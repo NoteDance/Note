@@ -1,0 +1,781 @@
+import tensorflow as tf
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import pickle
+import time
+
+
+def write_data(data,path):
+    output_file=open(path,'wb')
+    pickle.dump(data,output_file)
+    output_file.close()
+    return
+
+
+def read_data(path,dtype=np.float32):
+    input_file=open(path,'rb')
+    data=pickle.load(input_file)
+    return np.array(data,dtype=dtype)
+
+
+def write_data_csv(data,path,dtype=None,index=False,header=False):
+    if dtype==None:
+        data=pd.DataFrame(data)
+        data.to_csv(path,index=index,header=header)
+    else:
+        data=np.array(data,dtype=dtype)
+        data=pd.DataFrame(data)
+        data.to_csv(path,index=index,header=header)
+    return
+        
+
+def read_data_csv(path,dtype=None,header=None):
+    if dtype==None:
+        data=pd.read_csv(path,header=header)
+        return np.array(data)
+    else:
+        data=pd.read_csv(path,header=header)
+        return np.array(data,dtype=dtype)
+
+
+class rnn:
+    def __init__(self,train_data=None,train_labels=None):
+        self.graph=tf.Graph()
+        self.train_data=train_data
+        self.train_labels=train_labels
+        self.pre_train_data=None
+        with self.graph.as_default():
+            if type(train_data)==np.ndarray:
+                self.data_shape=train_data.shape
+                self.labels_shape=train_labels.shape
+                self.data=tf.placeholder(dtype=train_data.dtype,shape=[None,self.data_shape[1],self.data_shape[2]],name='data')
+                if len(self.labels_shape)==3:
+                    self.labels=tf.placeholder(dtype=train_labels.dtype,shape=[None,None,self.labels_shape[2]],name='labels')
+                elif len(self.labels_shape)==2:
+                    self.labels=tf.placeholder(dtype=train_labels.dtype,shape=[None,self.labels_shape[1]],name='labels')
+                self.train_data_dtype=train_data.dtype
+                self.train_labels_dtype=np.int32
+            else:
+                self.data=tf.placeholder(dtype=self.data_dtype,shape=[None,self.data_shape[1],self.data_shape[2]])
+                if len(self.labels_shape)==3:
+                    self.labels=tf.placeholder(dtype=self.labels_dtype,shape=[None,None,self.labels_shape[2]])
+                elif len(self.labels_shape)==2:
+                    self.labels=tf.placeholder(dtype=self.labels_dtype,shape=[None,self.labels_shape[1]])
+        self.embedding_w=None
+        self.embedding_b=None
+        self.hidden=None
+        self.pattern=None
+        self.weight_x=None
+        self.weight_h=None
+        self.weight_o=None
+        self.bias_x=None        
+        self.bias_h=None      
+        self.bias_o=None
+        self.h=[]
+        self.o=None
+        self.last_weight_x=None
+        self.last_weight_h=None
+        self.last_weight_o=None
+        self.last_bias_x=None
+        self.last_bias_h=None
+        self.last_bias_o=None
+        self.batch=None
+        self.epoch=None
+        self.l2=None
+        self.optimizer=None
+        self.lr=None
+        self.train_loss=None
+        self.train_accuracy=None
+        self.train_loss_list=[]
+        self.train_accuracy_list=[]
+        self.test_loss=None
+        self.test_accuracy=None
+        self.normalize=None
+        self.maximun=False
+        self.test_flag=False
+        self.flag=None
+        self.continue_flag=None
+        self.time=None
+        self.total_time=None
+        self.cpu_gpu='/gpu:0'
+        self.use_cpu_gpu='/gpu:0'
+        
+        
+    def preprocess(self,dtype=np.float32,normalize=True,maximun=False):
+        self.normalize=normalize
+        self.maximun=maximun
+        if self.normalize==True:
+            self.pre_train_data=self.train_data
+            if self.maximun==True:
+                self.pre_train_data/=np.max(self.pre_train_data,axis=0)
+            else:
+                self.pre_train_data-=np.mean(self.pre_train_data,axis=0)
+                self.pre_train_data/=np.std(self.pre_train_data,axis=0)
+        return
+
+    
+    def test_preprocess(self,data):
+        if self.normalize==True:
+            if self.maximun==True:
+                data/=np.max(data,axis=0)
+            else:
+                data-=np.mean(data,axis=0)
+                data/=np.std(data,axis=0)
+        return
+    
+    
+    def embedding(self,d,mean=0.07,stddev=0.07,dtype=tf.float32):
+        self.embedding_w=self.weight_init([self.data_shape[2],d],mean=mean,stddev=stddev,dtype=dtype,name='embedding_w')
+        self.embedding_b=self.bias_init([d],mean=mean,stddev=stddev,dtype=dtype,name='embedding_b')
+        self.train_data=tf.einsum('ijk,kl->ijl',self.train_data,self.embedding_w)+self.embedding_b
+        return
+    
+    
+    def weight_init(self,shape,mean,stddev,name):
+        return tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=self.dtype),name=name)
+            
+    
+    def bias_init(self,shape,mean,stddev,name):
+        return tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=self.dtype),name=name)
+
+    
+    def structure(self,hidden,pattern,ed=None,predicate=False,mean=0,stddev=0.07,dtype=tf.float32):
+        with self.graph.as_default():
+            self.dtype=dtype
+            self.continue_epoch=0
+            self.continue_flag=None
+            self.test_flag=False
+            self.train_loss_list.clear()
+            self.train_accuracy_list.clear()
+            self.hidden=hidden
+            self.pattern=pattern
+            self.predicate=predicate
+            self.h.clear()
+            with tf.name_scope('parameter_initialization'):
+                self.weight_x=self.weight_init([self.data_shape[2],self.hidden],mean=mean,stddev=stddev,name='weight_x')
+                self.bias_x=self.bias_init([self.hidden],mean=mean,stddev=stddev,name='bias_x')
+                self.weight_h=self.weight_init([self.hidden,self.hidden],mean=mean,stddev=stddev,name='weight_a')
+                self.bias_h=self.bias_init([self.hidden],mean=mean,stddev=stddev,name='bias_a')
+                if len(self.labels_shape)==3:
+                    self.weight_o=self.weight_init([self.hidden,self.labels_shape[2]],mean=mean,stddev=stddev,name='weight_o')
+                    self.bias_o=self.bias_init([self.labels_shape[2]],mean=mean,stddev=stddev,name='bias_o')
+                elif len(self.labels_shape)==2:
+                    self.weight_o=self.weight_init([self.hidden,self.labels_shape[1]],mean=mean,stddev=stddev,name='weight_o')
+                    self.bias_o=self.bias_init([self.labels_shape[1]],mean=mean,stddev=stddev,name='bias_o')
+                self.h.append(tf.zeros([1,self.hidden],name='h0'))
+                return
+            
+                
+    def forward_propagation(self,data,use_nn=False):
+        with self.graph.as_default():
+            if type(self.cpu_gpu)==str:
+                forward_cpu_gpu=self.cpu_gpu
+            else:
+                forward_cpu_gpu=self.cpu_gpu[0]
+            if use_nn==True:
+                forward_cpu_gpu=self.use_cpu_gpu
+            self.o=None
+            if use_nn==False:
+                weight_x=self.weight_x
+                weight_h=self.weight_h
+                weight_o=self.weight_o
+                bias_x=self.bias_x
+                bias_h=self.bias_h
+                bias_o=self.bias_o
+            else:
+                weight_x=tf.constant(self.last_weight_x)
+                weight_h=tf.constant(self.last_weight_h)
+                weight_o=tf.constant(self.last_weight_o)
+                bias_x=tf.constant(self.last_bias_x)
+                bias_h=tf.constant(self.last_bias_h)
+                bias_o=tf.constant(self.last_bias_o)
+            with tf.device(forward_cpu_gpu):
+                with tf.name_scope('forward_propagation'):
+                    X=tf.einsum('ijk,kl->ijl',data,weight_x)+bias_x
+                    if self.pattern=='1n':
+                        for i in range(self.labels_shape[1]):
+                            if i==0:
+                                self.h.append(tf.nn.tanh(tf.matmul(self.h[i],weight_h)+X+bias_h))
+                            else:
+                                self.h.append(tf.nn.tanh(tf.matmul(self.h[i],weight_h)+bias_h))
+                        self.o=tf.einsum('ijk,kl->ijl',tf.stack(self.h[1:],axis=1),weight_o)+bias_o
+                    elif self.pattern=='n1' or self.predicate==True:
+                        for i in range(self.data_shape[1]):
+                            self.h.append(tf.nn.tanh(tf.matmul(self.h[i],weight_h)+X[:][:,i]+bias_h))
+                            self.o.append(tf.add(tf.matmul(self.h[i+1],weight_o),bias_o))
+                    elif self.pattern=='nn':
+                        for i in range(self.data_shape[1]):
+                            self.h.append(tf.nn.tanh(tf.matmul(self.h[i],weight_h)+X[:][:,i]+bias_h))
+                        self.o=tf.einsum('ijk,kl->ijl',tf.stack(self.h[1:],axis=1),weight_o)+bias_o
+                    self.h.remove(self.h[0])
+                    return
+            
+        
+    def train(self,batch=None,epoch=None,optimizer='Adam',lr=0.001,l2=None,acc=True,train_summary_path=None,model_path=None,one=True,continue_train=False,cpu_gpu=None):
+        t1=time.time()
+        with self.graph.as_default():
+            self.epoch_flag=0
+            if self.flag==1:
+                self.continue_epoch=0
+                self.total_epoch=self.epoch
+                self.epoch_flag=1
+            self.h.clear()
+            self.h.append(tf.zeros([1,self.hidden],name='h0'))
+            self.batch=batch
+            self.epoch=epoch
+            self.l2=l2
+            self.optimizer=optimizer
+            self.lr=lr
+            if continue_train!=True:
+                if self.continue_train==True:
+                    continue_train=True
+                else:
+                    self.train_loss_list.clear()
+                    self.train_accuracy_list.clear()
+            if self.continue_train==False and continue_train==True:
+                self.train_loss_list.clear()
+                self.train_accuracy_list.clear()
+                self.continue_train=True
+            if continue_train!=True and self.continue_train==None:
+                self.continue_train=False
+            if cpu_gpu!=None:
+                self.cpu_gpu=cpu_gpu
+            if type(self.cpu_gpu)==str:
+                train_cpu_gpu=self.cpu_gpu
+            else:
+                train_cpu_gpu=self.cpu_gpu[1]
+            with tf.device(train_cpu_gpu):
+                if continue_train==True and self.continue_flag==None:
+                    self.continue_flag=1
+                if continue_train==True and self.flag==1:
+                    self.weight_x=tf.Variable(self.last_weight_x,name='weight_x')
+                    self.weight_h=tf.Variable(self.last_weight_h,name='weight_h')
+                    self.weight_o=tf.Variable(self.last_weight_o,name='weight_o')
+                    self.bias_x=tf.Variable(self.last_bias_x,name='bias_x')
+                    self.bias_h=tf.Variable(self.last_bias_h,name='bias_h')
+                    self.bias_o=tf.Variable(self.last_bias_o,name='bias_o')
+                    self.flag=0
+#     －－－－－－－－－－－－－－－forward propagation－－－－－－－－－－－－－－－
+                self.forward_propagation(self.data)
+#     －－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
+                with tf.name_scope('train_loss'):
+                    if self.pattern=='1n':
+                        if l2==None:
+                            train_loss=tf.reduce_mean(tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.o,labels=self.labels,axis=2),axis=1))
+                        else:
+                            train_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.o,labels=self.labels,axis=2),axis=1)
+                            train_loss=tf.reduce_mean(train_loss+l2/2*(tf.reduce_sum(self.weight_x**2)+tf.reduce_sum(self.weight_h**2)+tf.reduce_sum(self.weight_o**2)))
+                    elif self.pattern=='n1' or self.predicate==True:
+                        if self.pattern=='n1':
+                            if l2==None:
+                                train_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.o[-1],labels=self.labels))
+                            else:
+                                train_loss=tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.o[-1],labels=self.labels)
+                                train_loss=tf.reduce_mean(train_loss+l2/2*(tf.reduce_sum(self.weight_x**2)+tf.reduce_sum(self.weight_h**2)+tf.reduce_sum(self.weight_o**2)))
+                        else:
+                            if l2==None:
+                                train_loss=tf.reduce_mean(tf.square(self.o[-1]-tf.expand_dims(self.labels,axis=1)))
+                            else:
+                                train_loss=tf.square(self.o[-1]-tf.expand_dims(self.labels,axis=1))
+                                train_loss=tf.reduce_mean(train_loss+l2/2*(tf.reduce_sum(self.weight_x**2)+tf.reduce_sum(self.weight_h**2)+tf.reduce_sum(self.weight_o**2)))
+                    elif self.pattern=='nn':
+                        if l2==None:
+                            train_loss=tf.reduce_mean(tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.o,labels=self.labels,axis=2),axis=1))
+                        else:
+                            train_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.o,labels=self.labels,axis=2),axis=1)
+                            train_loss=tf.reduce_mean(train_loss+l2/2*(tf.reduce_sum(self.weight_x**2)+tf.reduce_sum(self.weight_h**2)+tf.reduce_sum(self.weight_o**2)))
+                    if self.optimizer=='Gradient':
+                        opt=tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(train_loss)
+                    if self.optimizer=='RMSprop':
+                        opt=tf.train.RMSPropOptimizer(learning_rate=self.lr).minimize(train_loss)
+                    if self.optimizer=='Momentum':
+                        opt=tf.train.MomentumOptimizer(learning_rate=self.lr,momentum=0.99).minimize(train_loss)
+                    if self.optimizer=='Adam':
+                        opt=tf.train.AdamOptimizer(learning_rate=self.lr).minimize(train_loss)
+                    train_loss_scalar=tf.summary.scalar('train_loss',train_loss)
+                if acc==True:
+                    with tf.name_scope('train_accuracy'):
+                        if self.pattern=='1n':
+                            train_accuracy=tf.reduce_mean(tf.cast(tf.equal(tf.argmax(self.o,2),tf.argmax(self.labels,2)),tf.float32))
+                        elif self.pattern=='n1' or self.predicate==True:
+                            if self.pattern=='n1':
+                                equal=tf.equal(tf.argmax(self.o[-1],1),tf.argmax(self.labels,1))
+                                train_accuracy=tf.reduce_mean(tf.cast(equal,tf.float32))
+                            else:
+                                train_accuracy=tf.reduce_mean(tf.abs(self.o[-1]-self.labels))
+                        elif self.pattern=='nn':
+                            train_accuracy=tf.reduce_mean(tf.cast(tf.equal(tf.argmax(self.o,2),tf.argmax(self.labels,2)),tf.float32))
+                        train_accuracy_scalar=tf.summary.scalar('train_accuracy',train_accuracy)
+                if train_summary_path!=None:
+                    train_merging=tf.summary.merge([train_loss_scalar,train_accuracy_scalar])
+                    train_writer=tf.summary.FileWriter(train_summary_path)
+                config=tf.ConfigProto()
+                config.gpu_options.allow_growth=True
+                config.allow_soft_placement=True
+                with tf.Session(config=config) as sess:
+                    tf.global_variables_initializer().run()
+                    if self.continue_epoch==0:
+                        self.epoch=self.epoch+1
+                    for i in range(self.epoch):
+                        if self.batch!=None:
+                            batches=int((self.data_shape[0]-self.data_shape[0]%self.batch)/self.batch)
+                            total_loss=0
+                            total_acc=0
+                            random=np.arange(self.data_shape[0])
+                            np.random.shuffle(random)
+                            if self.normalize==True:
+                                train_data=self.pre_train_data[random]
+                            else:
+                                train_data=self.train_data[random]
+                            train_labels=self.train_labels[random]
+                            for j in range(batches):
+                                train_data_batch=train_data[j*self.batch:(j+1)*self.batch]
+                                train_labels_batch=train_labels[j*self.batch:(j+1)*self.batch]
+                                feed_dict={self.data:train_data_batch,self.labels:train_labels_batch}
+                                if i==0:
+                                    batch_loss=sess.run(train_loss,feed_dict=feed_dict)
+                                else:
+                                    batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
+                                total_loss+=batch_loss
+                                if acc==True:
+                                    batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
+                                    total_acc+=batch_acc
+                            if self.data_shape[0]%self.batch!=0:
+                                batches+=1
+                                train_data_batch=np.concatenate([train_data[batches*self.batch:],train_data[:self.batch-(self.data_shape[0]-batches*self.batch)]])
+                                train_labels_batch=np.concatenate([train_labels[batches*self.batch:],train_labels[:self.batch-(self.labels_shape[0]-batches*self.batch)]])
+                                feed_dict={self.data:train_data_batch,self.labels:train_labels_batch}
+                                if i==0:
+                                    batch_loss=sess.run(train_loss,feed_dict=feed_dict)
+                                else:
+                                    batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
+                                total_loss+=batch_loss
+                                if acc==True:
+                                    batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
+                                    total_acc+=batch_acc
+                            loss=total_loss/batches
+                            train_acc=total_acc/batches
+                            self.train_loss_list.append(float(loss))
+                            self.train_loss=loss
+                            self.train_loss=self.train_loss.astype(np.float16)
+                            if acc==True:
+                                self.train_accuracy_list.append(float(train_acc))
+                                self.train_accuracy=train_acc
+                                self.train_accuracy=self.train_accuracy.astype(np.float16)
+                        else:
+                            random=np.arange(self.data_shape[0])
+                            np.random.shuffle(random)
+                            if self.normalize==True:
+                                train_data=self.pre_train_data[random]
+                            else:
+                                train_data=self.train_data[random]
+                            train_labels=self.train_labels[random]
+                            feed_dict={self.data:train_data,self.labels:train_labels}
+                            if i==0:
+                                loss=sess.run(train_loss,feed_dict=feed_dict)
+                            else:
+                                loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
+                            self.train_loss_list.append(float(loss))
+                            self.train_loss=loss
+                            self.train_loss=self.train_loss.astype(np.float16)
+                            if acc==True:
+                                if self.normalize==True:
+                                    accuracy=sess.run(train_accuracy,feed_dict=feed_dict)
+                                else:
+                                    accuracy=sess.run(train_accuracy,feed_dict=feed_dict)
+                                self.train_accuracy_list.append(float(accuracy))
+                                self.train_accuracy=accuracy
+                                self.train_accuracy=self.train_accuracy.astype(np.float16)
+                        if self.epoch%10!=0:
+                            epoch=self.epoch-self.epoch%10
+                            epoch=int(epoch/10)
+                        else:
+                            epoch=self.epoch/10
+                        if epoch==0:
+                            epoch=1
+                        if continue_train==True:
+                            if self.continue_flag==1:
+                                self.continue_epoch=0
+                            elif self.epoch_flag==1:
+                                self.continue_epoch=self.total_epoch+self.continue_epoch+1
+                                self.epoch_flag=0
+                            else:
+                                self.continue_epoch=self.continue_epoch+1
+                        if i%epoch==0:
+                            if continue_train==True and self.continue_flag==0:
+                                print('epoch:{0}   loss:{1:.6f}'.format(self.continue_epoch,self.train_loss))
+                            else:
+                                print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
+                            if model_path!=None and i%epoch*2==0:
+                                self.save(model_path,i,one)
+                            if train_summary_path!=None:
+                                if self.normalize==True:
+                                    train_summary=sess.run(train_merging,feed_dict={self.data:self.pre_train_data,self.labels:self.train_labels})
+                                    train_writer.add_summary(train_summary,i)
+                                else:
+                                    train_summary=sess.run(train_merging,feed_dict={self.data:self.train_data,self.labels:self.train_labels})
+                                    train_writer.add_summary(train_summary,i)
+                    print()
+                    print('last loss:{0}'.format(self.train_loss))
+                    if acc==True:
+                        print('accuracy:{0:.3f}%'.format(self.train_accuracy*100))
+                    if train_summary_path!=None:
+                        train_writer.close()
+                    self.last_weight_x=sess.run(self.weight_x)
+                    self.last_weight_h=sess.run(self.weight_h)
+                    self.last_weight_o=sess.run(self.weight_o)
+                    self.last_bias_x=sess.run(self.bias_x)
+                    self.last_bias_h=sess.run(self.bias_h)
+                    self.last_bias_o=sess.run(self.bias_o)
+                    if continue_train==True:
+                        self.weight_x=tf.Variable(self.last_weight_x,name='weight_x')
+                        self.weight_h=tf.Variable(self.last_weight_h,name='weight_h')
+                        self.weight_o=tf.Variable(self.last_weight_o,name='weight_o')
+                        self.bias_x=tf.Variable(self.last_bias_x,name='bias_x')
+                        self.bias_h=tf.Variable(self.last_bias_h,name='bias_h')
+                        self.bias_o=tf.Variable(self.last_bias_o,name='bias_o')
+                    if continue_train==True and self.continue_flag==1:  
+                        self.continue_epoch=self.epoch-1
+                        self.continue_flag=0
+                    if continue_train==True and self.continue_flag==0:
+                        self.epoch=self.continue_epoch
+                    t2=time.time()
+                    self.time=t2-t1
+                    if continue_train!=True:
+                        self.total_time=self.time
+                    else:
+                        self.total_time+=self.time
+                    print('time:{0:.3f}s'.format(self.total_time))
+                    return
+    
+
+    def test(self,test_data,test_labels,batch=None):
+        with self.graph.as_default():
+            if len(self.last_weight)==0 or self.test_flag==False:
+                use_nn=False
+            elif len(self.last_weight)!=0 and self.test_flag!=False:
+                use_nn=True
+            self.test_flag=True
+            if self.normalize==True:
+                test_data=self.test_preprocess(test_data)
+            shape=test_labels.shape
+            test_data_placeholder=tf.placeholder(dtype=test_data.dtype,shape=[None,test_data.shape[1],test_data.shape[2]])
+            if len(self.labels_shape)==3:
+                test_labels_placeholder=tf.placeholder(dtype=test_labels.dtype,shape=[None,None,shape[2]])
+            elif len(self.labels_shape)==2:
+                test_labels_placeholder=tf.placeholder(dtype=test_labels.dtype,shape=[None,shape[1]])
+            self.forward_propagation(test_data_placeholder,use_nn=use_nn)
+            if self.pattern=='1n':
+                test_loss=tf.reduce_mean(tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.o,labels=test_labels_placeholder,axis=2),axis=1))
+            elif self.pattern=='n1' or self.predicate==True:
+                if self.pattern=='n1':
+                    test_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.o[-1],labels=test_labels_placeholder))
+                else:
+                    test_loss=tf.reduce_mean(tf.square(self.o[-1]-tf.expand_dims(test_labels_placeholder,axis=1)))
+            elif self.pattern=='nn':
+                test_loss=tf.reduce_mean(tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.o,labels=test_labels_placeholder,axis=2),axis=1))
+            if self.pattern=='1n':
+                test_accuracy=tf.reduce_mean(tf.cast(tf.equal(tf.argmax(self.o,2),tf.argmax(test_labels_placeholder,2)),tf.float32))
+            elif self.pattern=='n1' or self.predicate==True:
+                if self.pattern=='n1':
+                    equal=tf.equal(tf.argmax(self.o[-1],1),tf.argmax(test_labels_placeholder,1))
+                    test_accuracy=tf.reduce_mean(tf.cast(equal,tf.float32))
+                else:
+                    test_accuracy=tf.reduce_mean(tf.abs(self.o[-1]-test_labels_placeholder))
+            elif self.pattern=='nn':
+                test_accuracy=tf.reduce_mean(tf.cast(tf.equal(tf.argmax(self.o,2),tf.argmax(test_labels_placeholder,2)),tf.float32))
+            config=tf.ConfigProto()
+            config.gpu_options.allow_growth=True
+            config.allow_soft_placement=True
+            sess=tf.Session(config=config)
+            if batch!=None:
+                total_test_loss=0
+                total_test_acc=0
+                test_batches=int((test_data.shape[0]-test_data.shape[0]%batch)/batch)
+                for j in range(test_batches):
+                    test_data_batch=test_data[j*batch:(j+1)*batch]
+                    test_labels_batch=test_labels[j*batch:(j+1)*batch]
+                    batch_test_loss=sess.run(test_loss,feed_dict={test_data_placeholder:test_data_batch,test_labels_placeholder:test_labels_batch})
+                    total_test_loss+=batch_test_loss
+                    batch_test_acc=sess.run(test_accuracy,feed_dict={test_data_placeholder:test_data_batch,test_labels_placeholder:test_labels_batch})
+                    total_test_acc+=batch_test_acc
+                if test_data.shape[0]%batch!=0:
+                    test_batches+=1
+                    test_data_batch=np.concatenate([test_data[test_batches*batch:],test_data[:batch-(test_data.shape[0]-test_batches*batch)]])
+                    test_labels_batch=np.concatenate([test_labels[test_batches*batch:],test_labels[:batch-(test_labels.shape[0]-test_batches*batch)]])
+                    batch_test_loss=sess.run(test_loss,feed_dict={test_data_placeholder:test_data_batch,test_labels_placeholder:test_labels_batch})
+                    total_test_loss+=batch_test_loss
+                    batch_test_acc=sess.run(test_accuracy,feed_dict={test_data_placeholder:test_data_batch,test_labels_placeholder:test_labels_batch})
+                    total_test_acc+=batch_test_acc
+                test_loss=total_test_loss/test_batches
+                test_acc=total_test_acc/test_batches
+                self.test_loss=test_loss
+                self.test_accuracy=test_acc
+                self.test_loss=self.test_loss.astype(np.float16)
+                self.test_accuracy=self.test_accuracy.astype(np.float16)
+            else:
+                self.test_loss=sess.run(test_loss,feed_dict={test_data_placeholder:test_data,test_labels_placeholder:test_labels})
+                self.test_accuracy=sess.run(test_accuracy,feed_dict={test_data_placeholder:test_data,test_labels_placeholder:test_labels})
+                self.test_loss=self.test_loss.astype(np.float16)
+                self.test_accuracy=self.test_accuracy.astype(np.float16)
+            print('test loss:{0}'.format(self.test_loss))
+            print('test accuracy:{0:.3f}%'.format(self.test_accuracy*100))
+            sess.close()
+            return    
+        
+    
+    def train_info(self):
+        print()
+        print('batch:{0}'.format(self.batch))
+        print()
+        print('epoch:{0}'.format(self.epoch))
+        print()
+        print('l2:{0}'.format(self.l2))
+        print()
+        print('optimizer:{0}'.format(self.optimizer))
+        print()
+        print('learning rate:{0}'.format(self.lr))
+        print()
+        print('time:{0:.3f}s'.format(self.time))
+        print()
+        print('-------------------------------------')
+        print()
+        print('train loss:{0}'.format(self.train_loss))
+        print()
+        print('train accuracy:{0:.3f}%'.format(self.train_accuracy*100))
+        return
+        
+    
+    def test_info(self):
+        print()
+        print('test loss:{0}'.format(self.test_loss))
+        print()
+        print('test accuracy:{0:.3f}%'.format(self.test_accuracy*100))
+        return
+		
+    
+    def info(self):
+        self.train_info()
+        if self.test_flag==True:
+            print()
+            print('-------------------------------------')
+            self.test_info()
+        return
+
+
+    def train_visual(self):
+        print()
+        plt.figure(1)
+        plt.plot(np.arange(self.epoch+1),self.train_loss_list)
+        plt.title('train loss')
+        plt.xlabel('epoch')
+        plt.ylabel('loss')
+        plt.figure(2)
+        plt.plot(np.arange(self.epoch+1),self.train_accuracy_list)
+        plt.title('train accuracy')
+        plt.xlabel('epoch')
+        plt.ylabel('accuracy')
+        print('train loss:{0}'.format(self.train_loss))
+        print()
+        print('train accuracy:{0:.3f}%'.format(self.train_accuracy*100))
+        return
+
+    
+    def comparison(self):
+        print()
+        print('train loss:{0}'.format(self.train_loss))
+        print()
+        print('train accuracy:{0:.3f}%'.format(self.train_accuracy*100))
+        print()
+        print('-------------------------------------')
+        print()
+        print('test loss:{0}'.format(self.test_loss))
+        print()
+        print('test accuracy:{0:.3f}%'.format(self.test_accuracy*100))
+        return
+    
+    
+    def network(self):
+        print()
+        print('input layer\t{0}x{1}\t{2}'.format(self.data_shape[1],self.data_shape[2],self.data_shape[2]*self.hidden+self.hidden))
+        print()
+        print('hidden layer\t{0}\t{1}\t{2}'.format(self.hidden,self.hidden*self.hidden+self.hidden,'tanh'))
+        print()
+        if len(self.labels_shape)==3:
+            print('output layer\t{0}\t{1}'.format(self.labels_shape[2],self.hidden*self.labels_shape[2]+self.labels_shape[2]))
+        elif len(self.labels_shape)==2:
+            print('output layer\t{0}\t{1}'.format(self.labels_shape[1],self.hidden*self.labels_shape[1]+self.labels_shape[1]))
+        print()
+        if len(self.labels_shape)==3:
+            total_params=self.data_shape[2]*self.hidden+self.hidden+self.hidden*self.hidden+self.hidden+self.hidden*self.labels_shape[2]+self.labels_shape[2]
+        elif len(self.labels_shape)==2:
+            total_params=self.data_shape[2]*self.hidden+self.hidden+self.hidden*self.hidden+self.hidden+self.hidden*self.labels_shape[1]+self.labels_shape[1]
+        print('total params:{0}'.format(total_params))
+        return
+
+
+    def save(self,model_path,i=None,one=True):
+        if one==True:
+            output_file=open(model_path+'.dat','wb')
+        else:
+            output_file=open(model_path+'-{0}.dat'.format(i+1),'wb')
+        pickle.dump(self.last_weight_x,output_file)
+        pickle.dump(self.last_weight_h,output_file)
+        pickle.dump(self.last_weight_o,output_file)
+        pickle.dump(self.last_bias_x,output_file)
+        pickle.dump(self.last_bias_h,output_file)
+        pickle.dump(self.last_bias_o,output_file)
+        pickle.dump(self.data_dtype,output_file)
+        pickle.dump(self.labels_dtype,output_file)
+        pickle.dump(self.data_shape,output_file)
+        pickle.dump(self.labels_shape,output_file)
+        pickle.dump(self.hidden,output_file)
+        pickle.dump(self.batch,output_file)
+        pickle.dump(self.epoch,output_file)
+        pickle.dump(self.l2,output_file)
+        pickle.dump(self.optimizer,output_file)
+        pickle.dump(self.lr,output_file)
+        pickle.dump(self.time,output_file)
+        pickle.dump(float(self.train_loss),output_file)
+        pickle.dump(float(self.train_accuracy*100),output_file)
+        pickle.dump(self.test_flag,output_file)
+        if self.test_flag==True:
+            pickle.dump(self.test_loss,output_file)
+            pickle.dump(self.test_accuracy,output_file)
+        pickle.dump(self.train_loss_list,output_file)
+        pickle.dump(self.train_accuracy_list,output_file)
+        pickle.dump(self.normalize,output_file)
+        pickle.dump(self.maximun,output_file)
+        pickle.dump(self.cpu_gpu,output_file)
+        pickle.dump(self.use_cpu_gpu,output_file)
+        output_file.close()
+        return
+    
+
+    def restore(self,model_path):
+        input_file=open(model_path,'rb')
+        self.last_weight_x=pickle.load(input_file)
+        self.last_weight_h=pickle.load(input_file)
+        self.last_weight_o=pickle.load(input_file)
+        self.last_bias_x=pickle.load(input_file)
+        self.last_bias_h=pickle.load(input_file)
+        self.last_bias_o=pickle.load(input_file)
+        self.data_dtype=pickle.load(input_file)
+        self.labels_dtype=pickle.load(input_file)
+        self.data_shape=pickle.load(input_file)
+        self.labels_shape=pickle.load(input_file)
+        self.hidden=pickle.load(input_file)
+        self.batch=pickle.load(input_file)
+        self.epoch=pickle.load(input_file)
+        self.l2=pickle.load(input_file)
+        self.optimizer=pickle.load(input_file)
+        self.lr=pickle.load(input_file)
+        self.time=pickle.load(input_file)
+        self.train_loss=pickle.load(input_file)
+        self.train_accuracy=pickle.load(input_file)
+        self.test_flag=pickle.load(input_file)
+        if self.test_flag==True:
+            self.test_loss=pickle.load(input_file)
+            self.test_accuracy=pickle.load(input_file)
+        self.train_loss_list=pickle.load(input_file)
+        self.train_accuracy_list=pickle.load(input_file)
+        self.normalize=pickle.load(input_file)
+        self.maximun=pickle.load(input_file)
+        self.cpu_gpu=pickle.load(input_file)
+        self.use_cpu_gpu=pickle.load(input_file)
+        self.flag=1
+        input_file.close()
+        return
+
+
+    def classify(self,data,one_hot=False,save_path=None,save_csv=None,cpu_gpu=None):
+        with self.graph.as_default():
+            if cpu_gpu!=None:
+                self.use_cpu_gpu=cpu_gpu
+            self.h.clear()
+            with tf.device(self.cla_cpu_gpu):
+                if self.normalize==True:
+                    if self.maximun==True:
+                        data/=np.max(data,axis=0)
+                    else:
+                        data-=np.mean(data,axis=0)
+                        data/=np.std(data,axis=0)
+                data=tf.constant(data)
+                self.forward_propagation(data,use_nn=True)
+                config=tf.ConfigProto()
+                config.gpu_options.allow_growth=True
+                config.allow_soft_placement=True
+                with tf.Session(config=config) as sess:
+                    if self.pattern=='1n':
+                        _output=sess.run(self.o)
+                    elif self.pattern=='n1':
+                        _output=sess.run(self.o[-1])
+                    elif self.pattern=='nn':
+                        _output=sess.run(self.o)
+                    if one_hot==True:
+                        if len(_output.shape)==2:
+                            index=np.argmax(_output,axis=1)
+                            output=np.zeros([_output.shape[0],_output.shape[1]])
+                            for i in range(_output.shape[0]):
+                                output[i][index[i]]+=1
+                        else:
+                            output=np.zeros([_output.shape[0],_output.shape[1],_output[2]])
+                            for i in range(_output.shape[0]):
+                                index=np.argmax(_output[i],axis=1)
+                                for j in range(index.shape[0]):
+                                    output[i][j][index[j]]+=1
+                        if save_path!=None:
+                            output_file=open(save_path,'wb')
+                            pickle.dump(output,output_file)
+                            output_file.close()
+                        elif save_csv!=None:
+                            data=pd.DataFrame(output)
+                            data.to_csv(save_csv,index=False,header=False)
+                        return output
+                    else:
+                        if len(_output.shape)==2:
+                            output=np.argmax(_output,axis=1)+1
+                        else:
+                            for i in range(_output.shape[0]):
+                                output[i]=np.argmax(_output[i],axis=1)+1
+                        if save_path!=None:
+                            output_file=open(save_path,'wb')
+                            pickle.dump(output,output_file)
+                            output_file.close()
+                        elif save_csv!=None:
+                            data=pd.DataFrame(output)
+                            data.to_csv(save_csv,index=False,header=False)
+                        return output
+                    
+                    
+    def predicate(self,data,save_path=None,save_csv=None,cpu_gpu=None):
+        with self.graph.as_default():
+            if cpu_gpu!=None:
+                self.use_cpu_gpu=cpu_gpu
+            self.h.clear()
+            with tf.device(self.pre_cpu_gpu):
+                if self.normalize==True:
+                    if self.maximun==True:
+                        data/=np.max(data,axis=0)
+                    else:
+                        data-=np.mean(data,axis=0)
+                        data/=np.std(data,axis=0)
+                    data=tf.constant(data)
+                    self.forward_propagation(data,use_nn=True)*np.max(self.train_labels)
+                else:
+                    data=tf.constant(data)
+                    self.forward_propagation(data,use_nn=True)
+                config=tf.ConfigProto()
+                config.gpu_options.allow_growth=True
+                config.allow_soft_placement=True
+                with tf.Session(config=config) as sess:
+                    output=sess.run(self.o[-1])
+                if save_path!=None:
+                    output_file=open(save_path,'wb')
+                    pickle.dump(output,output_file)
+                    output_file.close()
+                elif save_csv!=None:
+                    data=pd.DataFrame(output)
+                    data.to_csv(save_csv,index=False,header=False)
+                return output
