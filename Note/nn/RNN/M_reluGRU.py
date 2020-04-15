@@ -98,9 +98,10 @@ class m_relugru:
         self.test_accuracy=None
         self.normalize=None
         self.maximun=False
-        self.test_flag=False
-        self.flag=None
+        self.continue_train=None
         self.continue_flag=None
+        self.flag=None
+        self.test_flag=None
         self.time=None
         self.total_time=None
         self.cpu_gpu='/gpu:0'
