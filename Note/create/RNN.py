@@ -125,6 +125,8 @@ def attention(en_h,de_h,attention_w1,attention_w2,attention_w3):
         else:
             de_h=de_h[i]
         score=tf.einsum('ijk,kl->ijl',tf.nn.tanh(tf.expand_dims(tf.matmul(de_h,attention_w1),axis=1)+tf.einsum('ijk,kl->ijl',stack_en_h,attention_w2)),attention_w3)
+        score=tf.reduce_mean(score,axis=2)
+        score=tf.expand_dims(score,axis=2)
         attention_weights=tf.nn.softmax(score,axis=1)
         context_vector.append(tf.reduce_mean(attention_weights*stack_en_h,axis=1))
         attention_vector.append(tf.concat([de_h,context_vector[i]],axis=1))
