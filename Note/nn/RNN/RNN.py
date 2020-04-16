@@ -694,8 +694,9 @@ class rnn:
         with self.graph.as_default():
             if cpu_gpu!=None:
                 self.use_cpu_gpu=cpu_gpu
+		use_cpu_gpu=self.use_cpu_gpu[-1]
             self.h.clear()
-            with tf.device(self.cla_cpu_gpu):
+            with tf.device(use_cpu_gpu):
                 if self.normalize==True:
                     if self.maximun==True:
                         data/=np.max(data,axis=0)
@@ -754,8 +755,9 @@ class rnn:
         with self.graph.as_default():
             if cpu_gpu!=None:
                 self.use_cpu_gpu=cpu_gpu
+		use_cpu_gpu=self.use_cpu_gpu[-1]
             self.h.clear()
-            with tf.device(self.pre_cpu_gpu):
+            with tf.device(use_cpu_gpu):
                 if self.normalize==True:
                     if self.maximun==True:
                         data/=np.max(data,axis=0)
