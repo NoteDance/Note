@@ -156,7 +156,7 @@ class rnn:
             with tf.name_scope('parameter_initialization'):
                 self.weight_x=self.weight_init([self.data_shape[2],self.hidden],mean=mean,stddev=stddev,name='weight_x')
                 self.bias_x=self.bias_init([self.hidden],mean=mean,stddev=stddev,name='bias_x')
-                self.weight_h=self.weight_init([self.hidden,self.hidden],mean=mean,stddev=stddev,name='weight_a')
+                self.weight_h=self.weight_init([self.hidden,self.hidden],mean=mean,stddev=stddev,name='weight_h')
                 self.bias_h=self.bias_init([self.hidden],mean=mean,stddev=stddev,name='bias_a')
                 if len(self.labels_shape)==3:
                     self.weight_o=self.weight_init([self.hidden,self.labels_shape[2]],mean=mean,stddev=stddev,name='weight_o')
@@ -694,7 +694,7 @@ class rnn:
         with self.graph.as_default():
             if cpu_gpu!=None:
                 self.use_cpu_gpu=cpu_gpu
-		use_cpu_gpu=self.use_cpu_gpu[-1]
+                use_cpu_gpu=self.use_cpu_gpu[-1]
             self.h.clear()
             with tf.device(use_cpu_gpu):
                 if self.normalize==True:
@@ -755,7 +755,7 @@ class rnn:
         with self.graph.as_default():
             if cpu_gpu!=None:
                 self.use_cpu_gpu=cpu_gpu
-		use_cpu_gpu=self.use_cpu_gpu[-1]
+                use_cpu_gpu=self.use_cpu_gpu[-1]
             self.h.clear()
             with tf.device(use_cpu_gpu):
                 if self.normalize==True:
