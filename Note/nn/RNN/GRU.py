@@ -62,11 +62,11 @@ class gru:
                     self.labels=tf.placeholder(dtype=self.labels_dtype,shape=[None,None,self.labels_shape[2]])
                 elif len(self.labels_shape)==2:
                     self.labels=tf.placeholder(dtype=self.labels_dtype,shape=[None,self.labels_shape[1]])
-        self.embedding_w=None
-        self.embedding_b=None
         self.hidden=None
         self.pattern=None
         self.layers=None
+        self.embedding_w=None
+        self.embedding_b=None
         self.ug_weight_x=None
         self.ug_weight_h=None
         self.rg_weight_x=None
@@ -80,6 +80,8 @@ class gru:
         self.bias_o=None
         self.h=[]
         self.output=None
+        self.last_embedding_w=None
+        self.last_embedding_b=None
         self.last_ug_weight_x=None
         self.last_ug_weight_h=None
         self.last_rg_weight_x=None
@@ -104,9 +106,9 @@ class gru:
         self.test_accuracy=None
         self.normalize=None
         self.maximun=False
-        self.continue_train=None
-        self.continue_flag=None
+        self.continue_train=False
         self.flag=None
+        self.end_flag=False
         self.test_flag=None
         self.time=None
         self.total_time=None
@@ -140,7 +142,6 @@ class gru:
     def embedding(self,d,mean=0.07,stddev=0.07,dtype=tf.float32):
         self.embedding_w=self.weight_init([self.data_shape[2],d],mean=mean,stddev=stddev,dtype=dtype,name='embedding_w')
         self.embedding_b=self.bias_init([d],mean=mean,stddev=stddev,dtype=dtype,name='embedding_b')
-        self.train_data=tf.einsum('ijk,kl->ijl',self.train_data,self.embedding_w)+self.embedding_b
         return
     
     
@@ -154,9 +155,10 @@ class gru:
     
     def structure(self,hidden,pattern,layers=None,predicate=False,mean=0,stddev=0.07,dtype=tf.float32):
         with self.graph.as_default():
-            self.dtype=dtype
-            self.continue_epoch=0
-            self.continue_flag=None
+            self.continue_train=False
+            self.total_epoch=0
+            self.flag=None
+            self.end_flag=False
             self.test_flag=False
             self.train_loss_list.clear()
             self.train_accuracy_list.clear()
@@ -164,6 +166,8 @@ class gru:
             self.pattern=pattern
             self.layers=layers
             self.predicate=predicate
+            self.dtype=dtype
+            self.total_time=None
             with tf.name_scope('parameter_initialization'):
                 if self.layers!=None:
                     self.ug_weight_x=[]
@@ -246,16 +250,9 @@ class gru:
             if use_nn==True:
                 forward_cpu_gpu=self.use_cpu_gpu
             self.output=None
-            if use_nn==False:               
-                ug_weight_x=None
-                ug_weight_h=None
-                rg_weight_x=None
-                rg_weight_h=None
-                cltm_weight_x=None
-                cltm_weight_h=None
-                ug_bias=None
-                rg_bias=None
-                bias_c=None
+            if use_nn==False:  
+                embedding_w=self.embedding_w
+                embedding_b=self.embedding_b
                 ug_weight_x=self.fg_weight_x
                 ug_weight_h=self.fg_weight_h
                 rg_weight_x=self.ig_weight_x
@@ -267,7 +264,9 @@ class gru:
                 bias_c=self.bias_c
                 weight_o=self.weight_o
                 bias_o=self.bias_o
-            else:              
+            else:     
+                embedding_w=tf.constant(self.last_embedding_w)
+                embedding_b=tf.constant(self.last_embedding_b)
                 if self.layers!=None:
                     ug_weight_x=[]
                     ug_weight_h=[]
@@ -312,8 +311,10 @@ class gru:
                     c=[x for x in range(self.layers)]
                     self.h=[x for x in range(self.layers)]
                     for j in range(self.layers):
-                        with tf.device(forward_cpu_gpu[i]):
+                        with tf.device(forward_cpu_gpu[j]):
                             self.h[j]=[]
+                            if j==0:
+                                data=tf.einsum('ijk,kl->ijl',data,embedding_w)+embedding_b
                             if j==0:
                                 ux.append(tf.einsum('ijk,kl->ijl',data,ug_weight_x[j]))
                                 rx.append(tf.einsum('ijk,kl->ijl',data,rg_weight_x[j]))
@@ -412,6 +413,7 @@ class gru:
                                         self.h[j]=tf.stack(self.h[j],axis=1)
                         return
                     with tf.device(forward_cpu_gpu):
+                        data=tf.einsum('ijk,kl->ijl',data,embedding_w)+embedding_b
                         ux=tf.einsum('ijk,kl->ijl',data,ug_weight_x)
                         rx=tf.einsum('ijk,kl->ijl',data,rg_weight_x)
                         cx=tf.einsum('ijk,kl->ijl',data,cltm_weight_x)
@@ -460,15 +462,9 @@ class gru:
     def train(self,batch=None,epoch=None,optimizer='Adam',lr=0.001,l2=None,acc=True,train_summary_path=None,model_path=None,one=True,continue_train=False,cpu_gpu=None):
         t1=time.time()
         with self.graph.as_default():
-            self.epoch_flag=0
-            if self.flag==1:
-                self.continue_epoch=0
-                self.total_epoch=self.epoch
-                self.epoch_flag=1
             self.C.clear()
             self.h.clear()
             self.batch=batch
-            self.epoch=epoch
             self.l2=l2
             self.optimizer=optimizer
             self.lr=lr
@@ -479,11 +475,11 @@ class gru:
                     self.train_loss_list.clear()
                     self.train_accuracy_list.clear()
             if self.continue_train==False and continue_train==True:
+                if self.end_flag==False and self.flag==0:
+                    self.epoch=None
                 self.train_loss_list.clear()
                 self.train_accuracy_list.clear()
                 self.continue_train=True
-            if continue_train!=True and self.continue_train==None:
-                self.continue_train=False
             if cpu_gpu!=None:
                 self.cpu_gpu=cpu_gpu
             if type(self.cpu_gpu)==list and (len(self.cpu_gpu)!=self.layers+1 or len(self.cpu_gpu)==1):
@@ -493,31 +489,69 @@ class gru:
             else:
                 train_cpu_gpu=self.cpu_gpu[-1]
             with tf.device(train_cpu_gpu):
-                if continue_train==True and self.continue_flag==None:
-                    self.continue_flag=1
-                if continue_train==True and self.flag==1:
+                if continue_train==True and self.end_flag==True:
+                    self.end_flag=False
+                    self.embedding_w=tf.Variable(self.last_embedding_w,name='embedding_w')
+                    self.embedding_b=tf.Variable(self.last_embedding_b,name='embedding_b')
                     if self.layers!=None:
-                        self.last_ug_weight_x=[]
-                        self.last_ug_weight_h=[]
-                        self.last_rg_weight_x=[]
-                        self.last_rg_weight_h=[]
-                        self.last_cltm_weight_x=[]
-                        self.last_cltm_weight_h=[]
-                        self.last_ug_bias=[]
-                        self.last_rg_bias=[]
-                        self.last_bias_c=[]
+                        self.ug_weight_x=[]
+                        self.ug_weight_h=[]
+                        self.rg_weight_x=[]
+                        self.rg_weight_h=[]
+                        self.cltm_weight_x=[]
+                        self.cltm_weight_h=[]
+                        self.ug_bias=[]
+                        self.rg_bias=[]
+                        self.bias_c=[]
                         for i in range(self.layers):
-                            self.last_ug_weight_x.append(tf.Variable(self.ug_weight_x[i],name='ug_weight_x{}'.format(i+1)))
-                            self.last_ug_weight_h.append(tf.Variable(self.ug_weight_h[i],name='ug_weight_h{}'.format(i+1)))
-                            self.last_rg_weight_x.append(tf.Variable(self.rg_weight_x[i],name='rg_weight_x{}'.format(i+1)))
-                            self.last_rg_weight_h.append(tf.Variable(self.rg_weight_h[i],name='rg_weight_h{}'.format(i+1)))
-                            self.last_cltm_weight_x.append(tf.Variable(self.cltm_weight_x[i],name='cltm_weight_x{}'.format(i+1)))
-                            self.last_cltm_weight_h.append(tf.Variable(self.cltm_weight_h[i],name='cltm_weight_h{}'.format(i+1)))
-                            self.last_ug_bias.append(tf.Variable(self.fg_bias[i],name='ug_bias{}'.format(i+1)))
-                            self.last_rg_bias.append(tf.Variable(self.ig_bias[i],name='rg_bias{}'.format(i+1)))
-                            self.last_bias_c.append(tf.Variable(self.bias_c[i],name='bias_c{}'.format(i+1)))
-                        self.last_weight_o=tf.Variable(self.weight_o,name='weight_o')
-                        self.last_bias_o=tf.Variable(self.bias_o,name='bias_o')
+                            self.ug_weight_x.append(tf.Variable(self.last_fg_weight_x[i],name='ug_weight_x{}'.format(i+1)))
+                            self.ug_weight_h.append(tf.Variable(self.last_fg_weight_h[i],name='ug_weight_h{}'.format(i+1)))
+                            self.rg_weight_x.append(tf.Variable(self.last_ig_weight_x[i],name='rg_weight_x{}'.format(i+1)))
+                            self.rg_weight_h.append(tf.Variable(self.last_ig_weight_h[i],name='rg_weight_h{}'.format(i+1)))
+                            self.cltm_weight_x.append(tf.Variable(self.last_cltm_weight_x[i],name='cltm_weight_x{}'.format(i+1)))
+                            self.cltm_weight_h.append(tf.Variable(self.last_cltm_weight_h[i],name='cltm_weight_h{}'.format(i+1)))
+                            self.ug_bias.append(tf.Variable(self.last_fg_bias[i],name='ug_bias{}'.format(i+1)))
+                            self.rg_bias.append(tf.Variable(self.last_ig_bias[i],name='rg_bias{}'.format(i+1)))
+                            self.bias_c.append(tf.Variable(self.last_bias_c[i],name='bias_c{}'.format(i+1)))
+                        self.weight_o=tf.Variable(self.last_weight_o,name='weight_o')
+                        self.bias_o=tf.Variable(self.last_bias_o,name='bias_o')
+                    else:
+                        self.ug_weight_x=tf.Variable(self.last_fg_weight_x,name='ug_weight_x')
+                        self.ug_weight_h=tf.Variable(self.last_fg_weight_h,name='ug_weight_h')
+                        self.rg_weight_x=tf.Variable(self.last_ig_weight_x,name='rg_weight_x')
+                        self.rg_weight_h=tf.Variable(self.last_ig_weight_h,name='rg_weight_h')
+                        self.cltm_weight_x=tf.Variable(self.last_cltm_weight_x,name='cltm_weight_x')
+                        self.cltm_weight_h=tf.Variable(self.last_cltm_weight_h,name='cltm_weight_h')
+                        self.ug_bias=tf.Variable(self.last_fg_bias,name='ug_bias')
+                        self.rg_bias=tf.Variable(self.last_ig_bias,name='rg_bias')
+                        self.bias_c=tf.Variable(self.last_bias_c,name='bias_c')
+                        self.weight_o=tf.Variable(self.last_weight_o,name='weight_o')
+                        self.bias_o=tf.Variable(self.last_bias_o,name='bias_o')
+                if continue_train==True and self.flag==1:
+                    self.embedding_w=tf.Variable(self.last_embedding_w,name='embedding_w')
+                    self.embedding_b=tf.Variable(self.last_embedding_b,name='embedding_b')
+                    if self.layers!=None:
+                        self.ug_weight_x=[]
+                        self.ug_weight_h=[]
+                        self.rg_weight_x=[]
+                        self.rg_weight_h=[]
+                        self.cltm_weight_x=[]
+                        self.cltm_weight_h=[]
+                        self.ug_bias=[]
+                        self.rg_bias=[]
+                        self.bias_c=[]
+                        for i in range(self.layers):
+                            self.ug_weight_x.append(tf.Variable(self.last_ug_weight_x[i],name='ug_weight_x{}'.format(i+1)))
+                            self.ug_weight_h.append(tf.Variable(self.last_ug_weight_h[i],name='ug_weight_h{}'.format(i+1)))
+                            self.rg_weight_x.append(tf.Variable(self.last_rg_weight_x[i],name='rg_weight_x{}'.format(i+1)))
+                            self.rg_weight_h.append(tf.Variable(self.last_rg_weight_h[i],name='rg_weight_h{}'.format(i+1)))
+                            self.cltm_weight_x.append(tf.Variable(self.last_cltm_weight_x[i],name='cltm_weight_x{}'.format(i+1)))
+                            self.cltm_weight_h.append(tf.Variable(self.last_cltm_weight_h[i],name='cltm_weight_h{}'.format(i+1)))
+                            self.ug_bias.append(tf.Variable(self.last_ug_bias[i],name='ug_bias{}'.format(i+1)))
+                            self.rg_bias.append(tf.Variable(self.last_rg_bias[i],name='rg_bias{}'.format(i+1)))
+                            self.bias_c.append(tf.Variable(self.last_bias_c[i],name='bias_c{}'.format(i+1)))
+                        self.weight_o=tf.Variable(self.weight_o,name='weight_o')
+                        self.bias_o=tf.Variable(self.bias_o,name='bias_o')
                     else:
                         self.ug_weight_x=tf.Variable(self.last_ug_weight_x,name='ug_weight_x')
                         self.ug_weight_h=tf.Variable(self.last_ug_weight_h,name='ug_weight_h')
@@ -525,10 +559,10 @@ class gru:
                         self.rg_weight_h=tf.Variable(self.last_rg_weight_h,name='rg_weight_h')
                         self.cltm_weight_x=tf.Variable(self.last_cltm_weight_x,name='cltm_weight_x')
                         self.cltm_weight_h=tf.Variable(self.last_cltm_weight_h,name='cltm_weight_h')
-                        self.weight_o=tf.Variable(self.last_weight_o,name='weight_o')
                         self.ug_bias=tf.Variable(self.last_ug_bias,name='ug_bias')
                         self.rg_bias=tf.Variable(self.last_rg_bias,name='rg_bias')
                         self.bias_c=tf.Variable(self.last_bias_c,name='bias_c')
+                        self.weight_o=tf.Variable(self.last_weight_o,name='weight_o')
                         self.bias_o=tf.Variable(self.last_bias_o,name='bias_o')
                     self.flag=0
 #     －－－－－－－－－－－－－－－forward propagation－－－－－－－－－－－－－－－
@@ -600,115 +634,163 @@ class gru:
                 config=tf.ConfigProto()
                 config.gpu_options.allow_growth=True
                 config.allow_soft_placement=True
-                with tf.Session(config=config) as sess:
-                    tf.global_variables_initializer().run()
-                    if self.continue_epoch==0:
-                        self.epoch=self.epoch+1
-                    for i in range(self.epoch):
-                        if self.batch!=None:
-                            batches=int((self.data_shape[0]-self.data_shape[0]%self.batch)/self.batch)
-                            total_loss=0
-                            total_acc=0
-                            random=np.arange(self.data_shape[0])
-                            np.random.shuffle(random)
-                            if self.normalize==True:
-                                train_data=self.pre_train_data[random]
-                            else:
-                                train_data=self.train_data[random]
-                            train_labels=self.train_labels[random]
-                            for j in range(batches):
-                                train_data_batch=train_data[j*self.batch:(j+1)*self.batch]
-                                train_labels_batch=train_labels[j*self.batch:(j+1)*self.batch]
-                                feed_dict={self.data:train_data_batch,self.labels:train_labels_batch}
-                                if i==0:
-                                    batch_loss=sess.run(train_loss,feed_dict=feed_dict)
-                                else:
-                                    batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
-                                total_loss+=batch_loss
-                                if acc==True:
-                                    batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
-                                    total_acc+=batch_acc
-                            if self.data_shape[0]%self.batch!=0:
-                                batches+=1
-                                train_data_batch=np.concatenate([train_data[batches*self.batch:],train_data[:self.batch-(self.data_shape[0]-batches*self.batch)]])
-                                train_labels_batch=np.concatenate([train_labels[batches*self.batch:],train_labels[:self.batch-(self.labels_shape[0]-batches*self.batch)]])
-                                feed_dict={self.data:train_data_batch,self.labels:train_labels_batch}
-                                if i==0:
-                                    batch_loss=sess.run(train_loss,feed_dict=feed_dict)
-                                else:
-                                    batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
-                                total_loss+=batch_loss
-                                if acc==True:
-                                    batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
-                                    total_acc+=batch_acc
-                            loss=total_loss/batches
-                            train_acc=total_acc/batches
-                            self.train_loss_list.append(float(loss))
-                            self.train_loss=loss
-                            self.train_loss=self.train_loss.astype(np.float16)
-                            if acc==True:
-                                self.train_accuracy_list.append(float(train_acc))
-                                self.train_accuracy=train_acc
-                                self.train_accuracy=self.train_accuracy.astype(np.float16)
+                sess=tf.Session(config=config)
+                sess.run(tf.global_variables_initializer())
+                self.sess=sess
+                if self.total_epoch==0:
+                    epoch=epoch+1
+                for i in range(epoch):
+                    if self.batch!=None:
+                        batches=int((self.data_shape[0]-self.data_shape[0]%self.batch)/self.batch)
+                        total_loss=0
+                        total_acc=0
+                        random=np.arange(self.data_shape[0])
+                        np.random.shuffle(random)
+                        if self.normalize==True:
+                            train_data=self.pre_train_data[random]
                         else:
-                            random=np.arange(self.data_shape[0])
-                            np.random.shuffle(random)
-                            if self.normalize==True:
-                                train_data=self.pre_train_data[random]
+                            train_data=self.train_data[random]
+                        train_labels=self.train_labels[random]
+                        for j in range(batches):
+                            train_data_batch=train_data[j*self.batch:(j+1)*self.batch]
+                            train_labels_batch=train_labels[j*self.batch:(j+1)*self.batch]
+                            feed_dict={self.data:train_data_batch,self.labels:train_labels_batch}
+                            if i==0 and self.total_epoch==0:
+                                batch_loss=sess.run(train_loss,feed_dict=feed_dict)
                             else:
-                                train_data=self.train_data[random]
-                            train_labels=self.train_labels[random]
-                            feed_dict={self.data:train_data,self.labels:train_labels}
-                            if i==0:
-                                loss=sess.run(train_loss,feed_dict=feed_dict)
-                            else:
-                                loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
-                            self.train_loss_list.append(float(loss))
-                            self.train_loss=loss
-                            self.train_loss=self.train_loss.astype(np.float16)
+                                batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
+                            total_loss+=batch_loss
                             if acc==True:
-                                if self.normalize==True:
-                                    accuracy=sess.run(train_accuracy,feed_dict=feed_dict)
-                                else:
-                                    accuracy=sess.run(train_accuracy,feed_dict=feed_dict)
-                                self.train_accuracy_list.append(float(accuracy))
-                                self.train_accuracy=accuracy
-                                self.train_accuracy=self.train_accuracy.astype(np.float16)
-                        if self.epoch%10!=0:
-                            epoch=self.epoch-self.epoch%10
-                            epoch=int(epoch/10)
+                                batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
+                                total_acc+=batch_acc
+                        if self.data_shape[0]%self.batch!=0:
+                            batches+=1
+                            train_data_batch=np.concatenate([train_data[batches*self.batch:],train_data[:self.batch-(self.data_shape[0]-batches*self.batch)]])
+                            train_labels_batch=np.concatenate([train_labels[batches*self.batch:],train_labels[:self.batch-(self.labels_shape[0]-batches*self.batch)]])
+                            feed_dict={self.data:train_data_batch,self.labels:train_labels_batch}
+                            if i==0 and self.total_epoch==0:
+                                batch_loss=sess.run(train_loss,feed_dict=feed_dict)
+                            else:
+                                batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
+                            total_loss+=batch_loss
+                            if acc==True:
+                                batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
+                                total_acc+=batch_acc
+                        loss=total_loss/batches
+                        train_acc=total_acc/batches
+                        self.train_loss_list.append(float(loss))
+                        self.train_loss=loss
+                        self.train_loss=self.train_loss.astype(np.float16)
+                        if acc==True:
+                            self.train_accuracy_list.append(float(train_acc))
+                            self.train_accuracy=train_acc
+                            self.train_accuracy=self.train_accuracy.astype(np.float16)
+                    else:
+                        random=np.arange(self.data_shape[0])
+                        np.random.shuffle(random)
+                        if self.normalize==True:
+                            train_data=self.pre_train_data[random]
                         else:
-                            epoch=self.epoch/10
-                        if epoch==0:
-                            epoch=1
+                            train_data=self.train_data[random]
+                        train_labels=self.train_labels[random]
+                        feed_dict={self.data:train_data,self.labels:train_labels}
+                        if i==0 and self.total_epoch==0:
+                            loss=sess.run(train_loss,feed_dict=feed_dict)
+                        else:
+                            loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
+                        self.train_loss_list.append(float(loss))
+                        self.train_loss=loss
+                        self.train_loss=self.train_loss.astype(np.float16)
+                        if acc==True:
+                            if self.normalize==True:
+                                accuracy=sess.run(train_accuracy,feed_dict=feed_dict)
+                            else:
+                                accuracy=sess.run(train_accuracy,feed_dict=feed_dict)
+                            self.train_accuracy_list.append(float(accuracy))
+                            self.train_accuracy=accuracy
+                            self.train_accuracy=self.train_accuracy.astype(np.float16)
+                    if epoch%10!=0:
+                        temp_epoch=epoch-epoch%10
+                        temp_epoch=int(temp_epoch/10)
+                    else:
+                        temp_epoch=epoch/10
+                    if temp_epoch==0:
+                        temp_epoch=1
+                    if i%temp_epoch==0:
                         if continue_train==True:
-                            if self.continue_flag==1:
-                                self.continue_epoch=0
-                            elif self.epoch_flag==1:
-                                self.continue_epoch=self.total_epoch+self.continue_epoch+1
-                                self.epoch_flag=0
+                            if self.epoch!=None:
+                                self.total_epoch=self.epoch+i+1
                             else:
-                                self.continue_epoch=self.continue_epoch+1
-                        if i%epoch==0:
-                            if continue_train==True and self.continue_flag==0:
-                                print('epoch:{0}   loss:{1:.6f}'.format(self.continue_epoch,self.train_loss))
+                                self.total_epoch=i
+                        if continue_train==True:
+                            print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
+                        else:
+                            print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
+                        if model_path!=None and i%epoch*2==0:
+                            self.save_model(model_path,i,one)
+                        if train_summary_path!=None:
+                            if self.normalize==True:
+                                train_summary=sess.run(train_merging,feed_dict={self.data:self.pre_train_data,self.labels:self.train_labels})
+                                train_writer.add_summary(train_summary,i)
                             else:
-                                print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
-                            if model_path!=None and i%epoch*2==0:
-                                self.save_model(model_path,i,one)
-                            if train_summary_path!=None:
-                                if self.normalize==True:
-                                    train_summary=sess.run(train_merging,feed_dict={self.data:self.pre_train_data,self.labels:self.train_labels})
-                                    train_writer.add_summary(train_summary,i)
-                                else:
-                                    train_summary=sess.run(train_merging,feed_dict={self.data:self.train_data,self.labels:self.train_labels})
-                                    train_writer.add_summary(train_summary,i)
-                    print()
-                    print('last loss:{0}'.format(self.train_loss))
-                    if acc==True:
-                        print('accuracy:{0:.3f}%'.format(self.train_accuracy*100))
-                    if train_summary_path!=None:
-                        train_writer.close()
+                                train_summary=sess.run(train_merging,feed_dict={self.data:self.train_data,self.labels:self.train_labels})
+                                train_writer.add_summary(train_summary,i)
+                print()
+                print('last loss:{0}'.format(self.train_loss))
+                if acc==True:
+                    print('accuracy:{0:.3f}%'.format(self.train_accuracy*100))
+                if train_summary_path!=None:
+                    train_writer.close()
+                if continue_train==True:
+                    self.last_embedding_w=sess.run(self.embedding_w)
+                    self.last_embedding_b=sess.run(self.embedding_b)
+                    self.last_ug_weight_x=sess.run(self.ug_weight_x)
+                    self.last_ug_weight_h=sess.run(self.ug_weight_h)
+                    self.last_rg_weight_x=sess.run(self.rg_weight_x)
+                    self.last_rg_weight_h=sess.run(self.rg_weight_h)
+                    self.last_cltm_weight_x=sess.run(self.cltm_weight_x)
+                    self.last_cltm_weight_h=sess.run(self.cltm_weight_h)
+                    self.last_ug_bias=sess.run(self.ug_bias)
+                    self.last_rg_bias=sess.run(self.rg_bias)
+                    self.last_bias_c=sess.run(self.bias_c)
+                    self.last_weight_o=sess.run(self.weight_o)
+                    self.last_bias_o=sess.run(self.bias_o)
+                    if self.layers!=None:
+                        self.last_ug_weight_x=[]
+                        self.last_ug_weight_h=[]
+                        self.last_rg_weight_x=[]
+                        self.last_rg_weight_h=[]
+                        self.last_cltm_weight_x=[]
+                        self.last_cltm_weight_h=[]
+                        self.last_ug_bias=[]
+                        self.last_rg_bias=[]
+                        self.last_bias_c=[]
+                        for i in range(self.layers):
+                            self.ug_weight_x.append(tf.Variable(self.last_ug_weight_x[i],name='ug_weight_x{}'.format(i+1)))
+                            self.ug_weight_h.append(tf.Variable(self.last_ug_weight_h[i],name='ug_weight_h{}'.format(i+1)))
+                            self.rg_weight_x.append(tf.Variable(self.last_rg_weight_x[i],name='rg_weight_x{}'.format(i+1)))
+                            self.rg_weight_h.append(tf.Variable(self.last_rg_weight_h[i],name='rg_weight_h{}'.format(i+1)))
+                            self.cltm_weight_x.append(tf.Variable(self.last_cltm_weight_x[i],name='cltm_weight_x{}'.format(i+1)))
+                            self.cltm_weight_h.append(tf.Variable(self.last_cltm_weight_h[i],name='cltm_weight_h{}'.format(i+1)))
+                            self.ug_bias.append(tf.Variable(self.last_fg_bias[i],name='ug_bias{}'.format(i+1)))
+                            self.rg_bias.append(tf.Variable(self.last_ig_bias[i],name='rg_bias{}'.format(i+1)))
+                            self.bias_c.append(tf.Variable(self.last_bias_c[i],name='bias_c{}'.format(i+1)))
+                        self.weight_o=tf.Variable(self.last_weight_o,name='weight_o')
+                        self.bias_o=tf.Variable(self.last_bias_o,name='bias_o')
+                    else:
+                        self.ug_weight_x=tf.Variable(self.last_ug_weight_x,name='ug_weight_x')
+                        self.ug_weight_h=tf.Variable(self.last_ug_weight_h,name='ug_weight_h')
+                        self.rg_weight_x=tf.Variable(self.last_rg_weight_x,name='rg_weight_x')
+                        self.rg_weight_h=tf.Variable(self.last_rg_weight_h,name='rg_weight_h')
+                        self.cltm_weight_x=tf.Variable(self.last_cltm_weight_x,name='cltm_weight_x')
+                        self.cltm_weight_h=tf.Variable(self.last_cltm_weight_h,name='cltm_weight_h')
+                        self.ug_bias=tf.Variable(self.last_ug_bias,name='ug_bias')
+                        self.rg_bias=tf.Variable(self.last_rg_bias,name='rg_bias')
+                        self.bias_c=tf.Variable(self.last_bias_c,name='bias_c')
+                        self.weight_o=tf.Variable(self.last_weight_o,name='weight_o')
+                        self.bias_o=tf.Variable(self.last_bias_o,name='bias_o')
+                    self.last_embedding_w=None
+                    self.last_embedding_b=None
                     self.last_ug_weight_x=None
                     self.last_ug_weight_h=None
                     self.last_rg_weight_x=None
@@ -718,65 +800,57 @@ class gru:
                     self.last_ug_bias=None
                     self.last_rg_bias=None
                     self.last_bias_c=None
-                    self.last_ug_weight_x=sess.run(self.ug_weight_x)
-                    self.last_ug_weight_h=sess.run(self.ug_weight_h)
-                    self.last_rg_weight_x=sess.run(self.rg_weight_x)
-                    self.last_rg_weight_h=sess.run(self.rg_weight_h)
-                    self.last_cltm_weight_x=sess.run(self.cltm_weight_x)
-                    self.last_cltm_weight_h=sess.run(self.cltm_weight_h)
-                    self.last_weight_o=sess.run(self.weight_o)
-                    self.last_ug_bias=sess.run(self.ug_bias)
-                    self.last_rg_bias=sess.run(self.rg_bias)
-                    self.last_bias_c=sess.run(self.bias_c)
-                    self.last_bias_o=sess.run(self.bias_o)
-                    if continue_train==True:
-                        if self.layers!=None:
-                            self.last_ug_weight_x=[]
-                            self.last_ug_weight_h=[]
-                            self.last_rg_weight_x=[]
-                            self.last_rg_weight_h=[]
-                            self.last_cltm_weight_x=[]
-                            self.last_cltm_weight_h=[]
-                            self.last_ug_bias=[]
-                            self.last_rg_bias=[]
-                            self.last_bias_c=[]
-                            for i in range(self.layers):
-                                self.last_ug_weight_x.append(tf.Variable(self.ug_weight_x[i],name='ug_weight_x{}'.format(i+1)))
-                                self.last_ug_weight_h.append(tf.Variable(self.ug_weight_h[i],name='ug_weight_h{}'.format(i+1)))
-                                self.last_rg_weight_x.append(tf.Variable(self.rg_weight_x[i],name='rg_weight_x{}'.format(i+1)))
-                                self.last_rg_weight_h.append(tf.Variable(self.rg_weight_h[i],name='rg_weight_h{}'.format(i+1)))
-                                self.last_cltm_weight_x.append(tf.Variable(self.cltm_weight_x[i],name='cltm_weight_x{}'.format(i+1)))
-                                self.last_cltm_weight_h.append(tf.Variable(self.cltm_weight_h[i],name='cltm_weight_h{}'.format(i+1)))
-                                self.last_ug_bias.append(tf.Variable(self.fg_bias[i],name='ug_bias{}'.format(i+1)))
-                                self.last_rg_bias.append(tf.Variable(self.ig_bias[i],name='rg_bias{}'.format(i+1)))
-                                self.last_bias_c.append(tf.Variable(self.bias_c[i],name='bias_c{}'.format(i+1)))
-                            self.last_weight_o=tf.Variable(self.weight_o,name='weight_o')
-                            self.last_bias_o=tf.Variable(self.bias_o,name='bias_o')
-                        else:
-                            self.ug_weight_x=tf.Variable(self.last_ug_weight_x,name='ug_weight_x')
-                            self.ug_weight_h=tf.Variable(self.last_ug_weight_h,name='ug_weight_h')
-                            self.rg_weight_x=tf.Variable(self.last_rg_weight_x,name='rg_weight_x')
-                            self.rg_weight_h=tf.Variable(self.last_rg_weight_h,name='rg_weight_h')
-                            self.cltm_weight_x=tf.Variable(self.last_cltm_weight_x,name='cltm_weight_x')
-                            self.cltm_weight_h=tf.Variable(self.last_cltm_weight_h,name='cltm_weight_h')
-                            self.weight_o=tf.Variable(self.last_weight_o,name='weight_o')
-                            self.ug_bias=tf.Variable(self.last_ug_bias,name='ug_bias')
-                            self.rg_bias=tf.Variable(self.last_rg_bias,name='rg_bias')
-                            self.bias_c=tf.Variable(self.last_bias_c,name='bias_c')
-                            self.bias_o=tf.Variable(self.last_bias_o,name='bias_o')
-                    if continue_train==True and self.continue_flag==1:  
-                        self.continue_epoch=self.epoch-1
-                        self.continue_flag=0
-                    if continue_train==True and self.continue_flag==0:
-                        self.epoch=self.continue_epoch
-                    t2=time.time()
-                    self.time=t2-t1
-                    if continue_train!=True:
-                        self.total_time=self.time
+                    self.last_weight_o=None
+                    self.last_bias_o=None
+                    sess.run(tf.global_variables_initializer())
+                if continue_train==True:
+                    if self.epoch!=None:
+                        self.total_epoch=self.epoch+epoch
                     else:
-                        self.total_time+=self.time
-                    print('time:{0:.3f}s'.format(self.total_time))
-                    return
+                        self.total_epoch=epoch-1
+                    self.epoch=self.total_epoch
+                if continue_train!=True:
+                    self.epoch=epoch-1
+                t2=time.time()
+                self.time=t2-t1
+                if continue_train!=True or self.total_time==None:
+                    self.total_time=self.time
+                else:
+                    self.total_time+=self.time
+                print('time:{0:.3f}s'.format(self.total_time))
+                return
+            
+            
+    def end(self):
+        with self.graph.as_default():
+            self.end_flag=True
+            self.last_embedding_w=self.sess.run(self.embedding_w)
+            self.last_embedding_b=self.sess.run(self.embedding_b)
+            self.last_ug_weight_x=self.sess.run(self.ug_weight_x)
+            self.last_ug_weight_h=self.sess.run(self.ug_weight_h)
+            self.last_rg_weight_x=self.sess.run(self.rg_weight_x)
+            self.last_rg_weight_h=self.sess.run(self.rg_weight_h)
+            self.last_cltm_weight_x=self.sess.run(self.cltm_weight_x)
+            self.last_cltm_weight_h=self.sess.run(self.cltm_weight_h)
+            self.last_ug_bias=self.sess.run(self.ug_bias)
+            self.last_rg_bias=self.sess.run(self.rg_bias)
+            self.last_bias_c=self.sess.run(self.bias_c)
+            self.last_weight_o=self.sess.run(self.weight_o)
+            self.last_bias_o=self.sess.run(self.bias_o)
+            self.ug_weight_x=None
+            self.ug_weight_h=None
+            self.rg_weight_x=None
+            self.rg_weight_h=None
+            self.cltm_weight_x=None
+            self.cltm_weight_h=None
+            self.ug_bias=None
+            self.rg_bias=None
+            self.bias_c=None
+            self.weight_o=None
+            self.bias_o=None
+            self.total_epoch=self.epoch
+            self.sess.close()
+            return    
     
     
     def test(self,test_data,test_labels,batch=None):
@@ -965,6 +1039,8 @@ class gru:
             output_file=open(model_path+'.dat','wb')
         else:
             output_file=open(model_path+'-{0}.dat'.format(i+1),'wb')
+        pickle.dump(self.embedding_w,output_file)
+        pickle.dump(self.embedding_b,output_file)
         if self.layers!=None:
             pickle.dump(self.last_ug_weight_x,output_file)
             pickle.dump(self.last_ug_weight_h,output_file)
@@ -1012,6 +1088,9 @@ class gru:
         pickle.dump(self.train_accuracy_list,output_file)
         pickle.dump(self.normalize,output_file)
         pickle.dump(self.maximun,output_file)
+        pickle.dump(self.epoch,output_file)
+        pickle.dump(self.total_epoch,output_file)
+        pickle.dump(self.total_time,output_file)
         pickle.dump(self.cpu_gpu,output_file)
         pickle.dump(self.use_cpu_gpu,output_file)
         output_file.close()
@@ -1020,6 +1099,8 @@ class gru:
 
     def restore(self,model_path):
         input_file=open(model_path,'rb')
+        self.last_embedding_w=pickle.load(input_file)
+        self.last_embedding_b=pickle.load(input_file)
         if self.layers!=None:
             self.last_ug_weight_x=pickle.load(input_file)
             self.last_ug_weight_h=pickle.load(input_file)
@@ -1067,6 +1148,9 @@ class gru:
         self.train_accuracy_list=pickle.load(input_file)
         self.normalize=pickle.load(input_file)
         self.maximun=pickle.load(input_file)
+        self.epoch=pickle.load(input_file)
+        self.total_epoch=pickle.load(input_file)
+        self.total_time=pickle.load(input_file)
         self.cpu_gpu=pickle.load(input_file)
         self.use_cpu_gpu=pickle.load(input_file)
         self.flag=1
