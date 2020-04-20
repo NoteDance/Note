@@ -73,7 +73,6 @@ class unnamed:
         self.end_flag=False
         self.test_flag=None
         self.time=None
-        self.total_time=None
         self.cpu_gpu='/gpu:0'
         self.use_cpu_gpu='/gpu:0'
         
@@ -121,7 +120,7 @@ class unnamed:
             
             
             self.dtype=dtype
-            self.total_time=None
+            self.time=None
     
     
     def forward_propagation(self):
@@ -308,12 +307,12 @@ class unnamed:
                     if continue_train!=True:
                         self.epoch=epoch-1
                     t2=time.time()
-                    self.time=t2-t1
-                    if continue_train!=True or self.total_time==None:
-                        self.total_time=self.time
+                    _time=t2-t1
+                    if continue_train!=True or self.time==None:
+                        self.total_time=_time
                     else:
-                        self.total_time+=self.time
-                    print('time:{0:.3f}s'.format(self.total_time))
+                        self.total_time+=_time
+                    print('time:{0:.3f}s'.format(self.time))
                     return
     
     
@@ -389,7 +388,7 @@ class unnamed:
         print()
         print('learning rate:{0}'.format(self.lr))
         print()
-        print('time:{0:.3f}s'.format(self.total_time))
+        print('time:{0:.3f}s'.format(self.time))
         print()
         print('-------------------------------------')
         print()
@@ -453,6 +452,8 @@ class unnamed:
             output_file=open(model_path+'.dat','wb')
         else:
             output_file=open(model_path+'-{0}.dat'.format(i+1),'wb')
+            
+            
         pickle.dump(self.data_dtype,output_file)
         pickle.dump(self.labels_dtype,output_file)
         pickle.dump(self.data_shape,output_file)
@@ -474,7 +475,7 @@ class unnamed:
         pickle.dump(self.maximun,output_file)
         pickle.dump(self.epoch,output_file)
         pickle.dump(self.total_epoch,output_file)
-        pickle.dump(self.total_time,output_file)
+        pickle.dump(self.time,output_file)
         pickle.dump(self.cpu_gpu,output_file)
         pickle.dump(self.use_cpu_gpu,output_file)
         output_file.close()
@@ -483,6 +484,8 @@ class unnamed:
 
     def restore(self,model_path):
         input_file=open(model_path,'rb')
+        
+        
         self.data_dtype=pickle.load(input_file)
         self.labels_dtype=pickle.load(input_file)
         self.data_shape=pickle.load(input_file)
@@ -504,7 +507,7 @@ class unnamed:
         self.maximun=pickle.load(input_file)
         self.epoch=pickle.load(input_file)
         self.total_epoch=pickle.load(input_file)
-        self.total_time=pickle.load(input_file)
+        self.time=pickle.load(input_file)
         self.cpu_gpu=pickle.load(input_file)
         self.use_cpu_gpu=pickle.load(input_file)
         self.flag=1
