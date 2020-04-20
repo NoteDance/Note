@@ -93,7 +93,6 @@ class cnn:
         self.end_flag=False
         self.test_flag=None
         self.time=None
-        self.total_time=None
         self.cpu_gpu='/gpu:0'
         self.use_cpu_gpu='/gpu:0'
         
@@ -177,7 +176,7 @@ class cnn:
             self.mean=mean
             self.stddev=stddev
             self.dtype=dtype
-            self.total_time=None
+            self.time=None
             with tf.name_scope('parameter_initialization'):
                 for i in range(len(self.conv)):
                     if i==0:
@@ -639,12 +638,12 @@ class cnn:
                     if continue_train!=True:
                         self.epoch=epoch-1
                     t2=time.time()
-                    self.time=t2-t1
-                    if continue_train!=True or self.total_time==None:
-                        self.total_time=self.time
+                    _time=t2-t1
+                    if continue_train!=True or self.time==None:
+                        self.time=_time
                     else:
-                        self.total_time+=self.time
-                    print('time:{0:.3f}s'.format(self.total_time))
+                        self.time+=_time
+                    print('time:{0:.3f}s'.format(self.time))
                     return
     
     
@@ -955,7 +954,6 @@ class cnn:
         pickle.dump(self.dropout,output_file)
         pickle.dump(self.optimizer,output_file)
         pickle.dump(self.lr,output_file)
-        pickle.dump(self.time,output_file)
         pickle.dump(self.train_loss,output_file)
         pickle.dump(self.train_accuracy,output_file)
         pickle.dump(self.test_flag,output_file)
@@ -968,7 +966,7 @@ class cnn:
         pickle.dump(self.maximun,output_file)
         pickle.dump(self.epoch,output_file)
         pickle.dump(self.total_epoch,output_file)
-        pickle.dump(self.total_time,output_file)
+        pickle.dump(self.time,output_file)
         pickle.dump(self.cpu_gpu,output_file)
         pickle.dump(self.use_cpu_gpu,output_file)
         output_file.close()
@@ -996,7 +994,6 @@ class cnn:
         self.dropout=pickle.load(input_file)
         self.optimizer=pickle.load(input_file)
         self.lr=pickle.load(input_file)
-        self.time=pickle.load(input_file)
         self.train_loss=pickle.load(input_file)
         self.train_accuracy=pickle.load(input_file)
         self.test_flag=pickle.load(input_file)
@@ -1009,7 +1006,7 @@ class cnn:
         self.maximun=pickle.load(input_file)
         self.epoch=pickle.load(input_file)
         self.total_epoch=pickle.load(input_file)
-        self.total_time=pickle.load(input_file)
+        self.time=pickle.load(input_file)
         self.cpu_gpu=pickle.load(input_file)
         self.use_cpu_gpu=pickle.load(input_file)
         self.flag=1
