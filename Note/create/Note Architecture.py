@@ -512,4 +512,4 @@ class unnamed:
         self.use_cpu_gpu=pickle.load(input_file)
         self.flag=1
         input_file.close()
-        return    
+        return
