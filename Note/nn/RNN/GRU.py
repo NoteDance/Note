@@ -76,7 +76,7 @@ class gru:
         self.weight_o=None
         self.ug_bias=None        
         self.rg_bias=None
-        self.bias_c=None
+        self.cltm_bias=None
         self.bias_o=None
         self.h=[]
         self.output=None
@@ -91,7 +91,7 @@ class gru:
         self.last_weight_o=None
         self.last_ug_bias=None
         self.last_rg_bias=None
-        self.last_bias_c=None
+        self.last_cltm_bias=None
         self.last_bias_o=None
         self.batch=None
         self.epoch=None
@@ -178,7 +178,7 @@ class gru:
                     self.rg_bias=[]
                     self.cltm_weight_x=[]
                     self.cltm_weight_h=[]
-                    self.bias_c=[]
+                    self.cltm_bias=[]
                     for i in range(self.layers):
                         if i==0:
                             self.ug_weight_x.append(self.weight_init([self.data_shape[2],self.hidden],mean=mean,stddev=stddev,name='ug_weight_x{}'.format(i+1)))
@@ -189,7 +189,7 @@ class gru:
                             self.rg_bias.append(self.bias_init([self.hidden],mean=mean,stddev=stddev,name='rg_bias{}'.format(i+1)))
                             self.cltm_weight_x.append(self.weight_init([self.data_shape[2],self.hidden],mean=mean,stddev=stddev,name='cltm_weight_x{}'.format(i+1)))
                             self.cltm_weight_h.append(self.weight_init([self.hidden,self.hidden],mean=mean,stddev=stddev,name='cltm_weight_h{}'.format(i+1)))
-                            self.bias_c.append(self.bias_init([self.hidden],mean=mean,stddev=stddev,name='bias_c{}'.format(i+1)))
+                            self.cltm_bias.append(self.bias_init([self.hidden],mean=mean,stddev=stddev,name='cltm_bias{}'.format(i+1)))
                         else:
                             self.ug_weight_x.append(self.weight_init([self.hidden,self.hidden],mean=mean,stddev=stddev,name='ug_weight_x{}'.format(i+1)))
                             self.ug_weight_h.append(self.weight_init([self.hidden,self.hidden],mean=mean,stddev=stddev,name='ug_weight_h{}'.format(i+1)))
@@ -199,7 +199,7 @@ class gru:
                             self.rg_bias.append(self.bias_init([self.hidden],mean=mean,stddev=stddev,name='rg_bias{}'.format(i+1)))
                             self.cltm_weight_x.append(self.weight_init([self.hidden,self.hidden],mean=mean,stddev=stddev,name='cltm_weight_x{}'.format(i+1)))
                             self.cltm_weight_h.append(self.weight_init([self.hidden,self.hidden],mean=mean,stddev=stddev,name='cltm_weight_h{}'.format(i+1)))
-                            self.bias_c.append(self.bias_init([self.hidden],mean=mean,stddev=stddev,name='bias_c{}'.format(i+1)))
+                            self.cltm_bias.append(self.bias_init([self.hidden],mean=mean,stddev=stddev,name='cltm_bias{}'.format(i+1)))
                     if len(self.labels_shape)==3:
                         self.weight_o=self.weight_init([self.hidden,self.labels_shape[2]],mean=mean,stddev=stddev,name='weight_o')
                         self.bias_o=self.bias_init([self.labels_shape[2]],mean=mean,stddev=stddev,name='bias_o')
@@ -215,7 +215,7 @@ class gru:
                 self.rg_bias=self.bias_init([self.hidden],mean=mean,stddev=stddev,name='rg_bias')
                 self.cltm_weight_x=self.weight_init([self.data_shape[2],self.hidden],mean=mean,stddev=stddev,name='cltm_weight_x')
                 self.cltm_weight_h=self.weight_init([self.hidden,self.hidden],mean=mean,stddev=stddev,name='cltm_weight_h')
-                self.bias_c=self.bias_init([self.hidden],mean=mean,stddev=stddev,name='bias_c')
+                self.cltm_bias=self.bias_init([self.hidden],mean=mean,stddev=stddev,name='cltm_bias')
                 if len(self.labels_shape)==3:
                     self.weight_o=self.weight_init([self.hidden,self.labels_shape[2]],mean=mean,stddev=stddev,name='weight_o')
                     self.bias_o=self.bias_init([self.labels_shape[2]],mean=mean,stddev=stddev,name='bias_o')
@@ -261,7 +261,7 @@ class gru:
                 cltm_weight_h=self.cltm_weight_h
                 ug_bias=self.fg_bias
                 rg_bias=self.ig_bias
-                bias_c=self.bias_c
+                cltm_bias=self.cltm_bias
                 weight_o=self.weight_o
                 bias_o=self.bias_o
             else:     
@@ -276,7 +276,7 @@ class gru:
                     cltm_weight_h=[]
                     ug_bias=[]
                     rg_bias=[]
-                    bias_c=[]
+                    cltm_bias=[]
                     for i in range(self.layers):
                         ug_weight_x.append(tf.constant(self.last_fg_weight_x[i]))
                         ug_weight_h.append(tf.constant(self.last_fg_weight_h[i]))
@@ -286,7 +286,7 @@ class gru:
                         cltm_weight_h.append(tf.constant(self.last_cltm_weight_h[i]))
                         ug_bias.append(tf.constant(self.last_fg_bias[i]))
                         rg_bias.append(tf.constant(self.last_ig_bias[i]))
-                        bias_c.append(tf.constant(self.last_bias_c[i]))
+                        cltm_bias.append(tf.constant(self.last_cltm_bias[i]))
                     weight_o=tf.constant(self.weight_o)
                     bias_o=tf.constant(self.bias_o)
                 else:
@@ -298,7 +298,7 @@ class gru:
                     cltm_weight_h=tf.constant(self.last_cltm_weight_h)
                     ug_bias=tf.constant(self.last_fg_bias)
                     rg_bias=tf.constant(self.last_ig_bias)
-                    bias_c=tf.constant(self.last_bias_c)
+                    cltm_bias=tf.constant(self.last_cltm_bias)
                     weight_o=tf.constant(self.last_weight_o)
                     bias_o=tf.constant(self.last_bias_o)
             with tf.name_scope('forward_propagation'):
@@ -324,12 +324,12 @@ class gru:
                                         if k==0:
                                             u[j]=tf.nn.sigmoid(ux[j]+ug_bias[j])
                                             r[j]=tf.nn.sigmoid(rx[j]+rg_bias[j])
-                                            c[j]=tf.nn.tanh(cx[j]+bias_c[j])
+                                            c[j]=tf.nn.tanh(cx[j]+cltm_bias[j])
                                             self.h[j].append((1-u[j])*c[j])
                                         else:
                                             u[j]=tf.nn.sigmoid(ux[j]+tf.matmul(self.h[j][k-1],ug_weight_h[j])+ug_bias[j])
                                             r[j]=tf.nn.sigmoid(rx[j]+tf.matmul(self.h[j][k-1],rg_weight_h[j])+rg_bias[j])
-                                            c[j]=tf.nn.tanh(cx[j]+tf.matmul(r[j]*self.h[j][k-1],cltm_weight_h[j])+bias_c[j])
+                                            c[j]=tf.nn.tanh(cx[j]+tf.matmul(r[j]*self.h[j][k-1],cltm_weight_h[j])+cltm_bias[j])
                                             self.h[j].append(u[j]*self.h[j][k-1]+(1-u[j])*c[j])
                                     self.h[j]=tf.stack(self.h[j],axis=1)
                                 elif self.pattern=='n1' or self.predicate==True:
@@ -337,12 +337,12 @@ class gru:
                                         if k==0:
                                             u[j]=tf.nn.sigmoid(ux[j]+ug_bias[j])
                                             r[j]=tf.nn.sigmoid(rx[j]+rg_bias[j])
-                                            c[j]=tf.nn.tanh(cx[j]+bias_c[j])
+                                            c[j]=tf.nn.tanh(cx[j]+cltm_bias[j])
                                             self.h[j].append((1-u[j])*c[j])
                                         else:
                                             u[j]=tf.nn.sigmoid(ux[j]+tf.matmul(self.h[j][k-1],ug_weight_h[j])+ug_bias[j])
                                             r[j]=tf.nn.sigmoid(rx[j]+tf.matmul(self.h[j][k-1],rg_weight_h[j])+rg_bias[j])
-                                            c[j]=tf.nn.tanh(cx[j]+tf.matmul(r[j]*self.h[j][k-1],cltm_weight_h[j])+bias_c[j])
+                                            c[j]=tf.nn.tanh(cx[j]+tf.matmul(r[j]*self.h[j][k-1],cltm_weight_h[j])+cltm_bias[j])
                                             self.h[j].append(u[j]*self.h[j][k-1]+(1-u[j])*c[j])
                                     self.h[j]=tf.stack(self.h[j],axis=1)
                                 elif self.pattern=='nn':
@@ -350,12 +350,12 @@ class gru:
                                         if k==0:
                                             u[j]=tf.nn.sigmoid(ux[j]+ug_bias[j])
                                             r[j]=tf.nn.sigmoid(rx[j]+rg_bias[j])
-                                            c[j]=tf.nn.tanh(cx[j]+bias_c[j])
+                                            c[j]=tf.nn.tanh(cx[j]+cltm_bias[j])
                                             self.h[j].append((1-u[j])*c[j])
                                         else:
                                             u[j]=tf.nn.sigmoid(ux[j]+tf.matmul(self.h[j][k-1],ug_weight_h[j])+ug_bias[j])
                                             r[j]=tf.nn.sigmoid(rx[j]+tf.matmul(self.h[j][k-1],rg_weight_h[j])+rg_bias[j])
-                                            c[j]=tf.nn.tanh(cx[j]+tf.matmul(r[j]*self.h[j][k-1],cltm_weight_h[j])+bias_c[j])
+                                            c[j]=tf.nn.tanh(cx[j]+tf.matmul(r[j]*self.h[j][k-1],cltm_weight_h[j])+cltm_bias[j])
                                             self.h[j].append(u[j]*self.h[j][k-1]+(1-u[j])*c[j])
                                     self.h[j]=tf.stack(self.h[j],axis=1)
                             else:
@@ -367,12 +367,12 @@ class gru:
                                         if k==0:
                                             u[j]=tf.nn.sigmoid(ux[j]+ug_bias[j])
                                             r[j]=tf.nn.sigmoid(rx[j]+rg_bias[j])
-                                            c[j]=tf.nn.tanh(cx[j]+bias_c[j])
+                                            c[j]=tf.nn.tanh(cx[j]+cltm_bias[j])
                                             self.h[j].append((1-u[j])*c[j])
                                         else:
                                             u[j]=tf.nn.sigmoid(ux[j]+tf.matmul(self.h[j][k-1],ug_weight_h[j])+ug_bias[j])
                                             r[j]=tf.nn.sigmoid(rx[j]+tf.matmul(self.h[j][k-1],rg_weight_h[j])+rg_bias[j])
-                                            c[j]=tf.nn.tanh(cx[j]+tf.matmul(r[j]*self.h[j][k-1],cltm_weight_h[j])+bias_c[j])
+                                            c[j]=tf.nn.tanh(cx[j]+tf.matmul(r[j]*self.h[j][k-1],cltm_weight_h[j])+cltm_bias[j])
                                             self.h[j].append(u[j]*self.h[j][k-1]+(1-u[j])*c[j])
                                     if j==self.layers-1:
                                         self.output=tf.einsum('ijk,kl->ijl',tf.stack(self.h[-1],axis=1),weight_o)+bias_o
@@ -383,12 +383,12 @@ class gru:
                                         if k==0:
                                             u[j]=tf.nn.sigmoid(ux[j]+ug_bias[j])
                                             r[j]=tf.nn.sigmoid(rx[j]+rg_bias[j])
-                                            c[j]=tf.nn.tanh(cx[j]+bias_c[j])
+                                            c[j]=tf.nn.tanh(cx[j]+cltm_bias[j])
                                             self.h[j].append((1-u[j])*c[j])
                                         else:
                                             u[j]=tf.nn.sigmoid(ux[j]+tf.matmul(self.h[j][k-1],ug_weight_h[j])+ug_bias[j])
                                             r[j]=tf.nn.sigmoid(rx[j]+tf.matmul(self.h[j][k-1],rg_weight_h[j])+rg_bias[j])
-                                            c[j]=tf.nn.tanh(cx[j]+tf.matmul(r[j]*self.h[j][k-1],cltm_weight_h[j])+bias_c[j])
+                                            c[j]=tf.nn.tanh(cx[j]+tf.matmul(r[j]*self.h[j][k-1],cltm_weight_h[j])+cltm_bias[j])
                                             self.h[j].append(u[j]*self.h[j][k-1]+(1-u[j])*c[j])
                                     if j==self.layers-1:
                                         for k in range(self.data_shape[1]):
@@ -400,12 +400,12 @@ class gru:
                                         if k==0:
                                             u[j]=tf.nn.sigmoid(ux[j]+ug_bias[j])
                                             r[j]=tf.nn.sigmoid(rx[j]+rg_bias[j])
-                                            c[j]=tf.nn.tanh(cx[j]+bias_c[j])
+                                            c[j]=tf.nn.tanh(cx[j]+cltm_bias[j])
                                             self.h[j].append((1-u[j])*c[j])
                                         else:
                                             u[j]=tf.nn.sigmoid(ux[j]+tf.matmul(self.h[j][k-1],ug_weight_h[j])+ug_bias[j])
                                             r[j]=tf.nn.sigmoid(rx[j]+tf.matmul(self.h[j][k-1],rg_weight_h[j])+rg_bias[j])
-                                            c[j]=tf.nn.tanh(cx[j]+tf.matmul(r[j]*self.h[j][k-1],cltm_weight_h[j])+bias_c[j])
+                                            c[j]=tf.nn.tanh(cx[j]+tf.matmul(r[j]*self.h[j][k-1],cltm_weight_h[j])+cltm_bias[j])
                                             self.h[j].append(u[j]*self.h[j][k-1]+(1-u[j])*c[j])
                                     if j==self.layers-1:
                                         self.output=tf.einsum('ijk,kl->ijl',tf.stack(self.h[-1],axis=1),weight_o)+bias_o
@@ -422,12 +422,12 @@ class gru:
                                 if j==0:
                                     u=tf.nn.sigmoid(ux+ug_bias)
                                     r=tf.nn.sigmoid(rx+rg_bias)
-                                    c=tf.nn.tanh(cx+bias_c)
+                                    c=tf.nn.tanh(cx+cltm_bias)
                                     self.h.append((1-u)*c[j])
                                 else:
                                     u=tf.nn.sigmoid(ux+tf.matmul(self.h[j],ug_weight_h)+ug_bias)
                                     r=tf.nn.sigmoid(rx+tf.matmul(self.h[j],rg_weight_h)+rg_bias)
-                                    c=tf.nn.tanh(cx+tf.matmul(r*self.h[j],cltm_weight_h)+bias_c)
+                                    c=tf.nn.tanh(cx+tf.matmul(r*self.h[j],cltm_weight_h)+cltm_bias)
                                     self.h.append(u*self.h[j-1]+(1-u)*c)
                             self.output=tf.einsum('ijk,kl->ijl',tf.stack(self.h,axis=1),weight_o)+bias_o
                         elif self.pattern=='n1' or self.predicate==True:
@@ -435,12 +435,12 @@ class gru:
                                 if j==0:
                                     u=tf.nn.sigmoid(ux+ug_bias)
                                     r=tf.nn.sigmoid(rx+rg_bias)
-                                    c=tf.nn.tanh(cx+bias_c)
+                                    c=tf.nn.tanh(cx+cltm_bias)
                                     self.h.append((1-u)*c[j])
                                 else:
                                     u=tf.nn.sigmoid(ux+tf.matmul(self.h[j],ug_weight_h)+ug_bias)
                                     r=tf.nn.sigmoid(rx+tf.matmul(self.h[j],rg_weight_h)+rg_bias)
-                                    c=tf.nn.tanh(cx+tf.matmul(r*self.h[j],cltm_weight_h)+bias_c)
+                                    c=tf.nn.tanh(cx+tf.matmul(r*self.h[j],cltm_weight_h)+cltm_bias)
                                     self.h.append(u*self.h[j-1]+(1-u)*c)
                                 self.output.append(tf.add(tf.matmul(self.h[j+1],weight_o),bias_o))
                         elif self.pattern=='nn':
@@ -448,12 +448,12 @@ class gru:
                                 if j==0:
                                     u=tf.nn.sigmoid(ux+ug_bias)
                                     r=tf.nn.sigmoid(rx+rg_bias)
-                                    c=tf.nn.tanh(cx+bias_c)
+                                    c=tf.nn.tanh(cx+cltm_bias)
                                     self.h.append((1-u)*c[j])
                                 else:
                                     u=tf.nn.sigmoid(ux+tf.matmul(self.h[j],ug_weight_h)+ug_bias)
                                     r=tf.nn.sigmoid(rx+tf.matmul(self.h[j],rg_weight_h)+rg_bias)
-                                    c=tf.nn.tanh(cx+tf.matmul(r*self.h[j],cltm_weight_h)+bias_c)
+                                    c=tf.nn.tanh(cx+tf.matmul(r*self.h[j],cltm_weight_h)+cltm_bias)
                                     self.h.append(u*self.h[j-1]+(1-u)*c)
                             self.output=tf.einsum('ijk,kl->ijl',tf.stack(self.h,axis=1),weight_o)+bias_o
                         return
@@ -502,7 +502,7 @@ class gru:
                         self.cltm_weight_h=[]
                         self.ug_bias=[]
                         self.rg_bias=[]
-                        self.bias_c=[]
+                        self.cltm_bias=[]
                         for i in range(self.layers):
                             self.ug_weight_x.append(tf.Variable(self.last_fg_weight_x[i],name='ug_weight_x{}'.format(i+1)))
                             self.ug_weight_h.append(tf.Variable(self.last_fg_weight_h[i],name='ug_weight_h{}'.format(i+1)))
@@ -512,7 +512,7 @@ class gru:
                             self.cltm_weight_h.append(tf.Variable(self.last_cltm_weight_h[i],name='cltm_weight_h{}'.format(i+1)))
                             self.ug_bias.append(tf.Variable(self.last_fg_bias[i],name='ug_bias{}'.format(i+1)))
                             self.rg_bias.append(tf.Variable(self.last_ig_bias[i],name='rg_bias{}'.format(i+1)))
-                            self.bias_c.append(tf.Variable(self.last_bias_c[i],name='bias_c{}'.format(i+1)))
+                            self.cltm_bias.append(tf.Variable(self.last_cltm_bias[i],name='cltm_bias{}'.format(i+1)))
                         self.weight_o=tf.Variable(self.last_weight_o,name='weight_o')
                         self.bias_o=tf.Variable(self.last_bias_o,name='bias_o')
                     else:
@@ -524,7 +524,7 @@ class gru:
                         self.cltm_weight_h=tf.Variable(self.last_cltm_weight_h,name='cltm_weight_h')
                         self.ug_bias=tf.Variable(self.last_fg_bias,name='ug_bias')
                         self.rg_bias=tf.Variable(self.last_ig_bias,name='rg_bias')
-                        self.bias_c=tf.Variable(self.last_bias_c,name='bias_c')
+                        self.cltm_bias=tf.Variable(self.last_cltm_bias,name='cltm_bias')
                         self.weight_o=tf.Variable(self.last_weight_o,name='weight_o')
                         self.bias_o=tf.Variable(self.last_bias_o,name='bias_o')
                 if continue_train==True and self.flag==1:
@@ -539,7 +539,7 @@ class gru:
                         self.cltm_weight_h=[]
                         self.ug_bias=[]
                         self.rg_bias=[]
-                        self.bias_c=[]
+                        self.cltm_bias=[]
                         for i in range(self.layers):
                             self.ug_weight_x.append(tf.Variable(self.last_ug_weight_x[i],name='ug_weight_x{}'.format(i+1)))
                             self.ug_weight_h.append(tf.Variable(self.last_ug_weight_h[i],name='ug_weight_h{}'.format(i+1)))
@@ -549,7 +549,7 @@ class gru:
                             self.cltm_weight_h.append(tf.Variable(self.last_cltm_weight_h[i],name='cltm_weight_h{}'.format(i+1)))
                             self.ug_bias.append(tf.Variable(self.last_ug_bias[i],name='ug_bias{}'.format(i+1)))
                             self.rg_bias.append(tf.Variable(self.last_rg_bias[i],name='rg_bias{}'.format(i+1)))
-                            self.bias_c.append(tf.Variable(self.last_bias_c[i],name='bias_c{}'.format(i+1)))
+                            self.cltm_bias.append(tf.Variable(self.last_cltm_bias[i],name='cltm_bias{}'.format(i+1)))
                         self.weight_o=tf.Variable(self.weight_o,name='weight_o')
                         self.bias_o=tf.Variable(self.bias_o,name='bias_o')
                     else:
@@ -561,7 +561,7 @@ class gru:
                         self.cltm_weight_h=tf.Variable(self.last_cltm_weight_h,name='cltm_weight_h')
                         self.ug_bias=tf.Variable(self.last_ug_bias,name='ug_bias')
                         self.rg_bias=tf.Variable(self.last_rg_bias,name='rg_bias')
-                        self.bias_c=tf.Variable(self.last_bias_c,name='bias_c')
+                        self.cltm_bias=tf.Variable(self.last_cltm_bias,name='cltm_bias')
                         self.weight_o=tf.Variable(self.last_weight_o,name='weight_o')
                         self.bias_o=tf.Variable(self.last_bias_o,name='bias_o')
                     self.flag=0
@@ -752,7 +752,7 @@ class gru:
                     self.last_cltm_weight_h=sess.run(self.cltm_weight_h)
                     self.last_ug_bias=sess.run(self.ug_bias)
                     self.last_rg_bias=sess.run(self.rg_bias)
-                    self.last_bias_c=sess.run(self.bias_c)
+                    self.last_cltm_bias=sess.run(self.cltm_bias)
                     self.last_weight_o=sess.run(self.weight_o)
                     self.last_bias_o=sess.run(self.bias_o)
                     if self.layers!=None:
@@ -764,7 +764,7 @@ class gru:
                         self.last_cltm_weight_h=[]
                         self.last_ug_bias=[]
                         self.last_rg_bias=[]
-                        self.last_bias_c=[]
+                        self.last_cltm_bias=[]
                         for i in range(self.layers):
                             self.ug_weight_x.append(tf.Variable(self.last_ug_weight_x[i],name='ug_weight_x{}'.format(i+1)))
                             self.ug_weight_h.append(tf.Variable(self.last_ug_weight_h[i],name='ug_weight_h{}'.format(i+1)))
@@ -774,7 +774,7 @@ class gru:
                             self.cltm_weight_h.append(tf.Variable(self.last_cltm_weight_h[i],name='cltm_weight_h{}'.format(i+1)))
                             self.ug_bias.append(tf.Variable(self.last_fg_bias[i],name='ug_bias{}'.format(i+1)))
                             self.rg_bias.append(tf.Variable(self.last_ig_bias[i],name='rg_bias{}'.format(i+1)))
-                            self.bias_c.append(tf.Variable(self.last_bias_c[i],name='bias_c{}'.format(i+1)))
+                            self.cltm_bias.append(tf.Variable(self.last_cltm_bias[i],name='cltm_bias{}'.format(i+1)))
                         self.weight_o=tf.Variable(self.last_weight_o,name='weight_o')
                         self.bias_o=tf.Variable(self.last_bias_o,name='bias_o')
                     else:
@@ -786,7 +786,7 @@ class gru:
                         self.cltm_weight_h=tf.Variable(self.last_cltm_weight_h,name='cltm_weight_h')
                         self.ug_bias=tf.Variable(self.last_ug_bias,name='ug_bias')
                         self.rg_bias=tf.Variable(self.last_rg_bias,name='rg_bias')
-                        self.bias_c=tf.Variable(self.last_bias_c,name='bias_c')
+                        self.cltm_bias=tf.Variable(self.last_cltm_bias,name='cltm_bias')
                         self.weight_o=tf.Variable(self.last_weight_o,name='weight_o')
                         self.bias_o=tf.Variable(self.last_bias_o,name='bias_o')
                     self.last_embedding_w=None
@@ -799,7 +799,7 @@ class gru:
                     self.last_cltm_weight_h=None
                     self.last_ug_bias=None
                     self.last_rg_bias=None
-                    self.last_bias_c=None
+                    self.last_cltm_bias=None
                     self.last_weight_o=None
                     self.last_bias_o=None
                     sess.run(tf.global_variables_initializer())
@@ -834,7 +834,7 @@ class gru:
             self.last_cltm_weight_h=self.sess.run(self.cltm_weight_h)
             self.last_ug_bias=self.sess.run(self.ug_bias)
             self.last_rg_bias=self.sess.run(self.rg_bias)
-            self.last_bias_c=self.sess.run(self.bias_c)
+            self.last_cltm_bias=self.sess.run(self.cltm_bias)
             self.last_weight_o=self.sess.run(self.weight_o)
             self.last_bias_o=self.sess.run(self.bias_o)
             self.ug_weight_x=None
@@ -845,7 +845,7 @@ class gru:
             self.cltm_weight_h=None
             self.ug_bias=None
             self.rg_bias=None
-            self.bias_c=None
+            self.cltm_bias=None
             self.weight_o=None
             self.bias_o=None
             self.total_epoch=self.epoch
@@ -1051,7 +1051,7 @@ class gru:
             pickle.dump(self.last_weight_o,output_file)
             pickle.dump(self.last_ug_bias,output_file)
             pickle.dump(self.last_rg_bias,output_file)
-            pickle.dump(self.last_bias_c,output_file)
+            pickle.dump(self.last_cltm_bias,output_file)
             pickle.dump(self.last_bias_o,output_file) 
         else:
             pickle.dump(self.last_ug_weight_x,output_file)
@@ -1063,7 +1063,7 @@ class gru:
             pickle.dump(self.last_weight_o,output_file)
             pickle.dump(self.last_ug_bias,output_file)
             pickle.dump(self.last_rg_bias,output_file)
-            pickle.dump(self.last_bias_c,output_file)
+            pickle.dump(self.last_cltm_bias,output_file)
             pickle.dump(self.last_bias_o,output_file)
         pickle.dump(self.data_dtype,output_file)
         pickle.dump(self.labels_dtype,output_file)
@@ -1111,7 +1111,7 @@ class gru:
             self.last_weight_o=pickle.load(input_file)
             self.last_ug_bias=pickle.load(input_file)
             self.last_rg_bias=pickle.load(input_file)
-            self.last_bias_c=pickle.load(input_file)
+            self.last_cltm_bias=pickle.load(input_file)
             self.last_bias_o=pickle.load(input_file)
         else:
             self.last_ug_weight_x=pickle.load(input_file)
@@ -1123,7 +1123,7 @@ class gru:
             self.last_weight_o=pickle.load(input_file)
             self.last_ug_bias=pickle.load(input_file)
             self.last_rg_bias=pickle.load(input_file)
-            self.last_bias_c=pickle.load(input_file)
+            self.last_cltm_bias=pickle.load(input_file)
             self.last_bias_o=pickle.load(input_file)
         self.data_dtype=pickle.load(input_file)
         self.labels_dtype=pickle.load(input_file)
