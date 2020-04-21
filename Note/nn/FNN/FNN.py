@@ -56,12 +56,6 @@ class fnn:
                     self.labels=tf.placeholder(dtype=train_labels.dtype,shape=[None],name='labels')
                 self.data_dtype=train_data.dtype
                 self.labels_dtype=train_labels.dtype
-            else:
-                self.data=tf.placeholder(dtype=self.data_dtype,shape=[None,self.data_shape[1]])
-                if len(self.labels_shape)==2:
-                    self.labels=tf.placeholder(dtype=self.labels_dtype,shape=[None,self.labels_shape[1]])
-                else:
-                    self.labels=tf.placeholder(dtype=self.labels_dtype,shape=[None])
         self.hidden=[]
         self.hidden_layers=None
         self.layers=None
@@ -801,6 +795,13 @@ class fnn:
         self.labels_dtype=pickle.load(input_file)
         self.data_shape=pickle.load(input_file)
         self.labels_shape=pickle.load(input_file)
+        self.graph=tf.Graph()
+        with self.graph.as_default():
+            self.data=tf.placeholder(dtype=self.data_dtype,shape=[None,self.data_shape[1]])
+            if len(self.labels_shape)==2:
+                self.labels=tf.placeholder(dtype=self.labels_dtype,shape=[None,self.labels_shape[1]])
+            else:
+                self.labels=tf.placeholder(dtype=self.labels_dtype,shape=[None])
         self.hidden_layers=pickle.load(input_file)
         self.function=pickle.load(input_file)
         self.batch=pickle.load(input_file)
@@ -809,7 +810,6 @@ class fnn:
         self.dropout=pickle.load(input_file)
         self.optimizer=pickle.load(input_file)
         self.lr=pickle.load(input_file)
-        self.total_time=pickle.load(input_file)
         self.train_loss=pickle.load(input_file)
         self.train_accuracy=pickle.load(input_file)
         self.test_flag=pickle.load(input_file)
@@ -834,6 +834,9 @@ class fnn:
         with self.graph.as_default():
             if cpu_gpu!=None:
                 self.use_cpu_gpu=cpu_gpu
+            if type(self.use_cpu_gpu)==str:
+                use_cpu_gpu=self.use_cpu_gpu
+            else:
                 use_cpu_gpu=self.use_cpu_gpu[-1]
             with tf.device(use_cpu_gpu):
                 if self.normalize==True:
@@ -882,6 +885,9 @@ class fnn:
         with self.graph.as_default():
             if cpu_gpu!=None:
                 self.use_cpu_gpu=cpu_gpu
+            if type(self.use_cpu_gpu)==str:
+                use_cpu_gpu=self.use_cpu_gpu
+            else:
                 use_cpu_gpu=self.use_cpu_gpu[-1]
             with tf.device(use_cpu_gpu):
                 if self.normalize==True:
