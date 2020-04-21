@@ -49,13 +49,10 @@ class unnamed:
             if type(train_data)==np.ndarray:
                 self.data_shape=train_data.shape
                 self.labels_shape=train_labels.shape
-                self.data=
-                self.labels=
+                
+                
                 self.data_dtype=train_data.dtype
                 self.labels_dtype=train_labels.dtype
-            else:
-                self.data=
-                self.labels=
         self.batch=None
         self.epoch=None
         self.optimizer=None
@@ -462,7 +459,6 @@ class unnamed:
         pickle.dump(self.epoch,output_file)
         pickle.dump(self.optimizer,output_file)
         pickle.dump(self.lr,output_file)
-        pickle.dump(self.total_time,output_file)
         pickle.dump(self.train_loss,output_file)
         pickle.dump(self.train_accuracy,output_file)
         pickle.dump(self.test_flag,output_file)
@@ -490,6 +486,10 @@ class unnamed:
         self.labels_dtype=pickle.load(input_file)
         self.data_shape=pickle.load(input_file)
         self.labels_shape=pickle.load(input_file)
+        self.graph=tf.Graph()
+        with self.graph.as_default():
+            
+            
         self.batch=pickle.load(input_file)
         self.epoch=pickle.load(input_file)
         self.optimizer=pickle.load(input_file)
