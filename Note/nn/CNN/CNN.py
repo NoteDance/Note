@@ -54,9 +54,6 @@ class cnn:
                 self.labels=tf.placeholder(dtype=train_labels.dtype,shape=[None,self.labels_shape[1]],name='labels')
                 self.data_dtype=train_data.dtype
                 self.labels_dtype=train_labels.dtype
-            else:
-                self.data=tf.placeholder(dtype=self.data_dtype,shape=[None,self.data_shape[1],self.data_shape[2],self.data_shape[3]])
-                self.labels=tf.placeholder(dtype=self.labels_dtype.dtype,shape=[None,self.labels_shape[1]])
         self.conv=[]
         self.max_pool=None
         self.avg_pool=None
@@ -983,6 +980,10 @@ class cnn:
         self.labels_dtype=pickle.load(input_file)
         self.data_shape=pickle.load(input_file)
         self.labels_shape=pickle.load(input_file)
+        self.graph=tf.Graph()
+        with self.graph.as_default():
+            self.data=tf.placeholder(dtype=self.data_dtype,shape=[None,self.data_shape[1],self.data_shape[2],self.data_shape[3]])
+            self.labels=tf.placeholder(dtype=self.labels_dtype.dtype,shape=[None,self.labels_shape[1]])
         self.conv=pickle.load(input_file)
         self.max_pool=pickle.load(input_file)
         self.avg_pool=pickle.load(input_file)
@@ -1018,6 +1019,9 @@ class cnn:
         with self.graph.as_default():
             if cpu_gpu!=None:
                 self.use_cpu_gpu=cpu_gpu
+            if type(self.use_cpu_gpu)==str:
+                use_cpu_gpu=self.use_cpu_gpu
+            else:
                 use_cpu_gpu=self.use_cpu_gpu[-1]
             with tf.device(use_cpu_gpu):
                 if self.normalize==True:
