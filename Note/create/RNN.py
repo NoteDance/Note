@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 
-def rnn(data,weight,bias,stack=True):
+def rnn(data,weight,bias):
     h=[]
     if len(data.shape)==3:
         X=tf.einsum('ijk,kl->ijl',data,weight)+bias
@@ -12,13 +12,11 @@ def rnn(data,weight,bias,stack=True):
             h.append(tf.nn.tanh(X[:][:,i]+bias))
         else:
             h.append(tf.nn.tanh(tf.matmul(h[i-1],weight)+X[:][:,i]+bias))
-    if stack==True:
-        return tf.stack(h,axis=1)
-    else:
-        return h
+    return tf.stack(h,axis=1)
+
     
     
-def lstm(data,weight_x,weight_h,bias,stack=True):
+def lstm(data,weight_x,weight_h,bias):
     C=[]
     h=[]
     if len(data.shape)==3:
@@ -46,13 +44,10 @@ def lstm(data,weight_x,weight_h,bias,stack=True):
             c=tf.nn.tanh(cx[:][:,i]+tf.matmul(h[i-1],weight_h[3])+bias[3])
             C.append(f*C[i-1]+i*c)
             h.append(o*tf.nn.tanh(C[i]))
-    if stack==True:
-        return tf.stack(h,axis=1)
-    else:
-        return h
+    return tf.stack(h,axis=1)
 
 
-def gru(data,weight_x,weight_h,bias,stack=True):
+def gru(data,weight_x,weight_h,bias):
     h=[]
     if len(data.shape)==3:
         ux=tf.einsum('ijk,kl->ijl',data,weight_x[0])
@@ -73,13 +68,10 @@ def gru(data,weight_x,weight_h,bias,stack=True):
             r=tf.nn.sigmoid(rx[:][:,i]+tf.matmul(h[i-1],weight_h[1])+bias[1])
             c=tf.nn.tanh(cx[:][:,i]+tf.matmul(r*h[i-1],weight_h[2])+bias[2])
             h.append(u*h[i-1]+(1-u)*c)
-    if stack==True:
-        return tf.stack(h,axis=1)
-    else:
-        return h
+    return tf.stack(h,axis=1)
 
 
-def m_relugru(data,weight_x,weight_h,bias,stack=True):
+def m_relugru(data,weight_x,weight_h,bias):
     h=[]
     if len(data.shape)==3:
         ux=tf.einsum('ijk,kl->ijl',data,weight_x[0])
@@ -100,10 +92,7 @@ def m_relugru(data,weight_x,weight_h,bias,stack=True):
             c-=tf.reduce_mean(c,axis=0)
             c/=tf.math.reduce_std(c,axis=0)
             h.append(u*h[i-1]+(1-u)*c)
-    if stack==True:
-        return tf.stack(h,axis=1)
-    else:
-        return h
+    return tf.stack(h,axis=1)
 
 
 def rnn_weight(shape,mean=0,stddev=0.07,dtype=tf.float32,name=None):
