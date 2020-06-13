@@ -221,12 +221,18 @@ def embedding(data,embedding_w,embedding_b):
     return tf.einsum('ijk,kl->ijl',data,embedding_w)+embedding_b
 
 
-def attention(en_h,de_h,attention_w1,attention_w2,attention_w3):
+def attention(en_h,de_h,attention_w1,attention_w2,attention_w3,score_en_h=None):
     if type(en_h)==list:
         stack_en_h=tf.stack(en_h,axis=1)
-	else:
-		stack_en_h=en_h
-    score=tf.einsum('ijk,kl->ijl',tf.nn.tanh(tf.expand_dims(tf.matmul(de_h,attention_w1),axis=1)+tf.einsum('ijk,kl->ijl',stack_en_h,attention_w2)),attention_w3)
+    else:
+	stack_en_h=en_h
+    if score_en_h==None:
+	score=tf.einsum('ijk,kl->ijl',tf.nn.tanh(tf.einsum('ijk,kl->ijl',stack_en_h,attention_w1)+tf.expand_dims(tf.matmul(de_h,attention_w2),axis=1)),attention_w3)
+    else:
+	score=tf.einsum('ijk,kl->ijl',tf.nn.tanh(score_en_h+tf.expand_dims(tf.matmul(de_h,attention_w2),axis=1)),attention_w3)
     attention_weights=tf.nn.softmax(score,axis=1)
     context_vector=tf.reduce_sum(attention_weights*stack_en_h,axis=1)
-    return context_vector
+    if score_en_h==None:
+	return tf.einsum('ijk,kl->ijl',stack_en_h,attention_w1),context_vector
+    else:
+	return context_vector
