@@ -224,15 +224,9 @@ def embedding(data,embedding_w,embedding_b):
 def attention(en_h,de_h,attention_w1,attention_w2,attention_w3):
     if type(en_h)==list:
         stack_en_h=tf.stack(en_h,axis=1)
-    length=int(de_h.shape[1])
-    attention_vector=[]
-    context_vector=[]
-    for i in range(length):
-        if type(de_h)==tf.Tensor:
-            de_h=de_h[:][:,i]
-        else:
-            de_h=de_h[i]
-        score=tf.einsum('ijk,kl->ijl',tf.nn.tanh(tf.expand_dims(tf.matmul(de_h,attention_w1),axis=1)+tf.einsum('ijk,kl->ijl',stack_en_h,attention_w2)),attention_w3)
-        attention_weights=tf.nn.softmax(score,axis=1)
-        context_vector.append(tf.reduce_sum(attention_weights*stack_en_h,axis=1))
-    return tf.stack(context_vector,axis=1)
+	else:
+		stack_en_h=en_h
+    score=tf.einsum('ijk,kl->ijl',tf.nn.tanh(tf.expand_dims(tf.matmul(de_h,attention_w1),axis=1)+tf.einsum('ijk,kl->ijl',stack_en_h,attention_w2)),attention_w3)
+    attention_weights=tf.nn.softmax(score,axis=1)
+    context_vector=tf.reduce_sum(attention_weights*stack_en_h,axis=1)
+    return context_vector
