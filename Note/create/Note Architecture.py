@@ -53,6 +53,8 @@ class unnamed:
                 
                 self.data_dtype=train_data.dtype
                 self.labels_dtype=train_labels.dtype
+		
+		
         self.batch=None
         self.epoch=None
         self.optimizer=None
