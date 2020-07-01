@@ -121,10 +121,12 @@ class unnamed:
             self.dtype=dtype
             self.time=None
     
+
     
     def forward_propagation(self):
         with self.graph.as_default():
             
+	
             
     def train(self,batch=None,epoch=None,optimizer='Adam',lr=0.001,acc=True,train_summary_path=None,model_path=None,one=True,continue_train=False,cpu_gpu=None):
         t1=time.time()
