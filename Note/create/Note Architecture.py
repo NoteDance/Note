@@ -40,21 +40,13 @@ def read_data_csv(path,dtype=None,header=None):
 
 
 class unnamed:
-    def __init__(self,train_data=None,train_labels=None):
+    def __init__():
         self.graph=tf.Graph()
-        self.train_data=train_data
-        self.train_labels=train_labels
-        self.pre_train_data=None
+        
+        
         with self.graph.as_default():
-            if type(train_data)==np.ndarray:
-                self.data_shape=train_data.shape
-                self.labels_shape=train_labels.shape
                 
                 
-                self.data_dtype=train_data.dtype
-                self.labels_dtype=train_labels.dtype
-		
-		
         self.batch=None
         self.epoch=None
         self.optimizer=None
@@ -65,8 +57,6 @@ class unnamed:
         self.train_accuracy_list=[]
         self.test_loss=None
         self.test_accuracy=None
-        self.normalize=None
-        self.maximun=False
         self.continue_train=False
         self.flag=None
         self.end_flag=False
@@ -75,29 +65,6 @@ class unnamed:
         self.cpu_gpu='/gpu:0'
         self.use_cpu_gpu='/gpu:0'
         
-        
-    def preprocess(self,dtype=np.float32,normalize=True,maximun=False):
-        self.normalize=normalize
-        self.maximun=maximun
-        if self.normalize==True:
-            self.pre_train_data=self.train_data
-            if self.maximun==True:
-                self.pre_train_data/=np.max(self.pre_train_data,axis=0)
-            else:
-                self.pre_train_data-=np.mean(self.pre_train_data,axis=0)
-                self.pre_train_data/=np.std(self.pre_train_data,axis=0)
-        return
-
-    
-    def test_preprocess(self,data):
-        if self.normalize==True:
-            if self.maximun==True:
-                data/=np.max(data,axis=0)
-            else:
-                data-=np.mean(data,axis=0)
-                data/=np.std(data,axis=0)
-        return
-    
     
     def weight_init(self,shape,mean,stddev,name):
         return tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=self.dtype),name=name)
@@ -107,7 +74,7 @@ class unnamed:
         return tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=self.dtype),name=name)
     
     
-    def structure(self):
+    def structure():
         with self.graph.as_default():
             self.continue_train=False
             self.total_epoch=0
@@ -121,12 +88,12 @@ class unnamed:
             self.dtype=dtype
             self.time=None
     
-
     
-    def forward_propagation(self):
+    
+    def forward_propagation():
         with self.graph.as_default():
+           
             
-	
             
     def train(self,batch=None,epoch=None,optimizer='Adam',lr=0.001,acc=True,train_summary_path=None,model_path=None,one=True,continue_train=False,cpu_gpu=None):
         t1=time.time()
@@ -161,7 +128,7 @@ class unnamed:
                     self.flag=0
 #     －－－－－－－－－－－－－－－forward propagation－－－－－－－－－－－－－－－
                 
-	
+                
 #     －－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
                 with tf.name_scope('train_loss'):
                     
@@ -193,20 +160,18 @@ class unnamed:
                         epoch=epoch+1
                     for i in range(epoch):
                         if self.batch!=None:
-                            batches=int((self.data_shape[0]-self.data_shape[0]%self.batch)/self.batch)
+                            batches=int((self.shape0-self.shape0%self.batch)/self.batch)
                             total_loss=0
                             total_acc=0
-                            random=np.arange(self.data_shape[0])
+                            random=np.arange(self.shape0)
                             np.random.shuffle(random)
-                            if self.normalize==True:
-                                train_data=self.pre_train_data[random]
-                            else:
-                                train_data=self.train_data[random]
-                            train_labels=self.train_labels[random]
+                            
+                            
                             for j in range(batches):
-                                train_data_batch=train_data[j*self.batch:(j+1)*self.batch]
-                                train_labels_batch=train_labels[j*self.batch:(j+1)*self.batch]
-                                feed_dict={self.data:train_data_batch,self.labels:train_labels_batch}
+                                index1=j*self.batch
+                                index2=(j+1)*self.batch
+                                
+                                
                                 if i==0 and self.total_epoch==0:
                                     batch_loss=sess.run(train_loss,feed_dict=feed_dict)
                                 else:
@@ -215,11 +180,12 @@ class unnamed:
                                 if acc==True:
                                     batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
                                     total_acc+=batch_acc
-                            if self.data_shape[0]%self.batch!=0:
+                            if self.shape0%self.batch!=0:
                                 batches+=1
-                                train_data_batch=np.concatenate([train_data[batches*self.batch:],train_data[:self.batch-(self.data_shape[0]-batches*self.batch)]])
-                                train_labels_batch=np.concatenate([train_labels[batches*self.batch:],train_labels[:self.batch-(self.labels_shape[0]-batches*self.batch)]])
-                                feed_dict={self.data:train_data_batch,self.labels:train_labels_batch}
+                                index1=batches*self.batch
+                                index2=self.batch-(self.shape0-batches*self.batch)
+                                
+                                
                                 if i==0 and self.total_epoch==0:
                                     batch_loss=sess.run(train_loss,feed_dict=feed_dict)
                                 else:
@@ -238,14 +204,10 @@ class unnamed:
                                 self.train_accuracy=train_acc
                                 self.train_accuracy=self.train_accuracy.astype(np.float16)
                         else:
-                            random=np.arange(self.data_shape[0])
+                            random=np.arange(self.shape0)
                             np.random.shuffle(random)
-                            if self.normalize==True:
-                                train_data=self.pre_train_data[random]
-                            else:
-                                train_data=self.train_data[random]
-                            train_labels=self.train_labels[random]
-                            feed_dict={self.data:train_data,self.labels:train_labels}
+
+
                             if i==0 and self.total_epoch==0:
                                 loss=sess.run(train_loss,feed_dict=feed_dict)
                             else:
@@ -254,10 +216,7 @@ class unnamed:
                             self.train_loss=loss
                             self.train_loss=self.train_loss.astype(np.float16)
                             if acc==True:
-                                if self.normalize==True:
-                                    accuracy=sess.run(train_accuracy,feed_dict=feed_dict)
-                                else:
-                                    accuracy=sess.run(train_accuracy,feed_dict=feed_dict)
+                                accuracy=sess.run(train_accuracy,feed_dict=feed_dict)
                                 self.train_accuracy_list.append(float(accuracy))
                                 self.train_accuracy=accuracy
                                 self.train_accuracy=self.train_accuracy.astype(np.float16)
@@ -281,12 +240,8 @@ class unnamed:
                             if model_path!=None and i%epoch*2==0:
                                 self.save(model_path,i,one)
                             if train_summary_path!=None:
-                                if self.normalize==True:
-                                    train_summary=sess.run(train_merging,feed_dict={self.data:self.pre_train_data,self.labels:self.train_labels})
-                                    train_writer.add_summary(train_summary,i)
-                                else:
-                                    train_summary=sess.run(train_merging,feed_dict={self.data:self.train_data,self.labels:self.train_labels})
-                                    train_writer.add_summary(train_summary,i)
+                                train_summary=sess.run(train_merging,feed_dict=feed_dict)
+                                train_writer.add_summary(train_summary,i)
                     print()
                     print('last loss:{0}'.format(self.train_loss))
                     if acc==True:
@@ -335,8 +290,6 @@ class unnamed:
             elif and self.test_flag!=False:
                 use_nn=True
             self.test_flag=True
-            if self.normalize==True:
-                test_data=self.test_preprocess(test_data)
                 
                 
             config=tf.ConfigProto()
@@ -472,8 +425,6 @@ class unnamed:
             pickle.dump(self.test_accuracy,output_file)
         pickle.dump(self.train_loss_list,output_file)
         pickle.dump(self.train_accuracy_list,output_file)
-        pickle.dump(self.normalize,output_file)
-        pickle.dump(self.maximun,output_file)
         pickle.dump(self.epoch,output_file)
         pickle.dump(self.total_epoch,output_file)
         pickle.dump(self.time,output_file)
@@ -508,8 +459,6 @@ class unnamed:
             self.test_accuracy=pickle.load(input_file)
         self.train_loss_list=pickle.load(input_file)
         self.train_accuracy_list=pickle.load(input_file)
-        self.normalize=pickle.load(input_file)
-        self.maximun=pickle.load(input_file)
         self.epoch=pickle.load(input_file)
         self.total_epoch=pickle.load(input_file)
         self.time=pickle.load(input_file)
