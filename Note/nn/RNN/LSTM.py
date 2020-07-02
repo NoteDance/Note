@@ -44,9 +44,9 @@ class lstm:
         self.graph=tf.Graph()
         self.train_data=train_data
         self.train_labels=train_labels
-        self.pre_train_data=None
         with self.graph.as_default():
             if type(train_data)==np.ndarray:
+                self.shape0=train_data.shape[0]
                 self.data_shape=train_data.shape
                 self.labels_shape=train_labels.shape
                 self.data=tf.placeholder(dtype=train_data.dtype,shape=[None,self.data_shape[1],self.data_shape[2]],name='data')
@@ -105,8 +105,6 @@ class lstm:
         self.train_accuracy_list=[]
         self.test_loss=None
         self.test_accuracy=None
-        self.normalize=None
-        self.maximun=False
         self.continue_train=False
         self.flag=None
         self.end_flag=False
@@ -114,29 +112,6 @@ class lstm:
         self.time=None
         self.cpu_gpu='/gpu:0'
         self.use_cpu_gpu='/gpu:0'
-        
-        
-    def preprocess(self,dtype=np.float32,normalize=True,maximun=False):
-        self.normalize=normalize
-        self.maximun=maximun
-        if self.normalize==True:
-            self.pre_train_data=self.train_data
-            if self.maximun==True:
-                self.pre_train_data/=np.max(self.pre_train_data,axis=0)
-            else:
-                self.pre_train_data-=np.mean(self.pre_train_data,axis=0)
-                self.pre_train_data/=np.std(self.pre_train_data,axis=0)
-        return
-
-    
-    def test_preprocess(self,data):
-        if self.normalize==True:
-            if self.maximun==True:
-                data/=np.max(data,axis=0)
-            else:
-                data-=np.mean(data,axis=0)
-                data/=np.std(data,axis=0)
-        return
     
     
     def embedding(self,d,mean=0.07,stddev=0.07,dtype=tf.float32):
@@ -723,19 +698,18 @@ class lstm:
                     epoch=epoch+1
                 for i in range(epoch):
                     if self.batch!=None:
-                        batches=int((self.data_shape[0]-self.data_shape[0]%self.batch)/self.batch)
+                        batches=int((self.shape0-self.shape0%self.batch)/self.batch)
                         total_loss=0
                         total_acc=0
-                        random=np.arange(self.data_shape[0])
+                        random=np.arange(self.shape0)
                         np.random.shuffle(random)
-                        if self.normalize==True:
-                            train_data=self.pre_train_data[random]
-                        else:
-                            train_data=self.train_data[random]
+                        train_data=self.train_data[random]
                         train_labels=self.train_labels[random]
                         for j in range(batches):
-                            train_data_batch=train_data[j*self.batch:(j+1)*self.batch]
-                            train_labels_batch=train_labels[j*self.batch:(j+1)*self.batch]
+                            index1=j*self.batch
+                            index2=(j+1)*self.batch
+                            train_data_batch=train_data[index1:index2]
+                            train_labels_batch=train_labels[index1:index2]
                             feed_dict={self.data:train_data_batch,self.labels:train_labels_batch}
                             if i==0 and self.total_epoch==0:
                                 batch_loss=sess.run(train_loss,feed_dict=feed_dict)
@@ -745,10 +719,12 @@ class lstm:
                             if acc==True:
                                 batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
                                 total_acc+=batch_acc
-                        if self.data_shape[0]%self.batch!=0:
+                        if self.shape0%self.batch!=0:
                             batches+=1
-                            train_data_batch=np.concatenate([train_data[batches*self.batch:],train_data[:self.batch-(self.data_shape[0]-batches*self.batch)]])
-                            train_labels_batch=np.concatenate([train_labels[batches*self.batch:],train_labels[:self.batch-(self.labels_shape[0]-batches*self.batch)]])
+                            index1=batches*self.batch
+                            index2=self.batch-(self.shape0-batches*self.batch)
+                            train_data_batch=np.concatenate([train_data[index1:],train_data[:index2]])
+                            train_labels_batch=np.concatenate([train_labels[index1:],train_labels[:index2]])
                             feed_dict={self.data:train_data_batch,self.labels:train_labels_batch}
                             if i==0 and self.total_epoch==0:
                                 batch_loss=sess.run(train_loss,feed_dict=feed_dict)
@@ -768,12 +744,9 @@ class lstm:
                             self.train_accuracy=train_acc
                             self.train_accuracy=self.train_accuracy.astype(np.float16)
                     else:
-                        random=np.arange(self.data_shape[0])
+                        random=np.arange(self.shape0)
                         np.random.shuffle(random)
-                        if self.normalize==True:
-                            train_data=self.pre_train_data[random]
-                        else:
-                            train_data=self.train_data[random]
+                        train_data=self.train_data[random]
                         train_labels=self.train_labels[random]
                         feed_dict={self.data:train_data,self.labels:train_labels}
                         if i==0 and self.total_epoch==0:
@@ -784,10 +757,7 @@ class lstm:
                         self.train_loss=loss
                         self.train_loss=self.train_loss.astype(np.float16)
                         if acc==True:
-                            if self.normalize==True:
-                                accuracy=sess.run(train_accuracy,feed_dict=feed_dict)
-                            else:
-                                accuracy=sess.run(train_accuracy,feed_dict=feed_dict)
+                            accuracy=sess.run(train_accuracy,feed_dict=feed_dict)
                             self.train_accuracy_list.append(float(accuracy))
                             self.train_accuracy=accuracy
                             self.train_accuracy=self.train_accuracy.astype(np.float16)
@@ -811,12 +781,8 @@ class lstm:
                         if model_path!=None and i%epoch*2==0:
                             self.save(model_path,i,one)
                         if train_summary_path!=None:
-                            if self.normalize==True:
-                                train_summary=sess.run(train_merging,feed_dict={self.data:self.pre_train_data,self.labels:self.train_labels})
-                                train_writer.add_summary(train_summary,i)
-                            else:
-                                train_summary=sess.run(train_merging,feed_dict={self.data:self.train_data,self.labels:self.train_labels})
-                                train_writer.add_summary(train_summary,i)
+                            train_summary=sess.run(train_merging,feed_dict=feed_dict)
+                            train_writer.add_summary(train_summary,i)
                 print()
                 print('last loss:{0}'.format(self.train_loss))
                 if acc==True:
@@ -963,8 +929,6 @@ class lstm:
             elif len(self.last_weight)!=0 and self.test_flag!=False:
                 use_nn=True
             self.test_flag=True
-            if self.normalize==True:
-                test_data=self.test_preprocess(test_data)
             shape=test_labels.shape
             test_data_placeholder=tf.placeholder(dtype=test_data.dtype,shape=[None,test_data.shape[1],test_data.shape[2]])
             if len(shape)==3:
@@ -1178,6 +1142,7 @@ class lstm:
             pickle.dump(self.last_bias_o,output_file)
         pickle.dump(self.data_dtype,output_file)
         pickle.dump(self.labels_dtype,output_file)
+        pickle.dump(self.shape0,output_file)
         pickle.dump(self.data_shape,output_file)
         pickle.dump(self.labels_shape,output_file)
         pickle.dump(self.hidden,output_file)
@@ -1196,8 +1161,6 @@ class lstm:
             pickle.dump(self.test_accuracy,output_file)
         pickle.dump(self.train_loss_list,output_file)
         pickle.dump(self.train_accuracy_list,output_file)
-        pickle.dump(self.normalize,output_file)
-        pickle.dump(self.maximun,output_file)
         pickle.dump(self.epoch,output_file)
         pickle.dump(self.total_epoch,output_file)
         pickle.dump(self.time,output_file)
@@ -1243,6 +1206,7 @@ class lstm:
             self.last_bias_o=pickle.load(input_file)
         self.data_dtype=pickle.load(input_file)
         self.labels_dtype=pickle.load(input_file)
+        self.shape0=pickle.load(input_file)
         self.data_shape=pickle.load(input_file)
         self.labels_shape=pickle.load(input_file)
         self.graph=tf.Graph()
@@ -1268,8 +1232,6 @@ class lstm:
             self.test_accuracy=pickle.load(input_file)
         self.train_loss_list=pickle.load(input_file)
         self.train_accuracy_list=pickle.load(input_file)
-        self.normalize=pickle.load(input_file)
-        self.maximun=pickle.load(input_file)
         self.epoch=pickle.load(input_file)
         self.total_epoch=pickle.load(input_file)
         self.time=pickle.load(input_file)
@@ -1291,12 +1253,6 @@ class lstm:
             self.C.clear()
             self.h.clear()
             with tf.device(use_cpu_gpu):
-                if self.normalize==True:
-                    if self.maximun==True:
-                        data/=np.max(data,axis=0)
-                    else:
-                        data-=np.mean(data,axis=0)
-                        data/=np.std(data,axis=0)
                 data=tf.constant(data)
                 self.forward_propagation(data,use_nn=True)
                 config=tf.ConfigProto()
@@ -1356,17 +1312,8 @@ class lstm:
             self.C.clear()
             self.h.clear()
             with tf.device(use_cpu_gpu):
-                if self.normalize==True:
-                    if self.maximun==True:
-                        data/=np.max(data,axis=0)
-                    else:
-                        data-=np.mean(data,axis=0)
-                        data/=np.std(data,axis=0)
-                    data=tf.constant(data)
-                    self.forward_propagation(data,use_nn=True)*np.max(self.train_labels)
-                else:
-                    data=tf.constant(data)
-                    self.forward_propagation(data,use_nn=True)
+                data=tf.constant(data)
+                self.forward_propagation(data,use_nn=True)
                 config=tf.ConfigProto()
                 config.gpu_options.allow_growth=True
                 config.allow_soft_placement=True
