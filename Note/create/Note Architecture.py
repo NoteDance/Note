@@ -409,10 +409,6 @@ class unnamed:
             output_file=open(model_path+'-{0}.dat'.format(i+1),'wb')
             
             
-        pickle.dump(self.data_dtype,output_file)
-        pickle.dump(self.labels_dtype,output_file)
-        pickle.dump(self.data_shape,output_file)
-        pickle.dump(self.labels_shape,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.epoch,output_file)
         pickle.dump(self.optimizer,output_file)
@@ -438,10 +434,6 @@ class unnamed:
         input_file=open(model_path,'rb')
         
         
-        self.data_dtype=pickle.load(input_file)
-        self.labels_dtype=pickle.load(input_file)
-        self.data_shape=pickle.load(input_file)
-        self.labels_shape=pickle.load(input_file)
         self.graph=tf.Graph()
         with self.graph.as_default():
             
