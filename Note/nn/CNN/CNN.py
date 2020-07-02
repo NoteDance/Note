@@ -941,8 +941,8 @@ class cnn:
         self.labels_shape=pickle.load(input_file)
         self.graph=tf.Graph()
         with self.graph.as_default():
-            self.data=tf.placeholder(dtype=self.data_dtype,shape=[None,self.data_shape[1],self.data_shape[2],self.data_shape[3]])
-            self.labels=tf.placeholder(dtype=self.labels_dtype.dtype,shape=[None,self.labels_shape[1]])
+            self.data=tf.placeholder(dtype=self.data_dtype,shape=[None,self.data_shape[1],self.data_shape[2],self.data_shape[3]],name='data')
+            self.labels=tf.placeholder(dtype=self.labels_dtype.dtype,shape=[None,self.labels_shape[1]],name='labels')
         self.conv=pickle.load(input_file)
         self.max_pool=pickle.load(input_file)
         self.avg_pool=pickle.load(input_file)
