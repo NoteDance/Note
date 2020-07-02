@@ -217,8 +217,12 @@ def m_relugru_bias(shape,mean=0,stddev=0.07,dtype=tf.float32,name=None):
     return ug_bias,rg_bias,cltm_bias
 
 
-def embedding(data,embedding_w,embedding_b):
-    return tf.einsum('ijk,kl->ijl',data,embedding_w)+embedding_b
+def word_emb(data,cword_weight):
+    return tf.einsum('ijk,kl->ijl',data,cword_weight)
+
+
+def GloVe_emb(data,cword_weight,bword_weight):
+    return tf.einsum('ijk,kl->ijl',data,cword_weight)+tf.einsum('ijk,kl->ijl',data,bword_weight)
 
 
 def attention(en_h,de_h,attention_w1,attention_w2,attention_w3,score_en_h=None):
