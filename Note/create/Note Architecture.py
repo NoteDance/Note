@@ -160,7 +160,8 @@ class unnamed:
                     
                     self.flag=0
 #     －－－－－－－－－－－－－－－forward propagation－－－－－－－－－－－－－－－
-                train_output=self.forward_propagation()
+                
+	
 #     －－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
                 with tf.name_scope('train_loss'):
                     
