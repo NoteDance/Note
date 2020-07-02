@@ -761,11 +761,11 @@ class fnn:
         self.labels_shape=pickle.load(input_file)
         self.graph=tf.Graph()
         with self.graph.as_default():
-            self.data=tf.placeholder(dtype=self.data_dtype,shape=[None,self.data_shape[1]])
+            self.data=tf.placeholder(dtype=self.data_dtype,shape=[None,self.data_shape[1]],name='data')
             if len(self.labels_shape)==2:
-                self.labels=tf.placeholder(dtype=self.labels_dtype,shape=[None,self.labels_shape[1]])
+                self.labels=tf.placeholder(dtype=self.labels_dtype,shape=[None,self.labels_shape[1]],name='labels')
             else:
-                self.labels=tf.placeholder(dtype=self.labels_dtype,shape=[None])
+                self.labels=tf.placeholder(dtype=self.labels_dtype,shape=[None],name='labels')
         self.hidden_layers=pickle.load(input_file)
         self.function=pickle.load(input_file)
         self.batch=pickle.load(input_file)
