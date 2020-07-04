@@ -73,10 +73,10 @@ class GloVe:
     
     def forward_propagation(self,cword,bword,mul):
         with self.graph.as_default():
-            if len(self.cpu_gpu)==2:
-                forward_cpu_gpu=self.cpu_gpu[0]
+            if type(self.cpu_gpu)==str:
+		forward_cpu_gpu=self.cpu_gpu
             else:
-                forward_cpu_gpu=self.cpu_gpu
+                forward_cpu_gpu=self.cpu_gpu[0]
             with tf.device(forward_cpu_gpu):
                 weight=(mul/100)**(0.75+((tf.nn.relu(tf.math.log(mul/99))/tf.math.log(mul/99))*0.25))
                 cword_vec=tf.matmul(cword,self.cword_weight)
@@ -106,10 +106,10 @@ class GloVe:
                 self.continue_train=True
             if cpu_gpu!=None:
                 self.cpu_gpu=cpu_gpu
-            if len(self.cpu_gpu)==2:
-                train_cpu_gpu=self.cpu_gpu[1]
+            if type(self.cpu_gpu)==str:
+		train_cpu_gpu=self.cpu_gpu
             else:
-                train_cpu_gpu=self.cpu_gpu
+                train_cpu_gpu=self.cpu_gpu[1]
             with tf.device(train_cpu_gpu):
                 if continue_train==True and self.end_flag==True:
                     self.end_flag=False
