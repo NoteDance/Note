@@ -114,7 +114,7 @@ def lstm_weight_x(shape,mean=0,stddev=0.07,dtype=tf.float32,name=None):
         ig_weight_x=tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=dtype),name=name[1])
         og_weight_x=tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=dtype),name=name[2])
         cltm_weight_x=tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=dtype),name=name[3])
-    return fg_weight_x,ig_weight_x,og_weight_x,cltm_weight_x
+    return [fg_weight_x,ig_weight_x,og_weight_x,cltm_weight_x]
 
 
 def lstm_weight_h(shape,mean=0,stddev=0.07,dtype=tf.float32,name=None):
@@ -128,7 +128,7 @@ def lstm_weight_h(shape,mean=0,stddev=0.07,dtype=tf.float32,name=None):
         ig_weight_h=tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=dtype),name=name[1])
         og_weight_h=tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=dtype),name=name[2])
         cltm_weight_h=tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=dtype),name=name[3])
-    return fg_weight_h,ig_weight_h,og_weight_h,cltm_weight_h
+    return [fg_weight_h,ig_weight_h,og_weight_h,cltm_weight_h]
 
 
 def lstm_bias(shape,mean=0,stddev=0.07,dtype=tf.float32,name=None):
@@ -142,7 +142,7 @@ def lstm_bias(shape,mean=0,stddev=0.07,dtype=tf.float32,name=None):
         ig_bias=tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=dtype),name=name[1])
         og_bias=tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=dtype),name=name[2])
         cltm_bias=tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=dtype),name=name[3])
-    return fg_bias,ig_bias,og_bias,cltm_bias
+    return [fg_bias,ig_bias,og_bias,cltm_bias]
 
 
 def gru_weight_x(shape,mean=0,stddev=0.07,dtype=tf.float32,name=None):
@@ -154,7 +154,7 @@ def gru_weight_x(shape,mean=0,stddev=0.07,dtype=tf.float32,name=None):
         ug_weight_x=tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=dtype),name=name[0])
         rg_weight_x=tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=dtype),name=name[1])
         cltm_weight_x=tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=dtype),name=name[3])
-    return ug_weight_x,rg_weight_x,cltm_weight_x
+    return [ug_weight_x,rg_weight_x,cltm_weight_x]
 
 
 def gru_weight_h(shape,mean=0,stddev=0.07,dtype=tf.float32,name=None):
@@ -166,7 +166,7 @@ def gru_weight_h(shape,mean=0,stddev=0.07,dtype=tf.float32,name=None):
         ug_weight_h=tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=dtype),name=name[0])
         rg_weight_h=tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=dtype),name=name[1])
         cltm_weight_h=tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=dtype),name=name[3])
-    return ug_weight_h,rg_weight_h,cltm_weight_h
+    return [ug_weight_h,rg_weight_h,cltm_weight_h]
 
 
 def gru_bias(shape,mean=0,stddev=0.07,dtype=tf.float32,name=None):
@@ -178,7 +178,7 @@ def gru_bias(shape,mean=0,stddev=0.07,dtype=tf.float32,name=None):
         ug_bias=tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=dtype),name=name[0])
         rg_bias=tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=dtype),name=name[1])
         cltm_bias=tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=dtype),name=name[3])
-    return ug_bias,rg_bias,cltm_bias
+    return [ug_bias,rg_bias,cltm_bias]
 
 
 def m_relugru_weight_x(shape,mean=0,stddev=0.07,dtype=tf.float32,name=None):
@@ -190,7 +190,7 @@ def m_relugru_weight_x(shape,mean=0,stddev=0.07,dtype=tf.float32,name=None):
         ug_weight_x=tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=dtype),name=name[0])
         rg_weight_x=tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=dtype),name=name[1])
         cltm_weight_x=tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=dtype),name=name[3])
-    return ug_weight_x,rg_weight_x,cltm_weight_x
+    return [ug_weight_x,rg_weight_x,cltm_weight_x]
 
 
 def m_relugru_weight_h(shape,mean=0,stddev=0.07,dtype=tf.float32,name=None):
@@ -202,7 +202,7 @@ def m_relugru_weight_h(shape,mean=0,stddev=0.07,dtype=tf.float32,name=None):
         ug_weight_h=tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=dtype),name=name[0])
         rg_weight_h=tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=dtype),name=name[1])
         cltm_weight_h=tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=dtype),name=name[3])
-    return ug_weight_h,rg_weight_h,cltm_weight_h
+    return [ug_weight_h,rg_weight_h,cltm_weight_h]
 
 
 def m_relugru_bias(shape,mean=0,stddev=0.07,dtype=tf.float32,name=None):
@@ -214,7 +214,7 @@ def m_relugru_bias(shape,mean=0,stddev=0.07,dtype=tf.float32,name=None):
         ug_bias=tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=dtype),name=name[0])
         rg_bias=tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=dtype),name=name[1])
         cltm_bias=tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=dtype),name=name[3])
-    return ug_bias,rg_bias,cltm_bias
+    return [ug_bias,rg_bias,cltm_bias]
 
 
 def word_emb(data,cword_weight):
