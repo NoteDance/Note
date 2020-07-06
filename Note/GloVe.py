@@ -127,7 +127,7 @@ class GloVe:
                 train_output=self.forward_propagation(self.cword_place,self.bword_place,self.mul)
 #     －－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
                 with tf.name_scope('train_loss'):
-                    train_loss=tf.reduce_sum(train_output[0]*(train_output[1]+train_output[2]+train_output[3]-train_output[4])**2)   
+                    train_loss=tf.reduce_mean(train_output[0]*(train_output[1]+train_output[2]+train_output[3]-train_output[4])**2)   
                     if self.optimizer=='Gradient':
                         opt=tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(train_loss)
                     if self.optimizer=='RMSprop':
@@ -289,8 +289,6 @@ class GloVe:
         print('-------------------------------------')
         print()
         print('train loss:{0}'.format(self.train_loss))
-        print()
-        print('train accuracy:{0:.3f}%'.format(self.train_accuracy*100))
         return
 		
     
@@ -306,14 +304,7 @@ class GloVe:
         plt.title('train loss')
         plt.xlabel('epoch')
         plt.ylabel('loss')
-        plt.figure(2)
-        plt.plot(np.arange(self.epoch+1),self.train_accuracy_list)
-        plt.title('train accuracy')
-        plt.xlabel('epoch')
-        plt.ylabel('accuracy')
         print('train loss:{0}'.format(self.train_loss))
-        print()
-        print('train accuracy:{0:.3f}%'.format(self.train_accuracy*100))
         return
     
     
@@ -372,7 +363,6 @@ class GloVe:
         self.lr=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
         self.train_loss=pickle.load(input_file)
-        self.train_accuracy=pickle.load(input_file)
         self.train_loss_list=pickle.load(input_file)
         self.epoch=pickle.load(input_file)
         self.total_epoch=pickle.load(input_file)
@@ -384,5 +374,5 @@ class GloVe:
         return
     
     
-    def emb_mat(self):
+    def emb_weight(self):
         return self.last_cword_weight,self.last_bword_weight
