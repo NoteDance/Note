@@ -18,8 +18,8 @@ class skip_gram:
                 self.bword_shape=bword.shape
                 self.labels_shape=labels.shape
                 self.cword_place=tf.placeholder(dtype=cword.dtype,shape=[None,self.cword_shape[1]],name='cword')
-                self.bword_place=tf.placeholder(dtype=bword.dtype,shape=[None,self.bword_shape[1]],name='bword')
-                self.labels_place=tf.placeholder(dtype=labels.dtype,shape=[None],name='labels')
+                self.bword_place=tf.placeholder(dtype=bword.dtype,shape=[None,None,self.bword_shape[1]],name='bword')
+                self.labels_place=tf.placeholder(dtype=labels.dtype,shape=[None,None],name='labels')
                 self.cword_dtype=cword.dtype
                 self.bword_dtype=bword.dtype
                 self.labels_dtype=labels.dtype
@@ -73,8 +73,9 @@ class skip_gram:
                 forward_cpu_gpu=self.cpu_gpu[0]
             with tf.device(forward_cpu_gpu):
                 cword_vec=tf.matmul(cword,self.cword_weight)
-                bword_vec=tf.matmul(bword,self.bword_weight)
-                cb=tf.reduce_sum(cword_vec*bword_vec,axis=1)
+                cword_vec=tf.reshape(cword_vec,shape=[cword_vec.shape[0],1,cword_vec.shape[1]])
+                bword_vec=tf.einsum('ijk,kl->ijl',bword,self.bword_weight)
+                cb=tf.reduce_sum(cword_vec*bword_vec,axis=2)
             return cb
             
         
