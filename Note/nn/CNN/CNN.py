@@ -50,8 +50,8 @@ class cnn:
                 self.shape0=train_data.shape[0]
                 self.data_shape=train_data.shape
                 self.labels_shape=train_labels.shape
-                self.data=tf.placeholder(dtype=train_data.dtype,shape=[None,self.data_shape[1],self.data_shape[2],self.data_shape[3]],name='data')
-                self.labels=tf.placeholder(dtype=train_labels.dtype,shape=[None,self.labels_shape[1]],name='labels')
+                self.data=tf.placeholder(dtype=train_data.dtype,shape=[None,None,None,None],name='data')
+                self.labels=tf.placeholder(dtype=train_labels.dtype,shape=[None,None],name='labels')
                 self.data_dtype=train_data.dtype
                 self.labels_dtype=train_labels.dtype
         self.conv=[]
@@ -941,8 +941,8 @@ class cnn:
         self.labels_shape=pickle.load(input_file)
         self.graph=tf.Graph()
         with self.graph.as_default():
-            self.data=tf.placeholder(dtype=self.data_dtype,shape=[None,self.data_shape[1],self.data_shape[2],self.data_shape[3]],name='data')
-            self.labels=tf.placeholder(dtype=self.labels_dtype.dtype,shape=[None,self.labels_shape[1]],name='labels')
+            self.data=tf.placeholder(dtype=self.data_dtype,shape=[None,None,None,None],name='data')
+            self.labels=tf.placeholder(dtype=self.labels_dtype.dtype,shape=[None,None],name='labels')
         self.conv=pickle.load(input_file)
         self.max_pool=pickle.load(input_file)
         self.avg_pool=pickle.load(input_file)
