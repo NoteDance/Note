@@ -323,7 +323,7 @@ class CBOW:
         with self.graph.as_default():
             self.cword_place=tf.placeholder(dtype=self.cword_dtype,shape=[None,None,None],name='cword')
             self.bword_place=tf.placeholder(dtype=self.bword_dtype,shape=[None,None,None],name='bword')
-            self.labels=tf.placeholder(dtype=self.labels_dtype,shape=[None],name='labels')
+            self.labels=tf.placeholder(dtype=self.labels_dtype,shape=[None,None],name='labels')
         self.batch=pickle.load(input_file)
         self.epoch=pickle.load(input_file)
         self.optimizer=pickle.load(input_file)
