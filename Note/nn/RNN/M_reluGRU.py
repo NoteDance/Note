@@ -49,11 +49,11 @@ class m_relugru:
                 self.shape0=train_data.shape[0]
                 self.data_shape=train_data.shape
                 self.labels_shape=train_labels.shape
-                self.data=tf.placeholder(dtype=train_data.dtype,shape=[None,self.data_shape[1],self.data_shape[2]],name='data')
+                self.data=tf.placeholder(dtype=train_data.dtype,shape=[None,None,None],name='data')
                 if len(self.labels_shape)==3:
-                    self.labels=tf.placeholder(dtype=train_labels.dtype,shape=[None,None,self.labels_shape[2]],name='labels')
+                    self.labels=tf.placeholder(dtype=train_labels.dtype,shape=[None,None,None],name='labels')
                 elif len(self.labels_shape)==2:
-                    self.labels=tf.placeholder(dtype=train_labels.dtype,shape=[None,self.labels_shape[1]],name='labels')
+                    self.labels=tf.placeholder(dtype=train_labels.dtype,shape=[None,None],name='labels')
                 self.train_data_dtype=train_data.dtype
                 self.train_labels_dtype=np.int32
         self.hidden=None
@@ -1020,11 +1020,11 @@ class m_relugru:
         self.labels_shape=pickle.load(input_file)
         self.graph=tf.Graph()
         with self.graph.as_default():
-            self.data=tf.placeholder(dtype=self.data_dtype,shape=[None,self.data_shape[1],self.data_shape[2]],name='data')
+            self.data=tf.placeholder(dtype=self.data_dtype,shape=[None,None,None],name='data')
             if len(self.labels_shape)==3:
-                self.labels=tf.placeholder(dtype=self.labels_dtype,shape=[None,None,self.labels_shape[2]],name='labels')
+                self.labels=tf.placeholder(dtype=self.labels_dtype,shape=[None,None,None],name='labels')
             elif len(self.labels_shape)==2:
-                self.labels=tf.placeholder(dtype=self.labels_dtype,shape=[None,self.labels_shape[1]],name='labels')
+                self.labels=tf.placeholder(dtype=self.labels_dtype,shape=[None,None],name='labels')
         self.hidden=pickle.load(input_file)
         self.pattern=pickle.load(input_file)
         self.predicate=pickle.load(input_file)
