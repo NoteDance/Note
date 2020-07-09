@@ -14,11 +14,8 @@ class CBOW:
         with self.graph.as_default():
             if type(cword)==np.ndarray:
                 self.shape0=cword.shape[0]
-                self.cword_shape=cword.shape
-                self.bword_shape=bword.shape
-                self.labels_shape=labels.shape
-                self.cword_place=tf.placeholder(dtype=cword.dtype,shape=[None,None,self.cword_shape[1]],name='cword')
-                self.bword_place=tf.placeholder(dtype=bword.dtype,shape=[None,None,self.bword_shape[1]],name='bword')
+                self.cword_place=tf.placeholder(dtype=cword.dtype,shape=[None,None,None],name='cword')
+                self.bword_place=tf.placeholder(dtype=bword.dtype,shape=[None,None,None],name='bword')
                 self.labels_place=tf.placeholder(dtype=labels.dtype,shape=[None,None],name='labels')
                 self.cword_dtype=cword.dtype
                 self.bword_dtype=bword.dtype
@@ -319,16 +316,13 @@ class CBOW:
         self.last_cword_weight=pickle.load(input_file)  
         self.last_bword_weight=pickle.load(input_file)
         self.shape0=pickle.load(input_file)
-        self.cword_shape=pickle.load(input_file)
-        self.bword_shape=pickle.load(input_file)
-        self.labels_shape=pickle.load(input_file)
         self.cword_dtype=pickle.load(input_file)
         self.bword_dtype=pickle.load(input_file)
         self.labels_dtype=pickle.load(input_file)
         self.graph=tf.Graph()
         with self.graph.as_default():
-            self.cword_place=tf.placeholder(dtype=self.cword_dtype,shape=[None,self.cword_shape[1]],name='cword')
-            self.bword_place=tf.placeholder(dtype=self.bword_dtype,shape=[None,self.bword_shape[1]],name='bword')
+            self.cword_place=tf.placeholder(dtype=self.cword_dtype,shape=[None,None,None],name='cword')
+            self.bword_place=tf.placeholder(dtype=self.bword_dtype,shape=[None,None,None],name='bword')
             self.labels=tf.placeholder(dtype=self.labels_dtype,shape=[None],name='labels')
         self.batch=pickle.load(input_file)
         self.epoch=pickle.load(input_file)
