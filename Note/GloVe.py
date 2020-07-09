@@ -14,11 +14,8 @@ class GloVe:
         with self.graph.as_default():
             if type(cword)==np.ndarray:
                 self.shape0=cword.shape[0]
-                self.cword_shape=cword.shape
-                self.bword_shape=bword.shape
-                self.mul_shape=mul.shape
-                self.cword_place=tf.placeholder(dtype=cword.dtype,shape=[None,self.cword_shape[1]],name='cword')
-                self.bword_place=tf.placeholder(dtype=bword.dtype,shape=[None,self.bword_shape[1]],name='bword')
+                self.cword_place=tf.placeholder(dtype=cword.dtype,shape=[None,None],name='cword')
+                self.bword_place=tf.placeholder(dtype=bword.dtype,shape=[None,None],name='bword')
                 self.mul=tf.placeholder(dtype=mul.dtype,shape=[None],name='mul')
                 self.cword_dtype=cword.dtype
                 self.bword_dtype=bword.dtype
@@ -318,9 +315,6 @@ class GloVe:
         pickle.dump(self.last_cword_bias,output_file) 
         pickle.dump(self.last_bword_bias,output_file) 
         pickle.dump(self.shape0,output_file)
-        pickle.dump(self.cword_shape,output_file)
-        pickle.dump(self.bword_shape,output_file)
-        pickle.dump(self.mul_shape,output_file)
         pickle.dump(self.cword_dtype,output_file)
         pickle.dump(self.bword_dtype,output_file)
         pickle.dump(self.mul_dtype,output_file)
@@ -346,16 +340,13 @@ class GloVe:
         self.last_cword_bias=pickle.load(input_file)  
         self.last_bword_bias=pickle.load(input_file)
         self.shape0=pickle.load(input_file)
-        self.cword_shape=pickle.load(input_file)
-        self.bword_shape=pickle.load(input_file)
-        self.mul_shape=pickle.load(input_file)
         self.cword_dtype=pickle.load(input_file)
         self.bword_dtype=pickle.load(input_file)
         self.mul_dtype=pickle.load(input_file)
         self.graph=tf.Graph()
         with self.graph.as_default():
-            self.cword_place=tf.placeholder(dtype=self.cword_dtype,shape=[None,self.cword_shape[1]],name='cword')
-            self.bword_place=tf.placeholder(dtype=self.bword_dtype,shape=[None,self.bword_shape[1]],name='bword')
+            self.cword_place=tf.placeholder(dtype=self.cword_dtype,shape=[None,None],name='cword')
+            self.bword_place=tf.placeholder(dtype=self.bword_dtype,shape=[None,None],name='bword')
             self.mul=tf.placeholder(dtype=self.mul_dtype,shape=[None],name='mul')
         self.batch=pickle.load(input_file)
         self.epoch=pickle.load(input_file)
