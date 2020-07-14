@@ -43,11 +43,11 @@ class GloVe:
         self.use_cpu_gpu='/gpu:0'
     
     
-    def weight_init(self,shape,mean,stddev,name):
+    def weight_init(self,shape,mean,stddev,name=None):
         return tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=self.dtype),name=name)
             
     
-    def bias_init(self,shape,mean,stddev,name):
+    def bias_init(self,shape,mean,stddev,name=None):
         return tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=self.dtype),name=name)
     
     
