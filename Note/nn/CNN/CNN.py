@@ -102,11 +102,11 @@ class cnn:
         return
     
     
-    def weight_init(self,shape,mean,stddev,name=None):
+    def weight_init(self,shape,mean,stddev,name):
         return tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=self.dtype),name=name)
             
     
-    def bias_init(self,shape,mean,stddev,name=None):
+    def bias_init(self,shape,mean,stddev,name):
         return tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=self.dtype),name=name)
         
         
