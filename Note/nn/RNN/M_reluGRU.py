@@ -819,14 +819,14 @@ class m_relugru:
                 test_acc=total_test_acc/test_batches
                 self.test_loss=test_loss
                 self.test_accuracy=test_acc
-                self.test_loss=self.test_loss.astype(np.float16)
+                self.test_loss=self.test_loss.astype(np.float32)
                 self.test_accuracy=self.test_accuracy.astype(np.float16)
             else:
                 self.test_loss=sess.run(test_loss,feed_dict={test_data_placeholder:test_data,test_labels_placeholder:test_labels})
                 self.test_accuracy=sess.run(test_accuracy,feed_dict={test_data_placeholder:test_data,test_labels_placeholder:test_labels})
-                self.test_loss=self.test_loss.astype(np.float16)
+                self.test_loss=self.test_loss.astype(np.float32)
                 self.test_accuracy=self.test_accuracy.astype(np.float16)
-            print('test loss:{0}'.format(self.test_loss))
+            print('test loss:{0:.6f}'.format(self.test_loss))
             print('test accuracy:{0:.3f}%'.format(self.test_accuracy*100))
             sess.close()
             return
