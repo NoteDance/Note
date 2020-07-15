@@ -339,9 +339,9 @@ class rnn:
                                 total_acc+=batch_acc
                         loss=total_loss/batches
                         train_acc=total_acc/batches
-                        self.train_loss_list.append(float(loss))
+                        self.train_loss_list.append(loss.astype(np.float32))
                         self.train_loss=loss
-                        self.train_loss=self.train_loss.astype(np.float16)
+                        self.train_loss=self.train_loss.astype(np.float32)
                         if acc==True:
                             self.train_accuracy_list.append(float(train_acc))
                             self.train_accuracy=train_acc
@@ -356,9 +356,9 @@ class rnn:
                             loss=sess.run(train_loss,feed_dict=feed_dict)
                         else:
                             loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
-                        self.train_loss_list.append(float(loss))
+                        self.train_loss_list.append(loss.astype(np.float32))
                         self.train_loss=loss
-                        self.train_loss=self.train_loss.astype(np.float16)
+                        self.train_loss=self.train_loss.astype(np.float32)
                         if acc==True:
                             accuracy=sess.run(train_accuracy,feed_dict=feed_dict)
                             self.train_accuracy_list.append(float(accuracy))
@@ -387,7 +387,7 @@ class rnn:
                             train_summary=sess.run(train_merging,feed_dict=feed_dict)
                             train_writer.add_summary(train_summary,i)
                 print()
-                print('last loss:{0}'.format(self.train_loss))
+                print('last loss:{0:.6f}'.format(self.train_loss))
                 if acc==True:
                     print('accuracy:{0:.3f}%'.format(self.train_accuracy*100))
                 if train_summary_path!=None:
@@ -681,9 +681,9 @@ class rnn:
         with self.graph.as_default():
             self.data=tf.placeholder(dtype=self.data_dtype,shape=[None,None,None],name='data')
             if len(self.labels_shape)==3:
-                self.labels=tf.placeholder(dtype=self.labels_dtype,shape=[None,None,None],name='labels)
+                self.labels=tf.placeholder(dtype=self.labels_dtype,shape=[None,None,None],name='labels')
             elif len(self.labels_shape)==2:
-                self.labels=tf.placeholder(dtype=self.labels_dtype,shape=[None,None],name='labels)
+                self.labels=tf.placeholder(dtype=self.labels_dtype,shape=[None,None],name='labels')
         self.hidden=pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.epoch=pickle.load(input_file)
