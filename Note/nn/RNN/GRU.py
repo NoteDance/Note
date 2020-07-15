@@ -647,9 +647,9 @@ class gru:
                                 total_acc+=batch_acc
                         loss=total_loss/batches
                         train_acc=total_acc/batches
-                        self.train_loss_list.append(float(loss))
+                        self.train_loss_list.append(loss.astype(np.float32))
                         self.train_loss=loss
-                        self.train_loss=self.train_loss.astype(np.float16)
+                        self.train_loss=self.train_loss.astype(np.float32)
                         if acc==True:
                             self.train_accuracy_list.append(float(train_acc))
                             self.train_accuracy=train_acc
@@ -664,9 +664,9 @@ class gru:
                             loss=sess.run(train_loss,feed_dict=feed_dict)
                         else:
                             loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
-                        self.train_loss_list.append(float(loss))
+                        self.train_loss_list.append(loss.astype(np.float32))
                         self.train_loss=loss
-                        self.train_loss=self.train_loss.astype(np.float16)
+                        self.train_loss=self.train_loss.astype(np.float32)
                         if acc==True:
                             accuracy=sess.run(train_accuracy,feed_dict=feed_dict)
                             self.train_accuracy_list.append(float(accuracy))
@@ -695,7 +695,7 @@ class gru:
                             train_summary=sess.run(train_merging,feed_dict=feed_dict)
                             train_writer.add_summary(train_summary,i)
                 print()
-                print('last loss:{0}'.format(self.train_loss))
+                print('last loss:{0:.6f}'.format(self.train_loss))
                 if acc==True:
                     print('accuracy:{0:.3f}%'.format(self.train_accuracy*100))
                 if train_summary_path!=None:
