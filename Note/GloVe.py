@@ -71,7 +71,7 @@ class GloVe:
     def forward_propagation(self,cword,bword,mul):
         with self.graph.as_default():
             if type(self.cpu_gpu)==str:
-		forward_cpu_gpu=self.cpu_gpu
+                forward_cpu_gpu=self.cpu_gpu
             else:
                 forward_cpu_gpu=self.cpu_gpu[0]
             with tf.device(forward_cpu_gpu):
@@ -104,7 +104,7 @@ class GloVe:
             if cpu_gpu!=None:
                 self.cpu_gpu=cpu_gpu
             if type(self.cpu_gpu)==str:
-		train_cpu_gpu=self.cpu_gpu
+                train_cpu_gpu=self.cpu_gpu
             else:
                 train_cpu_gpu=self.cpu_gpu[1]
             with tf.device(train_cpu_gpu):
@@ -180,9 +180,9 @@ class GloVe:
                                     batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
                                 total_loss+=batch_loss
                             loss=total_loss/batches
-                            self.train_loss_list.append(float(loss))
+                            self.train_loss_list.append(loss.astype(np.float32))
                             self.train_loss=loss
-                            self.train_loss=self.train_loss.astype(np.float16)
+                            self.train_loss=self.train_loss.astype(np.float32)
                         else:
                             random=np.arange(self.shape0)
                             np.random.shuffle(random)
@@ -194,9 +194,9 @@ class GloVe:
                                 loss=sess.run(train_loss,feed_dict=feed_dict)
                             else:
                                 loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
-                            self.train_loss_list.append(float(loss))
+                            self.train_loss_list.append(loss.astype(np.float32))
                             self.train_loss=loss
-                            self.train_loss=self.train_loss.astype(np.float16)
+                            self.train_loss=self.train_loss.astype(np.float32)
                         if epoch%10!=0:
                             temp_epoch=epoch-epoch%10
                             temp_epoch=int(temp_epoch/10)
@@ -220,7 +220,7 @@ class GloVe:
                                 train_summary=sess.run(train_merging,feed_dict=feed_dict)
                                 train_writer.add_summary(train_summary,i)
                     print()
-                    print('last loss:{0}'.format(self.train_loss))
+                    print('last loss:{0:.6f}'.format(self.train_loss))
                     if train_summary_path!=None:
                         train_writer.close()
                     if continue_train==True:
