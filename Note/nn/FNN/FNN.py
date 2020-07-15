@@ -400,9 +400,9 @@ class fnn:
                                     total_acc+=batch_acc
                             loss=total_loss/batches
                             train_acc=total_acc/batches
-                            self.train_loss_list.append(float(loss))
+                            self.train_loss_list.append(loss.astype(np.float32))
                             self.train_loss=loss
-                            self.train_loss=self.train_loss.astype(np.float16)
+                            self.train_loss=self.train_loss.astype(np.float32)
                             if acc==True:
                                 self.train_accuracy_list.append(float(train_acc))
                                 self.train_accuracy=train_acc
@@ -417,9 +417,9 @@ class fnn:
                                 loss=sess.run(train_loss,feed_dict=feed_dict)
                             else:
                                 loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
-                            self.train_loss_list.append(float(loss))
+                            self.train_loss_list.append(loss.astype(np.float32))
                             self.train_loss=loss
-                            self.train_loss=self.train_loss.astype(np.float16)
+                            self.train_loss=self.train_loss.astype(np.float32)
                             if acc==True:
                                 accuracy=sess.run(train_accuracy,feed_dict=feed_dict)
                                 self.train_accuracy_list.append(float(accuracy))
@@ -448,7 +448,7 @@ class fnn:
                                 train_summary=sess.run(train_merging,feed_dict=feed_dict)
                                 train_writer.add_summary(train_summary,i)
                     print()
-                    print('last loss:{0}'.format(self.train_loss))
+                    print('last loss:{0:.6f}'.format(self.train_loss))
                     if acc==True:
                         if len(self.labels_shape)==2:
                             print('accuracy:{0:.3f}%'.format(self.train_accuracy*100))
@@ -720,11 +720,11 @@ class fnn:
             output_file=open(model_path+'-{0}.dat'.format(i+1),'wb')
         pickle.dump(self.last_weight,output_file)
         pickle.dump(self.last_bias,output_file)
-        pickle.dump(self.data_dtype,output_file)
-        pickle.dump(self.labels_dtype,output_file)
         pickle.dump(self.shape0,output_file)
         pickle.dump(self.data_shape,output_file)
         pickle.dump(self.labels_shape,output_file)
+        pickle.dump(self.data_dtype,output_file)
+        pickle.dump(self.labels_dtype,output_file)
         pickle.dump(self.hidden_layers,output_file)
         pickle.dump(self.function,output_file)
         pickle.dump(self.batch,output_file)
@@ -754,11 +754,11 @@ class fnn:
         input_file=open(model_path,'rb')
         self.last_weight=pickle.load(input_file)
         self.last_bias=pickle.load(input_file)
-        self.data_dtype=pickle.load(input_file)
-        self.labels_dtype=pickle.load(input_file)
         self.shape0=pickle.load(input_file)
         self.data_shape=pickle.load(input_file)
         self.labels_shape=pickle.load(input_file)
+        self.data_dtype=pickle.load(input_file)
+        self.labels_dtype=pickle.load(input_file)
         self.graph=tf.Graph()
         with self.graph.as_default():
             self.data=tf.placeholder(dtype=self.data_dtype,shape=[None,None],name='data')
