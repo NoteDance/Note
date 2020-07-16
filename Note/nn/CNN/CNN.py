@@ -450,15 +450,15 @@ class cnn:
                         else:
                             train_loss=tf.nn.softmax_cross_entropy_with_logits_v2(logits=train_output,labels=self.labels)
                             train_loss=tf.reduce_mean(train_loss+l2/2*(sum([tf.reduce_sum(x**2) for x in self.weight_conv])+sum([tf.reduce_sum(x**2) for x in self.weight_fc])))
-                    if self.optimizer=='Gradient':
-                        opt=tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(train_loss)
-                    if self.optimizer=='RMSprop':
-                        opt=tf.train.RMSPropOptimizer(learning_rate=self.lr).minimize(train_loss)
-                    if self.optimizer=='Momentum':
-                        opt=tf.train.MomentumOptimizer(learning_rate=self.lr,momentum=0.99).minimize(train_loss)
-                    if self.optimizer=='Adam':
-                        opt=tf.train.AdamOptimizer(learning_rate=self.lr).minimize(train_loss)
-                    train_loss_scalar=tf.summary.scalar('train_loss',train_loss)
+                if self.optimizer=='Gradient':
+                    opt=tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(train_loss)
+                if self.optimizer=='RMSprop':
+                    opt=tf.train.RMSPropOptimizer(learning_rate=self.lr).minimize(train_loss)
+                if self.optimizer=='Momentum':
+                    opt=tf.train.MomentumOptimizer(learning_rate=self.lr,momentum=0.99).minimize(train_loss)
+                if self.optimizer=='Adam':
+                    opt=tf.train.AdamOptimizer(learning_rate=self.lr).minimize(train_loss)
+                train_loss_scalar=tf.summary.scalar('train_loss',train_loss)
                 if acc==True:
                     with tf.name_scope('train_accuracy'):
                         equal=tf.equal(tf.argmax(train_output,1),tf.argmax(self.labels,1))
