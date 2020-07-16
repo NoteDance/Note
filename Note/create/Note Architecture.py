@@ -134,144 +134,144 @@ class unnamed:
                 with tf.name_scope('train_loss'):
                     
                     
-                    if self.optimizer=='Gradient':
-                        opt=tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(train_loss)
-                    if self.optimizer=='RMSprop':
-                        opt=tf.train.RMSPropOptimizer(learning_rate=self.lr).minimize(train_loss)
-                    if self.optimizer=='Momentum':
-                        opt=tf.train.MomentumOptimizer(learning_rate=self.lr,momentum=0.99).minimize(train_loss)
-                    if self.optimizer=='Adam':
-                        opt=tf.train.AdamOptimizer(learning_rate=self.lr).minimize(train_loss)
-                    train_loss_scalar=tf.summary.scalar('train_loss',train_loss)
-                    if acc==True:
-                        with tf.name_scope('train_accuracy'):
+                if self.optimizer=='Gradient':
+                    opt=tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(train_loss)
+                if self.optimizer=='RMSprop':
+                    opt=tf.train.RMSPropOptimizer(learning_rate=self.lr).minimize(train_loss)
+                if self.optimizer=='Momentum':
+                    opt=tf.train.MomentumOptimizer(learning_rate=self.lr,momentum=0.99).minimize(train_loss)
+                if self.optimizer=='Adam':
+                    opt=tf.train.AdamOptimizer(learning_rate=self.lr).minimize(train_loss)
+                train_loss_scalar=tf.summary.scalar('train_loss',train_loss)
+                if acc==True:
+                    with tf.name_scope('train_accuracy'):
+                        
+                        
+                        train_accuracy_scalar=tf.summary.scalar('train_accuracy',train_accuracy)
+                if train_summary_path!=None:
+                    train_merging=tf.summary.merge([train_loss_scalar,train_accuracy_scalar])
+                    train_writer=tf.summary.FileWriter(train_summary_path)
+                config=tf.ConfigProto()
+                config.gpu_options.allow_growth=True
+                config.allow_soft_placement=True
+                sess=tf.Session(config=config)
+                sess.run(tf.global_variables_initializer())
+                self.sess=sess
+                if self.total_epoch==0:
+                    epoch=epoch+1
+                for i in range(epoch):
+                    if self.batch!=None:
+                        batches=int((self.shape0-self.shape0%self.batch)/self.batch)
+                        total_loss=0
+                        total_acc=0
+                        random=np.arange(self.shape0)
+                        np.random.shuffle(random)
+                        
+                        
+                        for j in range(batches):
+                            index1=j*self.batch
+                            index2=(j+1)*self.batch
                             
                             
-                            train_accuracy_scalar=tf.summary.scalar('train_accuracy',train_accuracy)
-                    if train_summary_path!=None:
-                        train_merging=tf.summary.merge([train_loss_scalar,train_accuracy_scalar])
-                        train_writer=tf.summary.FileWriter(train_summary_path)
-                    config=tf.ConfigProto()
-                    config.gpu_options.allow_growth=True
-                    config.allow_soft_placement=True
-                    sess=tf.Session(config=config)
-                    sess.run(tf.global_variables_initializer())
-                    self.sess=sess
-                    if self.total_epoch==0:
-                        epoch=epoch+1
-                    for i in range(epoch):
-                        if self.batch!=None:
-                            batches=int((self.shape0-self.shape0%self.batch)/self.batch)
-                            total_loss=0
-                            total_acc=0
-                            random=np.arange(self.shape0)
-                            np.random.shuffle(random)
-                            
-                            
-                            for j in range(batches):
-                                index1=j*self.batch
-                                index2=(j+1)*self.batch
-                                
-                                
-                                if i==0 and self.total_epoch==0:
-                                    batch_loss=sess.run(train_loss,feed_dict=feed_dict)
-                                else:
-                                    batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
-                                total_loss+=batch_loss
-                                if acc==True:
-                                    batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
-                                    total_acc+=batch_acc
-                            if self.shape0%self.batch!=0:
-                                batches+=1
-                                index1=batches*self.batch
-                                index2=self.batch-(self.shape0-batches*self.batch)
-                                
-                                
-                                if i==0 and self.total_epoch==0:
-                                    batch_loss=sess.run(train_loss,feed_dict=feed_dict)
-                                else:
-                                    batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
-                                total_loss+=batch_loss
-                                if acc==True:
-                                    batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
-                                    total_acc+=batch_acc
-                            loss=total_loss/batches
-                            train_acc=total_acc/batches
-                            self.train_loss_list.append(loss.astype(np.float32))
-                            self.train_loss=loss
-                            self.train_loss=self.train_loss.astype(np.float32)
-                            if acc==True:
-                                self.train_accuracy_list.append(train_acc.astype(np.float32))
-                                self.train_accuracy=train_acc
-                                self.train_accuracy=self.train_accuracy.astype(np.float32)
-                        else:
-                            random=np.arange(self.shape0)
-                            np.random.shuffle(random)
-
-
                             if i==0 and self.total_epoch==0:
-                                loss=sess.run(train_loss,feed_dict=feed_dict)
+                                batch_loss=sess.run(train_loss,feed_dict=feed_dict)
                             else:
-                                loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
-                            self.train_loss_list.append(loss.astype(np.float32))
-                            self.train_loss=loss
-                            self.train_loss=self.train_loss.astype(np.float32)
+                                batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
+                            total_loss+=batch_loss
                             if acc==True:
-                                accuracy=sess.run(train_accuracy,feed_dict=feed_dict)
-                                self.train_accuracy_list.append(accuracy.astype(np.float32))
-                                self.train_accuracy=accuracy
-                                self.train_accuracy=self.train_accuracy.astype(np.float32)
-                        if epoch%10!=0:
-                            temp_epoch=epoch-epoch%10
-                            temp_epoch=int(temp_epoch/10)
-                        else:
-                            temp_epoch=epoch/10
-                        if temp_epoch==0:
-                            temp_epoch=1
-                        if i%temp_epoch==0:
-                            if continue_train==True:
-                                if self.epoch!=None:
-                                    self.total_epoch=self.epoch+i+1
-                                else:
-                                    self.total_epoch=i
-                            if continue_train==True:
-                                print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
+                                batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
+                                total_acc+=batch_acc
+                        if self.shape0%self.batch!=0:
+                            batches+=1
+                            index1=batches*self.batch
+                            index2=self.batch-(self.shape0-batches*self.batch)
+                            
+                            
+                            if i==0 and self.total_epoch==0:
+                                batch_loss=sess.run(train_loss,feed_dict=feed_dict)
                             else:
-                                print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
-                            if model_path!=None and i%epoch*2==0:
-                                self.save(model_path,i,one)
-                            if train_summary_path!=None:
-                                train_summary=sess.run(train_merging,feed_dict=feed_dict)
-                                train_writer.add_summary(train_summary,i)
-                    print()
-                    print('last loss:{0:.6f}'.format(self.train_loss))
-                    if acc==True:
-                        if len(self.labels_shape)==2:
-                            print('accuracy:{0:.3f}%'.format(self.train_accuracy*100))
-                        else:
-                            print('accuracy:{0:.3f}'.format(self.train_accuracy))
-                    if train_summary_path!=None:
-                        train_writer.close()
-                    if continue_train==True:
-                        
-                        
-                        sess.run(tf.global_variables_initializer())
-                    if continue_train==True:
-                        if self.epoch!=None:
-                            self.total_epoch=self.epoch+epoch
-                        else:
-                            self.total_epoch=epoch-1
-                        self.epoch=self.total_epoch
-                    if continue_train!=True:
-                        self.epoch=epoch-1
-                    t2=time.time()
-                    _time=t2-t1
-                    if continue_train!=True or self.time==None:
-                        self.total_time=_time
+                                batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
+                            total_loss+=batch_loss
+                            if acc==True:
+                                batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
+                                total_acc+=batch_acc
+                        loss=total_loss/batches
+                        train_acc=total_acc/batches
+                        self.train_loss_list.append(loss.astype(np.float32))
+                        self.train_loss=loss
+                        self.train_loss=self.train_loss.astype(np.float32)
+                        if acc==True:
+                            self.train_accuracy_list.append(train_acc.astype(np.float32))
+                            self.train_accuracy=train_acc
+                            self.train_accuracy=self.train_accuracy.astype(np.float32)
                     else:
-                        self.total_time+=_time
-                    print('time:{0:.3f}s'.format(self.time))
-                    return
+                        random=np.arange(self.shape0)
+                        np.random.shuffle(random)
+
+
+                        if i==0 and self.total_epoch==0:
+                            loss=sess.run(train_loss,feed_dict=feed_dict)
+                        else:
+                            loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
+                        self.train_loss_list.append(loss.astype(np.float32))
+                        self.train_loss=loss
+                        self.train_loss=self.train_loss.astype(np.float32)
+                        if acc==True:
+                            accuracy=sess.run(train_accuracy,feed_dict=feed_dict)
+                            self.train_accuracy_list.append(accuracy.astype(np.float32))
+                            self.train_accuracy=accuracy
+                            self.train_accuracy=self.train_accuracy.astype(np.float32)
+                    if epoch%10!=0:
+                        temp_epoch=epoch-epoch%10
+                        temp_epoch=int(temp_epoch/10)
+                    else:
+                        temp_epoch=epoch/10
+                    if temp_epoch==0:
+                        temp_epoch=1
+                    if i%temp_epoch==0:
+                        if continue_train==True:
+                            if self.epoch!=None:
+                                self.total_epoch=self.epoch+i+1
+                            else:
+                                self.total_epoch=i
+                        if continue_train==True:
+                            print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
+                        else:
+                            print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
+                        if model_path!=None and i%epoch*2==0:
+                            self.save(model_path,i,one)
+                        if train_summary_path!=None:
+                            train_summary=sess.run(train_merging,feed_dict=feed_dict)
+                            train_writer.add_summary(train_summary,i)
+                print()
+                print('last loss:{0:.6f}'.format(self.train_loss))
+                if acc==True:
+                    if len(self.labels_shape)==2:
+                        print('accuracy:{0:.3f}%'.format(self.train_accuracy*100))
+                    else:
+                        print('accuracy:{0:.3f}'.format(self.train_accuracy))
+                if train_summary_path!=None:
+                    train_writer.close()
+                if continue_train==True:
+                    
+                    
+                    sess.run(tf.global_variables_initializer())
+                if continue_train==True:
+                    if self.epoch!=None:
+                        self.total_epoch=self.epoch+epoch
+                    else:
+                        self.total_epoch=epoch-1
+                    self.epoch=self.total_epoch
+                if continue_train!=True:
+                    self.epoch=epoch-1
+                t2=time.time()
+                _time=t2-t1
+                if continue_train!=True or self.time==None:
+                    self.total_time=_time
+                else:
+                    self.total_time+=_time
+                print('time:{0:.3f}s'.format(self.time))
+                return
     
     
     def end(self):
