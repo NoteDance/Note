@@ -400,6 +400,7 @@ class cnn:
             self.dropout=dropout
             self.optimizer=optimizer
             self.lr=lr
+            self.acc=acc
             if continue_train!=True:
                 if self.continue_train==True:
                     continue_train=True
@@ -458,151 +459,151 @@ class cnn:
                     if self.optimizer=='Adam':
                         opt=tf.train.AdamOptimizer(learning_rate=self.lr).minimize(train_loss)
                     train_loss_scalar=tf.summary.scalar('train_loss',train_loss)
-                    if acc==True:
-                        with tf.name_scope('train_accuracy'):
-                            equal=tf.equal(tf.argmax(train_output,1),tf.argmax(self.labels,1))
-                            train_accuracy=tf.reduce_mean(tf.cast(equal,tf.float32))
-                            train_accuracy_scalar=tf.summary.scalar('train_accuracy',train_accuracy)
-                    if train_summary_path!=None:
-                        train_merging=tf.summary.merge([train_loss_scalar,train_accuracy_scalar])
-                        train_writer=tf.summary.FileWriter(train_summary_path)
-                    config=tf.ConfigProto()
-                    config.gpu_options.allow_growth=True
-                    config.allow_soft_placement=True
-                    sess=tf.Session(config=config)
-                    sess.run(tf.global_variables_initializer())
-                    self.sess=sess
-                    if self.total_epoch==0:
-                        epoch=epoch+1
-                    for i in range(epoch):
-                        if self.batch!=None:
-                            batches=int((self.shape0-self.shape0%self.batch)/self.batch)
-                            total_loss=0
-                            total_acc=0
-                            random=np.arange(self.shape0)
-                            np.random.shuffle(random)
-                            train_data=self.train_data[random]
-                            train_labels=self.train_labels[random]
-                            for j in range(batches):
-                                index1=j*self.batch
-                                index2=(j+1)*self.batch
-                                train_data_batch=train_data[index1:index2]
-                                train_labels_batch=train_labels[index1:index2]
-                                feed_dict={self.data:train_data_batch,self.labels:train_labels_batch}
-                                if i==0 and self.total_epoch==0:
-                                    batch_loss=sess.run(train_loss,feed_dict=feed_dict)
-                                else:
-                                    batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
-                                total_loss+=batch_loss
-                                if acc==True:
-                                    batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
-                                    total_acc+=batch_acc
-                            if self.shape0%self.batch!=0:
-                                batches+=1
-                                index1=batches*self.batch
-                                index2=self.batch-(self.shape0-batches*self.batch)
-                                train_data_batch=np.concatenate([train_data[index1:],train_data[:index2]])
-                                train_labels_batch=np.concatenate([train_labels[index1:],train_labels[:index2]])
-                                feed_dict={self.data:train_data_batch,self.labels:train_labels_batch}
-                                if i==0 and self.total_epoch==0:
-                                    batch_loss=sess.run(train_loss,feed_dict=feed_dict)
-                                else:
-                                    batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
-                                total_loss+=batch_loss
-                                if acc==True:
-                                    batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
-                                    total_acc+=batch_acc
-                            loss=total_loss/batches
-                            train_acc=total_acc/batches
-                            self.train_loss_list.append(loss.astype(np.float32))
-                            self.train_loss=loss
-                            self.train_loss=self.train_loss.astype(np.float32)
-                            if acc==True:
-                                self.train_accuracy_list.append(train_acc)
-                                self.train_accuracy=train_acc
-                                self.train_accuracy=self.train_accuracy.astype(np.float16)
-                        else:
-                            random=np.arange(self.shape0)
-                            np.random.shuffle(random)
-                            train_data=self.train_data[random]
-                            train_labels=self.train_labels[random]
-                            feed_dict={self.data:train_data,self.labels:train_labels}
+                if acc==True:
+                    with tf.name_scope('train_accuracy'):
+                        equal=tf.equal(tf.argmax(train_output,1),tf.argmax(self.labels,1))
+                        train_accuracy=tf.reduce_mean(tf.cast(equal,tf.float32))
+                        train_accuracy_scalar=tf.summary.scalar('train_accuracy',train_accuracy)
+                if train_summary_path!=None:
+                    train_merging=tf.summary.merge([train_loss_scalar,train_accuracy_scalar])
+                    train_writer=tf.summary.FileWriter(train_summary_path)
+                config=tf.ConfigProto()
+                config.gpu_options.allow_growth=True
+                config.allow_soft_placement=True
+                sess=tf.Session(config=config)
+                sess.run(tf.global_variables_initializer())
+                self.sess=sess
+                if self.total_epoch==0:
+                    epoch=epoch+1
+                for i in range(epoch):
+                    if self.batch!=None:
+                        batches=int((self.shape0-self.shape0%self.batch)/self.batch)
+                        total_loss=0
+                        total_acc=0
+                        random=np.arange(self.shape0)
+                        np.random.shuffle(random)
+                        train_data=self.train_data[random]
+                        train_labels=self.train_labels[random]
+                        for j in range(batches):
+                            index1=j*self.batch
+                            index2=(j+1)*self.batch
+                            train_data_batch=train_data[index1:index2]
+                            train_labels_batch=train_labels[index1:index2]
+                            feed_dict={self.data:train_data_batch,self.labels:train_labels_batch}
                             if i==0 and self.total_epoch==0:
-                                loss=sess.run(train_loss,feed_dict=feed_dict)
+                                batch_loss=sess.run(train_loss,feed_dict=feed_dict)
                             else:
-                                loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
-                            self.train_loss_list.append(loss.astype(np.float32))
-                            self.train_loss=loss
-                            self.train_loss=self.train_loss.astype(np.float32)
+                                batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
+                            total_loss+=batch_loss
                             if acc==True:
-                                accuracy=sess.run(train_accuracy,feed_dict=feed_dict)
-                                self.train_accuracy_list.append(accuracy)
-                                self.train_accuracy=accuracy
-                                self.train_accuracy=self.train_accuracy.astype(np.float16)
-                        if epoch%10!=0:
-                            temp_epoch=epoch-epoch%10
-                            temp_epoch=int(temp_epoch/10)
-                        else:
-                            temp_epoch=epoch/10
-                        if temp_epoch==0:
-                            temp_epoch=1
-                        if i%temp_epoch==0:
-                            if continue_train==True:
-                                if self.epoch!=None:
-                                    self.total_epoch=self.epoch+i+1
-                                else:
-                                    self.total_epoch=i
-                            if continue_train==True:
-                                print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
+                                batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
+                                total_acc+=batch_acc
+                        if self.shape0%self.batch!=0:
+                            batches+=1
+                            index1=batches*self.batch
+                            index2=self.batch-(self.shape0-batches*self.batch)
+                            train_data_batch=np.concatenate([train_data[index1:],train_data[:index2]])
+                            train_labels_batch=np.concatenate([train_labels[index1:],train_labels[:index2]])
+                            feed_dict={self.data:train_data_batch,self.labels:train_labels_batch}
+                            if i==0 and self.total_epoch==0:
+                                batch_loss=sess.run(train_loss,feed_dict=feed_dict)
                             else:
-                                print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
-                            if model_path!=None and i%epoch*2==0:
-                                self.save(model_path,i,one)
-                            if train_summary_path!=None:
-                                train_summary=sess.run(train_merging,feed_dict=feed_dict)
-                                train_writer.add_summary(train_summary,i)
-                    print()
-                    print('last loss:{0:.6f}'.format(self.train_loss))
-                    if acc==True:
-                        print('accuracy:{0:.3f}%'.format(self.train_accuracy*100))
-                    if train_summary_path!=None:
-                        train_writer.close()
-                    if continue_train==True:
-                        self.last_weight_conv=sess.run(self.weight_conv)
-                        self.last_bias_conv=sess.run(self.bias_conv)
-                        self.last_weight_fc=sess.run(self.weight_fc)
-                        self.last_bias_fc=sess.run(self.bias_fc)
-                        for i in range(len(self.conv)):
-                            self.weight_conv[i]=tf.Variable(self.last_weight_conv[i],name='conv_{0}_weight'.format(i+1))
-                            self.bias_conv[i]=tf.Variable(self.last_bias_conv[i],name='conv_{0}_bias'.format(i+1))
-                        for i in range(len(self.fc)+1):
-                            if i==len(self.fc):
-                                self.weight_fc[i]=tf.Variable(self.last_weight_fc[i],name='output_weight')
-                                self.bias_fc[i]=tf.Variable(self.last_bias_fc[i],name='output_bias')
-                            else:
-                                self.weight_fc[i]=tf.Variable(self.last_weight_fc[i],name='fc_{0}_weight'.format(i+1))
-                                self.bias_fc[i]=tf.Variable(self.last_bias_fc[i],name='fc_{0}_weight'.format(i+1))
-                        self.last_weight_conv.clear()
-                        self.last_bias_conv.clear()
-                        self.last_weight_fc.clear()
-                        self.last_bias_fc.clear()
-                        sess.run(tf.global_variables_initializer())
-                    if continue_train==True:
-                        if self.epoch!=None:
-                            self.total_epoch=self.epoch+epoch
-                        else:
-                            self.total_epoch=epoch-1
-                        self.epoch=self.total_epoch
-                    if continue_train!=True:
-                        self.epoch=epoch-1
-                    t2=time.time()
-                    _time=t2-t1
-                    if continue_train!=True or self.time==None:
-                        self.time=_time
+                                batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
+                            total_loss+=batch_loss
+                            if acc==True:
+                                batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
+                                total_acc+=batch_acc
+                        loss=total_loss/batches
+                        train_acc=total_acc/batches
+                        self.train_loss_list.append(loss.astype(np.float32))
+                        self.train_loss=loss
+                        self.train_loss=self.train_loss.astype(np.float32)
+                        if acc==True:
+                            self.train_accuracy_list.append(train_acc.astype(np.float32))
+                            self.train_accuracy=train_acc
+                            self.train_accuracy=self.train_accuracy.astype(np.float32)
                     else:
-                        self.time+=_time
-                    print('time:{0:.3f}s'.format(self.time))
-                    return
+                        random=np.arange(self.shape0)
+                        np.random.shuffle(random)
+                        train_data=self.train_data[random]
+                        train_labels=self.train_labels[random]
+                        feed_dict={self.data:train_data,self.labels:train_labels}
+                        if i==0 and self.total_epoch==0:
+                            loss=sess.run(train_loss,feed_dict=feed_dict)
+                        else:
+                            loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
+                        self.train_loss_list.append(loss.astype(np.float32))
+                        self.train_loss=loss
+                        self.train_loss=self.train_loss.astype(np.float32)
+                        if acc==True:
+                            accuracy=sess.run(train_accuracy,feed_dict=feed_dict)
+                            self.train_accuracy_list.append(accuracy.astype(np.float32))
+                            self.train_accuracy=accuracy
+                            self.train_accuracy=self.train_accuracy.astype(np.float32)
+                    if epoch%10!=0:
+                        temp_epoch=epoch-epoch%10
+                        temp_epoch=int(temp_epoch/10)
+                    else:
+                        temp_epoch=epoch/10
+                    if temp_epoch==0:
+                        temp_epoch=1
+                    if i%temp_epoch==0:
+                        if continue_train==True:
+                            if self.epoch!=None:
+                                self.total_epoch=self.epoch+i+1
+                            else:
+                                self.total_epoch=i
+                        if continue_train==True:
+                            print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
+                        else:
+                            print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
+                        if model_path!=None and i%epoch*2==0:
+                            self.save(model_path,i,one)
+                        if train_summary_path!=None:
+                            train_summary=sess.run(train_merging,feed_dict=feed_dict)
+                            train_writer.add_summary(train_summary,i)
+                print()
+                print('last loss:{0:.6f}'.format(self.train_loss))
+                if acc==True:
+                    print('accuracy:{0:.3f}%'.format(self.train_accuracy*100))
+                if train_summary_path!=None:
+                    train_writer.close()
+                if continue_train==True:
+                    self.last_weight_conv=sess.run(self.weight_conv)
+                    self.last_bias_conv=sess.run(self.bias_conv)
+                    self.last_weight_fc=sess.run(self.weight_fc)
+                    self.last_bias_fc=sess.run(self.bias_fc)
+                    for i in range(len(self.conv)):
+                        self.weight_conv[i]=tf.Variable(self.last_weight_conv[i],name='conv_{0}_weight'.format(i+1))
+                        self.bias_conv[i]=tf.Variable(self.last_bias_conv[i],name='conv_{0}_bias'.format(i+1))
+                    for i in range(len(self.fc)+1):
+                        if i==len(self.fc):
+                            self.weight_fc[i]=tf.Variable(self.last_weight_fc[i],name='output_weight')
+                            self.bias_fc[i]=tf.Variable(self.last_bias_fc[i],name='output_bias')
+                        else:
+                            self.weight_fc[i]=tf.Variable(self.last_weight_fc[i],name='fc_{0}_weight'.format(i+1))
+                            self.bias_fc[i]=tf.Variable(self.last_bias_fc[i],name='fc_{0}_weight'.format(i+1))
+                    self.last_weight_conv.clear()
+                    self.last_bias_conv.clear()
+                    self.last_weight_fc.clear()
+                    self.last_bias_fc.clear()
+                    sess.run(tf.global_variables_initializer())
+                if continue_train==True:
+                    if self.epoch!=None:
+                        self.total_epoch=self.epoch+epoch
+                    else:
+                        self.total_epoch=epoch-1
+                    self.epoch=self.total_epoch
+                if continue_train!=True:
+                    self.epoch=epoch-1
+                t2=time.time()
+                _time=t2-t1
+                if continue_train!=True or self.time==None:
+                    self.time=_time
+                else:
+                    self.time+=_time
+                print('time:{0:.3f}s'.format(self.time))
+                return
     
     
     def end(self):
@@ -666,12 +667,12 @@ class cnn:
                 self.test_loss=test_loss
                 self.test_accuracy=test_acc
                 self.test_loss=self.test_loss.astype(np.float32)
-                self.test_accuracy=self.test_accuracy.astype(np.float16)
+                self.test_accuracy=self.test_accuracy.astype(np.float32)
             else:
                 self.test_loss=sess.run(test_loss,feed_dict={test_data_placeholder:test_data,test_labels_placeholder:test_labels})
                 self.test_accuracy=sess.run(test_accuracy,feed_dict={test_data_placeholder:test_data,test_labels_placeholder:test_labels})
                 self.test_loss=self.test_loss.astype(np.float32)
-                self.test_accuracy=self.test_accuracy.astype(np.float16)
+                self.test_accuracy=self.test_accuracy.astype(np.float32)
             print('test loss:{0:.6f}'.format(self.test_loss))
             print('test accuracy:{0:.3f}%'.format(self.test_accuracy*100))
             sess.close()
@@ -696,15 +697,16 @@ class cnn:
         print()
         print('-------------------------------------')
         print()
-        print('train loss:{0}'.format(self.train_loss))
-        print()
-        print('train accuracy:{0:.3f}%'.format(self.train_accuracy*100))
+        print('train loss:{0:.6f}'.format(self.train_loss))
+        if self.acc==True:
+            print()
+            print('train accuracy:{0:.3f}%'.format(self.train_accuracy*100))
         return
         
     
     def test_info(self):
         print()
-        print('test loss:{0}'.format(self.test_loss))
+        print('test loss:{0:.6f}'.format(self.test_loss))
         print()
         print('test accuracy:{0:.3f}%'.format(self.test_accuracy*100))
         return
@@ -731,21 +733,22 @@ class cnn:
         plt.title('train accuracy')
         plt.xlabel('epoch')
         plt.ylabel('accuracy')
-        print('train loss:{0}'.format(self.train_loss))
-        print()
-        print('train accuracy:{0:.3f}%'.format(self.train_accuracy*100))
+        print('train loss:{0:.6f}'.format(self.train_loss))
+        if self.acc==True:
+            print()
+            print('train accuracy:{0:.3f}%'.format(self.train_accuracy*100))
         return
     
     
     def comparison(self):
         print()
-        print('train loss:{0}'.format(self.train_loss))
+        print('train loss:{0:.6f}'.format(self.train_loss))
         print()
         print('train accuracy:{0:.3f}%'.format(self.train_accuracy*100))
         print()
         print('-------------------------------------')
         print()
-        print('test loss:{0}'.format(self.test_loss))
+        print('test loss:{0:.6f}'.format(self.test_loss))
         print()
         print('test accuracy:{0:.3f}%'.format(self.test_accuracy*100))
         return
@@ -761,12 +764,12 @@ class cnn:
             if type(self.function)==list:
                 if i==1:
                     if self.conv[i-1][3]=='SAME':
-                        print('conv_layer_{0}\t{1}\t{3}\t{4}\t{5}\t{6}'.format(i,self.conv[i-1][0],self.data_shape[1],self.conv[i-1][1],np.prod(self.weight_conv[i-1].shape)+self.weight_conv[i-1].shape[3],self.function[i-1]))
+                        print('conv_layer_{0}\t{1}\t{2}\t{3}\t{4}\t{5}'.format(i,self.conv[i-1][0],self.data_shape[1],self.conv[i-1][1],np.prod(self.weight_conv[i-1].shape)+self.weight_conv[i-1].shape[3],self.function[i-1]))
                         total_params+=np.prod(self.weight_conv[i-1].shape)+self.weight_conv[i-1].shape[3]
                         print()
                     else:
                         conv_output_shape=int((self.data_shape[1]-self.conv[i-1][0])/self.conv[i-1][2]+1)
-                        print('conv_layer_{0}\t{1}\t{3}\t{4}\t{5}\t{6}'.format(i,self.conv[i-1][0],conv_output_shape,self.conv[i-1][1],np.prod(self.weight_conv[i-1].shape)+self.weight_conv[i-1].shape[3],self.function[i-1]))
+                        print('conv_layer_{0}\t{1}\t{2}\t{3}\t{4}\t{5}'.format(i,self.conv[i-1][0],conv_output_shape,self.conv[i-1][1],np.prod(self.weight_conv[i-1].shape)+self.weight_conv[i-1].shape[3],self.function[i-1]))
                         total_params+=np.prod(self.weight_conv[i-1].shape)+self.weight_conv[i-1].shape[3]
                         print()
                     if type(self.max_pool)==list and self.max_pool[i-1][0]!=0:
@@ -787,12 +790,12 @@ class cnn:
                             print()
                 elif i>0 and i<len(self.conv):
                     if self.conv[i-1][3]=='SAME':
-                        print('conv_layer_{0}\t{1}\t{3}\t{4}\t{5}\t{6}'.format(i,self.conv[i-1][0],self.data_shape[1],self.conv[i-1][1],np.prod(self.weight_conv[i-1].shape)+self.weight_conv[i-1].shape[3],self.function[i-1]))
+                        print('conv_layer_{0}\t{1}\t{2}\t{3}\t{4}\t{5}'.format(i,self.conv[i-1][0],self.data_shape[1],self.conv[i-1][1],np.prod(self.weight_conv[i-1].shape)+self.weight_conv[i-1].shape[3],self.function[i-1]))
                         total_params+=np.prod(self.weight_conv[i-1].shape)+self.weight_conv[i-1].shape[3]
                         print()
                     else:
                         conv_output_shape=int((np.array(self.activation[i-2].shape[1]).astype(int)-self.conv[i-1][0])/self.conv[i-1][2]+1)
-                        print('conv_layer_{0}\t{1}\t{3}\t{4}\t{5}\t{6}'.format(i,self.conv[i-1][0],conv_output_shape,self.conv[i-1][1],np.prod(self.weight_conv[i-1].shape)+self.weight_conv[i-1].shape[3],self.function[i-1]))
+                        print('conv_layer_{0}\t{1}\t{2}\t{3}\t{4}\t{5}'.format(i,self.conv[i-1][0],conv_output_shape,self.conv[i-1][1],np.prod(self.weight_conv[i-1].shape)+self.weight_conv[i-1].shape[3],self.function[i-1]))
                         total_params+=np.prod(self.weight_conv[i-1].shape)+self.weight_conv[i-1].shape[3]
                         print()
                     if type(self.max_pool)==list and self.max_pool[i-1][0]!=0:
@@ -814,7 +817,7 @@ class cnn:
             else:
                 if i==1:
                     if self.conv[i-1][3]=='SAME':
-                        print('conv_layer_{0}\t{1}\t{3}\t{4}\t{5}\t{6}'.format(i,self.conv[i-1][0],self.data_shape[1],self.conv[i-1][1],np.prod(self.weight_conv[i-1].shape)+self.weight_conv[i-1].shape[3],self.function))
+                        print('conv_layer_{0}\t{1}\t{2}\t{3}\t{4}\t{5}'.format(i,self.conv[i-1][0],self.data_shape[1],self.conv[i-1][1],np.prod(self.weight_conv[i-1].shape)+self.weight_conv[i-1].shape[3],self.function))
                         total_params+=np.prod(self.weight_conv[i-1].shape)+self.weight_conv[i-1].shape[3]
                         print()
                     else:
@@ -840,7 +843,7 @@ class cnn:
                             print()
                 elif i>0 and i<len(self.conv):               
                     if self.conv[i-1][3]=='SAME':
-                        print('conv_layer_{0}\t{1}\t{3}\t{4}\t{5}\t{6}'.format(i,self.conv[i-1][0],self.data_shape[1],self.conv[i-1][1],np.prod(self.weight_conv[i-1].shape)+self.weight_conv[i-1].shape[3],self.function))
+                        print('conv_layer_{0}\t{1}\t{2}\t{3}\t{4}\t{5}'.format(i,self.conv[i-1][0],self.data_shape[1],self.conv[i-1][1],np.prod(self.weight_conv[i-1].shape)+self.weight_conv[i-1].shape[3],self.function))
                         total_params+=np.prod(self.weight_conv[i-1].shape)+self.weight_conv[i-1].shape[3]
                         print()
                     else:
@@ -911,6 +914,7 @@ class cnn:
         pickle.dump(self.dropout,output_file)
         pickle.dump(self.optimizer,output_file)
         pickle.dump(self.lr,output_file)
+        pickle.dump(self.acc,output_file)
         pickle.dump(self.train_loss,output_file)
         pickle.dump(self.train_accuracy,output_file)
         pickle.dump(self.test_flag,output_file)
@@ -954,6 +958,7 @@ class cnn:
         self.dropout=pickle.load(input_file)
         self.optimizer=pickle.load(input_file)
         self.lr=pickle.load(input_file)
+        self.acc=pickle.load(input_file)
         self.train_loss=pickle.load(input_file)
         self.train_accuracy=pickle.load(input_file)
         self.test_flag=pickle.load(input_file)
