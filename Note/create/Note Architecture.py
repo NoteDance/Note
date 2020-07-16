@@ -416,6 +416,8 @@ class unnamed:
         pickle.dump(self.epoch,output_file)
         pickle.dump(self.optimizer,output_file)
         pickle.dump(self.lr,output_file)
+        
+        
         pickle.dump(self.acc,output_file)
         pickle.dump(self.train_loss,output_file)
         pickle.dump(self.train_accuracy,output_file)
@@ -446,6 +448,8 @@ class unnamed:
         self.epoch=pickle.load(input_file)
         self.optimizer=pickle.load(input_file)
         self.lr=pickle.load(input_file)
+        
+        
         self.acc=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
         self.train_loss=pickle.load(input_file)
