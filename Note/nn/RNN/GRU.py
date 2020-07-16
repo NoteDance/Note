@@ -575,15 +575,15 @@ class gru:
                                 train_loss=tf.reduce_mean(train_loss+l2/2*(tf.reduce_sum(self.ug_weight_x**2)+tf.reduce_sum(self.ug_weight_h**2)+tf.reduce_sum(self.rg_weight_x**2)+tf.reduce_sum(self.rg_weight_h**2)+tf.reduce_sum(self.cltm_weight_x**2)+tf.reduce_sum(self.cltm_weight_h**2)+tf.reduce_sum(self.weight_o**2)))
                             else:
                                 train_loss=tf.reduce_mean(train_loss+l2/2*(sum([tf.reduce_sum(x**2) for x in self.ug_weight_x])+sum([tf.reduce_sum(x**2) for x in self.ug_weight_h])+sum([tf.reduce_sum(x**2) for x in self.rg_weight_x])+sum([tf.reduce_sum(x**2) for x in self.rg_weight_h])+sum([tf.reduce_sum(x**2) for x in self.cltm_weight_x])+sum([tf.reduce_sum(x**2) for x in self.cltm_weight_h])+sum([tf.reduce_sum(x**2) for x in self.weight_o])))
-                    if self.optimizer=='Gradient':
-                        opt=tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(train_loss)
-                    if self.optimizer=='RMSprop':
-                        opt=tf.train.RMSPropOptimizer(learning_rate=self.lr).minimize(train_loss)
-                    if self.optimizer=='Momentum':
-                        opt=tf.train.MomentumOptimizer(learning_rate=self.lr,momentum=0.99).minimize(train_loss)
-                    if self.optimizer=='Adam':
-                        opt=tf.train.AdamOptimizer(learning_rate=self.lr).minimize(train_loss)
-                    train_loss_scalar=tf.summary.scalar('train_loss',train_loss)
+                if self.optimizer=='Gradient':
+                    opt=tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(train_loss)
+                if self.optimizer=='RMSprop':
+                    opt=tf.train.RMSPropOptimizer(learning_rate=self.lr).minimize(train_loss)
+                if self.optimizer=='Momentum':
+                    opt=tf.train.MomentumOptimizer(learning_rate=self.lr,momentum=0.99).minimize(train_loss)
+                if self.optimizer=='Adam':
+                    opt=tf.train.AdamOptimizer(learning_rate=self.lr).minimize(train_loss)
+                train_loss_scalar=tf.summary.scalar('train_loss',train_loss)
                 if acc==True:
                     with tf.name_scope('train_accuracy'):
                         if self.pattern=='1n':
@@ -1055,9 +1055,9 @@ class gru:
         pickle.dump(self.predicate,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.epoch,output_file)
-        pickle.dump(self.l2,output_file)
         pickle.dump(self.optimizer,output_file)
         pickle.dump(self.lr,output_file)
+        pickle.dump(self.l2,output_file)
         pickle.dump(self.acc,output_file)
         pickle.dump(self.train_loss,output_file)
         pickle.dump(self.train_accuracy,output_file)
@@ -1121,9 +1121,9 @@ class gru:
         self.predicate=pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.epoch=pickle.load(input_file)
-        self.l2=pickle.load(input_file)
         self.optimizer=pickle.load(input_file)
         self.lr=pickle.load(input_file)
+        self.l2=pickle.load(input_file)
         self.acc=pickle.load(input_file)
         self.train_loss=pickle.load(input_file)
         self.train_accuracy=pickle.load(input_file)
