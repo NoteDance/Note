@@ -663,15 +663,15 @@ class lstm:
                                 train_loss=tf.reduce_mean(train_loss+l2/2*(tf.reduce_sum(self.fg_weight_x**2)+tf.reduce_sum(self.fg_weight_h**2)+tf.reduce_sum(self.ig_weight_x**2)+tf.reduce_sum(self.ig_weight_h**2)+tf.reduce_sum(self.og_weight_x**2)+tf.reduce_sum(self.og_weight_h**2)+tf.reduce_sum(self.cltm_weight_x**2)+tf.reduce_sum(self.cltm_weight_h**2)+tf.reduce_sum(self.weight_o**2)))
                             else:
                                 train_loss=tf.reduce_mean(train_loss+l2/2*(sum([tf.reduce_sum(x**2) for x in self.fg_weight_x])+sum([tf.reduce_sum(x**2) for x in self.fg_weight_h])+sum([tf.reduce_sum(x**2) for x in self.ig_weight_x])+sum([tf.reduce_sum(x**2) for x in self.ig_weight_h])+sum([tf.reduce_sum(x**2) for x in self.og_weight_x])+sum([tf.reduce_sum(x**2) for x in self.og_weight_h])+sum([tf.reduce_sum(x**2) for x in self.cltm_weight_x])+sum([tf.reduce_sum(x**2) for x in self.cltm_weight_h])+sum([tf.reduce_sum(x**2) for x in self.weight_o]))) 
-                    if self.optimizer=='Gradient':
-                        opt=tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(train_loss)
-                    if self.optimizer=='RMSprop':
-                        opt=tf.train.RMSPropOptimizer(learning_rate=self.lr).minimize(train_loss)
-                    if self.optimizer=='Momentum':
-                        opt=tf.train.MomentumOptimizer(learning_rate=self.lr,momentum=0.99).minimize(train_loss)
-                    if self.optimizer=='Adam':
-                        opt=tf.train.AdamOptimizer(learning_rate=self.lr).minimize(train_loss)
-                    train_loss_scalar=tf.summary.scalar('train_loss',train_loss)
+                if self.optimizer=='Gradient':
+                    opt=tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(train_loss)
+                if self.optimizer=='RMSprop':
+                    opt=tf.train.RMSPropOptimizer(learning_rate=self.lr).minimize(train_loss)
+                if self.optimizer=='Momentum':
+                    opt=tf.train.MomentumOptimizer(learning_rate=self.lr,momentum=0.99).minimize(train_loss)
+                if self.optimizer=='Adam':
+                    opt=tf.train.AdamOptimizer(learning_rate=self.lr).minimize(train_loss)
+                train_loss_scalar=tf.summary.scalar('train_loss',train_loss)
                 if acc==True:
                     with tf.name_scope('train_accuracy'):
                         if self.pattern=='1n':
