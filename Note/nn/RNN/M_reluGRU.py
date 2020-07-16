@@ -619,9 +619,9 @@ class m_relugru:
                         self.train_loss=loss
                         self.train_loss=self.train_loss.astype(np.float32)
                         if acc==True:
-                            self.train_accuracy_list.append(float(train_acc))
+                            self.train_accuracy_list.append(train_acc.astype(np.float32))
                             self.train_accuracy=train_acc
-                            self.train_accuracy=self.train_accuracy.astype(np.float16)
+                            self.train_accuracy=self.train_accuracy.astype(np.float32)
                     else:
                         random=np.arange(self.shape0)
                         np.random.shuffle(random)
@@ -637,9 +637,9 @@ class m_relugru:
                         self.train_loss=self.train_loss.astype(np.float32)
                         if acc==True:
                             accuracy=sess.run(train_accuracy,feed_dict={self.data:self.train_data,self.labels:self.train_labels})
-                            self.train_accuracy_list.append(float(accuracy))
+                            self.train_accuracy_list.append(accuracy.astype(np.float32))
                             self.train_accuracy=accuracy
-                            self.train_accuracy=self.train_accuracy.astype(np.float16)
+                            self.train_accuracy=self.train_accuracy.astype(np.float32)
                     if epoch%10!=0:
                         temp_epoch=epoch-epoch%10
                         temp_epoch=int(temp_epoch/10)
@@ -820,14 +820,16 @@ class m_relugru:
                 self.test_loss=test_loss
                 self.test_accuracy=test_acc
                 self.test_loss=self.test_loss.astype(np.float32)
-                self.test_accuracy=self.test_accuracy.astype(np.float16)
+                self.test_accuracy=self.test_accuracy.astype(np.float32)
             else:
                 self.test_loss=sess.run(test_loss,feed_dict={test_data_placeholder:test_data,test_labels_placeholder:test_labels})
                 self.test_accuracy=sess.run(test_accuracy,feed_dict={test_data_placeholder:test_data,test_labels_placeholder:test_labels})
                 self.test_loss=self.test_loss.astype(np.float32)
-                self.test_accuracy=self.test_accuracy.astype(np.float16)
-            print('test loss:{0:.6f}'.format(self.test_loss))
-            print('test accuracy:{0:.3f}%'.format(self.test_accuracy*100))
+                self.test_accuracy=self.test_accuracy.astype(np.float32)
+            if self.predicate==False:
+                print('test accuracy:{0:.3f}%'.format(self.test_accuracy*100))
+            else:
+                print('test accuracy:{0:.6f}'.format(self.test_accuracy))
             sess.close()
             return
         
@@ -849,8 +851,12 @@ class m_relugru:
         print('-------------------------------------')
         print()
         print('train loss:{0}'.format(self.train_loss))
-        print()
-        print('train accuracy:{0:.3f}%'.format(self.train_accuracy*100))
+        if self.acc==True:
+            print()
+            if self.predicate==False:
+                print('train accuracy:{0:.3f}%'.format(self.train_accuracy*100))
+            else:
+                print('train accuracy:{0:.6f}'.format(self.train_accuracy))
         return
         
     
@@ -858,7 +864,10 @@ class m_relugru:
         print()
         print('test loss:{0}'.format(self.test_loss))
         print()
-        print('test accuracy:{0:.3f}%'.format(self.test_accuracy*100))
+        if self.predicate==False:
+            print('test accuracy:{0:.3f}%'.format(self.test_accuracy*100))
+        else:
+            print('test accuracy:{0:.6f}'.format(self.test_accuracy))
         return
 		
     
@@ -878,14 +887,19 @@ class m_relugru:
         plt.title('train loss')
         plt.xlabel('epoch')
         plt.ylabel('loss')
-        plt.figure(2)
-        plt.plot(np.arange(self.epoch+1),self.train_accuracy_list)
-        plt.title('train accuracy')
-        plt.xlabel('epoch')
-        plt.ylabel('accuracy')
+        if self.acc==True:
+            plt.figure(2)
+            plt.plot(np.arange(self.epoch+1),self.train_accuracy_list)
+            plt.title('train accuracy')
+            plt.xlabel('epoch')
+            plt.ylabel('accuracy')
         print('train loss:{0}'.format(self.train_loss))
-        print()
-        print('train accuracy:{0:.3f}%'.format(self.train_accuracy*100))
+        if self.acc==True:
+            print()
+            if self.predicate==False:
+                print('train accuracy:{0:.3f}%'.format(self.train_accuracy*100))
+            else:
+                print('train accuracy:{0:.6f}'.format(self.train_accuracy))
         return
         
     
@@ -894,12 +908,16 @@ class m_relugru:
         print('train loss:{0}'.format(self.train_loss))
         print()
         print('train accuracy:{0:.3f}%'.format(self.train_accuracy*100))
-        print()
-        print('-------------------------------------')
-        print()
-        print('test loss:{0}'.format(self.test_loss))
-        print()
-        print('test accuracy:{0:.3f}%'.format(self.test_accuracy*100))
+        if self.test_flag:
+            print()
+            print('-------------------------------------')
+            print()
+            print('test loss:{0:.6f}'.format(self.test_loss))
+            print()
+            if self.predicate==False:
+                print('test accuracy:{0:.3f}%'.format(self.test_accuracy*100))
+            else:
+                print('test accuracy:{0:.6f}'.format(self.test_accuracy))
         return
     
     
@@ -974,6 +992,7 @@ class m_relugru:
         pickle.dump(self.l2,output_file)
         pickle.dump(self.optimizer,output_file)
         pickle.dump(self.lr,output_file)
+        pickle.dump(self.acc,output_file)
         pickle.dump(self.train_loss,output_file)
         pickle.dump(self.train_accuracy,output_file)
         pickle.dump(self.test_flag,output_file)
@@ -1033,6 +1052,7 @@ class m_relugru:
         self.l2=pickle.load(input_file)
         self.optimizer=pickle.load(input_file)
         self.lr=pickle.load(input_file)
+        self.acc=pickle.load(input_file)
         self.train_loss=pickle.load(input_file)
         self.train_accuracy=pickle.load(input_file)
         self.test_flag=pickle.load(input_file)
