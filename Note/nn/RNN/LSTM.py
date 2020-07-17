@@ -576,6 +576,22 @@ class lstm:
                         self.cltm_bias=tf.Variable(self.last_cltm_bias,name='cltm_bias')
                         self.weight_o=tf.Variable(self.last_weight_o,name='weight_o')
                         self.bias_o=tf.Variable(self.last_bias_o,name='bias_o')
+                    self.last_embedding_w=None
+                    self.last_embedding_b=None
+                    self.last_fg_weight_x=None
+                    self.last_fg_weight_h=None
+                    self.last_ig_weight_x=None
+                    self.last_ig_weight_h=None
+                    self.last_og_weight_x=None
+                    self.last_og_weight_h=None
+                    self.last_cltm_weight_x=None
+                    self.last_cltm_weight_h=None
+                    self.last_fg_bias=None
+                    self.last_ig_bias=None
+                    self.last_og_bias=None
+                    self.last_cltm_bias=None
+                    self.last_weight_o=None
+                    self.last_bias_o=None
                 if continue_train==True and self.flag==1:
                     self.embedding_w=tf.Variable(self.last_embedding_w,name='embedding_w')
                     self.embedding_b=tf.Variable(self.last_embedding_b,name='embedding_b')
@@ -622,6 +638,22 @@ class lstm:
                         self.cltm_bias=tf.Variable(self.last_cltm_bias,name='cltm_bias')
                         self.weight_o=tf.Variable(self.last_weight_o,name='weight_o')
                         self.bias_o=tf.Variable(self.last_bias_o,name='bias_o')
+                    self.last_embedding_w=None
+                    self.last_embedding_b=None
+                    self.last_fg_weight_x=None
+                    self.last_fg_weight_h=None
+                    self.last_ig_weight_x=None
+                    self.last_ig_weight_h=None
+                    self.last_og_weight_x=None
+                    self.last_og_weight_h=None
+                    self.last_cltm_weight_x=None
+                    self.last_cltm_weight_h=None
+                    self.last_fg_bias=None
+                    self.last_ig_bias=None
+                    self.last_og_bias=None
+                    self.last_cltm_bias=None
+                    self.last_weight_o=None
+                    self.last_bias_o=None
                     self.flag=0
 #     －－－－－－－－－－－－－－－forward propagation－－－－－－－－－－－－－－－
                 self.forward_propagation(self.data)
