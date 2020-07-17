@@ -51,6 +51,8 @@ class unnamed:
         self.epoch=None
         self.optimizer=None
         self.lr=None
+        
+        
         self.train_loss=None
         self.train_accuracy=None
         self.train_loss_list=[]
@@ -142,14 +144,16 @@ class unnamed:
                     opt=tf.train.MomentumOptimizer(learning_rate=self.lr,momentum=0.99).minimize(train_loss)
                 if self.optimizer=='Adam':
                     opt=tf.train.AdamOptimizer(learning_rate=self.lr).minimize(train_loss)
-                train_loss_scalar=tf.summary.scalar('train_loss',train_loss)
-                if acc==True:
+                if self.acc==True:
                     with tf.name_scope('train_accuracy'):
                         
                         
-                        train_accuracy_scalar=tf.summary.scalar('train_accuracy',train_accuracy)
                 if train_summary_path!=None:
-                    train_merging=tf.summary.merge([train_loss_scalar,train_accuracy_scalar])
+                    train_loss_scalar=tf.summary.scalar('train_loss',train_loss)
+                    train_merging=tf.summary.merge([train_loss_scalar])
+                    if self.acc==True:
+                        train_accuracy_scalar=tf.summary.scalar('train_accuracy',train_accuracy)
+                        train_merging=tf.summary.merge([train_accuracy_scalar])
                     train_writer=tf.summary.FileWriter(train_summary_path)
                 config=tf.ConfigProto()
                 config.gpu_options.allow_growth=True
@@ -178,7 +182,7 @@ class unnamed:
                             else:
                                 batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
                             total_loss+=batch_loss
-                            if acc==True:
+                            if self.acc==True:
                                 batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
                                 total_acc+=batch_acc
                         if self.shape0%self.batch!=0:
@@ -192,7 +196,7 @@ class unnamed:
                             else:
                                 batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
                             total_loss+=batch_loss
-                            if acc==True:
+                            if self.acc==True:
                                 batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
                                 total_acc+=batch_acc
                         loss=total_loss/batches
@@ -200,7 +204,7 @@ class unnamed:
                         self.train_loss_list.append(loss.astype(np.float32))
                         self.train_loss=loss
                         self.train_loss=self.train_loss.astype(np.float32)
-                        if acc==True:
+                        if self.acc==True:
                             self.train_accuracy_list.append(train_acc.astype(np.float32))
                             self.train_accuracy=train_acc
                             self.train_accuracy=self.train_accuracy.astype(np.float32)
@@ -216,7 +220,7 @@ class unnamed:
                         self.train_loss_list.append(loss.astype(np.float32))
                         self.train_loss=loss
                         self.train_loss=self.train_loss.astype(np.float32)
-                        if acc==True:
+                        if self.acc==True:
                             accuracy=sess.run(train_accuracy,feed_dict=feed_dict)
                             self.train_accuracy_list.append(accuracy.astype(np.float32))
                             self.train_accuracy=accuracy
@@ -245,7 +249,7 @@ class unnamed:
                             train_writer.add_summary(train_summary,i)
                 print()
                 print('last loss:{0:.6f}'.format(self.train_loss))
-                if acc==True:
+                if self.acc==True:
                     if len(self.labels_shape)==2:
                         print('accuracy:{0:.3f}%'.format(self.train_accuracy*100))
                     else:
