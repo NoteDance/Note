@@ -422,6 +422,7 @@ class m_relugru:
             self.l2=l2
             self.optimizer=optimizer
             self.lr=lr
+            self.acc=acc
             if continue_train!=True:
                 if self.continue_train==True:
                     continue_train=True
@@ -506,42 +507,42 @@ class m_relugru:
 #     －－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
                 with tf.name_scope('train_loss'):
                     if self.pattern=='1n':
-                        if l2==None:
+                        if self.l2==None:
                             train_loss=tf.reduce_mean(tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.output,labels=self.labels,axis=2),axis=1))
                         else:
                             train_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.output,labels=self.labels,axis=2),axis=1)
                             if self.layers==None:
-                                train_loss=tf.reduce_mean(train_loss+l2/2*(tf.reduce_sum(self.ug_weight_x**2)+tf.reduce_sum(self.ug_weight_h**2)+tf.reduce_sum(self.cltm_weight_x**2)+tf.reduce_sum(self.cltm_weight_h**2)+tf.reduce_sum(self.weight_o**2)))
+                                train_loss=tf.reduce_mean(train_loss+self.l2/2*(tf.reduce_sum(self.ug_weight_x**2)+tf.reduce_sum(self.ug_weight_h**2)+tf.reduce_sum(self.cltm_weight_x**2)+tf.reduce_sum(self.cltm_weight_h**2)+tf.reduce_sum(self.weight_o**2)))
                             else:
-                                train_loss=tf.reduce_mean(train_loss+l2/2*(sum([tf.reduce_sum(x**2) for x in self.ug_weight_x])+sum([tf.reduce_sum(x**2) for x in self.ug_weight_h])+sum([tf.reduce_sum(x**2) for x in self.cltm_weight_x])+sum([tf.reduce_sum(x**2) for x in self.cltm_weight_h])+sum([tf.reduce_sum(x**2) for x in self.weight_o])))
+                                train_loss=tf.reduce_mean(train_loss+self.l2/2*(sum([tf.reduce_sum(x**2) for x in self.ug_weight_x])+sum([tf.reduce_sum(x**2) for x in self.ug_weight_h])+sum([tf.reduce_sum(x**2) for x in self.cltm_weight_x])+sum([tf.reduce_sum(x**2) for x in self.cltm_weight_h])+sum([tf.reduce_sum(x**2) for x in self.weight_o])))
                     elif self.pattern=='n1' or self.predicate==True:
                         if self.pattern=='n1':
-                            if l2==None:
+                            if self.l2==None:
                                 train_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.output[-1],labels=self.labels))
                             else:
                                 train_loss=tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.output[-1],labels=self.labels)
                                 if self.layers==None:
-                                    train_loss=tf.reduce_mean(train_loss+l2/2*(tf.reduce_sum(self.ug_weight_x**2)+tf.reduce_sum(self.ug_weight_h**2)+tf.reduce_sum(self.cltm_weight_x**2)+tf.reduce_sum(self.cltm_weight_h**2)+tf.reduce_sum(self.weight_o**2)))
+                                    train_loss=tf.reduce_mean(train_loss+self.l2/2*(tf.reduce_sum(self.ug_weight_x**2)+tf.reduce_sum(self.ug_weight_h**2)+tf.reduce_sum(self.cltm_weight_x**2)+tf.reduce_sum(self.cltm_weight_h**2)+tf.reduce_sum(self.weight_o**2)))
                                 else:
-                                    train_loss=tf.reduce_mean(train_loss+l2/2*(sum([tf.reduce_sum(x**2) for x in self.ug_weight_x])+sum([tf.reduce_sum(x**2) for x in self.ug_weight_h])+sum([tf.reduce_sum(x**2) for x in self.cltm_weight_x])+sum([tf.reduce_sum(x**2) for x in self.cltm_weight_h])+sum([tf.reduce_sum(x**2) for x in self.weight_o])))
+                                    train_loss=tf.reduce_mean(train_loss+self.l2/2*(sum([tf.reduce_sum(x**2) for x in self.ug_weight_x])+sum([tf.reduce_sum(x**2) for x in self.ug_weight_h])+sum([tf.reduce_sum(x**2) for x in self.cltm_weight_x])+sum([tf.reduce_sum(x**2) for x in self.cltm_weight_h])+sum([tf.reduce_sum(x**2) for x in self.weight_o])))
                         else:
-                            if l2==None:
+                            if self.l2==None:
                                 train_loss=tf.reduce_mean(tf.square(self.output[-1]-tf.expand_dims(self.labels,axis=1)))
                             else:
                                 train_loss=tf.square(self.output[-1]-tf.expand_dims(self.labels,axis=1))
                                 if self.layers==None:
-                                    train_loss=tf.reduce_mean(train_loss+l2/2*(tf.reduce_sum(self.ug_weight_x**2)+tf.reduce_sum(self.ug_weight_h**2)+tf.reduce_sum(self.cltm_weight_x**2)+tf.reduce_sum(self.cltm_weight_h**2)+tf.reduce_sum(self.weight_o**2)))
+                                    train_loss=tf.reduce_mean(train_loss+self.l2/2*(tf.reduce_sum(self.ug_weight_x**2)+tf.reduce_sum(self.ug_weight_h**2)+tf.reduce_sum(self.cltm_weight_x**2)+tf.reduce_sum(self.cltm_weight_h**2)+tf.reduce_sum(self.weight_o**2)))
                                 else:
-                                    train_loss=tf.reduce_mean(train_loss+l2/2*(sum([tf.reduce_sum(x**2) for x in self.ug_weight_x])+sum([tf.reduce_sum(x**2) for x in self.ug_weight_h])+sum([tf.reduce_sum(x**2) for x in self.cltm_weight_x])+sum([tf.reduce_sum(x**2) for x in self.cltm_weight_h])+sum([tf.reduce_sum(x**2) for x in self.weight_o])))
+                                    train_loss=tf.reduce_mean(train_loss+self.l2/2*(sum([tf.reduce_sum(x**2) for x in self.ug_weight_x])+sum([tf.reduce_sum(x**2) for x in self.ug_weight_h])+sum([tf.reduce_sum(x**2) for x in self.cltm_weight_x])+sum([tf.reduce_sum(x**2) for x in self.cltm_weight_h])+sum([tf.reduce_sum(x**2) for x in self.weight_o])))
                     elif self.pattern=='nn':
-                        if l2==None:
+                        if self.l2==None:
                             train_loss=tf.reduce_mean(tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.output,labels=self.labels,axis=2),axis=1))
                         else:
                             train_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.output,labels=self.labels,axis=2),axis=1)
                             if self.layers==None:
-                                train_loss=tf.reduce_mean(train_loss+l2/2*(tf.reduce_sum(self.ug_weight_x**2)+tf.reduce_sum(self.ug_weight_h**2)+tf.reduce_sum(self.cltm_weight_x**2)+tf.reduce_sum(self.cltm_weight_h**2)+tf.reduce_sum(self.weight_o**2)))
+                                train_loss=tf.reduce_mean(train_loss+self.l2/2*(tf.reduce_sum(self.ug_weight_x**2)+tf.reduce_sum(self.ug_weight_h**2)+tf.reduce_sum(self.cltm_weight_x**2)+tf.reduce_sum(self.cltm_weight_h**2)+tf.reduce_sum(self.weight_o**2)))
                             else:
-                                train_loss=tf.reduce_mean(train_loss+l2/2*(sum([tf.reduce_sum(x**2) for x in self.ug_weight_x])+sum([tf.reduce_sum(x**2) for x in self.ug_weight_h])+sum([tf.reduce_sum(x**2) for x in self.cltm_weight_x])+sum([tf.reduce_sum(x**2) for x in self.cltm_weight_h])+sum([tf.reduce_sum(x**2) for x in self.weight_o])))
+                                train_loss=tf.reduce_mean(train_loss+self.l2/2*(sum([tf.reduce_sum(x**2) for x in self.ug_weight_x])+sum([tf.reduce_sum(x**2) for x in self.ug_weight_h])+sum([tf.reduce_sum(x**2) for x in self.cltm_weight_x])+sum([tf.reduce_sum(x**2) for x in self.cltm_weight_h])+sum([tf.reduce_sum(x**2) for x in self.weight_o])))
                 if self.optimizer=='Gradient':
                     opt=tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(train_loss)
                 if self.optimizer=='RMSprop':
@@ -550,8 +551,7 @@ class m_relugru:
                     opt=tf.train.MomentumOptimizer(learning_rate=self.lr,momentum=0.99).minimize(train_loss)
                 if self.optimizer=='Adam':
                     opt=tf.train.AdamOptimizer(learning_rate=self.lr).minimize(train_loss)
-                train_loss_scalar=tf.summary.scalar('train_loss',train_loss)
-                if acc==True:
+                if self.acc==True:
                     with tf.name_scope('train_accuracy'):
                         if self.pattern=='1n':
                             train_accuracy=tf.reduce_mean(tf.cast(tf.equal(tf.argmax(self.output,2),tf.argmax(self.labels,2)),tf.float32))
@@ -563,9 +563,12 @@ class m_relugru:
                                 train_accuracy=tf.reduce_mean(tf.abs(self.output[-1]-self.labels))
                         elif self.pattern=='nn':
                             train_accuracy=tf.reduce_mean(tf.cast(tf.equal(tf.argmax(self.output,2),tf.argmax(self.labels,2)),tf.float32))
-                        train_accuracy_scalar=tf.summary.scalar('train_accuracy',train_accuracy)
                 if train_summary_path!=None:
-                    train_merging=tf.summary.merge([train_loss_scalar,train_accuracy_scalar])
+                    train_loss_scalar=tf.summary.scalar('train_loss',train_loss)
+                    train_merging=tf.summary.merge([train_loss_scalar])
+                    if self.acc==True:
+                        train_accuracy_scalar=tf.summary.scalar('train_accuracy',train_accuracy)
+                        train_merging=tf.summary.merge([train_accuracy_scalar])
                     train_writer=tf.summary.FileWriter(train_summary_path)
                 config=tf.ConfigProto()
                 config.gpu_options.allow_growth=True
@@ -595,7 +598,7 @@ class m_relugru:
                             else:
                                 batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
                             total_loss+=batch_loss
-                            if acc==True:
+                            if self.acc==True:
                                 batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
                                 total_acc+=batch_acc
                         if self.shape0%self.batch!=0:
@@ -610,7 +613,7 @@ class m_relugru:
                             else:
                                 batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
                             total_loss+=batch_loss
-                            if acc==True:
+                            if self.acc==True:
                                 batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
                                 total_acc+=batch_acc
                         loss=total_loss/batches
@@ -618,7 +621,7 @@ class m_relugru:
                         self.train_loss_list.append(loss.astype(np.float32))
                         self.train_loss=loss
                         self.train_loss=self.train_loss.astype(np.float32)
-                        if acc==True:
+                        if self.acc==True:
                             self.train_accuracy_list.append(train_acc.astype(np.float32))
                             self.train_accuracy=train_acc
                             self.train_accuracy=self.train_accuracy.astype(np.float32)
@@ -635,7 +638,7 @@ class m_relugru:
                         self.train_loss_list.append(loss.astype(np.float32))
                         self.train_loss=loss
                         self.train_loss=self.train_loss.astype(np.float32)
-                        if acc==True:
+                        if self.acc==True:
                             accuracy=sess.run(train_accuracy,feed_dict={self.data:self.train_data,self.labels:self.train_labels})
                             self.train_accuracy_list.append(accuracy.astype(np.float32))
                             self.train_accuracy=accuracy
@@ -664,7 +667,7 @@ class m_relugru:
                             train_writer.add_summary(train_summary,i)
                 print()
                 print('last loss:{0:.6f}'.format(self.train_loss))
-                if acc==True:
+                if self.acc==True:
                     print('accuracy:{0:.3f}%'.format(self.train_accuracy*100))
                 if train_summary_path!=None:
                     train_writer.close()
