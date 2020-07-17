@@ -42,17 +42,20 @@ def read_data_csv(path,dtype=None,header=None):
 class unnamed:
     def __init__():
         self.graph=tf.Graph()
-        
+        with tf.name_scope('data'):
+            
         
         with self.graph.as_default():
+            with tf.name_scope('placeholder/data_msg'):
                 
                 
         self.batch=None
         self.epoch=None
         self.optimizer=None
         self.lr=None
-        
-        
+        with tf.name_scope('regulation'):
+            
+            
         self.train_loss=None
         self.train_accuracy=None
         self.train_loss_list=[]
@@ -85,24 +88,40 @@ class unnamed:
             self.test_flag=False
             self.train_loss_list.clear()
             self.train_accuracy_list.clear()
-            
+            with tf.name_scope('parameter_clear/model_msg'):
+                
             
             self.dtype=dtype
             self.time=None
+            with tf.name_scope('parameter_initialization'):
     
     
     
+              
+                
     def forward_propagation():
         with self.graph.as_default():
-           
+           with tf.name_scope('processor_allocation'):
+               
+               
+           with tf.name_scope('parameter_allocation'):
+               
+               
+           with tf.name_scope('forward_propagation'):
+               
             
-            
+               
+               
+               
     def train(self,batch=None,epoch=None,optimizer='Adam',lr=0.001,acc=True,train_summary_path=None,model_path=None,one=True,continue_train=False,cpu_gpu=None):
         t1=time.time()
         with self.graph.as_default():
             self.batch=batch
             self.optimizer=optimizer
             self.lr=lr
+            with tf.name_scope('regulation'):
+                
+                
             self.acc=acc
             if continue_train!=True:
                 if self.continue_train==True:
@@ -118,16 +137,19 @@ class unnamed:
                 self.continue_train=True
             if cpu_gpu!=None:
                 self.cpu_gpu=cpu_gpu
-            
+            with tf.name_scope('processor_allocation'):
+                
             
             with tf.device(train_cpu_gpu):
                 if continue_train==True and self.end_flag==True:
                     self.end_flag=False
+                    with tf.name_scope('parameter_convert_into_tensor/clear_parameter'):
                     
                     
                 if continue_train==True and self.flag==1:
+                    with tf.name_scope('parameter_convert_into_tensor/clear_parameter'):
                     
-                    
+                        
                     self.flag=0
 #     －－－－－－－－－－－－－－－forward propagation－－－－－－－－－－－－－－－
                 
@@ -136,24 +158,23 @@ class unnamed:
                 with tf.name_scope('train_loss'):
                     
                     
-                if self.optimizer=='Gradient':
-                    opt=tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(train_loss)
-                if self.optimizer=='RMSprop':
-                    opt=tf.train.RMSPropOptimizer(learning_rate=self.lr).minimize(train_loss)
-                if self.optimizer=='Momentum':
-                    opt=tf.train.MomentumOptimizer(learning_rate=self.lr,momentum=0.99).minimize(train_loss)
-                if self.optimizer=='Adam':
-                    opt=tf.train.AdamOptimizer(learning_rate=self.lr).minimize(train_loss)
-                if self.acc==True:
+                with tf.name_scope('optimizer'):    
+                    if self.optimizer=='Gradient':
+                        opt=tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(train_loss)
+                    if self.optimizer=='RMSprop':
+                        opt=tf.train.RMSPropOptimizer(learning_rate=self.lr).minimize(train_loss)
+                    if self.optimizer=='Momentum':
+                        opt=tf.train.MomentumOptimizer(learning_rate=self.lr,momentum=0.99).minimize(train_loss)
+                    if self.optimizer=='Adam':
+                        opt=tf.train.AdamOptimizer(learning_rate=self.lr).minimize(train_loss)
+                train_loss_scalar=tf.summary.scalar('train_loss',train_loss)
+                if acc==True:
                     with tf.name_scope('train_accuracy'):
                         
                         
-                if train_summary_path!=None:
-                    train_loss_scalar=tf.summary.scalar('train_loss',train_loss)
-                    train_merging=tf.summary.merge([train_loss_scalar])
-                    if self.acc==True:
                         train_accuracy_scalar=tf.summary.scalar('train_accuracy',train_accuracy)
-                        train_merging=tf.summary.merge([train_accuracy_scalar])
+                if train_summary_path!=None:
+                    train_merging=tf.summary.merge([train_loss_scalar,train_accuracy_scalar])
                     train_writer=tf.summary.FileWriter(train_summary_path)
                 config=tf.ConfigProto()
                 config.gpu_options.allow_growth=True
@@ -170,11 +191,13 @@ class unnamed:
                         total_acc=0
                         random=np.arange(self.shape0)
                         np.random.shuffle(random)
+                        with tf.name_scope('randomize_data'):
                         
-                        
+                            
                         for j in range(batches):
                             index1=j*self.batch
                             index2=(j+1)*self.batch
+                            with tf.name_scope('data_batch/feed_dict'):
                             
                             
                             if i==0 and self.total_epoch==0:
@@ -182,21 +205,22 @@ class unnamed:
                             else:
                                 batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
                             total_loss+=batch_loss
-                            if self.acc==True:
+                            if acc==True:
                                 batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
                                 total_acc+=batch_acc
                         if self.shape0%self.batch!=0:
                             batches+=1
                             index1=batches*self.batch
                             index2=self.batch-(self.shape0-batches*self.batch)
-                            
+                            with tf.name_scope('data_batch/feed_dict'):
+                                
                             
                             if i==0 and self.total_epoch==0:
                                 batch_loss=sess.run(train_loss,feed_dict=feed_dict)
                             else:
                                 batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
                             total_loss+=batch_loss
-                            if self.acc==True:
+                            if acc==True:
                                 batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
                                 total_acc+=batch_acc
                         loss=total_loss/batches
@@ -204,14 +228,15 @@ class unnamed:
                         self.train_loss_list.append(loss.astype(np.float32))
                         self.train_loss=loss
                         self.train_loss=self.train_loss.astype(np.float32)
-                        if self.acc==True:
+                        if acc==True:
                             self.train_accuracy_list.append(train_acc.astype(np.float32))
                             self.train_accuracy=train_acc
                             self.train_accuracy=self.train_accuracy.astype(np.float32)
                     else:
                         random=np.arange(self.shape0)
                         np.random.shuffle(random)
-
+                        with tf.name_scope('randomize_data/feed_dict'):
+                            
 
                         if i==0 and self.total_epoch==0:
                             loss=sess.run(train_loss,feed_dict=feed_dict)
@@ -220,7 +245,7 @@ class unnamed:
                         self.train_loss_list.append(loss.astype(np.float32))
                         self.train_loss=loss
                         self.train_loss=self.train_loss.astype(np.float32)
-                        if self.acc==True:
+                        if acc==True:
                             accuracy=sess.run(train_accuracy,feed_dict=feed_dict)
                             self.train_accuracy_list.append(accuracy.astype(np.float32))
                             self.train_accuracy=accuracy
@@ -249,15 +274,15 @@ class unnamed:
                             train_writer.add_summary(train_summary,i)
                 print()
                 print('last loss:{0:.6f}'.format(self.train_loss))
-                if self.acc==True:
-                    if len(self.labels_shape)==2:
-                        print('accuracy:{0:.3f}%'.format(self.train_accuracy*100))
-                    else:
-                        print('accuracy:{0:.3f}'.format(self.train_accuracy))
+                if acc==True:
+                    with tf.name_scope('print_accuracy'):
+                        
+                        
                 if train_summary_path!=None:
                     train_writer.close()
                 if continue_train==True:
-                    
+                    with tf.name_scope('parameter_convert_into_numpy/clear_parameter'):
+                        
                     
                     sess.run(tf.global_variables_initializer())
                 if continue_train==True:
@@ -281,7 +306,8 @@ class unnamed:
     def end(self):
         with self.graph.as_default():
             self.end_flag=True
-            
+            with tf.name_scope('parameter_convert_into_numpy/clear_parameter'):
+                
             
             self.total_epoch=self.epoch
             self.sess.close()
@@ -290,11 +316,19 @@ class unnamed:
     
     def test(self,test_data,test_labels,batch=None):
         with self.graph.as_default():
-            if or self.test_flag==False:
-                use_nn=False
-            elif and self.test_flag!=False:
-                use_nn=True
+            with tf.name_scope('placeholder'):
+                if or self.test_flag==False:
+                    use_nn=False
+                elif and self.test_flag!=False:
+                    use_nn=True
             self.test_flag=True
+            with tf.name_scope('placeholder'):
+                
+                
+            with tf.name_scope('test_loss'):
+                
+                
+            with tf.name_scope('test_accuracy'):
                 
                 
             config=tf.ConfigProto()
@@ -333,7 +367,8 @@ class unnamed:
                 self.test_loss=self.test_loss.astype(np.float32)
                 self.test_accuracy=self.test_accuracy.astype(np.float32)
             print('test loss:{0:.6f}'.format(self.test_loss))
-            
+            with tf.name_scope('print_accuracy'):
+                
             
             sess.close()
             return
@@ -353,16 +388,19 @@ class unnamed:
         print()
         print('-------------------------------------')
         print()
-        print('train loss:{0}'.format(self.train_loss))
-        
-        
+        print('train loss:{0:.6f}'.format(self.train_loss))
+        if self.acc==True:
+            with tf.name_scope('print_accuracy'):
+            
+                
         return
         
     
     def test_info(self):
         print()
-        print('test loss:{0}'.format(self.test_loss))
-       
+        print('test loss:{0:.6f}'.format(self.test_loss))
+        with tf.name_scope('print_accuracy'):
+            
         
         return
 		
@@ -389,22 +427,28 @@ class unnamed:
             plt.title('train accuracy')
             plt.xlabel('epoch')
             plt.ylabel('accuracy')
-        print('train loss:{0}'.format(self.train_loss))
-  
-    
+        print('train loss:{0:.6f}'.format(self.train_loss))
+        if self.acc==True:
+            with tf.name_scope('print_accuracy'):
+                
+            
         return
     
         
     def comparison(self):
         print()
-        print('train loss:{0}'.format(self.train_loss))
-        print()
-        print('train accuracy:{0:.3f}%'.format(self.train_accuracy*100))
-        print()
-        print('-------------------------------------')
-        print()
-        print('test loss:{0}'.format(self.test_loss))
+        print('train loss:{0:.6f}'.format(self.train_loss))
+        if self.acc==True:
+            with tf.name_scope('print_accuracy'):
+                
         
+        if self.test_flag==True:
+            print()
+            print('-------------------------------------')
+            print()
+            print('test loss:{0:.6f}'.format(self.test_loss))
+            with tf.name_scope('print_accuracy'):
+            
         
         return
     
@@ -414,14 +458,16 @@ class unnamed:
             output_file=open(model_path+'.dat','wb')
         else:
             output_file=open(model_path+'-{0}.dat'.format(i+1),'wb')
+        with tf.name_scope('save_parameter/data_msg/model_msg'):
             
             
         pickle.dump(self.batch,output_file)
         pickle.dump(self.epoch,output_file)
         pickle.dump(self.optimizer,output_file)
         pickle.dump(self.lr,output_file)
+        with tf.name_scope('save_regularization'):
         
-        
+            
         pickle.dump(self.acc,output_file)
         pickle.dump(self.train_loss,output_file)
         pickle.dump(self.train_accuracy,output_file)
@@ -442,18 +488,24 @@ class unnamed:
 
     def restore(self,model_path):
         input_file=open(model_path,'rb')
-        
+        with tf.name_scope('restore_parameter/data_msg'):
+            
         
         self.graph=tf.Graph()
         with self.graph.as_default():
+            with tf.name_scope('placeholder'):
+                
+        
+        with tf.name_scope('restore_model_msg'):
             
             
         self.batch=pickle.load(input_file)
         self.epoch=pickle.load(input_file)
         self.optimizer=pickle.load(input_file)
         self.lr=pickle.load(input_file)
-        
-        
+        with tf.name_scope('restore_regularization'):
+            
+            
         self.acc=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
         self.train_loss=pickle.load(input_file)
