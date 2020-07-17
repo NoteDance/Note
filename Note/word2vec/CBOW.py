@@ -120,8 +120,8 @@ class CBOW:
                     opt=tf.train.MomentumOptimizer(learning_rate=self.lr,momentum=0.99).minimize(train_loss)
                 if self.optimizer=='Adam':
                     opt=tf.train.AdamOptimizer(learning_rate=self.lr).minimize(train_loss)
-                train_loss_scalar=tf.summary.scalar('train_loss',train_loss)
                 if train_summary_path!=None:
+                    train_loss_scalar=tf.summary.scalar('train_loss',train_loss)
                     train_merging=tf.summary.merge([train_loss_scalar])
                     train_writer=tf.summary.FileWriter(train_summary_path)
                 config=tf.ConfigProto()
@@ -167,9 +167,9 @@ class CBOW:
                                 batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
                             total_loss+=batch_loss
                         loss=total_loss/batches
-                        self.train_loss_list.append(loss.astype(np.float32))
+                        self.train_loss_list.append(float(loss))
                         self.train_loss=loss
-                        self.train_loss=self.train_loss.astype(np.float32)
+                        self.train_loss=self.train_loss.astype(np.float16)
                     else:
                         random=np.arange(self.shape0)
                         np.random.shuffle(random)
@@ -181,9 +181,9 @@ class CBOW:
                             loss=sess.run(train_loss,feed_dict=feed_dict)
                         else:
                             loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
-                        self.train_loss_list.append(loss.astype(np.float32))
+                        self.train_loss_list.append(float(loss))
                         self.train_loss=loss
-                        self.train_loss=self.train_loss.astype(np.float32)
+                        self.train_loss=self.train_loss.astype(np.float16)
                     if epoch%10!=0:
                         temp_epoch=epoch-epoch%10
                         temp_epoch=int(temp_epoch/10)
@@ -207,7 +207,7 @@ class CBOW:
                             train_summary=sess.run(train_merging,feed_dict=feed_dict)
                             train_writer.add_summary(train_summary,i)
                 print()
-                print('last loss:{0:.6f}'.format(self.train_loss))
+                print('last loss:{0}'.format(self.train_loss))
                 if train_summary_path!=None:
                     train_writer.close()
                 if continue_train==True:
