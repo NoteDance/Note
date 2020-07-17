@@ -439,17 +439,17 @@ class cnn:
 #     －－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
                 with tf.name_scope('train_loss'):
                     if self.labels_shape[1]==1:
-                        if l2==None:
+                        if self.l2==None:
                             train_loss=tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=train_output,labels=self.labels))
                         else:
                             train_loss=tf.nn.sigmoid_cross_entropy_with_logits(logits=train_output,labels=self.labels)
-                            train_loss=tf.reduce_mean(train_loss+l2/2*(sum([tf.reduce_sum(x**2) for x in self.weight_conv])+sum([tf.reduce_sum(x**2) for x in self.weight_fc])))
+                            train_loss=tf.reduce_mean(train_loss+self.l2/2*(sum([tf.reduce_sum(x**2) for x in self.weight_conv])+sum([tf.reduce_sum(x**2) for x in self.weight_fc])))
                     else:
-                        if l2==None:
+                        if self.l2==None:
                             train_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=train_output,labels=self.labels))
                         else:
                             train_loss=tf.nn.softmax_cross_entropy_with_logits_v2(logits=train_output,labels=self.labels)
-                            train_loss=tf.reduce_mean(train_loss+l2/2*(sum([tf.reduce_sum(x**2) for x in self.weight_conv])+sum([tf.reduce_sum(x**2) for x in self.weight_fc])))
+                            train_loss=tf.reduce_mean(train_loss+self.l2/2*(sum([tf.reduce_sum(x**2) for x in self.weight_conv])+sum([tf.reduce_sum(x**2) for x in self.weight_fc])))
                 if self.optimizer=='Gradient':
                     opt=tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(train_loss)
                 if self.optimizer=='RMSprop':
@@ -458,14 +458,16 @@ class cnn:
                     opt=tf.train.MomentumOptimizer(learning_rate=self.lr,momentum=0.99).minimize(train_loss)
                 if self.optimizer=='Adam':
                     opt=tf.train.AdamOptimizer(learning_rate=self.lr).minimize(train_loss)
-                train_loss_scalar=tf.summary.scalar('train_loss',train_loss)
-                if acc==True:
+                if self.acc==True:
                     with tf.name_scope('train_accuracy'):
                         equal=tf.equal(tf.argmax(train_output,1),tf.argmax(self.labels,1))
                         train_accuracy=tf.reduce_mean(tf.cast(equal,tf.float32))
-                        train_accuracy_scalar=tf.summary.scalar('train_accuracy',train_accuracy)
                 if train_summary_path!=None:
-                    train_merging=tf.summary.merge([train_loss_scalar,train_accuracy_scalar])
+                    train_loss_scalar=tf.summary.scalar('train_loss',train_loss)
+                    train_merging=tf.summary.merge([train_loss_scalar])
+                    if self.acc==True:
+                        train_accuracy_scalar=tf.summary.scalar('train_accuracy',train_accuracy)
+                        train_merging=tf.summary.merge([ train_accuracy_scalar])
                     train_writer=tf.summary.FileWriter(train_summary_path)
                 config=tf.ConfigProto()
                 config.gpu_options.allow_growth=True
@@ -495,7 +497,7 @@ class cnn:
                             else:
                                 batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
                             total_loss+=batch_loss
-                            if acc==True:
+                            if self.acc==True:
                                 batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
                                 total_acc+=batch_acc
                         if self.shape0%self.batch!=0:
@@ -510,7 +512,7 @@ class cnn:
                             else:
                                 batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
                             total_loss+=batch_loss
-                            if acc==True:
+                            if self.acc==True:
                                 batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
                                 total_acc+=batch_acc
                         loss=total_loss/batches
@@ -518,7 +520,7 @@ class cnn:
                         self.train_loss_list.append(loss.astype(np.float32))
                         self.train_loss=loss
                         self.train_loss=self.train_loss.astype(np.float32)
-                        if acc==True:
+                        if self.acc==True:
                             self.train_accuracy_list.append(train_acc.astype(np.float32))
                             self.train_accuracy=train_acc
                             self.train_accuracy=self.train_accuracy.astype(np.float32)
@@ -535,7 +537,7 @@ class cnn:
                         self.train_loss_list.append(loss.astype(np.float32))
                         self.train_loss=loss
                         self.train_loss=self.train_loss.astype(np.float32)
-                        if acc==True:
+                        if self.acc==True:
                             accuracy=sess.run(train_accuracy,feed_dict=feed_dict)
                             self.train_accuracy_list.append(accuracy.astype(np.float32))
                             self.train_accuracy=accuracy
@@ -564,7 +566,7 @@ class cnn:
                             train_writer.add_summary(train_summary,i)
                 print()
                 print('last loss:{0:.6f}'.format(self.train_loss))
-                if acc==True:
+                if self.acc==True:
                     print('accuracy:{0:.3f}%'.format(self.train_accuracy*100))
                 if train_summary_path!=None:
                     train_writer.close()
