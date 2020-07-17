@@ -300,6 +300,8 @@ class fnn:
                         else:
                             self.weight[i]=tf.Variable(self.last_weight[i],name='weight_{0}'.format(i+1))
                             self.bias[i]=tf.Variable(self.last_bias[i],name='bias_{0}'.format(i+1))
+                    self.last_weight.clear()
+                    self.last_bias.clear()
                 if continue_train==True and self.flag==1:
                     self.weight=[x for x in range(self.hidden_layers+1)]
                     self.bias=[x for x in range(self.hidden_layers+1)]
@@ -310,6 +312,8 @@ class fnn:
                         else:
                             self.weight[i]=tf.Variable(self.last_weight[i],name='weight_{0}'.format(i+1))
                             self.bias[i]=tf.Variable(self.last_bias[i],name='bias_{0}'.format(i+1))
+                    self.last_weight.clear()
+                    self.last_bias.clear()
                     self.flag=0
 #     －－－－－－－－－－－－－－－forward propagation－－－－－－－－－－－－－－－
                 train_output=self.forward_propagation(self.data,self.dropout)
