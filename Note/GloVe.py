@@ -114,11 +114,19 @@ class GloVe:
                     self.bword_weight=tf.Variable(self.last_bword_weight,name='bword_weight')
                     self.cword_bias=tf.Variable(self.last_cword_bias,name='cword_bias')
                     self.bword_bias=tf.Variable(self.last_bword_bias,name='bword_bias')
+		    self.last_cword_weight=None
+                    self.last_bword_weight=None
+                    self.last_cword_bias==None
+                    self.last_bword_bias==None
                 if continue_train==True and self.flag==1:
                     self.cword_weight=tf.Variable(self.last_cword_weight,name='cword_weight')
                     self.bword_weight=tf.Variable(self.last_bword_weight,name='bword_weight')
                     self.cword_bias=tf.Variable(self.last_cword_bias,name='cword_bias')
-                    self.bword_bias=tf.Variable(self.last_bword_bias,name='bword_bias')                
+                    self.bword_bias=tf.Variable(self.last_bword_bias,name='bword_bias')
+		    self.last_cword_weight=None
+                    self.last_bword_weight=None
+                    self.last_cword_bias==None
+                    self.last_bword_bias==None
                     self.flag=0
 #     －－－－－－－－－－－－－－－forward propagation－－－－－－－－－－－－－－－
                 train_output=self.forward_propagation(self.cword_place,self.bword_place,self.mul)
