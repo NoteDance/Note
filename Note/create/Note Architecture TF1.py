@@ -151,10 +151,9 @@ class unnamed:
                     
                         
                     self.flag=0
-#     －－－－－－－－－－－－－－－forward propagation－－－－－－－－－－－－－－－
+		with tf.name_scope('forward_propagation'):
                 
                 
-#     －－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
                 with tf.name_scope('train_loss'):
                     
                     
