@@ -473,6 +473,16 @@ class m_relugru:
                         self.ug_bias=tf.Variable(self.last_ug_bias,name='ug_bias')
                         self.cltm_bias=tf.Variable(self.last_cltm_bias,name='cltm_bias')
                         self.bias_o=tf.Variable(self.last_bias_o,name='bias_o')
+                    self.last_embedding_w=None
+                    self.last_embedding_b=None
+                    self.last_ug_weight_x=None
+                    self.last_ug_weight_h=None
+                    self.last_cltm_weight_x=None
+                    self.last_cltm_weight_h=None
+                    self.last_ug_bias=None
+                    self.last_cltm_bias=None
+                    self.last_weight_o=None
+                    self.last_bias_o=None
                 if continue_train==True and self.flag==1:
                     self.embedding_w=tf.Variable(self.last_embedding_w,name='embedding_w')
                     self.embedding_b=tf.Variable(self.last_embedding_b,name='embedding_b')
@@ -501,6 +511,16 @@ class m_relugru:
                         self.ug_bias=tf.Variable(self.last_ug_bias,name='ug_bias')
                         self.cltm_bias=tf.Variable(self.last_cltm_bias,name='cltm_bias')
                         self.bias_o=tf.Variable(self.last_bias_o,name='bias_o')
+                    self.last_embedding_w=None
+                    self.last_embedding_b=None
+                    self.last_ug_weight_x=None
+                    self.last_ug_weight_h=None
+                    self.last_cltm_weight_x=None
+                    self.last_cltm_weight_h=None
+                    self.last_ug_bias=None
+                    self.last_cltm_bias=None
+                    self.last_weight_o=None
+                    self.last_bias_o=None
                     self.flag=0
 #     －－－－－－－－－－－－－－－forward propagation－－－－－－－－－－－－－－－
                 self.forward_propagation(self.data)
