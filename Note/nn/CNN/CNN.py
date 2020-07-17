@@ -427,12 +427,20 @@ class cnn:
                     for i in range(len(self.conv)):
                         self.weight_conv[i]=tf.Variable(self.last_weight_conv[i],name='conv_{0}_weight'.format(i+1))
                         self.bias_conv[i]=tf.Variable(self.last_bias_conv[i],name='conv_{0}_bias'.format(i+1))
+                    self.last_weight_conv.clear()
+                    self.last_bias_conv.clear()
+                    self.last_weight_fc.clear()
+                    self.last_bias_fc.clear()
                 if continue_train==True and self.flag==1:
                     self.weight_conv=[x for x in range(len(self.conv))]
                     self.bias_conv=[x for x in range(len(self.conv))]
                     for i in range(len(self.conv)):
                         self.weight_conv[i]=tf.Variable(self.last_weight_conv[i],name='conv_{0}_weight'.format(i+1))
                         self.bias_conv[i]=tf.Variable(self.last_bias_conv[i],name='conv_{0}_bias'.format(i+1))
+                    self.last_weight_conv.clear()
+                    self.last_bias_conv.clear()
+                    self.last_weight_fc.clear()
+                    self.last_bias_fc.clear()
                     self.flag=0
 #     －－－－－－－－－－－－－－－forward propagation－－－－－－－－－－－－－－－
                 train_output=self.forward_propagation(self.data,self.dropout)
