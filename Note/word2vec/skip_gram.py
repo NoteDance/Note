@@ -103,9 +103,13 @@ class skip_gram:
                     self.end_flag=False
                     self.cword_weight=tf.Variable(self.last_cword_weight,name='cword_weight')
                     self.bword_weight=tf.Variable(self.last_bword_weight,name='bword_weight')
+                    self.last_cword_weight=None
+                    self.last_bword_weight=None
                 if continue_train==True and self.flag==1:
                     self.cword_weight=tf.Variable(self.last_cword_weight,name='cword_weight')
                     self.bword_weight=tf.Variable(self.last_bword_weight,name='bword_weight')
+                    self.last_cword_weight=None
+                    self.last_bword_weight=None
                     self.flag=0
 #     －－－－－－－－－－－－－－－forward propagation－－－－－－－－－－－－－－－
                 train_output=self.forward_propagation(self.cword_place,self.bword_place)
