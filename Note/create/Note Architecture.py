@@ -142,7 +142,7 @@ class unnamed:
                             
                         
                         with tf.GradientTape() as tape:
-                            with tf.name_scope('output/loss'):
+                            with tf.name_scope('forward_propagation/loss'):
                                 
                         
                             if i==0 and self.total_epoch==0:
@@ -165,7 +165,7 @@ class unnamed:
                             
                         
                         with tf.GradientTape() as tape:
-                            with tf.name_scope('output/loss'):
+                            with tf.name_scope('forward_propagation/loss'):
                                 
                             
                             if i==0 and self.total_epoch==0:
@@ -196,7 +196,7 @@ class unnamed:
                         
 
                     with tf.GradientTape() as tape:
-                        with tf.name_scope('output/loss'):
+                        with tf.name_scope('forward_propagation/loss'):
                             
                         
                         if i==0 and self.total_epoch==0:
