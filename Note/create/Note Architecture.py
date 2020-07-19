@@ -150,6 +150,9 @@ class unnamed:
                             else:
                                 gradient=tape.gradient(batch_loss,)
                                 optimizer.apply_gradients(zip(gradient,))
+                                with tf.name_scope('Note_optimizer/own_optimizer'):
+                                    
+                                    
                         total_loss+=batch_loss
                         if acc==True:
                             with tf.name_scope('train_accuracy'):
@@ -173,6 +176,9 @@ class unnamed:
                             else:
                                 gradient=tape.gradient(batch_loss,)
                                 optimizer.apply_gradients(zip(gradient,))
+                                with tf.name_scope('Note_optimizer/own_optimizer'):
+                                    
+                                    
                         total_loss+=batch_loss
                         if acc==True:
                             with tf.name_scope('train_accuracy'):
@@ -204,6 +210,9 @@ class unnamed:
                         else:
                             gradient=tape.gradient(train_loss,)
                             optimizer.apply_gradients(zip(gradient,))
+                            with tf.name_scope('Note_optimizer/own_optimizer'):
+                                
+                                
                     self.train_loss_list.append(loss.astype(np.float32))
                     self.train_loss=loss
                     self.train_loss=self.train_loss.astype(np.float32)
@@ -449,4 +458,4 @@ class unnamed:
         self.cpu_gpu=pickle.load(input_file)
         self.use_cpu_gpu=pickle.load(input_file)
         input_file.close()
-        return    
+        return
