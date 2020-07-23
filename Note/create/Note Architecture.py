@@ -44,6 +44,8 @@ class unnamed:
         with tf.name_scope('data'):     
            
             
+        
+        
         self.batch=None
         self.epoch=0
         self.optimizer=None
@@ -77,15 +79,10 @@ class unnamed:
         self.test_flag=False
         self.train_loss_list.clear()
         self.train_accuracy_list.clear()
-        with tf.name_scope('parameter_clear/model_msg'):
-            
-        
         self.dtype=dtype
         self.time=None
         with tf.name_scope('parameter_initialization'):
             
-    
-    
            
             
     @tf.function       
@@ -97,8 +94,6 @@ class unnamed:
                
                
         with tf.name_scope('forward_propagation'):
-            
-            
             
             
             
