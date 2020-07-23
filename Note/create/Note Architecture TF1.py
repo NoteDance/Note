@@ -48,9 +48,10 @@ class unnamed:
         with self.graph.as_default():
             with tf.name_scope('placeholder/data_msg'):
                 
-                
         
-        
+        with tf.name_scope('parameter'):
+            
+            
         self.batch=None
         self.epoch=None
         self.optimizer=None
