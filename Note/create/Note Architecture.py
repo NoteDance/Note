@@ -44,7 +44,8 @@ class unnamed:
         with tf.name_scope('data'):     
            
             
-        
+        with tf.name_scope('parameter'):
+            
         
         self.batch=None
         self.epoch=0
