@@ -80,6 +80,9 @@ class unnamed:
         self.train_loss_list.clear()
         self.train_accuracy_list.clear()
         self.dtype=dtype
+        with tf.name_scope('hyperparameter'):
+            
+            
         self.time=None
         with tf.name_scope('parameter_initialization'):
             
