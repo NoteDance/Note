@@ -44,11 +44,13 @@ class unnamed:
         self.graph=tf.Graph()
         with tf.name_scope('data'):
             
-        
+            
         with self.graph.as_default():
             with tf.name_scope('placeholder/data_msg'):
                 
                 
+        
+        
         self.batch=None
         self.epoch=None
         self.optimizer=None
@@ -88,16 +90,14 @@ class unnamed:
             self.test_flag=False
             self.train_loss_list.clear()
             self.train_accuracy_list.clear()
-            with tf.name_scope('parameter_clear/model_msg'):
+            with tf.name_scope('parameter_clear'):
                 
             
             self.dtype=dtype
             self.time=None
             with tf.name_scope('parameter_initialization'):
-    
-    
-    
-              
+                
+                
                 
     def forward_propagation():
         with self.graph.as_default():
@@ -108,8 +108,6 @@ class unnamed:
                
                
            with tf.name_scope('forward_propagation'):
-               
-            
                
                
                
@@ -143,15 +141,15 @@ class unnamed:
             with tf.device(train_cpu_gpu):
                 if continue_train==True and self.end_flag==True:
                     self.end_flag=False
-                    with tf.name_scope('parameter_convert_into_tensor/clear_parameter'):
+                    with tf.name_scope('parameter_convert_into_tensor):
                     
                     
                 if continue_train==True and self.flag==1:
-                    with tf.name_scope('parameter_convert_into_tensor/clear_parameter'):
+                    with tf.name_scope('parameter_convert_into_tensor):
                     
                         
                     self.flag=0
-		with tf.name_scope('forward_propagation'):
+                with tf.name_scope('forward_propagation'):
                 
                 
                 with tf.name_scope('train_loss'):
@@ -280,7 +278,7 @@ class unnamed:
                 if train_summary_path!=None:
                     train_writer.close()
                 if continue_train==True:
-                    with tf.name_scope('parameter_convert_into_numpy/clear_parameter'):
+                    with tf.name_scope('parameter_convert_into_numpy):
                         
                     
                     sess.run(tf.global_variables_initializer())
@@ -305,7 +303,7 @@ class unnamed:
     def end(self):
         with self.graph.as_default():
             self.end_flag=True
-            with tf.name_scope('parameter_convert_into_numpy/clear_parameter'):
+            with tf.name_scope('parameter_convert_into_numpy/parameter_clear'):
                 
             
             self.total_epoch=self.epoch
