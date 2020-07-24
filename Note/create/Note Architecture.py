@@ -94,9 +94,6 @@ class unnamed:
         with tf.name_scope('processor_allocation'):
                
                
-        with tf.name_scope('parameter_allocation'):
-               
-               
         with tf.name_scope('forward_propagation'):
             
             
@@ -110,7 +107,7 @@ class unnamed:
             
             
         self.acc=acc
-        with tf.name_scope('parameter_convert_into_tensor/clear_parameter'):
+        with tf.name_scope('parameter_convert_into_tensor'):
             
             
         if cpu_gpu!=None:
@@ -256,7 +253,7 @@ class unnamed:
         
         
     def end(self):
-        with tf.name_scope('parameter_convert_into_numpy/clear_parameter'):
+        with tf.name_scope('parameter_convert_into_numpy'):
             
             
         return
