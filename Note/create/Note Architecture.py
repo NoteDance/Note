@@ -1,4 +1,5 @@
 import tensorflow as tf
+from tensorflow.python.ops import state_ops
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
