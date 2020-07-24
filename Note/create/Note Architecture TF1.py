@@ -108,9 +108,6 @@ class unnamed:
            with tf.name_scope('processor_allocation'):
                
                
-           with tf.name_scope('parameter_allocation'):
-               
-               
            with tf.name_scope('forward_propagation'):
                
                
@@ -307,7 +304,7 @@ class unnamed:
     def end(self):
         with self.graph.as_default():
             self.end_flag=True
-            with tf.name_scope('parameter_convert_into_numpy/parameter_clear'):
+            with tf.name_scope('parameter_convert_into_numpy'):
                 
             
             self.total_epoch=self.epoch
