@@ -1,4 +1,5 @@
 import tensorflow as tf
+import Note.create.optimizer_tf1 as optimizer
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
