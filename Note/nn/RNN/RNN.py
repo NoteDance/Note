@@ -190,7 +190,7 @@ class rnn:
                     return
             
         
-    def train(self,batch=None,epoch=None,optimizer='Adam',lr=0.001,l2=None,acc=True,train_summary_path=None,model_path=None,one=True,continue_train=False,cpu_gpu=None):
+    def train(self,batch=None,epoch=None,optimizer='Adam',lr=0.001,l2=None,train_summary_path=None,model_path=None,one=True,continue_train=False,cpu_gpu=None):
         t1=time.time()
         with self.graph.as_default():
             self.h.clear()
@@ -199,7 +199,6 @@ class rnn:
             self.l2=l2
             self.optimizer=optimizer
             self.lr=lr
-            self.acc=acc
             if continue_train!=True:
                 if self.continue_train==True:
                     continue_train=True
@@ -292,25 +291,23 @@ class rnn:
                 if self.optimizer=='Adam':
                     opt=tf.train.AdamOptimizer(learning_rate=self.lr).minimize(train_loss)
                 train_loss_scalar=tf.summary.scalar('train_loss',train_loss)
-                if self.acc==True:
-                    with tf.name_scope('train_accuracy'):
-                        if self.pattern=='1n':
-                            train_accuracy=tf.reduce_mean(tf.cast(tf.equal(tf.argmax(self.o,2),tf.argmax(self.labels,2)),tf.float32))
-                        elif self.pattern=='n1' or self.predicate==True:
-                            if self.pattern=='n1':
-                                equal=tf.equal(tf.argmax(self.o[-1],1),tf.argmax(self.labels,1))
-                                train_accuracy=tf.reduce_mean(tf.cast(equal,tf.float32))
-                            else:
-                                train_accuracy=tf.reduce_mean(tf.abs(self.o[-1]-self.labels))
-                        elif self.pattern=='nn':
-                            train_accuracy=tf.reduce_mean(tf.cast(tf.equal(tf.argmax(self.o,2),tf.argmax(self.labels,2)),tf.float32))
-                        train_accuracy_scalar=tf.summary.scalar('train_accuracy',train_accuracy)
+                with tf.name_scope('train_accuracy'):
+                    if self.pattern=='1n':
+                        train_accuracy=tf.reduce_mean(tf.cast(tf.equal(tf.argmax(self.o,2),tf.argmax(self.labels,2)),tf.float32))
+                    elif self.pattern=='n1' or self.predicate==True:
+                        if self.pattern=='n1':
+                            equal=tf.equal(tf.argmax(self.o[-1],1),tf.argmax(self.labels,1))
+                            train_accuracy=tf.reduce_mean(tf.cast(equal,tf.float32))
+                        else:
+                            train_accuracy=tf.reduce_mean(tf.abs(self.o[-1]-self.labels))
+                    elif self.pattern=='nn':
+                        train_accuracy=tf.reduce_mean(tf.cast(tf.equal(tf.argmax(self.o,2),tf.argmax(self.labels,2)),tf.float32))
+                    train_accuracy_scalar=tf.summary.scalar('train_accuracy',train_accuracy)
                 if train_summary_path!=None:
                     train_loss_scalar=tf.summary.scalar('train_loss',train_loss)
                     train_merging=tf.summary.merge([train_loss_scalar])
-                    if self.acc==True:
-                        train_accuracy_scalar=tf.summary.scalar('train_accuracy',train_accuracy)
-                        train_merging=tf.summary.merge([train_accuracy_scalar])
+                    train_accuracy_scalar=tf.summary.scalar('train_accuracy',train_accuracy)
+                    train_merging=tf.summary.merge([train_accuracy_scalar])
                     train_writer=tf.summary.FileWriter(train_summary_path)
                 config=tf.ConfigProto()
                 config.gpu_options.allow_growth=True
@@ -340,9 +337,8 @@ class rnn:
                             else:
                                 batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
                             total_loss+=batch_loss
-                            if self.acc==True:
-                                batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
-                                total_acc+=batch_acc
+                            batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
+                            total_acc+=batch_acc
                         if self.shape0%self.batch!=0:
                             batches+=1
                             index1=batches*self.batch
@@ -355,18 +351,16 @@ class rnn:
                             else:
                                 batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
                             total_loss+=batch_loss
-                            if self.acc==True:
-                                batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
-                                total_acc+=batch_acc
+                            batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
+                            total_acc+=batch_acc
                         loss=total_loss/batches
                         train_acc=total_acc/batches
                         self.train_loss_list.append(loss.astype(np.float32))
                         self.train_loss=loss
                         self.train_loss=self.train_loss.astype(np.float32)
-                        if self.acc==True:
-                            self.train_accuracy_list.append(train_acc.astype(np.float32))
-                            self.train_accuracy=train_acc
-                            self.train_accuracy=self.train_accuracy.astype(np.float32)
+                        self.train_accuracy_list.append(train_acc.astype(np.float32))
+                        self.train_accuracy=train_acc
+                        self.train_accuracy=self.train_accuracy.astype(np.float32)
                     else:
                         random=np.arange(self.shape0)
                         np.random.shuffle(random)
@@ -380,11 +374,10 @@ class rnn:
                         self.train_loss_list.append(loss.astype(np.float32))
                         self.train_loss=loss
                         self.train_loss=self.train_loss.astype(np.float32)
-                        if self.acc==True:
-                            accuracy=sess.run(train_accuracy,feed_dict=feed_dict)
-                            self.train_accuracy_list.append(accuracy.astype(np.float32))
-                            self.train_accuracy=accuracy
-                            self.train_accuracy=self.train_accuracy.astype(np.float32)
+                        accuracy=sess.run(train_accuracy,feed_dict=feed_dict)
+                        self.train_accuracy_list.append(accuracy.astype(np.float32))
+                        self.train_accuracy=accuracy
+                        self.train_accuracy=self.train_accuracy.astype(np.float32)
                     if epoch%10!=0:
                         temp_epoch=epoch-epoch%10
                         temp_epoch=int(temp_epoch/10)
@@ -409,8 +402,7 @@ class rnn:
                             train_writer.add_summary(train_summary,i)
                 print()
                 print('last loss:{0:.6f}'.format(self.train_loss))
-                if self.acc==True:
-                    print('accuracy:{0:.3f}%'.format(self.train_accuracy*100))
+                print('accuracy:{0:.3f}%'.format(self.train_accuracy*100))
                 if train_summary_path!=None:
                     train_writer.close()
                 if continue_train==True:
@@ -572,12 +564,11 @@ class rnn:
         print('-------------------------------------')
         print()
         print('train loss:{0}'.format(self.train_loss))
-        if self.acc==True:
-            print()
-            if self.predicate==False:
-                print('train accuracy:{0:.3f}%'.format(self.train_accuracy*100))
-            else:
-                print('train accuracy:{0:.6f}'.format(self.train_accuracy))
+        print()
+        if self.predicate==False:
+            print('train accuracy:{0:.3f}%'.format(self.train_accuracy*100))
+        else:
+            print('train accuracy:{0:.6f}'.format(self.train_accuracy))
         return
         
     
@@ -608,19 +599,17 @@ class rnn:
         plt.title('train loss')
         plt.xlabel('epoch')
         plt.ylabel('loss')
-        if self.acc==True:
-            plt.figure(2)
-            plt.plot(np.arange(self.epoch+1),self.train_accuracy_list)
-            plt.title('train accuracy')
-            plt.xlabel('epoch')
-            plt.ylabel('accuracy')
+        plt.figure(2)
+        plt.plot(np.arange(self.epoch+1),self.train_accuracy_list)
+        plt.title('train accuracy')
+        plt.xlabel('epoch')
+        plt.ylabel('accuracy')
         print('train loss:{0}'.format(self.train_loss))
-        if self.acc==True:
-            print()
-            if self.predicate==False:
-                print('train accuracy:{0:.3f}%'.format(self.train_accuracy*100))
-            else:
-                print('train accuracy:{0:.6f}'.format(self.train_accuracy))
+        print()
+        if self.predicate==False:
+            print('train accuracy:{0:.3f}%'.format(self.train_accuracy*100))
+        else:
+            print('train accuracy:{0:.6f}'.format(self.train_accuracy))
         return
 
     
@@ -685,7 +674,6 @@ class rnn:
         pickle.dump(self.optimizer,output_file)
         pickle.dump(self.lr,output_file)
         pickle.dump(self.l2,output_file)
-        pickle.dump(self.acc,output_file)
         pickle.dump(float(self.train_loss),output_file)
         pickle.dump(float(self.train_accuracy*100),output_file)
         pickle.dump(self.test_flag,output_file)
@@ -731,7 +719,6 @@ class rnn:
         self.optimizer=pickle.load(input_file)
         self.lr=pickle.load(input_file)
         self.l2=pickle.load(input_file)
-        self.acc=pickle.load(input_file)
         self.train_loss=pickle.load(input_file)
         self.train_accuracy=pickle.load(input_file)
         self.test_flag=pickle.load(input_file)
