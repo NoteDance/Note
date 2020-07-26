@@ -54,11 +54,11 @@ class unnamed:
         
         
         self.train_loss=None
-        self.train_accuracy=None
+        self.train_acc=None
         self.train_loss_list=[]
-        self.train_accuracy_list=[]
+        self.train_acc_list=[]
         self.test_loss=None
-        self.test_accuracy=None
+        self.test_acc=None
         self.continue_train=False
         self.flag=None
         self.end_flag=False
@@ -84,7 +84,7 @@ class unnamed:
             self.end_flag=False
             self.test_flag=False
             self.train_loss_list.clear()
-            self.train_accuracy_list.clear()
+            self.train_acc_list.clear()
             
             
             self.dtype=dtype
@@ -97,24 +97,23 @@ class unnamed:
            
             
             
-    def train(self,batch=None,epoch=None,optimizer='Adam',lr=0.001,acc=True,train_summary_path=None,model_path=None,one=True,continue_train=False,cpu_gpu=None):
+    def train(self,batch=None,epoch=None,optimizer='Adam',lr=0.001,train_summary_path=None,model_path=None,one=True,continue_train=False,cpu_gpu=None):
         t1=time.time()
         with self.graph.as_default():
             self.batch=batch
             self.optimizer=optimizer
             self.lr=lr
-            self.acc=acc
             if continue_train!=True:
                 if self.continue_train==True:
                     continue_train=True
                 else:
                     self.train_loss_list.clear()
-                    self.train_accuracy_list.clear()
+                    self.train_acc_list.clear()
             if self.continue_train==False and continue_train==True:
                 if self.end_flag==False and self.flag==0:
                     self.epoch=None
                 self.train_loss_list.clear()
-                self.train_accuracy_list.clear()
+                self.train_acc_list.clear()
                 self.continue_train=True
             if cpu_gpu!=None:
                 self.cpu_gpu=cpu_gpu
@@ -144,16 +143,14 @@ class unnamed:
                     opt=tf.train.MomentumOptimizer(learning_rate=self.lr,momentum=0.99).minimize(train_loss)
                 if self.optimizer=='Adam':
                     opt=tf.train.AdamOptimizer(learning_rate=self.lr).minimize(train_loss)
-                if self.acc==True:
-                    with tf.name_scope('train_accuracy'):
+                with tf.name_scope('train_accuracy'):
                         
                         
                 if train_summary_path!=None:
                     train_loss_scalar=tf.summary.scalar('train_loss',train_loss)
                     train_merging=tf.summary.merge([train_loss_scalar])
-                    if self.acc==True:
-                        train_accuracy_scalar=tf.summary.scalar('train_accuracy',train_accuracy)
-                        train_merging=tf.summary.merge([train_accuracy_scalar])
+                    train_acc_scalar=tf.summary.scalar('train_accuracy',train_acc)
+                    train_merging=tf.summary.merge([train_acc_scalar])
                     train_writer=tf.summary.FileWriter(train_summary_path)
                 config=tf.ConfigProto()
                 config.gpu_options.allow_growth=True
@@ -182,9 +179,8 @@ class unnamed:
                             else:
                                 batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
                             total_loss+=batch_loss
-                            if self.acc==True:
-                                batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
-                                total_acc+=batch_acc
+                            batch_acc=sess.run(train_acc,feed_dict=feed_dict)
+                            total_acc+=batch_acc
                         if self.shape0%self.batch!=0:
                             batches+=1
                             index1=batches*self.batch
@@ -196,18 +192,16 @@ class unnamed:
                             else:
                                 batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
                             total_loss+=batch_loss
-                            if self.acc==True:
-                                batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
-                                total_acc+=batch_acc
+                            batch_acc=sess.run(train_acc,feed_dict=feed_dict)
+                            total_acc+=batch_acc
                         loss=total_loss/batches
                         train_acc=total_acc/batches
                         self.train_loss_list.append(loss.astype(np.float32))
                         self.train_loss=loss
                         self.train_loss=self.train_loss.astype(np.float32)
-                        if self.acc==True:
-                            self.train_accuracy_list.append(train_acc.astype(np.float32))
-                            self.train_accuracy=train_acc
-                            self.train_accuracy=self.train_accuracy.astype(np.float32)
+                        self.train_acc_list.append(train_acc.astype(np.float32))
+                        self.train_acc=train_acc
+                        self.train_acc=self.train_acc.astype(np.float32)
                     else:
                         random=np.arange(self.shape0)
                         np.random.shuffle(random)
@@ -220,11 +214,10 @@ class unnamed:
                         self.train_loss_list.append(loss.astype(np.float32))
                         self.train_loss=loss
                         self.train_loss=self.train_loss.astype(np.float32)
-                        if self.acc==True:
-                            accuracy=sess.run(train_accuracy,feed_dict=feed_dict)
-                            self.train_accuracy_list.append(accuracy.astype(np.float32))
-                            self.train_accuracy=accuracy
-                            self.train_accuracy=self.train_accuracy.astype(np.float32)
+                        acc=sess.run(train_acc,feed_dict=feed_dict)
+                        self.train_acc_list.append(acc.astype(np.float32))
+                        self.train_acc=acc
+                        self.train_acc=self.train_acc.astype(np.float32)
                     if epoch%10!=0:
                         temp_epoch=epoch-epoch%10
                         temp_epoch=int(temp_epoch/10)
@@ -249,11 +242,10 @@ class unnamed:
                             train_writer.add_summary(train_summary,i)
                 print()
                 print('last loss:{0:.6f}'.format(self.train_loss))
-                if self.acc==True:
-                    if len(self.labels_shape)==2:
-                        print('accuracy:{0:.3f}%'.format(self.train_accuracy*100))
-                    else:
-                        print('accuracy:{0:.3f}'.format(self.train_accuracy))
+                if len(self.labels_shape)==2:
+                    print('accuracy:{0:.3f}%'.format(self.train_acc*100))
+                else:
+                    print('accuracy:{0:.3f}'.format(self.train_acc))
                 if train_summary_path!=None:
                     train_writer.close()
                 if continue_train==True:
@@ -311,7 +303,7 @@ class unnamed:
                     test_labels_batch=test_labels[j*batch:(j+1)*batch]
                     batch_test_loss=sess.run(test_loss,feed_dict={test_data_placeholder:test_data_batch,test_labels_placeholder:test_labels_batch})
                     total_test_loss+=batch_test_loss
-                    batch_test_acc=sess.run(test_accuracy,feed_dict={test_data_placeholder:test_data_batch,test_labels_placeholder:test_labels_batch})
+                    batch_test_acc=sess.run(test_acc,feed_dict={test_data_placeholder:test_data_batch,test_labels_placeholder:test_labels_batch})
                     total_test_acc+=batch_test_acc
                 if test_data.shape[0]%batch!=0:
                     test_batches+=1
@@ -319,19 +311,19 @@ class unnamed:
                     test_labels_batch=np.concatenate([test_labels[batches*batch:],test_labels[:batch-(test_labels.shape[0]-batches*batch)]])
                     batch_test_loss=sess.run(test_loss,feed_dict={test_data_placeholder:test_data_batch,test_labels_placeholder:test_labels_batch})
                     total_test_loss+=batch_test_loss
-                    batch_test_acc=sess.run(test_accuracy,feed_dict={test_data_placeholder:test_data_batch,test_labels_placeholder:test_labels_batch})
+                    batch_test_acc=sess.run(test_acc,feed_dict={test_data_placeholder:test_data_batch,test_labels_placeholder:test_labels_batch})
                     total_test_acc+=batch_test_acc
                 test_loss=total_test_loss/test_batches
                 test_acc=total_test_acc/test_batches
                 self.test_loss=test_loss
-                self.test_accuracy=test_acc
+                self.test_acc=test_acc
                 self.test_loss=self.test_loss.astype(np.float32)
-                self.test_accuracy=self.test_accuracy.astype(np.float32)
+                self.test_acc=self.test_acc.astype(np.float32)
             else:
                 self.test_loss=sess.run(test_loss,feed_dict={test_data_placeholder:test_data,test_labels_placeholder:test_labels})
-                self.test_accuracy=sess.run(test_accuracy,feed_dict={test_data_placeholder:test_data,test_labels_placeholder:test_labels})
+                self.test_acc=sess.run(test_acc,feed_dict={test_data_placeholder:test_data,test_labels_placeholder:test_labels})
                 self.test_loss=self.test_loss.astype(np.float32)
-                self.test_accuracy=self.test_accuracy.astype(np.float32)
+                self.test_acc=self.test_acc.astype(np.float32)
             print('test loss:{0:.6f}'.format(self.test_loss))
             
             
@@ -383,12 +375,11 @@ class unnamed:
         plt.title('train loss')
         plt.xlabel('epoch')
         plt.ylabel('loss')
-        if self.acc==True:
-            plt.figure(2)
-            plt.plot(np.arange(self.epoch+1),self.train_accuracy_list)
-            plt.title('train accuracy')
-            plt.xlabel('epoch')
-            plt.ylabel('accuracy')
+        plt.figure(2)
+        plt.plot(np.arange(self.epoch+1),self.train_acc_list)
+        plt.title('train accuracy')
+        plt.xlabel('epoch')
+        plt.ylabel('accuracy')
         print('train loss:{0}'.format(self.train_loss))
   
     
@@ -399,7 +390,7 @@ class unnamed:
         print()
         print('train loss:{0}'.format(self.train_loss))
         print()
-        print('train accuracy:{0:.3f}%'.format(self.train_accuracy*100))
+        print('train accuracy:{0:.3f}%'.format(self.train_acc*100))
         print()
         print('-------------------------------------')
         print()
@@ -422,13 +413,12 @@ class unnamed:
         pickle.dump(self.lr,output_file)
         
         
-        pickle.dump(self.acc,output_file)
         pickle.dump(self.train_loss,output_file)
-        pickle.dump(self.train_accuracy,output_file)
+        pickle.dump(self.train_acc,output_file)
         pickle.dump(self.test_flag,output_file)
         if self.test_flag==True:
             pickle.dump(self.test_loss,output_file)
-            pickle.dump(self.test_accuracy,output_file)
+            pickle.dump(self.test_acc,output_file)
         pickle.dump(self.train_loss_list,output_file)
         pickle.dump(self.train_accuracy_list,output_file)
         pickle.dump(self.epoch,output_file)
@@ -454,16 +444,15 @@ class unnamed:
         self.lr=pickle.load(input_file)
         
         
-        self.acc=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
         self.train_loss=pickle.load(input_file)
-        self.train_accuracy=pickle.load(input_file)
+        self.train_acc=pickle.load(input_file)
         self.test_flag=pickle.load(input_file)
         if self.test_flag==True:
             self.test_loss=pickle.load(input_file)
             self.test_accuracy=pickle.load(input_file)
         self.train_loss_list=pickle.load(input_file)
-        self.train_accuracy_list=pickle.load(input_file)
+        self.train_acc_list=pickle.load(input_file)
         self.epoch=pickle.load(input_file)
         self.total_epoch=pickle.load(input_file)
         self.time=pickle.load(input_file)
