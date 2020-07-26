@@ -1,5 +1,6 @@
 import tensorflow as tf
 from tensorflow.python.ops import state_ops
+import tensorflow.keras.optimizers as optimizer
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -99,6 +100,12 @@ class unnamed:
             
             
             
+    def apply_gradient(self,tape,optimizer,loss,variable):
+        gradient=tape.gradient(loss,variable)
+        optimizer.apply_gradients(zip(gradient,variable))
+        return   
+    
+    
     def train(self,batch=None,epoch=None,lr=None,model_path=None,one=True,processor=None):
         t1=time.time()
         self.batch=batch
@@ -145,9 +152,7 @@ class unnamed:
                             if i==0 and self.total_epoch==0:
                                 batch_loss=batch_loss.numpy()
                             else:
-                                gradient=tape.gradient(batch_loss,)
-                                optimizer.apply_gradients(zip(gradient,))
-                                with tf.name_scope('Note_optimizer/own_optimizer'):
+                                with tf.name_scope('apply_gradient'):
                                     
                                     
                         total_loss+=batch_loss
@@ -170,9 +175,7 @@ class unnamed:
                             if i==0 and self.total_epoch==0:
                                 batch_loss=batch_loss.numpy()
                             else:
-                                gradient=tape.gradient(batch_loss,)
-                                optimizer.apply_gradients(zip(gradient,))
-                                with tf.name_scope('Note_optimizer/own_optimizer'):
+                                with tf.name_scope('apply_gradient'):
                                     
                                     
                         total_loss+=batch_loss
@@ -202,9 +205,7 @@ class unnamed:
                         if i==0 and self.total_epoch==0:
                             loss=train_loss.numpy()
                         else:
-                            gradient=tape.gradient(train_loss,)
-                            optimizer.apply_gradients(zip(gradient,))
-                            with tf.name_scope('Note_optimizer/own_optimizer'):
+                           with tf.name_scope('apply_gradient'):
                                 
                                 
                     self.train_loss_list.append(loss.astype(np.float32))
