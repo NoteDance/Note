@@ -69,7 +69,7 @@ class unnamed:
         self.continue_train=False
         self.flag=None
         self.end_flag=False
-        self.test_flag=None
+        self.test_flag=False
         self.time=None
         self.processor='/gpu:0'
         self.use_processor='/gpu:0'
