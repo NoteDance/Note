@@ -54,7 +54,7 @@ class transformer:
         return tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=self.dtype),name=name)
     
     
-    def structure(self,h,word_size,mean=0,stddev=0.07,embedding_w,dtype=np.float32):
+    def structure(self,h=6,word_size=None,mean=0,stddev=0.07,embedding_w,dtype=np.float32):
         self.epoch=0
         self.total_epoch=0
         self.test_flag=False
