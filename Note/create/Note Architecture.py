@@ -243,9 +243,9 @@ class unnamed:
                 print()
                 print('last loss:{0:.6f}'.format(self.train_loss))
                 if len(self.labels_shape)==2:
-                    print('accuracy:{0:.3f}%'.format(self.train_acc*100))
+                    print('acc:{0:.3f}%'.format(self.train_acc*100))
                 else:
-                    print('accuracy:{0:.3f}'.format(self.train_acc))
+                    print('acc:{0:.3f}'.format(self.train_acc))
                 if train_summary_path!=None:
                     train_writer.close()
                 if continue_train==True:
@@ -377,9 +377,9 @@ class unnamed:
         plt.ylabel('loss')
         plt.figure(2)
         plt.plot(np.arange(self.epoch+1),self.train_acc_list)
-        plt.title('train accuracy')
+        plt.title('train acc')
         plt.xlabel('epoch')
-        plt.ylabel('accuracy')
+        plt.ylabel('acc')
         print('train loss:{0}'.format(self.train_loss))
   
     
@@ -390,7 +390,7 @@ class unnamed:
         print()
         print('train loss:{0}'.format(self.train_loss))
         print()
-        print('train accuracy:{0:.3f}%'.format(self.train_acc*100))
+        print('train acc:{0:.3f}%'.format(self.train_acc*100))
         print()
         print('-------------------------------------')
         print()
