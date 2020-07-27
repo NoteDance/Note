@@ -434,13 +434,22 @@ class unnamed:
             output_file=open(model_path+'.dat','wb')
         else:
             output_file=open(model_path+'-{0}.dat'.format(i+1),'wb')
-        with tf.name_scope('save_parameter/data_msg/model_msg'):
+        with tf.name_scope('save_parameter'):
+            
+          
+        with tf.name_scope('save_data_msg'):
+            
+            
+        with tf.name_scope('save_shape0'):
             
             
         pickle.dump(self.batch,output_file)
         pickle.dump(self.epoch,output_file)
         pickle.dump(self.optimizer,output_file)
         pickle.dump(self.lr,output_file)
+        with tf.name_scope('save_hyperparameter'):
+            
+            
         with tf.name_scope('save_regularization'):
         
             
@@ -463,21 +472,27 @@ class unnamed:
 
     def restore(self,model_path):
         input_file=open(model_path,'rb')
-        with tf.name_scope('restore_parameter/data_msg'):
+        with tf.name_scope('restore_parameter/'):
             
-        
+            
+        with tf.name_scope('restore_data_msg'):
+            
+            
+        with tf.name_scope('restore_shape0'):
+            
+            
         self.graph=tf.Graph()
         with self.graph.as_default():
             with tf.name_scope('placeholder'):
                 
-        
-        with tf.name_scope('restore_model_msg'):
-            
-            
+                
         self.batch=pickle.load(input_file)
         self.epoch=pickle.load(input_file)
         self.optimizer=pickle.load(input_file)
         self.lr=pickle.load(input_file)
+        with tf.name_scope('restore_hyperparameter'):
+            
+            
         with tf.name_scope('restore_regularization'):
             
             
