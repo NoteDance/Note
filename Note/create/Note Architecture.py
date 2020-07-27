@@ -63,7 +63,7 @@ class unnamed:
         self.train_acc_list=[]
         self.test_loss=None
         self.test_acc=None
-        self.test_flag=None
+        self.test_flag=False
         self.time=None
         self.processor='GPU:0'
         self.use_processor='GPU:0'
