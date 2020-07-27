@@ -349,9 +349,9 @@ class unnamed:
         plt.ylabel('loss')
         plt.figure(2)
         plt.plot(np.arange(self.epoch+1),self.train_acc_list)
-        plt.title('train accuracy')
+        plt.title('train acc')
         plt.xlabel('epoch')
-        plt.ylabel('accuracy')
+        plt.ylabel('acc')
         print('train loss:{0:.6f}'.format(self.train_loss))
         with tf.name_scope('print_accuracy'):
                 
