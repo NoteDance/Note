@@ -94,8 +94,7 @@ class rnn:
         self.total_epoch=0
         self.time=0
         self.total_time=0
-        self.cpu_gpu='/gpu:0'
-        self.use_cpu_gpu='/gpu:0'
+        self.processor='/gpu:0'
     
     
     def embedding(self,d,mean=0.07,stddev=0.07,dtype=tf.float32):
