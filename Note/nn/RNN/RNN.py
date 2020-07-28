@@ -77,10 +77,10 @@ class rnn:
         self.last_bias_h=None
         self.last_bias_o=None
         self.batch=None
-        self.epoch=None
+        self.epoch=0
         self.l2=None
-        self.optimizer=None
         self.lr=None
+        self.optimizer=None
         self.train_loss=None
         self.train_accuracy=None
         self.train_loss_list=[]
@@ -91,7 +91,9 @@ class rnn:
         self.flag=None
         self.end_flag=False
         self.test_flag=None
-        self.time=None
+        self.total_epoch=0
+        self.time=0
+        self.total_time=0
         self.cpu_gpu='/gpu:0'
         self.use_cpu_gpu='/gpu:0'
     
@@ -113,7 +115,6 @@ class rnn:
     def structure(self,hidden,pattern,ed=None,predicate=False,mean=0,stddev=0.07,dtype=tf.float32):
         with self.graph.as_default():
             self.continue_train=False
-            self.total_epoch=0
             self.flag=None
             self.end_flag=False
             self.test_flag=False
@@ -123,8 +124,11 @@ class rnn:
             self.hidden=hidden
             self.pattern=pattern
             self.predicate=predicate
+            self.epoch=0
             self.dtype=dtype
-            self.time=None
+            self.total_epoch=0
+            self.time=0
+            self.total_time=0
             with tf.name_scope('parameter_initialization'):
                 self.weight_x=self.weight_init([self.data_shape[2],self.hidden],mean=mean,stddev=stddev,name='weight_x')
                 self.bias_x=self.bias_init([self.hidden],mean=mean,stddev=stddev,name='bias_x')
@@ -190,8 +194,7 @@ class rnn:
                     return
             
         
-    def train(self,batch=None,epoch=None,optimizer='Adam',lr=0.001,l2=None,train_summary_path=None,model_path=None,one=True,continue_train=False,cpu_gpu=None):
-        t1=time.time()
+    def train(self,batch=None,epoch=None,optimizer='Adam',lr=0.001,l2=None,train_summary_path=None,model_path=None,one=True,continue_train=False,processor=None):
         with self.graph.as_default():
             self.h.clear()
             self.h.append(tf.zeros([1,self.hidden],name='h0'))
@@ -206,18 +209,16 @@ class rnn:
                     self.train_loss_list.clear()
                     self.train_accuracy_list.clear()
             if self.continue_train==False and continue_train==True:
-                if self.end_flag==False and self.flag==0:
-                    self.epoch=None
                 self.train_loss_list.clear()
                 self.train_accuracy_list.clear()
                 self.continue_train=True
-            if cpu_gpu!=None:
-                self.cpu_gpu=cpu_gpu
-            if type(self.cpu_gpu)==str:
-                train_cpu_gpu=self.cpu_gpu
+            if processor!=None:
+                self.processor=processor
+            if type(self.processor)==str:
+                train_processor=self.processor
             else:
-                train_cpu_gpu=self.cpu_gpu[1]
-            with tf.device(train_cpu_gpu):
+                train_processor=self.processor[1]
+            with tf.device(train_processor):
                 if continue_train==True and self.end_flag==True:
                     self.embedding_w=tf.Variable(self.last_embedding_w,name='embedding_w')
                     self.embedding_b=tf.Variable(self.last_embedding_b,name='embedding_b')
@@ -236,6 +237,7 @@ class rnn:
                     self.last_bias_h=None
                     self.last_bias_o=None
                 if continue_train==True and self.flag==1:
+                    self.flag=0
                     self.embedding_w=tf.Variable(self.last_embedding_w,name='embedding_w')
                     self.embedding_b=tf.Variable(self.last_embedding_b,name='embedding_b')
                     self.weight_x=tf.Variable(self.last_weight_x,name='weight_x')
@@ -252,44 +254,43 @@ class rnn:
                     self.last_bias_x=None
                     self.last_bias_h=None
                     self.last_bias_o=None
-                    self.flag=0
 #     －－－－－－－－－－－－－－－forward propagation－－－－－－－－－－－－－－－
                 self.forward_propagation(self.data)
 #     －－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
                 with tf.name_scope('train_loss'):
                     if self.pattern=='1n':
-                        if self.l2==None:
+                        if l2==None:
                             train_loss=tf.reduce_mean(tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.o,labels=self.labels,axis=2),axis=1))
                         else:
                             train_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.o,labels=self.labels,axis=2),axis=1)
-                            train_loss=tf.reduce_mean(train_loss+self.l2/2*(tf.reduce_sum(self.weight_x**2)+tf.reduce_sum(self.weight_h**2)+tf.reduce_sum(self.weight_o**2)))
+                            train_loss=tf.reduce_mean(train_loss+l2/2*(tf.reduce_sum(self.weight_x**2)+tf.reduce_sum(self.weight_h**2)+tf.reduce_sum(self.weight_o**2)))
                     elif self.pattern=='n1' or self.predicate==True:
                         if self.pattern=='n1':
-                            if self.l2==None:
+                            if l2==None:
                                 train_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.o[-1],labels=self.labels))
                             else:
                                 train_loss=tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.o[-1],labels=self.labels)
-                                train_loss=tf.reduce_mean(train_loss+self.l2/2*(tf.reduce_sum(self.weight_x**2)+tf.reduce_sum(self.weight_h**2)+tf.reduce_sum(self.weight_o**2)))
+                                train_loss=tf.reduce_mean(train_loss+l2/2*(tf.reduce_sum(self.weight_x**2)+tf.reduce_sum(self.weight_h**2)+tf.reduce_sum(self.weight_o**2)))
                         else:
-                            if self.l2==None:
+                            if l2==None:
                                 train_loss=tf.reduce_mean(tf.square(self.o[-1]-tf.expand_dims(self.labels,axis=1)))
                             else:
                                 train_loss=tf.square(self.o[-1]-tf.expand_dims(self.labels,axis=1))
-                                train_loss=tf.reduce_mean(train_loss+self.l2/2*(tf.reduce_sum(self.weight_x**2)+tf.reduce_sum(self.weight_h**2)+tf.reduce_sum(self.weight_o**2)))
+                                train_loss=tf.reduce_mean(train_loss+l2/2*(tf.reduce_sum(self.weight_x**2)+tf.reduce_sum(self.weight_h**2)+tf.reduce_sum(self.weight_o**2)))
                     elif self.pattern=='nn':
-                        if self.l2==None:
+                        if l2==None:
                             train_loss=tf.reduce_mean(tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.o,labels=self.labels,axis=2),axis=1))
                         else:
                             train_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.o,labels=self.labels,axis=2),axis=1)
-                            train_loss=tf.reduce_mean(train_loss+self.l2/2*(tf.reduce_sum(self.weight_x**2)+tf.reduce_sum(self.weight_h**2)+tf.reduce_sum(self.weight_o**2)))
+                            train_loss=tf.reduce_mean(train_loss+l2/2*(tf.reduce_sum(self.weight_x**2)+tf.reduce_sum(self.weight_h**2)+tf.reduce_sum(self.weight_o**2)))
                 if self.optimizer=='Gradient':
-                    opt=tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(train_loss)
+                    opt=tf.train.GradientDescentOptimizer(learning_rate=lr).minimize(train_loss)
                 if self.optimizer=='RMSprop':
-                    opt=tf.train.RMSPropOptimizer(learning_rate=self.lr).minimize(train_loss)
+                    opt=tf.train.RMSPropOptimizer(learning_rate=lr).minimize(train_loss)
                 if self.optimizer=='Momentum':
-                    opt=tf.train.MomentumOptimizer(learning_rate=self.lr,momentum=0.99).minimize(train_loss)
+                    opt=tf.train.MomentumOptimizer(learning_rate=lr,momentum=0.99).minimize(train_loss)
                 if self.optimizer=='Adam':
-                    opt=tf.train.AdamOptimizer(learning_rate=self.lr).minimize(train_loss)
+                    opt=tf.train.AdamOptimizer(learning_rate=lr).minimize(train_loss)
                 train_loss_scalar=tf.summary.scalar('train_loss',train_loss)
                 with tf.name_scope('train_accuracy'):
                     if self.pattern=='1n':
@@ -317,9 +318,10 @@ class rnn:
                 self.sess=sess
                 if self.total_epoch==0:
                     epoch=epoch+1
+                t1=time.time()
                 for i in range(epoch):
-                    if self.batch!=None:
-                        batches=int((self.shape0-self.shape0%self.batch)/self.batch)
+                    if batch!=None:
+                        batches=int((self.shape0-self.shape0%batch)/batch)
                         total_loss=0
                         total_acc=0
                         random=np.arange(self.shape0)
@@ -327,8 +329,8 @@ class rnn:
                         train_data=self.train_data[random]
                         train_labels=self.train_labels[random]
                         for j in range(batches):
-                            index1=j*self.batch
-                            index2=(j+1)*self.batch
+                            index1=j*batch
+                            index2=(j+1)*batch
                             train_data_batch=train_data[index1:index2]
                             train_labels_batch=train_labels[index1:index2]
                             feed_dict={self.data:train_data_batch,self.labels:train_labels_batch}
@@ -339,10 +341,10 @@ class rnn:
                             total_loss+=batch_loss
                             batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
                             total_acc+=batch_acc
-                        if self.shape0%self.batch!=0:
+                        if self.shape0%batch!=0:
                             batches+=1
-                            index1=batches*self.batch
-                            index2=self.batch-(self.shape0-batches*self.batch)
+                            index1=batches*batch
+                            index2=batch-(self.shape0-batches*batch)
                             train_data_batch=np.concatenate([train_data[index1:],train_data[:index2]])
                             train_labels_batch=np.concatenate([train_labels[index1:],train_labels[:index2]])
                             feed_dict={self.data:train_data_batch,self.labels:train_labels_batch}
@@ -387,12 +389,7 @@ class rnn:
                         temp_epoch=1
                     if i%temp_epoch==0:
                         if continue_train==True:
-                            if self.epoch!=None:
-                                self.total_epoch=self.epoch+i+1
-                            else:
-                                self.total_epoch=i
-                        if continue_train==True:
-                            print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
+                            print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
                         else:
                             print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
                         if model_path!=None and i%epoch*2==0:
@@ -400,6 +397,13 @@ class rnn:
                         if train_summary_path!=None:
                             train_summary=sess.run(train_merging,feed_dict=feed_dict)
                             train_writer.add_summary(train_summary,i)
+                t2=time.time()
+                _time=int(t2-t1)
+                if continue_train!=True or self.time==0:
+                    self.total_time=_time
+                else:
+                    self.total_time+=_time
+                self.time=_time
                 print()
                 print('last loss:{0:.6f}'.format(self.train_loss))
                 print('accuracy:{0:.3f}%'.format(self.train_accuracy*100))
@@ -430,26 +434,22 @@ class rnn:
                     self.last_bias_o=None
                     sess.run(tf.global_variables_initializer())
                 if continue_train==True:
-                    if self.epoch!=None:
-                        self.total_epoch=self.epoch+epoch
-                    else:
+                    if self.total_epoch==0:
                         self.total_epoch=epoch-1
-                    self.epoch=self.total_epoch
+                        self.epoch=epoch-1
+                    else:
+                        self.total_epoch=self.total_epoch+epoch
+                        self.epoch=epoch
                 if continue_train!=True:
                     self.epoch=epoch-1
-                t2=time.time()
-                _time=t2-t1
-                if continue_train!=True or self.time==None:
-                    self.time=_time
-                else:
-                    self.time+=_time
-                print('time:{0:.3f}s'.format(self.time))
+                print('time:{0}s'.format(self.time))
                 return
         
         
     def end(self):
         with self.graph.as_default():
             self.end_flag=True
+            self.continue_train=False
             self.last_embedding_w=self.sess.run(self.embedding_w)
             self.last_embedding_b=self.sess.run(self.embedding_b)
             self.last_weight_x=self.sess.run(self.weight_x)
@@ -466,7 +466,6 @@ class rnn:
             self.bias_x=None
             self.bias_h=None
             self.bias_o=None
-            self.total_epoch=self.epoch
             self.sess.close()
             return
     
@@ -671,9 +670,9 @@ class rnn:
         pickle.dump(self.hidden,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.epoch,output_file)
-        pickle.dump(self.optimizer,output_file)
         pickle.dump(self.lr,output_file)
         pickle.dump(self.l2,output_file)
+        pickle.dump(self.optimizer,output_file)
         pickle.dump(float(self.train_loss),output_file)
         pickle.dump(float(self.train_accuracy*100),output_file)
         pickle.dump(self.test_flag,output_file)
@@ -682,11 +681,10 @@ class rnn:
             pickle.dump(self.test_accuracy,output_file)
         pickle.dump(self.train_loss_list,output_file)
         pickle.dump(self.train_accuracy_list,output_file)
-        pickle.dump(self.epoch,output_file)
         pickle.dump(self.total_epoch,output_file)
         pickle.dump(self.time,output_file)
-        pickle.dump(self.cpu_gpu,output_file)
-        pickle.dump(self.use_cpu_gpu,output_file)
+        pickle.dump(self.total_time,output_file)
+        pickle.dump(self.processor,output_file)
         output_file.close()
         return
     
@@ -716,9 +714,9 @@ class rnn:
         self.hidden=pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.epoch=pickle.load(input_file)
-        self.optimizer=pickle.load(input_file)
         self.lr=pickle.load(input_file)
         self.l2=pickle.load(input_file)
+        self.optimizer=pickle.load(input_file)
         self.train_loss=pickle.load(input_file)
         self.train_accuracy=pickle.load(input_file)
         self.test_flag=pickle.load(input_file)
@@ -727,26 +725,25 @@ class rnn:
             self.test_accuracy=pickle.load(input_file)
         self.train_loss_list=pickle.load(input_file)
         self.train_accuracy_list=pickle.load(input_file)
-        self.epoch=pickle.load(input_file)
         self.total_epoch=pickle.load(input_file)
         self.time=pickle.load(input_file)
-        self.cpu_gpu=pickle.load(input_file)
-        self.use_cpu_gpu=pickle.load(input_file)
+        self.total_time=pickle.load(input_file)
+        self.processor=pickle.load(input_file)
         self.flag=1
         input_file.close()
         return
 
 
-    def classify(self,data,one_hot=False,save_path=None,save_csv=None,cpu_gpu=None):
+    def classify(self,data,one_hot=False,save_path=None,save_csv=None,processor=None):
         with self.graph.as_default():
-            if cpu_gpu!=None:
-                self.use_cpu_gpu=cpu_gpu
-            if type(self.use_cpu_gpu)==str:
-                use_cpu_gpu=self.use_cpu_gpu
+            if processor!=None:
+                self.processor=processor
+            if type(processor)==str:
+                _processor=processor
             else:
-                use_cpu_gpu=self.use_cpu_gpu[-1]
+                _processor=processor[-1]
             self.h.clear()
-            with tf.device(use_cpu_gpu):
+            with tf.device(_processor):
                 data=tf.constant(data)
                 self.forward_propagation(data,use_nn=True)
                 config=tf.ConfigProto()
@@ -795,16 +792,16 @@ class rnn:
                         return output
                     
                     
-    def predicate(self,data,save_path=None,save_csv=None,cpu_gpu=None):
+    def predicate(self,data,save_path=None,save_csv=None,processor=None):
         with self.graph.as_default():
-            if cpu_gpu!=None:
-                self.use_cpu_gpu=cpu_gpu
-            if type(self.use_cpu_gpu)==str:
-                use_cpu_gpu=self.use_cpu_gpu
+            if processor!=None:
+                self.processor=processor
+            if type(processor)==str:
+                _processor=processor
             else:
-                use_cpu_gpu=self.use_cpu_gpu[-1]
+                _processor=self.processor[-1]
             self.h.clear()
-            with tf.device(use_cpu_gpu):
+            with tf.device(_processor):
                 data=tf.constant(data)
                 self.forward_propagation(data,use_nn=True)
                 config=tf.ConfigProto()
