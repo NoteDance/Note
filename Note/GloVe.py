@@ -29,18 +29,19 @@ class GloVe:
         self.last_cword_bias=None
         self.last_bword_bias=None
         self.batch=None
-        self.epoch=None
-        self.optimizer=None
+        self.epoch=0
         self.lr=None
+        self.optimizer=None
         self.train_loss=None
         self.train_loss_list=[]
         self.continue_train=False
         self.flag=None
         self.end_flag=False
         self.test_flag=None
-        self.time=None
-        self.cpu_gpu='/gpu:0'
-        self.use_cpu_gpu='/gpu:0'
+        self.total_epoch=0
+        self.time=0
+        self.total_time=0
+        self.processor='/gpu:0'
     
     
     def weight_init(self,shape,mean,stddev,name):
@@ -54,12 +55,14 @@ class GloVe:
     def structure(self,d,vocab_size,mean=0,stddev=0.07,dtype=np.float32):
         with self.graph.as_default():
             self.continue_train=False
-            self.total_epoch=0
             self.flag=None
             self.end_flag=False
             self.train_loss_list.clear()
             self.dtype=dtype
-            self.time=None
+            self.epoch=0
+            self.total_epoch=0
+            self.time=0
+            self.total_time=0
             with tf.name_scope('parameter_initialization'):            
                 self.cword_weight=self.weight_init(shape=[vocab_size,d],mean=mean,stddev=stddev,dtype=dtype,name='cword_weight')
                 self.bword_weight=self.weight_init(shape=[vocab_size,d],mean=mean,stddev=stddev,dtype=dtype,name='bword_weight')
@@ -70,11 +73,11 @@ class GloVe:
     
     def forward_propagation(self,cword,bword,mul):
         with self.graph.as_default():
-            if type(self.cpu_gpu)==str:
-                forward_cpu_gpu=self.cpu_gpu
+            if type(self.processor)==str:
+                forward_processor=self.processor
             else:
-                forward_cpu_gpu=self.cpu_gpu[0]
-            with tf.device(forward_cpu_gpu):
+                forward_processor=self.processor[0]
+            with tf.device(forward_processor):
                 weight=(mul/100)**(0.75+((tf.nn.relu(tf.math.log(mul/99))/tf.math.log(mul/99))*0.25))
                 cword_vec=tf.matmul(cword,self.cword_weight)
                 bword_vec=tf.matmul(bword,self.bword_weight)
@@ -85,8 +88,7 @@ class GloVe:
             return weight,cb,cword_bias,bword_bias,logmul
             
         
-    def train(self,batch=None,epoch=None,optimizer='Adam',lr=0.001,acc=True,train_summary_path=None,model_path=None,one=True,continue_train=False,cpu_gpu=None):
-        t1=time.time()
+    def train(self,batch=None,epoch=None,optimizer='Adam',lr=0.001,acc=True,train_summary_path=None,model_path=None,one=True,continue_train=False,processor=None):
         with self.graph.as_default():
             self.batch=batch
             self.optimizer=optimizer
@@ -97,50 +99,48 @@ class GloVe:
                 else:
                     self.train_loss_list.clear()
             if self.continue_train==False and continue_train==True:
-                if self.end_flag==False and self.flag==0:
-                    self.epoch=None
                 self.train_loss_list.clear()
                 self.continue_train=True
-            if cpu_gpu!=None:
-                self.cpu_gpu=cpu_gpu
-            if type(self.cpu_gpu)==str:
-                train_cpu_gpu=self.cpu_gpu
+            if processor!=None:
+                self.processor=processor
+            if type(self.processor)==str:
+                train_processor=self.processor
             else:
-                train_cpu_gpu=self.cpu_gpu[1]
-            with tf.device(train_cpu_gpu):
+                train_processor=self.processor[1]
+            with tf.device(train_processor):
+                self.flag=0
                 if continue_train==True and self.end_flag==True:
                     self.end_flag=False
                     self.cword_weight=tf.Variable(self.last_cword_weight,name='cword_weight')
                     self.bword_weight=tf.Variable(self.last_bword_weight,name='bword_weight')
                     self.cword_bias=tf.Variable(self.last_cword_bias,name='cword_bias')
                     self.bword_bias=tf.Variable(self.last_bword_bias,name='bword_bias')
-		    self.last_cword_weight=None
+                    self.last_cword_weight=None
                     self.last_bword_weight=None
-                    self.last_cword_bias==None
-                    self.last_bword_bias==None
+                    self.last_cword_bias=None
+                    self.last_bword_bias=None
                 if continue_train==True and self.flag==1:
                     self.cword_weight=tf.Variable(self.last_cword_weight,name='cword_weight')
                     self.bword_weight=tf.Variable(self.last_bword_weight,name='bword_weight')
                     self.cword_bias=tf.Variable(self.last_cword_bias,name='cword_bias')
                     self.bword_bias=tf.Variable(self.last_bword_bias,name='bword_bias')
-		    self.last_cword_weight=None
+                    self.last_cword_weight=None
                     self.last_bword_weight=None
-                    self.last_cword_bias==None
-                    self.last_bword_bias==None
-                    self.flag=0
+                    self.last_cword_bias=None
+                    self.last_bword_bias=None
 #     －－－－－－－－－－－－－－－forward propagation－－－－－－－－－－－－－－－
                 train_output=self.forward_propagation(self.cword_place,self.bword_place,self.mul)
 #     －－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
                 with tf.name_scope('train_loss'):
                     train_loss=tf.reduce_mean(train_output[0]*(train_output[1]+train_output[2]+train_output[3]-train_output[4])**2)   
                 if self.optimizer=='Gradient':
-                    opt=tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(train_loss)
+                    opt=tf.train.GradientDescentOptimizer(learning_rate=lr).minimize(train_loss)
                 if self.optimizer=='RMSprop':
-                    opt=tf.train.RMSPropOptimizer(learning_rate=self.lr).minimize(train_loss)
+                    opt=tf.train.RMSPropOptimizer(learning_rate=lr).minimize(train_loss)
                 if self.optimizer=='Momentum':
-                    opt=tf.train.MomentumOptimizer(learning_rate=self.lr,momentum=0.99).minimize(train_loss)
+                    opt=tf.train.MomentumOptimizer(learning_rate=lr,momentum=0.99).minimize(train_loss)
                 if self.optimizer=='Adam':
-                    opt=tf.train.AdamOptimizer(learning_rate=self.lr).minimize(train_loss)
+                    opt=tf.train.AdamOptimizer(learning_rate=lr).minimize(train_loss)
                 if train_summary_path!=None:
                     train_loss_scalar=tf.summary.scalar('train_loss',train_loss)
                     train_merging=tf.summary.merge([train_loss_scalar])
@@ -153,9 +153,10 @@ class GloVe:
                 self.sess=sess
                 if self.total_epoch==0:
                     epoch=epoch+1
+                t1=time.time()
                 for i in range(epoch):
-                    if self.batch!=None:
-                        batches=int((self.shape0-self.shape0%self.batch)/self.batch)
+                    if batch!=None:
+                        batches=int((self.shape0-self.shape0%batch)/batch)
                         total_loss=0
                         random=np.arange(self.shape0)
                         np.random.shuffle(random)
@@ -163,8 +164,8 @@ class GloVe:
                         bword=self.bword[random]
                         mul=self.mul[random]
                         for j in range(batches):
-                            index1=j*self.batch
-                            index2=(j+1)*self.batch
+                            index1=j*batch
+                            index2=(j+1)*batch
                             cword_batch=cword[index1:index2]
                             bword_batch=bword[index1:index2]
                             mul_batch=mul[index1:index2]
@@ -174,10 +175,10 @@ class GloVe:
                             else:
                                 batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
                             total_loss+=batch_loss
-                        if self.shape0%self.batch!=0:
+                        if self.shape0%batch!=0:
                             batches+=1
-                            index1=batches*self.batch
-                            index2=self.batch-(self.shape0-batches*self.batch)
+                            index1=batches*batch
+                            index2=batch-(self.shape0-batches*batch)
                             cword_batch=np.concatenate([cword[index1:],cword[:index2]])
                             bword_batch=np.concatenate([bword[index1:],bword[:index2]])
                             mul_batch=np.concatenate([mul[index1:],mul[:index2]])
@@ -214,12 +215,7 @@ class GloVe:
                         temp_epoch=1
                     if i%temp_epoch==0:
                         if continue_train==True:
-                            if self.epoch!=None:
-                                self.total_epoch=self.epoch+i+1
-                            else:
-                                self.total_epoch=i
-                        if continue_train==True:
-                            print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
+                            print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
                         else:
                             print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
                         if model_path!=None and i%epoch*2==0:
@@ -227,6 +223,13 @@ class GloVe:
                         if train_summary_path!=None:
                             train_summary=sess.run(train_merging,feed_dict=feed_dict)
                             train_writer.add_summary(train_summary,i)
+                t2=time.time()
+                _time=int(t2-t1)
+                if continue_train!=True or self.time==0:
+                    self.total_time=_time
+                else:
+                    self.total_time+=_time
+                self.time=_time
                 print()
                 print('last loss:{0}'.format(self.train_loss))
                 if train_summary_path!=None:
@@ -246,26 +249,22 @@ class GloVe:
                     self.last_bword_bias==None
                     sess.run(tf.global_variables_initializer())
                 if continue_train==True:
-                    if self.epoch!=None:
-                        self.total_epoch=self.epoch+epoch
-                    else:
+                    if self.total_epoch==0:
                         self.total_epoch=epoch-1
-                    self.epoch=self.total_epoch
+                        self.epoch=epoch-1
+                    else:
+                        self.total_epoch=self.total_epoch+epoch
+                        self.epoch=epoch
                 if continue_train!=True:
                     self.epoch=epoch-1
-                t2=time.time()
-                _time=t2-t1
-                if continue_train!=True or self.time==None:
-                    self.total_time=_time
-                else:
-                    self.total_time+=_time
-                print('time:{0:.3f}s'.format(self.time))
+                print('time:{0}s'.format(self.time))
                 return
     
     
     def end(self):
         with self.graph.as_default():
             self.end_flag=True
+            self.continue_train=False
             self.last_cword_weight=self.sess.run(self.cword_weight)
             self.last_bword_weight=self.sess.run(self.bword_weight)
             self.last_cword_bias=self.sess.run(self.cword_bias)
@@ -274,7 +273,6 @@ class GloVe:
             self.bword_weight=None
             self.cword_bias=None
             self.bword_bias=None
-            self.total_epoch=self.epoch
             self.sess.close()
             return
         
@@ -328,15 +326,14 @@ class GloVe:
         pickle.dump(self.mul_dtype,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.epoch,output_file)
-        pickle.dump(self.optimizer,output_file)
         pickle.dump(self.lr,output_file)
+        pickle.dump(self.optimizer,output_file)
         pickle.dump(self.train_loss,output_file)
         pickle.dump(self.train_loss_list,output_file)
-        pickle.dump(self.epoch,output_file)
         pickle.dump(self.total_epoch,output_file)
         pickle.dump(self.time,output_file)
-        pickle.dump(self.cpu_gpu,output_file)
-        pickle.dump(self.use_cpu_gpu,output_file)
+        pickle.dump(self.total_time,output_file)
+        pickle.dump(self.processor,output_file)
         output_file.close()
         return
     
@@ -358,16 +355,14 @@ class GloVe:
             self.mul=tf.placeholder(dtype=self.mul_dtype,shape=[None],name='mul')
         self.batch=pickle.load(input_file)
         self.epoch=pickle.load(input_file)
-        self.optimizer=pickle.load(input_file)
         self.lr=pickle.load(input_file)
-        self.total_time=pickle.load(input_file)
+        self.optimizer=pickle.load(input_file)
         self.train_loss=pickle.load(input_file)
         self.train_loss_list=pickle.load(input_file)
-        self.epoch=pickle.load(input_file)
         self.total_epoch=pickle.load(input_file)
         self.time=pickle.load(input_file)
-        self.cpu_gpu=pickle.load(input_file)
-        self.use_cpu_gpu=pickle.load(input_file)
+        self.total_time=pickle.load(input_file)
+        self.processor=pickle.load(input_file)
         self.flag=1
         input_file.close()
         return
