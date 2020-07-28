@@ -11,7 +11,7 @@ import time
 
 class transformer:
     def __init__(self,train_data,train_labels):
-        with tf.name_scope('data'):     
+        with tf.name_scope('data'):
             self.train_data=train_data
             self.train_labels=train_labels
             self.shape0=train_data.shape[0]
@@ -29,11 +29,13 @@ class transformer:
             self.vw3=[]
             self.fw2=[]
             self.ow=None
-        self.batch=None
-        self.epoch=0
+        with tf.name_scope('hyperparameter'):
+            self.batch=None
+            self.epoch=0
+            self.lr=None
+            self.h=None
+        self.regulation=None
         self.optimizer=None
-        self.lr=None
-        self.h=None
         self.train_loss=None
         self.train_acc=None
         self.train_loss_list=[]
@@ -41,9 +43,10 @@ class transformer:
         self.test_loss=None
         self.test_acc=None
         self.test_flag=False
-        self.time=None
+        self.total_epoch=0
+        self.time=0
+        self.total_time=0
         self.processor='GPU:0'
-        self.use_processor='GPU:0'
         
     
     def weight_init(self,shape,mean,stddev,name=None):
@@ -61,8 +64,10 @@ class transformer:
         self.train_loss_list.clear()
         self.train_accuracy_list.clear()
         self.dtype=dtype
-        self.h=h
+        with tf.name_scope('hyperparameter'):
+            self.h=h
         self.time=None
+        self.total_time=None
         with tf.name_scope('parameter_initialization'):
             self.embedding_w=embedding_w
             if self.ow==None:
@@ -232,9 +237,9 @@ class transformer:
                         
                                 
     def train(self,batch=None,epoch=None,lr=0.001,model_path=None,one=True,processor=None):
-        t1=time.time()
-        self.batch=batch
-        self.lr=lr
+        with tf.name_scope('hyperparameter'):
+            self.batch=batch
+            self.lr=lr
         if processor!=None:
             self.processor=processor
         with tf.name_scope('processor_allocation'):
@@ -246,13 +251,14 @@ class transformer:
             with tf.name_scope('variable'):
                 variable=self.qw1.extend(self.kw1.extend(self.vw1.extend(self.fw1.extend(self.qw2.extend(self.kw2.extend(self.vw2.extend(self.fw2.extend(self.qw3.extend(self.kw3.extend(self.vw3.extend(self.fw3)))))))))))
             with tf.name_scope('optimizer'):
-                self.optimizer='Adam'
-                optimizer=tf.keras.optimizers.Adam(self.lr)
+                self.optimizer=['Adam',{'lr':lr}]
+                optimizer=tf.keras.optimizers.Adam(lr)
             if self.total_epoch==0:
                 epoch=epoch+1
+            t1=time.time()
             for i in range(epoch):
-                if self.batch!=None:
-                    batches=int((self.shape0-self.shape0%self.batch)/self.batch)
+                if batch!=None:
+                    batches=int((self.shape0-self.shape0%batch)/batch)
                     total_loss=0
                     total_acc=0
                     random=np.arange(self.shape0)
@@ -261,8 +267,8 @@ class transformer:
                         train_data=self.train_data[random]
                         train_labels=self.train_labels[random]
                     for j in range(batches):
-                        index1=j*self.batch
-                        index2=(j+1)*self.batch
+                        index1=j*batch
+                        index2=(j+1)*batch
                         with tf.name_scope('data_batch/feed_dict'):
                             train_data_batch=train_data[index1:index2]
                             train_labels_batch=train_labels[index1:index2]
@@ -280,10 +286,10 @@ class transformer:
                             batch_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(labels_batch,2)!=0,tf.int32)==tf.argmax(labels_batch,2),tf.float32))
                         batch_acc=batch_acc.numpy()
                         total_acc+=batch_acc
-                    if self.shape0%self.batch!=0:
+                    if self.shape0%batch!=0:
                         batches+=1
-                        index1=batches*self.batch
-                        index2=self.batch-(self.shape0-batches*self.batch)
+                        index1=batches*batch
+                        index2=batch-(self.shape0-batches*batch)
                         with tf.name_scope('data_batch'):
                             train_data_batch=np.concatenate([train_data[index1:],train_data[:index2]])
                             train_labels_batch=np.concatenate([train_labels[index1:],train_labels[:index2]])
@@ -341,24 +347,29 @@ class transformer:
                 if temp_epoch==0:
                     temp_epoch=1
                 if i%temp_epoch==0:
-                    if self.epoch==0:
-                        self.total_epoch=i
+                    if self.total_epoch==0:
+                        print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
                     else:
-                        self.total_epoch=self.epoch+i+1
-                    print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
+                        print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
                     if model_path!=None and i%epoch*2==0:
                         self.save(model_path,i,one)
-            print()
-            print('last loss:{0:.6f}'.format(self.train_loss))
-            print('accuracy:{0:.3f}%'.format(self.train_acc*100))
-            self.epoch=self.total_epoch
             t2=time.time()
-            _time=t2-t1
-            if continue_train!=True or self.time==None:
+            _time=int(t2-t1)
+            if continue_train!=True or self.time==0:
                 self.total_time=_time
             else:
                 self.total_time+=_time
-            print('time:{0:.3f}s'.format(self.time))
+            self.time=_time
+            print()
+            print('last loss:{0:.6f}'.format(self.train_loss))
+            print('accuracy:{0:.3f}%'.format(self.train_acc*100))
+            if self.total_epoch==0:
+                self.total_epoch=epoch-1
+                self.epoch=epoch-1
+            else:
+                self.total_epoch=self.total_epoch+epoch
+                self.epoch=epoch
+            print('time:{0}s'.format(self.time))
             return
         
     
@@ -493,12 +504,14 @@ class transformer:
             pickle.dump(self.vw3,output_file)
             pickle.dump(self.fw2,output_file)
             pickle.dump(self.ow,output_file)
-        pickle.dump(self.shape0,output_file)
-        pickle.dump(self.batch,output_file)
-        pickle.dump(self.epoch,output_file)
+        with tf.name_scope('save_hyperparameter'):
+            pickle.dump(self.batch,output_file)
+            pickle.dump(self.epoch,output_file)
+            pickle.dump(self.lr,output_file)
+            pickle.dump(self.h,output_file)
+        pickle.dump(self.regulation,output_file)
         pickle.dump(self.optimizer,output_file)
-        pickle.dump(self.lr,output_file)
-        pickle.dump(self.h,output_file)
+        pickle.dump(self.shape0,output_file)
         pickle.dump(self.train_loss,output_file)
         pickle.dump(self.train_acc,output_file)
         pickle.dump(self.test_flag,output_file)
@@ -510,8 +523,8 @@ class transformer:
         pickle.dump(self.epoch,output_file)
         pickle.dump(self.total_epoch,output_file)
         pickle.dump(self.time,output_file)
-        pickle.dump(self.cpu_gpu,output_file)
-        pickle.dump(self.use_cpu_gpu,output_file)
+        pickle.dump(self.total_time,output_file)
+        pickle.dump(self.processor,output_file)
         output_file.close()
         return
     
@@ -532,13 +545,14 @@ class transformer:
             self.vw3=pickle.load(input_file)
             self.fw2=pickle.load(input_file)
             self.ow=pickle.load(input_file)
-        self.shape0=pickle.load(input_file)
-        self.batch=pickle.load(input_file)
-        self.epoch=pickle.load(input_file)
+        with tf.name_scope('restore_hyperparameter'):
+            self.batch=pickle.load(input_file)
+            self.epoch=pickle.load(input_file)
+            self.lr=pickle.load(input_file)
+            self.h=pickle.load(input_file)
+        self.regulation=pickle.load(input_file)
         self.optimizer=pickle.load(input_file)
-        self.lr=pickle.load(input_file)
-        self.h=pickle.load(input_file)
-        self.total_time=pickle.load(input_file)
+        self.shape0=pickle.load(input_file)
         self.train_loss=pickle.load(input_file)
         self.train_acc=pickle.load(input_file)
         self.test_flag=pickle.load(input_file)
@@ -550,7 +564,7 @@ class transformer:
         self.epoch=pickle.load(input_file)
         self.total_epoch=pickle.load(input_file)
         self.time=pickle.load(input_file)
-        self.cpu_gpu=pickle.load(input_file)
-        self.use_cpu_gpu=pickle.load(input_file)
+        self.total_time=pickle.load(input_file)
+        self.processor=pickle.load(input_file)
         input_file.close()
         return
