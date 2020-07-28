@@ -20,13 +20,14 @@ class unnamed:
         with tf.name_scope('parameter'):
             
             
-        self.batch=None
-        self.epoch=None
+        with tf.name_scope('hyperparameter'):    
+            self.batch=None
+            self.epoch=0
+            self.lr=None
+            
+            
+        self.regulation=None   
         self.optimizer=None
-        self.lr=None
-        with tf.name_scope('regulation'):
-            
-            
         self.train_loss=None
         self.train_acc=None
         self.train_loss_list=[]
@@ -37,9 +38,10 @@ class unnamed:
         self.flag=None
         self.end_flag=False
         self.test_flag=False
-        self.time=None
+        self.total_epoch=0
+        self.time=0
+        self.total_time=0
         self.processor='/gpu:0'
-        self.use_processor='/gpu:0'
         
     
     def weight_init(self,shape,mean,stddev,name=None):
@@ -53,20 +55,19 @@ class unnamed:
     def structure():
         with self.graph.as_default():
             self.continue_train=False
-            self.total_epoch=0
             self.flag=None
             self.end_flag=False
             self.test_flag=False
             self.train_loss_list.clear()
             self.train_acc_list.clear()
-            with tf.name_scope('parameter_clear'):
-                
-            
             self.dtype=dtype
             with tf.name_scope('hyperparameter'):
+                self.epoch=0
                 
-            
-            self.time=None
+                
+            self.total_epoch=0
+            self.time=0
+            self.total_time=0
             with tf.name_scope('parameter_initialization'):
                 
                 
@@ -81,11 +82,10 @@ class unnamed:
                
                
     def train(self,batch=None,epoch=None,lr=None,train_summary_path=None,model_path=None,one=True,continue_train=False,processor=None):
-        t1=time.time()
         with self.graph.as_default():
-            self.batch=batch
-            self.lr=lr
-            with tf.name_scope('regulation'):
+            with tf.name_scope('hyperparameter'):
+                self.batch=batch
+                self.lr=lr
                 
                 
             if continue_train!=True:
@@ -95,8 +95,6 @@ class unnamed:
                     self.train_loss_list.clear()
                     self.train_acc_list.clear()
             if self.continue_train==False and continue_train==True:
-                if self.end_flag==False and self.flag==0:
-                    self.epoch=None
                 self.train_loss_list.clear()
                 self.train_acc_list.clear()
                 self.continue_train=True
@@ -112,10 +110,10 @@ class unnamed:
                     
                     
                 if continue_train==True and self.flag==1:
+                    self.flag=0
                     with tf.name_scope('parameter_convert_into_tensor):
                     
                         
-                    self.flag=0
                 with tf.name_scope('forward_propagation'):
                 
                 
@@ -141,9 +139,10 @@ class unnamed:
                 self.sess=sess
                 if self.total_epoch==0:
                     epoch=epoch+1
+                t1=time.time()
                 for i in range(epoch):
-                    if self.batch!=None:
-                        batches=int((self.shape0-self.shape0%self.batch)/self.batch)
+                    if batch!=None:
+                        batches=int((self.shape0-self.shape0%batch)/batch)
                         total_loss=0
                         total_acc=0
                         random=np.arange(self.shape0)
@@ -152,8 +151,8 @@ class unnamed:
                         
                             
                         for j in range(batches):
-                            index1=j*self.batch
-                            index2=(j+1)*self.batch
+                            index1=j*batch
+                            index2=(j+1)*batch
                             with tf.name_scope('data_batch/feed_dict'):
                             
                             
@@ -164,10 +163,10 @@ class unnamed:
                             total_loss+=batch_loss
                             batch_acc=sess.run(train_acc,feed_dict=feed_dict)
                             total_acc+=batch_acc
-                        if self.shape0%self.batch!=0:
+                        if self.shape0%batch!=0:
                             batches+=1
-                            index1=batches*self.batch
-                            index2=self.batch-(self.shape0-batches*self.batch)
+                            index1=batches*batch
+                            index2=batch-(self.shape0-batches*batch)
                             with tf.name_scope('data_batch/feed_dict'):
                                 
                             
@@ -212,12 +211,7 @@ class unnamed:
                         temp_epoch=1
                     if i%temp_epoch==0:
                         if continue_train==True:
-                            if self.epoch!=None:
-                                self.total_epoch=self.epoch+i+1
-                            else:
-                                self.total_epoch=i
-                        if continue_train==True:
-                            print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
+                            print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
                         else:
                             print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
                         if model_path!=None and i%epoch*2==0:
@@ -225,6 +219,13 @@ class unnamed:
                         if train_summary_path!=None:
                             train_summary=sess.run(train_merging,feed_dict=feed_dict)
                             train_writer.add_summary(train_summary,i)
+                t2=time.time()
+                _time=int(t2-t1)
+                if continue_train!=True or self.time==0:
+                    self.total_time=_time
+                else:
+                    self.total_time+=_time
+                self.time=_time
                 print()
                 print('last loss:{0:.6f}'.format(self.train_loss))
                 with tf.name_scope('print_accuracy'):
@@ -238,30 +239,25 @@ class unnamed:
                     
                     sess.run(tf.global_variables_initializer())
                 if continue_train==True:
-                    if self.epoch!=None:
-                        self.total_epoch=self.epoch+epoch
-                    else:
+                    if self.total_epoch==0:
                         self.total_epoch=epoch-1
-                    self.epoch=self.total_epoch
+                        self.epoch=epoch-1
+                    else:
+                        self.total_epoch=self.total_epoch+epoch
+                        self.epoch=epoch
                 if continue_train!=True:
                     self.epoch=epoch-1
-                t2=time.time()
-                _time=t2-t1
-                if continue_train!=True or self.time==None:
-                    self.total_time=_time
-                else:
-                    self.total_time+=_time
-                print('time:{0:.3f}s'.format(self.time))
+                print('time:{0}s'.format(self.time))
                 return
     
     
     def end(self):
         with self.graph.as_default():
             self.end_flag=True
+            self.continue_train=False
             with tf.name_scope('parameter_convert_into_numpy'):
                 
-            
-            self.total_epoch=self.epoch
+                
             self.sess.close()
             return
     
@@ -368,7 +364,7 @@ class unnamed:
         plt.xlabel('epoch')
         plt.ylabel('loss')
         plt.figure(2)
-        plt.plot(np.arange(self.epoch+1),self.train_acc_list)
+        plt.plot(np.arange(self.epoch+1),self.train_accuracy_list)
         plt.title('train acc')
         plt.xlabel('epoch')
         plt.ylabel('acc')
@@ -407,19 +403,15 @@ class unnamed:
         with tf.name_scope('save_data_msg'):
             
             
-        with tf.name_scope('save_shape0'):
-            
-            
-        pickle.dump(self.batch,output_file)
-        pickle.dump(self.epoch,output_file)
-        pickle.dump(self.optimizer,output_file)
-        pickle.dump(self.lr,output_file)
         with tf.name_scope('save_hyperparameter'):
+            pickle.dump(self.batch,output_file)
+            pickle.dump(self.epoch,output_file)
+            pickle.dump(self.lr,output_file)
             
             
-        with tf.name_scope('save_regularization'):
-        
-            
+        pickle.dump(self.regulation,output_file)       
+        pickle.dump(self.optimizer,output_file)
+        pickle.dump(self.shape0,output_file)
         pickle.dump(self.train_loss,output_file)
         pickle.dump(self.train_accuracy,output_file)
         pickle.dump(self.test_flag,output_file)
@@ -428,11 +420,10 @@ class unnamed:
             pickle.dump(self.test_accuracy,output_file)
         pickle.dump(self.train_loss_list,output_file)
         pickle.dump(self.train_accuracy_list,output_file)
-        pickle.dump(self.epoch,output_file)
         pickle.dump(self.total_epoch,output_file)
         pickle.dump(self.time,output_file)
+        pickle.dump(self.total_time,output_file)
         pickle.dump(self.processor,output_file)
-        pickle.dump(self.use_processor,output_file)
         output_file.close()
         return
     
@@ -453,17 +444,15 @@ class unnamed:
             with tf.name_scope('placeholder'):
                 
                 
-        self.batch=pickle.load(input_file)
-        self.epoch=pickle.load(input_file)
-        self.optimizer=pickle.load(input_file)
-        self.lr=pickle.load(input_file)
         with tf.name_scope('restore_hyperparameter'):
+            self.batch=pickle.load(input_file)
+            self.epoch=pickle.load(input_file)
+            self.lr=pickle.load(input_file)
             
             
-        with tf.name_scope('restore_regularization'):
-            
-            
-        self.total_time=pickle.load(input_file)
+        self.regulation=pickle.load(input_file)
+        self.optimizer=pickle.load(input_file)    
+        self.shape0=pickle.load(input_file)
         self.train_loss=pickle.load(input_file)
         self.train_accuracy=pickle.load(input_file)
         self.test_flag=pickle.load(input_file)
@@ -472,11 +461,10 @@ class unnamed:
             self.test_accuracy=pickle.load(input_file)
         self.train_loss_list=pickle.load(input_file)
         self.train_accuracy_list=pickle.load(input_file)
-        self.epoch=pickle.load(input_file)
         self.total_epoch=pickle.load(input_file)
         self.time=pickle.load(input_file)
+        self.total_time=pickle.load(input_file)
         self.processor=pickle.load(input_file)
-        self.use_processor=pickle.load(input_file)
         self.flag=1
         input_file.close()
         return
