@@ -33,7 +33,8 @@ class transformer:
             self.batch=None
             self.epoch=0
             self.lr=None
-            self.h=None
+            self.layers=None
+        self.hyperparameter=None
         self.regulation=None
         self.optimizer=None
         self.train_loss=None
@@ -57,7 +58,7 @@ class transformer:
         return tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=self.dtype),name=name)
     
     
-    def structure(self,word_size=None,h=6,mean=0,stddev=0.07,embedding_w,dtype=np.float32):
+    def structure(self,word_size=None,layers=6,mean=0,stddev=0.07,embedding_w,dtype=np.float32):
         self.epoch=0
         self.total_epoch=0
         self.test_flag=False
@@ -65,7 +66,8 @@ class transformer:
         self.train_accuracy_list.clear()
         self.dtype=dtype
         with tf.name_scope('hyperparameter'):
-            self.h=h
+            self.layers=layers
+        self.hyperparameter={'layers':'encoder-decoder layers'}
         self.time=None
         self.total_time=None
         with tf.name_scope('parameter_initialization'):
@@ -103,10 +105,10 @@ class transformer:
     
     def encoder(self,word_vector):
         encoder_temp=[]
-        encoder=[x for x in range(self.h)]
+        encoder=[x for x in range(self.layers)]
         if len(word_vector.shape)==2:
             word_vector=tf.reshape(word_vector,shape=[1,word_vector.shape[0],word_vector.sahpe[1]])
-        for i in range(self.h):
+        for i in range(self.layers):
             with tf.device(self.forward_processor[i]):
                 with tf.name_scope('self_attention'):
                     query=tf.einsum('ijk,kl->ijl',word_vector1,self.qw1[i])
@@ -139,9 +141,9 @@ class transformer:
     
     def decoder(self,word_vector,encoder):
         decoder_temp=[]
-        decoder1=[x for x in range(self.h)]
-        decoder2=[x for x in range(self.h)]
-        for i in range(self.h):
+        decoder1=[x for x in range(self.layers)]
+        decoder2=[x for x in range(self.layers)]
+        for i in range(self.layers):
             with tf.device(self.forward_processor[i]):
                 with tf.name_scope('self_attention1'):
                     mask=tf.constant(np.triu(np.zeros([query.shape[1],query.shape[1]])-1e10))
@@ -194,15 +196,15 @@ class transformer:
     @tf.function       
     def forward_propagation(train_data,train_labels):
         with tf.name_scope('processor_allocation'):
-            self.forward_processor=[x for x in range(self.h)]
+            self.forward_processor=[x for x in range(self.layers)]
             if type(self.processor)==list:
-                for i in range(self.h):
+                for i in range(self.layers):
                     self.forward_processor[i]=self.processor[i]
             elif type(self.processor)==list and len(self.processor)==2:
-                for i in range(self.h):
+                for i in range(self.layers):
                     self.forward_processor[i]=self.processor[0]
             else:
-                for i in range(self.h):
+                for i in range(self.layers):
                     self.forward_processor[i]=self.processor     
         with tf.name_scope('forward_propagation'):
             with tf.device(self.forward_processor[0]):
@@ -508,7 +510,8 @@ class transformer:
             pickle.dump(self.batch,output_file)
             pickle.dump(self.epoch,output_file)
             pickle.dump(self.lr,output_file)
-            pickle.dump(self.h,output_file)
+            pickle.dump(self.layers,output_file)
+        pickle.dump(self.hyperparameter,output_file)
         pickle.dump(self.regulation,output_file)
         pickle.dump(self.optimizer,output_file)
         pickle.dump(self.shape0,output_file)
@@ -549,7 +552,8 @@ class transformer:
             self.batch=pickle.load(input_file)
             self.epoch=pickle.load(input_file)
             self.lr=pickle.load(input_file)
-            self.h=pickle.load(input_file)
+            self.layers=pickle.load(input_file)
+        self.hyperparameter=pickle.load(input_file)
         self.regulation=pickle.load(input_file)
         self.optimizer=pickle.load(input_file)
         self.shape0=pickle.load(input_file)
