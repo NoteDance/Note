@@ -50,15 +50,15 @@ class transformer:
         self.processor='GPU:0'
         
     
-    def weight_init(self,shape,mean,stddev,name=None):
-        return tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=self.dtype),name=name)
+    def weight_init(self,shape,mean,stddev):
+        return tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=self.dtype))
             
     
-    def bias_init(self,shape,mean,stddev,name=None):
-        return tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=self.dtype),name=name)
+    def bias_init(self,shape,mean,stddev):
+        return tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=self.dtype))
     
     
-    def structure(self,word_size=None,layers=6,mean=0,stddev=0.07,embedding_w,dtype=np.float32):
+    def structure(self,embedding_w,word_size,layers=6,mean=0,stddev=0.07,dtype=np.float32):
         self.epoch=0
         self.total_epoch=0
         self.test_flag=False
