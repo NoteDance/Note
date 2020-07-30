@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.python.ops import state_ops
-import tensorflow.keras.optimizers as optimizer
+import tensorflow.keras.optimizers as optimizers
 import Note.create.optimizer as optimizern
 import numpy as np
 import pandas as pd
@@ -111,9 +111,9 @@ class transformer:
         for i in range(self.layers):
             with tf.device(self.forward_processor[i]):
                 with tf.name_scope('self_attention'):
-                    query=tf.einsum('ijk,kl->ijl',word_vector1,self.qw1[i])
-                    key=tf.einsum('ijk,kl->ijl',word_vector1,self.kw1[i])
-                    value=tf.einsum('ijk,kl->ijl',word_vector1,self.vw1[i])
+                    query=tf.einsum('ijk,kl->ijl',word_vector,self.qw1[i])
+                    key=tf.einsum('ijk,kl->ijl',word_vector,self.kw1[i])
+                    value=tf.einsum('ijk,kl->ijl',word_vector,self.vw1[i])
                     query=tf.reshape(query,shape=[query.shape[0],query.shape[1],8,64])
                     key=tf.reshape(key,shape=[64,8,key.shape[1],key.shape[0]])
                     value=tf.reshape(value,shape=[value.shape[0],value.shape[1],8,64])
@@ -146,14 +146,14 @@ class transformer:
         for i in range(self.layers):
             with tf.device(self.forward_processor[i]):
                 with tf.name_scope('self_attention1'):
-                    mask=tf.constant(np.triu(np.zeros([query.shape[1],query.shape[1]])-1e10))
                     query1=tf.einsum('ijk,kl->ijl',word_vector,self.qw2[i])
+                    mask=tf.constant(np.triu(np.zeros([query1.shape[1],query1.shape[1]])-1e10))
                     key1=tf.einsum('ijk,kl->ijl',word_vector,self.kw2[i])
                     value1=tf.einsum('ijk,kl->ijl',word_vector,self.vw2[i])
-                    query1=tf.reshape(query1,shape=[query.shape[0],query.shape[1],8,64])
-                    key1=tf.reshape(key1,shape=[64,8,key.shape[1],key.shape[0]])
-                    value1=tf.reshape(value1,shape=[value.shape[0],value.shape[1],8,64])
-                    _value=tf.zeros(shape=[value.shape[0],value.shape[1]])
+                    query1=tf.reshape(query1,shape=[query1.shape[0],query1.shape[1],8,64])
+                    key1=tf.reshape(key1,shape=[64,8,key1.shape[1],key1.shape[0]])
+                    value1=tf.reshape(value1,shape=[value1.shape[0],value1.shape[1],8,64])
+                    _value=tf.zeros(shape=[value1.shape[0],value1.shape[1]])
                     for j in range(8):
                         for k in range(query1.shape[0]):
                             qk1=tf.matmul(query1[k,:,j,:],key1[:,j,:,k])
@@ -161,20 +161,20 @@ class transformer:
                             qk1=qk1*mask
                             softmax=tf.nn.softmax(qk1,axis=1)
                             softmax=tf.reshape(softmax,shape=[-1,1])
-                            for l in range(query.shape[1]):
+                            for l in range(query1.shape[1]):
                                 _value[k][l]=tf.reduce_sum(softmax[l]*value1[k,:,j,:],aixs=0)
                         decoder_temp.append(_value)
                         decoder_temp.clear()
                     decoder1[i]=tf.concat(decoder_temp,axis=2)
                 with tf.name_scope('self_attention2'):
-                    query2=tf.einsum('ijk,kl->ijl',decoder[i],self.qw3[i])
+                    query2=tf.einsum('ijk,kl->ijl',decoder1[i],self.qw3[i])
                     key2=tf.einsum('ijk,kl->ijl',encoder[i],self.kw3[i])
                     value2=tf.einsum('ijk,kl->ijl',encoder[i],self.vw3[i])
-                    query2=tf.reshape(query2,shape=[query.shape[0],query.shape[1],8,64])
-                    key2=tf.reshape(key2,shape=[64,8,key.shape[1],key.shape[0]])
-                    value2=tf.reshape(value2,shape=[value.shape[0],value.shape[1],8,64])
+                    query2=tf.reshape(query2,shape=[query2.shape[0],query2.shape[1],8,64])
+                    key2=tf.reshape(key2,shape=[64,8,key2.shape[1],key2.shape[0]])
+                    value2=tf.reshape(value2,shape=[value2.shape[0],value2.shape[1],8,64])
                     for j in range(8):
-                        for k in range(query.shape[0]):
+                        for k in range(query2.shape[0]):
                             qk2=tf.matmul(query2[k,:,j,:],key2[:,j,:,k])
                             qk2=qk2/8
                             qk2=qk2
@@ -194,7 +194,7 @@ class transformer:
                                         
             
     @tf.function       
-    def forward_propagation(train_data,train_labels):
+    def forward_propagation(self,train_data,train_labels):
         with tf.name_scope('processor_allocation'):
             self.forward_processor=[x for x in range(self.layers)]
             if type(self.processor)==list:
@@ -230,6 +230,19 @@ class transformer:
             with tf.name_scope('decoder'):
                 output=self.decoder(self,word_vector2,encoder)
             return output
+        
+        
+    def batch(self,data):
+        if self.index1==self.batches*self.batch:
+            return np.concatenate([data[self.index1:],data[:self.index2]])
+        else:
+            return data[self.index1:self.index2]
+        
+        
+    def extend(self,variable):
+        for i in range(len(variable)-1):
+            variable[0].extend[variable[i+1]]
+        return variable[0]
     
     
     def apply_gradient(self,tape,optimizer,loss,variable):
@@ -251,16 +264,17 @@ class transformer:
                 train_processor=self.processor  
         with tf.device(train_processor):
             with tf.name_scope('variable'):
-                variable=self.qw1.extend(self.kw1.extend(self.vw1.extend(self.fw1.extend(self.qw2.extend(self.kw2.extend(self.vw2.extend(self.fw2.extend(self.qw3.extend(self.kw3.extend(self.vw3.extend(self.fw3)))))))))))
+                variable=self.extend([self.qw1,self.kw1,self.vw1,self.fw1,self.qw2,self.kw2,self.vw2,self.qw3,self.kw3,self.vw3,self.fw2])
             with tf.name_scope('optimizer'):
                 self.optimizer=['Adam',{'lr':lr}]
-                optimizer=tf.keras.optimizers.Adam(lr)
+                optimizer=optimizers.Adam(lr)
             if self.total_epoch==0:
                 epoch=epoch+1
             t1=time.time()
             for i in range(epoch):
                 if batch!=None:
                     batches=int((self.shape0-self.shape0%batch)/batch)
+                    self.batches=batches
                     total_loss=0
                     total_acc=0
                     random=np.arange(self.shape0)
@@ -269,11 +283,11 @@ class transformer:
                         train_data=self.train_data[random]
                         train_labels=self.train_labels[random]
                     for j in range(batches):
-                        index1=j*batch
-                        index2=(j+1)*batch
-                        with tf.name_scope('data_batch/feed_dict'):
-                            train_data_batch=train_data[index1:index2]
-                            train_labels_batch=train_labels[index1:index2]
+                        self.index1=j*batch
+                        self.index2=(j+1)*batch
+                        with tf.name_scope('data_batch'):
+                            train_data_batch=self.batch(train_data)
+                            train_labels_batch=self.batch(train_labels)
                         with tf.GradientTape() as tape:
                             with tf.name_scope('forward_propagation/loss'):
                                 output=self.forward_propagation(train_data_batch)
@@ -285,16 +299,17 @@ class transformer:
                                     self.apply_gradient(tape,optimizer,batch_loss,variable)
                         total_loss+=batch_loss
                         with tf.name_scope('accuracy'):
-                            batch_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(labels_batch,2)!=0,tf.int32)==tf.argmax(labels_batch,2),tf.float32))
+                            batch_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(train_labels_batch,2)!=0,tf.int32)==tf.argmax(train_labels_batch,2),tf.float32))
                         batch_acc=batch_acc.numpy()
                         total_acc+=batch_acc
                     if self.shape0%batch!=0:
                         batches+=1
-                        index1=batches*batch
-                        index2=batch-(self.shape0-batches*batch)
+                        self.batches+=1
+                        self.index1=batches*batch
+                        self.index2=batch-(self.shape0-batches*batch)
                         with tf.name_scope('data_batch'):
-                            train_data_batch=np.concatenate([train_data[index1:],train_data[:index2]])
-                            train_labels_batch=np.concatenate([train_labels[index1:],train_labels[:index2]])
+                            train_data_batch=self.batch(train_data)
+                            train_labels_batch=self.batch(train_labels)
                         with tf.GradientTape() as tape:
                             with tf.name_scope('forward_propagation/loss'):
                                 output=self.forward_propagation(train_data_batch)
@@ -339,7 +354,7 @@ class transformer:
                         train_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(train_labels,2)!=0,tf.int32)==tf.argmax(train_labels,2),tf.float32))
                     acc=train_acc.numpy()
                     self.train_acc_list.append(float(acc))
-                    self.train_acc=accuracy
+                    self.train_acc=acc
                     self.train_acc=self.train_acc.astype(np.float32)
                 if epoch%10!=0:
                     temp_epoch=epoch-epoch%10
@@ -357,7 +372,7 @@ class transformer:
                         self.save(model_path,i,one)
             t2=time.time()
             _time=int(t2-t1)
-            if continue_train!=True or self.time==0:
+            if self.time==0:
                 self.total_time=_time
             else:
                 self.total_time+=_time
@@ -377,13 +392,19 @@ class transformer:
     
     def test(self,test_data,test_labels,batch=None):
         self.test_flag=True
+        batch_temp=self.batch
+        self.batch=batch
         if batch!=None:
             total_loss=0
             total_acc=0
-            test_batches=int((test_data.shape[0]-test_data.shape[0]%batch)/batch)
-            for j in range(test_batches):
-                test_data_batch=test_data[j*batch:(j+1)*batch]
-                test_labels_batch=test_labels[j*batch:(j+1)*batch]
+            batches=int((test_data.shape[0]-test_data.shape[0]%batch)/batch)
+            self.batches=batches
+            for j in range(batches):
+                self.index1=j*batch
+                self.index2=(j+1)*batch
+                with tf.name_scope('data_batch'):
+                    test_data_batch=self.batch(test_data)
+                    test_labels_batch=self.batch(test_labels)
                 with tf.name_scope('loss'):
                      output=self.forward_propagation(test_data_batch)
                      batch_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output,labels=test_labels_batch))
@@ -392,9 +413,11 @@ class transformer:
                     batch_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(test_labels_batch,2)!=0,tf.int32)==tf.argmax(test_labels_batch,2),tf.float32))
                 total_acc+=batch_acc.numpy()
             if test_data.shape[0]%batch!=0:
-                test_batches+=1
-                test_data_batch=np.concatenate([test_data[batches*batch:],test_data[:batch-(test_data.shape[0]-batches*batch)]])
-                test_labels_batch=np.concatenate([test_labels[batches*batch:],test_labels[:batch-(test_labels.shape[0]-batches*batch)]])
+                batches+=1
+                self.batches+=1
+                with tf.name_scope('data_batch'):
+                    test_data_batch=self.batch(test_data)
+                    test_labels_batch=self.batch(test_labels)
                 with tf.name_scope('loss'):
                     output=self.forward_propagation(test_data_batch)
                     batch_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output,labels=test_labels_batch))
@@ -402,8 +425,8 @@ class transformer:
                 with tf.name_scope('accuracy'):
                     batch_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(test_labels_batch,2)!=0,tf.int32)==tf.argmax(test_labels_batch,2),tf.float32))
                 total_acc+=batch_acc.numpy()
-            test_loss=total_loss/test_batches
-            test_acc=total_acc/test_batches
+            test_loss=total_loss/batches
+            test_acc=total_acc/batches
             self.test_loss=test_loss
             self.test_acc=test_acc
             self.test_loss=self.test_loss.astype(np.float32)
@@ -417,8 +440,8 @@ class transformer:
             self.test_loss=test_loss.numpy().astype(np.float32)
             self.test_acc=test_acc.numpy().astype(np.float32)
         print('test loss:{0:.6f}'.format(self.test_loss))
-        with tf.name_scope('print_accuracy'):
-            print('accuracy:{0:.3f}%'.format(self.test_acc*100))
+        print('test acc:{0:.3f}%'.format(self.test_acc*100))
+        self.batch=batch_temp
         return
         
     
