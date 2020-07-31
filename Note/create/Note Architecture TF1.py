@@ -78,8 +78,14 @@ class unnamed:
                
                
            with tf.name_scope('forward_propagation'):
+            
                
                
+    def batch(self,data):
+        if self.index1==self.batches*self.batch:
+            return np.concatenate([data[self.index1:],data[:self.index2]])
+        else:
+            return data[self.index1:self.index2]           
                
     def train(self,batch=None,epoch=None,lr=None,train_summary_path=None,model_path=None,one=True,continue_train=False,processor=None):
         with self.graph.as_default():
@@ -143,6 +149,7 @@ class unnamed:
                 for i in range(epoch):
                     if batch!=None:
                         batches=int((self.shape0-self.shape0%batch)/batch)
+                        self.batches=batches
                         total_loss=0
                         total_acc=0
                         random=np.arange(self.shape0)
@@ -151,8 +158,8 @@ class unnamed:
                         
                             
                         for j in range(batches):
-                            index1=j*batch
-                            index2=(j+1)*batch
+                            self.index1=j*batch
+                            self.index2=(j+1)*batch
                             with tf.name_scope('data_batch/feed_dict'):
                             
                             
@@ -165,8 +172,9 @@ class unnamed:
                             total_acc+=batch_acc
                         if self.shape0%batch!=0:
                             batches+=1
-                            index1=batches*batch
-                            index2=batch-(self.shape0-batches*batch)
+                            self.batches+=1
+                            self.index1=batches*batch
+                            self.index2=batch-(self.shape0-batches*batch)
                             with tf.name_scope('data_batch/feed_dict'):
                                 
                             
@@ -265,6 +273,8 @@ class unnamed:
     def test(self,test_data,test_labels,batch=None):
         with self.graph.as_default():
             self.test_flag=True
+            batch_temp=self.batch
+            self.batch=batch
             with tf.name_scope('placeholder'):
                 
                 
@@ -282,24 +292,30 @@ class unnamed:
             if batch!=None:
                 total_loss=0
                 total_acc=0
-                test_batches=int((test_data.shape[0]-test_data.shape[0]%batch)/batch)
-                for j in range(test_batches):
-                    test_data_batch=test_data[j*batch:(j+1)*batch]
-                    test_labels_batch=test_labels[j*batch:(j+1)*batch]
-                    batch_loss=sess.run(test_loss,feed_dict={test_data_placeholder:test_data_batch,test_labels_placeholder:test_labels_batch})
+                batches=int((test_data.shape[0]-test_data.shape[0]%batch)/batch)
+                self.batches=batches
+                for j in range(batches):
+                    self.index1=j*batch
+                    self.index2=(j+1)*batch
+                    with tf.name_scope('data_batch'):
+                        
+                        
+                    batch_loss=sess.run(test_loss,feed_dict={data_placeholder:test_data_batch,labels_placeholder:test_labels_batch})
                     total_loss+=batch_loss
-                    batch_acc=sess.run(test_acc,feed_dict={test_data_placeholder:test_data_batch,test_labels_placeholder:test_labels_batch})
+                    batch_acc=sess.run(test_acc,feed_dict={data_placeholder:test_data_batch,labels_placeholder:test_labels_batch})
                     total_acc+=batch_acc
                 if test_data.shape[0]%batch!=0:
-                    test_batches+=1
-                    test_data_batch=np.concatenate([test_data[batches*batch:],test_data[:batch-(test_data.shape[0]-batches*batch)]])
-                    test_labels_batch=np.concatenate([test_labels[batches*batch:],test_labels[:batch-(test_labels.shape[0]-batches*batch)]])
+                    batches+=1
+                    self.batches+=1
+                    with tf.name_scope('data_batch'):
+                        
+                        
                     batch_loss=sess.run(test_loss,feed_dict={test_data_placeholder:test_data_batch,test_labels_placeholder:test_labels_batch})
                     total_loss+=batch_loss
                     batch_acc=sess.run(test_acc,feed_dict={test_data_placeholder:test_data_batch,test_labels_placeholder:test_labels_batch})
                     total_acc+=batch_acc
-                test_loss=total_loss/test_batches
-                test_acc=total_acc/test_batches
+                test_loss=total_loss/batches
+                test_acc=total_acc/batches
                 self.test_loss=test_loss
                 self.test_acc=test_acc
                 self.test_loss=self.test_loss.astype(np.float32)
@@ -313,6 +329,7 @@ class unnamed:
             with tf.name_scope('print_accuracy'):
                 
             
+            self.batch=batch_temp 
             sess.close()
             return
         
@@ -364,7 +381,7 @@ class unnamed:
         plt.xlabel('epoch')
         plt.ylabel('loss')
         plt.figure(2)
-        plt.plot(np.arange(self.epoch+1),self.train_accuracy_list)
+        plt.plot(np.arange(self.epoch+1),self.train_acc_list)
         plt.title('train acc')
         plt.xlabel('epoch')
         plt.ylabel('acc')
@@ -413,13 +430,13 @@ class unnamed:
         pickle.dump(self.optimizer,output_file)
         pickle.dump(self.shape0,output_file)
         pickle.dump(self.train_loss,output_file)
-        pickle.dump(self.train_accuracy,output_file)
+        pickle.dump(self.train_acc,output_file)
         pickle.dump(self.test_flag,output_file)
         if self.test_flag==True:
             pickle.dump(self.test_loss,output_file)
-            pickle.dump(self.test_accuracy,output_file)
+            pickle.dump(self.test_acc,output_file)
         pickle.dump(self.train_loss_list,output_file)
-        pickle.dump(self.train_accuracy_list,output_file)
+        pickle.dump(self.train_acc_list,output_file)
         pickle.dump(self.total_epoch,output_file)
         pickle.dump(self.time,output_file)
         pickle.dump(self.total_time,output_file)
@@ -454,13 +471,13 @@ class unnamed:
         self.optimizer=pickle.load(input_file)    
         self.shape0=pickle.load(input_file)
         self.train_loss=pickle.load(input_file)
-        self.train_accuracy=pickle.load(input_file)
+        self.train_acc=pickle.load(input_file)
         self.test_flag=pickle.load(input_file)
         if self.test_flag==True:
             self.test_loss=pickle.load(input_file)
-            self.test_accuracy=pickle.load(input_file)
+            self.test_acc=pickle.load(input_file)
         self.train_loss_list=pickle.load(input_file)
-        self.train_accuracy_list=pickle.load(input_file)
+        self.train_acc_list=pickle.load(input_file)
         self.total_epoch=pickle.load(input_file)
         self.time=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
