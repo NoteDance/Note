@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.python.ops import state_ops
-import tensorflow.keras.optimizers as optimizer
+import tensorflow.keras.optimizers as optimizers
 import Note.create.optimizer as optimizern
 import numpy as np
 import pandas as pd
@@ -68,8 +68,21 @@ class unnamed:
                
                
         with tf.name_scope('forward_propagation'):
-            
-            
+    
+    
+    
+    def batch(self,data):
+        if self.index1==self.batches*self.batch:
+            return np.concatenate([data[self.index1:],data[:self.index2]])
+        else:
+            return data[self.index1:self.index2]
+        
+        
+    def extend(self,variable):
+        for i in range(len(variable)-1):
+            variable[0].extend(variable[i+1])
+        return variable[0]
+    
             
     def apply_gradient(self,tape,optimizer,loss,variable):
         gradient=tape.gradient(loss,variable)
@@ -103,6 +116,7 @@ class unnamed:
             for i in range(epoch):
                 if batch!=None:
                     batches=int((self.shape0-self.shape0%batch)/batch)
+                    self.batches=batches
                     total_loss=0
                     total_acc=0
                     random=np.arange(self.shape0)
@@ -111,8 +125,8 @@ class unnamed:
                         
                     
                     for j in range(batches):
-                        index1=j*batch
-                        index2=(j+1)*batch
+                        self.index1=j*batch
+                        self.index2=(j+1)*batch
                         with tf.name_scope('data_batch'):
                             
                         
@@ -134,8 +148,9 @@ class unnamed:
                         total_acc+=batch_acc
                     if self.shape0%batch!=0:
                         batches+=1
-                        index1=batches*batch
-                        index2=batch-(self.shape0-batches*batch)
+                        self.batches+=1
+                        self.index1=batches*batch
+                        self.index2=batch-(self.shape0-batches*batch)
                         with tf.name_scope('data_batch'):
                             
                         
@@ -204,12 +219,15 @@ class unnamed:
                     if model_path!=None and i%epoch*2==0:
                         self.save(model_path,i,one)
             t2=time.time()
-            _time=int(t2-t1)
-            if continue_train!=True or self.time==None:
+            _time=(t2-t1)-int(t2-t1)
+            if self.time==0:
                 self.total_time=_time
             else:
                 self.total_time+=_time
-            self.time=_time
+            if _time<0.5:
+                self.time=int(t2-t1)
+            else:
+                self.time=int(t2-t1)+1
             print()
             print('last loss:{0:.6f}'.format(self.train_loss))
             with tf.name_scope('print_accuracy'):
@@ -227,25 +245,33 @@ class unnamed:
     
     def test(self,test_data,test_labels,batch=None):
         self.test_flag=True
+        batch_temp=self.batch
+        self.batch=batch
         if batch!=None:
             total_loss=0
             total_acc=0
-            test_batches=int((test_data.shape[0]-test_data.shape[0]%batch)/batch)
-            for j in range(test_batches):
-                test_data_batch=test_data[j*batch:(j+1)*batch]
-                test_labels_batch=test_labels[j*batch:(j+1)*batch]
+            batches=int((test_data.shape[0]-test_data.shape[0]%batch)/batch)
+            self.batches=batches
+            for j in range(batches):
+                self.index1=j*batch
+                self.index2=(j+1)*batch
+                with tf.name_scope('data_batch'):
+                    
+                    
                 with tf.name_scope('loss'):
                 
                     
-                total_test_loss+=batch_test_loss.numpy()
+                total_loss+=batch_test_loss.numpy()
                 with tf.name_scope('accuracy'):
                     
                 
                 total_acc+=batch_acc.numpy()
             if test_data.shape[0]%batch!=0:
-                test_batches+=1
-                test_data_batch=np.concatenate([test_data[batches*batch:],test_data[:batch-(test_data.shape[0]-batches*batch)]])
-                test_labels_batch=np.concatenate([test_labels[batches*batch:],test_labels[:batch-(test_labels.shape[0]-batches*batch)]])
+                batches+=1
+                self.batches+=1
+                with tf.name_scope('data_batch'):
+                    
+                    
                 with tf.name_scope('loss'):
                     
                 
@@ -254,8 +280,8 @@ class unnamed:
                     
                 
                 total_acc+=batch_acc.numpy()
-            test_loss=total_loss/test_batches
-            test_acc=total_acc/test_batches
+            test_loss=total_loss/batches
+            test_acc=total_acc/batches
             self.test_loss=test_loss
             self.test_acc=test_acc
             self.test_loss=self.test_loss.astype(np.float32)
@@ -272,7 +298,7 @@ class unnamed:
         print('test loss:{0:.6f}'.format(self.test_loss))
         with tf.name_scope('print_accuracy'):
             
-            
+        self.batch=batch_temp    
         return
         
     
