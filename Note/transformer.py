@@ -264,7 +264,8 @@ class transformer:
                 train_processor=self.processor  
         with tf.device(train_processor):
             with tf.name_scope('variable'):
-                variable=self.extend([self.qw1,self.kw1,self.vw1,self.fw1,self.qw2,self.kw2,self.vw2,self.qw3,self.kw3,self.vw3,self.fw2])
+                variable=[self.qw1,self.kw1,self.vw1,self.fw1,self.qw2,self.kw2,self.vw2,self.qw3,self.kw3,self.vw3,self.fw2]
+                variable=self.extend(variable)
             with tf.name_scope('optimizer'):
                 self.optimizer=['Adam',{'lr':lr}]
                 optimizer=optimizers.Adam(lr)
@@ -371,12 +372,15 @@ class transformer:
                     if model_path!=None and i%epoch*2==0:
                         self.save(model_path,i,one)
             t2=time.time()
-            _time=int(t2-t1)
+            _time=(t2-t1)-int(t2-t1)
             if self.time==0:
                 self.total_time=_time
             else:
                 self.total_time+=_time
-            self.time=_time
+            if _time<0.5:
+                self.time=int(t2-t1)
+            else:
+                self.time=int(t2-t1)+1
             print()
             print('last loss:{0:.6f}'.format(self.train_loss))
             print('accuracy:{0:.3f}%'.format(self.train_acc*100))
