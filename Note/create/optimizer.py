@@ -122,20 +122,3 @@ class Adam:
             self.g[i]=self.lr*self.v_[i]/(tf.sqrt(self.s_[i])+self.epsilon)
             state_ops.assign(variable[i],variable[i]-self.g[i])
         return
-
-
-class optimizer_tf1:
-    def Gradient(self,train_loss,lr):
-        return tf.train.GradientDescentOptimizer(learning_rate=lr).minimize(train_loss)
-    
-    
-    def Momentum(self,train_loss,lr,momentum=0.99):
-        return tf.train.MomentumOptimizer(learning_rate=lr,momentum=momentum).minimize(train_loss)
-    
-    
-    def RMSprop(self,train_loss,lr):
-        return tf.train.RMSPropOptimizer(learning_rate=lr).minimize(train_loss)
-    
-    
-    def Adam(self,train_loss,lr=0.001):
-        return tf.train.AdamOptimizer(learning_rate=lr).minimize(train_loss)
