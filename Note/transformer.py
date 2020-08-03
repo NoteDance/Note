@@ -1,9 +1,7 @@
 import tensorflow as tf
 from tensorflow.python.ops import state_ops
 import tensorflow.keras.optimizers as optimizers
-import Note.create.optimizer as optimizern
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import pickle
 import time
