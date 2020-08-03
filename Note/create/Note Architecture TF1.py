@@ -1,7 +1,6 @@
 import tensorflow as tf
-import Note.create.optimizer_tf1 as optimizer
+import Note.create.TF1 as TF1
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import pickle
 import time
@@ -10,11 +9,12 @@ import time
 class unnamed:
     def __init__():
         self.graph=tf.Graph()
-        with tf.name_scope('data'):
+        tf1=TF1.tf1()
+        with tf.name_scope('data/shape0'):
             
             
         with self.graph.as_default():
-            with tf.name_scope('placeholder/data_msg'):
+            with tf.name_scope('placeholder'):
                 
         
         with tf.name_scope('parameter'):
@@ -81,12 +81,6 @@ class unnamed:
             
                
                
-    def batch(self,data):
-        if self.index1==self.batches*self.batch:
-            return np.concatenate([data[self.index1:],data[:self.index2]])
-        else:
-            return data[self.index1:self.index2]           
-               
     def train(self,batch=None,epoch=None,lr=None,train_summary_path=None,model_path=None,one=True,continue_train=False,processor=None):
         with self.graph.as_default():
             with tf.name_scope('hyperparameter'):
@@ -149,7 +143,7 @@ class unnamed:
                 for i in range(epoch):
                     if batch!=None:
                         batches=int((self.shape0-self.shape0%batch)/batch)
-                        self.batches=batches
+                        tf1.batches=batches
                         total_loss=0
                         total_acc=0
                         random=np.arange(self.shape0)
@@ -158,8 +152,8 @@ class unnamed:
                         
                             
                         for j in range(batches):
-                            self.index1=j*batch
-                            self.index2=(j+1)*batch
+                            tf1.index1=j*batch
+                            tf1.index2=(j+1)*batch
                             with tf.name_scope('data_batch/feed_dict'):
                             
                             
@@ -172,9 +166,9 @@ class unnamed:
                             total_acc+=batch_acc
                         if self.shape0%batch!=0:
                             batches+=1
-                            self.batches+=1
-                            self.index1=batches*batch
-                            self.index2=batch-(self.shape0-batches*batch)
+                            tf1.batches+=1
+                            tf1.index1=batches*batch
+                            tf1.index2=batch-(self.shape0-batches*batch)
                             with tf.name_scope('data_batch/feed_dict'):
                                 
                             
@@ -421,8 +415,8 @@ class unnamed:
             
           
         with tf.name_scope('save_data_msg'):
-            
-            
+            pickle.dump(tf1.dtype)
+            pickle.dump(tf1.shape)           
         with tf.name_scope('save_hyperparameter'):
             pickle.dump(self.batch,output_file)
             pickle.dump(self.epoch,output_file)
@@ -450,15 +444,13 @@ class unnamed:
 
     def restore(self,model_path):
         input_file=open(model_path,'rb')
-        with tf.name_scope('restore_parameter/'):
+        tf1=TF1.tf1()
+        with tf.name_scope('restore_parameter'):
             
             
-        with tf.name_scope('restore_data_msg'):
-            
-            
-        with tf.name_scope('restore_shape0'):
-            
-            
+        with tf.name_scope('restore_data_msg'):    
+            tf1.dtype=pickle.load(input_file)
+            tf1.shape=pickle.load(input_file)
         self.graph=tf.Graph()
         with self.graph.as_default():
             with tf.name_scope('placeholder'):
