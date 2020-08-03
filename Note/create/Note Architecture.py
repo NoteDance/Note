@@ -1,9 +1,9 @@
 import tensorflow as tf
+import Note.create.TF2 as TF2
 from tensorflow.python.ops import state_ops
 import tensorflow.keras.optimizers as optimizers
 import Note.create.optimizer as optimizern
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import pickle
 import time
@@ -11,7 +11,8 @@ import time
 
 class unnamed:
     def __init__():
-        with tf.name_scope('data'):     
+        tf2=TF2.tf2()
+        with tf.name_scope('data/shape0'):
            
             
         with tf.name_scope('parameter'):
@@ -71,25 +72,6 @@ class unnamed:
     
     
     
-    def batch(self,data):
-        if self.index1==self.batches*self.batch:
-            return np.concatenate([data[self.index1:],data[:self.index2]])
-        else:
-            return data[self.index1:self.index2]
-        
-        
-    def extend(self,variable):
-        for i in range(len(variable)-1):
-            variable[0].extend(variable[i+1])
-        return variable[0]
-    
-            
-    def apply_gradient(self,tape,optimizer,loss,variable):
-        gradient=tape.gradient(loss,variable)
-        optimizer.apply_gradients(zip(gradient,variable))
-        return
-    
-    
     def train(self,batch=None,epoch=None,lr=None,model_path=None,one=True,processor=None):
         with tf.name_scope('hyperparameter'):
             self.batch=batch
@@ -116,7 +98,7 @@ class unnamed:
             for i in range(epoch):
                 if batch!=None:
                     batches=int((self.shape0-self.shape0%batch)/batch)
-                    self.batches=batches
+                    tf2.batches=batches
                     total_loss=0
                     total_acc=0
                     random=np.arange(self.shape0)
@@ -125,8 +107,8 @@ class unnamed:
                         
                     
                     for j in range(batches):
-                        self.index1=j*batch
-                        self.index2=(j+1)*batch
+                        tf2.index1=j*batch
+                        tf2.index2=(j+1)*batch
                         with tf.name_scope('data_batch'):
                             
                         
@@ -148,9 +130,9 @@ class unnamed:
                         total_acc+=batch_acc
                     if self.shape0%batch!=0:
                         batches+=1
-                        self.batches+=1
-                        self.index1=batches*batch
-                        self.index2=batch-(self.shape0-batches*batch)
+                        tf2.batches+=1
+                        tf2.index1=batches*batch
+                        tf2.index2=batch-(self.shape0-batches*batch)
                         with tf.name_scope('data_batch'):
                             
                         
