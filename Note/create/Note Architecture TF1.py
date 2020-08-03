@@ -444,7 +444,7 @@ class unnamed:
 
     def restore(self,model_path):
         input_file=open(model_path,'rb')
-        tf1=TF1.tf1()
+        tf1.accumulator=0
         with tf.name_scope('restore_parameter'):
             
             
