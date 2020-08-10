@@ -120,10 +120,10 @@ class unnamed:
                 with tf.name_scope('train_loss'):
                     
                     
+                    train_loss_scalar=tf.summary.scalar('train_loss',train_loss)
                 with tf.name_scope('optimizer'): 
                     
                     
-                train_loss_scalar=tf.summary.scalar('train_loss',train_loss)
                 with tf.name_scope('train_accuracy'):
                     
                     
