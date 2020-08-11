@@ -1,3 +1,4 @@
+import tensorflow as tf
 import numpy as np
 
 
@@ -7,8 +8,12 @@ class tf2:
         self.batches=None
         self.index1=None
         self.index2=None
+    
+
+    def einsun(self,data,weight):
+        return tf.einsum('ijk,kl->ijl',data,weight)    
         
-        
+    
     def batch(self,data):
         if self.index1==self.batches*self.batch:
             return np.concatenate([data[self.index1:],data[:self.index2]])
