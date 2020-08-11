@@ -5,6 +5,7 @@ import numpy as np
 class tf1:
     def __init__(self):
         self.accumulator=0
+        self.test_accumulator=0
         self.dtype=[]
         self.shape=[]
         self.batch=None
@@ -13,12 +14,18 @@ class tf1:
         self.index2=None
     
     
-    def placeholder(self,data=None,name=None):
-        self.accumuator+=1
-        if data!=None:
+    def placeholder(self,data=None,name=None,test=False):
+        if test==False:
+            self.accumulator+=1
+        else:
+            self.test_accumulator+=1
+        if data!=None and test==False:
             self.dtype.append(data.dtype)
             self.shape.append(data.shape)
-        return tf.placeholde(dtype=self.dtype[self.accumuator-1],shape=[None for x in range(len(self.shape[self.accumuator-1]))],name=name)
+        if test==False:
+            return tf.placeholde(dtype=self.dtype[self.accumulator-1],shape=[None for x in range(len(self.shape[self.accumulator-1]))],name=name)
+        else:
+            return tf.placeholde(dtype=self.dtype[self.test_accumulator-1],shape=[None for x in range(len(self.shape[self.test_accumulator-1]))],name=name)
     
     
     def batch(self,data):
