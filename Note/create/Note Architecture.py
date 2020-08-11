@@ -227,16 +227,14 @@ class unnamed:
     
     def test(self,test_data,test_labels,batch=None):
         self.test_flag=True
-        batch_temp=self.batch
-        self.batch=batch
         if batch!=None:
             total_loss=0
             total_acc=0
             batches=int((test_data.shape[0]-test_data.shape[0]%batch)/batch)
-            self.batches=batches
+            tf2.batches=batches
             for j in range(batches):
-                self.index1=j*batch
-                self.index2=(j+1)*batch
+                tf2.index1=j*batch
+                tf2.index2=(j+1)*batch
                 with tf.name_scope('data_batch'):
                     
                     
@@ -250,7 +248,9 @@ class unnamed:
                 total_acc+=batch_acc.numpy()
             if test_data.shape[0]%batch!=0:
                 batches+=1
-                self.batches+=1
+                tf2.batches+=1
+                tf2.index1=batches*batch
+                tf2.index2=batch-(self.shape0-batches*batch)
                 with tf.name_scope('data_batch'):
                     
                     
@@ -280,7 +280,7 @@ class unnamed:
         print('test loss:{0:.6f}'.format(self.test_loss))
         with tf.name_scope('print_accuracy'):
             
-        self.batch=batch_temp    
+            
         return
         
     
