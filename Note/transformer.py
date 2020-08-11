@@ -1,4 +1,5 @@
 import tensorflow as tf
+import Note.create.TF2 as TF2
 from tensorflow.python.ops import state_ops
 import tensorflow.keras.optimizers as optimizers
 import numpy as np
@@ -9,6 +10,7 @@ import time
 
 class transformer:
     def __init__(self,train_data,train_labels):
+        tf2=TF2.tf2()
         with tf.name_scope('data'):
             self.train_data=train_data
             self.train_labels=train_labels
@@ -273,7 +275,7 @@ class transformer:
             for i in range(epoch):
                 if batch!=None:
                     batches=int((self.shape0-self.shape0%batch)/batch)
-                    self.batches=batches
+                    tf2.batches=batches
                     total_loss=0
                     total_acc=0
                     random=np.arange(self.shape0)
@@ -282,8 +284,8 @@ class transformer:
                         train_data=self.train_data[random]
                         train_labels=self.train_labels[random]
                     for j in range(batches):
-                        self.index1=j*batch
-                        self.index2=(j+1)*batch
+                        tf2.index1=j*batch
+                        tf2.index2=(j+1)*batch
                         with tf.name_scope('data_batch'):
                             train_data_batch=self.batch(train_data)
                             train_labels_batch=self.batch(train_labels)
@@ -303,9 +305,9 @@ class transformer:
                         total_acc+=batch_acc
                     if self.shape0%batch!=0:
                         batches+=1
-                        self.batches+=1
-                        self.index1=batches*batch
-                        self.index2=batch-(self.shape0-batches*batch)
+                        tf2.batches+=1
+                        tf2.index1=batches*batch
+                        tf2.index2=batch-(self.shape0-batches*batch)
                         with tf.name_scope('data_batch'):
                             train_data_batch=self.batch(train_data)
                             train_labels_batch=self.batch(train_labels)
@@ -394,16 +396,14 @@ class transformer:
     
     def test(self,test_data,test_labels,batch=None):
         self.test_flag=True
-        batch_temp=self.batch
-        self.batch=batch
         if batch!=None:
             total_loss=0
             total_acc=0
             batches=int((test_data.shape[0]-test_data.shape[0]%batch)/batch)
-            self.batches=batches
+            tf2.batches=batches
             for j in range(batches):
-                self.index1=j*batch
-                self.index2=(j+1)*batch
+                tf2.index1=j*batch
+                tf2.index2=(j+1)*batch
                 with tf.name_scope('data_batch'):
                     test_data_batch=self.batch(test_data)
                     test_labels_batch=self.batch(test_labels)
@@ -416,7 +416,9 @@ class transformer:
                 total_acc+=batch_acc.numpy()
             if test_data.shape[0]%batch!=0:
                 batches+=1
-                self.batches+=1
+                tf2.batches+=1
+                tf2.index1=batches*batch
+                tf2.index2=batch-(self.shape0-batches*batch)
                 with tf.name_scope('data_batch'):
                     test_data_batch=self.batch(test_data)
                     test_labels_batch=self.batch(test_labels)
@@ -443,7 +445,6 @@ class transformer:
             self.test_acc=test_acc.numpy().astype(np.float32)
         print('test loss:{0:.6f}'.format(self.test_loss))
         print('test acc:{0:.3f}%'.format(self.test_acc*100))
-        self.batch=batch_temp
         return
         
     
