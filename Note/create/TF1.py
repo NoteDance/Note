@@ -28,6 +28,10 @@ class tf1:
             return tf.placeholde(dtype=self.dtype[self.test_accumulator-1],shape=[None for x in range(len(self.shape[self.test_accumulator-1]))],name=name)
     
     
+    def einsun(self,data,weight):
+        return tf.einsum('ijk,kl->ijl',data,weight)
+    
+    
     def batch(self,data):
         if self.index1==self.batches*self.batch:
             return np.concatenate([data[self.index1:],data[:self.index2]])
