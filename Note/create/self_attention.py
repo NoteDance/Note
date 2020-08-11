@@ -16,7 +16,7 @@ def self_attention(data,qw,kw,vw,a,mask=False):
     for i in range(a):
         for j in range(query.shape[0]):
             qk=tf.matmul(query[j,:,i,:],key[:,i,:,j])
-            qk=qk/a
+            qk=qk/np.sqrt(int(data.shape[2])/a)
             if mask!=False:
                 qk=qk*mask
             softmax=tf.nn.softmax(qk,axis=1)
