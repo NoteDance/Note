@@ -32,6 +32,8 @@ class unnamed:
         self.train_acc_list=[]
         self.test_loss=None
         self.test_acc=None
+        self.test_loss_list=[]
+        self.test_acc_list=[]
         self.test_flag=False
         self.total_epoch=0
         self.time=0
@@ -51,6 +53,8 @@ class unnamed:
         self.test_flag=False
         self.train_loss_list.clear()
         self.train_acc_list.clear()
+        self.test_loss_list.clear()
+        self.test_acc_list.clear()
         self.dtype=dtype
         with tf.name_scope('hyperparameter'):
             self.epoch=0
@@ -72,14 +76,17 @@ class unnamed:
     
     
     
-    def train(self,batch=None,epoch=None,lr=None,model_path=None,one=True,processor=None):
+    def train(self,batch=None,epoch=None,lr=None,test=False,test_batch=None,model_path=None,one=True,processor=None):
         with tf.name_scope('hyperparameter'):
             self.batch=batch
             self.lr=lr
             
-            
+        
+        self.test_flag=test
         self.train_loss_list.clear()
         self.train_acc_list.clear()
+        self.test_loss_list.clear()
+        self.test_acc_list.clear()
         if processor!=None:
             self.processor=processor
         with tf.name_scope('processor_allocation'):
@@ -160,6 +167,12 @@ class unnamed:
                     self.train_acc_list.append(float(train_acc))
                     self.train_acc=train_acc
                     self.train_acc=self.train_acc.astype(np.float32)
+                    if test==True:
+                        with tf.name_scope('test'):
+                            
+                            
+                        self.test_loss_list.append(self.test_loss)
+                        self.test_acc_list.append(self.test_acc)
                 else:
                     random=np.arange(self.shape0)
                     np.random.shuffle(random)
@@ -186,6 +199,12 @@ class unnamed:
                     self.train_acc_list.append(float(acc))
                     self.train_acc=acc
                     self.train_acc=self.train_acc.astype(np.float32)
+                    if test==True:
+                        with tf.name_scope('test'):
+                            
+                            
+                        self.test_loss_list.append(self.test_loss)
+                        self.test_acc_list.append(self.test_acc)
                 if epoch%10!=0:
                     temp_epoch=epoch-epoch%10
                     temp_epoch=int(temp_epoch/10)
@@ -226,7 +245,6 @@ class unnamed:
     
     
     def test(self,test_data,test_labels,batch=None):
-        self.test_flag=True
         if batch!=None:
             total_loss=0
             total_acc=0
@@ -239,12 +257,12 @@ class unnamed:
                     
                     
                 with tf.name_scope('loss'):
-                
+                    
                     
                 total_loss+=batch_test_loss.numpy()
                 with tf.name_scope('accuracy'):
                     
-                
+                    
                 total_acc+=batch_acc.numpy()
             if test_data.shape[0]%batch!=0:
                 batches+=1
@@ -256,11 +274,11 @@ class unnamed:
                     
                 with tf.name_scope('loss'):
                     
-                
+                    
                 total_loss+=batch_loss.numpy()
                 with tf.name_scope('accuracy'):
                     
-                
+                    
                 total_acc+=batch_acc.numpy()
             test_loss=total_loss/batches
             test_acc=total_acc/batches
@@ -277,10 +295,11 @@ class unnamed:
                 
             self.test_loss=test_loss.numpy().astype(np.float32)
             self.test_acc=test_acc.numpy().astype(np.float32)
-        print('test loss:{0:.6f}'.format(self.test_loss))
-        with tf.name_scope('print_accuracy'):
-            
-            
+        if self.test_flag==False:
+            print('test loss:{0:.6f}'.format(self.test_loss))
+            with tf.name_scope('print_accuracy'):
+                
+                
         return
         
     
@@ -341,9 +360,44 @@ class unnamed:
                 
         return
     
-        
+    
+    def test_visual(self):
+        print()
+        plt.figure(1)
+        plt.plot(np.arange(self.epoch+1),self.test_loss_list)
+        plt.title('test loss')
+        plt.xlabel('epoch')
+        plt.ylabel('loss')
+        plt.figure(2)
+        plt.plot(np.arange(self.epoch+1),self.test_acc_list)
+        plt.title('test acc')
+        plt.xlabel('epoch')
+        plt.ylabel('acc')
+        print('test loss:{0:.6f}'.format(self.test_loss))
+        with tf.name_scope('print_accuracy'):
+            
+            
+        return 
+    
+    
     def comparison(self):
         print()
+        plt.figure(1)
+        plt.plot(np.arange(self.epoch+1),self.train_loss_list,'b-',label='train loss')
+        if self.test_flag==True:
+            plt.plot(np.arange(self.epoch+1),self.test_loss_list,'r-',label='test loss')
+        plt.title('loss')
+        plt.xlabel('epoch')
+        plt.ylabel('loss')
+        plt.legend()
+        plt.figure(2)
+        plt.plot(np.arange(self.epoch+1),self.train_acc_list,'b-',label='train acc')
+        if self.test_flag==True:
+            plt.plot(np.arange(self.epoch+1),self.test_acc_list,'r-',label='test acc')
+        plt.title('accuracy')
+        plt.xlabel('epoch')
+        plt.ylabel('acc')
+        plt.legend()
         print('train loss:{0}'.format(self.train_loss))
         with tf.name_scope('print_accuracy'):
                 
@@ -378,12 +432,14 @@ class unnamed:
         pickle.dump(self.shape0,output_file)
         pickle.dump(self.train_loss,output_file)
         pickle.dump(self.train_acc,output_file)
+        pickle.dump(self.train_loss_list,output_file)
+        pickle.dump(self.train_acc_list,output_file)
         pickle.dump(self.test_flag,output_file)
         if self.test_flag==True:
             pickle.dump(self.test_loss,output_file)
             pickle.dump(self.test_acc,output_file)
-        pickle.dump(self.train_loss_list,output_file)
-        pickle.dump(self.train_acc_list,output_file)
+            pickle.dump(self.test_loss_list,output_file)
+            pickle.dump(self.test_acc_list,output_file)
         pickle.dump(self.total_epoch,output_file)
         pickle.dump(self.time,output_file)
         pickle.dump(self.total_time,output_file)
@@ -408,12 +464,14 @@ class unnamed:
         self.shape0=pickle.load(input_file)
         self.train_loss=pickle.load(input_file)
         self.train_acc=pickle.load(input_file)
+        self.train_loss_list=pickle.load(input_file)
+        self.train_acc_list=pickle.load(input_file)
         self.test_flag=pickle.load(input_file)
         if self.test_flag==True:
             self.test_loss=pickle.load(input_file)
             self.test_acc=pickle.load(input_file)
-        self.train_loss_list=pickle.load(input_file)
-        self.train_acc_list=pickle.load(input_file)
+            self.test_loss_list=pickle.load(input_file)
+            self.test_acc_list=pickle.load(input_file)
         self.total_epoch=pickle.load(input_file)
         self.time=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
