@@ -67,11 +67,8 @@ class skip_gram:
     
     def forward_propagation(self,cword,bword):
         with self.graph.as_default():
-            if type(self.cpu_gpu)==str:
-                forward_cpu_gpu=self.cpu_gpu
-            else:
-                forward_cpu_gpu=self.cpu_gpu[0]
-            with tf.device(forward_cpu_gpu):
+            processor=self.processor
+            with tf.device(processor):
                 cword_vec=tf.matmul(cword,self.cword_weight)
                 cword_vec=tf.reshape(cword_vec,shape=[cword_vec.shape[0],1,cword_vec.shape[1]])
                 bword_vec=tf.einsum('ijk,kl->ijl',bword,self.bword_weight)
@@ -94,151 +91,146 @@ class skip_gram:
                 self.continue_train=True
             if processor!=None:
                 self.processor=processor
-            if type(self.processor)==str:
-                train_processor=self.processor
-            else:
-                train_processor=self.processor[1]
-            with tf.device(train_processor):
-                if continue_train==True and self.end_flag==True:
-                    self.end_flag=False
-                    self.cword_weight=tf.Variable(self.last_cword_weight,name='cword_weight')
-                    self.bword_weight=tf.Variable(self.last_bword_weight,name='bword_weight')
-                    self.last_cword_weight=None
-                    self.last_bword_weight=None
-                if continue_train==True and self.flag==1:
-                    self.flag=0
-                    self.cword_weight=tf.Variable(self.last_cword_weight,name='cword_weight')
-                    self.bword_weight=tf.Variable(self.last_bword_weight,name='bword_weight')
-                    self.last_cword_weight=None
-                    self.last_bword_weight=None
+            if continue_train==True and self.end_flag==True:
+                self.end_flag=False
+                self.cword_weight=tf.Variable(self.last_cword_weight,name='cword_weight')
+                self.bword_weight=tf.Variable(self.last_bword_weight,name='bword_weight')
+                self.last_cword_weight=None
+                self.last_bword_weight=None
+            if continue_train==True and self.flag==1:
+                self.flag=0
+                self.cword_weight=tf.Variable(self.last_cword_weight,name='cword_weight')
+                self.bword_weight=tf.Variable(self.last_bword_weight,name='bword_weight')
+                self.last_cword_weight=None
+                self.last_bword_weight=None
 #     －－－－－－－－－－－－－－－forward propagation－－－－－－－－－－－－－－－
-                train_output=self.forward_propagation(self.cword_place,self.bword_place)
+            train_output=self.forward_propagation(self.cword_place,self.bword_place)
 #     －－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
-                with tf.name_scope('train_loss'):
-                    train_loss=tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=train_output,labels=self.labels_place))   
-                if self.optimizer=='Gradient':
-                    opt=tf.train.GradientDescentOptimizer(learning_rate=lr).minimize(train_loss)
-                if self.optimizer=='RMSprop':
-                    opt=tf.train.RMSPropOptimizer(learning_rate=lr).minimize(train_loss)
-                if self.optimizer=='Momentum':
-                    opt=tf.train.MomentumOptimizer(learning_rate=lr,momentum=0.99).minimize(train_loss)
-                if self.optimizer=='Adam':
-                    opt=tf.train.AdamOptimizer(learning_rate=lr).minimize(train_loss)
-                if train_summary_path!=None:
-                    train_loss_scalar=tf.summary.scalar('train_loss',train_loss)
-                    train_merging=tf.summary.merge([train_loss_scalar])
-                    train_writer=tf.summary.FileWriter(train_summary_path)
-                config=tf.ConfigProto()
-                config.gpu_options.allow_growth=True
-                config.allow_soft_placement=True
-                sess=tf.Session(config=config)
-                sess.run(tf.global_variables_initializer())
-                self.sess=sess
-                if self.total_epoch==0:
-                    epoch=epoch+1
-                t1=time.time()
-                for i in range(epoch):
-                    if batch!=None:
-                        batches=int((self.shape0-self.shape0%batch)/batch)
-                        total_loss=0
-                        random=np.arange(self.shape0)
-                        np.random.shuffle(random)
-                        cword=self.cword[random]
-                        bword=self.bword[random]
-                        labels=self.labels[random]
-                        for j in range(batches):
-                            index1=j*batch
-                            index2=(j+1)*batch
-                            cword_batch=cword[index1:index2]
-                            bword_batch=bword[index1:index2]
-                            labels_batch=labels[index1:index2]
-                            feed_dict={self.cword_place:cword_batch,self.bword_place:bword_batch,self.labels_place:labels_batch}
-                            if i==0 and self.total_epoch==0:
-                                batch_loss=sess.run(train_loss,feed_dict=feed_dict)
-                            else:
-                                batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
-                            total_loss+=batch_loss
-                        if self.shape0%batch!=0:
-                            batches+=1
-                            index1=batches*batch
-                            index2=batch-(self.shape0-batches*batch)
-                            cword_batch=np.concatenate([cword[index1:],cword[:index2]])
-                            bword_batch=np.concatenate([bword[index1:],bword[:index2]])
-                            labels_batch=np.concatenate([labels[index1:],labels[:index2]])
-                            feed_dict={self.cword_place:cword_batch,self.bword_place:bword_batch,self.labels_place:labels_batch}
-                            if i==0 and self.total_epoch==0:
-                                batch_loss=sess.run(train_loss,feed_dict=feed_dict)
-                            else:
-                                batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
-                            total_loss+=batch_loss
-                        loss=total_loss/batches
-                        self.train_loss_list.append(float(loss))
-                        self.train_loss=loss
-                        self.train_loss=self.train_loss.astype(np.float16)
-                    else:
-                        random=np.arange(self.shape0)
-                        np.random.shuffle(random)
-                        cword=self.cword[random]
-                        bword=self.bword[random]
-                        labels=self.labels[random]
-                        feed_dict={self.cword_place:cword,self.bword_place:bword,self.labels_place:labels}
+            with tf.name_scope('train_loss'):
+                train_loss=tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=train_output,labels=self.labels_place))   
+            if self.optimizer=='Gradient':
+                opt=tf.train.GradientDescentOptimizer(learning_rate=lr).minimize(train_loss)
+            if self.optimizer=='RMSprop':
+                opt=tf.train.RMSPropOptimizer(learning_rate=lr).minimize(train_loss)
+            if self.optimizer=='Momentum':
+                opt=tf.train.MomentumOptimizer(learning_rate=lr,momentum=0.99).minimize(train_loss)
+            if self.optimizer=='Adam':
+                opt=tf.train.AdamOptimizer(learning_rate=lr).minimize(train_loss)
+            if train_summary_path!=None:
+                train_loss_scalar=tf.summary.scalar('train_loss',train_loss)
+                train_merging=tf.summary.merge([train_loss_scalar])
+                train_writer=tf.summary.FileWriter(train_summary_path)
+            config=tf.ConfigProto()
+            config.gpu_options.allow_growth=True
+            config.allow_soft_placement=True
+            sess=tf.Session(config=config)
+            sess.run(tf.global_variables_initializer())
+            self.sess=sess
+            if self.total_epoch==0:
+                epoch=epoch+1
+            t1=time.time()
+            for i in range(epoch):
+                if batch!=None:
+                    batches=int((self.shape0-self.shape0%batch)/batch)
+                    total_loss=0
+                    random=np.arange(self.shape0)
+                    np.random.shuffle(random)
+                    cword=self.cword[random]
+                    bword=self.bword[random]
+                    labels=self.labels[random]
+                    for j in range(batches):
+                        index1=j*batch
+                        index2=(j+1)*batch
+                        cword_batch=cword[index1:index2]
+                        bword_batch=bword[index1:index2]
+                        labels_batch=labels[index1:index2]
+                        feed_dict={self.cword_place:cword_batch,self.bword_place:bword_batch,self.labels_place:labels_batch}
                         if i==0 and self.total_epoch==0:
-                            loss=sess.run(train_loss,feed_dict=feed_dict)
+                            batch_loss=sess.run(train_loss,feed_dict=feed_dict)
                         else:
-                            loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
-                        self.train_loss_list.append(float(loss))
-                        self.train_loss=loss
-                        self.train_loss=self.train_loss.astype(np.float16)
-                    if epoch%10!=0:
-                        temp_epoch=epoch-epoch%10
-                        temp_epoch=int(temp_epoch/10)
-                    else:
-                        temp_epoch=epoch/10
-                    if temp_epoch==0:
-                        temp_epoch=1
-                    if i%temp_epoch==0:
-                        if continue_train==True:
-                            print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
+                            batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
+                        total_loss+=batch_loss
+                    if self.shape0%batch!=0:
+                        batches+=1
+                        index1=batches*batch
+                        index2=batch-(self.shape0-batches*batch)
+                        cword_batch=np.concatenate([cword[index1:],cword[:index2]])
+                        bword_batch=np.concatenate([bword[index1:],bword[:index2]])
+                        labels_batch=np.concatenate([labels[index1:],labels[:index2]])
+                        feed_dict={self.cword_place:cword_batch,self.bword_place:bword_batch,self.labels_place:labels_batch}
+                        if i==0 and self.total_epoch==0:
+                            batch_loss=sess.run(train_loss,feed_dict=feed_dict)
                         else:
-                            print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
-                        if model_path!=None and i%epoch*2==0:
-                            self.save(model_path,i,one)
-                        if train_summary_path!=None:
-                            train_summary=sess.run(train_merging,feed_dict=feed_dict)
-                            train_writer.add_summary(train_summary,i)
-                t2=time.time()
-                _time=(t2-t1)-int(t2-t1)
-                if continue_train!=True or self.time==0:
-                    self.total_time=_time
+                            batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
+                        total_loss+=batch_loss
+                    loss=total_loss/batches
+                    self.train_loss_list.append(float(loss))
+                    self.train_loss=loss
+                    self.train_loss=self.train_loss.astype(np.float16)
                 else:
-                    self.total_time+=_time
-                if _time<0.5:
-                    self.time=int(t2-t1)
-                else:
-                    self.time=int(t2-t1)+1
-                print()
-                print('last loss:{0}'.format(self.train_loss))
-                if train_summary_path!=None:
-                    train_writer.close()
-                if continue_train==True:
-                    self.last_cword_weight=sess.run(self.cword_weight)
-                    self.last_bword_weight=sess.run(self.bword_weight)
-                    self.cword_weight=tf.Variable(self.last_cword_weight,name='cword_weight')
-                    self.bword_weight=tf.Variable(self.last_bword_weight,name='bword_weight')
-                    self.last_cword_weight=None
-                    self.last_bword_weight=None
-                    sess.run(tf.global_variables_initializer())
-                if continue_train==True:
-                    if self.total_epoch==0:
-                        self.total_epoch=epoch-1
-                        self.epoch=epoch-1
+                    random=np.arange(self.shape0)
+                    np.random.shuffle(random)
+                    cword=self.cword[random]
+                    bword=self.bword[random]
+                    labels=self.labels[random]
+                    feed_dict={self.cword_place:cword,self.bword_place:bword,self.labels_place:labels}
+                    if i==0 and self.total_epoch==0:
+                        loss=sess.run(train_loss,feed_dict=feed_dict)
                     else:
-                        self.total_epoch=self.total_epoch+epoch
-                        self.epoch=epoch
-                if continue_train!=True:
+                        loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
+                    self.train_loss_list.append(float(loss))
+                    self.train_loss=loss
+                    self.train_loss=self.train_loss.astype(np.float16)
+                if epoch%10!=0:
+                    temp_epoch=epoch-epoch%10
+                    temp_epoch=int(temp_epoch/10)
+                else:
+                    temp_epoch=epoch/10
+                if temp_epoch==0:
+                    temp_epoch=1
+                if i%temp_epoch==0:
+                    if continue_train==True:
+                        print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
+                    else:
+                        print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
+                    if model_path!=None and i%epoch*2==0:
+                        self.save(model_path,i,one)
+                    if train_summary_path!=None:
+                        train_summary=sess.run(train_merging,feed_dict=feed_dict)
+                        train_writer.add_summary(train_summary,i)
+            t2=time.time()
+            _time=(t2-t1)-int(t2-t1)
+            if continue_train!=True or self.time==0:
+                self.total_time=_time
+            else:
+                self.total_time+=_time
+            if _time<0.5:
+                self.time=int(t2-t1)
+            else:
+                self.time=int(t2-t1)+1
+            print()
+            print('last loss:{0}'.format(self.train_loss))
+            if train_summary_path!=None:
+                train_writer.close()
+            if continue_train==True:
+                self.last_cword_weight=sess.run(self.cword_weight)
+                self.last_bword_weight=sess.run(self.bword_weight)
+                self.cword_weight=tf.Variable(self.last_cword_weight,name='cword_weight')
+                self.bword_weight=tf.Variable(self.last_bword_weight,name='bword_weight')
+                self.last_cword_weight=None
+                self.last_bword_weight=None
+                sess.run(tf.global_variables_initializer())
+            if continue_train==True:
+                if self.total_epoch==0:
+                    self.total_epoch=epoch-1
                     self.epoch=epoch-1
-                print('time:{0}s'.format(self.time))
-                return
+                else:
+                    self.total_epoch=self.total_epoch+epoch
+                    self.epoch=epoch
+            if continue_train!=True:
+                self.epoch=epoch-1
+            print('time:{0}s'.format(self.time))
+            return
     
     
     def end(self):
