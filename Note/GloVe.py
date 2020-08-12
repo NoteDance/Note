@@ -34,10 +34,6 @@ class GloVe:
         self.optimizer=None
         self.train_loss=None
         self.train_loss_list=[]
-        self.continue_train=False
-        self.flag=None
-        self.end_flag=False
-        self.test_flag=None
         self.total_epoch=0
         self.time=0
         self.total_time=0
