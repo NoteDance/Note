@@ -165,8 +165,7 @@ class unnamed:
                 self.train_acc=self.train_acc.astype(np.float32)
                 if test==True:
                     with tf.name_scope('test'):
-                        
-                        
+                        self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
                     self.test_loss_list.append(self.test_loss)
                     self.test_acc_list.append(self.test_acc)
             else:
@@ -197,8 +196,7 @@ class unnamed:
                 self.train_acc=self.train_acc.astype(np.float32)
                 if test==True:
                     with tf.name_scope('test'):
-                        
-                        
+                        self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
                     self.test_loss_list.append(self.test_loss)
                     self.test_acc_list.append(self.test_acc)
             if epoch%10!=0:
@@ -278,10 +276,10 @@ class unnamed:
                 total_acc+=batch_acc.numpy()
             test_loss=total_loss/batches
             test_acc=total_acc/batches
-            self.test_loss=test_loss
-            self.test_acc=test_acc
-            self.test_loss=self.test_loss.astype(np.float32)
-            self.test_acc=self.test_acc.astype(np.float32)
+            test_loss=test_loss
+            test_acc=test_acc
+            test_loss=test_loss.astype(np.float32)
+            test_acc=test_acc.astype(np.float32)
         else:
             with tf.name_scope('loss'):
                 
@@ -289,14 +287,9 @@ class unnamed:
             with tf.name_scope('accuracy'):
                 
                 
-            self.test_loss=test_loss.numpy().astype(np.float32)
-            self.test_acc=test_acc.numpy().astype(np.float32)
-        if self.test_flag==False:
-            print('test loss:{0:.6f}'.format(self.test_loss))
-            with tf.name_scope('print_accuracy'):
-                
-                
-        return
+            test_loss=test_loss.numpy().astype(np.float32)
+            test_acc=test_acc.numpy().astype(np.float32)
+        return test_loss,test_acc
         
     
     def train_info(self):
