@@ -36,10 +36,6 @@ class unnamed:
         self.test_acc=None
         self.test_loss_list=[]
         self.test_acc_list=[]
-        self.continue_train=False
-        self.flag=None
-        self.end_flag=False
-        self.test_flag=False
         self.total_epoch=0
         self.time=0
         self.total_time=0
@@ -195,8 +191,8 @@ class unnamed:
                     if test==True:
                         with tf.name_scope('test'):
                             self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
-                        self.test_loss_list.append(self.test_loss)
-                        self.test_acc_list.append(self.test_acc)
+                            self.test_loss_list.append(self.test_loss)
+                            self.test_acc_list.append(self.test_acc)
                 else:
                     random=np.arange(self.shape0)
                     np.random.shuffle(random)
@@ -217,8 +213,8 @@ class unnamed:
                     if test==True:
                         with tf.name_scope('test'):
                             self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
-                        self.test_loss_list.append(self.test_loss)
-                        self.test_acc_list.append(self.test_acc)
+                            self.test_loss_list.append(self.test_loss)
+                            self.test_acc_list.append(self.test_acc)
                 if epoch%10!=0:
                     temp_epoch=epoch-epoch%10
                     temp_epoch=int(temp_epoch/10)
