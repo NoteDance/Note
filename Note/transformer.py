@@ -9,11 +9,13 @@ import time
 
 
 class transformer:
-    def __init__(self,train_data,train_labels):
+    def __init__(self,train_data,train_labels,test_data=None,test_labels=None):
         tf2=TF2.tf2()
         with tf.name_scope('data'):
             self.train_data=train_data
             self.train_labels=train_labels
+            self.test_data=test_data
+            self.test_labels=test_labels
             self.shape0=train_data.shape[0]
         with tf.name_scope('parameter'):
             self.embedding_w=[]
@@ -43,7 +45,6 @@ class transformer:
         self.train_acc_list=[]
         self.test_loss=None
         self.test_acc=None
-        self.test_flag=False
         self.total_epoch=0
         self.time=0
         self.total_time=0
@@ -64,6 +65,8 @@ class transformer:
         self.test_flag=False
         self.train_loss_list.clear()
         self.train_accuracy_list.clear()
+        self.test_loss_list.clear()
+        self.test_acc_list.clear()
         self.dtype=dtype
         with tf.name_scope('hyperparameter'):
             self.layers=layers
@@ -251,151 +254,155 @@ class transformer:
         return
                         
                                 
-    def train(self,batch=None,epoch=None,lr=0.001,model_path=None,one=True,processor=None):
+    def train(self,batch=None,epoch=None,lr=0.001,test=False,test_batch=None,model_path=None,one=True,processor=None):
         with tf.name_scope('hyperparameter'):
             self.batch=batch
             self.lr=lr
+        self.test_flag=test
         if processor!=None:
             self.processor=processor
-        with tf.name_scope('processor_allocation'):
-            if type(self.processor)==list:
-                train_processor=self.processor[-1]
-            else:
-                train_processor=self.processor  
-        with tf.device(train_processor):
-            with tf.name_scope('variable'):
-                variable=[self.qw1,self.kw1,self.vw1,self.fw1,self.qw2,self.kw2,self.vw2,self.qw3,self.kw3,self.vw3,self.fw2]
-                variable=self.extend(variable)
-            with tf.name_scope('optimizer'):
-                self.optimizer=['Adam',{'lr':lr}]
-                optimizer=optimizers.Adam(lr)
-            if self.total_epoch==0:
-                epoch=epoch+1
-            t1=time.time()
-            for i in range(epoch):
-                if batch!=None:
-                    batches=int((self.shape0-self.shape0%batch)/batch)
-                    tf2.batches=batches
-                    total_loss=0
-                    total_acc=0
-                    random=np.arange(self.shape0)
-                    np.random.shuffle(random)
-                    with tf.name_scope('randomize_data'):
-                        train_data=self.train_data[random]
-                        train_labels=self.train_labels[random]
-                    for j in range(batches):
-                        tf2.index1=j*batch
-                        tf2.index2=(j+1)*batch
-                        with tf.name_scope('data_batch'):
-                            train_data_batch=self.batch(train_data)
-                            train_labels_batch=self.batch(train_labels)
-                        with tf.GradientTape() as tape:
-                            with tf.name_scope('forward_propagation/loss'):
-                                output=self.forward_propagation(train_data_batch)
-                                batch_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output,labels=train_labels_batch))
-                            if i==0 and self.total_epoch==0:
-                                batch_loss=batch_loss.numpy()
-                            else:
-                                with tf.name_scope('apply_gradient'):
-                                    self.apply_gradient(tape,optimizer,batch_loss,variable)
-                        total_loss+=batch_loss
-                        with tf.name_scope('accuracy'):
-                            batch_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(train_labels_batch,2)!=0,tf.int32)==tf.argmax(train_labels_batch,2),tf.float32))
-                        batch_acc=batch_acc.numpy()
-                        total_acc+=batch_acc
-                    if self.shape0%batch!=0:
-                        batches+=1
-                        tf2.batches+=1
-                        tf2.index1=batches*batch
-                        tf2.index2=batch-(self.shape0-batches*batch)
-                        with tf.name_scope('data_batch'):
-                            train_data_batch=self.batch(train_data)
-                            train_labels_batch=self.batch(train_labels)
-                        with tf.GradientTape() as tape:
-                            with tf.name_scope('forward_propagation/loss'):
-                                output=self.forward_propagation(train_data_batch)
-                                batch_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output,labels=train_labels_batch))
-                            if i==0 and self.total_epoch==0:
-                                batch_loss=batch_loss.numpy()
-                            else:
-                                with tf.name_scope('apply_gradient'):
-                                    self.apply_gradient(tape,optimizer,batch_loss,variable)
-                        total_loss+=batch_loss
-                        with tf.name_scope('accuracy'):
-                            batch_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(train_labels_batch,2)!=0,tf.int32)==tf.argmax(train_labels_batch,2),tf.float32))
-                        batch_acc=batch_acc.numpy()
-                        total_acc+=batch_acc
-                    loss=total_loss/batches
-                    train_acc=total_acc/batches
-                    self.train_loss_list.append(loss.astype(np.float32))
-                    self.train_loss=loss
-                    self.train_loss=self.train_loss.astype(np.float32)
-                    self.train_acc_list.append(float(train_acc))
-                    self.train_acc=train_acc
-                    self.train_acc=self.train_acc.astype(np.float32)
-                else:
-                    random=np.arange(self.shape0)
-                    np.random.shuffle(random)
-                    with tf.name_scope('randomize_data'):
-                        train_data=self.train_data[random]
-                        train_labels=self.train_labels[random]
+        with tf.name_scope('variable'):
+            variable=[self.qw1,self.kw1,self.vw1,self.fw1,self.qw2,self.kw2,self.vw2,self.qw3,self.kw3,self.vw3,self.fw2]
+            variable=self.extend(variable)
+        with tf.name_scope('optimizer'):
+            self.optimizer=['Adam',{'lr':lr}]
+            optimizer=optimizers.Adam(lr)
+        if self.total_epoch==0:
+            epoch=epoch+1
+        t1=time.time()
+        for i in range(epoch):
+            if batch!=None:
+                batches=int((self.shape0-self.shape0%batch)/batch)
+                tf2.batches=batches
+                total_loss=0
+                total_acc=0
+                random=np.arange(self.shape0)
+                np.random.shuffle(random)
+                with tf.name_scope('randomize_data'):
+                    train_data=self.train_data[random]
+                    train_labels=self.train_labels[random]
+                for j in range(batches):
+                    tf2.index1=j*batch
+                    tf2.index2=(j+1)*batch
+                    with tf.name_scope('data_batch'):
+                        train_data_batch=self.batch(train_data)
+                        train_labels_batch=self.batch(train_labels)
                     with tf.GradientTape() as tape:
                         with tf.name_scope('forward_propagation/loss'):
-                            output=self.forward_propagation(train_data)
-                            train_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output,labels=train_labels))
+                            output=self.forward_propagation(train_data_batch)
+                            batch_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output,labels=train_labels_batch))
                         if i==0 and self.total_epoch==0:
-                            loss=train_loss.numpy()
+                            batch_loss=batch_loss.numpy()
                         else:
                             with tf.name_scope('apply_gradient'):
                                 self.apply_gradient(tape,optimizer,batch_loss,variable)
-                    self.train_loss_list.append(loss.astype(np.float32))
-                    self.train_loss=loss
-                    self.train_loss=self.train_loss.astype(np.float32)
+                    total_loss+=batch_loss
                     with tf.name_scope('accuracy'):
-                        train_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(train_labels,2)!=0,tf.int32)==tf.argmax(train_labels,2),tf.float32))
-                    acc=train_acc.numpy()
-                    self.train_acc_list.append(float(acc))
-                    self.train_acc=acc
-                    self.train_acc=self.train_acc.astype(np.float32)
-                if epoch%10!=0:
-                    temp_epoch=epoch-epoch%10
-                    temp_epoch=int(temp_epoch/10)
-                else:
-                    temp_epoch=epoch/10
-                if temp_epoch==0:
-                    temp_epoch=1
-                if i%temp_epoch==0:
-                    if self.total_epoch==0:
-                        print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
+                        batch_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(train_labels_batch,2)!=0,tf.int32)==tf.argmax(train_labels_batch,2),tf.float32))
+                    batch_acc=batch_acc.numpy()
+                    total_acc+=batch_acc
+                if self.shape0%batch!=0:
+                    batches+=1
+                    tf2.batches+=1
+                    tf2.index1=batches*batch
+                    tf2.index2=batch-(self.shape0-batches*batch)
+                    with tf.name_scope('data_batch'):
+                        train_data_batch=self.batch(train_data)
+                        train_labels_batch=self.batch(train_labels)
+                    with tf.GradientTape() as tape:
+                        with tf.name_scope('forward_propagation/loss'):
+                            output=self.forward_propagation(train_data_batch)
+                            batch_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output,labels=train_labels_batch))
+                        if i==0 and self.total_epoch==0:
+                            batch_loss=batch_loss.numpy()
+                        else:
+                            with tf.name_scope('apply_gradient'):
+                                self.apply_gradient(tape,optimizer,batch_loss,variable)
+                    total_loss+=batch_loss
+                    with tf.name_scope('accuracy'):
+                        batch_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(train_labels_batch,2)!=0,tf.int32)==tf.argmax(train_labels_batch,2),tf.float32))
+                    batch_acc=batch_acc.numpy()
+                    total_acc+=batch_acc
+                loss=total_loss/batches
+                train_acc=total_acc/batches
+                self.train_loss_list.append(loss.astype(np.float32))
+                self.train_loss=loss
+                self.train_loss=self.train_loss.astype(np.float32)
+                self.train_acc_list.append(float(train_acc))
+                self.train_acc=train_acc
+                self.train_acc=self.train_acc.astype(np.float32)
+                if test==True:
+                    with tf.name_scope('test'):
+                        self.test_loss,self.test_acc=self.test(self.tst_data,self.test_labels,test_batch)
+                        self.test_loss_list.append(self.test_loss)
+                        self.test_acc_list.append(self.test_acc)
+            else:
+                random=np.arange(self.shape0)
+                np.random.shuffle(random)
+                with tf.name_scope('randomize_data'):
+                    train_data=self.train_data[random]
+                    train_labels=self.train_labels[random]
+                with tf.GradientTape() as tape:
+                    with tf.name_scope('forward_propagation/loss'):
+                        output=self.forward_propagation(train_data)
+                        train_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output,labels=train_labels))
+                    if i==0 and self.total_epoch==0:
+                        loss=train_loss.numpy()
                     else:
-                        print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
-                    if model_path!=None and i%epoch*2==0:
-                        self.save(model_path,i,one)
-            t2=time.time()
-            _time=(t2-t1)-int(t2-t1)
-            if self.time==0:
-                self.total_time=_time
+                        with tf.name_scope('apply_gradient'):
+                            self.apply_gradient(tape,optimizer,batch_loss,variable)
+                self.train_loss_list.append(loss.astype(np.float32))
+                self.train_loss=loss
+                self.train_loss=self.train_loss.astype(np.float32)
+                with tf.name_scope('accuracy'):
+                    train_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(train_labels,2)!=0,tf.int32)==tf.argmax(train_labels,2),tf.float32))
+                acc=train_acc.numpy()
+                self.train_acc_list.append(float(acc))
+                self.train_acc=acc
+                self.train_acc=self.train_acc.astype(np.float32)
+                if test==True:
+                    with tf.name_scope('test'):
+                        self.test_loss,self.test_acc=self.test(self.tst_data,self.test_labels,test_batch)
+                        self.test_loss_list.append(self.test_loss)
+                        self.test_acc_list.append(self.test_acc)
+            if epoch%10!=0:
+                temp_epoch=epoch-epoch%10
+                temp_epoch=int(temp_epoch/10)
             else:
-                self.total_time+=_time
-            if _time<0.5:
-                self.time=int(t2-t1)
-            else:
-                self.time=int(t2-t1)+1
-            print()
-            print('last loss:{0:.6f}'.format(self.train_loss))
-            print('accuracy:{0:.3f}%'.format(self.train_acc*100))
-            if self.total_epoch==0:
-                self.total_epoch=epoch-1
-                self.epoch=epoch-1
-            else:
-                self.total_epoch=self.total_epoch+epoch
-                self.epoch=epoch
-            print('time:{0}s'.format(self.time))
-            return
+                temp_epoch=epoch/10
+            if temp_epoch==0:
+                temp_epoch=1
+            if i%temp_epoch==0:
+                if self.total_epoch==0:
+                    print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
+                else:
+                    print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
+                if model_path!=None and i%epoch*2==0:
+                    self.save(model_path,i,one)
+        t2=time.time()
+        _time=(t2-t1)-int(t2-t1)
+        if self.time==0:
+            self.total_time=_time
+        else:
+            self.total_time+=_time
+        if _time<0.5:
+            self.time=int(t2-t1)
+        else:
+            self.time=int(t2-t1)+1
+        print()
+        print('last loss:{0:.6f}'.format(self.train_loss))
+        print('accuracy:{0:.1f}%'.format(self.train_acc*100))
+        if self.total_epoch==0:
+            self.total_epoch=epoch-1
+            self.epoch=epoch-1
+        else:
+            self.total_epoch=self.total_epoch+epoch
+            self.epoch=epoch
+        print('time:{0}s'.format(self.time))
+        return
         
     
     def test(self,test_data,test_labels,batch=None):
-        self.test_flag=True
         if batch!=None:
             total_loss=0
             total_acc=0
@@ -431,21 +438,19 @@ class transformer:
                 total_acc+=batch_acc.numpy()
             test_loss=total_loss/batches
             test_acc=total_acc/batches
-            self.test_loss=test_loss
-            self.test_acc=test_acc
-            self.test_loss=self.test_loss.astype(np.float32)
-            self.test_acc=self.test_acc.astype(np.float32)
+            test_loss=test_loss
+            test_acc=test_acc
+            test_loss=test_loss.astype(np.float32)
+            test_acc=test_acc.astype(np.float32)
         else:
             with tf.name_scope('loss'):
                 output=self.forward_propagation(test_data)
                 test_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output,labels=test_labels))
             with tf.name_scope('accuracy'):
                 test_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(test_labels,2)!=0,tf.int32)==tf.argmax(test_labels,2),tf.float32))
-            self.test_loss=test_loss.numpy().astype(np.float32)
-            self.test_acc=test_acc.numpy().astype(np.float32)
-        print('test loss:{0:.6f}'.format(self.test_loss))
-        print('test acc:{0:.3f}%'.format(self.test_acc*100))
-        return
+            test_loss=test_loss.numpy().astype(np.float32)
+            test_acc=test_acc.numpy().astype(np.float32)
+        return test_loss,test_acc
         
     
     def train_info(self):
@@ -463,14 +468,14 @@ class transformer:
         print('-------------------------------------')
         print()
         print('train loss:{0:.6f}'.format(self.train_loss))
-        print('train acc:{0:.3f}%'.format(self.train_acc*100))
+        print('train acc:{0:.1f}%'.format(self.train_acc*100))
         return
         
     
     def test_info(self):
         print()
         print('test loss:{0:.6f}'.format(self.test_loss))
-        print('test acc:{0:.3f}%'.format(self.test_acc*100))
+        print('test acc:{0:.1f}%'.format(self.test_acc*100))
         return
 		
     
@@ -496,20 +501,53 @@ class transformer:
         plt.xlabel('epoch')
         plt.ylabel('acc')
         print('train loss:{0:.6f}'.format(self.train_loss))
-        print('train acc:{0:.3f}%'.format(self.train_acc*100))
+        print('train acc:{0:.1f}%'.format(self.train_acc*100))
         return
+    
+    
+    def test_visual(self):
+        print()
+        plt.figure(1)
+        plt.plot(np.arange(self.epoch+1),self.test_loss_list)
+        plt.title('test loss')
+        plt.xlabel('epoch')
+        plt.ylabel('loss')
+        plt.figure(2)
+        plt.plot(np.arange(self.epoch+1),self.test_acc_list)
+        plt.title('test acc')
+        plt.xlabel('epoch')
+        plt.ylabel('acc')
+        print('test loss:{0:.6f}'.format(self.test_loss))
+        print('test acc:{0:.1f}%'.format(self.test_acc*100))   
+        return 
     
         
     def comparison(self):
         print()
+        plt.figure(1)
+        plt.plot(np.arange(self.epoch+1),self.train_loss_list,'b-',label='train loss')
+        if self.test_flag==True:
+            plt.plot(np.arange(self.epoch+1),self.test_loss_list,'r-',label='test loss')
+        plt.title('loss')
+        plt.xlabel('epoch')
+        plt.ylabel('loss')
+        plt.legend()
+        plt.figure(2)
+        plt.plot(np.arange(self.epoch+1),self.train_acc_list,'b-',label='train acc')
+        if self.test_flag==True:
+            plt.plot(np.arange(self.epoch+1),self.test_acc_list,'r-',label='test acc')
+        plt.title('accuracy')
+        plt.xlabel('epoch')
+        plt.ylabel('acc')
+        plt.legend()
         print('train loss:{0}'.format(self.train_loss))
-        print('train acc:{0:.3f}%'.format(self.train_acc*100))       
+        print('train acc:{0:.1f}%'.format(self.train_acc*100))       
         if self.test_flag==True:        
             print()
             print('-------------------------------------')
             print()
             print('test loss:{0:.6f}'.format(self.test_loss))
-            print('test acc:{0:.3f}%'.format(self.test_acc*100))
+            print('test acc:{0:.1f}%'.format(self.test_acc*100))
         return
     
     
@@ -543,12 +581,14 @@ class transformer:
         pickle.dump(self.shape0,output_file)
         pickle.dump(self.train_loss,output_file)
         pickle.dump(self.train_acc,output_file)
+        pickle.dump(self.train_loss_list,output_file)
+        pickle.dump(self.train_acc_list,output_file)
         pickle.dump(self.test_flag,output_file)
         if self.test_flag==True:
             pickle.dump(self.test_loss,output_file)
             pickle.dump(self.test_acc,output_file)
-        pickle.dump(self.train_loss_list,output_file)
-        pickle.dump(self.train_acc_list,output_file)
+            pickle.dump(self.test_loss_list,output_file)
+            pickle.dump(self.test_acc_list,output_file)
         pickle.dump(self.epoch,output_file)
         pickle.dump(self.total_epoch,output_file)
         pickle.dump(self.time,output_file)
@@ -585,12 +625,14 @@ class transformer:
         self.shape0=pickle.load(input_file)
         self.train_loss=pickle.load(input_file)
         self.train_acc=pickle.load(input_file)
+        self.train_loss_list=pickle.load(input_file)
+        self.train_acc_list=pickle.load(input_file)
         self.test_flag=pickle.load(input_file)
         if self.test_flag==True:
             self.test_loss=pickle.load(input_file)
             self.test_acc=pickle.load(input_file)
-        self.train_loss_list=pickle.load(input_file)
-        self.train_acc_list=pickle.load(input_file)
+            self.test_loss_list=pickle.load(input_file)
+            self.test_acc_list=pickle.load(input_file)
         self.epoch=pickle.load(input_file)
         self.total_epoch=pickle.load(input_file)
         self.time=pickle.load(input_file)
