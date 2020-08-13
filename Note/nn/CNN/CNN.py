@@ -161,18 +161,10 @@ class cnn:
     def forward_propagation_fc(self,data,dropout,shape,use_nn):
         with self.graph.as_default():
             for i in range(len(self.fc)):
-                if type(self.cpu_gpu)==str:
-                    self.forward_cpu_gpu[1].append(self.cpu_gpu)
-                elif len(self.cpu_gpu)!=len(self.fc):
-                    self.forward_cpu_gpu[1].append(self.cpu_gpu[1][0])
+                if type(self.processor)==str:
+                    self._processor[1].append(self.processor)
                 else:
-                    self.forward_cpu_gpu[1].append(self.cpu_gpu[1][i])
-            if use_nn==True:
-                for i in range(len(self.fc)):
-                    if type(self.use_cpu_gpu)==str:
-                        self.forward_cpu_gpu[1].append(self.use_cpu_gpu)
-                    else:
-                        self.forward_cpu_gpu[1].append(self.use_cpu_gpu[1][i])
+                    self._processor[1].append(self.processor[1][i])
             if use_nn==False:
                 weight_fc=self.weight_fc
                 bias_fc=self.bias_fc
@@ -208,7 +200,7 @@ class cnn:
             if type(dropout)==list:
                 data=tf.nn.dropout(data,dropout[0])
             for i in range(len(self.fc)):
-                with tf.device(self.forward_cpu_gpu[1][i]):
+                with tf.device(self._processor[1][i]):
                     if self.fc[i][1]=='sigmoid':
                         if i==0:
                             self.activation_fc[i]=tf.nn.sigmoid(tf.matmul(data,weight_fc[i])+bias_fc[i])
@@ -252,20 +244,12 @@ class cnn:
                 
     def forward_propagation(self,data,dropout=None,use_nn=False):
         with self.graph.as_default():
-            self.forward_cpu_gpu=[[],[]]
+            self._processor=[[],[]]
             for i in range(len(self.conv)):
-                if type(self.cpu_gpu)==str:
-                    self.forward_cpu_gpu[0].append(self.cpu_gpu)
-                elif len(self.cpu_gpu[0][0])!=len(self.conv):
-                    self.forward_cpu_gpu[0].append(self.cpu_gpu[0][0])
+                if type(self.processor)==str:
+                    self._processor[0].append(self.processor)
                 else:
-                    self.forward_cpu_gpu[0].append(self.cpu_gpu[0][i])
-            if use_nn==True:
-                for i in range(len(self.conv)):
-                    if type(self.use_cpu_gpu)==str:
-                        self.forward_cpu_gpu.append(self.use_cpu_gpu)
-                    else:
-                        self.forward_cpu_gpu.append(self.use_cpu_gpu[0][i])
+                    self._processor[0].append(self.processor[0][i])
             if use_nn==False:
                 weight_conv=self.weight_conv
                 bias_conv=self.bias_conv
@@ -278,7 +262,7 @@ class cnn:
             self.activation=[x for x in range(len(self.conv))]
             with tf.name_scope('forward_propagation'):
                 for i in range(len(self.conv)):
-                    with tf.device(self.forward_cpu_gpu[0][i]):
+                    with tf.device(self._processor[0][i]):
                         if type(self.function)==list:
                             if self.function[i]=='sigmoid':
                                 if i==0:
@@ -978,42 +962,37 @@ class cnn:
         with self.graph.as_default():
             if processor!=None:
                 self.processor=processor
-            if type(processor)==str:
-                _processor=processor
-            else:
-                _processor=processor[-1]
-            with tf.device(_processor):
-                data=tf.constant(data)
-                output=self.forward_propagation(data,use_nn=True)
-                config=tf.ConfigProto()
-                config.gpu_options.allow_growth=True
-                config.allow_soft_placement=True
-                with tf.Session(config=config) as sess:
-                    output=sess.run(output)
-                    if one_hot==True:
-                        softmax=np.sum(np.exp(output),axis=1).reshape(output.shape[0],1)
-                        softmax=np.exp(output)/softmax
-                        index=np.argmax(softmax,axis=1)
-                        output=np.zeros([output.shape[0],output.shape[1]])
-                        for i in range(output.shape[0]):
-                            output[i][index[i]]+=1
-                        if save_path!=None:
-                            output_file=open(save_path,'wb')
-                            pickle.dump(output,output_file)
-                            output_file.close()
-                        elif save_csv!=None:
-                            data=pd.DataFrame(output)
-                            data.to_csv(save_csv,index=False,header=False)
-                        return output
-                    else:
-                        softmax=np.sum(np.exp(output),axis=1).reshape(output.shape[0],1)
-                        softmax=np.exp(output)/softmax
-                        output=np.argmax(softmax,axis=1)+1
-                        if save_path!=None:
-                            output_file=open(save_path,'wb')
-                            pickle.dump(output,output_file)
-                            output_file.close()
-                        elif save_csv!=None:
-                            data=pd.DataFrame(output)
-                            data.to_csv(save_csv,index=False,header=False)
-                        return output
+            data=tf.constant(data)
+            output=self.forward_propagation(data,use_nn=True)
+            config=tf.ConfigProto()
+            config.gpu_options.allow_growth=True
+            config.allow_soft_placement=True
+            with tf.Session(config=config) as sess:
+                output=sess.run(output)
+                if one_hot==True:
+                    softmax=np.sum(np.exp(output),axis=1).reshape(output.shape[0],1)
+                    softmax=np.exp(output)/softmax
+                    index=np.argmax(softmax,axis=1)
+                    output=np.zeros([output.shape[0],output.shape[1]])
+                    for i in range(output.shape[0]):
+                        output[i][index[i]]+=1
+                    if save_path!=None:
+                        output_file=open(save_path,'wb')
+                        pickle.dump(output,output_file)
+                        output_file.close()
+                    elif save_csv!=None:
+                        data=pd.DataFrame(output)
+                        data.to_csv(save_csv,index=False,header=False)
+                    return output
+                else:
+                    softmax=np.sum(np.exp(output),axis=1).reshape(output.shape[0],1)
+                    softmax=np.exp(output)/softmax
+                    output=np.argmax(softmax,axis=1)+1
+                    if save_path!=None:
+                        output_file=open(save_path,'wb')
+                        pickle.dump(output,output_file)
+                        output_file.close()
+                    elif save_csv!=None:
+                        data=pd.DataFrame(output)
+                        data.to_csv(save_csv,index=False,header=False)
+                    return output
