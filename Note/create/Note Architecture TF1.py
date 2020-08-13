@@ -280,6 +280,9 @@ class unnamed:
     
     def test(self,test_data,test_labels,batch=None):
         with self.graph.as_default():
+            with tf.name_scope('placeholder'):
+                
+                
             with tf.name_scope('loss'):
                 
                 
