@@ -9,7 +9,7 @@ import time
 
 
 class transformer:
-    def __init__(self,train_data,train_labels,test_data=None,test_labels=None):
+    def __init__(self,train_data=None,train_labels=None,test_data=None,test_labels=None):
         tf2=TF2.tf2()
         with tf.name_scope('data'):
             self.train_data=train_data
@@ -112,7 +112,7 @@ class transformer:
         if len(word_vector.shape)==2:
             word_vector=tf.reshape(word_vector,shape=[1,word_vector.shape[0],word_vector.sahpe[1]])
         for i in range(self.layers):
-            with tf.device(self.forward_processor[i]):
+            with tf.device(self._processor[i]):
                 with tf.name_scope('self_attention'):
                     query=tf.einsum('ijk,kl->ijl',word_vector,self.qw1[i])
                     key=tf.einsum('ijk,kl->ijl',word_vector,self.kw1[i])
@@ -147,7 +147,7 @@ class transformer:
         decoder1=[x for x in range(self.layers)]
         decoder2=[x for x in range(self.layers)]
         for i in range(self.layers):
-            with tf.device(self.forward_processor[i]):
+            with tf.device(self._processor[i]):
                 with tf.name_scope('self_attention1'):
                     query1=tf.einsum('ijk,kl->ijl',word_vector,self.qw2[i])
                     mask=tf.constant(np.triu(np.zeros([query1.shape[1],query1.shape[1]])-1e10))
@@ -199,18 +199,15 @@ class transformer:
     @tf.function       
     def forward_propagation(self,train_data,train_labels):
         with tf.name_scope('processor_allocation'):
-            self.forward_processor=[x for x in range(self.layers)]
+            self._processor=[x for x in range(self.layers)]
             if type(self.processor)==list:
                 for i in range(self.layers):
-                    self.forward_processor[i]=self.processor[i]
-            elif type(self.processor)==list and len(self.processor)==2:
-                for i in range(self.layers):
-                    self.forward_processor[i]=self.processor[0]
+                    self._processor[i]=self.processor[i]
             else:
                 for i in range(self.layers):
-                    self.forward_processor[i]=self.processor     
+                    self._processor[i]=self.processor     
         with tf.name_scope('forward_propagation'):
-            with tf.device(self.forward_processor[0]):
+            with tf.device(self._processor[0]):
                 with tf.name_scope('embedding'):
                     if len(self.embedding_w)==2:
                         word_vector1=tf.einsum('ijk,kl->ijl',train_data,self.embedding_w[0])+tf.einsum('ijk,kl->ijl',train_data,self.embedding_w[1])
