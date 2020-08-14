@@ -225,8 +225,8 @@ class unnamed:
         print()
         print('last loss:{0:.6f}'.format(self.train_loss))
         with tf.name_scope('print_accuracy'):
-                
-        
+            print('accuracy:{0:.1f}'.format(self.train_acc*100))
+            print('accuracy:{0:.6f}'.format(self.train_acc))   
         if self.total_epoch==0:
             self.total_epoch=epoch-1
             self.epoch=epoch-1
@@ -307,8 +307,8 @@ class unnamed:
         print()
         print('train loss:{0:.6f}'.format(self.train_loss))
         with tf.name_scope('print_accuracy'):
-                
-                
+            print('train acc:{0:.1f}'.format(self.train_acc*100))
+            print('train acc:{0:.6f}'.format(self.train_acc))       
         return
         
     
@@ -316,8 +316,8 @@ class unnamed:
         print()
         print('test loss:{0:.6f}'.format(self.test_loss))
         with tf.name_scope('print_accuracy'):
-            
-        
+            print('test acc:{0:.1f}'.format(self.test_acc*100))
+            print('test acc:{0:.6f}'.format(self.test_acc))      
         return
 		
     
@@ -344,8 +344,8 @@ class unnamed:
         plt.ylabel('acc')
         print('train loss:{0:.6f}'.format(self.train_loss))
         with tf.name_scope('print_accuracy'):
-                
-                
+            print('train acc:{0:.1f}'.format(self.train_acc*100))
+            print('train acc:{0:.6f}'.format(self.train_acc))    
         return
     
     
@@ -363,8 +363,8 @@ class unnamed:
         plt.ylabel('acc')
         print('test loss:{0:.6f}'.format(self.test_loss))
         with tf.name_scope('print_accuracy'):
-            
-            
+            print('test acc:{0:.1f}'.format(self.test_acc*100))
+            print('test acc:{0:.6f}'.format(self.test_acc))  
         return 
     
     
@@ -388,16 +388,16 @@ class unnamed:
         plt.legend()
         print('train loss:{0}'.format(self.train_loss))
         with tf.name_scope('print_accuracy'):
-                
-            
+            print('train acc:{0:.1f}'.format(self.train_acc*100))
+            print('train acc:{0:.6f}'.format(self.train_acc))     
         if self.test_flag==True:        
             print()
             print('-------------------------------------')
             print()
             print('test loss:{0:.6f}'.format(self.test_loss))
             with tf.name_scope('print_accuracy'):
-                
-                
+                print('test acc:{0:.1f}'.format(self.test_acc*100))
+                print('test acc:{0:.6f}'.format(self.test_acc)) 
         return
     
     
