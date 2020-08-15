@@ -11,7 +11,7 @@ import time
 
 class unnamed:
     def __init__():
-        tf2=TF2.tf2()
+        self.tf2=TF2.tf2()
         with tf.name_scope('data/shape0'):
            
             
