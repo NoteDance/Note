@@ -10,7 +10,7 @@ import time
 
 class transformer:
     def __init__(self,train_data=None,train_labels=None,test_data=None,test_labels=None):
-        tf2=TF2.tf2()
+        self.tf2=TF2.tf2()
         with tf.name_scope('data'):
             self.train_data=train_data
             self.train_labels=train_labels
@@ -270,7 +270,7 @@ class transformer:
         for i in range(epoch):
             if batch!=None:
                 batches=int((self.shape0-self.shape0%batch)/batch)
-                tf2.batches=batches
+                self.tf2.batches=batches
                 total_loss=0
                 total_acc=0
                 random=np.arange(self.shape0)
@@ -279,11 +279,11 @@ class transformer:
                     train_data=self.train_data[random]
                     train_labels=self.train_labels[random]
                 for j in range(batches):
-                    tf2.index1=j*batch
-                    tf2.index2=(j+1)*batch
+                    self.tf2.index1=j*batch
+                    self.tf2.index2=(j+1)*batch
                     with tf.name_scope('data_batch'):
-                        train_data_batch=self.batch(train_data)
-                        train_labels_batch=self.batch(train_labels)
+                        train_data_batch=self.tf2.batch(train_data)
+                        train_labels_batch=self.tf2.batch(train_labels)
                     with tf.GradientTape() as tape:
                         with tf.name_scope('forward_propagation/loss'):
                             output=self.forward_propagation(train_data_batch)
@@ -300,12 +300,12 @@ class transformer:
                     total_acc+=batch_acc
                 if self.shape0%batch!=0:
                     batches+=1
-                    tf2.batches+=1
-                    tf2.index1=batches*batch
-                    tf2.index2=batch-(self.shape0-batches*batch)
+                    self.tf2.batches+=1
+                    self.tf2.index1=batches*batch
+                    self.tf2.index2=batch-(self.shape0-batches*batch)
                     with tf.name_scope('data_batch'):
-                        train_data_batch=self.batch(train_data)
-                        train_labels_batch=self.batch(train_labels)
+                        train_data_batch=self.tf2.batch(train_data)
+                        train_labels_batch=self.tf2.batch(train_labels)
                     with tf.GradientTape() as tape:
                         with tf.name_scope('forward_propagation/loss'):
                             output=self.forward_propagation(train_data_batch)
@@ -404,13 +404,13 @@ class transformer:
             total_loss=0
             total_acc=0
             batches=int((test_data.shape[0]-test_data.shape[0]%batch)/batch)
-            tf2.batches=batches
+            self.tf2.batches=batches
             for j in range(batches):
-                tf2.index1=j*batch
-                tf2.index2=(j+1)*batch
+                self.tf2.index1=j*batch
+                self.tf2.index2=(j+1)*batch
                 with tf.name_scope('data_batch'):
-                    test_data_batch=self.batch(test_data)
-                    test_labels_batch=self.batch(test_labels)
+                    test_data_batch=self.tf2.batch(test_data)
+                    test_labels_batch=self.tf2.batch(test_labels)
                 with tf.name_scope('loss'):
                      output=self.forward_propagation(test_data_batch)
                      batch_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output,labels=test_labels_batch))
@@ -420,9 +420,9 @@ class transformer:
                 total_acc+=batch_acc.numpy()
             if test_data.shape[0]%batch!=0:
                 batches+=1
-                tf2.batches+=1
-                tf2.index1=batches*batch
-                tf2.index2=batch-(self.shape0-batches*batch)
+                self.tf2.batches+=1
+                self.tf2.index1=batches*batch
+                self.tf2.index2=batch-(self.shape0-batches*batch)
                 with tf.name_scope('data_batch'):
                     test_data_batch=self.batch(test_data)
                     test_labels_batch=self.batch(test_labels)
