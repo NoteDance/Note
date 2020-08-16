@@ -252,7 +252,7 @@ class unnamed:
                 with tf.name_scope('loss'):
                     
                     
-                total_loss+=batch_test_loss.numpy()
+                total_loss+=batch_loss.numpy()
                 with tf.name_scope('accuracy'):
                     
                     
