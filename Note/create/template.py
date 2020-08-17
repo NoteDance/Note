@@ -50,7 +50,7 @@ class unnamed:
             
             
     @tf.function       
-    def forward_propagation(self,train_data,dropout):
+    def forward_propagation(self,train_data,dropout=None):
         with tf.name_scope('processor_allocation'):
             
             
@@ -58,7 +58,7 @@ class unnamed:
             
             
     
-    def loss(self,output,train_labels,l2):
+    def loss(self,output,train_labels,l2=None):
         
         
     
