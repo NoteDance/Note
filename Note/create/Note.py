@@ -127,8 +127,8 @@ class Note:
                             self.labels_batch=self.tf2.batch(train_labels)
                     with tf.GradientTape() as tape:
                         with tf.name_scope('forward_propagation/loss'):
-                            self.output=self.model.forward_propagation(self,self.data_batch,self.dropout)
-                            batch_loss=self.model.loss(self,self.output,self.labels_batch,self.l2)
+                            self.output=self.model.forward_propagation(self.data_batch,self.dropout)
+                            batch_loss=self.model.loss(self.output,self.labels_batch,self.l2)
                         if i==0 and self.total_epoch==0:
                             batch_loss=batch_loss.numpy()
                         else:
@@ -141,7 +141,7 @@ class Note:
                     total_loss+=batch_loss
                     if self.model.accuracy==1:
                         with tf.name_scope('accuracy'):
-                            batch_acc=self.model.accuracy(self,self.output,self.labels_batch)
+                            batch_acc=self.model.accuracy(self.output,self.labels_batch)
                         batch_acc=batch_acc.numpy()
                         total_acc+=batch_acc
                 if self.shape0%batch!=0:
@@ -162,8 +162,8 @@ class Note:
                             self.labels_batch=self.tf2.batch(train_labels)
                     with tf.GradientTape() as tape:
                         with tf.name_scope('forward_propagation/loss'):
-                            self.output=self.model.forward_propagation(self,self.data_batch,self.dropout)
-                            batch_loss=self.model.loss(self,self.output,self.labels_batch,self.l2)
+                            self.output=self.model.forward_propagation(self.data_batch,self.dropout)
+                            batch_loss=self.model.loss(self.output,self.labels_batch,self.l2)
                         if i==0 and self.total_epoch==0:
                             batch_loss=batch_loss.numpy()
                         else:
@@ -176,7 +176,7 @@ class Note:
                     total_loss+=batch_loss
                     if self.model.accuracy==1:
                         with tf.name_scope('accuracy'):
-                            batch_acc=self.model.accuracy(self,self.output,self.labels_batch)
+                            batch_acc=self.model.accuracy(self.output,self.labels_batch)
                         batch_acc=batch_acc.numpy()
                         total_acc+=batch_acc
                 loss=total_loss/batches
@@ -216,7 +216,7 @@ class Note:
                 with tf.GradientTape() as tape:
                     with tf.name_scope('forward_propagation/loss'):
                         self.output=self.model.forward_propagation(self,train_data,self.dropout)
-                        train_loss=self.model.loss(self,self.output,train_labels,self.l2)
+                        train_loss=self.model.loss(self.output,train_labels,self.l2)
                     if i==0 and self.total_epoch==0:
                         loss=train_loss.numpy()
                     else:
@@ -231,7 +231,7 @@ class Note:
                 self.train_loss=self.train_loss.astype(np.float32)
                 if self.model.accuracy==1:
                     with tf.name_scope('accuracy'):
-                        acc=self.model.accuracy(self,self.output,train_labels)
+                        acc=self.model.accuracy(self.output,train_labels)
                     acc=train_acc.numpy()
                     self.train_acc_list.append(float(acc))
                     self.train_acc=acc
@@ -309,11 +309,11 @@ class Note:
                     else:
                         self.labels_batch=self.tf2.batch(self.test_labels)
                 with tf.name_scope('loss'):
-                    batch_loss=self.model.loss(self)
+                    batch_loss=self.model.loss(self.data_batch,self.labels_batch)
                 total_loss+=batch_loss.numpy()
                 if self.model.accuracy==1:
                     with tf.name_scope('accuracy'):
-                        batch_acc=self.model.accuracy(self)
+                        batch_acc=self.model.accuracy(self.data_batch,self.labels_batch)
                     total_acc+=batch_acc.numpy()
             if shape0%batch!=0:
                 batches+=1
@@ -332,7 +332,7 @@ class Note:
                     else:
                         self.labels_batch=self.tf2.batch(self.test_labels)
                 with tf.name_scope('loss'):
-                    batch_loss=self.model.loss(self)
+                    batch_loss=self.model.loss(self.data_batch,self.labels_batch)
                 total_loss+=batch_loss.numpy()
                 if self.model.accuracy==1:
                     with tf.name_scope('accuracy'):
@@ -347,10 +347,10 @@ class Note:
                 test_acc=test_acc.astype(np.float32)
         else:
             with tf.name_scope('loss'):
-                test_loss=self.model.loss(self)
+                test_loss=self.model.loss(self.test_data,self.test_labels)
             if self.model.accuracy==1:
                 with tf.name_scope('accuracy'):
-                    test_acc=self.model.accuracy(self)
+                    test_acc=self.model.accuracy(self.test_data,self.test_labels)
                 test_loss=test_loss.numpy().astype(np.float32)
                 test_acc=test_acc.numpy().astype(np.float32)
         print('test loss:{0:.6f}'.format(test_loss))
