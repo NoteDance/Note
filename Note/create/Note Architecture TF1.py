@@ -9,7 +9,7 @@ import time
 class unnamed:
     def __init__():
         self.graph=tf.Graph()
-        tf1=TF1.tf1()
+        self.tf1=TF1.tf1()
         with tf.name_scope('data/shape0'):
             
             
@@ -144,7 +144,7 @@ class unnamed:
             for i in range(epoch):
                 if batch!=None:
                     batches=int((self.shape0-self.shape0%batch)/batch)
-                    tf1.batches=batches
+                    self.tf1.batches=batches
                     total_loss=0
                     total_acc=0
                     random=np.arange(self.shape0)
@@ -153,8 +153,8 @@ class unnamed:
                     
                         
                     for j in range(batches):
-                        tf1.index1=j*batch
-                        tf1.index2=(j+1)*batch
+                        self.tf1.index1=j*batch
+                        self.tf1.index2=(j+1)*batch
                         with tf.name_scope('data_batch/feed_dict'):
                         
                         
@@ -167,9 +167,9 @@ class unnamed:
                         total_acc+=batch_acc
                     if self.shape0%batch!=0:
                         batches+=1
-                        tf1.batches+=1
-                        tf1.index1=batches*batch
-                        tf1.index2=batch-(self.shape0-batches*batch)
+                        self.tf1.batches+=1
+                        self.tf1.index1=batches*batch
+                        self.tf1.index2=batch-(self.shape0-batches*batch)
                         with tf.name_scope('data_batch/feed_dict'):
                             
                         
@@ -298,10 +298,10 @@ class unnamed:
                 total_loss=0
                 total_acc=0
                 batches=int((test_data.shape[0]-test_data.shape[0]%batch)/batch)
-                tf1.batches=batches
+                self.tf1.batches=batches
                 for j in range(batches):
-                    tf1.index1=j*batch
-                    tf1.index2=(j+1)*batch
+                    self.tf1.index1=j*batch
+                    self.tf1.index2=(j+1)*batch
                     with tf.name_scope('data_batch/feed_dict'):
                         
                         
@@ -311,9 +311,9 @@ class unnamed:
                     total_acc+=batch_acc
                 if test_data.shape[0]%batch!=0:
                     batches+=1
-                    tf1.batches+=1
-                    tf1.index1=batches*batch
-                    tf1.index2=batch-(self.shape0-batches*batch)
+                    self.tf1.batches+=1
+                    self.tf1.index1=batches*batch
+                    self.tf1.index2=batch-(self.shape0-batches*batch)
                     with tf.name_scope('data_batch/feed_dict'):
                         
                         
@@ -489,14 +489,14 @@ class unnamed:
 
     def restore(self,model_path):
         input_file=open(model_path,'rb')
-        tf1.accumulator=0
-        tf1.test_accumulator=0
+        self.tf1.accumulator=0
+        self.tf1.test_accumulator=0
         with tf.name_scope('restore_parameter'):
             
             
         with tf.name_scope('restore_data_msg'):    
-            tf1.dtype=pickle.load(input_file)
-            tf1.shape=pickle.load(input_file)
+            self.tf1.dtype=pickle.load(input_file)
+            self.tf1.shape=pickle.load(input_file)
         self.graph=tf.Graph()
         with self.graph.as_default():
             with tf.name_scope('placeholder'):
