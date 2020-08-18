@@ -63,15 +63,37 @@ class Note:
         return
     
     
-    def train(self,batch=None,epoch=None,l2=None,dropout=None,optimizer=None,optimizern=None,lr=None,test=False,test_batch=None,model_path=None,one=True,processor=None):
+    def transfer(self):
+        with tf.name_scope('data/shape0'):
+            self.train_data=self.model.train_data
+            self.train_labels=self.model.train_labels
+            if type(self.train_data)==list:
+                self.data_batch=[x for x in range(len(self.train_data))]
+            if type(self.train_labels)==list:
+                self.labels_batch=[x for x in range(len(self.train_labels))]
+            self.test_data=self.model.test_data
+            self.test_labels=self.model.test_labels
+            if type(self.train_data)==list:
+                self.shape0=self.model.train_data[0].shape[0]
+            else:
+                self.shape0=self.model.train_data.shape[0]
         with tf.name_scope('parameter'):
             self.parameter=self.model.parameter
+        with tf.name_scope('hyperparameter'):
+            self.hyperparameter=self.model.hyperparameter
+        with tf.name_scope('optimizer'):
+            self.optimizer=self.model.optimzier
+        return
+    
+    
+    def train(self,batch=None,epoch=None,l2=None,dropout=None,optimizer=None,optimizern=None,lr=None,test=False,test_batch=None,model_path=None,one=True,processor=None):
+        with tf.name_scope('transfer data'):
+            self.transfer()
         with tf.name_scope('hyperparameter'):
             self.batch=batch
             self.lr=lr
             self.l2=l2
             self.dropout=dropout
-            self.hyperparameter=self.model.hyperparameter
         self.test_flag=test
         self.train_loss_list.clear()
         self.train_acc_list.clear()
@@ -80,7 +102,6 @@ class Note:
         if processor!=None:
             self.processor=processor
         with tf.name_scope('optimizer'):
-            self.optimizer=self.model.optimzier
             if optimizer!=None:
                 optimizer=optimizer
             else:
