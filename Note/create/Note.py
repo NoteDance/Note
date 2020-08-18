@@ -148,7 +148,7 @@ class Note:
                             self.labels_batch=self.tf2.batch(train_labels)
                     with tf.GradientTape() as tape:
                         with tf.name_scope('forward_propagation/loss'):
-                            self.output=self.model.forward_propagation(self.data_batch,self.dropout)
+                            self.output=self.model.forward_propagation(self.data_batch,self.dropout,self.processor)
                             batch_loss=self.model.loss(self.output,self.labels_batch,self.l2)
                         if i==0 and self.total_epoch==0:
                             batch_loss=batch_loss.numpy()
@@ -183,7 +183,7 @@ class Note:
                             self.labels_batch=self.tf2.batch(train_labels)
                     with tf.GradientTape() as tape:
                         with tf.name_scope('forward_propagation/loss'):
-                            self.output=self.model.forward_propagation(self.data_batch,self.dropout)
+                            self.output=self.model.forward_propagation(self.data_batch,self.dropout,self.processor)
                             batch_loss=self.model.loss(self.output,self.labels_batch,self.l2)
                         if i==0 and self.total_epoch==0:
                             batch_loss=batch_loss.numpy()
@@ -236,7 +236,7 @@ class Note:
                         train_labels=self.train_labels
                 with tf.GradientTape() as tape:
                     with tf.name_scope('forward_propagation/loss'):
-                        self.output=self.model.forward_propagation(self,train_data,self.dropout)
+                        self.output=self.model.forward_propagation(self,train_data,self.dropout,self.processor)
                         train_loss=self.model.loss(self.output,train_labels,self.l2)
                     if i==0 and self.total_epoch==0:
                         loss=train_loss.numpy()
@@ -517,8 +517,8 @@ class Note:
             pickle.dump(self.lr,output_file)
             pickle.dump(self.l2,output_file)
             pickle.dump(self.dropout,output_file)
-            pickle.dump(self.hyperparameter,output_file)
-        pickle.dump(self.optimizer,output_file)
+            pickle.dump(self.model.hyperparameter,output_file)
+        pickle.dump(self.model.optimizer,output_file)
         pickle.dump(self.model.accuracy,output_file)
         pickle.dump(self.model.acc,output_file)
         pickle.dump(self.shape0,output_file)
@@ -551,8 +551,8 @@ class Note:
             self.lr=pickle.load(input_file)
             self.l2=pickle.load(input_file)
             self.dropout=pickle.load(input_file)
-            self.hyperparameter=pickle.load(input_file)
-        self.optimizer=pickle.load(input_file)
+            self.model.hyperparameter=pickle.load(input_file)
+        self.model.optimizer=pickle.load(input_file)
         self.model.accuracy=pickle.load(input_file)
         self.model.acc=pickle.load(input_file)
         self.shape0=pickle.load(input_file)
