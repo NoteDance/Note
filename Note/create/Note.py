@@ -510,7 +510,7 @@ class Note:
         else:
             output_file=open(model_path+'-{0}.dat'.format(i+1),'wb')
         with tf.name_scope('save_parameter'):  
-            pickle.dump(self.parameter,output_file)
+            pickle.dump(self.model.parameter,output_file)
         with tf.name_scope('save_hyperparameter'):
             pickle.dump(self.batch,output_file)
             pickle.dump(self.epoch,output_file)
