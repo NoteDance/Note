@@ -76,6 +76,8 @@ class transformer:
         with tf.name_scope('parameter_initialization'):
             self.embedding_w=embedding_w
             if self.ow==None:
+                if self.embedding_w==None:
+                    self.embedding_w=self.weight_init(shape=[self.train_data.shape[2],512],mean=mean,stddev=stddev)
                 for i in range(self.h):
                     self.qw1.append(self.weight_init(shape=[512,512],mean=mean,stddev=stddev))
                     self.kw1.append(self.weight_init(shape=[512,512],mean=mean,stddev=stddev))
@@ -90,6 +92,8 @@ class transformer:
                     self.fw2.append(self.weight_init(shape=[512,512],mean=mean,stddev=stddev))
                 self.ow=self.weight_init(shape=[512,word_size],mean=mean,stddev=stddev)
             else:
+                if self.embedding_w==None:
+                    state_ops.assign(self.embedding_w,self.weight_init(shape=[self.train_data.shape[2],512],mean=mean,stddev=stddev))
                 for i in range(self.h):
                     state_ops.assign(self.qw1[i],self.weight_init(shape=[512,512],mean=mean,stddev=stddev))
                     state_ops.assign(self.kw1[i],self.weight_init(shape=[512,512],mean=mean,stddev=stddev))
@@ -212,19 +216,18 @@ class transformer:
                     if len(self.embedding_w)==2:
                         word_vector1=tf.einsum('ijk,kl->ijl',train_data,self.embedding_w[0])+tf.einsum('ijk,kl->ijl',train_data,self.embedding_w[1])
                         word_vector2=tf.einsum('ijk,kl->ijl',train_labels,self.embedding_w[0])+tf.einsum('ijk,kl->ijl',train_labels,self.embedding_w[1])
-                        arange1=tf.constant(np.arange(word_vector1.shape[1]))
-                        arange2=tf.constant(np.arange(word_vector1.shape[2]))
-                        arange3=tf.constant(np.arange(word_vector2.shape[1]))
-                        arange4=tf.constant(np.arange(word_vector2.shape[2]))
-                        word_vector1=word_vector1+tf.math.sin(arange1/10000**(arange2/512)*((arange2*2)%2==0)+tf.math.cos(arange1/10000**(arange2/512))*((arange2*2+1)%2!=0))
-                        word_vector2=word_vector2+tf.math.sin(arange3/10000**(arange4/512)*((arange4*2)%2==0)+tf.math.cos(arange3/10000**(arange4/512))*((arange4*2+1)%2!=0))
+                    elif type(self.embedding_w)!=list:
+                        word_vector1=tf.einsum('ijk,kl->ijl',train_data,self.embedding_w)
+                        word_vector2=tf.einsum('ijk,kl->ijl',train_labels,self.embedding_w)
                     else:
                         word_vector1=tf.einsum('ijk,kl->ijl',train_data,self.embedding_w[0])
                         word_vector2=tf.einsum('ijk,kl->ijl',train_labels,self.embedding_w[0])
-                        arange1=tf.constant(np.arange(word_vector1.shape[1]))
-                        arange2=tf.constant(np.arange(word_vector1.shape[2]))
-                        word_vector1=word_vector1+tf.math.sin(arange1/10000**(arange2/512)*((arange2*2)%2==0)+tf.math.cos(arange1/10000**(arange2/512))*((arange2*2+1)%2!=0))
-                        word_vector2=word_vector2+tf.math.sin(arange3/10000**(arange4/512)*((arange4*2)%2==0)+tf.math.cos(arange3/10000**(arange4/512))*((arange4*2+1)%2!=0))
+                arange1=tf.constant(np.arange(word_vector1.shape[1]))
+                arange2=tf.constant(np.arange(word_vector1.shape[2]))
+                arange3=tf.constant(np.arange(word_vector2.shape[1]))
+                arange4=tf.constant(np.arange(word_vector2.shape[2]))
+                word_vector1=word_vector1+tf.math.sin(arange1/10000**(arange2/512)*((arange2*2)%2==0)+tf.math.cos(arange1/10000**(arange2/512))*((arange2*2+1)%2!=0))
+                word_vector2=word_vector2+tf.math.sin(arange3/10000**(arange4/512)*((arange4*2)%2==0)+tf.math.cos(arange3/10000**(arange4/512))*((arange4*2+1)%2!=0))
             with tf.name_scope('encoder'):
                 encoder=self.encoder(self,word_vector1)
             with tf.name_scope('decoder'):
