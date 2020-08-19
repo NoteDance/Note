@@ -1,5 +1,5 @@
 import tensorflow as tf
-import Note.create.TF2 as TF2
+import Note.create.create as c
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
@@ -9,7 +9,7 @@ import time
 class Note:
     def __init__(self,model):
         self.model=model
-        self.tf2=TF2.tf2()
+        self.tf2=c.tf2()
         with tf.name_scope('data/shape0'):
             self.train_data=self.model.train_data
             self.train_labels=self.model.train_labels
