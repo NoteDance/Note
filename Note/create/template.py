@@ -1,4 +1,5 @@
 import tensorflow as tf
+import Note.create.create as c
 from tensorflow.python.ops import state_ops
 
 
