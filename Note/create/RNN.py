@@ -223,20 +223,3 @@ def word_emb(data,cword_weight):
 
 def GloVe_emb(data,cword_weight,bword_weight):
     return tf.einsum('ijk,kl->ijl',data,cword_weight)+tf.einsum('ijk,kl->ijl',data,bword_weight)
-
-
-def attention(en_h,de_h,attention_w1,attention_w2,attention_w3,score_en_h=None):
-    if type(en_h)==list:
-        stack_en_h=tf.stack(en_h,axis=1)
-    else:
-	stack_en_h=en_h
-    if score_en_h==None:
-	score=tf.einsum('ijk,kl->ijl',tf.nn.tanh(tf.einsum('ijk,kl->ijl',stack_en_h,attention_w1)+tf.expand_dims(tf.matmul(de_h,attention_w2),axis=1)),attention_w3)
-    else:
-	score=tf.einsum('ijk,kl->ijl',tf.nn.tanh(score_en_h+tf.expand_dims(tf.matmul(de_h,attention_w2),axis=1)),attention_w3)
-    attention_weights=tf.nn.softmax(score,axis=1)
-    context_vector=tf.reduce_sum(attention_weights*stack_en_h,axis=1)
-    if score_en_h==None:
-	return tf.einsum('ijk,kl->ijl',stack_en_h,attention_w1),context_vector
-    else:
-	return context_vector
