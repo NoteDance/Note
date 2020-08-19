@@ -136,7 +136,7 @@ class transformer:
                         word_vector=tf.nn.relu(tf.einsum('ijk,kl->ijl',encoder[i],self.fw1[i]))+word_vector
                         with tf.name_scope('normalization'):
                             mean=tf.reduce_mean(word_vector,axis=2)
-                            var=(word_vector-tf.reshape(mean,shape=[mean.shape[0].mean.shape[1],1]))**2
+                            var=(word_vector-tf.reshape(mean,shape=[mean.shape[0],mean.shape[1],1]))**2
                             word_vector=(word_vector-mean)/tf.sqrt(var+1e-07)
                     encoder[i]=word_vector
         return encoder
@@ -191,7 +191,7 @@ class transformer:
                             word_vector=tf.nn.relu(tf.einsum('ijk,kl->ijl',decoder2[i],self.fw2[i]))+word_vector
                             with tf.name_scope('normalization'):
                                 mean=tf.reduce_mean(word_vector,axis=2)
-                                var=(word_vector-tf.reshape(mean,shape=[mean.shape[0].mean.shape[1],1]))**2
+                                var=(word_vector-tf.reshape(mean,shape=[mean.shape[0],mean.shape[1],1]))**2
                                 word_vector=(word_vector-mean)/tf.sqrt(var+1e-07)
         return word_vector
                                         
