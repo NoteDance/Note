@@ -1,5 +1,5 @@
 import tensorflow as tf
-import Note.create.TF2 as TF2
+import Note.create.create as c
 from tensorflow.python.ops import state_ops
 import tensorflow.keras.optimizers as optimizers
 import Note.create.optimizer as optimizern
@@ -11,7 +11,7 @@ import time
 
 class unnamed:
     def __init__():
-        self.tf2=TF2.tf2()
+        self.tf2=c.tf2()
         with tf.name_scope('data/shape0'):
            
             
