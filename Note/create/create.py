@@ -86,7 +86,7 @@ def einsun(data,weight):
     return tf.einsum('ijk,kl->ijl',data,weight)
 
 
-def batchnorm(data):
+def norm(data):
     mean=tf.reduce_mean(data,axis=-1)
     var=(data-tf.expand_dims(mean,axis=-1))**2
     data=(data-mean)/tf.sqrt(var+1e-07)
