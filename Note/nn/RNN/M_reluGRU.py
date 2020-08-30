@@ -661,10 +661,7 @@ class m_relugru:
                 self.time=int(t2-t1)
             else:
                 self.time=int(t2-t1)+1
-            if continue_train!=True:
-                self.total_time=self.time
-            else:
-                self.total_time+=self.time
+            self.total_time+=self.time
             print()
             print('last loss:{0:.6f}'.format(self.train_loss))
             print('accuracy:{0:.3f}%'.format(self.train_accuracy*100))
