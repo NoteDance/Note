@@ -547,14 +547,14 @@ class cnn:
                             train_writer.add_summary(train_summary,i)
                 t2=time.time()
                 _time=(t2-t1)-int(t2-t1)
-                if continue_train!=True or self.time==0:
-                    self.total_time=_time
-                else:
-                    self.total_time+=_time
                 if _time<0.5:
                     self.time=int(t2-t1)
                 else:
                     self.time=int(t2-t1)+1
+                if continue_train!=True:
+                    self.total_time=self.time
+                else:
+                    self.total_time+=self.time		
                 print()
                 print('last loss:{0:.6f}'.format(self.train_loss))
                 print('accuracy:{0:.3f}%'.format(self.train_accuracy*100))
