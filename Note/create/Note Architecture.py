@@ -214,14 +214,11 @@ class unnamed:
                     self.save(model_path,i,one)
         t2=time.time()
         _time=(t2-t1)-int(t2-t1)
-        if self.time==0:
-            self.total_time=_time
-        else:
-            self.total_time+=_time
         if _time<0.5:
             self.time=int(t2-t1)
         else:
             self.time=int(t2-t1)+1
+	self.total_time+=self.time
         print()
         print('last loss:{0:.6f}'.format(self.train_loss))
         with tf.name_scope('print_accuracy'):
