@@ -35,7 +35,7 @@ class epsilon_greedy_mc:
     def episode(self,q,state,action,search_space,episode_step):
         episode=[]
         for i in range(episode_step):
-            action_prob=self.epsilon_greedy_policy(q,state,action)
+            action_prob=self.epsilon_greedy_policy(q,self.state[state],action)
             a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
             next_state,reward,end=search_space[action[a]]
             episode.append([state,a,reward])
@@ -80,7 +80,7 @@ class epsilon_greedy_mc:
         t1=time.time()
         for i in range(episode_num):
             s=np.random.choice(np.arange(len(self.state_list)),p=np.ones(len(self.state_list))*1/len(self.state_list))
-            e=self.episode(self.q,self.state[self.state_list[s]],self.action,self.search_space,self.episode_step)
+            e=self.episode(self.q,self.state_list[s],self.action,self.search_space,self.episode_step)
             self.q,self.r_sum,self.r_count=self.first_visit(e,self.q,self.r_sum,self.r_count,self.discount)
             self.delta=self.delta/(i+1)
             if episode_num%10!=0:
