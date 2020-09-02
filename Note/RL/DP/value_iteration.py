@@ -4,7 +4,7 @@ import time
 
 
 class value_iteration:
-    def __init__(self,policy,state,action,prs,discount,theta):
+    def __init__(self,policy,state,action,prs,discount,theta,end_flag=None):
         self.policy=policy
         self.state=state
         self.action=action
@@ -12,6 +12,7 @@ class value_iteration:
         self.discount=discount
         self.theta=theta
         self.delta=0
+        self.end_flag=end_flag
         self.iteration_num=0
         self.total_iteration_sum=0
         self.time=0
@@ -29,8 +30,11 @@ class value_iteration:
             for s in range(len(self.state)):
                 A=np.zeros(len(self.action),dtype=np.float32)
                 for a in range(len(self.action)):
-                    for prob,reward,next_state in self.prs[self.state[s]][self.action[a]]:
+                    for prob,reward,next_state,done in self.prs[self.state[s]][self.action[a]]:
                         A[a]+=prob*(reward+self.discount*V[next_state])
+                        if done and next_state!=self.end_flag and self.end_flag!=None:
+                            A[a]=float('-inf')
+                            break
                 best_action_value=max(A)
                 delta=max(delta,np.abs(best_action_value-V[s]))
                 V[s]=best_action_value
@@ -79,6 +83,7 @@ class value_iteration:
         pickle.dump(self.discount)
         pickle.dump(self.theta)
         pickle.dump(self.delta)
+        pickle.dump(self.end_flag)
         pickle.dump(self.total_iteration_sum)
         pickle.dump(self.total_time)
         output_file.close()
@@ -90,6 +95,7 @@ class value_iteration:
         self.discount=pickle.load(input_file)
         self.theta=pickle.load(input_file)
         self.delta=pickle.load(input_file)
+        self.end_flag=pickle.load(input_file)
         self.total_iteration_sum=pickle.load(input_file)
         self.total_time=self.time
         input_file.close()
