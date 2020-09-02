@@ -4,8 +4,8 @@ import pickle
 import time
 
 
-class epsilon_greedy_mc:
-    def __init__(self,state,state_list,action,search_space,q=None,epsilon=None,discount=None,episode_step=None,theta=None):
+class on_policy_mc:
+    def __init__(self,state,state_list,action,search_space,q=None,epsilon=None,discount=None,theta=None):
         self.q=q
         self.r_sum=dict()
         self.r_count=dict()
@@ -15,10 +15,9 @@ class epsilon_greedy_mc:
         self.search_space=search_space
         self.epsilon=epsilon
         self.discount=discount
-        self.episode_step=episode_step
         self.theta=theta
         self.delta=0
-        self.epi_num=0
+        self.episode_num=0
         self.total_episode=0
         self.time=0
         self.total_time=0
@@ -34,7 +33,7 @@ class epsilon_greedy_mc:
     
     def episode(self,q,state,action,search_space,episode_step):
         episode=[]
-        for i in range(episode_step):
+        while True:
             action_prob=self.epsilon_greedy_policy(q,self.state[state],action)
             a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
             next_state,reward,end=search_space[action[a]]
@@ -46,15 +45,15 @@ class epsilon_greedy_mc:
     
     
     def first_visit(self,episode,q,r_sum,r_count,discount):
-        state_action_set=set()
+        self.state_action_set=set()
         delta=0
         self.delta=0
         for i,[state,action,reward] in enumerate(episode):
             state_action=(state,action)
             first_visit_index=i
             G=sum(np.power(discount,i)*x[2] for i,x in enumerate(episode[first_visit_index:]))
-            if state_action not in state_action_set:
-                state_action_set.add(state_action)
+            if state_action not in self.state_action_set:
+                self.state_action_set.add(state_action)
                 if i==0:
                     r_sum[state_action]=G
                     r_count[state_action]=1
@@ -68,7 +67,6 @@ class epsilon_greedy_mc:
     
     
     def learn(self,episode_num,path=None,one=True):
-        self.episode_num=episode_num
         self.delta=0
         if self.q==None:
             self.q=np.zeros([len(self.state_list),len(self.action)],dtype=np.float32)
@@ -94,7 +92,7 @@ class epsilon_greedy_mc:
                 print('episode_num:{0}   delta:{1:.6f}'.format(i,self.delta))
                 if path!=None and i%episode_num*2==0:
                     self.save(path,i,one)
-            self.epi_num+=1
+            self.episode_num+=1
             self.total_episode+=1
             if self.theta!=None and self.delta<=self.theta:
                 break
@@ -118,8 +116,8 @@ class epsilon_greedy_mc:
             output_file=open(path+'-{0}.dat'.format(i+1),'wb')
         pickle.dump(self.epsilon)
         pickle.dump(self.discount)
-        pickle.dump(self.episode_step)
         pickle.dump(self.theta)
+        pickle.dump(self.state_action_set)
         pickle.dump(self.r_sum)
         pickle.dump(self.r_count)
         pickle.dump(self.delta)
@@ -133,8 +131,8 @@ class epsilon_greedy_mc:
         input_file=open(path,'rb')
         self.epsilon=pickle.load(input_file)
         self.discount=pickle.load(input_file)
-        self.episode_step=pickle.load(input_file)
         self.theta=pickle.load(input_file)
+        self.state_action_set=pickle.load(input_file)
         self.r_sum=pickle.load(input_file)
         self.r_count=pickle.load(input_file)
         self.delta=pickle.load(input_file)
