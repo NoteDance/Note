@@ -13,7 +13,6 @@ class on_policy_mc:
         self.state_list=state_list
         self.action=action
         self.search_space=search_space
-        self.state_action_set=None
         self.epsilon=epsilon
         self.discount=discount
         self.theta=theta
@@ -46,15 +45,14 @@ class on_policy_mc:
     
     
     def first_visit(self,episode,q,r_sum,r_count,discount):
-        if self.state_action_set==None:
-            self.state_action_set=set()
+        state_action_set=set()
         delta=0
         self.delta=0
         for i,[state,action,reward] in enumerate(episode):
             state_action=(state,action)
             first_visit_index=i
             G=sum(np.power(discount,i)*x[2] for i,x in enumerate(episode[first_visit_index:]))
-            if state_action not in self.state_action_set:
+            if state_action not in state_action_set:
                 self.state_action_set.add(state_action)
                 if i==0:
                     r_sum[state_action]=G
@@ -119,7 +117,6 @@ class on_policy_mc:
         pickle.dump(self.epsilon)
         pickle.dump(self.discount)
         pickle.dump(self.theta)
-        pickle.dump(self.state_action_set)
         pickle.dump(self.r_sum)
         pickle.dump(self.r_count)
         pickle.dump(self.delta)
@@ -134,7 +131,6 @@ class on_policy_mc:
         self.epsilon=pickle.load(input_file)
         self.discount=pickle.load(input_file)
         self.theta=pickle.load(input_file)
-        self.state_action_set=pickle.load(input_file)
         self.r_sum=pickle.load(input_file)
         self.r_count=pickle.load(input_file)
         self.delta=pickle.load(input_file)
