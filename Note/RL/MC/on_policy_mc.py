@@ -53,7 +53,7 @@ class on_policy_mc:
             first_visit_index=i
             G=sum(np.power(discount,i)*x[2] for i,x in enumerate(episode[first_visit_index:]))
             if state_action not in state_action_set:
-                self.state_action_set.add(state_action)
+                state_action_set.add(state_action)
                 if i==0:
                     r_sum[state_action]=G
                     r_count[state_action]=1
