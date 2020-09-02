@@ -5,9 +5,9 @@ import time
 
 
 class off_policy_mc:
-    def __init__(self,state,state_list,action,search_space,q=None,c=None,epsilon=None,discount=None,theta=None):
+    def __init__(self,state,state_list,action,search_space,q=None,epsilon=None,discount=None,theta=None):
         self.q=q
-        self.c=c
+        self.c=None
         self.state=state
         self.state_list=state_list
         self.action=action
@@ -114,6 +114,7 @@ class off_policy_mc:
             output_file=open(path+'.dat','wb')
         else:
             output_file=open(path+'-{0}.dat'.format(i+1),'wb')
+        pickle.dump(self.c)
         pickle.dump(self.epsilon)
         pickle.dump(self.discount)
         pickle.dump(self.theta)
@@ -126,6 +127,7 @@ class off_policy_mc:
     
     def restore(self,path):
         input_file=open(path,'rb')
+        self.c=pickle.load(input_file)
         self.epsilon=pickle.load(input_file)
         self.discount=pickle.load(input_file)
         self.theta=pickle.load(input_file)
