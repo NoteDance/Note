@@ -70,7 +70,7 @@ class policy_iteration:
                 temp=iteration/10
             if temp==0:
                 temp=1
-            if self.iteration_num%temp_iteration==0:
+            if self.iteration_num%temp==0:
                 if path!=None and self.iteration_num%iteration*2==0:
                     self.save(path,self.iteration_num,one)
             self.iteration_num+=1
