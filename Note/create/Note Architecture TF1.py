@@ -9,7 +9,7 @@ import time
 class unnamed:
     def __init__():
         self.graph=tf.Graph()
-        self.tf1=c.tf1()
+        tf1=c.tf1()
         with tf.name_scope('data/shape0'):
             
             
@@ -25,9 +25,10 @@ class unnamed:
             self.epoch=0
             self.lr=None
             
-            
-        self.regulation=None   
-        self.optimizer=None
+        with tf.name_scope('regulation'):   
+            self.regulation=None   
+        with tf.name_scope('optimizer'):
+            self.optimizer=None
         self.train_loss=None
         self.train_acc=None
         self.train_loss_list=[]
@@ -144,7 +145,7 @@ class unnamed:
             for i in range(epoch):
                 if batch!=None:
                     batches=int((self.shape0-self.shape0%batch)/batch)
-                    self.tf1.batches=batches
+                    tf1.batches=batches
                     total_loss=0
                     total_acc=0
                     random=np.arange(self.shape0)
@@ -153,8 +154,8 @@ class unnamed:
                     
                         
                     for j in range(batches):
-                        self.tf1.index1=j*batch
-                        self.tf1.index2=(j+1)*batch
+                        tf1.index1=j*batch
+                        tf1.index2=(j+1)*batch
                         with tf.name_scope('data_batch/feed_dict'):
                         
                         
@@ -167,9 +168,9 @@ class unnamed:
                         total_acc+=batch_acc
                     if self.shape0%batch!=0:
                         batches+=1
-                        self.tf1.batches+=1
-                        self.tf1.index1=batches*batch
-                        self.tf1.index2=batch-(self.shape0-batches*batch)
+                        tf1.batches+=1
+                        tf1.index1=batches*batch
+                        tf1.index2=batch-(self.shape0-batches*batch)
                         with tf.name_scope('data_batch/feed_dict'):
                             
                         
@@ -238,7 +239,7 @@ class unnamed:
                 self.time=int(t2-t1)
             else:
                 self.time=int(t2-t1)+1
-	    self.total_time+=self.time
+            self.total_time+=self.time
             print()
             print('last loss:{0:.6f}'.format(self.train_loss))
             with tf.name_scope('print_accuracy'):
@@ -295,10 +296,10 @@ class unnamed:
                 total_loss=0
                 total_acc=0
                 batches=int((test_data.shape[0]-test_data.shape[0]%batch)/batch)
-                self.tf1.batches=batches
+                tf1.batches=batches
                 for j in range(batches):
-                    self.tf1.index1=j*batch
-                    self.tf1.index2=(j+1)*batch
+                    tf1.index1=j*batch
+                    tf1.index2=(j+1)*batch
                     with tf.name_scope('data_batch/feed_dict'):
                         
                         
@@ -308,9 +309,9 @@ class unnamed:
                     total_acc+=batch_acc
                 if test_data.shape[0]%batch!=0:
                     batches+=1
-                    self.tf1.batches+=1
-                    self.tf1.index1=batches*batch
-                    self.tf1.index2=batch-(self.shape0-batches*batch)
+                    tf1.batches+=1
+                    tf1.index1=batches*batch
+                    tf1.index2=batch-(self.shape0-batches*batch)
                     with tf.name_scope('data_batch/feed_dict'):
                         
                         
@@ -341,8 +342,12 @@ class unnamed:
         print('batch:{0}'.format(self.batch))
         print()
         print('epoch:{0}'.format(self.epoch))
-        print()
-        print('optimizer:{0}'.format(self.optimizer))
+        if self.regulation!=None:
+            print()
+            print('regulation:{0}'.format(self.regulation))
+        if self.optimizer!=None:
+            print()
+            print('optimizer:{0}'.format(self.optimizer))
         print()
         print('learning rate:{0}'.format(self.lr))
         print()
@@ -462,9 +467,10 @@ class unnamed:
             pickle.dump(self.epoch,output_file)
             pickle.dump(self.lr,output_file)
             
-            
-        pickle.dump(self.regulation,output_file)       
-        pickle.dump(self.optimizer,output_file)
+        with tf.name_scope('save_regulation'):    
+            pickle.dump(self.regulation,output_file)     
+        with tf.name_scope('save_optimizer'):
+            pickle.dump(self.optimizer,output_file)
         pickle.dump(self.shape0,output_file)
         pickle.dump(self.train_loss,output_file)
         pickle.dump(self.train_acc,output_file)
@@ -486,14 +492,14 @@ class unnamed:
 
     def restore(self,model_path):
         input_file=open(model_path,'rb')
-        self.tf1.accumulator=0
-        self.tf1.test_accumulator=0
+        tf1.accumulator=0
+        tf1.test_accumulator=0
         with tf.name_scope('restore_parameter'):
             
             
         with tf.name_scope('restore_data_msg'):    
-            self.tf1.dtype=pickle.load(input_file)
-            self.tf1.shape=pickle.load(input_file)
+            tf1.dtype=pickle.load(input_file)
+            tf1.shape=pickle.load(input_file)
         self.graph=tf.Graph()
         with self.graph.as_default():
             with tf.name_scope('placeholder'):
@@ -504,9 +510,10 @@ class unnamed:
             self.epoch=pickle.load(input_file)
             self.lr=pickle.load(input_file)
             
-            
-        self.regulation=pickle.load(input_file)
-        self.optimizer=pickle.load(input_file)    
+        with tf.name_scope('restore_regulation'):    
+            self.regulation=pickle.load(input_file)
+        with tf.name_scope('restore_optimizer'):
+            self.optimizer=pickle.load(input_file)    
         self.shape0=pickle.load(input_file)
         self.train_loss=pickle.load(input_file)
         self.train_acc=pickle.load(input_file)
