@@ -13,6 +13,7 @@ class on_policy_mc:
         self.state_list=state_list
         self.action=action
         self.search_space=search_space
+        self.state_action_set=None
         self.epsilon=epsilon
         self.discount=discount
         self.theta=theta
@@ -45,7 +46,8 @@ class on_policy_mc:
     
     
     def first_visit(self,episode,q,r_sum,r_count,discount):
-        self.state_action_set=set()
+        if self.state_action_set==None:
+            self.state_action_set=set()
         delta=0
         self.delta=0
         for i,[state,action,reward] in enumerate(episode):
