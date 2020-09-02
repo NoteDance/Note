@@ -14,6 +14,8 @@ class unnamed:
             self.parameter=[]
         with tf.name_scope('hyperparameter'):
             self.hyperparameter=None
+        with tf.name_scope('regulation'):
+            self.regulation=None
         with tf.name_scope('optimizer'):
             self.optimizer=None
         self.p_accumulator=0
@@ -43,12 +45,15 @@ class unnamed:
     def structure(self):
         self.p_accumulator=0
         self.dtype=dtype
+        with tf.name_scope('hyperparameter'):
+            
+            
         with tf.name_scope('parameter_initialization'):
             
             
             
     @tf.function       
-    def forward_propagation(self,train_data,dropout=None,processor=None):
+    def forward_propagation(self,train_data,dropout):
         with tf.name_scope('processor_allocation'):
             
             
@@ -56,7 +61,7 @@ class unnamed:
             
             
     
-    def loss(self,output,train_labels,l2=None):
+    def loss(self,output,train_labels,l2):
         
         
     
