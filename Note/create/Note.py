@@ -32,6 +32,8 @@ class Note:
             self.l2=None
             self.dropout=None
             self.hyperparameter=self.model.hyperparameter
+        with tf.name_scope('regulation'):
+            self.regulation=self.model.regulation
         with tf.name_scope('optimizer'):
             self.optimizer=self.model.optimzier
         self.train_loss=None
@@ -63,37 +65,15 @@ class Note:
         return
     
     
-    def transfer(self):
-        with tf.name_scope('data/shape0'):
-            self.train_data=self.model.train_data
-            self.train_labels=self.model.train_labels
-            if type(self.train_data)==list:
-                self.data_batch=[x for x in range(len(self.train_data))]
-            if type(self.train_labels)==list:
-                self.labels_batch=[x for x in range(len(self.train_labels))]
-            self.test_data=self.model.test_data
-            self.test_labels=self.model.test_labels
-            if type(self.train_data)==list:
-                self.shape0=self.model.train_data[0].shape[0]
-            else:
-                self.shape0=self.model.train_data.shape[0]
+    def train(self,batch=None,epoch=None,l2=None,dropout=None,optimizer=None,optimizern=None,lr=None,test=False,test_batch=None,model_path=None,one=True,processor=None):
         with tf.name_scope('parameter'):
             self.parameter=self.model.parameter
-        with tf.name_scope('hyperparameter'):
-            self.hyperparameter=self.model.hyperparameter
-        with tf.name_scope('optimizer'):
-            self.optimizer=self.model.optimzier
-        return
-    
-    
-    def train(self,batch=None,epoch=None,l2=None,dropout=None,optimizer=None,optimizern=None,lr=None,test=False,test_batch=None,model_path=None,one=True,processor=None):
-        with tf.name_scope('transfer data'):
-            self.transfer()
         with tf.name_scope('hyperparameter'):
             self.batch=batch
             self.lr=lr
             self.l2=l2
             self.dropout=dropout
+            self.hyperparameter=self.model.hyperparameter
         self.test_flag=test
         self.train_loss_list.clear()
         self.train_acc_list.clear()
@@ -102,6 +82,7 @@ class Note:
         if processor!=None:
             self.processor=processor
         with tf.name_scope('optimizer'):
+            self.optimizer=self.model.optimzier
             if optimizer!=None:
                 optimizer=optimizer
             else:
@@ -148,8 +129,8 @@ class Note:
                             self.labels_batch=self.tf2.batch(train_labels)
                     with tf.GradientTape() as tape:
                         with tf.name_scope('forward_propagation/loss'):
-                            self.output=self.model.forward_propagation(self.data_batch,self.dropout,self.processor)
-                            batch_loss=self.model.loss(self.output,self.labels_batch,self.l2)
+                            self.output=self.model.forward_propagation(self,self.data_batch,self.dropout)
+                            batch_loss=self.model.loss(self,self.output,self.labels_batch,self.l2)
                         if i==0 and self.total_epoch==0:
                             batch_loss=batch_loss.numpy()
                         else:
@@ -162,7 +143,7 @@ class Note:
                     total_loss+=batch_loss
                     if self.model.accuracy==1:
                         with tf.name_scope('accuracy'):
-                            batch_acc=self.model.accuracy(self.output,self.labels_batch)
+                            batch_acc=self.model.accuracy(self,self.output,self.labels_batch)
                         batch_acc=batch_acc.numpy()
                         total_acc+=batch_acc
                 if self.shape0%batch!=0:
@@ -183,8 +164,8 @@ class Note:
                             self.labels_batch=self.tf2.batch(train_labels)
                     with tf.GradientTape() as tape:
                         with tf.name_scope('forward_propagation/loss'):
-                            self.output=self.model.forward_propagation(self.data_batch,self.dropout,self.processor)
-                            batch_loss=self.model.loss(self.output,self.labels_batch,self.l2)
+                            self.output=self.model.forward_propagation(self,self.data_batch,self.dropout)
+                            batch_loss=self.model.loss(self,self.output,self.labels_batch,self.l2)
                         if i==0 and self.total_epoch==0:
                             batch_loss=batch_loss.numpy()
                         else:
@@ -197,7 +178,7 @@ class Note:
                     total_loss+=batch_loss
                     if self.model.accuracy==1:
                         with tf.name_scope('accuracy'):
-                            batch_acc=self.model.accuracy(self.output,self.labels_batch)
+                            batch_acc=self.model.accuracy(self,self.output,self.labels_batch)
                         batch_acc=batch_acc.numpy()
                         total_acc+=batch_acc
                 loss=total_loss/batches
@@ -236,8 +217,8 @@ class Note:
                         train_labels=self.train_labels
                 with tf.GradientTape() as tape:
                     with tf.name_scope('forward_propagation/loss'):
-                        self.output=self.model.forward_propagation(self,train_data,self.dropout,self.processor)
-                        train_loss=self.model.loss(self.output,train_labels,self.l2)
+                        self.output=self.model.forward_propagation(self,train_data,self.dropout)
+                        train_loss=self.model.loss(self,self.output,train_labels,self.l2)
                     if i==0 and self.total_epoch==0:
                         loss=train_loss.numpy()
                     else:
@@ -252,7 +233,7 @@ class Note:
                 self.train_loss=self.train_loss.astype(np.float32)
                 if self.model.accuracy==1:
                     with tf.name_scope('accuracy'):
-                        acc=self.model.accuracy(self.output,train_labels)
+                        acc=self.model.accuracy(self,self.output,train_labels)
                     acc=train_acc.numpy()
                     self.train_acc_list.append(float(acc))
                     self.train_acc=acc
@@ -283,7 +264,7 @@ class Note:
             self.time=int(t2-t1)
         else:
             self.time=int(t2-t1)+1
-	self.total_time+=self.time
+        self.total_time+=self.time
         print()
         print('last loss:{0:.6f}'.format(self.train_loss))
         if self.model.accuracy==1:
@@ -327,11 +308,11 @@ class Note:
                     else:
                         self.labels_batch=self.tf2.batch(self.test_labels)
                 with tf.name_scope('loss'):
-                    batch_loss=self.model.loss(self.data_batch,self.labels_batch)
+                    batch_loss=self.model.loss(self)
                 total_loss+=batch_loss.numpy()
                 if self.model.accuracy==1:
                     with tf.name_scope('accuracy'):
-                        batch_acc=self.model.accuracy(self.data_batch,self.labels_batch)
+                        batch_acc=self.model.accuracy(self)
                     total_acc+=batch_acc.numpy()
             if shape0%batch!=0:
                 batches+=1
@@ -350,7 +331,7 @@ class Note:
                     else:
                         self.labels_batch=self.tf2.batch(self.test_labels)
                 with tf.name_scope('loss'):
-                    batch_loss=self.model.loss(self.data_batch,self.labels_batch)
+                    batch_loss=self.model.loss(self)
                 total_loss+=batch_loss.numpy()
                 if self.model.accuracy==1:
                     with tf.name_scope('accuracy'):
@@ -365,10 +346,10 @@ class Note:
                 test_acc=test_acc.astype(np.float32)
         else:
             with tf.name_scope('loss'):
-                test_loss=self.model.loss(self.test_data,self.test_labels)
+                test_loss=self.model.loss(self)
             if self.model.accuracy==1:
                 with tf.name_scope('accuracy'):
-                    test_acc=self.model.accuracy(self.test_data,self.test_labels)
+                    test_acc=self.model.accuracy(self)
                 test_loss=test_loss.numpy().astype(np.float32)
                 test_acc=test_acc.numpy().astype(np.float32)
         print('test loss:{0:.6f}'.format(test_loss))
@@ -390,8 +371,12 @@ class Note:
         print('batch:{0}'.format(self.batch))
         print()
         print('epoch:{0}'.format(self.epoch))
-        print()
-        print('optimizer:{0}'.format(self.optimizer))
+        if self.regulation!=None:
+            print()
+            print('regulation:{0}'.format(self.regulation))
+        if self.optimizer!=None:
+            print()
+            print('optimizer:{0}'.format(self.optimizer))
         print()
         print('learning rate:{0}'.format(self.lr))
         print()
@@ -507,15 +492,18 @@ class Note:
         else:
             output_file=open(model_path+'-{0}.dat'.format(i+1),'wb')
         with tf.name_scope('save_parameter'):  
-            pickle.dump(self.model.parameter,output_file)
+            pickle.dump(self.parameter,output_file)
         with tf.name_scope('save_hyperparameter'):
             pickle.dump(self.batch,output_file)
             pickle.dump(self.epoch,output_file)
             pickle.dump(self.lr,output_file)
             pickle.dump(self.l2,output_file)
             pickle.dump(self.dropout,output_file)
-            pickle.dump(self.model.hyperparameter,output_file)
-        pickle.dump(self.model.optimizer,output_file)
+            pickle.dump(self.hyperparameter,output_file)
+        with tf.name_scope('save_regulation'):
+            pickle.dump(self.regulation,output_file)
+        with tf.name_scope('save_optimizer'):
+            pickle.dump(self.optimizer,output_file)
         pickle.dump(self.model.accuracy,output_file)
         pickle.dump(self.model.acc,output_file)
         pickle.dump(self.shape0,output_file)
@@ -548,8 +536,11 @@ class Note:
             self.lr=pickle.load(input_file)
             self.l2=pickle.load(input_file)
             self.dropout=pickle.load(input_file)
-            self.model.hyperparameter=pickle.load(input_file)
-        self.model.optimizer=pickle.load(input_file)
+            self.hyperparameter=pickle.load(input_file)
+        with tf.name_scope('restore_regulation'):
+            self.regulation=pickle.load(input_file)
+        with tf.name_scope('restore_optimizer'):
+            self.optimizer=pickle.load(input_file)
         self.model.accuracy=pickle.load(input_file)
         self.model.acc=pickle.load(input_file)
         self.shape0=pickle.load(input_file)
