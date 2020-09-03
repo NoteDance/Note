@@ -91,7 +91,7 @@ class Sarsa:
         print()
         print('last delta:{0:.6f}'.format(self.delta))
         print('time:{0}s'.format(self.time))
-        return self.q
+        return
     
     
     def save(self,path,i=None,one=True):
