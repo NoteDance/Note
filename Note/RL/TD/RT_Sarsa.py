@@ -1,8 +1,10 @@
+import tensorflow as tf
 import numpy as np
 
 
 class RT_Sarsa:
-    def __init__(self,state,state_list,action,search_space,epsilon,alpha,discount):
+    def __init__(self,q,state,state_list,action,search_space,epsilon,alpha,discount):
+        self.q=q
         self.state=state
         self.state_list=state_list
         self.action=action
@@ -38,7 +40,9 @@ class RT_Sarsa:
     
     
     def learn(self):
-        self.q=np.zeros([len(self.state_list),len(self.action)],dtype=np.float32)
+        if len(self.state_list)>self.q.shape[0] or len(self.action)>self.q.shape[1]:
+            q=self.q*tf.ones([len(self.state_list),len(self.action)],dtype=tf.float32)[:self.q.shape[0],:self.q.shape[1]]
+            self.q=q.numpy()
         s=np.random.choice(np.arange(len(self.state_list)),p=np.ones(len(self.state_list))*1/len(self.state_list))
         self.q=self.update_q(self.q,self.state_list[s])
         return
