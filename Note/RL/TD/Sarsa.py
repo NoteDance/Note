@@ -5,7 +5,7 @@ import time
 
 
 class Sarsa:
-    def __init__(self,state,state_list,action,search_space,q=None,epsilon=None,alpha=None,discount=None,theta=None):
+    def __init__(self,q,state,state_list,action,search_space,epsilon=None,alpha=None,discount=None,theta=None):
         self.q=q
         self.state=state
         self.state_list=state_list
@@ -56,9 +56,7 @@ class Sarsa:
     
     def learn(self,episode_num,path=None,one=True):
         self.delta=0
-        if self.q==None:
-            self.q=np.zeros([len(self.state_list),len(self.action)],dtype=np.float32)
-        elif len(self.state_list)>self.q.shape[0] or len(self.action)>self.q.shape[1]:
+        if len(self.state_list)>self.q.shape[0] or len(self.action)>self.q.shape[1]:
             q=self.q*tf.ones([len(self.state_list),len(self.action)],dtype=tf.float32)[:self.q.shape[0],:self.q.shape[1]]
             self.q=q.numpy()
         t1=time.time()
