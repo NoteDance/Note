@@ -201,13 +201,13 @@ class unnamed:
                         self.test_loss_list.append(self.test_loss)
                         self.test_acc_list.append(self.test_acc)
             if epoch%10!=0:
-                temp_epoch=epoch-epoch%10
-                temp_epoch=int(temp_epoch/10)
+                temp=epoch-epoch%10
+                temp=int(temp/10)
             else:
-                temp_epoch=epoch/10
-            if temp_epoch==0:
-                temp_epoch=1
-            if i%temp_epoch==0:
+                temp=epoch/10
+            if temp==0:
+                temp=1
+            if i%temp==0:
                 if self.total_epoch==0:
                     print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
                 else:
