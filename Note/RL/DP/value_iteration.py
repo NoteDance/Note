@@ -72,7 +72,7 @@ class value_iteration:
                         A[a]+=prob*(reward+self.discount*V[next_state])
                 best_action=max(A)
                 self.policy[self.state[s]][best_action]=1
-        return self.policy
+        return
     
     
     def save(self,path,i=None,one=True):
