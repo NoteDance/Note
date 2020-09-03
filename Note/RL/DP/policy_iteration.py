@@ -85,7 +85,7 @@ class policy_iteration:
                 self.total_time+=self.time
                 print()
                 print('time:{0}s'.format(self.time))
-                return self.policy
+                return
     
     
     def save(self,path,i=None,one=True):
