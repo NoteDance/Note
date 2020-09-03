@@ -30,7 +30,7 @@ class off_policy_mc:
         return action_prob
     
     
-    def episode(self,q,state,action,search_space,episode_step):
+    def episode(self,q,state,action,search_space):
         episode=[]
         while True:
             action_prob=self.epsilon_greedy_policy(q,self.state[state],action)
