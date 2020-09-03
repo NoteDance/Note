@@ -48,6 +48,12 @@ class transformer:
         self.total_time=0
         self.processor='GPU:0'
         
+        
+    def iet(self):
+        self.total_epoch=self.total_epoch-self.epoch
+        self.total_time=self.total_time-self.time
+        return
+    
     
     def weight_init(self,shape,mean,stddev):
         return tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=self.dtype))
@@ -68,8 +74,8 @@ class transformer:
         self.dtype=dtype
         with tf.name_scope('hyperparameter'):
             self.layers=layers
-        self.time=None
-        self.total_time=None
+        self.time=0
+        self.total_time=0
         with tf.name_scope('parameter_initialization'):
             self.embedding_w=embedding_w
             if self.ow==None:
@@ -249,11 +255,12 @@ class transformer:
         gradient=tape.gradient(loss,variable)
         optimizer.apply_gradients(zip(gradient,variable))
         return
-                        
+                    
                                 
     def train(self,batch=None,epoch=None,lr=0.001,test=False,test_batch=None,model_path=None,one=True,processor=None):
         with tf.name_scope('hyperparameter'):
             self.batch=batch
+            self.epoch=0
             self.lr=lr
         self.test_flag=test
         if processor!=None:
@@ -330,7 +337,7 @@ class transformer:
                 self.train_acc=self.train_acc.astype(np.float32)
                 if test==True:
                     with tf.name_scope('test'):
-                        self.test_loss,self.test_acc=self.test(self.tst_data,self.test_labels,test_batch)
+                        self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
                         self.test_loss_list.append(self.test_loss)
                         self.test_acc_list.append(self.test_acc)
             else:
@@ -359,9 +366,11 @@ class transformer:
                 self.train_acc=self.train_acc.astype(np.float32)
                 if test==True:
                     with tf.name_scope('test'):
-                        self.test_loss,self.test_acc=self.test(self.tst_data,self.test_labels,test_batch)
+                        self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
                         self.test_loss_list.append(self.test_loss)
                         self.test_acc_list.append(self.test_acc)
+            self.epoch+=1
+            self.total_epoch+=1
             if epoch%10!=0:
                 temp=epoch-epoch%10
                 temp=int(temp/10)
@@ -382,16 +391,10 @@ class transformer:
             self.time=int(t2-t1)
         else:
             self.time=int(t2-t1)+1
-        self.total+=self.time
+        self.total_time+=self.time
         print()
         print('last loss:{0:.6f}'.format(self.train_loss))
         print('accuracy:{0:.1f}%'.format(self.train_acc*100))
-        if self.total_epoch==0:
-            self.total_epoch=epoch-1
-            self.epoch=epoch-1
-        else:
-            self.total_epoch=self.total_epoch+epoch
-            self.epoch=epoch
         print('time:{0}s'.format(self.time))
         return
         
@@ -451,13 +454,13 @@ class transformer:
         print()
         print('batch:{0}'.format(self.batch))
         print()
-        print('epoch:{0}'.format(self.epoch))
+        print('epoch:{0}'.format(self.total_epoch))
         print()
         print('optimizer:{0}'.format(self.optimizer))
         print()
         print('learning rate:{0}'.format(self.lr))
         print()
-        print('time:{0:.3f}s'.format(self.time))
+        print('time:{0:.3f}s'.format(self.total_time))
         print()
         print('-------------------------------------')
         print()
@@ -566,7 +569,6 @@ class transformer:
             pickle.dump(self.ow,output_file)
         with tf.name_scope('save_hyperparameter'):
             pickle.dump(self.batch,output_file)
-            pickle.dump(self.epoch,output_file)
             pickle.dump(self.lr,output_file)
             pickle.dump(self.layers,output_file)
         pickle.dump(self.optimizer,output_file)
@@ -581,9 +583,7 @@ class transformer:
             pickle.dump(self.test_acc,output_file)
             pickle.dump(self.test_loss_list,output_file)
             pickle.dump(self.test_acc_list,output_file)
-        pickle.dump(self.epoch,output_file)
         pickle.dump(self.total_epoch,output_file)
-        pickle.dump(self.time,output_file)
         pickle.dump(self.total_time,output_file)
         pickle.dump(self.processor,output_file)
         output_file.close()
@@ -608,7 +608,6 @@ class transformer:
             self.ow=pickle.load(input_file)
         with tf.name_scope('restore_hyperparameter'):
             self.batch=pickle.load(input_file)
-            self.epoch=pickle.load(input_file)
             self.lr=pickle.load(input_file)
             self.layers=pickle.load(input_file)
         self.optimizer=pickle.load(input_file)
@@ -623,9 +622,7 @@ class transformer:
             self.test_acc=pickle.load(input_file)
             self.test_loss_list=pickle.load(input_file)
             self.test_acc_list=pickle.load(input_file)
-        self.epoch=pickle.load(input_file)
         self.total_epoch=pickle.load(input_file)
-        self.time=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
         self.processor=pickle.load(input_file)
         input_file.close()
