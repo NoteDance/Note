@@ -45,12 +45,8 @@ class RT_Sarsa:
             self.dst[0]=delta/self.dst[1]
             self.dst[1]+=1
             t2=time.time()
-            time1=(t2-t1)-int(t2-t1)
-            if time1<0.5:
-                time2=int(t2-t1)
-            else:
-                time2=int(t2-t1)+1
-            self.dst[2]+=time2
+            _time=t2-t1
+            self.dst[2]+=_time
         return
     
     
