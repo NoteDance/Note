@@ -106,7 +106,7 @@ class off_policy_mc:
         print()
         print('last delta:{0:.6f}'.format(self.delta))
         print('time:{0}s'.format(self.time))
-        return self.q,self.c
+        return
     
     
     def save(self,path,i=None,one=True):
