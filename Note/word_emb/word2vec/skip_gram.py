@@ -36,6 +36,12 @@ class skip_gram:
         self.processor='/gpu:0'
     
     
+    def iet(self):
+        self.total_epoch=self.total_epoch-self.epoch
+        self.total_time=self.total_time-self.time
+        return
+    
+    
     def weight_init(self,shape,mean,stddev,name):
         return tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=self.dtype),name=name)
             
@@ -46,6 +52,8 @@ class skip_gram:
     
     def structure(self,d,vocab_size,mean=0,stddev=0.07,dtype=np.float32):
         with self.graph.as_default():
+            self.d=d
+            self.vocab_size=vocab_size
             self.continue_train=False
             self.flag=None
             self.end_flag=False
@@ -75,6 +83,7 @@ class skip_gram:
     def train(self,batch=None,epoch=None,optimizer='Adam',lr=0.001,acc=True,train_summary_path=None,model_path=None,one=True,continue_train=False,processor=None):
         with self.graph.as_default():
             self.batch=batch
+            self.epoch=0
             self.optimizer=optimizer
             self.lr=lr
             if continue_train!=True:
@@ -177,6 +186,8 @@ class skip_gram:
                     self.train_loss_list.append(float(loss))
                     self.train_loss=loss
                     self.train_loss=self.train_loss.astype(np.float16)
+                self.epoch+=1
+                self.total_epoch+=1
                 if epoch%10!=0:
                     temp=epoch-epoch%10
                     temp=int(temp/10)
@@ -213,15 +224,6 @@ class skip_gram:
                 self.last_cword_weight=None
                 self.last_bword_weight=None
                 sess.run(tf.global_variables_initializer())
-            if continue_train==True:
-                if self.total_epoch==0:
-                    self.total_epoch=epoch-1
-                    self.epoch=epoch-1
-                else:
-                    self.total_epoch=self.total_epoch+epoch
-                    self.epoch=epoch
-            if continue_train!=True:
-                self.epoch=epoch-1
             print('time:{0}s'.format(self.time))
             return
     
@@ -242,13 +244,13 @@ class skip_gram:
         print()
         print('batch:{0}'.format(self.batch))
         print()
-        print('epoch:{0}'.format(self.epoch))
+        print('epoch:{0}'.format(self.total_epoch))
         print()
         print('optimizer:{0}'.format(self.optimizer))
         print()
         print('learning rate:{0}'.format(self.lr))
         print()
-        print('time:{0:.3f}s'.format(self.time))
+        print('time:{0:.3f}s'.format(self.total_time))
         print()
         print('-------------------------------------')
         print()
@@ -277,6 +279,8 @@ class skip_gram:
             output_file=open(model_path+'.dat','wb')
         else:
             output_file=open(model_path+'-{0}.dat'.format(i+1),'wb')
+        pickle.dump(self.d)
+        pickle.dump(self.vocab_size)
         pickle.dump(self.last_cword_weight,output_file)   
         pickle.dump(self.last_bword_weight,output_file) 
         pickle.dump(self.shape0,output_file)
@@ -284,13 +288,11 @@ class skip_gram:
         pickle.dump(self.bword_dtype,output_file)
         pickle.dump(self.labels_dtype,output_file)
         pickle.dump(self.batch,output_file)
-        pickle.dump(self.epoch,output_file)
         pickle.dump(self.lr,output_file)
         pickle.dump(self.optimizer,output_file)
         pickle.dump(self.train_loss,output_file)
         pickle.dump(self.train_loss_list,output_file)
         pickle.dump(self.total_epoch,output_file)
-        pickle.dump(self.time,output_file)
         pickle.dump(self.total_time,output_file)
         pickle.dump(self.processor,output_file)
         output_file.close()
@@ -299,6 +301,8 @@ class skip_gram:
 
     def restore(self,model_path):
         input_file=open(model_path,'rb')
+        self.d=pickle.load(input_file)
+        self.vocab_size=pickle.load(input_file)
         self.last_cword_weight=pickle.load(input_file)  
         self.last_bword_weight=pickle.load(input_file)
         self.shape0=pickle.load(input_file)
@@ -311,13 +315,11 @@ class skip_gram:
             self.bword_place=tf.placeholder(dtype=self.bword_dtype,shape=[None,None,None],name='bword')
             self.labels=tf.placeholder(dtype=self.labels_dtype,shape=[None],name='labels')
         self.batch=pickle.load(input_file)
-        self.epoch=pickle.load(input_file)
         self.lr=pickle.load(input_file)
         self.optimizer=pickle.load(input_file)
         self.train_loss=pickle.load(input_file)
         self.train_loss_list=pickle.load(input_file)
         self.total_epoch=pickle.load(input_file)
-        self.time=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
         self.processor=pickle.load(input_file)
         self.flag=1
