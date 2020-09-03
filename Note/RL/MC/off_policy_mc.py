@@ -5,7 +5,7 @@ import time
 
 
 class off_policy_mc:
-    def __init__(self,state,state_list,action,search_space,q=None,epsilon=None,discount=None,theta=None):
+    def __init__(self,q,state,state_list,action,search_space,epsilon=None,discount=None,theta=None):
         self.q=q
         self.c=None
         self.state=state
@@ -67,10 +67,7 @@ class off_policy_mc:
     
     def learn(self,episode_num,path=None,one=True):
         self.delta=0
-        if self.q==None:
-            self.q=np.zeros([len(self.state_list),len(self.action)],dtype=np.float32)
-            self.c=np.zeros([len(self.state_list),len(self.action)],dtype=np.float32)
-        elif len(self.state_list)>self.q.shape[0] or len(self.action)>self.q.shape[1]:
+        if len(self.state_list)>self.q.shape[0] or len(self.action)>self.q.shape[1]:
             q=self.q*tf.ones([len(self.state_list),len(self.action)],dtype=tf.float32)[:self.q.shape[0],:self.q.shape[1]]
             self.q=q.numpy()
             c=self.c*tf.ones([len(self.state_list),len(self.action)],dtype=tf.float32)[:self.c.shape[0],:self.c.shape[1]]
