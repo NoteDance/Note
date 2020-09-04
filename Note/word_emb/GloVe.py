@@ -40,12 +40,6 @@ class GloVe:
         self.processor='/gpu:0'
     
     
-    def iet(self):
-        self.total_epoch=self.total_epoch-self.epoch
-        self.total_time=self.total_time-self.time
-        return
-    
-    
     def weight_init(self,shape,mean,stddev,name):
         return tf.Variable(tf.random.normal(shape=shape,mean=mean,stddev=stddev,dtype=self.dtype),name=name)
             
@@ -98,13 +92,13 @@ class GloVe:
             self.epoch=0
             self.optimizer=optimizer
             self.lr=lr
+            self.time=0
             if continue_train!=True:
                 if self.continue_train==True:
                     continue_train=True
                 else:
                     self.train_loss_list.clear()
             if self.continue_train==False and continue_train==True:
-                self.train_loss_list.clear()
                 self.continue_train=True
             if processor!=None:
                 self.processor=processor
@@ -153,8 +147,8 @@ class GloVe:
             self.sess=sess
             if self.total_epoch==0:
                 epoch=epoch+1
-            t1=time.time()
             for i in range(epoch):
+                t1=time.time()
                 if batch!=None:
                     batches=int((self.shape0-self.shape0%batch)/batch)
                     total_loss=0
@@ -207,7 +201,6 @@ class GloVe:
                     self.train_loss=loss
                     self.train_loss=self.train_loss.astype(np.float16)
                 self.epoch+=1
-                self.total_epoch+=1
                 if epoch%10!=0:
                     temp=epoch-epoch%10
                     temp=int(temp/10)
@@ -225,13 +218,13 @@ class GloVe:
                     if train_summary_path!=None:
                         train_summary=sess.run(train_merging,feed_dict=feed_dict)
                         train_writer.add_summary(train_summary,i)
-            t2=time.time()
-            _time=(t2-t1)-int(t2-t1)
-            if _time<0.5:
-                self.time=int(t2-t1)
+                t2=time.time()
+                self.time+=(t2-t1)
+            self.time=self.time-int(self.time)
+            if self.time<0.5:
+                self.time=int(self.time)
             else:
-                self.time=int(t2-t1)+1
-            self.total+=self.time
+                self.time=int(self.time)+1
             print()
             print('last loss:{0}'.format(self.train_loss))
             if train_summary_path!=None:
@@ -266,6 +259,8 @@ class GloVe:
             self.bword_weight=None
             self.cword_bias=None
             self.bword_bias=None
+            self.total_epoch+=self.epoch
+            self.total_time+=self.time
             self.sess.close()
             return
         
@@ -296,7 +291,7 @@ class GloVe:
     def train_visual(self):
         print()
         plt.figure(1)
-        plt.plot(np.arange(self.epoch+1),self.train_loss_list)
+        plt.plot(np.arange(self.total_epoch),self.train_loss_list)
         plt.title('train loss')
         plt.xlabel('epoch')
         plt.ylabel('loss')
