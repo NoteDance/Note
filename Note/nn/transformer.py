@@ -47,12 +47,6 @@ class transformer:
         self.time=0
         self.total_time=0
         self.processor='GPU:0'
-        
-        
-    def iet(self):
-        self.total_epoch=self.total_epoch-self.epoch
-        self.total_time=self.total_time-self.time
-        return
     
     
     def weight_init(self,shape,mean,stddev):
@@ -64,8 +58,6 @@ class transformer:
     
     
     def structure(self,embedding_w,word_size,layers=6,mean=0,stddev=0.07,dtype=np.float32):
-        self.epoch=0
-        self.total_epoch=0
         self.test_flag=False
         self.train_loss_list.clear()
         self.train_accuracy_list.clear()
@@ -74,6 +66,8 @@ class transformer:
         self.dtype=dtype
         with tf.name_scope('hyperparameter'):
             self.layers=layers
+        self.epoch=0
+        self.total_epoch=0
         self.time=0
         self.total_time=0
         with tf.name_scope('parameter_initialization'):
@@ -262,6 +256,7 @@ class transformer:
             self.batch=batch
             self.epoch=0
             self.lr=lr
+        self.time=0
         self.test_flag=test
         if processor!=None:
             self.processor=processor
@@ -273,8 +268,8 @@ class transformer:
             optimizer=optimizers.Adam(lr)
         if self.total_epoch==0:
             epoch=epoch+1
-        t1=time.time()
         for i in range(epoch):
+            t1=time.time()
             if batch!=None:
                 batches=int((self.shape0-self.shape0%batch)/batch)
                 self.tf2.batches=batches
@@ -382,15 +377,16 @@ class transformer:
                 if self.total_epoch==0:
                     print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
                 else:
-                    print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
+                    print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
                 if model_path!=None and i%epoch*2==0:
                     self.save(model_path,i,one)
-        t2=time.time()
-        _time=(t2-t1)-int(t2-t1)
-        if _time<0.5:
-            self.time=int(t2-t1)
+            t2=time.time()
+            self.time+=(t2-t1)
+        self.time=self.time-int(self.time)
+        if self.time<0.5:
+            self.time=int(self.time)
         else:
-            self.time=int(t2-t1)+1
+            self.time=int(self.time)+1
         self.total_time+=self.time
         print()
         print('last loss:{0:.6f}'.format(self.train_loss))
@@ -488,12 +484,12 @@ class transformer:
     def train_visual(self):
         print()
         plt.figure(1)
-        plt.plot(np.arange(self.epoch+1),self.train_loss_list)
+        plt.plot(np.arange(self.total_epoch),self.train_loss_list)
         plt.title('train loss')
         plt.xlabel('epoch')
         plt.ylabel('loss')
         plt.figure(2)
-        plt.plot(np.arange(self.epoch+1),self.train_acc_list)
+        plt.plot(np.arange(self.total_epoch),self.train_acc_list)
         plt.title('train acc')
         plt.xlabel('epoch')
         plt.ylabel('acc')
@@ -505,12 +501,12 @@ class transformer:
     def test_visual(self):
         print()
         plt.figure(1)
-        plt.plot(np.arange(self.epoch+1),self.test_loss_list)
+        plt.plot(np.arange(self.total_epoch),self.test_loss_list)
         plt.title('test loss')
         plt.xlabel('epoch')
         plt.ylabel('loss')
         plt.figure(2)
-        plt.plot(np.arange(self.epoch+1),self.test_acc_list)
+        plt.plot(np.arange(self.total_epoch),self.test_acc_list)
         plt.title('test acc')
         plt.xlabel('epoch')
         plt.ylabel('acc')
@@ -522,17 +518,17 @@ class transformer:
     def comparison(self):
         print()
         plt.figure(1)
-        plt.plot(np.arange(self.epoch+1),self.train_loss_list,'b-',label='train loss')
+        plt.plot(np.arange(self.total_epoch),self.train_loss_list,'b-',label='train loss')
         if self.test_flag==True:
-            plt.plot(np.arange(self.epoch+1),self.test_loss_list,'r-',label='test loss')
+            plt.plot(np.arange(self.total_epoch),self.test_loss_list,'r-',label='test loss')
         plt.title('loss')
         plt.xlabel('epoch')
         plt.ylabel('loss')
         plt.legend()
         plt.figure(2)
-        plt.plot(np.arange(self.epoch+1),self.train_acc_list,'b-',label='train acc')
+        plt.plot(np.arange(self.total_epoch),self.train_acc_list,'b-',label='train acc')
         if self.test_flag==True:
-            plt.plot(np.arange(self.epoch+1),self.test_acc_list,'r-',label='test acc')
+            plt.plot(np.arange(self.total_epoch),self.test_acc_list,'r-',label='test acc')
         plt.title('accuracy')
         plt.xlabel('epoch')
         plt.ylabel('acc')
