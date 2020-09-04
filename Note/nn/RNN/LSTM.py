@@ -461,6 +461,7 @@ class lstm:
             self.C.clear()
             self.h.clear()
             self.batch=batch
+            self.epoch=0
             self.l2=l2
             self.optimizer=optimizer
             self.lr=lr
@@ -474,10 +475,6 @@ class lstm:
                     self.test_loss_list.clear()
                     self.test_accuracy_list.clear()
             if self.continue_train==False and continue_train==True:
-                self.train_loss_list.clear()
-                self.train_accuracy_list.clear()
-                self.test_loss_list.clear()
-                self.test_accuracy_list.clear()
                 self.continue_train=True
             if processor!=None:
                 self.processor=processor
@@ -681,8 +678,8 @@ class lstm:
             self.sess=sess
             if self.total_epoch==0:
                 epoch=epoch+1
-            t1=time.time()
             for i in range(epoch):
+                t1=time.time()
                 if batch!=None:
                     batches=int((self.shape0-self.shape0%batch)/batch)
                     total_loss=0
@@ -751,14 +748,15 @@ class lstm:
                         self.test_loss,self.test_accuracy=self.test(self.test_data,self.test_labels,test_batch)
                         self.test_loss_list.append(self.test_loss)
                         self.test_accuracy_list.append(self.test_acc)
+                self.epoch+=1
                 if epoch%10!=0:
-                    temp_epoch=epoch-epoch%10
-                    temp_epoch=int(temp_epoch/10)
+                    temp=epoch-epoch%10
+                    temp=int(temp/10)
                 else:
-                    temp_epoch=epoch/10
-                if temp_epoch==0:
-                    temp_epoch=1
-                if i%temp_epoch==0:
+                    temp=epoch/10
+                if temp==0:
+                    temp=1
+                if i%temp==0:
                     if continue_train==True:
                         print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
                     else:
@@ -768,13 +766,13 @@ class lstm:
                     if train_summary_path!=None:
                         train_summary=sess.run(train_merging,feed_dict=feed_dict)
                         train_writer.add_summary(train_summary,i)
-            t2=time.time()
-            _time=(t2-t1)-int(t2-t1)
-            if _time<0.5:
-                self.time=int(t2-t1)
+                t2=time.time()
+                self.time+=(t2-t1)
+            self.time=self.time-int(self.time)
+            if self.time<0.5:
+                self.time=int(self.time)
             else:
-                self.time=int(t2-t1)+1
-	    self.total_time+=self.time
+                self.time=int(self.time)+1
             print()
             print('last loss:{0:.6f}'.format(self.train_loss))
             if self.predicate==False:
@@ -860,15 +858,6 @@ class lstm:
                 self.last_weight_o=None
                 self.last_bias_o=None
                 sess.run(tf.global_variables_initializer())
-            if continue_train==True:
-                if self.total_epoch==0:
-                    self.total_epoch=epoch-1
-                    self.epoch=epoch-1
-                else:
-                    self.total_epoch=self.total_epoch+epoch
-                    self.epoch=epoch
-            if continue_train!=True:
-                self.epoch=epoch-1
             print('time:{0}s'.format(self.time))
             return
      
@@ -907,6 +896,8 @@ class lstm:
             self.cltm_bias=None
             self.weight_o=None
             self.bias_o=None
+            self.total_epoch+=self.epoch
+            self.total_time+=self.time
             self.sess.close()
             return
         
@@ -985,7 +976,7 @@ class lstm:
         print()
         print('batch:{0}'.format(self.batch))
         print()
-        print('epoch:{0}'.format(self.epoch))
+        print('epoch:{0}'.format(self.total_epoch))
         print()
         print('l2:{0}'.format(self.l2))
         print()
@@ -993,7 +984,7 @@ class lstm:
         print()
         print('learning rate:{0}'.format(self.lr))
         print()
-        print('time:{0:.3f}s'.format(self.time))
+        print('time:{0:.3f}s'.format(self.total_time))
         print()
         print('-------------------------------------')
         print()
@@ -1029,12 +1020,12 @@ class lstm:
     def train_visual(self):
         print()
         plt.figure(1)
-        plt.plot(np.arange(self.epoch+1),self.train_loss_list)
+        plt.plot(np.arange(self.total_epoch),self.train_loss_list)
         plt.title('train loss')
         plt.xlabel('epoch')
         plt.ylabel('loss')
         plt.figure(2)
-        plt.plot(np.arange(self.epoch+1),self.train_accuracy_list)
+        plt.plot(np.arange(self.total_epoch),self.train_accuracy_list)
         plt.title('train accuracy')
         plt.xlabel('epoch')
         plt.ylabel('accuracy')
@@ -1050,12 +1041,12 @@ class lstm:
     def test_visual(self):
         print()
         plt.figure(1)
-        plt.plot(np.arange(self.epoch+1),self.test_loss_list)
+        plt.plot(np.arange(self.total_epoch),self.test_loss_list)
         plt.title('test loss')
         plt.xlabel('epoch')
         plt.ylabel('loss')
         plt.figure(2)
-        plt.plot(np.arange(self.epoch+1),self.test_accuracy_list)
+        plt.plot(np.arange(self.total_epoch),self.test_accuracy_list)
         plt.title('test accuracy')
         plt.xlabel('epoch')
         plt.ylabel('accuracy')
@@ -1071,17 +1062,17 @@ class lstm:
     def comparison(self):
         print()
         plt.figure(1)
-        plt.plot(np.arange(self.epoch+1),self.train_loss_list,'b-',label='train loss')
+        plt.plot(np.arange(self.total_epoch),self.train_loss_list,'b-',label='train loss')
         if self.test_flag==True:
-            plt.plot(np.arange(self.epoch+1),self.test_loss_list,'r-',label='test loss')
+            plt.plot(np.arange(self.total_epoch),self.test_loss_list,'r-',label='test loss')
         plt.title('loss')
         plt.xlabel('epoch')
         plt.ylabel('loss')
         plt.legend()
         plt.figure(2)
-        plt.plot(np.arange(self.epoch+1),self.train_accuracy_list,'b-',label='train accuracy')
+        plt.plot(np.arange(self.total_epoch),self.train_accuracy_list,'b-',label='train accuracy')
         if self.test_flag==True:
-            plt.plot(np.arange(self.epoch+1),self.test_accuracy_list,'r-',label='test accuracy')
+            plt.plot(np.arange(self.total_epoch),self.test_accuracy_list,'r-',label='test accuracy')
         plt.title('accuracy')
         plt.xlabel('epoch')
         plt.ylabel('accuracy')
@@ -1185,7 +1176,6 @@ class lstm:
         pickle.dump(self.pattern,output_file)
         pickle.dump(self.predicate,output_file)
         pickle.dump(self.batch,output_file)
-        pickle.dump(self.epoch,output_file)
         pickle.dump(self.lr,output_file)
         pickle.dump(self.l2,output_file)
         pickle.dump(self.optimizer,output_file)
@@ -1200,7 +1190,6 @@ class lstm:
             pickle.dump(self.test_loss_list,output_file)
             pickle.dump(self.test_accuracy_list,output_file)
         pickle.dump(self.total_epoch,output_file)
-        pickle.dump(self.time,output_file)
         pickle.dump(self.total_time,output_file)
         pickle.dump(self.processor,output_file)
         output_file.close()
@@ -1257,7 +1246,6 @@ class lstm:
         self.pattern=pickle.load(input_file)
         self.predicate=pickle.load(input_file)
         self.batch=pickle.load(input_file)
-        self.epoch=pickle.load(input_file)
         self.lr=pickle.load(input_file)
         self.l2=pickle.load(input_file)
         self.optimizer=pickle.load(input_file)
@@ -1272,7 +1260,6 @@ class lstm:
             self.test_loss_list=pickle.load(input_file)
             self.test_accuracy_list=pickle.load(input_file)
         self.total_epoch=pickle.load(input_file)
-        self.time=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
         self.processor=pickle.load(input_file)
         self.flag=1
