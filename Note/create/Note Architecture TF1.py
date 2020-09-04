@@ -86,9 +86,10 @@ class unnamed:
         with self.graph.as_default():
             with tf.name_scope('hyperparameter'):
                 self.batch=batch
+                self.epoch=0
                 self.lr=lr
                 
-                
+            self.time=0   
             self.test_flag=test   
             if continue_train!=True:
                 if self.continue_train==True:
@@ -99,10 +100,6 @@ class unnamed:
                     self.test_loss_list.clear()
                     self.test_acc_list.clear()
             if self.continue_train==False and continue_train==True:
-                self.train_loss_list.clear()
-                self.train_acc_list.clear()
-                self.test_loss_list.clear()
-                self.test_acc_list.clear()
                 self.continue_train=True
             if processor!=None:
                 self.processor=processor
@@ -141,8 +138,8 @@ class unnamed:
             self.sess=sess
             if self.total_epoch==0:
                 epoch=epoch+1
-            t1=time.time()
             for i in range(epoch):
+                t1=time.time()
                 if batch!=None:
                     batches=int((self.shape0-self.shape0%batch)/batch)
                     tf1.batches=batches
@@ -216,6 +213,7 @@ class unnamed:
                             self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
                             self.test_loss_list.append(self.test_loss)
                             self.test_acc_list.append(self.test_acc)
+                self.epoch+=1
                 if epoch%10!=0:
                     temp=epoch-epoch%10
                     temp=int(temp/10)
@@ -233,13 +231,13 @@ class unnamed:
                     if train_summary_path!=None:
                         train_summary=sess.run(train_merging,feed_dict=feed_dict)
                         train_writer.add_summary(train_summary,i)
-            t2=time.time()
-            _time=(t2-t1)-int(t2-t1)
-            if _time<0.5:
-                self.time=int(t2-t1)
+                t2=time.time()
+                self.time+=(t2-t1)
+            self.time=self.time-int(self.time)
+            if self.time<0.5:
+                self.time=int(self.time)
             else:
-                self.time=int(t2-t1)+1
-            self.total_time+=self.time
+                self.time=int(self.time)+1
             print()
             print('last loss:{0:.6f}'.format(self.train_loss))
             with tf.name_scope('print_accuracy'):
@@ -252,15 +250,6 @@ class unnamed:
                     
                 
                 sess.run(tf.global_variables_initializer())
-            if continue_train==True:
-                if self.total_epoch==0:
-                    self.total_epoch=epoch-1
-                    self.epoch=epoch-1
-                else:
-                    self.total_epoch=self.total_epoch+epoch
-                    self.epoch=epoch
-            if continue_train!=True:
-                self.epoch=epoch-1
             print('time:{0}s'.format(self.time))
             return
     
@@ -271,7 +260,9 @@ class unnamed:
             self.continue_train=False
             with tf.name_scope('parameter_convert_into_numpy'):
                 
-                
+            
+            self.total_epoch+=self.epoch
+            self.total_time+=self.time
             self.sess.close()
             return
     
@@ -341,7 +332,7 @@ class unnamed:
         print()
         print('batch:{0}'.format(self.batch))
         print()
-        print('epoch:{0}'.format(self.epoch))
+        print('epoch:{0}'.format(self.total_epoch))
         if self.regulation!=None:
             print()
             print('regulation:{0}'.format(self.regulation))
@@ -351,7 +342,7 @@ class unnamed:
         print()
         print('learning rate:{0}'.format(self.lr))
         print()
-        print('time:{0:.3f}s'.format(self.time))
+        print('time:{0:.3f}s'.format(self.total_time))
         print()
         print('-------------------------------------')
         print()
@@ -383,12 +374,12 @@ class unnamed:
     def train_visual(self):
         print()
         plt.figure(1)
-        plt.plot(np.arange(self.epoch+1),self.train_loss_list)
+        plt.plot(np.arange(self.total_epoch),self.train_loss_list)
         plt.title('train loss')
         plt.xlabel('epoch')
         plt.ylabel('loss')
         plt.figure(2)
-        plt.plot(np.arange(self.epoch+1),self.train_acc_list)
+        plt.plot(np.arange(self.total_epoch),self.train_acc_list)
         plt.title('train acc')
         plt.xlabel('epoch')
         plt.ylabel('acc')
@@ -402,12 +393,12 @@ class unnamed:
     def test_visual(self):
         print()
         plt.figure(1)
-        plt.plot(np.arange(self.epoch+1),self.test_loss_list)
+        plt.plot(np.arange(self.total_epoch),self.test_loss_list)
         plt.title('test loss')
         plt.xlabel('epoch')
         plt.ylabel('loss')
         plt.figure(2)
-        plt.plot(np.arange(self.epoch+1),self.test_acc_list)
+        plt.plot(np.arange(self.total_epoch),self.test_acc_list)
         plt.title('test acc')
         plt.xlabel('epoch')
         plt.ylabel('acc')
@@ -421,17 +412,17 @@ class unnamed:
     def comparison(self):
         print()
         plt.figure(1)
-        plt.plot(np.arange(self.epoch+1),self.train_loss_list,'b-',label='train loss')
+        plt.plot(np.arange(self.total_epoch),self.train_loss_list,'b-',label='train loss')
         if self.test_flag==True:
-            plt.plot(np.arange(self.epoch+1),self.test_loss_list,'r-',label='test loss')
+            plt.plot(np.arange(self.total_epoch),self.test_loss_list,'r-',label='test loss')
         plt.title('loss')
         plt.xlabel('epoch')
         plt.ylabel('loss')
         plt.legend()
         plt.figure(2)
-        plt.plot(np.arange(self.epoch+1),self.train_acc_list,'b-',label='train acc')
+        plt.plot(np.arange(self.total_epoch),self.train_acc_list,'b-',label='train acc')
         if self.test_flag==True:
-            plt.plot(np.arange(self.epoch+1),self.test_acc_list,'r-',label='test acc')
+            plt.plot(np.arange(self.total_epoch),self.test_acc_list,'r-',label='test acc')
         plt.title('accuracy')
         plt.xlabel('epoch')
         plt.ylabel('acc')
@@ -464,7 +455,6 @@ class unnamed:
             pickle.dump(tf1.shape)           
         with tf.name_scope('save_hyperparameter'):
             pickle.dump(self.batch,output_file)
-            pickle.dump(self.epoch,output_file)
             pickle.dump(self.lr,output_file)
             
         with tf.name_scope('save_regulation'):    
@@ -483,7 +473,6 @@ class unnamed:
             pickle.dump(self.test_loss_list,output_file)
             pickle.dump(self.test_acc_list,output_file)
         pickle.dump(self.total_epoch,output_file)
-        pickle.dump(self.time,output_file)
         pickle.dump(self.total_time,output_file)
         pickle.dump(self.processor,output_file)
         output_file.close()
@@ -507,7 +496,6 @@ class unnamed:
                 
         with tf.name_scope('restore_hyperparameter'):
             self.batch=pickle.load(input_file)
-            self.epoch=pickle.load(input_file)
             self.lr=pickle.load(input_file)
             
         with tf.name_scope('restore_regulation'):    
@@ -526,7 +514,6 @@ class unnamed:
             self.test_loss_list=pickle.load(input_file)
             self.test_acc_list=pickle.load(input_file)
         self.total_epoch=pickle.load(input_file)
-        self.time=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
         self.processor=pickle.load(input_file)
         self.flag=1
