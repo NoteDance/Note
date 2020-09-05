@@ -4,8 +4,9 @@ import time
 
 
 class RT_Sarsa:
-    def __init__(self,q,state,state_list,action,search_space,epsilon,alpha,discount,dst):
+    def __init__(self,q,state,state_list,action,search_space,epsilon,alpha,discount,dst,episode_step=None,save_episode=True):
         self.q=q
+        self.episode=[]
         self.state=state
         self.state_list=state_list
         self.action=action
@@ -14,6 +15,8 @@ class RT_Sarsa:
         self.alpha=alpha
         self.discount=discount
         self.dst=dst
+        self.episode_step=episode_step
+        self.save_episode=save_episode
 
 
     def epsilon_greedy_policy(self,q,state,action):
@@ -32,18 +35,22 @@ class RT_Sarsa:
     
     
     def RT_update_q(self,q,state):
+        a=0
         delta=0
         while True:
             t1=time.time()
+            a+=1
             action_prob=self.epsilon_greedy_policy(q,self.state[state],self.action)
             action=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
-            next_state,reward,end=self.search_space[self.action[action]]
+            next_state,reward,end=self.search_space[self.state[state]][self.action[action]]
             temp=q[state][action]
             delta+=np.abs(q[state][action]-temp)
             q,next_state=self.td(q,reward,state,next_state,action)
             state=next_state
             self.dst[0]=delta/self.dst[1]
             self.dst[1]+=1
+            if self.save_episode==True and a<=self.episode_step:
+                self.episode.append([self.state[state],self.action[action],reward])
             t2=time.time()
             _time=t2-t1
             self.dst[2]+=_time
