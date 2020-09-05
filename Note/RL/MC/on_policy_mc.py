@@ -139,6 +139,8 @@ class on_policy_mc:
         pickle.dump(self.epsilon)
         pickle.dump(self.discount)
         pickle.dump(self.theta)
+        pickle.dump(self.episode_step)
+        pickle.dump(self.save_episode)
         pickle.dump(self.delta)
         pickle.dump(self.total_episode)
         pickle.dump(self.total_time)
@@ -153,6 +155,8 @@ class on_policy_mc:
         self.epsilon=pickle.load(input_file)
         self.discount=pickle.load(input_file)
         self.theta=pickle.load(input_file)
+        self.episode_step=pickle.load(input_file)
+        self.save_episode=pickle.load(input_file)
         self.delta=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         self.total_time=self.time
