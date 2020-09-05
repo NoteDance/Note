@@ -131,6 +131,8 @@ class Sarsa:
         pickle.dump(self.alpha)
         pickle.dump(self.discount)
         pickle.dump(self.theta)
+        pickle.dump(self.episode_step)
+        pickle.dump(self.save_episode)
         pickle.dump(self.delta)
         pickle.dump(self.total_episode)
         pickle.dump(self.total_time)
@@ -144,6 +146,8 @@ class Sarsa:
         self.alpha=pickle.load(input_file)
         self.discount=pickle.load(input_file)
         self.theta=pickle.load(input_file)
+        self.episode_step=pickle.load(input_file)
+        self.save_episode=pickle.load(input_file)
         self.delta=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         self.total_time=self.time
