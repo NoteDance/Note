@@ -5,8 +5,9 @@ import time
 
 
 class on_policy_mc:
-    def __init__(self,q,state,state_list,action,search_space,epsilon=None,discount=None,theta=None):
+    def __init__(self,q,state,state_list,action,search_space,epsilon=None,discount=None,theta=None,episode_step=None,save_episode=True):
         self.q=q
+        self.episode=[]
         self.r_sum=dict()
         self.r_count=dict()
         self.state=state
@@ -16,6 +17,8 @@ class on_policy_mc:
         self.epsilon=epsilon
         self.discount=discount
         self.theta=theta
+        self.episode_step=episode_step
+        self.save_episode=save_episode
         self.delta=0
         self.episode_num=0
         self.total_episode=0
@@ -33,14 +36,35 @@ class on_policy_mc:
     
     def episode(self,q,state,action,search_space):
         episode=[]
-        while True:
-            action_prob=self.epsilon_greedy_policy(q,self.state[state],action)
-            a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
-            next_state,reward,end=search_space[action[a]]
-            episode.append([state,a,reward])
-            if end:
-                break
-            state=next_state
+        _episode=[]
+        if self.episode_step==None:
+            while True:
+                action_prob=self.epsilon_greedy_policy(q,self.state[state],action)
+                a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
+                next_state,reward,end=search_space[self.state[state]][action[a]]
+                episode.append([state,a,reward])
+                if end:
+                    if self.save_episode==True:
+                        _episode.append([self.state[state],action[a],reward,end])
+                    break
+                if self.save_episode==True:
+                    _episode.append([self.state[state],action[a],reward])
+                state=next_state
+        else:
+            for _ in range(self.episode_step):
+                action_prob=self.epsilon_greedy_policy(q,self.state[state],action)
+                a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
+                next_state,reward,end=search_space[self.state[state]][action[a]]
+                episode.append([state,a,reward])
+                if end:
+                    if self.save_episode==True:
+                        _episode.append([self.state[state],action[a],reward,end])
+                    break
+                if self.save_episode==True:
+                    _episode.append([self.state[state],action[a],reward])
+                state=next_state
+        if self.save_episode==True:
+            self.episode.append(_episode)
         return episode
     
     
@@ -110,11 +134,11 @@ class on_policy_mc:
             output_file=open(path+'.dat','wb')
         else:
             output_file=open(path+'-{0}.dat'.format(i+1),'wb')
+        pickle.dump(self.r_sum)
+        pickle.dump(self.r_count)
         pickle.dump(self.epsilon)
         pickle.dump(self.discount)
         pickle.dump(self.theta)
-        pickle.dump(self.r_sum)
-        pickle.dump(self.r_count)
         pickle.dump(self.delta)
         pickle.dump(self.total_episode)
         pickle.dump(self.total_time)
@@ -124,11 +148,11 @@ class on_policy_mc:
     
     def restore(self,path):
         input_file=open(path,'rb')
+        self.r_sum=pickle.load(input_file)
+        self.r_count=pickle.load(input_file)
         self.epsilon=pickle.load(input_file)
         self.discount=pickle.load(input_file)
         self.theta=pickle.load(input_file)
-        self.r_sum=pickle.load(input_file)
-        self.r_count=pickle.load(input_file)
         self.delta=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         self.total_time=self.time
