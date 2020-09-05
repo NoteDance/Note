@@ -5,8 +5,9 @@ import time
 
 
 class Sarsa:
-    def __init__(self,q,state,state_list,action,search_space,epsilon=None,alpha=None,discount=None,theta=None):
+    def __init__(self,q,state,state_list,action,search_space,epsilon=None,alpha=None,discount=None,theta=None,episode_step=None,save_episode=True):
         self.q=q
+        self.episode=[]
         self.state=state
         self.state_list=state_list
         self.action=action
@@ -15,6 +16,8 @@ class Sarsa:
         self.alpha=alpha
         self.discount=discount
         self.theta=theta
+        self.episode_step=episode_step
+        self.save_episode=save_episode
         self.delta=0
         self.episode_num=0
         self.total_episode=0
@@ -34,23 +37,50 @@ class Sarsa:
         action_prob=self.epsilon_greedy_policy(q,self.state[next_state],self.action)
         next_action=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
         q[state][action]=q[state][action]+self.alpha*(reward+self.discount*q[next_state][next_action]-q[state][action])
-        return q,next_state
+        return q
     
     
     def update_q(self,q,state):
         a=0
-        while True:
-            action_prob=self.epsilon_greedy_policy(q,self.state[state],self.action)
-            action=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
-            next_state,reward,end=self.search_space[self.action[action]]
-            temp=q[state][action]
-            self.delta+=np.abs(q[state][action]-temp)
-            if end:
-                self.delta+=self.delta/a
-                break
-            q,next_state=self.td(q,reward,state,next_state,action)
-            state=next_state
-            a+=1
+        episode=[]
+        if self.episode_step==None:
+            while True:
+                action_prob=self.epsilon_greedy_policy(q,self.state[state],self.action)
+                action=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
+                next_state,reward,end=self.search_space[self.state[state]][self.action[action]]
+                temp=q[state][action]
+                self.delta+=np.abs(q[state][action]-temp)
+                if end:
+                    self.delta+=self.delta/a
+                    if self.save_episode==True:
+                        episode.append([self.state[state],self.action[action],reward,end])
+                    break
+                if self.save_episode==True:
+                    episode.append([self.state[state],self.action[action],reward])
+                q=self.td(q,reward,state,next_state,action)
+                state=next_state
+                a+=1
+                if self.save_episode==True:
+                    self.episode.append(episode)
+        else:
+            for _ in range(self.episode_step):
+                action_prob=self.epsilon_greedy_policy(q,self.state[state],self.action)
+                action=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
+                next_state,reward,end=self.search_space[self.state[state]][self.action[action]]
+                temp=q[state][action]
+                self.delta+=np.abs(q[state][action]-temp)
+                if end:
+                    self.delta+=self.delta/a
+                    if self.save_episode==True:
+                        episode.append([self.state[state],self.action[action],reward,end])
+                    break
+                if self.save_episode==True:
+                    episode.append([self.state[state],self.action[action],reward])
+                q=self.td(q,reward,state,next_state,action)
+                state=next_state
+                a+=1
+                if self.save_episode==True:
+                    self.episode.append(episode)
         return q
     
     
