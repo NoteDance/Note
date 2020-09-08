@@ -23,9 +23,9 @@ class value_iteration:
         if iteration==None:
             iteration=int(len(self.state)*3)
         V=np.zeros(len(self.state),dtype=np.float32)
-        self.delta=0
-        t1=time.time()
+        self.delta=0        
         for i in range(iteration):
+			t1=time.time()
             delta=0
             for s in range(len(self.state)):
                 A=np.zeros(len(self.action),dtype=np.float32)
@@ -51,13 +51,14 @@ class value_iteration:
                     self.save(path,i,one)
             self.iteration_num+=1
             self.total_iteration_sum+=1
+			t2=time.time()
+			self.time+=(t2-t1)
             if delta<=self.theta:
-                t2=time.time()
-                _time=(t2-t1)-int(t2-t1)
-                if _time<0.5:
-                    self.time=int(t2-t1)
+				self.time=self.time-int(self.time)
+                if self.time<0.5:
+                    self.time=int(self.time)
                 else:
-                    self.time=int(t2-t1)+1
+                    self.time=int(self.time)+1
                 self.total_time+=self.time
                 self.delta=delta
                 print()
