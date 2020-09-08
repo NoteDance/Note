@@ -96,8 +96,8 @@ class off_policy_mc:
             self.q=q.numpy()
             c=self.c*tf.ones([len(self.state_list),len(self.action)],dtype=tf.float32)[:self.c.shape[0],:self.c.shape[1]]
             self.c=c.numpy()
-        t1=time.time()
         for i in range(episode_num):
+			t1=time.time()
             s=np.random.choice(np.arange(len(self.state_list)),p=np.ones(len(self.state_list))*1/len(self.state_list))
             e=self.episode(self.q,self.state_list[s],self.action,self.search_space,self.episode_step)
             self.q=self.importance_sampling(e,self.q,self.discount)
@@ -117,12 +117,12 @@ class off_policy_mc:
             self.total_episode+=1
             if self.theta!=None and self.delta<=self.theta:
                 break
-        t2=time.time()
-        _time=(t2-t1)-int(t2-t1)
-        if _time<0.5:
-            self.time=int(t2-t1)
+			t2=time.time()
+			self.time+=(t2-t1)
+        if self.time<0.5:
+            self.time=int(self.time)
         else:
-            self.time=int(t2-t1)+1
+            self.time=int(self.time)+1
         self.total_time+=self.time
         print()
         print('last delta:{0:.6f}'.format(self.delta))
