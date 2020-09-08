@@ -57,9 +57,9 @@ class policy_iteration:
 
 
     def learn(self,iteration=None,path=None,one=True):
-        self.delta=0
-        t1=time.time()
+        self.delta=0        
         while True:
+			t1=time.time()
             flag=True
             V=self.policy_evaluation(self.policy,self.state,self.action,self.prs,self.discount,self.theta,iteration)
             self.policy,flag=self.policy_improvement(self.policy,V,self.state,self.action,self.prs,self.discount,flag,self.end_flag)
@@ -75,13 +75,14 @@ class policy_iteration:
                     self.save(path,self.iteration_num,one)
             self.iteration_num+=1
             self.total_iteration_sum+=1
+			t2=time.time()
+			self.time+=(t2-t1)
             if flag:
-                t2=time.time()
-                _time=(t2-t1)-int(t2-t1)
-                if _time<0.5:
-                    self.time=int(t2-t1)
+				self.time=self.time-int(self.time)
+                if self.time<0.5:
+                    self.time=int(self.time)
                 else:
-                    self.time=int(t2-t1)+1
+                    self.time=int(self.time)+1
                 self.total_time+=self.time
                 print()
                 print('time:{0}s'.format(self.time))
