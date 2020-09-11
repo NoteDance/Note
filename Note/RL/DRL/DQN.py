@@ -29,9 +29,9 @@ class DQN:
     
     
     def epsilon_greedy_policy(self,state,action):
-        action_prob=np.ones(len(action),dtype=np.float32)
-        action_prob=action_prob*self.epsilon/len(action)
-        best_action=np.argmax(self.predict_net(state))
+        action_prob=action[self.state_list[state]]
+        action_prob=action_prob*self.epsilon/np.sum(action[self.state_list[state]])
+        best_action=np.argmax(self.predict_net(self.state[self.state_list[state]]).numpy())
         action_prob[best_action]+=1-self.epsilon
         return action_prob
     
@@ -72,9 +72,10 @@ class DQN:
             state=np.random.choice(np.arange(len(self.state_list)),p=np.ones(len(self.state_list))*1/len(self.state_list))
             while True:
                 t1=time.time()
-                action_prob=self.epsilon_greedy_policy(self.state[state],self.action)
+                action_prob=self.epsilon_greedy_policy(state,self.action)
                 action=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
                 next_state,reward,end=self.search_space[self.state[state]][self.action[action]]
+                state=next_state
                 if end:
                     break
                 self.a+=1
