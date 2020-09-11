@@ -88,9 +88,9 @@ class Q_learning:
             q=self.q*tf.ones([len(self.state_list),len(self.action)],dtype=tf.float32)[:self.q.shape[0],:self.q.shape[1]]
             self.q=q.numpy()
         for i in range(episode_num):
-			t1=time.time()
-            s=np.random.choice(np.arange(len(self.state_list)),p=np.ones(len(self.state_list))*1/len(self.state_list))
-            self.q=self.update_q(self.q,self.state_list[s])
+            t1=time.time()
+            state=np.random.choice(np.arange(len(self.state_list)),p=np.ones(len(self.state_list))*1/len(self.state_list))
+            self.q=self.update_q(self.q,self.state_list[state])
             self.delta=self.delta/(i+1)
             if episode_num%10!=0:
                 temp=episode_num-episode_num%10
@@ -107,8 +107,8 @@ class Q_learning:
             self.total_episode+=1
             if self.theta!=None and self.delta<=self.theta:
                 break
-			t2=time.time()
-			self.time+=(t2-t1)
+            t2=time.time()
+            self.time+=(t2-t1)
         if self.time<0.5:
             self.time=int(self.time)
         else:
