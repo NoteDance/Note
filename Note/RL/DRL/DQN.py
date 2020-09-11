@@ -40,14 +40,14 @@ class DQN:
         random=np.arange(len(self.memory_state))
         np.random.shuffle(random)
         if j==0:
-            self.memory_state=self.memory_state[random]
-            self.memory_action=self.memory_action[random]
-            self.memory_next_state=self.memory_next_state[random]
-            self.memory_reward=self.memory_reward[random]
+            self._memory_state=self.memory_state[random]
+            self._memory_action=self.memory_action[random]
+            self._memory_next_state=self.memory_next_state[random]
+            self._memory_reward=self.memory_reward[random]
         if index1==self.batches*self.batch:
-            return tf.concat([self.memory_state[index1:],self.memory_state[:index2]]),tf.concat([self.memory_action[index1:],self.memory_action[:index2]]),tf.concat([self.memory_next_state[index1:],self.memory_next_state[:index2]]),tf.concat([self.memory_reward[index1:],self.memory_reward[:index2]])
+            return tf.concat([self._memory_state[index1:],self._memory_state[:index2]]),tf.concat([self._memory_action[index1:],self._memory_action[:index2]]),tf.concat([self._memory_next_state[index1:],self._memory_next_state[:index2]]),tf.concat([self._memory_reward[index1:],self._memory_reward[:index2]])
         else:
-            return self.memory_state[index1:index2],self.memory_action[index1:index2],self.memory_next_state[index1:index2],self.memory_reward[index1:index2]
+            return self._memory_state[index1:index2],self._memory_action[index1:index2],self._memory_next_state[index1:index2],self._memory_reward[index1:index2]
     
     
     def update_parameter(self):
@@ -127,7 +127,7 @@ class DQN:
                 if temp==0:
                     temp=1
                 if i%temp==0:
-                    print('episode_num:{0}   loss:{1:.6f}'.format(i,loss))
+                    print('episode_num:{0}   loss:{1:.6f}'.format(i+1,loss))
                     if path!=None and i%episode_num*2==0:
                         self.save(path,i,one)
                 self.episode_num+=1
