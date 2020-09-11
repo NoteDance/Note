@@ -94,11 +94,11 @@ class policy_iteration:
             output_file=open(path+'.dat','wb')
         else:
             output_file=open(path+'-{0}.dat'.format(i+1),'wb')
-        pickle.dump(self.discount)
-        pickle.dump(self.theta)
-        pickle.dump(self.end_flag)
-        pickle.dump(self.total_iteration_sum)
-        pickle.dump(self.total_time)
+        pickle.dump(self.discount,output_file)
+        pickle.dump(self.theta,output_file)
+        pickle.dump(self.end_flag,output_file)
+        pickle.dump(self.total_iteration_sum,output_file)
+        pickle.dump(self.total_time,output_file)
         output_file.close()
         return
     
