@@ -27,7 +27,7 @@ class RT_Q_learning:
         return action_prob
     
     
-    def td(self,q,reward,state,next_state,action):
+    def td(self,q,state,action,next_state,reward):
         q[state][action]=q[state][action]+self.alpha*(reward+self.discount*np.max(q[next_state])-q[state][action])
         return q,next_state
     
