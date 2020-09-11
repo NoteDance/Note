@@ -5,11 +5,10 @@ import time
 
 
 class Q_learning:
-    def __init__(self,q,state,state_list,action,search_space,epsilon=None,alpha=None,discount=None,theta=None,episode_step=None,save_episode=True):
+    def __init__(self,q,state,action,search_space,epsilon=None,alpha=None,discount=None,theta=None,episode_step=None,save_episode=True):
         self.q=q
         self.episode=[]
         self.state=state
-        self.state_list=state_list
         self.action=action
         self.search_space=search_space
         self.epsilon=epsilon
@@ -43,7 +42,7 @@ class Q_learning:
         episode=[]
         if self.episode_step==None:
             while True:
-                action_prob=self.epsilon_greedy_policy(q,self.state[state],self.action)
+                action_prob=self.epsilon_greedy_policy(q,state,self.action)
                 action=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
                 next_state,reward,end=self.search_space[self.state[state]][self.action[action]]
                 temp=q[state][action]
@@ -51,16 +50,16 @@ class Q_learning:
                 if end:
                     self.delta+=self.delta/a
                     if self.save_episode==True:
-                        episode.append([state,self.action[action],reward,end])
+                        episode.append([self.state[state],self.action[action],reward,end])
                     break
                 if self.save_episode==True:
-                    episode.append([state,self.action[action],reward])
+                    episode.append([self.state[state],self.action[action],reward])
                 q=self.td(q,reward,state,next_state,action)
                 state=next_state
                 a+=1
         else:
             for _ in range(self.episode_step):
-                action_prob=self.epsilon_greedy_policy(q,self.state[state],self.action)
+                action_prob=self.epsilon_greedy_policy(q,state,self.action)
                 action=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
                 next_state,reward,end=self.search_space[self.state[state]][self.action[action]]
                 temp=q[state][action]
@@ -68,10 +67,10 @@ class Q_learning:
                 if end:
                     self.delta+=self.delta/a
                     if self.save_episode==True:
-                        episode.append([state,self.action[action],reward,end])
+                        episode.append([self.state[state],self.action[action],reward,end])
                     break
                 if self.save_episode==True:
-                    episode.append([state,self.action[action],reward])
+                    episode.append([self.state[state],self.action[action],reward])
                 q=self.td(q,reward,state,next_state,action)
                 state=next_state
                 a+=1
@@ -82,13 +81,13 @@ class Q_learning:
     
     def learn(self,episode_num,path=None,one=True):
         self.delta=0
-        if len(self.state_list)>self.q.shape[0] or len(self.action)>self.q.shape[1]:
-            q=self.q*tf.ones([len(self.state_list),len(self.action)],dtype=tf.float32)[:self.q.shape[0],:self.q.shape[1]]
+        if len(self.state)>self.q.shape[0] or len(self.action)>self.q.shape[1]:
+            q=self.q*tf.ones([len(self.state),len(self.action)],dtype=tf.float32)[:self.q.shape[0],:self.q.shape[1]]
             self.q=q.numpy()
         for i in range(episode_num):
             t1=time.time()
-            state=np.random.choice(np.arange(len(self.state_list)),p=np.ones(len(self.state_list))*1/len(self.state_list))
-            self.q=self.update_q(self.q,self.state_list[state])
+            state=np.random.choice(np.arange(len(self.state)),p=np.ones(len(self.state))*1/len(self.state))
+            self.q=self.update_q(self.q,state)
             self.delta=self.delta/(i+1)
             if episode_num%10!=0:
                 temp=episode_num-episode_num%10
