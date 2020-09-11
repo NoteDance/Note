@@ -44,10 +44,10 @@ class off_policy_mc:
                 episode.append([state,a,reward])
                 if end:
                     if self.save_episode==True:
-                        _episode.append([self.state[state],action[a],reward,end])
+                        _episode.append([state,action[a],reward,end])
                     break
                 if self.save_episode==True:
-                    _episode.append([self.state[state],action[a],reward])
+                    _episode.append([state,action[a],reward])
                 state=next_state
         else:
             for _ in range(self.episode_step):
@@ -57,10 +57,10 @@ class off_policy_mc:
                 episode.append([state,a,reward])
                 if end:
                     if self.save_episode==True:
-                        _episode.append([self.state[state],action[a],reward,end])
+                        _episode.append([state,action[a],reward,end])
                     break
                 if self.save_episode==True:
-                    _episode.append([self.state[state],action[a],reward])
+                    _episode.append([state,action[a],reward])
                 state=next_state
         if self.save_episode==True:
             self.episode.append(_episode)
