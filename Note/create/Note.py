@@ -81,9 +81,9 @@ class Note:
         with tf.name_scope('optimizer'):
             self.optimizer=self.model.optimzier
             if optimizer!=None:
-                optimizer=optimizer
+                optimizer=optimizer(learning_rate=lr)
             else:
-                optimizer=optimizern
+                optimizer=optimizern(lr=lr)
         if self.total_epoch==0:
             epoch=epoch+1
         for i in range(epoch):
