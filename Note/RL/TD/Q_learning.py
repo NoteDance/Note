@@ -51,15 +51,13 @@ class Q_learning:
                 if end:
                     self.delta+=self.delta/a
                     if self.save_episode==True:
-                        episode.append([self.state[state],self.action[action],reward,end])
+                        episode.append([state,self.action[action],reward,end])
                     break
                 if self.save_episode==True:
-                    episode.append([self.state[state],self.action[action],reward])
+                    episode.append([state,self.action[action],reward])
                 q=self.td(q,reward,state,next_state,action)
                 state=next_state
                 a+=1
-                if self.save_episode==True:
-                    self.episode.append(episode)
         else:
             for _ in range(self.episode_step):
                 action_prob=self.epsilon_greedy_policy(q,self.state[state],self.action)
@@ -70,15 +68,15 @@ class Q_learning:
                 if end:
                     self.delta+=self.delta/a
                     if self.save_episode==True:
-                        episode.append([self.state[state],self.action[action],reward,end])
+                        episode.append([state,self.action[action],reward,end])
                     break
                 if self.save_episode==True:
-                    episode.append([self.state[state],self.action[action],reward])
+                    episode.append([state,self.action[action],reward])
                 q=self.td(q,reward,state,next_state,action)
                 state=next_state
                 a+=1
-                if self.save_episode==True:
-                    self.episode.append(episode)
+        if self.save_episode==True:
+            self.episode.append(episode)
         return q
     
     
