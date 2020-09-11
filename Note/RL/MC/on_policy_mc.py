@@ -5,13 +5,12 @@ import time
 
 
 class on_policy_mc:
-    def __init__(self,q,state,state_list,action,search_space,epsilon=None,discount=None,theta=None,episode_step=None,save_episode=True):
+    def __init__(self,q,state,action,search_space,epsilon=None,discount=None,theta=None,episode_step=None,save_episode=True):
         self.q=q
         self.episode=[]
         self.r_sum=dict()
         self.r_count=dict()
         self.state=state
-        self.state_list=state_list
         self.action=action
         self.search_space=search_space
         self.epsilon=epsilon
@@ -39,16 +38,16 @@ class on_policy_mc:
         _episode=[]
         if self.episode_step==None:
             while True:
-                action_prob=self.epsilon_greedy_policy(q,self.state[state],action)
+                action_prob=self.epsilon_greedy_policy(q,state,action)
                 a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
                 next_state,reward,end=search_space[self.state[state]][action[a]]
                 episode.append([state,a,reward])
                 if end:
                     if self.save_episode==True:
-                        _episode.append([state,action[a],reward,end])
+                        _episode.append([self.state[state],action[a],reward,end])
                     break
                 if self.save_episode==True:
-                    _episode.append([state,action[a],reward])
+                    _episode.append([self.state[state],action[a],reward])
                 state=next_state
         else:
             for _ in range(self.episode_step):
@@ -58,10 +57,10 @@ class on_policy_mc:
                 episode.append([state,a,reward])
                 if end:
                     if self.save_episode==True:
-                        _episode.append([state,action[a],reward,end])
+                        _episode.append([self.state[state],action[a],reward,end])
                     break
                 if self.save_episode==True:
-                    _episode.append([state,action[a],reward])
+                    _episode.append([self.state[state],action[a],reward])
                 state=next_state
         if self.save_episode==True:
             self.episode.append(_episode)
@@ -92,13 +91,13 @@ class on_policy_mc:
     
     def learn(self,episode_num,path=None,one=True):
         self.delta=0
-        if len(self.state_list)>self.q.shape[0] or len(self.action)>self.q.shape[1]:
-            q=self.q*tf.ones([len(self.state_list),len(self.action)],dtype=tf.float32)[:self.q.shape[0],:self.q.shape[1]]
+        if len(self.state)>self.q.shape[0] or len(self.action)>self.q.shape[1]:
+            q=self.q*tf.ones([len(self.state),len(self.action)],dtype=tf.float32)[:self.q.shape[0],:self.q.shape[1]]
             self.q=q.numpy()
         for i in range(episode_num):
             t1=time.time()
-            s=np.random.choice(np.arange(len(self.state_list)),p=np.ones(len(self.state_list))*1/len(self.state_list))
-            e=self.episode(self.q,self.state_list[s],self.action,self.search_space,self.episode_step)
+            state=np.random.choice(np.arange(len(self.state)),p=np.ones(len(self.state))*1/len(self.state))
+            e=self.episode(self.q,state,self.action,self.search_space,self.episode_step)
             self.q,self.r_sum,self.r_count=self.first_visit(e,self.q,self.r_sum,self.r_count,self.discount)
             self.delta=self.delta/(i+1)
             if episode_num%10!=0:
