@@ -6,14 +6,13 @@ import time
 
 
 class DQN:
-    def __init__(self,predict_net,target_net,predict_p,target_p,state,state_list,action,search_space,epsilon=None,discount=None,memory_size=None,batch=None,update_step=None,optimizer=None,lr=None,save_episode=True):
+    def __init__(self,predict_net,target_net,predict_p,target_p,state,action,search_space,epsilon=None,discount=None,memory_size=None,batch=None,update_step=None,optimizer=None,lr=None,save_episode=True):
         self.predict_net=predict_net
         self.target_net=target_net
         self.predict_p=predict_p
         self.target_p=target_p
         self.episode=[]
         self.state=state
-        self.state_list=state_list
         self.action=action
         self.search_space=search_space
         self.epsilon=epsilon
@@ -31,9 +30,9 @@ class DQN:
     
     
     def epsilon_greedy_policy(self,state,action):
-        action_prob=action[self.state_list[state]]
-        action_prob=action_prob*self.epsilon/np.sum(action[self.state_list[state]])
-        best_action=np.argmax(self.predict_net(self.state[self.state_list[state]]).numpy())
+        action_prob=action[self.state[state]]
+        action_prob=action_prob*self.epsilon/np.sum(action[self.state[state]])
+        best_action=np.argmax(self.predict_net(self.state[self.state[state]]).numpy())
         action_prob[best_action]+=1-self.epsilon
         return action_prob
     
@@ -72,7 +71,7 @@ class DQN:
             self.a=0
             loss=0
             episode=[]
-            state=np.random.choice(np.arange(len(self.state_list)),p=np.ones(len(self.state_list))*1/len(self.state_list))
+            state=np.random.choice(np.arange(len(self.state)),p=np.ones(len(self.state))*1/len(self.state))
             while True:
                 t1=time.time()
                 action_prob=self.epsilon_greedy_policy(state,self.action)
@@ -81,10 +80,10 @@ class DQN:
                 state=next_state
                 if end:
                     if self.save_episode==True:
-                        episode.append([state,self.action[action],reward,end])
+                        episode.append([self.state[state],self.action[action],reward,end])
                     break
                 if self.save_episode==True:
-                    episode.append([state,self.action[action],reward])
+                    episode.append([self.state[state],self.action[action],reward])
                 self.a+=1
                 memory_state.append(self.state[state])
                 memory_action.append(action)
