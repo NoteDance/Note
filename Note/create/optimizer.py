@@ -49,7 +49,7 @@ class AdaGrad:
     
 
 class RMSProp:
-    def __init__(self,lr,gamma,epsilon=1e-06):
+    def __init__(self,lr,gamma=0.9,epsilon=1e-06):
         self.lr=lr
         self.gamma=gamma
         self.epsilon=epsilon
@@ -68,7 +68,7 @@ class RMSProp:
 
 
 class AdaDelta:
-    def __init__(self,lr,rho,epsilon=1e-05):
+    def __init__(self,lr,rho=0.95,epsilon=1e-05):
         self.lr=lr
         self.rho=rho
         self.epsilon=epsilon
