@@ -46,7 +46,7 @@ class value_iteration:
             if temp==0:
                 temp=1
             if i%temp==0:
-                print('iteration:{0}   delta:{1:.6f}'.format(i,delta))
+                print('iteration:{0}   delta:{1:.6f}'.format(i+1,delta))
                 if path!=None and i%iteration*2==0:
                     self.save(path,i,one)
             self.iteration_num+=1
