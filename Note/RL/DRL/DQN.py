@@ -6,11 +6,12 @@ import time
 
 
 class DQN:
-    def __init__(self,predict_net,target_net,predict_p,target_p,state,state_list,action,search_space,epsilon=None,discount=None,memory_size=None,batch=None,update_step=None,optimizer=None,lr=None):
+    def __init__(self,predict_net,target_net,predict_p,target_p,state,state_list,action,search_space,epsilon=None,discount=None,memory_size=None,batch=None,update_step=None,optimizer=None,lr=None,save_episode=True):
         self.predict_net=predict_net
         self.target_net=target_net
         self.predict_p=predict_p
         self.target_p=target_p
+        self.episode=[]
         self.state=state
         self.state_list=state_list
         self.action=action
@@ -22,6 +23,7 @@ class DQN:
         self.update_step=update_step
         self.lr=lr
         self.optimizer=optimizer(self.lr)
+        self.save_episode=save_episode
         self.episode_num=0
         self.total_episode=0
         self.time=0
@@ -69,6 +71,7 @@ class DQN:
         for i in range(episode_num):
             self.a=0
             loss=0
+            episode=[]
             state=np.random.choice(np.arange(len(self.state_list)),p=np.ones(len(self.state_list))*1/len(self.state_list))
             while True:
                 t1=time.time()
@@ -77,7 +80,11 @@ class DQN:
                 next_state,reward,end=self.search_space[self.state[state]][self.action[action]]
                 state=next_state
                 if end:
+                    if self.save_episode==True:
+                        episode.append([state,self.action[action],reward,end])
                     break
+                if self.save_episode==True:
+                    episode.append([state,self.action[action],reward])
                 self.a+=1
                 memory_state.append(self.state[state])
                 memory_action.append(action)
@@ -133,6 +140,8 @@ class DQN:
                         self.save(path,i,one)
                 self.episode_num+=1
                 self.total_episode+=1
+            if self.save_episode==True:
+                self.episode.append(episode)
         if self.time<0.5:
             self.time=int(self.time)
         else:
@@ -156,6 +165,7 @@ class DQN:
         pickle.dump(self.update_step,output_file)
         pickle.dump(self.lr,output_file)
         pickle.dump(self.optimizer,output_file)
+        pickle.dump(self.save_episode,output_file)
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
@@ -171,6 +181,7 @@ class DQN:
         self.update_step=pickle.load(input_file)
         self.lr=pickle.load(input_file)
         self.optimizer=pickle.load(input_file)
+        self.save_episode=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         self.total_time=self.time
         input_file.close()
