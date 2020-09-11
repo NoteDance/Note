@@ -109,7 +109,7 @@ class on_policy_mc:
             if temp==0:
                 temp=1
             if i%temp==0:
-                print('episode_num:{0}   delta:{1:.6f}'.format(i,self.delta))
+                print('episode_num:{0}   delta:{1:.6f}'.format(i+1,self.delta))
                 if path!=None and i%episode_num*2==0:
                     self.save(path,i,one)
             self.episode_num+=1
