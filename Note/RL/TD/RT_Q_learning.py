@@ -48,7 +48,7 @@ class RT_Q_learning:
             self.dst[0]=delta/self.dst[1]
             self.dst[1]+=1
             if self.save_episode==True and a<=self.episode_step:
-                self.episode.append([self.state[state],self.action[action],reward])
+                self.episode.append([state,self.action[action],reward])
             t2=time.time()
             _time=t2-t1
             self.dst[2]+=_time
