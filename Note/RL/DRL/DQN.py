@@ -6,15 +6,16 @@ import time
 
 
 class DQN:
-    def __init__(self,predict_net,target_net,predict_p,target_p,state,state_list,action,search_space,epsilon=None,discount=None,memory_size=None,batch=None,update_step=None,optimizer=None,lr=None,save_episode=True):
+    def __init__(self,predict_net,target_net,predict_p,target_p,state,state_name,action,action_name,search_space,epsilon=None,discount=None,memory_size=None,batch=None,update_step=None,optimizer=None,lr=None,save_episode=True):
         self.predict_net=predict_net
         self.target_net=target_net
         self.predict_p=predict_p
         self.target_p=target_p
         self.episode=[]
         self.state=state
-        self.state_list=state_list
+        self.state_name=state_name
         self.action=action
+        self.action_name=action_name
         self.search_space=search_space
         self.epsilon=epsilon
         self.discount=discount
@@ -30,10 +31,10 @@ class DQN:
         self.total_time=0
     
     
-    def epsilon_greedy_policy(self,state,action):
-        action_prob=action[self.state_list[state]]
-        action_prob=action_prob*self.epsilon/np.sum(action[self.state[state]])
-        best_action=np.argmax(self.predict_net(self.state[self.state[state]]).numpy())
+    def epsilon_greedy_policy(self,s,action):
+        action_prob=action[s]
+        action_prob=action_prob*self.epsilon/np.sum(action[s])
+        best_action=np.argmax(self.predict_net(self.state[self.state_list[s]]).numpy())
         action_prob[best_action]+=1-self.epsilon
         return action_prob
     
@@ -59,8 +60,8 @@ class DQN:
         return
     
     
-    def loss(self,state,action,next_state,reward):
-        return (reward+self.discount*tf.reduce_max(self.target_net(next_state),axis=-1)-self.predict_net(state)[np.arange(len(action)),action])**2
+    def loss(self,s,a,next_s,reward):
+        return (reward+self.discount*tf.reduce_max(self.target_net(next_s),axis=-1)-self.predict_net(s)[np.arange(len(a)),a])**2
     
     
     def learn(self,episode_num,path=None,one=True):
@@ -72,24 +73,24 @@ class DQN:
             self.a=0
             loss=0
             episode=[]
-            state=np.random.choice(np.arange(len(self.state_list)),p=np.ones(len(self.state_list))*1/len(self.state_list))
+            s=np.random.choice(np.arange(len(self.state_name)),p=np.ones(len(self.state_name))*1/len(self.state_name))
             while True:
                 t1=time.time()
-                action_prob=self.epsilon_greedy_policy(state,self.action)
-                action=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
-                next_state,reward,end=self.search_space[self.state_list[state]][self.action[action]]
+                action_prob=self.epsilon_greedy_policy(s,self.action)
+                a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
+                next_s,reward,end=self.search_space[self.state_name[s]][self.action_name[a]]
                 if end:
                     if self.save_episode==True:
-                        episode.append([self.state_list[state],self.action[action],reward,end])
+                        episode.append([self.state_name[s],self.action_name[a],reward,end])
                     break
                 if self.save_episode==True:
-                    episode.append([self.state_list[state],self.action[action],reward])
+                    episode.append([self.state_name[s],self.self.action_name[a],reward])
                 self.a+=1
-                memory_state.append(self.state[self.state_list[state]])
-                memory_action.append(action)
-                memory_next_state.append(self.state[self.state_list[next_state]])
+                memory_state.append(self.state[self.state_name[s]])
+                memory_action.append(a)
+                memory_next_state.append(self.state[self.state_name[next_s]])
                 memory_reward.append(reward)
-                state=next_state
+                s=next_s
                 if len(memory_state)>self.memory_size:
                     del memory_state[0]
                     del memory_action.pop[0]
