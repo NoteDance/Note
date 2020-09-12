@@ -67,21 +67,23 @@ class Note:
     
     def set_up(self,optimizer=None,optimizern=None,lr=None,l2=None,dropout=None):
         with tf.name_scope('hyperparameter'):
-            if l2!=None and dropout!=None and (optimizer!=None or optimizern!=None):
+            if optimizer!=None or optimizern!=None:
                 self.optimizer=optimizer
                 self.optimizern=optimizern
                 if optimizer!=None:
                     self.lr=optimizer.lr
                 else:
                     self.lr=optimizern.lr
-                self.l2=l2
-                self.dropout=dropout
             if self.optimizer!=None and lr!=None:
                 self.optimizer.lr=lr
                 self.lr=lr
             elif lr!=None:
                 self.optimizern.lr=lr
                 self.lr=lr
+            if l2!=None:
+                self.l2=l2
+            if dropout!=None:
+                self.dropout=dropout
             return
     
     
