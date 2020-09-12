@@ -5,12 +5,13 @@ import time
 
 
 class off_policy_mc:
-    def __init__(self,q,state,action,search_space,epsilon=None,discount=None,theta=None,episode_step=None,save_episode=True):
+    def __init__(self,q,state,action,action_name,search_space,epsilon=None,discount=None,theta=None,episode_step=None,save_episode=True):
         self.q=q
         self.episode=[]
         self.c=None
         self.state=state
         self.action=action
+        self.action_name=action_name
         self.search_space=search_space
         self.epsilon=epsilon
         self.discount=discount
@@ -24,43 +25,43 @@ class off_policy_mc:
         self.total_time=0
 
 
-    def epsilon_greedy_policy(self,q,state,action):
-        action_prob=np.ones(len(action),dtype=np.float32)
-        action_prob=action_prob*self.epsilon/len(action)
-        best_action=np.argmax(q[state])
-        action_prob[best_action]+=1-self.epsilon
+    def epsilon_greedy_policy(self,q,s,action):
+        action_prob=action[s]
+        action_prob=action_prob*self.epsilon/np.sum(action[s])
+        best_a=np.argmax(q[s])
+        action_prob[best_a]+=1-self.epsilon
         return action_prob
     
     
-    def episode(self,q,state,action,search_space):
+    def episode(self,q,s,action,search_space):
         episode=[]
         _episode=[]
         if self.episode_step==None:
             while True:
-                action_prob=self.epsilon_greedy_policy(q,state,action)
+                action_prob=self.epsilon_greedy_policy(q,s,action)
                 a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
-                next_state,reward,end=search_space[self.state[state]][action[a]]
-                episode.append([state,a,reward])
+                next_s,reward,end=search_space[self.state[s]][self.action_name[a]]
+                episode.append([s,a,reward])
                 if end:
                     if self.save_episode==True:
-                        _episode.append([self.state[state],action[a],reward,end])
+                        _episode.append([self.state[s],self.action_name[a],reward,end])
                     break
                 if self.save_episode==True:
-                    _episode.append([self.state[state],action[a],reward])
-                state=next_state
+                    _episode.append([self.state[s],self.action_name[a],reward])
+                s=next_s
         else:
             for _ in range(self.episode_step):
-                action_prob=self.epsilon_greedy_policy(q,self.state[state],action)
+                action_prob=self.epsilon_greedy_policy(q,self.state[s],action)
                 a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
-                next_state,reward,end=search_space[self.state[state]][action[a]]
-                episode.append([state,a,reward])
+                next_s,reward,end=search_space[self.state[s]][self.action_name[a]]
+                episode.append([s,a,reward])
                 if end:
                     if self.save_episode==True:
-                        _episode.append([self.state[state],action[a],reward,end])
+                        _episode.append([self.state[s],self.action_name[a],reward,end])
                     break
                 if self.save_episode==True:
-                    _episode.append([self.state[state],action[a],reward])
-                state=next_state
+                    _episode.append([self.state[s],self.action_name[a],reward])
+                s=next_s
         if self.save_episode==True:
             self.episode.append(_episode)
         return episode
@@ -72,33 +73,33 @@ class off_policy_mc:
         a=0
         delta=0
         self.delta=0
-        for i,[state,action,reward] in enumerate(episode):
+        for i,[s,a,reward] in enumerate(episode):
             a+=1
             first_visit_index=i
             G=sum(np.power(discount,i)*x[2] for i,x in enumerate(episode[first_visit_index:]))
-            self.c[state][action]+=w
-            delta+=np.abs(temp-(w/self.c[state][action])*(G-q[state][action]))
-            q[state][action]+=(w/self.c[state][action])*(G-q[state][action])
-            if action!=np.argmax(q[state]):
+            self.c[s][a]+=w
+            delta+=np.abs(temp-(w/self.c[s][a])*(G-q[s][a]))
+            q[s][a]+=(w/self.c[s][a])*(G-q[s][a])
+            if a!=np.argmax(q[s]):
                 break
-            action_prob=self.epsilon_greedy_policy(q,state,action)
+            action_prob=self.epsilon_greedy_policy(q,s,self.action)
             w=w*1/action_prob
-            temp=(w/self.c[state][action])*(G-q[state][action])
+            temp=(w/self.c[s][a])*(G-q[s][a])
         self.delta+=delta/a
         return q
     
     
     def learn(self,episode_num,path=None,one=True):
         self.delta=0
-        if len(self.state)>self.q.shape[0] or len(self.action)>self.q.shape[1]:
-            q=self.q*tf.ones([len(self.state),len(self.action)],dtype=tf.float32)[:self.q.shape[0],:self.q.shape[1]]
+        if len(self.state)>self.q.shape[0] or len(self.action_name)>self.q.shape[1]:
+            q=self.q*tf.ones([len(self.state),len(self.action_name)],dtype=tf.float32)[:self.q.shape[0],:self.q.shape[1]]
             self.q=q.numpy()
-            c=self.c*tf.ones([len(self.state),len(self.action)],dtype=tf.float32)[:self.c.shape[0],:self.c.shape[1]]
+            c=self.c*tf.ones([len(self.state),len(self.action_name)],dtype=tf.float32)[:self.c.shape[0],:self.c.shape[1]]
             self.c=c.numpy()
         for i in range(episode_num):
             t1=time.time()
-            state=np.random.choice(np.arange(len(self.state)),p=np.ones(len(self.state))*1/len(self.state))
-            e=self.episode(self.q,state,self.action,self.search_space,self.episode_step)
+            s=np.random.choice(np.arange(len(self.state)),p=np.ones(len(self.state))*1/len(self.state))
+            e=self.episode(self.q,s,self.action,self.search_space,self.episode_step)
             self.q=self.importance_sampling(e,self.q,self.discount)
             self.delta=self.delta/(i+1)
             if episode_num%10!=0:
