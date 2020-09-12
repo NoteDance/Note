@@ -17,7 +17,7 @@ class unnamed:
         with tf.name_scope('regulation'):
             self.regulation=None
         with tf.name_scope('optimizer'):
-            self.optimizer=None
+            self.opt=None
         self.p_accumulator=0
         self.accuracy=1
         self.acc=None
