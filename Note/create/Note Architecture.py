@@ -27,7 +27,7 @@ class unnamed:
         with tf.name_scope('regulation'):   
             self.regulation=None   
         with tf.name_scope('optimizer'):
-            self.optimizer=None
+            self.opt=None
         self.train_loss=None
         self.train_acc=None
         self.train_loss_list=[]
@@ -75,23 +75,39 @@ class unnamed:
                
         with tf.name_scope('forward_propagation'):
     
+            
+            
+    def set_up(self,optimizer=None,optimizern=None,lr=None,l2=None,dropout=None):
+        with tf.name_scope('hyperparameter'):
+            if l2!=None and dropout!=None and (optimizer!=None or optimizern!=None):
+                self.optimizer=optimizer
+                self.optimizern=optimizern
+                if optimizer!=None:
+                    self.lr=optimizer.lr
+                else:
+                    self.lr=optimizern.lr
+                self.l2=l2
+                self.dropout=dropout
+            if self.optimizer!=None and lr!=None:
+                self.optimizer.lr=lr
+                self.lr=lr
+            elif lr!=None:
+                self.optimizern.lr=lr
+                self.lr=lr
+            return
+        
     
-    
-    def train(self,batch=None,epoch=None,lr=None,test=False,test_batch=None,model_path=None,one=True,processor=None):
+    def train(self,batch=None,epoch=None,test=False,test_batch=None,model_path=None,one=True,processor=None):
         with tf.name_scope('hyperparameter'):
             self.batch=batch
             self.epoch=0
-            self.lr=lr
             
             
         self.time=0
         self.test_flag=test
         if processor!=None:
             self.processor=processor
-        with tf.name_scope('variable'):
-            
-            
-        with tf.name_scope('optimizer'):
+        with tf.name_scope('parameter'):
             
             
         if self.total_epoch==0:
@@ -122,8 +138,11 @@ class unnamed:
                             batch_loss=batch_loss.numpy()
                         else:
                             with tf.name_scope('apply_gradient'):
-                                
-                                
+                                if self.optimizer!=None:
+                                    self.tf2.apply_gradient(tape,self.optimizer,batch_loss,parameter)
+                                else:
+                                    gradient=tape.gradient(batch_loss,parameter)
+                                    self.optimizern(gradient,parameter)
                     total_loss+=batch_loss
                     with tf.name_scope('accuracy'):
                  
@@ -146,8 +165,11 @@ class unnamed:
                             batch_loss=batch_loss.numpy()
                         else:
                             with tf.name_scope('apply_gradient'):
-                                
-                                
+                                if self.optimizer!=None:
+                                    self.tf2.apply_gradient(tape,self.optimizer,batch_loss,parameter)
+                                else:
+                                    gradient=tape.gradient(batch_loss,parameter)
+                                    self.optimizern(gradient,parameter)
                     total_loss+=batch_loss
                     with tf.name_scope('accuracy'):
                  
@@ -181,8 +203,11 @@ class unnamed:
                         loss=train_loss.numpy()
                     else:
                        with tf.name_scope('apply_gradient'):
-                            
-                            
+                           if self.optimizer!=None:
+                               self.tf2.apply_gradient(tape,self.optimizer,batch_loss,parameter)
+                           else:
+                               gradient=tape.gradient(batch_loss,parameter)
+                               self.optimizern(gradient,parameter)
                 self.train_loss_list.append(loss.astype(np.float32))
                 self.train_loss=loss
                 self.train_loss=self.train_loss.astype(np.float32)
@@ -295,7 +320,7 @@ class unnamed:
             print('regulation:{0}'.format(self.regulation))
         if self.optimizer!=None:
             print()
-            print('optimizer:{0}'.format(self.optimizer))
+            print('optimizer:{0}'.format(self.opt))
         print()
         print('learning rate:{0}'.format(self.lr))
         print()
@@ -415,7 +440,11 @@ class unnamed:
         with tf.name_scope('save_regulation'):
             pickle.dump(self.regulation,output_file)   
         with tf.name_scope('save_optimizer'):
-            pickle.dump(self.optimizer,output_file)
+            pickle.dump(self.opt,output_file)
+            if self.optimizer!=None:
+                pickle.dump(self.optimizer,output_file)
+            else:
+                pickle.dump(self.optimizern,output_file)
         pickle.dump(self.shape0,output_file)
         pickle.dump(self.train_loss,output_file)
         pickle.dump(self.train_acc,output_file)
@@ -447,7 +476,11 @@ class unnamed:
         with tf.name_scope('restore_regulation'):
             self.regulation=pickle.load(input_file)
         with tf.name_scope('restore_optimizer'):
-            self.optimizer=pickle.load(input_file)
+            self.opt=pickle.load(input_file)
+            if self.optimizer!=None:
+                self.optimizer=pickle.load(input_file)
+            else:
+                self.optimizern=pickle.load(input_file)
         self.shape0=pickle.load(input_file)
         self.train_loss=pickle.load(input_file)
         self.train_acc=pickle.load(input_file)
