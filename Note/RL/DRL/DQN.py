@@ -1,12 +1,11 @@
 import tensorflow as tf
-from tensorflow.python.ops import state_ops
 import numpy as np
 import pickle
 import time
 
 
 class DQN:
-    def __init__(self,predict_net,target_net,predict_p,target_p,state,state_name,action,action_name,search_space,epsilon=None,discount=None,memory_size=None,batch=None,update_step=None,optimizer=None,lr=None,save_episode=True):
+    def __init__(self,predict_net,target_net,predict_p,target_p,state,state_name,action,action_name,search_space,epsilon=None,discount=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,save_episode=True):
         self.predict_net=predict_net
         self.target_net=target_net
         self.predict_p=predict_p
@@ -19,7 +18,7 @@ class DQN:
         self.search_space=search_space
         self.epsilon=epsilon
         self.discount=discount
-        self.memory_size=memory_size
+        self.pool_size=pool_size
         self.batch=batch
         self.update_step=update_step
         self.lr=lr
@@ -43,19 +42,19 @@ class DQN:
         random=np.arange(len(self.memory_state))
         np.random.shuffle(random)
         if j==0:
-            self._memory_state=self.memory_state[random]
-            self._memory_action=self.memory_action[random]
-            self._memory_next_state=self.memory_next_state[random]
-            self._memory_reward=self.memory_reward[random]
+            self._state_pool=self.state_pool[random]
+            self._action_pool=self.action_pool[random]
+            self._next_state_pool=self.next_state_pool[random]
+            self._reward_pool=self.reward_pool[random]
         if index1==self.batches*self.batch:
-            return tf.concat([self._memory_state[index1:],self._memory_state[:index2]]),tf.concat([self._memory_action[index1:],self._memory_action[:index2]]),tf.concat([self._memory_next_state[index1:],self._memory_next_state[:index2]]),tf.concat([self._memory_reward[index1:],self._memory_reward[:index2]])
+            return tf.concat([self._state_pool[index1:],self._state_pool[:index2]]),tf.concat([self._action_pool[index1:],self._action_pool[:index2]]),tf.concat([self._next_state_pool[index1:],self._next_state_pool[:index2]]),tf.concat([self._reward_pool[index1:],self._reward_pool[:index2]])
         else:
-            return self._memory_state[index1:index2],self._memory_action[index1:index2],self._memory_next_state[index1:index2],self._memory_reward[index1:index2]
+            return self._state_pool[index1:index2],self._action_pool[index1:index2],self._next_state_pool[index1:index2],self._reward_pool[index1:index2]
     
     
     def update_parameter(self):
         for i in range(len(self.predict_p)):
-            state_ops.assign(self.target_p[i],self.predict_p[i])
+            self.target_p[i]=self.predict_p[i]
         self.a=0
         return
     
@@ -65,10 +64,10 @@ class DQN:
     
     
     def learn(self,episode_num,path=None,one=True):
-        memory_state=[]
-        memory_action=[]
-        memory_next_state=[]
-        memory_reward=[]
+        state_pool=[]
+        action_pool=[]
+        next_state_pool=[]
+        reward_pool=[]
         for i in range(episode_num):
             self.a=0
             loss=0
@@ -86,24 +85,24 @@ class DQN:
                 if self.save_episode==True:
                     episode.append([self.state_name[s],self.self.action_name[a],reward])
                 self.a+=1
-                memory_state.append(self.state[self.state_name[s]])
-                memory_action.append(a)
-                memory_next_state.append(self.state[self.state_name[next_s]])
-                memory_reward.append(reward)
+                state_pool.append(self.state[self.state_name[s]])
+                action_pool.append(a)
+                next_state_pool.append(self.state[self.state_name[next_s]])
+                reward_pool.append(reward)
                 s=next_s
-                if len(memory_state)>self.memory_size:
-                    del memory_state[0]
-                    del memory_action.pop[0]
-                    del memory_next_state.pop[0]
-                    del memory_reward.pop[0]
-                self.memory_state=tf.Tensor(memory_state)
-                self.memory_action=tf.Tensor(memory_action)
-                self.memory_next_state=tf.Tensor(memory_next_state)
-                self.memory_reward=tf.Tensor(memory_reward)
+                if len(state_pool)>self.memory_size:
+                    del state_pool[0]
+                    del action_pool.pop[0]
+                    del next_state_pool.pop[0]
+                    del reward_pool.pop[0]
+                self.state_pool=tf.Tensor(state_pool)
+                self.action_pool=tf.Tensor(action_pool)
+                self.next_state_pool=tf.Tensor(next_state_pool)
+                self.reward_pool=tf.Tensor(reward_pool)
                 if len(self.memory_state)<self.batch:
-                    loss=self.loss(self.memory_state,self.memory_action,self.memory_next_state,self.memory_reward)
+                    loss=self.loss(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool)
                 else:
-                    self.batches=int((len(self.memory_state)-len(self.memory_state)%self.batch)/self.batch)
+                    self.batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
                     for j in range(self.batches):
                         index1=j*self.batch
                         index2=(j+1)*self.batch
@@ -161,7 +160,7 @@ class DQN:
             output_file=open(path+'-{0}.dat'.format(i+1),'wb')
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.discount,output_file)
-        pickle.dump(self.memory_size,output_file)
+        pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.update_step,output_file)
         pickle.dump(self.lr,output_file)
@@ -177,7 +176,7 @@ class DQN:
         input_file=open(path,'rb')
         self.epsilon=pickle.load(input_file)
         self.discount=pickle.load(input_file)
-        self.memory_size=pickle.load(input_file)
+        self.pool_size=pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.update_step=pickle.load(input_file)
         self.lr=pickle.load(input_file)
