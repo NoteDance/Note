@@ -40,27 +40,27 @@ class off_policy_mc:
             while True:
                 action_prob=self.epsilon_greedy_policy(q,s,action)
                 a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
-                next_s,reward,end=search_space[self.state[s]][self.action_name[a]]
-                episode.append([s,a,reward])
+                next_s,r,end=search_space[self.state[s]][self.action_name[a]]
+                episode.append([s,a,r])
                 if end:
                     if self.save_episode==True:
-                        _episode.append([self.state[s],self.action_name[a],reward,end])
+                        _episode.append([self.state[s],self.action_name[a],r,end])
                     break
                 if self.save_episode==True:
-                    _episode.append([self.state[s],self.action_name[a],reward])
+                    _episode.append([self.state[s],self.action_name[a],r])
                 s=next_s
         else:
             for _ in range(self.episode_step):
                 action_prob=self.epsilon_greedy_policy(q,self.state[s],action)
                 a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
-                next_s,reward,end=search_space[self.state[s]][self.action_name[a]]
-                episode.append([s,a,reward])
+                next_s,r,end=search_space[self.state[s]][self.action_name[a]]
+                episode.append([s,a,r])
                 if end:
                     if self.save_episode==True:
-                        _episode.append([self.state[s],self.action_name[a],reward,end])
+                        _episode.append([self.state[s],self.action_name[a],r,end])
                     break
                 if self.save_episode==True:
-                    _episode.append([self.state[s],self.action_name[a],reward])
+                    _episode.append([self.state[s],self.action_name[a],r])
                 s=next_s
         if self.save_episode==True:
             self.episode.append(_episode)
@@ -73,7 +73,7 @@ class off_policy_mc:
         a=0
         delta=0
         self.delta=0
-        for i,[s,a,reward] in enumerate(episode):
+        for i,[s,a,r] in enumerate(episode):
             a+=1
             first_visit_index=i
             G=sum(np.power(discount,i)*x[2] for i,x in enumerate(episode[first_visit_index:]))
