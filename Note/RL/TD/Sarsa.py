@@ -33,10 +33,10 @@ class Sarsa:
         return action_prob
     
     
-    def td(self,q,s,a,next_s,reward):
+    def td(self,q,s,a,next_s,r):
         action_prob=self.epsilon_greedy_policy(q,self.state[next_s],self.action)
         next_a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
-        q[s][a]=q[s][a]+self.alpha*(reward+self.discount*q[next_s][next_a]-q[s][a])
+        q[s][a]=q[s][a]+self.alpha*(r+self.discount*q[next_s][next_a]-q[s][a])
         return q
     
     
@@ -47,34 +47,34 @@ class Sarsa:
             while True:
                 action_prob=self.epsilon_greedy_policy(q,s,self.action)
                 a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
-                next_s,reward,end=self.search_space[self.state[s]][self.action[a]]
+                next_s,r,end=self.search_space[self.state[s]][self.action[a]]
                 temp=q[s][a]
                 self.delta+=np.abs(q[s][a]-temp)
                 if end:
                     self.delta+=self.delta/a
                     if self.save_episode==True:
-                        episode.append([self.state[s],self.action[a],reward,end])
+                        episode.append([self.state[s],self.action[a],r,end])
                     break
                 if self.save_episode==True:
-                    episode.append([self.state[s],self.action[a],reward])
-                q=self.td(q,s,a,next_s,reward)
+                    episode.append([self.state[s],self.action[a],r])
+                q=self.td(q,s,a,next_s,r)
                 s=next_s
                 a+=1
         else:
             for _ in range(self.episode_step):
                 action_prob=self.epsilon_greedy_policy(q,s,self.action)
                 a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
-                next_s,reward,end=self.search_space[self.state[s]][self.action[a]]
+                next_s,r,end=self.search_space[self.state[s]][self.action[a]]
                 temp=q[s][a]
                 self.delta+=np.abs(q[s][a]-temp)
                 if end:
                     self.delta+=self.delta/a
                     if self.save_episode==True:
-                        episode.append([self.state[s],self.action[a],reward,end])
+                        episode.append([self.state[s],self.action[a],r,end])
                     break
                 if self.save_episode==True:
-                    episode.append([self.state[s],self.action[a],reward])
-                q=self.td(q,s,a,next_s,reward)
+                    episode.append([self.state[s],self.action[a],r])
+                q=self.td(q,s,a,next_s,r)
                 s=next_s
                 a+=1
         if self.save_episode==True:
