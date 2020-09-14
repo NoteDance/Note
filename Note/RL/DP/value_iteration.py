@@ -18,7 +18,7 @@ class value_iteration:
         self.time=0
         self.total_time=0
         
-        
+    
     def learn(self,iteration=None,path=None,one=True):
         if iteration==None:
             iteration=int(len(self.state)*3)
@@ -30,9 +30,9 @@ class value_iteration:
             for s in range(len(self.state)):
                 A=np.zeros(len(self.action),dtype=np.float32)
                 for a in range(len(self.action)):
-                    for prob,reward,next_state,done in self.prs[self.state[s]][self.action[a]]:
-                        A[a]+=prob*(reward+self.discount*V[next_state])
-                        if done and next_state!=self.end_flag and self.end_flag!=None:
+                    for prob,r,next_s,done in self.prs[self.state[s]][self.action[a]]:
+                        A[a]+=prob*(r+self.discount*V[next_s])
+                        if done and next_s!=self.end_flag and self.end_flag!=None:
                             A[a]=float('-inf')
                             break
                 best_action_value=max(A)
@@ -69,10 +69,10 @@ class value_iteration:
             for s in range(len(self.state)):
                 A=np.zeros(len(self.action),dtype=np.float32)
                 for a in range(len(self.action)):
-                    for prob,reward,next_state in self.prs[self.state[s]][self.action[a]]:
-                        A[a]+=prob*(reward+self.discount*V[next_state])
-                best_action=max(A)
-                self.policy[self.state[s]][best_action]=1
+                    for prob,r,next_s in self.prs[self.state[s]][self.action[a]]:
+                        A[a]+=prob*(r+self.discount*V[next_s])
+                best_a=np.argmax(A)
+                self.policy[self.state[s]][best_a]=1
         return
     
     
