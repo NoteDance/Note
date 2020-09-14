@@ -28,31 +28,32 @@ class policy_iteration:
             for s in range(len(state)):
                 v=0
                 for a,action_prob in enumerate(policy[state[s]]):
-                    for prob,reward,next_state,done in prs[state[s]][action[a]]:
-                        v+=action_prob*prob*(reward+discount*V[next_state])
+                    for prob,r,next_s,done in prs[state[s]][action[a]]:
+                        v+=action_prob*prob*(r+discount*V[next_s])
                 delta=max(delta,np.abs(v-V[s]))
                 V[s]=v
             if delta<=theta:
                 break
         return V
 
-
+    
     def policy_improvement(self,policy,V,state,action,prs,discount,flag,end_flag):
         for s in range(len(state)):
-            old_action=np.argmax(policy[state[s]])
+            old_a=np.argmax(policy[state[s]])
             action_value=np.zeros(len(action),dtype=np.float32)
             old_action_value=0
             for a in range(len(action)):
-                for prob,reward,next_state,done in prs[state[s]][action[a]]:
-                    action_value[a]+=prob*(reward+discount*V[next_state])
-                    if done and next_state!=end_flag and end_flag!=None:
+                for prob,r,next_s,done in prs[state[s]][action[a]]:
+                    action_value[a]+=prob*(r+discount*V[next_s])
+                    if done and next_s!=end_flag and end_flag!=None:
                         action_value[a]=float('-inf')
-            best_action=np.max(action_value)
-            for prob,reward,next_state,done in prs[state[s]][action[old_action]]:
-                    old_action_value+=prob*(reward+discount*V[next_state])
-            if old_action!=best_action and old_action_value!=best_action:
+            best_a=np.argmax(action_value)
+            best_action_value=np.max(action_value)
+            for prob,r,next_s,done in prs[state[s]][action[old_a]]:
+                    old_action_value+=prob*(r+discount*V[next_s])
+            if old_a!=best_a and old_action_value!=best_action_value:
                 flag=False
-            policy[state[s]]=np.eye(len(action),dtype=np.float32)[best_action]
+            policy[state[s]]=np.eye(len(action),dtype=np.float32)[best_a]
         return policy,flag
 
 
