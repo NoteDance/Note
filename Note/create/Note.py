@@ -200,7 +200,7 @@ class Note:
                 self.train_loss=loss
                 self.train_loss=self.train_loss.astype(np.float32)
                 if self.nn.accuracy==1:
-                    self.train_acc_list.append(float(train_acc))
+                    self.train_acc_list.append(train_acc.astype(np.float32))
                     self.train_acc=train_acc
                     self.train_acc=self.train_acc.astype(np.float32)
                 if test==True:
@@ -247,7 +247,7 @@ class Note:
                     with tf.name_scope('accuracy'):
                         acc=self.nn.accuracy(self,self.output,train_labels)
                     acc=train_acc.numpy()
-                    self.train_acc_list.append(float(acc))
+                    self.train_acc_list.append(acc.astype(np.float32))
                     self.train_acc=acc
                     self.train_acc=self.train_acc.astype(np.float32)
                 if test==True:
