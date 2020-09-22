@@ -22,7 +22,7 @@ class policy_iteration:
     def policy_evaluation(self,policy,state,action,prs,discount,theta,iteration):
         if iteration==None:
             iteration=int(len(state)*3)
-        V=np.zeros(len(state),dtype=np.float32)
+        V=np.zeros(len(state),dtype=np.float16)
         for i in range(iteration):
             delta=0
             for s in range(len(state)):
@@ -40,7 +40,7 @@ class policy_iteration:
     def policy_improvement(self,policy,V,state,action,prs,discount,flag,end_flag):
         for s in range(len(state)):
             old_a=np.argmax(policy[state[s]])
-            action_value=np.zeros(len(action),dtype=np.float32)
+            action_value=np.zeros(len(action),dtype=np.float16)
             old_action_value=0
             for a in range(len(action)):
                 for prob,r,next_s,done in prs[state[s]][action[a]]:
@@ -53,7 +53,7 @@ class policy_iteration:
                     old_action_value+=prob*(r+discount*V[next_s])
             if old_a!=best_a and old_action_value!=best_action_value:
                 flag=False
-            policy[state[s]]=np.eye(len(action),dtype=np.float32)[best_a]
+            policy[state[s]]=np.eye(len(action),dtype=np.int8)[best_a]
         return policy,flag
 
 
