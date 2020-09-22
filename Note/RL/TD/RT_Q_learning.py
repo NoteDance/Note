@@ -57,7 +57,7 @@ class RT_Q_learning:
     
     def learn(self):
         if len(self.state)>self.q.shape[0] or len(self.action_name)>self.q.shape[1]:
-            q=self.q*tf.ones([len(self.state),len(self.action_name)],dtype=tf.float32)[:self.q.shape[0],:self.q.shape[1]]
+            q=self.q*tf.ones([len(self.state),len(self.action_name)],dtype=self.q.dtype)[:self.q.shape[0],:self.q.shape[1]]
             self.q=q.numpy()
         s=np.random.choice(np.arange(len(self.state)),p=np.ones(len(self.state))*1/len(self.state))
         self.q=self.RT_update_q(self.q,s)
