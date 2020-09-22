@@ -92,9 +92,9 @@ class off_policy_mc:
     def learn(self,episode_num,path=None,one=True):
         self.delta=0
         if len(self.state)>self.q.shape[0] or len(self.action_name)>self.q.shape[1]:
-            q=self.q*tf.ones([len(self.state),len(self.action_name)],dtype=tf.float32)[:self.q.shape[0],:self.q.shape[1]]
+            q=self.q*tf.ones([len(self.state),len(self.action_name)],dtype=self.q.dtype)[:self.q.shape[0],:self.q.shape[1]]
             self.q=q.numpy()
-            c=self.c*tf.ones([len(self.state),len(self.action_name)],dtype=tf.float32)[:self.c.shape[0],:self.c.shape[1]]
+            c=self.c*tf.ones([len(self.state),len(self.action_name)],dtype=self.q.dtype)[:self.c.shape[0],:self.c.shape[1]]
             self.c=c.numpy()
         for i in range(episode_num):
             t1=time.time()
