@@ -22,13 +22,13 @@ class value_iteration:
     def learn(self,iteration=None,path=None,one=True):
         if iteration==None:
             iteration=int(len(self.state)*3)
-        V=np.zeros(len(self.state),dtype=np.float32)
+        V=np.zeros(len(self.state),dtype=np.float16)
         self.delta=0        
         for i in range(iteration):
             t1=time.time()
             delta=0
             for s in range(len(self.state)):
-                A=np.zeros(len(self.action),dtype=np.float32)
+                A=np.zeros(len(self.action),dtype=np.float16)
                 for a in range(len(self.action)):
                     for prob,r,next_s,done in self.prs[self.state[s]][self.action[a]]:
                         A[a]+=prob*(r+self.discount*V[next_s])
@@ -67,7 +67,7 @@ class value_iteration:
                 break
         for s in range(len(self.state)):
             for s in range(len(self.state)):
-                A=np.zeros(len(self.action),dtype=np.float32)
+                A=np.zeros(len(self.action),dtype=np.float16)
                 for a in range(len(self.action)):
                     for prob,r,next_s in self.prs[self.state[s]][self.action[a]]:
                         A[a]+=prob*(r+self.discount*V[next_s])
