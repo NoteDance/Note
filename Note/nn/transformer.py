@@ -327,7 +327,7 @@ class transformer:
                 self.train_loss_list.append(loss.astype(np.float32))
                 self.train_loss=loss
                 self.train_loss=self.train_loss.astype(np.float32)
-                self.train_acc_list.append(float(train_acc))
+                self.train_acc_list.append(train_acc.astype(np.float32))
                 self.train_acc=train_acc
                 self.train_acc=self.train_acc.astype(np.float32)
                 if test==True:
@@ -356,7 +356,7 @@ class transformer:
                 with tf.name_scope('accuracy'):
                     train_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(train_labels,2)!=0,tf.int32)==tf.argmax(train_labels,2),tf.float32))
                 acc=train_acc.numpy()
-                self.train_acc_list.append(float(acc))
+                self.train_acc_list.append(acc.astype(np.float32))
                 self.train_acc=acc
                 self.train_acc=self.train_acc.astype(np.float32)
                 if test==True:
