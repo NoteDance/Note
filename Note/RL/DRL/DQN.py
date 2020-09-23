@@ -29,6 +29,7 @@ class DQN:
         self.lr=lr
         self.optimizer=optimizer
         self.save_episode=save_episode
+        self.opt_flag==False
         self.episode_num=0
         self.total_episode=0
         self.time=0
@@ -130,7 +131,7 @@ class DQN:
                             batch_loss=self.loss(state_batch,action_batch,next_state_batch,reward_batch)
                             with tf.GradientTape() as tape:
                                 gradient=tape.gradient(batch_loss,self.predict_p)
-                                if type(self.optimizer)==type:
+                                if self.opt_flag==True:
                                     self.optimizer(gradient,self.net_p)
                                 else:
                                     self.optimizer.apply_gradients(zip(gradient,self.net_p))
@@ -188,7 +189,7 @@ class DQN:
                             batch_loss=self.loss(state_batch,action_batch,next_state_batch,reward_batch)
                             with tf.GradientTape() as tape:
                                 gradient=tape.gradient(batch_loss,self.predict_p)
-                                if type(self.optimizer)==type:
+                                if self.opt_flag==True:
                                     self.optimizer(gradient,self.net_p)
                                 else:
                                     self.optimizer.apply_gradients(zip(gradient,self.net_p))
@@ -246,6 +247,7 @@ class DQN:
         pickle.dump(self.lr,output_file)
         pickle.dump(self.optimizer,output_file)
         pickle.dump(self.save_episode,output_file)
+        pickle.dump(self.opt_flag,output_file)
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
@@ -267,6 +269,7 @@ class DQN:
         self.lr=pickle.load(input_file)
         self.optimizer=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
+        self.opt_flag=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         self.total_time=self.time
         input_file.close()
