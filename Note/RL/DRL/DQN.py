@@ -39,7 +39,7 @@ class DQN:
     def epsilon_greedy_policy(self,s,action):
         action_prob=action[s]
         action_prob=action_prob*self.epsilon/np.sum(action[s])
-        best_action=np.argmax(self.predict_net(self.state[self.state_list[s]]).numpy())
+        best_action=np.argmax(self.predict_net(self.state[self.state_name[s]]).numpy())
         action_prob[best_action]+=1-self.epsilon
         return action_prob
     
@@ -132,9 +132,9 @@ class DQN:
                             with tf.GradientTape() as tape:
                                 gradient=tape.gradient(batch_loss,self.predict_p)
                                 if self.opt_flag==True:
-                                    self.optimizer(gradient,self.net_p)
+                                    self.optimizer(gradient,self.predict_p)
                                 else:
-                                    self.optimizer.apply_gradients(zip(gradient,self.net_p))
+                                    self.optimizer.apply_gradients(zip(gradient,self.predict_p))
                             loss+=batch_loss
                         loss=loss.numpy()/self.batches
                     t2=time.time()
@@ -190,9 +190,9 @@ class DQN:
                             with tf.GradientTape() as tape:
                                 gradient=tape.gradient(batch_loss,self.predict_p)
                                 if self.opt_flag==True:
-                                    self.optimizer(gradient,self.net_p)
+                                    self.optimizer(gradient,self.predict_p)
                                 else:
-                                    self.optimizer.apply_gradients(zip(gradient,self.net_p))
+                                    self.optimizer.apply_gradients(zip(gradient,self.predict_p))
                             loss+=batch_loss
                         loss=loss.numpy()/self.batches
                     t2=time.time()
