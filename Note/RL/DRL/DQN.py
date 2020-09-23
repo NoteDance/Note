@@ -130,7 +130,10 @@ class DQN:
                             batch_loss=self.loss(state_batch,action_batch,next_state_batch,reward_batch)
                             with tf.GradientTape() as tape:
                                 gradient=tape.gradient(batch_loss,self.predict_p)
-                                self.optimizer.apply_gradients(zip(gradient,self.predict_p))
+                                if type(self.optimizer)==type:
+                                    self.optimizer(gradient,self.net_p)
+                                else:
+                                    self.optimizer.apply_gradients(zip(gradient,self.net_p))
                             loss+=batch_loss
                         loss=loss.numpy()/self.batches
                     t2=time.time()
@@ -185,7 +188,10 @@ class DQN:
                             batch_loss=self.loss(state_batch,action_batch,next_state_batch,reward_batch)
                             with tf.GradientTape() as tape:
                                 gradient=tape.gradient(batch_loss,self.predict_p)
-                                self.optimizer.apply_gradients(zip(gradient,self.predict_p))
+                                if type(self.optimizer)==type:
+                                    self.optimizer(gradient,self.net_p)
+                                else:
+                                    self.optimizer.apply_gradients(zip(gradient,self.net_p))
                             loss+=batch_loss
                         loss=loss.numpy()/self.batches
                     t2=time.time()
@@ -200,7 +206,7 @@ class DQN:
             if temp==0:
                 temp=1
             if i%temp==0:
-                print('episode_num:{0}   loss:{1:.6f}'.format(i+1,loss))
+                print('episode num:{0}   loss:{1:.6f}'.format(i+1,loss))
                 if path!=None and i%episode_num*2==0:
                     self.save(path,i,one)
             self.episode_num+=1
