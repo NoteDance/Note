@@ -7,9 +7,9 @@ class Gradient:
         self.lr=lr
     
     
-    def Gradient(self,gradient,variable):
+    def Gradient(self,gradient,parameter):
         for i in range(len(gradient)):
-            state_ops.assign(variable[i],variable[i]-self.lr*gradient[i])
+            state_ops.assign(parameter[i],parameter[i]-self.lr*gradient[i])
         return
     
 
@@ -21,12 +21,12 @@ class Momentum:
         self.flag=0
     
     
-    def Momentum(self,gradient,variable):
+    def Momentum(self,gradient,parameter):
         if self.flag==0:
             self.v=[0 for x in range(len(gradient))]
         for i in range(len(gradient)):
             self.v[i]=self.gamma*self.v[i]+self.lr*gradient[i]
-            state_ops.assign(variable[i],variable[i]-self.v[i])
+            state_ops.assign(parameter[i],parameter[i]-self.v[i])
         return
     
     
@@ -38,13 +38,13 @@ class AdaGrad:
         self.flag=0
     
     
-    def AdaGrad(self,gradient,variable):
+    def AdaGrad(self,gradient,parameter):
         if self.flag==0:
             self.s=[0 for x in range(len(gradient))]
             self.flag=1
         for i in range(len(gradient)):
             self.s[i]=self.s[i]+gradient[i]**2
-            state_ops.assign(variable[i],variable[i]-self.lr*gradient[i]/tf.sqrt(self.s[i]+self.epsilon))
+            state_ops.assign(parameter[i],parameter[i]-self.lr*gradient[i]/tf.sqrt(self.s[i]+self.epsilon))
         return
     
 
@@ -57,13 +57,13 @@ class RMSProp:
         self.flag=0
     
     
-    def RMSProp(self,gradient,variable):
+    def RMSProp(self,gradient,parameter):
         if self.flag==0:
             self.s=[0 for x in range(len(gradient))]
             self.flag=1
         for i in range(len(gradient)):
             self.s[i]=self.gamma*self.s[i]+(1-self.gamma)*gradient[i]**2
-            state_ops.assign(variable[i],variable[i]-self.lr*gradient[i]/tf.sqrt(self.s[i]+self.epsilon))
+            state_ops.assign(parameter[i],parameter[i]-self.lr*gradient[i]/tf.sqrt(self.s[i]+self.epsilon))
         return
 
 
@@ -78,7 +78,7 @@ class AdaDelta:
         self.flag=0
     
     
-    def AdaDelta(self,gradient,variable):
+    def AdaDelta(self,gradient,parameter):
         if self.flag==0:
            self.s=[0 for x in range(len(gradient))]
            self.x=[0 for x in range(len(gradient))]
@@ -87,7 +87,7 @@ class AdaDelta:
         for i in range(len(gradient)):
             self.s[i]=self.rho*self.s[i]+(1-self.rho)*gradient[i]**2
             self.g[i]=tf.sqrt((self.x[i]+self.epsilon)/(self.s[i]+self.epsilon))*gradient[i]
-            state_ops.assign(variable[i],variable[i]-self.g[i])
+            state_ops.assign(parameter[i],parameter[i]-self.g[i])
             self.x[i]=self.rho*self.x[i]+(1-self.rho)*self.g[i]**2
         return
     
@@ -106,7 +106,7 @@ class Adam:
         self.flag=0
     
     
-    def Adam(self,gradient,variable,t):
+    def Adam(self,gradient,parameter,t):
         if self.flag==0:
             self.v=[0 for x in range(len(gradient))]
             self.s=[0 for x in range(len(gradient))]
@@ -120,5 +120,5 @@ class Adam:
             self.v_[i]=self.v[i]/(1-self.beta1**(t+1))
             self.s_[i]=self.s[i]/(1-self.beta2**(t+1))
             self.g[i]=self.lr*self.v_[i]/(tf.sqrt(self.s_[i])+self.epsilon)
-            state_ops.assign(variable[i],variable[i]-self.g[i])
+            state_ops.assign(parameter[i],parameter[i]-self.g[i])
         return
