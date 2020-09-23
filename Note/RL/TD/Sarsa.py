@@ -5,10 +5,10 @@ import time
 
 
 class Sarsa:
-    def __init__(self,q,state,action,action_name,search_space,epsilon=None,alpha=None,discount=None,theta=None,episode_step=None,save_episode=True):
+    def __init__(self,q,state_name,action,action_name,search_space,epsilon=None,alpha=None,discount=None,theta=None,episode_step=None,save_episode=True):
         self.q=q
         self.episode=[]
-        self.state=state
+        self.state_name=state_name
         self.action=action
         self.action_name=action_name
         self.search_space=search_space
@@ -47,16 +47,16 @@ class Sarsa:
             while True:
                 action_prob=self.epsilon_greedy_policy(q,s,self.action)
                 a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
-                next_s,r,end=self.search_space[self.state[s]][self.action[a]]
+                next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                 temp=q[s][a]
                 self.delta+=np.abs(q[s][a]-temp)
                 if end:
                     self.delta+=self.delta/a
                     if self.save_episode==True:
-                        episode.append([self.state[s],self.action[a],r,end])
+                        episode.append([self.state_name[s],self.action_name[a],r,end])
                     break
                 if self.save_episode==True:
-                    episode.append([self.state[s],self.action[a],r])
+                    episode.append([self.state_name[s],self.action_name[a],r])
                 q=self.td(q,s,a,next_s,r)
                 s=next_s
                 a+=1
@@ -64,16 +64,16 @@ class Sarsa:
             for _ in range(self.episode_step):
                 action_prob=self.epsilon_greedy_policy(q,s,self.action)
                 a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
-                next_s,r,end=self.search_space[self.state[s]][self.action[a]]
+                next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                 temp=q[s][a]
                 self.delta+=np.abs(q[s][a]-temp)
                 if end:
                     self.delta+=self.delta/a
                     if self.save_episode==True:
-                        episode.append([self.state[s],self.action[a],r,end])
+                        episode.append([self.state_name[s],self.action_name[a],r,end])
                     break
                 if self.save_episode==True:
-                    episode.append([self.state[s],self.action[a],r])
+                    episode.append([self.state_name[s],self.action_name[a],r])
                 q=self.td(q,s,a,next_s,r)
                 s=next_s
                 a+=1
@@ -84,12 +84,12 @@ class Sarsa:
     
     def learn(self,episode_num,path=None,one=True):
         self.delta=0
-        if len(self.state)>self.q.shape[0] or len(self.action_name)>self.q.shape[1]:
-            q=self.q*tf.ones([len(self.state),len(self.action_name)],dtype=self.q.dtype)[:self.q.shape[0],:self.q.shape[1]]
+        if len(self.state_name)>self.q.shape[0] or len(self.action_name)>self.q.shape[1]:
+            q=self.q*tf.ones([len(self.state_name),len(self.action_name)],dtype=self.q.dtype)[:self.q.shape[0],:self.q.shape[1]]
             self.q=q.numpy()
         for i in range(episode_num):
             t1=time.time()
-            s=np.random.choice(np.arange(len(self.state)),p=np.ones(len(self.state))*1/len(self.state))
+            s=np.random.choice(np.arange(len(self.state_name)),p=np.ones(len(self.state_name))*1/len(self.state_name))
             self.q=self.update_q(self.q,s)
             self.delta=self.delta/(i+1)
             if episode_num%10!=0:
