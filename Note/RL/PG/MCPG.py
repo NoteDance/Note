@@ -40,7 +40,7 @@ class MCPG:
             output=self.policy_net(self.state(s))
             while True:
                 output=self.policy_net(self.state(s))
-                a=np.random.choice(np.arange(len(self.action_name)),self.policy_net(self.state(s)))
+                a=np.random.choice(np.arange(len(self.action_name)),output)
                 next_s,r,end=self.search_space[self.state[s]][self.action_name[a]]
                 episode.append([s,a,r])
                 if end:
