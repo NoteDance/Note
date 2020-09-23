@@ -36,7 +36,7 @@ class Q_learning:
     
     
     def loss(self,s,a,next_s,r):
-        return (r+self.discount*tf.reduce_max(self.net(next_s))-self.net(s)[a])**2
+        return (r+self.discount*tf.reduce_max(self.net(self.state[next_s]))-self.net(self.state[s])[a])**2
     
     
     def learn(self,episode_num,path=None,one=True):
