@@ -68,15 +68,15 @@ class tf2:
             return data[self.index1:self.index2]
         
         
-def extend(variable):
-    for i in range(len(variable)-1):
-        variable[0].extend(variable[i+1])
-    return variable[0]
+def extend(parameter):
+    for i in range(len(parameter)-1):
+        parameter[0].extend(parameter[i+1])
+    return parameter[0]
 
 
-def apply_gradient(tape,optimizer,loss,variable):
-    gradient=tape.gradient(loss,variable)
-    optimizer.apply_gradients(zip(gradient,variable))
+def apply_gradient(tape,optimizer,loss,parameter):
+    gradient=tape.gradient(loss,parameter)
+    optimizer.apply_gradients(zip(gradient,parameter))
     return
 
 
