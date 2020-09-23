@@ -103,10 +103,10 @@ class Q_learning:
                     self.save(path,i,one)
             self.episode_num+=1
             self.total_episode+=1
-            if self.theta!=None and self.delta<=self.theta:
-                break
             t2=time.time()
             self.time+=(t2-t1)
+            if self.theta!=None and self.delta<=self.theta:
+                break
         if self.time<0.5:
             self.time=int(self.time)
         else:
