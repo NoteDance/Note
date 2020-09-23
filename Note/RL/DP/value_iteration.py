@@ -4,10 +4,10 @@ import time
 
 
 class value_iteration:
-    def __init__(self,policy,state,action,prs,discount,theta,end_flag=None):
+    def __init__(self,policy,state_name,action_name,prs,discount,theta,end_flag=None):
         self.policy=policy
-        self.state=state
-        self.action=action
+        self.state_name=state_name
+        self.action_name=action_name
         self.prs=prs
         self.discount=discount
         self.theta=theta
@@ -21,16 +21,16 @@ class value_iteration:
     
     def learn(self,iteration=None,path=None,one=True):
         if iteration==None:
-            iteration=int(len(self.state)*3)
-        V=np.zeros(len(self.state),dtype=np.float16)
+            iteration=int(len(self.state_name)*3)
+        V=np.zeros(len(self.state_name),dtype=np.float16)
         self.delta=0        
         for i in range(iteration):
             t1=time.time()
             delta=0
-            for s in range(len(self.state)):
-                A=np.zeros(len(self.action),dtype=np.float16)
-                for a in range(len(self.action)):
-                    for prob,r,next_s,done in self.prs[self.state[s]][self.action[a]]:
+            for s in range(len(self.state_name)):
+                A=np.zeros(len(self.action_name),dtype=np.float16)
+                for a in range(len(self.action_name)):
+                    for prob,r,next_s,done in self.prs[self.state_name[s]][self.action_name[a]]:
                         A[a]+=prob*(r+self.discount*V[next_s])
                         if done and next_s!=self.end_flag and self.end_flag!=None:
                             A[a]=float('-inf')
@@ -66,13 +66,13 @@ class value_iteration:
                 print('time:{0}s'.format(self.time))
                 break
         for s in range(len(self.state)):
-            for s in range(len(self.state)):
-                A=np.zeros(len(self.action),dtype=np.float16)
-                for a in range(len(self.action)):
-                    for prob,r,next_s in self.prs[self.state[s]][self.action[a]]:
+            for s in range(len(self.state_name)):
+                A=np.zeros(len(self.action_name),dtype=np.float16)
+                for a in range(len(self.action_name)):
+                    for prob,r,next_s in self.prs[self.state_name[s]][self.action_name[a]]:
                         A[a]+=prob*(r+self.discount*V[next_s])
                 best_a=np.argmax(A)
-                self.policy[self.state[s]][best_a]=1
+                self.policy[self.state_name[s]][best_a]=1
         return
     
     
