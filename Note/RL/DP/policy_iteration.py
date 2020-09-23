@@ -4,10 +4,10 @@ import time
 
 
 class policy_iteration:
-    def __init__(self,policy,state,action,prs,discount=None,theta=None,end_flag=None):
+    def __init__(self,policy,state_name,action_name,prs,discount=None,theta=None,end_flag=None):
         self.policy=policy
-        self.state=state
-        self.action=action
+        self.state_name=state_name
+        self.action_name=action_name
         self.prs=prs
         self.discount=discount
         self.theta=theta
@@ -19,17 +19,17 @@ class policy_iteration:
         self.total_time=0
         
         
-    def policy_evaluation(self,policy,state,action,prs,discount,theta,iteration):
+    def policy_evaluation(self,policy,state_name,action_name,prs,discount,theta,iteration):
         if iteration==None:
-            iteration=int(len(state)*3)
-        V=np.zeros(len(state),dtype=np.float16)
+            iteration=int(len(state_name)*3)
+        V=np.zeros(len(state_name),dtype=np.float16)
         for i in range(iteration):
             delta=0
-            for s in range(len(state)):
+            for s in range(len(state_name)):
                 v=0
-                for a,action_prob in enumerate(policy[state[s]]):
-                    for prob,r,next_s,done in prs[state[s]][action[a]]:
-                        v+=action_prob*prob*(r+discount*V[next_s])
+                for a,action_prob in enumerate(policy[state_name[s]]):
+                    for prob,r,next_s,done in prs[state_name[s]][action_name[a]]:
+                        v+=action_prob[a]*prob*(r+discount*V[next_s])
                 delta=max(delta,np.abs(v-V[s]))
                 V[s]=v
             if delta<=theta:
@@ -37,23 +37,23 @@ class policy_iteration:
         return V
 
     
-    def policy_improvement(self,policy,V,state,action,prs,discount,flag,end_flag):
-        for s in range(len(state)):
-            old_a=np.argmax(policy[state[s]])
-            action_value=np.zeros(len(action),dtype=np.float16)
+    def policy_improvement(self,policy,V,state_name,action_name,prs,discount,flag,end_flag):
+        for s in range(len(state_name)):
+            old_a=np.argmax(policy[state_name[s]])
+            action_value=np.zeros(len(action_name),dtype=np.float16)
             old_action_value=0
-            for a in range(len(action)):
-                for prob,r,next_s,done in prs[state[s]][action[a]]:
+            for a in range(len(action_name)):
+                for prob,r,next_s,done in prs[state_name[s]][action_name[a]]:
                     action_value[a]+=prob*(r+discount*V[next_s])
                     if done and next_s!=end_flag and end_flag!=None:
                         action_value[a]=float('-inf')
             best_a=np.argmax(action_value)
             best_action_value=np.max(action_value)
-            for prob,r,next_s,done in prs[state[s]][action[old_a]]:
+            for prob,r,next_s,done in prs[state_name[s]][action_name[old_a]]:
                     old_action_value+=prob*(r+discount*V[next_s])
             if old_a!=best_a and old_action_value!=best_action_value:
                 flag=False
-            policy[state[s]]=np.eye(len(action),dtype=np.int8)[best_a]
+            policy[state_name[s]]=np.eye(len(action_name),dtype=np.int8)[best_a]
         return policy,flag
 
 
