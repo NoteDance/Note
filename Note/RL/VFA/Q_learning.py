@@ -59,7 +59,10 @@ class Q_learning:
                     s=next_s
                     with tf.GradientTape() as tape:
                         gradient=tape.gradient(1/2*loss,self.net_p)
-                        self.optimizer.apply_gradients(zip(gradient,self.net_p))
+                        if type(self.optimizer)==type:
+                            self.optimizer(gradient,self.net_p)
+                        else:
+                            self.optimizer.apply_gradients(zip(gradient,self.net_p))
                     loss=loss.numpy()
                     t2=time.time()
                     self.time+=(t2-t1)
@@ -79,7 +82,10 @@ class Q_learning:
                     s=next_s
                     with tf.GradientTape() as tape:
                         gradient=tape.gradient(1/2*loss,self.net_p)
-                        self.optimizer.apply_gradients(zip(gradient,self.net_p))
+                        if type(self.optimizer)==type:
+                            self.optimizer(gradient,self.net_p)
+                        else:
+                            self.optimizer.apply_gradients(zip(gradient,self.net_p))
                     loss=loss.numpy()
                     t2=time.time()
                     self.time+=(t2-t1)
@@ -91,7 +97,7 @@ class Q_learning:
             if temp==0:
                 temp=1
             if i%temp==0:
-                print('episode_num:{0}   loss:{1:.6f}'.format(i+1,loss))
+                print('episode num:{0}   loss:{1:.6f}'.format(i+1,loss))
                 if path!=None and i%episode_num*2==0:
                     self.save(path,i,one)
             self.episode_num+=1
