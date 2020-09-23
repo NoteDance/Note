@@ -30,7 +30,7 @@ class Q_learning:
     def epsilon_greedy_policy(self,s,action):
         action_prob=action[s]
         action_prob=action_prob*self.epsilon/np.sum(action[s])
-        best_action=np.argmax(self.predict_net(self.state[self.state_list[s]]).numpy())
+        best_action=np.argmax(self.predict_net(self.state[self.state_name[s]]).numpy())
         action_prob[best_action]+=1-self.epsilon
         return action_prob
     
