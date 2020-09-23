@@ -34,7 +34,7 @@ class Sarsa:
     
     
     def td(self,q,s,a,next_s,r):
-        action_prob=self.epsilon_greedy_policy(q,self.state[next_s],self.action)
+        action_prob=self.epsilon_greedy_policy(q,next_s,self.action)
         next_a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
         q[s][a]=q[s][a]+self.alpha*(r+self.discount*q[next_s][next_a]-q[s][a])
         return q
