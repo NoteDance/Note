@@ -32,7 +32,7 @@ class MCPG:
         return tf.log(output)*G
     
     
-    def episode(self,s):
+    def episode(self,s,action):
         G=0
         loss=0
         episode=[]
@@ -41,7 +41,7 @@ class MCPG:
             output=self.policy_net(self.state(s))
             while True:
                 output=self.policy_net(self.state(s))
-                a=np.random.choice(np.arange(len(self.action_name)),output)
+                a=np.random.choice(action,output)
                 next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                 episode.append([s,a,r])
                 if end:
@@ -58,7 +58,7 @@ class MCPG:
             output=self.policy_net(self.state(s))
             for _ in range(self.episode_step):
                 output=self.policy_net(self.state(s))
-                a=np.random.choice(np.arange(len(self.action_name)),output)
+                a=np.random.choice(action,output)
                 next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                 episode.append([s,a,r])
                 if end:
@@ -78,10 +78,13 @@ class MCPG:
     
     
     def learn(self,episode_num,path=None,one=True):
+        state=np.arange(len(self.state_name),dtype=np.int8)
+        state_prob=np.ones(len(self.state_name),dtype=np.int8)/len(self.state_name)
+        action=np.arange(len(self.action_name),dtype=np.int8)
         for i in range(episode_num):
             t1=time.time()
-            s=np.random.choice(np.arange(len(self.state_name)),p=np.ones(len(self.state_name))*1/len(self.state_name))
-            loss=self.episode(s)
+            s=np.random.choice(state,p=state_prob)
+            loss=self.episode(s,action)
             with tf.GradientTape() as tape:
                 gradient=tape.gradient(loss,self.net_p)
                 if self.opt_flag==True:
