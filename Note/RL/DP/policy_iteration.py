@@ -19,10 +19,9 @@ class policy_iteration:
         self.total_time=0
         
         
-    def policy_evaluation(self,policy,state_name,action_name,prs,discount,theta,iteration):
+    def policy_evaluation(self,policy,V,state_name,action_name,prs,discount,theta,iteration):
         if iteration==None:
             iteration=int(len(state_name)*3)
-        V=np.zeros(len(state_name),dtype=np.float16)
         for i in range(iteration):
             delta=0
             for s in range(len(state_name)):
@@ -37,10 +36,9 @@ class policy_iteration:
         return V
 
     
-    def policy_improvement(self,policy,V,state_name,action_name,prs,discount,flag,end_flag):
+    def policy_improvement(self,policy,action_value,V,state_name,action_name,prs,discount,flag,end_flag):
         for s in range(len(state_name)):
             old_a=np.argmax(policy[state_name[s]])
-            action_value=np.zeros(len(action_name),dtype=np.float16)
             old_action_value=0
             for a in range(len(action_name)):
                 for prob,r,next_s,done in prs[state_name[s]][action_name[a]]:
@@ -58,12 +56,14 @@ class policy_iteration:
 
 
     def learn(self,iteration=None,path=None,one=True):
-        self.delta=0        
+        self.delta=0
+        _V=np.zeros(len(self.state_name),dtype=np.float16)
+        action_value=np.zeros(len(self.action_name),dtype=np.float16)
         while True:
             t1=time.time()
             flag=True
-            V=self.policy_evaluation(self.policy,self.state,self.action,self.prs,self.discount,self.theta,iteration)
-            self.policy,flag=self.policy_improvement(self.policy,V,self.state,self.action,self.prs,self.discount,flag,self.end_flag)
+            V=self.policy_evaluation(self.policy,_V,self.state,self.action,self.prs,self.discount,self.theta,iteration)
+            self.policy,flag=self.policy_improvement(self.policy,action_value,V,self.state,self.action,self.prs,self.discount,flag,self.end_flag)
             if iteration%10!=0:
                 temp=iteration-iteration%10
                 temp=int(temp/10)
