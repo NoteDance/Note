@@ -5,14 +5,13 @@ import time
 
 
 class off_policy_mc:
-    def __init__(self,q,state_name,action_name,search_space,action_prob=None,epsilon=None,discount=None,theta=None,episode_step=None,save_episode=True):
+    def __init__(self,q,state_name,action_name,search_space,epsilon=None,discount=None,theta=None,episode_step=None,save_episode=True):
         self.q=q
         self.episode=[]
         self.c=None
         self.state_name=state_name
         self.action_name=action_name
         self.search_space=search_space
-        self.action_prob=action_prob
         self.epsilon=epsilon
         self.discount=discount
         self.theta=theta
@@ -67,7 +66,7 @@ class off_policy_mc:
         return episode
     
     
-    def importance_sampling(self,episode,q,discount):
+    def importance_sampling(self,episode,q,discount,action_p):
         w=1
         temp=0
         a=0
@@ -82,7 +81,7 @@ class off_policy_mc:
             q[s][a]+=(w/self.c[s][a])*(G-q[s][a])
             if a!=np.argmax(q[s]):
                 break
-            action_prob=self.epsilon_greedy_policy(q,s,self.action_prob)
+            action_prob=self.epsilon_greedy_policy(q,s,action_p)
             w=w*1/action_prob
             temp=(w/self.c[s][a])*(G-q[s][a])
         self.delta+=delta/a
@@ -91,6 +90,7 @@ class off_policy_mc:
     
     def learn(self,episode_num,path=None,one=True):
         self.delta=0
+        action_prob=np.ones(len(self.action_name),dtype=np.int8)
         if len(self.state_name)>self.q.shape[0] or len(self.action_name)>self.q.shape[1]:
             q=self.q*tf.ones([len(self.state_name),len(self.action_name)],dtype=self.q.dtype)[:self.q.shape[0],:self.q.shape[1]]
             self.q=q.numpy()
@@ -99,7 +99,7 @@ class off_policy_mc:
         for i in range(episode_num):
             t1=time.time()
             s=np.random.choice(np.arange(len(self.state_name)),p=np.ones(len(self.state_name))*1/len(self.state_name))
-            e=self.episode(self.q,s,self.action_prob,self.search_space,self.episode_step)
+            e=self.episode(self.q,s,action_prob,self.search_space,self.episode_step)
             self.q=self.importance_sampling(e,self.q,self.discount)
             self.delta=self.delta/(i+1)
             if episode_num%10!=0:
@@ -136,7 +136,6 @@ class off_policy_mc:
         else:
             output_file=open(path+'-{0}.dat'.format(i+1),'wb')
         pickle.dump(self.c,output_file)
-        pickle.dump(self.action_prob,output_file)
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.discount,output_file)
         pickle.dump(self.theta,output_file)
@@ -152,7 +151,6 @@ class off_policy_mc:
     def restore(self,path):
         input_file=open(path,'rb')
         self.c=pickle.load(input_file)
-        self.action_prob=pickle.load(input_file)
         self.epsilon=pickle.load(input_file)
         self.discount=pickle.load(input_file)
         self.theta=pickle.load(input_file)
