@@ -5,13 +5,12 @@ import time
 
 
 class MCPG:
-    def __init__(self,policy_net,net_p,state,state_name,action,action_name,search_space,epsilon=None,discount=None,reward_min=None,episode_step=None,optimizer=None,lr=None,save_episode=True):
+    def __init__(self,policy_net,net_p,state,state_name,action_name,search_space,epsilon=None,discount=None,reward_min=None,episode_step=None,optimizer=None,lr=None,save_episode=True):
         self.policy_net=policy_net
         self.net_p=net_p
         self.episode=[]
         self.state=state
         self.state_name=state_name
-        self.action=action
         self.action_name=action_name
         self.search_space=search_space
         self.reward_list=[]
@@ -106,8 +105,8 @@ class MCPG:
                     self.save(path,i,one)
             self.episode_num+=1
             self.total_episode+=1
-			if self.reward_min!=None and max(self.reward_list)>=self.reward_min:
-				break
+            if self.reward_min!=None and max(self.reward_list)>=self.reward_min:
+               break 
         if self.time<0.5:
             self.time=int(self.time)
         else:
@@ -127,7 +126,7 @@ class MCPG:
         pickle.dump(self.reward_list,output_file)
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.discount,output_file)
-		pickle.dump(self.reward_min,output_file)
+        pickle.dump(self.reward_min,output_file)
         pickle.dump(self.episode_step,output_file)
         pickle.dump(self.lr,output_file)
         pickle.dump(self.optimizer,output_file)
@@ -144,7 +143,7 @@ class MCPG:
         self.reward_list=pickle.load(input_file)
         self.epsilon=pickle.load(input_file)
         self.discount=pickle.load(input_file)
-		self.reward_min=pickle.load(input_file)
+        self.reward_min=pickle.load(input_file)
         self.episode_step=pickle.load(input_file)
         self.lr=pickle.load(input_file)
         self.optimizer=pickle.load(input_file)
