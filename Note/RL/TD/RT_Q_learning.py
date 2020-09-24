@@ -31,14 +31,13 @@ class RT_Q_learning:
         return q,next_s
     
     
-    def RT_update_q(self,q,s):
+    def RT_update_q(self,q,s,action_p):
         a=0
         delta=0
-        action_prob=np.ones(len(self.action_name),dtype=np.int8)
         while True:
             t1=time.time()
             a+=1
-            action_prob=self.epsilon_greedy_policy(q,s,action_prob)
+            action_prob=self.epsilon_greedy_policy(q,s,action_p)
             a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
             next_s,reward,end=self.search_space[self.state_name[s]][self.action_name[a]]
             temp=q[s][a]
@@ -56,9 +55,10 @@ class RT_Q_learning:
     
     
     def learn(self):
+        action_prob=np.ones(len(self.action_name),dtype=np.int8)
         if len(self.state_name)>self.q.shape[0] or len(self.action_name)>self.q.shape[1]:
             q=self.q*tf.ones([len(self.state_name),len(self.action_name)],dtype=self.q.dtype)[:self.q.shape[0],:self.q.shape[1]]
             self.q=q.numpy()
         s=np.random.choice(np.arange(len(self.state_name)),p=np.ones(len(self.state_name))*1/len(self.state_name))
-        self.q=self.RT_update_q(self.q,s)
+        self.q=self.RT_update_q(self.q,s,action_prob)
         return
