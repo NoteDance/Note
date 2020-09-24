@@ -5,7 +5,7 @@ import time
 
 
 class DQN:
-    def __init__(self,predict_net,target_net,predict_p,target_p,state,state_name,action_name,search_space,action_prob=None,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,save_episode=True):
+    def __init__(self,predict_net,target_net,predict_p,target_p,state,state_name,action_name,search_space,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,save_episode=True):
         self.predict_net=predict_net
         self.target_net=target_net
         self.predict_p=predict_p
@@ -19,7 +19,6 @@ class DQN:
         self.state_name=state_name
         self.action_name=action_name
         self.search_space=search_space
-        self.action_prob=action_prob
         self.epsilon=epsilon
         self.discount=discount
         self.episode_step=episode_step
@@ -78,6 +77,7 @@ class DQN:
         action_pool=self.action_pool
         next_state_pool=self.next_state_pool
         reward_pool=self.reward_pool
+        action_p=np.ones(len(self.action_name),dtype=np.int8)
         for i in range(episode_num):
             self.a=0
             loss=0
@@ -86,7 +86,7 @@ class DQN:
             if self.episode_step==None:
                 while True:
                     t1=time.time()
-                    action_prob=self.epsilon_greedy_policy(s,self.action_prob)
+                    action_prob=self.epsilon_greedy_policy(s,action_p)
                     a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
                     next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                     if end:
@@ -144,7 +144,7 @@ class DQN:
             else:
                 for _ in range(self.episode_step):
                     t1=time.time()
-                    action_prob=self.epsilon_greedy_policy(s,self.action_prob)
+                    action_prob=self.epsilon_greedy_policy(s,action_p)
                     a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
                     next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                     if end:
@@ -238,7 +238,6 @@ class DQN:
         pickle.dump(self.action_pool,output_file)
         pickle.dump(self.next_state_pool,output_file)
         pickle.dump(self.reward_pool,output_file)
-        pickle.dump(self.action_prob,output_file)
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.discount,output_file)
         pickle.dump(self.episode_step,output_file)
@@ -261,7 +260,6 @@ class DQN:
         self.action_pool=pickle.load(input_file)
         self.next_state_pool=pickle.load(input_file)
         self.reward_pool=pickle.load(input_file)
-        self.action_prob=pickle.load(input_file)
         self.epsilon=pickle.load(input_file)
         self.discount=pickle.load(input_file)
         self.episode_step=pickle.load(input_file)
