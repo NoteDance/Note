@@ -5,14 +5,14 @@ import time
 
 
 class off_policy_mc:
-    def __init__(self,q,state_name,action,action_name,search_space,epsilon=None,discount=None,theta=None,episode_step=None,save_episode=True):
+    def __init__(self,q,state_name,action_name,search_space,action_prob=None,epsilon=None,discount=None,theta=None,episode_step=None,save_episode=True):
         self.q=q
         self.episode=[]
         self.c=None
         self.state_name=state_name
-        self.action=action
         self.action_name=action_name
         self.search_space=search_space
+        self.action_prob=action_prob
         self.epsilon=epsilon
         self.discount=discount
         self.theta=theta
@@ -25,20 +25,20 @@ class off_policy_mc:
         self.total_time=0
 
 
-    def epsilon_greedy_policy(self,q,s,action):
-        action_prob=action[s]
-        action_prob=action_prob*self.epsilon/np.sum(action[s])
+    def epsilon_greedy_policy(self,q,s,action_p):
+        action_prob=action_p[s]
+        action_prob=action_prob*self.epsilon/np.sum(action_p[s])
         best_a=np.argmax(q[s])
         action_prob[best_a]+=1-self.epsilon
         return action_prob
     
     
-    def episode(self,q,s,action,search_space):
+    def episode(self,q,s,action_p,search_space):
         episode=[]
         _episode=[]
         if self.episode_step==None:
             while True:
-                action_prob=self.epsilon_greedy_policy(q,s,action)
+                action_prob=self.epsilon_greedy_policy(q,s,action_p)
                 a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
                 next_s,r,end=search_space[self.state_name[s]][self.action_name[a]]
                 episode.append([s,a,r])
@@ -51,7 +51,7 @@ class off_policy_mc:
                 s=next_s
         else:
             for _ in range(self.episode_step):
-                action_prob=self.epsilon_greedy_policy(q,s,action)
+                action_prob=self.epsilon_greedy_policy(q,s,action_p)
                 a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
                 next_s,r,end=search_space[self.state_name[s]][self.action_name[a]]
                 episode.append([s,a,r])
@@ -82,7 +82,7 @@ class off_policy_mc:
             q[s][a]+=(w/self.c[s][a])*(G-q[s][a])
             if a!=np.argmax(q[s]):
                 break
-            action_prob=self.epsilon_greedy_policy(q,s,self.action)
+            action_prob=self.epsilon_greedy_policy(q,s,self.action_prob)
             w=w*1/action_prob
             temp=(w/self.c[s][a])*(G-q[s][a])
         self.delta+=delta/a
@@ -99,7 +99,7 @@ class off_policy_mc:
         for i in range(episode_num):
             t1=time.time()
             s=np.random.choice(np.arange(len(self.state_name)),p=np.ones(len(self.state_name))*1/len(self.state_name))
-            e=self.episode(self.q,s,self.action,self.search_space,self.episode_step)
+            e=self.episode(self.q,s,self.action_prob,self.search_space,self.episode_step)
             self.q=self.importance_sampling(e,self.q,self.discount)
             self.delta=self.delta/(i+1)
             if episode_num%10!=0:
@@ -136,6 +136,7 @@ class off_policy_mc:
         else:
             output_file=open(path+'-{0}.dat'.format(i+1),'wb')
         pickle.dump(self.c,output_file)
+        pickle.dump(self.action_prob,output_file)
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.discount,output_file)
         pickle.dump(self.theta,output_file)
@@ -151,6 +152,7 @@ class off_policy_mc:
     def restore(self,path):
         input_file=open(path,'rb')
         self.c=pickle.load(input_file)
+        self.action_prob=pickle.load(input_file)
         self.epsilon=pickle.load(input_file)
         self.discount=pickle.load(input_file)
         self.theta=pickle.load(input_file)
