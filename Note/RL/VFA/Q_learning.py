@@ -5,13 +5,12 @@ import time
 
 
 class Q_learning:
-    def __init__(self,net,net_p,state,state_name,action,action_name,search_space,epsilon=None,discount=None,episode_step=None,optimizer=None,lr=None,save_episode=True):
+    def __init__(self,net,net_p,state,state_name,action_name,search_space,epsilon=None,discount=None,episode_step=None,optimizer=None,lr=None,save_episode=True):
         self.net=net
         self.net_p=net_p
         self.episode=[]
         self.state=state
         self.state_name=state_name
-        self.action=action
         self.action_name=action_name
         self.search_space=search_space
         self.epsilon=epsilon
@@ -27,9 +26,9 @@ class Q_learning:
         self.total_time=0
     
     
-    def epsilon_greedy_policy(self,s,action):
-        action_prob=action[s]
-        action_prob=action_prob*self.epsilon/np.sum(action[s])
+    def epsilon_greedy_policy(self,s,action_p):
+        action_prob=action_p[s]
+        action_prob=action_prob*self.epsilon/np.sum(action_p[s])
         best_action=np.argmax(self.predict_net(self.state[self.state_name[s]]).numpy())
         action_prob[best_action]+=1-self.epsilon
         return action_prob
@@ -40,6 +39,7 @@ class Q_learning:
     
     
     def learn(self,episode_num,path=None,one=True):
+        action_p=np.ones(len(self.action_name),dtype=np.int8)
         for i in range(episode_num):
             loss=0
             episode=[]
@@ -47,7 +47,7 @@ class Q_learning:
             if self.episode_step==None:
                 while True:
                     t1=time.time()
-                    action_prob=self.epsilon_greedy_policy(s,self.action)
+                    action_prob=self.epsilon_greedy_policy(s,action_p)
                     a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
                     next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                     if end:
@@ -70,7 +70,7 @@ class Q_learning:
             else:
                 for _ in range(self.episode_step):
                     t1=time.time()
-                    action_prob=self.epsilon_greedy_policy(s,self.action)
+                    action_prob=self.epsilon_greedy_policy(s,action_p)
                     a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
                     next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                     if end:
