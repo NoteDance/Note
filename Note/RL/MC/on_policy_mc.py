@@ -26,20 +26,20 @@ class on_policy_mc:
 
 
     def epsilon_greedy_policy(self,q,s,action_p):
-        action_prob=action_p[s]
-        action_prob=action_prob*self.epsilon/np.sum(action_p[s])
+        action_prob=action_p
+        action_prob=action_prob*self.epsilon/np.sum(action_p)
         best_a=np.argmax(q[s])
         action_prob[best_a]+=1-self.epsilon
         return action_prob
     
     
-    def episode(self,q,s,action_p,search_space):
+    def episode(self,q,s,action,action_p,search_space):
         episode=[]
         _episode=[]
         if self.episode_step==None:
             while True:
                 action_prob=self.epsilon_greedy_policy(q,s,action_p)
-                a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
+                a=np.random.choice(action,p=action_prob)
                 next_s,r,end=search_space[self.state_name[s]][self.action_name[a]]
                 episode.append([s,a,r])
                 if end:
@@ -52,7 +52,7 @@ class on_policy_mc:
         else:
             for _ in range(self.episode_step):
                 action_prob=self.epsilon_greedy_policy(q,s,action_p)
-                a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
+                a=np.random.choice(action,p=action_prob)
                 next_s,r,end=search_space[self.state_name[s]][self.action_name[a]]
                 episode.append([s,a,r])
                 if end:
@@ -91,14 +91,17 @@ class on_policy_mc:
     
     def learn(self,episode_num,path=None,one=True):
         self.delta=0
+        state=np.arange(len(self.state_name),dtype=np.int8)
+        state_prob=np.ones(len(self.state_name),dtype=np.int8)/len(self.state_name)
+        action=np.arange(len(self.action_name),dtype=np.int8)
         action_prob=np.ones(len(self.action_name),dtype=np.int8)
         if len(self.state_name)>self.q.shape[0] or len(self.action_name)>self.q.shape[1]:
             q=self.q*tf.ones([len(self.state_name),len(self.action_name)],dtype=self.q.dtype)[:self.q.shape[0],:self.q.shape[1]]
             self.q=q.numpy()
         for i in range(episode_num):
             t1=time.time()
-            s=np.random.choice(np.arange(len(self.state_name)),p=np.ones(len(self.state_name))*1/len(self.state_name))
-            e=self.episode(self.q,s,action_prob,self.search_space,self.episode_step)
+            s=np.random.choice(state,p=state_prob)
+            e=self.episode(self.q,s,action,action_prob,self.search_space,self.episode_step)
             self.q,self.r_sum,self.r_count=self.first_visit(e,self.q,self.r_sum,self.r_count,self.discount)
             self.delta=self.delta/(i+1)
             if episode_num%10!=0:
