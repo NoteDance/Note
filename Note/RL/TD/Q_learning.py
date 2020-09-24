@@ -5,11 +5,10 @@ import time
 
 
 class Q_learning:
-    def __init__(self,q,state_name,action,action_name,search_space,epsilon=None,alpha=None,discount=None,theta=None,episode_step=None,save_episode=True):
+    def __init__(self,q,state_name,action_name,search_space,epsilon=None,alpha=None,discount=None,theta=None,episode_step=None,save_episode=True):
         self.q=q
         self.episode=[]
         self.state_name=state_name
-        self.action=action
         self.action_name=action_name
         self.search_space=search_space
         self.epsilon=epsilon
@@ -25,9 +24,9 @@ class Q_learning:
         self.total_time=0
 
 
-    def epsilon_greedy_policy(self,q,s,action):
-        action_prob=action[s]
-        action_prob=action_prob*self.epsilon/np.sum(action[s])
+    def epsilon_greedy_policy(self,q,s,action_p):
+        action_prob=action_p[s]
+        action_prob=action_prob*self.epsilon/np.sum(action_p[s])
         best_a=np.argmax(q[s])
         action_prob[best_a]+=1-self.epsilon
         return action_prob
@@ -38,12 +37,12 @@ class Q_learning:
         return q
     
     
-    def update_q(self,q,s):
+    def update_q(self,q,s,action_p):
         a=0
         episode=[]
         if self.episode_step==None:
             while True:
-                action_prob=self.epsilon_greedy_policy(q,s,self.action)
+                action_prob=self.epsilon_greedy_policy(q,s,action_p)
                 a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
                 next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                 temp=q[s][a]
@@ -60,7 +59,7 @@ class Q_learning:
                 a+=1
         else:
             for _ in range(self.episode_step):
-                action_prob=self.epsilon_greedy_policy(q,s,self.action)
+                action_prob=self.epsilon_greedy_policy(q,s,action_p)
                 a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
                 next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                 temp=q[s][a]
@@ -82,13 +81,14 @@ class Q_learning:
     
     def learn(self,episode_num,path=None,one=True):
         self.delta=0
+        action_prob=np.ones(len(self.action_name),dtype=np.int8)
         if len(self.state_name)>self.q.shape[0] or len(self.action_name)>self.q.shape[1]:
             q=self.q*tf.ones([len(self.state_name),len(self.action_name)],dtype=self.q.dtype)[:self.q.shape[0],:self.q.shape[1]]
             self.q=q.numpy()
         for i in range(episode_num):
             t1=time.time()
             s=np.random.choice(np.arange(len(self.state_name)),p=np.ones(len(self.state_name))*1/len(self.state_name))
-            self.q=self.update_q(self.q,s)
+            self.q=self.update_q(self.q,s,action_prob)
             self.delta=self.delta/(i+1)
             if episode_num%10!=0:
                 temp=episode_num-episode_num%10
