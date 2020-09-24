@@ -4,11 +4,10 @@ import time
 
 
 class RT_Q_learning:
-    def __init__(self,q,state_name,action,action_name,search_space,epsilon,alpha,discount,dst,episode_step=None,save_episode=True):
+    def __init__(self,q,state_name,action_name,search_space,epsilon,alpha,discount,dst,episode_step=None,save_episode=True):
         self.q=q
         self.episode=[]
         self.state_name=state_name
-        self.action=action
         self.action_name=action_name
         self.search_space=search_space
         self.epsilon=epsilon
@@ -19,9 +18,9 @@ class RT_Q_learning:
         self.save_episode=save_episode
 
 
-    def epsilon_greedy_policy(self,q,s,action):
-        action_prob=action[s]
-        action_prob=action_prob*self.epsilon/np.sum(action[s])
+    def epsilon_greedy_policy(self,q,s,action_p):
+        action_prob=action_p[s]
+        action_prob=action_prob*self.epsilon/np.sum(action_p[s])
         best_a=np.argmax(q[s])
         action_prob[best_a]+=1-self.epsilon
         return action_prob
@@ -35,10 +34,11 @@ class RT_Q_learning:
     def RT_update_q(self,q,s):
         a=0
         delta=0
+        action_prob=np.ones(len(self.action_name),dtype=np.int8)
         while True:
             t1=time.time()
             a+=1
-            action_prob=self.epsilon_greedy_policy(q,s,self.action)
+            action_prob=self.epsilon_greedy_policy(q,s,action_prob)
             a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
             next_s,reward,end=self.search_space[self.state_name[s]][self.action_name[a]]
             temp=q[s][a]
