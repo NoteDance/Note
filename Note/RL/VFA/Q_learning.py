@@ -27,8 +27,8 @@ class Q_learning:
     
     
     def epsilon_greedy_policy(self,s,action_p):
-        action_prob=action_p[s]
-        action_prob=action_prob*self.epsilon/np.sum(action_p[s])
+        action_prob=action_p
+        action_prob=action_prob*self.epsilon/np.sum(action_p)
         best_action=np.argmax(self.predict_net(self.state[self.state_name[s]]).numpy())
         action_prob[best_action]+=1-self.epsilon
         return action_prob
@@ -39,16 +39,19 @@ class Q_learning:
     
     
     def learn(self,episode_num,path=None,one=True):
+        state=np.arange(len(self.state_name),dtype=np.int8)
+        state_prob=np.ones(len(self.state_name),dtype=np.int8)/len(self.state_name)
+        action=np.arange(len(self.action_name),dtype=np.int8)
         action_p=np.ones(len(self.action_name),dtype=np.int8)
         for i in range(episode_num):
             loss=0
             episode=[]
-            s=np.random.choice(np.arange(len(self.state_name)),p=np.ones(len(self.state_name))*1/len(self.state_name))
+            s=np.random.choice(state,p=state_prob)
             if self.episode_step==None:
                 while True:
                     t1=time.time()
                     action_prob=self.epsilon_greedy_policy(s,action_p)
-                    a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
+                    a=np.random.choice(action,p=action_prob)
                     next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                     if end:
                         if self.save_episode==True:
@@ -71,7 +74,7 @@ class Q_learning:
                 for _ in range(self.episode_step):
                     t1=time.time()
                     action_prob=self.epsilon_greedy_policy(s,action_p)
-                    a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
+                    a=np.random.choice(action,p=action_prob)
                     next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                     if end:
                         if self.save_episode==True:
