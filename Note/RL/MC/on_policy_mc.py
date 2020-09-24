@@ -5,7 +5,7 @@ import time
 
 
 class on_policy_mc:
-    def __init__(self,q,state_name,action_name,search_space,action_prob=None,epsilon=None,discount=None,theta=None,episode_step=None,save_episode=True):
+    def __init__(self,q,state_name,action_name,search_space,epsilon=None,discount=None,theta=None,episode_step=None,save_episode=True):
         self.q=q
         self.episode=[]
         self.r_sum=dict()
@@ -13,7 +13,6 @@ class on_policy_mc:
         self.state_name=state_name
         self.action_name=action_name
         self.search_space=search_space
-        self.action_prob=action_prob
         self.epsilon=epsilon
         self.discount=discount
         self.theta=theta
@@ -92,13 +91,14 @@ class on_policy_mc:
     
     def learn(self,episode_num,path=None,one=True):
         self.delta=0
+        action_prob=np.ones(len(self.action_name),dtype=np.int8)
         if len(self.state_name)>self.q.shape[0] or len(self.action_name)>self.q.shape[1]:
             q=self.q*tf.ones([len(self.state_name),len(self.action_name)],dtype=self.q.dtype)[:self.q.shape[0],:self.q.shape[1]]
             self.q=q.numpy()
         for i in range(episode_num):
             t1=time.time()
             s=np.random.choice(np.arange(len(self.state_name)),p=np.ones(len(self.state_name))*1/len(self.state_name))
-            e=self.episode(self.q,s,self.action_prob,self.search_space,self.episode_step)
+            e=self.episode(self.q,s,action_prob,self.search_space,self.episode_step)
             self.q,self.r_sum,self.r_count=self.first_visit(e,self.q,self.r_sum,self.r_count,self.discount)
             self.delta=self.delta/(i+1)
             if episode_num%10!=0:
@@ -136,7 +136,6 @@ class on_policy_mc:
             output_file=open(path+'-{0}.dat'.format(i+1),'wb')
         pickle.dump(self.r_sum,output_file)
         pickle.dump(self.r_count,output_file)
-        pickle.dump(self.action_prob,output_file)
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.discount,output_file)
         pickle.dump(self.theta,output_file)
@@ -153,7 +152,6 @@ class on_policy_mc:
         input_file=open(path,'rb')
         self.r_sum=pickle.load(input_file)
         self.r_count=pickle.load(input_file)
-        self.action_prob=pickle.load(input_file)
         self.epsilon=pickle.load(input_file)
         self.discount=pickle.load(input_file)
         self.theta=pickle.load(input_file)
