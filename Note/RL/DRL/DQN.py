@@ -188,7 +188,7 @@ class DQN:
                                 if self.opt_flag==True:
                                     self.optimizer(gradient,self.predict_p)
                                 else:
-                                self.optimizer.apply_gradients(zip(gradient,self.predict_p))
+                                    self.optimizer.apply_gradients(zip(gradient,self.predict_p))
                             loss+=batch_loss
                         if len(self.memory_state)%self.batch!=0:
                             self.batches+=1
