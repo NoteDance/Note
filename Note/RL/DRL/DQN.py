@@ -109,10 +109,10 @@ class DQN:
                         del action_pool.pop[0]
                         del next_state_pool.pop[0]
                         del reward_pool.pop[0]
-                    self.state_pool=tf.Tensor(state_pool)
-                    self.action_pool=tf.Tensor(action_pool)
-                    self.next_state_pool=tf.Tensor(next_state_pool)
-                    self.reward_pool=tf.Tensor(reward_pool)
+                    self.state_pool=tf.convert_to_tensor(state_pool)
+                    self.action_pool=tf.convert_to_tensor(action_pool)
+                    self.next_state_pool=tf.convert_to_tensor(next_state_pool)
+                    self.reward_pool=tf.convert_to_tensor(reward_pool)
                     if len(self.memory_state)<self.batch:
                         loss=self.loss(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool)
                     else:
@@ -167,10 +167,10 @@ class DQN:
                         del action_pool.pop[0]
                         del next_state_pool.pop[0]
                         del reward_pool.pop[0]
-                    self.state_pool=tf.Tensor(state_pool)
-                    self.action_pool=tf.Tensor(action_pool)
-                    self.next_state_pool=tf.Tensor(next_state_pool)
-                    self.reward_pool=tf.Tensor(reward_pool)
+                    self.state_pool=tf.convert_to_tensor(state_pool)
+                    self.action_pool=tf.convert_to_tensor(action_pool)
+                    self.next_state_pool=tf.convert_to_tensor(next_state_pool)
+                    self.reward_pool=tf.convert_to_tensor(reward_pool)
                     if len(self.memory_state)<self.batch:
                         loss=self.loss(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool)
                     else:
