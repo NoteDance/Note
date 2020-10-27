@@ -117,6 +117,8 @@ class Note:
                 random=np.arange(self.shape0)
                 np.random.shuffle(random)
                 with tf.name_scope('randomize_data'):
+                    self.train_data=self.train_data[random]
+                    self.train_labels=self.train_labels[random]
                     if type(self.train_data)==list:
                         for i in range(len(self.train_data)):
                             train_data[i]=self.train_data[i]
@@ -219,6 +221,8 @@ class Note:
                 random=np.arange(self.shape0)
                 np.random.shuffle(random)
                 with tf.name_scope('randomize_data'):
+                    self.train_data=self.train_data[random]
+                    self.train_labels=self.train_labels[random]
                     if type(self.train_data)==list:
                         for i in range(len(self.train_data)):
                             train_data[i]=self.train_data[i]
@@ -276,6 +280,8 @@ class Note:
                     self.save(nn_path,i,one)
             t2=time.time()
             self.time+=(t2-t1)
+        self.train_data=self.train_data[np.arange(self.shape0)]
+        self.train_labels=self.train_labels[np.arange(self.shape0)]
         self.time=self.time-int(self.time)
         if self.time<0.5:
             self.time=int(self.time)
