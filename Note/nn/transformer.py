@@ -278,14 +278,14 @@ class transformer:
                 random=np.arange(self.shape0)
                 np.random.shuffle(random)
                 with tf.name_scope('randomize_data'):
-                    train_data=self.train_data[random]
-                    train_labels=self.train_labels[random]
+                    self.train_data=self.train_data[random]
+                    self.train_labels=self.train_labels[random]
                 for j in range(batches):
                     self.tf2.index1=j*batch
                     self.tf2.index2=(j+1)*batch
                     with tf.name_scope('data_batch'):
-                        train_data_batch=self.tf2.batch(train_data)
-                        train_labels_batch=self.tf2.batch(train_labels)
+                        train_data_batch=self.tf2.batch(self.train_data)
+                        train_labels_batch=self.tf2.batch(self.train_labels)
                     with tf.GradientTape() as tape:
                         with tf.name_scope('forward_propagation/loss'):
                             output=self.forward_propagation(train_data_batch)
@@ -306,8 +306,8 @@ class transformer:
                     self.tf2.index1=batches*batch
                     self.tf2.index2=batch-(self.shape0-batches*batch)
                     with tf.name_scope('data_batch'):
-                        train_data_batch=self.tf2.batch(train_data)
-                        train_labels_batch=self.tf2.batch(train_labels)
+                        train_data_batch=self.tf2.batch(self.train_data)
+                        train_labels_batch=self.tf2.batch(self.train_labels)
                     with tf.GradientTape() as tape:
                         with tf.name_scope('forward_propagation/loss'):
                             output=self.forward_propagation(train_data_batch)
@@ -339,12 +339,12 @@ class transformer:
                 random=np.arange(self.shape0)
                 np.random.shuffle(random)
                 with tf.name_scope('randomize_data'):
-                    train_data=self.train_data[random]
-                    train_labels=self.train_labels[random]
+                    self.train_data=self.train_data[random]
+                    self.train_labels=self.train_labels[random]
                 with tf.GradientTape() as tape:
                     with tf.name_scope('forward_propagation/loss'):
-                        output=self.forward_propagation(train_data)
-                        train_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output,labels=train_labels))
+                        output=self.forward_propagation(self.train_data)
+                        train_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output,labels=self.train_labels))
                     if i==0 and self.total_epoch==0:
                         loss=train_loss.numpy()
                     else:
@@ -354,7 +354,7 @@ class transformer:
                 self.train_loss=loss
                 self.train_loss=self.train_loss.astype(np.float32)
                 with tf.name_scope('accuracy'):
-                    train_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(train_labels,2)!=0,tf.int32)==tf.argmax(train_labels,2),tf.float32))
+                    train_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(self.train_labels,2)!=0,tf.int32)==tf.argmax(self.train_labels,2),tf.float32))
                 acc=train_acc.numpy()
                 self.train_acc_list.append(acc.astype(np.float32))
                 self.train_acc=acc
@@ -382,6 +382,8 @@ class transformer:
                     self.save(model_path,i,one)
             t2=time.time()
             self.time+=(t2-t1)
+        self.train_data=self.train_data[np.arange(self.shape0)]
+        self.train_labels=self.train_labels[np.arange(self.shape0)]
         self.time=self.time-int(self.time)
         if self.time<0.5:
             self.time=int(self.time)
