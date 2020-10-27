@@ -6,7 +6,7 @@ import pickle
 import time
 
 
-class lstm:
+class LSTM:
     def __init__(self,train_data=None,train_labels=None,test_data=None,test_labels=None):
         self.graph=tf.Graph()
         self.train_data=train_data
