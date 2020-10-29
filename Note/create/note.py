@@ -47,6 +47,7 @@ class Note:
         self.test_loss_list=[]
         self.test_acc_list=[]
         self.test_flag=False
+        self.ooo=False
         self.total_epoch=0
         self.time=0
         self.total_time=0
@@ -108,45 +109,65 @@ class Note:
             if batch!=None:
                 if type(self.train_data)==list:
                     train_data=[x for x in range(len(self.train_data))]
+                    data_batch=[x for x in range(len(self.train_data))]
                 if type(self.train_labels)==list:
                     train_labels=[x for x in range(len(self.train_labels))]
+                    labels_batch=[x for x in range(len(self.train_labels))]
                 batches=int((self.shape0-self.shape0%batch)/batch)
                 self.tf2.batches=batches
                 total_loss=0
                 total_acc=0
-                random=np.arange(self.shape0)
-                np.random.shuffle(random)
+                if self.ooo==True:
+                    random=np.arange(self.shape0)
+                    np.random.shuffle(random)
                 with tf.name_scope('randomize_data'):
-                    self.train_data=self.train_data[random]
-                    self.train_labels=self.train_labels[random]
                     if type(self.train_data)==list:
                         for i in range(len(self.train_data)):
+                            if self.ooo==True:
+                                self.train_data[i]=self.train_data[i][random]
                             train_data[i]=self.train_data[i]
                     else:
+                        if self.ooo==True:
+                            self.train_data=self.train_data[random]
                         train_data=self.train_data
                     if type(self.train_labels)==list:
                         for i in range(len(self.train_labels)):
+                            if self.ooo==True:
+                                self.train_labels[i]=self.train_labels[i][random]
                             train_labels[i]=self.train_labels[i]
                     else:
+                        if self.ooo==True:
+                            self.train_labels=self.train_labels[random]
                         train_labels=self.train_labels
                 for j in range(batches):
                     self.tf2.index1=j*batch
                     self.tf2.index2=(j+1)*batch
+                    if self.ooo==False:
+                        random=np.arange(batch)
+                        np.random.shuffle(random)
                     with tf.name_scope('data_batch'):
                         if type(self.train_data)==list:
                             for i in range(len(self.train_data)):
-                                self.data_batch[i]=self.tf2.batch(train_data[i])
+                                data_batch[i]=self.tf2.batch(train_data[i])
+                                if self.ooo==False:
+                                    data_batch[i]=data_batch[i][random]
                         else:
-                            self.data_batch=self.tf2.batch(train_data)
+                            data_batch=self.tf2.batch(train_data)
+                            if self.ooo==False:
+                                data_batch=data_batch[random]
                         if type(self.train_labels)==list:
                             for i in range(len(self.train_data)):
-                                self.labels_batch[i]=self.tf2.batch(train_labels[i])
+                                labels_batch[i]=self.tf2.batch(train_labels[i])
+                                if self.ooo==False:
+                                    labels_batch[i]=labels_batch[i][random]
                         else:
-                            self.labels_batch=self.tf2.batch(train_labels)
+                            labels_batch=self.tf2.batch(train_labels)
+                            if self.ooo==False:
+                                labels_batch=labels_batch[random]
                     with tf.GradientTape() as tape:
                         with tf.name_scope('forward_propagation/loss'):
-                            self.output=self.nn.forward_propagation(self.data_batch,self.dropout)
-                            batch_loss=self.nn.loss(self.output,self.labels_batch,self.l2)
+                            output=self.nn.forward_propagation(data_batch,self.dropout)
+                            batch_loss=self.nn.loss(output,labels_batch,self.l2)
                         if i==0 and self.total_epoch==0:
                             batch_loss=batch_loss.numpy()
                         else:
@@ -159,7 +180,7 @@ class Note:
                     total_loss+=batch_loss
                     if self.acc_flag1==1:
                         with tf.name_scope('accuracy'):
-                            batch_acc=self.nn.accuracy(self.output,self.labels_batch)
+                            batch_acc=self.nn.accuracy(output,labels_batch)
                         batch_acc=batch_acc.numpy()
                         total_acc+=batch_acc
                 if self.shape0%batch!=0:
@@ -167,21 +188,32 @@ class Note:
                     self.tf2.batches+=1
                     self.tf2.index1=batches*batch
                     self.tf2.index2=batch-(self.shape0-batches*batch)
+                    if self.ooo==False:
+                        random=np.arange(batch)
+                        np.random.shuffle(random)
                     with tf.name_scope('data_batch'):
                         if type(self.train_data)==list:
                             for i in range(len(self.train_data)):
-                                self.data_batch[i]=self.tf2.batch(train_data[i])
+                                data_batch[i]=self.tf2.batch(train_data[i])
+                                if self.ooo==False:
+                                    data_batch[i]=data_batch[i][random]
                         else:
-                            self.data_batch=self.tf2.batch(train_data)
+                            data_batch=self.tf2.batch(train_data)
+                            if self.ooo==False:
+                                data_batch=data_batch[random]
                         if type(self.train_labels)==list:
                             for i in range(len(self.train_data)):
-                                self.labels_batch[i]=self.tf2.batch(train_labels[i])
+                                labels_batch[i]=self.tf2.batch(train_labels[i])
+                                if self.ooo==False:
+                                    labels_batch[i]=labels_batch[i][random]
                         else:
-                            self.labels_batch=self.tf2.batch(train_labels)
+                            labels_batch=self.tf2.batch(train_labels)
+                            if self.ooo==False:
+                                labels_batch=labels_batch[random]
                     with tf.GradientTape() as tape:
                         with tf.name_scope('forward_propagation/loss'):
-                            self.output=self.nn.forward_propagation(self.data_batch,self.dropout)
-                            batch_loss=self.nn.loss(self.output,self.labels_batch,self.l2)
+                            output=self.nn.forward_propagation(data_batch,self.dropout)
+                            batch_loss=self.nn.loss(output,labels_batch,self.l2)
                         if i==0 and self.total_epoch==0:
                             batch_loss=batch_loss.numpy()
                         else:
@@ -194,7 +226,7 @@ class Note:
                     total_loss+=batch_loss
                     if self.acc_flag1==1:
                         with tf.name_scope('accuracy'):
-                            batch_acc=self.nn.accuracy(self.output,self.labels_batch)
+                            batch_acc=self.nn.accuracy(output,labels_batch)
                         batch_acc=batch_acc.numpy()
                         total_acc+=batch_acc
                 loss=total_loss/batches
@@ -221,22 +253,36 @@ class Note:
                 random=np.arange(self.shape0)
                 np.random.shuffle(random)
                 with tf.name_scope('randomize_data'):
-                    self.train_data=self.train_data[random]
-                    self.train_labels=self.train_labels[random]
                     if type(self.train_data)==list:
                         for i in range(len(self.train_data)):
-                            train_data[i]=self.train_data[i]
+                            if self.ooo==False:
+                                train_data[i]=self.train_data[i][random]
+                            else:
+                                self.train_data[i]=self.train_data[i][random]
+                                train_data[i]=self.train_data[i]
                     else:
-                        train_data=self.train_data
+                        if self.ooo==False:
+                            train_data=self.train_data[random]
+                        else:
+                            self.train_data=self.train_data[random]
+                            train_data=self.train_data
                     if type(self.train_labels)==list:
                         for i in range(len(self.train_labels)):
-                            train_labels[i]=self.train_labels[i]
+                            if self.ooo==False:
+                                train_labels[i]=self.train_labels[i][random]
+                            else:
+                                self.train_labels[i]=self.train_labels[i][random]
+                                train_labels[i]=self.train_labels[i]
                     else:
-                        train_labels=self.train_labels
+                        if self.ooo==False:
+                            train_labels=self.train_labels[random]
+                        else:
+                            self.train_labels=self.train_labels[random]
+                            train_labels=self.train_labels
                 with tf.GradientTape() as tape:
                     with tf.name_scope('forward_propagation/loss'):
-                        self.output=self.nn.forward_propagation(train_data,self.dropout)
-                        train_loss=self.nn.loss(self.output,train_labels,self.l2)
+                        output=self.nn.forward_propagation(train_data,self.dropout)
+                        train_loss=self.nn.loss(output,train_labels,self.l2)
                     if i==0 and self.total_epoch==0:
                         loss=train_loss.numpy()
                     else:
@@ -251,7 +297,7 @@ class Note:
                 self.train_loss=self.train_loss.astype(np.float32)
                 if self.acc_flag1==1:
                     with tf.name_scope('accuracy'):
-                        acc=self.nn.accuracy(self.output,train_labels)
+                        acc=self.nn.accuracy(output,train_labels)
                     acc=train_acc.numpy()
                     self.train_acc_list.append(acc.astype(np.float32))
                     self.train_acc=acc
@@ -280,8 +326,6 @@ class Note:
                     self.save(nn_path,i,one)
             t2=time.time()
             self.time+=(t2-t1)
-        self.train_data=self.train_data[np.arange(self.shape0)]
-        self.train_labels=self.train_labels[np.arange(self.shape0)]
         self.time=self.time-int(self.time)
         if self.time<0.5:
             self.time=int(self.time)
@@ -344,14 +388,14 @@ class Note:
                 with tf.name_scope('data_batch'):
                     if type(self.train_data)==list:
                         for i in range(len(self.test_data)):
-                            self.data_batch[i]=self.tf2.batch(self.test_data[i])
+                            data_batch[i]=self.tf2.batch(test_data[i])
                     else:
-                        self.data_batch=self.tf2.batch(self.test_data)
+                        data_batch=self.tf2.batch(test_data)
                     if type(self.test_labels)==list:
                         for i in range(len(self.test_labels)):
-                            self.labels_batch[i]=self.tf2.batch(self.test_labels[i])
+                            labels_batch[i]=self.tf2.batch(test_labels[i])
                     else:
-                        self.labels_batch=self.tf2.batch(self.test_labels)
+                        labels_batch=self.tf2.batch(test_labels)
                 with tf.name_scope('forward_propagation/loss'):
                     output=self.nn.forward_propagation(data_batch)
                     batch_loss=self.nn.loss(output,labels_batch)
