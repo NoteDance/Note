@@ -37,6 +37,7 @@ class unnamed:
         self.test_acc=None
         self.test_loss_list=[]
         self.test_acc_list=[]
+        self.ooo=False
         self.total_epoch=0
         self.time=0
         self.total_time=0
@@ -145,14 +146,25 @@ class unnamed:
                     tf1.batches=batches
                     total_loss=0
                     total_acc=0
-                    random=np.arange(self.shape0)
-                    np.random.shuffle(random)
+                    if self.ooo==True:
+                        random=np.arange(self.shape0)
+                        np.random.shuffle(random)
+                        
+                        
                     with tf.name_scope('randomize_data'):
                     
                         
                     for j in range(batches):
                         tf1.index1=j*batch
                         tf1.index2=(j+1)*batch
+                        if self.ooo==False:
+                            random=np.arange(batch)
+                            np.random.shuffle(random)
+                            
+                            
+                        else:
+                            
+                            
                         with tf.name_scope('data_batch/feed_dict'):
                         
                         
@@ -195,8 +207,12 @@ class unnamed:
                     random=np.arange(self.shape0)
                     np.random.shuffle(random)
                     with tf.name_scope('randomize_data/feed_dict'):
-                        
-
+                        if self.ooo==False:
+                            
+                            
+                        else:
+                            
+                            
                     if i==0 and self.total_epoch==0:
                         loss=sess.run(train_loss,feed_dict=feed_dict)
                     else:
