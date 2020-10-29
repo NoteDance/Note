@@ -69,6 +69,7 @@ class GRU:
         self.test_accuracy=None
         self.test_loss_list=[]
         self.test_accuracy_list=[]
+        self.ooo=False
         self.total_epoch=0
         self.time=0
         self.total_time=0
@@ -589,15 +590,23 @@ class GRU:
                     batches=int((self.shape0-self.shape0%batch)/batch)
                     total_loss=0
                     total_acc=0
-                    random=np.arange(self.shape0)
-                    np.random.shuffle(random)
-                    self.train_data=self.train_data[random]
-                    self.train_labels=self.train_labels[random]
+                    if self.ooo==True:
+                        random=np.arange(self.shape0)
+                        np.random.shuffle(random)
+                    if self.ooo==True:
+                        self.train_data=self.train_data[random]
+                        self.train_labels=self.train_labels[random]
                     for j in range(batches):
                         index1=j*batch
                         index2=(j+1)*batch
-                        train_data_batch=self.train_data[index1:index2]
-                        train_labels_batch=self.train_labels[index1:index2]
+                        if self.ooo==False:
+                            random=np.arange(batch)
+                            np.random.shuffle(random)
+                            train_data_batch=self.train_data[index1:index2][random]
+                            train_labels_batch=self.train_labels[index1:index2][random]
+                        else:
+                            train_data_batch=self.train_data[index1:index2]
+                            train_labels_batch=self.train_labels[index1:index2]
                         feed_dict={self.data:train_data_batch,self.labels:train_labels_batch}
                         if i==0 and self.total_epoch==0:
                             batch_loss=sess.run(train_loss,feed_dict=feed_dict)
@@ -610,8 +619,14 @@ class GRU:
                         batches+=1
                         index1=batches*batch
                         index2=batch-(self.shape0-batches*batch)
-                        train_data_batch=np.concatenate([self.train_data[index1:],self.train_data[:index2]])
-                        train_labels_batch=np.concatenate([self.train_labels[index1:],self.train_labels[:index2]])
+                        if self.ooo==False:
+                            random=np.arange(batch)
+                            np.random.shuffle(random)
+                            train_data_batch=np.concatenate([self.train_data[index1:],self.train_data[:index2]])[random]
+                            train_labels_batch=np.concatenate([self.train_labels[index1:],self.train_labels[:index2]])[random]
+                        else:
+                            train_data_batch=np.concatenate([self.train_data[index1:],self.train_data[:index2]])
+                            train_labels_batch=np.concatenate([self.train_labels[index1:],self.train_labels[:index2]])
                         feed_dict={self.data:train_data_batch,self.labels:train_labels_batch}
                         if i==0 and self.total_epoch==0:
                             batch_loss=sess.run(train_loss,feed_dict=feed_dict)
@@ -635,9 +650,14 @@ class GRU:
                 else:
                     random=np.arange(self.shape0)
                     np.random.shuffle(random)
-                    self.train_data=self.train_data[random]
-                    self.train_labels=self.train_labels[random]
-                    feed_dict={self.data:self.train_data,self.labels:self.train_labels}
+                    if self.ooo==False:
+                        train_data=self.train_data[random]
+                        train_labels=self.train_labels[random]
+                        feed_dict={self.data:train_data,self.labels:train_labels}
+                    else:
+                        self.train_data=self.train_data[random]
+                        self.train_labels=self.train_labels[random]
+                        feed_dict={self.data:self.train_data,self.labels:self.train_labels}
                     if i==0 and self.total_epoch==0:
                         loss=sess.run(train_loss,feed_dict=feed_dict)
                     else:
@@ -673,8 +693,6 @@ class GRU:
                         train_writer.add_summary(train_summary,i)
                 t2=time.time()
                 self.time+=(t2-t1)
-            self.train_data=self.train_data[np.arange(self.shape0)]
-            self.train_labels=self.train_labels[np.arange(self.shape0)]
             self.time=self.time-int(self.time)
             if self.time<0.5:
                 self.time=int(self.time)
