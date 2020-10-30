@@ -9,6 +9,8 @@ class policy_iteration:
         self.state_name=state_name
         self.action_name=action_name
         self.prs=prs
+        self.state_len=len(self.state_name)
+        self.action_len=len(self.action_name)
         self.discount=discount
         self.theta=theta
         self.delta=0
@@ -17,6 +19,12 @@ class policy_iteration:
         self.total_iteration_sum=0
         self.time=0
         self.total_time=0
+    
+    
+    def init(self):
+        self._V=np.zeros(len(self.state_name),dtype=np.float16)
+        self.action_value=np.zeros(len(self.action_name),dtype=np.float16)
+        return
         
         
     def policy_evaluation(self,policy,V,state_name,action_name,prs,discount,theta,iteration):
@@ -57,13 +65,11 @@ class policy_iteration:
 
     def learn(self,iteration=None,path=None,one=True):
         self.delta=0
-        _V=np.zeros(len(self.state_name),dtype=np.float16)
-        action_value=np.zeros(len(self.action_name),dtype=np.float16)
         while True:
             t1=time.time()
             flag=True
-            V=self.policy_evaluation(self.policy,_V,self.state,self.action,self.prs,self.discount,self.theta,iteration)
-            self.policy,flag=self.policy_improvement(self.policy,action_value,V,self.state,self.action,self.prs,self.discount,flag,self.end_flag)
+            V=self.policy_evaluation(self.policy,self._V,self.state,self.action,self.prs,self.discount,self.theta,iteration)
+            self.policy,flag=self.policy_improvement(self.policy,self.action_value,V,self.state,self.action,self.prs,self.discount,flag,self.end_flag)
             if iteration%10!=0:
                 temp=iteration-iteration%10
                 temp=int(temp/10)
@@ -95,6 +101,10 @@ class policy_iteration:
             output_file=open(path+'.dat','wb')
         else:
             output_file=open(path+'-{0}.dat'.format(i+1),'wb')
+        pickle.dump(self.state_len,output_file)
+        pickle.dump(self.action_len,output_file)
+        pickle.dump(self._V,output_file)
+        pickle.dump(self.action_value,output_file)
         pickle.dump(self.discount,output_file)
         pickle.dump(self.theta,output_file)
         pickle.dump(self.end_flag,output_file)
@@ -106,6 +116,12 @@ class policy_iteration:
     
     def restore(self,path):
         input_file=open(path,'rb')
+        self.state_len=pickle.load(input_file)
+        self.action_len=pickle.load(input_file)
+        if self.state_len==len(self.state_name):
+            self._V=pickle.load(input_file)
+        if self.action_len==len(self.action_name):
+            self.action_value=pickle.load(input_file)
         self.discount=pickle.load(input_file)
         self.theta=pickle.load(input_file)
         self.end_flag=pickle.load(input_file)
