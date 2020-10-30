@@ -6,6 +6,9 @@ import time
 class RT_Q_learning:
     def __init__(self,q,state_name,action_name,search_space,epsilon,alpha,discount,dst,episode_step=None,save_episode=True):
         self.q=q
+        if len(state_name)>q.shape[0] or len(action_name)>q.shape[1]:
+            q=q*tf.ones([len(state_name),len(action_name)],dtype=q.dtype)[:q.shape[0],:q.shape[1]]
+            self.q=q.numpy()
         self.episode=[]
         self.state_name=state_name
         self.action_name=action_name
@@ -16,6 +19,14 @@ class RT_Q_learning:
         self.dst=dst
         self.episode_step=episode_step
         self.save_episode=save_episode
+    
+    
+    def init(self):
+        self.state=np.arange(len(self.state_name),dtype=np.int8)
+        self.state_prob=np.ones(len(self.state_name),dtype=np.int8)/len(self.state_name)
+        self.action=np.arange(len(self.action_name),dtype=np.int8)
+        self.action_prob=np.ones(len(self.action_name),dtype=np.int8)
+        return
 
 
     def epsilon_greedy_policy(self,q,s,action_p):
@@ -55,13 +66,6 @@ class RT_Q_learning:
     
     
     def learn(self):
-        state=np.arange(len(self.state_name),dtype=np.int8)
-        state_prob=np.ones(len(self.state_name),dtype=np.int8)/len(self.state_name)
-        action=np.arange(len(self.action_name),dtype=np.int8)
-        action_prob=np.ones(len(self.action_name),dtype=np.int8)
-        if len(self.state_name)>self.q.shape[0] or len(self.action_name)>self.q.shape[1]:
-            q=self.q*tf.ones([len(self.state_name),len(self.action_name)],dtype=self.q.dtype)[:self.q.shape[0],:self.q.shape[1]]
-            self.q=q.numpy()
-        s=np.random.choice(state,p=state_prob)
-        self.q=self.RT_update_q(self.q,s,action,action_prob)
+        s=np.random.choice(self.state,p=self.state_prob)
+        self.q=self.RT_update_q(self.q,s,self.action,self.action_prob)
         return
