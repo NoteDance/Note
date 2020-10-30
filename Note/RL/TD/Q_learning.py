@@ -7,10 +7,15 @@ import time
 class Q_learning:
     def __init__(self,q,state_name,action_name,search_space,epsilon=None,alpha=None,discount=None,theta=None,episode_step=None,save_episode=True):
         self.q=q
+        if len(state_name)>q.shape[0] or len(action_name)>q.shape[1]:
+            q=q*tf.ones([len(state_name),len(action_name)],dtype=q.dtype)[:q.shape[0],:q.shape[1]]
+            self.q=q.numpy()
         self.episode=[]
         self.state_name=state_name
         self.action_name=action_name
         self.search_space=search_space
+        self.state_len=len(self.state_name)
+        self.action_len=len(self.action_name)
         self.epsilon=epsilon
         self.alpha=alpha
         self.discount=discount
@@ -22,6 +27,14 @@ class Q_learning:
         self.total_episode=0
         self.time=0
         self.total_time=0
+    
+    
+    def init(self):
+        self.state=np.arange(len(self.state_name),dtype=np.int8)
+        self.state_prob=np.ones(len(self.state_name),dtype=np.int8)/len(self.state_name)
+        self.action=np.arange(len(self.action_name),dtype=np.int8)
+        self.action_prob=np.ones(len(self.action_name),dtype=np.int8)
+        return
 
 
     def epsilon_greedy_policy(self,q,s,action_p):
@@ -43,7 +56,7 @@ class Q_learning:
         if self.episode_step==None:
             while True:
                 action_prob=self.epsilon_greedy_policy(q,s,action_p)
-                a=np.random.choice(action,p=action_prob)
+                a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
                 next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                 temp=q[s][a]
                 self.delta+=np.abs(q[s][a]-temp)
@@ -60,7 +73,7 @@ class Q_learning:
         else:
             for _ in range(self.episode_step):
                 action_prob=self.epsilon_greedy_policy(q,s,action_p)
-                a=np.random.choice(action,p=action_prob)
+                a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
                 next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                 temp=q[s][a]
                 self.delta+=np.abs(q[s][a]-temp)
@@ -81,17 +94,10 @@ class Q_learning:
     
     def learn(self,episode_num,path=None,one=True):
         self.delta=0
-        state=np.arange(len(self.state_name),dtype=np.int8)
-        state_prob=np.ones(len(self.state_name),dtype=np.int8)/len(self.state_name)
-        action=np.arange(len(self.action_name),dtype=np.int8)
-        action_prob=np.ones(len(self.action_name),dtype=np.int8)
-        if len(self.state_name)>self.q.shape[0] or len(self.action_name)>self.q.shape[1]:
-            q=self.q*tf.ones([len(self.state_name),len(self.action_name)],dtype=self.q.dtype)[:self.q.shape[0],:self.q.shape[1]]
-            self.q=q.numpy()
         for i in range(episode_num):
             t1=time.time()
-            s=np.random.choice(state,p=state_prob)
-            self.q=self.update_q(self.q,s,action,action_prob)
+            s=np.random.choice(self.state,p=self.state_prob)
+            self.q=self.update_q(self.q,s,self.action,self.action_prob)
             self.delta=self.delta/(i+1)
             if episode_num%10!=0:
                 temp=episode_num-episode_num%10
@@ -126,6 +132,12 @@ class Q_learning:
             output_file=open(path+'.dat','wb')
         else:
             output_file=open(path+'-{0}.dat'.format(i+1),'wb')
+        pickle.dump(self.state_len,output_file)
+        pickle.dump(self.action_len,output_file)
+        pickle.dump(self.state,output_file)
+        pickle.dump(self.state_prob,output_file)
+        pickle.dump(self.action,output_file)
+        pickle.dump(self.action_prob,output_file)
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.alpha,output_file)
         pickle.dump(self.discount,output_file)
@@ -141,6 +153,14 @@ class Q_learning:
     
     def restore(self,path):
         input_file=open(path,'rb')
+        self.state_len=pickle.load(input_file)
+        self.action_len=pickle.load(input_file)
+        if self.state_len==len(self.state_name):
+            self.state=pickle.load(input_file)
+            self.state_prob=pickle.load(input_file)
+        if self.action_len==len(self.action_name):
+            self.action=pickle.load(input_file)
+            self.action_prob=pickle.load(input_file)
         self.epsilon=pickle.load(input_file)
         self.alpha=pickle.load(input_file)
         self.discount=pickle.load(input_file)
