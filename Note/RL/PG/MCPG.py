@@ -13,6 +13,8 @@ class MCPG:
         self.state_name=state_name
         self.action_name=action_name
         self.search_space=search_space
+        self.state_len=len(self.state_name)
+        self.action_len=len(self.action_name)
         self.reward_list=[]
         self.epsilon=epsilon
         self.discount=discount
@@ -26,6 +28,13 @@ class MCPG:
         self.total_episode=0
         self.time=0
         self.total_time=0
+    
+    
+    def init(self):
+        self.state=np.arange(len(self.state_name),dtype=np.int8)
+        self.state_prob=np.ones(len(self.state_name),dtype=np.int8)/len(self.state_name)
+        self.action=np.arange(len(self.action_name),dtype=np.int8)
+        return
         
         
     def loss(self,output,G):
@@ -78,13 +87,10 @@ class MCPG:
     
     
     def learn(self,episode_num,path=None,one=True):
-        state=np.arange(len(self.state_name),dtype=np.int8)
-        state_prob=np.ones(len(self.state_name),dtype=np.int8)/len(self.state_name)
-        action=np.arange(len(self.action_name),dtype=np.int8)
         for i in range(episode_num):
             t1=time.time()
-            s=np.random.choice(state,p=state_prob)
-            loss=self.episode(s,action)
+            s=np.random.choice(self.state,p=self.state_prob)
+            loss=self.episode(s,self.action)
             with tf.GradientTape() as tape:
                 gradient=tape.gradient(loss,self.net_p)
                 if self.opt_flag==True:
@@ -126,6 +132,11 @@ class MCPG:
             output_file=open(path+'.dat','wb')
         else:
             output_file=open(path+'-{0}.dat'.format(i+1),'wb')
+        pickle.dump(self.state_len,output_file)
+        pickle.dump(self.action_len,output_file)
+        pickle.dump(self.state,output_file)
+        pickle.dump(self.state_prob,output_file)
+        pickle.dump(self.action,output_file)
         pickle.dump(self.reward_list,output_file)
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.discount,output_file)
@@ -143,6 +154,13 @@ class MCPG:
     
     def restore(self,path):
         input_file=open(path,'rb')
+        self.state_len=pickle.load(input_file)
+        self.action_len=pickle.load(input_file)
+        if self.state_len==len(self.state_name):
+            self.state=pickle.load(input_file)
+            self.state_prob=pickle.load(input_file)
+        if self.action_len==len(self.action_name):
+            self.action=pickle.load(input_file)
         self.reward_list=pickle.load(input_file)
         self.epsilon=pickle.load(input_file)
         self.discount=pickle.load(input_file)
