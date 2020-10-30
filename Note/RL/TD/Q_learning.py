@@ -43,7 +43,7 @@ class Q_learning:
         if self.episode_step==None:
             while True:
                 action_prob=self.epsilon_greedy_policy(q,s,action_p)
-                a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
+                a=np.random.choice(action,p=action_prob)
                 next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                 temp=q[s][a]
                 self.delta+=np.abs(q[s][a]-temp)
@@ -60,7 +60,7 @@ class Q_learning:
         else:
             for _ in range(self.episode_step):
                 action_prob=self.epsilon_greedy_policy(q,s,action_p)
-                a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
+                a=np.random.choice(action,p=action_prob)
                 next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                 temp=q[s][a]
                 self.delta+=np.abs(q[s][a]-temp)
