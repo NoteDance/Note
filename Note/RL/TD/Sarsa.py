@@ -35,6 +35,7 @@ class Sarsa:
         self.action=np.arange(len(self.action_name),dtype=np.int8)
         self.action_prob=np.ones(len(self.action_name),dtype=np.int8)
         return
+    
 
     def epsilon_greedy_policy(self,q,s,action_p):
         action_prob=action_p
