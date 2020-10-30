@@ -19,6 +19,8 @@ class DQN:
         self.state_name=state_name
         self.action_name=action_name
         self.search_space=search_space
+        self.state_len=len(self.state_name)
+        self.action_len=len(self.action_name)
         self.epsilon=epsilon
         self.discount=discount
         self.episode_step=episode_step
@@ -33,6 +35,14 @@ class DQN:
         self.total_episode=0
         self.time=0
         self.total_time=0
+    
+    
+    def init(self):
+        self._state=np.arange(len(self.state_name),dtype=np.int8)
+        self.state_prob=np.ones(len(self.state_name),dtype=np.int8)/len(self.state_name)
+        self.action=np.arange(len(self.action_name),dtype=np.int8)
+        self.action_p=np.ones(len(self.action_name),dtype=np.int8)
+        return
     
     
     def epsilon_greedy_policy(self,s,action_p):
@@ -69,28 +79,20 @@ class DQN:
     
     
     def learn(self,episode_num,path=None,one=True):
-        state_pool=[]
-        action_pool=[]
-        next_state_pool=[]
-        reward_pool=[]
         state_pool=self.state_pool
         action_pool=self.action_pool
         next_state_pool=self.next_state_pool
         reward_pool=self.reward_pool
-        state=np.arange(len(self.state_name),dtype=np.int8)
-        state_prob=np.ones(len(self.state_name),dtype=np.int8)/len(self.state_name)
-        action=np.arange(len(self.action_name),dtype=np.int8)
-        action_p=np.ones(len(self.action_name),dtype=np.int8)
         for i in range(episode_num):
             self.a=0
             loss=0
             episode=[]
-            s=np.random.choice(state,p=state_prob)
+            s=np.random.choice(self._state,p=self.state_prob)
             if self.episode_step==None:
                 while True:
                     t1=time.time()
-                    action_prob=self.epsilon_greedy_policy(s,action_p)
-                    a=np.random.choice(action,p=action_prob)
+                    action_prob=self.epsilon_greedy_policy(s,self.action_p)
+                    a=np.random.choice(self.action,p=self.action_prob)
                     next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                     if end:
                         if self.save_episode==True:
@@ -161,8 +163,8 @@ class DQN:
             else:
                 for _ in range(self.episode_step):
                     t1=time.time()
-                    action_prob=self.epsilon_greedy_policy(s,action_p)
-                    a=np.random.choice(action,p=action_prob)
+                    action_prob=self.epsilon_greedy_policy(s,self.action_p)
+                    a=np.random.choice(self.action,p=action_prob)
                     next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                     if end:
                         if self.save_episode==True:
@@ -269,6 +271,12 @@ class DQN:
         pickle.dump(self.action_pool,output_file)
         pickle.dump(self.next_state_pool,output_file)
         pickle.dump(self.reward_pool,output_file)
+        pickle.dump(self.state_len,output_file)
+        pickle.dump(self.action_len,output_file)
+        pickle.dump(self.state,output_file)
+        pickle.dump(self.state_prob,output_file)
+        pickle.dump(self.action,output_file)
+        pickle.dump(self.action_p,output_file)
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.discount,output_file)
         pickle.dump(self.episode_step,output_file)
@@ -291,6 +299,14 @@ class DQN:
         self.action_pool=pickle.load(input_file)
         self.next_state_pool=pickle.load(input_file)
         self.reward_pool=pickle.load(input_file)
+        self.state_len=pickle.load(input_file)
+        self.action_len=pickle.load(input_file)
+        if self.state_len==len(self.state_name):
+            self.state=pickle.load(input_file)
+            self.state_prob=pickle.load(input_file)
+        if self.action_len==len(self.action_name):
+            self.action=pickle.load(input_file)
+            self.action_p=pickle.load(input_file)
         self.epsilon=pickle.load(input_file)
         self.discount=pickle.load(input_file)
         self.episode_step=pickle.load(input_file)
