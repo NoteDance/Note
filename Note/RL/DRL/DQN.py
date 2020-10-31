@@ -32,6 +32,7 @@ class DQN:
         self.save_episode=save_episode
         self.opt_flag==False
         self.episode_num=0
+        self.accumulator=0
         self.total_episode=0
         self.time=0
         self.total_time=0
@@ -101,16 +102,20 @@ class DQN:
                     if self.save_episode==True:
                         episode.append([self.state_name[s],self.self.action_name[a],r])
                     self.a+=1
-                    state_pool.append(self.state[self.state_name[s]])
-                    action_pool.append(a)
-                    next_state_pool.append(self.state[self.state_name[next_s]])
-                    reward_pool.append(r)
-                    s=next_s
                     if len(state_pool)>self.memory_size:
-                        del state_pool[0]
-                        del action_pool.pop[0]
-                        del next_state_pool.pop[0]
-                        del reward_pool.pop[0]
+                        state_pool[a]=self.state[self.state_name[s]]
+                        action_pool[a]=a
+                        next_state_pool[a]=self.state[self.state_name[next_s]]
+                        reward_pool[a]=r
+                        self.accumulator+=1
+                        if self.accumulator==self.memory_size:
+                            self.accumulator=0
+                    else:
+                        state_pool.append(self.state[self.state_name[s]])
+                        action_pool.append(a)
+                        next_state_pool.append(self.state[self.state_name[next_s]])
+                        reward_pool.append(r)
+                    s=next_s
                     self.state_pool=tf.convert_to_tensor(state_pool)
                     self.action_pool=tf.convert_to_tensor(action_pool)
                     self.next_state_pool=tf.convert_to_tensor(next_state_pool)
@@ -173,16 +178,20 @@ class DQN:
                     if self.save_episode==True:
                         episode.append([self.state_name[s],self.self.action_name[a],r])
                     self.a+=1
-                    state_pool.append(self.state[self.state_name[s]])
-                    action_pool.append(a)
-                    next_state_pool.append(self.state[self.state_name[next_s]])
-                    reward_pool.append(r)
-                    s=next_s
                     if len(state_pool)>self.memory_size:
-                        del state_pool[0]
-                        del action_pool.pop[0]
-                        del next_state_pool.pop[0]
-                        del reward_pool.pop[0]
+                        state_pool[a]=self.state[self.state_name[s]]
+                        action_pool[a]=a
+                        next_state_pool[a]=self.state[self.state_name[next_s]]
+                        reward_pool[a]=r
+                        self.accumulator+=1
+                        if self.accumulator==self.memory_size:
+                            self.accumulator=0
+                    else:
+                        state_pool.append(self.state[self.state_name[s]])
+                        action_pool.append(a)
+                        next_state_pool.append(self.state[self.state_name[next_s]])
+                        reward_pool.append(r)
+                    s=next_s
                     self.state_pool=tf.convert_to_tensor(state_pool)
                     self.action_pool=tf.convert_to_tensor(action_pool)
                     self.next_state_pool=tf.convert_to_tensor(next_state_pool)
