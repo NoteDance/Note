@@ -269,6 +269,7 @@ class transformer:
             optimizer=optimizers.Adam(lr)
         if self.total_epoch==0:
             epoch=epoch+1
+        random=np.arange(self.shape0)
         for i in range(epoch):
             t1=time.time()
             if batch!=None:
@@ -276,9 +277,7 @@ class transformer:
                 self.tf2.batches=batches
                 total_loss=0
                 total_acc=0
-                if self.ooo==True:
-                    random=np.arange(self.shape0)
-                    np.random.shuffle(random)
+                np.random.shuffle(random)
                 with tf.name_scope('randomize_data'):
                     if self.ooo==True:
                         self.train_data=self.train_data[random]
@@ -286,13 +285,10 @@ class transformer:
                 for j in range(batches):
                     self.tf2.index1=j*batch
                     self.tf2.index2=(j+1)*batch
-                    if self.ooo==False:
-                        random=np.arange(batch)
-                        np.random.shuffle(random)
                     with tf.name_scope('data_batch'):
                         if self.ooo==False:
-                            train_data_batch=self.tf2.batch(self.train_data)[random]
-                            train_labels_batch=self.tf2.batch(self.train_labels)[random]
+                            train_data_batch=self.train_data[random[self.tf2.index1:self.tf2.index2]]
+                            train_labels_batch=self.train_labels[random[self.tf2.index1:self.tf2.index2]]
                         else:
                             train_data_batch=self.tf2.batch(self.train_data)
                             train_labels_batch=self.tf2.batch(self.train_labels)
@@ -315,13 +311,10 @@ class transformer:
                     self.tf2.batches+=1
                     self.tf2.index1=batches*batch
                     self.tf2.index2=batch-(self.shape0-batches*batch)
-                    if self.ooo==False:
-                        random=np.arange(batch)
-                        np.random.shuffle(random)
                     with tf.name_scope('data_batch'):
                         if self.ooo==False:
-                            train_data_batch=self.tf2.batch(self.train_data)[random]
-                            train_labels_batch=self.tf2.batch(self.train_labels)[random]
+                            train_data_batch=self.train_data[np.concatenate([random[self.tf2.index1:],random[:self.tf2.index2]])]
+                            train_labels_batch=self.train_labels[np.concatenate([random[self.tf2.index1:],random[:self.tf2.index2]])]
                         else:
                             train_data_batch=self.tf2.batch(self.train_data)
                             train_labels_batch=self.tf2.batch(self.train_labels)
@@ -353,7 +346,6 @@ class transformer:
                         self.test_loss_list.append(self.test_loss)
                         self.test_acc_list.append(self.test_acc)
             else:
-                random=np.arange(self.shape0)
                 np.random.shuffle(random)
                 with tf.name_scope('randomize_data'):
                     if self.ooo==False:
