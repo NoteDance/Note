@@ -1,4 +1,3 @@
-import tensorflow as tf
 import numpy as np
 import time
 
@@ -6,9 +5,6 @@ import time
 class RT_Q_learning:
     def __init__(self,q,state_name,action_name,search_space,epsilon,alpha,discount,dst,episode_step=None,save_episode=True):
         self.q=q
-        if len(state_name)>q.shape[0] or len(action_name)>q.shape[1]:
-            q=q*tf.ones([len(state_name),len(action_name)],dtype=q.dtype)[:q.shape[0],:q.shape[1]]
-            self.q=q.numpy()
         self.episode=[]
         self.state_name=state_name
         self.action_name=action_name
@@ -22,10 +18,24 @@ class RT_Q_learning:
     
     
     def init(self):
-        self.state=np.arange(len(self.state_name),dtype=np.int8)
-        self.state_prob=np.ones(len(self.state_name),dtype=np.int8)/len(self.state_name)
-        self.action=np.arange(len(self.action_name),dtype=np.int8)
-        self.action_prob=np.ones(len(self.action_name),dtype=np.int8)
+        self.t3=time.time()
+        if len(self.state_name)>self.state_len:
+            self.state=np.concatenate(self.state,np.arange(len(self.state_name)-self.state_len,dtype=np.int8)+len(self.state_len))
+            self.state_one=np.concatenate(self.state_one,np.ones(len(self.state_name)-self.state_len,dtype=np.int8))
+            self.state_prob=self.state_one/len(self.state_name)
+            self.action=np.concatenate(self.action,np.arange(len(self.action_name)-self.action_len,dtype=np.int8)+len(self.action_len))
+            self.action_prob=np.concatenate(self.action_prob,np.ones(len(self.action_name)-self.action_len,dtype=np.int8))
+        else:
+            self.state=np.arange(len(self.state_name),dtype=np.int8)
+            self.state_one=np.ones(len(self.state_name),dtype=np.int8)
+            self.state_prob=self.state_one/len(self.state_name)
+            self.action=np.arange(len(self.action_name),dtype=np.int8)
+            self.action_prob=np.ones(len(self.action_name),dtype=np.int8)
+        if len(self.state_name)>self.q.shape[0] or len(self.action_name)>self.q.shape[1]:
+            self.q=np.concatenate([self.q,np.zeros([len(self.state_name),len(self.action_name)-self.action_len],dtype=self.q.dtype)],axis=1)
+            self.q=np.concatenate([self.q,np.zeros([len(self.state_name)-self.state_len,len(self.action_name)],dtype=self.q.dtype)])
+            self.q=self.q.numpy()
+        self.t4=time.time()
         return
 
 
@@ -60,7 +70,7 @@ class RT_Q_learning:
             if self.save_episode==True and a<=self.episode_step:
                 self.episode.append([self.state_name[s],self.action_name[a],reward])
             t2=time.time()
-            _time=t2-t1
+            _time=t2-t1+self.t4-self.t3
             self.dst[2]+=_time
         return
     
