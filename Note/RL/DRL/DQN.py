@@ -32,19 +32,21 @@ class DQN:
         self.save_episode=save_episode
         self.opt_flag==False
         self.episode_num=0
-        self.t3=time.time()
-        self._random=np.arange(self.pool_size)
-        self.t4=time.time()
+        self._random=None
         self.total_episode=0
         self.time=0
         self.total_time=0
     
     
     def init(self):
+        self.t3=time.time()
         self._state=np.arange(len(self.state_name),dtype=np.int8)
         self.state_prob=np.ones(len(self.state_name),dtype=np.int8)/len(self.state_name)
         self.action=np.arange(len(self.action_name),dtype=np.int8)
         self.action_p=np.ones(len(self.action_name),dtype=np.int8)
+        if self._random!=None:
+            self._random=np.arange(self.pool_size)
+        self.t4=time.time()
         return
     
     
@@ -57,10 +59,6 @@ class DQN:
     
     
     def batch(self,index1,index2):
-        if len(self.state_pool)<self.pool_size:
-            self.random=np.arange(len(self.state_pool))
-        else:
-            self.random=self._random
         if index1==self.batches*self.batch:
             return self.state_pool[np.concatenate([self.random[index1:],self.random[:index2]])],self.action_pool[np.concatenate([self.random[index1:],self.random[:index2]])],self.next_state_pool[np.concatenate([self.random[index1:],self.random[:index2]])],self.reward_pool[np.concatenate([self.random[index1:],self.random[:index2]])]
         else:
@@ -83,6 +81,10 @@ class DQN:
         action_pool=self.action_pool
         next_state_pool=self.next_state_pool
         reward_pool=self.reward_pool
+        if len(self.state_pool)<self.pool_size:
+            self.random=np.arange(len(self.state_pool))
+        else:
+            self.random=self._random
         for i in range(episode_num):
             self.a=0
             loss=0
