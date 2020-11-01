@@ -276,15 +276,14 @@ class RNN:
             self.sess=sess
             if self.total_epoch==0:
                 epoch=epoch+1
+            random=np.arange(self.shape0)
             for i in range(epoch):
                 t1=time.time()
                 if batch!=None:
                     batches=int((self.shape0-self.shape0%batch)/batch)
                     total_loss=0
                     total_acc=0
-                    if self.ooo==True:
-                        random=np.arange(self.shape0)
-                        np.random.shuffle(random)
+                    np.random.shuffle(random)
                     if self.ooo==True:
                         self.train_data=self.train_data[random]
                         self.train_labels=self.train_labels[random]
@@ -292,10 +291,8 @@ class RNN:
                         index1=j*batch
                         index2=(j+1)*batch
                         if self.ooo==False:
-                            random=np.arange(batch)
-                            np.random.shuffle(random)
-                            train_data_batch=self.train_data[index1:index2][random]
-                            train_labels_batch=self.train_labels[index1:index2][random]
+                            train_data_batch=self.train_data[random[index1:index2]]
+                            train_labels_batch=self.train_labels[random[index1:index2]]
                         else:
                             train_data_batch=self.train_data[index1:index2]
                             train_labels_batch=self.train_labels[index1:index2]
@@ -312,10 +309,8 @@ class RNN:
                         index1=batches*batch
                         index2=batch-(self.shape0-batches*batch)
                         if self.ooo==False:
-                            random=np.arange(batch)
-                            np.random.shuffle(random)
-                            train_data_batch=np.concatenate([self.train_data[index1:],self.train_data[:index2]])[random]
-                            train_labels_batch=np.concatenate([self.train_labels[index1:],self.train_labels[:index2]])[random]
+                            train_data_batch=self.train_data[np.concatenate([random[index1:],random[:index2]])]
+                            train_labels_batch=self.train_data[np.concatenate([random[index1:],random[:index2]])]
                         else:
                             train_data_batch=np.concatenate([self.train_data[index1:],self.train_data[:index2]])
                             train_labels_batch=np.concatenate([self.train_labels[index1:],self.train_labels[:index2]])
@@ -340,7 +335,6 @@ class RNN:
                         self.test_loss_list.append(self.test_loss)
                         self.test_accuracy_list.append(self.test_acc)
                 else:
-                    random=np.arange(self.shape0)
                     np.random.shuffle(random)
                     if self.ooo==False:
                         train_data=self.train_data[random]
