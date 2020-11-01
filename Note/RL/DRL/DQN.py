@@ -288,6 +288,7 @@ class DQN:
         pickle.dump(self.optimizer,output_file)
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.opt_flag,output_file)
+        pickle.dump(self._random,output_file)
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
@@ -318,6 +319,7 @@ class DQN:
         self.optimizer=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
         self.opt_flag=pickle.load(input_file)
+        self._random=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         self.total_time=self.time
         input_file.close()
