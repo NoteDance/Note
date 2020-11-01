@@ -32,7 +32,9 @@ class DQN:
         self.save_episode=save_episode
         self.opt_flag==False
         self.episode_num=0
-        self.accumulator=0
+        self.t3=time.time()
+        self._random=np.arange(self.pool_size)
+        self.t4=time.time()
         self.total_episode=0
         self.time=0
         self.total_time=0
@@ -54,18 +56,15 @@ class DQN:
         return action_prob
     
     
-    def batch(self,j,index1,index2):
-        random=np.arange(len(self.memory_state))
-        np.random.shuffle(random)
-        if j==0:
-            self._state_pool=self.state_pool[random]
-            self._action_pool=self.action_pool[random]
-            self._next_state_pool=self.next_state_pool[random]
-            self._reward_pool=self.reward_pool[random]
-        if index1==self.batches*self.batch:
-            return tf.concat([self._state_pool[index1:],self._state_pool[:index2]]),tf.concat([self._action_pool[index1:],self._action_pool[:index2]]),tf.concat([self._next_state_pool[index1:],self._next_state_pool[:index2]]),tf.concat([self._reward_pool[index1:],self._reward_pool[:index2]])
+    def batch(self,index1,index2):
+        if len(self.state_pool)<self.pool_size:
+            self.random=np.arange(len(self.state_pool))
         else:
-            return self._state_pool[index1:index2],self._action_pool[index1:index2],self._next_state_pool[index1:index2],self._reward_pool[index1:index2]
+            self.random=self._random
+        if index1==self.batches*self.batch:
+            return self.state_pool[np.concatenate([self.random[index1:],self.random[:index2]])],self.action_pool[np.concatenate([self.random[index1:],self.random[:index2]])],self.next_state_pool[np.concatenate([self.random[index1:],self.random[:index2]])],self.reward_pool[np.concatenate([self.random[index1:],self.random[:index2]])]
+        else:
+            return self.state_pool[self.random[index1:index2]],self.action_pool[self.random[index1:index2]],self.next_state_pool[self.random[index1:index2]],self.reward_pool[self.random[index1:index2]]
     
     
     def update_parameter(self):
@@ -89,6 +88,7 @@ class DQN:
             loss=0
             episode=[]
             s=np.random.choice(self._state,p=self.state_prob)
+            np.random.shuffle(self.random)
             if self.episode_step==None:
                 while True:
                     t1=time.time()
@@ -102,19 +102,15 @@ class DQN:
                     if self.save_episode==True:
                         episode.append([self.state_name[s],self.self.action_name[a],r])
                     self.a+=1
-                    if len(state_pool)>self.memory_size:
-                        state_pool[a]=self.state[self.state_name[s]]
-                        action_pool[a]=a
-                        next_state_pool[a]=self.state[self.state_name[next_s]]
-                        reward_pool[a]=r
-                        self.accumulator+=1
-                        if self.accumulator==self.memory_size:
-                            self.accumulator=0
-                    else:
-                        state_pool.append(self.state[self.state_name[s]])
-                        action_pool.append(a)
-                        next_state_pool.append(self.state[self.state_name[next_s]])
-                        reward_pool.append(r)
+                    state_pool.append(self.state[self.state_name[s]])
+                    action_pool.append(a)
+                    next_state_pool.append(self.state[self.state_name[next_s]])
+                    reward_pool.append(r)
+                    if len(state_pool)>self.pool_size:
+                        del state_pool[0]
+                        del action_pool[0]
+                        del next_state_pool[0]
+                        del reward_pool[0]
                     s=next_s
                     self.state_pool=tf.convert_to_tensor(state_pool)
                     self.action_pool=tf.convert_to_tensor(action_pool)
@@ -178,19 +174,15 @@ class DQN:
                     if self.save_episode==True:
                         episode.append([self.state_name[s],self.self.action_name[a],r])
                     self.a+=1
-                    if len(state_pool)>self.memory_size:
-                        state_pool[a]=self.state[self.state_name[s]]
-                        action_pool[a]=a
-                        next_state_pool[a]=self.state[self.state_name[next_s]]
-                        reward_pool[a]=r
-                        self.accumulator+=1
-                        if self.accumulator==self.memory_size:
-                            self.accumulator=0
-                    else:
-                        state_pool.append(self.state[self.state_name[s]])
-                        action_pool.append(a)
-                        next_state_pool.append(self.state[self.state_name[next_s]])
-                        reward_pool.append(r)
+                    state_pool.append(self.state[self.state_name[s]])
+                    action_pool.append(a)
+                    next_state_pool.append(self.state[self.state_name[next_s]])
+                    reward_pool.append(r)
+                    if len(state_pool)>self.pool_size:
+                        del state_pool[0]
+                        del action_pool[0]
+                        del next_state_pool[0]
+                        del reward_pool[0]
                     s=next_s
                     self.state_pool=tf.convert_to_tensor(state_pool)
                     self.action_pool=tf.convert_to_tensor(action_pool)
@@ -261,9 +253,9 @@ class DQN:
             if self.save_episode==True:
                 self.episode.append(episode)
         if self.time<0.5:
-            self.time=int(self.time)
+            self.time=int(self.time+(self.t4-self.t3))
         else:
-            self.time=int(self.time)+1
+            self.time=int(self.time+(self.t4-self.t3))+1
         self.total_time+=self.time
         print()
         print('last loss:{0:.6f}'.format(loss))
