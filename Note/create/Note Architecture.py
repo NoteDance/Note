@@ -115,6 +115,7 @@ class unnamed:
             
         if self.total_epoch==0:
             epoch=epoch+1
+        random=np.arange(self.shape0)
         for i in range(epoch):
             t1=time.time()
             if batch!=None:
@@ -122,18 +123,13 @@ class unnamed:
                 tf2.batches=batches
                 total_loss=0
                 total_acc=0
-                if self.ooo==True:
-                    random=np.arange(self.shape0)
-                    np.random.shuffle(random)
+                np.random.shuffle(random)
                 with tf.name_scope('randomize_data'):
                     
                 
                 for j in range(batches):
                     tf2.index1=j*batch
                     tf2.index2=(j+1)*batch
-                    if self.ooo==False:
-                        random=np.arange(batch)
-                        np.random.shuffle(random)
                     with tf.name_scope('data_batch'):
                         
                     
@@ -197,7 +193,6 @@ class unnamed:
                         self.test_loss_list.append(self.test_loss)
                         self.test_acc_list.append(self.test_acc)
             else:
-                random=np.arange(self.shape0)
                 np.random.shuffle(random)
                 with tf.name_scope('randomize_data'):
                     
@@ -463,6 +458,7 @@ class unnamed:
             pickle.dump(self.test_acc,output_file)
             pickle.dump(self.test_loss_list,output_file)
             pickle.dump(self.test_acc_list,output_file)
+        pickle.dump(self.ooo,output_file)    
         pickle.dump(self.total_epoch,output_file)
         pickle.dump(self.total_time,output_file)
         pickle.dump(self.processor,output_file)
@@ -499,6 +495,7 @@ class unnamed:
             self.test_acc=pickle.load(input_file)
             self.test_loss_list=pickle.load(input_file)
             self.test_acc_list=pickle.load(input_file)
+        self.ooo=pickle.load(input_file)
         self.total_epoch=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
         self.processor=pickle.load(input_file)
