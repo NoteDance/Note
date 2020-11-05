@@ -28,20 +28,20 @@ class Q_learning:
         self.total_time=0
        
         
-    def init(self):
+    def init(self,dtype=np.int32):
         self.t3=time.time()
         if len(self.state_name)>self.state_len:
-            self.state=np.concatenate(self.state,np.arange(len(self.state_name)-self.state_len,dtype=np.int8)+len(self.state_len))
-            self.state_one=np.concatenate(self.state_one,np.ones(len(self.state_name)-self.state_len,dtype=np.int8))
+            self.state=np.concatenate(self.state,np.arange(len(self.state_name)-self.state_len,dtype=dtype)+len(self.state_len))
+            self.state_one=np.concatenate(self.state_one,np.ones(len(self.state_name)-self.state_len,dtype=dtype))
             self.state_prob=self.state_one/len(self.state_name)
-            self.action=np.concatenate(self.action,np.arange(len(self.action_name)-self.action_len,dtype=np.int8)+len(self.action_len))
-            self.action_p=np.concatenate(self.action_prob,np.ones(len(self.action_name)-self.action_len,dtype=np.int8))
+            self.action=np.concatenate(self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+len(self.action_len))
+            self.action_p=np.concatenate(self.action_prob,np.ones(len(self.action_name)-self.action_len,dtype=dtype))
         else:
-            self.state=np.arange(len(self.state_name),dtype=np.int8)
-            self.state_one=np.ones(len(self.state_name),dtype=np.int8)
+            self.state=np.arange(len(self.state_name),dtype=dtype)
+            self.state_one=np.ones(len(self.state_name),dtype=dtype)
             self.state_prob=self.state_one/len(self.state_name)
-            self.action=np.arange(len(self.action_name),dtype=np.int8)
-            self.action_p=np.ones(len(self.action_name),dtype=np.int8)
+            self.action=np.arange(len(self.action_name),dtype=dtype)
+            self.action_p=np.ones(len(self.action_name),dtype=dtype)
         self.t4=time.time()
         return
     
