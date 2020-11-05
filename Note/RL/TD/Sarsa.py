@@ -1,4 +1,3 @@
-import tensorflow as tf
 import numpy as np
 import pickle
 import time
@@ -7,9 +6,6 @@ import time
 class Sarsa:
     def __init__(self,q,state_name,action_name,search_space,epsilon=None,alpha=None,discount=None,theta=None,episode_step=None,save_episode=True):
         self.q=q
-        if len(state_name)>q.shape[0] or len(action_name)>q.shape[1]:
-            q=q*tf.ones([len(state_name),len(action_name)],dtype=q.dtype)[:q.shape[0],:q.shape[1]]
-            self.q=q.numpy()
         self.episode=[]
         self.state_name=state_name
         self.action_name=action_name
@@ -29,11 +25,25 @@ class Sarsa:
         self.total_time=0
         
         
-    def init(self):
-        self.state=np.arange(len(self.state_name),dtype=np.int8)
-        self.state_prob=np.ones(len(self.state_name),dtype=np.int8)/len(self.state_name)
-        self.action=np.arange(len(self.action_name),dtype=np.int8)
-        self.action_prob=np.ones(len(self.action_name),dtype=np.int8)
+    def init(self,dtype=np.int32):
+        self.t3=time.time()
+        if len(self.state_name)>self.state_len:
+            self.state=np.concatenate(self.state,np.arange(len(self.state_name)-self.state_len,dtype=dtype)+len(self.state_len))
+            self.state_one=np.concatenate(self.state_one,np.ones(len(self.state_name)-self.state_len,dtype=dtype))
+            self.state_prob=self.state_one/len(self.state_name)
+            self.action=np.concatenate(self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+len(self.action_len))
+            self.action_prob=np.concatenate(self.action_prob,np.ones(len(self.action_name)-self.action_len,dtype=dtype))
+        else:
+            self.state=np.arange(len(self.state_name),dtype=dtype)
+            self.state_one=np.ones(len(self.state_name),dtype=dtype)
+            self.state_prob=self.state_one/len(self.state_name)
+            self.action=np.arange(len(self.action_name),dtype=dtype)
+            self.action_prob=np.ones(len(self.action_name),dtype=dtype)
+        if len(self.state_name)>self.q.shape[0] or len(self.action_name)>self.q.shape[1]:
+            self.q=np.concatenate([self.q,np.zeros([len(self.state_name),len(self.action_name)-self.action_len],dtype=self.q.dtype)],axis=1)
+            self.q=np.concatenate([self.q,np.zeros([len(self.state_name)-self.state_len,len(self.action_name)],dtype=self.q.dtype)])
+            self.q=self.q.numpy()
+        self.t4=time.time()
         return
     
 
@@ -119,9 +129,9 @@ class Sarsa:
             if self.theta!=None and self.delta<=self.theta:
                 break
         if self.time<0.5:
-            self.time=int(self.time)
+            self.time=int(self.time+(self.t4-self.t3))
         else:
-            self.time=int(self.time)+1
+            self.time=int(self.time+(self.t4-self.t3))+1
         self.total_time+=self.time
         print()
         print('last delta:{0:.6f}'.format(self.delta))
@@ -147,6 +157,7 @@ class Sarsa:
         pickle.dump(self.episode_step,output_file)
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.delta,output_file)
+        pickle.dump(self.state_one,output_file)
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
@@ -170,6 +181,7 @@ class Sarsa:
         self.episode_step=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
         self.delta=pickle.load(input_file)
+        self.state_one=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         self.total_time=self.time
         input_file.close()
