@@ -38,12 +38,12 @@ class DQN:
         self.total_time=0
     
     
-    def init(self):
+    def init(self,dtype=np.int32):
         self.t3=time.time()
-        self._state=np.arange(len(self.state_name),dtype=np.int8)
-        self.state_prob=np.ones(len(self.state_name),dtype=np.int8)/len(self.state_name)
-        self.action=np.arange(len(self.action_name),dtype=np.int8)
-        self.action_p=np.ones(len(self.action_name),dtype=np.int8)
+        self._state=np.arange(len(self.state_name),dtype=dtype)
+        self.state_prob=np.ones(len(self.state_name),dtype=dtype)/len(self.state_name)
+        self.action=np.arange(len(self.action_name),dtype=dtype)
+        self.action_p=np.ones(len(self.action_name),dtype=dtype)
         if self._random!=None:
             self._random=np.arange(self.pool_size)
         self.t4=time.time()
