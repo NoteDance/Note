@@ -54,21 +54,19 @@ class MCPG:
         G=0
         loss=0
         episode=[]
-        _episode=[]
         if self.episode_step==None:
             output=self.policy_net(self.state[s])
             while True:
                 output=self.policy_net(self.state[s])
                 a=np.random.choice(action,output)
                 next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
-                episode.append([s,a,r])
                 if end:
                     self.reward_list.append(G)
                     if self.save_episode==True:
-                        _episode.append([self.state_name[s],self.action_name[a],r,end])
+                        episode.append([self.state_name[s],self.action_name[a],r,end])
                     break
                 if self.save_episode==True:
-                    _episode.append([self.state_name[s],self.action_name[a],r])
+                    episode.append([self.state_name[s],self.action_name[a],r])
                 G+=r
                 loss+=self.loss(output,G)
                 s=next_s
@@ -78,20 +76,19 @@ class MCPG:
                 output=self.policy_net(self.state[s])
                 a=np.random.choice(action,output)
                 next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
-                episode.append([s,a,r])
                 if end:
                     self.reward_list.append(G)
                     if self.save_episode==True:
-                        _episode.append([self.state_name[s],self.action_name[a],r,end])
+                        episode.append([self.state_name[s],self.action_name[a],r,end])
                     break
                 if self.save_episode==True:
-                    _episode.append([self.state_name[s],self.action_name[a],r])
+                    episode.append([self.state_name[s],self.action_name[a],r])
                 G+=r
                 loss+=self.loss(output,G)
                 s=next_s
             self.reward_list.append(G)
         if self.save_episode==True:
-            self.episode.append(_episode)
+            self.episode.append(episode)
         return loss
     
     
