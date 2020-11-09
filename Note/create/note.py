@@ -10,19 +10,6 @@ class Note:
     def __init__(self,nn):
         self.nn=nn
         self.tf2=c.tf2()
-        with tf.name_scope('data/shape0'):
-            self.train_data=self.nn.train_data
-            self.train_labels=self.nn.train_labels
-            if type(self.train_data)==list:
-                self.data_batch=[x for x in range(len(self.train_data))]
-            if type(self.train_labels)==list:
-                self.labels_batch=[x for x in range(len(self.train_labels))]
-            self.test_data=self.nn.test_data
-            self.test_labels=self.nn.test_labels
-            if type(self.train_data)==list:
-                self.shape0=self.nn.train_data[0].shape[0]
-            else:
-                self.shape0=self.nn.train_data.shape[0]
         with tf.name_scope('parameter'):
             self.parameter=self.nn.parameter
         with tf.name_scope('hyperparameter'):
@@ -52,6 +39,23 @@ class Note:
         self.time=0
         self.total_time=0
         self.processor='GPU:0'
+    
+    
+    def data(self,train_data,train_labels,test_data=None,test_labels=None):
+        with tf.name_scope('data/shape0'):
+            self.train_data=train_data
+            self.train_labels=train_labels
+            if type(train_data)==list:
+                self.data_batch=[x for x in range(len(train_data))]
+            if type(train_labels)==list:
+                self.labels_batch=[x for x in range(len(train_labels))]
+            self.test_data=test_data
+            self.test_labels=test_labels
+            if type(self.train_data)==list:
+                self.shape0=train_data[0].shape[0]
+            else:
+                self.shape0=train_data.shape[0]
+        return
     
     
     def init(self):
