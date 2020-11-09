@@ -33,12 +33,12 @@ class MCPG:
     def init(self,dtype=np.int32):
         self.t3=time.time()
         if len(self.state_name)>self.state_len:
-            self.state=np.concatenate(self.state,np.arange(len(self.state_name)-self.state_len,dtype=dtype)+len(self.state_len))
+            self._state=np.concatenate(self._state,np.arange(len(self.state_name)-self.state_len,dtype=dtype)+len(self.state_len))
             self.state_one=np.concatenate(self.state_one,np.ones(len(self.state_name)-self.state_len,dtype=dtype))
             self.state_prob=self.state_one/len(self.state_name)
             self.action=np.concatenate(self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+len(self.action_len))
         else:
-            self.state=np.arange(len(self.state_name),dtype=dtype)
+            self._state=np.arange(len(self.state_name),dtype=dtype)
             self.state_one=np.ones(len(self.state_name),dtype=dtype)
             self.state_prob=self.state_one/len(self.state_name)
             self.action=np.arange(len(self.action_name),dtype=dtype)
@@ -56,9 +56,9 @@ class MCPG:
         episode=[]
         _episode=[]
         if self.episode_step==None:
-            output=self.policy_net(self.state(s))
+            output=self.policy_net(self.state[s])
             while True:
-                output=self.policy_net(self.state(s))
+                output=self.policy_net(self.state[s])
                 a=np.random.choice(action,output)
                 next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                 episode.append([s,a,r])
@@ -73,9 +73,9 @@ class MCPG:
                 loss+=self.loss(output,G)
                 s=next_s
         else:
-            output=self.policy_net(self.state(s))
+            output=self.policy_net(self.state[s])
             for _ in range(self.episode_step):
-                output=self.policy_net(self.state(s))
+                output=self.policy_net(self.state[s])
                 a=np.random.choice(action,output)
                 next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                 episode.append([s,a,r])
@@ -143,7 +143,7 @@ class MCPG:
             output_file=open(path+'-{0}.dat'.format(i+1),'wb')
         pickle.dump(self.state_len,output_file)
         pickle.dump(self.action_len,output_file)
-        pickle.dump(self.state,output_file)
+        pickle.dump(self._state,output_file)
         pickle.dump(self.state_prob,output_file)
         pickle.dump(self.action,output_file)
         pickle.dump(self.reward_list,output_file)
@@ -167,7 +167,7 @@ class MCPG:
         self.state_len=pickle.load(input_file)
         self.action_len=pickle.load(input_file)
         if self.state_len==len(self.state_name):
-            self.state=pickle.load(input_file)
+            self._state=pickle.load(input_file)
             self.state_prob=pickle.load(input_file)
         if self.action_len==len(self.action_name):
             self.action=pickle.load(input_file)
