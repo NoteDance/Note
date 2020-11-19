@@ -19,7 +19,6 @@ class DQN:
         self.state_name=state_name
         self.action_name=action_name
         self.search_space=search_space
-        self.state_len=len(self.state_name)
         self.action_len=len(self.action_name)
         self.epsilon=epsilon
         self.discount=discount
@@ -40,8 +39,6 @@ class DQN:
     
     def init(self,dtype=np.int32):
         self.t3=time.time()
-        self._state=np.arange(len(self.state_name),dtype=dtype)
-        self.state_prob=np.ones(len(self.state_name),dtype=dtype)/len(self.state_name)
         self.action=np.arange(len(self.action_name),dtype=dtype)
         self.action_p=np.ones(len(self.action_name),dtype=dtype)
         if self._random!=None:
@@ -89,7 +86,7 @@ class DQN:
             self.a=0
             loss=0
             episode=[]
-            s=np.random.choice(self._state,p=self.state_prob)
+            s=int(np.random.uniform(0,len(self.state_name)))
             np.random.shuffle(self.random)
             if self.episode_step==None:
                 while True:
@@ -274,10 +271,7 @@ class DQN:
         pickle.dump(self.action_pool,output_file)
         pickle.dump(self.next_state_pool,output_file)
         pickle.dump(self.reward_pool,output_file)
-        pickle.dump(self.state_len,output_file)
         pickle.dump(self.action_len,output_file)
-        pickle.dump(self.state,output_file)
-        pickle.dump(self.state_prob,output_file)
         pickle.dump(self.action,output_file)
         pickle.dump(self.action_p,output_file)
         pickle.dump(self.epsilon,output_file)
@@ -303,11 +297,7 @@ class DQN:
         self.action_pool=pickle.load(input_file)
         self.next_state_pool=pickle.load(input_file)
         self.reward_pool=pickle.load(input_file)
-        self.state_len=pickle.load(input_file)
         self.action_len=pickle.load(input_file)
-        if self.state_len==len(self.state_name):
-            self.state=pickle.load(input_file)
-            self.state_prob=pickle.load(input_file)
         if self.action_len==len(self.action_name):
             self.action=pickle.load(input_file)
             self.action_p=pickle.load(input_file)
