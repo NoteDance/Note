@@ -10,7 +10,6 @@ class Q_learning:
         self.state_name=state_name
         self.action_name=action_name
         self.search_space=search_space
-        self.state_len=len(self.state_name)
         self.action_len=len(self.action_name)
         self.epsilon=epsilon
         self.alpha=alpha
@@ -27,17 +26,10 @@ class Q_learning:
     
     def init(self,dtype=np.int32):
         self.t3=time.time()
-        if len(self.state_name)>self.state_len:
-            self.state=np.concatenate(self.state,np.arange(len(self.state_name)-self.state_len,dtype=dtype)+len(self.state_len))
-            self.state_one=np.concatenate(self.state_one,np.ones(len(self.state_name)-self.state_len,dtype=dtype))
-            self.state_prob=self.state_one/len(self.state_name)
-            self.action=np.concatenate(self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+len(self.action_len))
+        if len(self.action_name)>self.action_len:
+            self.action=np.concatenate(self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len)
             self.action_prob=np.concatenate(self.action_prob,np.ones(len(self.action_name)-self.action_len,dtype=dtype))
         else:
-            self.state=np.arange(len(self.state_name),dtype=dtype)
-            self.state_one=np.ones(len(self.state_name),dtype=dtype)
-            self.state_prob=self.state_one/len(self.state_name)
-            self.action=np.arange(len(self.action_name),dtype=dtype)
             self.action_prob=np.ones(len(self.action_name),dtype=dtype)
         if len(self.state_name)>self.q.shape[0] or len(self.action_name)>self.q.shape[1]:
             self.q=np.concatenate([self.q,np.zeros([len(self.state_name),len(self.action_name)-self.action_len],dtype=self.q.dtype)],axis=1)
@@ -106,7 +98,7 @@ class Q_learning:
         self.delta=0
         for i in range(episode_num):
             t1=time.time()
-            s=np.random.choice(self.state,p=self.state_prob)
+            s=int(np.random.uniform(0,len(self.state_name)))
             self.q=self.update_q(self.q,s,self.action,self.action_prob)
             self.delta=self.delta/(i+1)
             if episode_num%10!=0:
@@ -142,10 +134,7 @@ class Q_learning:
             output_file=open(path+'.dat','wb')
         else:
             output_file=open(path+'-{0}.dat'.format(i+1),'wb')
-        pickle.dump(self.state_len,output_file)
         pickle.dump(self.action_len,output_file)
-        pickle.dump(self.state,output_file)
-        pickle.dump(self.state_prob,output_file)
         pickle.dump(self.action,output_file)
         pickle.dump(self.action_prob,output_file)
         pickle.dump(self.epsilon,output_file)
@@ -164,11 +153,7 @@ class Q_learning:
     
     def restore(self,path):
         input_file=open(path,'rb')
-        self.state_len=pickle.load(input_file)
         self.action_len=pickle.load(input_file)
-        if self.state_len==len(self.state_name):
-            self.state=pickle.load(input_file)
-            self.state_prob=pickle.load(input_file)
         if self.action_len==len(self.action_name):
             self.action=pickle.load(input_file)
             self.action_prob=pickle.load(input_file)
