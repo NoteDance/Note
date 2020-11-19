@@ -13,7 +13,6 @@ class Q_learning:
         self.state_name=state_name
         self.action_name=action_name
         self.search_space=search_space
-        self.state_len=len(self.state_name)
         self.action_len=len(self.action_name)
         self.epsilon=epsilon
         self.discount=discount
@@ -31,16 +30,10 @@ class Q_learning:
         
     def init(self,dtype=np.int32):
         t3=time.time()
-        if len(self.state_name)>self.state_len:
-            self._state=np.concatenate(self._state,np.arange(len(self.state_name)-self.state_len,dtype=dtype)+len(self.state_len))
-            self.state_one=np.concatenate(self.state_one,np.ones(len(self.state_name)-self.state_len,dtype=dtype))
-            self.state_prob=self.state_one/len(self.state_name)
-            self.action=np.concatenate(self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+len(self.action_len))
+        if len(self.action_name)>self.action_len:
+            self.action=np.concatenate(self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len)
             self.action_p=np.concatenate(self.action_prob,np.ones(len(self.action_name)-self.action_len,dtype=dtype))
         else:
-            self._state=np.arange(len(self.state_name),dtype=dtype)
-            self.state_one=np.ones(len(self.state_name),dtype=dtype)
-            self.state_prob=self.state_one/len(self.state_name)
             self.action=np.arange(len(self.action_name),dtype=dtype)
             self.action_p=np.ones(len(self.action_name),dtype=dtype)
         t4=time.time()
@@ -62,7 +55,7 @@ class Q_learning:
     
     def episode(self):
         episode=[]
-        s=np.random.choice(self._state,p=self.state_prob)
+        s=int(np.random.uniform(0,len(self.state_name)))
         if self.episode_step==None:
             while True:
                 action_prob=self.epsilon_greedy_policy(s,self.action_p)
@@ -110,10 +103,7 @@ class Q_learning:
             output_file=open(path+'.dat','wb')
         else:
             output_file=open(path+'-{0}.dat'.format(i+1),'wb')
-        pickle.dump(self.state_len,output_file)
         pickle.dump(self.action_len,output_file)
-        pickle.dump(self._state,output_file)
-        pickle.dump(self.state_prob,output_file)
         pickle.dump(self.action,output_file)
         pickle.dump(self.action_p,output_file)
         pickle.dump(self.epsilon,output_file)
@@ -132,11 +122,7 @@ class Q_learning:
     
     def restore(self,path):
         input_file=open(path,'rb')
-        self.state_len=pickle.load(input_file)
         self.action_len=pickle.load(input_file)
-        if self.state_len==len(self.state_name):
-            self._state=pickle.load(input_file)
-            self.state_prob=pickle.load(input_file)
         if self.action_len==len(self.action_name):
             self.action=pickle.load(input_file)
             self.action_p=pickle.load(input_file)
