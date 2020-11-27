@@ -29,14 +29,18 @@ class ART1:
     
     def _search(self,s,t,data,vector):
         a=0
+        resonance=False
         while True:
             a+=1
             s=s*vector
             t=self.T[np.argmax(s)]
             sim=self.c_layer(t,data)
             if sim>=self.p:
+                resonance=True
+            if resonance==True:
                 self.W[:,np.argmax(s)]=t*data/(0.5+np.sum(t*data))
                 self.T[np.argmax(s)]=t*data
+                resonance=False
                 self.accumulator+=1
                 break
             elif a>self.r_neure:
@@ -52,12 +56,15 @@ class ART1:
     
     def search(self,s,t,W,T,data,p,vector):
         a=0
+        resonance=False
         while True:
             a+=1
             s=s*vector
             t=T[np.argmax(s)]
             sim=np.sum(t*data)/np.sum(data)
             if sim>=p:
+                resonance=True
+            if resonance==True:
                 W[:,np.argmax(s)]=t*data/(0.5+np.sum(t*data))
                 T[np.argmax(s)]=t*data
                 break
@@ -72,6 +79,7 @@ class ART1:
     
     
     def learn(self):
+        resonance=False
         _vector=tf.ones(shape=[self.r_neure],dtype=tf.int8)
         while True:
             if self.accumulator==len(self.data):
@@ -80,8 +88,11 @@ class ART1:
                 s,t=self.r_layer(self.data[i])
                 sim=self.c_layer(t,self.data[i])
                 if sim>=self.p:
+                    resonance=True
+                if resonance==True:
                     self.W[:,np.argmax(s)]=t*self.data[i]/(0.5+np.sum(t*self.data[i]))
                     self.T[np.argmax(s)]=t*self.data[i]
+                    resonance=False
                     self.accumulator+=1
                 else:
                     vector=_vector
