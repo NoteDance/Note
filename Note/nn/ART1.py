@@ -28,7 +28,7 @@ class ART1:
     
     
     def _search(self,s,t,data,vector):
-        a=0
+        a=1
         resonance=False
         while True:
             s=s*vector
@@ -56,7 +56,7 @@ class ART1:
     
     
     def search(self,s,t,W,T,data,p,vector):
-        a=0
+        a=1
         resonance=False
         while True:
             s=s*vector
