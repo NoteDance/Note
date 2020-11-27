@@ -31,7 +31,6 @@ class ART1:
         a=0
         resonance=False
         while True:
-            a+=1
             s=s*vector
             t=self.T[np.argmax(s)]
             sim=self.c_layer(t,data)
@@ -49,8 +48,10 @@ class ART1:
                 self.W[:,np.argmax(s)]=t*data/(0.5+np.sum(t*data))
                 self.T[np.argmax(s)]=t*data
                 self.accumulator+=1
+                break
             else:
                 vector[np.argmax(s)]=0
+                a+=1
         return
     
     
@@ -58,7 +59,6 @@ class ART1:
         a=0
         resonance=False
         while True:
-            a+=1
             s=s*vector
             t=T[np.argmax(s)]
             sim=np.sum(t*data)/np.sum(data)
@@ -73,8 +73,10 @@ class ART1:
                 tf.concat(T,tf.ones(shape=[len(data)],dtype=tf.int8))
                 W[:,np.argmax(s)]=t*data/(0.5+np.sum(t*data))
                 T[np.argmax(s)]=t*data
+                break
             else:
                 vector[np.argmax(s)]=0
+                a+=1
         return
     
     
