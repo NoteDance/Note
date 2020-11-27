@@ -9,7 +9,6 @@ class ART1:
         self.c_neure=data.shape[-1]
         self.r_neure=r_neure
         self.p=p
-        self.accumulator=0
     
     
     def init(self):
@@ -83,6 +82,7 @@ class ART1:
         resonance=False
         _vector=tf.ones(shape=[self.r_neure],dtype=tf.int8)
         while True:
+            self.accumulator=0
             if self.accumulator==len(self.data):
                 break
             for i in range(len(self.data)):
@@ -109,7 +109,6 @@ class ART1:
         pickle.dump(self.W,output_file)
         pickle.dump(self.T,output_file)
         pickle.dump(self.p,output_file)
-        pickle.dump(self.accumulator,output_file)
         return
     
     
@@ -120,7 +119,6 @@ class ART1:
         self.W=pickle.load(input_file)
         self.T=pickle.load(input_file)
         self.p=pickle.load(input_file)
-        self.accumulator=pickle.load(input_file)
         return
     
     
