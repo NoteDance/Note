@@ -43,10 +43,12 @@ class ART1:
                 self.accumulator+=1
                 break
             elif a==self.r_neure:
-                tf.concat(self.W,tf.ones(shape=[self.c_neure,1],dtype=tf.float16)/(self.c_neure+1),axis=1)
-                tf.concat(self.T,tf.ones(shape=[self.c_neure],dtype=tf.int8))
+                tf.concat([self.W,tf.ones(shape=[self.c_neure,1],dtype=tf.float16)/(self.c_neure+1)],axis=1)
+                tf.concat([self.T,tf.ones(shape=[self.c_neure],dtype=tf.int8)],axis=0)
                 self.W[:,np.argmax(s)]=t*data/(0.5+np.sum(t*data))
                 self.T[np.argmax(s)]=t*data
+                self.r_neure+=1
+                self._vector=tf.concat([self._vector,tf.ones([1],dtype=tf.int8)],axis=0)
                 self.accumulator+=1
                 break
             else:
@@ -69,8 +71,8 @@ class ART1:
                 T[np.argmax(s)]=t*data
                 break
             elif a==len(s):
-                tf.concat(W,tf.ones(shape=[len(s),1],dtype=tf.float16)/(len(s)+1),axis=1)
-                tf.concat(T,tf.ones(shape=[len(data)],dtype=tf.int8))
+                tf.concat([W,tf.ones(shape=[len(s),1],dtype=tf.float16)/(len(s)+1)],axis=1)
+                tf.concat([T,tf.ones(shape=[len(data)],dtype=tf.int8)],axis=0)
                 W[:,np.argmax(s)]=t*data/(0.5+np.sum(t*data))
                 T[np.argmax(s)]=t*data
                 break
@@ -82,7 +84,7 @@ class ART1:
     
     def learn(self):
         resonance=False
-        _vector=tf.ones(shape=[self.r_neure],dtype=tf.int8)
+        self._vector=tf.ones(shape=[self.r_neure],dtype=tf.int8)
         while True:
             self.accumulator=0
             if self.accumulator==len(self.data):
@@ -98,7 +100,7 @@ class ART1:
                     resonance=False
                     self.accumulator+=1
                 else:
-                    vector=_vector
+                    vector=self._vector
                     vector[np.argmax(s)]=0
                     self._search(s,t,self.data[i],vector)
         return
