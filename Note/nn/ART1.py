@@ -19,6 +19,7 @@ class ART1:
     
     
     def r_layer(self,data):
+        data=data.reshape([1,-1])
         s=tf.matmul(data,self.W)
         return s,self.T[np.argmax(s)]
     
