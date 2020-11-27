@@ -43,7 +43,7 @@ class ART1:
                 resonance=False
                 self.accumulator+=1
                 break
-            elif a>self.r_neure:
+            elif a==self.r_neure:
                 tf.concat(self.W,tf.ones(shape=[self.c_neure,1],dtype=tf.float16)/(self.c_neure+1),axis=1)
                 tf.concat(self.T,tf.ones(shape=[self.c_neure],dtype=tf.int8))
                 self.W[:,np.argmax(s)]=t*data/(0.5+np.sum(t*data))
@@ -68,7 +68,7 @@ class ART1:
                 W[:,np.argmax(s)]=t*data/(0.5+np.sum(t*data))
                 T[np.argmax(s)]=t*data
                 break
-            elif a>len(s):
+            elif a==len(s):
                 tf.concat(W,tf.ones(shape=[len(s),1],dtype=tf.float16)/(len(s)+1),axis=1)
                 tf.concat(T,tf.ones(shape=[len(data)],dtype=tf.int8))
                 W[:,np.argmax(s)]=t*data/(0.5+np.sum(t*data))
