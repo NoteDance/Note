@@ -3,7 +3,7 @@ import numpy as np
 import pickle
 
 
-class ART1:
+class ART2:
     def __init__(self,data=None,r_neure=None,p=None,epislon=None,a=10,b=10,c=0.1,d=0.9,e=0,theta=0.2):
         self.data=data
         self.c_neure=data.shape[-1]
