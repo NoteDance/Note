@@ -54,7 +54,7 @@ class ART1:
             u=v/(self.e+np.sqrt(np.sum(v**2)))
             p=u
             q=p/(self.e+np.sqrt(np.sum(p**2)))
-            if np.sum((u-u_)<=self.epislon)==len(u):
+            if np.sum(np.abs(u-u_)<=self.epislon)==len(u):
                 break
         return u,p
     
