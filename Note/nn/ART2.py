@@ -97,6 +97,40 @@ class ART2:
         return
     
     
+    def recognition_layer(self,p,W,T):
+        h=tf.matmul(p,W)
+        return h,T[np.argmax(h)]
+    
+    
+    def compare_layer(self,data,a,b,e,theta,epislon):
+        w=0
+        x=0
+        v=0
+        u=0
+        p=0
+        q=0
+        data=data.reshape([1,-1])
+        while True:
+            u_=u
+            w=data+a*u
+            x=w/(e+np.sqrt(np.sum(w**2)))
+            if x>=theta:
+                pass
+            else:
+                f1=(2*theta*x**2)/(x**2+theta**2)
+            if q>=theta:
+                pass
+            else:
+                f2=(2*theta*q**2)/(q**2+theta**2)  
+            v=f1+b*f2
+            u=v/(e+np.sqrt(np.sum(v**2)))
+            p=u
+            q=p/(e+np.sqrt(np.sum(p**2)))
+            if np.sum(np.abs(u-u_)<=epislon)==len(u):
+                break
+        return u,p
+    
+    
     def search(self,u,h,t,W,T,p,d,vector):
         a=1
         resonance=False
