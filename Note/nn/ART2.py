@@ -37,7 +37,7 @@ class ART2:
     
     
     def c_layer(self,data):
-        z=0
+        w=0
         x=0
         v=0
         u=0
@@ -46,8 +46,8 @@ class ART2:
         data=data.reshape([1,-1])
         while True:
             u_=u
-            z=data+self.a*u
-            x=z/(self.e+np.sqrt(np.sum(z**2)))
+            w=data+self.a*u
+            x=w/(self.e+np.sqrt(np.sum(w**2)))
             f1=self.f(x)
             f2=self.f(q)
             v=f1+self.b*f2
