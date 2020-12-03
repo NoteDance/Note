@@ -57,6 +57,16 @@ class ART1:
         return
     
     
+    def recognition_layer(self,data,W,T):
+        data=data.reshape([1,-1])
+        s=tf.matmul(data,W)
+        return s,T[np.argmax(s)]
+    
+    
+    def compare_layer(self,t,data):
+        return np.sum(t*data)/np.sum(data)
+    
+    
     def search(self,s,t,W,T,data,p,vector):
         a=1
         resonance=False
@@ -123,16 +133,4 @@ class ART1:
         self.W=pickle.load(input_file)
         self.T=pickle.load(input_file)
         self.p=pickle.load(input_file)
-        return
-    
-    
-    def use(self,data):
-        s,t=self.r_layer(data)
-        sim=self.c_layer(t,data)
-        vector=tf.ones(shape=[self.r_neure],dtype=tf.int8)
-        if sim>=self.p:
-            return np.argmax(s)
-        else:
-            vector[np.argmax(s)]=0
-            self.search(s,t,self.W,self.T,data,self.p,vector)
         return
