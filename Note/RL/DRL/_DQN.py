@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+import matplotlib.pyplot as plt
 import pickle
 import time
 
@@ -26,9 +27,10 @@ class DQN:
         self.pool_size=pool_size
         self.batch=batch
         self.update_step=update_step
-        self.lr=lr
         self.optimizer=optimizer
+        self.lr=lr
         self.save_episode=save_episode
+        self.loss_list=[]
         self.opt_flag==False
         self.episode_num=0
         self._random=None
@@ -232,6 +234,7 @@ class DQN:
                     self.time+=(t2-t1)
                     if self.a==self.update_step:
                         self.update_parameter()
+            self.loss_list.append(loss)
             if episode_num%10!=0:
                 temp=episode_num-episode_num%10
                 temp=int(temp/10)
@@ -262,6 +265,17 @@ class DQN:
         return
     
     
+    def train_visual(self):
+        print()
+        plt.figure(1)
+        plt.plot(np.arange(self.total_episode),self.loss_list)
+        plt.title('train loss')
+        plt.xlabel('episode')
+        plt.ylabel('loss')
+        print('loss:{0:.6f}'.format(self.loss_list[-1]))
+        return
+    
+    
     def save(self,path,i=None,one=True):
         if one==True:
             output_file=open(path+'.dat','wb')
@@ -280,9 +294,10 @@ class DQN:
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.update_step,output_file)
-        pickle.dump(self.lr,output_file)
         pickle.dump(self.optimizer,output_file)
+        pickle.dump(self.lr,output_file)
         pickle.dump(self.save_episode,output_file)
+        pickle.dump(self.loss_list,output_file)
         pickle.dump(self.opt_flag,output_file)
         pickle.dump(self._random,output_file)
         pickle.dump(self.total_episode,output_file)
@@ -307,9 +322,10 @@ class DQN:
         self.pool_size=pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.update_step=pickle.load(input_file)
-        self.lr=pickle.load(input_file)
         self.optimizer=pickle.load(input_file)
+        self.lr=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
+        self.loss_list=pickle.load(input_file)
         self.opt_flag=pickle.load(input_file)
         self._random=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
