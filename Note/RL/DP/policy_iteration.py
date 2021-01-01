@@ -71,13 +71,13 @@ class policy_iteration:
             V=self.policy_evaluation(self.policy,self._V,self.state,self.action,self.prs,self.discount,self.theta,iteration)
             self.policy,flag=self.policy_improvement(self.policy,self.action_value,V,self.state,self.action,self.prs,self.discount,flag,self.end_flag)
             if iteration%10!=0:
-                temp=iteration-iteration%10
-                temp=int(temp/10)
+                d=iteration-iteration%10
+                d=int(d/10)
             else:
-                temp=iteration/10
-            if temp==0:
-                temp=1
-            if self.iteration_num%temp==0:
+                d=iteration/10
+            if d==0:
+                d=1
+            if self.iteration_num%d==0:
                 if path!=None and self.iteration_num%iteration*2==0:
                     self.save(path,self.iteration_num,one)
             self.iteration_num+=1
