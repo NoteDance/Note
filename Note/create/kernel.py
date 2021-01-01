@@ -6,7 +6,7 @@ import pickle
 import time
 
 
-class Note:
+class kernel:
     def __init__(self,nn):
         self.nn=nn
         self.tf2=c.tf2()
