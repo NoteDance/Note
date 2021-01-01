@@ -19,8 +19,8 @@ class MCPG:
         self.discount=discount
         self.reward_min=reward_min
         self.episode_step=episode_step
-        self.lr=lr
         self.optimizer=optimizer
+        self.lr=lr
         self.save_episode=save_episode
         self.loss=0
         self.opt_flag=False
