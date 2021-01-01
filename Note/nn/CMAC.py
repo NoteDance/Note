@@ -60,6 +60,9 @@ class CMAC:
                     self.save(path,i,one)
             t2=time.time()
             self.time+=(t2-t1)
+        self.loss_list.append(loss)
+        print()
+        print('last loss:{1:.6f}'.format(loss))
         if self.time<0.5:
             self.time=int(self.time)
         else:
