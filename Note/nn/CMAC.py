@@ -48,14 +48,14 @@ class CMAC:
             loss=loss/len(self.data)
             self.loss_list.append(loss)
             if epoch%10!=0:
-                temp=epoch-epoch%10
-                temp=int(temp/10)
+                d=epoch-epoch%10
+                d=int(d/10)
             else:
-                temp=epoch/10
-            if temp==0:
-                temp=1
-            if i%temp==0:
-                print('epoch:{0}   loss:{1:.6f}'.format(i+1,loss))
+                d=epoch/10
+            if d==0:
+                d=1
+            if i%d==0:
+                print('epoch:{0}   loss:{1:.6f}'.format(i,loss))
                 if path!=None and i%epoch*2==0:
                     self.save(path,i,one)
             t2=time.time()
