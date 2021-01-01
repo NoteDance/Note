@@ -44,13 +44,13 @@ class value_iteration:
                 delta=max(delta,np.abs(best_action_value-self.V[s]))
                 self.V[s]=best_action_value
             if iteration%10!=0:
-                temp=iteration-iteration%10
-                temp=int(temp/10)
+                d=iteration-iteration%10
+                d=int(d/10)
             else:
-                temp=iteration/10
-            if temp==0:
-                temp=1
-            if i%temp==0:
+                d=iteration/10
+            if d==0:
+                d=1
+            if i%d==0:
                 print('iteration:{0}   delta:{1:.6f}'.format(i+1,delta))
                 if path!=None and i%iteration*2==0:
                     self.save(path,i,one)
