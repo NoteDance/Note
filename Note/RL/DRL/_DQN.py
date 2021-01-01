@@ -236,13 +236,13 @@ class DQN:
                         self.update_parameter()
             self.loss_list.append(loss)
             if episode_num%10!=0:
-                temp=episode_num-episode_num%10
-                temp=int(temp/10)
+                d=episode_num-episode_num%10
+                d=int(d/10)
             else:
-                temp=episode_num/10
-            if temp==0:
-                temp=1
-            if i%temp==0:
+                d=episode_num/10
+            if d==0:
+                d=1
+            if i%d==0:
                 print('episode num:{0}   loss:{1:.6f}'.format(i+1,loss))
                 if path!=None and i%episode_num*2==0:
                     self.save(path,i,one)
