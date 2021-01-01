@@ -74,7 +74,7 @@ class CMAC:
     def train_visual(self):
         print()
         plt.figure(1)
-        plt.plot(np.arange(self.epoch),self.loss_list)
+        plt.plot(np.arange(self.epoch+1),self.loss_list)
         plt.title('train loss')
         plt.xlabel('epoch')
         plt.ylabel('loss')
