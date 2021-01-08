@@ -182,12 +182,14 @@ class ART2:
         return
     
     
-    def save(self,nn_path):
-        output_file=open(nn_path+'.dat','wb')
+    def save(self,path):
+        output_file=open(path+'save.dat','wb')
+        path=path+'save.dat'
+        index=path.rfind('\\')
+        parameter_file=open(path.replace(path[index+1:],'parameter.dat'),'wb')
+        pickle.dump([self.W,self.T],parameter_file)
         pickle.dump(self.c_neure,output_file)
         pickle.dump(self.r_neure,output_file)
-        pickle.dump(self.W,output_file)
-        pickle.dump(self.T,output_file)
         pickle.dump(self.p,output_file)
         pickle.dump(self.epislon,output_file)
         pickle.dump(self.a,output_file)
@@ -199,12 +201,14 @@ class ART2:
         return
     
     
-    def restore(self,nn_path):
-        input_file=open(nn_path,'rb')
+    def restore(self,s_path,p_path):
+        input_file=open(s_path,'rb')
+        parameter_file=open(p_path,'rb')
+        parameter=pickle.load(parameter_file)
+        self.W=parameter[0]
+        self.T=parameter[1]
         self.c_neure=pickle.load(input_file)
         self.r_neure=pickle.load(input_file)
-        self.W=pickle.load(input_file)
-        self.T=pickle.load(input_file)
         self.p=pickle.load(input_file)
         self.epislon=pickle.load(input_file)
         self.a=pickle.load(input_file)
