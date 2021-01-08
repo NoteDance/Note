@@ -167,6 +167,7 @@ class kernel:
                     with tf.GradientTape() as tape:
                         with tf.name_scope('forward_propagation/loss'):
                             output=self.nn.forward_propagation(data_batch,self.dropout)
+                            self.output=output
                             batch_loss=self.nn.loss(output,labels_batch,self.l2)
                         if i==0 and self.total_epoch==0:
                             batch_loss=batch_loss.numpy()
@@ -213,6 +214,7 @@ class kernel:
                     with tf.GradientTape() as tape:
                         with tf.name_scope('forward_propagation/loss'):
                             output=self.nn.forward_propagation(data_batch,self.dropout)
+                            self.output=output
                             batch_loss=self.nn.loss(output,labels_batch,self.l2)
                         if i==0 and self.total_epoch==0:
                             batch_loss=batch_loss.numpy()
@@ -281,6 +283,7 @@ class kernel:
                 with tf.GradientTape() as tape:
                     with tf.name_scope('forward_propagation/loss'):
                         output=self.nn.forward_propagation(train_data,self.dropout)
+                        self.output=output
                         train_loss=self.nn.loss(output,train_labels,self.l2)
                     if i==0 and self.total_epoch==0:
                         loss=train_loss.numpy()
@@ -553,13 +556,19 @@ class kernel:
         return
     
     
-    def save(self,nn_path,i=None,one=True):
+    def save(self,path,i=None,one=True):
         if one==True:
-            output_file=open(nn_path+'.dat','wb')
+            output_file=open(path+'save.dat','wb')
+            path=path+'save.dat'
+            index=path.rfind('\\')
+            parameter_file=open(path.replace(path[index+1:],'parameter.dat'),'wb')
         else:
-            output_file=open(nn_path+'-{0}.dat'.format(i+1),'wb')
+            output_file=open(path+'save-{0}.dat'.format(i+1),'wb')
+            path=path+'save-{0}.dat'.format(i+1)
+            index=path.rfind('\\')
+            parameter_file=open(path.replace(path[index+1:],'parameter-{0}.dat'.format(i+1)),'wb')
         with tf.name_scope('save_parameter'):  
-            pickle.dump(self.parameter,output_file)
+            pickle.dump(self.parameter,parameter_file)
         with tf.name_scope('save_hyperparameter'):
             pickle.dump(self.batch,output_file)
             pickle.dump(self.lr,output_file)
@@ -595,11 +604,12 @@ class kernel:
         return
     
 	
-    def restore(self,nn_path):
+    def restore(self,s_path,p_path):
         self.nn.flag=1
-        input_file=open(nn_path,'rb')
+        input_file=open(s_path,'rb')
+        parameter_file=open(p_path,'rb')
         with tf.name_scope('restore_parameter'):
-            self.nn.parameter=pickle.load(input_file)
+            self.nn.parameter=pickle.load(parameter_file)
         with tf.name_scope('restore_hyperparameter'):
             self.batch=pickle.load(input_file)
             self.lr=pickle.load(input_file)
