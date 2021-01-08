@@ -84,12 +84,16 @@ class CMAC:
     
     def save(self,path,i=None,one=True):
         if one==True:
-            output_file=open(path+'.dat','wb')
+            output_file=open(path+'save.dat','wb')
+            path=path+'save.dat'
+            index=path.rfind('\\')
+            parameter_file=open(path.replace(path[index+1:],'parameter.dat'),'wb')
         else:
-            output_file=open(path+'-{0}.dat'.format(i+1),'wb')
-        pickle.dump(self.C,output_file)
-        pickle.dump(self.form,output_file)
-        pickle.dump(self.memory,output_file)
+            output_file=open(path+'save-{0}.dat'.format(i+1),'wb')
+            path=path+'save-{0}.dat'.format(i+1)
+            index=path.rfind('\\')
+            parameter_file=open(path.replace(path[index+1:],'parameter-{0}.dat'.format(i+1)),'wb')
+        pickle.dump([self.C,self.form,self.memory],parameter_file)
         pickle.dump(self.rate,output_file)
         pickle.dump(self.loss_list,output_file)
         pickle.dump(self.epoch,output_file)
@@ -97,11 +101,13 @@ class CMAC:
         return
     
     
-    def restore(self,path):
-        input_file=open(path,'rb')
-        self.C=pickle.load(input_file)
-        self.form=pickle.load(input_file)
-        self.memory=pickle.load(input_file)
+    def restore(self,s_path,p_path):
+        input_file=open(s_path,'rb')
+        parameter_file=open(p_path,'rb')
+        parameter=pickle.load(parameter_file)
+        self.C=parameter[0]
+        self.form=parameter[1]
+        self.memory=parameter[2]
         self.rate=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
         self.epoch=pickle.load(input_file)
