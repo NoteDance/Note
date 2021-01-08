@@ -269,15 +269,20 @@ class CBOW:
         return
     
     
-    def save(self,model_path,i=None,one=True):
+    def save(self,path,i=None,one=True):
         if one==True:
-            output_file=open(model_path+'.dat','wb')
+            output_file=open(path+'save.dat','wb')
+            path=path+'save.dat'
+            index=path.rfind('\\')
+            parameter_file=open(path.replace(path[index+1:],'parameter.dat'),'wb')
         else:
-            output_file=open(model_path+'-{0}.dat'.format(i+1),'wb')
-        pickle.dump(self.d)
-        pickle.dump(self.vocab_size)
-        pickle.dump(self.last_cword_weight,output_file)   
-        pickle.dump(self.last_bword_weight,output_file) 
+            output_file=open(path+'save-{0}.dat'.format(i+1),'wb')
+            path=path+'save-{0}.dat'.format(i+1)
+            index=path.rfind('\\')
+            parameter_file=open(path.replace(path[index+1:],'parameter-{0}.dat'.format(i+1)),'wb')
+        pickle.dump([self.last_cword_weight,self.last_bword_weight],parameter_file)
+        pickle.dump(self.d,output_file)
+        pickle.dump(self.vocab_size,output_file)
         pickle.dump(self.shape0,output_file)
         pickle.dump(self.cword_shape,output_file)
         pickle.dump(self.bword_shape,output_file)
@@ -297,12 +302,14 @@ class CBOW:
         return
     
 
-    def restore(self,model_path):
-        input_file=open(model_path,'rb')
+    def restore(self,s_path,p_path):
+        input_file=open(s_path,'rb')
+        parameter_file=open(p_path,'rb')
+        parameter=pickle.load(parameter_file)
+        self.last_cword_weight=parameter[0]
+        self.last_bword_weight=parameter[1]
         self.d=pickle.load(input_file)
         self.vocab_size=pickle.load(input_file)
-        self.last_cword_weight=pickle.load(input_file)  
-        self.last_bword_weight=pickle.load(input_file)
         self.shape0=pickle.load(input_file)
         self.cword_dtype=pickle.load(input_file)
         self.bword_dtype=pickle.load(input_file)
