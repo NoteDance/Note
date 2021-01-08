@@ -559,25 +559,19 @@ class transformer:
         return
     
     
-    def save(self,model_path,i=None,one=True):
+    def save(self,path,i=None,one=True):
         if one==True:
-            output_file=open(model_path+'.dat','wb')
+            output_file=open(path+'save.dat','wb')
+            path=path+'save.dat'
+            index=path.rfind('\\')
+            parameter_file=open(path.replace(path[index+1:],'parameter.dat'),'wb')
         else:
-            output_file=open(model_path+'-{0}.dat'.format(i+1),'wb')
+            output_file=open(path+'save-{0}.dat'.format(i+1),'wb')
+            path=path+'save-{0}.dat'.format(i+1)
+            index=path.rfind('\\')
+            parameter_file=open(path.replace(path[index+1:],'parameter-{0}.dat'.format(i+1)),'wb')
         with tf.name_scope('save_parameter'):  
-            pickle.dump(self.embedding_w,output_file)
-            pickle.dump(self.qw1,output_file)
-            pickle.dump(self.kw1,output_file)
-            pickle.dump(self.vw1,output_file)
-            pickle.dump(self.fw1,output_file)
-            pickle.dump(self.qw2,output_file)
-            pickle.dump(self.kw2,output_file)
-            pickle.dump(self.vw2,output_file)
-            pickle.dump(self.qw3,output_file)
-            pickle.dump(self.kw3,output_file)
-            pickle.dump(self.vw3,output_file)
-            pickle.dump(self.fw2,output_file)
-            pickle.dump(self.ow,output_file)
+            pickle.dump([self.embedding_w,self.qw1,self.kw1,self.vw1,self.fw1,self.qw2,self.kw2,self.vw2,self.qw3,self.kw3,self.vw3,self.fw2,self.ow],parameter_file)
         with tf.name_scope('save_hyperparameter'):
             pickle.dump(self.batch,output_file)
             pickle.dump(self.lr,output_file)
@@ -601,22 +595,24 @@ class transformer:
         return
     
 
-    def restore(self,model_path):
-        input_file=open(model_path,'rb')
+    def restore(self,s_path,p_path):
+        input_file=open(s_path,'rb')
+        parameter_file=open(p_path,'rb')
+        parameter=pickle.load(parameter_file)
         with tf.name_scope('restore_parameter'):
-            self.embedding_w=pickle.load(input_file)
-            self.qw1=pickle.load(input_file)
-            self.kw1=pickle.load(input_file)
-            self.vw1=pickle.load(input_file)
-            self.fw1=pickle.load(input_file)
-            self.qw2=pickle.load(input_file)
-            self.kw2=pickle.load(input_file)
-            self.vw2=pickle.load(input_file)
-            self.qw3=pickle.load(input_file)
-            self.kw3=pickle.load(input_file)
-            self.vw3=pickle.load(input_file)
-            self.fw2=pickle.load(input_file)
-            self.ow=pickle.load(input_file)
+            self.embedding_w=parameter[0]
+            self.qw1=parameter[1]
+            self.kw1=parameter[2]
+            self.vw1=parameter[3]
+            self.fw1=parameter[4]
+            self.qw2=parameter[5]
+            self.kw2=parameter[6]
+            self.vw2=parameter[7]
+            self.qw3=parameter[8]
+            self.kw3=parameter[9]
+            self.vw3=parameter[10]
+            self.fw2=parameter[11]
+            self.ow=parameter[12]
         with tf.name_scope('restore_hyperparameter'):
             self.batch=pickle.load(input_file)
             self.lr=pickle.load(input_file)
