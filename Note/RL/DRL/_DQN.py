@@ -76,10 +76,6 @@ class DQN:
     
     
     def learn(self,episode_num,path=None,one=True):
-        state_pool=self.state_pool
-        action_pool=self.action_pool
-        next_state_pool=self.next_state_pool
-        reward_pool=self.reward_pool
         if len(self.state_pool)<self.pool_size:
             self.random=np.arange(len(self.state_pool))
         else:
@@ -103,26 +99,22 @@ class DQN:
                     if self.save_episode==True:
                         episode.append([self.state_name[s],self.self.action_name[a],r])
                     self.a+=1
-                    if state_pool==None:
-                        state_pool=np.expand_dims(self.state[self.state_name[s]],axis=0)
-                        action_pool=np.expand_dims(a,axis=0)
-                        next_state_pool=np.expand_dims(self.state[self.state_name[next_s]],axis=0)
-                        reward_pool=np.expand_dims(r,axis=0)
+                    if self.state_pool==None:
+                        self.state_pool=tf.expand_dims(self.state[self.state_name[s]],axis=0)
+                        self.action_pool=tf.expand_dims(a,axis=0)
+                        self.next_state_pool=tf.expand_dims(self.state[self.state_name[next_s]],axis=0)
+                        self.reward_pool=tf.expand_dims(r,axis=0)
                     else:
-                        state_pool=np.concatenate(state_pool,np.expand_dims(self.state[self.state_name[s]],axis=0))
-                        action_pool=np.concatenate(action_pool,np.expand_dims(a,axis=0))
-                        next_state_pool=np.concatenate(next_state_pool,np.expand_dims(self.state[self.state_name[next_s]],axis=0))
-                        reward_pool=np.concatenate(reward_pool,np.expand_dims(r,axis=0))
-                    if len(state_pool)>self.pool_size:
-                        state_pool=np.delete(state_pool,0,0)
-                        action_pool=np.delete(action_pool,0,0)
-                        next_state_pool=np.delete(next_state_pool,0,0)
-                        reward_pool=np.delete(reward_pool,0,0)
+                        self.state_pool=tf.concat(self.state_pool,np.expand_dims(self.state[self.state_name[s]],axis=0))
+                        self.action_pool=tf.concat(self.action_pool,np.expand_dims(a,axis=0))
+                        self.next_state_pool=tf.concat(self.next_state_pool,np.expand_dims(self.state[self.state_name[next_s]],axis=0))
+                        self.reward_pool=tf.concat(self.reward_pool,np.expand_dims(r,axis=0))
+                    if len(self.state_pool)>self.pool_size:
+                        self.state_pool=self.state_pool[1:]
+                        self.action_pool=self.action_pool[1:]
+                        self.next_state_pool=self.next_state_pool[1:]
+                        self.reward_pool=self.reward_pool[1:]
                     s=next_s
-                    self.state_pool=tf.convert_to_tensor(state_pool)
-                    self.action_pool=tf.convert_to_tensor(action_pool)
-                    self.next_state_pool=tf.convert_to_tensor(next_state_pool)
-                    self.reward_pool=tf.convert_to_tensor(reward_pool)
                     if len(self.memory_state)<self.batch:
                         loss=self.loss(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool)
                         with tf.GradientTape() as tape:
@@ -181,26 +173,22 @@ class DQN:
                     if self.save_episode==True:
                         episode.append([self.state_name[s],self.self.action_name[a],r])
                     self.a+=1
-                    if state_pool==None:
-                        state_pool=np.expand_dims(self.state[self.state_name[s]],axis=0)
-                        action_pool=np.expand_dims(a,axis=0)
-                        next_state_pool=np.expand_dims(self.state[self.state_name[next_s]],axis=0)
-                        reward_pool=np.expand_dims(r,axis=0)
+                    if self.state_pool==None:
+                        self.state_pool=tf.expand_dims(self.state[self.state_name[s]],axis=0)
+                        self.action_pool=tf.expand_dims(a,axis=0)
+                        self.next_state_pool=tf.expand_dims(self.state[self.state_name[next_s]],axis=0)
+                        self.reward_pool=tf.expand_dims(r,axis=0)
                     else:
-                        state_pool=np.concatenate(state_pool,np.expand_dims(self.state[self.state_name[s]],axis=0))
-                        action_pool=np.concatenate(action_pool,np.expand_dims(a,axis=0))
-                        next_state_pool=np.concatenate(next_state_pool,np.expand_dims(self.state[self.state_name[next_s]],axis=0))
-                        reward_pool=np.concatenate(reward_pool,np.expand_dims(r,axis=0))
-                    if len(state_pool)>self.pool_size:
-                        state_pool=np.delete(state_pool,0,0)
-                        action_pool=np.delete(action_pool,0,0)
-                        next_state_pool=np.delete(next_state_pool,0,0)
-                        reward_pool=np.delete(reward_pool,0,0)
+                        self.state_pool=tf.concatenate(self.state_pool,np.expand_dims(self.state[self.state_name[s]],axis=0))
+                        self.action_pool=tf.concatenate(self.action_pool,np.expand_dims(a,axis=0))
+                        self.next_state_pool=tf.concatenate(self.next_state_pool,np.expand_dims(self.state[self.state_name[next_s]],axis=0))
+                        self.reward_pool=tf.concatenate(self.reward_pool,np.expand_dims(r,axis=0))
+                    if len(self.state_pool)>self.pool_size:
+                        self.state_pool=self.state_pool[1:]
+                        self.action_pool=self.action_pool[1:]
+                        self.next_state_pool=self.next_state_pool[1:]
+                        self.reward_pool=self.reward_pool[1:]
                     s=next_s
-                    self.state_pool=tf.convert_to_tensor(state_pool)
-                    self.action_pool=tf.convert_to_tensor(action_pool)
-                    self.next_state_pool=tf.convert_to_tensor(next_state_pool)
-                    self.reward_pool=tf.convert_to_tensor(reward_pool)
                     if len(self.memory_state)<self.batch:
                         loss=self.loss(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool)
                         with tf.GradientTape() as tape:
@@ -260,10 +248,6 @@ class DQN:
                     self.save(path,i,one)
             self.episode_num+=1
             self.total_episode+=1
-            self.state_pool=state_pool
-            self.action_pool=action_pool
-            self.next_state_pool=next_state_pool
-            self.reward_pool=reward_pool
             if self.save_episode==True:
                 self.episode.append(episode)
         if self.time<0.5:
