@@ -11,10 +11,10 @@ class DQN:
         self.target_net=target_net
         self.predict_p=predict_p
         self.target_p=target_p
-        self.state_pool=[]
-        self.action_pool=[]
-        self.next_state_pool=[]
-        self.reward_pool=[]
+        self.state_pool=None
+        self.action_pool=None
+        self.next_state_pool=None
+        self.reward_pool=None
         self.episode=[]
         self.state=state
         self.state_name=state_name
@@ -103,15 +103,21 @@ class DQN:
                     if self.save_episode==True:
                         episode.append([self.state_name[s],self.self.action_name[a],r])
                     self.a+=1
-                    state_pool.append(self.state[self.state_name[s]])
-                    action_pool.append(a)
-                    next_state_pool.append(self.state[self.state_name[next_s]])
-                    reward_pool.append(r)
+                    if state_pool==None:
+                        state_pool=np.expand_dims(self.state[self.state_name[s]],axis=0)
+                        action_pool=np.expand_dims(a,axis=0)
+                        next_state_pool=np.expand_dims(self.state[self.state_name[next_s]],axis=0)
+                        reward_pool=np.expand_dims(r,axis=0)
+                    else:
+                        state_pool=np.concatenate(state_pool,np.expand_dims(self.state[self.state_name[s]],axis=0))
+                        action_pool=np.concatenate(action_pool,np.expand_dims(a,axis=0))
+                        next_state_pool=np.concatenate(next_state_pool,np.expand_dims(self.state[self.state_name[next_s]],axis=0))
+                        reward_pool=np.concatenate(reward_pool,np.expand_dims(r,axis=0))
                     if len(state_pool)>self.pool_size:
-                        del state_pool[0]
-                        del action_pool[0]
-                        del next_state_pool[0]
-                        del reward_pool[0]
+                        state_pool=np.delete(state_pool,0,0)
+                        action_pool=np.delete(action_pool,0,0)
+                        next_state_pool=np.delete(next_state_pool,0,0)
+                        reward_pool=np.delete(reward_pool,0,0)
                     s=next_s
                     self.state_pool=tf.convert_to_tensor(state_pool)
                     self.action_pool=tf.convert_to_tensor(action_pool)
@@ -175,15 +181,21 @@ class DQN:
                     if self.save_episode==True:
                         episode.append([self.state_name[s],self.self.action_name[a],r])
                     self.a+=1
-                    state_pool.append(self.state[self.state_name[s]])
-                    action_pool.append(a)
-                    next_state_pool.append(self.state[self.state_name[next_s]])
-                    reward_pool.append(r)
+                    if state_pool==None:
+                        state_pool=np.expand_dims(self.state[self.state_name[s]],axis=0)
+                        action_pool=np.expand_dims(a,axis=0)
+                        next_state_pool=np.expand_dims(self.state[self.state_name[next_s]],axis=0)
+                        reward_pool=np.expand_dims(r,axis=0)
+                    else:
+                        state_pool=np.concatenate(state_pool,np.expand_dims(self.state[self.state_name[s]],axis=0))
+                        action_pool=np.concatenate(action_pool,np.expand_dims(a,axis=0))
+                        next_state_pool=np.concatenate(next_state_pool,np.expand_dims(self.state[self.state_name[next_s]],axis=0))
+                        reward_pool=np.concatenate(reward_pool,np.expand_dims(r,axis=0))
                     if len(state_pool)>self.pool_size:
-                        del state_pool[0]
-                        del action_pool[0]
-                        del next_state_pool[0]
-                        del reward_pool[0]
+                        state_pool=np.delete(state_pool,0,0)
+                        action_pool=np.delete(action_pool,0,0)
+                        next_state_pool=np.delete(next_state_pool,0,0)
+                        reward_pool=np.delete(reward_pool,0,0)
                     s=next_s
                     self.state_pool=tf.convert_to_tensor(state_pool)
                     self.action_pool=tf.convert_to_tensor(action_pool)
