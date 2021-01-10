@@ -274,13 +274,13 @@ class DQN:
     
     def save(self,path,i=None,one=True):
         if one==True:
-            output_file=open(path+'save.dat','wb')
-            path=path+'save.dat'
+            output_file=open(path+'\save.dat','wb')
+            path=path+'\save.dat'
             index=path.rfind('\\')
             episode_file=open(path.replace(path[index+1:],'episode.dat'),'wb')
         else:
-            output_file=open(path+'save-{0}.dat'.format(i+1),'wb')
-            path=path+'save-{0}.dat'.format(i+1)
+            output_file=open(path+'\save-{0}.dat'.format(i+1),'wb')
+            path=path+'\save-{0}.dat'.format(i+1)
             index=path.rfind('\\')
             episode_file=open(path.replace(path[index+1:],'episode-{0}.dat'.format(i+1)),'wb')
         pickle.dump(self.episode,episode_file)
