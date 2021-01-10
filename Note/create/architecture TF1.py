@@ -442,11 +442,17 @@ class unnamed:
         return
     
     
-    def save(self,model_path,i=None,one=True):
+    def save(self,path,i=None,one=True):
         if one==True:
-            output_file=open(model_path+'.dat','wb')
+            output_file=open(path+'\save.dat','wb')
+            path=path+'\save.dat'
+            index=path.rfind('\\')
+            parameter_file=open(path.replace(path[index+1:],'parameter.dat'),'wb')
         else:
-            output_file=open(model_path+'-{0}.dat'.format(i+1),'wb')
+            output_file=open(path+'\save-{0}.dat'.format(i+1),'wb')
+            path=path+'\save-{0}.dat'.format(i+1)
+            index=path.rfind('\\')
+            parameter_file=open(path.replace(path[index+1:],'parameter-{0}.dat'.format(i+1)),'wb')
         with tf.name_scope('save_parameter'):
             
           
@@ -480,8 +486,9 @@ class unnamed:
         return
     
 
-    def restore(self,model_path):
-        input_file=open(model_path,'rb')
+    def restore(self,s_path,p_path):
+        input_file=open(s_path,'rb')
+        parameter_file=open(p_path,'rb')
         tf1.accumulator=0
         tf1.test_accumulator=0
         with tf.name_scope('restore_parameter'):
