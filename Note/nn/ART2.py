@@ -183,8 +183,8 @@ class ART2:
     
     
     def save(self,path):
-        output_file=open(path+'save.dat','wb')
-        path=path+'save.dat'
+        output_file=open(path+'\save.dat','wb')
+        path=path+'\save.dat'
         index=path.rfind('\\')
         parameter_file=open(path.replace(path[index+1:],'parameter.dat'),'wb')
         pickle.dump([self.W,self.T],parameter_file)
