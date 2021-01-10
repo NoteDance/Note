@@ -62,7 +62,7 @@ class CMAC:
             self.time+=(t2-t1)
         self.loss_list.append(loss)
         print()
-        print('last loss:{1:.6f}'.format(loss))
+        print('last loss:{0:.6f}'.format(loss))
         if self.time<0.5:
             self.time=int(self.time)
         else:
@@ -84,13 +84,13 @@ class CMAC:
     
     def save(self,path,i=None,one=True):
         if one==True:
-            output_file=open(path+'save.dat','wb')
-            path=path+'save.dat'
+            output_file=open(path+'\save.dat','wb')
+            path=path+'\save.dat'
             index=path.rfind('\\')
             parameter_file=open(path.replace(path[index+1:],'parameter.dat'),'wb')
         else:
-            output_file=open(path+'save-{0}.dat'.format(i+1),'wb')
-            path=path+'save-{0}.dat'.format(i+1)
+            output_file=open(path+'\save-{0}.dat'.format(i+1),'wb')
+            path=path+'\save-{0}.dat'.format(i+1)
             index=path.rfind('\\')
             parameter_file=open(path.replace(path[index+1:],'parameter-{0}.dat'.format(i+1)),'wb')
         pickle.dump([self.C,self.form,self.memory],parameter_file)
