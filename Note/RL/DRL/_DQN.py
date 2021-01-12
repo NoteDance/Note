@@ -72,7 +72,7 @@ class DQN:
     
     
     def loss(self,s,a,next_s,r):
-        return ((r+self.discount*tf.reduce_max(self.target_net(next_s),axis=-1))-self.predict_net(s)[np.arange(len(a)),a])**2
+        return tf.reduce_mean(((r+self.discount*tf.reduce_max(self.target_net(next_s),axis=-1))-self.predict_net(s)[np.arange(len(a)),a])**2)
     
     
     def learn(self,episode_num,path=None,one=True):
