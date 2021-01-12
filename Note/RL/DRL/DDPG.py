@@ -76,7 +76,7 @@ class DDPG:
         s=int(np.random.uniform(0,len(self.state_name)))
         if self.episode_step==None:
             while True:
-                a=self.actor_net(self.state[self.state_name[s]],self.actor_p)+self.OU
+                a=self.actor_net(self.state[self.state_name[s]],self.actor_p)+self.OU()
                 next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                 if end:
                     if self.save_episode==True:
