@@ -178,6 +178,8 @@ class kernel:
                                 else:
                                     gradient=tape.gradient(batch_loss,self.parameter)
                                     self.optimizern(gradient,self.parameter)
+                        if i==(epoch-1):
+                            self.output=self.nn.forward_propagation(data_batch,self.dropout)
                     total_loss+=batch_loss
                     if self.acc_flag1==1:
                         with tf.name_scope('accuracy'):
@@ -225,6 +227,8 @@ class kernel:
                                 else:
                                     gradient=tape.gradient(batch_loss,self.parameter)
                                     self.optimizern(gradient,self.parameter)
+                        if i==(epoch-1):
+                            self.output=self.nn.forward_propagation(data_batch,self.dropout)
                     total_loss+=batch_loss
                     if self.acc_flag1==1:
                         with tf.name_scope('accuracy'):
@@ -294,6 +298,8 @@ class kernel:
                            else:
                                gradient=tape.gradient(batch_loss,self.parameter)
                                self.optimizern(gradient,self.parameter)
+                    if i==(epoch-1):
+                        self.output=self.nn.forward_propagation(train_data,self.dropout)
                 self.train_loss_list.append(loss.astype(np.float32))
                 self.train_loss=loss
                 self.train_loss=self.train_loss.astype(np.float32)
