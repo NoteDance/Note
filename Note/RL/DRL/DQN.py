@@ -6,9 +6,8 @@ import time
 
 
 class DQN:
-    def __init__(self,predict_net,target_net,predict_p,target_p,state,state_name,action_name,search_space,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,save_episode=True):
-        self.predict_net=predict_net
-        self.target_net=target_net
+    def __init__(self,Q_net,predict_p,target_p,state,state_name,action_name,search_space,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,save_episode=True):
+        self.Q_net=Q_net
         self.predict_p=predict_p
         self.target_p=target_p
         self.state_pool=None
@@ -73,7 +72,7 @@ class DQN:
     
     
     def _loss(self,s,a,next_s,r):
-        return tf.reduce_mean(((r+self.discount*tf.reduce_max(self.target_net(next_s),axis=-1))-self.predict_net(s)[np.arange(len(a)),a])**2)
+        return tf.reduce_mean(((r+self.discount*tf.reduce_max(self.Q_net(next_s,self.target_p),axis=-1))-self.Q_net(s,self.predict_p)[np.arange(len(a)),a])**2)
     
     
     def epi(self):
