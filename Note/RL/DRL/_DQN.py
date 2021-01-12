@@ -6,9 +6,9 @@ import time
 
 
 class DQN:
-    def __init__(self,Q_net,predict_p,target_p,state,state_name,action_name,search_space,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,save_episode=True):
-        self.Q_net=Q_net
-        self.predict_p=predict_p
+    def __init__(self,value_net,estimate_p,target_p,state,state_name,action_name,search_space,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,save_episode=True):
+        self.value_net=value_net
+        self.estimate_p=estimate_p
         self.target_p=target_p
         self.state_pool=None
         self.action_pool=None
@@ -64,14 +64,14 @@ class DQN:
     
     
     def update_parameter(self):
-        for i in range(len(self.predict_p)):
-            self.target_p[i]=self.predict_p[i]
+        for i in range(len(self.estimate_p)):
+            self.target_p[i]=self.estimate_p[i]
         self.a=0
         return
     
     
     def loss(self,s,a,next_s,r):
-        return tf.reduce_mean(((r+self.discount*tf.reduce_max(self.Q_net(next_s,self.target_p),axis=-1))-self.Q_net(s,self.predict_p)[np.arange(len(a)),a])**2)
+        return tf.reduce_mean(((r+self.discount*tf.reduce_max(self.value_net(next_s,self.target_p),axis=-1))-self.value_net(s,self.estimate_p)[np.arange(len(a)),a])**2)
     
     
     def learn(self,episode_num,path=None,one=True):
@@ -117,11 +117,11 @@ class DQN:
                     if len(self.memory_state)<self.batch:
                         loss=self.loss(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool)
                         with tf.GradientTape() as tape:
-                            gradient=tape.gradient(loss,self.predict_p)
+                            gradient=tape.gradient(loss,self.estimate_p)
                             if self.opt_flag==True:
-                                self.optimizer(gradient,self.predict_p)
+                                self.optimizer(gradient,self.estimate_p)
                             else:
-                                self.optimizer.apply_gradients(zip(gradient,self.predict_p))
+                                self.optimizer.apply_gradients(zip(gradient,self.estimate_p))
                     else:
                         self.batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
                         for j in range(self.batches):
@@ -130,11 +130,11 @@ class DQN:
                             state_batch,action_batch,next_state_batch,reward_batch=self.batch(j,index1,index2)
                             batch_loss=self.loss(state_batch,action_batch,next_state_batch,reward_batch)
                             with tf.GradientTape() as tape:
-                                gradient=tape.gradient(batch_loss,self.predict_p)
+                                gradient=tape.gradient(batch_loss,self.estimate_p)
                                 if self.opt_flag==True:
-                                    self.optimizer(gradient,self.predict_p)
+                                    self.optimizer(gradient,self.estimate_p)
                                 else:
-                                    self.optimizer.apply_gradients(zip(gradient,self.predict_p))
+                                    self.optimizer.apply_gradients(zip(gradient,self.estimate_p))
                             loss+=batch_loss
                         if len(self.memory_state)%self.batch!=0:
                             self.batches+=1
@@ -143,11 +143,11 @@ class DQN:
                             state_batch,action_batch,next_state_batch,reward_batch=self.batch(j,index1,index2)
                             batch_loss=self.loss(state_batch,action_batch,next_state_batch,reward_batch)
                             with tf.GradientTape() as tape:
-                                gradient=tape.gradient(batch_loss,self.predict_p)
+                                gradient=tape.gradient(batch_loss,self.estimate_p)
                                 if self.opt_flag==True:
-                                    self.optimizer(gradient,self.predict_p)
+                                    self.optimizer(gradient,self.estimate_p)
                                 else:
-                                    self.optimizer.apply_gradients(zip(gradient,self.predict_p))
+                                    self.optimizer.apply_gradients(zip(gradient,self.estimate_p))
                             loss+=batch_loss
                         if len(self.memory_state)%self.batch!=0:
                             loss=loss.numpy()/self.batches+1
@@ -191,11 +191,11 @@ class DQN:
                     if len(self.memory_state)<self.batch:
                         loss=self.loss(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool)
                         with tf.GradientTape() as tape:
-                            gradient=tape.gradient(loss,self.predict_p)
+                            gradient=tape.gradient(loss,self.estimate_p)
                             if self.opt_flag==True:
-                                self.optimizer(gradient,self.predict_p)
+                                self.optimizer(gradient,self.estimate_p)
                             else:
-                                self.optimizer.apply_gradients(zip(gradient,self.predict_p))
+                                self.optimizer.apply_gradients(zip(gradient,self.estimate_p))
                     else:
                         self.batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
                         for j in range(self.batches):
@@ -204,11 +204,11 @@ class DQN:
                             state_batch,action_batch,next_state_batch,reward_batch=self.batch(j,index1,index2)
                             batch_loss=self.loss(state_batch,action_batch,next_state_batch,reward_batch)
                             with tf.GradientTape() as tape:
-                                gradient=tape.gradient(batch_loss,self.predict_p)
+                                gradient=tape.gradient(batch_loss,self.estimate_p)
                                 if self.opt_flag==True:
-                                    self.optimizer(gradient,self.predict_p)
+                                    self.optimizer(gradient,self.estimate_p)
                                 else:
-                                    self.optimizer.apply_gradients(zip(gradient,self.predict_p))
+                                    self.optimizer.apply_gradients(zip(gradient,self.estimate_p))
                             loss+=batch_loss
                         if len(self.memory_state)%self.batch!=0:
                             self.batches+=1
@@ -217,11 +217,11 @@ class DQN:
                             state_batch,action_batch,next_state_batch,reward_batch=self.batch(j,index1,index2)
                             batch_loss=self.loss(state_batch,action_batch,next_state_batch,reward_batch)
                             with tf.GradientTape() as tape:
-                                gradient=tape.gradient(batch_loss,self.predict_p)
+                                gradient=tape.gradient(batch_loss,self.estimate_p)
                                 if self.opt_flag==True:
-                                    self.optimizer(gradient,self.predict_p)
+                                    self.optimizer(gradient,self.estimate_p)
                                 else:
-                                    self.optimizer.apply_gradients(zip(gradient,self.predict_p))
+                                    self.optimizer.apply_gradients(zip(gradient,self.estimate_p))
                             loss+=batch_loss
                         if len(self.memory_state)%self.batch!=0:
                             loss=loss.numpy()/self.batches+1
