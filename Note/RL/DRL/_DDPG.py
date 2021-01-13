@@ -10,7 +10,7 @@ class DDPG:
         self.value_net=value_net
         self.actor_net=actor_net
         self.value_target_p=value_target_p
-        self.value_estimate_p=value_estimate_p
+        self.value_p=value_p
         self.actor_target_p=actor_target_p
         self.actor_p=actor_p
         self.state_pool=None
@@ -60,14 +60,14 @@ class DDPG:
     
     def update_parameter(self):
         for i in range(len(self.value_predict_p)):
-            self.value_target_p[i]=self.tau*self.value_target_p[i]+(1-self.tau)*self.value_estimate_p[i]
+            self.value_target_p[i]=self.tau*self.value_target_p[i]+(1-self.tau)*self.value_p[i]
         for i in range(len(self.actor_p)):
             self.actor_target_p[i]=self.tau*self.actor_target_p[i]+(1-self.tau)*self.actor_p[i]
         return
     
     
-    def loss(self,value_estimate,next_s,r):
-        return tf.reduce_mean(((r+self.discount*self.value_net(next_s,self.actor_net(next_s,self.actor_target_p),self.value_target_p))-value_estimate)**2)
+    def loss(self,value,next_s,r):
+        return tf.reduce_mean(((r+self.discount*self.value_net(next_s,self.actor_net(next_s,self.actor_target_p),self.value_target_p))-value)**2)
     
     
     def learn(self,episode_num,path=None,one=True):
@@ -108,17 +108,17 @@ class DDPG:
                         self.reward_pool=self.reward_pool[1:]
                     s=next_s
                     if len(self.memory_state)<self.batch:
-                        value_estimate=self.value_estimate_net(self.state_pool,self.action_pool,self.value_estimate_p)
-                        loss=self.loss(value_estimate,self.next_state_pool,self.reward_pool)
+                        value=self.value_net(self.state_pool,self.action_pool,self.value_p)
+                        loss=self.loss(value,self.next_state_pool,self.reward_pool)
                         with tf.GradientTape() as tape:
-                            gradient=tape.gradient(loss,self.value_estimate_p)
-                            value_gradient=tape.gradient(value_estimate,self.action_pool)
+                            gradient=tape.gradient(loss,self.value_p)
+                            value_gradient=tape.gradient(value,self.action_pool)
                             actor_gradient=tape.gradient(self.action_pool,self.state_pool)
                             actor_gradient=self.sampled_gradient(value_gradient,actor_gradient)
                             if self.opt_flag==True:
-                                self.optimizer(gradient,self.value_estimate_p)
+                                self.optimizer(gradient,self.value_p)
                             else:
-                                self.optimizer.apply_gradients(zip(gradient,self.value_estimate_p))
+                                self.optimizer.apply_gradients(zip(gradient,self.value_p))
                             for i in range(len(self.actor_p)):
                                 self.actor_p[i]=self.actor_p[i]-actor_gradient[i]
                     else:
@@ -127,17 +127,17 @@ class DDPG:
                             index1=j*self.batch
                             index2=(j+1)*self.batch
                             state_batch,action_batch,next_state_batch,reward_batch=self.batch(j,index1,index2)
-                            value_estimate=self.value_estimate_net(state_batch,action_batch,self.value_estimate_p)
-                            batch_loss=self.loss(value_estimate,next_state_batch,reward_batch)
+                            value=self.value_net(state_batch,action_batch,self.value_p)
+                            batch_loss=self.loss(value,next_state_batch,reward_batch)
                             with tf.GradientTape() as tape:
-                                gradient=tape.gradient(batch_loss,self.value_estimate_p)
-                                value_gradient=tape.gradient(value_estimate,action_batch)
+                                gradient=tape.gradient(batch_loss,self.value_p)
+                                value_gradient=tape.gradient(value,action_batch)
                                 actor_gradient=tape.gradient(action_batch,state_batch)
                                 actor_gradient=self.sampled_gradient(value_gradient,actor_gradient)
                                 if self.opt_flag==True:
-                                    self.optimizer(gradient,self.value_estimate_p)
+                                    self.optimizer(gradient,self.value_p)
                                 else:
-                                    self.optimizer.apply_gradients(zip(gradient,self.value_estimate_p))
+                                    self.optimizer.apply_gradients(zip(gradient,self.value_p))
                                 for i in range(len(self.actor_p)):
                                     self.actor_p[i]=self.actor_p[i]-actor_gradient[i]
                             loss+=batch_loss
@@ -146,17 +146,17 @@ class DDPG:
                             index1=self.batches*self.batch
                             index2=self.batch-(len(self.memory_state)-self.batches*self.batch)
                             state_batch,action_batch,next_state_batch,reward_batch=self.batch(j,index1,index2)
-                            value_estimate=self.value_estimate_net(state_batch,action_batch,self.value_estimate_p)
-                            batch_loss=self.loss(value_estimate,next_state_batch,reward_batch)
+                            value=self.value_net(state_batch,action_batch,self.value_p)
+                            batch_loss=self.loss(value,next_state_batch,reward_batch)
                             with tf.GradientTape() as tape:
-                                gradient=tape.gradient(batch_loss,self.value_estimate_p)
-                                value_gradient=tape.gradient(value_estimate,action_batch)
+                                gradient=tape.gradient(batch_loss,self.value_p)
+                                value_gradient=tape.gradient(value,action_batch)
                                 actor_gradient=tape.gradient(action_batch,state_batch)
                                 actor_gradient=self.sampled_gradient(value_gradient,actor_gradient)
                                 if self.opt_flag==True:
-                                    self.optimizer(gradient,self.value_estimate_p)
+                                    self.optimizer(gradient,self.value_p)
                                 else:
-                                    self.optimizer.apply_gradients(zip(gradient,self.value_estimate_p))
+                                    self.optimizer.apply_gradients(zip(gradient,self.value_p))
                                 for i in range(len(self.actor_p)):
                                     self.actor_p[i]=self.actor_p[i]-actor_gradient[i]
                             loss+=batch_loss
@@ -198,17 +198,17 @@ class DDPG:
                         self.reward_pool=self.reward_pool[1:]
                     s=next_s
                     if len(self.memory_state)<self.batch:
-                        value_estimate=self.value_estimate_net(self.state_pool,self.action_pool,self.value_estimate_p)
-                        loss=self.loss(value_estimate,self.next_state_pool,self.reward_pool)
+                        value=self.value_net(self.state_pool,self.action_pool,self.value_p)
+                        loss=self.loss(value,self.next_state_pool,self.reward_pool)
                         with tf.GradientTape() as tape:
-                            gradient=tape.gradient(loss,self.value_estimate_p)
-                            value_gradient=tape.gradient(value_estimate,self.action_pool)
+                            gradient=tape.gradient(loss,self.value_p)
+                            value_gradient=tape.gradient(value,self.action_pool)
                             actor_gradient=tape.gradient(self.action_pool,self.state_pool)
                             actor_gradient=self.sampled_gradient(value_gradient,actor_gradient)
                             if self.opt_flag==True:
-                                self.optimizer(gradient,self.value_estimate_p)
+                                self.optimizer(gradient,self.value_p)
                             else:
-                                self.optimizer.apply_gradients(zip(gradient,self.value_estimate_p))
+                                self.optimizer.apply_gradients(zip(gradient,self.value_p))
                             for i in range(len(self.actor_p)):
                                 self.actor_p[i]=self.actor_p[i]-actor_gradient[i]
                     else:
@@ -217,17 +217,17 @@ class DDPG:
                             index1=j*self.batch
                             index2=(j+1)*self.batch
                             state_batch,action_batch,next_state_batch,reward_batch=self.batch(j,index1,index2)
-                            value_estimate=self.value_estimate_net(state_batch,action_batch,self.value_estimate_p)
-                            batch_loss=self.loss(value_estimate,next_state_batch,reward_batch)
+                            value=self.value_net(state_batch,action_batch,self.value_p)
+                            batch_loss=self.loss(value,next_state_batch,reward_batch)
                             with tf.GradientTape() as tape:
-                                gradient=tape.gradient(batch_loss,self.value_estimate_p)
-                                value_gradient=tape.gradient(value_estimate,action_batch)
+                                gradient=tape.gradient(batch_loss,self.value_p)
+                                value_gradient=tape.gradient(value,action_batch)
                                 actor_gradient=tape.gradient(action_batch,state_batch)
                                 actor_gradient=self.sampled_gradient(value_gradient,actor_gradient)
                                 if self.opt_flag==True:
-                                    self.optimizer(gradient,self.value_estimate_p)
+                                    self.optimizer(gradient,self.value_p)
                                 else:
-                                    self.optimizer.apply_gradients(zip(gradient,self.value_estimate_p))
+                                    self.optimizer.apply_gradients(zip(gradient,self.value_p))
                                 for i in range(len(self.actor_p)):
                                     self.actor_p[i]=self.actor_p[i]-actor_gradient[i]
                             loss+=batch_loss
@@ -236,17 +236,17 @@ class DDPG:
                             index1=self.batches*self.batch
                             index2=self.batch-(len(self.memory_state)-self.batches*self.batch)
                             state_batch,action_batch,next_state_batch,reward_batch=self.batch(j,index1,index2)
-                            value_estimate=self.value_estimate_net(state_batch,action_batch,self.value_estimate_p)
-                            batch_loss=self.loss(value_estimate,next_state_batch,reward_batch)
+                            value=self.value_net(state_batch,action_batch,self.value_p)
+                            batch_loss=self.loss(value,next_state_batch,reward_batch)
                             with tf.GradientTape() as tape:
-                                gradient=tape.gradient(batch_loss,self.value_estimate_p)
-                                value_gradient=tape.gradient(value_estimate,action_batch)
+                                gradient=tape.gradient(batch_loss,self.value_p)
+                                value_gradient=tape.gradient(value,action_batch)
                                 actor_gradient=tape.gradient(action_batch,state_batch)
                                 actor_gradient=self.sampled_gradient(value_gradient,actor_gradient)
                                 if self.opt_flag==True:
-                                    self.optimizer(gradient,self.value_estimate_p)
+                                    self.optimizer(gradient,self.value_p)
                                 else:
-                                    self.optimizer.apply_gradients(zip(gradient,self.value_estimate_p))
+                                    self.optimizer.apply_gradients(zip(gradient,self.value_p))
                                 for i in range(len(self.actor_p)):
                                     self.actor_p[i]=self.actor_p[i]-actor_gradient[i]
                             loss+=batch_loss
