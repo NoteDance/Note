@@ -71,7 +71,7 @@ class DQL:
     
     
     def loss(self,s,a,next_s,r):
-        return tf.reduce_mean(((r+self.discount*self.value_net(next_s,self.target_p)[np.arange(len(a)),tf.reduce_max(self.value_net(next_s,self.estimate_p),axis=-1)])-self.value_net(s,self.estimate_p)[np.arange(len(a)),a])**2)
+        return tf.reduce_mean(((r+self.discount*self.value_net(next_s,self.target_p)[np.arange(len(a)),tf.math.argmax(self.value_net(next_s,self.estimate_p),axis=-1)])-self.value_net(s,self.estimate_p)[np.arange(len(a)),a])**2)
     
     
     def learn(self,episode_num,path=None,one=True):
