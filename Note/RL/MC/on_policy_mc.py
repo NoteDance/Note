@@ -25,7 +25,7 @@ class on_policy_mc:
         self.total_time=0
         
         
-    def init(self,dtype):
+    def init(self,dtype=np.int32):
         t3=time.time()
         if len(self.action_name)>self.action_len:
             self.action=np.concatenate(self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len)
