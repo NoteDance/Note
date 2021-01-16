@@ -40,8 +40,12 @@ class DQL:
     
     def init(self,dtype=np.int32):
         self.t3=time.time()
-        self.action=np.arange(len(self.action_name),dtype=dtype)
-        self.action_p=np.ones(len(self.action_name),dtype=dtype)
+        if len(self.action_name)>self.action_len:
+            self.action=np.concatenate(self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len)
+            self.action_p=np.concatenate(self.action_p,np.ones(len(self.action_name)-self.action_len,dtype=dtype))
+        else:
+            self.action=np.arange(len(self.action_name),dtype=dtype)
+            self.action_p=np.ones(len(self.action_name),dtype=dtype)
         if self._random!=None:
             self._random=np.arange(self.pool_size)
         self.t4=time.time()
@@ -71,7 +75,7 @@ class DQL:
     
     
     def loss(self,s,a,next_s,r):
-        return tf.reduce_mean(((r+self.discount*self.value_net(next_s,self.target_p)[np.arange(len(a)),tf.math.argmax(self.value_net(next_s,self.estimate_p),axis=-1)])-self.value_net(s,self.estimate_p)[np.arange(len(a)),a])**2)
+        return tf.reduce_mean(((r+self.discount*self.value_net(next_s,self.target_p)[self.action,tf.math.argmax(self.value_net(next_s,self.estimate_p),axis=-1)])-self.value_net(s,self.estimate_p)[self.action,a])**2)
     
     
     def learn(self,episode_num,path=None,one=True):
@@ -89,7 +93,7 @@ class DQL:
                 while True:
                     t1=time.time()
                     action_prob=self.epsilon_greedy_policy(s,self.action_p)
-                    a=np.random.choice(self.action,p=self.action_prob)
+                    a=np.random.choice(self.action,p=action_prob)
                     next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                     if end:
                         if self.save_episode==True:
