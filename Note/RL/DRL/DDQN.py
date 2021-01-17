@@ -5,7 +5,7 @@ import pickle
 import time
 
 
-class DQL:
+class DDQN:
     def __init__(self,value_net,estimate_p,target_p,state,state_name,action_name,search_space,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,save_episode=True):
         self.value_net=value_net
         self.estimate_p=estimate_p
