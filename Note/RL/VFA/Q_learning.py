@@ -32,21 +32,21 @@ class Q_learning:
         t3=time.time()
         if len(self.action_name)>self.action_len:
             self.action=np.concatenate(self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len)
-            self.action_p=np.concatenate(self.action_prob,np.ones(len(self.action_name)-self.action_len,dtype=dtype))
+            self.action_one=np.concatenate(self.action_onerob,np.ones(len(self.action_name)-self.action_len,dtype=dtype))
         else:
             self.action=np.arange(len(self.action_name),dtype=dtype)
-            self.action_p=np.ones(len(self.action_name),dtype=dtype)
+            self.action_one=np.ones(len(self.action_name),dtype=dtype)
         t4=time.time()
         self.time+=t4-t3
         return
     
     
-    def epsilon_greedy_policy(self,s,action_p):
-        action_prob=action_p
-        action_prob=action_prob*self.epsilon/np.sum(action_p)
-        best_action=np.argmax(self.predict_net(self.state[self.state_name[s]]).numpy())
-        action_prob[best_action]+=1-self.epsilon
-        return action_prob
+    def epsilon_greedy_policy(self,s,action_one):
+        action_onerob=action_one
+        action_onerob=action_onerob*self.epsilon/len(action_one)
+        best_action=np.argmax(self.net(self.state[self.state_name[s]]))
+        action_onerob[best_action]+=1-self.epsilon
+        return action_onerob
     
     
     def _loss(self,s,a,next_s,r):
@@ -58,8 +58,8 @@ class Q_learning:
         s=int(np.random.uniform(0,len(self.state_name)))
         if self.episode_step==None:
             while True:
-                action_prob=self.epsilon_greedy_policy(s,self.action_p)
-                a=np.random.choice(self.action,p=action_prob)
+                action_onerob=self.epsilon_greedy_policy(s,self.action_one)
+                a=np.random.choice(self.action,p=action_onerob)
                 next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                 if end:
                     if self.save_episode==True:
@@ -71,8 +71,8 @@ class Q_learning:
                 s=next_s
         else:
             for _ in range(self.episode_step):
-                action_prob=self.epsilon_greedy_policy(s,self.action_p)
-                a=np.random.choice(self.action,p=action_prob)
+                action_onerob=self.epsilon_greedy_policy(s,self.action_one)
+                a=np.random.choice(self.action,p=action_onerob)
                 next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                 if end:
                     if self.save_episode==True:
@@ -112,7 +112,7 @@ class Q_learning:
         pickle.dump(self.episode,episode_file)
         pickle.dump(self.action_len,output_file)
         pickle.dump(self.action,output_file)
-        pickle.dump(self.action_p,output_file)
+        pickle.dump(self.action_one,output_file)
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.discount,output_file)
         pickle.dump(self.episode_step,output_file)
@@ -134,7 +134,7 @@ class Q_learning:
         self.action_len=pickle.load(input_file)
         if self.action_len==len(self.action_name):
             self.action=pickle.load(input_file)
-            self.action_p=pickle.load(input_file)
+            self.action_one=pickle.load(input_file)
         self.epsilon=pickle.load(input_file)
         self.discount=pickle.load(input_file)
         self.episode_step=pickle.load(input_file)
