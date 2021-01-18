@@ -11,7 +11,6 @@ import time
 
 class unnamed:
     def __init__():
-        self.c=TF2.tf2()
         with tf.name_scope('data/shape0'):
            
             
@@ -123,13 +122,8 @@ class unnamed:
                 tf2.batches=batches
                 total_loss=0
                 total_acc=0
-                np.random.shuffle(random)
-                with tf.name_scope('randomize_data'):
-                    
-                
                 for j in range(batches):
-                    tf2.index1=j*batch
-                    tf2.index2=(j+1)*batch
+                    random=np.random.randint(0,self.shape0,self.batch)
                     with tf.name_scope('data_batch'):
                         
                     
@@ -142,7 +136,7 @@ class unnamed:
                         else:
                             with tf.name_scope('apply_gradient'):
                                 if self.optimizer!=None:
-                                    self.tf2.apply_gradient(tape,self.optimizer,batch_loss,parameter)
+                                    c.apply_gradient(tape,self.optimizer,batch_loss,parameter)
                                 else:
                                     gradient=tape.gradient(batch_loss,parameter)
                                     self.optimizern(gradient,parameter)
@@ -154,9 +148,7 @@ class unnamed:
                     total_acc+=batch_acc
                 if self.shape0%batch!=0:
                     batches+=1
-                    tf2.batches+=1
-                    tf2.index1=batches*batch
-                    tf2.index2=batch-(self.shape0-batches*batch)
+                    random=np.random.randint(0,self.shape0,self.batch)
                     with tf.name_scope('data_batch'):
                         
                     
@@ -169,7 +161,7 @@ class unnamed:
                         else:
                             with tf.name_scope('apply_gradient'):
                                 if self.optimizer!=None:
-                                    self.tf2.apply_gradient(tape,self.optimizer,batch_loss,parameter)
+                                    c.apply_gradient(tape,self.optimizer,batch_loss,parameter)
                                 else:
                                     gradient=tape.gradient(batch_loss,parameter)
                                     self.optimizern(gradient,parameter)
@@ -193,10 +185,7 @@ class unnamed:
                         self.test_loss_list.append(self.test_loss)
                         self.test_acc_list.append(self.test_acc)
             else:
-                np.random.shuffle(random)
-                with tf.name_scope('randomize_data'):
-                    
-
+                random=np.random.randint(0,self.shape0,self.shape0)
                 with tf.GradientTape() as tape:
                     with tf.name_scope('forward_propagation/loss'):
                         
@@ -206,7 +195,7 @@ class unnamed:
                     else:
                        with tf.name_scope('apply_gradient'):
                            if self.optimizer!=None:
-                               self.tf2.apply_gradient(tape,self.optimizer,batch_loss,parameter)
+                               c.apply_gradient(tape,self.optimizer,batch_loss,parameter)
                            else:
                                gradient=tape.gradient(batch_loss,parameter)
                                self.optimizern(gradient,parameter)
@@ -265,8 +254,7 @@ class unnamed:
             batches=int((test_data.shape[0]-test_data.shape[0]%batch)/batch)
             tf2.batches=batches
             for j in range(batches):
-                tf2.index1=j*batch
-                tf2.index2=(j+1)*batch
+                random=np.random.randint(0,shape0,batch)
                 with tf.name_scope('data_batch'):
                     
                     
@@ -280,9 +268,7 @@ class unnamed:
                 total_acc+=batch_acc.numpy()
             if test_data.shape[0]%batch!=0:
                 batches+=1
-                tf2.batches+=1
-                tf2.index1=batches*batch
-                tf2.index2=batch-(self.shape0-batches*batch)
+                random=np.random.randint(0,shape0,batch)
                 with tf.name_scope('data_batch'):
                     
                     
