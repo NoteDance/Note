@@ -75,12 +75,12 @@ class Dueling_DQN:
     
     
     def loss(self,s,a,next_s,r):
-        s1,action1=self.value_net(next_s,self.target_p)
-        s2,action2=self.value_net(s,self.estimate_p)
+        value1,action1=self.value_net(next_s,self.target_p)
+        value2,action2=self.value_net(s,self.estimate_p)
         action1=action1-tf.expand_dims(tf.reduce_sum(action1,axis=-1)/self.action,axis=-1)
         action2=action2-tf.expand_dims(tf.reduce_sum(action2,axis=-1)/self.action,axis=-1)
-        Q1=s1+action1
-        Q2=s2+action2
+        Q1=value1+action1
+        Q2=value2+action2
         return tf.reduce_mean(((r+self.discount*tf.reduce_max(Q1,axis=-1))-Q2[self.action,a])**2)
     
     
