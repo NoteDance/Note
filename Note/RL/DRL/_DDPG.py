@@ -34,7 +34,6 @@ class DDPG:
         self.loss_list=[]
         self.opt_flag==False
         self.episode_num=0
-        self._random=None
         self.total_episode=0
         self.time=0
         self.total_time=0
@@ -45,11 +44,9 @@ class DDPG:
         
     
     
-    def batch(self,index1,index2):
-        if index1==self.batches*self.batch:
-            return self.state_pool[np.concatenate([self.random[index1:],self.random[:index2]])],self.action_pool[np.concatenate([self.random[index1:],self.random[:index2]])],self.next_state_pool[np.concatenate([self.random[index1:],self.random[:index2]])],self.reward_pool[np.concatenate([self.random[index1:],self.random[:index2]])]
-        else:
-            return self.state_pool[self.random[index1:index2]],self.action_pool[self.random[index1:index2]],self.next_state_pool[self.random[index1:index2]],self.reward_pool[self.random[index1:index2]]
+    def batch(self):
+        random=np.random.randint(0,len(self.state_pool),self.batch)
+        return self.state_pool[random],self.action_pool[random],self.next_state_pool[random],self.reward_pool[random]  
     
     
     def sampled_gradient(self,value_gradient,actor_gradient):
@@ -71,15 +68,10 @@ class DDPG:
     
     
     def learn(self,episode_num,path=None,one=True):
-        if len(self.state_pool)<self.pool_size:
-            self.random=np.arange(len(self.state_pool))
-        else:
-            self.random=self._random
         for i in range(episode_num):
             loss=0
             episode=[]
             s=int(np.random.uniform(0,len(self.state_name)))
-            np.random.shuffle(self.random)
             if self.episode_step==None:
                 while True:
                     t1=time.time()
@@ -107,7 +99,7 @@ class DDPG:
                         self.next_state_pool=self.next_state_pool[1:]
                         self.reward_pool=self.reward_pool[1:]
                     s=next_s
-                    if len(self.memory_state)<self.batch:
+                    if len(self.state_pool)<self.batch:
                         value=self.value_net(self.state_pool,self.action_pool,self.value_p)
                         loss=self.loss(value,self.next_state_pool,self.reward_pool)
                         with tf.GradientTape() as tape:
@@ -124,9 +116,7 @@ class DDPG:
                     else:
                         self.batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
                         for j in range(self.batches):
-                            index1=j*self.batch
-                            index2=(j+1)*self.batch
-                            state_batch,action_batch,next_state_batch,reward_batch=self.batch(j,index1,index2)
+                            state_batch,action_batch,next_state_batch,reward_batch=self.batch()
                             value=self.value_net(state_batch,action_batch,self.value_p)
                             batch_loss=self.loss(value,next_state_batch,reward_batch)
                             with tf.GradientTape() as tape:
@@ -141,11 +131,9 @@ class DDPG:
                                 for i in range(len(self.actor_p)):
                                     self.actor_p[i]=self.actor_p[i]-actor_gradient[i]
                             loss+=batch_loss
-                        if len(self.memory_state)%self.batch!=0:
+                        if len(self.state_pool)%self.batch!=0:
                             self.batches+=1
-                            index1=self.batches*self.batch
-                            index2=self.batch-(len(self.memory_state)-self.batches*self.batch)
-                            state_batch,action_batch,next_state_batch,reward_batch=self.batch(j,index1,index2)
+                            state_batch,action_batch,next_state_batch,reward_batch=self.batch()
                             value=self.value_net(state_batch,action_batch,self.value_p)
                             batch_loss=self.loss(value,next_state_batch,reward_batch)
                             with tf.GradientTape() as tape:
@@ -160,9 +148,9 @@ class DDPG:
                                 for i in range(len(self.actor_p)):
                                     self.actor_p[i]=self.actor_p[i]-actor_gradient[i]
                             loss+=batch_loss
-                        if len(self.memory_state)%self.batch!=0:
+                        if len(self.state_pool)%self.batch!=0:
                             loss=loss.numpy()/self.batches+1
-                        elif len(self.memory_state)<self.batch:
+                        elif len(self.state_pool)<self.batch:
                             loss=loss.numpy()
                         else:
                             loss=loss.numpy()/self.batches
@@ -197,7 +185,7 @@ class DDPG:
                         self.next_state_pool=self.next_state_pool[1:]
                         self.reward_pool=self.reward_pool[1:]
                     s=next_s
-                    if len(self.memory_state)<self.batch:
+                    if len(self.state_pool)<self.batch:
                         value=self.value_net(self.state_pool,self.action_pool,self.value_p)
                         loss=self.loss(value,self.next_state_pool,self.reward_pool)
                         with tf.GradientTape() as tape:
@@ -214,9 +202,7 @@ class DDPG:
                     else:
                         self.batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
                         for j in range(self.batches):
-                            index1=j*self.batch
-                            index2=(j+1)*self.batch
-                            state_batch,action_batch,next_state_batch,reward_batch=self.batch(j,index1,index2)
+                            state_batch,action_batch,next_state_batch,reward_batch=self.batch()
                             value=self.value_net(state_batch,action_batch,self.value_p)
                             batch_loss=self.loss(value,next_state_batch,reward_batch)
                             with tf.GradientTape() as tape:
@@ -231,11 +217,9 @@ class DDPG:
                                 for i in range(len(self.actor_p)):
                                     self.actor_p[i]=self.actor_p[i]-actor_gradient[i]
                             loss+=batch_loss
-                        if len(self.memory_state)%self.batch!=0:
+                        if len(self.state_pool)%self.batch!=0:
                             self.batches+=1
-                            index1=self.batches*self.batch
-                            index2=self.batch-(len(self.memory_state)-self.batches*self.batch)
-                            state_batch,action_batch,next_state_batch,reward_batch=self.batch(j,index1,index2)
+                            state_batch,action_batch,next_state_batch,reward_batch=self.batch()
                             value=self.value_net(state_batch,action_batch,self.value_p)
                             batch_loss=self.loss(value,next_state_batch,reward_batch)
                             with tf.GradientTape() as tape:
@@ -250,9 +234,9 @@ class DDPG:
                                 for i in range(len(self.actor_p)):
                                     self.actor_p[i]=self.actor_p[i]-actor_gradient[i]
                             loss+=batch_loss
-                        if len(self.memory_state)%self.batch!=0:
+                        if len(self.state_pool)%self.batch!=0:
                             loss=loss.numpy()/self.batches+1
-                        elif len(self.memory_state)<self.batch:
+                        elif len(self.state_pool)<self.batch:
                             loss=loss.numpy()
                         else:
                             loss=loss.numpy()/self.batches
@@ -324,7 +308,6 @@ class DDPG:
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.loss_list,output_file)
         pickle.dump(self.opt_flag,output_file)
-        pickle.dump(self._random,output_file)
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
@@ -350,7 +333,6 @@ class DDPG:
         self.save_episode=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
         self.opt_flag=pickle.load(input_file)
-        self._random=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         self.total_time=self.time
         input_file.close()
