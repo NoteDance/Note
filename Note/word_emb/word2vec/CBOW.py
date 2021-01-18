@@ -132,18 +132,9 @@ class CBOW:
                 if batch!=None:
                     batches=int((self.shape0-self.shape0%batch)/batch)
                     total_loss=0
-                    random=np.arange(self.shape0)
-                    np.random.shuffle(random)
-                    cword=self.cword[random]
-                    bword=self.bword[random]
-                    labels=self.labels[random]
                     for j in range(batches):
-                        index1=j*batch
-                        index2=(j+1)*batch
-                        cword_batch=cword[index1:index2]
-                        bword_batch=bword[index1:index2]
-                        labels_batch=labels[index1:index2]
-                        feed_dict={self.cword_place:cword_batch,self.bword_place:bword_batch,self.labels_place:labels_batch}
+                        random=np.random.randint(0,self.shape0,self.batch)
+                        feed_dict={self.cword_place:self.cword[random],self.bword_place:self.bword[random],self.labels_place:self.labels[random]}
                         if i==0 and self.total_epoch==0:
                             batch_loss=sess.run(train_loss,feed_dict=feed_dict)
                         else:
@@ -151,12 +142,8 @@ class CBOW:
                         total_loss+=batch_loss
                     if self.shape0%batch!=0:
                         batches+=1
-                        index1=batches*batch
-                        index2=batch-(self.shape0-batches*batch)
-                        cword_batch=np.concatenate([cword[index1:],cword[:index2]])
-                        bword_batch=np.concatenate([bword[index1:],bword[:index2]])
-                        labels_batch=np.concatenate([labels[index1:],labels[:index2]])
-                        feed_dict={self.cword_place:cword_batch,self.bword_place:bword_batch,self.labels_place:labels_batch}
+                        random=np.random.randint(0,self.shape0,self.batch)
+                        feed_dict={self.cword_place:self.cword[random],self.bword_place:self.bword[random],self.labels_place:self.labels[random]}
                         if i==0 and self.total_epoch==0:
                             batch_loss=sess.run(train_loss,feed_dict=feed_dict)
                         else:
@@ -167,12 +154,8 @@ class CBOW:
                     self.train_loss=loss
                     self.train_loss=self.train_loss.astype(np.float16)
                 else:
-                    random=np.arange(self.shape0)
-                    np.random.shuffle(random)
-                    cword=self.cword[random]
-                    bword=self.bword[random]
-                    labels=self.labels[random]
-                    feed_dict={self.cword_place:cword,self.bword_place:bword,self.labels_place:labels}
+                    random=np.random.randint(0,self.shape0,self.shape0)
+                    feed_dict={self.cword_place:self.cword[random],self.bword_place:self.bword[random],self.labels_place:self.labels[random]}
                     if i==0 and self.total_epoch==0:
                         loss=sess.run(train_loss,feed_dict=feed_dict)
                     else:
