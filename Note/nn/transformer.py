@@ -1,5 +1,5 @@
 import tensorflow as tf
-import Note.create.TF2 as TF2
+import Note.create.create as c
 from tensorflow.python.ops import state_ops
 import tensorflow.keras.optimizers as optimizers
 import numpy as np
@@ -10,7 +10,6 @@ import time
 
 class transformer:
     def __init__(self,train_data=None,train_labels=None,test_data=None,test_labels=None):
-        self.tf2=TF2.tf2()
         with tf.name_scope('data'):
             self.train_data=train_data
             self.train_labels=train_labels
@@ -231,25 +230,6 @@ class transformer:
             with tf.name_scope('decoder'):
                 output=self.decoder(self,word_vector2,encoder)
             return output
-        
-        
-    def batch(self,data):
-        if self.index1==self.batches*self.batch:
-            return np.concatenate([data[self.index1:],data[:self.index2]])
-        else:
-            return data[self.index1:self.index2]
-        
-        
-    def extend(self,variable):
-        for i in range(len(variable)-1):
-            variable[0].extend[variable[i+1]]
-        return variable[0]
-    
-    
-    def apply_gradient(self,tape,optimizer,loss,variable):
-        gradient=tape.gradient(loss,variable)
-        optimizer.apply_gradients(zip(gradient,variable))
-        return
                     
                                 
     def train(self,batch=None,epoch=None,lr=0.001,test=False,test_batch=None,model_path=None,one=True,processor=None):
@@ -263,7 +243,7 @@ class transformer:
             self.processor=processor
         with tf.name_scope('variable'):
             variable=[self.qw1,self.kw1,self.vw1,self.fw1,self.qw2,self.kw2,self.vw2,self.qw3,self.kw3,self.vw3,self.fw2]
-            variable=self.extend(variable)
+            variable=c.extend(variable)
         with tf.name_scope('optimizer'):
             self.optimizer='Adam'
             optimizer=optimizers.Adam(lr)
@@ -274,7 +254,6 @@ class transformer:
             t1=time.time()
             if batch!=None:
                 batches=int((self.shape0-self.shape0%batch)/batch)
-                self.tf2.batches=batches
                 total_loss=0
                 total_acc=0
                 np.random.shuffle(random)
@@ -283,53 +262,36 @@ class transformer:
                         self.train_data=self.train_data[random]
                         self.train_labels=self.train_labels[random]
                 for j in range(batches):
-                    self.tf2.index1=j*batch
-                    self.tf2.index2=(j+1)*batch
-                    with tf.name_scope('data_batch'):
-                        if self.ooo==False:
-                            train_data_batch=self.train_data[random[self.tf2.index1:self.tf2.index2]]
-                            train_labels_batch=self.train_labels[random[self.tf2.index1:self.tf2.index2]]
-                        else:
-                            train_data_batch=self.tf2.batch(self.train_data)
-                            train_labels_batch=self.tf2.batch(self.train_labels)
+                    random=np.random.randint(0,self.shape0,self.batch)
                     with tf.GradientTape() as tape:
                         with tf.name_scope('forward_propagation/loss'):
-                            output=self.forward_propagation(train_data_batch)
-                            batch_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output,labels=train_labels_batch))
+                            output=self.forward_propagation(self.train_data[random])
+                            batch_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output,labels=self.train_labels[random]))
                         if i==0 and self.total_epoch==0:
                             batch_loss=batch_loss.numpy()
                         else:
                             with tf.name_scope('apply_gradient'):
-                                self.tf2.apply_gradient(tape,optimizer,batch_loss,variable)
+                                c.apply_gradient(tape,optimizer,batch_loss,variable)
                     total_loss+=batch_loss
                     with tf.name_scope('accuracy'):
-                        batch_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(train_labels_batch,2)!=0,tf.int32)==tf.argmax(train_labels_batch,2),tf.float32))
+                        batch_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(self.train_labels[random],2)!=0,tf.int32)==tf.argmax(self.train_labels[random],2),tf.float32))
                     batch_acc=batch_acc.numpy()
                     total_acc+=batch_acc
                 if self.shape0%batch!=0:
                     batches+=1
-                    self.tf2.batches+=1
-                    self.tf2.index1=batches*batch
-                    self.tf2.index2=batch-(self.shape0-batches*batch)
-                    with tf.name_scope('data_batch'):
-                        if self.ooo==False:
-                            train_data_batch=self.train_data[np.concatenate([random[self.tf2.index1:],random[:self.tf2.index2]])]
-                            train_labels_batch=self.train_labels[np.concatenate([random[self.tf2.index1:],random[:self.tf2.index2]])]
-                        else:
-                            train_data_batch=self.tf2.batch(self.train_data)
-                            train_labels_batch=self.tf2.batch(self.train_labels)
+                    random=np.random.randint(0,self.shape0,self.batch)
                     with tf.GradientTape() as tape:
                         with tf.name_scope('forward_propagation/loss'):
-                            output=self.forward_propagation(train_data_batch)
-                            batch_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output,labels=train_labels_batch))
+                            output=self.forward_propagation(self.train_data[random])
+                            batch_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output,labels=self.train_labels[random]))
                         if i==0 and self.total_epoch==0:
                             batch_loss=batch_loss.numpy()
                         else:
                             with tf.name_scope('apply_gradient'):
-                                self.tf2.apply_gradient(tape,optimizer,batch_loss,variable)
+                                c.apply_gradient(tape,optimizer,batch_loss,variable)
                     total_loss+=batch_loss
                     with tf.name_scope('accuracy'):
-                        batch_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(train_labels_batch,2)!=0,tf.int32)==tf.argmax(train_labels_batch,2),tf.float32))
+                        batch_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(self.train_labels[random],2)!=0,tf.int32)==tf.argmax(self.train_labels[random],2),tf.float32))
                     batch_acc=batch_acc.numpy()
                     total_acc+=batch_acc
                 loss=total_loss/batches
@@ -346,30 +308,21 @@ class transformer:
                         self.test_loss_list.append(self.test_loss)
                         self.test_acc_list.append(self.test_acc)
             else:
-                np.random.shuffle(random)
-                with tf.name_scope('randomize_data'):
-                    if self.ooo==False:
-                        train_data=self.train_data[random]
-                        train_labels=self.train_labels[random]
-                    else:
-                        self.train_data=self.train_data[random]
-                        self.train_labels=self.train_labels[random]
-                        train_data=self.train_data
-                        train_labels=self.train_labels
+                random=np.random.randint(0,self.shape0,self.shape0)
                 with tf.GradientTape() as tape:
                     with tf.name_scope('forward_propagation/loss'):
-                        output=self.forward_propagation(train_data)
-                        train_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output,labels=train_labels))
+                        output=self.forward_propagation(self.train_data[random])
+                        train_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output,labels=self.train_labels[random]))
                     if i==0 and self.total_epoch==0:
                         loss=train_loss.numpy()
                     else:
                         with tf.name_scope('apply_gradient'):
-                            self.tf2.apply_gradient(tape,optimizer,batch_loss,variable)
+                            c.apply_gradient(tape,optimizer,batch_loss,variable)
                 self.train_loss_list.append(loss.astype(np.float32))
                 self.train_loss=loss
                 self.train_loss=self.train_loss.astype(np.float32)
                 with tf.name_scope('accuracy'):
-                    train_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(train_labels,2)!=0,tf.int32)==tf.argmax(train_labels,2),tf.float32))
+                    train_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(self.train_labels[random],2)!=0,tf.int32)==tf.argmax(self.train_labels[random],2),tf.float32))
                 acc=train_acc.numpy()
                 self.train_acc_list.append(acc.astype(np.float32))
                 self.train_acc=acc
@@ -415,34 +368,24 @@ class transformer:
             total_loss=0
             total_acc=0
             batches=int((test_data.shape[0]-test_data.shape[0]%batch)/batch)
-            self.tf2.batches=batches
             for j in range(batches):
-                self.tf2.index1=j*batch
-                self.tf2.index2=(j+1)*batch
-                with tf.name_scope('data_batch'):
-                    test_data_batch=self.tf2.batch(test_data)
-                    test_labels_batch=self.tf2.batch(test_labels)
+                random=np.random.randint(0,test_data.shape[0],batch)
                 with tf.name_scope('loss'):
-                     output=self.forward_propagation(test_data_batch)
-                     batch_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output,labels=test_labels_batch))
+                     output=self.forward_propagation(test_data[random])
+                     batch_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output,labels=test_labels[random]))
                 total_loss+=batch_loss.numpy()
                 with tf.name_scope('accuracy'):
-                    batch_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(test_labels_batch,2)!=0,tf.int32)==tf.argmax(test_labels_batch,2),tf.float32))
+                    batch_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(test_labels[random],2)!=0,tf.int32)==tf.argmax(test_labels[random],2),tf.float32))
                 total_acc+=batch_acc.numpy()
             if test_data.shape[0]%batch!=0:
                 batches+=1
-                self.tf2.batches+=1
-                self.tf2.index1=batches*batch
-                self.tf2.index2=batch-(self.shape0-batches*batch)
-                with tf.name_scope('data_batch'):
-                    test_data_batch=self.batch(test_data)
-                    test_labels_batch=self.batch(test_labels)
+                random=np.random.randint(0,test_data.shape[0],batch)
                 with tf.name_scope('loss'):
-                    output=self.forward_propagation(test_data_batch)
-                    batch_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output,labels=test_labels_batch))
+                    output=self.forward_propagation(test_data[random])
+                    batch_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output,labels=test_labels[random]))
                 total_loss+=batch_loss.numpy()
                 with tf.name_scope('accuracy'):
-                    batch_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(test_labels_batch,2)!=0,tf.int32)==tf.argmax(test_labels_batch,2),tf.float32))
+                    batch_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(test_labels[random],2)!=0,tf.int32)==tf.argmax(test_labels[random],2),tf.float32))
                 total_acc+=batch_acc.numpy()
             test_loss=total_loss/batches
             test_acc=total_acc/batches
