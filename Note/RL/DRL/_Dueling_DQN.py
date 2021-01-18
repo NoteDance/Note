@@ -55,7 +55,7 @@ class Dueling_DQN:
     def epsilon_greedy_policy(self,s,action_p):
         action_prob=action_p
         action_prob=action_prob*self.epsilon/np.sum(action_p)
-        best_a=np.argmax(self.predict_net(self.state[self.state_name[s]]).numpy())
+        best_a=np.argmax(self.value_net(self.state[self.state_name[s]]))
         action_prob[best_a]+=1-self.epsilon
         return action_prob
     
