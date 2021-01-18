@@ -29,10 +29,10 @@ class on_policy_mc:
         self.t3=time.time()
         if len(self.action_name)>self.action_len:
             self.action=np.concatenate(self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len)
-            self.action_prob=np.concatenate(self.action_prob,np.ones(len(self.action_name)-self.action_len,dtype=dtype))
+            self.action_onerob=np.concatenate(self.action_onerob,np.ones(len(self.action_name)-self.action_len,dtype=dtype))
         else:
             self.action=np.arange(len(self.action_name),dtype=dtype)
-            self.action_prob=np.ones(len(self.action_name),dtype=dtype)
+            self.action_onerob=np.ones(len(self.action_name),dtype=dtype)
         if len(self.state_name)>self.q.shape[0] or len(self.action_name)>self.q.shape[1]:
             self.q=np.concatenate([self.q,np.zeros([len(self.state_name),len(self.action_name)-self.action_len],dtype=self.q.dtype)],axis=1)
             self.q=np.concatenate([self.q,np.zeros([len(self.state_name)-self.state_len,len(self.action_name)],dtype=self.q.dtype)])
@@ -41,21 +41,21 @@ class on_policy_mc:
         return
 
 
-    def epsilon_greedy_policy(self,q,s,action_p):
-        action_prob=action_p
-        action_prob=action_prob*self.epsilon/np.sum(action_p)
+    def epsilon_greedy_policy(self,q,s,action_one):
+        action_onerob=action_one
+        action_onerob=action_onerob*self.epsilon/len(action_one)
         best_a=np.argmax(q[s])
-        action_prob[best_a]+=1-self.epsilon
-        return action_prob
+        action_onerob[best_a]+=1-self.epsilon
+        return action_onerob
     
     
-    def episode(self,q,s,action,action_p,search_space):
+    def episode(self,q,s,action,action_one,search_space):
         episode=[]
         _episode=[]
         if self.episode_step==None:
             while True:
-                action_prob=self.epsilon_greedy_policy(q,s,action_p)
-                a=np.random.choice(action,p=action_prob)
+                action_onerob=self.epsilon_greedy_policy(q,s,action_one)
+                a=np.random.choice(action,p=action_onerob)
                 next_s,r,end=search_space[self.state_name[s]][self.action_name[a]]
                 episode.append([s,a,r])
                 if end:
@@ -67,8 +67,8 @@ class on_policy_mc:
                 s=next_s
         else:
             for _ in range(self.episode_step):
-                action_prob=self.epsilon_greedy_policy(q,s,action_p)
-                a=np.random.choice(action,p=action_prob)
+                action_onerob=self.epsilon_greedy_policy(q,s,action_one)
+                a=np.random.choice(action,p=action_onerob)
                 next_s,r,end=search_space[self.state_name[s]][self.action_name[a]]
                 episode.append([s,a,r])
                 if end:
@@ -110,7 +110,7 @@ class on_policy_mc:
         for i in range(episode_num):
             t1=time.time()
             s=int(np.random.uniform(0,len(self.state_name)))
-            e=self.episode(self.q,s,self.action,self.action_prob,self.search_space,self.episode_step)
+            e=self.episode(self.q,s,self.action,self.action_onerob,self.search_space,self.episode_step)
             self.q,self.r_sum,self.r_count=self.first_visit(e,self.q,self.r_sum,self.r_count,self.discount)
             self.delta=self.delta/(i+1)
             if episode_num%10!=0:
@@ -157,7 +157,7 @@ class on_policy_mc:
         pickle.dump(self.r_count,output_file)
         pickle.dump(self.action_len,output_file)
         pickle.dump(self.action,output_file)
-        pickle.dump(self.action_prob,output_file)
+        pickle.dump(self.action_onerob,output_file)
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.discount,output_file)
         pickle.dump(self.theta,output_file)
@@ -180,7 +180,7 @@ class on_policy_mc:
         self.action_len=pickle.load(input_file)
         if self.action_len==len(self.action_name):
             self.action=pickle.load(input_file)
-            self.action_prob=pickle.load(input_file)
+            self.action_onerob=pickle.load(input_file)
         self.epsilon=pickle.load(input_file)
         self.discount=pickle.load(input_file)
         self.theta=pickle.load(input_file)
