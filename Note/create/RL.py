@@ -2,12 +2,12 @@ import tensorflow as tf
 import numpy as np
 
 
-def epsilon_greedy_policy(action,action_p,epsilon):
-    action_prob=action_p
-    action_prob=action_prob*epsilon/np.sum(action_p)
-    best_a=np.argmax(action)
+def epsilon_greedy_policy(action,value,action_one,epsilon):
+    action_prob=action_one
+    action_prob=action_prob*epsilon/len(action_one)
+    best_a=np.argmax(value)
     action_prob[best_a]+=1-epsilon
-    return action_prob
+    return np.random.choice(action,p=action_prob)
 
 
 def pool(state,action,next_state,reward,pool_size,state_pool=None,action_pool=None,next_state_pool=None,reward_pool=None):
