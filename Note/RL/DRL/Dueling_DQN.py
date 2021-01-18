@@ -11,7 +11,7 @@ class Dueling_DQN:
         self.estimate_p=estimate_p
         self.target_p=target_p
         self.state_pool=None
-        self.action_pool=None
+        self.action_oneool=None
         self.next_state_pool=None
         self.reward_pool=None
         self.episode=[]
@@ -43,10 +43,10 @@ class Dueling_DQN:
         t3=time.time()
         if len(self.action_name)>self.action_len:
             self.action=np.concatenate(self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len)
-            self.action_p=np.concatenate(self.action_p,np.ones(len(self.action_name)-self.action_len,dtype=dtype))
+            self.action_one=np.concatenate(self.action_one,np.ones(len(self.action_name)-self.action_len,dtype=dtype))
         else:
             self.action=np.arange(len(self.action_name),dtype=dtype)
-            self.action_p=np.ones(len(self.action_name),dtype=dtype)
+            self.action_one=np.ones(len(self.action_name),dtype=dtype)
         if self._random!=None:
             self._random=np.arange(self.pool_size)
         t4=time.time()
@@ -54,19 +54,19 @@ class Dueling_DQN:
         return
     
     
-    def epsilon_greedy_policy(self,s,action_p):
-        action_prob=action_p
-        action_prob=action_prob*self.epsilon/np.sum(action_p)
+    def epsilon_greedy_policy(self,s,action_one):
+        action_onerob=action_one
+        action_onerob=action_onerob*self.epsilon/len(action_one)
         best_a=np.argmax(self.value_net(self.state[self.state_name[s]]))
-        action_prob[best_a]+=1-self.epsilon
-        return action_prob
+        action_onerob[best_a]+=1-self.epsilon
+        return action_onerob
     
     
     def batch(self,index1,index2):
         if index1==self.batches*self.batch:
-            return self.state_pool[np.concatenate([self.random[index1:],self.random[:index2]])],self.action_pool[np.concatenate([self.random[index1:],self.random[:index2]])],self.next_state_pool[np.concatenate([self.random[index1:],self.random[:index2]])],self.reward_pool[np.concatenate([self.random[index1:],self.random[:index2]])]
+            return self.state_pool[np.concatenate([self.random[index1:],self.random[:index2]])],self.action_oneool[np.concatenate([self.random[index1:],self.random[:index2]])],self.next_state_pool[np.concatenate([self.random[index1:],self.random[:index2]])],self.reward_pool[np.concatenate([self.random[index1:],self.random[:index2]])]
         else:
-            return self.state_pool[self.random[index1:index2]],self.action_pool[self.random[index1:index2]],self.next_state_pool[self.random[index1:index2]],self.reward_pool[self.random[index1:index2]]
+            return self.state_pool[self.random[index1:index2]],self.action_oneool[self.random[index1:index2]],self.next_state_pool[self.random[index1:index2]],self.reward_pool[self.random[index1:index2]]
     
     
     def update_parameter(self):
@@ -90,8 +90,8 @@ class Dueling_DQN:
         s=int(np.random.uniform(0,len(self.state_name)))
         if self.episode_step==None:
             while True:
-                action_prob=self.epsilon_greedy_policy(s,self.action_p)
-                a=np.random.choice(self.action,p=action_prob)
+                action_onerob=self.epsilon_greedy_policy(s,self.action_one)
+                a=np.random.choice(self.action,p=action_onerob)
                 next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                 if end:
                     if self.save_episode==True:
@@ -101,24 +101,24 @@ class Dueling_DQN:
                     episode.append([self.state_name[s],self.self.action_name[a],r])
                 if self.state_pool==None:
                     self.state_pool=tf.expand_dims(self.state[self.state_name[s]],axis=0)
-                    self.action_pool=tf.expand_dims(a,axis=0)
+                    self.action_oneool=tf.expand_dims(a,axis=0)
                     self.next_state_pool=tf.expand_dims(self.state[self.state_name[next_s]],axis=0)
                     self.reward_pool=tf.expand_dims(r,axis=0)
                 else:
                     self.state_pool=tf.concatenate(self.state_pool,tf.expand_dims(self.state[self.state_name[s]],axis=0))
-                    self.action_pool=tf.concatenate(self.action_pool,tf.expand_dims(a,axis=0))
+                    self.action_oneool=tf.concatenate(self.action_oneool,tf.expand_dims(a,axis=0))
                     self.next_state_pool=tf.concatenate(self.next_state_pool,tf.expand_dims(self.state[self.state_name[next_s]],axis=0))
                     self.reward_pool=tf.concatenate(self.reward_pool,tf.expand_dims(r,axis=0))
                 if len(self.state_pool)>self.pool_size:
                     self.state_pool=self.state_pool[1:]
-                    self.action_pool=self.action_pool[1:]
+                    self.action_oneool=self.action_oneool[1:]
                     self.next_state_pool=self.next_state_pool[1:]
                     self.reward_pool=self.reward_pool[1:]
                 s=next_s
         else:
             for _ in range(self.episode_step):
-                action_prob=self.epsilon_greedy_policy(s,self.action_p)
-                a=np.random.choice(self.action,p=action_prob)
+                action_onerob=self.epsilon_greedy_policy(s,self.action_one)
+                a=np.random.choice(self.action,p=action_onerob)
                 next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                 if end:
                     if self.save_episode==True:
@@ -128,17 +128,17 @@ class Dueling_DQN:
                     episode.append([self.state_name[s],self.self.action_name[a],r])
                 if self.state_pool==None:
                     self.state_pool=tf.expand_dims(self.state[self.state_name[s]],axis=0)
-                    self.action_pool=tf.expand_dims(a,axis=0)
+                    self.action_oneool=tf.expand_dims(a,axis=0)
                     self.next_state_pool=tf.expand_dims(self.state[self.state_name[next_s]],axis=0)
                     self.reward_pool=tf.expand_dims(r,axis=0)
                 else:
                     self.state_pool=tf.concatenate(self.state_pool,tf.expand_dims(self.state[self.state_name[s]],axis=0))
-                    self.action_pool=tf.concatenate(self.action_pool,tf.expand_dims(a,axis=0))
+                    self.action_oneool=tf.concatenate(self.action_oneool,tf.expand_dims(a,axis=0))
                     self.next_state_pool=tf.concatenate(self.next_state_pool,tf.expand_dims(self.state[self.state_name[next_s]],axis=0))
                     self.reward_pool=tf.concatenate(self.reward_pool,tf.expand_dims(r,axis=0))
                 if len(self.state_pool)>self.pool_size:
                     self.state_pool=self.state_pool[1:]
-                    self.action_pool=self.action_pool[1:]
+                    self.action_oneool=self.action_oneool[1:]
                     self.next_state_pool=self.next_state_pool[1:]
                     self.reward_pool=self.reward_pool[1:]
                 s=next_s
@@ -156,7 +156,7 @@ class Dueling_DQN:
             self.random=self._random
         np.random.shuffle(self.random)
         if len(self.state_pool)<self.batch:
-            self.loss=self._loss(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool)
+            self.loss=self._loss(self.state_pool,self.action_oneool,self.next_state_pool,self.reward_pool)
             with tf.GradientTape() as tape:
                 gradient=tape.gradient(self.loss,self.estimate_p)
                 if self.opt_flag==True:
@@ -223,12 +223,12 @@ class Dueling_DQN:
             episode_file=open(path.replace(path[index+1:],'episode-{0}.dat'.format(i+1)),'wb')
         pickle.dump(self.episode,episode_file)
         pickle.dump(self.state_pool,output_file)
-        pickle.dump(self.action_pool,output_file)
+        pickle.dump(self.action_oneool,output_file)
         pickle.dump(self.next_state_pool,output_file)
         pickle.dump(self.reward_pool,output_file)
         pickle.dump(self.action_len,output_file)
         pickle.dump(self.action,output_file)
-        pickle.dump(self.action_p,output_file)
+        pickle.dump(self.action_one,output_file)
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.discount,output_file)
         pickle.dump(self.episode_step,output_file)
@@ -251,13 +251,13 @@ class Dueling_DQN:
         episode_file=open(e_path,'rb')
         self.episode=pickle.load(episode_file)
         self.state_pool=pickle.load(input_file)
-        self.action_pool=pickle.load(input_file)
+        self.action_oneool=pickle.load(input_file)
         self.next_state_pool=pickle.load(input_file)
         self.reward_pool=pickle.load(input_file)
         self.action_len=pickle.load(input_file)
         if self.action_len==len(self.action_name):
             self.action=pickle.load(input_file)
-            self.action_p=pickle.load(input_file)
+            self.action_one=pickle.load(input_file)
         self.epsilon=pickle.load(input_file)
         self.discount=pickle.load(input_file)
         self.episode_step=pickle.load(input_file)
