@@ -35,7 +35,6 @@ class DDPG:
         self.opt_flag==False
         self.episode_num=0
         self.epi_num=0
-        self._random=None
         self.total_episode=0
         self.time=0
         self.total_time=0
@@ -46,11 +45,9 @@ class DDPG:
         
     
         
-    def batch(self,index1,index2):
-        if index1==self.batches*self.batch:
-            return self.state_pool[np.concatenate([self.random[index1:],self.random[:index2]])],self.action_pool[np.concatenate([self.random[index1:],self.random[:index2]])],self.next_state_pool[np.concatenate([self.random[index1:],self.random[:index2]])],self.reward_pool[np.concatenate([self.random[index1:],self.random[:index2]])]
-        else:
-            return self.state_pool[self.random[index1:index2]],self.action_pool[self.random[index1:index2]],self.next_state_pool[self.random[index1:index2]],self.reward_pool[self.random[index1:index2]]
+    def batch(self):
+        random=np.random.randint(0,len(self.state_pool),self.batch)
+        return self.state_pool[random],self.action_pool[random],self.next_state_pool[random],self.reward_pool[random]
     
     
     def sampled_gradient(self,value_gradient,actor_gradient):
@@ -134,11 +131,6 @@ class DDPG:
     
     def learn(self):
         self.loss=0
-        if len(self.state_pool)<self.pool_size:
-            self.random=np.arange(len(self.state_pool))
-        else:
-            self.random=self._random
-        np.random.shuffle(self.random)
         if len(self.state_pool)<self.batch:
             value=self.value_net(self.state_pool,self.action_pool,self.value_p)
             loss=self.loss(value,self.next_state_pool,self.reward_pool)
@@ -156,9 +148,7 @@ class DDPG:
         else:
             self.batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
             for j in range(self.batches):
-                index1=j*self.batch
-                index2=(j+1)*self.batch
-                state_batch,action_batch,next_state_batch,reward_batch=self.batch(index1,index2)
+                state_batch,action_batch,next_state_batch,reward_batch=self.batch()
                 value=self.value_net(state_batch,action_batch,self.value_p)
                 batch_loss=self.loss(value,next_state_batch,reward_batch)
                 with tf.GradientTape() as tape:
@@ -175,9 +165,7 @@ class DDPG:
                 self.loss+=batch_loss
             if len(self.state_pool)%self.batch!=0:
                 self.batches+=1
-                index1=self.batches*self.batch
-                index2=self.batch-(len(self.state_pool)-self.batches*self.batch)
-                state_batch,action_batch,next_state_batch,reward_batch=self.batch(j,index1,index2)
+                state_batch,action_batch,next_state_batch,reward_batch=self.batch()
                 value=self.value_net(state_batch,action_batch,self.value_p)
                 batch_loss=self.loss(value,next_state_batch,reward_batch)
                 with tf.GradientTape() as tape:
