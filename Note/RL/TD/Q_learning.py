@@ -29,10 +29,10 @@ class Q_learning:
         t3=time.time()
         if len(self.action_name)>self.action_len:
             self.action=np.concatenate(self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len)
-            self.action_prob=np.concatenate(self.action_prob,np.ones(len(self.action_name)-self.action_len,dtype=dtype))
+            self.action_onerob=np.concatenate(self.action_onerob,np.ones(len(self.action_name)-self.action_len,dtype=dtype))
         else:
             self.action=np.arange(len(self.action_name),dtype=dtype)
-            self.action_prob=np.ones(len(self.action_name),dtype=dtype)
+            self.action_onerob=np.ones(len(self.action_name),dtype=dtype)
         if len(self.state_name)>self.q.shape[0] or len(self.action_name)>self.q.shape[1]:
             self.q=np.concatenate([self.q,np.zeros([len(self.state_name),len(self.action_name)-self.action_len],dtype=self.q.dtype)],axis=1)
             self.q=np.concatenate([self.q,np.zeros([len(self.state_name)-self.state_len,len(self.action_name)],dtype=self.q.dtype)])
@@ -42,12 +42,12 @@ class Q_learning:
         return
 
 
-    def epsilon_greedy_policy(self,q,s,action_p):
-        action_prob=action_p
-        action_prob=action_prob*self.epsilon/np.sum(action_p)
+    def epsilon_greedy_policy(self,q,s,action_one):
+        action_onerob=action_one
+        action_onerob=action_onerob*self.epsilon/len(action_one)
         best_a=np.argmax(q[s])
-        action_prob[best_a]+=1-self.epsilon
-        return action_prob
+        action_onerob[best_a]+=1-self.epsilon
+        return action_onerob
     
     
     def td(self,q,episode):
@@ -56,14 +56,14 @@ class Q_learning:
         return q
     
     
-    def _episode(self,q,s,action,action_p):
+    def _episode(self,q,s,action,action_one):
         a=0
         episode=[]
         _episode=[]
         if self.episode_step==None:
             while True:
-                action_prob=self.epsilon_greedy_policy(q,s,action_p)
-                a=np.random.choice(action,p=action_prob)
+                action_onerob=self.epsilon_greedy_policy(q,s,action_one)
+                a=np.random.choice(action,p=action_onerob)
                 next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                 temp=q[s][a]
                 self.delta+=np.abs(q[s][a]-temp)
@@ -80,8 +80,8 @@ class Q_learning:
                 a+=1
         else:
             for _ in range(self.episode_step):
-                action_prob=self.epsilon_greedy_policy(q,s,action_p)
-                a=np.random.choice(action,p=action_prob)
+                action_onerob=self.epsilon_greedy_policy(q,s,action_one)
+                a=np.random.choice(action,p=action_onerob)
                 next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                 temp=q[s][a]
                 self.delta+=np.abs(q[s][a]-temp)
@@ -103,7 +103,7 @@ class Q_learning:
     
     def episode(self):
         s=int(np.random.uniform(0,len(self.state_name)))
-        return self._episode(self.q,s,self.action,self.action_prob)
+        return self._episode(self.q,s,self.action,self.action_onerob)
     
     
     def update_q(self,q,episode):
@@ -131,7 +131,7 @@ class Q_learning:
         pickle.dump(self.episode,episode_file)
         pickle.dump(self.action_len,output_file)
         pickle.dump(self.action,output_file)
-        pickle.dump(self.action_prob,output_file)
+        pickle.dump(self.action_onerob,output_file)
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.alpha,output_file)
         pickle.dump(self.discount,output_file)
@@ -152,7 +152,7 @@ class Q_learning:
         self.action_len=pickle.load(input_file)
         if self.action_len==len(self.action_name):
             self.action=pickle.load(input_file)
-            self.action_prob=pickle.load(input_file)
+            self.action_onerob=pickle.load(input_file)
         self.epsilon=pickle.load(input_file)
         self.alpha=pickle.load(input_file)
         self.discount=pickle.load(input_file)
