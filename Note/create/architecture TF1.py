@@ -9,7 +9,7 @@ import time
 class unnamed:
     def __init__():
         self.graph=tf.Graph()
-        tf1=c.tf1()
+        self.tf1=c.tf1
         with tf.name_scope('data/shape0'):
             
             
@@ -139,21 +139,14 @@ class unnamed:
             self.sess=sess
             if self.total_epoch==0:
                 epoch=epoch+1
-            random=np.arange(self.shape0)
             for i in range(epoch):
                 t1=time.time()
                 if batch!=None:
                     batches=int((self.shape0-self.shape0%batch)/batch)
-                    tf1.batches=batches
                     total_loss=0
                     total_acc=0
-                    np.random.shuffle(random)
-                    with tf.name_scope('randomize_data'):
-                    
-                        
                     for j in range(batches):
-                        tf1.index1=j*batch
-                        tf1.index2=(j+1)*batch
+                        random=np.random.randint(0,self.shape0,self.batch)
                         with tf.name_scope('data_batch/feed_dict'):
                         
                         
@@ -166,9 +159,7 @@ class unnamed:
                         total_acc+=batch_acc
                     if self.shape0%batch!=0:
                         batches+=1
-                        tf1.batches+=1
-                        tf1.index1=batches*batch
-                        tf1.index2=batch-(self.shape0-batches*batch)
+                        random=np.random.randint(0,self.shape0,self.batch)
                         with tf.name_scope('data_batch/feed_dict'):
                             
                         
@@ -193,7 +184,7 @@ class unnamed:
                             self.test_loss_list.append(self.test_loss)
                             self.test_acc_list.append(self.test_acc)
                 else:
-                    np.random.shuffle(random)
+                    random=np.random.randint(0,self.shape0,self.shape0)
                     with tf.name_scope('randomize_data/feed_dict'):
                         
                         
@@ -287,10 +278,8 @@ class unnamed:
                 total_loss=0
                 total_acc=0
                 batches=int((test_data.shape[0]-test_data.shape[0]%batch)/batch)
-                tf1.batches=batches
                 for j in range(batches):
-                    tf1.index1=j*batch
-                    tf1.index2=(j+1)*batch
+                    random=np.random.randint(0,shape0,batch)
                     with tf.name_scope('data_batch/feed_dict'):
                         
                         
@@ -300,9 +289,7 @@ class unnamed:
                     total_acc+=batch_acc
                 if test_data.shape[0]%batch!=0:
                     batches+=1
-                    tf1.batches+=1
-                    tf1.index1=batches*batch
-                    tf1.index2=batch-(self.shape0-batches*batch)
+                    random=np.random.randint(0,shape0,batch)
                     with tf.name_scope('data_batch/feed_dict'):
                         
                         
@@ -457,8 +444,8 @@ class unnamed:
             
           
         with tf.name_scope('save_data_msg'):
-            pickle.dump(tf1.dtype)
-            pickle.dump(tf1.shape)           
+            pickle.dump(self.tf1.dtype)
+            pickle.dump(self.tf1.shape)           
         with tf.name_scope('save_hyperparameter'):
             pickle.dump(self.batch,output_file)
             pickle.dump(self.lr,output_file)
@@ -489,14 +476,14 @@ class unnamed:
     def restore(self,s_path,p_path):
         input_file=open(s_path,'rb')
         parameter_file=open(p_path,'rb')
-        tf1.accumulator=0
-        tf1.test_accumulator=0
+        self.tf1.accumulator=0
+        self.tf1.test_accumulator=0
         with tf.name_scope('restore_parameter'):
             
             
         with tf.name_scope('restore_data_msg'):    
-            tf1.dtype=pickle.load(input_file)
-            tf1.shape=pickle.load(input_file)
+            self.tf1.dtype=pickle.load(input_file)
+            self.tf1.shape=pickle.load(input_file)
         self.graph=tf.Graph()
         with self.graph.as_default():
             with tf.name_scope('placeholder'):
