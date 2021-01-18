@@ -11,7 +11,7 @@ class Dueling_DQN:
         self.estimate_p=estimate_p
         self.target_p=target_p
         self.state_pool=None
-        self.action_oneool=None
+        self.action_pool=None
         self.next_state_pool=None
         self.reward_pool=None
         self.episode=[]
@@ -32,7 +32,6 @@ class Dueling_DQN:
         self.loss_list=[]
         self.opt_flag==False
         self.episode_num=0
-        self._random=None
         self.total_episode=0
         self.time=0
         self.total_time=0
@@ -53,18 +52,11 @@ class Dueling_DQN:
     
     
     def epsilon_greedy_policy(self,s,action_one):
-        action_onerob=action_one
-        action_onerob=action_onerob*self.epsilon/len(action_one)
+        action_prob=action_one
+        action_prob=action_prob*self.epsilon/len(action_one)
         best_a=np.argmax(self.value_net(self.state[self.state_name[s]]))
-        action_onerob[best_a]+=1-self.epsilon
-        return action_onerob
-    
-    
-    def batch(self,index1,index2):
-        if index1==self.batches*self.batch:
-            return self.state_pool[np.concatenate([self.random[index1:],self.random[:index2]])],self.action_oneool[np.concatenate([self.random[index1:],self.random[:index2]])],self.next_state_pool[np.concatenate([self.random[index1:],self.random[:index2]])],self.reward_pool[np.concatenate([self.random[index1:],self.random[:index2]])]
-        else:
-            return self.state_pool[self.random[index1:index2]],self.action_oneool[self.random[index1:index2]],self.next_state_pool[self.random[index1:index2]],self.reward_pool[self.random[index1:index2]]
+        action_prob[best_a]+=1-self.epsilon
+        return action_prob
     
     
     def update_parameter(self):
@@ -85,21 +77,16 @@ class Dueling_DQN:
     
     
     def learn(self,episode_num,path=None,one=True):
-        if len(self.state_pool)<self.pool_size:
-            self.random=np.arange(len(self.state_pool))
-        else:
-            self.random=self._random
         for i in range(episode_num):
             self.a=0
             loss=0
             episode=[]
             s=int(np.random.uniform(0,len(self.state_name)))
-            np.random.shuffle(self.random)
             if self.episode_step==None:
                 while True:
                     t1=time.time()
-                    action_onerob=self.epsilon_greedy_policy(s,self.action_one)
-                    a=np.random.choice(self.action,p=action_onerob)
+                    action_prob=self.epsilon_greedy_policy(s,self.action_one)
+                    a=np.random.choice(self.action,p=action_prob)
                     next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                     if end:
                         if self.save_episode==True:
@@ -110,22 +97,22 @@ class Dueling_DQN:
                     self.a+=1
                     if self.state_pool==None:
                         self.state_pool=tf.expand_dims(self.state[self.state_name[s]],axis=0)
-                        self.action_oneool=tf.expand_dims(a,axis=0)
+                        self.action_pool=tf.expand_dims(a,axis=0)
                         self.next_state_pool=tf.expand_dims(self.state[self.state_name[next_s]],axis=0)
                         self.reward_pool=tf.expand_dims(r,axis=0)
                     else:
                         self.state_pool=tf.concat(self.state_pool,tf.expand_dims(self.state[self.state_name[s]],axis=0))
-                        self.action_oneool=tf.concat(self.action_oneool,tf.expand_dims(a,axis=0))
+                        self.action_pool=tf.concat(self.action_pool,tf.expand_dims(a,axis=0))
                         self.next_state_pool=tf.concat(self.next_state_pool,tf.expand_dims(self.state[self.state_name[next_s]],axis=0))
                         self.reward_pool=tf.concat(self.reward_pool,tf.expand_dims(r,axis=0))
                     if len(self.state_pool)>self.pool_size:
                         self.state_pool=self.state_pool[1:]
-                        self.action_oneool=self.action_oneool[1:]
+                        self.action_pool=self.action_pool[1:]
                         self.next_state_pool=self.next_state_pool[1:]
                         self.reward_pool=self.reward_pool[1:]
                     s=next_s
-                    if len(self.memory_state)<self.batch:
-                        loss=self.loss(self.state_pool,self.action_oneool,self.next_state_pool,self.reward_pool)
+                    if len(self.state_pool)<self.batch:
+                        loss=self.loss(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool)
                         with tf.GradientTape() as tape:
                             gradient=tape.gradient(loss,self.estimate_p)
                             if self.opt_flag==True:
@@ -135,10 +122,8 @@ class Dueling_DQN:
                     else:
                         self.batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
                         for j in range(self.batches):
-                            index1=j*self.batch
-                            index2=(j+1)*self.batch
-                            state_batch,action_batch,next_state_batch,reward_batch=self.batch(j,index1,index2)
-                            batch_loss=self.loss(state_batch,action_batch,next_state_batch,reward_batch)
+                            random=np.random.randint(0,len(self.state_pool),self.batch)
+                            batch_loss=self.loss(self.state_pool[random],self.action_pool[random],self.next_state_pool[random],self.reward_pool[random])
                             with tf.GradientTape() as tape:
                                 gradient=tape.gradient(batch_loss,self.estimate_p)
                                 if self.opt_flag==True:
@@ -146,12 +131,10 @@ class Dueling_DQN:
                                 else:
                                     self.optimizer.apply_gradients(zip(gradient,self.estimate_p))
                             loss+=batch_loss
-                        if len(self.memory_state)%self.batch!=0:
+                        if len(self.state_pool)%self.batch!=0:
                             self.batches+=1
-                            index1=self.batches*self.batch
-                            index2=self.batch-(len(self.memory_state)-self.batches*self.batch)
-                            state_batch,action_batch,next_state_batch,reward_batch=self.batch(j,index1,index2)
-                            batch_loss=self.loss(state_batch,action_batch,next_state_batch,reward_batch)
+                            random=np.random.randint(0,len(self.state_pool),self.batch)
+                            batch_loss=self.loss(self.state_pool[random],self.action_pool[random],self.next_state_pool[random],self.reward_pool[random])
                             with tf.GradientTape() as tape:
                                 gradient=tape.gradient(batch_loss,self.estimate_p)
                                 if self.opt_flag==True:
@@ -159,9 +142,9 @@ class Dueling_DQN:
                                 else:
                                     self.optimizer.apply_gradients(zip(gradient,self.estimate_p))
                             loss+=batch_loss
-                        if len(self.memory_state)%self.batch!=0:
+                        if len(self.state_pool)%self.batch!=0:
                             loss=loss.numpy()/self.batches+1
-                        elif len(self.memory_state)<self.batch:
+                        elif len(self.state_pool)<self.batch:
                             loss=loss.numpy()
                         else:
                             loss=loss.numpy()/self.batches
@@ -172,8 +155,8 @@ class Dueling_DQN:
             else:
                 for _ in range(self.episode_step):
                     t1=time.time()
-                    action_onerob=self.epsilon_greedy_policy(s,self.action_one)
-                    a=np.random.choice(self.action,p=action_onerob)
+                    action_prob=self.epsilon_greedy_policy(s,self.action_one)
+                    a=np.random.choice(self.action,p=action_prob)
                     next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
                     if end:
                         if self.save_episode==True:
@@ -184,22 +167,22 @@ class Dueling_DQN:
                     self.a+=1
                     if self.state_pool==None:
                         self.state_pool=tf.expand_dims(self.state[self.state_name[s]],axis=0)
-                        self.action_oneool=tf.expand_dims(a,axis=0)
+                        self.action_pool=tf.expand_dims(a,axis=0)
                         self.next_state_pool=tf.expand_dims(self.state[self.state_name[next_s]],axis=0)
                         self.reward_pool=tf.expand_dims(r,axis=0)
                     else:
                         self.state_pool=tf.concatenate(self.state_pool,tf.expand_dims(self.state[self.state_name[s]],axis=0))
-                        self.action_oneool=tf.concatenate(self.action_oneool,tf.expand_dims(a,axis=0))
+                        self.action_pool=tf.concatenate(self.action_pool,tf.expand_dims(a,axis=0))
                         self.next_state_pool=tf.concatenate(self.next_state_pool,tf.expand_dims(self.state[self.state_name[next_s]],axis=0))
                         self.reward_pool=tf.concatenate(self.reward_pool,tf.expand_dims(r,axis=0))
                     if len(self.state_pool)>self.pool_size:
                         self.state_pool=self.state_pool[1:]
-                        self.action_oneool=self.action_oneool[1:]
+                        self.action_pool=self.action_pool[1:]
                         self.next_state_pool=self.next_state_pool[1:]
                         self.reward_pool=self.reward_pool[1:]
                     s=next_s
-                    if len(self.memory_state)<self.batch:
-                        loss=self.loss(self.state_pool,self.action_oneool,self.next_state_pool,self.reward_pool)
+                    if len(self.state_pool)<self.batch:
+                        loss=self.loss(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool)
                         with tf.GradientTape() as tape:
                             gradient=tape.gradient(loss,self.estimate_p)
                             if self.opt_flag==True:
@@ -209,10 +192,8 @@ class Dueling_DQN:
                     else:
                         self.batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
                         for j in range(self.batches):
-                            index1=j*self.batch
-                            index2=(j+1)*self.batch
-                            state_batch,action_batch,next_state_batch,reward_batch=self.batch(j,index1,index2)
-                            batch_loss=self.loss(state_batch,action_batch,next_state_batch,reward_batch)
+                            random=np.random.randint(0,len(self.state_pool),self.batch)
+                            batch_loss=self.loss(self.state_pool[random],self.action_pool[random],self.next_state_pool[random],self.reward_pool[random])
                             with tf.GradientTape() as tape:
                                 gradient=tape.gradient(batch_loss,self.estimate_p)
                                 if self.opt_flag==True:
@@ -220,12 +201,10 @@ class Dueling_DQN:
                                 else:
                                     self.optimizer.apply_gradients(zip(gradient,self.estimate_p))
                             loss+=batch_loss
-                        if len(self.memory_state)%self.batch!=0:
+                        if len(self.state_pool)%self.batch!=0:
                             self.batches+=1
-                            index1=self.batches*self.batch
-                            index2=self.batch-(len(self.memory_state)-self.batches*self.batch)
-                            state_batch,action_batch,next_state_batch,reward_batch=self.batch(j,index1,index2)
-                            batch_loss=self.loss(state_batch,action_batch,next_state_batch,reward_batch)
+                            random=np.random.randint(0,len(self.state_pool),self.batch)
+                            batch_loss=self.loss(self.state_pool[random],self.action_pool[random],self.next_state_pool[random],self.reward_pool[random])
                             with tf.GradientTape() as tape:
                                 gradient=tape.gradient(batch_loss,self.estimate_p)
                                 if self.opt_flag==True:
@@ -233,9 +212,9 @@ class Dueling_DQN:
                                 else:
                                     self.optimizer.apply_gradients(zip(gradient,self.estimate_p))
                             loss+=batch_loss
-                        if len(self.memory_state)%self.batch!=0:
+                        if len(self.state_pool)%self.batch!=0:
                             loss=loss.numpy()/self.batches+1
-                        elif len(self.memory_state)<self.batch:
+                        elif len(self.state_pool)<self.batch:
                             loss=loss.numpy()
                         else:
                             loss=loss.numpy()/self.batches
@@ -294,7 +273,7 @@ class Dueling_DQN:
             episode_file=open(path.replace(path[index+1:],'episode-{0}.dat'.format(i+1)),'wb')
         pickle.dump(self.episode,episode_file)
         pickle.dump(self.state_pool,output_file)
-        pickle.dump(self.action_oneool,output_file)
+        pickle.dump(self.action_pool,output_file)
         pickle.dump(self.next_state_pool,output_file)
         pickle.dump(self.reward_pool,output_file)
         pickle.dump(self.action_len,output_file)
@@ -311,7 +290,6 @@ class Dueling_DQN:
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.loss_list,output_file)
         pickle.dump(self.opt_flag,output_file)
-        pickle.dump(self._random,output_file)
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
@@ -323,7 +301,7 @@ class Dueling_DQN:
         episode_file=open(e_path,'rb')
         self.episode=pickle.load(episode_file)
         self.state_pool=pickle.load(input_file)
-        self.action_oneool=pickle.load(input_file)
+        self.action_pool=pickle.load(input_file)
         self.next_state_pool=pickle.load(input_file)
         self.reward_pool=pickle.load(input_file)
         self.action_len=pickle.load(input_file)
@@ -341,7 +319,6 @@ class Dueling_DQN:
         self.save_episode=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
         self.opt_flag=pickle.load(input_file)
-        self._random=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         self.total_time=self.time
         input_file.close()
