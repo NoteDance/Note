@@ -1,6 +1,5 @@
 import tensorflow as tf
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import pickle
 import time
@@ -929,7 +928,7 @@ class CNN:
         return
 
 
-    def classify(self,data,one_hot=False,save_path=None,save_csv=None,processor=None):
+    def classify(self,data,one_hot=False,save_path=None,processor=None):
         with self.graph.as_default():
             if processor!=None:
                 self.processor=processor
@@ -951,9 +950,6 @@ class CNN:
                         output_file=open(save_path,'wb')
                         pickle.dump(output,output_file)
                         output_file.close()
-                    elif save_csv!=None:
-                        data=pd.DataFrame(output)
-                        data.to_csv(save_csv,index=False,header=False)
                     return output
                 else:
                     softmax=np.sum(np.exp(output),axis=1).reshape(output.shape[0],1)
@@ -963,7 +959,4 @@ class CNN:
                         output_file=open(save_path,'wb')
                         pickle.dump(output,output_file)
                         output_file.close()
-                    elif save_csv!=None:
-                        data=pd.DataFrame(output)
-                        data.to_csv(save_csv,index=False,header=False)
                     return output
