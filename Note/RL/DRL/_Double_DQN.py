@@ -254,6 +254,12 @@ class Double_DQN:
         return
     
     
+    def save_p(self,path):
+        output_file=open(path+'.dat','wb')
+        pickle.dump(self.estimate_p,output_file)
+        return
+    
+    
     def save(self,path,i=None,one=True):
         if one==True:
             output_file=open(path+'\save.dat','wb')
