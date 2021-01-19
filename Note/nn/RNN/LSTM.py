@@ -1,6 +1,5 @@
 import tensorflow as tf
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import pickle
 import time
@@ -1254,7 +1253,7 @@ class LSTM:
         return
 
 
-    def classify(self,data,one_hot=False,save_path=None,save_csv=None,processor=None):
+    def classify(self,data,one_hot=False,save_path=None,processor=None):
         with self.graph.as_default():
             if processor!=None:
                 self.processor=processor
@@ -1302,13 +1301,10 @@ class LSTM:
                         output_file=open(save_path,'wb')
                         pickle.dump(output,output_file)
                         output_file.close()
-                    elif save_csv!=None:
-                        data=pd.DataFrame(output)
-                        data.to_csv(save_csv,index=False,header=False)
                     return output
                     
                     
-    def predicate(self,data,save_path=None,save_csv=None,processor=None):
+    def predicate(self,data,save_path=None,processor=None):
         with self.graph.as_default():
             if processor!=None:
                 self.processor=processor
@@ -1325,7 +1321,4 @@ class LSTM:
                 output_file=open(save_path,'wb')
                 pickle.dump(output,output_file)
                 output_file.close()
-            elif save_csv!=None:
-                data=pd.DataFrame(output)
-                data.to_csv(save_csv,index=False,header=False)
             return output
