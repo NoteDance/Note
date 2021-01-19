@@ -281,6 +281,13 @@ class DDPG:
         return
     
     
+    def save_p(self,path):
+        output_file=open(path+'.dat','wb')
+        pickle.dump(self.value_p,output_file)
+        pickle.dump(self.actor_p,output_file)
+        return
+    
+    
     def save(self,path,i=None,one=True):
         if one==True:
             output_file=open(path+'\save.dat','wb')
