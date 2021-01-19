@@ -96,6 +96,12 @@ class policy_iteration:
                 return
     
     
+    def save_policy(self,path):
+        output_file=open(path+'.dat','wb')
+        pickle.dump(self.policy,output_file)
+        return
+    
+    
     def save(self,path,i=None,one=True):
         if one==True:
             output_file=open(path+'.dat','wb')
