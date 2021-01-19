@@ -249,18 +249,12 @@ class transformer:
             optimizer=optimizers.Adam(lr)
         if self.total_epoch==0:
             epoch=epoch+1
-        random=np.arange(self.shape0)
         for i in range(epoch):
             t1=time.time()
             if batch!=None:
                 batches=int((self.shape0-self.shape0%batch)/batch)
                 total_loss=0
                 total_acc=0
-                np.random.shuffle(random)
-                with tf.name_scope('randomize_data'):
-                    if self.ooo==True:
-                        self.train_data=self.train_data[random]
-                        self.train_labels=self.train_labels[random]
                 for j in range(batches):
                     random=np.random.randint(0,self.shape0,self.batch)
                     with tf.GradientTape() as tape:
