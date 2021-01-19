@@ -33,7 +33,6 @@ class kernel:
         self.test_loss_list=[]
         self.test_acc_list=[]
         self.test_flag=False
-        self.ooo=False
         self.total_epoch=0
         self.time=0
         self.total_time=0
@@ -98,6 +97,11 @@ class kernel:
             self.parameter=self.nn.parameter
         with tf.name_scope('hyperparameter'):
             self.batch=batch
+            if batch!=None:
+                if batch!=1:
+                    random=np.arange(batch)
+                else:
+                    random=np.arange(self.shape0)
             self.epoch=0
             self.hyperparameter=self.nn.hyperparameter
         self.test_flag=test
@@ -119,19 +123,33 @@ class kernel:
                 batches=int((self.shape0-self.shape0%batch)/batch)
                 total_loss=0
                 total_acc=0
+                np.random.shuffle(random)
                 for j in range(batches):
-                    random=np.random.randint(0,self.shape0,self.batch)
+                    index1=j*batch
+                    index2=(j+1)*batch
                     with tf.name_scope('data_batch'):
                         if type(self.train_data)==list:
                             for i in range(len(self.train_data)):
-                                data_batch[i]=self.train_data[i][random]
+                                if batch!=1:
+                                    data_batch[i]=self.train_data[i][index1:index2][random]
+                                else:
+                                    data_batch[i]=self.train_data[i][j]
                         else:
-                            data_batch=self.train_data[random]
+                            if batch!=1:
+                                data_batch=self.train_data[index1:index2][random]
+                            else:
+                                data_batch=self.train_data[j]
                         if type(self.train_labels)==list:
                             for i in range(len(self.train_data)):
-                                labels_batch[i]=self.train_labels[i][random]
+                                if batch!=1:
+                                    labels_batch[i]=self.train_labels[i][index1:index2][random]
+                                else:
+                                    labels_batch[i]=self.train_labels[i][j]
                         else:
-                            labels_batch=self.train_labels[random]
+                            if batch!=1:
+                                labels_batch=self.train_labels[index1:index2][random]
+                            else:
+                                labels_batch=self.train_labels[j]
                     with tf.GradientTape() as tape:
                         with tf.name_scope('forward_propagation/loss'):
                             output=self.nn.forward_propagation(data_batch,self.dropout)
@@ -156,18 +174,32 @@ class kernel:
                         total_acc+=batch_acc
                 if self.shape0%batch!=0:
                     batches+=1
-                    random=np.random.randint(0,self.shape0,self.batch)
+                    index1=batches*batch
+                    index2=batch-(self.shape0-batches*batch)
                     with tf.name_scope('data_batch'):
                         if type(self.train_data)==list:
                             for i in range(len(self.train_data)):
-                                data_batch[i]=self.train_data[i][random]
+                                if type(self.train_data)==np.ndarray:
+                                    data_batch[i]=np.concatenate(self.train_data[i][index1:],self.train_data[i][:index2])[random]
+                                else:
+                                    data_batch[i]=tf.concat(self.train_data[i][index1:],self.train_data[i][:index2])[random]
+                                    
                         else:
-                            data_batch=self.train_data[random]
+                            if type(train_data)==np.ndarray:
+                                data_batch=np.concatenate(self.train_data[index1:],self.train_data[:index2])[random]
+                            else:
+                                data_batch=tf.concat(self.train_data[index1:],self.train_data[:index2])[random]
                         if type(self.train_labels)==list:
                             for i in range(len(self.train_data)):
-                                labels_batch[i]=self.train_labels[i][random]
+                                if type(self.train_labels)==np.ndarray:
+                                    labels_batch[i]=np.concatenate(self.train_labels[i][index1:],self.train_labels[i][:index2])[random]
+                                else:
+                                    labels_batch[i]=tf.concat(self.train_labels[i][index1:],self.train_labels[i][:index2])[random]
                         else:
-                            labels_batch=self.train_labels[random]
+                            if type(self.train_labels)==np.ndarray:
+                                labels_batch=np.concatenate(self.train_labels[index1:],self.train_labels[:index2])[random]
+                            else:
+                                labels_batch=tf.concat(self.train_labels[index1:],self.train_labels[:index2])[random]
                     with tf.GradientTape() as tape:
                         with tf.name_scope('forward_propagation/loss'):
                             output=self.nn.forward_propagation(data_batch,self.dropout)
@@ -207,37 +239,6 @@ class kernel:
                         if self.acc_flag1==1:
                             self.test_acc_list.append(self.test_acc)
             else:
-                if type(self.train_data)==list:
-                    train_data=[x for x in range(len(self.train_data))]
-                if type(self.train_labels)==list:
-                    train_labels=[x for x in range(len(self.train_labels))]
-                random=np.random.randint(0,self.shape0,self.shape0)
-                if type(self.train_data)==list:
-                    for i in range(len(self.train_data)):
-                        if self.ooo==False:
-                            train_data[i]=self.train_data[i][random]
-                        else:
-                            self.train_data[i]=self.train_data[i][random]
-                            train_data[i]=self.train_data[i]
-                else:
-                    if self.ooo==False:
-                        train_data=self.train_data[random]
-                    else:
-                        self.train_data=self.train_data[random]
-                        train_data=self.train_data
-                if type(self.train_labels)==list:
-                    for i in range(len(self.train_labels)):
-                        if self.ooo==False:
-                            train_labels[i]=self.train_labels[i][random]
-                        else:
-                            self.train_labels[i]=self.train_labels[i][random]
-                            train_labels[i]=self.train_labels[i]
-                else:
-                    if self.ooo==False:
-                        train_labels=self.train_labels[random]
-                    else:
-                        self.train_labels=self.train_labels[random]
-                        train_labels=self.train_labels
                 with tf.GradientTape() as tape:
                     with tf.name_scope('forward_propagation/loss'):
                         output=self.nn.forward_propagation(train_data,self.dropout)
@@ -552,7 +553,6 @@ class kernel:
             pickle.dump(self.test_acc,output_file)
             pickle.dump(self.test_loss_list,output_file)
             pickle.dump(self.test_acc_list,output_file)
-        pickle.dump(self.ooo,output_file)
         pickle.dump(self.total_epoch,output_file)
         pickle.dump(self.total_time,output_file)
         pickle.dump(self.processor,output_file)
@@ -593,7 +593,6 @@ class kernel:
             self.test_acc=pickle.load(input_file)
             self.test_loss_list=pickle.load(input_file)
             self.test_acc_list=pickle.load(input_file)
-        self.ooo=pickle.load(input_file)
         self.total_epoch=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
         self.processor=pickle.load(input_file)
