@@ -129,6 +129,12 @@ class Q_learning:
         return
     
     
+    def save_policy(self,path):
+        output_file=open(path+'.dat','wb')
+        pickle.dump(self.q,output_file)
+        return
+    
+    
     def save(self,path,i=None,one=True):
         if one==True:
             output_file=open(path+'\save.dat','wb')
