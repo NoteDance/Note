@@ -76,7 +76,6 @@ class LSTM:
         self.test_accuracy=None
         self.test_loss_list=[]
         self.test_accuracy_list=[]
-        self.ooo=False
         self.total_epoch=0
         self.time=0
         self.total_time=0
@@ -679,27 +678,15 @@ class LSTM:
             self.sess=sess
             if self.total_epoch==0:
                 epoch=epoch+1
-            random=np.arange(self.shape0)
             for i in range(epoch):
                 t1=time.time()
                 if batch!=None:
                     batches=int((self.shape0-self.shape0%batch)/batch)
                     total_loss=0
                     total_acc=0
-                    np.random.shuffle(random)
-                    if self.ooo==True:
-                        self.train_data=self.train_data[random]
-                        self.train_labels=self.train_labels[random]
                     for j in range(batches):
-                        index1=j*batch
-                        index2=(j+1)*batch
-                        if self.ooo==False:
-                            train_data_batch=self.train_data[random[index1:index2]]
-                            train_labels_batch=self.train_labels[random[index1:index2]]
-                        else:
-                            train_data_batch=self.train_data[index1:index2]
-                            train_labels_batch=self.train_labels[index1:index2]
-                        feed_dict={self.data:train_data_batch,self.labels:train_labels_batch}
+                        random=np.random.randint(0,self.shape0,self.batch)
+                        feed_dict={self.data:self.train_data[random],self.labels:self.train_labels[random]}
                         if i==0 and self.total_epoch==0:
                             batch_loss=sess.run(train_loss,feed_dict=feed_dict)
                         else:
@@ -709,15 +696,8 @@ class LSTM:
                         total_acc+=batch_acc
                     if self.shape0%batch!=0:
                         batches+=1
-                        index1=batches*batch
-                        index2=batch-(self.shape0-batches*batch)
-                        if self.ooo==False:
-                            train_data_batch=self.train_data[np.concatenate([random[index1:],random[:index2]])]
-                            train_labels_batch=self.train_data[np.concatenate([random[index1:],random[:index2]])]
-                        else:
-                            train_data_batch=np.concatenate([self.train_data[index1:],self.train_data[:index2]])
-                            train_labels_batch=np.concatenate([self.train_labels[index1:],self.train_labels[:index2]])
-                        feed_dict={self.data:train_data_batch,self.labels:train_labels_batch}
+                        random=np.random.randint(0,self.shape0,self.batch)
+                        feed_dict={self.data:self.train_data[random],self.labels:self.train_labels[random]}
                         if i==0 and self.total_epoch==0:
                             batch_loss=sess.run(train_loss,feed_dict=feed_dict)
                         else:
@@ -738,15 +718,8 @@ class LSTM:
                         self.test_loss_list.append(self.test_loss)
                         self.test_accuracy_list.append(self.test_acc)
                 else:
-                    np.random.shuffle(random)
-                    if self.ooo==False:
-                        train_data=self.train_data[random]
-                        train_labels=self.train_labels[random]
-                        feed_dict={self.data:train_data,self.labels:train_labels}
-                    else:
-                        self.train_data=self.train_data[random]
-                        self.train_labels=self.train_labels[random]
-                        feed_dict={self.data:self.train_data,self.labels:self.train_labels}
+                    random=np.random.randint(0,self.shape0,self.shape0)
+                    feed_dict={self.data:self.train_data[random],self.labels:self.train_labels[random]}
                     if i==0 and self.total_epoch==0:
                         loss=sess.run(train_loss,feed_dict=feed_dict)
                     else:
