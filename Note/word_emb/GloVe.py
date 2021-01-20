@@ -179,14 +179,9 @@ class GloVe:
                         batches+=1
                         index1=batches*batch
                         index2=batch-(self.shape0-batches*batch)
-                        if batch!=1:
-                            cword_batch=np.concatenate(self.cword[index1:],self.cword[:index2])[random]
-                            bword_batch=np.concatenate(self.bword[index1:],self.bword[:index2])[random]
-                            mul_batch=np.concatenate(self.mul[index1:],self.mul[:index2])[random]
-                        else:
-                            cword_batch=np.concatenate(self.cword[index1:],self.cword[:index2])[random][j]
-                            bword_batch=np.concatenate(self.bword[index1:],self.bword[:index2])[random][j]
-                            mul_batch=np.concatenate(self.mul[index1:],self.mul[:index2])[random][j]
+                        cword_batch=np.concatenate(self.cword[index1:],self.cword[:index2])[random]
+                        bword_batch=np.concatenate(self.bword[index1:],self.bword[:index2])[random]
+                        mul_batch=np.concatenate(self.mul[index1:],self.mul[:index2])[random]
                         feed_dict={self.cword_place:cword_batch,self.bword_place:bword_batch,self.mul_place:mul_batch}
                         if i==0 and self.total_epoch==0:
                             batch_loss=sess.run(train_loss,feed_dict=feed_dict)
