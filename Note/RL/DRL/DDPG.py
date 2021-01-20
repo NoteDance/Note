@@ -26,8 +26,6 @@ class DDPG:
         self.episode_step=episode_step
         self.pool_size=pool_size
         self.batch=batch
-        if batch!=None:
-            self.random=np.arange(self.batch)
         self.update_step=update_step
         self.optimizer=optimizer
         self.lr=lr
@@ -144,14 +142,15 @@ class DDPG:
                     self.actor_p[i]=self.actor_p[i]-actor_gradient[i]
         else:
             batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
-            np.random.shuffle(self.random)
+            random=np.arange(len(self.state_pool))
+            np.random.shuffle(random)
             for j in range(batches):
                 index1=j*self.batch
                 index2=(j+1)*self.batch
-                state_batch=self.state_pool[index1:index2][self.random]
-                action_batch=self.action_pool[index1:index2][self.random]
-                next_state_batch=self.next_state_pool[index1:index2][self.random]
-                reward_batch=self.reward_pool[index1:index2][self.random]
+                state_batch=self.state_pool[random][index1:index2]
+                action_batch=self.action_pool[random][index1:index2]
+                next_state_batch=self.next_state_pool[random][index1:index2]
+                reward_batch=self.reward_pool[random][index1:index2]
                 value=self.value_net(state_batch,action_batch,self.value_p)
                 batch_loss=self._loss(value,next_state_batch,reward_batch)
                 with tf.GradientTape() as tape:
@@ -170,11 +169,10 @@ class DDPG:
                 batches+=1
                 index1=batches*self.batch
                 index2=self.batch-(self.shape0-batches*self.batch)
-                state_batch=tf.concat(self.state_pool[index1:],self.state_pool[:index2])[self.random]
-                action_batch=tf.concat(self.action_pool[index1:],self.action_pool[:index2])[self.random]
-                next_state_batch=tf.concat(self.next_state_pool[index1:],self.next_state_pool[:index2])[self.random]
-                reward_batch=tf.concat(self.reward_pool[index1:],self.reward_pool[:index2])[self.random]
-                state_batch,action_batch,next_state_batch,reward_batch=self.batch()
+                state_batch=tf.concat(self.state_pool[random][index1:],self.state_pool[random][:index2])
+                action_batch=tf.concat(self.action_pool[random][index1:],self.action_pool[random][:index2])
+                next_state_batch=tf.concat(self.next_state_pool[random][index1:],self.next_state_pool[random][:index2])
+                reward_batch=tf.concat(self.reward_pool[random][index1:],self.reward_pool[random][:index2])
                 value=self.value_net(state_batch,action_batch,self.value_p)
                 batch_loss=self._loss(value,next_state_batch,reward_batch)
                 with tf.GradientTape() as tape:
@@ -238,7 +236,6 @@ class DDPG:
         pickle.dump(self.episode_step,output_file)
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
-        pickle.dump(self.random,output_file)
         pickle.dump(self.update_step,output_file)
         pickle.dump(self.lr,output_file)
         pickle.dump(self.optimizer,output_file)
@@ -264,7 +261,6 @@ class DDPG:
         self.episode_step=pickle.load(input_file)
         self.pool_size=pickle.load(input_file)
         self.batch=pickle.load(input_file)
-        self.random=pickle.load(input_file)
         self.update_step=pickle.load(input_file)
         self.lr=pickle.load(input_file)
         self.optimizer=pickle.load(input_file)
