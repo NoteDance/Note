@@ -321,18 +321,19 @@ class kernel:
                 batches=int((test_data.shape[0]-test_data.shape[0]%batch)/batch)
                 shape0=test_data.shape[0]
             for j in range(batches):
-                random=np.random.randint(0,shape0[0],batch)
+                index1=j*batch
+                index2=(j+1)*batch
                 with tf.name_scope('data_batch'):
                     if type(test_data)==list:
                         for i in range(len(test_data)):
-                            data_batch[i]=test_data[i][random]
+                            data_batch[i]=test_data[i][index1:index2]
                     else:
-                        data_batch=test_data[random]
+                        data_batch=test_data[index1:index2]
                     if type(test_labels)==list:
                         for i in range(len(test_labels)):
-                            labels_batch[i]=test_labels[i][random]
+                            labels_batch[i]=test_labels[i][index1:index2]
                     else:
-                        labels_batch=test_labels[random]
+                        labels_batch=test_labels[index1:index2]
                 with tf.name_scope('forward_propagation/loss'):
                     output=self.nn.forward_propagation(data_batch)
                     batch_loss=self.nn.loss(output,labels_batch)
@@ -343,18 +344,31 @@ class kernel:
                     total_acc+=batch_acc.numpy()
             if shape0%batch!=0:
                 batches+=1
-                random=np.random.randint(0,shape0[0],batch)
+                index1=batches*batch
+                index2=batch-(shape0-batches*batch)
                 with tf.name_scope('data_batch'):
                     if type(self.train_data)==list:
                         for i in range(len(self.test_data)):
-                            data_batch[i]=test_data[i][random]
+                            if type(self.test_data)==np.ndarray:
+                                data_batch[i]=np.concatenate(self.test_data[i][index1:],self.test_data[i][:index2])
+                            else:
+                                data_batch[i]=tf.concat(self.test_data[i][index1:],self.test_data[i][:index2])
                     else:
-                        data_batch=test_data[random]
+                        if type(self.test_data)==np.ndarray:
+                            data_batch=np.concatenate(self.test_data[index1:],self.test_data[:index2])
+                        else:
+                            data_batch=tf.concat(self.test_data[index1:],self.test_data[:index2])
                     if type(self.test_labels)==list:
                         for i in range(len(self.test_labels)):
-                            labels_batch[i]=test_labels[i][random]
+                            if type(self.test_labels)==np.ndarray:
+                                labels_batch[i]=np.concatenate(self.test_labels[i][index1:],self.test_labels[i][:index2])
+                            else:
+                                labels_batch[i]=tf.concat(self.test_labels[i][index1:],self.test_labels[i][:index2])
                     else:
-                        labels_batch=test_labels[random]
+                        if type(self.test_labels)==np.ndarray:
+                            labels_batch=np.concatenate(self.test_labels[index1:],self.test_labels[:index2])
+                        else:
+                            labels_batch=tf.concat(self.test_labels[index1:],self.test_labels[:index2])
                 with tf.name_scope('forward_propagation/loss'):
                     output=self.nn.forward_propagation(data_batch)
                     batch_loss=self.nn.loss(output,labels_batch)
