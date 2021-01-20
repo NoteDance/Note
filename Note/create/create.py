@@ -8,10 +8,6 @@ class tf1:
         self.test_accumulator=0
         self.dtype=[]
         self.shape=[]
-        self.batch=None
-        self.batches=None
-        self.index1=None
-        self.index2=None
     
     
     def placeholder(self,data=None,name=None,test=False):
@@ -26,13 +22,6 @@ class tf1:
             return tf.placeholde(dtype=self.dtype[self.accumulator-1],shape=[None for x in range(len(self.shape[self.accumulator-1]))],name=name)
         else:
             return tf.placeholde(dtype=self.dtype[self.test_accumulator-1],shape=[None for x in range(len(self.shape[self.test_accumulator-1]))],name=name)
-    
-    
-    def batch(self,data):
-        if self.index1==self.batches*self.batch:
-            return np.concatenate([data[self.index1:],data[:self.index2]])
-        else:
-            return data[self.index1:self.index2]
 
 
 def Gradient(train_loss,lr):
@@ -53,21 +42,6 @@ def Adam(train_loss,lr=0.001):
 
 
 
-class tf2:
-    def __init__(self):
-        self.batch=None
-        self.batches=None
-        self.index1=None
-        self.index2=None
-
-    
-    def batch(self,data):
-        if self.index1==self.batches*self.batch:
-            return np.concatenate([data[self.index1:],data[:self.index2]])
-        else:
-            return data[self.index1:self.index2]
-        
-        
 def extend(parameter):
     for i in range(len(parameter)-1):
         parameter[0].extend(parameter[i+1])
@@ -78,8 +52,6 @@ def apply_gradient(tape,optimizer,loss,parameter):
     gradient=tape.gradient(loss,parameter)
     optimizer.apply_gradients(zip(gradient,parameter))
     return
-
-
 
 
 def einsun(data,weight):
