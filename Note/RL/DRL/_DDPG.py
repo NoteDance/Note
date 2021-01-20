@@ -84,10 +84,10 @@ class DDPG:
                         self.next_state_pool=tf.expand_dims(self.state[self.state_name[next_s]],axis=0)
                         self.reward_pool=tf.expand_dims(r,axis=0)
                     else:
-                        self.state_pool=tf.concat(self.state_pool,tf.expand_dims(self.state[self.state_name[s]],axis=0))
-                        self.action_pool=tf.concat(self.action_pool,tf.expand_dims(a,axis=0))
-                        self.next_state_pool=tf.concat(self.next_state_pool,tf.expand_dims(self.state[self.state_name[next_s]],axis=0))
-                        self.reward_pool=tf.concat(self.reward_pool,tf.expand_dims(r,axis=0))
+                        self.state_pool=tf.concat([self.state_pool,tf.expand_dims(self.state[self.state_name[s]],axis=0)])
+                        self.action_pool=tf.concat([self.action_pool,tf.expand_dims(a,axis=0)])
+                        self.next_state_pool=tf.concat([self.next_state_pool,tf.expand_dims(self.state[self.state_name[next_s]],axis=0)])
+                        self.reward_pool=tf.concat([self.reward_pool,tf.expand_dims(r,axis=0)])
                     if len(self.state_pool)>self.pool_size:
                         self.state_pool=self.state_pool[1:]
                         self.action_pool=self.action_pool[1:]
@@ -137,10 +137,10 @@ class DDPG:
                             batches+=1
                             index1=batches*self.batch
                             index2=self.batch-(self.shape0-batches*self.batch)
-                            state_batch=tf.concat(self.state_pool[random][index1:],self.state_pool[random][:index2])
-                            action_batch=tf.concat(self.action_pool[random][index1:],self.action_pool[random][:index2])
-                            next_state_batch=tf.concat(self.next_state_pool[random][index1:],self.next_state_pool[random][:index2])
-                            reward_batch=tf.concat(self.reward_pool[random][index1:],self.reward_pool[random][:index2])
+                            state_batch=tf.concat([self.state_pool[random][index1:],self.state_pool[random][:index2]])
+                            action_batch=tf.concat([self.action_pool[random][index1:],self.action_pool[random][:index2]])
+                            next_state_batch=tf.concat([self.next_state_pool[random][index1:],self.next_state_pool[random][:index2]])
+                            reward_batch=tf.concat([self.reward_pool[random][index1:],self.reward_pool[random][:index2]])
                             value=self.value_net(state_batch,action_batch,self.value_p)
                             batch_loss=self.loss(value,next_state_batch,reward_batch)
                             with tf.GradientTape() as tape:
@@ -182,10 +182,10 @@ class DDPG:
                         self.next_state_pool=tf.expand_dims(self.state[self.state_name[next_s]],axis=0)
                         self.reward_pool=tf.expand_dims(r,axis=0)
                     else:
-                        self.state_pool=tf.concat(self.state_pool,tf.expand_dims(self.state[self.state_name[s]],axis=0))
-                        self.action_pool=tf.concat(self.action_pool,tf.expand_dims(a,axis=0))
-                        self.next_state_pool=tf.concat(self.next_state_pool,tf.expand_dims(self.state[self.state_name[next_s]],axis=0))
-                        self.reward_pool=tf.concat(self.reward_pool,tf.expand_dims(r,axis=0))
+                        self.state_pool=tf.concat([self.state_pool,tf.expand_dims(self.state[self.state_name[s]],axis=0)])
+                        self.action_pool=tf.concat([self.action_pool,tf.expand_dims(a,axis=0)])
+                        self.next_state_pool=tf.concat([self.next_state_pool,tf.expand_dims(self.state[self.state_name[next_s]],axis=0)])
+                        self.reward_pool=tf.concat([self.reward_pool,tf.expand_dims(r,axis=0)])
                     if len(self.state_pool)>self.pool_size:
                         self.state_pool=self.state_pool[1:]
                         self.action_pool=self.action_pool[1:]
@@ -235,10 +235,10 @@ class DDPG:
                             batches+=1
                             index1=batches*self.batch
                             index2=self.batch-(self.shape0-batches*self.batch)
-                            state_batch=tf.concat(self.state_pool[random][index1:],self.state_pool[random][:index2])
-                            action_batch=tf.concat(self.action_pool[random][index1:],self.action_pool[random][:index2])
-                            next_state_batch=tf.concat(self.next_state_pool[random][index1:],self.next_state_pool[random][:index2])
-                            reward_batch=tf.concat(self.reward_pool[random][index1:],self.reward_pool[random][:index2])
+                            state_batch=tf.concat([self.state_pool[random][index1:],self.state_pool[random][:index2]])
+                            action_batch=tf.concat([self.action_pool[random][index1:],self.action_pool[random][:index2]])
+                            next_state_batch=tf.concat([self.next_state_pool[random][index1:],self.next_state_pool[random][:index2]])
+                            reward_batch=tf.concat([self.reward_pool[random][index1:],self.reward_pool[random][:index2]])
                             value=self.value_net(state_batch,action_batch,self.value_p)
                             batch_loss=self.loss(value,next_state_batch,reward_batch)
                             with tf.GradientTape() as tape:
