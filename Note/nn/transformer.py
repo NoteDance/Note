@@ -289,12 +289,8 @@ class transformer:
                     index1=batches*batch
                     index2=batch-(self.shape0-batches*batch)
                     with tf.name_scope('data_batch'):
-                        if batch!=1:
-                            data_batch=np.concatenate((self.train_data[index1:],self.train_data[:index2]))[random]
-                            labels_batch=np.concatenate((self.train_labels[index1:],self.train_labels[:index2]))[random]
-                        else:
-                            data_batch=np.concatenate((self.train_data[index1:],self.train_data[:index2]))[random][j]
-                            labels_batch=np.concatenate((self.train_labels[index1:],self.train_labels[:index2]))[random][j]
+                        data_batch=np.concatenate((self.train_data[index1:],self.train_data[:index2]))[random]
+                        labels_batch=np.concatenate((self.train_labels[index1:],self.train_labels[:index2]))[random]
                     with tf.GradientTape() as tape:
                         with tf.name_scope('forward_propagation/loss'):
                             output=self.forward_propagation(data_batch)
@@ -397,6 +393,10 @@ class transformer:
                 total_acc+=batch_acc.numpy()
             if test_data.shape[0]%batch!=0:
                 batches+=1
+                index1=batches*batch
+                index2=batch-(self.shape0-batches*batch)
+                data_batch=np.concatenate((test_data[index1:],test_data[:index2]))
+                labels_batch=np.concatenate((test_labels[index1:],test_labels[:index2]))
                 with tf.name_scope('loss'):
                     output=self.forward_propagation(data_batch)
                     batch_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output,labels=labels_batch))
