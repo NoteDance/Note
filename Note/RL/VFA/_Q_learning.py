@@ -30,8 +30,8 @@ class Q_learning:
     def init(self,dtype=np.int32):
         self.t3=time.time()
         if len(self.action_name)>self.action_len:
-            self.action=np.concatenate(self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len)
-            self.action_one=np.concatenate(self.action_onerob,np.ones(len(self.action_name)-self.action_len,dtype=dtype))
+            self.action=np.concatenate((self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len))
+            self.action_one=np.concatenate((self.action_onerob,np.ones(len(self.action_name)-self.action_len,dtype=dtype)))
         else:
             self.action=np.arange(len(self.action_name),dtype=dtype)
             self.action_one=np.ones(len(self.action_name),dtype=dtype)
