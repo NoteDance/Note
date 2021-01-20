@@ -375,6 +375,11 @@ class M_reluGRU:
             self.C.clear()
             self.h.clear()
             self.batch=batch
+            if batch!=None:
+                if batch!=1:
+                    random=np.arange(batch)
+                else:
+                    random=np.arange(self.shape0)
             self.epoch=0
             self.l2=l2
             self.optimizer=optimizer
@@ -550,9 +555,17 @@ class M_reluGRU:
                     batches=int((self.shape0-self.shape0%batch)/batch)
                     total_loss=0
                     total_acc=0
+                    np.random.shuffle(random)
                     for j in range(batches):
-                        random=np.random.randint(0,self.shape0,self.batch)
-                        feed_dict={self.data:self.train_data[random],self.labels:self.train_labels[random]}
+                        index1=j*batch
+                        index2=(j+1)*batch
+                        if batch!=1:
+                            data_batch=self.train_data[index1:index2][random]
+                            labels_batch=self.train_labels[index1:index2][random]
+                        else:
+                            data_batch=self.train_data[random][j]
+                            labels_batch=self.train_labels[random][j]
+                        feed_dict={self.data:data_batch,self.labels:labels_batch}
                         if i==0:
                             batch_loss=sess.run(train_loss,feed_dict=feed_dict)
                         else:
@@ -562,8 +575,11 @@ class M_reluGRU:
                         total_acc+=batch_acc
                     if self.shape0%batch!=0:
                         batches+=1
-                        random=np.random.randint(0,self.shape0,self.batch)
-                        feed_dict={self.data:self.train_data[random],self.labels:self.train_labels[random]}
+                        index1=batches*batch
+                        index2=batch-(self.shape0-batches*batch)
+                        data_batch=np.concatenate((self.train_data[index1:],self.train_data[:index2]))[random]
+                        labels_batch=np.concatenate((self.train_labels[index1:],self.train_labels[:index2]))[random]
+                        feed_dict={self.data:data_batch,self.labels:labels_batch}
                         if i==0:
                             batch_loss=sess.run(train_loss,feed_dict=feed_dict)
                         else:
@@ -584,8 +600,7 @@ class M_reluGRU:
                         self.test_loss_list.append(self.test_loss)
                         self.test_accuracy_list.append(self.test_acc)
                 else:
-                    random=np.random.randint(0,self.shape0,self.shape0)
-                    feed_dict={self.data:self.train_data[random],self.labels:self.train_labels[random]}
+                    feed_dict={self.data:self.train_data,self.labels:self.train_labels}
                     if i==0:
                         loss=sess.run(train_loss,feed_dict=feed_dict)
                     else:
