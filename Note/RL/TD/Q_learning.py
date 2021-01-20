@@ -28,14 +28,14 @@ class Q_learning:
     def init(self,dtype=np.int32):
         t3=time.time()
         if len(self.action_name)>self.action_len:
-            self.action=np.concatenate(self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len)
-            self.action_onerob=np.concatenate(self.action_onerob,np.ones(len(self.action_name)-self.action_len,dtype=dtype))
+            self.action=np.concatenate((self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len))
+            self.action_onerob=np.concatenate((self.action_onerob,np.ones(len(self.action_name)-self.action_len,dtype=dtype)))
         else:
             self.action=np.arange(len(self.action_name),dtype=dtype)
             self.action_onerob=np.ones(len(self.action_name),dtype=dtype)
         if len(self.state_name)>self.q.shape[0] or len(self.action_name)>self.q.shape[1]:
-            self.q=np.concatenate([self.q,np.zeros([len(self.state_name),len(self.action_name)-self.action_len],dtype=self.q.dtype)],axis=1)
-            self.q=np.concatenate([self.q,np.zeros([len(self.state_name)-self.state_len,len(self.action_name)],dtype=self.q.dtype)])
+            self.q=np.concatenate((self.q,np.zeros([len(self.state_name),len(self.action_name)-self.action_len],dtype=self.q.dtype)),axis=1)
+            self.q=np.concatenate((self.q,np.zeros([len(self.state_name)-self.state_len,len(self.action_name)],dtype=self.q.dtype)))
             self.q=self.q.numpy()
         t4=time.time()
         self.time+=t4-t3
