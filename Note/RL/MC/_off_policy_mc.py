@@ -27,18 +27,18 @@ class off_policy_mc:
     def init(self,dtype=np.int32):
         self.t3=time.time()
         if len(self.action_name)>self.action_len:
-            self.action=np.concatenate(self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len)
-            self.action_onerob=np.concatenate(self.action_onerob,np.ones(len(self.action_name)-self.action_len,dtype=dtype))
+            self.action=np.concatenate((self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len))
+            self.action_onerob=np.concatenate((self.action_onerob,np.ones(len(self.action_name)-self.action_len,dtype=dtype)))
         else:
             self.action=np.arange(len(self.action_name),dtype=dtype)
             self.action_onerob=np.ones(len(self.action_name),dtype=dtype)
         if len(self.state_name)>self.q.shape[0] or len(self.action_name)>self.q.shape[1]:
-            self.q=np.concatenate([self.q,np.zeros([len(self.state_name),len(self.action_name)-self.action_len],dtype=self.q.dtype)],axis=1)
-            self.q=np.concatenate([self.q,np.zeros([len(self.state_name)-self.state_len,len(self.action_name)],dtype=self.q.dtype)])
+            self.q=np.concatenate((self.q,np.zeros([len(self.state_name),len(self.action_name)-self.action_len],dtype=self.q.dtype)),axis=1)
+            self.q=np.concatenate((self.q,np.zeros([len(self.state_name)-self.state_len,len(self.action_name)],dtype=self.q.dtype)))
             self.q=self.q.numpy()
         if len(self.state_name)>self.c.shape[0] or len(self.action_name)>self.c.shape[1]:
-            self.c=np.concatenate([self.c,np.zeros([len(self.state_name),len(self.action_name)-self.action_len],dtype=self.c.dtype)],axis=1)
-            self.c=np.concatenate([self.c,np.zeros([len(self.state_name)-self.state_len,len(self.action_name)],dtype=self.c.dtype)])
+            self.c=np.concatenate((self.c,np.zeros([len(self.state_name),len(self.action_name)-self.action_len],dtype=self.c.dtype)),axis=1)
+            self.c=np.concatenate((self.c,np.zeros([len(self.state_name)-self.state_len,len(self.action_name)],dtype=self.c.dtype)))
             self.c=self.c.numpy()
         self.t4=time.time()
         return
