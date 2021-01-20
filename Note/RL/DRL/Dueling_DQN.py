@@ -41,8 +41,8 @@ class Dueling_DQN:
     def init(self,dtype=np.int32):
         t3=time.time()
         if len(self.action_name)>self.action_len:
-            self.action=np.concatenate(self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len)
-            self.action_one=np.concatenate(self.action_one,np.ones(len(self.action_name)-self.action_len,dtype=dtype))
+            self.action=np.concatenate((self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len))
+            self.action_one=np.concatenate((self.action_one,np.ones(len(self.action_name)-self.action_len,dtype=dtype)))
         else:
             self.action=np.arange(len(self.action_name),dtype=dtype)
             self.action_one=np.ones(len(self.action_name),dtype=dtype)
@@ -95,10 +95,10 @@ class Dueling_DQN:
                     self.next_state_pool=tf.expand_dims(self.state[self.state_name[next_s]],axis=0)
                     self.reward_pool=tf.expand_dims(r,axis=0)
                 else:
-                    self.state_pool=tf.concat(self.state_pool,tf.expand_dims(self.state[self.state_name[s]],axis=0))
-                    self.action_pool=tf.concat(self.action_pool,tf.expand_dims(a,axis=0))
-                    self.next_state_pool=tf.concat(self.next_state_pool,tf.expand_dims(self.state[self.state_name[next_s]],axis=0))
-                    self.reward_pool=tf.concat(self.reward_pool,tf.expand_dims(r,axis=0))
+                    self.state_pool=tf.concat([self.state_pool,tf.expand_dims(self.state[self.state_name[s]],axis=0)])
+                    self.action_pool=tf.concat([self.action_pool,tf.expand_dims(a,axis=0)])
+                    self.next_state_pool=tf.concat([self.next_state_pool,tf.expand_dims(self.state[self.state_name[next_s]],axis=0)])
+                    self.reward_pool=tf.concat([self.reward_pool,tf.expand_dims(r,axis=0)])
                 if len(self.state_pool)>self.pool_size:
                     self.state_pool=self.state_pool[1:]
                     self.action_pool=self.action_pool[1:]
@@ -122,10 +122,10 @@ class Dueling_DQN:
                     self.next_state_pool=tf.expand_dims(self.state[self.state_name[next_s]],axis=0)
                     self.reward_pool=tf.expand_dims(r,axis=0)
                 else:
-                    self.state_pool=tf.concat(self.state_pool,tf.expand_dims(self.state[self.state_name[s]],axis=0))
-                    self.action_pool=tf.concat(self.action_pool,tf.expand_dims(a,axis=0))
-                    self.next_state_pool=tf.concat(self.next_state_pool,tf.expand_dims(self.state[self.state_name[next_s]],axis=0))
-                    self.reward_pool=tf.concat(self.reward_pool,tf.expand_dims(r,axis=0))
+                    self.state_pool=tf.concat([self.state_pool,tf.expand_dims(self.state[self.state_name[s]],axis=0)])
+                    self.action_pool=tf.concat([self.action_pool,tf.expand_dims(a,axis=0)])
+                    self.next_state_pool=tf.concat([self.next_state_pool,tf.expand_dims(self.state[self.state_name[next_s]],axis=0)])
+                    self.reward_pool=tf.concat([self.reward_pool,tf.expand_dims(r,axis=0)])
                 if len(self.state_pool)>self.pool_size:
                     self.state_pool=self.state_pool[1:]
                     self.action_pool=self.action_pool[1:]
@@ -171,10 +171,10 @@ class Dueling_DQN:
                 batches+=1
                 index1=batches*self.batch
                 index2=self.batch-(self.shape0-batches*self.batch)
-                state_batch=tf.concat(self.state_pool[random][index1:],self.state_pool[random][:index2])
-                action_batch=tf.concat(self.action_pool[random][index1:],self.action_pool[random][:index2])
-                next_state_batch=tf.concat(self.next_state_pool[random][index1:],self.next_state_pool[random][:index2])
-                reward_batch=tf.concat(self.reward_pool[random][index1:],self.reward_pool[random][:index2])
+                state_batch=tf.concat([self.state_pool[random][index1:],self.state_pool[random][:index2]])
+                action_batch=tf.concat([self.action_pool[random][index1:],self.action_pool[random][:index2]])
+                next_state_batch=tf.concat([self.next_state_pool[random][index1:],self.next_state_pool[random][:index2]])
+                reward_batch=tf.concat([self.reward_pool[random][index1:],self.reward_pool[random][:index2]])
                 batch_loss=self._loss(state_batch,action_batch,next_state_batch,reward_batch)
                 with tf.GradientTape() as tape:
                     gradient=tape.gradient(batch_loss,self.estimate_p)
