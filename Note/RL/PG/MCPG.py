@@ -33,7 +33,7 @@ class MCPG:
     def init(self,dtype=np.int32):
         t3=time.time()
         if len(self.action_name)>self.action_len:
-            self.action=np.concatenate(self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len)
+            self.action=np.concatenate((self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len))
         else:
             self.action=np.arange(len(self.action_name),dtype=dtype)
         t4=time.time()
