@@ -102,6 +102,11 @@ class unnamed:
     def train(self,batch=None,epoch=None,test=False,test_batch=None,model_path=None,one=True,processor=None):
         with tf.name_scope('hyperparameter'):
             self.batch=batch
+            if batch!=None:
+                if batch!=1:
+                    random=np.arange(batch)
+                else:
+                    random=np.arange(self.shape0)
             self.epoch=0
             
             
@@ -114,7 +119,6 @@ class unnamed:
             
         if self.total_epoch==0:
             epoch=epoch+1
-        random=np.arange(self.shape0)
         for i in range(epoch):
             t1=time.time()
             if batch!=None:
@@ -122,8 +126,10 @@ class unnamed:
                 tf2.batches=batches
                 total_loss=0
                 total_acc=0
+                np.random.shuffle(random)
                 for j in range(batches):
-                    random=np.random.randint(0,self.shape0,self.batch)
+                    index1=j*batch
+                    index2=(j+1)*batch
                     with tf.name_scope('data_batch'):
                         
                     
@@ -148,7 +154,8 @@ class unnamed:
                     total_acc+=batch_acc
                 if self.shape0%batch!=0:
                     batches+=1
-                    random=np.random.randint(0,self.shape0,self.batch)
+                    index1=batches*batch
+                    index2=batch-(self.shape0-batches*batch)
                     with tf.name_scope('data_batch'):
                         
                     
@@ -185,7 +192,6 @@ class unnamed:
                         self.test_loss_list.append(self.test_loss)
                         self.test_acc_list.append(self.test_acc)
             else:
-                random=np.random.randint(0,self.shape0,self.shape0)
                 with tf.GradientTape() as tape:
                     with tf.name_scope('forward_propagation/loss'):
                         
@@ -252,9 +258,9 @@ class unnamed:
             total_loss=0
             total_acc=0
             batches=int((test_data.shape[0]-test_data.shape[0]%batch)/batch)
-            tf2.batches=batches
             for j in range(batches):
-                random=np.random.randint(0,shape0,batch)
+                index1=j*batch
+                index2=(j+1)*batch
                 with tf.name_scope('data_batch'):
                     
                     
@@ -268,7 +274,8 @@ class unnamed:
                 total_acc+=batch_acc.numpy()
             if test_data.shape[0]%batch!=0:
                 batches+=1
-                random=np.random.randint(0,shape0,batch)
+                index1=batches*batch
+                index2=batch-(shape0-batches*batch)
                 with tf.name_scope('data_batch'):
                     
                     
