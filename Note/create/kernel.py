@@ -133,23 +133,23 @@ class kernel:
                                 if batch!=1:
                                     data_batch[i]=self.train_data[i][index1:index2][random]
                                 else:
-                                    data_batch[i]=self.train_data[i][j]
+                                    data_batch[i]=self.train_data[i][random][j]
                         else:
                             if batch!=1:
                                 data_batch=self.train_data[index1:index2][random]
                             else:
-                                data_batch=self.train_data[j]
+                                data_batch=self.train_data[random][j]
                         if type(self.train_labels)==list:
                             for i in range(len(self.train_data)):
                                 if batch!=1:
                                     labels_batch[i]=self.train_labels[i][index1:index2][random]
                                 else:
-                                    labels_batch[i]=self.train_labels[i][j]
+                                    labels_batch[i]=self.train_labels[i][random][j]
                         else:
                             if batch!=1:
                                 labels_batch=self.train_labels[index1:index2][random]
                             else:
-                                labels_batch=self.train_labels[j]
+                                labels_batch=self.train_labels[random][j]
                     with tf.GradientTape() as tape:
                         with tf.name_scope('forward_propagation/loss'):
                             output=self.nn.forward_propagation(data_batch,self.dropout)
