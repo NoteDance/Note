@@ -6,7 +6,7 @@ import time
 
 
 class Double_DQN:
-    def __init__(self,value_net,estimate_p,target_p,state,state_name,action_name,search_space,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,save_episode=True):
+    def __init__(self,value_net,estimate_p,target_p,state,state_name,action_name,exploration_space,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,save_episode=True):
         self.value_net=value_net
         self.estimate_p=estimate_p
         self.target_p=target_p
@@ -18,7 +18,7 @@ class Double_DQN:
         self.state=state
         self.state_name=state_name
         self.action_name=action_name
-        self.search_space=search_space
+        self.exploration_space=exploration_space
         self.action_len=len(self.action_name)
         self.epsilon=epsilon
         self.discount=discount
@@ -77,7 +77,7 @@ class Double_DQN:
                 while True:
                     action_prob=self.epsilon_greedy_policy(s,self.action_one)
                     a=np.random.choice(self.action,p=action_prob)
-                    next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
+                    next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
                     if end:
                         if self.save_episode==True:
                             episode.append([self.state_name[s],self.action_name[a],r,end])
@@ -104,7 +104,7 @@ class Double_DQN:
                 for _ in range(self.episode_step):
                     action_prob=self.epsilon_greedy_policy(s,self.action_one)
                     a=np.random.choice(self.action,p=action_prob)
-                    next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
+                    next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
                     if end:
                         if self.save_episode==True:
                             episode.append([self.state_name[s],self.action_name[a],r,end])
