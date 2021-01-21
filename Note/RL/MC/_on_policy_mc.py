@@ -4,14 +4,14 @@ import time
 
 
 class on_policy_mc:
-    def __init__(self,q,state_name,action_name,search_space,epsilon=None,discount=None,theta=None,episode_step=None,save_episode=True):
+    def __init__(self,q,state_name,action_name,exploration_space,epsilon=None,discount=None,theta=None,episode_step=None,save_episode=True):
         self.q=q
         self.episode=[]
         self.r_sum=dict()
         self.r_count=dict()
         self.state_name=state_name
         self.action_name=action_name
-        self.search_space=search_space
+        self.exploration_space=exploration_space
         self.action_len=len(self.action_name)
         self.epsilon=epsilon
         self.discount=discount
@@ -49,14 +49,14 @@ class on_policy_mc:
         return action_onerob
     
     
-    def episode(self,q,s,action,action_one,search_space):
+    def episode(self,q,s,action,action_one,exploration_space):
         episode=[]
         _episode=[]
         if self.episode_step==None:
             while True:
                 action_onerob=self.epsilon_greedy_policy(q,s,action_one)
                 a=np.random.choice(action,p=action_onerob)
-                next_s,r,end=search_space[self.state_name[s]][self.action_name[a]]
+                next_s,r,end=exploration_space[self.state_name[s]][self.action_name[a]]
                 episode.append([s,a,r])
                 if end:
                     if self.save_episode==True:
@@ -69,7 +69,7 @@ class on_policy_mc:
             for _ in range(self.episode_step):
                 action_onerob=self.epsilon_greedy_policy(q,s,action_one)
                 a=np.random.choice(action,p=action_onerob)
-                next_s,r,end=search_space[self.state_name[s]][self.action_name[a]]
+                next_s,r,end=exploration_space[self.state_name[s]][self.action_name[a]]
                 episode.append([s,a,r])
                 if end:
                     if self.save_episode==True:
@@ -110,7 +110,7 @@ class on_policy_mc:
         for i in range(episode_num):
             t1=time.time()
             s=int(np.random.uniform(0,len(self.state_name)))
-            e=self.episode(self.q,s,self.action,self.action_onerob,self.search_space,self.episode_step)
+            e=self.episode(self.q,s,self.action,self.action_onerob,self.exploration_space,self.episode_step)
             self.q,self.r_sum,self.r_count=self.first_visit(e,self.q,self.r_sum,self.r_count,self.discount)
             self.delta=self.delta/(i+1)
             if episode_num%10!=0:
