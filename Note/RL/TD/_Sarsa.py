@@ -4,12 +4,12 @@ import time
 
 
 class Sarsa:
-    def __init__(self,q,state_name,action_name,search_space,epsilon=None,alpha=None,discount=None,theta=None,episode_step=None,save_episode=True):
+    def __init__(self,q,state_name,action_name,exploration_space,epsilon=None,alpha=None,discount=None,theta=None,episode_step=None,save_episode=True):
         self.q=q
         self.episode=[]
         self.state_name=state_name
         self.action_name=action_name
-        self.search_space=search_space
+        self.exploration_space=exploration_space
         self.action_len=len(self.action_name)
         self.epsilon=epsilon
         self.alpha=alpha
@@ -62,7 +62,7 @@ class Sarsa:
             while True:
                 action_onerob=self.epsilon_greedy_policy(q,s,action_one)
                 a=np.random.choice(action,p=action_onerob)
-                next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
+                next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
                 temp=q[s][a]
                 self.delta+=np.abs(q[s][a]-temp)
                 if end:
@@ -79,7 +79,7 @@ class Sarsa:
             for _ in range(self.episode_step):
                 action_onerob=self.epsilon_greedy_policy(q,s,action_one)
                 a=np.random.choice(action,p=action_onerob)
-                next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
+                next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
                 temp=q[s][a]
                 self.delta+=np.abs(q[s][a]-temp)
                 if end:
