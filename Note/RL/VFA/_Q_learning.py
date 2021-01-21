@@ -5,14 +5,14 @@ import time
 
 
 class Q_learning:
-    def __init__(self,net,net_p,state,state_name,action_name,search_space,epsilon=None,discount=None,episode_step=None,optimizer=None,lr=None,save_episode=True):
+    def __init__(self,net,net_p,state,state_name,action_name,exploration_space,epsilon=None,discount=None,episode_step=None,optimizer=None,lr=None,save_episode=True):
         self.net=net
         self.net_p=net_p
         self.episode=[]
         self.state=state
         self.state_name=state_name
         self.action_name=action_name
-        self.search_space=search_space
+        self.exploration_space=exploration_space
         self.action_len=len(self.action_name)
         self.epsilon=epsilon
         self.discount=discount
@@ -61,7 +61,7 @@ class Q_learning:
                     t1=time.time()
                     action_onerob=self.epsilon_greedy_policy(s,self.action_one)
                     a=np.random.choice(self.action,p=action_onerob)
-                    next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
+                    next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
                     if end:
                         if self.save_episode==True:
                             episode.append([self.state_name[s],self.action_name[a],r,end])
@@ -84,7 +84,7 @@ class Q_learning:
                     t1=time.time()
                     action_onerob=self.epsilon_greedy_policy(s,self.action_one)
                     a=np.random.choice(self.action,p=action_onerob)
-                    next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
+                    next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
                     if end:
                         if self.save_episode==True:
                             episode.append([self.state_name[s],self.action_name[a],r,end])
