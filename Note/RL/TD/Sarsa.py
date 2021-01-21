@@ -34,8 +34,8 @@ class Sarsa:
             self.action=np.arange(len(self.action_name),dtype=dtype)
             self.action_onerob=np.ones(len(self.action_name),dtype=dtype)
         if len(self.state_name)>self.q.shape[0] or len(self.action_name)>self.q.shape[1]:
-            self.q=np.concatenate((self.q,np.zeros((len(self.state_name),len(self.action_name)-self.action_len),dtype=self.q.dtype)),axis=1)
-            self.q=np.concatenate((self.q,np.zeros((len(self.state_name)-self.state_len,len(self.action_name)),dtype=self.q.dtype)))
+            self.q=np.concatenate((self.q,np.zeros([len(self.state_name),len(self.action_name)-self.action_len],dtype=self.q.dtype)),axis=1)
+            self.q=np.concatenate((self.q,np.zeros([len(self.state_name)-self.state_len,len(self.action_name)],dtype=self.q.dtype)))
             self.q=self.q.numpy()
         t4=time.time()
         self.time+=t4-t3
@@ -62,7 +62,7 @@ class Sarsa:
         a=0
         episode=[]
         _episode=[]
-        for _in range(episode_num):
+        for _ in range(episode_num):
             if self.episode_step==None:
                 while True:
                     action_onerob=self.epsilon_greedy_policy(q,s,action_one)
