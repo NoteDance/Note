@@ -75,7 +75,7 @@ class Dueling_DQN:
         return tf.reduce_mean(((r+self.discount*tf.reduce_max(Q1,axis=-1))-Q2[self.action,a])**2)
     
     
-    def epi(self,episode_num):
+    def explore(self,episode_num):
         episode=[]
         s=int(np.random.uniform(0,len(self.state_name)))
         for _ in range(episode_num):
