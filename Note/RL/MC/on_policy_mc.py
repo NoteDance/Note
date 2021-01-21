@@ -50,38 +50,39 @@ class on_policy_mc:
         return action_onerob
     
     
-    def _episode(self,q,s,action,action_one,search_space):
+    def _explore(self,episode_num,q,s,action,action_one,search_space):
         episode=[]
         _episode=[]
-        if self.episode_step==None:
-            while True:
-                action_onerob=self.epsilon_greedy_policy(q,s,action_one)
-                a=np.random.choice(action,p=action_onerob)
-                next_s,r,end=search_space[self.state_name[s]][self.action_name[a]]
-                episode.append([s,a,r])
-                if end:
+        for _ in range(episode_num):
+            if self.episode_step==None:
+                while True:
+                    action_onerob=self.epsilon_greedy_policy(q,s,action_one)
+                    a=np.random.choice(action,p=action_onerob)
+                    next_s,r,end=search_space[self.state_name[s]][self.action_name[a]]
+                    episode.append([s,a,r])
+                    if end:
+                        if self.save_episode==True:
+                            _episode.append([self.state_name[s],self.action_name[a],r,end])
+                        break
                     if self.save_episode==True:
-                        _episode.append([self.state_name[s],self.action_name[a],r,end])
-                    break
-                if self.save_episode==True:
-                    _episode.append([self.state_name[s],self.action_name[a],r])
-                s=next_s
-        else:
-            for _ in range(self.episode_step):
-                action_onerob=self.epsilon_greedy_policy(q,s,action_one)
-                a=np.random.choice(action,p=action_onerob)
-                next_s,r,end=search_space[self.state_name[s]][self.action_name[a]]
-                episode.append([s,a,r])
-                if end:
+                        _episode.append([self.state_name[s],self.action_name[a],r])
+                    s=next_s
+            else:
+                for _ in range(self.episode_step):
+                    action_onerob=self.epsilon_greedy_policy(q,s,action_one)
+                    a=np.random.choice(action,p=action_onerob)
+                    next_s,r,end=search_space[self.state_name[s]][self.action_name[a]]
+                    episode.append([s,a,r])
+                    if end:
+                        if self.save_episode==True:
+                            _episode.append([self.state_name[s],self.action_name[a],r,end])
+                        break
                     if self.save_episode==True:
-                        _episode.append([self.state_name[s],self.action_name[a],r,end])
-                    break
-                if self.save_episode==True:
-                    _episode.append([self.state_name[s],self.action_name[a],r])
-                s=next_s
-        if self.save_episode==True:
-            self.episode.append(_episode)
-        self.epi_num+=1
+                        _episode.append([self.state_name[s],self.action_name[a],r])
+                    s=next_s
+            if self.save_episode==True:
+                self.episode.append(_episode)
+            self.epi_num+=1
         return episode
     
     
@@ -107,9 +108,9 @@ class on_policy_mc:
         return q,r_sum,r_count
     
     
-    def episode(self):
+    def explore(self,episode_num):
         s=int(np.random.uniform(0,len(self.state_name)))
-        return self._episode(self.q,s,self.action,self.action_onerob,self.search_space,self.episode_step)
+        return self._explore(episode_num,self.q,s,self.action,self.action_onerob,self.search_space,self.episode_step)
     
     
     def learn(self,episode,i):
