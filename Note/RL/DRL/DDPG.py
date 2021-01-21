@@ -63,7 +63,7 @@ class DDPG:
         return tf.reduce_mean(((r+self.discount*self.Q_target_net(next_s,self.actor_net(next_s,self.actor_target_p),self.value_target_p))-value)**2)
     
     
-    def epi(self,episode_num):
+    def explore(self,episode_num):
         episode=[]
         s=int(np.random.uniform(0,len(self.state_name)))
         for _ in range(episode_num):
