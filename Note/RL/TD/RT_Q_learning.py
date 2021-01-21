@@ -3,12 +3,12 @@ import time
 
 
 class RT_Q_learning:
-    def __init__(self,q,state_name,action_name,search_space,epsilon,alpha,discount,dst,episode_step=None,save_episode=True):
+    def __init__(self,q,state_name,action_name,exploration_space,epsilon,alpha,discount,dst,episode_step=None,save_episode=True):
         self.q=q
         self.episode=[]
         self.state_name=state_name
         self.action_name=action_name
-        self.search_space=search_space
+        self.exploration_space=exploration_space
         self.epsilon=epsilon
         self.alpha=alpha
         self.discount=discount
@@ -54,7 +54,7 @@ class RT_Q_learning:
             a+=1
             action_onerob=self.epsilon_greedy_policy(q,s,action_one)
             a=np.random.choice(np.arange(action_onerob.shape[0]),p=action_onerob)
-            next_s,reward,end=self.search_space[self.state_name[s]][self.action_name[a]]
+            next_s,reward,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
             temp=q[s][a]
             delta+=np.abs(q[s][a]-temp)
             q,next_s=self.td(q,s,a,next_s,reward)
