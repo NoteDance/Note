@@ -45,45 +45,46 @@ class MCPG:
         return tf.log(output)*G
     
     
-    def episode(self):
+    def explore(self,episode_num):
         G=0
         episode=[]
         s=int(np.random.uniform(0,len(self.state_name)))
-        if self.episode_step==None:
-            output=self.policy_net(self.state[s])
-            while True:
+        for _ in range(episode_num):
+            if self.episode_step==None:
                 output=self.policy_net(self.state[s])
-                a=np.random.choice(self.action,output)
-                next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
-                if end:
-                    self.reward_list.append(G)
+                while True:
+                    output=self.policy_net(self.state[s])
+                    a=np.random.choice(self.action,output)
+                    next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
+                    if end:
+                        self.reward_list.append(G)
+                        if self.save_episode==True:
+                            episode.append([self.state_name[s],self.action_name[a],r,end])
+                        break
                     if self.save_episode==True:
-                        episode.append([self.state_name[s],self.action_name[a],r,end])
-                    break
-                if self.save_episode==True:
-                    episode.append([self.state_name[s],self.action_name[a],r])
-                G+=r
-                self.loss+=self._loss(output,G)
-                s=next_s
-        else:
-            output=self.policy_net(self.state[s])
-            for _ in range(self.episode_step):
+                        episode.append([self.state_name[s],self.action_name[a],r])
+                    G+=r
+                    self.loss+=self._loss(output,G)
+                    s=next_s
+            else:
                 output=self.policy_net(self.state[s])
-                a=np.random.choice(self.action,output)
-                next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
-                if end:
-                    self.reward_list.append(G)
+                for _ in range(self.episode_step):
+                    output=self.policy_net(self.state[s])
+                    a=np.random.choice(self.action,output)
+                    next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
+                    if end:
+                        self.reward_list.append(G)
+                        if self.save_episode==True:
+                            episode.append([self.state_name[s],self.action_name[a],r,end])
+                        break
                     if self.save_episode==True:
-                        episode.append([self.state_name[s],self.action_name[a],r,end])
-                    break
-                if self.save_episode==True:
-                    episode.append([self.state_name[s],self.action_name[a],r])
-                G+=r
-                self.loss+=self._loss(output,G)
-                s=next_s
-            self.reward_list.append(G)
-        if self.save_episode==True:
-            self.episode.append(episode)
+                        episode.append([self.state_name[s],self.action_name[a],r])
+                    G+=r
+                    self.loss+=self._loss(output,G)
+                    s=next_s
+                self.reward_list.append(G)
+            if self.save_episode==True:
+                self.episode.append(episode)
         return
     
     
