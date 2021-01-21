@@ -5,14 +5,14 @@ import time
 
 
 class MCPG:
-    def __init__(self,policy_net,net_p,state,state_name,action_name,search_space,epsilon=None,discount=None,reward_min=None,episode_step=None,optimizer=None,lr=None,save_episode=True):
+    def __init__(self,policy_net,net_p,state,state_name,action_name,exploration_space,epsilon=None,discount=None,reward_min=None,episode_step=None,optimizer=None,lr=None,save_episode=True):
         self.policy_net=policy_net
         self.net_p=net_p
         self.episode=[]
         self.state=state
         self.state_name=state_name
         self.action_name=action_name
-        self.search_space=search_space
+        self.exploration_space=exploration_space
         self.action_len=len(self.action_name)
         self.reward_list=[]
         self.epsilon=epsilon
@@ -52,7 +52,7 @@ class MCPG:
             while True:
                 output=self.policy_net(self.state[s])
                 a=np.random.choice(action,output)
-                next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
+                next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
                 if end:
                     self.reward_list.append(G)
                     if self.save_episode==True:
@@ -68,7 +68,7 @@ class MCPG:
             for _ in range(self.episode_step):
                 output=self.policy_net(self.state[s])
                 a=np.random.choice(action,output)
-                next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
+                next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
                 if end:
                     self.reward_list.append(G)
                     if self.save_episode==True:
