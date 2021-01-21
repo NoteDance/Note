@@ -6,7 +6,7 @@ import time
 
 
 class DDPG:
-    def __init__(self,value_net,actor_net,value_target_p,value_predict_p,actor_target_p,actor_predict_p,state,state_name,action_name,search_space,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,tau=0.001,save_episode=True):
+    def __init__(self,value_net,actor_net,value_target_p,value_predict_p,actor_target_p,actor_predict_p,state,state_name,action_name,exploration_space,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,tau=0.001,save_episode=True):
         self.value_net=value_net
         self.actor_net=actor_net
         self.value_target_p=value_target_p
@@ -21,7 +21,7 @@ class DDPG:
         self.state=state
         self.state_name=state_name
         self.action_name=action_name
-        self.search_space=search_space
+        self.exploration_space=exploration_space
         self.discount=discount
         self.episode_step=episode_step
         self.pool_size=pool_size
@@ -71,7 +71,7 @@ class DDPG:
                 while True:
                     t1=time.time()
                     a=self.actor_net(self.state[self.state_name[s]],self.actor_p)+self.OU()
-                    next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
+                    next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
                     if end:
                         if self.save_episode==True:
                             episode.append([self.state_name[s],self.action_name[a],r,end])
@@ -168,7 +168,7 @@ class DDPG:
                 for _ in range(self.episode_step):
                     t1=time.time()
                     a=self.actor_net(self.state[self.state_name[s]],self.actor_p)+self.OU
-                    next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
+                    next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
                     if end:
                         if self.save_episode==True:
                             episode.append([self.state_name[s],self.action_name[a],r,end])
