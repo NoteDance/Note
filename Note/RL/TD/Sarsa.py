@@ -34,8 +34,8 @@ class Sarsa:
             self.action=np.arange(len(self.action_name),dtype=dtype)
             self.action_onerob=np.ones(len(self.action_name),dtype=dtype)
         if len(self.state_name)>self.q.shape[0] or len(self.action_name)>self.q.shape[1]:
-            self.q=np.concatenate([self.q,np.zeros((len(self.state_name),len(self.action_name)-self.action_len],dtype=self.q.dtype)),axis=1)
-            self.q=np.concatenate([self.q,np.zeros((len(self.state_name)-self.state_len,len(self.action_name)],dtype=self.q.dtype)))
+            self.q=np.concatenate((self.q,np.zeros((len(self.state_name),len(self.action_name)-self.action_len),dtype=self.q.dtype)),axis=1)
+            self.q=np.concatenate((self.q,np.zeros((len(self.state_name)-self.state_len,len(self.action_name)),dtype=self.q.dtype)))
             self.q=self.q.numpy()
         t4=time.time()
         self.time+=t4-t3
@@ -58,54 +58,55 @@ class Sarsa:
         return q
     
     
-    def _episode(self,q,s,action,action_one):
+    def _explore(self,episode_num,q,s,action,action_one):
         a=0
         episode=[]
         _episode=[]
-        if self.episode_step==None:
-            while True:
-                action_onerob=self.epsilon_greedy_policy(q,s,action_one)
-                a=np.random.choice(action,p=action_onerob)
-                next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
-                temp=q[s][a]
-                self.delta+=np.abs(q[s][a]-temp)
-                if end:
-                    self.delta+=self.delta/a
+        for _in range(episode_num):
+            if self.episode_step==None:
+                while True:
+                    action_onerob=self.epsilon_greedy_policy(q,s,action_one)
+                    a=np.random.choice(action,p=action_onerob)
+                    next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
+                    temp=q[s][a]
+                    self.delta+=np.abs(q[s][a]-temp)
+                    if end:
+                        self.delta+=self.delta/a
+                        if self.save_episode==True:
+                            episode.append([self.state_name[s],self.action_name[a],r,end])
+                        _episode.append([s,a,next_s,r])
+                        break
                     if self.save_episode==True:
-                        episode.append([self.state_name[s],self.action_name[a],r,end])
+                        episode.append([self.state_name[s],self.action_name[a],r])
                     _episode.append([s,a,next_s,r])
-                    break
-                if self.save_episode==True:
-                    episode.append([self.state_name[s],self.action_name[a],r])
-                _episode.append([s,a,next_s,r])
-                s=next_s
-                a+=1
-        else:
-            for _ in range(self.episode_step):
-                action_onerob=self.epsilon_greedy_policy(q,s,action_one)
-                a=np.random.choice(action,p=action_onerob)
-                next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
-                temp=q[s][a]
-                self.delta+=np.abs(q[s][a]-temp)
-                if end:
-                    self.delta+=self.delta/a
+                    s=next_s
+                    a+=1
+            else:
+                for _ in range(self.episode_step):
+                    action_onerob=self.epsilon_greedy_policy(q,s,action_one)
+                    a=np.random.choice(action,p=action_onerob)
+                    next_s,r,end=self.search_space[self.state_name[s]][self.action_name[a]]
+                    temp=q[s][a]
+                    self.delta+=np.abs(q[s][a]-temp)
+                    if end:
+                        self.delta+=self.delta/a
+                        if self.save_episode==True:
+                            episode.append([self.state_name[s],self.action_name[a],r,end])
+                        _episode.append([s,a,next_s,r])
+                        break
                     if self.save_episode==True:
-                        episode.append([self.state_name[s],self.action_name[a],r,end])
+                        episode.append([self.state_name[s],self.action_name[a],r])
                     _episode.append([s,a,next_s,r])
-                    break
-                if self.save_episode==True:
-                    episode.append([self.state_name[s],self.action_name[a],r])
-                _episode.append([s,a,next_s,r])
-                s=next_s
-                a+=1
-        if self.save_episode==True:
-            self.episode.append(episode)
+                    s=next_s
+                    a+=1
+            if self.save_episode==True:
+                self.episode.append(episode)
         return _episode
     
     
-    def episode(self):
+    def explore(self,episode_num):
         s=int(np.random.uniform(0,len(self.state_name)))
-        return self._episode(self.q,s,self.action,self.action_onerob)
+        return self._episode(episode_num,self.q,s,self.action,self.action_onerob)
     
     
     def update_q(self,q,episode):
