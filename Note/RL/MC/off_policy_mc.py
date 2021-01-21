@@ -4,13 +4,13 @@ import time
 
 
 class off_policy_mc:
-    def __init__(self,q,c,state_name,action_name,search_space,epsilon=None,discount=None,theta=None,episode_step=None,save_episode=True):
+    def __init__(self,q,c,state_name,action_name,exploration_space,epsilon=None,discount=None,theta=None,episode_step=None,save_episode=True):
         self.q=q
         self.c=c
         self.episode=[]
         self.state_name=state_name
         self.action_name=action_name
-        self.search_space=search_space
+        self.exploration_space=exploration_space
         self.action_len=len(self.action_name)
         self.epsilon=epsilon
         self.discount=discount
@@ -54,7 +54,7 @@ class off_policy_mc:
         return action_onerob
     
     
-    def _explore(self,episode_num,q,s,action,action_one,search_space):
+    def _explore(self,episode_num,q,s,action,action_one,exploration_space):
         episode=[]
         _episode=[]
         for _ in range(episode_num):
@@ -62,7 +62,7 @@ class off_policy_mc:
                 while True:
                     action_onerob=self.epsilon_greedy_policy(q,s,action_one)
                     a=np.random.choice(action,p=action_onerob)
-                    next_s,r,end=search_space[self.state_name[s]][self.action_name[a]]
+                    next_s,r,end=exploration_space[self.state_name[s]][self.action_name[a]]
                     episode.append([s,a,r])
                     if end:
                         if self.save_episode==True:
@@ -75,7 +75,7 @@ class off_policy_mc:
                 for _ in range(self.episode_step):
                     action_onerob=self.epsilon_greedy_policy(q,s,action_one)
                     a=np.random.choice(action,p=action_onerob)
-                    next_s,r,end=search_space[self.state_name[s]][self.action_name[a]]
+                    next_s,r,end=exploration_space[self.state_name[s]][self.action_name[a]]
                     episode.append([s,a,r])
                     if end:
                         if self.save_episode==True:
@@ -114,7 +114,7 @@ class off_policy_mc:
     
     def explore(self,episode_num):
         s=int(np.random.uniform(0,len(self.state_name)))
-        return self._explore(episode_num,self.q,s,self.action,self.action_onerob,self.search_space,self.episode_step)
+        return self._explore(episode_num,self.q,s,self.action,self.action_onerob,self.exploration_space,self.episode_step)
     
     
     def learn(self,episode,i):
