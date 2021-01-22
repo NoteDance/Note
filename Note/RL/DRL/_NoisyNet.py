@@ -57,8 +57,9 @@ class NoisyNet:
         for i in range(len(value_p)):
             noisy_row=self.noisy(np.random.normal(value_p[i].shape[0]))
             noisy_column=self.noisy(np.random.normal(value_p[i].shape[1]))
-            noisy.append([noisy_row,noisy_column])
-        return noisy_column
+            noisy_bias=self.noisy(np.random.normal(value_p[i].shape[1]))
+            noisy.append([noisy_row,noisy_column,noisy_bias])
+        return noisy
     
     
     def update_parameter(self):
