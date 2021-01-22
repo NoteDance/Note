@@ -48,18 +48,18 @@ class NoisyNet:
         return
     
     
-    def noisy(self,x):
-        return np.sign(x)*np.sqrt(x)
+    def noise(self,x):
+        return tf.math.sign(x)*tf.math.sqrt(tf.math.abs(x))
     
     
-    def noisy_variable(self,value_p):
-        noisy=[]
+    def Gaussian_noise(self,value_p):
+        noise=[]
         for i in range(len(value_p)):
-            noisy_row=self.noisy(np.random.normal(value_p[i].shape[0]))
-            noisy_column=self.noisy(np.random.normal(value_p[i].shape[1]))
-            noisy_bias=self.noisy(np.random.normal(value_p[i].shape[1]))
-            noisy.append([noisy_row,noisy_column,noisy_bias])
-        return noisy
+            noise_row=self.noise(tf.random.normal(value_p[i].shape[0]),dtype=value_p[i].dtype)
+            noise_column=self.noise(tf.random.normal(value_p[i].shape[1]),dtype=value_p[i].dtype)
+            noise_bias=self.noise(tf.random.normal(value_p[i].shape[1]),dtype=value_p[i].dtype)
+            noise.append([noise_row,noise_column,noise_bias])
+        return noise
     
     
     def update_parameter(self):
