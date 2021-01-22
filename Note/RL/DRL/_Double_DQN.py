@@ -32,6 +32,7 @@ class Double_DQN:
         self.loss_list=[]
         self.opt_flag==False
         self.episode_num=0
+        self.a=0
         self.total_episode=0
         self.time=0
         self.total_time=0
@@ -60,7 +61,6 @@ class Double_DQN:
     def update_parameter(self):
         for i in range(len(self.estimate_p)):
             self.target_p[i]=self.estimate_p[i]
-        self.a=0
         return
     
     
@@ -70,7 +70,6 @@ class Double_DQN:
     
     def learn(self,episode_num,path=None,one=True):
         for i in range(episode_num):
-            self.a=0
             loss=0
             episode=[]
             s=int(np.random.uniform(0,len(self.state_name)))
@@ -111,6 +110,8 @@ class Double_DQN:
                                 self.optimizer(gradient,self.estimate_p)
                             else:
                                 self.optimizer.apply_gradients(zip(gradient,self.estimate_p))
+                        if self.a%self.update_step==0:
+                            self.update_parameter()
                     else:
                         batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
                         random=np.arange(len(self.state_pool))
@@ -152,10 +153,10 @@ class Double_DQN:
                             loss=loss.numpy()
                         else:
                             loss=loss.numpy()/self.batches
+                    if self.a%self.update_step==0:
+                        self.update_parameter()
                     t2=time.time()
                     self.time+=(t2-t1)
-                    if self.a==self.update_step:
-                        self.update_parameter()
             else:
                 for _ in range(self.episode_step):
                     t1=time.time()
@@ -193,6 +194,8 @@ class Double_DQN:
                                 self.optimizer(gradient,self.estimate_p)
                             else:
                                 self.optimizer.apply_gradients(zip(gradient,self.estimate_p))
+                        if self.a%self.update_step==0:
+                            self.update_parameter()
                     else:
                         batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
                         random=np.arange(len(self.state_pool))
@@ -234,10 +237,10 @@ class Double_DQN:
                             loss=loss.numpy()
                         else:
                             loss=loss.numpy()/self.batches
+                    if self.a%self.update_step==0:
+                        self.update_parameter()
                     t2=time.time()
                     self.time+=(t2-t1)
-                    if self.a==self.update_step:
-                        self.update_parameter()
             self.loss_list.append(loss)
             if episode_num%10!=0:
                 d=episode_num-episode_num%10
@@ -312,6 +315,7 @@ class Double_DQN:
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.loss_list,output_file)
         pickle.dump(self.opt_flag,output_file)
+        pickle.dump(self.a,output_file)
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
@@ -341,6 +345,7 @@ class Double_DQN:
         self.save_episode=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
         self.opt_flag=pickle.load(input_file)
+        self.a=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         self.total_time=self.time
         input_file.close()
