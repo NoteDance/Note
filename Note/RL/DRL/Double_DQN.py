@@ -33,6 +33,7 @@ class Double_DQN:
         self.opt_flag==False
         self.episode_num=0
         self.epi_num=0
+        self.a=0
         self.total_episode=0
         self.time=0
         self.total_time=0
@@ -46,6 +47,7 @@ class Double_DQN:
         else:
             self.action=np.arange(len(self.action_name),dtype=dtype)
             self.action_one=np.ones(len(self.action_name),dtype=dtype)
+        self.a=0
         t4=time.time()
         self.time+=t4-t3
         return
@@ -84,6 +86,7 @@ class Double_DQN:
                         break
                     if self.save_episode==True:
                         episode.append([self.state_name[s],self.self.action_name[a],r])
+                    self.a+=1
                     if self.state_pool==None:
                         self.state_pool=tf.expand_dims(self.state[self.state_name[s]],axis=0)
                         self.action_pool=tf.expand_dims(a,axis=0)
@@ -111,6 +114,7 @@ class Double_DQN:
                         break
                     if self.save_episode==True:
                         episode.append([self.state_name[s],self.self.action_name[a],r])
+                    self.a+=1
                     if self.state_pool==None:
                         self.state_pool=tf.expand_dims(self.state[self.state_name[s]],axis=0)
                         self.action_pool=tf.expand_dims(a,axis=0)
@@ -143,6 +147,8 @@ class Double_DQN:
                     self.optimizer(gradient,self.estimate_p)
                 else:
                     self.optimizer.apply_gradients(zip(gradient,self.estimate_p))
+            if self.a%self.update_step==0:
+                self.update_parameter()
         else:
             batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
             for j in range(batches):
@@ -182,6 +188,8 @@ class Double_DQN:
                 self.loss=self.loss.numpy()
             else:
                 self.loss=self.loss.numpy()/self.batches
+            if self.a%self.update_step==0:
+                self.update_parameter()
         return
     
     
@@ -232,6 +240,7 @@ class Double_DQN:
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.loss_list,output_file)
         pickle.dump(self.opt_flag,output_file)
+        pickle.dump(self.a,output_file)
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
@@ -261,6 +270,7 @@ class Double_DQN:
         self.save_episode=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
         self.opt_flag=pickle.load(input_file)
+        self.a=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         self.total_time=self.time
         input_file.close()
