@@ -32,6 +32,7 @@ class NoisyNet:
         self.loss_list=[]
         self.opt_flag==False
         self.episode_num=0
+        self.a=0
         self.total_episode=0
         self.time=0
         self.total_time=0
@@ -63,18 +64,17 @@ class NoisyNet:
     def update_parameter(self):
         for i in range(len(self.value_p)):
             self.target_p[i]=self.value_p[i]
-        self.a=0
         return
     
     
     def loss(self,s,a,next_s,r):
         if self.DUELING==False:
-            noisy1=self.noisy_variable(self.target_p)
-            noisy2=self.noisy_variable(self.value_p)
+            noisy1=self.noisy_variable(self.target_p[0])
+            noisy2=self.noisy_variable(self.value_p[0])
             return tf.reduce_mean(((r+self.discount*tf.reduce_max(self.value_net(next_s,self.target_p,noisy1),axis=-1))-self.value_net(s,self.value_p,noisy2)[self.action,a])**2)
         else:
-            noisy1=self.noisy_variable(self.target_p)
-            noisy2=self.noisy_variable(self.value_p)
+            noisy1=self.noisy_variable(self.target_p[0])
+            noisy2=self.noisy_variable(self.value_p[0])
             value1,action1=self.value_net(next_s,self.target_p,noisy1)
             value2,action2=self.value_net(s,self.value_p,noisy2)
             action1=action1-tf.expand_dims(tf.reduce_sum(action1,axis=-1)/self.action,axis=-1)
@@ -85,15 +85,17 @@ class NoisyNet:
     
     
     def learn(self,episode_num,path=None,one=True):
+        index=len(self.value_p[0])
+        self.value_p[0].extend(self.value_p[1])
+        parameter=self.value_p[0]
         for i in range(episode_num):
-            self.a=0
             loss=0
             episode=[]
             s=int(np.random.uniform(0,len(self.state_name)))
             if self.episode_step==None:
                 while True:
                     t1=time.time()
-                    noisy=self.noisy_variable(self.value_p)
+                    noisy=self.noisy_variable(self.value_p[0])
                     value=self.value_net(self.state_name[s],self.value_p,noisy)
                     a=np.argmax(value)
                     next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
@@ -123,11 +125,16 @@ class NoisyNet:
                     if len(self.state_pool)<self.batch:
                         loss=self.loss(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool)
                         with tf.GradientTape() as tape:
-                            gradient=tape.gradient(loss,self.value_p)
+                            gradient=tape.gradient(loss,parameter)
                             if self.opt_flag==True:
-                                self.optimizer(gradient,self.value_p)
+                                self.optimizer(gradient,parameter)
                             else:
-                                self.optimizer.apply_gradients(zip(gradient,self.value_p))
+                                self.optimizer.apply_gradients(zip(gradient,parameter))
+                        if self.a%self.update_step==0:
+                            self.value_p[0]=parameter[:index]
+                            self.update_parameter()
+                            self.value_p[0].extend(self.value_p[1])
+                            parameter=self.value_p[0]
                     else:
                         batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
                         random=np.arange(len(self.state_pool))
@@ -141,11 +148,11 @@ class NoisyNet:
                             reward_batch=self.reward_pool[random][index1:index2]
                             batch_loss=self.loss(state_batch,action_batch,next_state_batch,reward_batch)
                             with tf.GradientTape() as tape:
-                                gradient=tape.gradient(batch_loss,self.value_p)
+                                gradient=tape.gradient(batch_loss,parameter)
                                 if self.opt_flag==True:
-                                    self.optimizer(gradient,self.value_p)
+                                    self.optimizer(gradient,parameter)
                                 else:
-                                    self.optimizer.apply_gradients(zip(gradient,self.value_p))
+                                    self.optimizer.apply_gradients(zip(gradient,parameter))
                             loss+=batch_loss
                         if len(self.state_pool)%self.batch!=0:
                             batches+=1
@@ -157,11 +164,11 @@ class NoisyNet:
                             reward_batch=tf.concat([self.reward_pool[random][index1:],self.reward_pool[random][:index2]])
                             batch_loss=self.loss(state_batch,action_batch,next_state_batch,reward_batch)
                             with tf.GradientTape() as tape:
-                                gradient=tape.gradient(batch_loss,self.value_p)
+                                gradient=tape.gradient(batch_loss,parameter)
                                 if self.opt_flag==True:
-                                    self.optimizer(gradient,self.value_p)
+                                    self.optimizer(gradient,parameter)
                                 else:
-                                    self.optimizer.apply_gradients(zip(gradient,self.value_p))
+                                    self.optimizer.apply_gradients(zip(gradient,parameter))
                             loss+=batch_loss
                         if len(self.state_pool)%self.batch!=0:
                             loss=loss.numpy()/self.batches+1
@@ -169,14 +176,17 @@ class NoisyNet:
                             loss=loss.numpy()
                         else:
                             loss=loss.numpy()/self.batches
+                    if self.a%self.update_step==0:
+                        self.value_p[0]=parameter[:index]
+                        self.update_parameter()
+                        self.value_p[0].extend(self.value_p[1])
+                        parameter=self.value_p[0]
                     t2=time.time()
                     self.time+=(t2-t1)
-                    if self.a==self.update_step:
-                        self.update_parameter()
             else:
                 for _ in range(self.episode_step):
                     t1=time.time()
-                    noisy=self.noisy_variable(self.value_p)
+                    noisy=self.noisy_variable(self.value_p[0])
                     value=self.value_net(self.state_name[s],self.value_p,noisy)
                     a=np.argmax(value)
                     next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
@@ -206,11 +216,16 @@ class NoisyNet:
                     if len(self.state_pool)<self.batch:
                         loss=self.loss(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool)
                         with tf.GradientTape() as tape:
-                            gradient=tape.gradient(loss,self.value_p)
+                            gradient=tape.gradient(loss,parameter)
                             if self.opt_flag==True:
-                                self.optimizer(gradient,self.value_p)
+                                self.optimizer(gradient,parameter)
                             else:
-                                self.optimizer.apply_gradients(zip(gradient,self.value_p))
+                                self.optimizer.apply_gradients(zip(gradient,parameter))
+                        if self.a%self.update_step==0:
+                            self.value_p[0]=parameter[:index]
+                            self.update_parameter()
+                            self.value_p[0].extend(self.value_p[1])
+                            parameter=self.value_p[0]
                     else:
                         batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
                         random=np.arange(len(self.state_pool))
@@ -224,11 +239,11 @@ class NoisyNet:
                             reward_batch=self.reward_pool[random][index1:index2]
                             batch_loss=self.loss(state_batch,action_batch,next_state_batch,reward_batch)
                             with tf.GradientTape() as tape:
-                                gradient=tape.gradient(batch_loss,self.value_p)
+                                gradient=tape.gradient(batch_loss,parameter)
                                 if self.opt_flag==True:
-                                    self.optimizer(gradient,self.value_p)
+                                    self.optimizer(gradient,parameter)
                                 else:
-                                    self.optimizer.apply_gradients(zip(gradient,self.value_p))
+                                    self.optimizer.apply_gradients(zip(gradient,parameter))
                             loss+=batch_loss
                         if len(self.state_pool)%self.batch!=0:
                             batches+=1
@@ -240,11 +255,11 @@ class NoisyNet:
                             reward_batch=tf.concat([self.reward_pool[random][index1:],self.reward_pool[random][:index2]])
                             batch_loss=self.loss(state_batch,action_batch,next_state_batch,reward_batch)
                             with tf.GradientTape() as tape:
-                                gradient=tape.gradient(batch_loss,self.value_p)
+                                gradient=tape.gradient(batch_loss,parameter)
                                 if self.opt_flag==True:
-                                    self.optimizer(gradient,self.value_p)
+                                    self.optimizer(gradient,parameter)
                                 else:
-                                    self.optimizer.apply_gradients(zip(gradient,self.value_p))
+                                    self.optimizer.apply_gradients(zip(gradient,parameter))
                             loss+=batch_loss
                         if len(self.state_pool)%self.batch!=0:
                             loss=loss.numpy()/self.batches+1
@@ -252,10 +267,13 @@ class NoisyNet:
                             loss=loss.numpy()
                         else:
                             loss=loss.numpy()/self.batches
+                    if self.a%self.update_step==0:
+                        self.value_p[0]=parameter[:index]
+                        self.update_parameter()
+                        self.value_p[0].extend(self.value_p[1])
+                        parameter=self.value_p[0]
                     t2=time.time()
                     self.time+=(t2-t1)
-                    if self.a==self.update_step:
-                        self.update_parameter()
             self.loss_list.append(loss)
             if episode_num%10!=0:
                 d=episode_num-episode_num%10
@@ -272,6 +290,7 @@ class NoisyNet:
             self.total_episode+=1
             if self.save_episode==True:
                 self.episode.append(episode)
+        self.value_p[0]=parameter[:index]
         if self.time<0.5:
             self.time=int(self.time+(self.t4-self.t3))
         else:
@@ -329,6 +348,7 @@ class NoisyNet:
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.loss_list,output_file)
         pickle.dump(self.opt_flag,output_file)
+        pickle.dump(self.a,output_file)
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
@@ -357,6 +377,7 @@ class NoisyNet:
         self.save_episode=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
         self.opt_flag=pickle.load(input_file)
+        self.a=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         self.total_time=self.time
         input_file.close()
