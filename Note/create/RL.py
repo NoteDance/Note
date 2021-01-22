@@ -27,3 +27,17 @@ def pool(state,action,next_state,reward,pool_size,state_pool=None,action_pool=No
        next_state_pool=next_state_pool[1:]
        reward_pool=reward_pool[1:]
    return state_pool,action_pool,next_state_pool,reward_pool
+
+
+def _noise(x):
+    return tf.math.sign(x)*tf.math.sqrt(tf.math.abs(x))
+
+
+def Gaussian_noise(value_p,dtype=tf.float32):
+    noise=[]
+    for i in range(len(value_p)):
+        noise_row=_noise(tf.random.normal([value_p[i].shape[0],1]),dtype=dtype)
+        noise_column=_noise(tf.random.normal([value_p[i].shape[1],1]),dtype=dtype)
+        noise_bias=_noise(tf.random.normal([value_p[i].shape[1],1]),dtype=dtype)
+        noise.append([noise_row,noise_column,noise_bias])
+    return noise
