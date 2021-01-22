@@ -5,7 +5,7 @@ import pickle
 import time
 
 
-class DQN:
+class NoisyNet:
     def __init__(self,value_net,value_p,target_p,state,state_name,action_name,exploration_space,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,save_episode=True):
         self.value_net=value_net
         self.value_p=value_p
@@ -41,10 +41,8 @@ class DQN:
         self.t3=time.time()
         if len(self.action_name)>self.action_len:
             self.action=np.concatenate((self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len))
-            self.action_one=np.concatenate((self.action_one,np.ones(len(self.action_name)-self.action_len,dtype=dtype)))
         else:
             self.action=np.arange(len(self.action_name),dtype=dtype)
-            self.action_one=np.ones(len(self.action_name),dtype=dtype)
         self.t4=time.time()
         return
     
@@ -320,7 +318,6 @@ class DQN:
         pickle.dump(self.reward_pool,output_file)
         pickle.dump(self.action_len,output_file)
         pickle.dump(self.action,output_file)
-        pickle.dump(self.action_one,output_file)
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.discount,output_file)
         pickle.dump(self.episode_step,output_file)
@@ -349,7 +346,6 @@ class DQN:
         self.action_len=pickle.load(input_file)
         if self.action_len==len(self.action_name):
             self.action=pickle.load(input_file)
-            self.action_one=pickle.load(input_file)
         self.epsilon=pickle.load(input_file)
         self.discount=pickle.load(input_file)
         self.episode_step=pickle.load(input_file)
