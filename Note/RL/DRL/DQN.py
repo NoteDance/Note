@@ -69,7 +69,7 @@ class DQN:
         return tf.reduce_mean(((r+self.discount*tf.reduce_max(self.value_net(next_s,self.target_p),axis=-1))-self.value_net(s,self.estimate_p)[self.action,a])**2)
     
     
-    def epi(self):
+    def explore(self):
         episode=[]
         s=int(np.random.uniform(0,len(self.state_name)))
         if self.episode_step==None:
