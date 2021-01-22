@@ -360,6 +360,7 @@ class transformer:
                     self.save(model_path,i,one)
             t2=time.time()
             self.time+=(t2-t1)
+        self.qw1=[variable[:self.h]]
         self.time=self.time-int(self.time)
         if self.time<0.5:
             self.time=int(self.time)
