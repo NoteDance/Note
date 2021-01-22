@@ -55,9 +55,9 @@ class NoisyNet:
     def Gaussian_noise(self,value_p):
         noise=[]
         for i in range(len(value_p)):
-            noise_row=self.noise(tf.random.normal(value_p[i].shape[0]),dtype=value_p[i].dtype)
-            noise_column=self.noise(tf.random.normal(value_p[i].shape[1]),dtype=value_p[i].dtype)
-            noise_bias=self.noise(tf.random.normal(value_p[i].shape[1]),dtype=value_p[i].dtype)
+            noise_row=self.noise(tf.random.normal([value_p[i].shape[0],1]),dtype=value_p[i].dtype)
+            noise_column=self.noise(tf.random.normal([value_p[i].shape[1],1]),dtype=value_p[i].dtype)
+            noise_bias=self.noise(tf.random.normal([value_p[i].shape[1],1]),dtype=value_p[i].dtype)
             noise.append([noise_row,noise_column,noise_bias])
         return noise
     
