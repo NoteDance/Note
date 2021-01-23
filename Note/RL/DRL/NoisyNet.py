@@ -257,6 +257,7 @@ class NoisyNet:
         pickle.dump(self.reward_pool,output_file)
         pickle.dump(self.action_len,output_file)
         pickle.dump(self.action,output_file)
+        pickle.dump(self.DUELING,output_file)
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.discount,output_file)
         pickle.dump(self.episode_step,output_file)
@@ -285,6 +286,7 @@ class NoisyNet:
         self.action_len=pickle.load(input_file)
         if self.action_len==len(self.action_name):
             self.action=pickle.load(input_file)
+        self.DUELING=pickle.load(input_file)
         self.epsilon=pickle.load(input_file)
         self.discount=pickle.load(input_file)
         self.episode_step=pickle.load(input_file)
