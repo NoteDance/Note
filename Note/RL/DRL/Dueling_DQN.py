@@ -6,9 +6,9 @@ import time
 
 
 class Dueling_DQN:
-    def __init__(self,value_net,estimate_p,target_p,state,state_name,action_name,exploration_space,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,save_episode=True):
+    def __init__(self,value_net,value_p,target_p,state,state_name,action_name,exploration_space,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,save_episode=True):
         self.value_net=value_net
-        self.estimate_p=estimate_p
+        self.value_p=value_p
         self.target_p=target_p
         self.state_pool=None
         self.action_pool=None
@@ -61,14 +61,14 @@ class Dueling_DQN:
     
     
     def update_parameter(self):
-        for i in range(len(self.estimate_p)):
-            self.target_p[i]=self.estimate_p[i]
+        for i in range(len(self.value_p)):
+            self.target_p[i]=self.value_p[i]
         return
     
     
     def _loss(self,s,a,next_s,r):
         value1,action1=self.value_net(next_s,self.target_p)
-        value2,action2=self.value_net(s,self.estimate_p)
+        value2,action2=self.value_net(s,self.value_p)
         action1=action1-tf.expand_dims(tf.reduce_sum(action1,axis=-1)/self.action,axis=-1)
         action2=action2-tf.expand_dims(tf.reduce_sum(action2,axis=-1)/self.action,axis=-1)
         Q1=value1+action1
@@ -147,11 +147,11 @@ class Dueling_DQN:
         if len(self.state_pool)<self.batch:
             self.loss=self._loss(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool)
             with tf.GradientTape() as tape:
-                gradient=tape.gradient(self.loss,self.estimate_p)
+                gradient=tape.gradient(self.loss,self.value_p)
                 if self.opt_flag==True:
-                    self.optimizer(gradient,self.estimate_p)
+                    self.optimizer(gradient,self.value_p)
                 else:
-                    self.optimizer.apply_gradients(zip(gradient,self.estimate_p))
+                    self.optimizer.apply_gradients(zip(gradient,self.value_p))
             if self.a%self.update_step==0:
                 self.update_parameter()
         else:
@@ -165,11 +165,11 @@ class Dueling_DQN:
                 reward_batch=self.reward_pool[index1:index2]
                 batch_loss=self._loss(state_batch,action_batch,next_state_batch,reward_batch)
                 with tf.GradientTape() as tape:
-                    gradient=tape.gradient(batch_loss,self.estimate_p)
+                    gradient=tape.gradient(batch_loss,self.value_p)
                     if self.opt_flag==True:
-                        self.optimizer(gradient,self.estimate_p)
+                        self.optimizer(gradient,self.value_p)
                     else:
-                        self.optimizer.apply_gradients(zip(gradient,self.estimate_p))
+                        self.optimizer.apply_gradients(zip(gradient,self.value_p))
                 self.loss+=batch_loss
             if len(self.state_pool)%self.batch!=0:
                 batches+=1
@@ -181,11 +181,11 @@ class Dueling_DQN:
                 reward_batch=tf.concat([self.reward_pool[index1:],self.reward_pool[:index2]])
                 batch_loss=self._loss(state_batch,action_batch,next_state_batch,reward_batch)
                 with tf.GradientTape() as tape:
-                    gradient=tape.gradient(batch_loss,self.estimate_p)
+                    gradient=tape.gradient(batch_loss,self.value_p)
                     if self.opt_flag==True:
-                        self.optimizer(gradient,self.estimate_p)
+                        self.optimizer(gradient,self.value_p)
                     else:
-                        self.optimizer.apply_gradients(zip(gradient,self.estimate_p))
+                        self.optimizer.apply_gradients(zip(gradient,self.value_p))
                 self.loss+=batch_loss
             if len(self.state_pool)%self.batch!=0:
                 self.loss=self.loss.numpy()/self.batches+1
@@ -211,7 +211,7 @@ class Dueling_DQN:
     
     def save_p(self,path):
         output_file=open(path+'.dat','wb')
-        pickle.dump(self.estimate_p,output_file)
+        pickle.dump(self.value_p,output_file)
         return
     
     
