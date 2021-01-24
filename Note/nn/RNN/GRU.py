@@ -674,6 +674,8 @@ class GRU:
                         train_writer.add_summary(train_summary,i)
                 t2=time.time()
                 self.time+=(t2-t1)
+            if model_path!=None:
+                self.save_model(model_path)
             self.time=self.time-int(self.time)
             if self.time<0.5:
                 self.time=int(self.time)
@@ -1011,8 +1013,14 @@ class GRU:
             total_params=(self.data_shape[2]*self.hidden+self.hidden*self.hidden+self.hidden)*4+self.hidden*self.labels_shape[1]+self.labels_shape[1]
         print('total params:{0}'.format(total_params))
         return
-
-
+    
+    
+    def save_p(self,path):
+        parameter_file=open(path+'.dat','wb')
+        pickle.dump([self.embedding_w,self.embedding_b,self.last_ug_weight_x,self.last_ug_weight_h,self.last_rg_weight_x,self.last_rg_weight_h,self.last_cltm_weight_x,self.last_cltm_weight_h,self.last_weight_o,self.last_ug_bias,self.last_rg_bias,self.last_cltm_bias,self.last_bias_o],parameter_file)
+        return
+    
+    
     def save(self,model_path,i=None,one=True):
         if one==True:
             output_file=open(model_path+'.dat','wb')
