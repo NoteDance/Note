@@ -285,6 +285,8 @@ class DDPG:
             self.total_episode+=1
             if self.save_episode==True:
                 self.episode.append(episode)
+        if path!=None:
+            self.save(path)
         if self.time<0.5:
             self.time=int(self.time)
         else:
@@ -308,9 +310,15 @@ class DDPG:
     
     
     def save_p(self,path):
-        output_file=open(path+'.dat','wb')
-        pickle.dump(self.value_p,output_file)
-        pickle.dump(self.actor_p,output_file)
+        parameter_file=open(path+'.dat','wb')
+        pickle.dump(self.value_p,parameter_file)
+        pickle.dump(self.actor_p,parameter_file)
+        return
+    
+    
+    def save_e(self,path):
+        episode_file=open(path+'.dat','wb')
+        pickle.dump(self.episode,episode_file)
         return
     
     
