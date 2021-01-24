@@ -82,6 +82,12 @@ class CMAC:
         return
     
     
+    def save_p(self,path):
+        parameter_file=open(path+'.dat','wb')
+        pickle.dump([self.C,self.form,self.memory],parameter_file)
+        return
+    
+    
     def save(self,path,i=None,one=True):
         if one==True:
             output_file=open(path+'\save.dat','wb')
