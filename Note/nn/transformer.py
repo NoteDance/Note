@@ -360,6 +360,8 @@ class transformer:
                     self.save(model_path,i,one)
             t2=time.time()
             self.time+=(t2-t1)
+        if model_path!=None:
+            self.save(model_path)
         self.qw1=[variable[:self.h]]
         self.time=self.time-int(self.time)
         if self.time<0.5:
@@ -517,6 +519,12 @@ class transformer:
             print()
             print('test loss:{0:.6f}'.format(self.test_loss))
             print('test acc:{0:.1f}%'.format(self.test_acc*100))
+        return
+    
+    
+    def save_p(self,path):
+        parameter_file=open(path+'.dat','wb')
+        pickle.dump([self.embedding_w,self.qw1,self.kw1,self.vw1,self.fw1,self.qw2,self.kw2,self.vw2,self.qw3,self.kw3,self.vw3,self.fw2,self.ow],parameter_file)
         return
     
     
