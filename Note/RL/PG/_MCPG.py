@@ -114,7 +114,9 @@ class MCPG:
             self.episode_num+=1
             self.total_episode+=1
             if self.reward_min!=None and max(self.reward_list)>=self.reward_min:
-               break 
+               break
+        if path!=None:
+            self.save(path)
         if self.time<0.5:
             self.time=int(self.time+(self.t4-self.t3))
         else:
@@ -127,8 +129,14 @@ class MCPG:
     
     
     def save_p(self,path):
-        output_file=open(path+'.dat','wb')
-        pickle.dump(self.net_p,output_file)
+        parameter_file=open(path+'.dat','wb')
+        pickle.dump(self.net_p,parameter_file)
+        return
+    
+    
+    def save_e(self,path):
+        episode_file=open(path+'.dat','wb')
+        pickle.dump(self.episode,episode_file)
         return
     
     
