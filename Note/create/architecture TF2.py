@@ -238,6 +238,8 @@ class unnamed:
                     self.save(model_path,i,one)
             t2=time.time()
             self.time+=(t2-t1)
+        if model_path!=None:
+            self.save(model_path)
         self.time=self.time-int(self.time)
         if self.time<0.5:
             self.time=int(self.time)
@@ -416,6 +418,12 @@ class unnamed:
             with tf.name_scope('print_accuracy'):
                 print('test acc:{0:.1f}'.format(self.test_acc*100))
                 print('test acc:{0:.6f}'.format(self.test_acc)) 
+        return
+    
+    
+    def save_p(self,path):
+        parameter_file=open(path+'.dat','wb')
+        parameter=pickle.dump(,parameter_file)
         return
     
     
