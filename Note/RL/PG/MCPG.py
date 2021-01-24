@@ -101,8 +101,14 @@ class MCPG:
     
     
     def save_p(self,path):
-        output_file=open(path+'.dat','wb')
-        pickle.dump(self.net_p,output_file)
+        parameter_file=open(path+'.dat','wb')
+        pickle.dump(self.net_p,parameter_file)
+        return
+    
+    
+    def save_e(self,path):
+        episode_file=open(path+'.dat','wb')
+        pickle.dump(self.episode,episode_file)
         return
     
     
