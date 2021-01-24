@@ -289,6 +289,8 @@ class kernel:
                     self.save(nn_path,i,one)
             t2=time.time()
             self.time+=(t2-t1)
+        if nn_path!=None:
+            self.save(nn_path)
         self.time=self.time-int(self.time)
         if self.time<0.5:
             self.time=int(self.time)
@@ -524,6 +526,12 @@ class kernel:
                 print('test acc:{0:.1f}'.format(self.test_acc*100))
             else:
                 print('test acc:{0:.6f}'.format(self.test_acc)) 
+        return
+    
+    
+    def save_p(self,path):
+        parameter_file=open(path+'.dat','wb')
+        pickle.dump(self.parameter,parameter_file)
         return
     
     
