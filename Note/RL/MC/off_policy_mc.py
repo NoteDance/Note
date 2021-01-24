@@ -125,8 +125,14 @@ class off_policy_mc:
     
     
     def save_policy(self,path):
-        output_file=open(path+'.dat','wb')
-        pickle.dump(self.q,output_file)
+        policy_file=open(path+'.dat','wb')
+        pickle.dump(self.q,policy_file)
+        return
+    
+    
+    def save_e(self,path):
+        episode_file=open(path+'.dat','wb')
+        pickle.dump(self.episode,episode_file)
         return
     
     
