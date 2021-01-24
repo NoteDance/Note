@@ -130,6 +130,8 @@ class on_policy_mc:
             self.time+=(t2-t1)
             if self.theta!=None and self.delta<=self.theta:
                 break
+        if path!=None:
+            self.save(path)
         if self.time<0.5:
             self.time=int(self.time+(self.t4-self.t3))
         else:
@@ -142,8 +144,14 @@ class on_policy_mc:
     
     
     def save_policy(self,path):
-        output_file=open(path+'.dat','wb')
-        pickle.dump(self.q,output_file)
+        policy_file=open(path+'.dat','wb')
+        pickle.dump(self.q,policy_file)
+        return
+    
+    
+    def save_e(self,path):
+        episode_file=open(path+'.dat','wb')
+        pickle.dump(self.episode,episode_file)
         return
     
     
