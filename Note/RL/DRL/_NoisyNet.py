@@ -292,6 +292,8 @@ class NoisyNet:
             self.total_episode+=1
             if self.save_episode==True:
                 self.episode.append(episode)
+        if path!=None:
+            self.save(path)
         self.value_p[0]=parameter[:index]
         if self.time<0.5:
             self.time=int(self.time+(self.t4-self.t3))
@@ -318,6 +320,12 @@ class NoisyNet:
     def save_p(self,path):
         output_file=open(path+'.dat','wb')
         pickle.dump(self.value_p,output_file)
+        return
+    
+    
+    def save_e(self,path):
+        episode_file=open(path+'.dat','wb')
+        pickle.dump(self.episode,episode_file)
         return
     
     
