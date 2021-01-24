@@ -366,6 +366,8 @@ class RNN:
                         train_writer.add_summary(train_summary,i)
                 t2=time.time()
                 self.time+=(t2-t1)
+            if model_path!=None:
+                self.save(model_path)
             self.time=self.time-int(self.time)
             if self.time<0.5:
                 self.time=int(self.time)
@@ -646,6 +648,12 @@ class RNN:
         elif len(self.labels_shape)==2:
             total_params=self.data_shape[2]*self.hidden+self.hidden+self.hidden*self.hidden+self.hidden+self.hidden*self.labels_shape[1]+self.labels_shape[1]
         print('total params:{0}'.format(total_params))
+        return
+    
+    
+    def save_p(self,path):
+        parameter_file=open(path+'.dat','wb')
+        pickle.dump([self.embedding_w,self.embedding_b,self.last_weight_x,self.last_weight_h,self.last_weight_o,self.last_bias_x,self.last_bias_h,self.last_bias_o],parameter_file)
         return
 
 
