@@ -115,6 +115,8 @@ class Q_learning:
                     self.save(path,i,one)
             self.episode_num+=1
             self.total_episode+=1
+        if path!=None:
+            self.save(path)
         if self.save_episode==True:
             self.episode.append(episode)
         if self.time<0.5:
@@ -129,8 +131,14 @@ class Q_learning:
     
     
     def save_p(self,path):
-        output_file=open(path+'.dat','wb')
-        pickle.dump(self.net_p,output_file)
+        parameter_file=open(path+'.dat','wb')
+        pickle.dump(self.net_p,parameter_file)
+        return
+    
+    
+    def save_e(self,path):
+        episode_file=open(path+'.dat','wb')
+        pickle.dump(self.episode,episode_file)
         return
     
     
