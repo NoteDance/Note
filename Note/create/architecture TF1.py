@@ -231,6 +231,8 @@ class unnamed:
                         train_writer.add_summary(train_summary,i)
                 t2=time.time()
                 self.time+=(t2-t1)
+            if model_path!=None:
+                self.save(model_path)
             self.time=self.time-int(self.time)
             if self.time<0.5:
                 self.time=int(self.time)
@@ -438,6 +440,12 @@ class unnamed:
         return
     
     
+    def save_p(self,path):
+        parameter_file=open(path+'.dat','wb')
+        parameter=pickle.dump(,parameter_file)
+        return
+    
+    
     def save(self,path,i=None,one=True):
         if one==True:
             output_file=open(path+'\save.dat','wb')
@@ -453,8 +461,8 @@ class unnamed:
             
           
         with tf.name_scope('save_data_msg'):
-            pickle.dump(self.tf1.dtype)
-            pickle.dump(self.tf1.shape)           
+            pickle.dump(self.tf1.dtype,output_file)
+            pickle.dump(self.tf1.shape,output_file)           
         with tf.name_scope('save_hyperparameter'):
             pickle.dump(self.batch,output_file)
             pickle.dump(self.lr,output_file)
