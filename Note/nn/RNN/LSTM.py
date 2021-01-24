@@ -769,6 +769,8 @@ class LSTM:
                         train_writer.add_summary(train_summary,i)
                 t2=time.time()
                 self.time+=(t2-t1)
+            if model_path!=None:
+                self.save(model_path)
             self.time=self.time-int(self.time)
             if self.time<0.5:
                 self.time=int(self.time)
@@ -1128,6 +1130,12 @@ class LSTM:
         elif len(self.labels_shape)==2:
             total_params=(self.data_shape[2]*self.hidden+self.hidden*self.hidden+self.hidden)*4+self.hidden*self.labels_shape[1]+self.labels_shape[1]
         print('total params:{0}'.format(total_params))
+        return
+    
+    
+    def save_p(self,path):
+        parameter_file=open(path+'.dat','wb')
+        pickle.dump([self.embedding_w,self.embedding_b,self.last_fg_weight_x,self.last_fg_weight_h,self.last_ig_weight_x,self.last_ig_weight_h,self.last_og_weight_x,self.last_og_weight_h,self.last_cltm_weight_x,self.last_cltm_weight_h,self.last_weight_o,self.last_fg_bias,self.last_ig_bias,self.last_og_bias,self.last_cltm_bias,self.last_bias_o],parameter_file)
         return
 
 
