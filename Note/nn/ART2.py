@@ -182,6 +182,12 @@ class ART2:
         return
     
     
+    def save_p(self,path):
+        parameter_file=open(path+'.dat','wb')
+        pickle.dump([self.W,self.T],parameter_file)
+        return
+    
+    
     def save(self,path):
         output_file=open(path+'\save.dat','wb')
         path=path+'\save.dat'
