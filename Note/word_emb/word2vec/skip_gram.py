@@ -201,6 +201,8 @@ class skip_gram:
                         train_writer.add_summary(train_summary,i)
                 t2=time.time()
                 self.time+=(t2-t1)
+            if model_path!=None:
+                self.save(model_path)
             self.time=self.time-int(self.time)
             if self.time<0.5:
                 self.time=int(self.time)
@@ -267,6 +269,12 @@ class skip_gram:
         plt.xlabel('epoch')
         plt.ylabel('loss')
         print('train loss:{0}'.format(self.train_loss))
+        return
+    
+    
+    def save_p(self,path):
+        parameter_file=open(path+'.dat','wb')
+        pickle.dump([self.last_cword_weight,self.last_bword_weight],parameter_file)
         return
     
     
