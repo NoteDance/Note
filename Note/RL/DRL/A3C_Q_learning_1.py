@@ -5,7 +5,7 @@ import time
 
 
 class A3C_Q_learning_1:
-    def __init__(self,value_net,value_p,target_p,state,state_name,action_name,exploration_space,T=None,Tmax=None,It=None,Ia=None,alpha=None,lr=None,epsilon=None,discount=None,episode_step=None,save_episode=True):
+    def __init__(self,value_net,value_p,target_p,state,state_name,action_name,exploration_space,Tmax=None,It=None,Ia=None,alpha=None,lr=None,epsilon=None,discount=None,episode_step=None,save_episode=True):
         self.value_net=value_net
         self.value_p=value_p
         self.target_p=target_p
@@ -18,7 +18,7 @@ class A3C_Q_learning_1:
         self.discount=discount
         self.episode_step=episode_step
         self.lr=lr
-        self.T=T
+        self.T=0
         self.Tmax=Tmax
         self.It=It
         self.Ia=Ia
@@ -55,7 +55,7 @@ class A3C_Q_learning_1:
     
     
     def _loss(self,s,a,next_s,r):
-        return tf.reduce_mean(((r+self.discount*tf.reduce_max(self.value_net(next_s,self.target_p),axis=-1))-self.value_net(s,self.value_p)[self.action,a])**2)
+        return ((r+self.discount*tf.reduce_max(self.value_net(next_s,self.target_p)))-self.value_net(s,self.value_p)[a])**2
     
     
     def learn(self,episode_num,epsilon):
