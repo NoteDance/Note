@@ -73,7 +73,7 @@ class Dueling_DQN:
         Q1=value1+action1
         Q2=value2+action2
         if len(self.state_pool)<self.batch:
-            return tf.reduce_mean(((r+self.discount*tf.reduce_max(Q1,axis=-1))-Q2[np.arange(len(self.state_pool)),a])**2)
+            return tf.reduce_mean(((r+self.discount*tf.reduce_max(Q1,axis=-1))-Q2[np.arange(len(a)),a])**2)
         else:
             return tf.reduce_mean(((r+self.discount*tf.reduce_max(Q1,axis=-1))-Q2[self.index,a])**2)
     
