@@ -124,10 +124,8 @@ class policy_iteration:
         input_file=open(path,'rb')
         self.state_len=pickle.load(input_file)
         self.action_len=pickle.load(input_file)
-        if self.state_len==len(self.state_name):
-            self._V=pickle.load(input_file)
-        if self.action_len==len(self.action_name):
-            self.action_value=pickle.load(input_file)
+        self._V=pickle.load(input_file)
+        self.action_value=pickle.load(input_file)
         self.discount=pickle.load(input_file)
         self.theta=pickle.load(input_file)
         self.end_flag=pickle.load(input_file)
