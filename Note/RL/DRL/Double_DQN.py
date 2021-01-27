@@ -47,6 +47,7 @@ class Double_DQN:
         else:
             self.action=np.arange(len(self.action_name),dtype=dtype)
             self.action_one=np.ones(len(self.action_name),dtype=dtype)
+        self.index=np.arange(self.batch,dtype=np.int8)
         self.a=0
         t4=time.time()
         self.time+=t4-t3
@@ -68,7 +69,10 @@ class Double_DQN:
     
     
     def _loss(self,s,a,next_s,r):
-        return tf.reduce_mean(((r+self.discount*self.value_net(next_s,self.target_p)[self.action,tf.math.argmax(self.value_net(next_s,self.value_p),axis=-1)])-self.value_net(s,self.value_p)[self.action,a])**2)
+        if len(self.state_pool)<self.batch:
+            return tf.reduce_mean(((r+self.discount*self.value_net(next_s,self.target_p)[np.arange(len(self.state_pool)),tf.math.argmax(self.value_net(next_s,self.value_p),axis=-1)])-self.value_net(s,self.value_p)[np.arange(len(self.state_pool)),a])**2)
+        else:
+            return tf.reduce_mean(((r+self.discount*self.value_net(next_s,self.target_p)[self.index,tf.math.argmax(self.value_net(next_s,self.value_p),axis=-1)])-self.value_net(s,self.value_p)[self.index,a])**2)
     
     
     def explore(self,episode_num):
@@ -262,9 +266,8 @@ class Double_DQN:
         self.next_state_pool=pickle.load(input_file)
         self.reward_pool=pickle.load(input_file)
         self.action_len=pickle.load(input_file)
-        if self.action_len==len(self.action_name):
-            self.action=pickle.load(input_file)
-            self.action_one=pickle.load(input_file)
+        self.action=pickle.load(input_file)
+        self.action_one=pickle.load(input_file)
         self.epsilon=pickle.load(input_file)
         self.discount=pickle.load(input_file)
         self.episode_step=pickle.load(input_file)
