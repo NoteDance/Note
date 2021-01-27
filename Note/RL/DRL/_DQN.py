@@ -46,6 +46,7 @@ class DQN:
         else:
             self.action=np.arange(len(self.action_name),dtype=dtype)
             self.action_one=np.ones(len(self.action_name),dtype=dtype)
+        self.index=np.arange(self.batch,dtype=np.int8)
         self.t4=time.time()
         return
     
@@ -65,7 +66,10 @@ class DQN:
     
     
     def loss(self,s,a,next_s,r):
-        return tf.reduce_mean(((r+self.discount*tf.reduce_max(self.value_net(next_s,self.target_p),axis=-1))-self.value_net(s,self.value_p)[self.action,a])**2)
+        if len(self.state_pool)<self.batch:
+            return tf.reduce_mean(((r+self.discount*tf.reduce_max(self.value_net(next_s,self.target_p),axis=-1))-self.value_net(s,self.value_p)[np.arange(len(self.state_pool)),a])**2)
+        else:
+            return tf.reduce_mean(((r+self.discount*tf.reduce_max(self.value_net(next_s,self.target_p),axis=-1))-self.value_net(s,self.value_p)[self.index,a])**2)
     
     
     def learn(self,episode_num,path=None,one=True):
@@ -312,6 +316,7 @@ class DQN:
         pickle.dump(self.action_len,output_file)
         pickle.dump(self.action,output_file)
         pickle.dump(self.action_one,output_file)
+        pickle.dump(self.index,output_file)
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.discount,output_file)
         pickle.dump(self.episode_step,output_file)
@@ -339,9 +344,9 @@ class DQN:
         self.next_state_pool=pickle.load(input_file)
         self.reward_pool=pickle.load(input_file)
         self.action_len=pickle.load(input_file)
-        if self.action_len==len(self.action_name):
-            self.action=pickle.load(input_file)
-            self.action_one=pickle.load(input_file)
+        self.action=pickle.load(input_file)
+        self.action_one=pickle.load(input_file)
+        self.index=pickle.load(input_file)
         self.epsilon=pickle.load(input_file)
         self.discount=pickle.load(input_file)
         self.episode_step=pickle.load(input_file)
