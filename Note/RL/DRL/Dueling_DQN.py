@@ -31,8 +31,9 @@ class Dueling_DQN:
         self.save_episode=save_episode
         self.loss_list=[]
         self.opt_flag==False
-        self.episode_num=0
         self.a=0
+        self.epi_num=0
+        self.episode_num=0
         self.total_episode=0
         self.time=0
         self.total_time=0
@@ -81,6 +82,7 @@ class Dueling_DQN:
             self.reward_pool=None
             self.loss_list=[]
             self.a=0
+            self.epi_num=0
             self.episode_num=0
             self.total_episode=0
             self.time=0
