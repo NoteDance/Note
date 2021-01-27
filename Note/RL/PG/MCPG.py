@@ -41,7 +41,9 @@ class MCPG:
         return
     
     
-    def init(self,epsilon=None,discount=None,reward_min=None,episode_step=None,optimizer=None,lr=None,net_p=None,flag=None):
+    def init(self,net_p=None,epsilon=None,discount=None,reward_min=None,episode_step=None,optimizer=None,lr=None,flag=None):
+        if net_p!=None:
+            self.net_p=net_p
         if epsilon!=None:
             self.epsilon=epsilon
         if discount!=None:
@@ -54,8 +56,6 @@ class MCPG:
             self.optimizer=optimizer
         if lr!=None:
             self.lr=lr
-        if net_p!=None:
-            self.net_p=net_p
         if flag==None:
             self.episode=[]
             self.reward_list=[]
