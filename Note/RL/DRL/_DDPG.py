@@ -40,7 +40,7 @@ class DDPG:
         self.total_time=0
     
     
-    def init(self,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,tau=0.001,value_p=None,value_target_p=None,actor_p=None,actor_target_p=None,flag=None):
+    def init(self,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,tau=None,value_p=None,value_target_p=None,actor_p=None,actor_target_p=None,flag=None):
         if discount!=None:
             self.discount=discount
         if episode_step!=None:
@@ -388,6 +388,7 @@ class DDPG:
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.loss_list,output_file)
         pickle.dump(self.opt_flag,output_file)
+        pickle.dump(self.episode_num,output_file)
         pickle.dump(self.a,output_file)
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
@@ -414,6 +415,7 @@ class DDPG:
         self.save_episode=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
         self.opt_flag=pickle.load(input_file)
+        self.episode_num=pickle.load(input_file)
         self.a=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         self.total_time=self.time
