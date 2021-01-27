@@ -4,7 +4,7 @@ import time
 
 
 class value_iteration:
-    def __init__(self,policy,state_name,action_name,prs,discount,theta,end_flag=None):
+    def __init__(self,policy,state_name,action_name,prs,discount=None,theta=None,end_flag=None):
         self.policy=policy
         self.state_name=state_name
         self.action_name=action_name
@@ -21,10 +21,25 @@ class value_iteration:
         self.total_time=0
     
     
-    def init(self):
+    def init_v(self):
         self.V=np.zeros(len(self.state_name),dtype=np.float16)
         self.A=np.zeros(len(self.action_name),dtype=np.float16)
         return
+    
+    
+    def init(self,discount=None,theta=None,flag=None):
+        if discount!=None:
+            self.discount=discount
+        if theta!=None:
+            self.theta=theta
+        if flag==None:
+            self.delta=0
+            self.iteration_num=0
+            self.total_iteration_sum=0
+            self.time=0
+            self.total_time=0
+        return
+    
     
     def learn(self,iteration=None,path=None,one=True):
         if iteration==None:
