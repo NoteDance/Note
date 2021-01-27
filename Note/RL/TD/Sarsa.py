@@ -18,6 +18,7 @@ class Sarsa:
         self.episode_step=episode_step
         self.save_episode=save_episode
         self.delta=0
+        self.epi_num=0
         self.episode_num=0
         self.epi_num=0
         self.total_episode=0
@@ -56,6 +57,7 @@ class Sarsa:
         if flag==None:
             self.episode=[]
             self.delta=0
+            self.epi_num=0
             self.episode_num=0
             self.total_episode=0
             self.time=0
@@ -122,6 +124,7 @@ class Sarsa:
                     a+=1
             if self.save_episode==True:
                 self.episode.append(episode)
+            self.epi_num+=1
         return _episode
     
     
@@ -164,6 +167,7 @@ class Sarsa:
             path=path+'\save-{0}.dat'.format(i+1)
             index=path.rfind('\\')
             episode_file=open(path.replace(path[index+1:],'episode-{0}.dat'.format(i+1)),'wb')
+        self.episode_num=self.epi_num
         pickle.dump(self.episode,episode_file)
         pickle.dump(self.action_len,output_file)
         pickle.dump(self.action,output_file)
