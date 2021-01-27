@@ -40,7 +40,7 @@ class DDPG:
         self.total_time=0
     
     
-    def init(self,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,tau=None,value_p=None,value_target_p=None,actor_p=None,actor_target_p=None,flag=None):
+    def init(self,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,tau=0.001,value_p=None,value_target_p=None,actor_p=None,actor_target_p=None,flag=None):
         if discount!=None:
             self.discount=discount
         if episode_step!=None:
