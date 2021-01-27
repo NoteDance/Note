@@ -21,6 +21,7 @@ class Q_learning:
         self.optimizer=optimizer
         self.save_episode=save_episode
         self.opt_flag=False
+        self.epi_num=0
         self.episode_num=0
         self.total_episode=0
         self.time=0
@@ -54,6 +55,7 @@ class Q_learning:
             self.lr=lr
         if flag==None:
             self.episode=[]
+            self.epi_num=0
             self.episode_num=0
             self.total_episode=0
             self.time=0
@@ -135,7 +137,7 @@ class Q_learning:
                 print('episode num:{0}   loss:{1:.6f}'.format(i+1,loss))
                 if path!=None and i%episode_num*2==0:
                     self.save(path,i,one)
-            self.episode_num+=1
+            self.epi_num+=1
             self.total_episode+=1
         if path!=None:
             self.save(path)
@@ -175,6 +177,7 @@ class Q_learning:
             path=path+'\save-{0}.dat'.format(i+1)
             index=path.rfind('\\')
             episode_file=open(path.replace(path[index+1:],'episode-{0}.dat'.format(i+1)),'wb')
+        self.episode_num=self.epi_num
         pickle.dump(self.episode,episode_file)
         pickle.dump(self.action_len,output_file)
         pickle.dump(self.action,output_file)
