@@ -1,5 +1,5 @@
 import tensorflow as tf
-import Note.create.create as c
+import Note.creat.creat as c
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
@@ -56,16 +56,18 @@ class kernel:
         return
     
     
-    def init(self):
+    def init(self,parameter=None):
         self.nn.flag=0
-        self.parameter=[]
-        self.nn.parameter=[]
+        if parameter!=None:
+            self.parameter=parameter
         self.train_loss_list.clear()
         self.train_acc_list.clear()
         self.test_loss_list.clear()
         self.test_acc_list.clear()
         self.test_flag=False
+        self.epoch=0
         self.total_epoch=0
+        self.time=0
         self.total_time=0
         return
     
@@ -160,7 +162,7 @@ class kernel:
                         else:
                             with tf.name_scope('apply_gradient'):
                                 if self.optimizer!=None:
-                                    c.apply_gradient(tape,self.optimizer,batch_loss,self.parameter)
+                                    n.apply_gradient(tape,self.optimizer,batch_loss,self.parameter)
                                 else:
                                     gradient=tape.gradient(batch_loss,self.parameter)
                                     self.optimizern(gradient,self.parameter)
@@ -210,7 +212,7 @@ class kernel:
                         else:
                             with tf.name_scope('apply_gradient'):
                                 if self.optimizer!=None:
-                                    c.apply_gradient(tape,self.optimizer,batch_loss,self.parameter)
+                                    n.apply_gradient(tape,self.optimizer,batch_loss,self.parameter)
                                 else:
                                     gradient=tape.gradient(batch_loss,self.parameter)
                                     self.optimizern(gradient,self.parameter)
@@ -249,7 +251,7 @@ class kernel:
                     else:
                        with tf.name_scope('apply_gradient'):
                            if self.optimizer!=None:
-                               c.apply_gradient(tape,self.optimizer,batch_loss,self.parameter)
+                               n.apply_gradient(tape,self.optimizer,batch_loss,self.parameter)
                            else:
                                gradient=tape.gradient(batch_loss,self.parameter)
                                self.optimizern(gradient,self.parameter)
