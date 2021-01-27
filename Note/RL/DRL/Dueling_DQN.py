@@ -179,7 +179,7 @@ class Dueling_DQN:
                     s=next_s
             if self.save_episode==True:
                 self.episode.append(episode)
-            self.episode_num+=1
+            self.epi_num+=1
         return
     
     
