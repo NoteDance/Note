@@ -9,10 +9,10 @@ class DDPG:
     def __init__(self,value_net,actor_net,value_target_p,value_p,actor_target_p,actor_p,state,state_name,action_name,exploration_space,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,tau=0.001,save_episode=True):
         self.value_net=value_net
         self.actor_net=actor_net
-        self.value_target_p=value_target_p
         self.value_p=value_p
-        self.actor_target_p=actor_target_p
+        self.value_target_p=value_target_p
         self.actor_p=actor_p
+        self.actor_target_p=actor_target_p
         self.state_pool=None
         self.action_pool=None
         self.next_state_pool=None
@@ -34,11 +34,47 @@ class DDPG:
         self.loss_list=[]
         self.opt_flag==False
         self.episode_num=0
-        self.epi_num=0
         self.a=0
         self.total_episode=0
         self.time=0
         self.total_time=0
+    
+    
+    def init(self,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,value_p=None,value_target_p=None,actor_p=None,actor_target_p=None,flag=None):
+        if discount!=None:
+            self.discount=discount
+        if episode_step!=None:
+            self.episode_step=episode_step
+        if pool_size!=None:
+            self.pool_size=pool_size
+        if batch!=None:
+            self.batch=batch
+            self.index=np.arange(self.batch,dtype=np.int8)
+        if update_step!=None:
+            self.update_step=update_step
+        if optimizer!=None:
+            self.optimizer=optimizer
+        if lr!=None:
+            self.lr=lr
+        if value_p!=None:
+            self.value_p=value_p
+            self.value_target_p=value_target_p
+        if actor_p!=None:
+            self.actor_p=actor_p
+            self.actor_target_p=actor_target_p
+        if flag==None:
+            self.episode=[]
+            self.state_pool=None
+            self.action_pool=None
+            self.next_state_pool=None
+            self.reward_pool=None
+            self.loss_list=[]
+            self.a=0
+            self.episode_num=0
+            self.total_episode=0
+            self.time=0
+            self.total_time=0
+        return
         
         
     def OU(self):
@@ -126,7 +162,7 @@ class DDPG:
                     s=next_s
             if self.save_episode==True:
                 self.episode.append(episode)
-            self.epi_num+=1
+            self.episode_num+=1
         return
     
     
@@ -256,6 +292,7 @@ class DDPG:
         pickle.dump(self.loss_list,output_file)
         pickle.dump(self.opt_flag,output_file)
         pickle.dump(self.a,output_file)
+        pickle.dump(self.episode_num,output_file)
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
@@ -282,6 +319,7 @@ class DDPG:
         self.loss_list=pickle.load(input_file)
         self.opt_flag=pickle.load(input_file)
         self.a=pickle.load(input_file)
+        self.episode_num=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         self.total_time=self.time
         input_file.close()
