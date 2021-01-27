@@ -30,7 +30,7 @@ class MCPG:
         self.total_time=0
     
     
-    def init(self,dtype=np.int32):
+    def init_a(self,dtype=np.int32):
         t3=time.time()
         if len(self.action_name)>self.action_len:
             self.action=np.concatenate((self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len))
@@ -38,6 +38,32 @@ class MCPG:
             self.action=np.arange(len(self.action_name),dtype=dtype)
         t4=time.time()
         self.time+=t4-t3
+        return
+    
+    
+    def init(self,epsilon=None,discount=None,reward_min=None,episode_step=None,optimizer=None,lr=None,net_p=None,flag=None):
+        if epsilon!=None:
+            self.epsilon=epsilon
+        if discount!=None:
+            self.discount=discount
+        if reward_min!=None:
+            self.reward_min=reward_min
+        if episode_step!=None:
+            self.episode_step=episode_step
+        if optimizer!=None:
+            self.optimizer=optimizer
+        if lr!=None:
+            self.lr=lr
+        if net_p!=None:
+            self.net_p=net_p
+        if flag==None:
+            self.episode=[]
+            self.reward_list=[]
+            self.loss=0
+            self.episode_num=0
+            self.total_episode=0
+            self.time=0
+            self.total_time=0
         return
         
         
@@ -136,6 +162,7 @@ class MCPG:
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.opt_flag,output_file)
         pickle.dump(self.state_one,output_file)
+        pickle.dump(self.episode_num,output_file)
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
@@ -158,6 +185,7 @@ class MCPG:
         self.save_episode=pickle.load(input_file)
         self.opt_flag=pickle.load(input_file)
         self.state_one=pickle.load(input_file)
+        self.episode_num=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         self.total_time=self.time
         input_file.close()
