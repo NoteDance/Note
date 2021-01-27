@@ -15,6 +15,7 @@ class policy_iteration:
         self.theta=theta
         self.delta=0
         self.end_flag=end_flag
+        self.ite_num=0
         self.iteration_num=0
         self.total_iteration=0
         self.time=0
@@ -34,6 +35,7 @@ class policy_iteration:
             self.theta=theta
         if flag==None:
             self.delta=0
+            self.ite_num=0
             self.iteration_num=0
             self.total_iteration=0
             self.time=0
@@ -94,7 +96,7 @@ class policy_iteration:
             if self.iteration_num%d==0:
                 if path!=None and self.iteration_num%iteration*2==0:
                     self.save(path,self.iteration_num,one)
-            self.iteration_num+=1
+            self.ite_num+=1
             self.total_iteration+=1
             t2=time.time()
             self.time+=(t2-t1)
@@ -121,6 +123,7 @@ class policy_iteration:
             output_file=open(path+'.dat','wb')
         else:
             output_file=open(path+'-{0}.dat'.format(i+1),'wb')
+        self.iteration_num=self.ite_num
         pickle.dump(self.state_len,output_file)
         pickle.dump(self.action_len,output_file)
         pickle.dump(self._V,output_file)
