@@ -25,7 +25,7 @@ class Sarsa:
         self.total_time=0
 
 
-    def init(self,dtype=np.int32):
+    def init_a(self,dtype=np.int32):
         t3=time.time()
         if len(self.action_name)>self.action_len:
             self.action=np.concatenate((self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len))
@@ -39,6 +39,27 @@ class Sarsa:
             self.q=self.q.numpy()
         t4=time.time()
         self.time+=t4-t3
+        return
+    
+    
+    def init(self,epsilon=None,alpha=None,discount=None,theta=None,episode_step=None,flag=None):
+        if epsilon!=None:
+            self.epsilon=epsilon
+        if alpha!=None:
+            self.alpha=alpha
+        if discount!=None:
+            self.discount=discount
+        if theta!=None:
+            self.theta=theta
+        if episode_step!=None:
+            self.episode_step=episode_step
+        if flag==None:
+            self.episode=[]
+            self.delta=0
+            self.episode_num=0
+            self.total_episode=0
+            self.time=0
+            self.total_time=0
         return
     
 
@@ -154,6 +175,7 @@ class Sarsa:
         pickle.dump(self.episode_step,output_file)
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.delta,output_file)
+        pickle.dump(self.episode_num,output_file)
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
@@ -174,6 +196,7 @@ class Sarsa:
         self.episode_step=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
         self.delta=pickle.load(input_file)
+        self.episode_num=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         self.total_time=self.time
         input_file.close()
