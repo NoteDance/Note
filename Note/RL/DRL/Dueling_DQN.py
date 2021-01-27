@@ -47,6 +47,7 @@ class Dueling_DQN:
         else:
             self.action=np.arange(len(self.action_name),dtype=dtype)
             self.action_one=np.ones(len(self.action_name),dtype=dtype)
+        self.index=np.arange(self.batch,dtype=np.int8)
         t4=time.time()
         self.time+=t4-t3
         return
@@ -73,7 +74,10 @@ class Dueling_DQN:
         action2=action2-tf.expand_dims(tf.reduce_sum(action2,axis=-1)/self.action,axis=-1)
         Q1=value1+action1
         Q2=value2+action2
-        return tf.reduce_mean(((r+self.discount*tf.reduce_max(Q1,axis=-1))-Q2[self.action,a])**2)
+        if len(self.state_pool)<self.batch:
+            return tf.reduce_mean(((r+self.discount*tf.reduce_max(Q1,axis=-1))-Q2[np.arange(len(self.state_pool)),a])**2)
+        else:
+            return tf.reduce_mean(((r+self.discount*tf.reduce_max(Q1,axis=-1))-Q2[self.index,a])**2)
     
     
     def explore(self,episode_num):
@@ -267,9 +271,8 @@ class Dueling_DQN:
         self.next_state_pool=pickle.load(input_file)
         self.reward_pool=pickle.load(input_file)
         self.action_len=pickle.load(input_file)
-        if self.action_len==len(self.action_name):
-            self.action=pickle.load(input_file)
-            self.action_one=pickle.load(input_file)
+        self.action=pickle.load(input_file)
+        self.action_one=pickle.load(input_file)
         self.epsilon=pickle.load(input_file)
         self.discount=pickle.load(input_file)
         self.episode_step=pickle.load(input_file)
