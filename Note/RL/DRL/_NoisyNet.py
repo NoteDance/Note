@@ -50,7 +50,10 @@ class NoisyNet:
         return
     
     
-    def init(self,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,value_p=None,target_p=None,flag=None):
+    def init(self,value_p=None,target_p=None,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,flag=None):
+        if value_p!=None:
+            self.value_p=value_p
+            self.target_p=target_p
         if epsilon!=None:
             self.epsilon=epsilon
         if discount!=None:
@@ -68,9 +71,6 @@ class NoisyNet:
             self.optimizer=optimizer
         if lr!=None:
             self.lr=lr
-        if value_p!=None:
-            self.value_p=value_p
-            self.target_p=target_p
         if flag==None:
             self.episode=[]
             self.state_pool=None
