@@ -32,14 +32,13 @@ class DQN:
         self.loss_list=[]
         self.opt_flag==False
         self.episode_num=0
-        self.epi_num=0
         self.a=0
         self.total_episode=0
         self.time=0
         self.total_time=0
         
         
-    def init(self,dtype=np.int32):
+    def init_a(self,dtype=np.int32):
         t3=time.time()
         if len(self.action_name)>self.action_len:
             self.action=np.concatenate((self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len))
@@ -51,6 +50,42 @@ class DQN:
         self.a=0
         t4=time.time()
         self.time+=t4-t3
+        return
+    
+    
+    def init(self,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,value_p=None,target_p=None,flag=None):
+        if epsilon!=None:
+            self.epsilon=epsilon
+        if discount!=None:
+            self.discount=discount
+        if episode_step!=None:
+            self.episode_step=episode_step
+        if pool_size!=None:
+            self.pool_size=pool_size
+        if batch!=None:
+            self.batch=batch
+            self.index=np.arange(self.batch,dtype=np.int8)
+        if update_step!=None:
+            self.update_step=update_step
+        if optimizer!=None:
+            self.optimizer=optimizer
+        if lr!=None:
+            self.lr=lr
+        if value_p!=None:
+            self.value_p=value_p
+            self.target_p=target_p
+        if flag==None:
+            self.episode=[]
+            self.state_pool=None
+            self.action_pool=None
+            self.next_state_pool=None
+            self.reward_pool=None
+            self.loss_list=[]
+            self.a=0
+            self.episode_num=0
+            self.total_episode=0
+            self.time=0
+            self.total_time=0
         return
     
     
@@ -137,7 +172,7 @@ class DQN:
                     s=next_s
             if self.save_episode==True:
                 self.episode.append(episode)
-            self.epi_num+=1
+            self.episode_num+=1
         return
     
     
@@ -252,6 +287,7 @@ class DQN:
         pickle.dump(self.loss_list,output_file)
         pickle.dump(self.opt_flag,output_file)
         pickle.dump(self.a,output_file)
+        pickle.dump(self.episode_num,output_file)
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
@@ -282,6 +318,7 @@ class DQN:
         self.loss_list=pickle.load(input_file)
         self.opt_flag=pickle.load(input_file)
         self.a=pickle.load(input_file)
+        self.episode_num=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         self.total_time=self.time
         input_file.close()
