@@ -70,7 +70,7 @@ class Double_DQN:
     
     def _loss(self,s,a,next_s,r):
         if len(self.state_pool)<self.batch:
-            return tf.reduce_mean(((r+self.discount*self.value_net(next_s,self.target_p)[np.arange(len(self.state_pool)),tf.math.argmax(self.value_net(next_s,self.value_p),axis=-1)])-self.value_net(s,self.value_p)[np.arange(len(self.state_pool)),a])**2)
+            return tf.reduce_mean(((r+self.discount*self.value_net(next_s,self.target_p)[np.arange(len(a)),tf.math.argmax(self.value_net(next_s,self.value_p),axis=-1)])-self.value_net(s,self.value_p)[np.arange(len(a)),a])**2)
         else:
             return tf.reduce_mean(((r+self.discount*self.value_net(next_s,self.target_p)[self.index,tf.math.argmax(self.value_net(next_s,self.value_p),axis=-1)])-self.value_net(s,self.value_p)[self.index,a])**2)
     
