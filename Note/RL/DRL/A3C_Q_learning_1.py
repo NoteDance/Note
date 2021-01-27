@@ -40,7 +40,10 @@ class A3C_Q_learning_1:
         return
     
     
-    def init(self,Tmax=None,It=None,Ia=None,alpha=None,lr=None,value_p=None,target_p=None,flag=None):
+    def init(self,value_p=None,target_p=None,Tmax=None,It=None,Ia=None,alpha=None,lr=None,flag=None):
+        if value_p!=None:
+            self.value_p=value_p
+            self.target_p=target_p
         if Tmax!=None:
             self.Tmax=Tmax
         if It!=None:
@@ -51,9 +54,6 @@ class A3C_Q_learning_1:
             self.alpha=alpha
         if lr!=None:
             self.lr=lr
-        if value_p!=None:
-            self.value_p=value_p
-            self.target_p=target_p
         if flag==None:
             self.episode=[]
         return
