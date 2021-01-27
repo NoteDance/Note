@@ -24,7 +24,7 @@ class off_policy_mc:
         self.total_time=0
         
         
-    def init(self,dtype=np.int32):
+    def init_a(self,dtype=np.int32):
         self.t3=time.time()
         if len(self.action_name)>self.action_len:
             self.action=np.concatenate((self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len))
@@ -41,6 +41,27 @@ class off_policy_mc:
             self.c=np.concatenate((self.c,np.zeros([len(self.state_name)-self.state_len,len(self.action_name)],dtype=self.c.dtype)))
             self.c=self.c.numpy()
         self.t4=time.time()
+        return
+    
+    
+    def init(self,epsilon=None,discount=None,theta=None,episode_step=None,flag=None):
+        if epsilon!=None:
+            self.epsilon=epsilon
+        if discount!=None:
+            self.discount=discount
+        if theta!=None:
+            self.theta=theta
+        if episode_step!=None:
+            self.episode_step=episode_step
+        if flag==None:
+            self.r_sum=dict()
+            self.r_count=dict()
+            self.episode=[]
+            self.delta=0
+            self.episode_num=0
+            self.total_episode=0
+            self.time=0
+            self.total_time=0
         return
 
 
@@ -180,6 +201,7 @@ class off_policy_mc:
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.delta,output_file)
         pickle.dump(self.state_one,output_file)
+        pickle.dump(self.episode_num,output_file)
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
@@ -200,6 +222,7 @@ class off_policy_mc:
         self.save_episode=pickle.load(input_file)
         self.delta=pickle.load(input_file)
         self.state_one=pickle.load(input_file)
+        self.episode_num=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         self.total_time=self.time
         input_file.close()
