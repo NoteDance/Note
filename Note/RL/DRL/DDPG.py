@@ -44,7 +44,6 @@ class DDPG:
         if value_p!=None:
             self.value_p=value_p
             self.value_target_p=value_target_p
-        if actor_p!=None:
             self.actor_p=actor_p
             self.actor_target_p=actor_target_p
         if discount!=None:
