@@ -23,6 +23,7 @@ class MCPG:
         self.lr=lr
         self.save_episode=save_episode
         self.opt_flag=False
+        self.epi_num=0
         self.episode_num=0
         self.total_episode=0
         self.time=0
@@ -58,6 +59,7 @@ class MCPG:
             self.episode=[]
             self.reward_list=[]
             self.loss=0
+            self.epi_num=0
             self.episode_num=0
             self.total_episode=0
             self.time=0
@@ -137,7 +139,7 @@ class MCPG:
                 print('episode num:{0}   max reward:{1}'.format(i+1,max(self.reward_list)))
                 if path!=None and i%episode_num*2==0:
                     self.save(path,i,one)
-            self.episode_num+=1
+            self.epi_num+=1
             self.total_episode+=1
             if self.reward_min!=None and max(self.reward_list)>=self.reward_min:
                break
@@ -177,6 +179,7 @@ class MCPG:
             path=path+'\save-{0}.dat'.format(i+1)
             index=path.rfind('\\')
             episode_file=open(path.replace(path[index+1:],'episode-{0}.dat'.format(i+1)),'wb')
+        self.episode_num=self.epi_num
         pickle.dump(self.episode,episode_file)
         pickle.dump(self.action_len,output_file)
         pickle.dump(self.action,output_file)
