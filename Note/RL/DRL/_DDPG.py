@@ -41,7 +41,7 @@ class DDPG:
         self.total_time=0
     
     
-    def init(self,value_p=None,value_target_p=None,actor_p=None,actor_target_p=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,tau=None,flag=None):
+    def set_up(self,value_p=None,value_target_p=None,actor_p=None,actor_target_p=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,tau=None,init=True):
         if value_p!=None:
             self.value_p=value_p
             self.value_target_p=value_target_p
@@ -64,7 +64,7 @@ class DDPG:
             self.lr=lr
         if tau!=None:
             self.tau=tau
-        if flag==None:
+        if init==True:
             self.episode=[]
             self.state_pool=None
             self.action_pool=None
