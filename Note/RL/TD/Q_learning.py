@@ -25,7 +25,7 @@ class Q_learning:
         self.total_time=0
         
         
-    def init_a(self,dtype=np.int32):
+    def init(self,dtype=np.int32):
         t3=time.time()
         if len(self.action_name)>self.action_len:
             self.action=np.concatenate((self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len))
@@ -42,7 +42,7 @@ class Q_learning:
         return
     
     
-    def init(self,epsilon=None,alpha=None,discount=None,theta=None,episode_step=None,flag=None):
+    def set_up(self,epsilon=None,alpha=None,discount=None,theta=None,episode_step=None,init=True):
         if epsilon!=None:
             self.epsilon=epsilon
         if alpha!=None:
@@ -53,7 +53,7 @@ class Q_learning:
             self.theta=theta
         if episode_step!=None:
             self.episode_step=episode_step
-        if flag==None:
+        if init==True:
             self.episode=[]
             self.delta=0
             self.epi_num=0
