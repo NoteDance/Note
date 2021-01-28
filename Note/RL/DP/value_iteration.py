@@ -22,18 +22,18 @@ class value_iteration:
         self.total_time=0
     
     
-    def init_v(self):
+    def init(self):
         self.V=np.zeros(len(self.state_name),dtype=np.float16)
         self.A=np.zeros(len(self.action_name),dtype=np.float16)
         return
     
     
-    def init(self,discount=None,theta=None,flag=None):
+    def set_up(self,discount=None,theta=None,init=True):
         if discount!=None:
             self.discount=discount
         if theta!=None:
             self.theta=theta
-        if flag==None:
+        if init==True:
             self.delta=0
             self.ite_num=0
             self.iteration_num=0
