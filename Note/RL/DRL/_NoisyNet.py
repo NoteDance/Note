@@ -40,7 +40,7 @@ class NoisyNet:
         self.total_time=0
     
     
-    def init_a(self,dtype=np.int32):
+    def init(self,dtype=np.int32):
         self.t3=time.time()
         if len(self.action_name)>self.action_len:
             self.action=np.concatenate((self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len))
@@ -51,7 +51,7 @@ class NoisyNet:
         return
     
     
-    def init(self,value_p=None,target_p=None,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,flag=None):
+    def set_up(self,value_p=None,target_p=None,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,init=True):
         if value_p!=None:
             self.value_p=value_p
             self.target_p=target_p
@@ -72,7 +72,7 @@ class NoisyNet:
             self.optimizer=optimizer
         if lr!=None:
             self.lr=lr
-        if flag==None:
+        if init==True:
             self.episode=[]
             self.state_pool=None
             self.action_pool=None
