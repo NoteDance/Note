@@ -28,7 +28,7 @@ class A3C_Q_learning_1:
         self.total_episode=0
     
     
-    def init_a(self,dtype=np.int32):
+    def init(self,dtype=np.int32):
         self.t1=time.time()
         if len(self.action_name)>self.action_len:
             self.action=np.concatenate((self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len))
@@ -40,7 +40,7 @@ class A3C_Q_learning_1:
         return
     
     
-    def init(self,value_p=None,target_p=None,Tmax=None,It=None,Ia=None,alpha=None,lr=None,flag=None):
+    def set_up(self,value_p=None,target_p=None,Tmax=None,It=None,Ia=None,alpha=None,lr=None,init=True):
         if value_p!=None:
             self.value_p=value_p
             self.target_p=target_p
@@ -54,7 +54,7 @@ class A3C_Q_learning_1:
             self.alpha=alpha
         if lr!=None:
             self.lr=lr
-        if flag==None:
+        if init==True:
             self.episode=[]
         return
     
