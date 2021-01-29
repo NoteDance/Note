@@ -87,13 +87,6 @@ class Q_learning:
                     a=np.random.choice(self.action,p=action_prob)
                     next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
                     loss+=self.loss(s,a,next_s,r)
-                    if end:
-                        if self.save_episode==True:
-                            episode.append([self.state_name[s],self.action_name[a],r,end])
-                        break
-                    if self.save_episode==True:
-                        episode.append([self.state_name[s],self.self.action_name[a],r])
-                    s=next_s
                     with tf.GradientTape() as tape:
                         gradient=tape.gradient(1/2*loss,self.net_p)
                         if self.opt_flag==True:
@@ -101,6 +94,15 @@ class Q_learning:
                         else:
                             self.optimizer.apply_gradients(zip(gradient,self.net_p))
                     loss=loss.numpy()
+                    if end:
+                        if self.save_episode==True:
+                            episode.append([self.state_name[s],self.action_name[a],r,end])
+                        t2=time.time()
+                        self.time+=(t2-t1)
+                        break
+                    if self.save_episode==True:
+                        episode.append([self.state_name[s],self.self.action_name[a],r])
+                    s=next_s
                     t2=time.time()
                     self.time+=(t2-t1)
             else:
@@ -110,13 +112,6 @@ class Q_learning:
                     a=np.random.choice(self.action,p=action_prob)
                     next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
                     loss+=self.loss(s,a,next_s,r)
-                    if end:
-                        if self.save_episode==True:
-                            episode.append([self.state_name[s],self.action_name[a],r,end])
-                        break
-                    if self.save_episode==True:
-                        episode.append([self.state_name[s],self.self.action_name[a],r])
-                    s=next_s
                     with tf.GradientTape() as tape:
                         gradient=tape.gradient(1/2*loss,self.net_p)
                         if self.opt_flag==True:
@@ -124,6 +119,15 @@ class Q_learning:
                         else:
                             self.optimizer.apply_gradients(zip(gradient,self.net_p))
                     loss=loss.numpy()
+                    if end:
+                        if self.save_episode==True:
+                            episode.append([self.state_name[s],self.action_name[a],r,end])
+                        t2=time.time()
+                        self.time+=(t2-t1)
+                        break
+                    if self.save_episode==True:
+                        episode.append([self.state_name[s],self.self.action_name[a],r])
+                    s=next_s
                     t2=time.time()
                     self.time+=(t2-t1)
             if episode_num%10!=0:
