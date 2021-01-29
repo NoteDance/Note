@@ -78,10 +78,8 @@ class A3C_Q_learning_n:
     
     
     def learn(self,episode_num,epsilon):
-        t=1
         for i in range(episode_num):
-            ts=t
-            R=0
+            t=0
             g=[0 for _ in range(len(self.value_p))]
             gradient=[0 for _ in range(len(self.value_p))]
             episode=[]
@@ -110,14 +108,14 @@ class A3C_Q_learning_n:
                     t+=1
                     if self.T>self.Tmax:
                         return
-                    if t-ts==self.tmax:
+                    if self.T%self.It==0:
+                        self.update_parameter()
+                    if t%self.tmax==0 or end:
                         for i in range(len(self.value_p)):
                             self.value_p[i]=self.value_p[i]+gradient[i]
                             gradient=[0 for _ in range(len(self.value_p))]
                             g=[0 for _ in range(len(self.value_p))]
-                            ts=1
-                    if self.T%self.It==0:
-                        self.update_parameter()
+                            break
             else:
                 for _ in range(self.episode_step):
                     action_prob=self.epsilon_greedy_policy(s,self.action_one,epsilon)
@@ -137,19 +135,19 @@ class A3C_Q_learning_n:
                         for i in range(len(_gradient)):
                             g[i]=g[i]+(self.alpha*g[i]+(1-self.alpha)*_gradient[i]**2)
                             gradient[i]=gradient[i]+self.lr*_gradient[i]/tf.math.sqrt(g[i]+self.epsilon)
-                            ts=1
                     s=next_s
                     self.T+=1
                     t+=1
                     if self.T>self.Tmax:
                         return
-                    if t-ts==self.tmax:
+                    if self.T%self.It==0:
+                        self.update_parameter()
+                    if t%self.tmax==0 or end:
                         for i in range(len(self.value_p)):
                             self.value_p[i]=self.value_p[i]+gradient[i]
                             gradient=[0 for _ in range(len(self.value_p))]
                             g=[0 for _ in range(len(self.value_p))]
-                    if self.T%self.It==0:
-                        self.update_parameter()
+                            break
             self.total_episode+=1
             if self.save_episode==True:
                 self.episode.append(episode)
