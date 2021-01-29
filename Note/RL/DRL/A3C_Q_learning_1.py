@@ -92,8 +92,7 @@ class A3C_Q_learning_1:
                     if end:
                         if self.save_episode==True:
                             episode.append([self.state_name[s],self.action_name[a],r,end])
-                        break
-                    if self.save_episode==True:
+                    elif self.save_episode==True:
                         episode.append([self.state_name[s],self.self.action_name[a],r])
                     loss=self._loss(self.state[self.state_name[s]],a,self.state[self.state_name[next_s]],r)
                     self.loss=loss
@@ -105,15 +104,15 @@ class A3C_Q_learning_1:
                     s=next_s
                     self.T+=1
                     t+=1
+                    if self.T>self.Tmax:
+                        return
                     if self.T%self.It==0:
                         self.update_parameter()
-                    elif t%self.Ia==0:
+                    elif t%self.Ia==0 or end:
                         for i in range(len(self.value_p)):
                             self.value_p[i]=self.value_p[i]+gradient[i]
                             gradient=[0 for _ in range(len(self.value_p))]
                             g=[0 for _ in range(len(self.value_p))]
-                    if self.T>self.Tmax:
-                        return
             else:
                 for _ in range(self.episode_step):
                     action_prob=self.epsilon_greedy_policy(s,self.action_one,epsilon)
@@ -122,8 +121,7 @@ class A3C_Q_learning_1:
                     if end:
                         if self.save_episode==True:
                             episode.append([self.state_name[s],self.action_name[a],r,end])
-                        break
-                    if self.save_episode==True:
+                    elif self.save_episode==True:
                         episode.append([self.state_name[s],self.self.action_name[a],r])
                     loss=self._loss(self.state[self.state_name[s]],a,self.state[self.state_name[next_s]],r)
                     self.loss=loss
@@ -135,15 +133,15 @@ class A3C_Q_learning_1:
                     s=next_s
                     self.T+=1
                     t+=1
+                    if self.T>self.Tmax:
+                        return
                     if self.T%self.It==0:
                         self.update_parameter()
-                    elif t%self.Ia==0:
+                    elif t%self.Ia==0 or end:
                         for i in range(len(self.value_p)):
                             self.value_p[i]=self.value_p[i]+gradient[i]
                             gradient=[0 for _ in range(len(self.value_p))]
                             g=[0 for _ in range(len(self.value_p))]
-                    if self.T>self.Tmax:
-                        return
             self.total_episode+=1
             if self.save_episode==True:
                 self.episode.append(episode)
