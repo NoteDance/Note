@@ -118,16 +118,10 @@ class DQN:
             if self.episode_step==None:
                 while True:
                     t1=time.time()
+                    self.a+=1
                     action_prob=self.epsilon_greedy_policy(s,self.action_one)
                     a=np.random.choice(self.action,p=action_prob)
                     next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
-                    if end:
-                        if self.save_episode==True:
-                            episode.append([self.state_name[s],self.action_name[a],r,end])
-                        break
-                    if self.save_episode==True:
-                        episode.append([self.state_name[s],self.self.action_name[a],r])
-                    self.a+=1
                     if self.state_pool==None:
                         self.state_pool=tf.expand_dims(self.state[self.state_name[s]],axis=0)
                         self.action_pool=tf.expand_dims(a,axis=0)
@@ -143,6 +137,12 @@ class DQN:
                         self.action_pool=self.action_pool[1:]
                         self.next_state_pool=self.next_state_pool[1:]
                         self.reward_pool=self.reward_pool[1:]
+                    if end:
+                        if self.save_episode==True:
+                            episode.append([self.state_name[s],self.action_name[a],r,end])
+                        break
+                    elif self.save_episode==True:
+                        episode.append([self.state_name[s],self.self.action_name[a],r])
                     s=next_s
                     if len(self.state_pool)<self.batch:
                         loss=self.loss(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool)
@@ -202,16 +202,10 @@ class DQN:
             else:
                 for _ in range(self.episode_step):
                     t1=time.time()
+                    self.a+=1
                     action_prob=self.epsilon_greedy_policy(s,self.action_one)
                     a=np.random.choice(self.action,p=action_prob)
                     next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
-                    if end:
-                        if self.save_episode==True:
-                            episode.append([self.state_name[s],self.action_name[a],r,end])
-                        break
-                    if self.save_episode==True:
-                        episode.append([self.state_name[s],self.self.action_name[a],r])
-                    self.a+=1
                     if self.state_pool==None:
                         self.state_pool=tf.expand_dims(self.state[self.state_name[s]],axis=0)
                         self.action_pool=tf.expand_dims(a,axis=0)
@@ -227,6 +221,12 @@ class DQN:
                         self.action_pool=self.action_pool[1:]
                         self.next_state_pool=self.next_state_pool[1:]
                         self.reward_pool=self.reward_pool[1:]
+                    if end:
+                        if self.save_episode==True:
+                            episode.append([self.state_name[s],self.action_name[a],r,end])
+                        break
+                    elif self.save_episode==True:
+                        episode.append([self.state_name[s],self.self.action_name[a],r])
                     s=next_s
                     if len(self.state_pool)<self.batch:
                         loss=self.loss(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool)
