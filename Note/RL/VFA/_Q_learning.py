@@ -32,7 +32,7 @@ class Q_learning:
         self.t3=time.time()
         if len(self.action_name)>self.action_len:
             self.action=np.concatenate((self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len))
-            self.action_one=np.concatenate((self.action_onerob,np.ones(len(self.action_name)-self.action_len,dtype=dtype)))
+            self.action_one=np.concatenate((self.action_prob,np.ones(len(self.action_name)-self.action_len,dtype=dtype)))
         else:
             self.action=np.arange(len(self.action_name),dtype=dtype)
             self.action_one=np.ones(len(self.action_name),dtype=dtype)
@@ -64,11 +64,11 @@ class Q_learning:
     
     
     def epsilon_greedy_policy(self,s,action_one):
-        action_onerob=action_one
-        action_onerob=action_onerob*self.epsilon/len(action_one)
+        action_prob=action_one
+        action_prob=action_prob*self.epsilon/len(action_one)
         best_action=np.argmax(self.net(self.state[self.state_name[s]]))
-        action_onerob[best_action]+=1-self.epsilon
-        return action_onerob
+        action_prob[best_action]+=1-self.epsilon
+        return action_prob
     
     
     def loss(self,s,a,next_s,r):
@@ -83,8 +83,8 @@ class Q_learning:
             if self.episode_step==None:
                 while True:
                     t1=time.time()
-                    action_onerob=self.epsilon_greedy_policy(s,self.action_one)
-                    a=np.random.choice(self.action,p=action_onerob)
+                    action_prob=self.epsilon_greedy_policy(s,self.action_one)
+                    a=np.random.choice(self.action,p=action_prob)
                     next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
                     loss+=self.loss(s,a,next_s,r)
                     if end:
@@ -106,8 +106,8 @@ class Q_learning:
             else:
                 for _ in range(self.episode_step):
                     t1=time.time()
-                    action_onerob=self.epsilon_greedy_policy(s,self.action_one)
-                    a=np.random.choice(self.action,p=action_onerob)
+                    action_prob=self.epsilon_greedy_policy(s,self.action_one)
+                    a=np.random.choice(self.action,p=action_prob)
                     next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
                     loss+=self.loss(s,a,next_s,r)
                     if end:
