@@ -86,26 +86,26 @@ class Q_learning:
                     action_onerob=self.epsilon_greedy_policy(s,self.action_one)
                     a=np.random.choice(self.action,p=action_onerob)
                     next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
+                    self.loss+=self._loss(s,a,next_s,r)
                     if end:
                         if self.save_episode==True:
                             episode.append([self.state_name[s],self.action_name[a],r,end])
                         break
                     if self.save_episode==True:
                         episode.append([self.state_name[s],self.self.action_name[a],r])
-                    self.loss+=self._loss(s,a,next_s,r)
                     s=next_s
             else:
                 for _ in range(self.episode_step):
                     action_onerob=self.epsilon_greedy_policy(s,self.action_one)
                     a=np.random.choice(self.action,p=action_onerob)
                     next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
+                    self.loss+=self._loss(s,a,next_s,r)
                     if end:
                         if self.save_episode==True:
                             episode.append([self.state_name[s],self.action_name[a],r,end])
                         break
                     if self.save_episode==True:
                         episode.append([self.state_name[s],self.self.action_name[a],r])
-                    self.loss+=self._loss(s,a,next_s,r)
                     s=next_s
             if self.save_episode==True:
                 self.episode.append(episode)
