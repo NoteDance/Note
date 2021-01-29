@@ -68,11 +68,11 @@ class off_policy_mc:
 
 
     def epsilon_greedy_policy(self,q,s,action_one):
-        action_onerob=action_one
-        action_onerob=action_onerob*self.epsilon/len(action_one)
+        action_prob=action_one
+        action_prob=action_prob*self.epsilon/len(action_one)
         best_a=np.argmax(q[s])
-        action_onerob[best_a]+=1-self.epsilon
-        return action_onerob
+        action_prob[best_a]+=1-self.epsilon
+        return action_prob
     
     
     def episode(self,q,s,action,action_one,exploration_space):
@@ -80,8 +80,8 @@ class off_policy_mc:
         _episode=[]
         if self.episode_step==None:
             while True:
-                action_onerob=self.epsilon_greedy_policy(q,s,action_one)
-                a=np.random.choice(action,p=action_onerob)
+                action_prob=self.epsilon_greedy_policy(q,s,action_one)
+                a=np.random.choice(action,p=action_prob)
                 next_s,r,end=exploration_space[self.state_name[s]][self.action_name[a]]
                 episode.append([s,a,r])
                 if end:
@@ -93,8 +93,8 @@ class off_policy_mc:
                 s=next_s
         else:
             for _ in range(self.episode_step):
-                action_onerob=self.epsilon_greedy_policy(q,s,action_one)
-                a=np.random.choice(action,p=action_onerob)
+                action_prob=self.epsilon_greedy_policy(q,s,action_one)
+                a=np.random.choice(action,p=action_prob)
                 next_s,r,end=exploration_space[self.state_name[s]][self.action_name[a]]
                 episode.append([s,a,r])
                 if end:
@@ -124,8 +124,8 @@ class off_policy_mc:
             q[s][a]+=(w/self.c[s][a])*(G-q[s][a])
             if a!=np.argmax(q[s]):
                 break
-            action_onerob=self.epsilon_greedy_policy(q,s,action_one)
-            w=w*1/action_onerob
+            action_prob=self.epsilon_greedy_policy(q,s,action_one)
+            w=w*1/action_prob
             temp=(w/self.c[s][a])*(G-q[s][a])
         self.delta+=delta/a
         return q
@@ -136,7 +136,7 @@ class off_policy_mc:
         for i in range(episode_num):
             t1=time.time()
             s=int(np.random.uniform(0,len(self.state_name)))
-            e=self.episode(self.q,s,self.action,self.action_onerob,self.exploration_space,self.episode_step)
+            e=self.episode(self.q,s,self.action,self.action_prob,self.exploration_space,self.episode_step)
             self.q=self.importance_sampling(e,self.q,self.discount)
             self.delta=self.delta/(i+1)
             if episode_num%10!=0:
@@ -196,7 +196,7 @@ class off_policy_mc:
         pickle.dump(self.episode,episode_file)
         pickle.dump(self.action_len,output_file)
         pickle.dump(self.action,output_file)
-        pickle.dump(self.action_onerob,output_file)
+        pickle.dump(self.action_prob,output_file)
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.discount,output_file)
         pickle.dump(self.theta,output_file)
@@ -217,7 +217,7 @@ class off_policy_mc:
         self.episode=pickle.load(episode_file)
         self.action_len=pickle.load(input_file)
         self.action=pickle.load(input_file)
-        self.action_onerob=pickle.load(input_file)
+        self.action_prob=pickle.load(input_file)
         self.epsilon=pickle.load(input_file)
         self.discount=pickle.load(input_file)
         self.theta=pickle.load(input_file)
