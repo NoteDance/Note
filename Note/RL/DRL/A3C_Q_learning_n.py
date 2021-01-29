@@ -115,6 +115,7 @@ class A3C_Q_learning_n:
                             self.value_p[i]=self.value_p[i]+gradient[i]
                             gradient=[0 for _ in range(len(self.value_p))]
                             g=[0 for _ in range(len(self.value_p))]
+                            ts=1
                     if self.T%self.It==0:
                         self.update_parameter()
             else:
@@ -136,6 +137,7 @@ class A3C_Q_learning_n:
                         for i in range(len(_gradient)):
                             g[i]=g[i]+(self.alpha*g[i]+(1-self.alpha)*_gradient[i]**2)
                             gradient[i]=gradient[i]+self.lr*_gradient[i]/tf.math.sqrt(g[i]+self.epsilon)
+                            ts=1
                     s=next_s
                     self.T+=1
                     t+=1
