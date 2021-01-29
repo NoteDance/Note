@@ -139,17 +139,11 @@ class NoisyNet:
         for _ in range(episode_num):
             if self.episode_step==None:
                 while True:
+                    self.a+=1
                     noisy=self.noisy_variable(self.value_p[0])
                     value=self.value_net(self.state_name[s],self.value_p,noisy)
                     a=np.argmax(value)
                     next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
-                    if end:
-                        if self.save_episode==True:
-                            episode.append([self.state_name[s],self.action_name[a],r,end])
-                        break
-                    if self.save_episode==True:
-                        episode.append([self.state_name[s],self.self.action_name[a],r])
-                    self.a+=1
                     if self.state_pool==None:
                         self.state_pool=tf.expand_dims(self.state[self.state_name[s]],axis=0)
                         self.action_pool=tf.expand_dims(a,axis=0)
@@ -165,20 +159,20 @@ class NoisyNet:
                         self.action_pool=self.action_pool[1:]
                         self.next_state_pool=self.next_state_pool[1:]
                         self.reward_pool=self.reward_pool[1:]
+                    if end:
+                        if self.save_episode==True:
+                            episode.append([self.state_name[s],self.action_name[a],r,end])
+                        break
+                    elif self.save_episode==True:
+                        episode.append([self.state_name[s],self.self.action_name[a],r])
                     s=next_s
             else:
                 for _ in range(self.episode_step):
+                    self.a+=1
                     noisy=self.noisy_variable(self.value_p[0])
                     value=self.value_net(self.state_name[s],self.value_p,noisy)
                     a=np.argmax(value)
                     next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
-                    if end:
-                        if self.save_episode==True:
-                            episode.append([self.state_name[s],self.action_name[a],r,end])
-                        break
-                    if self.save_episode==True:
-                        episode.append([self.state_name[s],self.self.action_name[a],r])
-                    self.a+=1
                     if self.state_pool==None:
                         self.state_pool=tf.expand_dims(self.state[self.state_name[s]],axis=0)
                         self.action_pool=tf.expand_dims(a,axis=0)
@@ -194,6 +188,12 @@ class NoisyNet:
                         self.action_pool=self.action_pool[1:]
                         self.next_state_pool=self.next_state_pool[1:]
                         self.reward_pool=self.reward_pool[1:]
+                    if end:
+                        if self.save_episode==True:
+                            episode.append([self.state_name[s],self.action_name[a],r,end])
+                        break
+                    elif self.save_episode==True:
+                        episode.append([self.state_name[s],self.self.action_name[a],r])
                     s=next_s
             if self.save_episode==True:
                 self.episode.append(episode)
