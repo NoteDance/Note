@@ -21,10 +21,10 @@ class RT_Q_learning:
         self.t3=time.time()
         if len(self.action_name)>self.q.shape[1]:
             self.action=np.concatenate((self.action,np.arange(len(self.action_name)-self.q.shape[1],dtype=dtype)+self.q.shape[1]))
-            self.action_onerob=np.concatenate((self.action_onerob,np.ones(len(self.action_name)-self.q.shape[1],dtype=dtype)))
+            self.action_prob=np.concatenate((self.action_prob,np.ones(len(self.action_name)-self.q.shape[1],dtype=dtype)))
         else:
             self.action=np.arange(len(self.action_name),dtype=dtype)
-            self.action_onerob=np.ones(len(self.action_name),dtype=dtype)
+            self.action_prob=np.ones(len(self.action_name),dtype=dtype)
         if len(self.state_name)>self.q.shape[0] or len(self.action_name)>self.q.shape[1]:
             self.q=np.concatenate((self.q,np.zeros([len(self.state_name),len(self.action_name)-self.action_len],dtype=self.q.dtype)),axis=1)
             self.q=np.concatenate((self.q,np.zeros([len(self.state_name)-self.state_len,len(self.action_name)],dtype=self.q.dtype)))
@@ -34,11 +34,11 @@ class RT_Q_learning:
 
 
     def epsilon_greedy_policy(self,q,s,action_one):
-        action_onerob=action_one
-        action_onerob=action_onerob*self.epsilon/len(action_one)
+        action_prob=action_one
+        action_prob=action_prob*self.epsilon/len(action_one)
         best_a=np.argmax(q[s])
-        action_onerob[best_a]+=1-self.epsilon
-        return action_onerob
+        action_prob[best_a]+=1-self.epsilon
+        return action_prob
     
     
     def td(self,q,s,a,next_s,reward):
@@ -52,8 +52,8 @@ class RT_Q_learning:
         while True:
             t1=time.time()
             a+=1
-            action_onerob=self.epsilon_greedy_policy(q,s,action_one)
-            a=np.random.choice(np.arange(action_onerob.shape[0]),p=action_onerob)
+            action_prob=self.epsilon_greedy_policy(q,s,action_one)
+            a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
             next_s,reward,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
             temp=q[s][a]
             delta+=np.abs(q[s][a]-temp)
@@ -71,5 +71,5 @@ class RT_Q_learning:
     
     def learn(self):
         s=int(np.random.uniform(0,len(self.state_name)))
-        self.q=self.RT_update_q(self.q,s,self.action,self.action_onerob)
+        self.q=self.RT_update_q(self.q,s,self.action,self.action_prob)
         return
