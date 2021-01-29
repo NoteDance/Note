@@ -93,6 +93,7 @@ class Sarsa:
                     next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
                     temp=q[s][a]
                     self.delta+=np.abs(q[s][a]-temp)
+                    _episode.append([s,a,next_s,r])
                     if end:
                         self.delta+=self.delta/a
                         if self.save_episode==True:
@@ -101,7 +102,6 @@ class Sarsa:
                         break
                     if self.save_episode==True:
                         episode.append([self.state_name[s],self.action_name[a],r])
-                    _episode.append([s,a,next_s,r])
                     s=next_s
                     a+=1
             else:
@@ -111,6 +111,7 @@ class Sarsa:
                     next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
                     temp=q[s][a]
                     self.delta+=np.abs(q[s][a]-temp)
+                    _episode.append([s,a,next_s,r])
                     if end:
                         self.delta+=self.delta/a
                         if self.save_episode==True:
@@ -119,7 +120,6 @@ class Sarsa:
                         break
                     if self.save_episode==True:
                         episode.append([self.state_name[s],self.action_name[a],r])
-                    _episode.append([s,a,next_s,r])
                     s=next_s
                     a+=1
             if self.save_episode==True:
