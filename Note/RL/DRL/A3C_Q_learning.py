@@ -113,6 +113,7 @@ class A3C_Q_learning:
                             self.value_p[i]=self.value_p[i]+gradient[i]
                             gradient=[0 for _ in range(len(self.value_p))]
                             g=[0 for _ in range(len(self.value_p))]
+                            break
             else:
                 for _ in range(self.episode_step):
                     action_prob=self.epsilon_greedy_policy(s,self.action_one,epsilon)
@@ -142,6 +143,7 @@ class A3C_Q_learning:
                             self.value_p[i]=self.value_p[i]+gradient[i]
                             gradient=[0 for _ in range(len(self.value_p))]
                             g=[0 for _ in range(len(self.value_p))]
+                            break
             self.total_episode+=1
             if self.save_episode==True:
                 self.episode.append(episode)
