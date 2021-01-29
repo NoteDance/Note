@@ -30,10 +30,10 @@ class Sarsa:
         t3=time.time()
         if len(self.action_name)>self.action_len:
             self.action=np.concatenate((self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len))
-            self.action_onerob=np.concatenate((self.action_onerob,np.ones(len(self.action_name)-self.action_len,dtype=dtype)))
+            self.action_prob=np.concatenate((self.action_prob,np.ones(len(self.action_name)-self.action_len,dtype=dtype)))
         else:
             self.action=np.arange(len(self.action_name),dtype=dtype)
-            self.action_onerob=np.ones(len(self.action_name),dtype=dtype)
+            self.action_prob=np.ones(len(self.action_name),dtype=dtype)
         if len(self.state_name)>self.q.shape[0] or len(self.action_name)>self.q.shape[1]:
             self.q=np.concatenate((self.q,np.zeros([len(self.state_name),len(self.action_name)-self.action_len],dtype=self.q.dtype)),axis=1)
             self.q=np.concatenate((self.q,np.zeros([len(self.state_name)-self.state_len,len(self.action_name)],dtype=self.q.dtype)))
@@ -66,17 +66,17 @@ class Sarsa:
     
 
     def epsilon_greedy_policy(self,q,s,action_one):
-        action_onerob=action_one
-        action_onerob=action_onerob*self.epsilon/len(action_one)
+        action_prob=action_one
+        action_prob=action_prob*self.epsilon/len(action_one)
         best_a=np.argmax(q[s])
-        action_onerob[best_a]+=1-self.epsilon
-        return action_onerob
+        action_prob[best_a]+=1-self.epsilon
+        return action_prob
     
     
     def td(self,q,episode):
         for s,a,next_s,r in episode:
-            action_onerob=self.epsilon_greedy_policy(q,next_s,self.action_one)
-            next_a=np.random.choice(np.arange(action_onerob.shape[0]),p=action_onerob)
+            action_prob=self.epsilon_greedy_policy(q,next_s,self.action_one)
+            next_a=np.random.choice(np.arange(action_prob.shape[0]),p=action_prob)
             q[s][a]=q[s][a]+self.alpha*(r+self.discount*q[next_s][next_a]-q[s][a])
         return q
     
@@ -88,8 +88,8 @@ class Sarsa:
         for _ in range(episode_num):
             if self.episode_step==None:
                 while True:
-                    action_onerob=self.epsilon_greedy_policy(q,s,action_one)
-                    a=np.random.choice(action,p=action_onerob)
+                    action_prob=self.epsilon_greedy_policy(q,s,action_one)
+                    a=np.random.choice(action,p=action_prob)
                     next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
                     temp=q[s][a]
                     self.delta+=np.abs(q[s][a]-temp)
@@ -106,8 +106,8 @@ class Sarsa:
                     a+=1
             else:
                 for _ in range(self.episode_step):
-                    action_onerob=self.epsilon_greedy_policy(q,s,action_one)
-                    a=np.random.choice(action,p=action_onerob)
+                    action_prob=self.epsilon_greedy_policy(q,s,action_one)
+                    a=np.random.choice(action,p=action_prob)
                     next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
                     temp=q[s][a]
                     self.delta+=np.abs(q[s][a]-temp)
@@ -130,7 +130,7 @@ class Sarsa:
     
     def explore(self,episode_num):
         s=int(np.random.uniform(0,len(self.state_name)))
-        return self._episode(episode_num,self.q,s,self.action,self.action_onerob)
+        return self._episode(episode_num,self.q,s,self.action,self.action_prob)
     
     
     def update_q(self,q,episode):
@@ -171,7 +171,7 @@ class Sarsa:
         pickle.dump(self.episode,episode_file)
         pickle.dump(self.action_len,output_file)
         pickle.dump(self.action,output_file)
-        pickle.dump(self.action_onerob,output_file)
+        pickle.dump(self.action_prob,output_file)
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.alpha,output_file)
         pickle.dump(self.discount,output_file)
@@ -192,7 +192,7 @@ class Sarsa:
         self.episode=pickle.load(episode_file)
         self.action_len=pickle.load(input_file)
         self.action=pickle.load(input_file)
-        self.action_onerob=pickle.load(input_file)
+        self.action_prob=pickle.load(input_file)
         self.epsilon=pickle.load(input_file)
         self.alpha=pickle.load(input_file)
         self.discount=pickle.load(input_file)
