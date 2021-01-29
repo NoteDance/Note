@@ -86,13 +86,13 @@ class Q_learning:
                     action_onerob=self.epsilon_greedy_policy(s,self.action_one)
                     a=np.random.choice(self.action,p=action_onerob)
                     next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
+                    loss+=self.loss(s,a,next_s,r)
                     if end:
                         if self.save_episode==True:
                             episode.append([self.state_name[s],self.action_name[a],r,end])
                         break
                     if self.save_episode==True:
                         episode.append([self.state_name[s],self.self.action_name[a],r])
-                    loss+=self.loss(s,a,next_s,r)
                     s=next_s
                     with tf.GradientTape() as tape:
                         gradient=tape.gradient(1/2*loss,self.net_p)
@@ -109,13 +109,13 @@ class Q_learning:
                     action_onerob=self.epsilon_greedy_policy(s,self.action_one)
                     a=np.random.choice(self.action,p=action_onerob)
                     next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
+                    loss+=self.loss(s,a,next_s,r)
                     if end:
                         if self.save_episode==True:
                             episode.append([self.state_name[s],self.action_name[a],r,end])
                         break
                     if self.save_episode==True:
                         episode.append([self.state_name[s],self.self.action_name[a],r])
-                    loss+=self.loss(s,a,next_s,r)
                     s=next_s
                     with tf.GradientTape() as tape:
                         gradient=tape.gradient(1/2*loss,self.net_p)
