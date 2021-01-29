@@ -81,6 +81,8 @@ class MCPG:
                 output=self.policy_net(self.state[s])
                 a=np.random.choice(action,output)
                 next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
+                G+=r
+                loss+=self.loss(output,G)
                 if end:
                     self.reward_list.append(G)
                     if self.save_episode==True:
@@ -88,8 +90,6 @@ class MCPG:
                     break
                 if self.save_episode==True:
                     episode.append([self.state_name[s],self.action_name[a],r])
-                G+=r
-                loss+=self.loss(output,G)
                 s=next_s
         else:
             output=self.policy_net(self.state[s])
@@ -97,6 +97,8 @@ class MCPG:
                 output=self.policy_net(self.state[s])
                 a=np.random.choice(action,output)
                 next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
+                G+=r
+                loss+=self.loss(output,G)
                 if end:
                     self.reward_list.append(G)
                     if self.save_episode==True:
@@ -104,8 +106,6 @@ class MCPG:
                     break
                 if self.save_episode==True:
                     episode.append([self.state_name[s],self.action_name[a],r])
-                G+=r
-                loss+=self.loss(output,G)
                 s=next_s
             self.reward_list.append(G)
         if self.save_episode==True:
