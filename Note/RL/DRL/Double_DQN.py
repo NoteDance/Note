@@ -101,7 +101,7 @@ class Double_DQN:
     
     def update_parameter(self):
         for i in range(len(self.value_p)):
-            self.target_p[i]=self.value_p[i]
+            self.target_p[i]=self.value_p[i].copy()
         return
     
     
