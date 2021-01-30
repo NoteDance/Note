@@ -86,6 +86,8 @@ class A3C_Q_learning:
             s=int(np.random.uniform(0,len(self.state_name)))
             if self.episode_step==None:
                 while True:
+                    if self.T>self.Tmax:
+                        return
                     action_prob=self.epsilon_greedy_policy(s,self.action_one,epsilon)
                     a=np.random.choice(self.action,p=action_prob)
                     next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
@@ -104,8 +106,6 @@ class A3C_Q_learning:
                     s=next_s
                     self.T+=1
                     t+=1
-                    if self.T>self.Tmax:
-                        return
                     if self.T%self.It==0:
                         self.update_parameter()
                     elif t%self.Ia==0 or end:
@@ -116,6 +116,8 @@ class A3C_Q_learning:
                             break
             else:
                 for _ in range(self.episode_step):
+                    if self.T>self.Tmax:
+                        return
                     action_prob=self.epsilon_greedy_policy(s,self.action_one,epsilon)
                     a=np.random.choice(self.action,p=action_prob)
                     next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
@@ -134,8 +136,6 @@ class A3C_Q_learning:
                     s=next_s
                     self.T+=1
                     t+=1
-                    if self.T>self.Tmax:
-                        return
                     if self.T%self.It==0:
                         self.update_parameter()
                     elif t%self.Ia==0 or end:
