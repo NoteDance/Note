@@ -103,9 +103,84 @@ class DDPG:
         return tf.reduce_mean(((r+self.discount*self.value_net(next_s,self.actor_net(next_s,self.actor_target_p),self.value_target_p))-value)**2)
     
     
+    def _learn(self):
+        if len(self.state_pool)<self.batch:
+            value=self.value_net(self.state_pool,self.action_pool,self.value_p)
+            loss=self.loss(value,self.next_state_pool,self.reward_pool)
+            with tf.GradientTape() as tape:
+                gradient=tape.gradient(loss,self.value_p)
+                value_gradient=tape.gradient(value,self.action_pool)
+                actor_gradient=tape.gradient(self.action_pool,self.state_pool)
+                actor_gradient=self.sampled_gradient(value_gradient,actor_gradient)
+                if self.opt_flag==True:
+                    self.optimizer(gradient,self.value_p)
+                else:
+                    self.optimizer.apply_gradients(zip(gradient,self.value_p))
+                for i in range(len(self.actor_p)):
+                    self.actor_p[i]=self.actor_p[i]-actor_gradient[i]
+                if self.a%self.update_step==0:
+                    self.update_parameter()
+        else:
+            batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
+            random=np.arange(len(self.state_pool))
+            np.random.shuffle(random)
+            loss=0
+            for j in range(batches):
+                index1=j*self.batch
+                index2=(j+1)*self.batch
+                state_batch=self.state_pool[random][index1:index2]
+                action_batch=self.action_pool[random][index1:index2]
+                next_state_batch=self.next_state_pool[random][index1:index2]
+                reward_batch=self.reward_pool[random][index1:index2]
+                value=self.value_net(state_batch,action_batch,self.value_p)
+                batch_loss=self.loss(value,next_state_batch,reward_batch)
+                with tf.GradientTape() as tape:
+                    gradient=tape.gradient(batch_loss,self.value_p)
+                    value_gradient=tape.gradient(value,action_batch)
+                    actor_gradient=tape.gradient(action_batch,state_batch)
+                    actor_gradient=self.sampled_gradient(value_gradient,actor_gradient)
+                    if self.opt_flag==True:
+                        self.optimizer(gradient,self.value_p)
+                    else:
+                        self.optimizer.apply_gradients(zip(gradient,self.value_p))
+                    for i in range(len(self.actor_p)):
+                        self.actor_p[i]=self.actor_p[i]-actor_gradient[i]
+                loss+=batch_loss
+            if len(self.state_pool)%self.batch!=0:
+                batches+=1
+                index1=batches*self.batch
+                index2=self.batch-(self.shape0-batches*self.batch)
+                state_batch=tf.concat([self.state_pool[random][index1:],self.state_pool[random][:index2]])
+                action_batch=tf.concat([self.action_pool[random][index1:],self.action_pool[random][:index2]])
+                next_state_batch=tf.concat([self.next_state_pool[random][index1:],self.next_state_pool[random][:index2]])
+                reward_batch=tf.concat([self.reward_pool[random][index1:],self.reward_pool[random][:index2]])
+                value=self.value_net(state_batch,action_batch,self.value_p)
+                batch_loss=self.loss(value,next_state_batch,reward_batch)
+                with tf.GradientTape() as tape:
+                    gradient=tape.gradient(batch_loss,self.value_p)
+                    value_gradient=tape.gradient(value,action_batch)
+                    actor_gradient=tape.gradient(action_batch,state_batch)
+                    actor_gradient=self.sampled_gradient(value_gradient,actor_gradient)
+                    if self.opt_flag==True:
+                        self.optimizer(gradient,self.value_p)
+                    else:
+                        self.optimizer.apply_gradients(zip(gradient,self.value_p))
+                    for i in range(len(self.actor_p)):
+                        self.actor_p[i]=self.actor_p[i]-actor_gradient[i]
+                loss+=batch_loss
+            if self.a%self.update_step==0:
+                self.update_parameter()
+            if len(self.state_pool)%self.batch!=0:
+                loss=loss.numpy()/self.batches+1
+            elif len(self.state_pool)<self.batch:
+                loss=loss.numpy()
+            else:
+                loss=loss.numpy()/self.batches
+        return
+    
+    
     def learn(self,episode_num,path=None,one=True):
         for i in range(episode_num):
-            loss=0
             episode=[]
             s=int(np.random.uniform(0,len(self.state_name)))
             if self.episode_step==None:
@@ -136,77 +211,7 @@ class DDPG:
                     elif self.save_episode==True:
                         episode.append([self.state_name[s],self.self.action_name[a],r])
                     s=next_s
-                    if len(self.state_pool)<self.batch:
-                        value=self.value_net(self.state_pool,self.action_pool,self.value_p)
-                        loss=self.loss(value,self.next_state_pool,self.reward_pool)
-                        with tf.GradientTape() as tape:
-                            gradient=tape.gradient(loss,self.value_p)
-                            value_gradient=tape.gradient(value,self.action_pool)
-                            actor_gradient=tape.gradient(self.action_pool,self.state_pool)
-                            actor_gradient=self.sampled_gradient(value_gradient,actor_gradient)
-                            if self.opt_flag==True:
-                                self.optimizer(gradient,self.value_p)
-                            else:
-                                self.optimizer.apply_gradients(zip(gradient,self.value_p))
-                            for i in range(len(self.actor_p)):
-                                self.actor_p[i]=self.actor_p[i]-actor_gradient[i]
-                            if self.a%self.update_step==0:
-                                self.update_parameter()
-                    else:
-                        batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
-                        random=np.arange(len(self.state_pool))
-                        np.random.shuffle(random)
-                        for j in range(batches):
-                            index1=j*self.batch
-                            index2=(j+1)*self.batch
-                            state_batch=self.state_pool[random][index1:index2]
-                            action_batch=self.action_pool[random][index1:index2]
-                            next_state_batch=self.next_state_pool[random][index1:index2]
-                            reward_batch=self.reward_pool[random][index1:index2]
-                            value=self.value_net(state_batch,action_batch,self.value_p)
-                            batch_loss=self.loss(value,next_state_batch,reward_batch)
-                            with tf.GradientTape() as tape:
-                                gradient=tape.gradient(batch_loss,self.value_p)
-                                value_gradient=tape.gradient(value,action_batch)
-                                actor_gradient=tape.gradient(action_batch,state_batch)
-                                actor_gradient=self.sampled_gradient(value_gradient,actor_gradient)
-                                if self.opt_flag==True:
-                                    self.optimizer(gradient,self.value_p)
-                                else:
-                                    self.optimizer.apply_gradients(zip(gradient,self.value_p))
-                                for i in range(len(self.actor_p)):
-                                    self.actor_p[i]=self.actor_p[i]-actor_gradient[i]
-                            loss+=batch_loss
-                        if len(self.state_pool)%self.batch!=0:
-                            batches+=1
-                            index1=batches*self.batch
-                            index2=self.batch-(self.shape0-batches*self.batch)
-                            state_batch=tf.concat([self.state_pool[random][index1:],self.state_pool[random][:index2]])
-                            action_batch=tf.concat([self.action_pool[random][index1:],self.action_pool[random][:index2]])
-                            next_state_batch=tf.concat([self.next_state_pool[random][index1:],self.next_state_pool[random][:index2]])
-                            reward_batch=tf.concat([self.reward_pool[random][index1:],self.reward_pool[random][:index2]])
-                            value=self.value_net(state_batch,action_batch,self.value_p)
-                            batch_loss=self.loss(value,next_state_batch,reward_batch)
-                            with tf.GradientTape() as tape:
-                                gradient=tape.gradient(batch_loss,self.value_p)
-                                value_gradient=tape.gradient(value,action_batch)
-                                actor_gradient=tape.gradient(action_batch,state_batch)
-                                actor_gradient=self.sampled_gradient(value_gradient,actor_gradient)
-                                if self.opt_flag==True:
-                                    self.optimizer(gradient,self.value_p)
-                                else:
-                                    self.optimizer.apply_gradients(zip(gradient,self.value_p))
-                                for i in range(len(self.actor_p)):
-                                    self.actor_p[i]=self.actor_p[i]-actor_gradient[i]
-                            loss+=batch_loss
-                        if len(self.state_pool)%self.batch!=0:
-                            loss=loss.numpy()/self.batches+1
-                        elif len(self.state_pool)<self.batch:
-                            loss=loss.numpy()
-                        else:
-                            loss=loss.numpy()/self.batches
-                    if self.a%self.update_step==0:
-                        self.update_parameter()
+                    self._learn()
                     t2=time.time()
                     self.time+=(t2-t1)
             else:
@@ -237,77 +242,7 @@ class DDPG:
                     elif self.save_episode==True:
                         episode.append([self.state_name[s],self.self.action_name[a],r])
                     s=next_s
-                    if len(self.state_pool)<self.batch:
-                        value=self.value_net(self.state_pool,self.action_pool,self.value_p)
-                        loss=self.loss(value,self.next_state_pool,self.reward_pool)
-                        with tf.GradientTape() as tape:
-                            gradient=tape.gradient(loss,self.value_p)
-                            value_gradient=tape.gradient(value,self.action_pool)
-                            actor_gradient=tape.gradient(self.action_pool,self.state_pool)
-                            actor_gradient=self.sampled_gradient(value_gradient,actor_gradient)
-                            if self.opt_flag==True:
-                                self.optimizer(gradient,self.value_p)
-                            else:
-                                self.optimizer.apply_gradients(zip(gradient,self.value_p))
-                            for i in range(len(self.actor_p)):
-                                self.actor_p[i]=self.actor_p[i]-actor_gradient[i]
-                        if self.a%self.update_step==0:
-                            self.update_parameter()
-                    else:
-                        batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
-                        random=np.arange(len(self.state_pool))
-                        np.random.shuffle(random)
-                        for j in range(self.batches):
-                            index1=j*self.batch
-                            index2=(j+1)*self.batch
-                            state_batch=self.state_pool[random][index1:index2]
-                            action_batch=self.action_pool[random][index1:index2]
-                            next_state_batch=self.next_state_pool[random][index1:index2]
-                            reward_batch=self.reward_pool[random][index1:index2]
-                            value=self.value_net(state_batch,action_batch,self.value_p)
-                            batch_loss=self.loss(value,next_state_batch,reward_batch)
-                            with tf.GradientTape() as tape:
-                                gradient=tape.gradient(batch_loss,self.value_p)
-                                value_gradient=tape.gradient(value,action_batch)
-                                actor_gradient=tape.gradient(action_batch,state_batch)
-                                actor_gradient=self.sampled_gradient(value_gradient,actor_gradient)
-                                if self.opt_flag==True:
-                                    self.optimizer(gradient,self.value_p)
-                                else:
-                                    self.optimizer.apply_gradients(zip(gradient,self.value_p))
-                                for i in range(len(self.actor_p)):
-                                    self.actor_p[i]=self.actor_p[i]-actor_gradient[i]
-                            loss+=batch_loss
-                        if len(self.state_pool)%self.batch!=0:
-                            batches+=1
-                            index1=batches*self.batch
-                            index2=self.batch-(self.shape0-batches*self.batch)
-                            state_batch=tf.concat([self.state_pool[random][index1:],self.state_pool[random][:index2]])
-                            action_batch=tf.concat([self.action_pool[random][index1:],self.action_pool[random][:index2]])
-                            next_state_batch=tf.concat([self.next_state_pool[random][index1:],self.next_state_pool[random][:index2]])
-                            reward_batch=tf.concat([self.reward_pool[random][index1:],self.reward_pool[random][:index2]])
-                            value=self.value_net(state_batch,action_batch,self.value_p)
-                            batch_loss=self.loss(value,next_state_batch,reward_batch)
-                            with tf.GradientTape() as tape:
-                                gradient=tape.gradient(batch_loss,self.value_p)
-                                value_gradient=tape.gradient(value,action_batch)
-                                actor_gradient=tape.gradient(action_batch,state_batch)
-                                actor_gradient=self.sampled_gradient(value_gradient,actor_gradient)
-                                if self.opt_flag==True:
-                                    self.optimizer(gradient,self.value_p)
-                                else:
-                                    self.optimizer.apply_gradients(zip(gradient,self.value_p))
-                                for i in range(len(self.actor_p)):
-                                    self.actor_p[i]=self.actor_p[i]-actor_gradient[i]
-                            loss+=batch_loss
-                        if len(self.state_pool)%self.batch!=0:
-                            loss=loss.numpy()/self.batches+1
-                        elif len(self.state_pool)<self.batch:
-                            loss=loss.numpy()
-                        else:
-                            loss=loss.numpy()/self.batches
-                    if self.a%self.update_step==0:
-                        self.update_parameter()
+                    self._learn()
                     t2=time.time()
                     self.time+=(t2-t1)
             self.loss_list.append(loss)
