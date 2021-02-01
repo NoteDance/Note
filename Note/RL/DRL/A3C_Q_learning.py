@@ -96,13 +96,13 @@ class A3C_Q_learning:
                             episode.append([self.state_name[s],self.action_name[a],r,end])
                     elif self.save_episode==True:
                         episode.append([self.state_name[s],self.self.action_name[a],r])
-                    loss=self._loss(self.state[self.state_name[s]],a,self.state[self.state_name[next_s]],r)
-                    self.loss=loss
                     with tf.GradientTape() as tape:
-                        _gradient=tape.gradient(loss,self.value_p)
-                        for i in range(len(_gradient)):
-                            g[i]=g[i]+(self.alpha*g[i]+(1-self.alpha)*_gradient[i]**2)
-                            gradient[i]=gradient[i]+self.lr*_gradient[i]/tf.math.sqrt(g[i]+self.epsilon)
+                        loss=self._loss(self.state[self.state_name[s]],a,self.state[self.state_name[next_s]],r)
+                    self.loss=loss
+                    _gradient=tape.gradient(loss,self.value_p)
+                    for i in range(len(_gradient)):
+                        g[i]=g[i]+(self.alpha*g[i]+(1-self.alpha)*_gradient[i]**2)
+                        gradient[i]=gradient[i]+self.lr*_gradient[i]/tf.math.sqrt(g[i]+self.epsilon)
                     s=next_s
                     self.T+=1
                     t+=1
@@ -126,13 +126,13 @@ class A3C_Q_learning:
                             episode.append([self.state_name[s],self.action_name[a],r,end])
                     elif self.save_episode==True:
                         episode.append([self.state_name[s],self.self.action_name[a],r])
-                    loss=self._loss(self.state[self.state_name[s]],a,self.state[self.state_name[next_s]],r)
-                    self.loss=loss
                     with tf.GradientTape() as tape:
-                        _gradient=tape.gradient(loss,self.value_p)
-                        for i in range(len(_gradient)):
-                            g[i]=g[i]+(self.alpha*g[i]+(1-self.alpha)*_gradient[i]**2)
-                            gradient[i]=gradient[i]+self.lr*_gradient[i]/tf.math.sqrt(g[i]+self.epsilon)
+                        loss=self._loss(self.state[self.state_name[s]],a,self.state[self.state_name[next_s]],r)
+                    self.loss=loss
+                    _gradient=tape.gradient(loss,self.value_p)
+                    for i in range(len(_gradient)):
+                        g[i]=g[i]+(self.alpha*g[i]+(1-self.alpha)*_gradient[i]**2)
+                        gradient[i]=gradient[i]+self.lr*_gradient[i]/tf.math.sqrt(g[i]+self.epsilon)
                     s=next_s
                     self.T+=1
                     t+=1
