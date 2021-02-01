@@ -149,6 +149,6 @@ class policy_iteration:
         self.end_flag=pickle.load(input_file)
         self.iteration_num=pickle.load(input_file)
         self.total_iteration=pickle.load(input_file)
-        self.total_time=self.time
+        self.total_time=pickle.load(input_file)
         input_file.close()
         return
