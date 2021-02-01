@@ -116,10 +116,10 @@ class Q_learning:
     def learn(self):
         with tf.GradientTape() as tape:
             gradient=tape.gradient(1/2*self.loss,self.net_p)
-            if self.opt_flag==True:
-                self.optimizer(gradient,self.net_p)
-            else:
-                self.optimizer.apply_gradients(zip(gradient,self.net_p))
+        if self.opt_flag==True:
+            self.optimizer(gradient,self.net_p)
+        else:
+            self.optimizer.apply_gradients(zip(gradient,self.net_p))
         self.loss=self.loss.numpy()
         return
     
