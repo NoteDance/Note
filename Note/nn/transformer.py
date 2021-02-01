@@ -247,7 +247,7 @@ class transformer:
             self.processor=processor
         with tf.name_scope('variable'):
             variable=[self.qw1,self.kw1,self.vw1,self.fw1,self.qw2,self.kw2,self.vw2,self.qw3,self.kw3,self.vw3,self.fw2]
-            variable=c.extend(variable)
+            variable=n.extend(variable)
         with tf.name_scope('optimizer'):
             self.optimizer='Adam'
             optimizer=optimizers.Adam(lr)
@@ -274,11 +274,11 @@ class transformer:
                         with tf.name_scope('forward_propagation/loss'):
                             output=self.forward_propagation(data_batch)
                             batch_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output,labels=labels_batch))
-                        if i==0 and self.total_epoch==0:
-                            batch_loss=batch_loss.numpy()
-                        else:
-                            with tf.name_scope('apply_gradient'):
-                                c.apply_gradient(tape,optimizer,batch_loss,variable)
+                    if i==0 and self.total_epoch==0:
+                        batch_loss=batch_loss.numpy()
+                    else:
+                        with tf.name_scope('apply_gradient'):
+                            c.apply_gradient(tape,optimizer,batch_loss,variable)
                     total_loss+=batch_loss
                     with tf.name_scope('accuracy'):
                         batch_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(self.train_labels[random],2)!=0,tf.int32)==tf.argmax(self.train_labels[random],2),tf.float32))
@@ -295,11 +295,11 @@ class transformer:
                         with tf.name_scope('forward_propagation/loss'):
                             output=self.forward_propagation(data_batch)
                             batch_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output,labels=labels_batch))
-                        if i==0 and self.total_epoch==0:
-                            batch_loss=batch_loss.numpy()
-                        else:
-                            with tf.name_scope('apply_gradient'):
-                                c.apply_gradient(tape,optimizer,batch_loss,variable)
+                    if i==0 and self.total_epoch==0:
+                        batch_loss=batch_loss.numpy()
+                    else:
+                        with tf.name_scope('apply_gradient'):
+                            c.apply_gradient(tape,optimizer,batch_loss,variable)
                     total_loss+=batch_loss
                     with tf.name_scope('accuracy'):
                         batch_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(self.train_labels[random],2)!=0,tf.int32)==tf.argmax(self.train_labels[random],2),tf.float32))
@@ -323,11 +323,11 @@ class transformer:
                     with tf.name_scope('forward_propagation/loss'):
                         output=self.forward_propagation(self.train_data)
                         train_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output,labels=self.train_labels))
-                    if i==0 and self.total_epoch==0:
-                        loss=train_loss.numpy()
-                    else:
-                        with tf.name_scope('apply_gradient'):
-                            c.apply_gradient(tape,optimizer,batch_loss,variable)
+                if i==0 and self.total_epoch==0:
+                    loss=train_loss.numpy()
+                else:
+                    with tf.name_scope('apply_gradient'):
+                        c.apply_gradient(tape,optimizer,batch_loss,variable)
                 self.train_loss_list.append(loss.astype(np.float32))
                 self.train_loss=loss
                 self.train_loss=self.train_loss.astype(np.float32)
