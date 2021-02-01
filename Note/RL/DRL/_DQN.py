@@ -112,13 +112,13 @@ class DQN:
     
     def _learn(self):
         if len(self.state_pool)<self.batch:
-            loss=self.loss(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool)
             with tf.GradientTape() as tape:
-                gradient=tape.gradient(loss,self.value_p)
-                if self.opt_flag==True:
-                    self.optimizer(gradient,self.value_p)
-                else:
-                    self.optimizer.apply_gradients(zip(gradient,self.value_p))
+                loss=self.loss(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool)
+            gradient=tape.gradient(loss,self.value_p)
+            if self.opt_flag==True:
+                self.optimizer(gradient,self.value_p)
+            else:
+                self.optimizer.apply_gradients(zip(gradient,self.value_p))
             if self.a%self.update_step==0:
                 self.update_parameter()
         else:
@@ -133,13 +133,13 @@ class DQN:
                 action_batch=self.action_pool[random][index1:index2]
                 next_state_batch=self.next_state_pool[random][index1:index2]
                 reward_batch=self.reward_pool[random][index1:index2]
-                batch_loss=self.loss(state_batch,action_batch,next_state_batch,reward_batch)
                 with tf.GradientTape() as tape:
-                    gradient=tape.gradient(batch_loss,self.value_p)
-                    if self.opt_flag==True:
-                        self.optimizer(gradient,self.value_p)
-                    else:
-                        self.optimizer.apply_gradients(zip(gradient,self.value_p))
+                    batch_loss=self.loss(state_batch,action_batch,next_state_batch,reward_batch)
+                gradient=tape.gradient(batch_loss,self.value_p)
+                if self.opt_flag==True:
+                    self.optimizer(gradient,self.value_p)
+                else:
+                    self.optimizer.apply_gradients(zip(gradient,self.value_p))
                 loss+=batch_loss
             if len(self.state_pool)%self.batch!=0:
                 batches+=1
@@ -149,13 +149,13 @@ class DQN:
                 action_batch=tf.concat([self.action_pool[random][index1:],self.action_pool[random][:index2]])
                 next_state_batch=tf.concat([self.next_state_pool[random][index1:],self.next_state_pool[random][:index2]])
                 reward_batch=tf.concat([self.reward_pool[random][index1:],self.reward_pool[random][:index2]])
-                batch_loss=self.loss(state_batch,action_batch,next_state_batch,reward_batch)
                 with tf.GradientTape() as tape:
-                    gradient=tape.gradient(batch_loss,self.value_p)
-                    if self.opt_flag==True:
-                        self.optimizer(gradient,self.value_p)
-                    else:
-                        self.optimizer.apply_gradients(zip(gradient,self.value_p))
+                    batch_loss=self.loss(state_batch,action_batch,next_state_batch,reward_batch)
+                gradient=tape.gradient(batch_loss,self.value_p)
+                if self.opt_flag==True:
+                    self.optimizer(gradient,self.value_p)
+                else:
+                    self.optimizer.apply_gradients(zip(gradient,self.value_p))
                 loss+=batch_loss
             if self.a%self.update_step==0:
                 self.update_parameter()
@@ -170,7 +170,6 @@ class DQN:
     
     def learn(self,episode_num,path=None,one=True):
         for i in range(episode_num):
-            loss=0
             episode=[]
             s=int(np.random.uniform(0,len(self.state_name)))
             if self.episode_step==None:
