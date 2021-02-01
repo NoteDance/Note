@@ -86,13 +86,13 @@ class Q_learning:
                     action_prob=self.epsilon_greedy_policy(s,self.action_one)
                     a=np.random.choice(self.action,p=action_prob)
                     next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
-                    loss+=self.loss(s,a,next_s,r)
                     with tf.GradientTape() as tape:
-                        gradient=tape.gradient(1/2*loss,self.net_p)
-                        if self.opt_flag==True:
-                            self.optimizer(gradient,self.net_p)
-                        else:
-                            self.optimizer.apply_gradients(zip(gradient,self.net_p))
+                        loss+=self.loss(s,a,next_s,r)
+                    gradient=tape.gradient(1/2*loss,self.net_p)
+                    if self.opt_flag==True:
+                        self.optimizer(gradient,self.net_p)
+                    else:
+                        self.optimizer.apply_gradients(zip(gradient,self.net_p))
                     loss=loss.numpy()
                     if end:
                         if self.save_episode==True:
@@ -111,13 +111,13 @@ class Q_learning:
                     action_prob=self.epsilon_greedy_policy(s,self.action_one)
                     a=np.random.choice(self.action,p=action_prob)
                     next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
-                    loss+=self.loss(s,a,next_s,r)
                     with tf.GradientTape() as tape:
-                        gradient=tape.gradient(1/2*loss,self.net_p)
-                        if self.opt_flag==True:
-                            self.optimizer(gradient,self.net_p)
-                        else:
-                            self.optimizer.apply_gradients(zip(gradient,self.net_p))
+                        loss+=self.loss(s,a,next_s,r)
+                    gradient=tape.gradient(1/2*loss,self.net_p)
+                    if self.opt_flag==True:
+                        self.optimizer(gradient,self.net_p)
+                    else:
+                        self.optimizer.apply_gradients(zip(gradient,self.net_p))
                     loss=loss.numpy()
                     if end:
                         if self.save_episode==True:
