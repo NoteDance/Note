@@ -168,63 +168,66 @@ class NoisyNet:
     
     
     def _learn(self,i,parameter,index):
-        if len(self.state_pool)<self.batch:
-            self.loss=self._loss(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool)
+        if len(self.state_pool[i],)<self.batch:
             with tf.GradientTape() as tape:
-                gradient=tape.gradient(self.loss,parameter)
-                if self.opt_flag==True:
-                    self.optimizer(gradient,parameter)
-                else:
-                    self.optimizer.apply_gradients(zip(gradient,parameter))
+                self.lossp[i]=self._loss(self.state_pool[i],self.action_pool[i],self.next_state_pool[i],self.reward_pool[i])
+            gradient=tape.gradient(self.loss[i],parameter)
+            if self.opt_flag==True:
+                self.optimizer(gradient,parameter)
+            else:
+                self.optimizer.apply_gradients(zip(gradient,parameter))
             if self.a%self.update_step==0:
                 self.value_p[0]=parameter[:index]
                 self.update_parameter()
                 self.value_p[0].extend(self.value_p[1])
                 parameter=self.value_p[0]
         else:
-            batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
+            batches=int((len(self.state_pool[i])-len(self.state_pool[i])%self.batch)/self.batch)
+            random=np.arange(len(self.state_pool[i]))
+            np.random.shuffle(random)
+            self.loss[i]=0
             for j in range(batches):
                 index1=j*self.batch
                 index2=(j+1)*self.batch
-                state_batch=self.state_pool[index1:index2]
-                action_batch=self.action_pool[index1:index2]
-                next_state_batch=self.next_state_pool[index1:index2]
-                reward_batch=self.reward_pool[index1:index2]
-                batch_loss=self._loss(state_batch,action_batch,next_state_batch,reward_batch)
+                state_batch=self.state_pool[i][random][index1:index2]
+                action_batch=self.action_pool[i][random][index1:index2]
+                next_state_batch=self.next_state_pool[i][random][index1:index2]
+                reward_batch=self.reward_pool[i][random][index1:index2]
                 with tf.GradientTape() as tape:
-                    gradient=tape.gradient(batch_loss,parameter)
-                    if self.opt_flag==True:
-                        self.optimizer(gradient,parameter)
-                    else:
-                        self.optimizer.apply_gradients(zip(gradient,parameter))
+                    batch_loss=self._loss(state_batch,action_batch,next_state_batch,reward_batch)
+                gradient=tape.gradient(batch_loss,parameter)
+                if self.opt_flag==True:
+                    self.optimizer(gradient,parameter)
+                else:
+                    self.optimizer.apply_gradients(zip(gradient,parameter))
                 self.loss+=batch_loss
-            if len(self.state_pool)%self.batch!=0:
+            if len(self.state_pool[i])%self.batch!=0:
                 batches+=1
                 index1=batches*self.batch
                 index2=self.batch-(self.shape0-batches*self.batch)
-                state_batch=tf.concat([self.state_pool[index1:],self.state_pool[:index2]])
-                action_batch=tf.concat([self.action_pool[index1:],self.action_pool[:index2]])
-                next_state_batch=tf.concat([self.next_state_pool[index1:],self.next_state_pool[:index2]])
-                reward_batch=tf.concat([self.reward_pool[index1:],self.reward_pool[:index2]])
-                batch_loss=self._loss(state_batch,action_batch,next_state_batch,reward_batch)
+                state_batch=tf.concat([self.state_pool[i][random][index1:],self.state_pool[i][random][:index2]])
+                action_batch=tf.concat([self.action_pool[i][random][index1:],self.action_pool[i][random][:index2]])
+                next_state_batch=tf.concat([self.next_state_pool[i][random][index1:],self.next_state_pool[i][random][:index2]])
+                reward_batch=tf.concat([self.reward_pool[i][random][index1:],self.reward_pool[i][random][:index2]])
                 with tf.GradientTape() as tape:
-                    gradient=tape.gradient(batch_loss,self.value_p)
-                    if self.opt_flag==True:
-                        self.optimizer(gradient,self.value_p)
-                    else:
-                        self.optimizer.apply_gradients(zip(gradient,self.value_p))
-                self.loss+=batch_loss
+                    batch_loss=self._loss(state_batch,action_batch,next_state_batch,reward_batch)
+                gradient=tape.gradient(batch_loss,self.value_p)
+                if self.opt_flag==True:
+                    self.optimizer(gradient,self.value_p)
+                else:
+                    self.optimizer.apply_gradients(zip(gradient,self.value_p))
+                self.loss[i]+=batch_loss
             if self.a%self.update_step==0:
                 self.value_p[0]=parameter[:index]
                 self.update_parameter()
                 self.value_p[0].extend(self.value_p[1])
                 parameter=self.value_p[0]
             if len(self.state_pool)%self.batch!=0:
-                self.loss=self.loss.numpy()/self.batches+1
-            elif len(self.state_pool)<self.batch:
-                self.loss=self.loss.numpy()
+                self.loss[i]=self.loss[i].numpy()/self.batches+1
+            elif len(self.state_pool[i])<self.batch:
+                self.loss[i]=self.loss[i].numpy()
             else:
-                self.loss=self.loss.numpy()/self.batches
+                self.loss[i]=self.loss[i].numpy()/self.batches
         return
     
     
@@ -232,10 +235,11 @@ class NoisyNet:
         self.T+=1
         self.a.append(0)
         self.loss.append(0)
-        self.state_pool.append(None)
-        self.action_pool.append(None)
-        self.next_state_pool.append(None)
-        self.reward_pool.append(None)
+        if len(self.state_pool)==i-1:
+            self.state_pool.append(None)
+            self.action_pool.append(None)
+            self.next_state_pool.append(None)
+            self.reward_pool.append(None)
         index=len(self.value_p[0])
         self.value_p[0].extend(self.value_p[1])
         parameter=self.value_p[0]
