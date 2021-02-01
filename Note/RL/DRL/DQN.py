@@ -147,13 +147,13 @@ class DQN:
     
     def _learn(self,i):
         if len(self.state_pool)<self.batch:
-            self.loss=self._loss(self.state_pool[i],self.action_pool[i],self.next_state_pool[i],self.reward_pool[i])
             with tf.GradientTape() as tape:
-                gradient=tape.gradient(self.loss,self.value_p)
-                if self.opt_flag==True:
-                    self.optimizer(gradient,self.value_p)
-                else:
-                    self.optimizer.apply_gradients(zip(gradient,self.value_p))
+                self.loss[i]=self._loss(self.state_pool[i],self.action_pool[i],self.next_state_pool[i],self.reward_pool[i])
+            gradient=tape.gradient(self.loss[i],self.value_p)
+            if self.opt_flag==True:
+                self.optimizer(gradient,self.value_p)
+            else:
+                self.optimizer.apply_gradients(zip(gradient,self.value_p))
             if self.a%self.update_step==0:
                 self.update_parameter()
         else:
@@ -168,13 +168,13 @@ class DQN:
                 action_batch=self.action_pool[i][random][index1:index2]
                 next_state_batch=self.next_state_pool[i][random][index1:index2]
                 reward_batch=self.reward_pool[i][random][index1:index2]
-                batch_loss=self._loss(state_batch,action_batch,next_state_batch,reward_batch)
                 with tf.GradientTape() as tape:
-                    gradient=tape.gradient(batch_loss,self.value_p)
-                    if self.opt_flag==True:
-                        self.optimizer(gradient,self.value_p)
-                    else:
-                        self.optimizer.apply_gradients(zip(gradient,self.value_p))
+                    batch_loss=self._loss(state_batch,action_batch,next_state_batch,reward_batch)
+                gradient=tape.gradient(batch_loss,self.value_p)
+                if self.opt_flag==True:
+                    self.optimizer(gradient,self.value_p)
+                else:
+                    self.optimizer.apply_gradients(zip(gradient,self.value_p))
                 self.loss[i]+=batch_loss
             if len(self.state_pool)%self.batch!=0:
                 batches+=1
@@ -184,13 +184,13 @@ class DQN:
                 action_batch=tf.concat([self.action_pool[i][random][index1:],self.action_pool[i][random][:index2]])
                 next_state_batch=tf.concat([self.next_state_pool[i][random][index1:],self.next_state_pool[i][random][:index2]])
                 reward_batch=tf.concat([self.reward_pool[i][random][index1:],self.reward_pool[i][random][:index2]])
-                batch_loss=self._loss(state_batch,action_batch,next_state_batch,reward_batch)
                 with tf.GradientTape() as tape:
-                    gradient=tape.gradient(batch_loss,self.value_p)
-                    if self.opt_flag==True:
-                        self.optimizer(gradient,self.value_p)
-                    else:
-                        self.optimizer.apply_gradients(zip(gradient,self.value_p))
+                    batch_loss=self._loss(state_batch,action_batch,next_state_batch,reward_batch)
+                gradient=tape.gradient(batch_loss,self.value_p)
+                if self.opt_flag==True:
+                    self.optimizer(gradient,self.value_p)
+                else:
+                    self.optimizer.apply_gradients(zip(gradient,self.value_p))
                 self.loss[i]+=batch_loss
             if self.a[i]%self.update_step==0:
                 self.update_parameter()
@@ -205,16 +205,14 @@ class DQN:
     
     def learn(self,episode_num,epsilon,i):
         self.T+=1
-        if len(self.epsilon)==0:
-            self.epsilon.append[epsilon]
-        else:
-            pass
         self.a.append(0)
         self.loss.append(0)
-        self.state_pool.append(None)
-        self.action_pool.append(None)
-        self.next_state_pool.append(None)
-        self.reward_pool.append(None)
+        if len(self.state_pool)==i-1:
+            self.state_pool.append(None)
+            self.action_pool.append(None)
+            self.next_state_pool.append(None)
+            self.reward_pool.append(None)
+            self.epsilon.append[epsilon]
         for _ in range(episode_num):
             s=int(np.random.uniform(0,len(self.state_name)))
             if self.episode_step==None:
