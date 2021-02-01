@@ -137,15 +137,15 @@ class unnamed:
                         with tf.name_scope('forward_propagation/loss'):
                             
                     
-                        if i==0 and self.total_epoch==0:
-                            batch_loss=batch_loss.numpy()
-                        else:
-                            with tf.name_scope('apply_gradient'):
-                                if self.optimizer!=None:
-                                    c.apply_gradient(tape,self.optimizer,batch_loss,parameter)
-                                else:
-                                    gradient=tape.gradient(batch_loss,parameter)
-                                    self.optimizern(gradient,parameter)
+                    if i==0 and self.total_epoch==0:
+                        batch_loss=batch_loss.numpy()
+                    else:
+                        with tf.name_scope('apply_gradient'):
+                            if self.optimizer!=None:
+                                c.apply_gradient(tape,self.optimizer,batch_loss,parameter)
+                            else:
+                                gradient=tape.gradient(batch_loss,parameter)
+                                self.optimizern(gradient,parameter)
                     total_loss+=batch_loss
                     with tf.name_scope('accuracy'):
                  
@@ -163,15 +163,15 @@ class unnamed:
                         with tf.name_scope('forward_propagation/loss'):
                             
                         
-                        if i==0 and self.total_epoch==0:
-                            batch_loss=batch_loss.numpy()
-                        else:
-                            with tf.name_scope('apply_gradient'):
-                                if self.optimizer!=None:
-                                    c.apply_gradient(tape,self.optimizer,batch_loss,parameter)
-                                else:
-                                    gradient=tape.gradient(batch_loss,parameter)
-                                    self.optimizern(gradient,parameter)
+                    if i==0 and self.total_epoch==0:
+                        batch_loss=batch_loss.numpy()
+                    else:
+                        with tf.name_scope('apply_gradient'):
+                            if self.optimizer!=None:
+                                c.apply_gradient(tape,self.optimizer,batch_loss,parameter)
+                            else:
+                                gradient=tape.gradient(batch_loss,parameter)
+                                self.optimizern(gradient,parameter)
                     total_loss+=batch_loss
                     with tf.name_scope('accuracy'):
                  
@@ -196,15 +196,15 @@ class unnamed:
                     with tf.name_scope('forward_propagation/loss'):
                         
                     
-                    if i==0 and self.total_epoch==0:
-                        loss=train_loss.numpy()
-                    else:
-                       with tf.name_scope('apply_gradient'):
-                           if self.optimizer!=None:
-                               c.apply_gradient(tape,self.optimizer,batch_loss,parameter)
-                           else:
-                               gradient=tape.gradient(batch_loss,parameter)
-                               self.optimizern(gradient,parameter)
+                if i==0 and self.total_epoch==0:
+                    loss=train_loss.numpy()
+                else:
+                   with tf.name_scope('apply_gradient'):
+                       if self.optimizer!=None:
+                           c.apply_gradient(tape,self.optimizer,batch_loss,parameter)
+                       else:
+                           gradient=tape.gradient(batch_loss,parameter)
+                           self.optimizern(gradient,parameter)
                 self.train_loss_list.append(loss.astype(np.float32))
                 self.train_loss=loss
                 self.train_loss=self.train_loss.astype(np.float32)
