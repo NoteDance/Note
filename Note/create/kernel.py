@@ -1,5 +1,5 @@
 import tensorflow as tf
-import Note.creat.creat as c
+import Note.creat.create as c
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
@@ -157,15 +157,15 @@ class kernel:
                             output=self.nn.forward_propagation(data_batch,self.dropout)
                             self.output=output
                             batch_loss=self.nn.loss(output,labels_batch,self.l2)
-                        if i==0 and self.total_epoch==0:
-                            batch_loss=batch_loss.numpy()
-                        else:
-                            with tf.name_scope('apply_gradient'):
-                                if self.optimizer!=None:
-                                    n.apply_gradient(tape,self.optimizer,batch_loss,self.parameter)
-                                else:
-                                    gradient=tape.gradient(batch_loss,self.parameter)
-                                    self.optimizern(gradient,self.parameter)
+                    if i==0 and self.total_epoch==0:
+                        batch_loss=batch_loss.numpy()
+                    else:
+                        with tf.name_scope('apply_gradient'):
+                            if self.optimizer!=None:
+                                c.apply_gradient(tape,self.optimizer,batch_loss,self.parameter)
+                            else:
+                                gradient=tape.gradient(batch_loss,self.parameter)
+                                self.optimizern(gradient,self.parameter)
                     if i==(epoch-1):
                         self.output=self.nn.forward_propagation(data_batch,self.dropout)
                     total_loss+=batch_loss
@@ -207,15 +207,15 @@ class kernel:
                             output=self.nn.forward_propagation(data_batch,self.dropout)
                             self.output=output
                             batch_loss=self.nn.loss(output,labels_batch,self.l2)
-                        if i==0 and self.total_epoch==0:
-                            batch_loss=batch_loss.numpy()
-                        else:
-                            with tf.name_scope('apply_gradient'):
-                                if self.optimizer!=None:
-                                    n.apply_gradient(tape,self.optimizer,batch_loss,self.parameter)
-                                else:
-                                    gradient=tape.gradient(batch_loss,self.parameter)
-                                    self.optimizern(gradient,self.parameter)
+                    if i==0 and self.total_epoch==0:
+                        batch_loss=batch_loss.numpy()
+                    else:
+                        with tf.name_scope('apply_gradient'):
+                            if self.optimizer!=None:
+                                c.apply_gradient(tape,self.optimizer,batch_loss,self.parameter)
+                            else:
+                                gradient=tape.gradient(batch_loss,self.parameter)
+                                self.optimizern(gradient,self.parameter)
                     if i==(epoch-1):
                         self.output=self.nn.forward_propagation(data_batch,self.dropout)
                     total_loss+=batch_loss
@@ -246,15 +246,15 @@ class kernel:
                         output=self.nn.forward_propagation(train_data,self.dropout)
                         self.output=output
                         train_loss=self.nn.loss(output,train_labels,self.l2)
-                    if i==0 and self.total_epoch==0:
-                        loss=train_loss.numpy()
-                    else:
-                       with tf.name_scope('apply_gradient'):
-                           if self.optimizer!=None:
-                               n.apply_gradient(tape,self.optimizer,batch_loss,self.parameter)
-                           else:
-                               gradient=tape.gradient(batch_loss,self.parameter)
-                               self.optimizern(gradient,self.parameter)
+                if i==0 and self.total_epoch==0:
+                    loss=train_loss.numpy()
+                else:
+                   with tf.name_scope('apply_gradient'):
+                       if self.optimizer!=None:
+                           c.apply_gradient(tape,self.optimizer,batch_loss,self.parameter)
+                       else:
+                           gradient=tape.gradient(batch_loss,self.parameter)
+                           self.optimizern(gradient,self.parameter)
                 if i==(epoch-1):
                     self.output=self.nn.forward_propagation(train_data,self.dropout)
                 self.train_loss_list.append(loss.astype(np.float32))
