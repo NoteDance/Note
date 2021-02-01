@@ -324,6 +324,6 @@ class Double_DQN:
         self.opt_flag=pickle.load(input_file)
         self.episode_num=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
-        self.total_time=self.time
+        self.total_time=pickle.load(input_file)
         input_file.close()
         return
