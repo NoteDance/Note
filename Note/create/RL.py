@@ -41,3 +41,20 @@ def Gaussian_noise(value_p,dtype=tf.float32):
         noise_bias=_noise(tf.random.normal([value_p[i].shape[1],1]),dtype=dtype)
         noise.append([noise_row,noise_column,noise_bias])
     return noise
+
+
+def pr(state_pool,t,batch,K,N,alpha,beta,error,p=None):
+    if p==None:
+        p=tf.ones([batch],dtype=tf.float32)
+        prob=p**alpha/tf.reduce_sum(p**alpha)
+        w=(N*prob)**-beta
+        w=w/tf.reduce_max(w)
+    else:
+        prob=p**alpha/tf.reduce_sum(p**alpha)
+        w=(N*prob)**-beta
+        w=w/tf.reduce_max(w)
+    if t%K==0:
+        index=np.random.choice(np.arange(len(state_pool),dtype=np.int8),size=[len(state_pool)],p=prob)
+        delta=error(state_pool[index])
+        p=delta+10**-7
+    return w*delta,p,delta
