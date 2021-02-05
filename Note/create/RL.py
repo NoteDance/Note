@@ -45,11 +45,12 @@ def Gaussian_noise(value_p,dtype=tf.float32):
 
 def pr(state_pool,t,batch,K,N,alpha,beta,error,p=None):
     if p==None:
-        p=tf.ones([batch],dtype=tf.float32)
+        p=tf.ones([len(state_pool)],dtype=tf.float32)
         prob=p**alpha/tf.reduce_sum(p**alpha)
         w=(N*prob)**-beta
         w=w/tf.reduce_max(w)
     else:
+        p=tf.concat([p,tf.ones([len(state_pool)-len(p)])*tf.reduce_max(p)])
         prob=p**alpha/tf.reduce_sum(p**alpha)
         w=(N*prob)**-beta
         w=w/tf.reduce_max(w)
