@@ -61,4 +61,4 @@ def pr(state_pool,t,batch,K,pool_size,alpha,beta,error,p=None,size_vector=None):
             index=np.random.choice(size_vector,size=[len(state_pool)],p=prob)
         delta=error(state_pool[index])
         p[index]=delta+10**-7
-    return w*delta,p,delta
+    return w*delta,p,delta,state_pool[index]
