@@ -6,7 +6,7 @@ import time
 
 
 class NoisyNet:
-    def __init__(self,value_net,value_p,target_p,state,state_name,action_name,exploration_space,DUELING=None,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,save_episode=True):
+    def __init__(self,value_net,value_p,target_p,state,state_name,action_name,exploration_space,DUELING=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,pool_net=True,save_episode=True):
         self.value_net=value_net
         self.value_p=value_p
         self.target_p=target_p
@@ -29,6 +29,9 @@ class NoisyNet:
         self.update_step=update_step
         self.optimizer=optimizer
         self.lr=lr
+        self.t=0
+        self.t_counter=0
+        self.pool_net=pool_net
         self.save_episode=save_episode
         self.loss=[]
         self.loss_list=[]
@@ -75,7 +78,9 @@ class NoisyNet:
         if lr!=None:
             self.lr=lr
         if init==True:
-            self.T=0
+            self.t=0
+            self.t_counter=0
+            self.pool_net=True
             self.episode=[]
             self.state_pool=[]
             self.action_pool=[]
@@ -141,16 +146,25 @@ class NoisyNet:
         value=self.value_net(self.state_name[s],self.value_p,noisy)
         a=np.argmax(value)
         next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
-        if self.state_pool[i]==None:
-            self.state_pool[i]=tf.expand_dims(self.state[self.state_name[s]],axis=0)
-            self.action_pool[i]=tf.expand_dims(a,axis=0)
-            self.next_state_pool[i]=tf.expand_dims(self.state[self.state_name[next_s]],axis=0)
-            self.reward_pool[i]=tf.expand_dims(r,axis=0)
+        if self.pool_net==True:
+            flag=np.random.randint(0,2)
+            index=np.random.randint(0,self.t_counter)
+        if self.pool_net==True and flag==1 and self.state_pool[index]!=None and len(self.state_pool)==self.t_counter:
+            self.state_pool[index]=tf.concat([self.state_pool[index],tf.expand_dims(self.state[self.state_name[s]],axis=0)])
+            self.action_pool[index]=tf.concat([self.action_pool[index],tf.expand_dims(a,axis=0)])
+            self.next_state_pool[index]=tf.concat([self.next_state_pool[index],tf.expand_dims(self.state[self.state_name[next_s]],axis=0)])
+            self.reward_pool[index]=tf.concat([self.reward_pool[index],tf.expand_dims(r,axis=0)])
         else:
-            self.state_pool[i]=tf.concat([self.state_pool[i],tf.expand_dims(self.state[self.state_name[s]],axis=0)])
-            self.action_pool[i]=tf.concat([self.action_pool[i],tf.expand_dims(a,axis=0)])
-            self.next_state_pool[i]=tf.concat([self.next_state_pool[i],tf.expand_dims(self.state[self.state_name[next_s]],axis=0)])
-            self.reward_pool[i]=tf.concat([self.reward_pool[i],tf.expand_dims(r,axis=0)])
+            if self.state_pool[i]==None:
+                self.state_pool[i]=tf.expand_dims(self.state[self.state_name[s]],axis=0)
+                self.action_pool[i]=tf.expand_dims(a,axis=0)
+                self.next_state_pool[i]=tf.expand_dims(self.state[self.state_name[next_s]],axis=0)
+                self.reward_pool[i]=tf.expand_dims(r,axis=0)
+            else:
+                self.state_pool[i]=tf.concat([self.state_pool[i],tf.expand_dims(self.state[self.state_name[s]],axis=0)])
+                self.action_pool[i]=tf.concat([self.action_pool[i],tf.expand_dims(a,axis=0)])
+                self.next_state_pool[i]=tf.concat([self.next_state_pool[i],tf.expand_dims(self.state[self.state_name[next_s]],axis=0)])
+                self.reward_pool[i]=tf.concat([self.reward_pool[i],tf.expand_dims(r,axis=0)])
         if len(self.state_pool[i])>self.pool_size:
             self.state_pool[i]=self.state_pool[i][1:]
             self.action_pool[i]=self.action_pool[i][1:]
@@ -183,16 +197,23 @@ class NoisyNet:
                 parameter=self.value_p[0]
         else:
             batches=int((len(self.state_pool[i])-len(self.state_pool[i])%self.batch)/self.batch)
-            random=np.arange(len(self.state_pool[i]))
-            np.random.shuffle(random)
+            if self.pool_net!=True:
+                random=np.arange(len(self.state_pool[i]))
+                np.random.shuffle(random)
             self.loss[i]=0
             for j in range(batches):
                 index1=j*self.batch
                 index2=(j+1)*self.batch
-                state_batch=self.state_pool[i][random][index1:index2]
-                action_batch=self.action_pool[i][random][index1:index2]
-                next_state_batch=self.next_state_pool[i][random][index1:index2]
-                reward_batch=self.reward_pool[i][random][index1:index2]
+                if self.pool_net==True:
+                    state_batch=self.state_pool[i][index1:index2]
+                    action_batch=self.action_pool[i][index1:index2]
+                    next_state_batch=self.next_state_pool[i][index1:index2]
+                    reward_batch=self.reward_pool[i][index1:index2]
+                else:
+                    state_batch=self.state_pool[i][random][index1:index2]
+                    action_batch=self.action_pool[i][random][index1:index2]
+                    next_state_batch=self.next_state_pool[i][random][index1:index2]
+                    reward_batch=self.reward_pool[i][random][index1:index2]
                 with tf.GradientTape() as tape:
                     batch_loss=self._loss(state_batch,action_batch,next_state_batch,reward_batch)
                 gradient=tape.gradient(batch_loss,parameter)
@@ -205,10 +226,16 @@ class NoisyNet:
                 batches+=1
                 index1=batches*self.batch
                 index2=self.batch-(self.shape0-batches*self.batch)
-                state_batch=tf.concat([self.state_pool[i][random][index1:],self.state_pool[i][random][:index2]])
-                action_batch=tf.concat([self.action_pool[i][random][index1:],self.action_pool[i][random][:index2]])
-                next_state_batch=tf.concat([self.next_state_pool[i][random][index1:],self.next_state_pool[i][random][:index2]])
-                reward_batch=tf.concat([self.reward_pool[i][random][index1:],self.reward_pool[i][random][:index2]])
+                if self.pool_net==True:
+                    state_batch=tf.concat([self.state_pool[i][index1:],self.state_pool[i][:index2]])
+                    action_batch=tf.concat([self.action_pool[i][index1:],self.action_pool[i][:index2]])
+                    next_state_batch=tf.concat([self.next_state_pool[i][index1:],self.next_state_pool[i][:index2]])
+                    reward_batch=tf.concat([self.reward_pool[i][index1:],self.reward_pool[i][:index2]])
+                else:
+                    state_batch=tf.concat([self.state_pool[i][random][index1:],self.state_pool[i][random][:index2]])
+                    action_batch=tf.concat([self.action_pool[i][random][index1:],self.action_pool[i][random][:index2]])
+                    next_state_batch=tf.concat([self.next_state_pool[i][random][index1:],self.next_state_pool[i][random][:index2]])
+                    reward_batch=tf.concat([self.reward_pool[i][random][index1:],self.reward_pool[i][random][:index2]])
                 with tf.GradientTape() as tape:
                     batch_loss=self._loss(state_batch,action_batch,next_state_batch,reward_batch)
                 gradient=tape.gradient(batch_loss,self.value_p)
@@ -232,7 +259,8 @@ class NoisyNet:
     
     
     def learn(self,episode_num,i):
-        self.T+=1
+        self.t+=1
+        self.t_counter+=1
         self.a.append(0)
         self.loss.append(0)
         if len(self.state_pool)==i-1:
@@ -261,6 +289,11 @@ class NoisyNet:
                     self._learn(i,parameter,index)
                     if end:
                         break
+        self.t_counter-=1
+        del self.state_pool[i]
+        del self.action_pool[i]
+        del self.next_state_pool[i]
+        del self.reward_pool[i]
         return
     
     
@@ -299,7 +332,7 @@ class NoisyNet:
             index=path.rfind('\\')
             episode_file=open(path.replace(path[index+1:],'episode-{0}.dat'.format(i+1)),'wb')
         self.episode_num=self.epi_num
-        self.thread=self.T
+        self.thread=self.t
         pickle.dump(self.episode,episode_file)
         pickle.dump(self.state_pool,output_file)
         pickle.dump(self.action_pool,output_file)
@@ -317,6 +350,8 @@ class NoisyNet:
         pickle.dump(self.optimizer,output_file)
         pickle.dump(self.lr,output_file)
         pickle.dump(self.thread,output_file)
+        pickle.dump(self.t_counter,output_file)
+        pickle.dump(self.pool_net,output_file)
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.loss_list,output_file)
         pickle.dump(self.opt_flag,output_file)
@@ -347,6 +382,8 @@ class NoisyNet:
         self.optimizer=pickle.load(input_file)
         self.lr=pickle.load(input_file)
         self.thread=pickle.load(input_file)
+        self.t_counter=pickle.load(input_file)
+        self.pool_net=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
         self.opt_flag=pickle.load(input_file)
