@@ -272,10 +272,10 @@ class Dueling_DQN:
                     if end:
                         break
         self.t_counter-=1
-        self.state_pool[i]=None
-        self.action_pool[i]=None
-        self.next_state_pool[i]=None
-        self.reward_pool[i]=None
+        self.state_pool[i]=tf.expand_dims(self.state_pool[i][0],axis=0)
+        self.action_pool[i]=tf.expand_dims(self.action_pool[i][0],axis=0)
+        self.next_state_pool[i]=tf.expand_dims(self.next_state_pool[i][0],axis=0)
+        self.reward_pool[i]=tf.expand_dims(self.reward_pool[i][0],axis=0)
         self.finish_list.append(i)
         return
     
