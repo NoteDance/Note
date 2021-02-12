@@ -274,7 +274,6 @@ class DDPG:
                     self._learn(i)
                     if end:
                         break
-        self.t_counter-=1
         self.state_pool[i]=tf.expand_dims(self.state_pool[i][0],axis=0)
         self.action_pool[i]=tf.expand_dims(self.action_pool[i][0],axis=0)
         self.next_state_pool[i]=tf.expand_dims(self.next_state_pool[i][0],axis=0)
