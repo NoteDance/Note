@@ -30,6 +30,7 @@ class Double_DQN:
         self.lr=lr
         self.t=0
         self.t_counter=0
+        self.finish_list=[]
         self.pool_net=pool_net
         self.save_episode=save_episode
         self.loss=[]
@@ -79,6 +80,7 @@ class Double_DQN:
         if init==True:
             self.t=0
             self.t_counter=0
+            self.finish_list=[]
             self.pool_net=True
             self.episode=[]
             self.epsilon=[]
@@ -125,7 +127,12 @@ class Double_DQN:
         next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
         if self.pool_net==True:
             flag=np.random.randint(0,2)
-            index=np.random.randint(0,self.t_counter)
+            while True:
+                index=np.random.randint(0,self.t_counter)
+                if index in self.finish_list:
+                    continue
+                else:
+                    break
         if self.pool_net==True and flag==1 and self.state_pool[index]!=None and len(self.state_pool)==self.t_counter:
             self.state_pool[index]=tf.concat([self.state_pool[index],tf.expand_dims(self.state[self.state_name[s]],axis=0)])
             self.action_pool[index]=tf.concat([self.action_pool[index],tf.expand_dims(a,axis=0)])
@@ -259,10 +266,11 @@ class Double_DQN:
                     if end:
                         break
         self.t_counter-=1
-        del self.state_pool[i]
-        del self.action_pool[i]
-        del self.next_state_pool[i]
-        del self.reward_pool[i]
+        self.state_pool[i]=None
+        self.action_pool[i]=None
+        self.next_state_pool[i]=None
+        self.reward_pool[i]=None
+        self.finish_list.append(i)
         return
     
     
@@ -321,6 +329,7 @@ class Double_DQN:
         pickle.dump(self.lr,output_file)
         pickle.dump(self.thread,output_file)
         pickle.dump(self.t_counter,output_file)
+        pickle.dump(self.finish_list,output_file)
         pickle.dump(self.pool_net,output_file)
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.loss_list,output_file)
@@ -354,6 +363,7 @@ class Double_DQN:
         self.lr=pickle.load(input_file)
         self.thread=pickle.load(input_file)
         self.t_counter=pickle.load(input_file)
+        self.finish_list=pickle.load(input_file)
         self.pool_net=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
