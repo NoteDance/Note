@@ -32,6 +32,9 @@ class DDPG:
         self.tau=tau
         self.t=0
         self.t_counter=0
+        self.one_list=[]
+        self.index_list=[]
+        self.p=None
         self.flish_list=[]
         self.pool_net=pool_net
         self.save_episode=save_episode
@@ -72,6 +75,9 @@ class DDPG:
         if init==True:
             self.t=0
             self.t_counter=0
+            self.one_list=[]
+            self.index_list=[]
+            self.p=None
             self.flish_list=[]
             self.pool_net=True
             self.episode=[]
@@ -120,7 +126,7 @@ class DDPG:
         if self.pool_net==True:
             flag=np.random.randint(0,2)
             while True:
-                index=np.random.randint(0,self.t_counter)
+                index=np.random.choice(self.index_list,p=self.p)
                 if index in self.finish_list:
                     continue
                 else:
@@ -249,6 +255,9 @@ class DDPG:
     def learn(self,episode_num,i):
         self.t+=1
         self.t_counter+=1
+        self.one_list.append(1)
+        self.index_list.append(i)
+        self.p=np.array(self.one_list,dtype=np.float16)/self.t_counter
         self.a.append(0)
         self.loss.append(0)
         if len(self.state_pool)==i-1:
@@ -274,6 +283,9 @@ class DDPG:
                     self._learn(i)
                     if end:
                         break
+        self.t_counter-=1
+        self.one_list[i]=0
+        self.p=np.array(self.one_list,dtype=np.float16)/self.t_counter
         self.state_pool[i]=tf.expand_dims(self.state_pool[i][0],axis=0)
         self.action_pool[i]=tf.expand_dims(self.action_pool[i][0],axis=0)
         self.next_state_pool[i]=tf.expand_dims(self.next_state_pool[i][0],axis=0)
@@ -334,6 +346,9 @@ class DDPG:
         pickle.dump(self.lr,output_file)
         pickle.dump(self.thread,output_file)
         pickle.dump(self.t_counter,output_file)
+        pickle.dump(self.one_list,output_file)
+        pickle.dump(self.index_list,output_file)
+        pickle.dump(self.p,output_file)
         pickle.dump(self.finish_list,output_file)
         pickle.dump(self.pool_net,output_file)
         pickle.dump(self.save_episode,output_file)
@@ -364,6 +379,9 @@ class DDPG:
         self.lr=pickle.load(input_file)
         self.thread=pickle.load(input_file)
         self.t_counter=pickle.load(input_file)
+        self.one_list=pickle.load(input_file)
+        self.index_list=pickle.load(input_file)
+        self.p=pickle.load(input_file)
         self.finish_list=pickle.load(input_file)
         self.pool_net=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
