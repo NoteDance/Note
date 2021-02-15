@@ -5,7 +5,7 @@ import pickle
 import time
 
 
-class Double_DQN:
+class Dueling_DQN:
     def __init__(self,value_net,value_p,target_p,state,state_name,action_name,exploration_space,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,pool_net=True,save_episode=True):
         self.value_net=value_net
         self.value_p=value_p
@@ -33,7 +33,7 @@ class Double_DQN:
         self.one_list=[]
         self.index_list=[]
         self.p=None
-        self.finish_list=[]
+        self.flish_list=[]
         self.pool_net=pool_net
         self.save_episode=save_episode
         self.loss=[]
@@ -86,7 +86,7 @@ class Double_DQN:
             self.one_list=[]
             self.index_list=[]
             self.p=None
-            self.finish_list=[]
+            self.flish_list=[]
             self.pool_net=True
             self.episode=[]
             self.epsilon=[]
@@ -120,15 +120,21 @@ class Double_DQN:
     
     
     def _loss(self,s,a,next_s,r):
+        value1,action1=self.value_net(next_s,self.target_p)
+        value2,action2=self.value_net(s,self.value_p)
+        action1=action1-tf.expand_dims(tf.reduce_sum(action1,axis=-1)/self.action,axis=-1)
+        action2=action2-tf.expand_dims(tf.reduce_sum(action2,axis=-1)/self.action,axis=-1)
+        Q1=value1+action1
+        Q2=value2+action2
         if len(self.state_pool)<self.batch:
-            return tf.reduce_mean(((r+self.discount*self.value_net(next_s,self.target_p)[np.arange(len(a)),tf.math.argmax(self.value_net(next_s,self.value_p),axis=-1)])-self.value_net(s,self.value_p)[np.arange(len(a)),a])**2)
+            return tf.reduce_mean(((r+self.discount*tf.reduce_max(Q1,axis=-1))-Q2[np.arange(len(a)),a])**2)
         else:
-            return tf.reduce_mean(((r+self.discount*self.value_net(next_s,self.target_p)[self.index,tf.math.argmax(self.value_net(next_s,self.value_p),axis=-1)])-self.value_net(s,self.value_p)[self.index,a])**2)
+            return tf.reduce_mean(((r+self.discount*tf.reduce_max(Q1,axis=-1))-Q2[self.index,a])**2)
     
     
-    def explore(self,s,epsilon,i):
+    def explore(self,s,episode_num,i):
         episode=[]
-        action_prob=self.epsilon_greedy_policy(s,self.action_one,epsilon)
+        action_prob=self.epsilon_greedy_policy(s,self.action_one)
         a=np.random.choice(self.action,p=action_prob)
         next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
         if self.pool_net==True:
@@ -155,7 +161,7 @@ class Double_DQN:
                 self.action_pool[i]=tf.concat([self.action_pool[i],tf.expand_dims(a,axis=0)])
                 self.next_state_pool[i]=tf.concat([self.next_state_pool[i],tf.expand_dims(self.state[self.state_name[next_s]],axis=0)])
                 self.reward_pool[i]=tf.concat([self.reward_pool[i],tf.expand_dims(r,axis=0)])
-        if len(self.state_pool)>self.pool_size:
+        if len(self.state_pool[i])>self.pool_size:
             self.state_pool[i]=self.state_pool[i][1:]
             self.action_pool[i]=self.action_pool[i][1:]
             self.next_state_pool[i]=self.next_state_pool[i][1:]
@@ -168,7 +174,7 @@ class Double_DQN:
         if self.save_episode==True:
             self.episode.append(episode)
         self.epi_num+=1
-        return next_s,end
+        return
     
     
     def _learn(self,i):
@@ -233,9 +239,9 @@ class Double_DQN:
                 self.loss[i]+=batch_loss
             if self.a%self.update_step==0:
                 self.update_parameter()
-            if len(self.state_pool)%self.batch!=0:
-                self.loss[i]=self.loss[i].numpy()/self.batches+1
-            elif len(self.state_pool)<self.batch:
+            if len(self.state_pool[i])%self.batch!=0:
+                self.loss[i]=self.loss.numpy()/self.batches+1
+            elif len(self.state_pool[i])<self.batch:
                 self.loss[i]=self.loss[i].numpy()
             else:
                 self.loss[i]=self.loss[i].numpy()/self.batches
@@ -255,7 +261,7 @@ class Double_DQN:
             self.action_pool.append(None)
             self.next_state_pool.append(None)
             self.reward_pool.append(None)
-            self.epsilon.append(epsilon)
+            self.epsilon.append[epsilon]
         for _ in range(episode_num):
             s=int(np.random.uniform(0,len(self.state_name)))
             if self.episode_step==None:
@@ -269,15 +275,15 @@ class Double_DQN:
             else:
                 for _ in range(self.episode_step):
                     self.a[i]+=1
-                    next_s,end=self.explore(self.epsilon[i],i)
+                    next_s,end=self.explore(s,self.epsilon[i],i)
                     s=next_s
                     self._learn(i)
                     if end:
                         break
         self.t_counter-=1
         self.one_list[i]=0
-        self.p=np.array(self.one_list,dtype=np.float16)/self.t_counter 
-        self.finish_list.append(i)           
+        self.p=np.array(self.one_list,dtype=np.float16)/self.t_counter
+        self.finish_list.append(i)
         self.state_pool[i]=tf.expand_dims(self.state_pool[i][0],axis=0)
         self.action_pool[i]=tf.expand_dims(self.action_pool[i][0],axis=0)
         self.next_state_pool[i]=tf.expand_dims(self.next_state_pool[i][0],axis=0)
