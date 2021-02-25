@@ -146,33 +146,10 @@ class NoisyNet:
                 self.value_p[0].extend(self.value_p[1])
                 parameter=self.value_p[0]
         else:
-            batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
-            random=np.arange(len(self.state_pool))
-            np.random.shuffle(random)
             loss=0
-            for j in range(batches):
-                index1=j*self.batch
-                index2=(j+1)*self.batch
-                state_batch=self.state_pool[random][index1:index2]
-                action_batch=self.action_pool[random][index1:index2]
-                next_state_batch=self.next_state_pool[random][index1:index2]
-                reward_batch=self.reward_pool[random][index1:index2]
-                with tf.GradientTape() as tape:
-                    batch_loss=self.loss(state_batch,action_batch,next_state_batch,reward_batch)
-                gradient=tape.gradient(batch_loss,parameter)
-                if self.opt_flag==True:
-                    self.optimizer(gradient,parameter)
-                else:
-                    self.optimizer.apply_gradients(zip(gradient,parameter))
-                loss+=batch_loss
-            if len(self.state_pool)%self.batch!=0:
-                batches+=1
-                index1=batches*self.batch
-                index2=self.batch-(self.shape0-batches*self.batch)
-                state_batch=tf.concat([self.state_pool[random][index1:],self.state_pool[random][:index2]])
-                action_batch=tf.concat([self.action_pool[random][index1:],self.action_pool[random][:index2]])
-                next_state_batch=tf.concat([self.next_state_pool[random][index1:],self.next_state_pool[random][:index2]])
-                reward_batch=tf.concat([self.reward_pool[random][index1:],self.reward_pool[random][:index2]])
+            self.batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
+            train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool)).shuffle(len(self.state_pool)).batch(self.batch)
+            for state_batch,action_batch,next_state_batch,reward_batch in train_ds:
                 with tf.GradientTape() as tape:
                     batch_loss=self.loss(state_batch,action_batch,next_state_batch,reward_batch)
                 gradient=tape.gradient(batch_loss,parameter)
@@ -192,7 +169,7 @@ class NoisyNet:
                 loss=loss.numpy()
             else:
                 loss=loss.numpy()/self.batches
-        return
+        return loss
             
     
     def learn(self,episode_num,path=None,one=True):
@@ -232,7 +209,7 @@ class NoisyNet:
                     elif self.save_episode==True:
                         episode.append([self.state_name[s],self.self.action_name[a],r])
                     s=next_s
-                    self._learn(parameter,index)
+                    loss=self._learn(parameter,index)
                     t2=time.time()
                     self.time+=(t2-t1)
             else:
@@ -265,7 +242,7 @@ class NoisyNet:
                     elif self.save_episode==True:
                         episode.append([self.state_name[s],self.self.action_name[a],r])
                     s=next_s
-                    self._learn(parameter,index)
+                    loss=self._learn(parameter,index)
                     t2=time.time()
                     self.time+=(t2-t1)
             self.loss_list.append(loss)
