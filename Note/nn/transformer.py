@@ -1,5 +1,5 @@
 import tensorflow as tf
-import Note.create.DL.nn as n
+import Note.create.creat as c
 from tensorflow.python.ops import state_ops
 import tensorflow.keras.optimizers as optimizers
 import numpy as np
