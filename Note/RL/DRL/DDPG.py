@@ -181,12 +181,12 @@ class DDPG:
             if self.a%self.update_step==0:
                 self.update_parameter()
         else:
+            self.loss[i]=0
             batches=int((len(self.state_pool[i])-len(self.state_pool[i])%self.batch)/self.batch)
             if len(self.state_pool)%self.batch!=0:
                 batches+=1
             if self.pool_net!=True:
-                train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool[i],self.action_pool[i],self.next_state_pool[i],)).shuffle(len(self.state_pool[i])).batch(self.batch)
-            self.loss[i]=0
+                train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool[i],self.action_pool[i],self.next_state_pool[i],self.reward_pool[i])).shuffle(len(self.state_pool[i])).batch(self.batch)
             if self.pool_net==True:
                 for j in range(batches):
                     index1=j*self.batch
