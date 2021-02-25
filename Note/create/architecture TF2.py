@@ -140,7 +140,7 @@ class unnamed:
                     else:
                         with tf.name_scope('apply_gradient'):
                             if self.optimizer!=None:
-                                n.apply_gradient(tape,self.optimizer,batch_loss,parameter)
+                                c.apply_gradient(tape,self.optimizer,batch_loss,parameter)
                             else:
                                 gradient=tape.gradient(batch_loss,parameter)
                                 self.optimizern(gradient,parameter)
@@ -173,7 +173,7 @@ class unnamed:
                 else:
                    with tf.name_scope('apply_gradient'):
                        if self.optimizer!=None:
-                           n.apply_gradient(tape,self.optimizer,batch_loss,parameter)
+                           c.apply_gradient(tape,self.optimizer,batch_loss,parameter)
                        else:
                            gradient=tape.gradient(batch_loss,parameter)
                            self.optimizern(gradient,parameter)
@@ -238,7 +238,7 @@ class unnamed:
                 buffer_size=buffer_size
             else:
                 buffer_size=len(test_data)
-            test_ds=tf.data.Dataset.from_tensor_slices((test_data,test_labels)).shuffle(buffer_size).batch(batch)
+            test_ds=tf.data.Dataset.from_tensor_slices((test_data,test_labels)).batch(batch)
             for data_batch,labels_batch in test_ds:
                 with tf.name_scope('loss'):
                     
