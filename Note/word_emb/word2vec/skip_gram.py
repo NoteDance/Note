@@ -77,11 +77,6 @@ class skip_gram:
     def train(self,batch=None,epoch=None,optimizer='Adam',lr=0.001,acc=True,train_summary_path=None,model_path=None,one=True,continue_train=False,processor=None):
         with self.graph.as_default():
             self.batch=batch
-            if batch!=None:
-                if batch!=1:
-                    random=np.arange(batch)
-                else:
-                    random=np.arange(self.shape0)
             self.epoch=0
             self.optimizer=optimizer
             self.lr=lr
@@ -137,18 +132,17 @@ class skip_gram:
                 if batch!=None:
                     batches=int((self.shape0-self.shape0%batch)/batch)
                     total_loss=0
-                    np.random.shuffle(random)
                     for j in range(batches):
                         index1=j*batch
                         index2=(j+1)*batch
                         if batch!=1:
-                            cword_batch=self.cword[index1:index2][random]
-                            bword_batch=self.bword[index1:index2][random]
-                            labels_batch=self.labels[index1:index2][random]
+                            cword_batch=self.cword[index1:index2]
+                            bword_batch=self.bword[index1:index2]
+                            labels_batch=self.labels[index1:index2]
                         else:
-                            cword_batch=self.cword[random][j]
-                            bword_batch=self.bword[random][j]
-                            labels_batch=self.labels[random][j]
+                            cword_batch=self.cword[j]
+                            bword_batch=self.bword[j]
+                            labels_batch=self.labels[j]
                         feed_dict={self.cword_place:cword_batch,self.bword_place:bword_batch,self.labels_place:labels_batch}
                         if i==0 and self.total_epoch==0:
                             batch_loss=sess.run(train_loss,feed_dict=feed_dict)
@@ -159,9 +153,9 @@ class skip_gram:
                         batches+=1
                         index1=batches*batch
                         index2=batch-(self.shape0-batches*batch)
-                        cword_batch=np.concatenate(self.cword[index1:],self.cword[:index2])[random]
-                        bword_batch=np.concatenate(self.bword[index1:],self.bword[:index2])[random]
-                        labels_batch=np.concatenate(self.labels[index1:],self.labels[:index2])[random]
+                        cword_batch=np.concatenate(self.cword[index1:],self.cword[:index2])
+                        bword_batch=np.concatenate(self.bword[index1:],self.bword[:index2])
+                        labels_batch=np.concatenate(self.labels[index1:],self.labels[:index2])
                         feed_dict={self.cword_place:cword_batch,self.bword_place:bword_batch,self.labels_place:labels_batch}
                         if i==0 and self.total_epoch==0:
                             batch_loss=sess.run(train_loss,feed_dict=feed_dict)
