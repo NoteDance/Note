@@ -1,5 +1,5 @@
 import tensorflow as tf
-import Note.create.DL.nn as n
+import Note.create.creat as c
 from tensorflow.python.ops import state_ops
 import tensorflow.keras.optimizers as optimizers
 import numpy as np
@@ -273,7 +273,7 @@ class transformer:
                         batch_loss=batch_loss.numpy()
                     else:
                         with tf.name_scope('apply_gradient'):
-                            n.apply_gradient(tape,optimizer,batch_loss,variable)
+                            c.apply_gradient(tape,optimizer,batch_loss,variable)
                     total_loss+=batch_loss
                     with tf.name_scope('accuracy'):
                         batch_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(labels_batch,2)!=0,tf.int32)==tf.argmax(labels_batch,2),tf.float32))
@@ -301,7 +301,7 @@ class transformer:
                     loss=train_loss.numpy()
                 else:
                     with tf.name_scope('apply_gradient'):
-                        n.apply_gradient(tape,optimizer,batch_loss,variable)
+                        c.apply_gradient(tape,optimizer,batch_loss,variable)
                 self.train_loss_list.append(loss.astype(np.float32))
                 self.train_loss=loss
                 self.train_loss=self.train_loss.astype(np.float32)
