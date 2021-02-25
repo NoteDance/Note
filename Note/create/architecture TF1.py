@@ -1,5 +1,5 @@
 import tensorflow as tf
-import Note.create.create as c
+import Note.create.creat as c
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
@@ -9,7 +9,7 @@ import time
 class unnamed:
     def __init__():
         self.graph=tf.Graph()
-        self.tf1=c.tf1
+        self.tf1=n.tf1
         with tf.name_scope('data/shape0'):
             
             
@@ -87,11 +87,6 @@ class unnamed:
         with self.graph.as_default():
             with tf.name_scope('hyperparameter'):
                 self.batch=batch
-                if batch!=None:
-                    if batch!=1:
-                        random=np.arange(batch)
-                    else:
-                        random=np.arange(self.shape0)
                 self.epoch=0
                 self.lr=lr
                 
@@ -150,7 +145,6 @@ class unnamed:
                     batches=int((self.shape0-self.shape0%batch)/batch)
                     total_loss=0
                     total_acc=0
-                    np.random.shuffle(random)
                     for j in range(batches):
                         index1=j*batch
                         index2=(j+1)*batch
