@@ -1,5 +1,5 @@
 import tensorflow as tf
-import Note.create.create as c
+import Note.create.creat as c
 from tensorflow.python.ops import state_ops
 import tensorflow.keras.optimizers as optimizers
 import numpy as np
@@ -42,6 +42,7 @@ class transformer:
         self.train_acc_list=[]
         self.test_loss=None
         self.test_acc=None
+        self.buffer_size=None
         self.total_epoch=0
         self.time=0
         self.total_time=0
@@ -231,16 +232,17 @@ class transformer:
             return output
                     
                                 
-    def train(self,batch=None,epoch=None,lr=0.001,test=False,test_batch=None,model_path=None,one=True,processor=None):
+    def train(self,batch=None,epoch=None,lr=0.001,test=False,test_batch=None,model_path=None,one=True,processor=None,buffer_size=None):
         with tf.name_scope('hyperparameter'):
             self.batch=batch
-            if batch!=None:
-                if batch!=1:
-                    random=np.arange(batch)
-                else:
-                    random=np.arange(self.shape0)
             self.epoch=0
             self.lr=lr
+        if buffer_size!=None:
+            self.buffer_size=buffer_size
+        elif self.buffer_size!=None:
+            pass
+        else:
+            self.buffer_size=self.shape0
         self.time=0
         self.test_flag=test
         if processor!=None:
@@ -256,20 +258,11 @@ class transformer:
         for i in range(epoch):
             t1=time.time()
             if batch!=None:
+                train_ds=tf.data.Dataset.from_tensor_slices((self.train_data,self.train_labels)).shuffle(self.buffer_size).batch(batch)
                 batches=int((self.shape0-self.shape0%batch)/batch)
                 total_loss=0
                 total_acc=0
-                np.random.shuffle(random)
-                for j in range(batches):
-                    index1=j*batch
-                    index2=(j+1)*batch
-                    with tf.name_scope('data_batch'):
-                        if batch!=1:
-                            data_batch=self.train_data[index1:index2][random]
-                            labels_batch=self.train_labels[index1:index2][random]
-                        else:
-                            data_batch=self.train_data[random][j]
-                            labels_batch=self.train_labels[random][j]
+                for data_batch,labels_batch in train_ds:
                     with tf.GradientTape() as tape:
                         with tf.name_scope('forward_propagation/loss'):
                             output=self.forward_propagation(data_batch)
@@ -278,31 +271,10 @@ class transformer:
                         batch_loss=batch_loss.numpy()
                     else:
                         with tf.name_scope('apply_gradient'):
-                            c.apply_gradient(tape,optimizer,batch_loss,variable)
+                            n.apply_gradient(tape,optimizer,batch_loss,variable)
                     total_loss+=batch_loss
                     with tf.name_scope('accuracy'):
-                        batch_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(self.train_labels[random],2)!=0,tf.int32)==tf.argmax(self.train_labels[random],2),tf.float32))
-                    batch_acc=batch_acc.numpy()
-                    total_acc+=batch_acc
-                if self.shape0%batch!=0:
-                    batches+=1
-                    index1=batches*batch
-                    index2=batch-(self.shape0-batches*batch)
-                    with tf.name_scope('data_batch'):
-                        data_batch=np.concatenate((self.train_data[index1:],self.train_data[:index2]))[random]
-                        labels_batch=np.concatenate((self.train_labels[index1:],self.train_labels[:index2]))[random]
-                    with tf.GradientTape() as tape:
-                        with tf.name_scope('forward_propagation/loss'):
-                            output=self.forward_propagation(data_batch)
-                            batch_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output,labels=labels_batch))
-                    if i==0 and self.total_epoch==0:
-                        batch_loss=batch_loss.numpy()
-                    else:
-                        with tf.name_scope('apply_gradient'):
-                            c.apply_gradient(tape,optimizer,batch_loss,variable)
-                    total_loss+=batch_loss
-                    with tf.name_scope('accuracy'):
-                        batch_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(self.train_labels[random],2)!=0,tf.int32)==tf.argmax(self.train_labels[random],2),tf.float32))
+                        batch_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(labels_batch,2)!=0,tf.int32)==tf.argmax(labels_batch,2),tf.float32))
                     batch_acc=batch_acc.numpy()
                     total_acc+=batch_acc
                 loss=total_loss/batches
@@ -327,12 +299,12 @@ class transformer:
                     loss=train_loss.numpy()
                 else:
                     with tf.name_scope('apply_gradient'):
-                        c.apply_gradient(tape,optimizer,batch_loss,variable)
+                        n.apply_gradient(tape,optimizer,batch_loss,variable)
                 self.train_loss_list.append(loss.astype(np.float32))
                 self.train_loss=loss
                 self.train_loss=self.train_loss.astype(np.float32)
                 with tf.name_scope('accuracy'):
-                    train_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(self.train_labels[random],2)!=0,tf.int32)==tf.argmax(self.train_labels[random],2),tf.float32))
+                    train_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(self.train_labels,2)!=0,tf.int32)==tf.argmax(self.train_labels,2),tf.float32))
                 acc=train_acc.numpy()
                 self.train_acc_list.append(acc.astype(np.float32))
                 self.train_acc=acc
@@ -557,6 +529,7 @@ class transformer:
             pickle.dump(self.test_acc,output_file)
             pickle.dump(self.test_loss_list,output_file)
             pickle.dump(self.test_acc_list,output_file)
+        pickle.dump(self.buffer_size,output_file)
         pickle.dump(self.total_epoch,output_file)
         pickle.dump(self.total_time,output_file)
         pickle.dump(self.processor,output_file)
@@ -598,6 +571,7 @@ class transformer:
             self.test_acc=pickle.load(input_file)
             self.test_loss_list=pickle.load(input_file)
             self.test_acc_list=pickle.load(input_file)
+        self.buffer_size=pickle.load(input_file)
         self.total_epoch=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
         self.processor=pickle.load(input_file)
