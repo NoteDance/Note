@@ -1,5 +1,5 @@
 import tensorflow as tf
-import Note.create.creat as c
+import Note.create.DL.nn as n
 from tensorflow.python.ops import state_ops
 import tensorflow.keras.optimizers as optimizers
 import numpy as np
@@ -361,7 +361,7 @@ class transformer:
                 buffer_size=buffer_size
             else:
                 buffer_size=len(test_data)
-            test_ds=tf.data.Dataset.from_tensor_slices((test_data,test_labels)).shuffle(buffer_size).batch(batch)
+            test_ds=tf.data.Dataset.from_tensor_slices((test_data,test_labels)).batch(batch)
             for data_batch,labels_batch in test_ds:
                 with tf.name_scope('loss'):
                      output=self.forward_propagation(data_batch)
