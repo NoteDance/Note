@@ -460,11 +460,6 @@ class LSTM:
             self.C.clear()
             self.h.clear()
             self.batch=batch
-            if batch!=None:
-                if batch!=1:
-                    random=np.arange(batch)
-                else:
-                    random=np.arange(self.shape0)
             self.epoch=0
             self.l2=l2
             self.optimizer=optimizer
@@ -688,36 +683,35 @@ class LSTM:
                     batches=int((self.shape0-self.shape0%batch)/batch)
                     total_loss=0
                     total_acc=0
-                    np.random.shuffle(random)
                     for j in range(batches):
                         index1=j*batch
                         index2=(j+1)*batch
                         if batch!=1:
-                            data_batch=self.train_data[index1:index2][random]
-                            labels_batch=self.train_labels[index1:index2][random]
+                            data_batch=self.train_data[index1:index2]
+                            labels_batch=self.train_labels[index1:index2]
                         else:
-                            data_batch=self.train_data[random][j]
-                            labels_batch=self.train_labels[random][j]
+                            data_batch=self.train_data[j]
+                            labels_batch=self.train_labels[j]
                         feed_dict={self.data:data_batch,self.labels:labels_batch}
                         if i==0 and self.total_epoch==0:
                             batch_loss=sess.run(train_loss,feed_dict=feed_dict)
                         else:
                             batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
-                        total_loss+=batch_loss
+                        total_loss=total_loss+batch_loss/batch
                         batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
                         total_acc+=batch_acc
                     if self.shape0%batch!=0:
                         batches+=1
                         index1=batches*batch
                         index2=batch-(self.shape0-batches*batch)
-                        data_batch=np.concatenate((self.train_data[index1:],self.train_data[:index2]))[random]
-                        labels_batch=np.concatenate((self.train_labels[index1:],self.train_labels[:index2]))[random]
+                        data_batch=np.concatenate((self.train_data[index1:],self.train_data[:index2]))
+                        labels_batch=np.concatenate((self.train_labels[index1:],self.train_labels[:index2]))
                         feed_dict={self.data:data_batch,self.labels:labels_batch}
                         if i==0 and self.total_epoch==0:
                             batch_loss=sess.run(train_loss,feed_dict=feed_dict)
                         else:
                             batch_loss,_=sess.run([train_loss,opt],feed_dict=feed_dict)
-                        total_loss+=batch_loss
+                        total_loss=total_loss+batch_loss/batch
                         batch_acc=sess.run(train_accuracy,feed_dict=feed_dict)
                         total_acc+=batch_acc
                     loss=total_loss/batches
