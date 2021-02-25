@@ -1,5 +1,5 @@
 import tensorflow as tf
-import Note.create.create as c
+import Note.create.creat as c
 from tensorflow.python.ops import state_ops
 import tensorflow.keras.optimizers as optimizers
 import Note.create.optimizer as optimizern
@@ -35,6 +35,7 @@ class unnamed:
         self.test_acc=None
         self.test_loss_list=[]
         self.test_acc_list=[]
+        self.buffer_size=None
         self.ooo=False
         self.total_epoch=0
         self.time=0
@@ -99,17 +100,21 @@ class unnamed:
             return
         
     
-    def train(self,batch=None,epoch=None,test=False,test_batch=None,model_path=None,one=True,processor=None):
+    def train(self,batch=None,epoch=None,test=False,test_batch=None,model_path=None,one=True,buffer_size=None,processor=None):
         with tf.name_scope('hyperparameter'):
             self.batch=batch
-            if batch!=None:
-                if batch!=1:
-                    random=np.arange(batch)
-                else:
-                    random=np.arange(self.shape0)
             self.epoch=0
             
-            
+        
+        batches=int((self.shape0-self.shape0%batch)/batch)
+        if self.shape0%batch!=0:
+            batches+=1
+        if buffer_size!=None:
+            self.buffer_size=buffer_size
+        elif self.buffer_size!=None:
+            pass
+        else:
+            self.buffer_size=self.shape0
         self.time=0
         self.test_flag=test
         if processor!=None:
@@ -122,17 +127,10 @@ class unnamed:
         for i in range(epoch):
             t1=time.time()
             if batch!=None:
-                batches=int((self.shape0-self.shape0%batch)/batch)
-                tf2.batches=batches
                 total_loss=0
                 total_acc=0
-                np.random.shuffle(random)
-                for j in range(batches):
-                    index1=j*batch
-                    index2=(j+1)*batch
-                    with tf.name_scope('data_batch'):
-                        
-                    
+                train_ds=tf.data.Dataset.from_tensor_slices((self.train_data,self.train_labels)).shuffle(self.buffer_size).batch(batch)
+                for data_batch,labels_batch in train_ds:
                     with tf.GradientTape() as tape:
                         with tf.name_scope('forward_propagation/loss'):
                             
@@ -142,33 +140,7 @@ class unnamed:
                     else:
                         with tf.name_scope('apply_gradient'):
                             if self.optimizer!=None:
-                                c.apply_gradient(tape,self.optimizer,batch_loss,parameter)
-                            else:
-                                gradient=tape.gradient(batch_loss,parameter)
-                                self.optimizern(gradient,parameter)
-                    total_loss+=batch_loss
-                    with tf.name_scope('accuracy'):
-                 
-                    
-                    batch_acc=batch_acc.numpy()
-                    total_acc+=batch_acc
-                if self.shape0%batch!=0:
-                    batches+=1
-                    index1=batches*batch
-                    index2=batch-(self.shape0-batches*batch)
-                    with tf.name_scope('data_batch'):
-                        
-                    
-                    with tf.GradientTape() as tape:
-                        with tf.name_scope('forward_propagation/loss'):
-                            
-                        
-                    if i==0 and self.total_epoch==0:
-                        batch_loss=batch_loss.numpy()
-                    else:
-                        with tf.name_scope('apply_gradient'):
-                            if self.optimizer!=None:
-                                c.apply_gradient(tape,self.optimizer,batch_loss,parameter)
+                                n.apply_gradient(tape,self.optimizer,batch_loss,parameter)
                             else:
                                 gradient=tape.gradient(batch_loss,parameter)
                                 self.optimizern(gradient,parameter)
@@ -201,7 +173,7 @@ class unnamed:
                 else:
                    with tf.name_scope('apply_gradient'):
                        if self.optimizer!=None:
-                           c.apply_gradient(tape,self.optimizer,batch_loss,parameter)
+                           n.apply_gradient(tape,self.optimizer,batch_loss,parameter)
                        else:
                            gradient=tape.gradient(batch_loss,parameter)
                            self.optimizern(gradient,parameter)
@@ -255,32 +227,19 @@ class unnamed:
         return
     
     
-    def test(self,test_data,test_labels,batch=None):
+    def test(self,test_data,test_labels,batch=None,buffer_size=None):
         if batch!=None:
             total_loss=0
             total_acc=0
             batches=int((test_data.shape[0]-test_data.shape[0]%batch)/batch)
-            for j in range(batches):
-                index1=j*batch
-                index2=(j+1)*batch
-                with tf.name_scope('data_batch'):
-                    
-                    
-                with tf.name_scope('loss'):
-                    
-                    
-                total_loss+=batch_loss.numpy()
-                with tf.name_scope('accuracy'):
-                    
-                    
-                total_acc+=batch_acc.numpy()
             if test_data.shape[0]%batch!=0:
                 batches+=1
-                index1=batches*batch
-                index2=batch-(shape0-batches*batch)
-                with tf.name_scope('data_batch'):
-                    
-                    
+            if buffer_size!=None:
+                buffer_size=buffer_size
+            else:
+                buffer_size=len(test_data)
+            test_ds=tf.data.Dataset.from_tensor_slices((test_data,test_labels)).shuffle(buffer_size).batch(batch)
+            for data_batch,labels_batch in test_ds:
                 with tf.name_scope('loss'):
                     
                     
@@ -465,6 +424,7 @@ class unnamed:
             pickle.dump(self.test_acc,output_file)
             pickle.dump(self.test_loss_list,output_file)
             pickle.dump(self.test_acc_list,output_file)
+        pickle.dump(self.buffer_size,output_file) 
         pickle.dump(self.ooo,output_file)    
         pickle.dump(self.total_epoch,output_file)
         pickle.dump(self.total_time,output_file)
@@ -503,6 +463,7 @@ class unnamed:
             self.test_acc=pickle.load(input_file)
             self.test_loss_list=pickle.load(input_file)
             self.test_acc_list=pickle.load(input_file)
+        self.buffer_size=pickle.load(input_file)
         self.ooo=pickle.load(input_file)
         self.total_epoch=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
