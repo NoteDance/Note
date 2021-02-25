@@ -1,5 +1,5 @@
 import tensorflow as tf
-import Note.create.creat as c
+import Note.create.DL.nn as n
 from tensorflow.python.ops import state_ops
 import tensorflow.keras.optimizers as optimizers
 import numpy as np
@@ -237,6 +237,9 @@ class transformer:
             self.batch=batch
             self.epoch=0
             self.lr=lr
+        batches=int((self.shape0-self.shape0%batch)/batch)
+        if self.shape0%batch!=0:
+            batches+=1
         if buffer_size!=None:
             self.buffer_size=buffer_size
         elif self.buffer_size!=None:
@@ -258,10 +261,9 @@ class transformer:
         for i in range(epoch):
             t1=time.time()
             if batch!=None:
-                train_ds=tf.data.Dataset.from_tensor_slices((self.train_data,self.train_labels)).shuffle(self.buffer_size).batch(batch)
-                batches=int((self.shape0-self.shape0%batch)/batch)
                 total_loss=0
                 total_acc=0
+                train_ds=tf.data.Dataset.from_tensor_slices((self.train_data,self.train_labels)).shuffle(self.buffer_size).batch(batch)
                 for data_batch,labels_batch in train_ds:
                     with tf.GradientTape() as tape:
                         with tf.name_scope('forward_propagation/loss'):
@@ -348,33 +350,22 @@ class transformer:
         return
         
     
-    def test(self,test_data,test_labels,batch=None):
+    def test(self,test_data,test_labels,batch=None,buffer_size=None):
         if batch!=None:
             total_loss=0
             total_acc=0
             batches=int((test_data.shape[0]-test_data.shape[0]%batch)/batch)
-            for j in range(batches):
-                index1=j*batch
-                index2=(j+1)*batch
-                with tf.name_scope('data_batch'):
-                    data_batch=test_data[index1:index2]
-                    labels_batch=test_labels[index1:index2]
+            if test_data.shape[0]%batch!=0:
+                batches+=1
+            if buffer_size!=None:
+                buffer_size=buffer_size
+            else:
+                buffer_size=len(test_data)
+            test_ds=tf.data.Dataset.from_tensor_slices((test_data,test_labels)).shuffle(buffer_size).batch(batch)
+            for data_batch,labels_batch in test_ds:
                 with tf.name_scope('loss'):
                      output=self.forward_propagation(data_batch)
                      batch_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output,labels=labels_batch))
-                total_loss+=batch_loss.numpy()
-                with tf.name_scope('accuracy'):
-                    batch_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(labels_batch,2)!=0,tf.int32)==tf.argmax(labels_batch,2),tf.float32))
-                total_acc+=batch_acc.numpy()
-            if test_data.shape[0]%batch!=0:
-                batches+=1
-                index1=batches*batch
-                index2=batch-(self.shape0-batches*batch)
-                data_batch=np.concatenate((test_data[index1:],test_data[:index2]))
-                labels_batch=np.concatenate((test_labels[index1:],test_labels[:index2]))
-                with tf.name_scope('loss'):
-                    output=self.forward_propagation(data_batch)
-                    batch_loss=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output,labels=labels_batch))
                 total_loss+=batch_loss.numpy()
                 with tf.name_scope('accuracy'):
                     batch_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(labels_batch,2)!=0,tf.int32)==tf.argmax(labels_batch,2),tf.float32))
