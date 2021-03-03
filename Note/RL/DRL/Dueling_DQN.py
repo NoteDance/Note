@@ -32,6 +32,7 @@ class Dueling_DQN:
         self.t_counter=0
         self.one_list=[]
         self.index_list=[]
+        self.use_flag=[]
         self.p=None
         self.flish_list=[]
         self.pool_net=pool_net
@@ -85,6 +86,7 @@ class Dueling_DQN:
             self.t_counter=0
             self.one_list=[]
             self.index_list=[]
+            self.use_flag=[]
             self.p=None
             self.flish_list=[]
             self.pool_net=True
@@ -141,11 +143,11 @@ class Dueling_DQN:
             flag=np.random.randint(0,2)
             while True:
                 index=np.random.choice(self.index_list,p=self.p)
-                if index in self.finish_list:
+                if index in self.finish_list or self.use_flag[i]==True:
                     continue
                 else:
                     break
-        if self.pool_net==True and flag==1 and self.state_pool[index]!=None and len(self.state_pool)==self.t_counter:
+        if self.pool_net==True and flag==1 and self.state_pool[index]!=None and len(self.state_pool)==self.t_counter and self.use_flag[i]==False:
             self.state_pool[index]=tf.concat([self.state_pool[index],tf.expand_dims(self.state[self.state_name[s]],axis=0)])
             self.action_pool[index]=tf.concat([self.action_pool[index],tf.expand_dims(a,axis=0)])
             self.next_state_pool[index]=tf.concat([self.next_state_pool[index],tf.expand_dims(self.state[self.state_name[next_s]],axis=0)])
@@ -178,6 +180,7 @@ class Dueling_DQN:
     
     
     def _learn(self,i):
+        self.use_flag[i]=True
         if len(self.state_pool[i])<self.batch:
             with tf.GradientTape() as tape:
                 self.loss[i]=self._loss(self.state_pool[i],self.action_pool[i],self.next_state_pool[i],self.reward_pool[i])
@@ -236,6 +239,7 @@ class Dueling_DQN:
                     else:
                         self.optimizer.apply_gradients(zip(gradient,self.value_p))
                     self.loss[i]+=batch_loss
+            self.use_flag[i]=False
             if self.a%self.update_step==0:
                 self.update_parameter()
             if len(self.state_pool[i])<self.batch:
@@ -250,6 +254,7 @@ class Dueling_DQN:
         self.t_counter+=1
         self.one_list.append(1)
         self.index_list.append(i)
+        self.use_flag.append(False)
         self.p=np.array(self.one_list,dtype=np.float16)/self.t_counter
         self.a.append(0)
         self.loss.append(0)
