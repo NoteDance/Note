@@ -15,7 +15,6 @@ class NoisyNet:
         self.next_state_pool=[]
         self.reward_pool=[]
         self.episode=[]
-        self.episode_list=[]
         self.state=state
         self.state_name=state_name
         self.action_name=action_name
@@ -85,12 +84,12 @@ class NoisyNet:
             self.lr=lr
         if init==True:
             self.t=0
-            self.flish_list=[]
             self.t_counter=0
             self.one_list=[]
             self.index_list=[]
             self.use_flag=[]
             self.p=None
+            self.flish_list=[]
             self.pool_net=True
             self.episode=[]
             self.episode_list=[]
@@ -193,7 +192,7 @@ class NoisyNet:
         elif self.save_episode==True:
             episode.append([self.state_name[s],self.self.action_name[a],r])
         if self.save_episode==True:
-            self.episode_list[i].append(episode)
+            self.episode.append(episode)
         self.epi_num+=1
         return
     
@@ -319,14 +318,7 @@ class NoisyNet:
         self.reward_pool[i]=tf.expand_dims(self.reward_pool[i][0],axis=0)
         return
     
-    
-    def merge_episode(self):
-        for i in range(self.episode_list):
-            self.episode.extend(self.episode_list[i])
-            self.episode_list[i].clear()
-        return
-    
-    
+        
     def train_visual(self):
         print()
         plt.figure(1)
@@ -350,12 +342,14 @@ class NoisyNet:
         return
     
     
-    def save(self,path,i):
+    def save(self,path):
         output_file=open(path+'\save.dat','wb')
         path=path+'\save.dat'
+        index=path.rfind('\\')
+        episode_file=open(path.replace(path[index+1:],'episode.dat'),'wb')
         self.episode_num=self.epi_num
         self.thread=self.t
-        pickle.dump(self.episode_list[i],output_file)
+        pickle.dump(self.episode,episode_file)
         pickle.dump(self.state_pool,output_file)
         pickle.dump(self.action_pool,output_file)
         pickle.dump(self.next_state_pool,output_file)
@@ -372,11 +366,11 @@ class NoisyNet:
         pickle.dump(self.optimizer,output_file)
         pickle.dump(self.lr,output_file)
         pickle.dump(self.thread,output_file)
-        pickle.dump(self.finish_list,output_file)
         pickle.dump(self.t_counter,output_file)
         pickle.dump(self.one_list,output_file)
         pickle.dump(self.index_list,output_file)
         pickle.dump(self.p,output_file)
+        pickle.dump(self.finish_list,output_file)
         pickle.dump(self.pool_net,output_file)
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.loss_list,output_file)
@@ -388,11 +382,10 @@ class NoisyNet:
         return
     
     
-    def restore(self,s_path,e_path,i):
+    def restore(self,s_path,e_path):
         input_file=open(s_path,'rb')
         episode_file=open(e_path,'rb')
         self.episode=pickle.load(episode_file)
-        self.episode_list[i]=pickle.load(input_file)
         self.state_pool=pickle.load(input_file)
         self.action_pool=pickle.load(input_file)
         self.next_state_pool=pickle.load(input_file)
@@ -409,11 +402,11 @@ class NoisyNet:
         self.optimizer=pickle.load(input_file)
         self.lr=pickle.load(input_file)
         self.thread=pickle.load(input_file)
-        self.finish_list=pickle.load(input_file)
         self.t_counter=pickle.load(input_file)
         self.one_list=pickle.load(input_file)
         self.index_list=pickle.load(input_file)
         self.p=pickle.load(input_file)
+        self.finish_list=pickle.load(input_file)
         self.pool_net=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
