@@ -18,6 +18,7 @@ class DDPG:
         self.next_state_pool=[]
         self.reward_pool=[]
         self.episode=[]
+        self.episode_list=[]
         self.state=state
         self.state_name=state_name
         self.action_name=action_name
@@ -31,12 +32,12 @@ class DDPG:
         self.lr=lr
         self.tau=tau
         self.t=0
+        self.flish_list=[]
         self.t_counter=0
         self.one_list=[]
         self.index_list=[]
         self.use_flag=[]
         self.p=None
-        self.flish_list=[]
         self.pool_net=pool_net
         self.save_episode=save_episode
         self.loss=[]
@@ -75,14 +76,15 @@ class DDPG:
             self.tau=tau
         if init==True:
             self.t=0
+            self.flish_list=[]
             self.t_counter=0
             self.one_list=[]
             self.index_list=[]
             self.use_flag=[]
             self.p=None
-            self.flish_list=[]
             self.pool_net=True
             self.episode=[]
+            self.episode_list=[]
             self.state_pool=[]
             self.action_pool=[]
             self.next_state_pool=[]
@@ -133,7 +135,7 @@ class DDPG:
                     continue
                 else:
                     break
-        if self.pool_net==True and flag==1 and self.state_pool[index]!=None and len(self.state_pool)==self.t_counter and self.use_flag[i]==False:
+        if self.pool_net==True and flag==1 and self.state_pool[index]!=None and index in self.finish_list and self.use_flag[i]==False:
             self.state_pool[index]=tf.concat([self.state_pool[index],tf.expand_dims(self.state[self.state_name[s]],axis=0)])
             self.action_pool[index]=tf.concat([self.action_pool[index],tf.expand_dims(a,axis=0)])
             self.next_state_pool[index]=tf.concat([self.next_state_pool[index],tf.expand_dims(self.state[self.state_name[next_s]],axis=0)])
@@ -160,7 +162,7 @@ class DDPG:
         elif self.save_episode==True:
             episode.append([self.state_name[s],self.self.action_name[a],r])
         if self.save_episode==True:
-            self.episode.append(episode)
+            self.episode_list[i].append(episode)
         self.epi_num+=1
         return next_s,end
     
@@ -291,14 +293,21 @@ class DDPG:
                     self._learn(i)
                     if end:
                         break
+        self.finish_list.append(i)
         self.t_counter-=1
         self.one_list[i]=0
         self.p=np.array(self.one_list,dtype=np.float16)/self.t_counter
-        self.finish_list.append(i)
         self.state_pool[i]=tf.expand_dims(self.state_pool[i][0],axis=0)
         self.action_pool[i]=tf.expand_dims(self.action_pool[i][0],axis=0)
         self.next_state_pool[i]=tf.expand_dims(self.next_state_pool[i][0],axis=0)
         self.reward_pool[i]=tf.expand_dims(self.reward_pool[i][0],axis=0)
+        return
+    
+    
+    def merge_episode(self):
+        for i in range(self.episode_list):
+            self.episode.extend(self.episode_list[i])
+            self.episode_list[i].clear()
         return
     
     
@@ -326,20 +335,12 @@ class DDPG:
         return
     
     
-    def save(self,path,i=None,one=True):
-        if one==True:
-            output_file=open(path+'\save.dat','wb')
-            path=path+'\save.dat'
-            index=path.rfind('\\')
-            episode_file=open(path.replace(path[index+1:],'episode.dat'),'wb')
-        else:
-            output_file=open(path+'\save-{0}.dat'.format(i+1),'wb')
-            path=path+'\save-{0}.dat'.format(i+1)
-            index=path.rfind('\\')
-            episode_file=open(path.replace(path[index+1:],'episode-{0}.dat'.format(i+1)),'wb')
+    def save(self,path,i):
+        output_file=open(path+'\save.dat','wb')
+        path=path+'\save.dat'
         self.episode_num=self.epi_num
         self.thread=self.t
-        pickle.dump(self.episode,episode_file)
+        pickle.dump(self.episode_list[i],output_file)
         pickle.dump(self.state_pool,output_file)
         pickle.dump(self.action_pool,output_file)
         pickle.dump(self.next_state_pool,output_file)
@@ -369,10 +370,11 @@ class DDPG:
         return
     
     
-    def restore(self,s_path,e_path):
+    def restore(self,s_path,e_path,i):
         input_file=open(s_path,'rb')
         episode_file=open(e_path,'rb')
         self.episode=pickle.load(episode_file)
+        self.episode_list[i]=pickle.load(input_file)
         self.state_pool=pickle.load(input_file)
         self.action_pool=pickle.load(input_file)
         self.next_state_pool=pickle.load(input_file)
