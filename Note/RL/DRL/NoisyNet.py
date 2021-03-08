@@ -152,7 +152,6 @@ class NoisyNet:
     
     
     def explore(self,s,i):
-        episode=[]
         noisy=self.noisy_variable(self.value_p[0])
         value=self.value_net(self.state_name[s],self.value_p,noisy)
         a=np.argmax(value)
@@ -188,13 +187,11 @@ class NoisyNet:
             self.reward_pool[i]=self.reward_pool[i][1:]
         if end:
             if self.save_episode==True:
-                episode.append([self.state_name[s],self.action_name[a],r,end])
+                episode=[self.state_name[s],self.action_name[a],r,end]
         elif self.save_episode==True:
-            episode.append([self.state_name[s],self.self.action_name[a],r])
-        if self.save_episode==True:
-            self.episode.append(episode)
+            episode=[self.state_name[s],self.self.action_name[a],r]
         self.epi_num+=1
-        return
+        return next_s,end,episode
     
     
     def _learn(self,i,parameter,index):
@@ -282,6 +279,7 @@ class NoisyNet:
         self.p=np.array(self.one_list,dtype=np.float16)/self.t_counter
         self.a.append(0)
         self.loss.append(0)
+        episode=[]
         if len(self.state_pool)==i-1:
             self.state_pool.append(None)
             self.action_pool.append(None)
@@ -295,19 +293,29 @@ class NoisyNet:
             if self.episode_step==None:
                 while True:
                     self.a[i]+=1
-                    next_s,end=self.explore(s,i)
+                    next_s,end,_episode=self.explore(s,i)
                     s=next_s
                     self._learn(i,parameter,index)
+                    if self.save_episode==True:
+                        episode.append(_episode)
                     if end:
+                        if self.save_episode==True:
+                            self.episode.append(episode)
                         break
             else:
                 for _ in range(self.episode_step):
                     self.a[i]+=1
-                    next_s,end=self.explore(s,i)
+                    next_s,end,_episode=self.explore(s,i)
                     s=next_s
                     self._learn(i,parameter,index)
+                    if self.save_episode==True:
+                        episode.append(_episode)
                     if end:
+                        if self.save_episode==True:
+                            self.episode.append(episode)
                         break
+                if self.save_episode==True:
+                    self.episode.append(episode)
         self.finish_list.append(i)
         self.t_counter-=1
         self.one_list[i]=0
