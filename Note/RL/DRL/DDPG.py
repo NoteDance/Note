@@ -122,7 +122,6 @@ class DDPG:
         
     
     def explore(self,i):
-        episode=[]
         a=self.actor_net(self.state[self.state_name[s]],self.actor_p)+self.OU()
         next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
         if self.pool_net==True:
@@ -156,13 +155,11 @@ class DDPG:
             self.reward_pool[i]=self.reward_pool[i][1:]
         if end:
             if self.save_episode==True:
-                episode.append([self.state_name[s],self.action_name[a],r,end])
+                episode=[self.state_name[s],self.action_name[a],r,end]
         elif self.save_episode==True:
-            episode.append([self.state_name[s],self.self.action_name[a],r])
-        if self.save_episode==True:
-            self.episode.append(episode)
+            episode=[self.state_name[s],self.self.action_name[a],r]
         self.epi_num+=1
-        return next_s,end
+        return next_s,end,episode
     
     
     def _learn(self,i):
@@ -268,6 +265,7 @@ class DDPG:
         self.p=np.array(self.one_list,dtype=np.float16)/self.t_counter
         self.a.append(0)
         self.loss.append(0)
+        episode=[]
         if len(self.state_pool)==i-1:
             self.state_pool.append(None)
             self.action_pool.append(None)
@@ -278,19 +276,29 @@ class DDPG:
             if self.episode_step==None:
                 while True:
                     self.a[i]+=1
-                    next_s,end=self.explore(i)
+                    next_s,end,_episode=self.explore(i)
                     s=next_s
                     self._learn(i)
+                    if self.save_episode==True:
+                        episode.append(_episode)
                     if end:
+                        if self.save_episode==True:
+                            self.episode.append(episode)
                         break
             else:
                 for _ in range(self.episode_step):
                     self.a[i]+=1
-                    next_s,end=self.explore(i)
+                    next_s,end,_episode=self.explore(i)
                     s=next_s
                     self._learn(i)
+                    if self.save_episode==True:
+                        episode.append(_episode)
                     if end:
+                        if self.save_episode==True:
+                            self.episode.append(episode)
                         break
+                if self.save_episode==True:
+                    self.episode.append(episode)
         self.finish_list.append(i)
         self.t_counter-=1
         self.one_list[i]=0
