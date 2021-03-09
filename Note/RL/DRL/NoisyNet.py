@@ -92,7 +92,6 @@ class NoisyNet:
             self.flish_list=[]
             self.pool_net=True
             self.episode=[]
-            self.episode_list=[]
             self.state_pool=[]
             self.action_pool=[]
             self.next_state_pool=[]
@@ -211,10 +210,10 @@ class NoisyNet:
                 parameter=self.value_p[0]
         else:
             self.loss[i]=0
+            batches=int((len(self.state_pool[i])-len(self.state_pool[i])%self.batch)/self.batch)
+            if len(self.state_pool)%self.batch!=0:
+                batches+=1
             if self.pool_net==True:
-                batches=int((len(self.state_pool[i])-len(self.state_pool[i])%self.batch)/self.batch)
-                if len(self.state_pool)%self.batch!=0:
-                    batches+=1
                 for j in range(batches):
                     index1=j*self.batch
                     index2=(j+1)*self.batch
