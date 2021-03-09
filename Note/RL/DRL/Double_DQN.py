@@ -184,10 +184,10 @@ class Double_DQN:
                 self.update_parameter()
         else:
             self.loss[i]=0
+            batches=int((len(self.state_pool[i])-len(self.state_pool[i])%self.batch)/self.batch)
+            if len(self.state_pool)%self.batch!=0:
+                batches+=1
             if self.pool_net==True:
-                batches=int((len(self.state_pool[i])-len(self.state_pool[i])%self.batch)/self.batch)
-                if len(self.state_pool)%self.batch!=0:
-                    batches+=1
                 for j in range(batches):
                     index1=j*self.batch
                     index2=(j+1)*self.batch
