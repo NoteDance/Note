@@ -83,15 +83,14 @@ class Dueling_DQN:
             self.lr=lr
         if init==True:
             self.t=0
-            self.flish_list=[]
             self.t_counter=0
             self.one_list=[]
             self.index_list=[]
             self.use_flag=[]
             self.p=None
+            self.flish_list=[]
             self.pool_net=True
             self.episode=[]
-            self.episode_list=[]
             self.epsilon=[]
             self.state_pool=[]
             self.action_pool=[]
@@ -191,10 +190,10 @@ class Dueling_DQN:
                 self.update_parameter()
         else:
             self.loss[i]=0
+            batches=int((len(self.state_pool[i])-len(self.state_pool[i])%self.batch)/self.batch)
+            if len(self.state_pool)%self.batch!=0:
+                batches+=1
             if self.pool_net==True:
-                batches=int((len(self.state_pool[i])-len(self.state_pool[i])%self.batch)/self.batch)
-                if len(self.state_pool)%self.batch!=0:
-                    batches+=1
                 for j in range(batches):
                     index1=j*self.batch
                     index2=(j+1)*self.batch
