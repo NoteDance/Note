@@ -185,6 +185,7 @@ class ART2:
     def save_p(self,path):
         parameter_file=open(path+'.dat','wb')
         pickle.dump([self.W,self.T],parameter_file)
+        parameter_file.close()
         return
     
     
@@ -204,6 +205,8 @@ class ART2:
         pickle.dump(self.d,output_file)
         pickle.dump(self.e,output_file)
         pickle.dump(self.theta,output_file)
+        output_file.close()
+        parameter_file.close()
         return
     
     
@@ -223,4 +226,6 @@ class ART2:
         self.d=pickle.load(input_file)
         self.e=pickle.load(input_file)
         self.theta=pickle.load(input_file)
+        input_file.close()
+        parameter_file.close()
         return
