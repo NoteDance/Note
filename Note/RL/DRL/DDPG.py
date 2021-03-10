@@ -195,9 +195,8 @@ class DDPG:
                         self.optimizer(gradient,self.value_p)
                     else:
                         self.optimizer.apply_gradients(zip(gradient,self.value_p))
-                    for i in range(len(self.actor_p)):
-                        self.actor_p[i]=self.actor_p[i]-actor_gradient[i]
                     self.loss[i]+=batch_loss
+                    self.update_parameter()
                 if len(self.state_pool)%self.batch!=0:
                     batches+=1
                     index1=batches*self.batch
@@ -217,9 +216,8 @@ class DDPG:
                         self.optimizer(gradient,self.value_p)
                     else:
                         self.optimizer.apply_gradients(zip(gradient,self.value_p))
-                    for i in range(len(self.actor_p)):
-                        self.actor_p[i]=self.actor_p[i]-actor_gradient[i]
                     self.loss[i]+=batch_loss
+                    self.update_parameter()
             else:
                 train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool[i],self.action_pool[i],self.next_state_pool[i],self.reward_pool[i])).shuffle(len(self.state_pool[i])).batch(self.batch)
                 for state_batch,action_batch,next_state_batch,reward_batch in train_ds:
@@ -235,8 +233,8 @@ class DDPG:
                     else:
                         self.optimizer.apply_gradients(zip(gradient,self.value_p))
                     self.loss[i]+=batch_loss
+                    self.update_parameter()
             self.use_flag[i]=False
-            self.update_parameter()
             if len(self.state_pool)<self.batch:
                 self.loss[i]=self.loss[i].numpy()
             else:
@@ -310,12 +308,14 @@ class DDPG:
         parameter_file=open(path+'.dat','wb')
         pickle.dump(self.value_p,parameter_file)
         pickle.dump(self.actor_p,parameter_file)
+        parameter_file.close()
         return
     
     
     def save_e(self,path):
         episode_file=open(path+'.dat','wb')
         pickle.dump(self.episode,episode_file)
+        episode_file.close()
         return
     
     
