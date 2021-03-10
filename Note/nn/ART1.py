@@ -119,6 +119,7 @@ class ART1:
     def save_p(self,path):
         parameter_file=open(path+'.dat','wb')
         pickle.dump([self.W,self.T],parameter_file)
+        parameter_file.close()
         return
     
     
@@ -131,6 +132,7 @@ class ART1:
         pickle.dump(self.c_neure,output_file)
         pickle.dump(self.r_neure,output_file)
         pickle.dump(self.p,output_file)
+        output_file.close()
         return
     
     
@@ -143,4 +145,6 @@ class ART1:
         self.c_neure=pickle.load(input_file)
         self.r_neure=pickle.load(input_file)
         self.p=pickle.load(input_file)
+        input_file.close()
+        parameter_file.close()
         return
