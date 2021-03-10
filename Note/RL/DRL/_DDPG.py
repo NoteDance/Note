@@ -129,7 +129,7 @@ class DDPG:
                 else:
                     self.optimizer.apply_gradients(zip(gradient,self.value_p))
                 loss+=batch_loss
-            self.update_parameter()
+                self.update_parameter()
             if len(self.state_pool)%self.batch!=0:
                 loss=loss.numpy()/self.batches+1
             elif len(self.state_pool)<self.batch:
@@ -247,12 +247,14 @@ class DDPG:
         parameter_file=open(path+'.dat','wb')
         pickle.dump(self.value_p,parameter_file)
         pickle.dump(self.actor_p,parameter_file)
+        parameter_file.close()
         return
     
     
     def save_e(self,path):
         episode_file=open(path+'.dat','wb')
         pickle.dump(self.episode,episode_file)
+        episode_file.close()
         return
     
     
