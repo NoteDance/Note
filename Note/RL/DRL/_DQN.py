@@ -329,4 +329,5 @@ class DQN:
         self.total_episode=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
         input_file.close()
+        episode_file.close()
         return
