@@ -6,7 +6,7 @@ import time
 
 
 class DDPG:
-    def __init__(self,value_net,actor_net,value_p,value_target_p,actor_p,actor_target_p,state,state_name,action_name,exploration_space,discount=None,episode_step=None,pool_size=None,batch=None,optimizer=None,lr=None,tau=0.001,save_episode=True):
+    def __init__(self,value_net,actor_net,value_p,value_target_p,actor_p,actor_target_p,state,state_name,action_name,exploration_space,discount=None,episode_step=None,pool_size=None,batch=None,optimizer=None,tau=0.001,save_episode=True):
         self.value_net=value_net
         self.actor_net=actor_net
         self.value_p=value_p
@@ -27,7 +27,6 @@ class DDPG:
         self.pool_size=pool_size
         self.batch=batch
         self.optimizer=optimizer
-        self.lr=lr
         self.tau=tau
         self.save_episode=save_episode
         self.loss_list=[]
@@ -39,7 +38,7 @@ class DDPG:
         self.total_time=0
     
     
-    def set_up(self,value_p=None,value_target_p=None,actor_p=None,actor_target_p=None,discount=None,episode_step=None,pool_size=None,batch=None,optimizer=None,lr=None,tau=None,init=True):
+    def set_up(self,value_p=None,value_target_p=None,actor_p=None,actor_target_p=None,discount=None,episode_step=None,pool_size=None,batch=None,optimizer=None,tau=None,init=True):
         if value_p!=None:
             self.value_p=value_p
             self.value_target_p=value_target_p
@@ -56,8 +55,6 @@ class DDPG:
             self.index=np.arange(self.batch,dtype=np.int8)
         if optimizer!=None:
             self.optimizer=optimizer
-        if lr!=None:
-            self.lr=lr
         if tau!=None:
             self.tau=tau
         if init==True:
@@ -282,7 +279,6 @@ class DDPG:
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.optimizer,output_file)
-        pickle.dump(self.lr,output_file)
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.loss_list,output_file)
         pickle.dump(self.opt_flag,output_file)
@@ -290,6 +286,7 @@ class DDPG:
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
+        episode_file.close()
         return
     
     
@@ -307,7 +304,6 @@ class DDPG:
         self.pool_size=pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.optimizer=pickle.load(input_file)
-        self.lr=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
         self.opt_flag=pickle.load(input_file)
@@ -315,4 +311,5 @@ class DDPG:
         self.total_episode=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
         input_file.close()
+        episode_file.close()
         return
