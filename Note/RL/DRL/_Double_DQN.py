@@ -251,14 +251,16 @@ class Double_DQN:
     
     
     def save_p(self,path):
-        output_file=open(path+'.dat','wb')
-        pickle.dump(self.value_p,output_file)
+        parameter_file=open(path+'.dat','wb')
+        pickle.dump(self.value_p,parameter_file)
+        parameter_file.close()
         return
     
     
     def save_e(self,path):
         episode_file=open(path+'.dat','wb')
         pickle.dump(self.episode,episode_file)
+        episode_file.close()
         return
     
     
