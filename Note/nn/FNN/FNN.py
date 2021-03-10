@@ -715,6 +715,7 @@ class FNN:
     def save_p(self,path):
         parameter_file=open(path+'.dat','wb')
         pickle.dump([self.last_weight,self.last_bias],parameter_file)
+        parameter_file.close()
         return
 
 
