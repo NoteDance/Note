@@ -48,7 +48,7 @@ class DDPG:
         self.total_time=0
     
     
-    def set_up(self,value_p=None,value_target_p=None,actor_p=None,actor_target_p=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,tau=0.001,init=True):
+    def set_up(self,value_p=None,value_target_p=None,actor_p=None,actor_target_p=None,discount=None,episode_step=None,pool_size=None,batch=None,optimizer=None,lr=None,tau=0.001,init=True):
         if value_p!=None:
             self.value_p=value_p
             self.value_target_p=value_target_p
