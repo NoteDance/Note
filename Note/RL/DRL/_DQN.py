@@ -299,6 +299,7 @@ class DQN:
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
+        episode_file.close()
         return
     
     
