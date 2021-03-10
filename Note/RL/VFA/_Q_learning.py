@@ -5,7 +5,7 @@ import time
 
 
 class Q_learning:
-    def __init__(self,net,net_p,state,state_name,action_name,exploration_space,epsilon=None,discount=None,episode_step=None,optimizer=None,save_episode=True):
+    def __init__(self,net,net_p,state,state_name,action_name,exploration_space,epsilon=None,discount=None,episode_step=None,optimizer=None,lr=None,save_episode=True):
         self.net=net
         self.net_p=net_p
         self.episode=[]
@@ -18,6 +18,7 @@ class Q_learning:
         self.discount=discount
         self.episode_step=episode_step
         self.optimizer=optimizer
+        self.lr=lr
         self.save_episode=save_episode
         self.opt_flag=False
         self.epi_num=0
@@ -39,7 +40,7 @@ class Q_learning:
         return
     
     
-    def set_up(self,net_p=None,epsilon=None,discount=None,episode_step=None,optimizer=None,init=True):
+    def set_up(self,net_p=None,epsilon=None,discount=None,episode_step=None,optimizer=None,lr=None,init=True):
         if net_p!=None:
             self.net_p=net_p
         if epsilon!=None:
@@ -50,6 +51,9 @@ class Q_learning:
             self.episode_step=episode_step
         if optimizer!=None:
             self.optimizer=optimizer
+        if lr!=None:
+            self.lr=lr
+            self.optimizer.lr=lr
         if init==True:
             self.episode=[]
             self.epi_num=0
@@ -73,6 +77,8 @@ class Q_learning:
     
     
     def learn(self,episode_num,path=None,one=True):
+        if self.lr!=None:
+            self.optimizer.lr=self.lr
         for i in range(episode_num):
             loss=0
             episode=[]
@@ -188,8 +194,8 @@ class Q_learning:
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.discount,output_file)
         pickle.dump(self.episode_step,output_file)
-        pickle.dump(self.lr,output_file)
         pickle.dump(self.optimizer,output_file)
+        pickle.dump(self.lr,output_file)
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.opt_flag,output_file)
         pickle.dump(self.state_one,output_file)
@@ -211,8 +217,8 @@ class Q_learning:
         self.epsilon=pickle.load(input_file)
         self.discount=pickle.load(input_file)
         self.episode_step=pickle.load(input_file)
-        self.lr=pickle.load(input_file)
         self.optimizer=pickle.load(input_file)
+        self.lr=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
         self.opt_flag=pickle.load(input_file)
         self.state_one=pickle.load(input_file)
