@@ -6,7 +6,7 @@ import time
 
 
 class Dueling_DQN:
-    def __init__(self,value_net,value_p,target_p,state,state_name,action_name,exploration_space,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,pool_net=True,save_episode=True):
+    def __init__(self,value_net,value_p,target_p,state,state_name,action_name,exploration_space,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,pool_net=True,save_episode=True):
         self.value_net=value_net
         self.value_p=value_p
         self.target_p=target_p
@@ -27,6 +27,8 @@ class Dueling_DQN:
         self.batch=batch
         self.update_step=update_step
         self.optimizer=optimizer
+        self.lr=lr
+        if(lr!=None):self.optimizer.lr=lr
         self.t=0
         self.t_counter=0
         self.one_list=[]
@@ -61,7 +63,7 @@ class Dueling_DQN:
         return
     
     
-    def set_up(self,value_p=None,target_p=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,init=True):
+    def set_up(self,value_p=None,target_p=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,init=True):
         if value_p!=None:
             self.value_p=value_p
             self.target_p=target_p
@@ -78,6 +80,9 @@ class Dueling_DQN:
             self.update_step=update_step
         if optimizer!=None:
             self.optimizer=optimizer
+        if lr!=None:
+            self.lr=lr
+            self.optimizer.lr=lr
         if init==True:
             self.t=0
             self.t_counter=0
@@ -258,7 +263,7 @@ class Dueling_DQN:
             self.action_pool.append(None)
             self.next_state_pool.append(None)
             self.reward_pool.append(None)
-            self.epsilon.append[epsilon]
+            self.epsilon.append(epsilon)
         for _ in range(episode_num):
             s=int(np.random.uniform(0,len(self.state_name)))
             if self.episode_step==None:
@@ -346,6 +351,7 @@ class Dueling_DQN:
         pickle.dump(self.batch,output_file)
         pickle.dump(self.update_step,output_file)
         pickle.dump(self.optimizer,output_file)
+        pickle.dump(self.lr,output_file)
         pickle.dump(self.thread,output_file)
         pickle.dump(self.t_counter,output_file)
         pickle.dump(self.one_list,output_file)
@@ -383,6 +389,7 @@ class Dueling_DQN:
         self.batch=pickle.load(input_file)
         self.update_step=pickle.load(input_file)
         self.optimizer=pickle.load(input_file)
+        self.lr=pickle.load(input_file)
         self.thread=pickle.load(input_file)
         self.t_counter=pickle.load(input_file)
         self.one_list=pickle.load(input_file)
