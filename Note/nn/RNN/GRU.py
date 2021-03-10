@@ -1012,6 +1012,7 @@ class GRU:
     def save_p(self,path):
         parameter_file=open(path+'.dat','wb')
         pickle.dump([self.embedding_w,self.embedding_b,self.last_ug_weight_x,self.last_ug_weight_h,self.last_rg_weight_x,self.last_rg_weight_h,self.last_cltm_weight_x,self.last_cltm_weight_h,self.last_weight_o,self.last_ug_bias,self.last_rg_bias,self.last_cltm_bias,self.last_bias_o],parameter_file)
+        parameter_file.close()
         return
     
     
