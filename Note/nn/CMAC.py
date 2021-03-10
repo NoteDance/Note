@@ -85,6 +85,7 @@ class CMAC:
     def save_p(self,path):
         parameter_file=open(path+'.dat','wb')
         pickle.dump([self.C,self.form,self.memory],parameter_file)
+        parameter_file.close()
         return
     
     
@@ -104,6 +105,8 @@ class CMAC:
         pickle.dump(self.loss_list,output_file)
         pickle.dump(self.epoch,output_file)
         pickle.dump(self.time,output_file)
+        output_file.close()
+        parameter_file.close()
         return
     
     
@@ -118,4 +121,6 @@ class CMAC:
         self.loss_list=pickle.load(input_file)
         self.epoch=pickle.load(input_file)
         self.time=pickle.load(input_file)
+        input_file.close()
+        parameter_file.close()
         return
