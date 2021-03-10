@@ -1,5 +1,5 @@
 import tensorflow as tf
-import Note.create.creat as c
+import Note.create.DL.nn as n
 from tensorflow.python.ops import state_ops
 import tensorflow.keras.optimizers as optimizers
 import numpy as np
@@ -273,7 +273,7 @@ class transformer:
                         batch_loss=batch_loss.numpy()
                     else:
                         with tf.name_scope('apply_gradient'):
-                            c.apply_gradient(tape,optimizer,batch_loss,variable)
+                            n.apply_gradient(tape,optimizer,batch_loss,variable)
                     total_loss+=batch_loss
                     with tf.name_scope('accuracy'):
                         batch_acc=tf.reduce_mean(tf.cast(tf.argmax(output,2)*tf.cast(tf.argmax(labels_batch,2)!=0,tf.int32)==tf.argmax(labels_batch,2),tf.float32))
@@ -301,7 +301,7 @@ class transformer:
                     loss=train_loss.numpy()
                 else:
                     with tf.name_scope('apply_gradient'):
-                        c.apply_gradient(tape,optimizer,batch_loss,variable)
+                        n.apply_gradient(tape,optimizer,batch_loss,variable)
                 self.train_loss_list.append(loss.astype(np.float32))
                 self.train_loss=loss
                 self.train_loss=self.train_loss.astype(np.float32)
@@ -488,6 +488,7 @@ class transformer:
     def save_p(self,path):
         parameter_file=open(path+'.dat','wb')
         pickle.dump([self.embedding_w,self.qw1,self.kw1,self.vw1,self.fw1,self.qw2,self.kw2,self.vw2,self.qw3,self.kw3,self.vw3,self.fw2,self.ow],parameter_file)
+        parameter_file.close()
         return
     
     
@@ -525,6 +526,7 @@ class transformer:
         pickle.dump(self.total_time,output_file)
         pickle.dump(self.processor,output_file)
         output_file.close()
+        parameter_file.close()
         return
     
 
@@ -567,4 +569,5 @@ class transformer:
         self.total_time=pickle.load(input_file)
         self.processor=pickle.load(input_file)
         input_file.close()
+        parameter_file.close()
         return
