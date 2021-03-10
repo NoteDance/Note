@@ -169,12 +169,14 @@ class on_policy_mc:
     def save_policy(self,path):
         policy_file=open(path+'.dat','wb')
         pickle.dump(self.q,policy_file)
+        policy_file.close()
         return
     
     
     def save_e(self,path):
         episode_file=open(path+'.dat','wb')
         pickle.dump(self.episode,episode_file)
+        episode_file.close()
         return
     
     
@@ -207,6 +209,7 @@ class on_policy_mc:
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
+        episode_file.close()
         return
     
     
@@ -230,4 +233,5 @@ class on_policy_mc:
         self.total_episode=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
         input_file.close()
+        episode_file.close()
         return
