@@ -1130,6 +1130,7 @@ class LSTM:
     def save_p(self,path):
         parameter_file=open(path+'.dat','wb')
         pickle.dump([self.embedding_w,self.embedding_b,self.last_fg_weight_x,self.last_fg_weight_h,self.last_ig_weight_x,self.last_ig_weight_h,self.last_og_weight_x,self.last_og_weight_h,self.last_cltm_weight_x,self.last_cltm_weight_h,self.last_weight_o,self.last_fg_bias,self.last_ig_bias,self.last_og_bias,self.last_cltm_bias,self.last_bias_o],parameter_file)
+        parameter_file.close()
         return
 
 
@@ -1304,9 +1305,6 @@ class LSTM:
                         output_file=open(save_path,'wb')
                         pickle.dump(output,output_file)
                         output_file.close()
-                    elif save_csv!=None:
-                        data=pd.DataFrame(output)
-                        data.to_csv(save_csv,index=False,header=False)
                     return output
                 else:
                     if len(_output.shape)==2:
