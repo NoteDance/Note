@@ -299,8 +299,9 @@ class GloVe:
     def save_p(self,path):
         parameter_file=open(path+'.dat','wb')
         pickle.dump([self.last_cword_weight,self.last_bword_weight,self.last_cword_bias,self.last_bword_bias],parameter_file)
+        parameter_file.close()
         return
-    
+        
     
     def save(self,path,i=None,one=True):
         if one==True:
@@ -329,6 +330,7 @@ class GloVe:
         pickle.dump(self.total_time,output_file)
         pickle.dump(self.processor,output_file)
         output_file.close()
+        parameter_file.close()
         return
     
 
@@ -361,6 +363,7 @@ class GloVe:
         self.processor=pickle.load(input_file)
         self.flag=1
         input_file.close()
+        parameter_file.close()
         return
     
     
