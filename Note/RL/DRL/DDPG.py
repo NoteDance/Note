@@ -6,7 +6,7 @@ import time
 
 
 class DDPG:
-    def __init__(self,value_net,actor_net,value_target_p,value_p,actor_target_p,actor_p,state,state_name,action_name,exploration_space,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,tau=0.001,pool_net=True,save_episode=True):
+    def __init__(self,value_net,actor_net,value_target_p,value_p,actor_target_p,actor_p,state,state_name,action_name,exploration_space,discount=None,episode_step=None,pool_size=None,batch=None,optimizer=None,lr=None,tau=0.001,pool_net=True,save_episode=True):
         self.value_net=value_net
         self.actor_net=actor_net
         self.value_p=value_p
@@ -26,7 +26,6 @@ class DDPG:
         self.episode_step=episode_step
         self.pool_size=pool_size
         self.batch=batch
-        self.update_step=update_step
         self.optimizer=optimizer
         self.lr=lr
         self.tau=tau
@@ -44,7 +43,6 @@ class DDPG:
         self.opt_flag==False
         self.epi_num=0
         self.episode_num=0
-        self.a=[]
         self.total_episode=0
         self.time=0
         self.total_time=0
@@ -65,8 +63,6 @@ class DDPG:
         if batch!=None:
             self.batch=batch
             self.index=np.arange(self.batch,dtype=np.int8)
-        if update_step!=None:
-            self.update_step=update_step
         if optimizer!=None:
             self.optimizer=optimizer
         if lr!=None:
@@ -89,7 +85,6 @@ class DDPG:
             self.reward_pool=[]
             self.loss=[]
             self.loss_list=[]
-            self.a=[]
             self.epi_num=0
             self.episode_num=0
             self.total_episode=0
@@ -110,10 +105,12 @@ class DDPG:
     
     
     def update_parameter(self):
-        for i in range(len(self.value_predict_p)):
-            self.value_target_p[i]=self.tau*self.value_target_p[i]+(1-self.tau)*self.value_p[i]
         for i in range(len(self.actor_p)):
-            self.actor_target_p[i]=self.tau*self.actor_target_p[i]+(1-self.tau)*self.actor_p[i]
+            self.actor_p[i]=self.actor_p[i]-actor_gradient[i]
+        for i in range(len(self.value_predict_p)):
+            self.value_target_p[i]=self.tau*self.value_p[i]+(1-self.tau)*self.value_target_p[i]
+        for i in range(len(self.actor_p)):
+            self.actor_target_p[i]=self.tau*self.actor_p[i]+(1-self.tau)*self.actor_target_p[i]
         return
     
     
@@ -176,10 +173,7 @@ class DDPG:
                 self.optimizer(gradient,self.value_p)
             else:
                 self.optimizer.apply_gradients(zip(gradient,self.value_p))
-            for i in range(len(self.actor_p)):
-                self.actor_p[i]=self.actor_p[i]-actor_gradient[i]
-            if self.a%self.update_step==0:
-                self.update_parameter()
+            self.update_parameter()
         else:
             self.loss[i]=0
             batches=int((len(self.state_pool[i])-len(self.state_pool[i])%self.batch)/self.batch)
@@ -243,12 +237,9 @@ class DDPG:
                         self.optimizer(gradient,self.value_p)
                     else:
                         self.optimizer.apply_gradients(zip(gradient,self.value_p))
-                    for i in range(len(self.actor_p)):
-                        self.actor_p[i]=self.actor_p[i]-actor_gradient[i]
                     self.loss[i]+=batch_loss
             self.use_flag[i]=False
-            if self.a%self.update_step==0:
-                self.update_parameter()
+            self.update_parameter()
             if len(self.state_pool)<self.batch:
                 self.loss[i]=self.loss[i].numpy()
             else:
@@ -263,7 +254,6 @@ class DDPG:
         self.index_list.append(i)
         self.use_flag.append(False)
         self.p=np.array(self.one_list,dtype=np.float16)/self.t_counter
-        self.a.append(0)
         self.loss.append(0)
         episode=[]
         if len(self.state_pool)==i-1:
@@ -275,7 +265,6 @@ class DDPG:
             s=int(np.random.uniform(0,len(self.state_name)))
             if self.episode_step==None:
                 while True:
-                    self.a[i]+=1
                     next_s,end,_episode=self.explore(i)
                     s=next_s
                     self._learn(i)
@@ -287,7 +276,6 @@ class DDPG:
                         break
             else:
                 for _ in range(self.episode_step):
-                    self.a[i]+=1
                     next_s,end,_episode=self.explore(i)
                     s=next_s
                     self._learn(i)
@@ -351,7 +339,6 @@ class DDPG:
         pickle.dump(self.episode_step,output_file)
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
-        pickle.dump(self.update_step,output_file)
         pickle.dump(self.optimizer,output_file)
         pickle.dump(self.lr,output_file)
         pickle.dump(self.thread,output_file)
@@ -384,7 +371,6 @@ class DDPG:
         self.episode_step=pickle.load(input_file)
         self.pool_size=pickle.load(input_file)
         self.batch=pickle.load(input_file)
-        self.update_step=pickle.load(input_file)
         self.optimizer=pickle.load(input_file)
         self.lr=pickle.load(input_file)
         self.thread=pickle.load(input_file)
