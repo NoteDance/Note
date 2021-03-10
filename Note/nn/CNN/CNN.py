@@ -858,6 +858,7 @@ class CNN:
     def save_p(self,path):
         parameter_file=open(path+'.dat','wb')
         pickle.dump([self.last_weight_conv,self.last_bias_conv,self.last_weight_fc,self.last_bias_fc],parameter_file)
+        parameter_file.close()
         return
     
     
