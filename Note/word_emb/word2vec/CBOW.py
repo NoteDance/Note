@@ -269,6 +269,7 @@ class CBOW:
     def save_p(self,path):
         parameter_file=open(path+'.dat','wb')
         pickle.dump([self.last_cword_weight,self.last_bword_weight],parameter_file)
+        parameter_file.close()
         return
     
     
@@ -302,6 +303,7 @@ class CBOW:
         pickle.dump(self.total_time,output_file)
         pickle.dump(self.processor,output_file)
         output_file.close()
+        parameter_file.close()
         return
     
 
@@ -333,6 +335,7 @@ class CBOW:
         self.processor=pickle.load(input_file)
         self.flag=1
         input_file.close()
+        parameter_file.close()
         return
     
     
