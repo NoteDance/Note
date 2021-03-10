@@ -383,6 +383,7 @@ class unnamed:
     def save_p(self,path):
         parameter_file=open(path+'.dat','wb')
         parameter=pickle.dump(,parameter_file)
+        parameter_file.close()
         return
     
     
@@ -430,6 +431,7 @@ class unnamed:
         pickle.dump(self.total_time,output_file)
         pickle.dump(self.processor,output_file)
         output_file.close()
+        parameter_file.close()
         return
     
 
@@ -469,4 +471,5 @@ class unnamed:
         self.total_time=pickle.load(input_file)
         self.processor=pickle.load(input_file)
         input_file.close()
+        parameter_file.close()
         return
