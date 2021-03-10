@@ -648,6 +648,7 @@ class RNN:
     def save_p(self,path):
         parameter_file=open(path+'.dat','wb')
         pickle.dump([self.embedding_w,self.embedding_b,self.last_weight_x,self.last_weight_h,self.last_weight_o,self.last_bias_x,self.last_bias_h,self.last_bias_o],parameter_file)
+        parameter_file.close()
         return
 
 
