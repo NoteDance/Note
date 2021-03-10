@@ -32,7 +32,6 @@ class DDPG:
         self.save_episode=save_episode
         self.loss_list=[]
         self.opt_flag==False
-        self.a=0
         self.epi_num=0
         self.episode_num=0
         self.total_episode=0
@@ -40,7 +39,7 @@ class DDPG:
         self.total_time=0
     
     
-    def set_up(self,value_p=None,value_target_p=None,actor_p=None,actor_target_p=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,tau=None,init=True):
+    def set_up(self,value_p=None,value_target_p=None,actor_p=None,actor_target_p=None,discount=None,episode_step=None,pool_size=None,batch=None,optimizer=None,lr=None,tau=None,init=True):
         if value_p!=None:
             self.value_p=value_p
             self.value_target_p=value_target_p
