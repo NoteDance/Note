@@ -5,7 +5,7 @@ import time
 
 
 class MCPG:
-    def __init__(self,policy_net,net_p,state,state_name,action_name,exploration_space,epsilon=None,discount=None,reward_min=None,episode_step=None,optimizer=None,lr=None,save_episode=True):
+    def __init__(self,policy_net,net_p,state,state_name,action_name,exploration_space,save_episode=True):
         self.policy_net=policy_net
         self.net_p=net_p
         self.episode=[]
@@ -15,13 +15,12 @@ class MCPG:
         self.exploration_space=exploration_space
         self.action_len=len(self.action_name)
         self.reward_list=[]
-        self.epsilon=epsilon
-        self.discount=discount
-        self.reward_min=reward_min
-        self.episode_step=episode_step
-        self.optimizer=optimizer
-        self.lr=lr
-        if(lr!=None):self.optimizer.lr=lr
+        self.epsilon=None
+        self.discount=None
+        self.reward_min=None
+        self.episode_step=None
+        self.optimizer=None
+        self.lr=None
         self.save_episode=save_episode
         self.loss=0
         self.opt_flag=False
@@ -43,7 +42,7 @@ class MCPG:
         return
     
     
-    def set_up(self,net_p=None,epsilon=None,discount=None,reward_min=None,episode_step=None,optimizer=None,lr=None,init=True):
+    def set_up(self,net_p=None,epsilon=None,discount=None,reward_min=None,episode_step=None,optimizer=None,lr=None,init=False):
         if net_p!=None:
             self.net_p=net_p
         if epsilon!=None:
@@ -59,6 +58,8 @@ class MCPG:
         if lr!=None:
             self.lr=lr
             self.optimizer.lr=lr
+        elif self.lr!=None:
+            self.optimizer.lr=self.lr
         if init==True:
             self.episode=[]
             self.reward_list=[]
