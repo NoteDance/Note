@@ -153,12 +153,14 @@ class Q_learning:
     def save_p(self,path):
         parameter_file=open(path+'.dat','wb')
         pickle.dump(self.value_p,parameter_file)
+        parameter_file.close()
         return
     
     
     def save_e(self,path):
         episode_file=open(path+'.dat','wb')
         pickle.dump(self.episode,episode_file)
+        episode_file.close()
         return
     
     
@@ -189,6 +191,7 @@ class Q_learning:
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.total_episode,output_file)
         output_file.close()
+        episode_file.close()
         return
     
     
@@ -211,4 +214,5 @@ class Q_learning:
         self.save_episode=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         input_file.close()
+        episode_file.close()
         return
