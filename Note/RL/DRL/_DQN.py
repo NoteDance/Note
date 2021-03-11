@@ -6,7 +6,7 @@ import time
 
 
 class DQN:
-    def __init__(self,value_net,value_p,target_p,state,state_name,action_name,exploration_space,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,save_episode=True):
+    def __init__(self,value_net,value_p,target_p,state,state_name,action_name,exploration_space,save_episode=True):
         self.value_net=value_net
         self.value_p=value_p
         self.target_p=target_p
@@ -20,14 +20,14 @@ class DQN:
         self.action_name=action_name
         self.exploration_space=exploration_space
         self.action_len=len(self.action_name)
-        self.epsilon=epsilon
-        self.discount=discount
-        self.episode_step=episode_step
-        self.pool_size=pool_size
-        self.batch=batch
-        self.update_step=update_step
-        self.optimizer=optimizer
-        self.lr=lr
+        self.epsilon=None
+        self.discount=None
+        self.episode_step=None
+        self.pool_size=None
+        self.batch=None
+        self.update_step=None
+        self.optimizer=None
+        self.lr=None
         self.save_episode=save_episode
         self.loss_list=[]
         self.opt_flag==False
