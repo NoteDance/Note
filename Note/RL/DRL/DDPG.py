@@ -6,13 +6,13 @@ import time
 
 
 class DDPG:
-    def __init__(self,value_net,actor_net,value_target_p,value_p,actor_target_p,actor_p,state,state_name,action_name,exploration_space,pool_net=True,save_episode=True):
+    def __init__(self,value_net,actor_net,state,state_name,action_name,exploration_space,pool_net=True,save_episode=True):
         self.value_net=value_net
         self.actor_net=actor_net
-        self.value_p=value_p
-        self.value_target_p=value_target_p
-        self.actor_p=actor_p
-        self.actor_target_p=actor_target_p
+        self.value_p=None
+        self.value_target_p=None
+        self.actor_p=None
+        self.actor_target_p=None
         self.state_pool=[]
         self.action_pool=[]
         self.next_state_pool=[]
