@@ -6,7 +6,7 @@ import time
 
 
 class DDPG:
-    def __init__(self,value_net,actor_net,value_p,value_target_p,actor_p,actor_target_p,state,state_name,action_name,exploration_space,discount=None,episode_step=None,pool_size=None,batch=None,optimizer=None,lr=None,tau=0.001,save_episode=True):
+    def __init__(self,value_net,actor_net,value_p,value_target_p,actor_p,actor_target_p,state,state_name,action_name,exploration_space,save_episode=True):
         self.value_net=value_net
         self.actor_net=actor_net
         self.value_p=value_p
@@ -22,13 +22,13 @@ class DDPG:
         self.state_name=state_name
         self.action_name=action_name
         self.exploration_space=exploration_space
-        self.discount=discount
-        self.episode_step=episode_step
-        self.pool_size=pool_size
-        self.batch=batch
-        self.optimizer=optimizer
-        self.lr=lr
-        self.tau=tau
+        self.discount=None
+        self.episode_step=None
+        self.pool_size=None
+        self.batch=None
+        self.optimizer=None
+        self.lr=None
+        self.tau=None
         self.save_episode=save_episode
         self.loss_list=[]
         self.opt_flag==False
