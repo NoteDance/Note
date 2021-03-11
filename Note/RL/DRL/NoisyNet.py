@@ -6,10 +6,10 @@ import time
 
 
 class NoisyNet:
-    def __init__(self,value_net,value_p,target_p,state,state_name,action_name,exploration_space,DUELING=None,pool_net=True,save_episode=True):
+    def __init__(self,value_net,state,state_name,action_name,exploration_space,DUELING=None,pool_net=True,save_episode=True):
         self.value_net=value_net
-        self.value_p=value_p
-        self.target_p=target_p
+        self.value_p=None
+        self.target_p=None
         self.state_pool=[]
         self.action_pool=[]
         self.next_state_pool=[]
