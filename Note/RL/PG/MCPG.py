@@ -5,9 +5,9 @@ import time
 
 
 class MCPG:
-    def __init__(self,policy_net,net_p,state,state_name,action_name,exploration_space,save_episode=True):
+    def __init__(self,policy_net,state,state_name,action_name,exploration_space,save_episode=True):
         self.policy_net=policy_net
-        self.net_p=net_p
+        self.net_p=None
         self.episode=[]
         self.state=state
         self.state_name=state_name
