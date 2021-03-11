@@ -5,7 +5,7 @@ import time
 
 
 class Q_learning:
-    def __init__(self,net,net_p,state,state_name,action_name,exploration_space,epsilon=None,discount=None,episode_step=None,optimizer=None,lr=None,save_episode=True):
+    def __init__(self,net,net_p,state,state_name,action_name,exploration_space,save_episode=True):
         self.net=net
         self.net_p=net_p
         self.episode=[]
@@ -14,12 +14,11 @@ class Q_learning:
         self.action_name=action_name
         self.exploration_space=exploration_space
         self.action_len=len(self.action_name)
-        self.epsilon=epsilon
-        self.discount=discount
-        self.episode_step=episode_step
-        self.optimizer=optimizer
-        self.lr=lr
-        if(lr!=None):self.optimizer.lr=lr
+        self.epsilon=None
+        self.discount=None
+        self.episode_step=None
+        self.optimizer=None
+        self.lr=None
         self.save_episode=save_episode
         self.loss=0
         self.opt_flag=False
@@ -43,7 +42,7 @@ class Q_learning:
         return
     
     
-    def set_up(self,net_p=None,epsilon=None,discount=None,episode_step=None,optimizer=None,lr=None,init=True):
+    def set_up(self,net_p=None,epsilon=None,discount=None,episode_step=None,optimizer=None,lr=None,init=False):
         if net_p!=None:
             self.net_p=net_p
         if epsilon!=None:
@@ -57,6 +56,8 @@ class Q_learning:
         if lr!=None:
             self.lr=lr
             self.optimizer.lr=lr
+        elif self.lr!=None:
+            self.optimizer.lr=self.lr
         if init==True:
             self.episode=[]
             self.epi_num=0
