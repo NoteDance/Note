@@ -5,10 +5,10 @@ import time
 
 
 class Q_learning_n:
-    def __init__(self,value_net,value_p,target_p,state,state_name,action_name,exploration_space,save_episode=True):
+    def __init__(self,value_net,state,state_name,action_name,exploration_space,save_episode=True):
         self.value_net=value_net
-        self.value_p=value_p
-        self.target_p=target_p
+        self.value_p=None
+        self.target_p=None
         self.episode=[]
         self.state=state
         self.state_name=state_name
