@@ -4,8 +4,8 @@ import pickle
 import time
 
 
-class A3C_Q_learning_n:
-    def __init__(self,value_net,value_p,target_p,state,state_name,action_name,exploration_space,tmax=None,Tmax=None,It=None,alpha=None,lr=None,epsilon=None,discount=None,episode_step=None,save_episode=True):
+class Q_learning_n:
+    def __init__(self,value_net,value_p,target_p,state,state_name,action_name,exploration_space,save_episode=True):
         self.value_net=value_net
         self.value_p=value_p
         self.target_p=target_p
@@ -15,16 +15,16 @@ class A3C_Q_learning_n:
         self.action_name=action_name
         self.exploration_space=exploration_space
         self.action_len=len(self.action_name)
-        self.discount=discount
-        self.episode_step=episode_step
-        self.lr=lr
+        self.epsilon=None
+        self.discount=None
+        self.episode_step=None
+        self.lr=None
         self.T=0
-        self.tmax=tmax
-        self.Tmax=Tmax
-        self.It=It
-        self.alpha=alpha
+        self.tmax=None
+        self.Tmax=None
+        self.It=None
+        self.alpha=None
         self.save_episode=save_episode
-        self.epsilon=epsilon
         self.total_episode=0
     
     
@@ -40,7 +40,7 @@ class A3C_Q_learning_n:
         return
     
     
-    def set_up(self,value_p=None,target_p=None,Tmax=None,It=None,Ia=None,alpha=None,lr=None,init=True):
+    def set_up(self,value_p=None,target_p=None,Tmax=None,It=None,Ia=None,alpha=None,lr=None,init=False):
         if value_p!=None:
             self.value_p=value_p
             self.target_p=target_p
@@ -158,12 +158,14 @@ class A3C_Q_learning_n:
     def save_p(self,path):
         parameter_file=open(path+'.dat','wb')
         pickle.dump(self.value_p,parameter_file)
+        parameter_file.close()
         return
     
     
     def save_e(self,path):
         episode_file=open(path+'.dat','wb')
         pickle.dump(self.episode,episode_file)
+        episode_file.close()
         return
     
     
@@ -195,6 +197,7 @@ class A3C_Q_learning_n:
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.total_episode,output_file)
         output_file.close()
+        episode_file.close()
         return
     
     
@@ -218,4 +221,5 @@ class A3C_Q_learning_n:
         self.save_episode=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         input_file.close()
+        episode_file.close()
         return
