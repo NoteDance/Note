@@ -51,7 +51,7 @@ class NoisyNet:
         return
     
     
-    def set_up(self,value_p=None,target_p=None,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,init=True):
+    def set_up(self,value_p=None,target_p=None,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,init=False):
         if value_p!=None:
             self.value_p=value_p
             self.target_p=target_p
