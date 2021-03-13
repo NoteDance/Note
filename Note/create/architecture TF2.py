@@ -1,5 +1,5 @@
 import tensorflow as tf
-import Note.create.creat as c
+import Note.create.nn as n
 from tensorflow.python.ops import state_ops
 import tensorflow.keras.optimizers as optimizers
 import Note.create.optimizer as optimizern
@@ -140,7 +140,7 @@ class unnamed:
                     else:
                         with tf.name_scope('apply_gradient'):
                             if self.optimizer!=None:
-                                c.apply_gradient(tape,self.optimizer,batch_loss,parameter)
+                                n.apply_gradient(tape,self.optimizer,batch_loss,parameter)
                             else:
                                 gradient=tape.gradient(batch_loss,parameter)
                                 self.optimizern(gradient,parameter)
@@ -173,7 +173,7 @@ class unnamed:
                 else:
                    with tf.name_scope('apply_gradient'):
                        if self.optimizer!=None:
-                           c.apply_gradient(tape,self.optimizer,batch_loss,parameter)
+                           n.apply_gradient(tape,self.optimizer,batch_loss,parameter)
                        else:
                            gradient=tape.gradient(batch_loss,parameter)
                            self.optimizern(gradient,parameter)
