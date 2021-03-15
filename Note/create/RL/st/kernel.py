@@ -30,6 +30,7 @@ class kernel:
         self.batch=None
         self.update_step=None
         self.lr=None
+        self.end_loss=None
         self.save_episode=save_episode
         self.loss_list=[]
         self.opt_flag==False
@@ -55,7 +56,7 @@ class kernel:
         return
     
     
-    def set_up(self,parameter=None,optimizer=None,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,lr=None,init=False):
+    def set_up(self,parameter=None,optimizer=None,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,lr=None,end_loss=None,init=False):
         if parameter!=None:
             self.parameter=parameter
         if optimizer!=None:
@@ -74,6 +75,8 @@ class kernel:
             self.update_step=update_step
         if lr!=None:
             self.lr=lr
+        if end_loss!=None:
+            self.end_loss=end_loss
         if init==True:
             self.episode=[]
             self.state_pool=None
@@ -98,7 +101,7 @@ class kernel:
         return action_prob
     
     
-    def _learn(self):
+    def learn1(self):
         if len(self.state_pool)<self.batch:
             with tf.GradientTape() as tape:
                 loss=self.loss(self.nn,self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool)
@@ -133,98 +136,127 @@ class kernel:
         return loss
     
     
+    def learn2(self):
+        episode=[]
+        s=int(np.random.uniform(0,len(self.state_name)))
+        if self.episode_step==None:
+            while True:
+                t1=time.time()
+                self.a+=1
+                if self.epsilon!=None:
+                    action_prob=self.epsilon_greedy_policy(s,self.action_one)
+                    a=np.random.choice(self.action,p=action_prob)
+                    next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
+                else:
+                    a=self.nn[1](self.state[self.state_name[s]],self.actor_p)
+                    next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
+                if self.state_pool==None:
+                    self.state_pool=tf.expand_dims(self.state[self.state_name[s]],axis=0)
+                    self.action_pool=tf.expand_dims(a,axis=0)
+                    self.next_state_pool=tf.expand_dims(self.state[self.state_name[next_s]],axis=0)
+                    self.reward_pool=tf.expand_dims(r,axis=0)
+                else:
+                    self.state_pool=tf.concat([self.state_pool,tf.expand_dims(self.state[self.state_name[s]],axis=0)])
+                    self.action_pool=tf.concat([self.action_pool,tf.expand_dims(a,axis=0)])
+                    self.next_state_pool=tf.concat([self.next_state_pool,tf.expand_dims(self.state[self.state_name[next_s]],axis=0)])
+                    self.reward_pool=tf.concat([self.reward_pool,tf.expand_dims(r,axis=0)])
+                if len(self.state_pool)>self.pool_size:
+                    self.state_pool=self.state_pool[1:]
+                    self.action_pool=self.action_pool[1:]
+                    self.next_state_pool=self.next_state_pool[1:]
+                    self.reward_pool=self.reward_pool[1:]
+                if end:
+                    if self.save_episode==True:
+                        episode.append([self.state_name[s],self.action_name[a],r,end])
+                    break
+                elif self.save_episode==True:
+                    episode.append([self.state_name[s],self.self.action_name[a],r])
+                s=next_s
+                loss=self._learn()
+                t2=time.time()
+                self.time+=(t2-t1)
+        else:
+            for _ in range(self.episode_step):
+                t1=time.time()
+                self.a+=1
+                if self.epsilon!=None:
+                    action_prob=self.epsilon_greedy_policy(s,self.action_one)
+                    a=np.random.choice(self.action,p=action_prob)
+                    next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
+                else:
+                    a=self.nn[1](self.state[self.state_name[s]],self.actor_p)
+                    next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
+                if self.state_pool==None:
+                    self.state_pool=tf.expand_dims(self.state[self.state_name[s]],axis=0)
+                    self.action_pool=tf.expand_dims(a,axis=0)
+                    self.next_state_pool=tf.expand_dims(self.state[self.state_name[next_s]],axis=0)
+                    self.reward_pool=tf.expand_dims(r,axis=0)
+                else:
+                    self.state_pool=tf.concat([self.state_pool,tf.expand_dims(self.state[self.state_name[s]],axis=0)])
+                    self.action_pool=tf.concat([self.action_pool,tf.expand_dims(a,axis=0)])
+                    self.next_state_pool=tf.concat([self.next_state_pool,tf.expand_dims(self.state[self.state_name[next_s]],axis=0)])
+                    self.reward_pool=tf.concat([self.reward_pool,tf.expand_dims(r,axis=0)])
+                if len(self.state_pool)>self.pool_size:
+                    self.state_pool=self.state_pool[1:]
+                    self.action_pool=self.action_pool[1:]
+                    self.next_state_pool=self.next_state_pool[1:]
+                    self.reward_pool=self.reward_pool[1:]
+                if end:
+                    if self.save_episode==True:
+                        episode.append([self.state_name[s],self.action_name[a],r,end])
+                    break
+                elif self.save_episode==True:
+                    episode.append([self.state_name[s],self.self.action_name[a],r])
+                s=next_s
+                loss=self._learn()
+                t2=time.time()
+                self.time+=(t2-t1)
+        return loss,episode
+    
+    
     def learn(self,episode_num,path=None,one=True):
-        for i in range(episode_num):
-            episode=[]
-            s=int(np.random.uniform(0,len(self.state_name)))
-            if self.episode_step==None:
-                while True:
-                    t1=time.time()
-                    self.a+=1
-                    if self.epsilon!=None:
-                        action_prob=self.epsilon_greedy_policy(s,self.action_one)
-                        a=np.random.choice(self.action,p=action_prob)
-                        next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
-                    else:
-                        a=self.nn[1](self.state[self.state_name[s]],self.actor_p)
-                        next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
-                    if self.state_pool==None:
-                        self.state_pool=tf.expand_dims(self.state[self.state_name[s]],axis=0)
-                        self.action_pool=tf.expand_dims(a,axis=0)
-                        self.next_state_pool=tf.expand_dims(self.state[self.state_name[next_s]],axis=0)
-                        self.reward_pool=tf.expand_dims(r,axis=0)
-                    else:
-                        self.state_pool=tf.concat([self.state_pool,tf.expand_dims(self.state[self.state_name[s]],axis=0)])
-                        self.action_pool=tf.concat([self.action_pool,tf.expand_dims(a,axis=0)])
-                        self.next_state_pool=tf.concat([self.next_state_pool,tf.expand_dims(self.state[self.state_name[next_s]],axis=0)])
-                        self.reward_pool=tf.concat([self.reward_pool,tf.expand_dims(r,axis=0)])
-                    if len(self.state_pool)>self.pool_size:
-                        self.state_pool=self.state_pool[1:]
-                        self.action_pool=self.action_pool[1:]
-                        self.next_state_pool=self.next_state_pool[1:]
-                        self.reward_pool=self.reward_pool[1:]
-                    if end:
-                        if self.save_episode==True:
-                            episode.append([self.state_name[s],self.action_name[a],r,end])
-                        break
-                    elif self.save_episode==True:
-                        episode.append([self.state_name[s],self.self.action_name[a],r])
-                    s=next_s
-                    loss=self._learn()
-                    t2=time.time()
-                    self.time+=(t2-t1)
-            else:
-                for _ in range(self.episode_step):
-                    t1=time.time()
-                    self.a+=1
-                    if self.epsilon!=None:
-                        action_prob=self.epsilon_greedy_policy(s,self.action_one)
-                        a=np.random.choice(self.action,p=action_prob)
-                        next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
-                    else:
-                        a=self.nn[1](self.state[self.state_name[s]],self.actor_p)
-                        next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
-                    if self.state_pool==None:
-                        self.state_pool=tf.expand_dims(self.state[self.state_name[s]],axis=0)
-                        self.action_pool=tf.expand_dims(a,axis=0)
-                        self.next_state_pool=tf.expand_dims(self.state[self.state_name[next_s]],axis=0)
-                        self.reward_pool=tf.expand_dims(r,axis=0)
-                    else:
-                        self.state_pool=tf.concat([self.state_pool,tf.expand_dims(self.state[self.state_name[s]],axis=0)])
-                        self.action_pool=tf.concat([self.action_pool,tf.expand_dims(a,axis=0)])
-                        self.next_state_pool=tf.concat([self.next_state_pool,tf.expand_dims(self.state[self.state_name[next_s]],axis=0)])
-                        self.reward_pool=tf.concat([self.reward_pool,tf.expand_dims(r,axis=0)])
-                    if len(self.state_pool)>self.pool_size:
-                        self.state_pool=self.state_pool[1:]
-                        self.action_pool=self.action_pool[1:]
-                        self.next_state_pool=self.next_state_pool[1:]
-                        self.reward_pool=self.reward_pool[1:]
-                    if end:
-                        if self.save_episode==True:
-                            episode.append([self.state_name[s],self.action_name[a],r,end])
-                        break
-                    elif self.save_episode==True:
-                        episode.append([self.state_name[s],self.self.action_name[a],r])
-                    s=next_s
-                    loss=self._learn()
-                    t2=time.time()
-                    self.time+=(t2-t1)
-            self.loss_list.append(loss)
-            if episode_num%10!=0:
-                d=episode_num-episode_num%10
-                d=int(d/10)
-            else:
-                d=episode_num/10
-            if d==0:
-                d=1
-            if i%d==0:
-                print('episode num:{0}   loss:{1:.6f}'.format(i+1,loss))
-                if path!=None and i%episode_num*2==0:
-                    self.save(path,i,one)
-            self.epi_num+=1
-            self.total_episode+=1
-            if self.save_episode==True:
-                self.episode.append(episode)
+        if episode_num!=None:
+            for i in range(episode_num):
+                loss,episode=self.learn2()
+                self.loss_list.append(loss)
+                if episode_num%10!=0:
+                    d=episode_num-episode_num%10
+                    d=int(d/10)
+                else:
+                    d=episode_num/10
+                if d==0:
+                    d=1
+                if i%d==0:
+                    print('episode num:{0}   loss:{1:.6f}'.format(i+1,loss))
+                    if path!=None and i%episode_num*2==0:
+                        self.save(path,i,one)
+                self.epi_num+=1
+                self.total_episode+=1
+                if self.save_episode==True:
+                    self.episode.append(episode)
+                if loss<=self.end_loss:
+                    break
+        else:
+            while True:
+                loss,episode=self.learn2()
+                self.loss_list.append(loss)
+                if episode_num%10!=0:
+                    d=episode_num-episode_num%10
+                    d=int(d/10)
+                else:
+                    d=episode_num/10
+                if d==0:
+                    d=1
+                if i%d==0:
+                    print('episode num:{0}   loss:{1:.6f}'.format(i+1,loss))
+                    if path!=None and i%episode_num*2==0:
+                        self.save(path,i,one)
+                self.epi_num+=1
+                self.total_episode+=1
+                if self.save_episode==True:
+                    self.episode.append(episode)
+                if loss<=self.end_loss:
+                    break
         if path!=None:
             self.save(path)
         if self.time<0.5:
@@ -292,6 +324,7 @@ class kernel:
         pickle.dump(self.update_step,output_file)
         pickle.dump(self.optimizer,output_file)
         pickle.dump(self.lr,output_file)
+        pickle.dump(self.end_loss,output_file)
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.loss_list,output_file)
         pickle.dump(self.opt_flag,output_file)
@@ -324,6 +357,7 @@ class kernel:
         self.update_step=pickle.load(input_file)
         self.optimizer=pickle.load(input_file)
         self.lr=pickle.load(input_file)
+        self.end_loss=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
         self.opt_flag=pickle.load(input_file)
