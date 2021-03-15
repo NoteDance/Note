@@ -29,6 +29,7 @@ class DDPG:
         self.optimizer=None
         self.lr=None
         self.tau=None
+        self.end_loss=None
         self.t=0
         self.t_counter=0
         self.one_list=[]
@@ -48,7 +49,7 @@ class DDPG:
         self.total_time=0
     
     
-    def set_up(self,value_p=None,value_target_p=None,actor_p=None,actor_target_p=None,discount=None,episode_step=None,pool_size=None,batch=None,optimizer=None,lr=None,tau=0.001,init=False):
+    def set_up(self,value_p=None,value_target_p=None,actor_p=None,actor_target_p=None,discount=None,episode_step=None,pool_size=None,batch=None,optimizer=None,lr=None,tau=0.001,end_loss=None,init=False):
         if value_p!=None:
             self.value_p=value_p
             self.value_target_p=value_target_p
@@ -72,6 +73,8 @@ class DDPG:
             self.optimizer.lr=self.lr
         if tau!=None:
             self.tau=tau
+        if end_loss!=None:
+            self.end_loss=end_loss
         if init==True:
             self.t=0
             self.t_counter=0
@@ -337,13 +340,14 @@ class DDPG:
         pickle.dump(self.action_pool,output_file)
         pickle.dump(self.next_state_pool,output_file)
         pickle.dump(self.reward_pool,output_file)
-        pickle.dump(self.tau,output_file)
         pickle.dump(self.discount,output_file)
         pickle.dump(self.episode_step,output_file)
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.optimizer,output_file)
         pickle.dump(self.lr,output_file)
+        pickle.dump(self.tau,output_file)
+        pickle.dump(self.end_loss,output_file)
         pickle.dump(self.thread,output_file)
         pickle.dump(self.t_counter,output_file)
         pickle.dump(self.one_list,output_file)
@@ -370,13 +374,14 @@ class DDPG:
         self.action_pool=pickle.load(input_file)
         self.next_state_pool=pickle.load(input_file)
         self.reward_pool=pickle.load(input_file)
-        self.tau=pickle.load(input_file)
         self.discount=pickle.load(input_file)
         self.episode_step=pickle.load(input_file)
         self.pool_size=pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.optimizer=pickle.load(input_file)
         self.lr=pickle.load(input_file)
+        self.tau=pickle.load(input_file)
+        self.end_loss=pickle.load(input_file)
         self.thread=pickle.load(input_file)
         self.t_counter=pickle.load(input_file)
         self.one_list=pickle.load(input_file)
