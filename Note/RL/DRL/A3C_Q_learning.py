@@ -19,6 +19,7 @@ class Q_learning:
         self.discount=None
         self.episode_step=None
         self.lr=None
+        self.end_loss=None
         self.T=0
         self.Tmax=None
         self.It=None
@@ -40,7 +41,7 @@ class Q_learning:
         return
     
     
-    def set_up(self,value_p=None,target_p=None,Tmax=None,It=None,Ia=None,alpha=None,lr=None,init=False):
+    def set_up(self,value_p=None,target_p=None,Tmax=None,It=None,Ia=None,alpha=None,lr=None,end_loss=None,init=False):
         if value_p!=None:
             self.value_p=value_p
             self.target_p=target_p
@@ -54,6 +55,8 @@ class Q_learning:
             self.alpha=alpha
         if lr!=None:
             self.lr=lr
+        if end_loss!=None:
+            self.end_loss=end_loss
         if init==True:
             self.episode=[]
         return
@@ -183,6 +186,7 @@ class Q_learning:
         pickle.dump(self.discount,output_file)
         pickle.dump(self.episode_step,output_file)
         pickle.dump(self.lr,output_file)
+        pickle.dump(self.end_loss,output_file)
         pickle.dump(self.T,output_file)
         pickle.dump(self.Tmax,output_file)
         pickle.dump(self.It,output_file)
@@ -206,6 +210,7 @@ class Q_learning:
         self.discount=pickle.load(input_file)
         self.episode_step=pickle.load(input_file)
         self.lr=pickle.load(input_file)
+        self.end_loss=pickle.load(input_file)
         self.T=pickle.load(input_file)
         self.Tmax=pickle.load(input_file)
         self.It=pickle.load(input_file)
