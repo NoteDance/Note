@@ -17,6 +17,10 @@ class kernel:
             self.lr=None
             self.l2=None
             self.dropout=None
+            self.end_loss=None
+            self.end_acc=None
+            self.end_test_loss=None
+            self.end_test_acc=None
             self.hyperparameter=self.nn.hyperparameter
         with tf.name_scope('regulation'):
             self.regulation=self.nn.regulation
@@ -72,7 +76,7 @@ class kernel:
         return
     
     
-    def set_up(self,optimizer=None,optimizern=None,lr=None,l2=None,dropout=None):
+    def set_up(self,optimizer=None,optimizern=None,lr=None,l2=None,dropout=None,end_loss=None,end_acc=None,end_test_loss=None,end_test_acc=None):
         with tf.name_scope('hyperparameter'):
             if optimizer!=None or optimizern!=None:
                 self.optimizer=optimizer
@@ -91,8 +95,199 @@ class kernel:
                 self.l2=l2
             if dropout!=None:
                 self.dropout=dropout
+            if end_loss!=None:
+                self.end_loss=end_loss
+            if end_acc!=None:
+                self.end_acc=end_acc
+            if end_test_loss!=None:
+                self.end_test_loss=end_test_loss
+            if end_test_acc!=None:
+                self.end_test_acc=end_test_acc
             return
     
+    
+    def _train(self,epoch,batch,test,test_batch):
+        if batch!=None:
+            total_loss=0
+            total_acc=0
+            batches=int((self.shape0-self.shape0%batch)/batch)
+            if type(self.train_data)==list:
+                data_batch=[x for x in range(len(self.train_data))]
+            if type(self.train_labels)==list:
+                labels_batch=[x for x in range(len(self.train_labels))]
+            for j in range(batches):
+                index1=j*batch
+                index2=(j+1)*batch
+                with tf.name_scope('data_batch'):
+                    if type(self.train_data)==list:
+                        for i in range(len(self.train_data)):
+                            if batch!=1:
+                                data_batch[i]=self.train_data[i][index1:index2]
+                            else:
+                                data_batch[i]=self.train_data[i][j]
+                    else:
+                        if batch!=1:
+                            data_batch=self.train_data[index1:index2]
+                        else:
+                            data_batch=self.train_data[j]
+                    if type(self.train_labels)==list:
+                        for i in range(len(self.train_data)):
+                            if batch!=1:
+                                labels_batch[i]=self.train_labels[i][index1:index2]
+                            else:
+                                labels_batch[i]=self.train_labels[i][j]
+                    else:
+                        if batch!=1:
+                            labels_batch=self.train_labels[index1:index2]
+                        else:
+                            labels_batch=self.train_labels[j]
+                with tf.GradientTape() as tape:
+                    with tf.name_scope('forward_propagation/loss'):
+                        output=self.nn.forward_propagation(data_batch,self.dropout)
+                        self.output=output
+                        batch_loss=self.nn.loss(output,labels_batch,self.l2)
+                if i==0 and self.total_epoch==0:
+                    batch_loss=batch_loss.numpy()
+                else:
+                    with tf.name_scope('apply_gradient'):
+                        if self.optimizer!=None:
+                            n.apply_gradient(tape,self.optimizer,batch_loss,self.parameter)
+                        else:
+                            gradient=tape.gradient(batch_loss,self.parameter)
+                            self.optimizern(gradient,self.parameter)
+                if i==(epoch-1):
+                    self.output=self.nn.forward_propagation(data_batch,self.dropout)
+                total_loss+=batch_loss
+                if self.acc_flag1==1:
+                    with tf.name_scope('accuracy'):
+                        batch_acc=self.nn.accuracy(output,labels_batch)
+                    batch_acc=batch_acc.numpy()
+                    total_acc+=batch_acc
+            if self.shape0%batch!=0:
+                batches+=1
+                index1=batches*batch
+                index2=batch-(self.shape0-batches*batch)
+                with tf.name_scope('data_batch'):
+                    if type(self.train_data)==list:
+                        for i in range(len(self.train_data)):
+                            if type(self.train_data)==np.ndarray:
+                                data_batch[i]=np.concatenate((self.train_data[i][index1:],self.train_data[i][:index2]))
+                            else:
+                                data_batch[i]=tf.concat([self.train_data[i][index1:],self.train_data[i][:index2]])
+                                
+                    else:
+                        if type(self.train_data)==np.ndarray:
+                            data_batch=np.concatenate((self.train_data[index1:],self.train_data[:index2]))
+                        else:
+                            data_batch=tf.concat([self.train_data[index1:],self.train_data[:index2]])
+                    if type(self.train_labels)==list:
+                        for i in range(len(self.train_data)):
+                            if type(self.train_labels)==np.ndarray:
+                                labels_batch[i]=np.concatenate((self.train_labels[i][index1:],self.train_labels[i][:index2]))
+                            else:
+                                labels_batch[i]=tf.concat([self.train_labels[i][index1:],self.train_labels[i][:index2]])
+                    else:
+                        if type(self.train_labels)==np.ndarray:
+                            labels_batch=np.concatenate((self.train_labels[index1:],self.train_labels[:index2]))
+                        else:
+                            labels_batch=tf.concat([self.train_labels[index1:],self.train_labels[:index2]])
+                with tf.GradientTape() as tape:
+                    with tf.name_scope('forward_propagation/loss'):
+                        output=self.nn.forward_propagation(data_batch,self.dropout)
+                        self.output=output
+                        batch_loss=self.nn.loss(output,labels_batch,self.l2)
+                    if i==0 and self.total_epoch==0:
+                        batch_loss=batch_loss.numpy()
+                    else:
+                        with tf.name_scope('apply_gradient'):
+                            if self.optimizer!=None:
+                                n.apply_gradient(tape,self.optimizer,batch_loss,self.parameter)
+                            else:
+                                gradient=tape.gradient(batch_loss,self.parameter)
+                                self.optimizern(gradient,self.parameter)
+                if i==0 and self.total_epoch==0:
+                    batch_loss=batch_loss.numpy()
+                else:
+                    with tf.name_scope('apply_gradient'):
+                        if self.optimizer!=None:
+                            n.apply_gradient(tape,self.optimizer,batch_loss,self.parameter)
+                        else:
+                            gradient=tape.gradient(batch_loss,self.parameter)
+                            self.optimizern(gradient,self.parameter)
+                if i==(epoch-1):
+                    self.output=self.nn.forward_propagation(data_batch,self.dropout)
+                total_loss+=batch_loss
+                if self.acc_flag1==1:
+                    with tf.name_scope('accuracy'):
+                        batch_acc=self.nn.accuracy(output,labels_batch)
+                    batch_acc=batch_acc.numpy()
+                    total_acc+=batch_acc
+            loss=total_loss/batches
+            if self.acc_flag1==1:
+                train_acc=total_acc/batches
+            self.train_loss_list.append(loss.astype(np.float32))
+            self.train_loss=loss
+            self.train_loss=self.train_loss.astype(np.float32)
+            if self.acc_flag1==1:
+                self.train_acc_list.append(train_acc.astype(np.float32))
+                self.train_acc=train_acc
+                self.train_acc=self.train_acc.astype(np.float32)
+            if test==True:
+                with tf.name_scope('test'):
+                    self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
+                    self.test_loss_list.append(self.test_loss)
+                    if self.acc_flag1==1:
+                        self.test_acc_list.append(self.test_acc)
+        else:
+            with tf.GradientTape() as tape:
+                with tf.name_scope('forward_propagation/loss'):
+                    output=self.nn.forward_propagation(self.train_data,self.dropout)
+                    self.output=output
+                    train_loss=self.nn.loss(output,self.train_labels,self.l2)
+            if i==0 and self.total_epoch==0:
+                loss=train_loss.numpy()
+            else:
+               with tf.name_scope('apply_gradient'):
+                   if self.optimizer!=None:
+                       n.apply_gradient(tape,self.optimizer,batch_loss,self.parameter)
+                   else:
+                       gradient=tape.gradient(batch_loss,self.parameter)
+                       self.optimizern(gradient,self.parameter)
+            if i==(epoch-1):
+                self.output=self.nn.forward_propagation(self.train_data,self.dropout)
+            self.train_loss_list.append(loss.astype(np.float32))
+            self.train_loss=loss
+            self.train_loss=self.train_loss.astype(np.float32)
+            if self.acc_flag1==1:
+                with tf.name_scope('accuracy'):
+                    acc=self.nn.accuracy(output,self.train_labels)
+                acc=train_acc.numpy()
+                self.train_acc_list.append(acc.astype(np.float32))
+                self.train_acc=acc
+                self.train_acc=self.train_acc.astype(np.float32)
+            if test==True:
+                with tf.name_scope('test'):
+                    self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
+                    self.test_loss_list.append(self.test_loss)
+                    if self.acc_flag1==1:
+                        self.test_acc_list.append(self.test_acc)
+        return
+    
+    
+    def end(self):
+        if self.end_loss!=None and self.train_loss<=self.end_loss:
+            return True
+        elif self.end_acc!=None and self.train_acc>=self.end_acc:
+            return True
+        elif self.end_loss!=None and self.end_acc!=None and self.train_loss<=self.end_loss and self.train_acc>=self.end_acc:
+            return True
+        elif self.end_test_loss!=None and self.test_loss<=self.end_test_loss:
+            return True
+        elif self.end_test_acc!=None and self.test_acc>=self.end_test_acc:
+            return True
+        elif self.end_test_loss!=None and self.end_test_acc!=None and self.test_loss<=self.end_test_loss and self.test_acc>=self.end_test_acc:
+            return True
+        
     
     def train(self,batch=None,epoch=None,test=False,test_batch=None,nn_path=None,one=True,processor=None):
         with tf.name_scope('parameter'):
@@ -108,190 +303,56 @@ class kernel:
             self.opt=self.nn.opt
         if self.total_epoch==0:
             epoch=epoch+1
-        for i in range(epoch):
-            t1=time.time()
-            if batch!=None:
-                total_loss=0
-                total_acc=0
-                batches=int((self.shape0-self.shape0%batch)/batch)
-                if type(self.train_data)==list:
-                    data_batch=[x for x in range(len(self.train_data))]
-                if type(self.train_labels)==list:
-                    labels_batch=[x for x in range(len(self.train_labels))]
-                for j in range(batches):
-                    index1=j*batch
-                    index2=(j+1)*batch
-                    with tf.name_scope('data_batch'):
-                        if type(self.train_data)==list:
-                            for i in range(len(self.train_data)):
-                                if batch!=1:
-                                    data_batch[i]=self.train_data[i][index1:index2]
-                                else:
-                                    data_batch[i]=self.train_data[i][j]
-                        else:
-                            if batch!=1:
-                                data_batch=self.train_data[index1:index2]
-                            else:
-                                data_batch=self.train_data[j]
-                        if type(self.train_labels)==list:
-                            for i in range(len(self.train_data)):
-                                if batch!=1:
-                                    labels_batch[i]=self.train_labels[i][index1:index2]
-                                else:
-                                    labels_batch[i]=self.train_labels[i][j]
-                        else:
-                            if batch!=1:
-                                labels_batch=self.train_labels[index1:index2]
-                            else:
-                                labels_batch=self.train_labels[j]
-                    with tf.GradientTape() as tape:
-                        with tf.name_scope('forward_propagation/loss'):
-                            output=self.nn.forward_propagation(data_batch,self.dropout)
-                            self.output=output
-                            batch_loss=self.nn.loss(output,labels_batch,self.l2)
-                    if i==0 and self.total_epoch==0:
-                        batch_loss=batch_loss.numpy()
-                    else:
-                        with tf.name_scope('apply_gradient'):
-                            if self.optimizer!=None:
-                                n.apply_gradient(tape,self.optimizer,batch_loss,self.parameter)
-                            else:
-                                gradient=tape.gradient(batch_loss,self.parameter)
-                                self.optimizern(gradient,self.parameter)
-                    if i==(epoch-1):
-                        self.output=self.nn.forward_propagation(data_batch,self.dropout)
-                    total_loss+=batch_loss
-                    if self.acc_flag1==1:
-                        with tf.name_scope('accuracy'):
-                            batch_acc=self.nn.accuracy(output,labels_batch)
-                        batch_acc=batch_acc.numpy()
-                        total_acc+=batch_acc
-                if self.shape0%batch!=0:
-                    batches+=1
-                    index1=batches*batch
-                    index2=batch-(self.shape0-batches*batch)
-                    with tf.name_scope('data_batch'):
-                        if type(self.train_data)==list:
-                            for i in range(len(self.train_data)):
-                                if type(self.train_data)==np.ndarray:
-                                    data_batch[i]=np.concatenate((self.train_data[i][index1:],self.train_data[i][:index2]))
-                                else:
-                                    data_batch[i]=tf.concat([self.train_data[i][index1:],self.train_data[i][:index2]])
-                                    
-                        else:
-                            if type(self.train_data)==np.ndarray:
-                                data_batch=np.concatenate((self.train_data[index1:],self.train_data[:index2]))
-                            else:
-                                data_batch=tf.concat([self.train_data[index1:],self.train_data[:index2]])
-                        if type(self.train_labels)==list:
-                            for i in range(len(self.train_data)):
-                                if type(self.train_labels)==np.ndarray:
-                                    labels_batch[i]=np.concatenate((self.train_labels[i][index1:],self.train_labels[i][:index2]))
-                                else:
-                                    labels_batch[i]=tf.concat([self.train_labels[i][index1:],self.train_labels[i][:index2]])
-                        else:
-                            if type(self.train_labels)==np.ndarray:
-                                labels_batch=np.concatenate((self.train_labels[index1:],self.train_labels[:index2]))
-                            else:
-                                labels_batch=tf.concat([self.train_labels[index1:],self.train_labels[:index2]])
-                    with tf.GradientTape() as tape:
-                        with tf.name_scope('forward_propagation/loss'):
-                            output=self.nn.forward_propagation(data_batch,self.dropout)
-                            self.output=output
-                            batch_loss=self.nn.loss(output,labels_batch,self.l2)
-                        if i==0 and self.total_epoch==0:
-                            batch_loss=batch_loss.numpy()
-                        else:
-                            with tf.name_scope('apply_gradient'):
-                                if self.optimizer!=None:
-                                    n.apply_gradient(tape,self.optimizer,batch_loss,self.parameter)
-                                else:
-                                    gradient=tape.gradient(batch_loss,self.parameter)
-                                    self.optimizern(gradient,self.parameter)
-                    if i==0 and self.total_epoch==0:
-                        batch_loss=batch_loss.numpy()
-                    else:
-                        with tf.name_scope('apply_gradient'):
-                            if self.optimizer!=None:
-                                n.apply_gradient(tape,self.optimizer,batch_loss,self.parameter)
-                            else:
-                                gradient=tape.gradient(batch_loss,self.parameter)
-                                self.optimizern(gradient,self.parameter)
-                    if i==(epoch-1):
-                        self.output=self.nn.forward_propagation(data_batch,self.dropout)
-                    total_loss+=batch_loss
-                    if self.acc_flag1==1:
-                        with tf.name_scope('accuracy'):
-                            batch_acc=self.nn.accuracy(output,labels_batch)
-                        batch_acc=batch_acc.numpy()
-                        total_acc+=batch_acc
-                loss=total_loss/batches
-                if self.acc_flag1==1:
-                    train_acc=total_acc/batches
-                self.train_loss_list.append(loss.astype(np.float32))
-                self.train_loss=loss
-                self.train_loss=self.train_loss.astype(np.float32)
-                if self.acc_flag1==1:
-                    self.train_acc_list.append(train_acc.astype(np.float32))
-                    self.train_acc=train_acc
-                    self.train_acc=self.train_acc.astype(np.float32)
-                if test==True:
-                    with tf.name_scope('test'):
-                        self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
-                        self.test_loss_list.append(self.test_loss)
-                        if self.acc_flag1==1:
-                            self.test_acc_list.append(self.test_acc)
-            else:
-                with tf.GradientTape() as tape:
-                    with tf.name_scope('forward_propagation/loss'):
-                        output=self.nn.forward_propagation(self.train_data,self.dropout)
-                        self.output=output
-                        train_loss=self.nn.loss(output,self.train_labels,self.l2)
-                if i==0 and self.total_epoch==0:
-                    loss=train_loss.numpy()
+        if epoch!=None:
+            for i in range(epoch):
+                t1=time.time()
+                self._train(epoch,batch,test,test_batch)
+                self.epoch+=1
+                self.total_epoch+=1
+                if epoch%10!=0:
+                    d=epoch-epoch%10
+                    d=int(d/10)
                 else:
-                   with tf.name_scope('apply_gradient'):
-                       if self.optimizer!=None:
-                           n.apply_gradient(tape,self.optimizer,batch_loss,self.parameter)
-                       else:
-                           gradient=tape.gradient(batch_loss,self.parameter)
-                           self.optimizern(gradient,self.parameter)
-                if i==(epoch-1):
-                    self.output=self.nn.forward_propagation(self.train_data,self.dropout)
-                self.train_loss_list.append(loss.astype(np.float32))
-                self.train_loss=loss
-                self.train_loss=self.train_loss.astype(np.float32)
-                if self.acc_flag1==1:
-                    with tf.name_scope('accuracy'):
-                        acc=self.nn.accuracy(output,self.train_labels)
-                    acc=train_acc.numpy()
-                    self.train_acc_list.append(acc.astype(np.float32))
-                    self.train_acc=acc
-                    self.train_acc=self.train_acc.astype(np.float32)
-                if test==True:
-                    with tf.name_scope('test'):
-                        self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
-                        self.test_loss_list.append(self.test_loss)
-                        if self.acc_flag1==1:
-                            self.test_acc_list.append(self.test_acc)
-            self.epoch+=1
-            self.total_epoch+=1
-            if epoch%10!=0:
-                d=epoch-epoch%10
-                d=int(d/10)
-            else:
-                d=epoch/10
-            if d==0:
-                d=1
-            if i%d==0:
-                if self.total_epoch==0:
-                    print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
+                    d=epoch/10
+                if d==0:
+                    d=1
+                if i%d==0:
+                    if self.total_epoch==0:
+                        print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
+                    else:
+                        print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
+                    if nn_path!=None and i%epoch*2==0:
+                        self.save(nn_path,i,one)
+                t2=time.time()
+                self.time+=(t2-t1)
+                if self.end()==True:
+                    break
+        else:
+            i=0
+            while True:
+                t1=time.time()
+                i+=1
+                self._train(epoch,batch,test,test_batch)
+                self.epoch+=1
+                self.total_epoch+=1
+                if epoch%10!=0:
+                    d=epoch-epoch%10
+                    d=int(d/10)
                 else:
-                    print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
-                if nn_path!=None and i%epoch*2==0:
-                    self.save(nn_path,i,one)
-            t2=time.time()
-            self.time+=(t2-t1)
+                    d=epoch/10
+                if d==0:
+                    d=1
+                if i%d==0:
+                    if self.total_epoch==0:
+                        print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
+                    else:
+                        print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
+                    if nn_path!=None and i%epoch*2==0:
+                        self.save(nn_path,i,one)
+                t2=time.time()
+                self.time+=(t2-t1)
+                if self.end()==True:
+                    break
         if nn_path!=None:
             self.save(nn_path)
         self.time=self.time-int(self.time)
@@ -557,6 +618,10 @@ class kernel:
             pickle.dump(self.lr,output_file)
             pickle.dump(self.l2,output_file)
             pickle.dump(self.dropout,output_file)
+            pickle.dump(self.end_loss,output_file)
+            pickle.dump(self.end_acc,output_file)
+            pickle.dump(self.end_test_loss,output_file)
+            pickle.dump(self.end_test_acc,output_file)
             pickle.dump(self.hyperparameter,output_file)
         with tf.name_scope('save_regulation'):
             pickle.dump(self.regulation,output_file)
@@ -599,6 +664,10 @@ class kernel:
             self.lr=pickle.load(input_file)
             self.l2=pickle.load(input_file)
             self.dropout=pickle.load(input_file)
+            self.end_loss=pickle.load(input_file)
+            self.end_acc=pickle.load(input_file)
+            self.end_test_loss=pickle.load(input_file)
+            self.end_test_acc=pickle.load(input_file)
             self.hyperparameter=pickle.load(input_file)
         with tf.name_scope('restore_regulation'):
             self.regulation=pickle.load(input_file)
