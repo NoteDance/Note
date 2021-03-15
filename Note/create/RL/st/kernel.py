@@ -172,7 +172,7 @@ class kernel:
                 elif self.save_episode==True:
                     episode.append([self.state_name[s],self.self.action_name[a],r])
                 s=next_s
-                loss=self._learn()
+                loss=self.learn1()
                 t2=time.time()
                 self.time+=(t2-t1)
         else:
@@ -208,7 +208,7 @@ class kernel:
                 elif self.save_episode==True:
                     episode.append([self.state_name[s],self.self.action_name[a],r])
                 s=next_s
-                loss=self._learn()
+                loss=self.learn1()
                 t2=time.time()
                 self.time+=(t2-t1)
         return loss,episode
@@ -234,7 +234,7 @@ class kernel:
                 self.total_episode+=1
                 if self.save_episode==True:
                     self.episode.append(episode)
-                if loss<=self.end_loss:
+                if self.end_loss!=None and loss<=self.end_loss:
                     break
         else:
             while True:
@@ -255,7 +255,7 @@ class kernel:
                 self.total_episode+=1
                 if self.save_episode==True:
                     self.episode.append(episode)
-                if loss<=self.end_loss:
+                if self.end_loss!=None and loss<=self.end_loss:
                     break
         if path!=None:
             self.save(path)
