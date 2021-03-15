@@ -29,6 +29,7 @@ class NoisyNet:
         self.update_step=None
         self.optimizer=None
         self.lr=None
+        self.end_loss=None
         self.t=0
         self.t_counter=0
         self.one_list=[]
@@ -61,7 +62,7 @@ class NoisyNet:
         return
     
     
-    def set_up(self,value_p=None,target_p=None,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,init=False):
+    def set_up(self,value_p=None,target_p=None,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,optimizer=None,lr=None,end_loss=None,init=False):
         if value_p!=None:
             self.value_p=value_p
             self.target_p=target_p
@@ -85,6 +86,8 @@ class NoisyNet:
             self.optimizer.lr=lr
         elif self.lr!=None:
             self.optimizer.lr=self.lr
+        if end_loss!=None:
+            self.end_loss=end_loss
         if init==True:
             self.t=0
             self.t_counter=0
@@ -377,6 +380,7 @@ class NoisyNet:
         pickle.dump(self.update_step,output_file)
         pickle.dump(self.optimizer,output_file)
         pickle.dump(self.lr,output_file)
+        pickle.dump(self.end_loss,output_file)
         pickle.dump(self.thread,output_file)
         pickle.dump(self.t_counter,output_file)
         pickle.dump(self.one_list,output_file)
@@ -414,6 +418,7 @@ class NoisyNet:
         self.update_step=pickle.load(input_file)
         self.optimizer=pickle.load(input_file)
         self.lr=pickle.load(input_file)
+        self.end_loss=pickle.load(input_file)
         self.thread=pickle.load(input_file)
         self.t_counter=pickle.load(input_file)
         self.one_list=pickle.load(input_file)
