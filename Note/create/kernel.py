@@ -1,5 +1,5 @@
 import tensorflow as tf
-import Note.creat.nn as n
+import Note.creat.DL.nn as n
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
@@ -76,11 +76,12 @@ class kernel:
         return
     
     
-    def set_up(self,optimizer=None,optimizern=None,lr=None,l2=None,dropout=None,end_loss=None,end_acc=None,end_test_loss=None,end_test_acc=None):
-        with tf.name_scope('hyperparameter'):
-            if optimizer!=None or optimizern!=None:
+    def set_up(self,optimizer=None,optimizern=None,opt_func=None,lr=None,l2=None,dropout=None,end_loss=None,end_acc=None,end_test_loss=None,end_test_acc=None):
+        with tf.name_scope('hyperparameter/optimizer'):
+            if optimizer!=None or optimizern!=None or opt_func!=None:
                 self.optimizer=optimizer
                 self.optimizern=optimizern
+                self.opt_func=opt_func
                 if optimizer!=None:
                     self.lr=optimizer.lr
                 else:
@@ -104,6 +105,21 @@ class kernel:
             if end_test_acc!=None:
                 self.end_test_acc=end_test_acc
             return
+        
+        
+    def end(self):
+        if self.end_loss!=None and self.train_loss<=self.end_loss:
+            return True
+        elif self.end_acc!=None and self.train_acc>=self.end_acc:
+            return True
+        elif self.end_loss!=None and self.end_acc!=None and self.train_loss<=self.end_loss and self.train_acc>=self.end_acc:
+            return True
+        elif self.end_test_loss!=None and self.test_loss<=self.end_test_loss:
+            return True
+        elif self.end_test_acc!=None and self.test_acc>=self.end_test_acc:
+            return True
+        elif self.end_test_loss!=None and self.end_test_acc!=None and self.test_loss<=self.end_test_loss and self.test_acc>=self.end_test_acc:
+            return True
     
     
     def _train(self,epoch,batch,test,test_batch):
@@ -152,9 +168,11 @@ class kernel:
                     with tf.name_scope('apply_gradient'):
                         if self.optimizer!=None:
                             n.apply_gradient(tape,self.optimizer,batch_loss,self.parameter)
-                        else:
+                        elif self.optimizern!=None:
                             gradient=tape.gradient(batch_loss,self.parameter)
                             self.optimizern(gradient,self.parameter)
+                        else:
+                            self.opt_func(tape,self.optimizer,batch_loss,self.parameter)
                 if i==(epoch-1):
                     self.output=self.nn.forward_propagation(data_batch,self.dropout)
                 total_loss+=batch_loss
@@ -201,18 +219,22 @@ class kernel:
                         with tf.name_scope('apply_gradient'):
                             if self.optimizer!=None:
                                 n.apply_gradient(tape,self.optimizer,batch_loss,self.parameter)
-                            else:
+                            elif self.optimizern!=None:
                                 gradient=tape.gradient(batch_loss,self.parameter)
                                 self.optimizern(gradient,self.parameter)
+                            else:
+                                self.opt_func(tape,self.optimizer,batch_loss,self.parameter)
                 if i==0 and self.total_epoch==0:
                     batch_loss=batch_loss.numpy()
                 else:
                     with tf.name_scope('apply_gradient'):
                         if self.optimizer!=None:
                             n.apply_gradient(tape,self.optimizer,batch_loss,self.parameter)
-                        else:
+                        elif self.optimizern!=None:
                             gradient=tape.gradient(batch_loss,self.parameter)
                             self.optimizern(gradient,self.parameter)
+                        else:
+                            self.opt_func(tape,self.optimizer,batch_loss,self.parameter)
                 if i==(epoch-1):
                     self.output=self.nn.forward_propagation(data_batch,self.dropout)
                 total_loss+=batch_loss
@@ -249,9 +271,11 @@ class kernel:
                with tf.name_scope('apply_gradient'):
                    if self.optimizer!=None:
                        n.apply_gradient(tape,self.optimizer,batch_loss,self.parameter)
-                   else:
+                   elif self.optimizern!=None:
                        gradient=tape.gradient(batch_loss,self.parameter)
                        self.optimizern(gradient,self.parameter)
+                   else:
+                       self.opt_func(tape,self.optimizer,batch_loss,self.parameter)
             if i==(epoch-1):
                 self.output=self.nn.forward_propagation(self.train_data,self.dropout)
             self.train_loss_list.append(loss.astype(np.float32))
@@ -271,21 +295,6 @@ class kernel:
                     if self.acc_flag1==1:
                         self.test_acc_list.append(self.test_acc)
         return
-    
-    
-    def end(self):
-        if self.end_loss!=None and self.train_loss<=self.end_loss:
-            return True
-        elif self.end_acc!=None and self.train_acc>=self.end_acc:
-            return True
-        elif self.end_loss!=None and self.end_acc!=None and self.train_loss<=self.end_loss and self.train_acc>=self.end_acc:
-            return True
-        elif self.end_test_loss!=None and self.test_loss<=self.end_test_loss:
-            return True
-        elif self.end_test_acc!=None and self.test_acc>=self.end_test_acc:
-            return True
-        elif self.end_test_loss!=None and self.end_test_acc!=None and self.test_loss<=self.end_test_loss and self.test_acc>=self.end_test_acc:
-            return True
         
     
     def train(self,batch=None,epoch=None,test=False,test_batch=None,nn_path=None,one=True,processor=None):
@@ -646,8 +655,10 @@ class kernel:
             pickle.dump(self.opt,output_file)
             if self.optimizer!=None:
                 pickle.dump(self.optimizer,output_file)
-            else:
+            elif self.optimizern!=None:
                 pickle.dump(self.optimizern,output_file)
+            else:
+                pickle.dump(self.opt_func,output_file)
         pickle.dump(self.acc_flag1,output_file)
         pickle.dump(self.acc_flag2,output_file)
         pickle.dump(self.shape0,output_file)
@@ -692,8 +703,10 @@ class kernel:
             self.opt=pickle.load(input_file)
             if self.optimizer!=None:
                 self.optimizer=pickle.load(input_file)
-            else:
+            elif self.optimizern!=None:
                 self.optimizern=pickle.load(input_file)
+            else:
+                self.opt_func=pickle.load(input_file)
         self.acc_flag1=pickle.load(input_file)
         self.acc_flag2=pickle.load(input_file)
         self.shape0=pickle.load(input_file)
