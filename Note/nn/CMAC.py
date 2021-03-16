@@ -43,6 +43,21 @@ class CMAC:
         return
     
     
+    def end(self):
+        if self.end_loss!=None and self.train_loss<=self.end_loss:
+            return True
+        elif self.end_acc!=None and self.train_acc>=self.end_acc:
+            return True
+        elif self.end_loss!=None and self.end_acc!=None and self.train_loss<=self.end_loss and self.train_acc>=self.end_acc:
+            return True
+        elif self.end_test_loss!=None and self.test_loss<=self.end_test_loss:
+            return True
+        elif self.end_test_acc!=None and self.test_acc>=self.end_test_acc:
+            return True
+        elif self.end_test_loss!=None and self.end_test_acc!=None and self.test_loss<=self.end_test_loss and self.test_acc>=self.end_test_acc:
+            return True
+    
+    
     def mapping(self,data):
         _address=self.form[data]
         address=_address[0]
@@ -110,9 +125,13 @@ class CMAC:
         if epoch!=None:
             for i in range(epoch):
                 loss,acc,test_loss,test_acc=self._learn(i,epoch,path,one)
+                if self.end()==True:
+                    break
         else:
             while True:
                 loss,acc,test_loss,test_acc=self._learn(i,epoch,path,one)
+                if self.end()==True:
+                    break
         self.loss_list.append(loss)
         self.acc_list.append(acc)
         if self.test_data!=None:
