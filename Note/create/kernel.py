@@ -177,7 +177,6 @@ class kernel:
                                     data_batch[i]=np.concatenate((self.train_data[i][index1:],self.train_data[i][:index2]))
                                 else:
                                     data_batch[i]=tf.concat([self.train_data[i][index1:],self.train_data[i][:index2]])
-                                    
                         else:
                             if type(self.train_data)==np.ndarray:
                                 data_batch=np.concatenate((self.train_data[index1:],self.train_data[:index2]))
