@@ -174,7 +174,6 @@ class kernel:
                                 data_batch[i]=np.concatenate((self.train_data[i][index1:],self.train_data[i][:index2]))
                             else:
                                 data_batch[i]=tf.concat([self.train_data[i][index1:],self.train_data[i][:index2]])
-                                
                     else:
                         if type(self.train_data)==np.ndarray:
                             data_batch=np.concatenate((self.train_data[index1:],self.train_data[:index2]))
@@ -318,9 +317,15 @@ class kernel:
                     d=1
                 if i%d==0:
                     if self.total_epoch==0:
-                        print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
+                        if test==False:
+                            print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
+                        else:
+                            print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i,self.train_loss,self.test_loss))
                     else:
-                        print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
+                        if test==False:
+                            print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
+                        else:
+                            print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
                     if nn_path!=None and i%epoch*2==0:
                         self.save(nn_path,i,one)
                 t2=time.time()
@@ -344,9 +349,12 @@ class kernel:
                     d=1
                 if i%d==0:
                     if self.total_epoch==0:
-                        print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
+                        if test==False:
+                            print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
+                        else:
+                            print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i,self.train_loss,self.test_loss))
                     else:
-                        print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
+                        print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
                     if nn_path!=None and i%epoch*2==0:
                         self.save(nn_path,i,one)
                 t2=time.time()
@@ -362,12 +370,21 @@ class kernel:
             self.time=int(self.time)+1
         self.total_time+=self.time
         print()
-        print('last loss:{0:.6f}'.format(self.train_loss))
+        if test==False:
+            print('last loss:{0:.6f}'.format(self.train_loss))
+        else:
+            print('last loss:{0:.6f},last test loss:{1:.6f}'.format(self.train_loss,self.test_loss))
         if self.acc_flag1==1:
             if self.acc_flag2=='%':
-                print('accuracy:{0:.1f}'.format(self.train_acc*100))
+                if test==False:
+                    print('accuracy:{0:.1f}'.format(self.train_acc*100))
+                else:
+                    print('accuracy:{0:.1f},test accuracy:{1:.1f}'.format(self.train_acc*100,self.test_acc*100))
             else:
-                print('accuracy:{0:.6f}'.format(self.train_acc))   
+                if test==False:
+                    print('accuracy:{0:.6f}'.format(self.train_acc))
+                else:
+                    print('accuracy:{0:.6f},test accuracy:{1:.6f}'.format(self.train_acc,self.test_acc))   
         print('time:{0}s'.format(self.time))
         return
     
