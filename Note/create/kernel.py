@@ -122,7 +122,7 @@ class kernel:
             return True
     
     
-    def _train(self,epoch,batch,test,test_batch):
+    def _train(self,epoch,batch,test,test_batch,i):
         if batch!=None:
             total_loss=0
             total_acc=0
@@ -172,7 +172,7 @@ class kernel:
                             gradient=tape.gradient(batch_loss,self.parameter)
                             self.optimizern(gradient,self.parameter)
                         else:
-                            self.opt_func(tape,self.optimizer,batch_loss,self.parameter)
+                            self.opt_func(tape,self.optimizer,batch_loss,self.parameter,i,j)
                 if i==(epoch-1):
                     self.output=self.nn.forward_propagation(data_batch,self.dropout)
                 total_loss+=batch_loss
@@ -223,7 +223,7 @@ class kernel:
                                 gradient=tape.gradient(batch_loss,self.parameter)
                                 self.optimizern(gradient,self.parameter)
                             else:
-                                self.opt_func(tape,self.optimizer,batch_loss,self.parameter)
+                                self.opt_func(tape,self.optimizer,batch_loss,self.parameter,i,j)
                 if i==0 and self.total_epoch==0:
                     batch_loss=batch_loss.numpy()
                 else:
@@ -234,7 +234,7 @@ class kernel:
                             gradient=tape.gradient(batch_loss,self.parameter)
                             self.optimizern(gradient,self.parameter)
                         else:
-                            self.opt_func(tape,self.optimizer,batch_loss,self.parameter)
+                            self.opt_func(tape,self.optimizer,batch_loss,self.parameter,i,j)
                 if i==(epoch-1):
                     self.output=self.nn.forward_propagation(data_batch,self.dropout)
                 total_loss+=batch_loss
@@ -275,7 +275,7 @@ class kernel:
                        gradient=tape.gradient(train_loss,self.parameter)
                        self.optimizern(gradient,self.parameter)
                    else:
-                       self.opt_func(tape,self.optimizer,train_loss,self.parameter)
+                       self.opt_func(tape,self.optimizer,train_loss,self.parameter,i,j)
             if i==(epoch-1):
                 self.output=self.nn.forward_propagation(self.train_data,self.dropout)
             self.train_loss_list.append(loss.astype(np.float32))
@@ -314,7 +314,7 @@ class kernel:
         if epoch!=None:
             for i in range(epoch):
                 t1=time.time()
-                self._train(epoch,batch,test,test_batch)
+                self._train(epoch,batch,test,test_batch,i)
                 self.epoch+=1
                 self.total_epoch+=1
                 if epoch%10!=0:
@@ -346,7 +346,7 @@ class kernel:
             while True:
                 t1=time.time()
                 i+=1
-                self._train(epoch,batch,test,test_batch)
+                self._train(epoch,batch,test,test_batch,i)
                 self.epoch+=1
                 self.total_epoch+=1
                 if epoch%10!=0:
