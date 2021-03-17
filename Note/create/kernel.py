@@ -1,5 +1,5 @@
 import tensorflow as tf
-import Note.creat.nn as n
+import Note.creat.DL.nn as n
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
@@ -264,7 +264,7 @@ class kernel:
                        gradient=tape.gradient(train_loss,self.parameter)
                        self.optimizern(gradient,self.parameter)
                    else:
-                       self.opt_func(tape,self.optimizer,train_loss,self.parameter,i,None)
+                       self.opt_func(tape,self.optimizer,train_loss,self.parameter,i)
             if i==(epoch-1):
                 self.output=self.nn.forward_propagation(self.train_data,self.dropout)
             self.train_loss_list.append(loss.astype(np.float32))
