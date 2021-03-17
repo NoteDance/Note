@@ -198,15 +198,6 @@ class kernel:
                             output=self.nn.forward_propagation(data_batch,self.dropout)
                             self.output=output
                             batch_loss=self.nn.loss(output,labels_batch,self.l2)
-                        if i==0 and self.total_epoch==0:
-                            batch_loss=batch_loss.numpy()
-                        else:
-                            with tf.name_scope('apply_gradient'):
-                                if self.optimizer!=None:
-                                    n.apply_gradient(tape,self.optimizer,batch_loss,self.parameter)
-                                else:
-                                    gradient=tape.gradient(batch_loss,self.parameter)
-                                    self.optimizern(gradient,self.parameter)
                     if i==0 and self.total_epoch==0:
                         batch_loss=batch_loss.numpy()
                     else:
