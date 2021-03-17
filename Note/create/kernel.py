@@ -213,17 +213,6 @@ class kernel:
                         output=self.nn.forward_propagation(data_batch,self.dropout)
                         self.output=output
                         batch_loss=self.nn.loss(output,labels_batch,self.l2)
-                    if i==0 and self.total_epoch==0:
-                        batch_loss=batch_loss.numpy()
-                    else:
-                        with tf.name_scope('apply_gradient'):
-                            if self.optimizer!=None:
-                                n.apply_gradient(tape,self.optimizer,batch_loss,self.parameter)
-                            elif self.optimizern!=None:
-                                gradient=tape.gradient(batch_loss,self.parameter)
-                                self.optimizern(gradient,self.parameter)
-                            else:
-                                self.opt_func(tape,self.optimizer,batch_loss,self.parameter,i,j)
                 if i==0 and self.total_epoch==0:
                     batch_loss=batch_loss.numpy()
                 else:
@@ -234,7 +223,7 @@ class kernel:
                             gradient=tape.gradient(batch_loss,self.parameter)
                             self.optimizern(gradient,self.parameter)
                         else:
-                            self.opt_func(tape,self.optimizer,batch_loss,self.parameter,i,j)
+                            self.opt_func(tape,self.optimizer,batch_loss,self.parameter,i,batches)
                 if i==(epoch-1):
                     self.output=self.nn.forward_propagation(data_batch,self.dropout)
                 total_loss+=batch_loss
@@ -275,7 +264,7 @@ class kernel:
                        gradient=tape.gradient(train_loss,self.parameter)
                        self.optimizern(gradient,self.parameter)
                    else:
-                       self.opt_func(tape,self.optimizer,train_loss,self.parameter,i,j)
+                       self.opt_func(tape,self.optimizer,train_loss,self.parameter,i,None)
             if i==(epoch-1):
                 self.output=self.nn.forward_propagation(self.train_data,self.dropout)
             self.train_loss_list.append(loss.astype(np.float32))
