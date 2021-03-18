@@ -14,12 +14,12 @@ class CMAC:
         self.form=form
         self.memory=memory
         self.rate=None
-        self.acc=acc
-        self.epoch=0
         self.end_loss=None
         self.end_acc=None
         self.end_test_loss=None
         self.end_test_acc=None
+        self.acc=acc
+        self.epoch=0
         self.loss_list=[]
         self.acc_list=[]
         self.test_loss_list=[]
@@ -231,6 +231,10 @@ class CMAC:
             parameter_file=open(path.replace(path[index+1:],'parameter-{0}.dat'.format(i+1)),'wb')
         pickle.dump([self.C,self.form,self.memory],parameter_file)
         pickle.dump(self.rate,output_file)
+        pickle.dump(self.end_loss,output_file)
+        pickle.dump(self.end_acc,output_file)
+        pickle.dump(self.end_test_loss,output_file)
+        pickle.dump(self.end_test_acc,output_file)
         pickle.dump(self.loss_list,output_file)
         pickle.dump(self.acc_list,output_file)
         pickle.dump(self.test_loss_list,output_file)
@@ -250,6 +254,10 @@ class CMAC:
         self.form=parameter[1]
         self.memory=parameter[2]
         self.rate=pickle.load(input_file)
+        self.end_loss=pickle.load(input_file)
+        self.end_acc=pickle.load(input_file)
+        self.end_test_loss=pickle.load(input_file)
+        self.end_test_acc=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
         self.acc_list=pickle.load(input_file)
         self.test_loss_list=pickle.load(input_file)
