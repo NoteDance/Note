@@ -5,7 +5,7 @@ import time
 
 
 class CMAC:
-    def __init__(self,data=None,labels=None,form=None,memory=None,acc=None,test_data=None,test_labels=None):
+    def __init__(self,data=None,labels=None,form=None,memory=None,acc_func=None,test_data=None,test_labels=None):
         self.data=data
         self.labels=labels
         self.test_data=test_data
@@ -18,7 +18,7 @@ class CMAC:
         self.end_acc=None
         self.end_test_loss=None
         self.end_test_acc=None
-        self.acc=acc
+        self.acc_func=acc_func
         self.epoch=0
         self.loss_list=[]
         self.acc_list=[]
@@ -235,7 +235,7 @@ class CMAC:
         pickle.dump(self.end_acc,output_file)
         pickle.dump(self.end_test_loss,output_file)
         pickle.dump(self.end_test_acc,output_file)
-        pickle.dump(self.acc,output_file)
+        pickle.dump(self.acc_func,output_file)
         pickle.dump(self.loss_list,output_file)
         pickle.dump(self.acc_list,output_file)
         pickle.dump(self.test_loss_list,output_file)
@@ -259,7 +259,7 @@ class CMAC:
         self.end_acc=pickle.load(input_file)
         self.end_test_loss=pickle.load(input_file)
         self.end_test_acc=pickle.load(input_file)
-        self.acc=pickle.load(input_file)
+        self.acc_func=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
         self.acc_list=pickle.load(input_file)
         self.test_loss_list=pickle.load(input_file)
