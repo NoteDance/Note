@@ -1,5 +1,5 @@
 import tensorflow as tf
-import Note.creat.nn as n
+import Note.creat.DL.nn as n
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
@@ -122,15 +122,11 @@ class kernel:
             return True
     
     
-    def _train(self,epoch,batch,test,test_batch,i):
+    def _train(self,epoch,batch,test,test_batch,i,data_batch=None,labels_batch=None):
         if batch!=None:
             total_loss=0
             total_acc=0
             batches=int((self.shape0-self.shape0%batch)/batch)
-            if type(self.train_data)==list:
-                data_batch=[x for x in range(len(self.train_data))]
-            if type(self.train_labels)==list:
-                labels_batch=[x for x in range(len(self.train_labels))]
             for j in range(batches):
                 index1=j*batch
                 index2=(j+1)*batch
@@ -188,26 +184,14 @@ class kernel:
                 with tf.name_scope('data_batch'):
                     if type(self.train_data)==list:
                         for i in range(len(self.train_data)):
-                            if type(self.train_data)==np.ndarray:
-                                data_batch[i]=np.concatenate((self.train_data[i][index1:],self.train_data[i][:index2]))
-                            else:
-                                data_batch[i]=tf.concat([self.train_data[i][index1:],self.train_data[i][:index2]])
+                            data_batch[i]=tf.concat([self.train_data[i][index1:],self.train_data[i][:index2]])
                     else:
-                        if type(self.train_data)==np.ndarray:
-                            data_batch=np.concatenate((self.train_data[index1:],self.train_data[:index2]))
-                        else:
-                            data_batch=tf.concat([self.train_data[index1:],self.train_data[:index2]])
+                        data_batch=tf.concat([self.train_data[index1:],self.train_data[:index2]])
                     if type(self.train_labels)==list:
                         for i in range(len(self.train_data)):
-                            if type(self.train_labels)==np.ndarray:
-                                labels_batch[i]=np.concatenate((self.train_labels[i][index1:],self.train_labels[i][:index2]))
-                            else:
-                                labels_batch[i]=tf.concat([self.train_labels[i][index1:],self.train_labels[i][:index2]])
+                            labels_batch[i]=tf.concat([self.train_labels[i][index1:],self.train_labels[i][:index2]])
                     else:
-                        if type(self.train_labels)==np.ndarray:
-                            labels_batch=np.concatenate((self.train_labels[index1:],self.train_labels[:index2]))
-                        else:
-                            labels_batch=tf.concat([self.train_labels[index1:],self.train_labels[:index2]])
+                        labels_batch=tf.concat([self.train_labels[index1:],self.train_labels[:index2]])
                 with tf.GradientTape() as tape:
                     with tf.name_scope('forward_propagation/loss'):
                         output=self.nn.forward_propagation(data_batch,self.dropout)
@@ -298,12 +282,16 @@ class kernel:
             self.processor=processor
         with tf.name_scope('optimizer'):
             self.opt=self.nn.opt
+        if type(self.train_data)==list:
+            data_batch=[x for x in range(len(self.train_data))]
+        if type(self.train_labels)==list:
+            labels_batch=[x for x in range(len(self.train_labels))]
         if self.total_epoch==0:
             epoch=epoch+1
         if epoch!=None:
             for i in range(epoch):
                 t1=time.time()
-                self._train(epoch,batch,test,test_batch,i)
+                self._train(epoch,batch,test,test_batch,i,data_batch,labels_batch)
                 self.epoch+=1
                 self.total_epoch+=1
                 if epoch%10!=0:
