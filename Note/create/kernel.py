@@ -1,5 +1,5 @@
 import tensorflow as tf
-import Note.creat.DL.nn as n
+import Note.creat.nn as n
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
