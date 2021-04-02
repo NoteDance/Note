@@ -115,7 +115,7 @@ class on_policy_mc:
             G=sum(np.power(discount,i)*x[2] for i,x in enumerate(episode[i:]))
             if state_action not in state_action_set:
                 state_action_set.add(state_action)
-                if state_action not in r_sum==0:
+                if state_action not in r_sum:
                     r_sum[state_action]=G
                     r_count[state_action]=1
                 else:
