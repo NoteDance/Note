@@ -128,13 +128,13 @@ class kernel:
             if self.exploration_func==None:
                 next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
             else:
-                next_s,r,end=self.exploration_func(self.exploration_space[self.state_name[s]][self.action_name[a]])
+                next_s,r,end=self.exploration_func(self.state_name[s],self.action_name[a],self.exploration_space[self.state_name[s]][self.action_name[a]])
         else:
             a=self.nn[1](self.state[self.state_name[s]],self.actor_p)
             if self.exploration_func==None:
                 next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
             else:
-                next_s,r,end=self.exploration_func(self.exploration_space[self.state_name[s]][self.action_name[a]])
+                next_s,r,end=self.exploration_func(self.state_name[s],self.action_name[a],self.exploration_space[self.state_name[s]][self.action_name[a]])
         if self.pool_net==True:
             flag=np.random.randint(0,2)
             while True:
