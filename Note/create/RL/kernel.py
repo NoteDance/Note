@@ -6,7 +6,7 @@ import time
 
 
 class kernel:
-    def __init__(self,nn,gradient,loss,update_parameter,optimizer,state,state_name,action_name,exploration_space,pool_net=True,save_episode=True):
+    def __init__(self,nn,gradient,loss,update_parameter,optimizer,state,state_name,action_name,exploration_space,exploration_func=None,pool_net=True,save_episode=True):
         self.nn=nn
         self.parameter=None
         self.gradient=gradient
@@ -22,6 +22,7 @@ class kernel:
         self.state_name=state_name
         self.action_name=action_name
         self.exploration_space=exploration_space
+        self.exploration_func=exploration_func
         self.action_len=len(self.action_name)
         self.epsilon=[]
         self.discount=None
@@ -124,10 +125,16 @@ class kernel:
         if self.epsilon!=None:
             action_prob=self.epsilon_greedy_policy(s,self.action_one,epsilon)
             a=np.random.choice(self.action,p=action_prob)
-            next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
+            if self.exploration_func==None:
+                next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
+            else:
+                next_s,r,end=self.exploration_func(self.exploration_space[self.state_name[s]][self.action_name[a]])
         else:
             a=self.nn[1](self.state[self.state_name[s]],self.actor_p)
-            next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
+            if self.exploration_func==None:
+                next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
+            else:
+                next_s,r,end=self.exploration_func(self.exploration_space[self.state_name[s]][self.action_name[a]])
         if self.pool_net==True:
             flag=np.random.randint(0,2)
             while True:
@@ -334,7 +341,7 @@ class kernel:
         pickle.dump(self.update_step,output_file)
         pickle.dump(self.optimizer,output_file)
         pickle.dump(self.lr,output_file)
-         pickle.dump(self.end_loss,output_file)
+        pickle.dump(self.end_loss,output_file)
         pickle.dump(self.thread,output_file)
         pickle.dump(self.t_counter,output_file)
         pickle.dump(self.one_list,output_file)
