@@ -146,14 +146,19 @@ class Q_learning:
             output_file=open(path+'\save.dat','wb')
             path=path+'\save.dat'
             index=path.rfind('\\')
-            episode_file=open(path.replace(path[index+1:],'episode.dat'),'wb')
+            if self.save_episode==True:
+                episode_file=open(path.replace(path[index+1:],'episode.dat'),'wb')
+                pickle.dump(self.episode,episode_file)
+                episode_file.close()
         else:
             output_file=open(path+'\save-{0}.dat'.format(i+1),'wb')
             path=path+'\save-{0}.dat'.format(i+1)
             index=path.rfind('\\')
-            episode_file=open(path.replace(path[index+1:],'episode-{0}.dat'.format(i+1)),'wb')
+            if self.save_episode==True:
+                episode_file=open(path.replace(path[index+1:],'episode-{0}.dat'.format(i+1)),'wb')
+                pickle.dump(self.episode,episode_file)
+                episode_file.close()
         self.episode_num=self.epi_num
-        pickle.dump(self.episode,episode_file)
         pickle.dump(self.action_len,output_file)
         pickle.dump(self.action,output_file)
         pickle.dump(self.action_one,output_file)
@@ -169,14 +174,15 @@ class Q_learning:
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
-        episode_file.close()
         return
     
     
     def restore(self,s_path,e_path):
         input_file=open(s_path,'rb')
-        episode_file=open(e_path,'rb')
-        self.episode=pickle.load(episode_file)
+        if self.save_episode==True:
+            episode_file=open(e_path,'rb')
+            self.episode=pickle.load(episode_file)
+            episode_file.close()
         self.action_len=pickle.load(input_file)
         self.action=pickle.load(input_file)
         self.action_one=pickle.load(input_file)
@@ -192,5 +198,4 @@ class Q_learning:
         self.total_episode=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
         input_file.close()
-        episode_file.close()
         return
