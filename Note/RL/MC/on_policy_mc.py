@@ -85,10 +85,10 @@ class on_policy_mc:
                     episode.append([s,a,r])
                     if end:
                         if self.save_episode==True:
-                            _episode.append([self.state_name[s],self.action_name[a],r,end])
+                            _episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s],r,end])
                         break
                     if self.save_episode==True:
-                        _episode.append([self.state_name[s],self.action_name[a],r])
+                        _episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s],r])
                     s=next_s
             else:
                 for _ in range(self.episode_step):
@@ -98,10 +98,10 @@ class on_policy_mc:
                     episode.append([s,a,r])
                     if end:
                         if self.save_episode==True:
-                            _episode.append([self.state_name[s],self.action_name[a],r,end])
+                            _episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s],r,end])
                         break
                     if self.save_episode==True:
-                        _episode.append([self.state_name[s],self.action_name[a],r])
+                        _episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s],r])
                     s=next_s
             if self.save_episode==True:
                 self.episode.append(_episode)
@@ -118,7 +118,7 @@ class on_policy_mc:
             G=sum(np.power(discount,i)*x[2] for i,x in enumerate(episode[i:]))
             if state_action not in state_action_set:
                 state_action_set.add(state_action)
-                if state_action not in r_sum:
+                if state_action not in r_sum==0:
                     r_sum[state_action]=G
                     r_count[state_action]=1
                 else:
@@ -161,14 +161,19 @@ class on_policy_mc:
             output_file=open(path+'\save.dat','wb')
             path=path+'\save.dat'
             index=path.rfind('\\')
-            episode_file=open(path.replace(path[index+1:],'episode.dat'),'wb')
+            if self.save_episode==True:
+                episode_file=open(path.replace(path[index+1:],'episode.dat'),'wb')
+                pickle.dump(self.episode,episode_file)
+                episode_file.close()
         else:
             output_file=open(path+'\save-{0}.dat'.format(i+1),'wb')
             path=path+'\save-{0}.dat'.format(i+1)
             index=path.rfind('\\')
-            episode_file=open(path.replace(path[index+1:],'episode-{0}.dat'.format(i+1)),'wb')
+            if self.save_episode==True:
+                episode_file=open(path.replace(path[index+1:],'episode-{0}.dat'.format(i+1)),'wb')
+                pickle.dump(self.episode,episode_file)
+                episode_file.close()
         self.episode_num=self.epi_num
-        pickle.dump(self.episode,episode_file)
         pickle.dump(self.r_sum,output_file)
         pickle.dump(self.r_count,output_file)
         pickle.dump(self.action_len,output_file)
@@ -184,14 +189,15 @@ class on_policy_mc:
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
-        episode_file.close()
         return
     
     
-    def restore(self,s_path,e_path):
+    def restore(self,s_path,e_path=None):
         input_file=open(s_path,'rb')
-        episode_file=open(e_path,'rb')
-        self.episode=pickle.load(episode_file)
+        if self.save_episode==True:
+            episode_file=open(e_path,'rb')
+            self.episode=pickle.load(episode_file)
+            episode_file.close()
         self.r_sum=pickle.load(input_file)
         self.r_count=pickle.load(input_file)
         self.action_len=pickle.load(input_file)
@@ -207,5 +213,4 @@ class on_policy_mc:
         self.total_episode=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
         input_file.close()
-        episode_file.close()
         return
