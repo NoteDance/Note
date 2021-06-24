@@ -176,10 +176,10 @@ class DQN:
                     self.reward_pool=self.reward_pool[1:]
                 if end:
                     if self.save_episode==True:
-                        episode.append([self.state_name[s],self.action_name[a],r,end])
+                        episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s],r,end])
                     break
                 elif self.save_episode==True:
-                    episode.append([self.state_name[s],self.self.action_name[a],r])
+                    episode.append([self.state_name[s],self.self.action_name[a],self.state_name[next_s],r])
                 s=next_s
                 loss=self.learn1()
                 t2=time.time()
@@ -208,10 +208,10 @@ class DQN:
                     self.reward_pool=self.reward_pool[1:]
                 if end:
                     if self.save_episode==True:
-                        episode.append([self.state_name[s],self.action_name[a],r,end])
+                        episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s],r,end])
                     break
                 elif self.save_episode==True:
-                    episode.append([self.state_name[s],self.self.action_name[a],r])
+                    episode=[self.state_name[s],self.self.action_name[a],self.state_name[next_s],r]
                 s=next_s
                 loss=self.learn1()
                 t2=time.time()
@@ -307,14 +307,19 @@ class DQN:
             output_file=open(path+'\save.dat','wb')
             path=path+'\save.dat'
             index=path.rfind('\\')
-            episode_file=open(path.replace(path[index+1:],'episode.dat'),'wb')
+            if self.save_episode==True:
+                episode_file=open(path.replace(path[index+1:],'episode.dat'),'wb')
+                pickle.dump(self.episode,episode_file)
+                episode_file.close()
         else:
             output_file=open(path+'\save-{0}.dat'.format(i+1),'wb')
             path=path+'\save-{0}.dat'.format(i+1)
             index=path.rfind('\\')
-            episode_file=open(path.replace(path[index+1:],'episode-{0}.dat'.format(i+1)),'wb')
+            if self.save_episode==True:
+                episode_file=open(path.replace(path[index+1:],'episode-{0}.dat'.format(i+1)),'wb')
+                pickle.dump(self.episode,episode_file)
+                episode_file.close()
         self.episode_num=self.epi_num
-        pickle.dump(self.episode,episode_file)
         pickle.dump(self.state_pool,output_file)
         pickle.dump(self.action_pool,output_file)
         pickle.dump(self.next_state_pool,output_file)
@@ -340,14 +345,15 @@ class DQN:
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
-        episode_file.close()
         return
     
     
-    def restore(self,s_path,e_path):
+    def restore(self,s_path,e_path=None):
         input_file=open(s_path,'rb')
-        episode_file=open(e_path,'rb')
-        self.episode=pickle.load(episode_file)
+        if self.save_episode==True:
+            episode_file=open(e_path,'rb')
+            self.episode=pickle.load(episode_file)
+            episode_file.close()
         self.state_pool=pickle.load(input_file)
         self.action_pool=pickle.load(input_file)
         self.next_state_pool=pickle.load(input_file)
@@ -373,5 +379,4 @@ class DQN:
         self.total_episode=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
         input_file.close()
-        episode_file.close()
         return
