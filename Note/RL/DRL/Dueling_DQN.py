@@ -175,9 +175,9 @@ class Dueling_DQN:
             self.reward_pool[i]=self.reward_pool[i][1:]
         if end:
             if self.save_episode==True:
-                episode=[self.state_name[s],self.action_name[a],r,end]
+                episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r,end]
         elif self.save_episode==True:
-            episode=[self.state_name[s],self.self.action_name[a],r]
+            episode=[self.state_name[s],self.self.action_name[a],self.state_name[next_s],r]
         self.epi_num+=1
         return next_s,end,episode
     
@@ -336,10 +336,12 @@ class Dueling_DQN:
         output_file=open(path+'\save.dat','wb')
         path=path+'\save.dat'
         index=path.rfind('\\')
-        episode_file=open(path.replace(path[index+1:],'episode.dat'),'wb')
+        if self.save_episode==True:
+            episode_file=open(path.replace(path[index+1:],'episode.dat'),'wb')
+            pickle.dump(self.episode,episode_file)
+            episode_file.close()
         self.episode_num=self.epi_num
         self.thread=self.t
-        pickle.dump(self.episode,episode_file)
         pickle.dump(self.state_pool,output_file)
         pickle.dump(self.action_pool,output_file)
         pickle.dump(self.next_state_pool,output_file)
@@ -371,14 +373,15 @@ class Dueling_DQN:
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
-        episode_file.close()
         return
     
     
-    def restore(self,s_path,e_path):
+    def restore(self,s_path,e_path=None):
         input_file=open(s_path,'rb')
-        episode_file=open(e_path,'rb')
-        self.episode=pickle.load(episode_file)
+        if self.save_episode==True:
+            episode_file=open(e_path,'rb')
+            self.episode=pickle.load(episode_file)
+            episode_file.close()
         self.state_pool=pickle.load(input_file)
         self.action_pool=pickle.load(input_file)
         self.next_state_pool=pickle.load(input_file)
@@ -410,5 +413,4 @@ class Dueling_DQN:
         self.total_episode=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
         input_file.close()
-        episode_file.close()
         return
