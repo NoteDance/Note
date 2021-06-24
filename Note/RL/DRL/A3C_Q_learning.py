@@ -96,9 +96,9 @@ class Q_learning:
                     next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
                     if end:
                         if self.save_episode==True:
-                            episode.append([self.state_name[s],self.action_name[a],r,end])
+                            episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s],r,end])
                     elif self.save_episode==True:
-                        episode.append([self.state_name[s],self.self.action_name[a],r])
+                        episode.append([self.state_name[s],self.self.action_name[a],self.state_name[next_s],r])
                     with tf.GradientTape() as tape:
                         loss=self._loss(self.state[self.state_name[s]],a,self.state[self.state_name[next_s]],r)
                     self.loss=loss
@@ -126,9 +126,9 @@ class Q_learning:
                     next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
                     if end:
                         if self.save_episode==True:
-                            episode.append([self.state_name[s],self.action_name[a],r,end])
+                            episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s],r,end])
                     elif self.save_episode==True:
-                        episode.append([self.state_name[s],self.self.action_name[a],r])
+                        episode.append([self.state_name[s],self.self.action_name[a],self.state_name[next_s],r])
                     with tf.GradientTape() as tape:
                         loss=self._loss(self.state[self.state_name[s]],a,self.state[self.state_name[next_s]],r)
                     self.loss=loss
@@ -172,12 +172,18 @@ class Q_learning:
             output_file=open(path+'\save.dat','wb')
             path=path+'\save.dat'
             index=path.rfind('\\')
-            episode_file=open(path.replace(path[index+1:],'episode.dat'),'wb')
+            if self.save_episode==True:
+                episode_file=open(path.replace(path[index+1:],'episode.dat'),'wb')
+                pickle.dump(self.episode,episode_file)
+                episode_file.close()
         else:
             output_file=open(path+'\save-{0}.dat'.format(i+1),'wb')
             path=path+'\save-{0}.dat'.format(i+1)
             index=path.rfind('\\')
-            episode_file=open(path.replace(path[index+1:],'episode-{0}.dat'.format(i+1)),'wb')
+            if self.save_episode==True:
+                episode_file=open(path.replace(path[index+1:],'episode-{0}.dat'.format(i+1)),'wb')
+                pickle.dump(self.episode,episode_file)
+                episode_file.close()
         pickle.dump(self.episode,episode_file)
         pickle.dump(self.action_len,output_file)
         pickle.dump(self.action,output_file)
@@ -195,14 +201,15 @@ class Q_learning:
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.total_episode,output_file)
         output_file.close()
-        episode_file.close()
         return
     
     
-    def restore(self,s_path,e_path):
+    def restore(self,s_path,e_path=None):
         input_file=open(s_path,'rb')
-        episode_file=open(e_path,'rb')
-        self.episode=pickle.load(episode_file)
+        if self.save_episode==True:
+            episode_file=open(e_path,'rb')
+            self.episode=pickle.load(episode_file)
+            episode_file.close()
         self.action_len=pickle.load(input_file)
         self.action=pickle.load(input_file)
         self.action_one=pickle.load(input_file)
@@ -219,5 +226,4 @@ class Q_learning:
         self.save_episode=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         input_file.close()
-        episode_file.close()
         return
