@@ -43,7 +43,17 @@ def Gaussian_noise(value_p,dtype=tf.float32):
     return noise
 
 
-def pr(state_pool,t,batch,K,pool_size,alpha,beta,error,p=None,size_vector=None):
+def update_param(param,tau=None):
+    if tau==None:
+        for i in range(len(param[0])):
+            param[1][i]=param[0][i].copy()
+    else:
+        for i in range(len(param[0])):
+            param[1][i]=tau*param[1][i]+(1-tau)*param[0][i]
+    return
+
+
+def pr(state_pool,action_pool,next_state_pool,reward_pool,t,pool_size,batch,K,alpha,beta,p=None):
     if p==None:
         p=tf.ones([len(state_pool)],dtype=tf.float32)
         prob=p**alpha/tf.reduce_sum(p**alpha)
@@ -55,10 +65,6 @@ def pr(state_pool,t,batch,K,pool_size,alpha,beta,error,p=None,size_vector=None):
         w=(pool_size*prob)**-beta
         w=w/tf.reduce_max(w)
     if t%K==0:
-        if len(state_pool)!=pool_size:
-            index=np.random.choice(np.arange(len(state_pool),dtype=np.int8),size=[len(state_pool)],p=prob)
-        elif size_vector!=None:
-            index=np.random.choice(size_vector,size=[len(state_pool)],p=prob)
-        delta=error(state_pool[index])
-        p[index]=delta+10**-7
-    return w*delta,p,delta,state_pool[index]
+        index=np.random.choice(np.arange(len(state_pool),dtype=np.int8),size=[pool_size],p=prob)
+    t+=1
+    return state_pool[index],action_pool[index],next_state_pool[index],reward_pool[index]
