@@ -7,7 +7,7 @@ class Gradient:
         self.lr=lr
     
     
-    def Gradient(self,gradient,parameter):
+    def opt(self,gradient,parameter):
         for i in range(len(gradient)):
             state_ops.assign(parameter[i],parameter[i]-self.lr*gradient[i])
         return
@@ -21,7 +21,7 @@ class Momentum:
         self.flag=0
     
     
-    def Momentum(self,gradient,parameter):
+    def opt(self,gradient,parameter):
         if self.flag==0:
             self.v=[0 for x in range(len(gradient))]
         for i in range(len(gradient)):
@@ -38,7 +38,7 @@ class AdaGrad:
         self.flag=0
     
     
-    def AdaGrad(self,gradient,parameter):
+    def opt(self,gradient,parameter):
         if self.flag==0:
             self.s=[0 for x in range(len(gradient))]
             self.flag=1
@@ -57,7 +57,7 @@ class RMSProp:
         self.flag=0
     
     
-    def RMSProp(self,gradient,parameter):
+    def opt(self,gradient,parameter):
         if self.flag==0:
             self.s=[0 for x in range(len(gradient))]
             self.flag=1
@@ -78,7 +78,7 @@ class AdaDelta:
         self.flag=0
     
     
-    def AdaDelta(self,gradient,parameter):
+    def opt(self,gradient,parameter):
         if self.flag==0:
            self.s=[0 for x in range(len(gradient))]
            self.x=[0 for x in range(len(gradient))]
@@ -106,7 +106,7 @@ class Adam:
         self.flag=0
     
     
-    def Adam(self,gradient,parameter,t):
+    def opt(self,gradient,parameter,t):
         if self.flag==0:
             self.v=[0 for x in range(len(gradient))]
             self.s=[0 for x in range(len(gradient))]
