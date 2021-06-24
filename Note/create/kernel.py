@@ -78,12 +78,12 @@ class kernel:
             self.opt_func=opt_func
             if optimizer!=None:
                 self.lr=optimizer.lr
-            else optimizern!=None:
+            elif optimizern!=None:
                 self.lr=optimizern.lr
         if self.optimizer!=None and lr!=None:
             self.optimizer.lr=lr
             self.lr=lr
-        else lr!=None:
+        elif lr!=None:
             self.optimizern.lr=lr
             self.lr=lr
         if l2!=None:
@@ -604,7 +604,7 @@ class kernel:
         pickle.dump(self.train_acc,output_file)
         pickle.dump(self.train_loss_list,output_file)
         pickle.dump(self.train_acc_list,output_file)
-		pickle.dump(self.test_flag,output_file)
+        pickle.dump(self.test_flag,output_file)
         if self.test_flag==True:
             pickle.dump(self.test_loss,output_file)
             pickle.dump(self.test_acc,output_file)
@@ -623,7 +623,7 @@ class kernel:
         input_file=open(s_path,'rb')
         parameter_file=open(p_path,'rb')
         self.nn.param=pickle.load(parameter_file)
-		self.param=self.nn.param
+        self.param=self.nn.param
         self.batch=pickle.load(input_file)
         self.lr=pickle.load(input_file)
         self.nn.l2=pickle.load(input_file)
@@ -648,7 +648,7 @@ class kernel:
         self.train_acc=pickle.load(input_file)
         self.train_loss_list=pickle.load(input_file)
         self.train_acc_list=pickle.load(input_file)
-		self.test_flag=pickle.load(input_file)
+        self.test_flag=pickle.load(input_file)
         if self.test_flag==True:
             self.test_loss=pickle.load(input_file)
             self.test_acc=pickle.load(input_file)
