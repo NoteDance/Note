@@ -284,7 +284,6 @@ class NoisyNet:
         self.p=np.array(self.one_list,dtype=np.float16)/self.t_counter
         self.a.append(0)
         self.loss.append(0)
-        episode=[]
         if len(self.state_pool)==i-1:
             self.state_pool.append(None)
             self.action_pool.append(None)
@@ -294,6 +293,7 @@ class NoisyNet:
         self.value_p[0].extend(self.value_p[1])
         parameter=self.value_p[0]
         for _ in range(episode_num):
+            episode=[]
             s=int(np.random.uniform(0,len(self.state_name)))
             if self.episode_step==None:
                 while True:
