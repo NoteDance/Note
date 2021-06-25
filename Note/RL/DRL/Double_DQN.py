@@ -255,7 +255,6 @@ class Double_DQN:
         self.p=np.array(self.one_list,dtype=np.float16)/self.t_counter
         self.a.append(0)
         self.loss.append(0)
-        episode=[]
         if len(self.state_pool)==i-1:
             self.state_pool.append(None)
             self.action_pool.append(None)
@@ -263,6 +262,7 @@ class Double_DQN:
             self.reward_pool.append(None)
             self.epsilon.append(epsilon)
         for _ in range(episode_num):
+            episode=[]
             s=int(np.random.uniform(0,len(self.state_name)))
             if self.episode_step==None:
                 while True:
