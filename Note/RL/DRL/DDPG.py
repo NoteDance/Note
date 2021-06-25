@@ -20,7 +20,7 @@ class DDPG:
         self.episode=[]
         self.state=state
         self.state_name=state_name
-		self.variance=variance
+        self.variance=variance
         self.exploration_space=exploration_space
         self.discount=None
         self.episode_step=None
@@ -89,7 +89,7 @@ class DDPG:
             self.action_pool=[]
             self.next_state_pool=[]
             self.reward_pool=[]
-			self._TD=[]
+            self._TD=[]
             self.loss=[]
             self.loss_list=[]
             self.epi_num=0
@@ -101,7 +101,7 @@ class DDPG:
         
         
     def OU(self):
-		return np.random.normal(0,self.variance)
+        return np.random.normal(0,self.variance)
     
     
     def update_parameter(self):
@@ -113,10 +113,10 @@ class DDPG:
     
     
     def TD(self,value,s,next_s,r):
-        return tf.reduce_mean((r+self.discount*value_net(next_s,self.value_target_p)-value)**2)
+        return tf.reduce_mean((r+self.discount*self.value_net(next_s,self.value_target_p)-value)**2)
         
     
-    def explore(self,i):
+    def explore(self,s,i):
         a=self.actor_net(self.state[self.state_name[s]],self.actor_p).numpy()+self.OU()
         next_s,r,end=self.exploration_space(self.state_name[s],a)
         if self.pool_net==True:
@@ -167,11 +167,11 @@ class DDPG:
             actor_gradient=self._TD[i]*tape.gradient(tf.math.log(self.action_pool[i]),self.actor_p)
             if self.opt_flag==True:
                 self.optimizer(value_gradient,self.value_p)
-				self.optimizer(actor_gradient,self.actor_p)
+                self.optimizer(actor_gradient,self.actor_p)
             else:
                 self.optimizer.apply_gradients(zip(value_gradient,self.value_p))
-				self.optimizer.apply_gradients(zip(actor_gradient,self.value_p))
-			self.loss[i]=self._TD[i]
+                self.optimizer.apply_gradients(zip(actor_gradient,self.value_p))
+            self.loss[i]=self._TD[i]
             self.update_parameter()
         else:
             self.loss[i]=0
@@ -193,10 +193,10 @@ class DDPG:
                     actor_gradient=self._TD[i]*tape.gradient(tf.math.log(action_batch),self.actor_p)
                     if self.opt_flag==True:
                         self.optimizer(value_gradient,self.value_p)
-						self.optimizer(actor_gradient,self.actor_p)
+                        self.optimizer(actor_gradient,self.actor_p)
                     else:
-						self.optimizer.apply_gradients(zip(value_gradient,self.value_p))
-						self.optimizer.apply_gradients(zip(actor_gradient,self.value_p))
+                        self.optimizer.apply_gradients(zip(value_gradient,self.value_p))
+                        self.optimizer.apply_gradients(zip(actor_gradient,self.value_p))
                     self.loss[i]+=self._TD[i]
                     self.update_parameter()
                 if len(self.state_pool)%self.batch!=0:
@@ -214,10 +214,10 @@ class DDPG:
                     actor_gradient=self._TD[i]*tape.gradient(tf.math.log(action_batch),self.actor_p)
                     if self.opt_flag==True:
                         self.optimizer(value_gradient,self.value_p)
-						self.optimizer(actor_gradient,self.actor_p)
+                        self.optimizer(actor_gradient,self.actor_p)
                     else:
-						self.optimizer.apply_gradients(zip(value_gradient,self.value_p))
-						self.optimizer.apply_gradients(zip(actor_gradient,self.value_p))
+                        self.optimizer.apply_gradients(zip(value_gradient,self.value_p))
+                        self.optimizer.apply_gradients(zip(actor_gradient,self.value_p))
                     self.loss[i]+=self._TD[i]
                     self.update_parameter()
             else:
@@ -230,10 +230,10 @@ class DDPG:
                     actor_gradient=self._TD[i]*tape.gradient(tf.math.log(action_batch),self.actor_p)
                     if self.opt_flag==True:
                         self.optimizer(value_gradient,self.value_p)
-						self.optimizer(actor_gradient,self.actor_p)
+                        self.optimizer(actor_gradient,self.actor_p)
                     else:
-						self.optimizer.apply_gradients(zip(value_gradient,self.value_p))
-						self.optimizer.apply_gradients(zip(actor_gradient,self.value_p))
+                        self.optimizer.apply_gradients(zip(value_gradient,self.value_p))
+                        self.optimizer.apply_gradients(zip(actor_gradient,self.value_p))
                     self.loss[i]+=self._TD[i]
                     self.update_parameter()
             self.use_flag[i]=False
@@ -251,19 +251,19 @@ class DDPG:
         self.index_list.append(i)
         self.use_flag.append(False)
         self.p=np.array(self.one_list,dtype=np.float16)/self.t_counter
-		self.TD.append(0)
+        self.TD.append(0)
         self.loss.append(0)
-        episode=[]
         if len(self.state_pool)==i-1:
             self.state_pool.append(None)
             self.action_pool.append(None)
             self.next_state_pool.append(None)
             self.reward_pool.append(None)
         for _ in range(episode_num):
+            episode=[]
             s=int(np.random.uniform(0,len(self.state_name)))
             if self.episode_step==None:
                 while True:
-                    next_s,end,_episode=self.explore(i)
+                    next_s,end,_episode=self.explore(s,i)
                     s=next_s
                     self._learn(i)
                     if self.save_episode==True:
@@ -274,7 +274,7 @@ class DDPG:
                         break
             else:
                 for _ in range(self.episode_step):
-                    next_s,end,_episode=self.explore(i)
+                    next_s,end,_episode=self.explore(s,i)
                     s=next_s
                     self._learn(i)
                     if self.save_episode==True:
