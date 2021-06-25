@@ -244,7 +244,7 @@ class kernel:
                 else:
                     episode=[self.state_name[s],a,self.state_name[next_s],r]
         self.epi_num+=1
-        return next_s,end,episode
+        return next_s,end,episode,index
     
     
     def _learn(self,i):
@@ -382,11 +382,12 @@ class kernel:
             if self.episode_step==None:
                 while True:
                     self.a[i]+=1
-                    next_s,end,_episode=self.explore(s,self.epsilon[i],i)
+                    next_s,end,_episode,index=self.explore(s,self.epsilon[i],i)
                     s=next_s
                     self._learn(i)
                     if self.save_episode==True:
-                        episode.append(_episode)
+                        if index not in self.finish_list:
+                            episode.append(_episode)
                     if end:
                         if self.save_episode==True:
                             self.episode.append(episode)
@@ -398,7 +399,8 @@ class kernel:
                     s=next_s
                     self._learn(i)
                     if self.save_episode==True:
-                        episode.append(_episode)
+                        if index not in self.finish_list:
+                            episode.append(_episode)
                     if end:
                         if self.save_episode==True:
                             self.episode.append(episode)
