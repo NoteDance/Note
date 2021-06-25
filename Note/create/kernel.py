@@ -155,7 +155,6 @@ class kernel:
                         labels_batch=self.train_labels[j]
                 with tf.GradientTape() as tape:
                     output=self.nn.forward_propagation(data_batch)
-                    self.output=output
                     batch_loss=self.nn.loss(output,labels_batch)
                 if i==0 and self.total_epoch==0:
                     batch_loss=batch_loss.numpy()
@@ -167,8 +166,6 @@ class kernel:
                         self.optimizern.opt(gradient,self.param)
                     else:
                         self.opt_func(tape,self.optimizer,batch_loss,self.param,i,j)
-                if i==(epoch-1):
-                    self.output=self.nn.forward_propagation(data_batch)
                 total_loss+=batch_loss
                 if self.acc_flag1==1:
                     batch_acc=self.nn.accuracy(output,labels_batch)
@@ -190,7 +187,6 @@ class kernel:
                     labels_batch=tf.concat([self.train_labels[index1:],self.train_labels[:index2]])
                 with tf.GradientTape() as tape:
                     output=self.nn.forward_propagation(data_batch)
-                    self.output=output
                     batch_loss=self.nn.loss(output,labels_batch)
                 if i==0 and self.total_epoch==0:
                     batch_loss=batch_loss.numpy()
@@ -202,8 +198,6 @@ class kernel:
                         self.optimizern.opt(gradient,self.param)
                     else:
                         self.opt_func(tape,self.optimizer,batch_loss,self.param,i,batches)
-                if i==(epoch-1):
-                    self.output=self.nn.forward_propagation(data_batch)
                 total_loss+=batch_loss
                 if self.acc_flag1==1:
                     batch_acc=self.nn.accuracy(output,labels_batch)
@@ -227,7 +221,6 @@ class kernel:
         else:
             with tf.GradientTape() as tape:
                 output=self.nn.forward_propagation(self.train_data)
-                self.output=output
                 train_loss=self.nn.loss(output,self.train_labels)
             if i==0 and self.total_epoch==0:
                 loss=train_loss.numpy()
@@ -239,8 +232,6 @@ class kernel:
                    self.optimizern.opt(gradient,self.param)
                else:
                    self.opt_func(tape,self.optimizer,train_loss,self.param,i)
-            if i==(epoch-1):
-                self.output=self.nn.forward_propagation(self.train_data)
             self.train_loss_list.append(loss.astype(np.float32))
             self.train_loss=loss
             self.train_loss=self.train_loss.astype(np.float32)
