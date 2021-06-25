@@ -367,7 +367,6 @@ class kernel:
         self.a.append(0)
         self.TD.append(0)
         self.loss.append(0)
-        episode=[]
         if len(self.state_pool)==i-1:
             self.state_pool.append(None)
             self.action_pool.append(None)
@@ -375,6 +374,7 @@ class kernel:
             self.reward_pool.append(None)
             self.epsilon.append(epsilon)
         for _ in range(episode_num):
+            episode=[]
             if self.exploration_space==None:
                 s=self.exploration.explore(init=True)
             else:
