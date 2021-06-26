@@ -48,8 +48,7 @@ class kernel:
         self.loss_list=[]
         self.opt_flag==False
         self.a=[]
-        self.epi_num=0
-        self.episode_num=0
+        self.episode_num=[]
         self.total_episode=0
         self.time=0
         self.total_time=0
@@ -117,8 +116,7 @@ class kernel:
             self.loss=[]
             self.loss_list=[]
             self.a=[]
-            self.epi_num=0
-            self.episode_num=0
+            self.episode_num=[]
             self.total_episode=0
             self.time=0
             self.total_time=0
@@ -241,7 +239,6 @@ class kernel:
                     episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r]
                 else:
                     episode=[self.state_name[s],a,self.state_name[next_s],r]
-        self.epi_num+=1
         return next_s,end,episode,index
     
     
@@ -356,11 +353,13 @@ class kernel:
     
     
     def learn(self,episode_num,epsilon,i):
+        self.thread+=1
         if i not in self.finish_list:
-            self.thread+=1
             self.one_list.append(1)
             self.index_list.append(i)
             self.use_flag.append(False)
+        else:
+            self.one_list[i]=1
         self.p=np.array(self.one_list,dtype=np.float16)/self.thread
         self.a.append(0)
         self.TD.append(0)
@@ -371,7 +370,11 @@ class kernel:
             self.next_state_pool.append(None)
             self.reward_pool.append(None)
             self.epsilon.append(epsilon)
+            self.episode_num.append(0)
         for _ in range(episode_num):
+            if self.episode_num[i]==episode_num+1:
+                break
+            self.episode_num[i]+=1
             episode=[]
             if self.exploration_space==None:
                 s=self.exploration.explore(init=True)
@@ -405,7 +408,8 @@ class kernel:
                         break
                 if self.save_episode==True:
                     self.episode.append(episode)
-        self.finish_list.append(i)
+        if i not in self.finish_list:
+            self.finish_list.append(i)
         self.thread-=1
         self.one_list[i]=0
         self.p=np.array(self.one_list,dtype=np.float16)/self.thread
@@ -449,7 +453,7 @@ class kernel:
         if self.save_episode==True:
             episode_file=open(path.replace(path[index+1:],'episode.dat'),'wb')
             pickle.dump(self.episode,episode_file)
-        self.episode_num=self.epi_num
+        self.one_list=[0]*len(self.one_list)
         pickle.dump(self.param,parameter_file)
         pickle.dump(self.state_pool,output_file)
         pickle.dump(self.action_pool,output_file)
@@ -473,7 +477,6 @@ class kernel:
         pickle.dump(self.optimizer,output_file)
         pickle.dump(self.lr,output_file)
         pickle.dump(self.end_loss,output_file)
-        pickle.dump(self.thread,output_file)
         pickle.dump(self.one_list,output_file)
         pickle.dump(self.index_list,output_file)
         pickle.dump(self.finish_list,output_file)
@@ -520,7 +523,6 @@ class kernel:
         self.optimizer=pickle.load(input_file)
         self.lr=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
-        self.thread=pickle.load(input_file)
         self.one_list=pickle.load(input_file)
         self.index_list=pickle.load(input_file)
         self.finish_list=pickle.load(input_file)
