@@ -6,7 +6,7 @@ import time
 
 
 class kernel:
-    def __init__(self,nn,update_param,optimizer,state,state_name,action_name,exploration_space,exploration=None,pr=None,pool_net=True,save_episode=True):
+    def __init__(self,nn,update_param,optimizer,state,state_name,action_name,exploration_space,episode_num,exploration=None,pr=None,pool_net=True,save_episode=True):
         self.nn=nn
         self._nn=nn.nn
         self.param=nn.param
@@ -22,6 +22,7 @@ class kernel:
         self.state_name=state_name
         self.action_name=action_name
         self.exploration_space=exploration_space
+        self.epi_num=episode_num
         self.exploration=exploration
         self.pr=pr
         self.epsilon=[]
@@ -70,13 +71,15 @@ class kernel:
         return
     
     
-    def set_up(self,param=None,optimizer=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,rp=None,alpha=None,beta=None,lr=None,end_loss=None,init=False):
+    def set_up(self,param=None,optimizer=None,discount=None,episode_num=None,episode_step=None,pool_size=None,batch=None,update_step=None,rp=None,alpha=None,beta=None,lr=None,end_loss=None,init=False):
         if param!=None:
             self.param=param
         if optimizer!=None:
             self.optimizer=optimizer
         if discount!=None:
             self.discount=discount
+        if episode_num!=None:
+            self.epi_num=episode_num
         if episode_step!=None:
             self.episode_step=episode_step
         if pool_size!=None:
@@ -352,7 +355,7 @@ class kernel:
         return
     
     
-    def learn(self,episode_num,epsilon,i):
+    def learn(self,epsilon,i):
         self.thread+=1
         if i not in self.finish_list:
             self.one_list.append(1)
@@ -371,8 +374,8 @@ class kernel:
             self.reward_pool.append(None)
             self.epsilon.append(epsilon)
             self.episode_num.append(0)
-        for _ in range(episode_num):
-            if self.episode_num[i]==episode_num+1:
+        for _ in range(self.epi_num):
+            if self.episode_num[i]==self.epi_num+1:
                 break
             self.episode_num[i]+=1
             episode=[]
@@ -466,6 +469,7 @@ class kernel:
         pickle.dump(self.index,output_file)
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.discount,output_file)
+        pickle.dump(self.epi_num,output_file)
         pickle.dump(self.episode_step,output_file)
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
@@ -512,6 +516,7 @@ class kernel:
         self.index=pickle.load(input_file)
         self.epsilon=pickle.load(input_file)
         self.discount=pickle.load(input_file)
+        self.epi_num=pickle.load(input_file)
         self.episode_step=pickle.load(input_file)
         self.pool_size=pickle.load(input_file)
         self.batch=pickle.load(input_file)
