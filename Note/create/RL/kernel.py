@@ -189,7 +189,7 @@ class kernel:
                     continue
                 else:
                     break
-        if self.pool_net==True and flag==1 and self.state_pool[index]!=None and index in self.finish_list and self.use_flag[i]==False:
+        if self.pool_net==True and flag==1 and self.state_pool[index]!=None and self.use_flag[i]==False:
             if self.exploration_space==None:
                 self.state_pool[index]=tf.concat([self.state_pool[index],tf.expand_dims(s,axis=0)])
                 self.action_pool[index]=tf.concat([self.action_pool[index],tf.expand_dims(a,axis=0)])
