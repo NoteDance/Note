@@ -182,11 +182,11 @@ class kernel:
                     if len(a.shape)>0:
                         a=self._epsilon_greedy_policy(a,self.action_one)
                         next_s,r,end=self.exploration.explore(self.state_name[s],self.action_name[a],self.exploration_space[self.state_name[s]][self.action_name[a]])
-        if len(self._one_list)==i-1:
+        if len(self._one_list)==i:
             self._one_list.append(self.one_list)
         else:
             self._one_list=self.one_list
-        if len(self.p)==i-1:
+        if len(self.p)==i:
             self.p.append(np.array(self._one_list[i],dtype=np.float16)/len(self._one_list))
         else:
             self.p[i]=np.array(self._one_list[i],dtype=np.float16)/len(self._one_list)
