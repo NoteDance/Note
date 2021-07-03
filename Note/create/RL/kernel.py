@@ -6,7 +6,7 @@ import time
 
 
 class kernel:
-    def __init__(self,nn,update_param,optimizer,state,state_name,action_name,exploration_space,exploration=None,pr=None,pool_net=True,save_episode=True):
+    def __init__(self,nn,update_param,optimizer,state,state_name,action_name,exploration_space,thread_lock,exploration=None,pr=None,pool_net=True,save_episode=True):
         self.nn=nn
         self._nn=nn.nn
         self.param=nn.param
@@ -37,11 +37,12 @@ class kernel:
         self.end_loss=None
         self.thread=0
         self.thread_sum=0
+        self.thread_lock=thread_lock
         self.one_list=[]
-        self.index_list=[]
+        self._one_list=[]
         self.use_flag=[]
-        self.p=None
-        self.flish_list=[]
+        self.p=[]
+        self.finish_list=[]
         self.pool_net=pool_net
         self.save_episode=save_episode
         self.TD=[]
@@ -106,10 +107,10 @@ class kernel:
             self.thread=0
             self.thread_sum=0
             self.one_list=[]
-            self.index_list=[]
+            self._one_list=[]
             self.use_flag=[]
-            self.p=None
-            self.flish_list=[]
+            self.p=[]
+            self.finish_list=[]
             self.pool_net=True
             self.episode=[]
             self.epsilon=[]
@@ -181,10 +182,18 @@ class kernel:
                     if len(a.shape)>0:
                         a=self._epsilon_greedy_policy(a,self.action_one)
                         next_s,r,end=self.exploration.explore(self.state_name[s],self.action_name[a],self.exploration_space[self.state_name[s]][self.action_name[a]])
+        if len(self._one_list)==i-1:
+            self._one_list.append(self.one_list)
+        else:
+            self._one_list=self.one_list
+        if len(self.p)==i-1:
+            self.p.append(np.array(self._one_list[i],dtype=np.float16)/len(self._one_list))
+        else:
+            self.p[i]=np.array(self._one_list[i],dtype=np.float16)/len(self._one_list)
         if self.pool_net==True:
             flag=np.random.randint(0,2)
             while True:
-                index=np.random.choice(self.index_list,p=self.p)
+                index=np.random.choice(len(self.p[i]),p=self.p[i])
                 if index in self.finish_list or self.use_flag[i]==True:
                     continue
                 else:
@@ -359,18 +368,10 @@ class kernel:
     
     
     def learn(self,epsilon,episode_num,i):
+        self.thread_lock.acquire()
         self.thread+=1
-        if i not in self.finish_list:
-            self.one_list.append(1)
-            self.index_list.append(i)
-            self.use_flag.append(False)
-        else:
-            self.one_list[i]=1
-        self.p=np.array(self.one_list,dtype=np.float16)/self.thread
-        self.a.append(0)
-        self.TD.append(0)
-        self.loss.append(0)
-        if len(self.state_pool)==i-1:
+        self.thread_lock.release()
+        if len(self.state_pool)==i:
             self.state_pool.append(None)
             self.action_pool.append(None)
             self.next_state_pool.append(None)
@@ -378,7 +379,16 @@ class kernel:
             self.epsilon.append(epsilon)
             self.epi_num.append(episode_num)
             self.episode_num.append(0)
+            self.one_list.append(1)
+            self.use_flag.append(False)
+            self.thread_lock.acquire()
             self.thread_sum+=1
+            self.thread_lock.release()
+        elif i not in self.finish_list:
+            self.one_list[i]=1
+        self.a.append(0)
+        self.TD.append(0)
+        self.loss.append(0)
         for _ in range(episode_num):
             if self.episode_num[i]==self.epi_num[i]:
                 break
@@ -418,9 +428,10 @@ class kernel:
                     self.episode.append(episode)
         if i not in self.finish_list:
             self.finish_list.append(i)
+        self.thread_lock.acquire()
         self.thread-=1
+        self.thread_lock.release()
         self.one_list[i]=0
-        self.p=np.array(self.one_list,dtype=np.float16)/self.thread
         self.state_pool[i]=tf.expand_dims(self.state_pool[i][0],axis=0)
         self.action_pool[i]=tf.expand_dims(self.action_pool[i][0],axis=0)
         self.next_state_pool[i]=tf.expand_dims(self.next_state_pool[i][0],axis=0)
@@ -461,7 +472,9 @@ class kernel:
         if self.save_episode==True:
             episode_file=open(path.replace(path[index+1:],'episode.dat'),'wb')
             pickle.dump(self.episode,episode_file)
+            episode_file.close()
         self.one_list=[0]*len(self.one_list)
+        self.use_flag=[False]*len(self.use_flag)
         pickle.dump(self.param,parameter_file)
         pickle.dump(self.state_pool,output_file)
         pickle.dump(self.action_pool,output_file)
@@ -487,7 +500,9 @@ class kernel:
         pickle.dump(self.end_loss,output_file)
         pickle.dump(self.thread_sum,output_file)
         pickle.dump(self.one_list,output_file)
-        pickle.dump(self.index_list,output_file)
+        pickle.dump(self._one_list,output_file)
+        pickle.dump(self.use_flag,output_file)
+        pickle.dump(self.p,output_file)
         pickle.dump(self.finish_list,output_file)
         pickle.dump(self.pool_net,output_file)
         pickle.dump(self.save_episode,output_file)
@@ -498,7 +513,6 @@ class kernel:
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
-        episode_file.close()
         return
     
     
@@ -535,7 +549,9 @@ class kernel:
         self.end_loss=pickle.load(input_file)
         self.thread_sum=pickle.load(input_file)
         self.one_list=pickle.load(input_file)
-        self.index_list=pickle.load(input_file)
+        self._one_list=pickle.load(input_file)
+        self.use_flag=pickle.load(input_file)
+        self.p=pickle.load(input_file)
         self.finish_list=pickle.load(input_file)
         self.pool_net=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
