@@ -40,7 +40,6 @@ class kernel:
         self.thread_lock=thread_lock
         self.one_list=[]
         self._one_list=[]
-        self.use_flag=[]
         self.p=[]
         self.finish_list=[]
         self.pool_net=pool_net
@@ -108,7 +107,6 @@ class kernel:
             self.thread_sum=0
             self.one_list=[]
             self._one_list=[]
-            self.use_flag=[]
             self.p=[]
             self.finish_list=[]
             self.pool_net=True
@@ -194,11 +192,11 @@ class kernel:
             flag=np.random.randint(0,2)
             while True:
                 index=np.random.choice(len(self.p[i]),p=self.p[i])
-                if index in self.finish_list or self.use_flag[i]==True:
+                if index in self.finish_list:
                     continue
                 else:
                     break
-        if self.pool_net==True and flag==1 and self.state_pool[index]!=None and self.use_flag[i]==False:
+        if self.pool_net==True and flag==1 and self.state_pool[index]!=None:
             if self.exploration_space==None:
                 self.state_pool[index]=tf.concat([self.state_pool[index],tf.expand_dims(s,axis=0)])
                 self.action_pool[index]=tf.concat([self.action_pool[index],tf.expand_dims(a,axis=0)])
@@ -258,7 +256,6 @@ class kernel:
     
     
     def _learn(self,i):
-        self.use_flag[i]=True
         if len(self.state_pool)<self.batch:
             with tf.GradientTape() as tape:
                 if type(self._nn)!=list:
@@ -355,7 +352,6 @@ class kernel:
                         actor_gradient=self.TD[i]*tape.gradient(tf.math.log(action_batch),self.param[2])
                         self.optimizer.opt(value_gradient,actor_gradient,self.param)
                         self.loss[i]+=self.TD[i]
-            self.use_flag[i]=False
             if self.update_step!=None:
                 if self.a%self.update_step==0:
                     self.update_param.update(self.param)
@@ -381,7 +377,6 @@ class kernel:
             self.epi_num.append(episode_num)
             self.episode_num.append(0)
             self.one_list.append(1)
-            self.use_flag.append(False)
             self.thread_lock.acquire()
             self.thread_sum+=1
             self.thread_lock.release()
@@ -502,7 +497,6 @@ class kernel:
         pickle.dump(self.thread_sum,output_file)
         pickle.dump(self.one_list,output_file)
         pickle.dump(self._one_list,output_file)
-        pickle.dump(self.use_flag,output_file)
         pickle.dump(self.p,output_file)
         pickle.dump(self.finish_list,output_file)
         pickle.dump(self.pool_net,output_file)
@@ -551,7 +545,6 @@ class kernel:
         self.thread_sum=pickle.load(input_file)
         self.one_list=pickle.load(input_file)
         self._one_list=pickle.load(input_file)
-        self.use_flag=pickle.load(input_file)
         self.p=pickle.load(input_file)
         self.finish_list=pickle.load(input_file)
         self.pool_net=pickle.load(input_file)
