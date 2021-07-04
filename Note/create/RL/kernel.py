@@ -281,8 +281,9 @@ class kernel:
                 self.update_param.update(self.param)
         else:
             self.loss[i]=0
-            batches=int((len(self.state_pool[i])-len(self.state_pool[i])%self.batch)/self.batch)
-            if len(self.state_pool)%self.batch!=0:
+            length=min(len(self.state_pool),len(self.action_pool),len(self.next_state_pool),len(self.reward_pool))
+            batches=int((length-length%self.batch)/self.batch)
+            if length%self.batch!=0:
                 batches+=1
             if self.pool_net==True:
                 for j in range(batches):
@@ -310,17 +311,17 @@ class kernel:
                         actor_gradient=self.TD[i]*tape.gradient(tf.math.log(action_batch),self.param[2])
                         self.optimizer.opt(value_gradient,actor_gradient,self.param)
                         self.loss[i]+=self.TD[i]
-                if len(self.state_pool)%self.batch!=0:
+                if length%self.batch!=0:
                     if self.pr!=None:
                         state_batch,action_batch,next_state_batch,reward_batch=self.pr(self.state_pool[i],self.action_pool[i],self.next_state_pool[i],self.reward_pool[i],self.pool_size,self.batch,self.rp,self.alpha,self.beta)
                     else:
                         batches+=1
                         index1=batches*self.batch
                         index2=self.batch-(self.shape0-batches*self.batch)
-                        state_batch=tf.concat([self.state_pool[i][index1:],self.state_pool[i][:index2]])
-                        action_batch=tf.concat([self.action_pool[i][index1:],self.action_pool[i][:index2]])
-                        next_state_batch=tf.concat([self.next_state_pool[i][index1:],self.next_state_pool[i][:index2]])
-                        reward_batch=tf.concat([self.reward_pool[i][index1:],self.reward_pool[i][:index2]])
+                        state_batch=tf.concat([self.state_pool[i][index1:length],self.state_pool[i][:index2]])
+                        action_batch=tf.concat([self.action_pool[i][index1:length],self.action_pool[i][:index2]])
+                        next_state_batch=tf.concat([self.next_state_pool[i][index1:length],self.next_state_pool[i][:index2]])
+                        reward_batch=tf.concat([self.reward_pool[i][index1:length],self.reward_pool[i][:index2]])
                     with tf.GradientTape() as tape:
                         if type(self._nn)!=list:
                             batch_loss=self._loss(self._nn,state_batch,action_batch,next_state_batch,reward_batch)
