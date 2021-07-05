@@ -399,31 +399,43 @@ class kernel:
                     self.a[i]+=1
                     next_s,end,_episode,index=self.explore(s,self.epsilon[i],i)
                     s=next_s
+                    self.thread_lock.acquire()
                     self._learn(i)
+                    self.thread_lock.release()
                     if self.save_episode==True:
                         if index not in self.finish_list:
                             episode.append(_episode)
                     if end:
                         if self.save_episode==True:
+                            self.thread_lock.acquire()
                             self.episode.append(episode)
+                            self.thread_lock.release()
                         break
             else:
                 for _ in range(self.episode_step):
                     self.a[i]+=1
                     next_s,end,episode=self.explore(s,self.epsilon[i],i)
                     s=next_s
+                    self.thread_lock.acquire()
                     self._learn(i)
+                    self.thread_lock.release()
                     if self.save_episode==True:
                         if index not in self.finish_list:
                             episode.append(_episode)
                     if end:
                         if self.save_episode==True:
+                            self.thread_lock.acquire()
                             self.episode.append(episode)
+                            self.thread_lock.release()
                         break
                 if self.save_episode==True:
+                    self.thread_lock.acquire()
                     self.episode.append(episode)
+                    self.thread_lock.release()
         if i not in self.finish_list:
+            self.thread_lock.acquire()
             self.finish_list.append(i)
+            self.thread_lock.release()
         self.thread_lock.acquire()
         self.thread-=1
         self.thread_lock.release()
