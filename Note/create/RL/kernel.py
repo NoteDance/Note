@@ -198,15 +198,19 @@ class kernel:
                     break
         if self.pool_net==True and flag==1:
             if self.exploration_space==None:
+                self.thread_lock.acquire()
                 self.state_pool[index]=tf.concat([self.state_pool[index],tf.expand_dims(s,axis=0)])
                 self.action_pool[index]=tf.concat([self.action_pool[index],tf.expand_dims(a,axis=0)])
                 self.next_state_pool[index]=tf.concat([self.next_state_pool[index],tf.expand_dims(next_s,axis=0)])
                 self.reward_pool[index]=tf.concat([self.reward_pool[index],tf.expand_dims(r,axis=0)])
+                self.thread_lock.release()
             else:
+                self.thread_lock.acquire()
                 self.state_pool[index]=tf.concat([self.state_pool[index],tf.expand_dims(self.state[self.state_name[s]],axis=0)])
                 self.action_pool[index]=tf.concat([self.action_pool[index],tf.expand_dims(a,axis=0)])
                 self.next_state_pool[index]=tf.concat([self.next_state_pool[index],tf.expand_dims(self.state[self.state_name[next_s]],axis=0)])
                 self.reward_pool[index]=tf.concat([self.reward_pool[index],tf.expand_dims(r,axis=0)])
+                self.thread_lock.release()
         else:
             if self.state_pool[i]==None:
                 if self.exploration_space==None:
