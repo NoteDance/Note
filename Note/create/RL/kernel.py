@@ -257,18 +257,19 @@ class kernel:
     
     def learn1(self,i,j=None,batches=None,length=None):
         if len(self.state_pool[i])<self.batch:
+            length=min(len(self.state_pool[i]),len(self.action_pool[i]),len(self.next_state_pool[i]),len(self.reward_pool[i]))
             with tf.GradientTape() as tape:
                 if type(self._nn)!=list:
-                    self.loss[i]=self._loss(self._nn,self.state_pool[i],self.action_pool[i],self.next_state_pool[i],self.reward_pool[i])
+                    self.loss[i]=self._loss(self._nn,self.state_pool[i][:length],self.action_pool[i][:length],self.next_state_pool[i][:length],self.reward_pool[i][:length])
                 else:
-                    value=self._nn[0](self.state_pool[i],param=0)
-                    self.TD[i]=tf.reduce_mean((self.reward_pool+self.discount*self._nn[0](self.next_state_pool[i],param=1)-value)**2)
+                    value=self._nn[0](self.state_pool[i][:length],param=0)
+                    self.TD[i]=tf.reduce_mean((self.reward_pool[i][:length]+self.discount*self._nn[0](self.next_state_pool[i][:length],param=1)-value)**2)
             if type(self._nn)!=list:
                 gradient=tape.gradient(self.loss[i],self.param[0])
                 self.optimizer.opt(gradient,self.param[0])
             else:
                 value_gradient=tape.gradient(self.TD[i],self.param[0])
-                actor_gradient=self.TD[i]*tape.gradient(tf.math.log(self.action_pool[i]),self.param[2])
+                actor_gradient=self.TD[i]*tape.gradient(tf.math.log(self.action_pool[i][:length]),self.param[2])
                 self.loss[i]=self.TD[i]
                 self.optimizer.opt(value_gradient,actor_gradient,self.param)
             if self.update_step!=None:
@@ -331,7 +332,8 @@ class kernel:
     
     
     def learn2(self,i):
-        train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool[i],self.action_pool[i],self.next_state_pool[i],self.reward_pool[i])).shuffle(len(self.state_pool[i])).batch(self.batch)
+        length=min(len(self.state_pool[i]),len(self.action_pool[i]),len(self.next_state_pool[i]),len(self.reward_pool[i]))
+        train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool[i][:length],self.action_pool[i][:length],self.next_state_pool[i][:length],self.reward_pool[i][:length])).shuffle(length).batch(self.batch)
         for state_batch,action_batch,next_state_batch,reward_batch in train_ds:
             with tf.GradientTape() as tape:
                 if type(self._nn)!=list:
@@ -421,7 +423,8 @@ class kernel:
                     self.a[i]+=1
                     next_s,end,_episode,index=self.explore(s,self.epsilon[i],i)
                     s=next_s
-                    self.learn3(i)
+                    if self.state_pool[i]!=None and self.action_pool[i]!=None and self.next_state_pool[i]!=None and self.reward_pool[i]!=None:
+                        self.learn3(i)
                     if self.save_episode==True:
                         if index not in self.finish_list:
                             episode.append(_episode)
@@ -436,7 +439,8 @@ class kernel:
                     self.a[i]+=1
                     next_s,end,episode=self.explore(s,self.epsilon[i],i)
                     s=next_s
-                    self.learn3(i)
+                    if self.state_pool[i]!=None and self.action_pool[i]!=None and self.next_state_pool[i]!=None and self.reward_pool[i]!=None:
+                        self.learn3(i)
                     if self.save_episode==True:
                         if index not in self.finish_list:
                             episode.append(_episode)
