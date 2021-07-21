@@ -444,9 +444,11 @@ class kernel:
             self.thread_lock.release()
         elif i not in self.finish_list:
             self.one_list[i]=1
+        self.thread_lock.acquire()
         self.a.append(0)
         self.TD.append(0)
         self.loss.append(0)
+        self.thread_lock.release()
         for _ in range(episode_num):
             if self.episode_num[i]==self.epi_num[i]:
                 break
@@ -468,7 +470,9 @@ class kernel:
                             episode.append(_episode)
                     if end:
                         if self.save_episode==True:
+                            self.thread_lock.acquire()
                             self.episode.append(episode)
+                            self.thread_lock.release()
                         break
             else:
                 for _ in range(self.episode_step):
@@ -482,12 +486,16 @@ class kernel:
                             episode.append(_episode)
                     if end:
                         if self.save_episode==True:
+                            self.thread_lock.acquire()
                             self.episode.append(episode)
+                            self.thread_lock.release()
                         break
                 if self.save_episode==True:
                     self.episode.append(episode)
         if i not in self.finish_list:
+            self.thread_lock.acquire()
             self.finish_list.append(i)
+            self.thread_lock.release()
         self.thread_lock.acquire()
         self.thread-=1
         self.thread_lock.release()
