@@ -196,7 +196,7 @@ class kernel:
                     continue
                 else:
                     break
-        if self.pool_net==True and flag==1 and self.state_pool[index]!=None:
+        if self.pool_net==True and flag==1:
             if self.exploration_space==None:
                 self.state_pool[index]=tf.concat([self.state_pool[index],tf.expand_dims(s,axis=0)])
                 self.action_pool[index]=tf.concat([self.action_pool[index],tf.expand_dims(a,axis=0)])
@@ -210,31 +210,41 @@ class kernel:
         else:
             if self.state_pool[i]==None:
                 if self.exploration_space==None:
+                    self.thread_lock.acquire()
                     self.state_pool[i]=tf.expand_dims(s,axis=0)
                     self.action_pool[i]=tf.expand_dims(a,axis=0)
                     self.next_state_pool[i]=tf.expand_dims(next_s,axis=0)
                     self.reward_pool[i]=tf.expand_dims(r,axis=0)
+                    self.thread_lock.release()
                 else:
+                    self.thread_lock.acquire()
                     self.state_pool[i]=tf.expand_dims(self.state[self.state_name[s]],axis=0)
                     self.action_pool[i]=tf.expand_dims(a,axis=0)
                     self.next_state_pool[i]=tf.expand_dims(self.state[self.state_name[next_s]],axis=0)
                     self.reward_pool[i]=tf.expand_dims(r,axis=0)
+                    self.thread_lock.release()
             else:
                 if self.exploration_space==None:
+                    self.thread_lock.acquire()
                     self.state_pool[i]=tf.concat([self.state_pool[i],tf.expand_dims(s,axis=0)])
                     self.action_pool[i]=tf.concat([self.action_pool[i],tf.expand_dims(a,axis=0)])
                     self.next_state_pool[i]=tf.concat([self.next_state_pool[i],tf.expand_dims(next_s,axis=0)])
                     self.reward_pool[i]=tf.concat([self.reward_pool[i],tf.expand_dims(r,axis=0)])
+                    self.thread_lock.release()
                 else:
+                    self.thread_lock.acquire()
                     self.state_pool[i]=tf.concat([self.state_pool[i],tf.expand_dims(self.state[self.state_name[s]],axis=0)])
                     self.action_pool[i]=tf.concat([self.action_pool[i],tf.expand_dims(a,axis=0)])
                     self.next_state_pool[i]=tf.concat([self.next_state_pool[i],tf.expand_dims(self.state[self.state_name[next_s]],axis=0)])
                     self.reward_pool[i]=tf.concat([self.reward_pool[i],tf.expand_dims(r,axis=0)])
+                    self.thread_lock.release()
         if len(self.state_pool[i])>self.pool_size:
+            self.thread_lock.acquire()
             self.state_pool[i]=self.state_pool[i][1:]
             self.action_pool[i]=self.action_pool[i][1:]
             self.next_state_pool[i]=self.next_state_pool[i][1:]
             self.reward_pool[i]=self.reward_pool[i][1:]
+            self.thread_lock.release()
         if end:
             if self.save_episode==True:
                 if self.exploration_space==None:
@@ -430,9 +440,7 @@ class kernel:
                             episode.append(_episode)
                     if end:
                         if self.save_episode==True:
-                            self.thread_lock.acquire()
                             self.episode.append(episode)
-                            self.thread_lock.release()
                         break
             else:
                 for _ in range(self.episode_step):
@@ -446,18 +454,12 @@ class kernel:
                             episode.append(_episode)
                     if end:
                         if self.save_episode==True:
-                            self.thread_lock.acquire()
                             self.episode.append(episode)
-                            self.thread_lock.release()
                         break
                 if self.save_episode==True:
-                    self.thread_lock.acquire()
                     self.episode.append(episode)
-                    self.thread_lock.release()
         if i not in self.finish_list:
-            self.thread_lock.acquire()
             self.finish_list.append(i)
-            self.thread_lock.release()
         self.thread_lock.acquire()
         self.thread-=1
         self.thread_lock.release()
