@@ -439,7 +439,10 @@ class kernel:
         self.TD.append(0)
         self.loss.append(0)
         self.thread_lock.release()
+        while len(self.state_pool)<i:
+            pass
         if len(self.state_pool)==i:
+            self.thread_lock.acquire()
             self.state_pool.append(None)
             self.action_pool.append(None)
             self.next_state_pool.append(None)
@@ -448,7 +451,6 @@ class kernel:
             self.epi_num.append(episode_num)
             self.episode_num.append(0)
             self.one_list.append(1)
-            self.thread_lock.acquire()
             self.thread_sum+=1
             self.thread_lock.release()
         elif i not in self.finish_list:
@@ -495,7 +497,9 @@ class kernel:
                             self.thread_lock.release()
                         break
                 if self.save_episode==True:
+                    self.thread_lock.acquire()
                     self.episode.append(episode)
+                    self.thread_lock.release()
         if i not in self.finish_list:
             self.thread_lock.acquire()
             self.finish_list.append(i)
