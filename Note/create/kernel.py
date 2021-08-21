@@ -9,6 +9,7 @@ class kernel:
     def __init__(self,nn):
         self.nn=nn
         self.param=nn.param
+        self.ol=None
         self.batch=None
         self.epoch=0
         self.optimizer=nn.optimizer
@@ -123,7 +124,7 @@ class kernel:
             return True
     
     
-    def _train(self,epoch,batch,test,test_batch,i,data_batch=None,labels_batch=None):
+    def _train(self,epoch=None,batch=None,test=None,test_batch=None,i=None,data_batch=None,labels_batch=None):
         if batch!=None:
             total_loss=0
             total_acc=0
@@ -218,7 +219,7 @@ class kernel:
                 self.test_loss_list.append(self.test_loss)
                 if self.acc_flag1==1:
                     self.test_acc_list.append(self.test_acc)
-        else:
+        elif self.ol==None:
             with tf.GradientTape() as tape:
                 output=self.nn.forward_propagation(self.train_data)
                 train_loss=self.nn.loss(output,self.train_labels)
@@ -246,6 +247,25 @@ class kernel:
                 self.test_loss_list.append(self.test_loss)
                 if self.acc_flag1==1:
                     self.test_acc_list.append(self.test_acc)
+        else:
+            data=self.ol()
+            if data=='end':
+                return
+            self.total_epoch+=1
+            with tf.GradientTape() as tape:
+                output=self.nn.forward_propagation(data[0])
+                train_loss=self.nn.loss(output,data[1])
+            if i==0 and self.total_epoch==0:
+                loss=train_loss.numpy()
+            else:
+               if self.optimizer!=None and self.opt_func==None:
+                   self.apply_gradient(tape,self.optimizer,train_loss,self.param)
+               elif self.optimizern!=None:
+                   gradient=tape.gradient(train_loss,self.param)
+                   self.optimizern.opt(gradient,self.param)
+               else:
+                   self.opt_func(tape,self.optimizer,train_loss,self.param,i)
+            self.nn.train_loss=loss.astype(np.float32)
         return
         
     
@@ -260,9 +280,9 @@ class kernel:
             data_batch=[x for x in range(len(self.train_data))]
         if type(self.train_labels)==list:
             labels_batch=[x for x in range(len(self.train_labels))]
-        if self.total_epoch==0:
-            epoch=epoch+1
         if epoch!=None:
+            if self.total_epoch==0:
+                epoch=epoch+1
             for i in range(epoch):
                 t1=time.time()
                 self._train(epoch,batch,test,test_batch,i,data_batch,labels_batch)
@@ -292,7 +312,7 @@ class kernel:
                 self.time+=(t2-t1)
                 if self.end()==True:
                     break
-        else:
+        elif self.ol==None:
             i=0
             while True:
                 t1=time.time()
@@ -321,6 +341,11 @@ class kernel:
                 self.time+=(t2-t1)
                 if self.end()==True:
                     break
+        else:
+            while True:
+                self._train()
+                if nn_path!=None:
+                    self.save(nn_path)
         if nn_path!=None:
             self.save(nn_path)
         self.time=self.time-int(self.time)
@@ -575,6 +600,7 @@ class kernel:
             index=path.rfind('\\')
             parameter_file=open(path.replace(path[index+1:],'parameter-{0}.dat'.format(i+1)),'wb')
         pickle.dump(self.param,parameter_file)
+        pickle.dump(self.ol,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.lr,output_file)
         pickle.dump(self.l2,output_file)
@@ -615,6 +641,7 @@ class kernel:
         parameter_file=open(p_path,'rb')
         self.nn.param=pickle.load(parameter_file)
         self.param=self.nn.param
+        self.ol=pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.lr=pickle.load(input_file)
         self.nn.l2=pickle.load(input_file)
