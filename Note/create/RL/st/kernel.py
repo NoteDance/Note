@@ -10,6 +10,7 @@ class kernel:
         self.nn=nn
         self._nn=nn.nn
         self.param=nn.param
+        self.ol=None
         self.loss=nn.loss
         self.update_param=nn.update_param
         self.optimizer=nn.optimizer
@@ -42,6 +43,7 @@ class kernel:
         self.epi_num=0
         self.episode_num=0
         self.total_episode=0
+        self.total_epoch=0
         self.time=0
         self.total_time=0
     
@@ -101,6 +103,7 @@ class kernel:
             self.epi_num=0
             self.episode_num=0
             self.total_episode=0
+            self.total_epoch=0
             self.time=0
             self.total_time=0
         return
@@ -402,7 +405,7 @@ class kernel:
                     self.episode.append(episode)
                 if self.end_loss!=None and loss<=self.end_loss:
                     break
-        else:
+        elif self.ol==None:
             while True:
                 loss,episode=self.learn2()
                 self.loss_list.append(loss)
@@ -423,6 +426,37 @@ class kernel:
                     self.episode.append(episode)
                 if self.end_loss!=None and loss<=self.end_loss:
                     break
+        else:
+            while True:
+                data=self.ol()
+                if data=='end':
+                    if path!=None:
+                        self.save(path)
+                    return
+                self.total_epoch+=1
+                with tf.GradientTape() as tape:
+                    if type(self._nn)!=list:
+                        loss=self.loss(self._nn,data[0],data[1],data[2],data[3])				
+                    else:  
+                        value=self._nn[0](data[0],param=0)
+                        TD=tf.reduce_mean((data[3]+self.discount*self._nn[0](data[2],param=1)-value)**2)
+                if type(self._nn)!=list:
+                    gradient=tape.gradient(loss,self.param[0])
+                    self.optimizer.opt(gradient,self.param[0])
+                else:
+                    value_gradient=tape.gradient(TD,self.param[0])				
+                    actor_gradient=TD*tape.gradient(tf.math.log(data[1]),self.param[2])
+                    loss=TD
+                    self.optimizer.opt(value_gradient,actor_gradient,self.param)
+                if self.update_step!=None:
+                    if self.a%self.update_step==0:
+                        self.update_param.update(self.param)
+                else:
+                    self.update_param.update(self.param)
+                if len(self.loss_list)==0:
+                    self.loss_list.append(loss.numpy())
+                else:
+                    self.loss_list[0]=loss.numpy()
         if path!=None:
             self.save(path)
         if self.time<0.5:
@@ -482,6 +516,7 @@ class kernel:
                 episode_file.close()
         self.episode_num=self.epi_num
         pickle.dump(self.param,parameter_file)
+        pickle.dump(self.ol,output_file)
         pickle.dump(self.state_pool,output_file)
         pickle.dump(self.action_pool,output_file)
         pickle.dump(self.next_state_pool,output_file)
@@ -509,6 +544,7 @@ class kernel:
         pickle.dump(self.a,output_file)
         pickle.dump(self.episode_num,output_file)
         pickle.dump(self.total_episode,output_file)
+        pickle.dump(self.total_epoch,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
         return
@@ -523,6 +559,7 @@ class kernel:
             episode_file.close()
         self.nn.param=pickle.load(parameter_file)
         self.param=self.nn.param
+        self.ol==pickle.load(input_file)
         self.state_pool=pickle.load(input_file)
         self.action_pool=pickle.load(input_file)
         self.next_state_pool=pickle.load(input_file)
@@ -553,6 +590,7 @@ class kernel:
         self.a=pickle.load(input_file)
         self.episode_num=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
+        self.total_epoch=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
         input_file.close()
         return
