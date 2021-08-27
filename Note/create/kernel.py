@@ -261,6 +261,13 @@ class kernel:
             data=self.ol()
             if data=='end':
                 return
+            if self.eb==0:
+                self._nn.i+=1
+            elif self.eb==1:
+                self.nn.optimizer.i+=1
+            else:
+                self._nn.i+=1
+                self.nn.optimizer.i+=1
             self.total_epoch+=1
             with tf.GradientTape() as tape:
                 output=self._nn.forward_propagation(data[0])
@@ -336,6 +343,13 @@ class kernel:
             while True:
                 t1=time.time()
                 i+=1
+                if self.eb==0:
+                    self._nn.i+=1
+                elif self.eb==1:
+                    self.nn.optimizer.i+=1
+                else:
+                    self._nn.i+=1
+                    self.nn.optimizer.i+=1
                 self._train(epoch,batch,test,test_batch,i)
                 self.epoch+=1
                 self.total_epoch+=1
@@ -634,8 +648,6 @@ class kernel:
         pickle.dump(self.end_test_loss,output_file)
         pickle.dump(self.end_test_acc,output_file)
         pickle.dump(self.eb,output_file)
-        if self.eb==True:
-            pickle.dump(self.nn.i,output_file)
         pickle.dump(self.d,output_file)
         pickle.dump(self.e,output_file)
         pickle.dump(self.hp,output_file)
@@ -680,8 +692,6 @@ class kernel:
         self.end_test_loss=pickle.load(input_file)
         self.end_test_acc=pickle.load(input_file)
         self.eb=pickle.load(input_file)
-        if self.eb==True:
-            self.nn.i=pickle.load(input_file)
         self.d=pickle.load(input_file)
         self.e=pickle.load(input_file)
         self.hp=pickle.load(input_file)
