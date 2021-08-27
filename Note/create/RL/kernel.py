@@ -9,8 +9,8 @@ class kernel:
     def __init__(self,nn,update_param,optimizer,state,state_name,action_name,exploration_space,thread_lock,exploration=None,pr=None,pool_net=True,save_episode=True):
         self.nn=nn
         self._nn=nn.nn
-        self.param=nn.param
-        self._loss=self._nn.loss
+        self.param=nn.nn.param
+        self._loss=nn.nn.loss
         self.update_param=nn.update_param
         self.optimizer=nn.optimizer
         self.state_pool=[]
@@ -552,6 +552,7 @@ class kernel:
         self.one_list=[0]*len(self.one_list)
         self.use_flag=[False]*len(self.use_flag)
         pickle.dump(self.param,parameter_file)
+        self._nn.param=None
         pickle.dump(self._nn,output_file)
         pickle.dump(self.state_pool,output_file)
         pickle.dump(self.action_pool,output_file)
@@ -599,10 +600,9 @@ class kernel:
             episode_file=open(e_path,'rb')
             self.episode=pickle.load(episode_file)
             episode_file.close()
-        self.nn.param=pickle.load(parameter_file)
-        self.param=self.nn.param
+        self.param=pickle.load(parameter_file)
         self._nn=pickle.load(input_file)
-        self.nn.nn=self._nn
+        self._nn.param=self.param
         self.state_pool=pickle.load(input_file)
         self.action_pool=pickle.load(input_file)
         self.next_state_pool=pickle.load(input_file)
