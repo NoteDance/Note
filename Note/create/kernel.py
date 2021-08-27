@@ -22,8 +22,9 @@ class kernel:
         self.end_acc=None
         self.end_test_loss=None
         self.end_test_acc=None
-        self.i=None
-        self.j=None
+        self.eb=None
+        self.d=None
+        self.e=None
         self.hp=None
         self.regulation=None
         self.opt=None
@@ -133,7 +134,8 @@ class kernel:
             total_acc=0
             batches=int((self.shape0-self.shape0%batch)/batch)
             for j in range(batches):
-                self.j=j
+                if self.eb==True:
+                    self.nn.j=j
                 index1=j*batch
                 index2=(j+1)*batch
                 if type(self.train_data)==list:
@@ -289,7 +291,8 @@ class kernel:
                 epoch=epoch+1
             for i in range(epoch):
                 t1=time.time()
-                self.i=i
+                if self.eb==True:
+                    self.nn.i+=1
                 self._train(epoch,batch,test,test_batch,data_batch,labels_batch)
                 self.epoch+=1
                 self.total_epoch+=1
@@ -300,7 +303,11 @@ class kernel:
                     d=epoch/10
                 if d==0:
                     d=1
-                if i%d==0:
+                if self.d==None:
+                    self.d=d
+                if self.e==None:
+                    self.e=epoch*2
+                if i%self.d==0:
                     if self.total_epoch==0:
                         if test==False:
                             print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
@@ -311,7 +318,7 @@ class kernel:
                             print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
                         else:
                             print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
-                    if nn_path!=None and i%epoch*2==0:
+                    if nn_path!=None and i%self.e==0:
                         self.save(nn_path,i,one)
                 t2=time.time()
                 self.time+=(t2-t1)
@@ -332,7 +339,11 @@ class kernel:
                     d=epoch/10
                 if d==0:
                     d=1
-                if i%d==0:
+                if self.d==None:
+                    self.d=d
+                if self.e==None:
+                    self.e=epoch*2
+                if i%self.d==0:
                     if self.total_epoch==0:
                         if test==False:
                             print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
@@ -340,7 +351,7 @@ class kernel:
                             print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i,self.train_loss,self.test_loss))
                     else:
                         print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
-                    if nn_path!=None and i%epoch*2==0:
+                    if nn_path!=None and i%self.e==0:
                         self.save(nn_path,i,one)
                 t2=time.time()
                 self.time+=(t2-t1)
@@ -615,6 +626,11 @@ class kernel:
         pickle.dump(self.end_acc,output_file)
         pickle.dump(self.end_test_loss,output_file)
         pickle.dump(self.end_test_acc,output_file)
+        pickle.dump(self.eb,output_file)
+        if self.eb==True:
+            pickle.dump(self.nn.i,output_file)
+        pickle.dump(self.d,output_file)
+        pickle.dump(self.e,output_file)
         pickle.dump(self.hp,output_file)
         pickle.dump(self.regulation,output_file)
         pickle.dump(self.opt,output_file)
@@ -658,6 +674,11 @@ class kernel:
         self.end_acc=pickle.load(input_file)
         self.end_test_loss=pickle.load(input_file)
         self.end_test_acc=pickle.load(input_file)
+        self.eb=pickle.load(input_file)
+        if self.eb==True:
+            self.nn.i=pickle.load(input_file)
+        self.d=pickle.load(input_file)
+        self.e=pickle.load(input_file)
         self.hp=pickle.load(input_file)
         self.regulation=pickle.load(input_file)
         self.opt=pickle.load(input_file)
