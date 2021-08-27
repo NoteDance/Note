@@ -8,7 +8,7 @@ import time
 class kernel:
     def __init__(self,nn):
         self.nn=nn
-        self.param=nn.param
+        self.param=nn.nn.param
         self._nn=nn.nn
         self.ol=None
         self.batch=None
@@ -17,7 +17,7 @@ class kernel:
         self.optimizern=nn.optimizer
         self.opt_func=nn.opt_func
         self.lr=None
-        self.l2=nn.l2
+        self.l2=nn.nn.l2
         self.end_loss=None
         self.end_acc=None
         self.end_test_loss=None
@@ -93,9 +93,9 @@ class kernel:
             self.lr=lr
         if l2!=None:
             self.l2=l2
-            self.nn.l2=l2
+            self.nn.nn.l2=l2
         if dropout!=None:
-            self.nn.dropout=dropout
+            self.nn.nn.dropout=dropout
         if end_loss!=None:
             self.end_loss=end_loss
         if end_acc!=None:
@@ -134,8 +134,13 @@ class kernel:
             total_acc=0
             batches=int((self.shape0-self.shape0%batch)/batch)
             for j in range(batches):
-                if self.eb==True:
-                    self.nn.j=j
+                if self.eb==0:
+                    self._nn.j=j
+                elif self.eb==1:
+                    self.nn.optimizer.j=j
+                else:
+                    self._nn.j=j
+                    self.nn.optimizer.j=j
                 index1=j*batch
                 index2=(j+1)*batch
                 if type(self.train_data)==list:
@@ -182,6 +187,13 @@ class kernel:
                 batches+=1
                 index1=batches*batch
                 index2=batch-(self.shape0-batches*batch)
+                if self.eb==0:
+                    self._nn.j+=1
+                elif self.eb==1:
+                    self.nn.optimizer.j+=1
+                else:
+                    self._nn.j+=1
+                    self.nn.optimizer.j+=1
                 if type(self.train_data)==list:
                     for i in range(len(self.train_data)):
                         data_batch[i]=tf.concat([self.train_data[i][index1:],self.train_data[i][:index2]])
@@ -291,8 +303,13 @@ class kernel:
                 epoch=epoch+1
             for i in range(epoch):
                 t1=time.time()
-                if self.eb==True:
-                    self.nn.i+=1
+                if self.eb==0:
+                    self._nn.i+=1
+                elif self.eb==1:
+                    self.nn.optimizer.i+=1
+                else:
+                    self._nn.i+=1
+                    self.nn.optimizer.i+=1
                 self._train(epoch,batch,test,test_batch,data_batch,labels_batch)
                 self.epoch+=1
                 self.total_epoch+=1
@@ -616,12 +633,12 @@ class kernel:
             index=path.rfind('\\')
             parameter_file=open(path.replace(path[index+1:],'parameter-{0}.dat'.format(i+1)),'wb')
         pickle.dump(self.param,parameter_file)
+        self._nn.param=None
         pickle.dump(self._nn,output_file)
         pickle.dump(self.ol,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.lr,output_file)
         pickle.dump(self.l2,output_file)
-        pickle.dump(self.nn.dropout,output_file)
         pickle.dump(self.end_loss,output_file)
         pickle.dump(self.end_acc,output_file)
         pickle.dump(self.end_test_loss,output_file)
@@ -661,15 +678,13 @@ class kernel:
     def restore(self,s_path,p_path):
         input_file=open(s_path,'rb')
         parameter_file=open(p_path,'rb')
-        self.nn.param=pickle.load(parameter_file)
-        self.param=self.nn.param
-        self._nn=pickle.load(input_file)
-        self.nn.nn=self._nn
+        self.param=pickle.load(parameter_file)
+        self._nn=pickle.load(parameter_file)
+        self._nn.param=self.param
         self.ol=pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.lr=pickle.load(input_file)
-        self.nn.l2=pickle.load(input_file)
-        self.nn.dropout=pickle.load(input_file)
+        self.l2=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
         self.end_acc=pickle.load(input_file)
         self.end_test_loss=pickle.load(input_file)
