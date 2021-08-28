@@ -9,7 +9,6 @@ class kernel:
     def __init__(self,nn,update_param,optimizer,state,state_name,action_name,exploration_space,thread_lock,exploration=None,pr=None,pool_net=True,save_episode=True):
         self.nn=nn
         self.param=nn.nn.param
-        self._loss=nn.nn.loss
         self.update_param=nn.update_param
         self.optimizer=nn.optimizer
         self.state_pool=[]
@@ -303,7 +302,7 @@ class kernel:
             length=min(len(self.state_pool[i]),len(self.action_pool[i]),len(self.next_state_pool[i]),len(self.reward_pool[i]))
             with tf.GradientTape() as tape:
                 if type(self.nn.nn.nn)!=list:
-                    self.loss[i]=self._loss(self.nn.nn.nn,self.state_pool[i][:length],self.action_pool[i][:length],self.next_state_pool[i][:length],self.reward_pool[i][:length])
+                    self.loss[i]=self.nn.nn.loss(self.nn.nn.nn,self.state_pool[i][:length],self.action_pool[i][:length],self.next_state_pool[i][:length],self.reward_pool[i][:length])
                 else:
                     value=self.nn.nn.nn[0](self.state_pool[i][:length],param=0)
                     self.TD[i]=tf.reduce_mean((self.reward_pool[i][:length]+self.discount*self.nn.nn.nn[0](self.next_state_pool[i][:length],param=1)-value)**2)
@@ -332,7 +331,7 @@ class kernel:
                 reward_batch=self.reward_pool[i][index1:index2]
                 with tf.GradientTape() as tape:
                     if type(self.nn.nn.nn)!=list:
-                        batch_loss=self._loss(self.nn.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
+                        batch_loss=self.nn.nn.loss(self.nn.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
                     else:
                         value=self.nn.nn.nn[0](state_batch,param=0)
                         self.TD[i]=tf.reduce_mean((reward_batch+self.discount*self.nn.nn.nn[0](next_state_batch,param=1)-value)**2)
@@ -358,7 +357,7 @@ class kernel:
                     reward_batch=tf.concat([self.reward_pool[i][index1:length],self.reward_pool[i][:index2]])
                 with tf.GradientTape() as tape:
                     if type(self.nn.nn.nn)!=list:
-                        batch_loss=self._loss(self.nn.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
+                        batch_loss=self.nn.nn.loss(self.nn.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
                     else:
                         value=self.nn.nn.nn[0](state_batch,param=0)
                         self.TD[i]=tf.reduce_mean((reward_batch+self.discount*self.nn.nn.nn[0](next_state_batch,param=1)-value)**2)
@@ -380,7 +379,7 @@ class kernel:
         for state_batch,action_batch,next_state_batch,reward_batch in train_ds:
             with tf.GradientTape() as tape:
                 if type(self.nn.nn.nn)!=list:
-                    batch_loss=self._loss(self.nn.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
+                    batch_loss=self.nn.nn.loss(self.nn.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
                 else:
                     value=self.nn.nn.nn[0](state_batch,param=0)
                     self.TD[i]=tf.reduce_mean((reward_batch+self.discount*self.nn.nn.nn[0](next_state_batch,param=1)-value)**2)
