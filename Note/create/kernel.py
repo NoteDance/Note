@@ -9,7 +9,6 @@ class kernel:
     def __init__(self,nn):
         self.nn=nn
         self.param=nn.nn.param
-        self._nn=nn.nn
         self.ol=None
         self.batch=None
         self.epoch=0
@@ -133,11 +132,11 @@ class kernel:
             batches=int((self.shape0-self.shape0%batch)/batch)
             for j in range(batches):
                 if self.eb==0:
-                    self._nn.j=j
+                    self.nn.nn.j=j
                 elif self.eb==1:
                     self.nn.optimizer.j=j
                 else:
-                    self._nn.j=j
+                    self.nn.nn.j=j
                     self.nn.optimizer.j=j
                 index1=j*batch
                 index2=(j+1)*batch
@@ -164,8 +163,8 @@ class kernel:
                     else:
                         labels_batch=self.train_labels[j]
                 with tf.GradientTape() as tape:
-                    output=self._nn.forward_propagation(data_batch)
-                    batch_loss=self._nn.loss(output,labels_batch)
+                    output=self.nn.nn.forward_propagation(data_batch)
+                    batch_loss=self.nn.nn.loss(output,labels_batch)
                 if i==0 and self.total_epoch==0:
                     batch_loss=batch_loss.numpy()
                 else:
@@ -184,11 +183,11 @@ class kernel:
                 index1=batches*batch
                 index2=batch-(self.shape0-batches*batch)
                 if self.eb==0:
-                    self._nn.j+=1
+                    self.nn.nn.j+=1
                 elif self.eb==1:
                     self.nn.optimizer.j+=1
                 else:
-                    self._nn.j+=1
+                    self.nn.nn.j+=1
                     self.nn.optimizer.j+=1
                 if type(self.train_data)==list:
                     for i in range(len(self.train_data)):
@@ -201,8 +200,8 @@ class kernel:
                 else:
                     labels_batch=tf.concat([self.train_labels[index1:],self.train_labels[:index2]])
                 with tf.GradientTape() as tape:
-                    output=self._nn.forward_propagation(data_batch)
-                    batch_loss=self._nn.loss(output,labels_batch)
+                    output=self.nn.nn.forward_propagation(data_batch)
+                    batch_loss=self.nn.nn.loss(output,labels_batch)
                 if i==0 and self.total_epoch==0:
                     batch_loss=batch_loss.numpy()
                 else:
@@ -233,8 +232,8 @@ class kernel:
                     self.test_acc_list.append(self.test_acc)
         elif self.ol==None:
             with tf.GradientTape() as tape:
-                output=self._nn.forward_propagation(self.train_data)
-                train_loss=self._nn.loss(output,self.train_labels)
+                output=self.nn.nn.forward_propagation(self.train_data)
+                train_loss=self.nn.nn.loss(output,self.train_labels)
             if i==0 and self.total_epoch==0:
                 loss=train_loss.numpy()
             else:
@@ -262,16 +261,16 @@ class kernel:
             if data=='end':
                 return
             if self.eb==0:
-                self._nn.i+=1
+                self.nn.nn.i+=1
             elif self.eb==1:
                 self.nn.optimizer.i+=1
             else:
-                self._nn.i+=1
+                self.nn.nn.i+=1
                 self.nn.optimizer.i+=1
             self.total_epoch+=1
             with tf.GradientTape() as tape:
-                output=self._nn.forward_propagation(data[0])
-                train_loss=self._nn.loss(output,data[1])
+                output=self.nn.nn.forward_propagation(data[0])
+                train_loss=self.nn.nn.loss(output,data[1])
             if i==0 and self.total_epoch==0:
                 loss=train_loss.numpy()
             else:
@@ -301,11 +300,11 @@ class kernel:
             for i in range(epoch):
                 t1=time.time()
                 if self.eb==0:
-                    self._nn.i+=1
+                    self.nn.nn.i+=1
                 elif self.eb==1:
                     self.nn.optimizer.i+=1
                 else:
-                    self._nn.i+=1
+                    self.nn.nn.i+=1
                     self.nn.optimizer.i+=1
                 self._train(epoch,batch,test,test_batch,data_batch,labels_batch)
                 self.epoch+=1
@@ -344,11 +343,11 @@ class kernel:
                 t1=time.time()
                 i+=1
                 if self.eb==0:
-                    self._nn.i+=1
+                    self.nn.nn.i+=1
                 elif self.eb==1:
                     self.nn.optimizer.i+=1
                 else:
-                    self._nn.i+=1
+                    self.nn.nn.i+=1
                     self.nn.optimizer.i+=1
                 self._train(epoch,batch,test,test_batch,i)
                 self.epoch+=1
@@ -438,8 +437,8 @@ class kernel:
                         labels_batch[i]=test_labels[i][index1:index2]
                 else:
                     labels_batch=test_labels[index1:index2]
-                output=self._nn.forward_propagation(data_batch)
-                batch_loss=self._nn.loss(output,labels_batch)
+                output=self.nn.nn.forward_propagation(data_batch)
+                batch_loss=self.nn.nn.loss(output,labels_batch)
                 total_loss+=batch_loss.numpy()
                 if self.acc_flag1==1:
                     batch_acc=self.nn.accuracy(output,labels_batch)
@@ -470,8 +469,8 @@ class kernel:
                         labels_batch=np.concatenate(test_labels[index1:],test_labels[:index2])
                     else:
                         labels_batch=tf.concat(test_labels[index1:],test_labels[:index2])
-                output=self._nn.forward_propagation(data_batch)
-                batch_loss=self._nn.loss(output,labels_batch)
+                output=self.nn.nn.forward_propagation(data_batch)
+                batch_loss=self.nn.nn.loss(output,labels_batch)
                 total_loss+=batch_loss.numpy()
                 if self.acc_flag1==1:
                     batch_acc=self.nn.accuracy(output,labels_batch)
@@ -484,8 +483,8 @@ class kernel:
                 test_acc=test_acc
                 test_acc=test_acc.astype(np.float32)
         else:
-            output=self._nn.forward_propagation(test_data)
-            test_loss=self._nn.loss(output,test_labels)
+            output=self.nn.nn.forward_propagation(test_data)
+            test_loss=self.nn.nn.loss(output,test_labels)
             if self.acc_flag1==1:
                 test_acc=self.nn.accuracy(output,test_labels)
                 test_loss=test_loss.numpy().astype(np.float32)
@@ -637,8 +636,8 @@ class kernel:
             index=path.rfind('\\')
             parameter_file=open(path.replace(path[index+1:],'parameter-{0}.dat'.format(i+1)),'wb')
         pickle.dump(self.param,parameter_file)
-        self._nn.param=None
-        pickle.dump(self._nn,output_file)
+        self.nn.nn.param=None
+        pickle.dump(self.nn.nn,output_file)
         pickle.dump(self.ol,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.lr,output_file)
@@ -681,8 +680,8 @@ class kernel:
         input_file=open(s_path,'rb')
         parameter_file=open(p_path,'rb')
         self.param=pickle.load(parameter_file)
-        self._nn=pickle.load(parameter_file)
-        self._nn.param=self.param
+        self.nn.nn=pickle.load(input_file)
+        self.nn.nn.param=self.param
         self.ol=pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.lr=pickle.load(input_file)
