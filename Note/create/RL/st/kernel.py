@@ -36,7 +36,6 @@ class kernel:
         self.end_loss=None
         self.save_episode=save_episode
         self.loss_list=[]
-        self.opt_flag==False
         self.a=0
         self.d=None
         self.e=None
@@ -550,7 +549,6 @@ class kernel:
         pickle.dump(self.end_loss,output_file)
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.loss_list,output_file)
-        pickle.dump(self.opt_flag,output_file)
         pickle.dump(self.a,output_file)
         pickle.dump(self.d,output_file)
         pickle.dump(self.e,output_file)
@@ -599,7 +597,6 @@ class kernel:
         self.end_loss=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
-        self.opt_flag=pickle.load(input_file)
         self.a=pickle.load(input_file)
         self.d=pickle.load(input_file)
         self.e=pickle.load(input_file)
