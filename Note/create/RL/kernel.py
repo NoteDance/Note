@@ -46,7 +46,7 @@ class kernel:
         self.loss=[]
         self.loss_list=[]
         self.opt_flag==False
-        self.a=[]
+        self.a=0
         self.epi_num=[]
         self.episode_num=[]
         self.total_episode=0
@@ -117,7 +117,7 @@ class kernel:
             self.TD=[]
             self.loss=[]
             self.loss_list=[]
-            self.a=[]
+            self.a=0
             self.epi_num=[]
             self.episode_num=[]
             self.total_episode=0
@@ -396,10 +396,9 @@ class kernel:
             
     
     def learn3(self,i):
+        self.a+=1
         if len(self.state_pool[i])<self.batch:
-            self.thread_lock.acquire()
             self.learn1(i)
-            self.thread_lock.release()
         else:
             self.loss[i]=0
             length=min(len(self.state_pool[i]),len(self.action_pool[i]),len(self.next_state_pool[i]),len(self.reward_pool[i]))
@@ -408,23 +407,14 @@ class kernel:
                 batches+=1
             if self.pool_net==True:
                 for j in range(batches):
-                    self.thread_lock.acquire()
                     self.learn1(i,j,batches,length)
-                    self.thread_lock.release()
-                self.thread_lock.acquire()
-                self.learn1(i,j,batches,length)
-                self.thread_lock.release()
             else:
-                self.thread_lock.acquire()
                 self.learn2(i)
-                self.thread_lock.release()
-            self.thread_lock.acquire()
             if self.update_step!=None:
                 if self.a%self.update_step==0:
                     self.update_param.update(self.param)
             else:
                 self.update_param.update(self.param)
-            self.thread_lock.release()
             if len(self.state_pool[i])<self.batch:
                 self.loss[i]=self.loss[i].numpy()
             else:
@@ -435,7 +425,6 @@ class kernel:
     def learn(self,epsilon,episode_num,i):
         self.thread_lock.acquire()
         self.thread+=1
-        self.a.append(0)
         self.TD.append(0)
         self.loss.append(0)
         self.thread_lock.release()
@@ -466,11 +455,12 @@ class kernel:
                 s=int(np.random.uniform(0,len(self.state_name)))
             if self.episode_step==None:
                 while True:
-                    self.a[i]+=1
                     next_s,end,_episode,index=self.explore(s,self.epsilon[i],i)
                     s=next_s
                     if self.state_pool[i]!=None and self.action_pool[i]!=None and self.next_state_pool[i]!=None and self.reward_pool[i]!=None:
+                        self.thread_lock.acquire()
                         self.learn3(i)
+                        self.thread_lock.release()
                     if self.save_episode==True:
                         if index not in self.finish_list:
                             episode.append(_episode)
@@ -482,11 +472,12 @@ class kernel:
                         break
             else:
                 for _ in range(self.episode_step):
-                    self.a[i]+=1
                     next_s,end,episode=self.explore(s,self.epsilon[i],i)
                     s=next_s
                     if self.state_pool[i]!=None and self.action_pool[i]!=None and self.next_state_pool[i]!=None and self.reward_pool[i]!=None:
+                        self.thread_lock.acquire()
                         self.learn3(i)
+                        self.thread_lock.release()
                     if self.save_episode==True:
                         if index not in self.finish_list:
                             episode.append(_episode)
