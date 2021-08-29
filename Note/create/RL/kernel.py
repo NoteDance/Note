@@ -45,7 +45,6 @@ class kernel:
         self.TD=[]
         self.loss=[]
         self.loss_list=[]
-        self.opt_flag==False
         self.a=0
         self.epi_num=[]
         self.episode_num=[]
@@ -577,7 +576,7 @@ class kernel:
         pickle.dump(self.pool_net,output_file)
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.loss_list,output_file)
-        pickle.dump(self.opt_flag,output_file)
+        pickle.dump(self.a,output_file)
         pickle.dump(self.epi_num,output_file)
         pickle.dump(self.episode_num,output_file)
         pickle.dump(self.total_episode,output_file)
@@ -626,7 +625,7 @@ class kernel:
         self.pool_net=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
-        self.opt_flag=pickle.load(input_file)
+        self.a=pickle.load(input_file)
         self.epi_num=pickle.load(input_file)
         self.episode_num=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
