@@ -508,10 +508,12 @@ class kernel:
         self.thread-=1
         self.thread_lock.release()
         self.one_list[i]=0
+        self.thread_lock.acquire()
         self.state_pool[i]=tf.expand_dims(self.state_pool[i][0],axis=0)
         self.action_pool[i]=tf.expand_dims(self.action_pool[i][0],axis=0)
         self.next_state_pool[i]=tf.expand_dims(self.next_state_pool[i][0],axis=0)
         self.reward_pool[i]=tf.expand_dims(self.reward_pool[i][0],axis=0)
+        self.thread_lock.release()
         return
     
     
