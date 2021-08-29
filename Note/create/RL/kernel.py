@@ -418,11 +418,13 @@ class kernel:
                 self.thread_lock.acquire()
                 self.learn2(i)
                 self.thread_lock.release()
+            self.thread_lock.acquire()
             if self.update_step!=None:
                 if self.a%self.update_step==0:
                     self.update_param.update(self.param)
             else:
                 self.update_param.update(self.param)
+            self.thread_lock.release()
             if len(self.state_pool[i])<self.batch:
                 self.loss[i]=self.loss[i].numpy()
             else:
