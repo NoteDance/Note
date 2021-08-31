@@ -177,23 +177,23 @@ class kernel:
                     if len(a.shape)>0:
                         a=self._epsilon_greedy_policy(a,self.action_one)
                         next_s,r,end=self.exploration.explore(self.state_name[s],self.action_name[a],self.exploration_space[self.state_name[s]][self.action_name[a]])
-        while len(self._one_list)<i:
-            pass
-        if len(self._one_list)==i:
-            self.thread_lock.acquire()
-            self._one_list.append(self.one_list)
-            self.thread_lock.release()
-        else:
-            self._one_list[i]=self.one_list
-        while len(self.p)<i:
-            pass
-        if len(self.p)==i:
-            self.thread_lock.acquire()
-            self.p.append(np.array(self._one_list[i],dtype=np.float16)/len(self._one_list))
-            self.thread_lock.release()
-        else:
-            self.p[i]=np.array(self._one_list[i],dtype=np.float16)/len(self._one_list)
         if self.pool_net==True:
+            while len(self._one_list)<i:
+                pass
+            if len(self._one_list)==i:
+                self.thread_lock.acquire()
+                self._one_list.append(self.one_list)
+                self.thread_lock.release()
+            else:
+                self._one_list[i]=self.one_list
+            while len(self.p)<i:
+                pass
+            if len(self.p)==i:
+                self.thread_lock.acquire()
+                self.p.append(np.array(self._one_list[i],dtype=np.float16)/len(self._one_list))
+                self.thread_lock.release()
+            else:
+                self.p[i]=np.array(self._one_list[i],dtype=np.float16)/len(self._one_list)
             flag=np.random.randint(0,2)
             while True:
                 index=np.random.choice(len(self.p[i]),p=self.p[i])
@@ -269,13 +269,18 @@ class kernel:
                         self.action_pool[i]=tf.concat([self.action_pool[i],tf.expand_dims(a,axis=0)])
                         self.next_state_pool[i]=tf.concat([self.next_state_pool[i],tf.expand_dims(self.state[self.state_name[next_s]],axis=0)])
                         self.reward_pool[i]=tf.concat([self.reward_pool[i],tf.expand_dims(r,axis=0)])
-        if len(self.state_pool[i])>self.pool_size:
+        if self.pool_net==True and len(self.state_pool[i])>self.pool_size:
             self.thread_lock.acquire()
             self.state_pool[i]=self.state_pool[i][1:]
             self.action_pool[i]=self.action_pool[i][1:]
             self.next_state_pool[i]=self.next_state_pool[i][1:]
             self.reward_pool[i]=self.reward_pool[i][1:]
             self.thread_lock.release()
+        else:
+            self.state_pool[i]=self.state_pool[i][1:]
+            self.action_pool[i]=self.action_pool[i][1:]
+            self.next_state_pool[i]=self.next_state_pool[i][1:]
+            self.reward_pool[i]=self.reward_pool[i][1:]
         if end:
             if self.save_episode==True:
                 if self.exploration_space==None:
@@ -400,11 +405,11 @@ class kernel:
             self.learn1(i)
         else:
             self.loss[i]=0
-            length=min(len(self.state_pool[i]),len(self.action_pool[i]),len(self.next_state_pool[i]),len(self.reward_pool[i]))
-            batches=int((length-length%self.batch)/self.batch)
-            if length%self.batch!=0:
-                batches+=1
             if self.pool_net==True:
+                length=min(len(self.state_pool[i]),len(self.action_pool[i]),len(self.next_state_pool[i]),len(self.reward_pool[i]))
+                batches=int((length-length%self.batch)/self.batch)
+                if length%self.batch!=0:
+                    batches+=1
                 for j in range(batches):
                     self.learn1(i,j,batches,length)
             else:
@@ -498,12 +503,13 @@ class kernel:
         self.thread-=1
         self.thread_lock.release()
         self.one_list[i]=0
-        self.thread_lock.acquire()
-        self.state_pool[i]=tf.expand_dims(self.state_pool[i][0],axis=0)
-        self.action_pool[i]=tf.expand_dims(self.action_pool[i][0],axis=0)
-        self.next_state_pool[i]=tf.expand_dims(self.next_state_pool[i][0],axis=0)
-        self.reward_pool[i]=tf.expand_dims(self.reward_pool[i][0],axis=0)
-        self.thread_lock.release()
+        if self.pool_net==True:
+            self.thread_lock.acquire()
+            self.state_pool[i]=tf.expand_dims(self.state_pool[i][0],axis=0)
+            self.action_pool[i]=tf.expand_dims(self.action_pool[i][0],axis=0)
+            self.next_state_pool[i]=tf.expand_dims(self.next_state_pool[i][0],axis=0)
+            self.reward_pool[i]=tf.expand_dims(self.reward_pool[i][0],axis=0)
+            self.thread_lock.release()
         return
     
     
