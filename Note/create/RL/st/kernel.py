@@ -40,7 +40,6 @@ class kernel:
         self.e=None
         self.epi_num=0
         self.episode_num=0
-        self.info=None
         self.total_episode=0
         self.total_epoch=0
         self.time=0
@@ -62,12 +61,9 @@ class kernel:
         return
     
     
-    def set_up(self,param=None,opt=None,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,rp=None,alpha=None,beta=None,end_loss=None,init=False):
+    def set_up(self,param=None,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,rp=None,alpha=None,beta=None,end_loss=None):
         if param!=None:
             self.param=param
-        if opt!=None:
-            self.opt=opt
-            self.nn.opt=opt
         if epsilon!=None:
             self.epsilon=epsilon
         if discount!=None:
@@ -88,20 +84,19 @@ class kernel:
             self.beta=beta
         if end_loss!=None:
             self.end_loss=end_loss
-        if init==True:
-            self.episode=[]
-            self.state_pool=None
-            self.action_pool=None
-            self.next_state_pool=None
-            self.reward_pool=None
-            self.loss_list=[]
-            self.a=0
-            self.epi_num=0
-            self.episode_num=0
-            self.total_episode=0
-            self.total_epoch=0
-            self.time=0
-            self.total_time=0
+        self.episode=[]
+        self.state_pool=None
+        self.action_pool=None
+        self.next_state_pool=None
+        self.reward_pool=None
+        self.loss_list=[]
+        self.a=0
+        self.epi_num=0
+        self.episode_num=0
+        self.total_episode=0
+        self.total_epoch=0
+        self.time=0
+        self.total_time=0
         return
     
     
@@ -548,7 +543,6 @@ class kernel:
         pickle.dump(self.d,output_file)
         pickle.dump(self.e,output_file)
         pickle.dump(self.episode_num,output_file)
-        pickle.dump(self.info,output_file)
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_epoch,output_file)
         pickle.dump(self.total_time,output_file)
@@ -593,7 +587,6 @@ class kernel:
         self.d=pickle.load(input_file)
         self.e=pickle.load(input_file)
         self.episode_num=pickle.load(input_file)
-        self.info=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         self.total_epoch=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
