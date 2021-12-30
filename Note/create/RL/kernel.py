@@ -47,7 +47,6 @@ class kernel:
         self.a=0
         self.epi_num=[]
         self.episode_num=[]
-        self.info=None
         self.total_episode=0
         self.time=0
         self.total_time=0
@@ -69,12 +68,9 @@ class kernel:
         return
     
     
-    def set_up(self,param=None,opt=None,discount=None,episode_num=None,episode_step=None,pool_size=None,batch=None,update_step=None,rp=None,alpha=None,beta=None,end_loss=None,init=False):
+    def set_up(self,param=None,discount=None,episode_num=None,episode_step=None,pool_size=None,batch=None,update_step=None,rp=None,alpha=None,beta=None,end_loss=None):
         if param!=None:
             self.param=param
-        if opt!=None:
-            self.opt=opt
-            self.nn.opt=opt
         if discount!=None:
             self.discount=discount
         if episode_num!=None:
@@ -96,29 +92,28 @@ class kernel:
             self.beta=beta
         if end_loss!=None:
             self.end_loss=end_loss
-        if init==True:
-            self.thread=0
-            self.thread_sum=0
-            self.one_list=[]
-            self._one_list=[]
-            self.p=[]
-            self.finish_list=[]
-            self.pool_net=True
-            self.episode=[]
-            self.epsilon=[]
-            self.state_pool=None
-            self.action_pool=None
-            self.next_state_pool=None
-            self.reward_pool=None
-            self.TD=[]
-            self.loss=[]
-            self.loss_list=[]
-            self.a=0
-            self.epi_num=[]
-            self.episode_num=[]
-            self.total_episode=0
-            self.time=0
-            self.total_time=0
+        self.thread=0
+        self.thread_sum=0
+        self.one_list=[]
+        self._one_list=[]
+        self.p=[]
+        self.finish_list=[]
+        self.pool_net=True
+        self.episode=[]
+        self.epsilon=[]
+        self.state_pool=None
+        self.action_pool=None
+        self.next_state_pool=None
+        self.reward_pool=None
+        self.TD=[]
+        self.loss=[]
+        self.loss_list=[]
+        self.a=0
+        self.epi_num=[]
+        self.episode_num=[]
+        self.total_episode=0
+        self.time=0
+        self.total_time=0
         return
     
     
@@ -579,7 +574,6 @@ class kernel:
         pickle.dump(self.loss_list,output_file)
         pickle.dump(self.a,output_file)
         pickle.dump(self.epi_num,output_file)
-        pickle.dump(self.info,output_file)
         pickle.dump(self.episode_num,output_file)
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
@@ -628,7 +622,6 @@ class kernel:
         self.loss_list=pickle.load(input_file)
         self.a=pickle.load(input_file)
         self.epi_num=pickle.load(input_file)
-        self.info=pickle.load(input_file)
         self.episode_num=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
