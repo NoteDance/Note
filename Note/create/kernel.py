@@ -14,7 +14,6 @@ class kernel:
         self.epoch=0
         self.opt=None
         self.sopt=None
-        self.lr=None
         self.end_loss=None
         self.end_acc=None
         self.end_test_loss=None
@@ -22,8 +21,6 @@ class kernel:
         self.eb=None
         self.d=None
         self.e=None
-        self.info=None
-        self.regulation=None
         self.optf=None
         self.acc_flag1=nn.acc_flag1
         self.acc_flag2=nn.acc_flag2
@@ -39,7 +36,6 @@ class kernel:
         self.total_epoch=0
         self.time=0
         self.total_time=0
-        self.processor='GPU:0'
     
     
     def data(self,train_data,train_labels,test_data=None,test_labels=None):
@@ -73,11 +69,7 @@ class kernel:
         return
     
     
-    def set_up(self,opt=None,end_loss=None,end_acc=None,end_test_loss=None,end_test_acc=None):
-        if opt!=None:
-            self.opt=opt
-            self._opt=opt
-            self.nn.opt=opt
+    def set_end(self,end_loss=None,end_acc=None,end_test_loss=None,end_test_acc=None):
         if end_loss!=None:
             self.end_loss=end_loss
         if end_acc!=None:
@@ -253,12 +245,10 @@ class kernel:
         return
         
     
-    def train(self,batch=None,epoch=None,test=False,test_batch=None,nn_path=None,one=True,processor=None):
+    def train(self,batch=None,epoch=None,test=False,test_batch=None,nn_path=None,one=True):
         self.batch=batch
         self.epoch=0
         self.test_flag=test
-        if processor!=None:
-            self.processor=processor
         self.optf=self.nn.optf
         if self.optf!=True:
             self.opt=self.nn.opt
@@ -473,7 +463,7 @@ class kernel:
         print()
         print('epoch:{0}'.format(self.total_epoch))
         print()
-        print('learning rate:{0}'.format(self.lr))
+        print('learning rate:{0}'.format(self.nn.lr))
         print()
         print('time:{0:.3f}s'.format(self.total_time))
         print()
@@ -611,7 +601,6 @@ class kernel:
         pickle.dump(self.eb,output_file)
         pickle.dump(self.d,output_file)
         pickle.dump(self.e,output_file)
-        pickle.dump(self.info,output_file)
         pickle.dump(self.optf,output_file)
         pickle.dump(self.acc_flag1,output_file)
         pickle.dump(self.acc_flag2,output_file)
@@ -629,7 +618,6 @@ class kernel:
         pickle.dump(self.total_epoch,output_file)
         pickle.dump(self.total_epoch,output_file)
         pickle.dump(self.total_time,output_file)
-        pickle.dump(self.processor,output_file)
         output_file.close()
         parameter_file.close()
         return
@@ -654,7 +642,6 @@ class kernel:
         self.eb=pickle.load(input_file)
         self.d=pickle.load(input_file)
         self.e=pickle.load(input_file)
-        self.info=pickle.load(input_file)
         self.optf=pickle.load(input_file)
         self.acc_flag1=pickle.load(input_file)
         self.acc_flag2=pickle.load(input_file)
@@ -671,7 +658,6 @@ class kernel:
             self.test_acc_list=pickle.load(input_file)
         self.total_epoch=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
-        self.processor=pickle.load(input_file)
         input_file.close()
         parameter_file.close()
         return
