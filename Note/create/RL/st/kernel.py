@@ -33,6 +33,8 @@ class kernel:
         self.alpha=None
         self.beta=None
         self.end_loss=None
+        self.eflag=None
+        self.bflag=None
         self.save_episode=save_episode
         self.loss_list=[]
         self.a=0
@@ -160,6 +162,8 @@ class kernel:
                         actor_gradient=TD*tape.gradient(tf.math.log(action_batch),self.param[2])
                         self.opt(value_gradient,actor_gradient,self.param)
                         loss+=TD
+                    if self.bflag==True:
+                        self.nn.batchcount=j
                 if len(self.state_pool)%self.batch!=0:
                     state_batch,action_batch,next_state_batch,reward_batch=self.pr(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.pool_size,self.batch,self.rp,self.alpha,self.beta)
                     with tf.GradientTape() as tape:
@@ -177,6 +181,8 @@ class kernel:
                         actor_gradient=TD*tape.gradient(tf.math.log(action_batch),self.param[2])
                         self.opt(value_gradient,actor_gradient,self.param)
                         loss+=TD
+                    if self.bflag==True:
+                        self.nn.batchcount+=1
             else:
                 train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool)).shuffle(len(self.state_pool)).batch(self.batch)
                 for state_batch,action_batch,next_state_batch,reward_batch in train_ds:
@@ -195,6 +201,10 @@ class kernel:
                         actor_gradient=TD*tape.gradient(tf.math.log(action_batch),self.param[2])
                         self.opt(value_gradient,actor_gradient,self.param)
                         loss+=TD
+                    if self.bflag==True:
+                        self.nn.batchcount+=1
+                if self.bflag==True:
+                    self.nn.batchcount=0
             if self.update_step!=None:
                 if self.a%self.update_step==0:
                     self.update_param.update(self.param)
@@ -398,6 +408,8 @@ class kernel:
                 self.total_episode+=1
                 if self.save_episode==True:
                     self.episode.append(episode)
+                if self.eflag==True:
+                    self.nn.episodecount+=1
                 if self.end_loss!=None and loss<=self.end_loss:
                     break
         elif self.ol==None:
@@ -423,6 +435,8 @@ class kernel:
                 self.total_episode+=1
                 if self.save_episode==True:
                     self.episode.append(episode)
+                if self.eflag==True:
+                    self.nn.episodecount+=1
                 if self.end_loss!=None and loss<=self.end_loss:
                     break
         else:
@@ -456,6 +470,8 @@ class kernel:
                     self.loss_list.append(loss.numpy())
                 else:
                     self.loss_list[0]=loss.numpy()
+                if self.eflag==True:
+                    self.nn.episodecount+=1
         if path!=None:
             self.save(path)
         if self.time<0.5:
@@ -537,6 +553,8 @@ class kernel:
         pickle.dump(self.alpha,output_file)
         pickle.dump(self.beta,output_file)
         pickle.dump(self.end_loss,output_file)
+        pickle.dump(self.eflag,output_file)
+        pickle.dump(self.bflag,output_file)
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.loss_list,output_file)
         pickle.dump(self.a,output_file)
@@ -581,6 +599,8 @@ class kernel:
         self.alpha=pickle.load(input_file)
         self.beta=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
+        self.eflag=pickle.load(input_file)
+        self.bflag=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
         self.a=pickle.load(input_file)
