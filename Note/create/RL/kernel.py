@@ -32,6 +32,8 @@ class kernel:
         self.alpha=None
         self.beta=None
         self.end_loss=None
+        self.eflag=None
+        self.bflag=None
         self.thread=0
         self.thread_sum=0
         self.thread_lock=thread_lock
@@ -81,7 +83,7 @@ class kernel:
             self.pool_size=pool_size
         if batch!=None:
             self.batch=batch
-            self.index=np.arange(batch,dtype=np.int8)
+            self.index=np.arange(batch)
         if update_step!=None:
             self.update_step=update_step
         if rp!=None:
@@ -340,6 +342,8 @@ class kernel:
                     actor_gradient=self.TD[i]*tape.gradient(tf.math.log(action_batch),self.param[2])
                     self.opt(value_gradient,actor_gradient,self.param)
                     self.loss[i]+=self.TD[i]
+            if self.bflag==True:
+                self.nn.batchcount[i]=j
             if length%self.batch!=0:
                 if self.pr!=None:
                     state_batch,action_batch,next_state_batch,reward_batch=self.pr(self.state_pool[i],self.action_pool[i],self.next_state_pool[i],self.reward_pool[i],self.pool_size,self.batch,self.rp,self.alpha,self.beta)
@@ -366,6 +370,8 @@ class kernel:
                     actor_gradient=self.TD[i]*tape.gradient(tf.math.log(action_batch),self.param[2])
                     self.opt(value_gradient,actor_gradient,self.param)
                     self.loss[i]+=self.TD[i]
+                if self.bflag==True:
+                    self.nn.batchcount[i]+=1
         return
     
     
@@ -388,6 +394,8 @@ class kernel:
                 actor_gradient=self.TD[i]*tape.gradient(tf.math.log(action_batch),self.param[2])
                 self.opt(value_gradient,actor_gradient,self.param)
                 self.loss[i]+=self.TD[i]
+            if self.bflag==True:
+                self.nn.batchcount[i]+=1
         return
             
     
@@ -406,6 +414,8 @@ class kernel:
                     self.learn1(i,j,batches,length)
             else:
                 self.learn2(i)
+            if self.bflag==True:
+                self.nn.batchcount[i]=0
             if self.update_step!=None:
                 if self.a%self.update_step==0:
                     self.update_param.update(self.param)
@@ -415,6 +425,8 @@ class kernel:
                 self.loss[i]=self.loss[i].numpy()
             else:
                 self.loss[i]=self.loss[i].numpy()/batches
+        if self.eflag==True:
+            self.nn.episodecount[i]+=1
         return
     
     
@@ -435,6 +447,8 @@ class kernel:
             self.epsilon.append(epsilon)
             self.epi_num.append(episode_num)
             self.episode_num.append(0)
+            self.nn.batchcount.append(0)
+            self.nn.episodecount.append(0)
             self.one_list.append(1)
             self.thread_sum+=1
             self.thread_lock.release()
@@ -564,6 +578,8 @@ class kernel:
         pickle.dump(self.alpha,output_file)
         pickle.dump(self.beta,output_file)
         pickle.dump(self.end_loss,output_file)
+        pickle.dump(self.eflag,output_file)
+        pickle.dump(self.bflag,output_file)
         pickle.dump(self.thread_sum,output_file)
         pickle.dump(self.one_list,output_file)
         pickle.dump(self._one_list,output_file)
@@ -612,6 +628,8 @@ class kernel:
         self.alpha=pickle.load(input_file)
         self.beta=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
+        self.eflag=pickle.load(input_file)
+        self.bflag=pickle.load(input_file)
         self.thread_sum=pickle.load(input_file)
         self.one_list=pickle.load(input_file)
         self._one_list=pickle.load(input_file)
