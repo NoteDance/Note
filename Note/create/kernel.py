@@ -18,7 +18,8 @@ class kernel:
         self.end_acc=None
         self.end_test_loss=None
         self.end_test_acc=None
-        self.eb=None
+        self.eflag=None
+        self.bflag=None
         self.d=None
         self.e=None
         self.optf=None
@@ -108,8 +109,6 @@ class kernel:
             total_acc=0
             batches=int((self.shape0-self.shape0%batch)/batch)
             for j in range(batches):
-                if self.eb==True:
-                    self.nn.batchcount=j
                 index1=j*batch
                 index2=(j+1)*batch
                 if type(self.train_data)==list:
@@ -150,12 +149,12 @@ class kernel:
                     batch_acc=self.nn.accuracy(output,labels_batch)
                     batch_acc=batch_acc.numpy()
                     total_acc+=batch_acc
+                if self.bflag==True:
+                    self.nn.batchcount=j
             if self.shape0%batch!=0:
                 batches+=1
                 index1=batches*batch
                 index2=batch-(self.shape0-batches*batch)
-                if self.eb==True:
-                    self.nn.batchcount=j
                 if type(self.train_data)==list:
                     for i in range(len(self.train_data)):
                         data_batch[i]=tf.concat([self.train_data[i][index1:],self.train_data[i][:index2]])
@@ -182,6 +181,8 @@ class kernel:
                     batch_acc=self.nn.accuracy(output,labels_batch)
                     batch_acc=batch_acc.numpy()
                     total_acc+=batch_acc
+                if self.bflag==True:
+                    self.nn.batchcount+=1
             loss=total_loss/batches
             if self.acc_flag1==1:
                 train_acc=total_acc/batches
@@ -227,8 +228,6 @@ class kernel:
             data=self.ol()
             if data=='end':
                 return
-            if self.eb==True:
-                self.nn.epochcount+=1
             self.total_epoch+=1
             with tf.GradientTape() as tape:
                 output=self.nn.forward_propagation(data[0])
@@ -242,6 +241,8 @@ class kernel:
                    gradient=tape.gradient(train_loss,self.param)
                    self.sopt(gradient,self.param)
             self.nn.train_loss=loss.astype(np.float32)
+            if self.eflag==True:
+                self.nn.epochcount+=1
         return
         
     
@@ -259,11 +260,9 @@ class kernel:
         if type(self.train_labels)==list:
             labels_batch=[x for x in range(len(self.train_labels))]
         if epoch!=None:
-            if self.total_epoch==0:
-                epoch=epoch+1
             for i in range(epoch):
                 t1=time.time()
-                if self.eb==True:
+                if self.eflag==True:
                     self.nn.epochcount+=1
                 self._train(epoch,batch,test,test_batch,data_batch,labels_batch)
                 self.epoch+=1
@@ -292,6 +291,8 @@ class kernel:
                             print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
                     if nn_path!=None and i%self.e==0:
                         self.save(nn_path,i,one)
+                if self.total_epoch==0:
+                    epoch=epoch+1
                 t2=time.time()
                 self.time+=(t2-t1)
                 if self.end()==True:
@@ -301,8 +302,6 @@ class kernel:
             while True:
                 t1=time.time()
                 i+=1
-                if self.eb==True:
-                    self.nn.epochcount+=1
                 self._train(epoch,batch,test,test_batch,i)
                 self.epoch+=1
                 self.total_epoch+=1
@@ -327,6 +326,8 @@ class kernel:
                         print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
                     if nn_path!=None and i%self.e==0:
                         self.save(nn_path,i,one)
+                if self.eflag==True:
+                    self.nn.epochcount+=1
                 t2=time.time()
                 self.time+=(t2-t1)
                 if self.end()==True:
@@ -336,6 +337,8 @@ class kernel:
                 self._train()
                 if nn_path!=None:
                     self.save(nn_path)
+                if self.eflag==True:
+                    self.nn.epochcount+=1
         if nn_path!=None:
             self.save(nn_path)
         self.time=self.time-int(self.time)
@@ -598,7 +601,8 @@ class kernel:
         pickle.dump(self.end_acc,output_file)
         pickle.dump(self.end_test_loss,output_file)
         pickle.dump(self.end_test_acc,output_file)
-        pickle.dump(self.eb,output_file)
+        pickle.dump(self.eflag,output_file)
+        pickle.dump(self.bflag,output_file)
         pickle.dump(self.d,output_file)
         pickle.dump(self.e,output_file)
         pickle.dump(self.optf,output_file)
@@ -639,7 +643,8 @@ class kernel:
         self.end_acc=pickle.load(input_file)
         self.end_test_loss=pickle.load(input_file)
         self.end_test_acc=pickle.load(input_file)
-        self.eb=pickle.load(input_file)
+        self.eflag=pickle.load(input_file)
+        self.bflag=pickle.load(input_file)
         self.d=pickle.load(input_file)
         self.e=pickle.load(input_file)
         self.optf=pickle.load(input_file)
