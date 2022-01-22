@@ -601,8 +601,10 @@ class kernel:
         pickle.dump(self.end_acc,output_file)
         pickle.dump(self.end_test_loss,output_file)
         pickle.dump(self.end_test_acc,output_file)
-        pickle.dump(self.eflag,output_file)
-        pickle.dump(self.bflag,output_file)
+        if self.eflag==True:
+            pickle.dump(self.eflag,output_file)
+        if self.bflag==True:
+            pickle.dump(self.bflag,output_file)
         pickle.dump(self.d,output_file)
         pickle.dump(self.e,output_file)
         pickle.dump(self.optf,output_file)
@@ -643,8 +645,10 @@ class kernel:
         self.end_acc=pickle.load(input_file)
         self.end_test_loss=pickle.load(input_file)
         self.end_test_acc=pickle.load(input_file)
-        self.eflag=pickle.load(input_file)
-        self.bflag=pickle.load(input_file)
+        if self.eflag==True:
+            self.eflag=pickle.load(input_file)
+        if self.bflag==True:
+            self.bflag=pickle.load(input_file)
         self.d=pickle.load(input_file)
         self.e=pickle.load(input_file)
         self.optf=pickle.load(input_file)
