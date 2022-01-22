@@ -553,8 +553,10 @@ class kernel:
         pickle.dump(self.alpha,output_file)
         pickle.dump(self.beta,output_file)
         pickle.dump(self.end_loss,output_file)
-        pickle.dump(self.eflag,output_file)
-        pickle.dump(self.bflag,output_file)
+        if self.eflag==True:
+            pickle.dump(self.eflag,output_file)
+        if self.bflag==True:
+            pickle.dump(self.bflag,output_file)
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.loss_list,output_file)
         pickle.dump(self.a,output_file)
@@ -599,8 +601,10 @@ class kernel:
         self.alpha=pickle.load(input_file)
         self.beta=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
-        self.eflag=pickle.load(input_file)
-        self.bflag=pickle.load(input_file)
+        if self.eflag==True:
+            self.eflag=pickle.load(input_file)
+        if self.bflag==True:
+            self.bflag=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
         self.a=pickle.load(input_file)
