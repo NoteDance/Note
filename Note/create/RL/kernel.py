@@ -447,8 +447,10 @@ class kernel:
             self.epsilon.append(epsilon)
             self.epi_num.append(episode_num)
             self.episode_num.append(0)
-            self.nn.batchcount.append(0)
-            self.nn.episodecount.append(0)
+            if self.eflag==True:
+                self.nn.episodecount.append(0)
+            if self.bflag==True:
+                self.nn.batchcount.append(0)
             self.one_list.append(1)
             self.thread_sum+=1
             self.thread_lock.release()
@@ -578,8 +580,10 @@ class kernel:
         pickle.dump(self.alpha,output_file)
         pickle.dump(self.beta,output_file)
         pickle.dump(self.end_loss,output_file)
-        pickle.dump(self.eflag,output_file)
-        pickle.dump(self.bflag,output_file)
+        if self.eflag==True:
+            pickle.dump(self.eflag,output_file)
+        if self.bflag==True:
+            pickle.dump(self.bflag,output_file)
         pickle.dump(self.thread_sum,output_file)
         pickle.dump(self.one_list,output_file)
         pickle.dump(self._one_list,output_file)
@@ -628,8 +632,10 @@ class kernel:
         self.alpha=pickle.load(input_file)
         self.beta=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
-        self.eflag=pickle.load(input_file)
-        self.bflag=pickle.load(input_file)
+        if self.eflag==True:
+            self.eflag=pickle.load(input_file)
+        if self.bflag==True:
+            self.bflag=pickle.load(input_file)
         self.thread_sum=pickle.load(input_file)
         self.one_list=pickle.load(input_file)
         self._one_list=pickle.load(input_file)
