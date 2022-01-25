@@ -1,6 +1,5 @@
 import numpy as np
 import pickle
-import time
 
 
 class Q_learning:
@@ -21,12 +20,10 @@ class Q_learning:
         self.epi_num=0
         self.episode_num=0
         self.total_episode=0
-        self.time=0
         self.total_time=0
         
         
     def init(self,dtype=np.int32):
-        t3=time.time()
         if len(self.action_name)>self.action_len:
             self.action=np.concatenate((self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len))
             self.action_prob=np.concatenate((self.action_prob,np.ones(len(self.action_name)-self.action_len,dtype=dtype)))
@@ -37,8 +34,6 @@ class Q_learning:
             self.q=np.concatenate((self.q,np.zeros([len(self.state_name),len(self.action_name)-self.action_len],dtype=self.q.dtype)),axis=1)
             self.q=np.concatenate((self.q,np.zeros([len(self.state_name)-self.state_len,len(self.action_name)],dtype=self.q.dtype)))
             self.q=self.q.numpy()
-        t4=time.time()
-        self.time+=t4-t3
         return
     
     
