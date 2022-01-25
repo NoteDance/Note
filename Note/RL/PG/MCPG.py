@@ -1,7 +1,6 @@
 import tensorflow as tf
 import numpy as np
 import pickle
-import time
 
 
 class MCPG:
@@ -27,18 +26,14 @@ class MCPG:
         self.epi_num=0
         self.episode_num=0
         self.total_episode=0
-        self.time=0
         self.total_time=0
     
     
     def init(self,dtype=np.int32):
-        t3=time.time()
         if len(self.action_name)>self.action_len:
             self.action=np.concatenate((self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len))
         else:
             self.action=np.arange(len(self.action_name),dtype=dtype)
-        t4=time.time()
-        self.time+=t4-t3
         return
     
     
