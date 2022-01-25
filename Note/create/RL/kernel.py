@@ -2,7 +2,6 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
-import time
 
 
 class kernel:
@@ -50,12 +49,10 @@ class kernel:
         self.epi_num=[]
         self.episode_num=[]
         self.total_episode=0
-        self.time=0
         self.total_time=0
         
         
     def init(self,dtype=np.int32):
-        t3=time.time()
         self.action_len=len(self.action_name)
         if len(self.action_name)>self.action_len:
             self.action=np.concatenate((self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len))
@@ -65,8 +62,6 @@ class kernel:
             self.action=np.arange(len(self.action_name),dtype=dtype)
             if self.epsilon!=None:
                 self.action_one=np.ones(len(self.action_name),dtype=dtype)
-        t4=time.time()
-        self.time+=t4-t3
         return
     
     
