@@ -49,7 +49,6 @@ class kernel:
     
     
     def init(self,dtype=np.int32):
-        self.t3=time.time()
         self.action_len=len(self.action_name)
         if len(self.action_name)>self.action_len:
             self.action=np.concatenate((self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len))
@@ -59,7 +58,6 @@ class kernel:
             self.action=np.arange(len(self.action_name),dtype=dtype)
             if self.epsilon!=None:
                 self.action_one=np.ones(len(self.action_name),dtype=dtype)
-        self.t4=time.time()
         return
     
     
@@ -475,9 +473,9 @@ class kernel:
         if path!=None:
             self.save(path)
         if self.time<0.5:
-            self.time=int(self.time+(self.t4-self.t3))
+            self.time=int(self.time)
         else:
-            self.time=int(self.time+(self.t4-self.t3))+1
+            self.time=int(self.time)+1
         self.total_time+=self.time
         print()
         print('last loss:{0:.6f}'.format(loss))
