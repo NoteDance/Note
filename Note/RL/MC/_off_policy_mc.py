@@ -26,7 +26,6 @@ class off_policy_mc:
         
         
     def init(self,dtype=np.int32):
-        self.t3=time.time()
         if len(self.action_name)>self.action_len:
             self.action=np.concatenate((self.action,np.arange(len(self.action_name)-self.action_len,dtype=dtype)+self.action_len))
             self.action_onerob=np.concatenate((self.action_onerob,np.ones(len(self.action_name)-self.action_len,dtype=dtype)))
@@ -41,7 +40,6 @@ class off_policy_mc:
             self.c=np.concatenate((self.c,np.zeros([len(self.state_name),len(self.action_name)-self.action_len],dtype=self.c.dtype)),axis=1)
             self.c=np.concatenate((self.c,np.zeros([len(self.state_name)-self.state_len,len(self.action_name)],dtype=self.c.dtype)))
             self.c=self.c.numpy()
-        self.t4=time.time()
         return
     
     
@@ -159,9 +157,9 @@ class off_policy_mc:
         if path!=None:
             self.save(path)
         if self.time<0.5:
-            self.time=int(self.time+(self.t4-self.t3))
+            self.time=int(self.time)
         else:
-            self.time=int(self.time+(self.t4-self.t3))+1
+            self.time=int(self.time)+1
         self.total_time+=self.time
         print()
         print('last delta:{0:.6f}'.format(self.delta))
