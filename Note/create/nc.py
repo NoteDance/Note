@@ -1,7 +1,7 @@
 class compiler:
     def __init__(self,filename):
         self.filename=filename
-        self.init={'z':'tf.zeros(','n':'tf.random.normal(','u':'tf.random.uniform('}
+        self.init={'z':'tf.zeros(','n':'tf.random.normal(','u':'tf.random.uniform(','o':'tf.ones('}
         self.oj1=['','','','','']
         self.oj2=['','']
         self.oj3=''
@@ -21,14 +21,19 @@ class compiler:
         self.line=line
         for i in range(len(line)):
             if self.line[i]=='.' and self.line[i+1]==' ':
-                if self.line[i-4]=='z' or self.line[i-4]=='n' or self.line[i-4]=='u':
-                    init=self.line[i-4]
-                    self.oj1[2]=self.line[i-3:i]
-                    index=i-4
+                if 'z' in self.line[:i]:
+                    init='z'
+                    index=self.line.find('z')
+                elif 'n' in self.line[:i]:
+                    init='n'
+                    index=self.line.find('n')
+                elif 'u' in self.line[:i]:
+                    init='u'
+                    index=self.line.find('u')
                 else:
-                    init=self.line[i-6]
-                    self.oj1[2]=self.line[i-5:i]
-                    index=i-6
+                    init='o'
+                    index=self.line.find('o')
+                self.oj1[2]=self.line[index+1:i]
                 index1=i+1
             elif self.line[i]=='[':
                 self.oj1[0]=self.line[index1+1:i]
@@ -43,7 +48,7 @@ class compiler:
                 if self.oj1[3]!='':
                     self.oj1[2]+=','
                 line=self.tf_function(oj1=self.oj1,init=init)
-                self.line=self.line.replace(self.line[index-1:],line)
+                self.line=self.line.replace(self.line[index:],line)
                 self.oj1=['','','','','']
             if self.line[i]=='(':
                 index1=i
