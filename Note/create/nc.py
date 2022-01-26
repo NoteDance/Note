@@ -53,14 +53,14 @@ class compiler:
                 continue
             elif self.line[i]==')':
                 index3=i
-                if '.*' in self.line[index1:index2]:
+                if '.*' in self.line[index1:index3+1]:
                     self.oj1[0]=self.line[index1+1:index2]
                     self.oj2[1]=self.line[index2+2:index3]
                     string1=self.line[:index1]
                     string2=self.line[index3+1:]
                     string=self.tf_function(self,oj2=self.oj2)
                     self.line=string1+string+string2
-                if '.^' in self.line[index1:index2]:
+                if '.^' in self.line[index1:index3+1]:
                     self.oj2=self.line[index1+1:index2]
                     string1=self.line[:index1]
                     string2=self.line[index3+1:]
@@ -80,18 +80,18 @@ class compiler:
         with open(self.filename) as infile:
             while 1:
                 line=infile.readline()
-                if '. ' in line or '.*'  in line or '.^' in line:
+                if ('. ' in line and "'" not in line or '"' not in line) or ("'" not in line and '.*'  in line or '.^' in line):
                     self.readlines(line)
                     outfile.write(self.line)
                     self.line=''
                 elif '#' in line:
                     outfile.write(line)
-                elif line=='"""':
+                elif line=='"""' or line=="'''":
                     flag=False
                     outfile.write(line)
                 elif flag==False:
                     outfile.write(line)
-                elif line=='"""' and flag==False:
+                elif flag==False and line=='"""' or  line=="'''":
                     flag=True
                     outfile.write(line)
                 elif line=='':
