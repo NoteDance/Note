@@ -21,18 +21,12 @@ class compiler:
         self.line=line
         for i in range(len(line)):
             if self.line[i]=='.' and self.line[i+1]==' ':
-                if 'z' in self.line[:i]:
-                    init='z'
-                    index=self.line.find('z')
-                elif 'n' in self.line[:i]:
-                    init='n'
-                    index=self.line.find('n')
-                elif 'u' in self.line[:i]:
-                    init='u'
-                    index=self.line.find('u')
+                if '=' in self.line:
+                    index=self.line.find('=')+1
+                    init=self.line[index]
                 else:
-                    init='o'
-                    index=self.line.find('o')
+                    index=self.line.find('r')+7
+                    init=self.line[index]
                 self.oj1[1]=self.line[index+1:i]
             elif self.line[i]=='[':
                 index1=i
