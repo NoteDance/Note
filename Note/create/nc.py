@@ -2,7 +2,7 @@ class compiler:
     def __init__(self,filename):
         self.filename=filename
         self.init={'z':'tf.zeros(','n':'tf.random.normal(','u':'tf.random.uniform(','o':'tf.ones('}
-        self.oj1=['','','','','']
+        self.oj1=['','','','']
         self.oj2=['','']
         self.oj3=''
         self.line=''
@@ -10,7 +10,7 @@ class compiler:
     
     def tf_function(self,oj1=None,oj2=None,oj3=None,init=None):
         if oj1!=None:
-            return oj1[0]+'='+self.init[init]+oj1[1]+oj1[2]+oj1[3]+oj1[4]+')'
+            return self.init[init]+oj1[0]+oj1[1]+oj1[2]+oj1[3]+')'
         if oj2!=None:
             return 'tf.matmul('+oj2[0]+','+oj2[1]+')'
         elif oj3!=None:
@@ -33,23 +33,21 @@ class compiler:
                 else:
                     init='o'
                     index=self.line.find('o')
-                self.oj1[2]=self.line[index+1:i]
-                index1=i+1
+                self.oj1[1]=self.line[index+1:i]
             elif self.line[i]=='[':
-                self.oj1[0]=self.line[index1+1:i]
-                index2=i
+                index1=i
             elif self.line[i]==']':
-                self.oj1[1]=self.line[index2:]+','
+                self.oj1[0]=self.line[index1:i+1]+','
             elif self.line[i]=='(':
-                self.oj1[3]=self.line[i+1]+','
+                self.oj1[2]=self.line[i+1]+','
             elif self.line[i]==')':
-                self.oj1[4]=self.line[i-1]
+                self.oj1[3]=self.line[i-1]
             else:
-                if self.oj1[3]!='':
-                    self.oj1[2]+=','
+                if self.oj1[2]!='':
+                    self.oj1[1]+=','
                 line=self.tf_function(oj1=self.oj1,init=init)
                 self.line=self.line.replace(self.line[index:],line)
-                self.oj1=['','','','','']
+                self.oj1=['','','','']
             if self.line[i]=='(':
                 index1=i
                 continue
