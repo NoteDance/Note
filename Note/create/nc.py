@@ -48,7 +48,7 @@ class compiler:
             elif self.line[i]=='.':
                 index2=i
                 continue
-            elif self.line[i]==')':
+            elif self.line[i]==')' and index1!=None:
                 index3=i
                 if '.*' in self.line[index1:index3+1]:
                     self.oj1[0]=self.line[index1+1:index2]
@@ -63,6 +63,7 @@ class compiler:
                     string2=self.line[index3+1:]
                     string=self.tf_function(self,oj3=self.oj3)
                     self.line=string1+string+string2
+                index1=None
         return
     
     
