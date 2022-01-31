@@ -35,11 +35,11 @@ class compiler:
         for i in range(len(string_list)):
             if i!=len(string_list)-1:
                 if i==0:
-                    line+=self.line[string_list[i][0]-1:]+self.line.replace(self.line[string_list[i][0]:],string_list[i][2])+self.line[string_list[i][1]:string_list[i+1][0]]
+                    line+=self.line[string_list[i][0]-1:]+self.line.replace(self.line[string_list[i][0]:],string_list[i][2])+self.line[string_list[i][1]+1:string_list[i+1][0]]
                 else:
-                    line+=string_list[i][2]+self.line[string_list[i][1]:string_list[i+1][0]]
+                    line+=string_list[i][2]+self.line[string_list[i][1]+1:string_list[i+1][0]]
             else:
-                line+=string_list[i][2]+self.line[string_list[i][1]:]
+                line+=string_list[i][2]+self.line[string_list[i][1]+1:]
         self.line=line
         return
     
