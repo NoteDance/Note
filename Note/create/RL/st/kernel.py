@@ -6,7 +6,7 @@ import time
 
 
 class kernel:
-    def __init__(self,nn=None,update_param=None,state=None,state_name=None,action_name=None,exploration_space=None,exploration=None,pr=None,save_episode=True):
+    def __init__(self,nn=None,state=None,state_name=None,action_name=None,exploration_space=None,exploration=None,pr=None,save_episode=True):
         self.nn=nn
         self.param=nn.param
         self.ol=None
@@ -134,9 +134,9 @@ class kernel:
                 self.opt(value_gradient,actor_gradient,self.param)
             if self.update_step!=None:
                 if self.a%self.update_step==0:
-                    self.update_param.update(self.param)
+                    self.update_param(self.param)
             else:
-                self.update_param.update(self.param)
+                self.update_param(self.param)
         else:
             loss=0
             batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
@@ -205,9 +205,9 @@ class kernel:
                     self.nn.batchcount=0
             if self.update_step!=None:
                 if self.a%self.update_step==0:
-                    self.update_param.update(self.param)
+                    self.update_param(self.param)
             else:
-                self.update_param.update(self.param)
+                self.update_param(self.param)
             if len(self.state_pool)<self.batch:
                 loss=loss.numpy()
             else:
@@ -461,9 +461,9 @@ class kernel:
                     self.opt.opt(value_gradient,actor_gradient,self.param)
                 if self.update_step!=None:
                     if self.a%self.update_step==0:
-                        self.update_param.update(self.param)
+                        self.update_param(self.param)
                 else:
-                    self.update_param.update(self.param)
+                    self.update_param(self.param)
                 if len(self.loss_list)==0:
                     self.loss_list.append(loss.numpy())
                 else:
@@ -545,7 +545,6 @@ class kernel:
         pickle.dump(self.episode_step,output_file)
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
-        pickle.dump(self.update_param,output_file)
         pickle.dump(self.update_step,output_file)
         pickle.dump(self.rp,output_file)
         pickle.dump(self.alpha,output_file)
@@ -593,7 +592,6 @@ class kernel:
         self.episode_step=pickle.load(input_file)
         self.pool_size=pickle.load(input_file)
         self.batch=pickle.load(input_file)
-        self.update.param=pickle.load(input_file)
         self.update_step=pickle.load(input_file)
         self.rp=pickle.load(input_file)
         self.alpha=pickle.load(input_file)
