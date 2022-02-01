@@ -10,7 +10,6 @@ class kernel:
         self.nn=nn
         self.param=nn.param
         self.ol=None
-        self.update_param=nn.update_param
         self.opt=nn.opt
         self.state_pool=None
         self.action_pool=None
@@ -134,9 +133,9 @@ class kernel:
                 self.opt(value_gradient,actor_gradient,self.param)
             if self.update_step!=None:
                 if self.a%self.update_step==0:
-                    self.update_param(self.param)
+                    self.nn.update_param(self.param)
             else:
-                self.update_param(self.param)
+                self.nn.update_param(self.param)
         else:
             loss=0
             batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
@@ -205,9 +204,9 @@ class kernel:
                     self.nn.batchcount=0
             if self.update_step!=None:
                 if self.a%self.update_step==0:
-                    self.update_param(self.param)
+                    self.nn.update_param(self.param)
             else:
-                self.update_param(self.param)
+                self.nn.update_param(self.param)
             if len(self.state_pool)<self.batch:
                 loss=loss.numpy()
             else:
@@ -461,9 +460,9 @@ class kernel:
                     self.opt.opt(value_gradient,actor_gradient,self.param)
                 if self.update_step!=None:
                     if self.a%self.update_step==0:
-                        self.update_param(self.param)
+                        self.nn.update_param(self.param)
                 else:
-                    self.update_param(self.param)
+                    self.nn.update_param(self.param)
                 if len(self.loss_list)==0:
                     self.loss_list.append(loss.numpy())
                 else:
