@@ -5,7 +5,7 @@ import pickle
 
 
 class kernel:
-    def __init__(self,nn=None,update_param=None,state=None,state_name=None,action_name=None,exploration_space=None,thread_lock=None,exploration=None,pr=None,pool_net=True,save_episode=True):
+    def __init__(self,nn=None,state=None,state_name=None,action_name=None,exploration_space=None,thread_lock=None,exploration=None,pr=None,pool_net=True,save_episode=True):
         self.nn=nn
         self.param=nn.param
         self.update_param=nn.update_param
@@ -309,9 +309,9 @@ class kernel:
                 self.opt(value_gradient,actor_gradient,self.param)
             if self.update_step!=None:
                 if self.a%self.update_step==0:
-                    self.update_param.update(self.param)
+                    self.update_param(self.param)
             else:
-                self.update_param.update(self.param)
+                self.update_param(self.param)
         else:
             if self.pr!=None:
                 state_batch,action_batch,next_state_batch,reward_batch=self.pr(self.state_pool[i],self.action_pool[i],self.next_state_pool[i],self.reward_pool[i],self.pool_size,self.batch,self.rp,self.alpha,self.beta)
@@ -413,9 +413,9 @@ class kernel:
                 self.nn.batchcount[i]=0
             if self.update_step!=None:
                 if self.a%self.update_step==0:
-                    self.update_param.update(self.param)
+                    self.update_param(self.param)
             else:
-                self.update_param.update(self.param)
+                self.update_param(self.param)
             if len(self.state_pool[i])<self.batch:
                 self.loss[i]=self.loss[i].numpy()
             else:
@@ -569,7 +569,6 @@ class kernel:
         pickle.dump(self.episode_step,output_file)
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
-        pickle.dump(self.update_param,output_file)
         pickle.dump(self.update_step,output_file)
         pickle.dump(self.rp,output_file)
         pickle.dump(self.alpha,output_file)
@@ -621,7 +620,6 @@ class kernel:
         self.episode_step=pickle.load(input_file)
         self.pool_size=pickle.load(input_file)
         self.batch=pickle.load(input_file)
-        self.update_param=pickle.load(input_file)
         self.update_step=pickle.load(input_file)
         self.rp=pickle.load(input_file)
         self.alpha=pickle.load(input_file)
