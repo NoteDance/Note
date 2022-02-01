@@ -8,7 +8,6 @@ class kernel:
     def __init__(self,nn=None,state=None,state_name=None,action_name=None,exploration_space=None,thread_lock=None,exploration=None,pr=None,pool_net=True,save_episode=True):
         self.nn=nn
         self.param=nn.param
-        self.update_param=nn.update_param
         self.opt=nn.opt
         self.state_pool=[]
         self.action_pool=[]
@@ -309,9 +308,9 @@ class kernel:
                 self.opt(value_gradient,actor_gradient,self.param)
             if self.update_step!=None:
                 if self.a%self.update_step==0:
-                    self.update_param(self.param)
+                    self.nn.update_param(self.param)
             else:
-                self.update_param(self.param)
+                self.nn.update_param(self.param)
         else:
             if self.pr!=None:
                 state_batch,action_batch,next_state_batch,reward_batch=self.pr(self.state_pool[i],self.action_pool[i],self.next_state_pool[i],self.reward_pool[i],self.pool_size,self.batch,self.rp,self.alpha,self.beta)
@@ -413,9 +412,9 @@ class kernel:
                 self.nn.batchcount[i]=0
             if self.update_step!=None:
                 if self.a%self.update_step==0:
-                    self.update_param(self.param)
+                    self.nn.update_param(self.param)
             else:
-                self.update_param(self.param)
+                self.nn.update_param(self.param)
             if len(self.state_pool[i])<self.batch:
                 self.loss[i]=self.loss[i].numpy()
             else:
