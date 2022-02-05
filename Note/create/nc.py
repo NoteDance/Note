@@ -121,7 +121,7 @@ class compiler:
     
     def writelines(self):
         outfile=self.filename
-        outfile.replace(outfile[-2:],'py')
+        outfile=outfile.replace(outfile[outfile.find('.')+1:],'py')
         outfile=open(outfile,'w')
         with open(self.filename) as infile:
             while 1:
