@@ -50,25 +50,27 @@ class compiler:
         for i in range(len(line)):
             if self.line[i]=='.' and self.line[i+1]==' ':
                 if '=' in self.line:
-                    index=self.line.find('=')+1
-                    init=self.line[index]
+                    indexf=self.line.find('=')+1
+                    init=self.line[indexf]
                 else:
-                    index=self.line.find('r')+7
-                    init=self.line[index]
-                self.oj1[1]=self.line[index+1:i]
+                    indexf=self.line.find('r')+7
+                    init=self.line[indexf]
+                self.oj1[1]=self.line[indexf+1:i]
             elif self.line[i]=='[':
                 index1=i
             elif self.line[i]==']':
                 self.oj1[0]=self.line[index1:i+1]+','
+                indexl=i
             elif self.line[i]=='(':
                 self.oj1[2]=self.line[i+1]+','
             elif self.line[i]==')':
                 self.oj1[3]=self.line[i-1]
+                indexl=i
             else:
                 if self.oj1[2]!='':
                     self.oj1[1]+=','
-                line=self.tf_function(oj1=self.oj1,init=init)
-                self.line=self.line.replace(self.line[index:],line)
+                line=self.tf_function(oj1=self.oj1,init=init)+self.index[indexl+1:]
+                self.line=self.line.replace(self.line[indexf:],line)
                 self.oj1=['','','','']
             if self.line[i]=='(':
                 index1=i
