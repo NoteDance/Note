@@ -20,8 +20,6 @@ class kernel:
         self.end_test_acc=None
         self.eflag=None
         self.bflag=None
-        self.d=None
-        self.e=None
         self.optf=None
         self.acc_flag1=nn.acc_flag1
         self.acc_flag2=nn.acc_flag2
@@ -310,11 +308,8 @@ class kernel:
                     d=epoch/10
                 if d==0:
                     d=1
-                if self.d==None:
-                    self.d=d
-                if self.e==None:
-                    self.e=self.d*2
-                if i%self.d==0:
+                e=d*2
+                if i%d==0:
                     if self.flag==None:
                         if test==False:
                             print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
@@ -325,7 +320,7 @@ class kernel:
                             print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
                         else:
                             print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
-                    if nn_path!=None and i%self.e==0:
+                    if nn_path!=None and i%e==0:
                         self.save(nn_path,i,one)
                 if self.eflag==True:
                     self.nn.epochcount+=1
@@ -606,8 +601,6 @@ class kernel:
             pickle.dump(self.eflag,output_file)
         if self.bflag==True:
             pickle.dump(self.bflag,output_file)
-        pickle.dump(self.d,output_file)
-        pickle.dump(self.e,output_file)
         pickle.dump(self.optf,output_file)
         pickle.dump(self.acc_flag1,output_file)
         pickle.dump(self.acc_flag2,output_file)
@@ -651,8 +644,6 @@ class kernel:
             self.eflag=pickle.load(input_file)
         if self.bflag==True:
             self.bflag=pickle.load(input_file)
-        self.d=pickle.load(input_file)
-        self.e=pickle.load(input_file)
         self.optf=pickle.load(input_file)
         self.acc_flag1=pickle.load(input_file)
         self.acc_flag2=pickle.load(input_file)
