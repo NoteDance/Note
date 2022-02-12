@@ -272,11 +272,8 @@ class kernel:
                     d=epoch/10
                 if d==0:
                     d=1
-                if self.d==None:
-                    self.d=d
-                if self.e==None:
-                    self.e=self.d*2
-                if i%self.d==0:
+                e=d*2
+                if i%d==0:
                     if self.flag==None:
                         if test==False:
                             print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
@@ -287,7 +284,7 @@ class kernel:
                             print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
                         else:
                             print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
-                    if nn_path!=None and i%self.e==0:
+                    if nn_path!=None and i%e==0:
                         self.save(nn_path,i,one)
                 t2=time.time()
                 self.time+=(t2-t1)
