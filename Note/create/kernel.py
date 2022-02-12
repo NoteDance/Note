@@ -25,6 +25,7 @@ class kernel:
         self.optf=None
         self.acc_flag1=nn.acc_flag1
         self.acc_flag2=nn.acc_flag2
+        self.flag=None
         self.train_loss=None
         self.train_acc=None
         self.train_loss_list=[]
@@ -58,6 +59,7 @@ class kernel:
     def init(self,param=None):
         if param!=None:
             self.param=param
+        self.flag=None
         self.train_loss_list.clear()
         self.train_acc_list.clear()
         self.test_loss_list.clear()
@@ -103,7 +105,7 @@ class kernel:
             return True
     
     
-    def _train(self,epoch=None,batch=None,test=None,test_batch=None,data_batch=None,labels_batch=None):
+    def _train(self,batch=None,test=None,test_batch=None,data_batch=None,labels_batch=None):
         if batch!=None:
             total_loss=0
             total_acc=0
@@ -136,14 +138,13 @@ class kernel:
                 with tf.GradientTape() as tape:
                     output=self.nn.fp(data_batch)
                     batch_loss=self.nn.loss(output,labels_batch)
-                if i==0 and self.total_epoch==0:
-                    batch_loss=batch_loss.numpy()
+                if self.optf!=True:
+                    self.apply_gradient(tape,self.opt,batch_loss,self.param)
                 else:
-                    if self.optf!=True:
-                        self.apply_gradient(tape,self.opt,batch_loss,self.param)
-                    else:
-                        gradient=tape.gradient(batch_loss,self.param)
-                        self.sopt(gradient,self.param)
+                    gradient=tape.gradient(batch_loss,self.param)
+                    self.sopt(gradient,self.param)
+                if self.total_epoch==1:
+                    batch_loss=batch_loss.numpy()
                 total_loss+=batch_loss
                 if self.acc_flag1==1:
                     batch_acc=self.nn.accuracy(output,labels_batch)
@@ -168,14 +169,13 @@ class kernel:
                 with tf.GradientTape() as tape:
                     output=self.nn.fp(data_batch)
                     batch_loss=self.nn.loss(output,labels_batch)
-                if i==0 and self.total_epoch==0:
-                    batch_loss=batch_loss.numpy()
+                if self.optf!=True:
+                    self.apply_gradient(tape,self.opt,batch_loss,self.param)
                 else:
-                    if self.optf!=True:
-                        self.apply_gradient(tape,self.opt,batch_loss,self.param)
-                    else:
-                        gradient=tape.gradient(batch_loss,self.param)
-                        self.sopt(gradient,self.param)
+                    gradient=tape.gradient(batch_loss,self.param)
+                    self.sopt(gradient,self.param)
+                if self.total_epoch==1:
+                    batch_loss=batch_loss.numpy()
                 total_loss+=batch_loss
                 if self.acc_flag1==1:
                     batch_acc=self.nn.accuracy(output,labels_batch)
@@ -202,14 +202,13 @@ class kernel:
             with tf.GradientTape() as tape:
                 output=self.nn.fp(self.train_data)
                 train_loss=self.nn.loss(output,self.train_labels)
-            if i==0 and self.total_epoch==0:
-                loss=train_loss.numpy()
+            if self.optf!=True:
+                self.apply_gradient(tape,self.opt,train_loss,self.param)
             else:
-               if self.optf!=True:
-                   self.apply_gradient(tape,self.opt,train_loss,self.param)
-               else:
-                   gradient=tape.gradient(train_loss,self.param)
-                   self.sopt(gradient,self.param)
+                gradient=tape.gradient(train_loss,self.param)
+                self.sopt(gradient,self.param)
+            if self.total_epoch==1:
+                loss=train_loss.numpy()
             self.train_loss_list.append(loss.astype(np.float32))
             self.train_loss=loss
             self.train_loss=self.train_loss.astype(np.float32)
@@ -232,14 +231,14 @@ class kernel:
             with tf.GradientTape() as tape:
                 output=self.nn.fp(data[0])
                 train_loss=self.nn.loss(output,data[1])
-            if i==0 and self.total_epoch==0:
-                loss=train_loss.numpy()
+
+            if self.optf!=True:
+                self.apply_gradient(tape,self.opt,train_loss,self.param)
             else:
-               if self.optf!=True:
-                   self.apply_gradient(tape,self.opt,train_loss,self.param)
-               else:
-                   gradient=tape.gradient(train_loss,self.param)
-                   self.sopt(gradient,self.param)
+                gradient=tape.gradient(train_loss,self.param)
+                self.sopt(gradient,self.param)
+            if self.total_epoch==1:
+                loss=train_loss.numpy()
             self.nn.train_loss=loss.astype(np.float32)
             if self.eflag==True:
                 self.nn.epochcount+=1
@@ -247,6 +246,7 @@ class kernel:
         
     
     def train(self,batch=None,epoch=None,test=False,test_batch=None,nn_path=None,one=True):
+        self.flag=True
         self.batch=batch
         self.epoch=0
         self.test_flag=test
@@ -264,12 +264,12 @@ class kernel:
                 t1=time.time()
                 if self.eflag==True:
                     self.nn.epochcount+=1
-                self._train(epoch,batch,test,test_batch,data_batch,labels_batch)
+                self._train(batch,test,test_batch,data_batch,labels_batch)
                 self.epoch+=1
                 self.total_epoch+=1
                 if epoch%10!=0:
-                    d=epoch-epoch%10
-                    d=int(d/10)
+                    d=epoch-epoch%9
+                    d=int(d/9)
                 else:
                     d=epoch/10
                 if d==0:
@@ -277,13 +277,13 @@ class kernel:
                 if self.d==None:
                     self.d=d
                 if self.e==None:
-                    self.e=epoch*2
+                    self.e=self.d*2
                 if i%self.d==0:
-                    if self.total_epoch==0:
+                    if self.flag==None:
                         if test==False:
-                            print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
+                            print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
                         else:
-                            print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i,self.train_loss,self.test_loss))
+                            print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
                     else:
                         if test==False:
                             print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
@@ -291,8 +291,6 @@ class kernel:
                             print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
                     if nn_path!=None and i%self.e==0:
                         self.save(nn_path,i,one)
-                if self.total_epoch==0:
-                    epoch=epoch+1
                 t2=time.time()
                 self.time+=(t2-t1)
                 if self.end()==True:
@@ -302,7 +300,7 @@ class kernel:
             while True:
                 t1=time.time()
                 i+=1
-                self._train(epoch,batch,test,test_batch,i)
+                self._train(batch,test,test_batch)
                 self.epoch+=1
                 self.total_epoch+=1
                 if epoch%10!=0:
@@ -315,15 +313,18 @@ class kernel:
                 if self.d==None:
                     self.d=d
                 if self.e==None:
-                    self.e=epoch*2
+                    self.e=self.d*2
                 if i%self.d==0:
-                    if self.total_epoch==0:
+                    if self.flag==None:
                         if test==False:
-                            print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
+                            print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
                         else:
-                            print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i,self.train_loss,self.test_loss))
+                            print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
                     else:
-                        print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
+                        if test==False:
+                            print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
+                        else:
+                            print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
                     if nn_path!=None and i%self.e==0:
                         self.save(nn_path,i,one)
                 if self.eflag==True:
@@ -611,6 +612,7 @@ class kernel:
         pickle.dump(self.acc_flag1,output_file)
         pickle.dump(self.acc_flag2,output_file)
         pickle.dump(self.shape0,output_file)
+        pickle.dump(self.flag,output_file)
         pickle.dump(self.train_loss,output_file)
         pickle.dump(self.train_acc,output_file)
         pickle.dump(self.train_loss_list,output_file)
@@ -655,6 +657,7 @@ class kernel:
         self.acc_flag1=pickle.load(input_file)
         self.acc_flag2=pickle.load(input_file)
         self.shape0=pickle.load(input_file)
+        self.flag=pickle.load(input_file)
         self.train_loss=pickle.load(input_file)
         self.train_acc=pickle.load(input_file)
         self.train_loss_list=pickle.load(input_file)
