@@ -244,11 +244,12 @@ class kernel:
         
     
     def train(self,batch=None,epoch=None,test=False,test_batch=None,nn_path=None,one=True):
-        self.flag=True
         self.batch=batch
         self.epoch=0
-        self.test_flag=test
         self.optf=self.nn.optf
+        if self.flag==None:
+            self.test_flag=test
+            self.flag=True
         if self.optf!=True:
             self.opt=self.nn.opt
         else:
