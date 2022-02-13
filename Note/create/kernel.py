@@ -299,8 +299,8 @@ class kernel:
                 self.epoch+=1
                 self.total_epoch+=1
                 if epoch%10!=0:
-                    d=epoch-epoch%10
-                    d=int(d/10)
+                    d=epoch-epoch%9
+                    d=int(d/9)
                 else:
                     d=epoch/10
                 if d==0:
