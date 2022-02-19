@@ -359,13 +359,13 @@ class kernel:
             self.p=9
             self.s=2
         elif p!=None:
-            self.p=p
+            self.p=p-1
             self.s=2
         elif s!=None:
             self.p=9
             self.s=s
         else:
-            self.p=p
+            self.p=p-1
             self.s=s
         if self.optf!=True:
             self.opt=self.nn.opt
