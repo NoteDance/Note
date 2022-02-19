@@ -55,21 +55,20 @@ class kernel:
         else:
             self.shape0=train_data.shape[0]
         if self.thread!=None:
-            self.t=[thread for thread in range(self.thread)]
-            self.t=self.t.reverse()
-            self.train_loss=[0 for _ in range(self.thread)]
-            self.train_acc=[0 for _ in range(self.thread)]
+            self.t=-np.arange(-self.thread,1)
+            self.train_loss=np.zeros(self.thread)
+            self.train_acc=np.zeros(self.thread)
             self.train_loss_list=[[] for _ in range(self.thread)]
             self.train_acc_list=[[] for _ in range(self.thread)]
             if test_data!=None:
-                self.test_loss=[0 for _ in range(self.thread)]
-                self.test_acc=[0 for _ in range(self.thread)]
+                self.test_loss=np.zeros(self.thread)
+                self.test_acc=np.zeros(self.thread)
                 self.test_loss_list=[[] for _ in range(self.thread)]
                 self.test_acc_list=[[] for _ in range(self.thread)]
-            self.epoch=[0 for _ in range(self.thread)]
-            self.total_epoch=[0 for _ in range(self.thread)]
-            self.time=[0 for _ in range(self.thread)]
-            self.total_time=[0 for _ in range(self.thread)]
+            self.epoch=np.zeros(self.thread)
+            self.total_epoch=np.zeros(self.thread)
+            self.time=np.zeros(self.thread)
+            self.total_time=np.zeros(self.thread)
         return
     
     
@@ -89,23 +88,22 @@ class kernel:
     
     
     def extend(self,thread):
-        t=[self.thread+thread+1 for thread in range(thread)]
-        t=t.reverse()
+        t=-np.arange(-thread,1)+self.thread+1
         self.t=t.extend(self.t)
         self.thread+=thread
-        self.train_loss.extend([0 for _ in range(len(self.t))])
-        self.train_acc.extend([0 for _ in range(len(self.t))])
+        self.train_loss=np.concatenate((self.train_loss,np.zeros(self.t)))
+        self.train_acc=np.concatenate((self.train_acc,np.zeros(self.t)))
         self.train_loss_list.extend([[] for _ in range(len(self.t))])
         self.train_acc_list.extend([[] for _ in range(len(self.t))])
         if self.test==True:
-            self.test_loss.extend([0 for _ in range(len(self.t))])
-            self.test_acc.extend([0 for _ in range(len(self.t))])
+            self.test_loss=np.concatenate((self.test_loss,np.zeros(self.t)))
+            self.test_acc=np.concatenate((self.test_acc,np.zeros(self.t)))
             self.test_loss_list.extend([[] for _ in range(len(self.t))])
             self.test_acc_list.extend([[] for _ in range(len(self.t))])
-        self.epoch.extend([0 for _ in range(len(self.t))])
-        self.total_epoch.extend([0 for _ in range(len(self.t))])
-        self.time.extend([0 for _ in range(len(self.t))])
-        self.total_time.extend([0 for _ in range(len(self.t))])
+        self.epoch=np.concatenate((self.epoch,np.zeros(self.t)))
+        self.total_epoch=np.concatenate((self.total_epoch,np.zeros(self.t)))
+        self.time=np.concatenate((self.time,np.zeros(self.t)))
+        self.total_time=np.concatenate((self.total_time,np.zeros(self.t)))
         return
     
     
