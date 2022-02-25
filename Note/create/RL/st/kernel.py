@@ -393,13 +393,10 @@ class kernel:
                     d=episode_num/10
                 if d==0:
                     d=1
-                if self.d==None:
-                    self.d=d
-                if self.e==None:
-                    self.e=episode_num*2
-                if i%self.d==0:
+                e=d*2
+                if i%d==0:
                     print('episode num:{0}   loss:{1:.6f}'.format(i+1,loss))
-                    if path!=None and i%self.e==0:
+                    if path!=None and i%e==0:
                         self.save(path,i,one)
                 self.epi_num+=1
                 self.total_episode+=1
@@ -420,13 +417,10 @@ class kernel:
                     d=episode_num/10
                 if d==0:
                     d=1
-                if self.d==None:
-                    self.d=d
-                if self.e==None:
-                    self.e=episode_num*2
-                if i%self.d==0:
+                e=d*2
+                if i%d==0:
                     print('episode num:{0}   loss:{1:.6f}'.format(i+1,loss))
-                    if path!=None and i%self.e==0:
+                    if path!=None and i%e==0:
                         self.save(path,i,one)
                 self.epi_num+=1
                 self.total_episode+=1
@@ -556,8 +550,6 @@ class kernel:
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.loss_list,output_file)
         pickle.dump(self.a,output_file)
-        pickle.dump(self.d,output_file)
-        pickle.dump(self.e,output_file)
         pickle.dump(self.episode_num,output_file)
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_epoch,output_file)
@@ -603,8 +595,6 @@ class kernel:
         self.save_episode=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
         self.a=pickle.load(input_file)
-        self.d=pickle.load(input_file)
-        self.e=pickle.load(input_file)
         self.episode_num=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         self.total_epoch=pickle.load(input_file)
