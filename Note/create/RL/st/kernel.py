@@ -403,6 +403,7 @@ class kernel:
                     d=int(d/self.p)
                 else:
                     d=episode_num/(self.p+1)
+                    d=int(d)
                 if d==0:
                     d=1
                 e=d*self.s
@@ -427,6 +428,7 @@ class kernel:
                     d=int(d/self.p)
                 else:
                     d=episode_num/(self.p+1)
+                    d=int(d)
                 if d==0:
                     d=1
                 e=d*self.s
