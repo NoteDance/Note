@@ -381,25 +381,34 @@ class kernel:
         return loss,episode
     
     
-    def learn(self,episode_num,path=None,one=True):
+    def learn(self,episode_num,path=None,one=True,p=None,s=None):
+        if p==None and s==None:
+            self.p=9
+            self.s=2
+        elif p!=None:
+            self.p=p-1
+            self.s=2
+        elif s!=None:
+            self.p=9
+            self.s=s
+        else:
+            self.p=p-1
+            self.s=s
         if episode_num!=None:
             for i in range(episode_num):
                 loss,episode=self.learn2()
                 self.loss_list.append(loss)
                 if episode_num%10!=0:
-                    d=episode_num-episode_num%10
-                    d=int(d/10)
+                    d=episode_num-episode_num%self.p
+                    d=int(d/self.p)
                 else:
-                    d=episode_num/10
+                    d=episode_num/(self.p+1)
                 if d==0:
                     d=1
-                if self.d==None:
-                    self.d=d
-                if self.e==None:
-                    self.e=episode_num*2
-                if i%self.d==0:
+                e=d*self.s
+                if i%d==0:
                     print('episode num:{0}   loss:{1:.6f}'.format(i+1,loss))
-                    if path!=None and i%self.e==0:
+                    if path!=None and i%e==0:
                         self.save(path,i,one)
                 self.epi_num+=1
                 self.total_episode+=1
@@ -414,19 +423,16 @@ class kernel:
                 loss,episode=self.learn2()
                 self.loss_list.append(loss)
                 if episode_num%10!=0:
-                    d=episode_num-episode_num%10
-                    d=int(d/10)
+                    d=episode_num-episode_num%self.p
+                    d=int(d/self.p)
                 else:
-                    d=episode_num/10
+                    d=episode_num/(self.p+1)
                 if d==0:
                     d=1
-                if self.d==None:
-                    self.d=d
-                if self.e==None:
-                    self.e=episode_num*2
-                if i%self.d==0:
+                e=d*self.s
+                if i%d==0:
                     print('episode num:{0}   loss:{1:.6f}'.format(i+1,loss))
-                    if path!=None and i%self.e==0:
+                    if path!=None and i%e==0:
                         self.save(path,i,one)
                 self.epi_num+=1
                 self.total_episode+=1
@@ -556,8 +562,8 @@ class kernel:
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.loss_list,output_file)
         pickle.dump(self.a,output_file)
-        pickle.dump(self.d,output_file)
-        pickle.dump(self.e,output_file)
+        pickle.dump(self.p,output_file)
+        pickle.dump(self.s,output_file)
         pickle.dump(self.episode_num,output_file)
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_epoch,output_file)
@@ -603,8 +609,8 @@ class kernel:
         self.save_episode=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
         self.a=pickle.load(input_file)
-        self.d=pickle.load(input_file)
-        self.e=pickle.load(input_file)
+        self.p=pickle.load(input_file)
+        self.s=pickle.load(input_file)
         self.episode_num=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         self.total_epoch=pickle.load(input_file)
