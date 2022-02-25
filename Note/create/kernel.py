@@ -399,7 +399,7 @@ class kernel:
                         d=epoch-epoch%self.p
                         d=int(d/self.p)
                     else:
-                        d=epoch/10
+                        d=epoch/(self.p+1)
                     if d==0:
                         d=1
                     e=d*self.s
@@ -444,7 +444,7 @@ class kernel:
                         d=epoch-epoch%self.p
                         d=int(d/self.p)
                     else:
-                        d=epoch/10
+                        d=epoch/(self.p+1)
                     if d==0:
                         d=1
                     e=d*self.s
