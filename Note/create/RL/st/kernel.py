@@ -7,10 +7,11 @@ import time
 
 class kernel:
     def __init__(self,nn=None,state=None,state_name=None,action_name=None,exploration_space=None,exploration=None,pr=None,save_episode=True):
-        self.nn=nn
-        self.param=nn.param
+        if nn!=None:
+            self.nn=nn
+            self.param=nn.param
+            self.opt=nn.opt
         self.ol=None
-        self.opt=nn.opt
         self.state_pool=None
         self.action_pool=None
         self.next_state_pool=None
@@ -536,7 +537,6 @@ class kernel:
                 episode_file.close()
         self.episode_num=self.epi_num
         pickle.dump(self.param,parameter_file)
-        self.nn.param=None
         pickle.dump(self.nn,output_file)
         pickle.dump(self.ol,output_file)
         pickle.dump(self.state_pool,output_file)
