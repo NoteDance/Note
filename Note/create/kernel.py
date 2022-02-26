@@ -7,8 +7,11 @@ import time
 
 class kernel:
     def __init__(self,nn=None):
-        self.nn=nn
-        self.param=nn.param
+        if nn!=None:
+            self.nn=nn
+            self.param=nn.param
+            self.acc_flag1=nn.acc_flag1
+            self.acc_flag2=nn.acc_flag2
         self.ol=None
         self.batch=None
         self.epoch=0
@@ -21,8 +24,6 @@ class kernel:
         self.eflag=None
         self.bflag=None
         self.optf=None
-        self.acc_flag1=nn.acc_flag1
-        self.acc_flag2=nn.acc_flag2
         self.flag=None
         self.train_loss=None
         self.train_acc=None
@@ -588,7 +589,6 @@ class kernel:
             index=path.rfind('\\')
             parameter_file=open(path.replace(path[index+1:],'parameter-{0}.dat'.format(i+1)),'wb')
         pickle.dump(self.param,parameter_file)
-        self.nn.param=None
         pickle.dump(self.nn,output_file)
         pickle.dump(self.ol,output_file)
         pickle.dump(self.batch,output_file)
@@ -603,7 +603,6 @@ class kernel:
         pickle.dump(self.optf,output_file)
         pickle.dump(self.acc_flag1,output_file)
         pickle.dump(self.acc_flag2,output_file)
-        pickle.dump(self.shape0,output_file)
         pickle.dump(self.flag,output_file)
         pickle.dump(self.train_loss,output_file)
         pickle.dump(self.train_acc,output_file)
@@ -646,7 +645,6 @@ class kernel:
         self.optf=pickle.load(input_file)
         self.acc_flag1=pickle.load(input_file)
         self.acc_flag2=pickle.load(input_file)
-        self.shape0=pickle.load(input_file)
         self.flag=pickle.load(input_file)
         self.train_loss=pickle.load(input_file)
         self.train_acc=pickle.load(input_file)
