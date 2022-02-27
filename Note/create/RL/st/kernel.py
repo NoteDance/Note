@@ -517,6 +517,7 @@ class kernel:
     
     
     def save(self,path,i=None,one=True):
+        self.nn.param=None
         if one==True:
             output_file=open(path+'\save.dat','wb')
             path=path+'\save.dat'
@@ -536,7 +537,6 @@ class kernel:
                 pickle.dump(self.episode,episode_file)
                 episode_file.close()
         self.episode_num=self.epi_num
-        self.nn.param=None
         pickle.dump(self.param,parameter_file)
         pickle.dump(self.nn,output_file)
         pickle.dump(self.ol,output_file)
