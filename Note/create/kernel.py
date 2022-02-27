@@ -588,8 +588,8 @@ class kernel:
             path=path+'\save-{0}.dat'.format(i+1)
             index=path.rfind('\\')
             parameter_file=open(path.replace(path[index+1:],'parameter-{0}.dat'.format(i+1)),'wb')
-        pickle.dump(self.param,parameter_file)
         self.nn.param=None
+        pickle.dump(self.param,parameter_file)
         pickle.dump(self.nn,output_file)
         pickle.dump(self.ol,output_file)
         pickle.dump(self.batch,output_file)
