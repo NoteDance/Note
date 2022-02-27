@@ -551,6 +551,7 @@ class kernel:
     
     
     def save(self,path):
+        self.nn.param=None
         output_file=open(path+'\save.dat','wb')
         path=path+'\save.dat'
         index=path.rfind('\\')
@@ -561,7 +562,6 @@ class kernel:
             episode_file.close()
         self.one_list=self.one_list*0
         self.flag[1:]=self.flag[1:]*0
-        self.nn.param=None
         pickle.dump(self.param,parameter_file)
         pickle.dump(self.nn,output_file)
         pickle.dump(self.state_pool,output_file)
