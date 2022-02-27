@@ -9,7 +9,6 @@ class kernel:
     def __init__(self,nn=None):
         if nn!=None:
             self.nn=nn
-            self.param=nn.param
             self.acc_flag1=nn.acc_flag1
             self.acc_flag2=nn.acc_flag2
         self.thread=None
@@ -75,7 +74,7 @@ class kernel:
     
     def init(self,param=None):
         if param!=None:
-            self.param=param
+            self.nn.param=param
         self.train_loss_list.clear()
         self.train_acc_list.clear()
         self.test_loss_list.clear()
@@ -179,16 +178,16 @@ class kernel:
                     batch_loss=self.nn.loss(output,labels_batch)
                 if self.optf!=True:
                     if self.thread==None:
-                        self.apply_gradient(tape,self.opt,batch_loss,self.param)
+                        self.apply_gradient(tape,self.opt,batch_loss,self.nn.param)
                     else:
-                        self.apply_gradient(tape,self.opt[t],batch_loss,self.param[t])
+                        self.apply_gradient(tape,self.opt[t],batch_loss,self.nn.param[t])
                 else:
                     if self.thread==None:
-                        gradient=tape.gradient(batch_loss,self.param)
-                        self.sopt(gradient,self.param)
+                        gradient=tape.gradient(batch_loss,self.nn.param)
+                        self.sopt(gradient,self.nn.param)
                     else:
-                        gradient=tape.gradient(batch_loss,self.param[t])
-                        self.sopt(gradient,self.param,t)
+                        gradient=tape.gradient(batch_loss,self.nn.param[t])
+                        self.sopt(gradient,self.nn.param,t)
                 if self.total_epoch==1:
                     batch_loss=batch_loss.numpy()
                 total_loss+=batch_loss
@@ -223,16 +222,16 @@ class kernel:
                     batch_loss=self.nn.loss(output,labels_batch)
                 if self.optf!=True:
                     if self.thread==None:
-                        self.apply_gradient(tape,self.opt,batch_loss,self.param)
+                        self.apply_gradient(tape,self.opt,batch_loss,self.nn.param)
                     else:
-                        self.apply_gradient(tape,self.opt[t],batch_loss,self.param[t])
+                        self.apply_gradient(tape,self.opt[t],batch_loss,self.nn.param[t])
                 else:
                     if self.thread==None:
-                        gradient=tape.gradient(batch_loss,self.param)
+                        gradient=tape.gradient(batch_loss,self.nn.param)
                         self.sopt(gradient,self.param)
                     else:
-                        gradient=tape.gradient(batch_loss,self.param[t])
-                        self.sopt(gradient,self.param,t)
+                        gradient=tape.gradient(batch_loss,self.nn.param[t])
+                        self.sopt(gradient,self.nn.param,t)
                 if self.total_epoch==1:
                     batch_loss=batch_loss.numpy()
                 total_loss+=batch_loss
@@ -285,16 +284,16 @@ class kernel:
                 train_loss=self.nn.loss(output,self.train_labels)
             if self.optf!=True:
                 if self.thread==None:
-                    self.apply_gradient(tape,self.opt,train_loss,self.param)
+                    self.apply_gradient(tape,self.opt,train_loss,self.nn.param)
                 else:
-                    self.apply_gradient(tape,self.opt[t],train_loss,self.param[t])
+                    self.apply_gradient(tape,self.opt[t],train_loss,self.nn.param[t])
             else:
                 if self.thread==None:
-                    gradient=tape.gradient(train_loss,self.param)
-                    self.sopt(gradient,self.param)
+                    gradient=tape.gradient(train_loss,self.nn.param)
+                    self.sopt(gradient,self.nn.param)
                 else:
-                    gradient=tape.gradient(train_loss,self.param[t])
-                    self.sopt(gradient,self.param,t)
+                    gradient=tape.gradient(train_loss,self.nn.param[t])
+                    self.sopt(gradient,self.nn.param,t)
             if self.total_epoch==1:
                 loss=train_loss.numpy()
             if self.thread==None:
@@ -338,10 +337,10 @@ class kernel:
                 output=self.nn.fp(data[0])
                 train_loss=self.nn.loss(output,data[1])
             if self.optf!=True:
-                self.apply_gradient(tape,self.opt,train_loss,self.param)
+                self.apply_gradient(tape,self.opt,train_loss,self.nn.param)
             else:
-                gradient=tape.gradient(train_loss,self.param)
-                self.sopt(gradient,self.param)
+                gradient=tape.gradient(train_loss,self.nn.param)
+                self.sopt(gradient,self.nn.param)
             if self.total_epoch==1:
                 loss=train_loss.numpy()
             self.nn.train_loss=loss.astype(np.float32)
@@ -739,13 +738,12 @@ class kernel:
     
     def save_p(self,path):
         parameter_file=open(path+'.dat','wb')
-        pickle.dump(self.param,parameter_file)
+        pickle.dump(self.nn.param,parameter_file)
         parameter_file.close()
         return
     
     
     def save(self,path,i=None,one=True):
-        self.nn.param=None
         if one==True:
             output_file=open(path+'\save.dat','wb')
             path=path+'\save.dat'
@@ -756,8 +754,9 @@ class kernel:
             path=path+'\save-{0}.dat'.format(i+1)
             index=path.rfind('\\')
             parameter_file=open(path.replace(path[index+1:],'parameter-{0}.dat'.format(i+1)),'wb')
-        pickle.dump(self.param,parameter_file)
         pickle.dump(self.nn,output_file)
+        pickle.dump(self.nn.param,parameter_file)
+        self.nn.param=None
         pickle.dump(self.ol,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.end_loss,output_file)
@@ -795,9 +794,8 @@ class kernel:
     def restore(self,s_path,p_path):
         input_file=open(s_path,'rb')
         parameter_file=open(p_path,'rb')
-        self.param=pickle.load(parameter_file)
         self.nn=pickle.load(input_file)
-        self.nn.param=self.param
+        self.nn.param=pickle.load(parameter_file)
         if self.nn.optf!=True:
             self.opt=self.nn.opt
         else:
