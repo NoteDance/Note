@@ -561,9 +561,9 @@ class kernel:
             episode_file.close()
         self.one_list=self.one_list*0
         self.flag[1:]=self.flag[1:]*0
-        pickle.dump(self.nn,output_file)
         pickle.dump(self.nn.param,parameter_file)
         self.nn.param=None
+        pickle.dump(self.nn,output_file)
         pickle.dump(self.state_pool,output_file)
         pickle.dump(self.action_pool,output_file)
         pickle.dump(self.next_state_pool,output_file)
@@ -612,8 +612,10 @@ class kernel:
             episode_file=open(e_path,'rb')
             self.episode=pickle.load(episode_file)
             episode_file.close()
+        param=pickle.load(parameter_file)
         self.nn=pickle.load(input_file)
-        self.nn.param=pickle.load(parameter_file)
+        self.nn.param=param
+        param=None
         self.opt=self.nn.opt
         self.state_pool=pickle.load(input_file)
         self.action_pool=pickle.load(input_file)
