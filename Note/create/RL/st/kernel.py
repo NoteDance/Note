@@ -536,8 +536,8 @@ class kernel:
                 pickle.dump(self.episode,episode_file)
                 episode_file.close()
         self.episode_num=self.epi_num
-        pickle.dump(self.param,parameter_file)
         self.nn.param=None
+        pickle.dump(self.param,parameter_file)
         pickle.dump(self.nn,output_file)
         pickle.dump(self.ol,output_file)
         pickle.dump(self.state_pool,output_file)
