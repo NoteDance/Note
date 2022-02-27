@@ -745,6 +745,7 @@ class kernel:
     
     
     def save(self,path,i=None,one=True):
+        self.nn.param=None
         if one==True:
             output_file=open(path+'\save.dat','wb')
             path=path+'\save.dat'
@@ -755,7 +756,6 @@ class kernel:
             path=path+'\save-{0}.dat'.format(i+1)
             index=path.rfind('\\')
             parameter_file=open(path.replace(path[index+1:],'parameter-{0}.dat'.format(i+1)),'wb')
-        self.nn.param=None
         pickle.dump(self.param,parameter_file)
         pickle.dump(self.nn,output_file)
         pickle.dump(self.ol,output_file)
