@@ -9,7 +9,6 @@ class kernel:
     def __init__(self,nn=None,state=None,state_name=None,action_name=None,exploration_space=None,exploration=None,pr=None,save_episode=True):
         if nn!=None:
             self.nn=nn
-            self.param=nn.param
             self.opt=nn.opt
         self.ol=None
         self.state_pool=None
@@ -63,7 +62,7 @@ class kernel:
     
     def set_up(self,param=None,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,rp=None,alpha=None,beta=None,end_loss=None):
         if param!=None:
-            self.param=param
+            self.nn.param=param
         if epsilon!=None:
             self.epsilon=epsilon
         if discount!=None:
@@ -125,18 +124,18 @@ class kernel:
                     value=self.nn.nn[0](self.state_pool,param=0)
                     TD=tf.reduce_mean((self.reward_pool+self.discount*self.nn.nn[0](self.next_state_pool,param=1)-value)**2)
             if type(self.nn.nn)!=list:
-                gradient=tape.gradient(loss,self.param[0])
-                self.opt(gradient,self.param[0])
+                gradient=tape.gradient(loss,self.nn.param[0])
+                self.opt(gradient,self.nn.param[0])
             else:
-                value_gradient=tape.gradient(TD,self.param[0])				
-                actor_gradient=TD*tape.gradient(tf.math.log(self.action_pool),self.param[2])
+                value_gradient=tape.gradient(TD,self.nn.param[0])				
+                actor_gradient=TD*tape.gradient(tf.math.log(self.action_pool),self.nn.param[2])
                 loss=TD
-                self.opt(value_gradient,actor_gradient,self.param)
+                self.opt(value_gradient,actor_gradient,self.nn.param)
             if self.update_step!=None:
                 if self.a%self.update_step==0:
-                    self.nn.update_param(self.param)
+                    self.nn.update_param(self.nn.param)
             else:
-                self.nn.update_param(self.param)
+                self.nn.update_param(self.nn.param)
         else:
             loss=0
             batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
@@ -152,13 +151,13 @@ class kernel:
                             value=self.nn.nn[0](state_batch,param=0)
                             TD=tf.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch,param=1)-value)**2)
                     if type(self.nn.nn)!=list:
-                        gradient=tape.gradient(batch_loss,self.param[0])
-                        self.opt(gradient,self.param[0])
+                        gradient=tape.gradient(batch_loss,self.nn.param[0])
+                        self.opt(gradient,self.nn.param[0])
                         loss+=batch_loss
                     else:
-                        value_gradient=tape.gradient(TD,self.param[0])
-                        actor_gradient=TD*tape.gradient(tf.math.log(action_batch),self.param[2])
-                        self.opt(value_gradient,actor_gradient,self.param)
+                        value_gradient=tape.gradient(TD,self.nn.param[0])
+                        actor_gradient=TD*tape.gradient(tf.math.log(action_batch),self.nn.param[2])
+                        self.opt(value_gradient,actor_gradient,self.nn.param)
                         loss+=TD
                     if self.bflag==True:
                         self.nn.batchcount=j
@@ -171,13 +170,13 @@ class kernel:
                             value=self.nn.nn[0](state_batch,param=0)
                             TD=tf.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch,param=1)-value)**2)
                     if type(self.nn.nn)!=list:
-                        gradient=tape.gradient(batch_loss,self.param[0])
-                        self.opt(gradient,self.param[0])
+                        gradient=tape.gradient(batch_loss,self.nn.param[0])
+                        self.opt(gradient,self.nn.param[0])
                         loss+=batch_loss
                     else:
-                        value_gradient=tape.gradient(TD,self.param[0])
-                        actor_gradient=TD*tape.gradient(tf.math.log(action_batch),self.param[2])
-                        self.opt(value_gradient,actor_gradient,self.param)
+                        value_gradient=tape.gradient(TD,self.nn.param[0])
+                        actor_gradient=TD*tape.gradient(tf.math.log(action_batch),self.nn.param[2])
+                        self.opt(value_gradient,actor_gradient,self.nn.param)
                         loss+=TD
                     if self.bflag==True:
                         self.nn.batchcount+=1
@@ -191,13 +190,13 @@ class kernel:
                             value=self.nn.nn[0](state_batch,param=0)
                             TD=tf.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch,param=1)-value)**2)
                     if type(self.nn.nn)!=list:
-                        gradient=tape.gradient(batch_loss,self.param[0])
-                        self.opt(gradient,self.param[0])
+                        gradient=tape.gradient(batch_loss,self.nn.param[0])
+                        self.opt(gradient,self.nn.param[0])
                         loss+=batch_loss
                     else:
-                        value_gradient=tape.gradient(TD,self.param[0])
-                        actor_gradient=TD*tape.gradient(tf.math.log(action_batch),self.param[2])
-                        self.opt(value_gradient,actor_gradient,self.param)
+                        value_gradient=tape.gradient(TD,self.nn.param[0])
+                        actor_gradient=TD*tape.gradient(tf.math.log(action_batch),self.nn.param[2])
+                        self.opt(value_gradient,actor_gradient,self.nn.param)
                         loss+=TD
                     if self.bflag==True:
                         self.nn.batchcount+=1
@@ -205,9 +204,9 @@ class kernel:
                     self.nn.batchcount=0
             if self.update_step!=None:
                 if self.a%self.update_step==0:
-                    self.nn.update_param(self.param)
+                    self.nn.update_param(self.nn.param)
             else:
-                self.nn.update_param(self.param)
+                self.nn.update_param(self.nn.param)
             if len(self.state_pool)<self.batch:
                 loss=loss.numpy()
             else:
@@ -460,18 +459,18 @@ class kernel:
                         value=self.nn.nn[0](data[0],param=0)
                         TD=tf.reduce_mean((data[3]+self.discount*self.nn.nn[0](data[2],param=1)-value)**2)
                 if type(self.nn.nn)!=list:
-                    gradient=tape.gradient(loss,self.param[0])
-                    self.opt.opt(gradient,self.param[0])
+                    gradient=tape.gradient(loss,self.nn.param[0])
+                    self.opt.opt(gradient,self.nn.param[0])
                 else:
-                    value_gradient=tape.gradient(TD,self.param[0])				
-                    actor_gradient=TD*tape.gradient(tf.math.log(data[1]),self.param[2])
+                    value_gradient=tape.gradient(TD,self.nn.param[0])				
+                    actor_gradient=TD*tape.gradient(tf.math.log(data[1]),self.nn.param[2])
                     loss=TD
-                    self.opt.opt(value_gradient,actor_gradient,self.param)
+                    self.opt.opt(value_gradient,actor_gradient,self.nn.param)
                 if self.update_step!=None:
                     if self.a%self.update_step==0:
-                        self.nn.update_param(self.param)
+                        self.nn.update_param(self.nn.param)
                 else:
-                    self.nn.update_param(self.param)
+                    self.nn.update_param(self.nn.param)
                 if len(self.loss_list)==0:
                     self.loss_list.append(loss.numpy())
                 else:
@@ -504,7 +503,7 @@ class kernel:
     
     def save_p(self,path):
         parameter_file=open(path+'.dat','wb')
-        pickle.dump(self.param,parameter_file)
+        pickle.dump(self.nn.param,parameter_file)
         parameter_file.close()
         return
     
@@ -517,7 +516,6 @@ class kernel:
     
     
     def save(self,path,i=None,one=True):
-        self.nn.param=None
         if one==True:
             output_file=open(path+'\save.dat','wb')
             path=path+'\save.dat'
@@ -537,8 +535,9 @@ class kernel:
                 pickle.dump(self.episode,episode_file)
                 episode_file.close()
         self.episode_num=self.epi_num
-        pickle.dump(self.param,parameter_file)
         pickle.dump(self.nn,output_file)
+        pickle.dump(self.nn.param,parameter_file)
+        self.nn.param=None
         pickle.dump(self.ol,output_file)
         pickle.dump(self.state_pool,output_file)
         pickle.dump(self.action_pool,output_file)
@@ -582,9 +581,8 @@ class kernel:
             episode_file=open(e_path,'rb')
             self.episode=pickle.load(episode_file)
             episode_file.close()
-        self.param=pickle.load(parameter_file)
         self.nn=pickle.load(input_file)
-        self.nn.param=self.param
+        self.nn.param=pickle.load(parameter_file)
         self.opt=self.nn.opt
         self.ol=pickle.load(input_file)
         self.state_pool=pickle.load(input_file)
