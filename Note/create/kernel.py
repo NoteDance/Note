@@ -754,9 +754,9 @@ class kernel:
             path=path+'\save-{0}.dat'.format(i+1)
             index=path.rfind('\\')
             parameter_file=open(path.replace(path[index+1:],'parameter-{0}.dat'.format(i+1)),'wb')
-        pickle.dump(self.nn,output_file)
         pickle.dump(self.nn.param,parameter_file)
         self.nn.param=None
+        pickle.dump(self.nn,output_file)
         pickle.dump(self.ol,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.end_loss,output_file)
@@ -794,8 +794,10 @@ class kernel:
     def restore(self,s_path,p_path):
         input_file=open(s_path,'rb')
         parameter_file=open(p_path,'rb')
+        param=pickle.load(parameter_file)
         self.nn=pickle.load(input_file)
-        self.nn.param=pickle.load(parameter_file)
+        self.nn.param=param
+        param=None
         if self.nn.optf!=True:
             self.opt=self.nn.opt
         else:
