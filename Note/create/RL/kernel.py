@@ -38,7 +38,6 @@ class kernel:
         self.state_list=np.array(0,dtype='int8')
         self._state_list=[]
         self.p=[]
-        self.flag=np.array(1,dtype='int8')
         self.finish_list=[]
         self.pool_net=pool_net
         self.save_episode=save_episode
@@ -91,7 +90,7 @@ class kernel:
             self.end_loss=end_loss
         self.thread=0
         self.thread_sum=0
-        self.state_list=[]
+        self.state_list=np.array(0,dtype='int8')
         self._state_list=[]
         self.flag=[]
         self.p=[]
@@ -175,23 +174,17 @@ class kernel:
                 self._state_list.append(self.state_list)
                 self.thread_lock.release()
             else:
-                if np.min(self.flag)!=0:
-                    pass
-                else:
+                if len(self._state_list[i])<self.thread_sum:
                     self._state_list[i]=self.state_list[1:]
             while len(self.p)<i:
                 pass
             if len(self.p)==i:
-                self.flag=np.append(self.flag,np.array(0,dtype='int8'))
                 self.thread_lock.acquire()
-                self.p.append(np.array(self._state_list[i],dtype=np.float16)/len(self._state_list))
+                self.p.append(np.array(self._state_list[i],dtype=np.float16)/np.sum(self.state_list[i]))
                 self.thread_lock.release()
             else:
-                if np.min(self.flag)!=0:
-                    pass
-                else:
-                    self.p[i]=np.array(self._state_list[i],dtype=np.float16)/len(self._state_list)
-                    self.flag[i+1]=1
+                if len(self.p[i])<self.thread_sum:
+                    self.p[i]=np.array(self._state_list[i],dtype=np.float16)/np.sum(self.state_list[i])
             flag=np.random.randint(0,2)
             while True:
                 index=np.random.choice(len(self.p[i]),p=self.p[i])
@@ -455,7 +448,7 @@ class kernel:
                 self.nn.episodecount.append(0)
             if self.bflag==True:
                 self.nn.batchcount.append(0)
-            self.state_list=np.append(self.statelist,np.array(1,dtype='int8'))
+            self.state_list=np.append(self.state_list,np.array(1,dtype='int8'))
             self.thread_sum+=1
             self.thread_lock.release()
         elif i not in self.finish_list:
@@ -560,7 +553,6 @@ class kernel:
             pickle.dump(self.episode,episode_file)
             episode_file.close()
         self.one_list=self.one_list*0
-        self.flag[1:]=self.flag[1:]*0
         pickle.dump(self.nn.param,parameter_file)
         self.nn.param=None
         pickle.dump(self.nn,output_file)
@@ -590,7 +582,6 @@ class kernel:
         pickle.dump(self.thread_sum,output_file)
         pickle.dump(self.state_list,output_file)
         pickle.dump(self._state_list,output_file)
-        pickle.dump(self.flag,output_file)
         pickle.dump(self.p,output_file)
         pickle.dump(self.finish_list,output_file)
         pickle.dump(self.pool_net,output_file)
@@ -643,7 +634,6 @@ class kernel:
         self.thread_sum=pickle.load(input_file)
         self.state_list=pickle.load(input_file)
         self._state_list=pickle.load(input_file)
-        self.flag=pickle.load(input_file)
         self.p=pickle.load(input_file)
         self.finish_list=pickle.load(input_file)
         self.pool_net=pickle.load(input_file)
