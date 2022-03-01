@@ -171,7 +171,7 @@ class kernel:
                 pass
             if len(self._state_list)==i:
                 self.thread_lock.acquire()
-                self._state_list.append(self.state_list)
+                self._state_list.append(self.state_list[1:])
                 self.thread_lock.release()
             else:
                 if len(self._state_list[i])<self.thread_sum:
