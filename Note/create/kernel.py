@@ -119,7 +119,7 @@ class kernel:
         return
     
     
-    def apply_gradient(tape,opt,loss,parameter):
+    def apply_gradient(self,tape,opt,loss,parameter):
         gradient=tape.gradient(loss,parameter)
         opt.apply_gradients(zip(gradient,parameter))
         return
