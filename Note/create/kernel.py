@@ -215,7 +215,7 @@ class kernel:
             self.train_loss=self.train_loss.astype(np.float32)
             if self.acc_flag1==1:
                 acc=self.nn.accuracy(output,self.train_labels)
-                acc=train_acc.numpy()
+                acc=acc.numpy()
                 self.train_acc_list.append(acc.astype(np.float32))
                 self.train_acc=acc
                 self.train_acc=self.train_acc.astype(np.float32)
@@ -298,7 +298,7 @@ class kernel:
             while True:
                 t1=time.time()
                 i+=1
-                self._train(batch,test_batch)
+                self._train(test_batch=test_batch)
                 self.epoch+=1
                 self.total_epoch+=1
                 if epoch%10!=0:
