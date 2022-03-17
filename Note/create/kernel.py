@@ -9,8 +9,6 @@ class kernel:
     def __init__(self,nn=None):
         if nn!=None:
             self.nn=nn
-            self.acc_flag1=nn.acc_flag1
-            self.acc_flag2=nn.acc_flag2
         self.PO=None
         self.thread_lock=None
         self.thread=None
@@ -26,6 +24,8 @@ class kernel:
         self.eflag=None
         self.bflag=None
         self.optf=None
+        self.acc_flag1=None
+        self.acc_flag2=None
         self.flag=None
         self.train_loss=None
         self.train_acc=None
