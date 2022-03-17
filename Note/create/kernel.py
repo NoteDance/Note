@@ -10,8 +10,6 @@ class kernel:
         if nn!=None:
             self.nn=nn
             self.param=nn.param
-            self.acc_flag1=nn.acc_flag1
-            self.acc_flag2=nn.acc_flag2
         self.ol=None
         self.batch=None
         self.epoch=0
@@ -24,6 +22,8 @@ class kernel:
         self.eflag=None
         self.bflag=None
         self.optf=None
+        self.acc_flag1=None
+        self.acc_flag2=None
         self.flag=None
         self.train_loss=None
         self.train_acc=None
