@@ -382,18 +382,18 @@ class kernel:
             with tf.GradientTape() as tape:
                 output=self.nn.fp(data_batch)
                 batch_loss=self.nn.loss(output,labels_batch)
-                if self.optf!=True:
-                    self.apply_gradient(tape,self.opt,batch_loss,self.nn.param)
-                else:
-                    gradient=tape.gradient(batch_loss,self.nn.param)
-                    self.sopt(gradient,self.nn.param,t)
-                if self.total_epoch==1:
-                    batch_loss=batch_loss.numpy()
-                if self.acc_flag1==1:
-                    batch_acc=self.nn.accuracy(output,labels_batch)
-                    batch_acc=batch_acc.numpy()
-                if self.bflag==True:
-                    self.nn.batchcount=j
+            if self.optf!=True:
+                self.apply_gradient(tape,self.opt,batch_loss,self.nn.param)
+            else:
+                gradient=tape.gradient(batch_loss,self.nn.param)
+                self.sopt(gradient,self.nn.param,t)
+            if self.total_epoch==1:
+                batch_loss=batch_loss.numpy()
+            if self.acc_flag1==1:
+                batch_acc=self.nn.accuracy(output,labels_batch)
+                batch_acc=batch_acc.numpy()
+            if self.bflag==True:
+                self.nn.batchcount=j
             if index1==batches*batch:
                 if type(self.train_data)==list:
                     for i in range(len(self.train_data)):
@@ -493,10 +493,10 @@ class kernel:
                         total_loss=0
                         total_acc=0
                         batches=int((self.shape0-self.shape0%batch)/batch)
+                        self.thread_lock.acquire()
                         for j in range(batches):
                             index1=j*batch
                             index2=(j+1)*batch
-                            self.thread_lock.acquire()
                             if self.acc_flag1==1:
                                 batch_loss,batch_acc=self.train_(data_batch,labels_batch,batch,batches,test_batch,index1,index2,j,t)
                                 total_loss+=batch_loss
@@ -504,14 +504,11 @@ class kernel:
                             else:
                                 batch_loss=self.train_(data_batch,labels_batch,batch,batches,test_batch,index1,index2,j,t)
                                 total_loss+=batch_loss
-                            self.thread_lock.release()
                         if self.shape0%batch!=0:
                             batches+=1
                             index1=batches*batch
                             index2=batch-(self.shape0-batches*batch)
-                            self.thread_lock.acquire()
                             self.train_(batch,test_batch,index1,index2,t)
-                            self.thread_lock.release()
                         loss=total_loss/batches
                         if self.acc_flag1==1:
                             train_acc=total_acc/batches
@@ -527,6 +524,7 @@ class kernel:
                             self.test_loss_list.append(self.test_loss)
                         if self.acc_flag1==1:
                             self.test_acc_list.append(self.test_acc)
+                        self.thread_lock.release()
                     else:
                         self._train(batch,test_batch,data_batch,labels_batch,t)
                 if self.thread==None:
