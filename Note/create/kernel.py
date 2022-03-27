@@ -502,7 +502,7 @@ class kernel:
                 self.thread_lock.acquire()
                 self.param=self.nn.param
                 with tf.GradientTape() as tape:
-                    output=self.nn.fp(self.train_data)
+                    self.output=self.nn.fp(self.train_data)
                     self._train_loss=self.nn.loss(self.output,self.train_labels)
                 self.gradient=tape.gradient(self._train_loss,self.param)
                 self.thread_lock.release()
