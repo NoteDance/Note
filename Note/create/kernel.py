@@ -571,7 +571,6 @@ class kernel:
     def train(self,batch=None,epoch=None,test_batch=None,nn_path=None,one=True,p=None,s=None):
         self.batch=batch
         self.epoch=0
-        self.optf=self.nn.optf
         if self.flag==None:
             self.flag=True
         if p==None and s==None:
