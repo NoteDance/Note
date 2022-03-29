@@ -9,6 +9,11 @@ class kernel:
     def __init__(self,nn=None):
         if nn!=None:
             self.nn=nn
+            try:
+                if self.nn.km==0:
+                    self.nn.km=1
+            except AttributeError:
+                pass
         self.PO=None
         self.thread_lock=None
         self.thread=None
@@ -571,11 +576,6 @@ class kernel:
     def train(self,batch=None,epoch=None,test_batch=None,nn_path=None,one=True,p=None,s=None):
         self.batch=batch
         self.epoch=0
-        try:
-            if self.nn.km==0:
-                self.nn.km=1
-        except AttributeError:
-            pass
         if self.flag==None:
             self.flag=True
         if p==None and s==None:
@@ -1041,6 +1041,11 @@ class kernel:
         self.nn=pickle.load(input_file)
         self.nn.param=param
         param=None
+        try:
+            if self.nn.km==0:
+                self.nn.km=1
+        except AttributeError:
+            pass
         if self.nn.optf!=True:
             self.opt=self.nn.opt
         else:
