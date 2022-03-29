@@ -753,11 +753,12 @@ class kernel:
                     else:
                         print('accuracy:{0:.6f},test accuracy:{1:.6f}'.format(self.train_acc,self.test_acc))   
             print('time:{0}s'.format(self.time))
-        try:
-            if self.nn.km==1:
-                self.nn.km=0
-        except AttributeError:
-            pass
+        if self.thread==None:
+            try:
+                if self.nn.km==1:
+                    self.nn.km=0
+            except AttributeError:
+                pass
         return
     
     
