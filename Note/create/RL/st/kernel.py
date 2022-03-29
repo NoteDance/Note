@@ -382,6 +382,11 @@ class kernel:
     
     
     def learn(self,episode_num,path=None,one=True,p=None,s=None):
+        try:
+            if self.nn.km==0:
+                self.nn.km=1
+        except AttributeError:
+            pass
         if p==None and s==None:
             self.p=9
             self.s=2
@@ -487,6 +492,11 @@ class kernel:
         print()
         print('last loss:{0:.6f}'.format(loss))
         print('time:{0}s'.format(self.time))
+        try:
+            if self.nn.km==1:
+                self.nn.km=0
+        except AttributeError:
+            pass
         return
     
     
