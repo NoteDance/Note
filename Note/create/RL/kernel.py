@@ -9,6 +9,11 @@ class kernel:
         if nn!=None:
             self.nn=nn
             self.opt=nn.opt
+            try:
+                if self.nn.km==0:
+                    self.nn.km=1
+            except AttributeError:
+                pass
         self.state_pool=[]
         self.action_pool=[]
         self.next_state_pool=[]
@@ -433,11 +438,6 @@ class kernel:
         self.TD.append(0)
         self.loss.append(0)
         self.thread_lock.release()
-        try:
-            if self.nn.km==0:
-                self.nn.km=1
-        except AttributeError:
-            pass
         while len(self.state_pool)<i:
             pass
         if len(self.state_pool)==i:
@@ -612,6 +612,11 @@ class kernel:
         self.nn=pickle.load(input_file)
         self.nn.param=param
         param=None
+        try:
+            if self.nn.km==0:
+                self.nn.km=1
+        except AttributeError:
+            pass
         self.opt=self.nn.opt
         self.state_pool=pickle.load(input_file)
         self.action_pool=pickle.load(input_file)
