@@ -433,6 +433,11 @@ class kernel:
         self.TD.append(0)
         self.loss.append(0)
         self.thread_lock.release()
+        try:
+            if self.nn.km==0:
+                self.nn.km=1
+        except AttributeError:
+            pass
         while len(self.state_pool)<i:
             pass
         if len(self.state_pool)==i:
