@@ -571,6 +571,11 @@ class kernel:
     def train(self,batch=None,epoch=None,test_batch=None,nn_path=None,one=True,p=None,s=None):
         self.batch=batch
         self.epoch=0
+        try:
+            if self.nn.km==0:
+                self.nn.km=1
+        except AttributeError:
+            pass
         if self.flag==None:
             self.flag=True
         if p==None and s==None:
@@ -748,6 +753,11 @@ class kernel:
                     else:
                         print('accuracy:{0:.6f},test accuracy:{1:.6f}'.format(self.train_acc,self.test_acc))   
             print('time:{0}s'.format(self.time))
+        try:
+            if self.nn.km==1:
+                self.nn.km=0
+        except AttributeError:
+            pass
         return
     
     
