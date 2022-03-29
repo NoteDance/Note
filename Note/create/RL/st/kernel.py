@@ -10,6 +10,11 @@ class kernel:
         if nn!=None:
             self.nn=nn
             self.opt=nn.opt
+            try:
+                if self.nn.km==0:
+                    self.nn.km=1
+            except AttributeError:
+                pass
         self.ol=None
         self.state_pool=None
         self.action_pool=None
@@ -382,11 +387,6 @@ class kernel:
     
     
     def learn(self,episode_num,path=None,one=True,p=None,s=None):
-        try:
-            if self.nn.km==0:
-                self.nn.km=1
-        except AttributeError:
-            pass
         if p==None and s==None:
             self.p=9
             self.s=2
@@ -595,6 +595,11 @@ class kernel:
         self.nn=pickle.load(input_file)
         self.nn.param=param
         param=None
+        try:
+            if self.nn.km==0:
+                self.nn.km=1
+        except AttributeError:
+            pass
         self.opt=self.nn.opt
         self.ol=pickle.load(input_file)
         self.state_pool=pickle.load(input_file)
