@@ -46,7 +46,6 @@ class kernel:
         self.finish_list=[]
         self.pool_net=pool_net
         self.save_episode=save_episode
-        self.TD=[]
         self.loss=[]
         self.loss_list=[]
         self.a=0
@@ -107,7 +106,6 @@ class kernel:
         self.action_pool=None
         self.next_state_pool=None
         self.reward_pool=None
-        self.TD=[]
         self.loss=[]
         self.loss_list=[]
         self.a=0
@@ -305,14 +303,14 @@ class kernel:
                     self.loss[i]=self.nn.loss(self.nn.nn,self.state_pool[i][:length],self.action_pool[i][:length],self.next_state_pool[i][:length],self.reward_pool[i][:length])
                 else:
                     self.value=self.nn.nn[0](self.state_pool[i][:length],param=0)
-                    self.TD[i]=tf.reduce_mean((self.reward_pool[i][:length]+self.discount*self.nn.nn[0](self.next_state_pool[i][:length],param=1)-self.value)**2)
+                    TD=tf.reduce_mean((self.reward_pool[i][:length]+self.discount*self.nn.nn[0](self.next_state_pool[i][:length],param=1)-self.value)**2)
             if type(self.nn.nn)!=list:
                 self.gradient=tape.gradient(self.loss[i],self.nn.param[0])
                 self.opt(self.gradient,self.nn.param[0])
             else:
-                self.value_gradient=tape.gradient(self.TD[i],self.nn.param[0])
-                self.actor_gradient=self.TD[i]*tape.gradient(tf.math.log(self.action_pool[i][:length]),self.nn.param[2])
-                self.loss[i]=self.TD[i]
+                self.value_gradient=tape.gradient(TD,self.nn.param[0])
+                self.actor_gradient=TD*tape.gradient(tf.math.log(self.action_pool[i][:length]),self.nn.param[2])
+                self.loss[i]=TD
                 self.opt(self.value_gradient,self.actor_gradient,self.nn.param)
             if self.update_step!=None:
                 if self.a%self.update_step==0:
@@ -334,16 +332,16 @@ class kernel:
                         self.batch_loss=self.nn.loss(self.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
                     else:
                         self.value=self.nn.nn[0](state_batch,param=0)
-                        self.TD[i]=tf.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch,param=1)-self.value)**2)
+                        TD=tf.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch,param=1)-self.value)**2)
                 if type(self.nn.nn)!=list:
                     self.gradient=tape.gradient(self.batch_loss,self.param[0])
                     self.opt(self.gradient,self.nn.param[0],self.lr)
                     self.loss[i]+=self.batch_loss
                 else:
-                    self.value_gradient=tape.gradient(self.TD[i],self.nn.param[0])
-                    self.actor_gradient=self.TD[i]*tape.gradient(tf.math.log(action_batch),self.nn.param[2])
+                    self.value_gradient=tape.gradient(TD,self.nn.param[0])
+                    self.actor_gradient=TD*tape.gradient(tf.math.log(action_batch),self.nn.param[2])
                     self.opt(self.value_gradient,self.actor_gradient,self.nn.param)
-                    self.loss[i]+=self.TD[i]
+                    self.loss[i]+=TD
             if self.bflag==True:
                 self.nn.batchcount[i]=j
             if length%self.batch!=0:
@@ -362,16 +360,16 @@ class kernel:
                         batch_loss=self.nn.loss(self.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
                     else:
                         self.value=self.nn.nn[0](state_batch,param=0)
-                        self.TD[i]=tf.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch,param=1)-self.value)**2)
+                        TD=tf.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch,param=1)-self.value)**2)
                 if type(self.nn.nn)!=list:
                     self.gradient=tape.gradient(batch_loss,self.nn.param[0])
                     self.opt(self.gradient,self.nn.param[0],self.lr)
                     self.loss[i]+=batch_loss
                 else:
-                    self.value_gradient=tape.gradient(self.TD[i],self.nn.param[0])
-                    self.actor_gradient=self.TD[i]*tape.gradient(tf.math.log(action_batch),self.nn.param[2])
+                    self.value_gradient=tape.gradient(TD,self.nn.param[0])
+                    self.actor_gradient=TD*tape.gradient(tf.math.log(action_batch),self.nn.param[2])
                     self.opt(self.value_gradient,self.actor_gradient,self.nn.param)
-                    self.loss[i]+=self.TD[i]
+                    self.loss[i]+=TD
                 if self.bflag==True:
                     self.nn.batchcount[i]+=1
         return
@@ -386,16 +384,16 @@ class kernel:
                     self.batch_loss=self.nn.loss(self.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
                 else:
                     self.value=self.nn.nn[0](state_batch,param=0)
-                    self.TD[i]=tf.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch,param=1)-self.value)**2)
+                    TD=tf.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch,param=1)-self.value)**2)
             if type(self.nn.nn)!=list:
                 self.gradient=tape.gradient(self.batch_loss,self.nn.param[0])
                 self.opt(self.gradient,self.nn.param[0],self.lr)
                 self.loss[i]+=self.batch_loss
             else:
-                self.value_gradient=tape.gradient(self.TD[i],self.nn.param[0])
-                self.actor_gradient=self.TD[i]*tape.gradient(tf.math.log(action_batch),self.nn.param[2])
+                self.value_gradient=tape.gradient(TD,self.nn.param[0])
+                self.actor_gradient=TD*tape.gradient(tf.math.log(action_batch),self.nn.param[2])
                 self.opt(self.value_gradient,self.actor_gradient,self.nn.param)
-                self.loss[i]+=self.TD[i]
+                self.loss[i]+=TD
             if self.bflag==True:
                 self.nn.batchcount[i]+=1
         return
@@ -435,7 +433,6 @@ class kernel:
     def learn(self,epsilon,episode_num,i):
         self.thread_lock.acquire()
         self.thread+=1
-        self.TD.append(0)
         self.loss.append(0)
         self.thread_lock.release()
         while len(self.state_pool)<i:
