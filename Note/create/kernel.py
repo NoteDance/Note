@@ -96,7 +96,7 @@ class kernel:
         return
     
     
-    def extend(self,thread):
+    def add_threads(self,thread):
         t=-np.arange(-thread,1)+self.thread+1
         self.t=t.extend(self.t)
         self.thread+=thread
