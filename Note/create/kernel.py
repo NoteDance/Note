@@ -154,18 +154,18 @@ class kernel:
     def loss_acc(self,output=None,labels_batch=None,batch_loss=None,batch=None,test_batch=None,train_loss=None,total_loss=None,total_acc=None,t=None):
         if batch!=None:
             if self.total_epoch>=1:
-                batch_loss=batch_loss.numpy()
+                batch_loss=batch_loss
                 total_loss+=batch_loss
                 if self.acc_flag1==1:
                     batch_acc=self.nn.accuracy(output,labels_batch)
-                    batch_acc=batch_acc.numpy()
+                    batch_acc=batch_acc
                     total_acc+=batch_acc
             if self.shape0%batch!=0:
-                batch_loss=batch_loss.numpy()
+                batch_loss=batch_loss
                 total_loss+=batch_loss
                 if self.acc_flag1==1:
                     batch_acc=self.nn.accuracy(output,labels_batch)
-                    batch_acc=batch_acc.numpy()
+                    batch_acc=batch_acc
                     total_acc+=batch_acc
             return total_loss,total_acc
         elif self.ol==None:
@@ -315,7 +315,7 @@ class kernel:
                     else:
                         self.nn.batchcount[t]+=1
             if self.total_epoch>=1:
-                loss=total_loss/batches
+                loss=total_loss.numpy()/batches
                 if self.acc_flag1==1:
                     train_acc=total_acc/batches
                 if self.thread==None:
@@ -323,7 +323,7 @@ class kernel:
                     self.train_loss=loss
                     self.train_loss=self.train_loss.astype(np.float32)
                     if i==epoch-1:
-                        loss=_total_loss/batches
+                        loss=_total_loss.numpy()/batches
                         self.train_loss_list.append(loss.astype(np.float32))
                         self.train_loss=loss
                         self.train_loss=self.train_loss.astype(np.float32) 
@@ -332,7 +332,7 @@ class kernel:
                     self.train_loss[t]=loss
                     self.train_loss[t]=self.train_loss[t].astype(np.float32)
                     if i==epoch-1:
-                        loss=_total_loss/batches
+                        loss=_total_loss.numpy()/batches
                         self.train_loss_list[t].append(loss.astype(np.float32))
                         self.train_loss[t]=loss
                         self.train_loss[t]=self.train_loss[t].astype(np.float32)
@@ -342,7 +342,7 @@ class kernel:
                         self.train_acc=train_acc
                         self.train_acc=self.train_acc.astype(np.float32)
                         if i==epoch-1:
-                            train_acc=_total_acc/batches
+                            train_acc=_total_acc.numpy()/batches
                             self.train_acc_list.append(train_acc.astype(np.float32))
                             self.train_acc=train_acc
                             self.train_acc=self.train_acc.astype(np.float32)
@@ -351,7 +351,7 @@ class kernel:
                         self.train_acc[t]=train_acc
                         self.train_acc[t]=self.train_acc[t].astype(np.float32)
                         if i==epoch-1:
-                            train_acc=_total_acc/batches
+                            train_acc=_total_acc.numpy()/batches
                             self.train_acc_list[t].append(train_acc.astype(np.float32))
                             self.train_acc[t]=train_acc
                             self.train_acc[t]=self.train_acc[t].astype(np.float32)
@@ -448,15 +448,12 @@ class kernel:
                 else:
                     self.sopt(self.gradient,self.nn.param,t)
                 if self.total_epoch>=1:
-                    self.batch_loss=self.batch_loss.numpy()
                     if self.acc_flag1==1:
                         self.batch_acc=self.nn.accuracy(self.output,labels_batch)
-                        self.batch_acc=self.batch_acc.numpy()
                 if i==epoch-1:
                     self.output=self.nn.fp(data_batch)
                     self._batch_loss=self.nn.loss(self.output,labels_batch)
                     self._batch_acc=self.nn.accuracy(self.output,labels_batch)
-                    self._batch_acc=self.batch_acc.numpy()
                 if self.bflag==True:
                     self.nn.batchcount=j
             else:
@@ -473,10 +470,8 @@ class kernel:
                 else:
                     self.sopt(self.gradient,self.nn.param,t)
                 if self.total_epoch>=1:
-                    self.batch_loss=self.batch_loss.numpy()
                     if self.acc_flag1==1:
                         self.batch_acc=self.nn.accuracy(self.output,labels_batch)
-                        self.batch_acc=self.batch_acc.numpy()
                 if i==epoch-1:
                     self.output=self.nn.fp(data_batch)
                     self._batch_loss=self.nn.loss(self.output,labels_batch)
@@ -508,10 +503,8 @@ class kernel:
                     else:
                         self.sopt(self.gradient,self.param,t)
                     if self.total_epoch>=1:
-                        self.batch_loss=self.batch_loss.numpy()
                         if self.acc_flag1==1:
                             self.batch_acc=self.nn.accuracy(self.output,labels_batch)
-                            self.batch_acc=self.batch_acc.numpy()
                     if i==epoch-1:
                         self.output=self.nn.fp(data_batch)
                         self._batch_loss=self.nn.loss(self.output,labels_batch)
@@ -531,10 +524,8 @@ class kernel:
                     else:
                         self.sopt(self.gradient,self.nn.param,t)
                     if self.total_epoch>=1:
-                        self.batch_loss=self.batch_loss.numpy()
                         if self.acc_flag1==1:
                             self.batch_acc=self.nn.accuracy(self.output,labels_batch)
-                            self.batch_acc=self.batch_acc.numpy()
                     if i==epoch-1:
                         self.output=self.nn.fp(data_batch)
                         self._batch_loss=self.nn.loss(self.output,labels_batch)
@@ -671,14 +662,14 @@ class kernel:
                     if i==epoch-1:
                         _total_loss+=self._batch_loss
         if self.total_epoch>=1:
-            loss=total_loss/batches
+            loss=total_loss.numpy()/batches
             if self.acc_flag1==1:
-                train_acc=total_acc/batches
+                train_acc=total_acc.numpy()/batches
             self.train_loss_list.append(loss.astype(np.float32))
             self.train_loss=loss
             self.train_loss=self.train_loss.astype(np.float32)
             if i==epoch-1:
-                loss=_total_loss/batches
+                loss=_total_loss.numpy()/batches
                 self.train_loss_list.append(loss.astype(np.float32))
                 self.train_loss=loss
                 self.train_loss=self.train_loss.astype(np.float32)
@@ -687,7 +678,7 @@ class kernel:
                 self.train_acc=train_acc
                 self.train_acc=self.train_acc.astype(np.float32)
                 if i==epoch-1:
-                    train_acc=_total_acc/batches
+                    train_acc=_total_acc.numpy()/batches
                     self.train_acc_list.append(train_acc.astype(np.float32))
                     self.train_acc=train_acc
                     self.train_acc=self.train_acc.astype(np.float32)
@@ -702,6 +693,9 @@ class kernel:
     def train(self,batch=None,epoch=None,test_batch=None,nn_path=None,one=True,p=None,s=None):
         self.batch=batch
         self.epoch=0
+        t1=None
+        t2=None
+        t=None
         if self.flag==None:
             self.flag=True
         if p==None and s==None:
@@ -726,6 +720,12 @@ class kernel:
             labels_batch=[x for x in range(len(self.train_labels))]
         if epoch!=None:
             for i in range(epoch):
+                if self.end()==True:
+                    if self.thread==None:
+                        self.time+=(t2-t1)
+                    else:
+                        self.time[t]+=(t2-t1)
+                    break
                 t1=time.time()
                 if self.eflag==True:
                     if self.thread==None:
@@ -778,11 +778,15 @@ class kernel:
                     self.time+=(t2-t1)
                 else:
                     self.time[t]+=(t2-t1)
-                if self.end()==True:
-                    break
         elif self.ol==None:
             i=0
             while True:
+                if self.end()==True:
+                    if self.thread==None:
+                        self.time+=(t2-t1)
+                    else:
+                        self.time[t]+=(t2-t1)
+                    break
                 t1=time.time()
                 if self.thread==None:
                     self._train(epoch=epoch,test_batch=test_batch,i=i)
@@ -836,8 +840,6 @@ class kernel:
                     self.time+=(t2-t1)
                 else:
                     self.time[t]+=(t2-t1)
-                if self.end()==True:
-                    break
         else:
             while True:
                 self._train()
@@ -925,10 +927,10 @@ class kernel:
                 else:
                     output=self.nn.fp(data_batch,t)
                 batch_loss=self.nn.loss(output,labels_batch)
-                total_loss+=batch_loss.numpy()
+                total_loss+=batch_loss
                 if self.acc_flag1==1:
                     batch_acc=self.nn.accuracy(output,labels_batch)
-                    total_acc+=batch_acc.numpy()
+                    total_acc+=batch_acc
             if shape0%batch!=0:
                 batches+=1
                 index1=batches*batch
@@ -960,15 +962,15 @@ class kernel:
                 else:
                     output=self.nn.fp(data_batch,t)
                 batch_loss=self.nn.loss(output,labels_batch)
-                total_loss+=batch_loss.numpy()
+                total_loss+=batch_loss
                 if self.acc_flag1==1:
                     batch_acc=self.nn.accuracy(output,labels_batch)
-                    total_acc+=batch_acc.numpy()
-            test_loss=total_loss/batches
+                    total_acc+=batch_acc
+            test_loss=total_loss.numpy()/batches
             test_loss=test_loss
             test_loss=test_loss.astype(np.float32)
             if self.acc_flag1==1:
-                test_acc=total_acc/batches
+                test_acc=total_acc.numpy()/batches
                 test_acc=test_acc
                 test_acc=test_acc.astype(np.float32)
         else:
