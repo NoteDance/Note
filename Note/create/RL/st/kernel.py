@@ -484,7 +484,7 @@ class kernel:
                     if path!=None:
                         self.save(path)
                     return
-                self.total_epoch+=1
+                self.total_e+=1
                 with tf.GradientTape() as tape:
                     if type(self.nn.nn)!=list:
                         loss=self.nn.loss(self.nn.nn,data[0],data[1],data[2],data[3])				
