@@ -242,8 +242,6 @@ class kernel:
                 self.nn.update_param(self.nn.param)
             if len(self.state_pool)<self.batch:
                 loss=loss.numpy()
-                if i==episode_num-1:
-                    self.loss=self.loss.numpy()
             else:
                 loss=loss.numpy()/batches
                 if i==episode_num-1:
