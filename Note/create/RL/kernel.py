@@ -333,8 +333,8 @@ class kernel:
                 if type(self.nn.nn)!=list:
                     self.gradient=tape.gradient(self.loss[i],self.param[0])
                 else:
-                    self.value_gradient=tape.gradient(self.TD,self.nn.param[0])
-                    self.actor_gradient=self.TD*tape.gradient(tf.math.log(self.action_pool[i][:length]),self.nn.param[2])
+                    self.value_gradient=tape.gradient(self.TD,self.param[0])
+                    self.actor_gradient=self.TD*tape.gradient(tf.math.log(self.action_pool[i][:length]),self.param[2])
                 self.thread_lock.release()
                 self.thread_lock.acquire()
                 if type(self.nn.nn)!=list:
@@ -395,8 +395,8 @@ class kernel:
                     if type(self.nn.nn)!=list:
                         self.gradient=tape.gradient(self.batch_loss,self.param[0])
                     else:
-                        self.value_gradient=tape.gradient(self.TD,self.nn.param[0])
-                        self.actor_gradient=self.TD*tape.gradient(tf.math.log(action_batch),self.nn.param[2])
+                        self.value_gradient=tape.gradient(self.TD,self.param[0])
+                        self.actor_gradient=self.TD*tape.gradient(tf.math.log(action_batch),self.param[2])
                     self.thread_lock.release()
                     self.thread_lock.acquire()
                     if type(self.nn.nn)!=list:
@@ -453,24 +453,27 @@ class kernel:
                             self._loss[i]+=TD
                 else:
                     self.thread_lock.acquire()
+                    self.param=self.nn.param
                     with tf.GradientTape() as tape:
                         if type(self.nn.nn)!=list:
                             self.batch_loss=self.nn.loss(self.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
                         else:
                             self.value=self.nn.nn[0](state_batch,param=0)
                             self.TD=tf.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch,param=1)-self.value)**2)
+                    if type(self.nn.nn)!=list:
+                        self.gradient=tape.gradient(self.batch_loss,self.param[0])
+                    else:
+                        self.value_gradient=tape.gradient(self.TD,self.param[0])
+                        self.actor_gradient=self.TD*tape.gradient(tf.math.log(action_batch),self.param[2])
                     self.thread_lock.release()
                     self.thread_lock.acquire()
                     if type(self.nn.nn)!=list:
-                        self.gradient=tape.gradient(self.batch_loss,self.nn.param[0])
                         self.opt(self.gradient,self.nn.param[0],self.lr)
                         self.loss[i]+=self.batch_loss
                         if k==episode_num-1:
                             self.batch_loss=self.nn.loss(self.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
                             self._loss[i]+=self.batch_loss
                     else:
-                        self.value_gradient=tape.gradient(self.TD,self.nn.param[0])
-                        self.actor_gradient=self.TD*tape.gradient(tf.math.log(action_batch),self.nn.param[2])
                         self.opt(self.value_gradient,self.actor_gradient,self.nn.param)
                         self.loss[i]+=self.TD
                         if k==episode_num-1:
@@ -512,24 +515,27 @@ class kernel:
                         self._loss[i]+=TD
             else:
                 self.thread_lock.acquire()
+                self.param=self.nn.param
                 with tf.GradientTape() as tape:
                     if type(self.nn.nn)!=list:
                         self.batch_loss=self.nn.loss(self.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
                     else:
                         self.value=self.nn.nn[0](state_batch,param=0)
                         self.TD=tf.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch,param=1)-self.value)**2)
+                if type(self.nn.nn)!=list:
+                    self.gradient=tape.gradient(self.batch_loss,self.param[0])
+                else:
+                    self.value_gradient=tape.gradient(self.TD,self.param[0])
+                    self.actor_gradient=self.TD*tape.gradient(tf.math.log(action_batch),self.param[2])
                 self.thread_lock.release()
                 self.thread_lock.acquire()
                 if type(self.nn.nn)!=list:
-                    self.gradient=tape.gradient(self.batch_loss,self.nn.param[0])
                     self.opt(self.gradient,self.nn.param[0],self.lr)
                     self.loss[i]+=self.batch_loss
                     if k==episode_num-1:
                         self.batch_loss=self.nn.loss(self.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
                         self._loss[i]+=self.batch_loss
                 else:
-                    self.value_gradient=tape.gradient(self.TD,self.nn.param[0])
-                    self.actor_gradient=self.TD*tape.gradient(tf.math.log(action_batch),self.nn.param[2])
                     self.opt(self.value_gradient,self.actor_gradient,self.nn.param)
                     self.loss[i]+=self.TD
                     if k==episode_num-1:
