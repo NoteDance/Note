@@ -31,8 +31,6 @@ class kernel:
         self.alpha=None
         self.beta=None
         self.end_loss=None
-        self.eflag=None
-        self.bflag=None
         self.thread=0
         self.thread_sum=0
         self.thread_lock=thread_lock
@@ -350,8 +348,10 @@ class kernel:
                         value=self.nn.nn[0](state_batch,param=0)
                         TD=tf.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch,param=1)-value)**2)
                         self._loss[i]+=TD
-            if self.bflag==True:
-                self.nn.batchcount[i]=j
+            try:
+                self.nn.bc[i]=j
+            except AttributeError:
+                pass
             if length%self.batch!=0:
                 if self.pr!=None:
                     state_batch,action_batch,next_state_batch,reward_batch=self.pr(self.state_pool[i],self.action_pool[i],self.next_state_pool[i],self.reward_pool[i],self.pool_size,self.batch,self.rp,self.alpha,self.beta)
@@ -385,8 +385,10 @@ class kernel:
                         value=self.nn.nn[0](state_batch,param=0)
                         TD=tf.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch,param=1)-value)**2)
                         self._loss[i]+=TD
-                if self.bflag==True:
-                    self.nn.batchcount[i]+=1
+                try:
+                    self.nn.bc[i]+=1
+                except AttributeError:
+                    pass
         return
     
     
@@ -416,8 +418,10 @@ class kernel:
                     value=self.nn.nn[0](state_batch,param=0)
                     TD=tf.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch,param=1)-value)**2)
                     self._loss[i]+=TD
-            if self.bflag==True:
-                self.nn.batchcount[i]+=1
+            try:
+                self.nn.bc[i]+=1
+            except AttributeError:
+                pass
         return
             
     
@@ -435,9 +439,11 @@ class kernel:
                 for j in range(batches):
                     self.learn1(i,j,batches,length,episode_num,k)
             else:
+                try:
+                    self.nn.bc[i]=0
+                except AttributeError:
+                    pass
                 self.learn2(i,episode_num,k)
-            if self.bflag==True:
-                self.nn.batchcount[i]=0
             if self.update_step!=None:
                 if self.a%self.update_step==0:
                     self.nn.update_param(self.param)
@@ -449,8 +455,10 @@ class kernel:
                 self.loss[i]=self.loss[i].numpy()/batches
                 if k==episode_num-1:
                     self.loss[i]=self._loss[i].numpy()/batches
-        if self.eflag==True:
-            self.nn.episodecount[i]+=1
+        try:
+            self.nn.ec[i]+=1
+        except AttributeError:
+            pass
         return
     
     
@@ -471,10 +479,14 @@ class kernel:
             self.epsilon.append(epsilon)
             self.epi_num.append(episode_num)
             self.episode_num.append(0)
-            if self.eflag==True:
-                self.nn.episodecount.append(0)
-            if self.bflag==True:
-                self.nn.batchcount.append(0)
+            try:
+                self.nn.ec.append(0)
+            except AttributeError:
+                pass
+            try:
+                self.nn.bc.append(0)
+            except AttributeError:
+                pass
             self.state_list=np.append(self.state_list,np.array(1,dtype='int8'))
             self.thread_sum+=1
             self.thread_lock.release()
@@ -602,10 +614,6 @@ class kernel:
         pickle.dump(self.alpha,output_file)
         pickle.dump(self.beta,output_file)
         pickle.dump(self.end_loss,output_file)
-        if self.eflag==True:
-            pickle.dump(self.eflag,output_file)
-        if self.bflag==True:
-            pickle.dump(self.bflag,output_file)
         pickle.dump(self.thread_sum,output_file)
         pickle.dump(self.state_list,output_file)
         pickle.dump(self._state_list,output_file)
@@ -653,10 +661,6 @@ class kernel:
         self.alpha=pickle.load(input_file)
         self.beta=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
-        if self.eflag==True:
-            self.eflag=pickle.load(input_file)
-        if self.bflag==True:
-            self.bflag=pickle.load(input_file)
         self.thread_sum=pickle.load(input_file)
         self.state_list=pickle.load(input_file)
         self._state_list=pickle.load(input_file)
