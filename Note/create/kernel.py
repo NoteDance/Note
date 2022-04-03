@@ -26,8 +26,6 @@ class kernel:
         self.end_acc=None
         self.end_test_loss=None
         self.end_test_acc=None
-        self.eflag=None
-        self.bflag=None
         self.optf=None
         self.acc_flag1=None
         self.acc_flag2=None
@@ -267,11 +265,16 @@ class kernel:
                     _total_loss,_total_acc=self.loss_acc(output=output,labels_batch=labels_batch,batch_loss=_batch_loss,batch=batch,total_loss=total_loss,total_acc=total_acc,t=t)
                 else:
                     total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,batch_loss=batch_loss,batch=batch,total_loss=total_loss,total_acc=total_acc,t=t)
-                if self.bflag==True:
-                    if self.thread==None:
-                        self.nn.batchcount=j
-                    else:
-                        self.nn.batchcount[t]=j
+                if self.thread==None:
+                    try:
+                        self.nn.bc=j
+                    except AttributeError:
+                        pass
+                else:
+                    try:
+                        self.nn.bc[t]=j
+                    except AttributeError:
+                        pass
             if self.shape0%batch!=0:
                 batches+=1
                 index1=batches*batch
@@ -313,11 +316,16 @@ class kernel:
                     _total_loss,_total_acc=self.loss_acc(output=output,labels_batch=labels_batch,batch_loss=_batch_loss,batch=batch,total_loss=total_loss,total_acc=total_acc,t=t)
                 else:
                     total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,batch_loss=batch_loss,batch=batch,total_loss=total_loss,total_acc=total_acc,t=t)
-                if self.bflag==True:
-                    if self.thread==None:
-                        self.nn.batchcount+=1
-                    else:
-                        self.nn.batchcount[t]+=1
+                if self.thread==None:
+                    try:
+                        self.nn.bc+=1
+                    except AttributeError:
+                        pass
+                else:
+                    try:
+                        self.nn.bc[t]+=1
+                    except AttributeError:
+                        pass
             if self.total_epoch>=1:
                 loss=total_loss.numpy()/batches
                 if self.acc_flag1==1:
@@ -412,8 +420,10 @@ class kernel:
             train_loss=self.nn.loss(output,data[1])
             loss=train_loss.numpy()
             self.nn.train_loss=loss.astype(np.float32)
-            if self.eflag==True:
-                self.nn.epochcount+=1
+            try:
+                self.nn.ec+=1
+            except AttributeError:
+                pass
             self.total_epoch+=1
         return
     
@@ -460,8 +470,10 @@ class kernel:
                     self.output=self.nn.fp(data_batch)
                     self._batch_loss=self.nn.loss(self.output,labels_batch)
                     self._batch_acc=self.nn.accuracy(self.output,labels_batch)
-                if self.bflag==True:
-                    self.nn.batchcount=j
+                try:
+                    self.nn.bc=j
+                except AttributeError:
+                    pass
             else:
                 self.thread_lock.acquire()
                 self.param=self.nn.param
@@ -481,8 +493,10 @@ class kernel:
                 if i==epoch-1:
                     self.output=self.nn.fp(data_batch)
                     self._batch_loss=self.nn.loss(self.output,labels_batch)
-                if self.bflag==True:
-                    self.nn.batchcount=j
+                try:
+                    self.nn.bc=j
+                except AttributeError:
+                    pass
                 if self.acc_flag1==1 and batch!=None:
                     return self.batch_loss,self.batch_acc
                 elif batch!=None:
@@ -514,8 +528,10 @@ class kernel:
                     if i==epoch-1:
                         self.output=self.nn.fp(data_batch)
                         self._batch_loss=self.nn.loss(self.output,labels_batch)
-                    if self.bflag==True:
-                        self.nn.batchcount+=1
+                    try:
+                        self.nn.bc=j
+                    except AttributeError:
+                        pass
                 else:
                     self.thread_lock.acquire()
                     self.param=self.nn.param
@@ -535,8 +551,10 @@ class kernel:
                     if i==epoch-1:
                         self.output=self.nn.fp(data_batch)
                         self._batch_loss=self.nn.loss(self.output,labels_batch)
-                    if self.bflag==True:
-                        self.nn.batchcount+=1
+                    try:
+                        self.nn.bc+=1
+                    except AttributeError:
+                        pass
                     if self.acc_flag1==1 and batch!=None:
                         return self.batch_loss,self.batch_acc
                     elif batch!=None:
@@ -727,11 +745,16 @@ class kernel:
         if epoch!=None:
             for i in range(epoch):
                 t1=time.time()
-                if self.eflag==True:
-                    if self.thread==None:
-                        self.nn.epochcount+=1
-                    else:
-                        self.nn.epochcount[self.t[-1]]+=1
+                if self.thread==None:
+                    try:
+                        self.nn.ec+=1
+                    except AttributeError:
+                        pass
+                else:
+                    try:
+                        self.nn.ec[self.t[-1]]+=1
+                    except AttributeError:
+                        pass
                 if self.thread==None:
                     self._train(batch,epoch,test_batch,data_batch,labels_batch,i=i)
                 else:
@@ -828,11 +851,16 @@ class kernel:
                                 print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
                         if nn_path!=None and i%e==0:
                             self.save(nn_path,i,one)
-                if self.eflag==True:
-                    if self.thread==None:
-                        self.nn.epochcount+=1
-                    else:
-                        self.nn.epochcount[t]+=1
+                if self.thread==None:
+                    try:
+                        self.nn.ec+=1
+                    except AttributeError:
+                        pass
+                else:
+                    try:
+                        self.nn.ec[t]+=1
+                    except AttributeError:
+                        pass
                 t2=time.time()
                 if self.thread==None:
                     self.time+=(t2-t1)
@@ -852,8 +880,10 @@ class kernel:
                 self.nn.train_loss=loss.astype(np.float32)
                 if nn_path!=None:
                     self.save(nn_path)
-                if self.eflag==True:
-                    self.nn.epochcount+=1
+                try:
+                    self.nn.ec+=1
+                except AttributeError:
+                    pass
         if nn_path!=None:
             self.save(nn_path)
         if self.thread==None:
@@ -1141,10 +1171,6 @@ class kernel:
         pickle.dump(self.end_acc,output_file)
         pickle.dump(self.end_test_loss,output_file)
         pickle.dump(self.end_test_acc,output_file)
-        if self.eflag==True:
-            pickle.dump(self.eflag,output_file)
-        if self.bflag==True:
-            pickle.dump(self.bflag,output_file)
         pickle.dump(self.optf,output_file)
         pickle.dump(self.acc_flag1,output_file)
         pickle.dump(self.acc_flag2,output_file)
@@ -1191,10 +1217,6 @@ class kernel:
         self.end_acc=pickle.load(input_file)
         self.end_test_loss=pickle.load(input_file)
         self.end_test_acc=pickle.load(input_file)
-        if self.eflag==True:
-            self.eflag=pickle.load(input_file)
-        if self.bflag==True:
-            self.bflag=pickle.load(input_file)
         self.optf=pickle.load(input_file)
         self.acc_flag1=pickle.load(input_file)
         self.acc_flag2=pickle.load(input_file)
