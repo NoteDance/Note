@@ -147,8 +147,6 @@ class kernel:
             return True
         elif self.end_test_loss!=None and self.end_test_acc!=None and self.test_loss<=self.end_test_loss and self.test_acc>=self.end_test_acc:
             return True
-        else:
-            return False
     
     
     def loss_acc(self,output=None,labels_batch=None,batch_loss=None,batch=None,test_batch=None,train_loss=None,total_loss=None,total_acc=None,t=None):
