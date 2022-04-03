@@ -459,6 +459,7 @@ class kernel:
                     self.nn.episodecount+=1
                 if self.end_loss!=None and loss<=self.end_loss:
                     self.nn.param=self.param
+                    self.param=None
                     break
         elif self.ol==None:
             i=0
@@ -489,6 +490,7 @@ class kernel:
                     self.nn.episodecount+=1
                 if self.end_loss!=None and loss<=self.end_loss:
                     self.nn.param=self.param
+                    self.param=None
                     break
         else:
             while True:
