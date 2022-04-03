@@ -19,6 +19,7 @@ class kernel:
         self.end_acc=None
         self.end_test_loss=None
         self.end_test_acc=None
+        self.end_flag=None
         self.eflag=None
         self.bflag=None
         self.optf=None
@@ -144,6 +145,8 @@ class kernel:
     
     
     def _train(self,batch=None,epoch=None,test_batch=None,data_batch=None,labels_batch=None,i=None):
+        if self.emd_flag==True:
+            self._param=self.param
         if batch!=None:
             total_loss=0
             total_acc=0
@@ -298,9 +301,6 @@ class kernel:
             labels_batch=[x for x in range(len(self.train_labels))]
         if epoch!=None:
             for i in range(epoch):
-                if self.end()==True:
-                    self.time+=(t2-t1)
-                    break
                 t1=time.time()
                 if self.eflag==True:
                     self.nn.epochcount+=1
@@ -330,12 +330,12 @@ class kernel:
                         self.save(nn_path,i,one)
                 t2=time.time()
                 self.time+=(t2-t1)
+                if self.end_flag==True and self.end()==True:
+                    self.param=self._param
+                    break
         elif self.ol==None:
             i=0
             while True:
-                if self.end()==True:
-                    self.time+=(t2-t1)
-                    break
                 t1=time.time()
                 self._train(epoch=epoch,test_batch=test_batch,i=i)
                 i+=1
@@ -366,6 +366,9 @@ class kernel:
                     self.nn.epochcount+=1
                 t2=time.time()
                 self.time+=(t2-t1)
+                if self.end_flag==True and self.end()==True:
+                    self.param=self._param
+                    break
         else:
             while True:
                 self._train()
