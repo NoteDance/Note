@@ -117,6 +117,8 @@ class kernel:
     
     
     def learn1(self,episode_num,i):
+        if self.end_loss!=None:
+            self._param=self.param
         if len(self.state_pool)<self.batch:
             with tf.GradientTape() as tape:
                 if type(self.nn.nn)!=list:
@@ -415,8 +417,6 @@ class kernel:
         loss=0
         if episode_num!=None:
             for i in range(episode_num):
-                if self.end_loss!=None and loss<=self.end_loss:
-                    break
                 loss,episode=self.learn2(episode_num,i)
                 self.loss_list.append(loss)
                 if i==episode_num-1:
@@ -439,10 +439,11 @@ class kernel:
                     self.episode.append(episode)
                 if self.eflag==True:
                     self.nn.episodecount+=1
+                if self.end_loss!=None and loss<=self.end_loss:
+                    self.param=self._param
+                    break
         elif self.ol==None:
             while True:
-                if self.end_loss!=None and loss<=self.end_loss:
-                    break
                 loss,episode=self.learn2(episode_num,i)
                 self.loss_list.append(loss)
                 if i==episode_num-1:
@@ -465,6 +466,9 @@ class kernel:
                     self.episode.append(episode)
                 if self.eflag==True:
                     self.nn.episodecount+=1
+                if self.end_loss!=None and loss<=self.end_loss:
+                    self.param=self._param
+                    break
         else:
             while True:
                 data=self.ol()
