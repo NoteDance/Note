@@ -26,6 +26,7 @@ class kernel:
         self.end_acc=None
         self.end_test_loss=None
         self.end_test_acc=None
+        self.end_flag=None
         self.eflag=None
         self.bflag=None
         self.optf=None
@@ -149,6 +150,8 @@ class kernel:
             return True
         elif self.end_test_loss!=None and self.end_test_acc!=None and self.test_loss<=self.end_test_loss and self.test_acc>=self.end_test_acc:
             return True
+        else:
+            return False
     
     
     def loss_acc(self,output=None,labels_batch=None,batch_loss=None,batch=None,test_batch=None,train_loss=None,total_loss=None,total_acc=None,t=None):
@@ -207,6 +210,8 @@ class kernel:
     
     
     def _train(self,batch=None,epoch=None,test_batch=None,data_batch=None,labels_batch=None,t=None,i=None):
+        if self.end_flag==True:
+            self._param=self.nn.param
         if batch!=None:
             total_loss=0
             total_acc=0
@@ -415,6 +420,8 @@ class kernel:
     
     
     def train_(self,data_batch=None,labels_batch=None,batches=None,batch=None,epoch=None,test_batch=None,index1=None,index2=None,j=None,t=None,i=None):
+        if self.end_flag==True:
+            self._param=self.nn.param
         if batch!=None:
             if type(self.train_data)==list:
                 for i in range(len(self.train_data)):
@@ -720,12 +727,6 @@ class kernel:
             labels_batch=[x for x in range(len(self.train_labels))]
         if epoch!=None:
             for i in range(epoch):
-                if self.end()==True:
-                    if self.thread==None:
-                        self.time+=(t2-t1)
-                    else:
-                        self.time[t]+=(t2-t1)
-                    break
                 t1=time.time()
                 if self.eflag==True:
                     if self.thread==None:
@@ -778,15 +779,12 @@ class kernel:
                     self.time+=(t2-t1)
                 else:
                     self.time[t]+=(t2-t1)
+                if self.end_flag==True and self.end()==True:
+                    self.nn.param=self._param
+                    break
         elif self.ol==None:
             i=0
             while True:
-                if self.end()==True:
-                    if self.thread==None:
-                        self.time+=(t2-t1)
-                    else:
-                        self.time[t]+=(t2-t1)
-                    break
                 t1=time.time()
                 if self.thread==None:
                     self._train(epoch=epoch,test_batch=test_batch,i=i)
@@ -840,6 +838,9 @@ class kernel:
                     self.time+=(t2-t1)
                 else:
                     self.time[t]+=(t2-t1)
+                if self.end_flag==True and self.end()==True:
+                    self.nn.param=self._param
+                    break
         else:
             while True:
                 self._train()
