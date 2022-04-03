@@ -26,7 +26,6 @@ class kernel:
         self.end_acc=None
         self.end_test_loss=None
         self.end_test_acc=None
-        self.end_flag=None
         self.eflag=None
         self.bflag=None
         self.optf=None
@@ -210,7 +209,7 @@ class kernel:
     
     
     def _train(self,batch=None,epoch=None,test_batch=None,data_batch=None,labels_batch=None,t=None,i=None):
-        if self.end_flag==True:
+        if self.end_loss!=None or self.end_acc!=None or self.end_test_loss!=None or self.end_test_acc!=None:
             self._param=self.nn.param
         if batch!=None:
             total_loss=0
@@ -420,7 +419,7 @@ class kernel:
     
     
     def train_(self,data_batch=None,labels_batch=None,batches=None,batch=None,epoch=None,test_batch=None,index1=None,index2=None,j=None,t=None,i=None):
-        if self.end_flag==True:
+        if self.end_loss!=None or self.end_acc!=None or self.end_test_loss!=None or self.end_test_acc!=None:
             self._param=self.nn.param
         if batch!=None:
             if type(self.train_data)==list:
@@ -781,6 +780,7 @@ class kernel:
                     self.time[t]+=(t2-t1)
                 if self.end_flag==True and self.end()==True:
                     self.nn.param=self._param
+                    self._param=None
                     break
         elif self.ol==None:
             i=0
@@ -840,6 +840,7 @@ class kernel:
                     self.time[t]+=(t2-t1)
                 if self.end_flag==True and self.end()==True:
                     self.nn.param=self._param
+                    self._param=None
                     break
         else:
             while True:
