@@ -20,13 +20,10 @@ class kernel:
         self.ol=None
         self.batch=None
         self.epoch=0
-        self.opt=None
-        self.sopt=None
         self.end_loss=None
         self.end_acc=None
         self.end_test_loss=None
         self.end_test_acc=None
-        self.optf=None
         self.acc_flag1=None
         self.acc_flag2=None
         self.flag=None
@@ -242,18 +239,18 @@ class kernel:
                     else:
                         output=self.nn.fp(data_batch,t)
                     batch_loss=self.nn.loss(output,labels_batch)
-                if self.optf!=True:
+                try:
                     if self.thread==None:
-                        self.apply_gradient(tape,self.opt,batch_loss,self.nn.param)
+                        self.apply_gradient(tape,self.nn.opt,batch_loss,self.nn.param)
                     else:
-                        self.apply_gradient(tape,self.opt[t],batch_loss,self.nn.param[t])
-                else:
+                        self.apply_gradient(tape,self.nn.opt[t],batch_loss,self.nn.param[t])
+                except AttributeError:
                     if self.thread==None:
                         gradient=tape.gradient(batch_loss,self.nn.param)
-                        self.sopt(gradient,self.nn.param)
+                        self.nn.oopt(gradient,self.nn.param)
                     else:
                         gradient=tape.gradient(batch_loss,self.nn.param[t])
-                        self.sopt(gradient,self.nn.param,t)
+                        self.nn.oopt(gradient,self.nn.param,t)
                 if i==epoch-1:
                     if self.thread==None:
                         output=self.nn.fp(data_batch)
@@ -293,18 +290,18 @@ class kernel:
                     else:
                         output=self.nn.fp(data_batch,t)
                     batch_loss=self.nn.loss(output,labels_batch)
-                if self.optf!=True:
+                try:
                     if self.thread==None:
-                        self.apply_gradient(tape,self.opt,batch_loss,self.nn.param)
+                        self.apply_gradient(tape,self.nn.opt,batch_loss,self.nn.param)
                     else:
-                        self.apply_gradient(tape,self.opt[t],batch_loss,self.nn.param[t])
-                else:
+                        self.apply_gradient(tape,self.nn.opt[t],batch_loss,self.nn.param[t])
+                except AttributeError:
                     if self.thread==None:
                         gradient=tape.gradient(batch_loss,self.nn.param)
-                        self.sopt(gradient,self.param)
+                        self.nn.oopt(gradient,self.param)
                     else:
                         gradient=tape.gradient(batch_loss,self.nn.param[t])
-                        self.sopt(gradient,self.nn.param,t)
+                        self.nn.oopt(gradient,self.nn.param,t)
                 if i==epoch-1:
                     if self.thread==None:
                         output=self.nn.fp(data_batch)
@@ -383,18 +380,18 @@ class kernel:
                 else:
                     output=self.nn.fp(data_batch,t)
                 train_loss=self.nn.loss(output,self.train_labels)
-            if self.optf!=True:
+            try:
                 if self.thread==None:
-                    self.apply_gradient(tape,self.opt,train_loss,self.nn.param)
+                    self.apply_gradient(tape,self.nn.opt,train_loss,self.nn.param)
                 else:
-                    self.apply_gradient(tape,self.opt[t],batch_loss,self.nn.param[t])
-            else:
+                    self.apply_gradient(tape,self.nn.opt[t],batch_loss,self.nn.param[t])
+            except AttributeError:
                 if self.thread==None:
                     gradient=tape.gradient(train_loss,self.nn.param)
-                    self.sopt(gradient,self.nn.param)
+                    self.nn.oopt(gradient,self.nn.param)
                 else:
                     gradient=tape.gradient(batch_loss,self.nn.param[t])
-                    self.sopt(gradient,self.nn.param,t)
+                    self.nn.oopt(gradient,self.nn.param,t)
             self.loss_acc(output=output,labels_batch=labels_batch,batch_loss=batch_loss,batch=batch,test_batch=test_batch,total_loss=total_loss,total_acc=total_acc,t=t)
             if i==epoch-1:
                 if self.thread==None:
@@ -410,11 +407,11 @@ class kernel:
             with tf.GradientTape() as tape:
                 output=self.nn.fp(data[0])
                 train_loss=self.nn.loss(output,data[1])
-            if self.optf!=True:
-                self.apply_gradient(tape,self.opt,train_loss,self.nn.param)
-            else:
+            try:
+                self.apply_gradient(tape,self.nn.opt,train_loss,self.nn.param)
+            except AttributeError:
                 gradient=tape.gradient(train_loss,self.nn.param)
-                self.sopt(gradient,self.nn.param)
+                self.nn.oopt(gradient,self.nn.param)
             train_loss=self.nn.loss(output,data[1])
             loss=train_loss.numpy()
             self.nn.train_loss=loss.astype(np.float32)
@@ -457,10 +454,10 @@ class kernel:
                     self.output=self.nn.fp(data_batch)
                     self.batch_loss=self.nn.loss(self.output,labels_batch)
                 self.gradient=tape.gradient(self.batch_loss,self.nn.param)
-                if self.optf!=True:
-                    self.opt.apply_gradients(zip(self.gradient,self.nn.param))
-                else:
-                    self.sopt(self.gradient,self.nn.param,t)
+                try:
+                    self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
+                except AttributeError:
+                    self.nn.oopt(self.gradient,self.nn.param,t)
                 if self.total_epoch>=1:
                     if self.acc_flag1==1:
                         self.batch_acc=self.nn.accuracy(self.output,labels_batch)
@@ -481,10 +478,10 @@ class kernel:
                 self.gradient=tape.gradient(self.batch_loss,self.param)
                 self.thread_lock.release()
                 self.thread_lock.acquire()
-                if self.optf!=True:
-                    self.opt.apply_gradients(zip(self.gradient,self.nn.param))
-                else:
-                    self.sopt(self.gradient,self.nn.param,t)
+                try:
+                    self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
+                except AttributeError:
+                    self.nn.oopt(self.gradient,self.nn.param,t)
                 if self.total_epoch>=1:
                     if self.acc_flag1==1:
                         self.batch_acc=self.nn.accuracy(self.output,labels_batch)
@@ -516,10 +513,10 @@ class kernel:
                         self.output=self.nn.fp(data_batch)
                         self.batch_loss=self.nn.loss(self.output,labels_batch)
                     self.gradient=tape.gradient(self.batch_loss,self.nn.param)
-                    if self.optf!=True:
-                        self.opt.apply_gradients(zip(self.gradient,self.nn.param))
-                    else:
-                        self.sopt(self.gradient,self.param,t)
+                    try:
+                        self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
+                    except AttributeError:
+                        self.nn.oopt(self.gradient,self.param,t)
                     if self.total_epoch>=1:
                         if self.acc_flag1==1:
                             self.batch_acc=self.nn.accuracy(self.output,labels_batch)
@@ -539,10 +536,10 @@ class kernel:
                     self.gradient=tape.gradient(self.batch_loss,self.param)
                     self.thread_lock.release()
                     self.thread_lock.acquire()
-                    if self.optf!=True:
-                        self.opt.apply_gradients(zip(self.gradient,self.nn.param))
-                    else:
-                        self.sopt(self.gradient,self.nn.param,t)
+                    try:
+                        self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
+                    except AttributeError:
+                        self.nn.oopt(self.gradient,self.nn.param,t)
                     if self.total_epoch>=1:
                         if self.acc_flag1==1:
                             self.batch_acc=self.nn.accuracy(self.output,labels_batch)
@@ -564,10 +561,10 @@ class kernel:
                     self.output=self.nn.fp(self.train_data)
                     self._train_loss=self.nn.loss(self.output,self.train_labels)
                 self.gradient=tape.gradient(self._train_loss,self.nn.param)
-                if self.optf!=True:
-                    self.opt.apply_gradients(zip(self.gradient,self.nn.param))
-                else:
-                    self.sopt(self.gradient,self.nn.param)
+                try:
+                    self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
+                except AttributeError:
+                    self.nn.oopt(self.gradient,self.nn.param)
                 if self.total_epoch>=1:
                     self.loss=self._train_loss.numpy()
                     self.train_loss_list.append(self.loss.astype(np.float32))
@@ -606,10 +603,10 @@ class kernel:
                 self.gradient=tape.gradient(self._train_loss,self.param)
                 self.thread_lock.release()
                 self.thread_lock.acquire()
-                if self.optf!=True:
-                    self.opt.apply_gradients(zip(self.gradient,self.nn.param))
-                else:
-                    self.sopt(self.gradient,self.nn.param,t)
+                try:
+                    self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
+                except AttributeError:
+                    self.nn.oopt(self.gradient,self.nn.param,t)
                 if self.total_epoch>=1:
                     self.loss=self._train_loss.numpy()
                     self.train_loss_list.append(self.loss.astype(np.float32))
@@ -732,10 +729,6 @@ class kernel:
         else:
             self.p=p-1
             self.s=s
-        if self.optf!=True:
-            self.opt=self.nn.opt
-        else:
-            self.sopt=self.nn.opt
         if type(self.train_data)==list:
             data_batch=[x for x in range(len(self.train_data))]
         if type(self.train_labels)==list:
@@ -1169,7 +1162,6 @@ class kernel:
         pickle.dump(self.end_acc,output_file)
         pickle.dump(self.end_test_loss,output_file)
         pickle.dump(self.end_test_acc,output_file)
-        pickle.dump(self.optf,output_file)
         pickle.dump(self.acc_flag1,output_file)
         pickle.dump(self.acc_flag2,output_file)
         pickle.dump(self.p,output_file)
@@ -1205,17 +1197,12 @@ class kernel:
                 self.nn.km=1
         except AttributeError:
             pass
-        if self.nn.optf!=True:
-            self.opt=self.nn.opt
-        else:
-            self.sopt=self.nn.opt
         self.ol=pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
         self.end_acc=pickle.load(input_file)
         self.end_test_loss=pickle.load(input_file)
         self.end_test_acc=pickle.load(input_file)
-        self.optf=pickle.load(input_file)
         self.acc_flag1=pickle.load(input_file)
         self.acc_flag2=pickle.load(input_file)
         self.p=pickle.load(input_file)
