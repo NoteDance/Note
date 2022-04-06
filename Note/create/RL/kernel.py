@@ -5,7 +5,7 @@ import pickle
 
 
 class kernel:
-    def __init__(self,nn=None,state=None,state_name=None,action_name=None,exploration_space=None,thread_lock=None,explore=None,pr=None,save_episode=True):
+    def __init__(self,nn=None,state=None,state_name=None,action_name=None,thread_lock=None,pr=None,save_episode=True):
         if nn!=None:
             self.nn=nn
             self.opt=nn.opt
@@ -22,8 +22,6 @@ class kernel:
         self.state=state
         self.state_name=state_name
         self.action_name=action_name
-        self.exploration_space=exploration_space
-        self.explore=explore
         self.pr=pr
         self.epsilon=[]
         self.discount=None
@@ -136,49 +134,57 @@ class kernel:
     
     def _explore(self,s,epsilon,i):
         if type(self.nn.nn)!=list:
-            if self.explore==None:
+            try:
+                if self.nn.explore:
+                    pass
+                try:
+                    if self.nn.exploration_space:
+                        pass
+                    action_prob=self.epsilon_greedy_policy(s,self.action_one)
+                    a=np.random.choice(self.action,p=action_prob)
+                    next_s,r,end=self.nn.explore(self.action_name[a])
+                except AttributeError:
+                    action_prob=self.epsilon_greedy_policy(s,self.action_one)
+                    a=np.random.choice(self.action,p=action_prob)
+                    next_s,r,end=self.nn.explore(self.state_name[s],self.action_name[a],self.nn.exploration_space[self.state_name[s]][self.action_name[a]])
+            except AttributeError:
                 action_prob=self.epsilon_greedy_policy(s,self.action_one,epsilon)
                 a=np.random.choice(self.action,p=action_prob)
-                next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
-            else:
-                if self.exploration_space==None:
-                    action_prob=self.epsilon_greedy_policy(s,self.action_one)
-                    a=np.random.choice(self.action,p=action_prob)
-                    next_s,r,end=self.explore(self.action_name[a])
-                else:
-                    action_prob=self.epsilon_greedy_policy(s,self.action_one)
-                    a=np.random.choice(self.action,p=action_prob)
-                    next_s,r,end=self.explore(self.state_name[s],self.action_name[a],self.exploration_space[self.state_name[s]][self.action_name[a]])
+                next_s,r,end=self.nn.exploration_space[self.state_name[s]][self.action_name[a]]
         else:
-            if self.explore==None:
+            try:
+                if self.nn.explore:
+                    pass
+                try:
+                    if self.nn.exploration_space:
+                        pass
+                    if len(self.nn.param)==4:
+                        a=(self.nn.nn[1](self.state[self.state_name[s]],p=1)+tf.random.normal([1])).numpy()
+                    else:
+                        a=self.nn.nn[1](self.state[self.state_name[s]]).numpy()
+                    if len(a.shape)>0:
+                        a=self._epsilon_greedy_policy(a,self.action_one)
+                        next_s,r,end=self.nn.explore(self.action_name[a])
+                    else:
+                        next_s,r,end=self.nn.explore(a)
+                except AttributeError:
+                    if len(self.nn.param)==4:
+                        a=(self.nn.nn[1](self.state[self.state_name[s]],p=1)+tf.random.normal([1])).numpy()
+                    else:
+                        a=self.nn.nn[1](self.state[self.state_name[s]]).numpy()
+                    if len(a.shape)>0:
+                        a=self._epsilon_greedy_policy(a,self.action_one)
+                        next_s,r,end=self.nn.explore(self.state_name[s],self.action_name[a],self.nn.exploration_space[self.state_name[s]][self.action_name[a]])
+            except AttributeError:
                 if len(self.nn.param)==4:
                     a=(self.nn.nn[1](self.state[self.state_name[s]],p=1)+tf.random.normal([1])).numpy()
                 else:
                     a=self.nn.nn[1](self.state[self.state_name[s]]).numpy()
                 if len(a.shape)>0:
                     a=self._epsilon_greedy_policy(a,self.action_one)
-                    next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
+                    next_s,r,end=self.nn.exploration_space[self.state_name[s]][self.action_name[a]]
                 else:
-                    next_s,r,end=self.exploration_space(self.state_name[s],a)
-            else:
-                if self.exploration_space==None:
-                    if len(self.nn.param)==4:
-                        a=(self.nn.nn[1](self.state[self.state_name[s]],p=1)+tf.random.normal([1])).numpy()
-                    else:
-                        a=self.nn.nn[1](self.state[self.state_name[s]]).numpy()
-                    if len(a.shape)>0:
-                        a=self._epsilon_greedy_policy(a,self.action_one)
-                        next_s,r,end=self.explore(self.action_name[a])
-                    else:
-                        next_s,r,end=self.explore(a)
-                else:
-                    if len(self.nn.param)==4:
-                        a=(self.nn.nn[1](self.state[self.state_name[s]],p=1)+tf.random.normal([1])).numpy()
-                    else:
-                        a=self.nn.nn[1](self.state[self.state_name[s]]).numpy()
-                    if len(a.shape)>0:
-                        a=self._epsilon_greedy_policy(a,self.action_one)
-                        next_s,r,end=self.explore(self.state_name[s],self.action_name[a],self.exploration_space[self.state_name[s]][self.action_name[a]])
+                    next_s,r,end=self.nn.exploration_space(self.state_name[s],a)
         if self.pool_net==True:
             while len(self._state_list)<i:
                 pass
@@ -840,7 +846,6 @@ class kernel:
         pickle.dump(self.action_pool,output_file)
         pickle.dump(self.next_state_pool,output_file)
         pickle.dump(self.reward_pool,output_file)
-        pickle.dump(self.explore,output_file)
         pickle.dump(self.action_len,output_file)
         pickle.dump(self.action,output_file)
         pickle.dump(self.action_one,output_file)
@@ -893,7 +898,6 @@ class kernel:
         self.action_pool=pickle.load(input_file)
         self.next_state_pool=pickle.load(input_file)
         self.reward_pool=pickle.load(input_file)
-        self.explore=pickle.load(input_file)
         self.action_len=pickle.load(input_file)
         self.action=pickle.load(input_file)
         self.action_one=pickle.load(input_file)
