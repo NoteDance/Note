@@ -135,10 +135,10 @@ class kernel:
     def _explore(self,s,epsilon,i):
         if type(self.nn.nn)!=list:
             try:
-                if self.nn.explore:
+                if self.nn.explore!=None:
                     pass
                 try:
-                    if self.nn.exploration_space:
+                    if self.nn.exploration_space!=None:
                         pass
                     action_prob=self.epsilon_greedy_policy(s,self.action_one)
                     a=np.random.choice(self.action,p=action_prob)
@@ -153,10 +153,10 @@ class kernel:
                 next_s,r,end=self.nn.exploration_space[self.state_name[s]][self.action_name[a]]
         else:
             try:
-                if self.nn.explore:
+                if self.nn.explore!=None:
                     pass
                 try:
-                    if self.nn.exploration_space:
+                    if self.nn.exploration_space!=None:
                         pass
                     if len(self.nn.param)==4:
                         a=(self.nn.nn[1](self.state[self.state_name[s]],p=1)+tf.random.normal([1])).numpy()
