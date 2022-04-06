@@ -241,7 +241,7 @@ class kernel:
                     batch_loss=self.nn.loss(output,labels_batch)
                 try:
                     if self.thread==None:
-                        if self.nn.opt:
+                        if self.nn.opt!=None:
                             pass
                         self.apply_gradient(tape,self.nn.opt,batch_loss,self.nn.param)
                     else:
@@ -296,7 +296,7 @@ class kernel:
                     batch_loss=self.nn.loss(output,labels_batch)
                 try:
                     if self.thread==None:
-                        if self.nn.opt:
+                        if self.nn.opt!=None:
                             pass
                         self.apply_gradient(tape,self.nn.opt,batch_loss,self.nn.param)
                     else:
@@ -390,7 +390,7 @@ class kernel:
                 train_loss=self.nn.loss(output,self.train_labels)
             try:
                 if self.thread==None:
-                    if self.nn.opt:
+                    if self.nn.opt!=None:
                             pass
                     self.apply_gradient(tape,self.nn.opt,train_loss,self.nn.param)
                 else:
@@ -420,7 +420,7 @@ class kernel:
                 output=self.nn.fp(data[0])
                 train_loss=self.nn.loss(output,data[1])
             try:
-                if self.nn.opt:
+                if self.nn.opt!=None:
                     pass
                 self.apply_gradient(tape,self.nn.opt,train_loss,self.nn.param)
             except AttributeError:
@@ -469,6 +469,8 @@ class kernel:
                     self.batch_loss=self.nn.loss(self.output,labels_batch)
                 self.gradient=tape.gradient(self.batch_loss,self.nn.param)
                 try:
+                    if self.nn.opt!=None:
+                        pass
                     self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
                 except AttributeError:
                     self.nn.oopt(self.gradient,self.nn.param,t)
@@ -493,6 +495,8 @@ class kernel:
                 self.thread_lock.release()
                 self.thread_lock.acquire()
                 try:
+                    if self.nn.opt!=None:
+                        pass
                     self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
                 except AttributeError:
                     self.nn.oopt(self.gradient,self.nn.param,t)
@@ -528,6 +532,8 @@ class kernel:
                         self.batch_loss=self.nn.loss(self.output,labels_batch)
                     self.gradient=tape.gradient(self.batch_loss,self.nn.param)
                     try:
+                        if self.nn.opt!=None:
+                            pass
                         self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
                     except AttributeError:
                         self.nn.oopt(self.gradient,self.param,t)
@@ -551,6 +557,8 @@ class kernel:
                     self.thread_lock.release()
                     self.thread_lock.acquire()
                     try:
+                        if self.nn.opt!=None:
+                            pass
                         self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
                     except AttributeError:
                         self.nn.oopt(self.gradient,self.nn.param,t)
@@ -576,6 +584,8 @@ class kernel:
                     self._train_loss=self.nn.loss(self.output,self.train_labels)
                 self.gradient=tape.gradient(self._train_loss,self.nn.param)
                 try:
+                    if self.nn.opt!=None:
+                        pass
                     self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
                 except AttributeError:
                     self.nn.oopt(self.gradient,self.nn.param)
@@ -618,6 +628,8 @@ class kernel:
                 self.thread_lock.release()
                 self.thread_lock.acquire()
                 try:
+                    if self.nn.opt!=None:
+                        pass
                     self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
                 except AttributeError:
                     self.nn.oopt(self.gradient,self.nn.param,t)
