@@ -306,7 +306,7 @@ class kernel:
     def learn2(self,episode_num,i):
         episode=[]
         if self.exploration_space==None:
-            s=self.exploration.explore(init=True)
+            s=self.explore(init=True)
         else:
             s=int(np.random.uniform(0,len(self.state_name)))
         if self.episode_step==None:
@@ -322,18 +322,18 @@ class kernel:
                         if self.exploration_space==None:
                             action_prob=self.epsilon_greedy_policy(s,self.action_one)
                             a=np.random.choice(self.action,p=action_prob)
-                            next_s,r,end=self.exploration.explore(self.action_name[a])
+                            next_s,r,end=self.explore(self.action_name[a])
                         else:
                             action_prob=self.epsilon_greedy_policy(s,self.action_one)
                             a=np.random.choice(self.action,p=action_prob)
-                            next_s,r,end=self.exploration.explore(self.state_name[s],self.action_name[a],self.exploration_space[self.state_name[s]][self.action_name[a]])
+                            next_s,r,end=self.explore(self.state_name[s],self.action_name[a],self.exploration_space[self.state_name[s]][self.action_name[a]])
                 else:
                     if self.explore==None:
                         if len(self.nn.param)==4:
                             a=(self.nn.nn[1](self.state[self.state_name[s]],p=1)+tf.random.normal([1])).numpy()
                         else:
                             a=self.nn.nn[1](self.state[self.state_name[s]]).numpy()
-                        if type(self.exploration_space)==dict:
+                        if len(a.shape)>0:
                             a=self._epsilon_greedy_policy(a,self.action_one)
                             next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
                         else:
@@ -341,7 +341,7 @@ class kernel:
                     else:
                         if self.exploration_space==None:
                             a=self.nn.nn[1](self.state[self.state_name[s]]).numpy()
-                            if type(self.exploration_space)==dict:
+                            if len(a.shape)>0:
                                 a=self._epsilon_greedy_policy(a,self.action_one)
                                 next_s,r,end=self.explore(self.action_name[a])
                             else:
@@ -349,7 +349,7 @@ class kernel:
                         else:
                             a=self.nn.nn[1](self.state[self.state_name[s]]).numpy()
                             a=self._epsilon_greedy_policy(a,self.action_one)
-                            next_s,r,end=self.exploration.explore(self.state_name[s],self.action_name[a],self.exploration_space[self.state_name[s]][self.action_name[a]])
+                            next_s,r,end=self.explore(self.state_name[s],self.action_name[a],self.exploration_space[self.state_name[s]][self.action_name[a]])
                 if self.state_pool==None:
                     if self.exploration_space==None:
                         self.state_pool=tf.expand_dims(s,axis=0)
@@ -433,7 +433,7 @@ class kernel:
                         else:
                             a=self.nn.nn[1](self.state[self.state_name[s]])
                             a=self._epsilon_greedy_policy(a,self.action_one)
-                            next_s,r,end=self.exploration.explore(self.state_name[s],self.action_name[a],self.exploration_space[self.state_name[s]][self.action_name[a]])
+                            next_s,r,end=self.explore(self.state_name[s],self.action_name[a],self.exploration_space[self.state_name[s]][self.action_name[a]])
                 if self.state_pool==None:
                     self.state_pool=tf.expand_dims(self.state[self.state_name[s]],axis=0)
                     self.action_pool=tf.expand_dims(a,axis=0)
