@@ -176,12 +176,22 @@ class kernel:
                         next_s,r,end=self.nn.table[self.state_name[s]][self.action_name[a]]
                     else:
                         next_s,r,end=self.nn.table(self.state_name[s],a)
-            if self.state_name!=None and self.action_name!=None:
-                episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s]])
-            elif self.state_name!=None:
-                episode.append([self.state_name[s],a,self.state_name[next_s]])
+            if end:
+                if self.state_name!=None and self.action_name!=None:
+                    episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s]])
+                elif self.state_name!=None:
+                    episode.append([self.state_name[s],a,self.state_name[next_s]])
+                else:
+                    episode.append([s,a,next_s])
+                episode.append('end')
+                break
             else:
-                episode.append([s,a,next_s])
+                if self.state_name!=None and self.action_name!=None:
+                    episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s]])
+                elif self.state_name!=None:
+                    episode.append([self.state_name[s],a,self.state_name[next_s]])
+                else:
+                    episode.append([s,a,next_s])
         return episode
     
     
@@ -468,11 +478,11 @@ class kernel:
                 if end:
                     if self.save_episode==True:
                         if self.state_name==None and self.action_name==None:
-                            episode=[s,a,next_s,r,'end']
+                            episode=[s,a,next_s,r]
                         elif self.action_name==None:
-                            episode=[self.state_name[s],a,self.state_name[next_s],r,'end']
+                            episode=[self.state_name[s],a,self.state_name[next_s],r]
                         else:
-                            episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r,'end']
+                            episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r]
                     break
                 elif self.save_episode==True:
                     if self.state_name==None and self.action_name==None:
@@ -552,11 +562,11 @@ class kernel:
                 if end:
                     if self.save_episode==True:
                         if self.state_name==None and self.action_name==None:
-                            episode=[s,a,next_s,r,'end']
+                            episode=[s,a,next_s,r]
                         elif self.action_name==None:
-                            episode=[self.state_name[s],a,self.state_name[next_s],r,'end']
+                            episode=[self.state_name[s],a,self.state_name[next_s],r]
                         else:
-                            episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r,'end']
+                            episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r]
                     break
                 elif self.save_episode==True:
                     if self.state_name==None and self.action_name==None:
@@ -569,7 +579,7 @@ class kernel:
                 loss=self.learn1(episode_num,i)
                 t2=time.time()
                 self.time+=(t2-t1)
-        return loss,episode
+        return loss,episode,end
     
     
     def learn(self,episode_num,path=None,one=True,p=None,s=None):
@@ -588,7 +598,7 @@ class kernel:
         loss=0
         if episode_num!=None:
             for i in range(episode_num):
-                loss,episode=self.learn2(episode_num,i)
+                loss,episode,end=self.learn2(episode_num,i)
                 self.loss_list.append(loss)
                 if i==episode_num-1:
                     self.loss_list.append(self.loss)
@@ -608,6 +618,8 @@ class kernel:
                 self.epi_num+=1
                 self.total_episode+=1
                 if self.save_episode==True:
+                    if end:
+                        episode.append('end')
                     self.episode.append(episode)
                 try:
                     self.nn.ec+=1
@@ -620,7 +632,7 @@ class kernel:
         elif self.ol==None:
             i=0
             while True:
-                loss,episode=self.learn2(episode_num,i)
+                loss,episode,end=self.learn2(episode_num,i)
                 self.loss_list.append(loss)
                 if i==episode_num-1:
                     self.loss_list.append(self.loss)
@@ -641,6 +653,8 @@ class kernel:
                 self.epi_num+=1
                 self.total_e+=1
                 if self.save_episode==True:
+                    if end:
+                        episode.append('end')
                     self.episode.append(episode)
                 try:
                     self.nn.ec+=1
