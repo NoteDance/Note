@@ -285,11 +285,11 @@ class kernel:
         if end:
             if self.save_episode==True:
                 if self.state_name==None and self.action_name==None:
-                    episode=[s,a,next_s,r,'end']
+                    episode=[s,a,next_s,r]
                 elif self.action_name==None:
-                    episode=[self.state_name[s],a,self.state_name[next_s],r,'end']
+                    episode=[self.state_name[s],a,self.state_name[next_s]]
                 else:
-                    episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r,'end']
+                    episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r]
         elif self.save_episode==True:
             if self.state_name==None and self.action_name==None:
                 episode=[s,a,next_s,r]
@@ -363,11 +363,12 @@ class kernel:
                         next_s,r,end=self.nn.table(self.state_name[s],a)
             if end:
                 if self.state_name!=None and self.action_name!=None:
-                    episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s],'end'])
+                    episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s]])
                 elif self.state_name!=None:
-                    episode.append([self.state_name[s],a,self.state_name[next_s],'end'])
+                    episode.append([self.state_name[s],a,self.state_name[next_s]])
                 else:
-                    episode.append([s,a,next_s,'end'])
+                    episode.append([s,a,next_s])
+                episode.append('end')
                 break
             elif self.stop==True:
                 break
@@ -838,6 +839,7 @@ class kernel:
                     if end:
                         if self.save_episode==True:
                             self.thread_lock.acquire()
+                            episode.append('end')
                             self.episode.append(episode)
                             self.thread_lock.release()
                         break
@@ -860,6 +862,7 @@ class kernel:
                     if end:
                         if self.save_episode==True:
                             self.thread_lock.acquire()
+                            episode.append('end')
                             self.episode.append(episode)
                             self.thread_lock.release()
                         break
