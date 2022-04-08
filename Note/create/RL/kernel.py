@@ -36,6 +36,7 @@ class kernel:
         self.thread=0
         self.thread_sum=0
         self.thread_lock=thread_lock
+        self.stop=[]
         self.state_list=np.array(0,dtype='int8')
         self._state_list=[]
         self.p=[]
@@ -141,11 +142,11 @@ class kernel:
                 if self.nn.explore!=None:
                     pass
                 try:
-                    if self.nn.exploration_space!=None:
+                    if self.nn.table!=None:
                         pass
                     action_prob=self.epsilon_greedy_policy(s,self.action_one)
                     a=np.random.choice(self.action,p=action_prob)
-                    next_s,r,end=self.nn.explore(self.state_name[s],self.action_name[a],self.nn.exploration_space[self.state_name[s]][self.action_name[a]])
+                    next_s,r,end=self.nn.explore(self.state_name[s],self.action_name[a],self.nn.table[self.state_name[s]][self.action_name[a]])
                 except AttributeError:
                     action_prob=self.epsilon_greedy_policy(s,self.action_one)
                     a=np.random.choice(self.action,p=action_prob)
@@ -156,18 +157,18 @@ class kernel:
             except AttributeError:
                 action_prob=self.epsilon_greedy_policy(s,self.action_one,epsilon)
                 a=np.random.choice(self.action,p=action_prob)
-                next_s,r,end=self.nn.exploration_space[self.state_name[s]][self.action_name[a]]
+                next_s,r,end=self.nn.table[self.state_name[s]][self.action_name[a]]
         else:
             try:
                 if self.nn.explore!=None:
                     pass
                 try:
-                    if self.nn.exploration_space!=None:
+                    if self.nn.table!=None:
                         pass
                     a=self.nn.nn[1](self.state[self.state_name[s]]).numpy()
                     if len(a.shape)>0:
                         a=self._epsilon_greedy_policy(a,self.action_one)
-                        next_s,r,end=self.nn.explore(self.state_name[s],self.action_name[a],self.nn.exploration_space[self.state_name[s]][self.action_name[a]])
+                        next_s,r,end=self.nn.explore(self.state_name[s],self.action_name[a],self.nn.table[self.state_name[s]][self.action_name[a]])
                 except AttributeError:
                     if len(self.nn.param)==4:
                         if self.state_name==None:
@@ -191,9 +192,9 @@ class kernel:
                     a=self.nn.nn[1](self.state[self.state_name[s]]).numpy()
                 if len(a.shape)>0:
                     a=self._epsilon_greedy_policy(a,self.action_one)
-                    next_s,r,end=self.nn.exploration_space[self.state_name[s]][self.action_name[a]]
+                    next_s,r,end=self.nn.table[self.state_name[s]][self.action_name[a]]
                 else:
-                    next_s,r,end=self.nn.exploration_space(self.state_name[s],a)
+                    next_s,r,end=self.nn.table(self.state_name[s],a)
         if self.pool_net==True:
             while len(self._state_list)<i:
                 pass
@@ -222,7 +223,7 @@ class kernel:
         if self.state_pool[index]==None:
             if self.pool_net==True:
                 self.thread_lock.acquire()
-                if self.nn.exploration_space==None:
+                if self.nn.table==None:
                     self.state_pool[index]=tf.expand_dims(s,axis=0)
                     self.action_pool[index]=tf.expand_dims(a,axis=0)
                     self.next_state_pool[index]=tf.expand_dims(next_s,axis=0)
@@ -234,7 +235,7 @@ class kernel:
                     self.reward_pool[index]=tf.expand_dims(r,axis=0)
                 self.thread_lock.release()
             else:
-                if self.nn.exploration_space==None:
+                if self.nn.table==None:
                     self.state_pool[i]=tf.expand_dims(s,axis=0)
                     self.action_pool[i]=tf.expand_dims(a,axis=0)
                     self.next_state_pool[i]=tf.expand_dims(next_s,axis=0)
@@ -247,7 +248,7 @@ class kernel:
         else:
             if self.pool_net==True:
                 self.thread_lock.acquire()
-                if self.nn.exploration_space==None:
+                if self.nn.table==None:
                     self.state_pool[index]=tf.concat([self.state_pool[index],tf.expand_dims(s,axis=0)])
                     self.action_pool[index]=tf.concat([self.action_pool[index],tf.expand_dims(a,axis=0)])
                     self.next_state_pool[index]=tf.concat([self.next_state_pool[index],tf.expand_dims(next_s,axis=0)])
@@ -259,7 +260,7 @@ class kernel:
                     self.reward_pool[index]=tf.concat([self.reward_pool[index],tf.expand_dims(r,axis=0)])
                 self.thread_lock.release()
             else:
-                if self.nn.exploration_space==None:
+                if self.nn.table==None:
                     self.state_pool[i]=tf.concat([self.state_pool[i],tf.expand_dims(s,axis=0)])
                     self.action_pool[i]=tf.concat([self.action_pool[i],tf.expand_dims(a,axis=0)])
                     self.next_state_pool[i]=tf.concat([self.next_state_pool[i],tf.expand_dims(next_s,axis=0)])
@@ -310,10 +311,10 @@ class kernel:
                     if self.nn.explore!=None:
                         pass
                     try:
-                        if self.nn.exploration_space!=None:
+                        if self.nn.table!=None:
                             pass
                         a=np.argmax(self.nn.nn(s))
-                        next_s,r,end=self.nn.explore(self.state_name[s],self.action_name[a],self.nn.exploration_space[self.state_name[s]][self.action_name[a]])
+                        next_s,r,end=self.nn.explore(self.state_name[s],self.action_name[a],self.nn.table[self.state_name[s]][self.action_name[a]])
                     except AttributeError:
                         a=np.argmax(self.nn.nn(s))
                         if self.action_name==None:
@@ -322,18 +323,18 @@ class kernel:
                             next_s,r,end=self.nn.explore(self.action_name[a])
                 except AttributeError:
                     a=np.argmax(self.nn.nn(s))
-                    next_s,r,end=self.nn.exploration_space[self.state_name[s]][self.action_name[a]]
+                    next_s,r,end=self.nn.table[self.state_name[s]][self.action_name[a]]
             else:
                 try:
                     if self.nn.explore!=None:
                         pass
                     try:
-                        if self.nn.exploration_space!=None:
+                        if self.nn.table!=None:
                             pass
                         a=self.nn.nn[1](self.state[self.state_name[s]]).numpy()
                         if len(a.shape)>0:
                             a=np.argmax(a)
-                            next_s,r,end=self.nn.explore(self.state_name[s],self.action_name[a],self.nn.exploration_space[self.state_name[s]][self.action_name[a]])
+                            next_s,r,end=self.nn.explore(self.state_name[s],self.action_name[a],self.nn.table[self.state_name[s]][self.action_name[a]])
                     except AttributeError:
                         if len(self.nn.param)==4:
                             if self.state_name==None:
@@ -357,9 +358,9 @@ class kernel:
                         a=self.nn.nn[1](self.state[self.state_name[s]]).numpy()
                     if len(a.shape)>0:
                         a=np.argmax(a)
-                        next_s,r,end=self.nn.exploration_space[self.state_name[s]][self.action_name[a]]
+                        next_s,r,end=self.nn.table[self.state_name[s]][self.action_name[a]]
                     else:
-                        next_s,r,end=self.nn.exploration_space(self.state_name[s],a)
+                        next_s,r,end=self.nn.table(self.state_name[s],a)
             if end:
                 if self.state_name!=None and self.action_name!=None:
                     episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s],'end'])
@@ -641,6 +642,8 @@ class kernel:
         length=min(len(self.state_pool[i]),len(self.action_pool[i]),len(self.next_state_pool[i]),len(self.reward_pool[i]))
         train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool[i][:length],self.action_pool[i][:length],self.next_state_pool[i][:length],self.reward_pool[i][:length])).shuffle(length).batch(self.batch)
         for state_batch,action_batch,next_state_batch,reward_batch in train_ds:
+            if self.stop[i]==True:
+                break
             if self.PO==1:
                 with tf.GradientTape() as tape:
                     if type(self.nn.nn)!=list:
@@ -738,6 +741,8 @@ class kernel:
                 if length%self.batch!=0:
                     batches+=1
                 for j in range(batches):
+                    if self.stop[i]==True:
+                        break
                     self.learn1(i,j,batches,length,episode_num,k)
             else:
                 try:
@@ -789,6 +794,7 @@ class kernel:
             self.epsilon.append(epsilon)
             self.epi_num.append(episode_num)
             self.episode_num.append(0)
+            self.stop.append(0)
             try:
                 self.nn.ec.append(0)
             except AttributeError:
@@ -803,16 +809,20 @@ class kernel:
         elif i not in self.finish_list:
             self.state_list[i]=1
         for k in range(episode_num):
+            if self.stop[i]==True:
+                break
             if self.episode_num[i]==self.epi_num[i]:
                 break
             self.episode_num[i]+=1
             episode=[]
-            if self.nn.exploration_space==None:
+            if self.nn.table==None:
                 s=self.nn.explore(init=True)
             else:
                 s=int(np.random.uniform(0,len(self.state_name)))
             if self.episode_step==None:
                 while True:
+                    if self.stop[i]==True:
+                        break
                     next_s,end,_episode,index=self._explore(s,self.epsilon[i],i)
                     s=next_s
                     if self.state_pool[i]!=None and self.action_pool[i]!=None and self.next_state_pool[i]!=None and self.reward_pool[i]!=None:
@@ -833,6 +843,8 @@ class kernel:
                         break
             else:
                 for _ in range(self.episode_step):
+                    if self.stop[i]==True:
+                        break
                     next_s,end,episode=self._explore(s,self.epsilon[i],i)
                     s=next_s
                     if self.state_pool[i]!=None and self.action_pool[i]!=None and self.next_state_pool[i]!=None and self.reward_pool[i]!=None:
