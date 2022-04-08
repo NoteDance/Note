@@ -132,22 +132,22 @@ class kernel:
                     if self.nn.explore!=None:
                         pass
                     try:
-                        if self.nn.exploration_space!=None:
+                        if self.nn.table!=None:
                             pass
                         a=np.argmax(self.nn.nn(self.state[self.state_name[s]]))
-                        next_s,r,end=self.nn.explore(self.state_name[s],self.action_name[a],self.nn.exploration_space[self.state_name[s]][self.action_name[a]])
+                        next_s,r,end=self.nn.explore(self.state_name[s],self.action_name[a],self.nn.table[self.state_name[s]][self.action_name[a]])
                     except AttributeError:
                         a=np.argmax(self.nn.nn(self.state[self.state_name[s]]))
                         next_s,r,end=self.nn.explore(self.action_name[a])
                 except AttributeError:
                     a=np.argmax(self.nn.nn(self.state[self.state_name[s]]))
-                    next_s,r,end=self.nn.exploration_space[self.state_name[s]][self.action_name[a]]
+                    next_s,r,end=self.nn.table[self.state_name[s]][self.action_name[a]]
             else:
                 try:
                     if self.nn.explore!=None:
                         pass
                     try:
-                        if self.nn.exploration_space!=None:
+                        if self.nn.table!=None:
                             pass
                         if len(self.nn.param)==4:
                             a=(self.nn.nn[1](self.state[self.state_name[s]],p=1)+tf.random.normal([1])).numpy()
@@ -155,7 +155,7 @@ class kernel:
                             a=self.nn.nn[1](self.state[self.state_name[s]]).numpy()
                         if len(a.shape)>0:
                             a=np.argmax(a)
-                            next_s,r,end=self.nn.explore(self.state_name[s],self.action_name[a],self.nn.exploration_space[self.state_name[s]][self.action_name[a]])
+                            next_s,r,end=self.nn.explore(self.state_name[s],self.action_name[a],self.nn.table[self.state_name[s]][self.action_name[a]])
                     except AttributeError:
                         if len(self.nn.param)==4:
                             a=(self.nn.nn[1](self.state[self.state_name[s]],p=1)+tf.random.normal([1])).numpy()
@@ -173,9 +173,9 @@ class kernel:
                         a=self.nn.nn[1](self.state[self.state_name[s]]).numpy()
                     if len(a.shape)>0:
                         a=np.argmax(a)
-                        next_s,r,end=self.nn.exploration_space[self.state_name[s]][self.action_name[a]]
+                        next_s,r,end=self.nn.table[self.state_name[s]][self.action_name[a]]
                     else:
-                        next_s,r,end=self.nn.exploration_space(self.state_name[s],a)
+                        next_s,r,end=self.nn.table(self.state_name[s],a)
             if self.state_name!=None and self.action_name!=None:
                 episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s]])
             elif self.state_name!=None:
@@ -372,7 +372,7 @@ class kernel:
     
     def learn2(self,episode_num,i):
         episode=[]
-        if self.nn.exploration_space==None:
+        if self.nn.table==None:
             s=self.nn.explore(init=True)
         else:
             s=int(np.random.uniform(0,len(self.state_name)))
@@ -385,11 +385,11 @@ class kernel:
                         if self.nn.explore!=None:
                             pass
                         try:
-                            if self.nn.exploration_space!=None:
+                            if self.nn.table!=None:
                                 pass
                             action_prob=self.epsilon_greedy_policy(s,self.action_one)
                             a=np.random.choice(self.action,p=action_prob)
-                            next_s,r,end=self.nn.explore(self.state_name[s],self.action_name[a],self.nn.exploration_space[self.state_name[s]][self.action_name[a]])
+                            next_s,r,end=self.nn.explore(self.state_name[s],self.action_name[a],self.nn.table[self.state_name[s]][self.action_name[a]])
                         except AttributeError:
                             action_prob=self.epsilon_greedy_policy(s,self.action_one)
                             a=np.random.choice(self.action,p=action_prob)
@@ -400,18 +400,18 @@ class kernel:
                     except AttributeError:
                         action_prob=self.epsilon_greedy_policy(s,self.action_one)
                         a=np.random.choice(self.action,p=action_prob)
-                        next_s,r,end=self.nn.exploration_space[self.state_name[s]][self.action_name[a]]
+                        next_s,r,end=self.nn.table[self.state_name[s]][self.action_name[a]]
                 else:
                     try:
                         if self.nn.explore!=None:
                             pass 
                         try:
-                            if self.nn.exploration_space!=None:
+                            if self.nn.table!=None:
                                 pass
                             a=self.nn.nn[1](self.state[self.state_name[s]]).numpy()
                             if len(a.shape)>0:
                                 a=self._epsilon_greedy_policy(a,self.action_one)
-                                next_s,r,end=self.nn.explore(self.state_name[s],self.action_name[a],self.nn.exploration_space[self.state_name[s]][self.action_name[a]])
+                                next_s,r,end=self.nn.explore(self.state_name[s],self.action_name[a],self.nn.table[self.state_name[s]][self.action_name[a]])
                         except AttributeError:
                             if len(self.nn.param)==4:
                                 if self.state_name==None:
@@ -435,11 +435,11 @@ class kernel:
                             a=self.nn.nn[1](self.state[self.state_name[s]]).numpy()
                         if len(a.shape)>0:
                             a=self._epsilon_greedy_policy(a,self.action_one)
-                            next_s,r,end=self.nn.exploration_space[self.state_name[s]][self.action_name[a]]
+                            next_s,r,end=self.nn.table[self.state_name[s]][self.action_name[a]]
                         else:
-                            next_s,r,end=self.nn.exploration_space(self.state_name[s],a)
+                            next_s,r,end=self.nn.table(self.state_name[s],a)
                 if self.state_pool==None:
-                    if self.nn.exploration_space==None:
+                    if self.nn.table==None:
                         self.state_pool=tf.expand_dims(s,axis=0)
                         self.action_pool=tf.expand_dims(a,axis=0)
                         self.next_state_pool=tf.expand_dims(next_s,axis=0)
@@ -450,7 +450,7 @@ class kernel:
                         self.next_state_pool=tf.expand_dims(self.state[self.state_name[next_s]],axis=0)
                         self.reward_pool=tf.expand_dims(r,axis=0)
                 else:
-                    if self.nn.exploration_space==None:
+                    if self.nn.table==None:
                         self.state_pool=tf.concat([self.state_pool,tf.expand_dims(s,axis=0)])
                         self.action_pool=tf.concat([self.action_pool,tf.expand_dims(a,axis=0)])
                         self.next_state_pool=tf.concat([self.next_state_pool,tf.expand_dims(next_s,axis=0)])
@@ -494,11 +494,11 @@ class kernel:
                         if self.nn.explore!=None:
                             pass
                         try:
-                            if self.nn.exploration_space!=None:
+                            if self.nn.table!=None:
                                 pass
                             action_prob=self.epsilon_greedy_policy(s,self.action_one)
                             a=np.random.choice(self.action,p=action_prob)
-                            next_s,r,end=self.nn.explore(self.state_name[s],self.action_name[a],self.nn.exploration_space[self.state_name[s]][self.action_name[a]])
+                            next_s,r,end=self.nn.explore(self.state_name[s],self.action_name[a],self.nn.table[self.state_name[s]][self.action_name[a]])
                         except AttributeError:
                             action_prob=self.epsilon_greedy_policy(s,self.action_one)
                             a=np.random.choice(self.action,p=action_prob)
@@ -506,17 +506,17 @@ class kernel:
                     except AttributeError:
                         action_prob=self.epsilon_greedy_policy(s,self.action_one)
                         a=np.random.choice(self.action,p=action_prob)
-                        next_s,r,end=self.nn.exploration_space[self.state_name[s]][self.action_name[a]]
+                        next_s,r,end=self.nn.table[self.state_name[s]][self.action_name[a]]
                 else:
                     try:
                         if self.nn.explore!=None:
                             pass
                         try:
-                            if self.nn.exploration_space!=None:
+                            if self.nn.table!=None:
                                 pass
                             a=self.nn.nn[1](self.state[self.state_name[s]])
                             a=self._epsilon_greedy_policy(a,self.action_one)
-                            next_s,r,end=self.nn.explore(self.state_name[s],self.action_name[a],self.nn.exploration_space[self.state_name[s]][self.action_name[a]])
+                            next_s,r,end=self.nn.explore(self.state_name[s],self.action_name[a],self.nn.table[self.state_name[s]][self.action_name[a]])
                         except AttributeError:
                             a=self.nn.nn[1](self.state[self.state_name[s]]).numpy()
                             if len(a.shape)>0:
@@ -531,9 +531,9 @@ class kernel:
                             a=self.nn.nn[1](self.state[self.state_name[s]]).numpy()
                         if len(a.shape)>0:
                             a=self._epsilon_greedy_policy(a,self.action_one)
-                            next_s,r,end=self.nn.exploration_space[self.state_name[s]][self.action_name[a]]
+                            next_s,r,end=self.nn.table[self.state_name[s]][self.action_name[a]]
                         else:
-                            next_s,r,end=self.nn.exploration_space(self.state_name[s],a)
+                            next_s,r,end=self.nn.table(self.state_name[s],a)
                 if self.state_pool==None:
                     self.state_pool=tf.expand_dims(self.state[self.state_name[s]],axis=0)
                     self.action_pool=tf.expand_dims(a,axis=0)
