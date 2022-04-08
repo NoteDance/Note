@@ -70,6 +70,7 @@ class kernel:
                     self.test_acc=np.zeros(self.thread)
                     self.test_loss_list=[[] for _ in range(self.thread)]
                     self.test_acc_list=[[] for _ in range(self.thread)]
+            self.stop=np.zeros(self.thread)
             self.epoch=np.zeros(self.thread)
             self.total_epoch=np.zeros(self.thread)
             self.time=np.zeros(self.thread)
@@ -107,6 +108,7 @@ class kernel:
                 self.test_acc=np.concatenate((self.test_acc,np.zeros(self.t)))
                 self.test_loss_list.extend([[] for _ in range(len(self.t))])
                 self.test_acc_list.extend([[] for _ in range(len(self.t))])
+        self.stop=np.concatenate((self.stop,np.zeros(self.t)))
         self.epoch=np.concatenate((self.epoch,np.zeros(self.t)))
         self.total_epoch=np.concatenate((self.total_epoch,np.zeros(self.t)))
         self.time=np.concatenate((self.time,np.zeros(self.t)))
@@ -855,6 +857,12 @@ class kernel:
                     self.time+=(t2-t1)
                 else:
                     self.time[t]+=(t2-t1)
+                if self.thread==None:
+                    if self.stop==True:
+                        break
+                else:
+                    if self.stop[t]==True:
+                        break
                 if self.end_flag==True and self.end()==True:
                     self.nn.param=self._param
                     self._param=None
@@ -920,6 +928,12 @@ class kernel:
                     self.time+=(t2-t1)
                 else:
                     self.time[t]+=(t2-t1)
+                if self.thread==None:
+                    if self.stop==True:
+                        break
+                else:
+                    if self.stop[t]==True:
+                        break
                 if self.end_flag==True and self.end()==True:
                     self.nn.param=self._param
                     self._param=None
