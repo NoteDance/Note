@@ -838,8 +838,8 @@ class kernel:
                             episode.append(_episode)
                     if end:
                         if self.save_episode==True:
-                            self.thread_lock.acquire()
                             episode.append('end')
+                            self.thread_lock.acquire()
                             self.episode.append(episode)
                             self.thread_lock.release()
                         break
@@ -861,8 +861,8 @@ class kernel:
                             episode.append(_episode)
                     if end:
                         if self.save_episode==True:
-                            self.thread_lock.acquire()
                             episode.append('end')
+                            self.thread_lock.acquire()
                             self.episode.append(episode)
                             self.thread_lock.release()
                         break
