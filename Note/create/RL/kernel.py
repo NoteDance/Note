@@ -150,12 +150,7 @@ class kernel:
             except AttributeError:
                 action_prob=self.epsilon_greedy_policy(s,self.action_one,epsilon)
                 a=np.random.choice(self.action,p=action_prob)
-                try:
-                    if self.nn.table!=None:
-                        pass
-                    next_s,r,end=self.nn.table[self.state_name[s]][self.action_name[a]]
-                except AttributeError:
-                    next_s,r,end=self.nn.transition(self.state_name[s],self.action_name[a])
+                next_s,r,end=self.nn.transition(self.state_name[s],self.action_name[a])
         else:
             try:
                 if self.nn.explore!=None:
@@ -182,19 +177,9 @@ class kernel:
                     a=self.nn.nn[1](self.state[self.state_name[s]]).numpy()
                 if len(a.shape)>0:
                     a=self._epsilon_greedy_policy(a,self.action_one)
-                    try:
-                        if self.nn.table!=None:
-                            pass
-                        next_s,r,end=self.nn.table[self.state_name[s]][self.action_name[a]]
-                    except AttributeError:
-                        next_s,r,end=self.nn.transition(self.state_name[s],self.action_name[a])
+                    next_s,r,end=self.nn.transition(self.state_name[s],self.action_name[a])
                 else:
-                    try:
-                        if self.nn.table!=None:
-                            pass
-                        next_s,r,end=self.nn.table[self.state_name[s]][a]
-                    except AttributeError:
-                        next_s,r,end=self.nn.transition(self.state_name[s],a)
+                    next_s,r,end=self.nn.transition(self.state_name[s],a)
         if self.pool_net==True:
             while len(self._state_list)<i:
                 pass
@@ -299,7 +284,7 @@ class kernel:
                 episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r]
         return next_s,end,episode,index
     
-    
+        
     def get_episode(self,s):
         next_s=None
         episode=[]
@@ -317,12 +302,7 @@ class kernel:
                         next_s,r,end=self.nn.explore(self.action_name[a])
                 except AttributeError:
                     a=np.argmax(self.nn.nn(s))
-                    try:
-                        if self.nn.table!=None:
-                            pass
-                        next_s,r,end=self.nn.table[self.state_name[s]][self.action_name[a]]
-                    except AttributeError:
-                        next_s,r,end=self.nn.transition(self.state_name[s],self.action_name[a])
+                    next_s,r,end=self.nn.transition(self.state_name[s],self.action_name[a])
             else:
                 try:
                     if self.nn.explore!=None:
@@ -349,19 +329,9 @@ class kernel:
                         a=self.nn.nn[1](self.state[self.state_name[s]]).numpy()
                     if len(a.shape)>0:
                         a=np.argmax(a)
-                        try:
-                            if self.nn.table!=None:
-                                pass
-                            next_s,r,end=self.nn.table[self.state_name[s]][self.action_name[a]]
-                        except AttributeError:
-                            next_s,r,end=self.nn.transition(self.state_name[s],self.action_name[a])
+                        next_s,r,end=self.nn.transition(self.state_name[s],self.action_name[a])
                     else:
-                        try:
-                            if self.nn.table!=None:
-                                pass 
-                            next_s,r,end=self.nn.table[self.state_name[s]][a]
-                        except AttributeError:
-                            next_s,r,end=self.nn.transition(self.state_name[s],a)
+                        next_s,r,end=self.nn.transition(self.state_name[s],a)
             if end:
                 if self.state_name!=None and self.action_name!=None:
                     episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s]])
@@ -817,7 +787,7 @@ class kernel:
                 break
             self.episode_num[i]+=1
             episode=[]
-            if self.nn.table==None:
+            if self.state_name==None:
                 s=self.nn.explore(init=True)
             else:
                 s=int(np.random.uniform(0,len(self.state_name)))
