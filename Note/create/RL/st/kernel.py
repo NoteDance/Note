@@ -6,7 +6,7 @@ import time
 
 
 class kernel:
-    def __init__(self,nn=None,state=None,state_name=None,action_name=None,pr=None,save_episode=True):
+    def __init__(self,nn=None,state=None,state_name=None,action_name=None,save_episode=True):
         if nn!=None:
             self.nn=nn
             self.opt=nn.opt
@@ -27,16 +27,12 @@ class kernel:
         self.state=state
         self.state_name=state_name
         self.action_name=action_name
-        self.pr=pr
         self.epsilon=None
         self.discount=None
         self.episode_step=None
         self.pool_size=None
         self.batch=None
         self.update_step=None
-        self.rp=None
-        self.alpha=None
-        self.beta=None
         self.end_loss=None
         self.save_episode=save_episode
         self.loss_list=[]
@@ -64,7 +60,7 @@ class kernel:
         return
     
     
-    def set_up(self,param=None,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,rp=None,alpha=None,beta=None,end_loss=None):
+    def set_up(self,param=None,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,end_loss=None):
         if param!=None:
             self.nn.param=param
         if epsilon!=None:
@@ -79,12 +75,6 @@ class kernel:
             self.batch=batch
         if update_step!=None:
             self.update_step=update_step
-        if rp!=None:
-            self.rp=rp
-        if alpha!=None:
-            self.alpha=alpha
-        if beta!=None:
-            self.beta=beta
         if end_loss!=None:
             self.end_loss=end_loss
         self.episode=[]
@@ -229,9 +219,11 @@ class kernel:
             batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
             if len(self.state_pool)%self.batch!=0:
                 batches+=1
-            if self.pr!=None:
+            try:
+                if self.nn.pr!=None:
+                    pass
                 for j in range(batches):
-                    state_batch,action_batch,next_state_batch,reward_batch=self.pr(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.pool_size,self.batch,self.rp,self.alpha,self.beta)
+                    state_batch,action_batch,next_state_batch,reward_batch=self.nn.pr(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
                     with tf.GradientTape() as tape:
                         if type(self.nn.nn)!=list:
                             batch_loss=self.nn.loss(self.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
@@ -274,7 +266,12 @@ class kernel:
                     except AttributeError:
                         pass
                 if len(self.state_pool)%self.batch!=0:
-                    state_batch,action_batch,next_state_batch,reward_batch=self.pr(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.pool_size,self.batch,self.rp,self.alpha,self.beta)
+                    try:
+                        if self.nn.pr!=None:
+                            pass
+                        state_batch,action_batch,next_state_batch,reward_batch=self.nn.pr(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
+                    except AttributeError:
+                        pass
                     with tf.GradientTape() as tape:
                         if type(self.nn.nn)!=list:
                             batch_loss=self.nn.loss(self.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
@@ -314,7 +311,7 @@ class kernel:
                         self.nn.bc+=1
                     except AttributeError:
                         pass
-            else:
+            except AttributeError:
                 j=0
                 train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool)).shuffle(len(self.state_pool)).batch(self.batch)
                 try:
@@ -843,9 +840,6 @@ class kernel:
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.update_step,output_file)
-        pickle.dump(self.rp,output_file)
-        pickle.dump(self.alpha,output_file)
-        pickle.dump(self.beta,output_file)
         pickle.dump(self.end_loss,output_file)
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.loss_list,output_file)
@@ -891,9 +885,6 @@ class kernel:
         self.pool_size=pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.update_step=pickle.load(input_file)
-        self.rp=pickle.load(input_file)
-        self.alpha=pickle.load(input_file)
-        self.beta=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
