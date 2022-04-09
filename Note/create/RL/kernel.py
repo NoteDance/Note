@@ -5,7 +5,7 @@ import pickle
 
 
 class kernel:
-    def __init__(self,nn=None,state=None,state_name=None,action_name=None,thread_lock=None,pr=None,save_episode=True):
+    def __init__(self,nn=None,state=None,state_name=None,action_name=None,thread_lock=None,save_episode=True):
         if nn!=None:
             self.nn=nn
             self.opt=nn.opt
@@ -22,16 +22,12 @@ class kernel:
         self.state=state
         self.state_name=state_name
         self.action_name=action_name
-        self.pr=pr
         self.epsilon=[]
         self.discount=None
         self.episode_step=None
         self.pool_size=None
         self.batch=None
         self.update_step=None
-        self.rp=None
-        self.alpha=None
-        self.beta=None
         self.end_loss=None
         self.thread=0
         self.thread_sum=0
@@ -67,7 +63,7 @@ class kernel:
         return
     
     
-    def set_up(self,param=None,discount=None,episode_num=None,episode_step=None,pool_size=None,batch=None,update_step=None,rp=None,alpha=None,beta=None,end_loss=None):
+    def set_up(self,param=None,discount=None,episode_num=None,episode_step=None,pool_size=None,batch=None,update_step=None,end_loss=None):
         if param!=None:
             self.nn.param=param
         if discount!=None:
@@ -83,12 +79,6 @@ class kernel:
             self.index=np.arange(batch)
         if update_step!=None:
             self.update_step=update_step
-        if rp!=None:
-            self.rp=rp
-        if alpha!=None:
-            self.alpha=alpha
-        if beta!=None:
-            self.beta=beta
         if end_loss!=None:
             self.end_loss=end_loss
         self.thread=0
@@ -415,9 +405,11 @@ class kernel:
                 self.thread_lock.release()
                 self.loss[i]=0
         else:
-            if self.pr!=None:
-                state_batch,action_batch,next_state_batch,reward_batch=self.pr(self.state_pool[i],self.action_pool[i],self.next_state_pool[i],self.reward_pool[i],self.pool_size,self.batch,self.rp,self.alpha,self.beta)
-            else:
+            try:
+                if self.nn.pr!=None:
+                    pass
+                state_batch,action_batch,next_state_batch,reward_batch=self.nn.pr(self.state_pool[i],self.action_pool[i],self.next_state_pool[i],self.reward_pool[i],self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
+            except AttributeError:
                 index1=j*self.batch
                 index2=(j+1)*self.batch
                 state_batch=self.state_pool[i][index1:index2]
@@ -513,9 +505,11 @@ class kernel:
             except AttributeError:
                 pass
             if length%self.batch!=0:
-                if self.pr!=None:
-                    state_batch,action_batch,next_state_batch,reward_batch=self.pr(self.state_pool[i],self.action_pool[i],self.next_state_pool[i],self.reward_pool[i],self.pool_size,self.batch,self.rp,self.alpha,self.beta)
-                else:
+                try:
+                    if self.pr!=None:
+                        pass
+                    state_batch,action_batch,next_state_batch,reward_batch=self.nn.pr(self.state_pool[i],self.action_pool[i],self.next_state_pool[i],self.reward_pool[i],self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
+                except AttributeError:
                     batches+=1
                     index1=batches*self.batch
                     index2=self.batch-(self.shape0-batches*self.batch)
@@ -909,9 +903,6 @@ class kernel:
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.update_step,output_file)
-        pickle.dump(self.rp,output_file)
-        pickle.dump(self.alpha,output_file)
-        pickle.dump(self.beta,output_file)
         pickle.dump(self.end_loss,output_file)
         pickle.dump(self.thread_sum,output_file)
         pickle.dump(self.state_list,output_file)
@@ -961,9 +952,6 @@ class kernel:
         self.pool_size=pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.update_step=pickle.load(input_file)
-        self.rp=pickle.load(input_file)
-        self.alpha=pickle.load(input_file)
-        self.beta=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
         self.thread_sum=pickle.load(input_file)
         self.state_list=pickle.load(input_file)
