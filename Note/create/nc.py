@@ -14,7 +14,7 @@ class compiler:
     
     def tf_function(self,oj1=None,oj2=None,oj3=None,oj4=None,oj5=None,oj6=None,init=None):
         if oj1!=None:
-            return self.init[init]+oj1[0]+oj1[1]+oj1[2]+oj1[3]+')'
+            return self.init[init]+oj1[0]+oj1[2]+oj1[3]+'dtype='+oj1[1]+')'
         if oj2!=None:
             return 'tf.matmul('+oj2[0]+','+oj2[1]+')'
         elif oj3!=None:
@@ -55,7 +55,7 @@ class compiler:
                 else:
                     indexf=self.line.find('r')+7
                     init=self.line[indexf]
-                self.oj1[1]=self.line[indexf+1:i]
+                self.oj1[1]='tf.'+self.line[indexf+1:i]
             elif self.line[i]=='[':
                 index1=i
             elif self.line[i]==']':
@@ -67,8 +67,6 @@ class compiler:
                 self.oj1[3]=self.line[i-1]
                 indexl=i
             else:
-                if self.oj1[2]!='':
-                    self.oj1[1]+=','
                 line=self.tf_function(oj1=self.oj1,init=init)+self.index[indexl+1:]
                 self.line=self.line.replace(self.line[indexf:],line)
                 self.oj1=['','','','']
