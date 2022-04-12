@@ -33,10 +33,25 @@ class kernel:
         self.thread_sum=0
         self.thread_lock=thread_lock
         self.stop=[]
-        self.state_list=np.array(0,dtype='int8')
+        self.state_list=None
         self._state_list=[]
         self.p=[]
+        self.im=[]
+        self.om=[]
+        self.imr=[]
+        self.rank_flag=False
+        self.row_one=None
+        self.rank_one=None
+        self.row_p=[]
+        self.d_index=0
         self.finish_list=[]
+        try:
+            if self.nn.row!=None:
+                pass
+            self.row_one=np.array(0,dtype='int8')
+            self.rank_one=np.array(0,dtype='int8')
+        except AttributeError:
+            self.state_list=np.array(0,dtype='int8')
         self.pool_net=True
         self.PO=None
         self.save_episode=save_episode
@@ -83,11 +98,22 @@ class kernel:
             self.end_loss=end_loss
         self.thread=0
         self.thread_sum=0
-        self.state_list=np.array(0,dtype='int8')
         self._state_list=[]
-        self.flag=[]
         self.p=[]
+        self.im=[]
+        self.imr=[]
+        self.rank_flag=False
+        self.row_p=[]
+        self.rank_one=[]
+        self.d_index=0
         self.finish_list=[]
+        try:
+            if self.nn.row!=None:
+                pass
+            self.row_one=np.array(0,dtype='int8')
+            self.rank_one=np.array(0,dtype='int8')
+        except AttributeError:
+            self.state_list=np.array(0,dtype='int8')
         self.pool_net=True
         self.episode=[]
         self.epsilon=[]
@@ -171,33 +197,58 @@ class kernel:
                 else:
                     next_s,r,end=self.nn.transition(self.state_name[s],a)
         if self.pool_net==True:
-            while len(self._state_list)<i:
-                pass
-            if len(self._state_list)==i:
-                self.thread_lock.acquire()
-                self._state_list.append(self.state_list[1:])
-                self.thread_lock.release()
+            if self.state_list==None:
+                while True:
+                    row_sum=np.sum(self.row_one)
+                    row_len=len(self.row_one)
+                    self.row_p[i]=self.row_one[:row_len]/row_sum
+                    row_index=np.random.choice(len(self.row_one),p=self.row_p[i])-1
+                    rank_sum=np.sum(self.om[row_index])
+                    rank_len=len(self.om[row_index])
+                    if rank_sum==0:
+                        self.row_one[row_index]=0
+                        break
+                    rank_index=np.random.choice(len(self.om[row_index][:rank_len]),p=self.om[row_index][:rank_len]/rank_sum)
+                    index=self.im[row_index][rank_index]
+                    if index in self.finish_list:
+                        self.om[row_index][rank_index]=0
+                        continue
+                    else:
+                        break
             else:
-                if len(self._state_list[i])<self.thread_sum:
-                    self._state_list[i]=self.state_list[1:]
-            while len(self.p)<i:
-                pass
-            if len(self.p)==i:
-                self.thread_lock.acquire()
-                self.p.append(np.array(self._state_list[i],dtype=np.float16)/np.sum(self.state_list[i]))
-                self.thread_lock.release()
-            else:
-                if len(self.p[i])<self.thread_sum:
-                    self.p[i]=np.array(self._state_list[i],dtype=np.float16)/np.sum(self.state_list[i])
-            while True:
-                index=np.random.choice(len(self.p[i]),p=self.p[i])
-                if index in self.finish_list:
-                    continue
+                while len(self._state_list)<i:
+                    pass
+                if len(self._state_list)==i:
+                    self.thread_lock.acquire()
+                    self._state_list.append(self.state_list[1:])
+                    self.thread_lock.release()
                 else:
-                    break
-        if self.state_pool[index]==None:
-            if self.pool_net==True:
+                    if len(self._state_list[i])<self.thread_sum:
+                        self._state_list[i]=self.state_list[1:]
+                while len(self.p)<i:
+                    pass
+                if len(self.p)==i:
+                    self.thread_lock.acquire()
+                    self.p.append(np.array(self._state_list[i],dtype=np.float16)/np.sum(self._state_list[i]))
+                    self.thread_lock.release()
+                else:
+                    if len(self.p[i])<self.thread_sum:
+                        self.p[i]=np.array(self._state_list[i],dtype=np.float16)/np.sum(self._state_list[i])
+                while True:
+                    index=np.random.choice(len(self.p[i]),p=self.p[i])
+                    if index in self.finish_list:
+                        continue
+                    else:
+                        break
+        if self.pool_net==True:
+            self.thread_lock.acquire()
+            if len(self.state_pool[i])>self.pool_size:
                 self.thread_lock.acquire()
+                self.state_pool[i]=self.state_pool[i][1:]
+                self.action_pool[i]=self.action_pool[i][1:]
+                self.next_state_pool[i]=self.next_state_pool[i][1:]
+                self.reward_pool[i]=self.reward_pool[i][1:]
+            if self.state_pool[index]==None:
                 if self.state==None:
                     self.state_pool[index]=tf.expand_dims(s,axis=0)
                     self.action_pool[index]=tf.expand_dims(a,axis=0)
@@ -208,21 +259,7 @@ class kernel:
                     self.action_pool[index]=tf.expand_dims(a,axis=0)
                     self.next_state_pool[index]=tf.expand_dims(self.state[self.state_name[next_s]],axis=0)
                     self.reward_pool[index]=tf.expand_dims(r,axis=0)
-                self.thread_lock.release()
             else:
-                if self.state==None:
-                    self.state_pool[i]=tf.expand_dims(s,axis=0)
-                    self.action_pool[i]=tf.expand_dims(a,axis=0)
-                    self.next_state_pool[i]=tf.expand_dims(next_s,axis=0)
-                    self.reward_pool[i]=tf.expand_dims(r,axis=0)
-                else:
-                    self.state_pool[i]=tf.expand_dims(self.state[self.state_name[s]],axis=0)
-                    self.action_pool[i]=tf.expand_dims(a,axis=0)
-                    self.next_state_pool[i]=tf.expand_dims(self.state[self.state_name[next_s]],axis=0)
-                    self.reward_pool[i]=tf.expand_dims(r,axis=0)
-        else:
-            if self.pool_net==True:
-                self.thread_lock.acquire()
                 if self.state==None:
                     self.state_pool[index]=tf.concat([self.state_pool[index],tf.expand_dims(s,axis=0)])
                     self.action_pool[index]=tf.concat([self.action_pool[index],tf.expand_dims(a,axis=0)])
@@ -233,26 +270,19 @@ class kernel:
                     self.action_pool[index]=tf.concat([self.action_pool[index],tf.expand_dims(a,axis=0)])
                     self.next_state_pool[index]=tf.concat([self.next_state_pool[index],tf.expand_dims(self.state[self.state_name[next_s]],axis=0)])
                     self.reward_pool[index]=tf.concat([self.reward_pool[index],tf.expand_dims(r,axis=0)])
-                self.thread_lock.release()
-            else:
-                if self.state==None:
-                    self.state_pool[i]=tf.concat([self.state_pool[i],tf.expand_dims(s,axis=0)])
-                    self.action_pool[i]=tf.concat([self.action_pool[i],tf.expand_dims(a,axis=0)])
-                    self.next_state_pool[i]=tf.concat([self.next_state_pool[i],tf.expand_dims(next_s,axis=0)])
-                    self.reward_pool[i]=tf.concat([self.reward_pool[i],tf.expand_dims(r,axis=0)])
-                else:
-                    self.state_pool[i]=tf.concat([self.state_pool[i],tf.expand_dims(self.state[self.state_name[s]],axis=0)])
-                    self.action_pool[i]=tf.concat([self.action_pool[i],tf.expand_dims(a,axis=0)])
-                    self.next_state_pool[i]=tf.concat([self.next_state_pool[i],tf.expand_dims(self.state[self.state_name[next_s]],axis=0)])
-                    self.reward_pool[i]=tf.concat([self.reward_pool[i],tf.expand_dims(r,axis=0)])
-        if self.pool_net==True and len(self.state_pool[i])>self.pool_size:
-            self.thread_lock.acquire()
-            self.state_pool[i]=self.state_pool[i][1:]
-            self.action_pool[i]=self.action_pool[i][1:]
-            self.next_state_pool[i]=self.next_state_pool[i][1:]
-            self.reward_pool[i]=self.reward_pool[i][1:]
             self.thread_lock.release()
         else:
+            if self.state==None:
+                self.state_pool[i]=tf.concat([self.state_pool[i],tf.expand_dims(s,axis=0)])
+                self.action_pool[i]=tf.concat([self.action_pool[i],tf.expand_dims(a,axis=0)])
+                self.next_state_pool[i]=tf.concat([self.next_state_pool[i],tf.expand_dims(next_s,axis=0)])
+                self.reward_pool[i]=tf.concat([self.reward_pool[i],tf.expand_dims(r,axis=0)])
+            else:
+                self.state_pool[i]=tf.concat([self.state_pool[i],tf.expand_dims(self.state[self.state_name[s]],axis=0)])
+                self.action_pool[i]=tf.concat([self.action_pool[i],tf.expand_dims(a,axis=0)])
+                self.next_state_pool[i]=tf.concat([self.next_state_pool[i],tf.expand_dims(self.state[self.state_name[next_s]],axis=0)])
+                self.reward_pool[i]=tf.concat([self.reward_pool[i],tf.expand_dims(r,axis=0)])
+        if len(self.state_pool[i])>self.pool_size:
             self.state_pool[i]=self.state_pool[i][1:]
             self.action_pool[i]=self.action_pool[i][1:]
             self.next_state_pool[i]=self.next_state_pool[i][1:]
@@ -339,6 +369,38 @@ class kernel:
                 else:
                     episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s],r])
         return episode
+    
+    
+    def index_matrix(self,i):
+        if len(self.im)==self.nn.row and self.rank_flag==False:
+            self.rank_flag=True
+            self.d_index=0
+        if self.rank_flag==True:
+            while True:
+                if len(self.im)==self.nn.row:
+                    self.d_index=0
+                    break
+                if len(self.im)!=self.nn.row and self.d_index>len(self.im):
+                    self.imr=[]
+                    self.rank_one=np.array(0,dtype='int8')
+                    self.im.append(self.imr)
+                    self.row_one=np.append(self.row_one,np.array(1,dtype='int8'))
+                    self.om.append(self.rank_one)
+                if len(self.im[self.d_index])!=self.nn.row:
+                    self.imr.append(i)
+                    self.rank_one=np.append(self.rank_one,np.array(1,dtype='int8'))
+                    continue
+                self.d_index+=1
+        if len(self.imr)!=self.nn.rank and len(self.im)!=self.nn.row and self.rank_flag!=True:
+            if len(self.imr)==0:
+                self.im.append(self.imr)
+                self.row_one=np.append(self.row_one,np.array(1,dtype='int8'))
+                self.om.append(self.rank_one)
+            self.imr.append(i)
+            self.rank_one=np.append(self.rank_one,np.array(1,dtype='int8'))
+        else:
+            self.imr=[]
+        return
     
     
     def learn1(self,i,j=None,batches=None,length=None,episode_num=None,k=None):
@@ -751,6 +813,9 @@ class kernel:
             pass
         if len(self.state_pool)==i:
             self.thread_lock.acquire()
+            self.index_matrix(i)
+            self.row_p.append(None)
+            self.rank_one.append(None)
             self.state_pool.append(None)
             self.action_pool.append(None)
             self.next_state_pool.append(None)
@@ -767,11 +832,15 @@ class kernel:
                 self.nn.bc.append(0)
             except AttributeError:
                 pass
-            self.state_list=np.append(self.state_list,np.array(1,dtype='int8'))
+            try:
+                if self.nn.row!=None:
+                    pass
+            except AttributeError:
+                self.state_list=np.append(self.state_list,np.array(1,dtype='int8'))
             self.thread_sum+=1
             self.thread_lock.release()
-        elif i not in self.finish_list:
-            self.state_list[i]=1
+        elif i not in self.finish_lis and self.state_list!=None:
+            self.state_list[i+1]=1
         for k in range(episode_num):
             if self.stop[i]==True:
                 break
@@ -840,14 +909,11 @@ class kernel:
         self.thread_lock.acquire()
         self.thread-=1
         self.thread_lock.release()
-        self.state_list[i]=0
         if self.pool_net==True:
-            self.thread_lock.acquire()
             self.state_pool[i]=tf.expand_dims(self.state_pool[i][0],axis=0)
             self.action_pool[i]=tf.expand_dims(self.action_pool[i][0],axis=0)
             self.next_state_pool[i]=tf.expand_dims(self.next_state_pool[i][0],axis=0)
             self.reward_pool[i]=tf.expand_dims(self.reward_pool[i][0],axis=0)
-            self.thread_lock.release()
         return
     
     
@@ -908,6 +974,11 @@ class kernel:
         pickle.dump(self.state_list,output_file)
         pickle.dump(self._state_list,output_file)
         pickle.dump(self.p,output_file)
+        pickle.dump(self.im,output_file)
+        pickle.dump(self.om,output_file)
+        pickle.dump(self.rank_flag,output_file)
+        pickle.dump(self.row_one,output_file)
+        pickle.dump(self.row_p,output_file)
         pickle.dump(self.finish_list,output_file)
         pickle.dump(self.pool_net,output_file)
         pickle.dump(self.save_episode,output_file)
@@ -957,6 +1028,11 @@ class kernel:
         self.state_list=pickle.load(input_file)
         self._state_list=pickle.load(input_file)
         self.p=pickle.load(input_file)
+        self.im=pickle.load(input_file)
+        self.om=pickle.load(input_file)
+        self.rank_flag=pickle.load(input_file)
+        self.row_one=pickle.load(input_file)
+        self.row_p=pickle.load(input_file)
         self.finish_list=pickle.load(input_file)
         self.pool_net=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
