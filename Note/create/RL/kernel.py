@@ -494,7 +494,7 @@ class kernel:
             self.thread_sum+=1
             self.thread_lock.release()
         elif i not in self.finish_list:
-            self.state_list[i]=1
+            self.state_list[i+1]=1
         for k in range(episode_num):
             if self.episode_num[i]==self.epi_num[i]:
                 break
