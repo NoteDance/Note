@@ -177,11 +177,11 @@ class kernel:
                 pass
             if len(self.p)==i:
                 self.thread_lock.acquire()
-                self.p.append(np.array(self._state_list[i],dtype=np.float16)/np.sum(self.state_list[i]))
+                self.p.append(np.array(self._state_list[i],dtype=np.float16)/np.sum(self._state_list[i]))
                 self.thread_lock.release()
             else:
                 if len(self.p[i])<self.thread_sum:
-                    self.p[i]=np.array(self._state_list[i],dtype=np.float16)/np.sum(self.state_list[i])
+                    self.p[i]=np.array(self._state_list[i],dtype=np.float16)/np.sum(self._state_list[i])
             while True:
                 index=np.random.choice(len(self.p[i]),p=self.p[i])
                 if index in self.finish_list:
