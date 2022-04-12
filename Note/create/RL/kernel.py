@@ -45,13 +45,14 @@ class kernel:
         self.row_p=[]
         self.d_index=0
         self.finish_list=[]
-        try:
-            if self.nn.row!=None:
-                pass
-            self.row_one=np.array(0,dtype='int8')
-            self.rank_one=np.array(0,dtype='int8')
-        except AttributeError:
-            self.state_list=np.array(0,dtype='int8')
+        if nn!=None:
+            try:
+                if self.nn.row!=None:
+                    pass
+                self.row_one=np.array(0,dtype='int8')
+                self.rank_one=np.array(0,dtype='int8')
+            except AttributeError:
+                self.state_list=np.array(0,dtype='int8')
         self.pool_net=True
         self.PO=None
         self.save_episode=save_episode
@@ -376,21 +377,18 @@ class kernel:
             self.rank_flag=True
             self.d_index=0
         if self.rank_flag==True:
-            while True:
-                if len(self.im)==self.nn.row:
-                    self.d_index=0
-                    break
-                if len(self.im)!=self.nn.row and self.d_index>len(self.im):
-                    self.imr=[]
-                    self.rank_one=np.array(0,dtype='int8')
-                    self.im.append(self.imr)
-                    self.row_one=np.append(self.row_one,np.array(1,dtype='int8'))
-                    self.om.append(self.rank_one)
-                if len(self.im[self.d_index])!=self.nn.row:
-                    self.imr.append(i)
-                    self.rank_one=np.append(self.rank_one,np.array(1,dtype='int8'))
-                    continue
-                self.d_index+=1
+            if len(self.im)==self.nn.row:
+                self.d_index=0
+            if len(self.im)!=self.nn.row and self.d_index>len(self.im):
+                self.imr=[]
+                self.rank_one=np.array(0,dtype='int8')
+                self.im.append(self.imr)
+                self.row_one=np.append(self.row_one,np.array(1,dtype='int8'))
+                self.om.append(self.rank_one)
+            if len(self.im[self.d_index])!=self.nn.row:
+                self.imr.append(i)
+                self.rank_one=np.append(self.rank_one,np.array(1,dtype='int8'))
+            self.d_index+=1
         if len(self.imr)!=self.nn.rank and len(self.im)!=self.nn.row and self.rank_flag!=True:
             if len(self.imr)==0:
                 self.im.append(self.imr)
