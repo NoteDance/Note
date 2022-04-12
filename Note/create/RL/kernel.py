@@ -832,10 +832,7 @@ class kernel:
                 self.nn.bc.append(0)
             except AttributeError:
                 pass
-            try:
-                if self.nn.row!=None:
-                    pass
-            except AttributeError:
+            if self.state_list!=None:
                 self.state_list=np.append(self.state_list,np.array(1,dtype='int8'))
             self.thread_sum+=1
             self.thread_lock.release()
