@@ -261,16 +261,19 @@ class kernel:
                     self.next_state_pool[index]=tf.expand_dims(self.state[self.state_name[next_s]],axis=0)
                     self.reward_pool[index]=tf.expand_dims(r,axis=0)
             else:
-                if self.state==None:
-                    self.state_pool[index]=tf.concat([self.state_pool[index],tf.expand_dims(s,axis=0)])
-                    self.action_pool[index]=tf.concat([self.action_pool[index],tf.expand_dims(a,axis=0)])
-                    self.next_state_pool[index]=tf.concat([self.next_state_pool[index],tf.expand_dims(next_s,axis=0)])
-                    self.reward_pool[index]=tf.concat([self.reward_pool[index],tf.expand_dims(r,axis=0)])
-                else:
-                    self.state_pool[index]=tf.concat([self.state_pool[index],tf.expand_dims(self.state[self.state_name[s]],axis=0)])
-                    self.action_pool[index]=tf.concat([self.action_pool[index],tf.expand_dims(a,axis=0)])
-                    self.next_state_pool[index]=tf.concat([self.next_state_pool[index],tf.expand_dims(self.state[self.state_name[next_s]],axis=0)])
-                    self.reward_pool[index]=tf.concat([self.reward_pool[index],tf.expand_dims(r,axis=0)])
+                try:
+                    if self.state==None:
+                        self.state_pool[index]=tf.concat([self.state_pool[index],tf.expand_dims(s,axis=0)])
+                        self.action_pool[index]=tf.concat([self.action_pool[index],tf.expand_dims(a,axis=0)])
+                        self.next_state_pool[index]=tf.concat([self.next_state_pool[index],tf.expand_dims(next_s,axis=0)])
+                        self.reward_pool[index]=tf.concat([self.reward_pool[index],tf.expand_dims(r,axis=0)])
+                    else:
+                        self.state_pool[index]=tf.concat([self.state_pool[index],tf.expand_dims(self.state[self.state_name[s]],axis=0)])
+                        self.action_pool[index]=tf.concat([self.action_pool[index],tf.expand_dims(a,axis=0)])
+                        self.next_state_pool[index]=tf.concat([self.next_state_pool[index],tf.expand_dims(self.state[self.state_name[next_s]],axis=0)])
+                        self.reward_pool[index]=tf.concat([self.reward_pool[index],tf.expand_dims(r,axis=0)])
+                except ValueError:
+                    pass
             self.thread_lock.release()
         else:
             if self.state==None:
@@ -907,10 +910,10 @@ class kernel:
         self.thread-=1
         self.thread_lock.release()
         if self.pool_net==True:
-            self.state_pool[i]=tf.expand_dims(self.state_pool[i][0],axis=0)
-            self.action_pool[i]=tf.expand_dims(self.action_pool[i][0],axis=0)
-            self.next_state_pool[i]=tf.expand_dims(self.next_state_pool[i][0],axis=0)
-            self.reward_pool[i]=tf.expand_dims(self.reward_pool[i][0],axis=0)
+            self.state_pool[i]=None
+            self.action_pool[i]=None
+            self.next_state_pool[i]=None
+            self.reward_pool[i]=None
         return
     
     
