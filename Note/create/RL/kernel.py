@@ -219,7 +219,7 @@ class kernel:
                         self.action_pool[index]=tf.concat([self.action_pool[index],tf.expand_dims(a,axis=0)])
                         self.next_state_pool[index]=tf.concat([self.next_state_pool[index],tf.expand_dims(self.state[self.state_name[next_s]],axis=0)])
                         self.reward_pool[index]=tf.concat([self.reward_pool[index],tf.expand_dims(r,axis=0)])
-                except ValueError:
+                except TypeError:
                     pass
             self.thread_lock.release()
         else:
