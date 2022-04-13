@@ -379,20 +379,22 @@ class kernel:
         if self.rank_flag==True:
             if len(self.im)==self.nn.row:
                 self.d_index=0
-            if len(self.im)!=self.nn.row and self.d_index>len(self.im):
-                self.imr=[]
-                self.rank_one=np.array(0,dtype='int8')
-                self.im.append(self.imr)
-                self.row_one=np.append(self.row_one,np.array(1,dtype='int8'))
-                self.om.append(self.rank_one)
             if len(self.im[self.d_index])!=self.nn.row:
-                self.imr.append(i)
-                self.rank_one=np.append(self.rank_one,np.array(1,dtype='int8'))
-            self.d_index+=1
+                self.im[self.d_index].append(i)
+                self.rank_one[self.d_index]=np.append(self.rank_one[self.d_index],np.array(1,dtype='int8'))
+            else:
+                self.d_index+=1
+                if len(self.im)!=self.nn.row and self.d_index>len(self.im):
+                    self.imr=[]
+                    self.rank_one[self.d_index]=np.array(0,dtype='int8')
+                    self.im.append(self.imr)
+                    self.om.append(self.rank_one[self.d_index])
+                self.im[self.d_index].append(i)
+                self.rank_one[self.d_index]=np.append(self.rank_one[self.d_index],np.array(1,dtype='int8'))
         if len(self.imr)!=self.nn.rank and len(self.im)!=self.nn.row and self.rank_flag!=True:
             if len(self.imr)==0:
                 self.im.append(self.imr)
-                self.row_one=np.append(self.row_one,np.array(1,dtype='int8'))
+                self.rank_one=np.append(self.rank_one,np.array(1,dtype='int8'))
                 self.om.append(self.rank_one)
             self.imr.append(i)
             self.rank_one=np.append(self.rank_one,np.array(1,dtype='int8'))
