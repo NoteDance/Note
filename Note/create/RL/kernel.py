@@ -190,12 +190,12 @@ class kernel:
                     break
         if self.pool_net==True:
             self.thread_lock.acquire()
-            if len(self.state_pool[i])>self.pool_size:
+            if len(self.state_pool[index])>self.pool_size:
                 self.thread_lock.acquire()
-                self.state_pool[i]=self.state_pool[i][1:]
-                self.action_pool[i]=self.action_pool[i][1:]
-                self.next_state_pool[i]=self.next_state_pool[i][1:]
-                self.reward_pool[i]=self.reward_pool[i][1:]
+                self.state_pool[index]=self.state_pool[index][1:]
+                self.action_pool[index]=self.action_pool[index][1:]
+                self.next_state_pool[index]=self.next_state_pool[index][1:]
+                self.reward_pool[index]=self.reward_pool[index][1:]
             if self.state_pool[index]==None:
                 if self.state==None:
                     self.state_pool[index]=tf.expand_dims(s,axis=0)
