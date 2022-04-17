@@ -3,6 +3,9 @@ class compiler:
         self.filename=filename
         self.init={'z':'tf.zeros(','n':'tf.random.normal(','u':'tf.random.uniform(','o':'tf.ones('}
         self.operator=['.*','.^','.|','.||','./','.=']
+        self.define=dict()
+        self.define_list=None
+        self.index_list=None
         self.oj1=['','','','']
         self.oj2=['','']
         self.oj3=''
@@ -47,6 +50,15 @@ class compiler:
     def getchar(self,line):
         self.line=line
         string_list=[]
+        if len(self.define)!=0:
+            index=[define in line for define in self.define]
+            for i in range(len(index)):
+                if index[i]==True:
+                    while 1:
+                        if self.define_list[i] in line:
+                            line=line.replace(self.define_list[i],self.define[self.define_list[i]])
+                        else:
+                            break
         for i in range(len(line)):
             if self.line[i]=='.' and self.line[i+1]==' ':
                 if '=' in self.line:
@@ -124,6 +136,12 @@ class compiler:
         with open(self.filename) as infile:
             while 1:
                 line=infile.readline()
+                if 'define. ' in line:
+                    self.define[line[line.find(' ')+1,line.rfine(' ')]]=line[line.rfind(' ')+1:]
+                    outfile.write('')
+                    continue
+                if len(self.define)!=0 and self.define_list==None:
+                    self.define_list=[define for define in self.define]
                 if ('. ' in line and "'" not in line or '"' not in line) or ("'" not in line and True in [operator in line for operator in self.operator]):
                     self.readlines(line)
                     outfile.write(self.line)
