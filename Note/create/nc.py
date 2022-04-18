@@ -138,7 +138,6 @@ class compiler:
                 line=infile.readline()
                 if 'define. ' in line:
                     self.define[line[line.find(' ')+1,line.rfine(' ')]]=line[line.rfind(' ')+1:]
-                    outfile.write('')
                     continue
                 if len(self.define)!=0 and self.define_list==None:
                     self.define_list=[define for define in self.define]
