@@ -6,7 +6,7 @@ import time
 
 
 class kernel:
-    def __init__(self,nn=None,state=None,state_name=None,action_name=None,exploration_space=None,exploration=None,pr=None,save_episode=True):
+    def __init__(self,nn=None,state=None,state_name=None,action_name=None,save_episode=True):
         if nn!=None:
             self.nn=nn
             self.param=nn.param
@@ -20,18 +20,12 @@ class kernel:
         self.state=state
         self.state_name=state_name
         self.action_name=action_name
-        self.exploration_space=exploration_space
-        self.exploration=exploration
-        self.pr=pr
         self.epsilon=None
         self.discount=None
         self.episode_step=None
         self.pool_size=None
         self.batch=None
         self.update_step=None
-        self.rp=None
-        self.alpha=None
-        self.beta=None
         self.end_loss=None
         self.save_episode=save_episode
         self.loss_list=[]
@@ -59,7 +53,7 @@ class kernel:
         return
     
     
-    def set_up(self,param=None,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,rp=None,alpha=None,beta=None,end_loss=None):
+    def set_up(self,param=None,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,end_loss=None):
         if param!=None:
             self.param=param
         if epsilon!=None:
@@ -74,12 +68,6 @@ class kernel:
             self.batch=batch
         if update_step!=None:
             self.update_step=update_step
-        if rp!=None:
-            self.rp=rp
-        if alpha!=None:
-            self.alpha=alpha
-        if beta!=None:
-            self.beta=beta
         if end_loss!=None:
             self.end_loss=end_loss
         self.episode=[]
@@ -101,7 +89,10 @@ class kernel:
     def epsilon_greedy_policy(self,s,action_one):
         action_prob=action_one
         action_prob=action_prob*self.epsilon/len(action_one)
-        best_a=np.argmax(self.nn.nn(self.state[self.state_name[s]]))
+        if self.state==None:
+            best_a=np.argmax(self.nn.nn(s))
+        else:
+            best_a=np.argmax(self.nn.nn(self.state[self.state_name[s]]))
         action_prob[best_a]+=1-self.epsilon
         return action_prob
     
@@ -121,16 +112,16 @@ class kernel:
             with tf.GradientTape() as tape:
                 if type(self.nn.nn)!=list:
                     loss=self.nn.loss(self.nn.nn,self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool)				
-                else:  
-                    value=self.nn.nn[0](self.state_pool,param=0)
-                    TD=tf.reduce_mean((self.reward_pool+self.discount*self.nn.nn[0](self.next_state_pool,param=1)-value)**2)
+                else:
+                    value=self.nn.nn[0](self.state_pool)
+                    TD=tf.reduce_mean((self.reward_pool+self.discount*self.nn.nn[0](self.next_state_pool)-value)**2)
             if type(self.nn.nn)!=list:
-                gradient=tape.gradient(loss,self.param[0])
-                self.opt(gradient,self.param[0])
+                gradient=tape.gradient(loss,self.nn.param[0])
+                self.opt(gradient,self.nn.param[0])
             else:
-                value_gradient=tape.gradient(TD,self.param[0])				
-                actor_gradient=TD*tape.gradient(tf.math.log(self.action_pool),self.param[2])
-                self.opt(value_gradient,actor_gradient,self.param)
+                value_gradient=tape.gradient(TD,self.nn.param[0])				
+                actor_gradient=TD*tape.gradient(tf.math.log(self.action_pool),self.nn.param[1])
+                self.opt(value_gradient,actor_gradient,self.nn.param)
             if self.update_step!=None:
                 if self.a%self.update_step==0:
                     self.nn.update_param(self.param)
@@ -139,6 +130,7 @@ class kernel:
             loss=0
         else:
             loss=0
+            self.loss=0
             batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
             if len(self.state_pool)%self.batch!=0:
                 batches+=1
@@ -149,53 +141,58 @@ class kernel:
                         if type(self.nn.nn)!=list:
                             batch_loss=self.nn.loss(self.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
                         else:
-                            value=self.nn.nn[0](state_batch,param=0)
-                            TD=tf.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch,param=1)-value)**2)
+                            value=self.nn.nn[0](state_batch)
+                            TD=tf.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch)-value)**2)
                     if type(self.nn.nn)!=list:
-                        gradient=tape.gradient(batch_loss,self.param[0])
-                        self.opt(gradient,self.param[0])
+                        gradient=tape.gradient(batch_loss,self.nn.param[0])
+                        self.opt(gradient,self.nn.param[0])
                         if j>=1:
                             loss+=batch_loss
                         if i==episode_num-1:
                             batch_loss=self.nn.loss(self.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
                             self.loss+=batch_loss
                     else:
-                        value_gradient=tape.gradient(TD,self.param[0])
-                        actor_gradient=TD*tape.gradient(tf.math.log(action_batch),self.param[2])
-                        self.opt(value_gradient,actor_gradient,self.param)
+                        value_gradient=tape.gradient(TD,self.nn.param[0])
+                        actor_gradient=TD*tape.gradient(tf.math.log(action_batch),self.nn.param[1])
+                        self.opt(value_gradient,actor_gradient,self.nn.param)
                         if j>=1:
                             loss+=TD
                         if i==episode_num-1:
-                            value=self.nn.nn[0](state_batch,param=0)
-                            TD=tf.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch,param=1)-value)**2)
+                            value=self.nn.nn[0](state_batch)
+                            TD=tf.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch)-value)**2)
                             self.loss+=TD
                     try:
                         self.nn.bc=j
                     except AttributeError:
                         pass
                 if len(self.state_pool)%self.batch!=0:
-                    state_batch,action_batch,next_state_batch,reward_batch=self.pr(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.pool_size,self.batch,self.rp,self.alpha,self.beta)
+                    try:
+                        if self.nn.pr!=None:
+                            pass
+                        state_batch,action_batch,next_state_batch,reward_batch=self.nn.pr(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
+                    except AttributeError:
+                        pass
                     with tf.GradientTape() as tape:
                         if type(self.nn.nn)!=list:
                             batch_loss=self.nn.loss(self.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
                         else:
-                            value=self.nn.nn[0](state_batch,param=0)
-                            TD=tf.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch,param=1)-value)**2)
+                            value=self.nn.nn[0](state_batch)
+                            TD=tf.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch)-value)**2)
                     if type(self.nn.nn)!=list:
-                        gradient=tape.gradient(batch_loss,self.param[0])
-                        self.opt(gradient,self.param[0])
+                        gradient=tape.gradient(batch_loss,self.nn.param[0])
+                        self.opt(gradient,self.nn.param[0])
                         loss+=batch_loss
                         if i==episode_num-1:
                             batch_loss=self.nn.loss(self.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
                             self.loss+=batch_loss
                     else:
-                        value_gradient=tape.gradient(TD,self.param[0])
-                        actor_gradient=TD*tape.gradient(tf.math.log(action_batch),self.param[2])
-                        self.opt(value_gradient,actor_gradient,self.param)
+                        value_gradient=tape.gradient(TD,self.nn.param[0])
+                        actor_gradient=TD*tape.gradient(tf.math.log(action_batch),self.nn.param[1])
+                        self.opt(value_gradient,actor_gradient,self.nn.param)
                         loss+=TD
                         if i==episode_num-1:
-                            value=self.nn.nn[0](state_batch,param=0)
-                            TD=tf.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch,param=1)-value)**2)
+                            value=self.nn.nn[0](state_batch)
+                            TD=tf.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch)-value)**2)
                             self.loss+=TD
                     try:
                         self.nn.bc+=1
@@ -213,25 +210,25 @@ class kernel:
                         if type(self.nn.nn)!=list:
                             batch_loss=self.nn.loss(self.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
                         else:
-                            value=self.nn.nn[0](state_batch,param=0)
-                            TD=tf.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch,param=1)-value)**2)
+                            value=self.nn.nn[0](state_batch)
+                            TD=tf.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch)-value)**2)
                     if type(self.nn.nn)!=list:
-                        gradient=tape.gradient(batch_loss,self.param[0])
-                        self.opt(gradient,self.param[0])
+                        gradient=tape.gradient(batch_loss,self.nn.param[0])
+                        self.opt(gradient,self.nn.param[0])
                         if j>=1:
                             loss+=batch_loss
                         if i==episode_num-1:
                             batch_loss=self.nn.loss(self.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
                             self.loss+=batch_loss
                     else:
-                        value_gradient=tape.gradient(TD,self.param[0])
-                        actor_gradient=TD*tape.gradient(tf.math.log(action_batch),self.param[2])
-                        self.opt(value_gradient,actor_gradient,self.param)
+                        value_gradient=tape.gradient(TD,self.nn.param[0])
+                        actor_gradient=TD*tape.gradient(tf.math.log(action_batch),self.nn.param[1])
+                        self.opt(value_gradient,actor_gradient,self.nn.param)
                         if j>=1:
                             loss+=TD
                         if i==episode_num-1:
-                            value=self.nn.nn[0](state_batch,param=0)
-                            TD=tf.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch,param=1)-value)**2)
+                            value=self.nn.nn[0](state_batch)
+                            TD=tf.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch)-value)**2)
                             self.loss+=TD
                     j+=1
                     try:
@@ -254,8 +251,8 @@ class kernel:
     
     def learn2(self,episode_num,i):
         episode=[]
-        if self.exploration_space==None:
-            s=self.exploration.explore(init=True)
+        if self.state_name==None:
+            s=self.nn.explore(init=True)
         else:
             s=int(np.random.uniform(0,len(self.state_name)))
         if self.episode_step==None:
@@ -263,42 +260,50 @@ class kernel:
                 t1=time.time()
                 self.a+=1
                 if type(self.nn.nn)!=list:
-                    if self.exploration==None:
+                    try:
+                        if self.nn.explore!=None:
+                            pass
                         action_prob=self.epsilon_greedy_policy(s,self.action_one)
                         a=np.random.choice(self.action,p=action_prob)
-                        next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
-                    else:
-                        if self.exploration_space==None:
-                            action_prob=self.epsilon_greedy_policy(s,self.action_one)
-                            a=np.random.choice(self.action,p=action_prob)
-                            next_s,r,end=self.exploration.explore(self.action_name[a])
+                        if self.action_name==None:
+                            next_s,r,end=self.nn.explore(a)
                         else:
-                            action_prob=self.epsilon_greedy_policy(s,self.action_one)
-                            a=np.random.choice(self.action,p=action_prob)
-                            next_s,r,end=self.exploration.explore(self.state_name[s],self.action_name[a],self.exploration_space[self.state_name[s]][self.action_name[a]])
+                            next_s,r,end=self.nn.explore(self.action_name[a])
+                    except AttributeError:
+                        action_prob=self.epsilon_greedy_policy(s,self.action_one)
+                        a=np.random.choice(self.action,p=action_prob)
+                        next_s,r,end=self.nn.transition(self.state_name[s],self.action_name[a])
                 else:
-                    if self.exploration==None:
-                        a=self.nn.nn[1](self.state[self.state_name[s]],param=2).numpy()
+                    try:
+                        if self.nn.explore!=None:
+                            pass 
+                        if len(self.nn.param)==4:
+                            if self.state_name==None:
+                                a=(self.nn.nn[1](s,p=1)+tf.random.normal([1])).numpy()
+                            else:
+                                a=(self.nn.nn[1](self.state[self.state_name[s]],p=1)+tf.random.normal([1])).numpy()
+                        else:
+                            if self.state_name==None:
+                                a=self.nn.nn[1](s).numpy()
+                            else:
+                                a=self.nn.nn[1](self.state[self.state_name[s]]).numpy()
                         if len(a.shape)>0:
                             a=self._epsilon_greedy_policy(a,self.action_one)
-                            next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
+                            next_s,r,end=self.nn.explore(self.action_name[a])
                         else:
-                            next_s,r,end=self.exploration_space(self.state_name[s],a)
-                    else:
-                        if self.exploration_space==None:
-                            a=self.nn.nn[1](self.state[self.state_name[s]],param=2).numpy()
-                            if len(a.shape)>0:
-                                a=self._epsilon_greedy_policy(a,self.action_one)
-                                next_s,r,end=self.exploration.explore(self.action_name[a])
-                            else:
-                                next_s,r,end=self.exploration.explore(a)
+                            next_s,r,end=self.nn.explore(a)
+                    except AttributeError:
+                        if len(self.nn.param)==4:
+                            a=(self.nn.nn[1](self.state[self.state_name[s]],p=1)+tf.random.normal([1])).numpy()
                         else:
-                            a=self.nn.nn[1](self.state[self.state_name[s]],param=2).numpy()
-                            if len(a.shape)>0:
-                                a=self._epsilon_greedy_policy(a,self.action_one)
-                                next_s,r,end=self.exploration.explore(self.state_name[s],self.action_name[a],self.exploration_space[self.state_name[s]][self.action_name[a]])
+                            a=self.nn.nn[1](self.state[self.state_name[s]]).numpy()
+                        if len(a.shape)>0:
+                            a=self._epsilon_greedy_policy(a,self.action_one)
+                            next_s,r,end=self.nn.transition(self.state_name[s],self.action_name[a])
+                        else:
+                            next_s,r,end=self.nn.transition(self.state_name[s],a)
                 if self.state_pool==None:
-                    if self.exploration_space==None:
+                    if self.state==None:
                         self.state_pool=tf.expand_dims(s,axis=0)
                         self.action_pool=tf.expand_dims(a,axis=0)
                         self.next_state_pool=tf.expand_dims(next_s,axis=0)
@@ -309,7 +314,7 @@ class kernel:
                         self.next_state_pool=tf.expand_dims(self.state[self.state_name[next_s]],axis=0)
                         self.reward_pool=tf.expand_dims(r,axis=0)
                 else:
-                    if self.exploration_space==None:
+                    if self.state==None:
                         self.state_pool=tf.concat([self.state_pool,tf.expand_dims(s,axis=0)])
                         self.action_pool=tf.concat([self.action_pool,tf.expand_dims(a,axis=0)])
                         self.next_state_pool=tf.concat([self.next_state_pool,tf.expand_dims(next_s,axis=0)])
@@ -326,16 +331,24 @@ class kernel:
                     self.reward_pool=self.reward_pool[1:]
                 if end:
                     if self.save_episode==True:
-                        if self.exploration_space==None:
-                            episode.append([s,a,next_s,r,end])
+                        if self.state_name==None and self.action_name==None:
+                            episode=[s,a,next_s,r]
+                        elif self.state_name==None:
+                            episode=[s,self.action_name[a],next_s,r]
+                        elif self.action_name==None:
+                            episode=[self.state_name[s],a,self.state_name[next_s],r]
                         else:
-                            episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s],r,end])
+                            episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r]
                     break
                 elif self.save_episode==True:
-                    if self.exploration_space==None:
-                        episode.append([s,a,next_s,r])
+                    if self.state_name==None and self.action_name==None:
+                        episode=[s,a,next_s,r]
+                    elif self.state_name==None:
+                        episode=[s,self.action_name[a],next_s,r]
+                    elif self.action_name==None:
+                        episode=[self.state_name[s],a,self.state_name[next_s],r]
                     else:
-                        episode.append([self.state_name[s],self.self.action_name[a],self.state_name[next_s],r])
+                        episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r]
                 s=next_s
                 loss=self.learn1(episode_num,i)
                 t2=time.time()
@@ -345,40 +358,48 @@ class kernel:
                 t1=time.time()
                 self.a+=1
                 if type(self.nn.nn)!=list:
-                    if self.exploration==None:
+                    try:
+                        if self.nn.explore!=None:
+                            pass
                         action_prob=self.epsilon_greedy_policy(s,self.action_one)
                         a=np.random.choice(self.action,p=action_prob)
-                        next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
-                    else:
-                        if self.exploration_space==None:
-                            action_prob=self.epsilon_greedy_policy(s,self.action_one)
-                            a=np.random.choice(self.action,p=action_prob)
-                            next_s,r,end=self.exploration.explore(self.action_name[a])
+                        if self.action_name==None:
+                            next_s,r,end=self.nn.explore(a)
                         else:
-                            action_prob=self.epsilon_greedy_policy(s,self.action_one)
-                            a=np.random.choice(self.action,p=action_prob)
-                            next_s,r,end=self.exploration.explore(self.state_name[s],self.action_name[a],self.exploration_space[self.state_name[s]][self.action_name[a]])
+                            next_s,r,end=self.nn.explore(self.action_name[a])
+                    except AttributeError:
+                        action_prob=self.epsilon_greedy_policy(s,self.action_one)
+                        a=np.random.choice(self.action,p=action_prob)
+                        next_s,r,end=self.nn.transition(self.state_name[s],self.action_name[a])
                 else:
-                    if self.exploration==None:
-                        a=self.nn.nn[1](self.state[self.state_name[s]],param=2).numpy()
+                    try:
+                        if self.nn.explore!=None:
+                            pass 
+                        if len(self.nn.param)==4:
+                            if self.state_name==None:
+                                a=(self.nn.nn[1](s,p=1)+tf.random.normal([1])).numpy()
+                            else:
+                                a=(self.nn.nn[1](self.state[self.state_name[s]],p=1)+tf.random.normal([1])).numpy()
+                        else:
+                            if self.state_name==None:
+                                a=self.nn.nn[1](s).numpy()
+                            else:
+                                a=self.nn.nn[1](self.state[self.state_name[s]]).numpy()
                         if len(a.shape)>0:
                             a=self._epsilon_greedy_policy(a,self.action_one)
-                            next_s,r,end=self.exploration_space[self.state_name[s]][self.action_name[a]]
+                            next_s,r,end=self.nn.explore(self.action_name[a])
                         else:
-                            next_s,r,end=self.exploration_space(self.state_name[s],a)
-                    else:
-                        if self.exploration_space==None:
-                            a=self.nn.nn[1](self.state[self.state_name[s]],param=2).numpy()
-                            if len(a.shape)>0:
-                                a=self._epsilon_greedy_policy(a,self.action_one)
-                                next_s,r,end=self.exploration.explore(self.action_name[a])
-                            else:
-                                next_s,r,end=self.exploration.explore(a)
+                            next_s,r,end=self.nn.explore(a)
+                    except AttributeError:
+                        if len(self.nn.param)==4:
+                            a=(self.nn.nn[1](self.state[self.state_name[s]],p=1)+tf.random.normal([1])).numpy()
                         else:
-                            a=self.nn.nn[1](self.state[self.state_name[s]],param=2)
-                            if len(a.shape)>0:
-                                a=self._epsilon_greedy_policy(a,self.action_one)
-                                next_s,r,end=self.exploration.explore(self.state_name[s],self.action_name[a],self.exploration_space[self.state_name[s]][self.action_name[a]])
+                            a=self.nn.nn[1](self.state[self.state_name[s]]).numpy()
+                        if len(a.shape)>0:
+                            a=self._epsilon_greedy_policy(a,self.action_one)
+                            next_s,r,end=self.nn.transition(self.state_name[s],self.action_name[a])
+                        else:
+                            next_s,r,end=self.nn.transition(self.state_name[s],a)
                 if self.state_pool==None:
                     self.state_pool=tf.expand_dims(self.state[self.state_name[s]],axis=0)
                     self.action_pool=tf.expand_dims(a,axis=0)
@@ -396,34 +417,36 @@ class kernel:
                     self.reward_pool=self.reward_pool[1:]
                 if end:
                     if self.save_episode==True:
-                        if self.exploration_space==None:
-                            episode.append([s,a,next_s,r,end])
+                        if self.state_name==None and self.action_name==None:
+                            episode=[s,a,next_s,r]
+                        elif self.state_name==None:
+                            episode=[s,self.action_name[a],next_s,r]
+                        elif self.action_name==None:
+                            episode=[self.state_name[s],a,self.state_name[next_s],r]
                         else:
-                            if len(a.shape)>0:
-                                episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r,end]
-                            else:
-                                episode=[self.state_name[s],a,self.state_name[next_s],r,end] 
+                            episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r]
                     break
                 elif self.save_episode==True:
-                    if self.exploration_space==None:
-                        episode.append([s,a,next_s,r])
+                    if self.state_name==None and self.action_name==None:
+                        episode=[s,a,next_s,r]
+                    elif self.state_name==None:
+                        episode=[s,self.action_name[a],next_s,r]
+                    elif self.action_name==None:
+                        episode=[self.state_name[s],a,self.state_name[next_s],r]
                     else:
-                        if len(a.shape)>0:
-                            episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r]
-                        else:
-                            episode=[self.state_name[s],a,self.state_name[next_s],r]
+                        episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r]
                 s=next_s
                 loss=self.learn1(episode_num,i)
                 t2=time.time()
                 self.time+=(t2-t1)
-        return loss,episode
+        return loss,episode,end
     
     
     def learn(self,episode_num,path=None,one=True):
         loss=0
         if episode_num!=None:
             for i in range(episode_num):
-                loss,episode=self.learn2(episode_num,i)
+                loss,episode,end=self.learn2(episode_num,i)
                 self.loss_list.append(loss)
                 if i==episode_num-1:
                     self.loss_list.append(self.loss)
@@ -442,6 +465,8 @@ class kernel:
                 self.epi_num+=1
                 self.total_episode+=1
                 if self.save_episode==True:
+                    if end:
+                        episode.append('end')
                     self.episode.append(episode)
                 try:
                     self.nn.ec+=1
@@ -453,7 +478,7 @@ class kernel:
                     break
         elif self.ol==None:
             while True:
-                loss,episode=self.learn2(episode_num,i)
+                loss,episode,end=self.learn2(episode_num,i)
                 self.loss_list.append(loss)
                 if i==episode_num-1:
                     self.loss_list.append(self.loss)
@@ -472,6 +497,8 @@ class kernel:
                 self.epi_num+=1
                 self.total_e+=1
                 if self.save_episode==True:
+                    if end:
+                        episode.append('end')
                     self.episode.append(episode)
                 try:
                     self.nn.ec+=1
@@ -488,8 +515,8 @@ class kernel:
                     if type(self.nn.nn)!=list:
                         loss=self.nn.loss(self.nn.nn,data[0],data[1],data[2],data[3])
                     else:
-                        value=self.nn.nn[0](data[0],param=0)
-                        TD=tf.reduce_mean((data[3]+self.discount*self.nn.nn[0](data[2],param=1)-value)**2)
+                        value=self.nn.nn[0](data[0])
+                        TD=tf.reduce_mean((data[3]+self.discount*self.nn.nn[0](data[2])-value)**2)
                         loss=TD
                     if len(self.loss_list)==0:
                         self.loss_list.append(loss.numpy())
@@ -503,21 +530,16 @@ class kernel:
                     if type(self.nn.nn)!=list:
                         loss=self.nn.loss(self.nn.nn,data[0],data[1],data[2],data[3])				
                     else:  
-                        value=self.nn.nn[0](data[0],param=0)
-                        TD=tf.reduce_mean((data[3]+self.discount*self.nn.nn[0](data[2],param=1)-value)**2)
+                        value=self.nn.nn[0](data[0])
+                        TD=tf.reduce_mean((data[3]+self.discount*self.nn.nn[0](data[2])-value)**2)
                 if type(self.nn.nn)!=list:
-                    gradient=tape.gradient(loss,self.param[0])
-                    self.opt.opt(gradient,self.param[0])
+                    gradient=tape.gradient(loss,self.nn.param[0])
+                    self.opt(gradient,self.nn.param[0])
                 else:
-                    value_gradient=tape.gradient(TD,self.param[0])				
-                    actor_gradient=TD*tape.gradient(tf.math.log(data[1]),self.param[2])
+                    value_gradient=tape.gradient(TD,self.nn.param[0])				
+                    actor_gradient=TD*tape.gradient(tf.math.log(data[1]),self.nn.param[1])
                     loss=TD
-                    self.opt.opt(value_gradient,actor_gradient,self.param)
-                if self.update_step!=None:
-                    if self.a%self.update_step==0:
-                        self.nn.update_param(self.param)
-                else:
-                    self.nn.update_param(self.param)
+                    self.opt(value_gradient,actor_gradient,self.nn.param)
                 if len(self.loss_list)==0:
                     self.loss_list.append(loss.numpy())
                 else:
@@ -602,9 +624,6 @@ class kernel:
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.update_step,output_file)
-        pickle.dump(self.rp,output_file)
-        pickle.dump(self.alpha,output_file)
-        pickle.dump(self.beta,output_file)
         pickle.dump(self.end_loss,output_file)
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.loss_list,output_file)
@@ -643,9 +662,6 @@ class kernel:
         self.pool_size=pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.update_step=pickle.load(input_file)
-        self.rp=pickle.load(input_file)
-        self.alpha=pickle.load(input_file)
-        self.beta=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
