@@ -174,6 +174,8 @@ class kernel:
                     output=self.nn.fp(data_batch)
                     batch_loss=self.nn.loss(output,labels_batch)
                 try:
+                    if self.nn.opt!=None:
+                        pass
                     self.apply_gradient(tape,self.nn.opt,batch_loss,self.param)
                 except AttributeError:
                     gradient=tape.gradient(batch_loss,self.param)
@@ -206,6 +208,8 @@ class kernel:
                     output=self.nn.fp(data_batch)
                     batch_loss=self.nn.loss(output,labels_batch)
                 try:
+                    if self.nn.opt!=None:
+                        pass
                     self.apply_gradient(tape,self.nn.opt,batch_loss,self.param)
                 except AttributeError:
                     gradient=tape.gradient(batch_loss,self.param)
@@ -251,6 +255,8 @@ class kernel:
                 output=self.nn.fp(self.train_data)
                 train_loss=self.nn.loss(output,self.train_labels)
             try:
+                if self.nn.opt!=None:
+                    pass
                 self.apply_gradient(tape,self.nn.opt,train_loss,self.param)
             except AttributeError:
                 gradient=tape.gradient(train_loss,self.param)
@@ -268,6 +274,8 @@ class kernel:
                 output=self.nn.fp(data[0])
                 train_loss=self.nn.loss(output,data[1])
             try:
+                if self.nn.opt!=None:
+                    pass
                 self.apply_gradient(tape,self.nn.opt,train_loss,self.param)
             except AttributeError:
                 gradient=tape.gradient(train_loss,self.param)
