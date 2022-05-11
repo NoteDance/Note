@@ -59,13 +59,13 @@ class kernel:
             self.shape0=train_data.shape[0]
         if self.thread!=None:
             self.t=-np.arange(-self.thread,1)
-            if self.PO!=True:
+            if self.PO==None:
                 self.train_loss=np.zeros(self.thread)
                 self.train_acc=np.zeros(self.thread)
                 self.train_loss_list=[[] for _ in range(self.thread)]
                 self.train_acc_list=[[] for _ in range(self.thread)]
             if test_data!=None:
-                if self.PO!=True:
+                if self.PO==None:
                     self.test_loss=np.zeros(self.thread)
                     self.test_acc=np.zeros(self.thread)
                     self.test_loss_list=[[] for _ in range(self.thread)]
@@ -97,13 +97,13 @@ class kernel:
         t=-np.arange(-thread,1)+self.thread+1
         self.t=t.extend(self.t)
         self.thread+=thread
-        if self.PO!=True:
+        if self.PO==None:
             self.train_loss=np.concatenate((self.train_loss,np.zeros(self.t)))
             self.train_acc=np.concatenate((self.train_acc,np.zeros(self.t)))
             self.train_loss_list.extend([[] for _ in range(len(self.t))])
             self.train_acc_list.extend([[] for _ in range(len(self.t))])
         if self.test==True:
-            if self.PO!=True:
+            if self.PO==None:
                 self.test_loss=np.concatenate((self.test_loss,np.zeros(self.t)))
                 self.test_acc=np.concatenate((self.test_acc,np.zeros(self.t)))
                 self.test_loss_list.extend([[] for _ in range(len(self.t))])
