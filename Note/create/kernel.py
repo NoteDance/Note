@@ -513,7 +513,7 @@ class kernel:
                     self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
                 except AttributeError:
                     self.nn.oopt(self.gradient,self.nn.param,t)
-                if self.total_epoch>=1:
+                if self.total_epoch[t]>=1:
                     if self.acc_flag1==1:
                         self.batch_acc=self.nn.accuracy(self.output,labels_batch)
                 if i==epoch-1:
@@ -539,7 +539,7 @@ class kernel:
                     self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
                 except AttributeError:
                     self.nn.oopt(self.gradient,self.nn.param,t)
-                if self.total_epoch>=1:
+                if self.total_epoch[t]>=1:
                     if self.acc_flag1==1:
                         self.batch_acc=self.nn.accuracy(self.output,labels_batch)
                 if i==epoch-1:
@@ -576,7 +576,7 @@ class kernel:
                         self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
                     except AttributeError:
                         self.nn.oopt(self.gradient,self.param,t)
-                    if self.total_epoch>=1:
+                    if self.total_epoch[t]>=1:
                         if self.acc_flag1==1:
                             self.batch_acc=self.nn.accuracy(self.output,labels_batch)
                     if i==epoch-1:
@@ -601,7 +601,7 @@ class kernel:
                         self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
                     except AttributeError:
                         self.nn.oopt(self.gradient,self.nn.param,t)
-                    if self.total_epoch>=1:
+                    if self.total_epoch[t]>=1:
                         if self.acc_flag1==1:
                             self.batch_acc=self.nn.accuracy(self.output,labels_batch)
                     if i==epoch-1:
@@ -628,7 +628,7 @@ class kernel:
                     self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
                 except AttributeError:
                     self.nn.oopt(self.gradient,self.nn.param)
-                if self.total_epoch>=1:
+                if self.total_epoch[t]>=1:
                     self.loss=self._train_loss.numpy()
                     self.train_loss_list.append(self.loss.astype(np.float32))
                     self.train_loss=self.loss
@@ -672,7 +672,7 @@ class kernel:
                     self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
                 except AttributeError:
                     self.nn.oopt(self.gradient,self.nn.param,t)
-                if self.total_epoch>=1:
+                if self.total_epoch[t]>=1:
                     self.loss=self._train_loss.numpy()
                     self.train_loss_list.append(self.loss.astype(np.float32))
                     self.train_loss=self.loss
@@ -716,7 +716,7 @@ class kernel:
             index2=(j+1)*batch
             if self.acc_flag1==1:
                 self.train_(data_batch,labels_batch,batch,epoch,batches,test_batch,index1,index2,j,t,i)
-                if self.total_epoch>=1:
+                if self.total_epoch[t]>=1:
                     total_loss+=self.batch_loss
                     total_acc+=self.batch_acc
                     if i==epoch-1:
@@ -724,7 +724,7 @@ class kernel:
                         _total_acc+=self._batch_acc 
             else:
                 self.train_(data_batch,labels_batch,batch,epoch,batches,test_batch,index1,index2,j,t,i)
-                if self.total_epoch>=1:
+                if self.total_epoch[t]>=1:
                     total_loss+=self.batch_loss
                     if i==epoch-1:
                         _total_loss+=self._batch_loss
@@ -734,18 +734,18 @@ class kernel:
             index2=batch-(self.shape0-batches*batch)
             self.train_(data_batch,labels_batch,batch,epoch,batches,test_batch,index1,index2,j,t,i)
             if self.acc_flag1==1:
-                if self.total_epoch>=1:
+                if self.total_epoch[t]>=1:
                     total_loss+=self.batch_loss
                     total_acc+=self.batch_acc
                     if i==epoch-1:
                         _total_loss+=self._batch_loss
                         _total_acc+=self._batch_acc
             else:
-                if self.total_epoch>=1:
+                if self.total_epoch[t]>=1:
                     total_loss+=self.batch_loss
                     if i==epoch-1:
                         _total_loss+=self._batch_loss
-        if self.total_epoch>=1:
+        if self.total_epoch[t]>=1:
             loss=total_loss.numpy()/batches
             if self.acc_flag1==1:
                 train_acc=total_acc.numpy()/batches
