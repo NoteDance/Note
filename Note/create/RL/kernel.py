@@ -5,7 +5,7 @@ import pickle
 
 
 class kernel:
-    def __init__(self,nn=None,state=None,state_name=None,action_name=None,thread_lock=None,save_episode=True):
+    def __init__(self,nn=None,state=None,state_name=None,action_name=None,thread=None,thread_lock=None,save_episode=True):
         if nn!=None:
             self.nn=nn
             self.opt=nn.opt
@@ -29,10 +29,10 @@ class kernel:
         self.batch=None
         self.update_step=None
         self.end_loss=None
-        self.thread=0
-        self.thread_sum=0
+        self.thread=thread
+        self.t=-np.arange(-self.thread,1)
         self.thread_lock=thread_lock
-        self.stop=[]
+        self.stop=np.zeros(self.thread)
         self.state_list=None
         self._state_list=[]
         self.p=[]
@@ -56,12 +56,12 @@ class kernel:
         self.pool_net=True
         self.PO=None
         self.save_episode=save_episode
-        self.loss=[]
+        self.loss=np.zeros(self.thread)
         self._loss=[]
         self.loss_list=[]
         self.a=0
         self.epi_num=[]
-        self.episode_num=[]
+        self.episode_num=np.zeros(self.thread)
         self.total_episode=0
         self.total_time=0
         
@@ -76,6 +76,18 @@ class kernel:
             self.action=np.arange(len(self.action_name),dtype=dtype)
             if self.epsilon!=None:
                 self.action_one=np.ones(len(self.action_name),dtype=dtype)
+        return
+    
+    
+    def add_threads(self,thread):
+        t=-np.arange(-thread,1)+self.thread+1
+        self.t=t.extend(self.t)
+        self.thread+=thread
+        if self.PO!=True:
+            self.loss=np.concatenate((self.train_loss,np.zeros(self.t)))
+            self.loss_list.extend([[] for _ in range(len(self.t))])
+        self.stop=np.concatenate((self.stop,np.zeros(self.t)))
+        self.episode_num=np.concatenate((self.epoch,np.zeros(self.t)))
         return
     
     
@@ -98,7 +110,6 @@ class kernel:
         if end_loss!=None:
             self.end_loss=end_loss
         self.thread=0
-        self.thread_sum=0
         self._state_list=[]
         self.p=[]
         self.im=[]
@@ -122,14 +133,13 @@ class kernel:
         self.action_pool=None
         self.next_state_pool=None
         self.reward_pool=None
-        self.loss=[]
+        self.loss=np.zeros(self.thread)
         self._loss=[]
         self.loss_list=[]
         self.a=0
         self.epi_num=[]
-        self.episode_num=[]
+        self.episode_num=np.zeros(self.thread)
         self.total_episode=0
-        self.time=0
         self.total_time=0
         return
     
@@ -306,7 +316,7 @@ class kernel:
     def get_episode(self,s):
         next_s=None
         episode=[]
-        self.stop=False
+        self.end=False
         while True:
             s=next_s
             if type(self.nn.nn)!=list:
@@ -361,7 +371,7 @@ class kernel:
                     episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s],r])
                 episode.append('end')
                 break
-            elif self.stop==True:
+            elif self.end==True:
                 break
             else:
                 if self.state_name==None and self.action_name==None:
@@ -806,10 +816,10 @@ class kernel:
         return
     
     
-    def learn(self,epsilon,episode_num,i):
+    def learn(self,epsilon,episode_num):
+        i=self.t.pop()
         self.thread_lock.acquire()
         self.thread+=1
-        self.loss.append(0)
         self._loss.append(0)
         self.thread_lock.release()
         while len(self.state_pool)<i:
@@ -825,8 +835,6 @@ class kernel:
             self.reward_pool.append(None)
             self.epsilon.append(epsilon)
             self.epi_num.append(episode_num)
-            self.episode_num.append(0)
-            self.stop.append(0)
             try:
                 self.nn.ec.append(0)
             except AttributeError:
@@ -869,12 +877,13 @@ class kernel:
                         if index not in self.finish_list:
                             episode.append(_episode)
                     if end:
+                        self.thread_lock.acquire()
+                        self.loss_list.append(self.loss[i])
                         if self.save_episode==True:
                             episode.append('end')
-                            self.thread_lock.acquire()
                             self.episode.append(episode)
-                            self.thread_lock.release()
                         break
+                        self.thread_lock.release()
             else:
                 for _ in range(self.episode_step):
                     if self.stop[i]==True:
@@ -892,12 +901,13 @@ class kernel:
                         if index not in self.finish_list:
                             episode.append(_episode)
                     if end:
+                        self.thread_lock.acquire()
+                        self.loss_list.append(self.loss[i])
                         if self.save_episode==True:
                             episode.append('end')
-                            self.thread_lock.acquire()
                             self.episode.append(episode)
-                            self.thread_lock.release()
                         break
+                        self.thread_lock.release()
                 if self.save_episode==True:
                     self.thread_lock.acquire()
                     self.episode.append(episode)
@@ -970,7 +980,6 @@ class kernel:
         pickle.dump(self.batch,output_file)
         pickle.dump(self.update_step,output_file)
         pickle.dump(self.end_loss,output_file)
-        pickle.dump(self.thread_sum,output_file)
         pickle.dump(self.state_list,output_file)
         pickle.dump(self._state_list,output_file)
         pickle.dump(self.p,output_file)
@@ -1024,7 +1033,6 @@ class kernel:
         self.batch=pickle.load(input_file)
         self.update_step=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
-        self.thread_sum=pickle.load(input_file)
         self.state_list=pickle.load(input_file)
         self._state_list=pickle.load(input_file)
         self.p=pickle.load(input_file)
