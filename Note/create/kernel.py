@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
+import os
 import time
 
 
@@ -782,18 +783,19 @@ class kernel:
         t=None
         if self.flag==None:
             self.flag=True
-        if p==None and s==None:
+        if self.p==None:
             self.p=9
-            self.s=2
-        elif p!=None:
-            self.p=p-1
-            self.s=2
-        elif s!=None:
-            self.p=9
-            self.s=s
         else:
             self.p=p-1
-            self.s=s
+        if self.s==None:
+            self.s=2
+        else:
+            if type(s)!=list:
+                self.s=s
+            else:
+                self.s=s[0]
+                self.mf=s[1]
+                self.file_list=[]
         if type(self.train_data)==list:
             data_batch=[x for x in range(len(self.train_data))]
         if type(self.train_labels)==list:
@@ -1230,6 +1232,10 @@ class kernel:
             path=path+'\save-{0}.dat'.format(i+1)
             index=path.rfind('\\')
             parameter_file=open(path.replace(path[index+1:],'parameter-{0}.dat'.format(i+1)),'wb')
+            self.file_list.append(['save-{0}.dat','parameter-{0}.dat'])
+            if len(self.file_list)>self.mf:
+                os.remove(self.file_list[0][0])
+                os.remove(self.file_list[0][1])
         pickle.dump(self.nn.param,parameter_file)
         self.nn.param=None
         pickle.dump(self.nn,output_file)
@@ -1243,6 +1249,8 @@ class kernel:
         pickle.dump(self.acc_flag2,output_file)
         pickle.dump(self.p,output_file)
         pickle.dump(self.s,output_file)
+        pickle.dump(self.mf,output_file)
+        pickle.dump(self.file_list,output_file)
         pickle.dump(self.flag,output_file)
         pickle.dump(self.train_loss,output_file)
         pickle.dump(self.train_acc,output_file)
@@ -1284,6 +1292,8 @@ class kernel:
         self.acc_flag2=pickle.load(input_file)
         self.p=pickle.load(input_file)
         self.s=pickle.load(input_file)
+        self.mf=pickle.load(input_file)
+        self.file_list=pickle.load(input_file)
         self.flag=pickle.load(input_file)
         self.train_loss=pickle.load(input_file)
         self.train_acc=pickle.load(input_file)
