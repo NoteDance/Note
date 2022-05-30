@@ -1,0 +1,80 @@
+Use kernel to train neural network. First, you should write a neural network class that include method object and Instance object.
+method object:
+#method object need to use Tensorflow 2.0 version and above to write.
+1. fp(data) Receive data to forward propagation then output result.
+2. loss(output,labels) Receive output and labels output loss.
+3. oopt() If you want to write optimizer by yourself.
+
+instance object:
+1.If you don't want to write optimizer by yourself,assign opt as optimizer of tensorflow
+2.instance include parameter and hyper-parameter,where parameter must be named param, instance can include anything you need.
+
+
+----------------------------------------------------------------------------------------
+If you done your neural network.
+simple example:
+#start kernel
+import Note.create.kernel as k
+kernel=k.kernel(your neural network object)
+
+#input you data,if you have test data can transfer to kernel API data()
+#data can be a list,[data1,data2,...,datan]
+kernel.data(train_data,train_labels,test_data=None,test_labels=None)
+
+#train neural network
+#batch: data batch
+#epoch: train epoch
+kernel.train(batch=None,epoch=None)
+
+
+----------------------------------------------------------------------------------------
+#save
+#this kernel API can save you neural network and param as a file.
+kernel.save(path)
+
+
+----------------------------------------------------------------------------------------
+#restore
+#when you want to train your neural network again.
+import Note.create.kernel as k
+#don't need neural network object.
+kernel=k.kernel()
+#use this API to restore your neural network and param file.
+kernel.restore(s_path,p_path)
+
+
+-----------------------------------------------------------------------------------------
+set_end(self,end_loss=None,end_acc=None,end_test_loss=None,end_test_acc=None)
+#this kernel API can set end condition for training
+kernel.set_end(end condition)
+
+
+-----------------------------------------------------------------------------------------
+train_visual(self)
+#this kernel API can visualize your taining
+kernel.train_visual()
+
+
+-----------------------------------------------------------------------------------------
+Parallel optimization:
+Use multithreading to optimize.
+Note have two types of parallel optimization.
+You can use parallel optimization as follow.
+#first transfer thread lock to kernel
+kernel.thread_lock=your thread lock
+#then set kernel data PO
+#the first kind of parallel optimization(not parallel computing gradient and optimizing)
+kernel.PO=1
+#the second kind of parallel optimization(parallel computing gradient and optimizing)
+kernel.PO=2
+
+add_threads(self,thread)
+#add threads
+
+
+-----------------------------------------------------------------------------------------
+self.nn: neural network object
+self.thread: thread sum
+self.thread_lock: thread lock
+self.PO: parallel optimization
+self.nn.km: kernel mode

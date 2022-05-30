@@ -1,0 +1,1 @@
+Note is an AI system that have kernel for deep learning and reinforcement learning.

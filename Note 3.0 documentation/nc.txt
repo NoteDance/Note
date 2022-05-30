@@ -1,0 +1,33 @@
+Note compiler
+
+Note compiler can compile filename.n into filename.py.
+Using Note compiler can use different grammar to write your neural network in filename.n.
+
+Grammar transition by Note compiler:
+Operator:
+(object.*object)->tf.matmul(object1,object2)
+(object.^)->tf.reverse(object)
+(object1.|object2)->tf.concat([object1,object2],0)
+(object1.||object2)->tf.concat([object1,object2],1)
+(object./)->tf.math.sqrt(object)
+(object1.=object2)->state_ops.assign(object1,object2)
+
+Init:
+example:
+param=zint32. [3,4]->param=tf.zeros([3,4],tf.int32)
+return zint32. [3,4]->return tf.zeros([3,4],dtype=tf.int32)
+param=uint32. [3,4](0,1)->param=tf.random.uniform([3,4],0,1,dtype=tf.int32)
+return uint32. [3,4](0,1)->return tf.random.uniform([3,4],0,1,dtype=tf.int32)
+param=nint32. [3,4](0,1)->param=tf.random.normal([3,4],0,1,dtype=tf.int32)
+return nint32. [3,4](0,1)->return tf.random.normal([3,4],0,1,dtype=tf.int32)
+param=oint32. [3,4]->param=tf.ones([3,4],tf.int32)
+return oint32. [3,4]->return tf.ones([3,4],dtype=tf.int32)
+
+Using example:
+import Note.create.nc as nc
+nc=nc.compiler(filename.n)
+nc.Compile()
+#then you will get filename.py.
+
+Macro:
+define. macro name string
