@@ -1,2 +1,2 @@
 # Note
-https://github.com/7NoteDancing/Note-documentation
+documentation:https://github.com/7NoteDancing/Note-documentation
