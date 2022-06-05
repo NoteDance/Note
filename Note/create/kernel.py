@@ -300,8 +300,12 @@ class kernel:
             self.flag=True
         if type(self.train_data)==list:
             data_batch=[x for x in range(len(self.train_data))]
+        else:
+            data_batch=None
         if type(self.train_labels)==list:
             labels_batch=[x for x in range(len(self.train_labels))]
+        else:
+            labels_batch=None
         if epoch!=None:
             for i in range(epoch):
                 t1=time.time()
