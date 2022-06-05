@@ -266,12 +266,7 @@ class kernel:
                     except AttributeError:
                         pass
                 if len(self.state_pool)%self.batch!=0:
-                    try:
-                        if self.nn.pr!=None:
-                            pass
-                        state_batch,action_batch,next_state_batch,reward_batch=self.nn.pr(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
-                    except AttributeError:
-                        pass
+                    state_batch,action_batch,next_state_batch,reward_batch=self.nn.pr(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
                     with tf.GradientTape() as tape:
                         if type(self.nn.nn)!=list:
                             batch_loss=self.nn.loss(self.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
