@@ -243,17 +243,17 @@ class kernel:
         return data_batch,labels_batch
     
     
-    def core_opt(self,data,labels,t=None):
+    def core_opt(self,output,loss,t=None):
         try:
             if self.core.DType!=None:
                 pass
             if self.ol==None:
                 with self.core.GradientTape() as tape:
                     if self.thread==None:
-                        output=self.nn.fp(data)
+                        output=output
                     else:
-                        output=self.nn.fp(data,t)
-                    batch_loss=self.nn.loss(output,labels)
+                        output=output
+                    batch_loss=loss
                 try:
                     if self.thread==None:
                         if self.nn.opt!=None:
@@ -272,8 +272,8 @@ class kernel:
                         self.nn.oopt(gradient,self.nn.param,t)
             else:
                 with self.core.GradientTape() as tape:
-                    output=self.nn.fp(data[0])
-                    train_loss=self.nn.loss(output,data[1])
+                    output=output
+                    train_loss=loss
                 if self.thread_lock!=None:
                     try:
                         if self.nn.opt!=None:
@@ -308,12 +308,10 @@ class kernel:
                         gradient=tape.gradient(train_loss,self.nn.param)
                         self.nn.oopt(gradient,self.nn.param)
         except AttributeError:
-            output=self.nn(data)
-            batch_loss=self.nn.loss(output,labels)
             self.nn.opt.zero_grad()
-            batch_loss.backward()
+            loss.backward()
             self.nn.opt.step()
-        return batch_loss
+        return
     
     
     def core_opt_t(self,data,labels,t):
@@ -392,7 +390,12 @@ class kernel:
                 index1=j*batch
                 index2=(j+1)*batch
                 data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j)
-                batch_loss=self.core_opt(data_batch,labels_batch,t)
+                if self.thread==None:
+                    output=self.nn.fp(data_batch)
+                else:
+                    output=self.nn.fp(data_batch,t)
+                batch_loss=self.nn.loss(output,labels_batch)
+                self.core_opt(output,batch_loss,t)
                 if i==epoch-1:
                     if self.thread==None:
                         output=self.nn.fp(data_batch)
@@ -417,7 +420,12 @@ class kernel:
                 index1=batches*batch
                 index2=batch-(self.shape0-batches*batch)
                 data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j,True)
-                batch_loss=self.core_opt(data_batch,labels_batch,t)
+                if self.thread==None:
+                    output=self.nn.fp(data_batch)
+                else:
+                    output=self.nn.fp(data_batch,t)
+                batch_loss=self.nn.loss(output,labels_batch)
+                self.core_opt(output,batch_loss,t)
                 if i==epoch-1:
                     if self.thread==None:
                         output=self.nn.fp(data_batch)
@@ -490,7 +498,12 @@ class kernel:
                         if self.acc_flag1==1:
                             self.test_acc_list[t].append(self.test_acc[t])
         elif self.ol==None:
-            train_loss=self.core_opt(self.train_data,self.train_labels,t)
+            if self.thread==None:
+                output=self.nn.fp(self.train_data)
+            else:
+                output=self.nn.fp(data_batch,t)
+            train_loss=self.nn.loss(output,self.train_labels)
+            self.core_opt(output,train_loss,t)
             self.loss_acc(output=output,labels_batch=labels_batch,train_loss=train_loss,batch=batch,test_batch=test_batch,total_loss=total_loss,total_acc=total_acc,t=t)
             if i==epoch-1:
                 if self.thread==None:
@@ -503,7 +516,9 @@ class kernel:
             data=self.ol()
             if self.stop==True:
                 return
-            self.core_opt(data[0],data[1])
+            output=self.nn.fp(data[0])
+            train_loss=self.nn.loss(output,data[1])
+            self.core_opt(output,train_loss)
             train_loss=self.nn.loss(output,data[1])
             loss=train_loss.numpy()
             if self.thread_lock!=None:
@@ -531,10 +546,10 @@ class kernel:
         if batch!=None:
             if index1==batches*batch:
                 data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j,True)
-                self.core_opt_t(data_batch,labels_batch,t,batch,epoch,i,j)
+                self.core_opt_t(data_batch,labels_batch,t)
                 return
             data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j)
-            self.core_opt_t(data_batch,labels_batch,t,batch,epoch,i,j)
+            self.core_opt_t(data_batch,labels_batch,t)
             if self.PO==1:
                 if self.total_epoch[t]>=1:
                     if self.acc_flag1==1:
@@ -566,8 +581,8 @@ class kernel:
                 self.thread_lock.release()
             return
         else:
+            self.core_opt_t(self.train_data,self.train_labels,t)
             if self.PO==1:
-                self.core_opt_t(self.train_data,self.train_labels,t)
                 if self.total_epoch[t]>=1:
                     self.loss=self._train_loss.numpy()
                     self.train_loss_list.append(self.loss.astype(np.float32))
@@ -598,7 +613,6 @@ class kernel:
                         if self.acc_flag1==1:
                             self.test_acc_list.append(self.test_acc)
             else:
-                self.core_opt_t(self.train_data,self.train_labels,t,test_batch=test_batch)
                 self.thread_lock.acquire()
                 if self.total_epoch[t]>=1:
                     self.loss=self._train_loss.numpy()
