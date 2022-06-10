@@ -27,7 +27,7 @@ class kernel:
         self.end_test_loss=None
         self.end_test_acc=None
         self.acc_flag1=None
-        self.acc_flag2=None
+        self.acc_flag2='%'
         self.flag=None
         self.train_loss=None
         self.train_acc=None
