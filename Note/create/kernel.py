@@ -26,8 +26,7 @@ class kernel:
         self.end_acc=None
         self.end_test_loss=None
         self.end_test_acc=None
-        self.acc_flag1=None
-        self.acc_flag2='%'
+        self.acc_flag='%'
         self.flag=None
         self.train_loss=None
         self.train_acc=None
@@ -155,17 +154,25 @@ class kernel:
             if self.total_epoch>=1:
                 batch_loss=batch_loss
                 total_loss+=batch_loss
-                if self.acc_flag1==1:
+                try:
+                    if self.nn.accuracy!=None:
+                        pass
                     batch_acc=self.nn.accuracy(output,labels_batch)
                     batch_acc=batch_acc
                     total_acc+=batch_acc
+                except AttributeError:
+                    pass
             if self.shape0%batch!=0:
                 batch_loss=batch_loss
                 total_loss+=batch_loss
-                if self.acc_flag1==1:
+                try:
+                    if self.nn.accuracy!=None:
+                        pass
                     batch_acc=self.nn.accuracy(output,labels_batch)
                     batch_acc=batch_acc
                     total_acc+=batch_acc
+                except AttributeError:
+                    pass
             return total_loss,total_acc
         elif self.ol==None:
             if self.total_epoch>=1:
@@ -178,7 +185,9 @@ class kernel:
                     self.train_loss_list[t].append(loss.astype(np.float32))
                     self.train_loss[t]=loss
                     self.train_loss[t]=self.train_loss[t].astype(np.float32)
-                if self.acc_flag1==1:
+                try:
+                    if self.nn.accuracy!=None:
+                        pass
                     if self.thread==None:
                         acc=self.nn.accuracy(output,self.train_labels)
                         acc=acc.numpy()
@@ -191,17 +200,27 @@ class kernel:
                         self.train_acc_list[t].append(acc.astype(np.float32))
                         self.train_acc[t]=acc
                         self.train_acc[t]=self.train_acc[t].astype(np.float32)
+                except AttributeError:
+                    pass
                 if self.test==True:
                     if self.thread==None:
                         self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
                         self.test_loss_list.append(self.test_loss)
-                        if self.acc_flag1==1:
+                        try:
+                            if self.nn.accuracy!=None:
+                                pass
                             self.test_acc_list.append(self.test_acc)
+                        except AttributeError:
+                            pass
                     else:
                         self.test_loss[t],self.test_acc[t]=self.test(self.test_data,self.test_labels,test_batch,t)
                         self.test_loss_list[t].append(self.test_loss[t])
-                        if self.acc_flag1==1:
+                        try:
+                            if self.nn.accuracy!=None:
+                                pass
                             self.test_acc_list[t].append(self.test_acc[t])
+                        except AttributeError:
+                            pass
             return
     
     
@@ -447,8 +466,12 @@ class kernel:
                         pass
             if self.total_epoch>=1:
                 loss=total_loss.numpy()/batches
-                if self.acc_flag1==1:
+                try:
+                    if self.nn.accuracy!=None:
+                        pass
                     train_acc=total_acc/batches
+                except AttributeError:
+                    pass
                 if self.thread==None:
                     self.train_loss_list.append(loss.astype(np.float32))
                     self.train_loss=loss
@@ -467,7 +490,9 @@ class kernel:
                         self.train_loss_list[t].append(loss.astype(np.float32))
                         self.train_loss[t]=loss
                         self.train_loss[t]=self.train_loss[t].astype(np.float32)
-                if self.acc_flag1==1:
+                try:
+                    if self.nn.accuracy!=None:
+                        pass
                     if self.thread==None:
                         self.train_acc_list.append(train_acc.astype(np.float32))
                         self.train_acc=train_acc
@@ -486,17 +511,27 @@ class kernel:
                             self.train_acc_list[t].append(train_acc.astype(np.float32))
                             self.train_acc[t]=train_acc
                             self.train_acc[t]=self.train_acc[t].astype(np.float32)
+                except AttributeError:
+                    pass
                 if self.test==True:
                     if self.thread==None:
                         self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
                         self.test_loss_list.append(self.test_loss)
-                        if self.acc_flag1==1:
+                        try:
+                            if self.nn.accuracy!=None:
+                                pass
                             self.test_acc_list.append(self.test_acc)
+                        except AttributeError:
+                            pass
                     else:
                         self.test_loss[t],self.test_acc[t]=self.test(self.test_data,self.test_labels,test_batch,t)
                         self.test_loss_list[t].append(self.test_loss[t])
-                        if self.acc_flag1==1:
+                        try:
+                            if self.nn.accuracy!=None:
+                                pass
                             self.test_acc_list[t].append(self.test_acc[t])
+                        except AttributeError:
+                            pass
         elif self.ol==None:
             if self.thread==None:
                 output=self.nn.fp(self.train_data)
@@ -552,8 +587,12 @@ class kernel:
             self.core_opt_t(data_batch,labels_batch,t)
             if self.PO==1:
                 if self.total_epoch[t]>=1:
-                    if self.acc_flag1==1:
+                    try:
+                        if self.nn.accuracy!=None:
+                            pass
                         self.batch_acc=self.nn.accuracy(self.output,labels_batch)
+                    except AttributeError:
+                        pass
                 if i==epoch-1:
                     self.output=self.nn.fp(data_batch)
                     self._batch_loss=self.nn.loss(self.output,labels_batch)
@@ -565,8 +604,12 @@ class kernel:
             else:
                 self.thread_lock.acquire()
                 if self.total_epoch[t]>=1:
-                    if self.acc_flag1==1:
+                    try:
+                        if self.nn.accuracy!=None:
+                            pass
                         self.batch_acc=self.nn.accuracy(self.output,labels_batch)
+                    except AttributeError:
+                        pass
                 if i==epoch-1:
                     self.output=self.nn.fp(data_batch)
                     self._batch_loss=self.nn.loss(self.output,labels_batch)
@@ -574,8 +617,12 @@ class kernel:
                     self.nn.bc+=1
                 except AttributeError:
                     pass
-                if self.acc_flag1==1:
+                try:
+                    if self.nn.accuracy!=None:
+                        pass
                     return self.batch_loss,self.batch_acc
+                except AttributeError:
+                    pass
                 else:
                     return self.batch_loss
                 self.thread_lock.release()
@@ -595,7 +642,9 @@ class kernel:
                         self.train_loss_list.append(self.loss.astype(np.float32))
                         self.train_loss=self.loss
                         self.train_loss=self.train_loss.astype(np.float32)
-                    if self.acc_flag1==1:
+                    try:
+                        if self.nn.accuracy!=None:
+                            pass
                         self.acc=self.nn.accuracy(self.output,self.train_labels)
                         self.acc=self.acc.numpy()
                         self.train_acc_list.append(self.acc.astype(np.float32))
@@ -607,11 +656,17 @@ class kernel:
                             self.train_acc_list.append(self.acc.astype(np.float32))
                             self.train_acc=self.acc
                             self.train_acc=self.train_acc.astype(np.float32)
+                    except AttributeError:
+                        pass
                     if self.test==True:
                         self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
                         self.test_loss_list.append(self.test_loss)
-                        if self.acc_flag1==1:
+                        try:
+                            if self.nn.accuracy!=None:
+                                pass
                             self.test_acc_list.append(self.test_acc)
+                        except AttributeError:
+                            pass
             else:
                 self.thread_lock.acquire()
                 if self.total_epoch[t]>=1:
@@ -626,7 +681,9 @@ class kernel:
                         self.train_loss_list.append(self.loss.astype(np.float32))
                         self.train_loss=self.loss
                         self.train_loss=self.train_loss.astype(np.float32)
-                    if self.acc_flag1==1:
+                    try:
+                        if self.nn.accuracy!=None:
+                            pass
                         self.acc=self.nn.accuracy(self.output,self.train_labels)
                         self.acc=self.acc.numpy()
                         self.train_acc_list.append(self.acc.astype(np.float32))
@@ -637,12 +694,18 @@ class kernel:
                             self.acc=self.acc.numpy()
                             self.train_acc_list.append(self.acc.astype(np.float32))
                             self.train_acc=self.acc
-                            self.train_acc=self.train_acc.astype(np.float32) 
+                            self.train_acc=self.train_acc.astype(np.float32)
+                    except AttributeError:
+                        pass
                     if self.test==True:
                         self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
                         self.test_loss_list.append(self.test_loss)
-                        if self.acc_flag1==1:
+                        try:
+                            if self.nn.accuracy!=None:
+                                pass
                             self.test_acc_list.append(self.test_acc)
+                        except AttributeError:
+                            pass
                 self.thread_lock.release()
             return
     
@@ -656,7 +719,9 @@ class kernel:
         for j in range(batches):
             index1=j*batch
             index2=(j+1)*batch
-            if self.acc_flag1==1:
+            try:
+                if self.nn.accuracy!=None:
+                    pass
                 self.train_(data_batch,labels_batch,batch,epoch,batches,test_batch,index1,index2,j,t,i)
                 if self.total_epoch[t]>=1:
                     total_loss+=self.batch_loss
@@ -664,7 +729,7 @@ class kernel:
                     if i==epoch-1:
                         _total_loss+=self._batch_loss
                         _total_acc+=self._batch_acc 
-            else:
+            except AttributeError:
                 self.train_(data_batch,labels_batch,batch,epoch,batches,test_batch,index1,index2,j,t,i)
                 if self.total_epoch[t]>=1:
                     total_loss+=self.batch_loss
@@ -675,22 +740,28 @@ class kernel:
             index1=batches*batch
             index2=batch-(self.shape0-batches*batch)
             self.train_(data_batch,labels_batch,batch,epoch,batches,test_batch,index1,index2,j,t,i)
-            if self.acc_flag1==1:
+            try:
+                if self.nn.accuracy!=None:
+                    pass
                 if self.total_epoch[t]>=1:
                     total_loss+=self.batch_loss
                     total_acc+=self.batch_acc
                     if i==epoch-1:
                         _total_loss+=self._batch_loss
                         _total_acc+=self._batch_acc
-            else:
+            except AttributeError:
                 if self.total_epoch[t]>=1:
                     total_loss+=self.batch_loss
                     if i==epoch-1:
                         _total_loss+=self._batch_loss
         if self.total_epoch[t]>=1:
             loss=total_loss.numpy()/batches
-            if self.acc_flag1==1:
+            try:
+                if self.nn.accuracy!=None:
+                    pass
                 train_acc=total_acc.numpy()/batches
+            except AttributeError:
+                pass
             self.train_loss_list.append(loss.astype(np.float32))
             self.train_loss=loss
             self.train_loss=self.train_loss.astype(np.float32)
@@ -699,7 +770,9 @@ class kernel:
                 self.train_loss_list.append(loss.astype(np.float32))
                 self.train_loss=loss
                 self.train_loss=self.train_loss.astype(np.float32)
-            if self.acc_flag1==1:
+            try:
+                if self.nn.accuracy!=None:
+                    pass
                 self.train_acc_list.append(train_acc.astype(np.float32))
                 self.train_acc=train_acc
                 self.train_acc=self.train_acc.astype(np.float32)
@@ -708,11 +781,17 @@ class kernel:
                     self.train_acc_list.append(train_acc.astype(np.float32))
                     self.train_acc=train_acc
                     self.train_acc=self.train_acc.astype(np.float32)
+            except AttributeError:
+                pass
             if self.test==True:
                 self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
                 self.test_loss_list.append(self.test_loss)
-            if self.acc_flag1==1:
+            try:
+                if self.nn.accuracy!=None:
+                    pass
                 self.test_acc_list.append(self.test_acc)
+            except AttributeError:
+                pass
         return
     
     
@@ -921,8 +1000,10 @@ class kernel:
                 print('last loss:{0:.6f}'.format(self.train_loss))
             else:
                 print('last loss:{0:.6f},last test loss:{1:.6f}'.format(self.train_loss,self.test_loss))
-            if self.acc_flag1==1:
-                if self.acc_flag2=='%':
+            try:
+                if self.nn.accuracy!=None:
+                    pass
+                if self.acc_flag=='%':
                     if self.test==False:
                         print('accuracy:{0:.1f}'.format(self.train_acc*100))
                     else:
@@ -932,6 +1013,8 @@ class kernel:
                         print('accuracy:{0:.6f}'.format(self.train_acc))
                     else:
                         print('accuracy:{0:.6f},test accuracy:{1:.6f}'.format(self.train_acc,self.test_acc))   
+            except AttributeError:
+                pass
             print('time:{0}s'.format(self.time))
         if self.thread==None:
             try:
@@ -975,9 +1058,13 @@ class kernel:
                     output=self.nn.fp(data_batch,t)
                 batch_loss=self.nn.loss(output,labels_batch)
                 total_loss+=batch_loss
-                if self.acc_flag1==1:
+                try:
+                    if self.nn.accuracy!=None:
+                        pass
                     batch_acc=self.nn.accuracy(output,labels_batch)
                     total_acc+=batch_acc
+                except AttributeError:
+                    pass
             if shape0%batch!=0:
                 batches+=1
                 index1=batches*batch
@@ -1010,38 +1097,52 @@ class kernel:
                     output=self.nn.fp(data_batch,t)
                 batch_loss=self.nn.loss(output,labels_batch)
                 total_loss+=batch_loss
-                if self.acc_flag1==1:
+                try:
+                    if self.nn.accuracy!=None:
+                        pass
                     batch_acc=self.nn.accuracy(output,labels_batch)
                     total_acc+=batch_acc
+                except AttributeError:
+                    pass
             test_loss=total_loss.numpy()/batches
             test_loss=test_loss
             test_loss=test_loss.astype(np.float32)
-            if self.acc_flag1==1:
+            try:
+                if self.nn.accuracy!=None:
+                    pass
                 test_acc=total_acc.numpy()/batches
                 test_acc=test_acc
                 test_acc=test_acc.astype(np.float32)
+            except AttributeError:
+                pass
         else:
             if self.thread==None:
                 output=self.nn.fp(test_data)
             else:
                 output=self.nn.fp(test_data,t)
             test_loss=self.nn.loss(output,test_labels)
-            if self.acc_flag1==1:
+            try:
+                if self.nn.accuracy!=None:
+                    pass
                 test_acc=self.nn.accuracy(output,test_labels)
                 test_loss=test_loss.numpy().astype(np.float32)
                 test_acc=test_acc.numpy().astype(np.float32)
+            except AttributeError:
+                pass
         if self.thread==None:
             print('test loss:{0:.6f}'.format(test_loss))
-            if self.acc_flag1==1:
-                if self.acc_flag2=='%':
+            try:
+                if self.nn.accuracy!=None:
+                    pass
+                if self.acc_flag=='%':
                     print('accuracy:{0:.1f}'.format(test_acc*100))
                 else:
                     print('accuracy:{0:.6f}'.format(test_acc))
-                if self.acc_flag2=='%':
+                if self.acc_flag=='%':
                     return test_loss,test_acc*100
                 else:
                     return test_loss,test_acc
-            else:
+            except AttributeError:
                 return test_loss
     
     
@@ -1058,7 +1159,7 @@ class kernel:
         print('-------------------------------------')
         print()
         print('train loss:{0:.6f}'.format(self.train_loss))
-        if self.acc_flag2=='%':
+        if self.acc_flag=='%':
             print('train acc:{0:.1f}'.format(self.train_acc*100))
         else:
             print('train acc:{0:.6f}'.format(self.train_acc))       
@@ -1068,7 +1169,7 @@ class kernel:
     def test_info(self):
         print()
         print('test loss:{0:.6f}'.format(self.test_loss))
-        if self.acc_flag2=='%':
+        if self.acc_flag=='%':
             print('test acc:{0:.1f}'.format(self.test_acc*100))
         else:
             print('test acc:{0:.6f}'.format(self.test_acc))      
@@ -1097,7 +1198,7 @@ class kernel:
         plt.xlabel('epoch')
         plt.ylabel('acc')
         print('train loss:{0:.6f}'.format(self.train_loss))
-        if self.acc_flag2=='%':
+        if self.acc_flag=='%':
             print('train acc:{0:.1f}'.format(self.train_acc*100))
         else:
             print('train acc:{0:.6f}'.format(self.train_acc))    
@@ -1117,7 +1218,7 @@ class kernel:
         plt.xlabel('epoch')
         plt.ylabel('acc')
         print('test loss:{0:.6f}'.format(self.test_loss))
-        if self.acc_flag2=='%':
+        if self.acc_flag=='%':
             print('test acc:{0:.1f}'.format(self.test_acc*100))
         else:
             print('test acc:{0:.6f}'.format(self.test_acc))  
@@ -1143,7 +1244,7 @@ class kernel:
         plt.ylabel('acc')
         plt.legend()
         print('train loss:{0}'.format(self.train_loss))
-        if self.acc_flag2=='%':
+        if self.acc_flag=='%':
             print('train acc:{0:.1f}'.format(self.train_acc*100))
         else:
             print('train acc:{0:.6f}'.format(self.train_acc))     
@@ -1152,7 +1253,7 @@ class kernel:
             print('-------------------------------------')
             print()
             print('test loss:{0:.6f}'.format(self.test_loss))
-            if self.acc_flag2=='%':
+            if self.acc_flag=='%':
                 print('test acc:{0:.1f}'.format(self.test_acc*100))
             else:
                 print('test acc:{0:.6f}'.format(self.test_acc)) 
@@ -1190,8 +1291,7 @@ class kernel:
         pickle.dump(self.end_acc,output_file)
         pickle.dump(self.end_test_loss,output_file)
         pickle.dump(self.end_test_acc,output_file)
-        pickle.dump(self.acc_flag1,output_file)
-        pickle.dump(self.acc_flag2,output_file)
+        pickle.dump(self.acc_flag,output_file)
         pickle.dump(self.p,output_file)
         pickle.dump(self.s,output_file)
         pickle.dump(self.mf,output_file)
@@ -1233,8 +1333,7 @@ class kernel:
         self.end_acc=pickle.load(input_file)
         self.end_test_loss=pickle.load(input_file)
         self.end_test_acc=pickle.load(input_file)
-        self.acc_flag1=pickle.load(input_file)
-        self.acc_flag2=pickle.load(input_file)
+        self.acc_flag=pickle.load(input_file)
         self.p=pickle.load(input_file)
         self.s=pickle.load(input_file)
         self.mf=pickle.load(input_file)
