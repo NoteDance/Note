@@ -291,7 +291,7 @@ class kernel:
         return
         
     
-    def train(self,batch=None,epoch=None,test_batch=None,nn_path=None,one=True):
+    def train(self,batch=None,epoch=None,test_batch=None,file_path=None,one=True):
         self.batch=batch
         self.epoch=0
         t1=None
@@ -335,8 +335,8 @@ class kernel:
                             print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
                         else:
                             print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
-                    if nn_path!=None and i%e==0:
-                        self.save(nn_path,i,one)
+                    if file_path!=None and i%e==0:
+                        self.save(file_path,self.total_epoch,one)
                 t2=time.time()
                 self.time+=(t2-t1)
                 if self.end_flag==True and self.end()==True:
@@ -370,8 +370,8 @@ class kernel:
                             print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
                         else:
                             print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
-                    if nn_path!=None and i%e==0:
-                        self.save(nn_path,i,one)
+                    if file_path!=None and i%e==0:
+                        self.save(file_path,self.total_epoch,one)
                 try:
                     self.nn.ec+=1
                 except AttributeError:
@@ -390,14 +390,14 @@ class kernel:
                 train_loss=self.nn.loss(output,data[1])
                 loss=train_loss.numpy()
                 self.nn.train_loss=loss.astype(np.float32)
-                if nn_path!=None:
-                    self.save(nn_path)
+                if file_path!=None:
+                    self.save(file_path)
                 try:
                     self.nn.ec+=1
                 except AttributeError:
                     pass
-        if nn_path!=None:
-            self.save(nn_path)
+        if file_path!=None:
+            self.save(file_path)
         self.time=self.time-int(self.time)
         if self.time<0.5:
             self.time=int(self.time)
