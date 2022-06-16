@@ -808,14 +808,10 @@ class kernel:
         else:
             self.p=p-1
         if self.s==None:
-            self.s=2
+            self.s=0
         else:
-            if type(s)!=list:
-                self.s=s
-            else:
-                self.s=s[0]
-                self.mf=s[1]
-                self.file_list=[]
+            self.s=s-1
+            self.file_list=[]
         if type(self.train_data)==list:
             data_batch=[x for x in range(len(self.train_data))]
         else:
@@ -857,15 +853,20 @@ class kernel:
                     self.total_epoch[t]+=1
                 if self.thread==None:
                     if epoch%10!=0:
-                        d=epoch-epoch%self.p
-                        d=int(d/self.p)
+                        p=epoch-epoch%self.p
+                        p=int(p/self.p)
+                        s=epoch-epoch%self.s
+                        s=int(s/self.s)
                     else:
-                        d=epoch/(self.p+1)
-                        d=int(d)
-                    if d==0:
-                        d=1
-                    e=d*self.s
-                    if i%d==0:
+                        p=epoch/(self.p+1)
+                        p=int(p)
+                        s=epoch/(self.s+1)
+                        s=int(s)
+                    if p==0:
+                        p=1
+                    if s==0:
+                        s=1
+                    if i%p==0:
                         if self.flag==None:
                             if self.test==False:
                                 print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
@@ -876,8 +877,8 @@ class kernel:
                                 print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
                             else:
                                 print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
-                        if nn_path!=None and i%e==0:
-                            self.save(nn_path,i,one)
+                    if nn_path!=None and i%s==0:
+                        self.save(nn_path,self.total_epoch,one)
                 t2=time.time()
                 if self.thread==None:
                     self.time+=(t2-t1)
@@ -918,15 +919,20 @@ class kernel:
                     self.total_epoch[t]+=1
                 if self.thread==None:
                     if epoch%10!=0:
-                        d=epoch-epoch%self.p
-                        d=int(d/self.p)
+                        p=epoch-epoch%self.p
+                        p=int(p/self.p)
+                        s=epoch-epoch%self.s
+                        s=int(s/self.s)
                     else:
-                        d=epoch/(self.p+1)
-                        d=int(d)
-                    if d==0:
-                        d=1
-                    e=d*self.s
-                    if i%d==0:
+                        p=epoch/(self.p+1)
+                        p=int(p)
+                        s=epoch/(self.s+1)
+                        s=int(s)
+                    if p==0:
+                        p=1
+                    if s==0:
+                        s=1
+                    if i%p==0:
                         if self.flag==None:
                             if self.test==False:
                                 print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
@@ -937,8 +943,8 @@ class kernel:
                                 print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
                             else:
                                 print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
-                        if nn_path!=None and i%e==0:
-                            self.save(nn_path,i,one)
+                    if nn_path!=None and i%s==0:
+                        self.save(nn_path,self.total_epoch,one)
                 if self.thread==None:
                     try:
                         self.nn.ec+=1
@@ -1279,7 +1285,7 @@ class kernel:
             index=path.rfind('\\')
             parameter_file=open(path.replace(path[index+1:],'parameter-{0}.dat'.format(i+1)),'wb')
             self.file_list.append(['save-{0}.dat','parameter-{0}.dat'])
-            if len(self.file_list)>self.mf:
+            if len(self.file_list)>self.s+1:
                 os.remove(self.file_list[0][0])
                 os.remove(self.file_list[0][1])
         pickle.dump(self.nn.param,parameter_file)
@@ -1294,7 +1300,6 @@ class kernel:
         pickle.dump(self.acc_flag,output_file)
         pickle.dump(self.p,output_file)
         pickle.dump(self.s,output_file)
-        pickle.dump(self.mf,output_file)
         pickle.dump(self.file_list,output_file)
         pickle.dump(self.flag,output_file)
         pickle.dump(self.train_loss,output_file)
@@ -1336,7 +1341,6 @@ class kernel:
         self.acc_flag=pickle.load(input_file)
         self.p=pickle.load(input_file)
         self.s=pickle.load(input_file)
-        self.mf=pickle.load(input_file)
         self.file_list=pickle.load(input_file)
         self.flag=pickle.load(input_file)
         self.train_loss=pickle.load(input_file)
