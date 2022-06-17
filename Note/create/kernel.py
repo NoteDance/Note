@@ -411,6 +411,7 @@ class kernel:
                     output=self.nn.fp(data_batch,t)
                 batch_loss=self.nn.loss(output,labels_batch)
                 self.core_opt(output,batch_loss,t)
+                total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,batch_loss=batch_loss,batch=batch,total_loss=total_loss,total_acc=total_acc,t=t)
                 if i==epoch-1:
                     if self.thread==None:
                         output=self.nn.fp(data_batch)
@@ -418,8 +419,6 @@ class kernel:
                         output=self.nn.fp(data_batch,t)
                     _batch_loss=self.nn.loss(output,labels_batch)
                     _total_loss,_total_acc=self.loss_acc(output=output,labels_batch=labels_batch,batch_loss=_batch_loss,batch=batch,total_loss=total_loss,total_acc=total_acc,t=t)
-                else:
-                    total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,batch_loss=batch_loss,batch=batch,total_loss=total_loss,total_acc=total_acc,t=t)
                 if self.thread==None:
                     try:
                         self.nn.bc=j
@@ -441,6 +440,7 @@ class kernel:
                     output=self.nn.fp(data_batch,t)
                 batch_loss=self.nn.loss(output,labels_batch)
                 self.core_opt(output,batch_loss,t)
+                total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,batch_loss=batch_loss,batch=batch,total_loss=total_loss,total_acc=total_acc,t=t)
                 if i==epoch-1:
                     if self.thread==None:
                         output=self.nn.fp(data_batch)
@@ -448,8 +448,6 @@ class kernel:
                         output=self.nn.fp(data_batch,t)
                     _batch_loss=self.nn.loss(output,labels_batch)
                     _total_loss,_total_acc=self.loss_acc(output=output,labels_batch=labels_batch,batch_loss=_batch_loss,batch=batch,total_loss=total_loss,total_acc=total_acc,t=t)
-                else:
-                    total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,batch_loss=batch_loss,batch=batch,total_loss=total_loss,total_acc=total_acc,t=t)
                 if self.thread==None:
                     try:
                         self.nn.bc+=1
@@ -548,7 +546,6 @@ class kernel:
             if self.stop==True:
                 return
             output=self.nn.fp(data[0])
-            train_loss=self.nn.loss(output,data[1])
             self.core_opt(output,train_loss)
             train_loss=self.nn.loss(output,data[1])
             loss=train_loss.numpy()
