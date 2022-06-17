@@ -871,12 +871,12 @@ class kernel:
                             if self.test_flag==False:
                                 print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
                             else:
-                                print('epoch:{0}   loss:{1:.6f},test_flag loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
+                                print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
                         else:
                             if self.test_flag==False:
                                 print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
                             else:
-                                print('epoch:{0}   loss:{1:.6f},test_flag loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
+                                print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
                     if file_path!=None and i%s==0:
                         self.save(file_path,self.total_epoch,one)
                 t2=time.time()
@@ -937,12 +937,12 @@ class kernel:
                             if self.test_flag==False:
                                 print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
                             else:
-                                print('epoch:{0}   loss:{1:.6f},test_flag loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
+                                print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
                         else:
                             if self.test_flag==False:
                                 print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
                             else:
-                                print('epoch:{0}   loss:{1:.6f},test_flag loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
+                                print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
                     if file_path!=None and i%s==0:
                         self.save(file_path,self.total_epoch,one)
                 if self.thread==None:
@@ -1005,7 +1005,7 @@ class kernel:
             if self.test_flag==False:
                 print('last loss:{0:.6f}'.format(self.train_loss))
             else:
-                print('last loss:{0:.6f},last test_flag loss:{1:.6f}'.format(self.train_loss,self.test_loss))
+                print('last loss:{0:.6f},last test loss:{1:.6f}'.format(self.train_loss,self.test_loss))
             try:
                 if self.nn.accuracy!=None:
                     pass
@@ -1136,7 +1136,7 @@ class kernel:
             except AttributeError:
                 pass
         if self.thread==None:
-            print('test_flag loss:{0:.6f}'.format(test_loss))
+            print('test loss:{0:.6f}'.format(test_loss))
             try:
                 if self.nn.accuracy!=None:
                     pass
@@ -1174,11 +1174,11 @@ class kernel:
     
     def test_info(self):
         print()
-        print('test_flag loss:{0:.6f}'.format(self.test_loss))
+        print('test loss:{0:.6f}'.format(self.test_loss))
         if self.acc_flag=='%':
-            print('test_flag acc:{0:.1f}'.format(self.test_acc*100))
+            print('test acc:{0:.1f}'.format(self.test_acc*100))
         else:
-            print('test_flag acc:{0:.6f}'.format(self.test_acc))      
+            print('test acc:{0:.6f}'.format(self.test_acc))      
         return
 		
     
@@ -1215,19 +1215,19 @@ class kernel:
         print()
         plt.figure(1)
         plt.plot(np.arange(self.total_epoch),self.test_loss_list)
-        plt.title('test_flag loss')
+        plt.title('test loss')
         plt.xlabel('epoch')
         plt.ylabel('loss')
         plt.figure(2)
         plt.plot(np.arange(self.total_epoch),self.test_acc_list)
-        plt.title('test_flag acc')
+        plt.title('test acc')
         plt.xlabel('epoch')
         plt.ylabel('acc')
-        print('test_flag loss:{0:.6f}'.format(self.test_loss))
+        print('test loss:{0:.6f}'.format(self.test_loss))
         if self.acc_flag=='%':
-            print('test_flag acc:{0:.1f}'.format(self.test_acc*100))
+            print('test acc:{0:.1f}'.format(self.test_acc*100))
         else:
-            print('test_flag acc:{0:.6f}'.format(self.test_acc))  
+            print('test acc:{0:.6f}'.format(self.test_acc))  
         return 
     
     
@@ -1236,7 +1236,7 @@ class kernel:
         plt.figure(1)
         plt.plot(np.arange(self.total_epoch),self.train_loss_list,'b-',label='train loss')
         if self.test_flag==True:
-            plt.plot(np.arange(self.total_epoch),self.test_loss_list,'r-',label='test_flag loss')
+            plt.plot(np.arange(self.total_epoch),self.test_loss_list,'r-',label='test loss')
         plt.title('loss')
         plt.xlabel('epoch')
         plt.ylabel('loss')
@@ -1244,7 +1244,7 @@ class kernel:
         plt.figure(2)
         plt.plot(np.arange(self.total_epoch),self.train_acc_list,'b-',label='train acc')
         if self.test_flag==True:
-            plt.plot(np.arange(self.total_epoch),self.test_acc_list,'r-',label='test_flag acc')
+            plt.plot(np.arange(self.total_epoch),self.test_acc_list,'r-',label='test acc')
         plt.title('accuracy')
         plt.xlabel('epoch')
         plt.ylabel('acc')
@@ -1258,11 +1258,11 @@ class kernel:
             print()
             print('-------------------------------------')
             print()
-            print('test_flag loss:{0:.6f}'.format(self.test_loss))
+            print('test loss:{0:.6f}'.format(self.test_loss))
             if self.acc_flag=='%':
-                print('test_flag acc:{0:.1f}'.format(self.test_acc*100))
+                print('test acc:{0:.1f}'.format(self.test_acc*100))
             else:
-                print('test_flag acc:{0:.6f}'.format(self.test_acc)) 
+                print('test acc:{0:.6f}'.format(self.test_acc)) 
         return
     
     
