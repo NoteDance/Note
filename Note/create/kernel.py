@@ -808,7 +808,7 @@ class kernel:
         else:
             self.p=p-1
         if self.s==None:
-            self.s=0
+            self.s=1
         else:
             self.s=s-1
             self.file_list=[]
