@@ -180,12 +180,11 @@ class kernel:
                 except AttributeError:
                     gradient=tape.gradient(batch_loss,self.param)
                     self.nn.oopt(gradient,self.param)
+                total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,batch_loss=batch_loss,batch=batch,total_loss=total_loss,total_acc=total_acc)
                 if i==epoch-1:
                     output=self.nn.fp(data_batch)
                     _batch_loss=self.nn.loss(output,labels_batch)
                     _total_loss,_total_acc=self.loss_acc(output=output,labels_batch=labels_batch,batch_loss=_batch_loss,batch=batch,total_loss=total_loss,total_acc=total_acc)
-                else:
-                    total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,batch_loss=batch_loss,batch=batch,total_loss=total_loss,total_acc=total_acc)
                 try:
                     self.nn.bc=j
                 except AttributeError:
@@ -214,12 +213,11 @@ class kernel:
                 except AttributeError:
                     gradient=tape.gradient(batch_loss,self.param)
                     self.nn.sopt(gradient,self.param)
+                total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,batch_loss=batch_loss,batch=batch,total_loss=total_loss,total_acc=total_acc)
                 if i==epoch-1:
                     output=self.nn.fp(data_batch)
                     _batch_loss=self.nn.loss(output,labels_batch)
                     _total_loss,_total_acc=self.loss_acc(output=output,labels_batch=labels_batch,batch_loss=_batch_loss,batch=batch,total_loss=total_loss,total_acc=total_acc)
-                else:
-                    total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,batch_loss=batch_loss,batch=batch,total_loss=total_loss,total_acc=total_acc)
                 try:
                     self.nn.bc+=1
                 except AttributeError:
