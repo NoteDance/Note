@@ -37,7 +37,7 @@ class kernel:
         self.test_acc=None
         self.test_loss_list=[]
         self.test_acc_list=[]
-        self.test=False
+        self.test_flag=False
         self.total_epoch=0
         self.time=0
         self.total_time=0
@@ -53,7 +53,7 @@ class kernel:
         self.test_data=test_data
         self.test_labels=test_labels
         if test_data!=None:
-            self.test=True
+            self.test_flag=True
         if type(self.train_data)==list:
             self.shape0=train_data[0].shape[0]
         else:
@@ -86,7 +86,7 @@ class kernel:
         self.train_acc_list.clear()
         self.test_loss_list.clear()
         self.test_acc_list.clear()
-        self.test=False
+        self.test_flag=False
         self.epoch=0
         self.total_epoch=0
         self.time=0
@@ -103,7 +103,7 @@ class kernel:
             self.train_acc=np.concatenate((self.train_acc,np.zeros(self.t)))
             self.train_loss_list.extend([[] for _ in range(len(self.t))])
             self.train_acc_list.extend([[] for _ in range(len(self.t))])
-        if self.test==True:
+        if self.test_flag==True:
             if self.PO==None:
                 self.test_loss=np.concatenate((self.test_loss,np.zeros(self.t)))
                 self.test_acc=np.concatenate((self.test_acc,np.zeros(self.t)))
@@ -191,7 +191,7 @@ class kernel:
                         self.train_acc_list[t].append(acc.astype(np.float32))
                         self.train_acc[t]=acc
                         self.train_acc[t]=self.train_acc[t].astype(np.float32)
-                if self.test==True:
+                if self.test_flag==True:
                     if self.thread==None:
                         self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
                         self.test_loss_list.append(self.test_loss)
@@ -374,7 +374,7 @@ class kernel:
                             self.train_acc_list[t].append(train_acc.astype(np.float32))
                             self.train_acc[t]=train_acc
                             self.train_acc[t]=self.train_acc[t].astype(np.float32)
-                if self.test==True:
+                if self.test_flag==True:
                     if self.thread==None:
                         self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
                         self.test_loss_list.append(self.test_loss)
@@ -653,7 +653,7 @@ class kernel:
                             self.train_acc_list.append(self.acc.astype(np.float32))
                             self.train_acc=self.acc
                             self.train_acc=self.train_acc.astype(np.float32)
-                    if self.test==True:
+                    if self.test_flag==True:
                         self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
                         self.test_loss_list.append(self.test_loss)
                         if self.acc_flag1==1:
@@ -697,7 +697,7 @@ class kernel:
                             self.train_acc_list.append(self.acc.astype(np.float32))
                             self.train_acc=self.acc
                             self.train_acc=self.train_acc.astype(np.float32) 
-                    if self.test==True:
+                    if self.test_flag==True:
                         self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
                         self.test_loss_list.append(self.test_loss)
                         if self.acc_flag1==1:
@@ -767,7 +767,7 @@ class kernel:
                     self.train_acc_list.append(train_acc.astype(np.float32))
                     self.train_acc=train_acc
                     self.train_acc=self.train_acc.astype(np.float32)
-            if self.test==True:
+            if self.test_flag==True:
                 self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
                 self.test_loss_list.append(self.test_loss)
             if self.acc_flag1==1:
@@ -842,12 +842,12 @@ class kernel:
                         s=1
                     if i%p==0:
                         if self.flag==None:
-                            if self.test==False:
+                            if self.test_flag==False:
                                 print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
                             else:
                                 print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
                         else:
-                            if self.test==False:
+                            if self.test_flag==False:
                                 print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
                             else:
                                 print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
@@ -902,12 +902,12 @@ class kernel:
                         s=1
                     if i%p==0:
                         if self.flag==None:
-                            if self.test==False:
+                            if self.test_flag==False:
                                 print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
                             else:
                                 print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
                         else:
-                            if self.test==False:
+                            if self.test_flag==False:
                                 print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
                             else:
                                 print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
@@ -970,21 +970,21 @@ class kernel:
             self.total_time[t]+=self.time[t]
         if self.thread==None:
             print()
-            if self.test==False:
+            if self.test_flag==False:
                 print('last loss:{0:.6f}'.format(self.train_loss))
             else:
                 print('last loss:{0:.6f},last test loss:{1:.6f}'.format(self.train_loss,self.test_loss))
             if self.acc_flag1==1:
                 if self.acc_flag2=='%':
-                    if self.test==False:
+                    if self.test_flag==False:
                         print('accuracy:{0:.1f}'.format(self.train_acc*100))
                     else:
-                        print('accuracy:{0:.1f},test accuracy:{1:.1f}'.format(self.train_acc*100,self.test_acc*100))
+                        print('accuracy:{0:.1f},test_flag accuracy:{1:.1f}'.format(self.train_acc*100,self.test_acc*100))
                 else:
-                    if self.test==False:
+                    if self.test_flag==False:
                         print('accuracy:{0:.6f}'.format(self.train_acc))
                     else:
-                        print('accuracy:{0:.6f},test accuracy:{1:.6f}'.format(self.train_acc,self.test_acc))   
+                        print('accuracy:{0:.6f},test_flag accuracy:{1:.6f}'.format(self.train_acc,self.test_acc))   
             print('time:{0}s'.format(self.time))
         if self.thread==None:
             try:
@@ -1130,7 +1130,7 @@ class kernel:
     
     def info(self):
         self.train_info()
-        if self.test==True:
+        if self.test_flag==True:
             print()
             print('-------------------------------------')
             self.test_info()
@@ -1181,7 +1181,7 @@ class kernel:
         print()
         plt.figure(1)
         plt.plot(np.arange(self.total_epoch),self.train_loss_list,'b-',label='train loss')
-        if self.test==True:
+        if self.test_flag==True:
             plt.plot(np.arange(self.total_epoch),self.test_loss_list,'r-',label='test loss')
         plt.title('loss')
         plt.xlabel('epoch')
@@ -1189,7 +1189,7 @@ class kernel:
         plt.legend()
         plt.figure(2)
         plt.plot(np.arange(self.total_epoch),self.train_acc_list,'b-',label='train acc')
-        if self.test==True:
+        if self.test_flag==True:
             plt.plot(np.arange(self.total_epoch),self.test_acc_list,'r-',label='test acc')
         plt.title('accuracy')
         plt.xlabel('epoch')
@@ -1200,7 +1200,7 @@ class kernel:
             print('train acc:{0:.1f}'.format(self.train_acc*100))
         else:
             print('train acc:{0:.6f}'.format(self.train_acc))     
-        if self.test==True:        
+        if self.test_flag==True:        
             print()
             print('-------------------------------------')
             print()
@@ -1253,8 +1253,8 @@ class kernel:
         pickle.dump(self.train_acc,output_file)
         pickle.dump(self.train_loss_list,output_file)
         pickle.dump(self.train_acc_list,output_file)
-        pickle.dump(self.test,output_file)
-        if self.test==True:
+        pickle.dump(self.test_flag,output_file)
+        if self.test_flag==True:
             pickle.dump(self.test_loss,output_file)
             pickle.dump(self.test_acc,output_file)
             pickle.dump(self.test_loss_list,output_file)
@@ -1295,8 +1295,8 @@ class kernel:
         self.train_acc=pickle.load(input_file)
         self.train_loss_list=pickle.load(input_file)
         self.train_acc_list=pickle.load(input_file)
-        self.test=pickle.load(input_file)
-        if self.test==True:
+        self.test_flag=pickle.load(input_file)
+        if self.test_flag==True:
             self.test_loss=pickle.load(input_file)
             self.test_acc=pickle.load(input_file)
             self.test_loss_list=pickle.load(input_file)
