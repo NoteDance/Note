@@ -153,18 +153,14 @@ class kernel:
     def loss_acc(self,output=None,labels_batch=None,batch_loss=None,batch=None,test_batch=None,train_loss=None,total_loss=None,total_acc=None,t=None):
         if batch!=None:
             if self.total_epoch>=1:
-                batch_loss=batch_loss
                 total_loss+=batch_loss
                 if self.acc_flag1==1:
                     batch_acc=self.nn.accuracy(output,labels_batch)
-                    batch_acc=batch_acc
                     total_acc+=batch_acc
             if self.shape0%batch!=0:
-                batch_loss=batch_loss
                 total_loss+=batch_loss
                 if self.acc_flag1==1:
                     batch_acc=self.nn.accuracy(output,labels_batch)
-                    batch_acc=batch_acc
                     total_acc+=batch_acc
             return total_loss,total_acc
         elif self.ol==None:
