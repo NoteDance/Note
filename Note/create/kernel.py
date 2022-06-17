@@ -255,6 +255,7 @@ class kernel:
                     else:
                         gradient=tape.gradient(batch_loss,self.nn.param[t])
                         self.nn.oopt(gradient,self.nn.param,t)
+                total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,batch_loss=batch_loss,batch=batch,total_loss=total_loss,total_acc=total_acc,t=t)
                 if i==epoch-1:
                     if self.thread==None:
                         output=self.nn.fp(data_batch)
@@ -262,8 +263,6 @@ class kernel:
                         output=self.nn.fp(data_batch,t)
                     _batch_loss=self.nn.loss(output,labels_batch)
                     _total_loss,_total_acc=self.loss_acc(output=output,labels_batch=labels_batch,batch_loss=_batch_loss,batch=batch,total_loss=total_loss,total_acc=total_acc,t=t)
-                else:
-                    total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,batch_loss=batch_loss,batch=batch,total_loss=total_loss,total_acc=total_acc,t=t)
                 if self.thread==None:
                     try:
                         self.nn.bc=j
@@ -310,6 +309,7 @@ class kernel:
                     else:
                         gradient=tape.gradient(batch_loss,self.nn.param[t])
                         self.nn.oopt(gradient,self.nn.param,t)
+                total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,batch_loss=batch_loss,batch=batch,total_loss=total_loss,total_acc=total_acc,t=t)
                 if i==epoch-1:
                     if self.thread==None:
                         output=self.nn.fp(data_batch)
@@ -317,8 +317,6 @@ class kernel:
                         output=self.nn.fp(data_batch,t)
                     _batch_loss=self.nn.loss(output,labels_batch)
                     _total_loss,_total_acc=self.loss_acc(output=output,labels_batch=labels_batch,batch_loss=_batch_loss,batch=batch,total_loss=total_loss,total_acc=total_acc,t=t)
-                else:
-                    total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,batch_loss=batch_loss,batch=batch,total_loss=total_loss,total_acc=total_acc,t=t)
                 if self.thread==None:
                     try:
                         self.nn.bc+=1
