@@ -542,7 +542,7 @@ class kernel:
                 else:
                     output=self.nn.fp(data_batch,t)
                 train_loss=self.nn.loss(output,self.train_labels)
-                self.loss_acc(output=output,labels_batch=labels_batch,loss=train_loss,test_batch=test_batch,total_loss=total_loss,total_acc=total_acc,t=t)
+                self.loss_acc(output=output,labels_batch=labels_batch,loss=train_loss,test_batch=test_batch,total_loss=_total_loss,total_acc=_total_acc,t=t)
         else:
             data=self.ol()
             if self.stop==True:
