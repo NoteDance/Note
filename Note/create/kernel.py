@@ -150,22 +150,22 @@ class kernel:
             return True
     
     
-    def loss_acc(self,output=None,labels_batch=None,batch_loss=None,batch=None,test_batch=None,train_loss=None,total_loss=None,total_acc=None,t=None):
-        if batch!=None:
+    def loss_acc(self,output=None,labels_batch=None,loss=None,test_batch=None,total_loss=None,total_acc=None,t=None,flag=None):
+        if self.batch!=None:
             if self.total_epoch>=1:
-                total_loss+=batch_loss
+                total_loss+=loss
                 if self.acc_flag1==1:
                     batch_acc=self.nn.accuracy(output,labels_batch)
                     total_acc+=batch_acc
-            if self.shape0%batch!=0:
-                total_loss+=batch_loss
+            if flag!=None:
+                total_loss+=loss
                 if self.acc_flag1==1:
                     batch_acc=self.nn.accuracy(output,labels_batch)
                     total_acc+=batch_acc
             return total_loss,total_acc
         elif self.ol==None:
             if self.total_epoch>=1:
-                loss=train_loss.numpy()
+                loss=loss.numpy()
                 if self.thread==None:
                     self.train_loss_list.append(loss.astype(np.float32))
                     self.train_loss=loss
@@ -205,6 +205,8 @@ class kernel:
         if self.end_loss!=None or self.end_acc!=None or self.end_test_loss!=None or self.end_test_acc!=None:
             self._param=self.nn.param
         if batch!=None:
+            _total_loss=0
+            _total_acc=0
             total_loss=0
             total_acc=0
             batches=int((self.shape0-self.shape0%batch)/batch)
@@ -255,14 +257,14 @@ class kernel:
                     else:
                         gradient=tape.gradient(batch_loss,self.nn.param[t])
                         self.nn.oopt(gradient,self.nn.param,t)
-                total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,batch_loss=batch_loss,batch=batch,total_loss=total_loss,total_acc=total_acc,t=t)
+                total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc,t=t)
                 if i==epoch-1:
                     if self.thread==None:
                         output=self.nn.fp(data_batch)
                     else:
                         output=self.nn.fp(data_batch,t)
                     _batch_loss=self.nn.loss(output,labels_batch)
-                    _total_loss,_total_acc=self.loss_acc(output=output,labels_batch=labels_batch,batch_loss=_batch_loss,batch=batch,total_loss=total_loss,total_acc=total_acc,t=t)
+                    _total_loss,_total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=_batch_loss,total_loss=_total_loss,total_acc=_total_acc,t=t)
                 if self.thread==None:
                     try:
                         self.nn.bc=j
@@ -309,14 +311,14 @@ class kernel:
                     else:
                         gradient=tape.gradient(batch_loss,self.nn.param[t])
                         self.nn.oopt(gradient,self.nn.param,t)
-                total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,batch_loss=batch_loss,batch=batch,total_loss=total_loss,total_acc=total_acc,t=t)
+                total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc,t=t,flag=True)
                 if i==epoch-1:
                     if self.thread==None:
                         output=self.nn.fp(data_batch)
                     else:
                         output=self.nn.fp(data_batch,t)
                     _batch_loss=self.nn.loss(output,labels_batch)
-                    _total_loss,_total_acc=self.loss_acc(output=output,labels_batch=labels_batch,batch_loss=_batch_loss,batch=batch,total_loss=total_loss,total_acc=total_acc,t=t)
+                    _total_loss,_total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=_batch_loss,total_loss=_total_loss,total_acc=_total_acc,t=t,flag=True)
                 if self.thread==None:
                     try:
                         self.nn.bc+=1
@@ -402,14 +404,14 @@ class kernel:
                 else:
                     gradient=tape.gradient(batch_loss,self.nn.param[t])
                     self.nn.oopt(gradient,self.nn.param,t)
-            self.loss_acc(output=output,labels_batch=labels_batch,train_loss=train_loss,batch=batch,test_batch=test_batch,total_loss=total_loss,total_acc=total_acc,t=t)
+            self.loss_acc(output=output,labels_batch=labels_batch,loss=train_loss,test_batch=test_batch,total_loss=total_loss,total_acc=total_acc,t=t)
             if i==epoch-1:
                 if self.thread==None:
                     output=self.nn.fp(self.train_data)
                 else:
                     output=self.nn.fp(data_batch,t)
                 train_loss=self.nn.loss(output,self.train_labels)
-                self.loss_acc(output=output,labels_batch=labels_batch,train_loss=train_loss,batch=batch,test_batch=test_batch,total_loss=total_loss,total_acc=total_acc,t=t)
+                self.loss_acc(output=output,labels_batch=labels_batch,loss=train_loss,test_batch=test_batch,total_loss=_total_loss,total_acc=_total_acc,t=t)
         else:
             data=self.ol()
             if self.stop==True:
