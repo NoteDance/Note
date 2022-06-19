@@ -20,6 +20,8 @@ class kernel:
         self.thread=None
         self.ol=None
         self.stop=None
+        self.suspend=False
+        self.save_epoch=None
         self.batch=None
         self.epoch=0
         self.end_loss=None
@@ -395,6 +397,7 @@ class kernel:
             total_acc=0
             batches=int((self.shape0-self.shape0%batch)/batch)
             for j in range(batches):
+                self.suspend_func()
                 index1=j*batch
                 index2=(j+1)*batch
                 data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j)
@@ -520,6 +523,7 @@ class kernel:
                         except AttributeError:
                             pass
         elif self.ol==None:
+            self.suspend_func()
             if self.thread==None:
                 output=self.nn.fp(self.train_data)
             else:
@@ -535,9 +539,10 @@ class kernel:
                 train_loss=self.nn.loss(output,self.train_labels)
                 self.loss_acc(output=output,labels_batch=labels_batch,loss=train_loss,test_batch=test_batch,total_loss=_total_loss,total_acc=_total_acc,t=t)
         else:
-            data=self.ol()
             if self.stop==True:
                 return
+            self.suspend_func()
+            data=self.ol()
             output=self.nn.fp(data[0])
             self.core_opt(output,train_loss)
             train_loss=self.nn.loss(output,data[1])
@@ -703,6 +708,7 @@ class kernel:
         _total_acc=0
         batches=int((self.shape0-self.shape0%batch)/batch)
         for j in range(batches):
+            self.suspend_func()
             index1=j*batch
             index2=(j+1)*batch
             try:
@@ -808,6 +814,11 @@ class kernel:
             labels_batch=None
         if epoch!=None:
             for i in range(epoch):
+                if self.save_epoch!=None and self.save_epoch==self.total_epoch:
+                    self.save(file_path,self.total_epoch,False)
+                    self.save_epoch=None
+                elif self.save_epoch>self.total_epoch:
+                    print('\nsave_epoch>total_epoch\n')
                 t1=time.time()
                 if self.thread==None:
                     try:
@@ -881,6 +892,7 @@ class kernel:
                     self._param=None
                     break
         elif self.ol==None:
+            self.suspend_func()
             i=0
             while True:
                 t1=time.time()
@@ -1136,6 +1148,14 @@ class kernel:
                     return test_loss,test_acc
             except AttributeError:
                 return test_loss
+    
+    
+    def suspend_func(self):
+        if self.suspend==True:
+            while True:
+                if self.suspend==False:
+                    break
+        return
     
     
     def train_info(self):
