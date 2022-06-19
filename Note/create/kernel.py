@@ -238,16 +238,28 @@ class kernel:
                 else:
                     labels_batch=self.train_labels[j]
         else:
-            if type(self.train_data)==list:
-                for i in range(len(self.train_data)):
-                    data_batch[i]=self.core.concat([self.train_data[i][index1:],self.train_data[i][:index2]])
-            else:
-                data_batch=self.core.concat([self.train_data[index1:],self.train_data[:index2]])
-            if type(self.train_labels)==list:
-                for i in range(len(self.train_data)):
-                    labels_batch[i]=self.core.concat([self.train_labels[i][index1:],self.train_labels[i][:index2]])
-            else:
-                labels_batch=self.core.concat([self.train_labels[index1:],self.train_labels[:index2]])
+            try:
+                if type(self.train_data)==list:
+                    for i in range(len(self.train_data)):
+                        data_batch[i]=self.core.concat([self.train_data[i][index1:],self.train_data[i][:index2]])
+                else:
+                    data_batch=self.core.concat([self.train_data[index1:],self.train_data[:index2]])
+                if type(self.train_labels)==list:
+                    for i in range(len(self.train_data)):
+                        labels_batch[i]=self.core.concat([self.train_labels[i][index1:],self.train_labels[i][:index2]])
+                else:
+                    labels_batch=self.core.concat([self.train_labels[index1:],self.train_labels[:index2]])
+            except:
+                if type(self.train_data)==list:
+                    for i in range(len(self.train_data)):
+                        data_batch[i]=self.core.concat([self.train_data[i][index1:],self.train_data[i][:index2]])
+                else:
+                    data_batch=self.core.concat([self.train_data[index1:],self.train_data[:index2]])
+                if type(self.train_labels)==list:
+                    for i in range(len(self.train_data)):
+                        labels_batch[i]=self.core.concat([self.train_labels[i][index1:],self.train_labels[i][:index2]])
+                else:
+                    labels_batch=self.core.concat([self.train_labels[index1:],self.train_labels[:index2]])
         return data_batch,labels_batch
     
     
@@ -406,7 +418,15 @@ class kernel:
                 else:
                     output=self.nn.fp(data_batch,t)
                 batch_loss=self.nn.loss(output,labels_batch)
-                self.core_opt(output,batch_loss,t)
+                try:
+                    self.core_opt(output,batch_loss,t)
+                except:
+                    while True:
+                        try:
+                            self.core_opt(output,batch_loss,t)
+                            break
+                        except:
+                            continue
                 total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc,t=t)
                 if i==epoch-1:
                     if self.thread==None:
@@ -435,7 +455,15 @@ class kernel:
                 else:
                     output=self.nn.fp(data_batch,t)
                 batch_loss=self.nn.loss(output,labels_batch)
-                self.core_opt(output,batch_loss,t)
+                try:
+                    self.core_opt(output,batch_loss,t)
+                except:
+                    while True:
+                        try:
+                            self.core_opt(output,batch_loss,t)
+                            break
+                        except:
+                            continue
                 total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc,t=t)
                 if i==epoch-1:
                     if self.thread==None:
@@ -529,7 +557,15 @@ class kernel:
             else:
                 output=self.nn.fp(data_batch,t)
             train_loss=self.nn.loss(output,self.train_labels)
-            self.core_opt(output,train_loss,t)
+            try:
+                self.core_opt(output,batch_loss,t)
+            except:
+                while True:
+                    try:
+                        self.core_opt(output,batch_loss,t)
+                        break
+                    except:
+                        continue
             self.loss_acc(output=output,labels_batch=labels_batch,loss=train_loss,test_batch=test_batch,total_loss=total_loss,total_acc=total_acc,t=t)
             if i==epoch-1:
                 if self.thread==None:
@@ -544,7 +580,15 @@ class kernel:
             self.suspend_func()
             data=self.ol()
             output=self.nn.fp(data[0])
-            self.core_opt(output,train_loss)
+            try:
+                self.core_opt(output,train_loss)
+            except:
+                while True:
+                    try:
+                        self.core_opt(output,train_loss)
+                        break
+                    except:
+                        continue
             train_loss=self.nn.loss(output,data[1])
             loss=train_loss.numpy()
             if self.thread_lock!=None:
@@ -572,10 +616,26 @@ class kernel:
         if batch!=None:
             if index1==batches*batch:
                 data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j,True)
-                self.core_opt_t(data_batch,labels_batch,t)
+                try:
+                    self.core_opt_t(data_batch,labels_batch,t)
+                except:
+                    while True:
+                       try:
+                           self.core_opt_t(data_batch,labels_batch,t)
+                           break
+                       except:
+                           continue
                 return
             data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j)
-            self.core_opt_t(data_batch,labels_batch,t)
+            try:
+                self.core_opt_t(data_batch,labels_batch,t)
+            except:
+                while True:
+                   try:
+                       self.core_opt_t(data_batch,labels_batch,t)
+                       break
+                   except:
+                       continue
             if self.PO==1:
                 if self.total_epoch[t]>=1:
                     try:
@@ -1073,28 +1133,52 @@ class kernel:
                 batches+=1
                 index1=batches*batch
                 index2=batch-(shape0-batches*batch)
-                if type(test_data)==list:
-                    for i in range(len(test_data)):
+                try:
+                    if type(test_data)==list:
+                        for i in range(len(test_data)):
+                            if type(test_data)==np.ndarray:
+                                data_batch[i]=np.concatenate(test_data[i][index1:],test_data[i][:index2])
+                            else:
+                                data_batch[i]=self.core.concat(test_data[i][index1:],test_data[i][:index2])
+                    else:
                         if type(test_data)==np.ndarray:
-                            data_batch[i]=np.concatenate(test_data[i][index1:],test_data[i][:index2])
+                            data_batch=np.concatenate(test_data[index1:],test_data[:index2])
                         else:
-                            data_batch[i]=self.core.concat(test_data[i][index1:],test_data[i][:index2])
-                else:
-                    if type(test_data)==np.ndarray:
-                        data_batch=np.concatenate(test_data[index1:],test_data[:index2])
+                            data_batch=self.core.concat(test_data[index1:],test_data[:index2])
+                    if type(self.test_labels)==list:
+                        for i in range(len(test_labels)):
+                            if type(test_labels)==np.ndarray:
+                                labels_batch[i]=np.concatenate(test_labels[i][index1:],test_labels[i][:index2])
+                            else:
+                                labels_batch[i]=self.core.concat(test_labels[i][index1:],test_labels[i][:index2])
                     else:
-                        data_batch=self.core.concat(test_data[index1:],test_data[:index2])
-                if type(self.test_labels)==list:
-                    for i in range(len(test_labels)):
                         if type(test_labels)==np.ndarray:
-                            labels_batch[i]=np.concatenate(test_labels[i][index1:],test_labels[i][:index2])
+                            labels_batch=np.concatenate(test_labels[index1:],test_labels[:index2])
                         else:
-                            labels_batch[i]=self.core.concat(test_labels[i][index1:],test_labels[i][:index2])
-                else:
-                    if type(test_labels)==np.ndarray:
-                        labels_batch=np.concatenate(test_labels[index1:],test_labels[:index2])
+                            labels_batch=self.core.concat(test_labels[index1:],test_labels[:index2])
+                except:
+                    if type(test_data)==list:
+                        for i in range(len(test_data)):
+                            if type(test_data)==np.ndarray:
+                                data_batch[i]=np.concatenate(test_data[i][index1:],test_data[i][:index2])
+                            else:
+                                data_batch[i]=self.core.concat(test_data[i][index1:],test_data[i][:index2])
                     else:
-                        labels_batch=self.core.concat(test_labels[index1:],test_labels[:index2])
+                        if type(test_data)==np.ndarray:
+                            data_batch=np.concatenate(test_data[index1:],test_data[:index2])
+                        else:
+                            data_batch=self.core.concat(test_data[index1:],test_data[:index2])
+                    if type(self.test_labels)==list:
+                        for i in range(len(test_labels)):
+                            if type(test_labels)==np.ndarray:
+                                labels_batch[i]=np.concatenate(test_labels[i][index1:],test_labels[i][:index2])
+                            else:
+                                labels_batch[i]=self.core.concat(test_labels[i][index1:],test_labels[i][:index2])
+                    else:
+                        if type(test_labels)==np.ndarray:
+                            labels_batch=np.concatenate(test_labels[index1:],test_labels[:index2])
+                        else:
+                            labels_batch=self.core.concat(test_labels[index1:],test_labels[:index2])
                 if self.thread==None:
                     output=self.nn.fp(data_batch)
                 else:
