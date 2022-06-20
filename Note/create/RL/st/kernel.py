@@ -309,7 +309,7 @@ class kernel:
         return
     
     
-    def learn1(self,episode_num,i):
+    def _train(self,episode_num,i):
         if self.end_loss!=None:
             self.param=self.nn.param
         if len(self.state_pool)<self.batch:
@@ -462,7 +462,7 @@ class kernel:
         return loss
     
     
-    def learn2(self,episode_num,i):
+    def train_(self,episode_num,i):
         episode=[]
         if self.state_name==None:
             s=self.nn.explore(init=True)
@@ -563,7 +563,7 @@ class kernel:
                     else:
                         episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r]
                 s=next_s
-                loss=self.learn1(episode_num,i)
+                loss=self._train(episode_num,i)
                 t2=time.time()
                 self.time+=(t2-t1)
         else:
@@ -649,13 +649,13 @@ class kernel:
                     else:
                         episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r]
                 s=next_s
-                loss=self.learn1(episode_num,i)
+                loss=self._train(episode_num,i)
                 t2=time.time()
                 self.time+=(t2-t1)
         return loss,episode,end
     
     
-    def learn(self,episode_num,path=None,one=True,p=None,s=None):
+    def train(self,episode_num,path=None,one=True,p=None,s=None):
         if p==None and s==None:
             self.p=9
             self.s=2
@@ -671,7 +671,7 @@ class kernel:
         loss=0
         if episode_num!=None:
             for i in range(episode_num):
-                loss,episode,end=self.learn2(episode_num,i)
+                loss,episode,end=self.train_(episode_num,i)
                 self.loss_list.append(loss)
                 if i==episode_num-1:
                     self.loss_list.append(self.loss)
@@ -705,7 +705,7 @@ class kernel:
         elif self.ol==None:
             i=0
             while True:
-                loss,episode,end=self.learn2(episode_num,i)
+                loss,episode,end=self.train_(episode_num,i)
                 self.loss_list.append(loss)
                 if i==episode_num-1:
                     self.loss_list.append(self.loss)
