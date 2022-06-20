@@ -21,6 +21,7 @@ class kernel:
         self.ol=None
         self.stop=None
         self.suspend=False
+        self.file_path=None
         self.save_epoch=None
         self.batch=None
         self.epoch=0
@@ -875,7 +876,7 @@ class kernel:
         if epoch!=None:
             for i in range(epoch):
                 if self.save_epoch!=None and self.save_epoch==self.total_epoch:
-                    self.save(file_path,self.total_epoch,False)
+                    self.save(self.file_path,self.total_epoch,False)
                     self.save_epoch=None
                 elif self.save_epoch>self.total_epoch:
                     print('\nsave_epoch>total_epoch\n')
