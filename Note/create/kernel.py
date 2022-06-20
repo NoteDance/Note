@@ -23,6 +23,7 @@ class kernel:
         self.suspend=False
         self.file_path=None
         self.save_epoch=None
+        self.save_and_stop=None
         self.batch=None
         self.epoch=0
         self.end_loss=None
@@ -427,6 +428,8 @@ class kernel:
                             self.core_opt(output,batch_loss,t)
                             break
                         except:
+                            if self.thread==None:
+                                print('\ncore unsuccessfully be replaced,try again.')
                             continue
                 total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc,t=t)
                 if i==epoch-1:
@@ -464,6 +467,8 @@ class kernel:
                             self.core_opt(output,batch_loss,t)
                             break
                         except:
+                            if self.thread==None:
+                                print('\ncore unsuccessfully be replaced,try again.')
                             continue
                 total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc,t=t)
                 if i==epoch-1:
@@ -566,6 +571,8 @@ class kernel:
                         self.core_opt(output,batch_loss,t)
                         break
                     except:
+                        if self.thread==None:
+                            print('\ncore unsuccessfully be replaced,try again.')
                         continue
             self.loss_acc(output=output,labels_batch=labels_batch,loss=train_loss,test_batch=test_batch,total_loss=total_loss,total_acc=total_acc,t=t)
             if i==epoch-1:
@@ -589,6 +596,8 @@ class kernel:
                         self.core_opt(output,train_loss)
                         break
                     except:
+                        if self.thread==None:
+                            print('\ncore unsuccessfully be replaced,try again.')
                         continue
             train_loss=self.nn.loss(output,data[1])
             loss=train_loss.numpy()
@@ -875,11 +884,7 @@ class kernel:
             labels_batch=None
         if epoch!=None:
             for i in range(epoch):
-                if self.save_epoch!=None and self.save_epoch==self.total_epoch:
-                    self.save(self.file_path,self.total_epoch,False)
-                    self.save_epoch=None
-                elif self.save_epoch>self.total_epoch:
-                    print('\nsave_epoch>total_epoch\n')
+                self._save()
                 t1=time.time()
                 if self.thread==None:
                     try:
@@ -1236,10 +1241,32 @@ class kernel:
     
     
     def suspend_func(self):
-        if self.suspend==True:
-            while True:
-                if self.suspend==False:
-                    break
+        if self.thread==None:
+            if self.suspend==True:
+                print('training have suspended.')
+                while True:
+                    if self.suspend==False:
+                        print('training have continued.')
+                        break
+        return
+    
+    
+    def _save(self):
+        if self.thread==None:
+            if self.save_epoch!=None and self.save_and_stop==None:
+                self.save_and_stop=input('Whether to stop training:')
+            if self.save_epoch==self.total_epoch:
+                if self.save_and_stop==True:
+                    self.save(self.file_path,self.total_epoch,False)
+                    self.save_epoch=None
+                    self.save_and_stop=None
+                    print('\nneural network have saved and training have stopped.')
+                    return
+                self.save(self.file_path,self.total_epoch,False)
+                self.save_epoch=None
+                print('\nneural network have saved.')
+            elif self.save_epoch>self.total_epoch:
+                print('\nsave_epoch>total_epoch')
         return
     
     
