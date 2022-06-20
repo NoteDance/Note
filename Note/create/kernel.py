@@ -1241,13 +1241,14 @@ class kernel:
     
     
     def suspend_func(self):
-        if self.thread==None:
-            if self.suspend==True:
+        if self.suspend==True:
+            if self.thread==None:
                 print('training have suspended.')
-                while True:
-                    if self.suspend==False:
+            while True:
+                if self.suspend==False:
+                    if self.thread==None:
                         print('training have continued.')
-                        break
+                    break
         return
     
     
