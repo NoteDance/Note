@@ -416,7 +416,7 @@ class kernel:
         return
     
     
-    def learn1(self,i,j=None,batches=None,length=None,episode_num=None,k=None):
+    def _train(self,i,j=None,batches=None,length=None,episode_num=None,k=None):
         if len(self.state_pool[i])<self.batch:
             length=min(len(self.state_pool[i]),len(self.action_pool[i]),len(self.next_state_pool[i]),len(self.reward_pool[i]))
             if self.PO==1:
@@ -481,9 +481,9 @@ class kernel:
                 self.loss[i]=0
         else:
             try:
-                if self.nn.pr!=None:
+                if self.nn.data_func!=None:
                     pass
-                state_batch,action_batch,next_state_batch,reward_batch=self.nn.pr(self.state_pool[i],self.action_pool[i],self.next_state_pool[i],self.reward_pool[i],self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
+                state_batch,action_batch,next_state_batch,reward_batch=self.nn.data_func(self.state_pool[i],self.action_pool[i],self.next_state_pool[i],self.reward_pool[i],self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
             except AttributeError:
                 index1=j*self.batch
                 index2=(j+1)*self.batch
@@ -581,9 +581,9 @@ class kernel:
                 pass
             if length%self.batch!=0:
                 try:
-                    if self.pr!=None:
+                    if self.nn.data_func!=None:
                         pass
-                    state_batch,action_batch,next_state_batch,reward_batch=self.nn.pr(self.state_pool[i],self.action_pool[i],self.next_state_pool[i],self.reward_pool[i],self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
+                    state_batch,action_batch,next_state_batch,reward_batch=self.nn.data_func(self.state_pool[i],self.action_pool[i],self.next_state_pool[i],self.reward_pool[i],self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
                 except AttributeError:
                     batches+=1
                     index1=batches*self.batch
@@ -677,7 +677,7 @@ class kernel:
         return
     
     
-    def learn2(self,i,episode_num=None,k=None):
+    def train_(self,i,episode_num=None,k=None):
         length=min(len(self.state_pool[i]),len(self.action_pool[i]),len(self.next_state_pool[i]),len(self.reward_pool[i]))
         train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool[i][:length],self.action_pool[i][:length],self.next_state_pool[i][:length],self.reward_pool[i][:length])).shuffle(length).batch(self.batch)
         for state_batch,action_batch,next_state_batch,reward_batch in train_ds:
@@ -768,10 +768,10 @@ class kernel:
         return
             
     
-    def learn3(self,i,episode_num,k):
+    def _train_(self,i,episode_num,k):
         self.a+=1
         if len(self.state_pool[i])<self.batch:
-            self.learn1(i,episode_num=episode_num,k=k)
+            self._train(i,episode_num=episode_num,k=k)
         else:
             self.loss[i]=0
             if self.pool_net==True:
@@ -782,13 +782,13 @@ class kernel:
                 for j in range(batches):
                     if self.stop[i]==True:
                         break
-                    self.learn1(i,j,batches,length,episode_num,k)
+                    self._train(i,j,batches,length,episode_num,k)
             else:
                 try:
                     self.nn.bc[i]=0
                 except AttributeError:
                     pass
-                self.learn2(i,episode_num,k)
+                self.train_(i,episode_num,k)
             if self.PO==1:
                 if self.update_step!=None:
                     if self.a%self.update_step==0:
@@ -816,7 +816,7 @@ class kernel:
         return
     
     
-    def learn(self,epsilon,episode_num):
+    def train(self,epsilon,episode_num):
         i=self.t.pop()
         self.thread_lock.acquire()
         self.thread+=1
@@ -869,10 +869,10 @@ class kernel:
                     if self.state_pool[i]!=None and self.action_pool[i]!=None and self.next_state_pool[i]!=None and self.reward_pool[i]!=None:
                         if self.PO==1:
                             self.thread_lock.acquire()
-                            self.learn3(i,episode_num,k)
+                            self._train_(i,episode_num,k)
                             self.thread_lock.release()
                         else:
-                            self.learn3(i,episode_num,k)
+                            self._train_(i,episode_num,k)
                     if self.save_episode==True:
                         if index not in self.finish_list:
                             episode.append(_episode)
@@ -893,10 +893,10 @@ class kernel:
                     if self.state_pool[i]!=None and self.action_pool[i]!=None and self.next_state_pool[i]!=None and self.reward_pool[i]!=None:
                         if self.PO==1:
                             self.thread_lock.acquire()
-                            self.learn3(i,episode_num,k)
+                            self._train_(i,episode_num,k)
                             self.thread_lock.release()
                         else:
-                            self.learn3(i,episode_num,k)
+                            self._train_(i,episode_num,k)
                     if self.save_episode==True:
                         if index not in self.finish_list:
                             episode.append(_episode)
