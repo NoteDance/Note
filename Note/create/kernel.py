@@ -282,7 +282,7 @@ class kernel:
                             pass
                         self.apply_gradient(tape,self.nn.opt,batch_loss,self.nn.param)
                     else:
-                        if self.nn.opt:
+                        if self.nn.opt!=None:
                             pass
                         self.apply_gradient(tape,self.nn.opt[t],batch_loss,self.nn.param[t])
                 except AttributeError:
