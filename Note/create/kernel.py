@@ -104,11 +104,9 @@ class kernel:
     def loss_acc(self,output=None,labels_batch=None,loss=None,test_batch=None,train_loss=None,total_loss=None,total_acc=None):
         if self.batch!=None:
             if self.total_epoch>=1:
-                batch_loss=loss
                 total_loss+=loss
                 if self.acc_flag1==1:
                     batch_acc=self.nn.accuracy(output,labels_batch)
-                    batch_acc=batch_acc
                     total_acc+=batch_acc
             return total_loss,total_acc
         elif self.ol==None:
