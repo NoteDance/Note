@@ -30,9 +30,8 @@ class kernel:
         self.update_step=None
         self.end_loss=None
         self.thread=thread
-        self.t=-np.arange(-self.thread,1)
+        self.t=list(-np.arange(-self.thread,1))
         self.thread_lock=thread_lock
-        self.stop=np.zeros(self.thread)
         self.state_list=None
         self._state_list=[]
         self.p=[]
@@ -84,10 +83,9 @@ class kernel:
         self.t=t.extend(self.t)
         self.thread+=thread
         if self.PO!=True:
-            self.loss=np.concatenate((self.train_loss,np.zeros(self.t)))
-            self.loss_list.extend([[] for _ in range(len(self.t))])
-        self.stop=np.concatenate((self.stop,np.zeros(self.t)))
-        self.episode_num=np.concatenate((self.epoch,np.zeros(self.t)))
+            self.loss=np.concatenate((self.train_loss,np.zeros(thread)))
+            self.loss_list.extend([[] for _ in range(thread)])
+        self.episode_num=np.concatenate((self.epoch,np.zeros(thread)))
         return
     
     
@@ -681,8 +679,6 @@ class kernel:
         length=min(len(self.state_pool[i]),len(self.action_pool[i]),len(self.next_state_pool[i]),len(self.reward_pool[i]))
         train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool[i][:length],self.action_pool[i][:length],self.next_state_pool[i][:length],self.reward_pool[i][:length])).shuffle(length).batch(self.batch)
         for state_batch,action_batch,next_state_batch,reward_batch in train_ds:
-            if self.stop[i]==True:
-                break
             if self.PO==1:
                 with tf.GradientTape() as tape:
                     if type(self.nn.nn)!=list:
@@ -780,8 +776,6 @@ class kernel:
                 if length%self.batch!=0:
                     batches+=1
                 for j in range(batches):
-                    if self.stop[i]==True:
-                        break
                     self.learn1(i,j,batches,length,episode_num,k)
             else:
                 try:
@@ -850,8 +844,6 @@ class kernel:
         elif i not in self.finish_lis and self.state_list!=None:
             self.state_list[i+1]=1
         for k in range(episode_num):
-            if self.stop[i]==True:
-                break
             if self.episode_num[i]==self.epi_num[i]:
                 break
             self.episode_num[i]+=1
@@ -862,8 +854,6 @@ class kernel:
                 s=int(np.random.uniform(0,len(self.state_name)))
             if self.episode_step==None:
                 while True:
-                    if self.stop[i]==True:
-                        break
                     next_s,end,_episode,index=self._explore(s,self.epsilon[i],i)
                     s=next_s
                     if self.state_pool[i]!=None and self.action_pool[i]!=None and self.next_state_pool[i]!=None and self.reward_pool[i]!=None:
@@ -886,8 +876,6 @@ class kernel:
                         self.thread_lock.release()
             else:
                 for _ in range(self.episode_step):
-                    if self.stop[i]==True:
-                        break
                     next_s,end,episode,index=self._explore(s,self.epsilon[i],i)
                     s=next_s
                     if self.state_pool[i]!=None and self.action_pool[i]!=None and self.next_state_pool[i]!=None and self.reward_pool[i]!=None:
