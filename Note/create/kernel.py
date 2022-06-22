@@ -19,7 +19,6 @@ class kernel:
         self.thread_lock=None
         self.thread=None
         self.ol=None
-        self.stop=None
         self.batch=None
         self.epoch=0
         self.end_loss=None
@@ -79,7 +78,6 @@ class kernel:
                     self.test_acc=np.zeros(self.thread)
                     self.test_loss_list=[[] for _ in range(self.thread)]
                     self.test_acc_list=[[] for _ in range(self.thread)]
-            self.stop=np.zeros(self.thread)
             self.epoch=np.zeros(self.thread)
             self.total_epoch=np.zeros(self.thread)
             self.time=np.zeros(self.thread)
@@ -125,7 +123,6 @@ class kernel:
                 self.test_acc=np.concatenate((self.test_acc,np.zeros(thread)))
                 self.test_loss_list.extend([[] for _ in range(thread)])
                 self.test_acc_list.extend([[] for _ in range(thread)])
-        self.stop=np.concatenate((self.stop,np.zeros(thread)))
         self.epoch=np.concatenate((self.epoch,np.zeros(thread)))
         self.total_epoch=np.concatenate((self.total_epoch,np.zeros(thread)))
         self.time=np.concatenate((self.time,np.zeros(thread)))
@@ -425,8 +422,6 @@ class kernel:
                 self.loss_acc(output=output,labels_batch=labels_batch,loss=train_loss,test_batch=test_batch,total_loss=_total_loss,total_acc=_total_acc,t=t)
         else:
             data=self.ol()
-            if self.stop==True:
-                return
             with tf.GradientTape() as tape:
                 output=self.nn.fp(data[0])
                 train_loss=self.nn.loss(output,data[1])
@@ -895,12 +890,6 @@ class kernel:
                     self.time+=(t2-t1)
                 else:
                     self.time[t]+=(t2-t1)
-                if self.thread==None:
-                    if self.stop==True:
-                        break
-                else:
-                    if self.stop[t]==True:
-                        break
                 if self.end_flag==True and self.end()==True:
                     self.nn.param=self._param
                     self._param=None
@@ -965,12 +954,6 @@ class kernel:
                     self.time+=(t2-t1)
                 else:
                     self.time[t]+=(t2-t1)
-                if self.thread==None:
-                    if self.stop==True:
-                        break
-                else:
-                    if self.stop[t]==True:
-                        break
                 if self.end_flag==True and self.end()==True:
                     self.nn.param=self._param
                     self._param=None
