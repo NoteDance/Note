@@ -18,7 +18,6 @@ class kernel:
         self.ol=None
         self.PO=None
         self.thread_lock=None
-        self.stop=None
         self.state_pool=None
         self.action_pool=None
         self.next_state_pool=None
@@ -648,24 +647,6 @@ class kernel:
         else:
             while True:
                 data=self.ol()
-                if self.stop==True:
-                    if type(self.nn.nn)!=list:
-                        loss=self.nn.loss(self.nn.nn,data[0],data[1],data[2],data[3])
-                    elif len(self.nn.param)==4:
-                        value=self.nn.nn[0](data[0],p=0)
-                        TD=tf.reduce_mean((data[3]+self.discount*self.nn.nn[0](data[2],p=2)-value)**2)
-                        loss=TD
-                    else:
-                        value=self.nn.nn[0](data[0])
-                        TD=tf.reduce_mean((data[3]+self.discount*self.nn.nn[0](data[2])-value)**2)
-                        loss=TD
-                    if len(self.loss_list)==0:
-                        self.loss_list.append(loss.numpy())
-                    else:
-                        self.loss_list[0]=loss.numpy()
-                    if path!=None:
-                        self.save(path)
-                    return
                 with tf.GradientTape() as tape:
                     if type(self.nn.nn)!=list:
                         loss=self.nn.loss(self.nn.nn,data[0],data[1],data[2],data[3])				
