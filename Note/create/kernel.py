@@ -938,9 +938,14 @@ class kernel:
                         self._train_(batch,epoch,data_batch,labels_batch,test_batch,t,i)
                     else:
                         self._train(batch,epoch,test_batch,data_batch,labels_batch,t,i)
-                if self.thread==None:
-                    self.epoch+=1
-                    self.total_epoch+=1
+                if type(self.total_epoch)!=list:
+                    if self.thread_lock!=None:
+                        self.thread_lock.acquire()
+                        self.total_epoch+=1
+                        self.thread_lock.release()
+                    else:
+                        self.epoch+=1
+                        self.total_epoch+=1
                 else:
                     self.epoch[t]+=1
                     self.total_epoch[t]+=1
@@ -973,8 +978,19 @@ class kernel:
                     if file_path!=None and i%s==0:
                         self.save(file_path,self.total_epoch,one)
                 t2=time.time()
-                if self.thread==None:
-                    self.time+=(t2-t1)
+                if type(self.time)!=list:
+                    if self.thread_lock!=None:
+                        self.thread_lock.acquire()
+                        self.time+=(t2-t1)
+                        self._time=self.time-int(self.time)
+                        if self._time<0.5:
+                            self.time=int(self.time)
+                        else:
+                            self.time=int(self.time)+1
+                        self.total_time+=self.time
+                        self.thread_lock.release()
+                    else:
+                        self.time+=(t2-t1)
                 else:
                     self.time[t]+=(t2-t1)
                 if self.end_flag==True and self.end()==True:
@@ -999,9 +1015,14 @@ class kernel:
                     else:
                         self._train(epoch=epoch,test_batch=test_batch,t=t,i=i)
                 i+=1
-                if self.thread==None:
-                    self.epoch+=1
-                    self.total_epoch+=1
+                if type(self.total_epoch)!=list:
+                    if self.thread_lock!=None:
+                        self.thread_lock.acquire()
+                        self.total_epoch+=1
+                        self.thread_lock.release()
+                    else:
+                        self.epoch+=1
+                        self.total_epoch+=1
                 else:
                     self.epoch[t]+=1
                     self.total_epoch[t]+=1
@@ -1044,8 +1065,19 @@ class kernel:
                     except AttributeError:
                         pass
                 t2=time.time()
-                if self.thread==None:
-                    self.time+=(t2-t1)
+                if type(self.time)!=list:
+                    if self.thread_lock!=None:
+                        self.thread_lock.acquire()
+                        self.time+=(t2-t1)
+                        self._time=self.time-int(self.time)
+                        if self._time<0.5:
+                            self.time=int(self.time)
+                        else:
+                            self.time=int(self.time)+1
+                        self.total_time+=self.time
+                        self.thread_lock.release()
+                    else:
+                        self.time+=(t2-t1)
                 else:
                     self.time[t]+=(t2-t1)
                 if self.end_flag==True and self.end()==True:
@@ -1069,8 +1101,8 @@ class kernel:
         if file_path!=None:
             self.save(file_path)
         if self.thread==None:
-            self.time=self.time-int(self.time)
-            if self.time<0.5:
+            self._time=self.time-int(self.time)
+            if self._time<0.5:
                 self.time=int(self.time)
             else:
                 self.time=int(self.time)+1
