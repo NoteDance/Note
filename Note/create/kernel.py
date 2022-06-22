@@ -19,7 +19,6 @@ class kernel:
         self.thread_lock=None
         self.thread=None
         self.ol=None
-        self.stop=None
         self.suspend=False
         self.file_path=None
         self.save_epoch=None
@@ -432,8 +431,6 @@ class kernel:
     
     
     def _train(self,batch=None,epoch=None,test_batch=None,_data_batch=None,_labels_batch=None,t=None,i=None):
-        if self.stop==True:
-            return
         if self.end_loss!=None or self.end_acc!=None or self.end_test_loss!=None or self.end_test_acc!=None:
             self._param=self.nn.param
         if batch!=None:
@@ -913,8 +910,6 @@ class kernel:
             labels_batch=None
         if epoch!=None:
             for i in range(epoch):
-                if self.stop==True:
-                    return
                 self._save()
                 t1=time.time()
                 if self.thread==None:
@@ -990,8 +985,6 @@ class kernel:
             self.suspend_func()
             i=0
             while True:
-                if self.stop==True:
-                    return
                 t1=time.time()
                 if self.thread==None:
                     self._train(epoch=epoch,test_batch=test_batch,i=i)
