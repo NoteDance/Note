@@ -115,6 +115,7 @@ class kernel:
     def get_episode(self,s):
         next_s=None
         episode=[]
+        self.end=False
         while True:
             s=next_s
             if type(self.nn.nn)!=list:
@@ -169,7 +170,7 @@ class kernel:
                     episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s],r])
                 episode.append('end')
                 break
-            elif self.stop==True:
+            elif self.end==True:
                 break
             else:
                 if self.state_name==None and self.action_name==None:
@@ -310,6 +311,8 @@ class kernel:
     
     
     def _train(self,episode_num,i):
+        if self.stop==True:
+            return None
         if self.end_loss!=None:
             self.param=self.nn.param
         if len(self.state_pool)<self.batch:
@@ -463,6 +466,8 @@ class kernel:
     
     
     def train_(self,episode_num,i):
+        if self.stop==True:
+            return None,None,None
         episode=[]
         if self.state_name==None:
             s=self.nn.explore(init=True)
@@ -656,21 +661,19 @@ class kernel:
     
     
     def train(self,episode_num,path=None,one=True,p=None,s=None):
-        if p==None and s==None:
+        if self.p==None:
             self.p=9
-            self.s=2
-        elif p!=None:
-            self.p=p-1
-            self.s=2
-        elif s!=None:
-            self.p=9
-            self.s=s
         else:
             self.p=p-1
-            self.s=s
+        if self.s==None:
+            self.s=1
+        else:
+            self.s=s-1
         loss=0
         if episode_num!=None:
             for i in range(episode_num):
+                if self.stop==True:
+                    return
                 loss,episode,end=self.train_(episode_num,i)
                 self.loss_list.append(loss)
                 if i==episode_num-1:
@@ -705,6 +708,8 @@ class kernel:
         elif self.ol==None:
             i=0
             while True:
+                if self.stop==True:
+                    return
                 loss,episode,end=self.train_(episode_num,i)
                 self.loss_list.append(loss)
                 if i==episode_num-1:
@@ -739,25 +744,9 @@ class kernel:
                     break
         else:
             while True:
-                data=self.ol()
                 if self.stop==True:
-                    if type(self.nn.nn)!=list:
-                        loss=self.nn.loss(self.nn.nn,data[0],data[1],data[2],data[3])
-                    elif len(self.nn.param)==4:
-                        value=self.nn.nn[0](data[0],p=0)
-                        TD=self.core.reduce_mean((data[3]+self.discount*self.nn.nn[0](data[2],p=2)-value)**2)
-                        loss=TD
-                    else:
-                        value=self.nn.nn[0](data[0])
-                        TD=self.core.reduce_mean((data[3]+self.discount*self.nn.nn[0](data[2])-value)**2)
-                        loss=TD
-                    if len(self.loss_list)==0:
-                        self.loss_list.append(loss.numpy())
-                    else:
-                        self.loss_list[0]=loss.numpy()
-                    if path!=None:
-                        self.save(path)
                     return
+                data=self.ol()
                 if type(self.nn.nn)!=list:
                     loss=self.nn.loss(self.nn.nn,data[0],data[1],data[2],data[3])				
                 elif len(self.nn.param)==4:
