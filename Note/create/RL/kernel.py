@@ -32,7 +32,6 @@ class kernel:
         self.thread=thread
         self.t=-np.arange(-self.thread,1)
         self.thread_lock=thread_lock
-        self.stop=None
         self.state_list=None
         self._state_list=[]
         self.p=[]
@@ -677,8 +676,6 @@ class kernel:
     
     
     def train_(self,i,episode_num=None,k=None):
-        if self.stop==True:
-            return
         length=min(len(self.state_pool[i]),len(self.action_pool[i]),len(self.next_state_pool[i]),len(self.reward_pool[i]))
         train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool[i][:length],self.action_pool[i][:length],self.next_state_pool[i][:length],self.reward_pool[i][:length])).shuffle(length).batch(self.batch)
         for state_batch,action_batch,next_state_batch,reward_batch in train_ds:
@@ -768,8 +765,6 @@ class kernel:
             
     
     def _train_(self,i,episode_num,k):
-        if self.stop==True:
-            return
         self.a+=1
         if len(self.state_pool[i])<self.batch:
             self._train(i,episode_num=episode_num,k=k)
@@ -849,8 +844,6 @@ class kernel:
         elif i not in self.finish_lis and self.state_list!=None:
             self.state_list[i+1]=1
         for k in range(episode_num):
-            if self.stop==True:
-                return
             if self.episode_num[i]==self.epi_num[i]:
                 break
             self.episode_num[i]+=1
@@ -861,8 +854,6 @@ class kernel:
                 s=int(np.random.uniform(0,len(self.state_name)))
             if self.episode_step==None:
                 while True:
-                    if self.stop==True:
-                        return
                     next_s,end,_episode,index=self._explore(s,self.epsilon[i],i)
                     s=next_s
                     if self.state_pool[i]!=None and self.action_pool[i]!=None and self.next_state_pool[i]!=None and self.reward_pool[i]!=None:
@@ -885,8 +876,6 @@ class kernel:
                         self.thread_lock.release()
             else:
                 for _ in range(self.episode_step):
-                    if self.stop==True:
-                        return
                     next_s,end,episode,index=self._explore(s,self.epsilon[i],i)
                     s=next_s
                     if self.state_pool[i]!=None and self.action_pool[i]!=None and self.next_state_pool[i]!=None and self.reward_pool[i]!=None:
