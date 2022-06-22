@@ -18,7 +18,6 @@ class kernel:
         self.ol=None
         self.PO=None
         self.thread_lock=None
-        self.stop=None
         self.state_pool=None
         self.action_pool=None
         self.next_state_pool=None
@@ -311,8 +310,6 @@ class kernel:
     
     
     def _train(self,episode_num,i):
-        if self.stop==True:
-            return None
         if self.end_loss!=None:
             self.param=self.nn.param
         if len(self.state_pool)<self.batch:
@@ -466,8 +463,6 @@ class kernel:
     
     
     def train_(self,episode_num,i):
-        if self.stop==True:
-            return None,None,None
         episode=[]
         if self.state_name==None:
             s=self.nn.explore(init=True)
@@ -672,8 +667,6 @@ class kernel:
         loss=0
         if episode_num!=None:
             for i in range(episode_num):
-                if self.stop==True:
-                    return
                 loss,episode,end=self.train_(episode_num,i)
                 self.loss_list.append(loss)
                 if i==episode_num-1:
@@ -708,8 +701,6 @@ class kernel:
         elif self.ol==None:
             i=0
             while True:
-                if self.stop==True:
-                    return
                 loss,episode,end=self.train_(episode_num,i)
                 self.loss_list.append(loss)
                 if i==episode_num-1:
@@ -744,8 +735,6 @@ class kernel:
                     break
         else:
             while True:
-                if self.stop==True:
-                    return
                 data=self.ol()
                 if type(self.nn.nn)!=list:
                     loss=self.nn.loss(self.nn.nn,data[0],data[1],data[2],data[3])				
