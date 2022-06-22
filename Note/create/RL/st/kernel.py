@@ -774,7 +774,8 @@ class kernel:
                     self.total_e+=1
         if path!=None:
             self.save(path)
-        if self.time<0.5:
+        self._time=self.time-int(self.time)
+        if self._time<0.5:
             self.time=int(self.time)
         else:
             self.time=int(self.time)+1
