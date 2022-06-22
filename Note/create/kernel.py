@@ -59,7 +59,15 @@ class kernel:
         else:
             self.shape0=train_data.shape[0]
         if self.thread!=None:
-            self.t=-np.arange(-self.thread,1)
+            self.t=list(self.t)
+            try:
+                self.nn.ec=np.zeros(self.thread)
+            except AttributeError:
+                pass
+            try:
+                self.nn.bc=np.zeros(self.thread)
+            except AttributeError:
+                pass
             if self.PO==None:
                 self.train_loss=np.zeros(self.thread)
                 self.train_acc=np.zeros(self.thread)
@@ -98,22 +106,30 @@ class kernel:
         t=-np.arange(-thread,1)+self.thread+1
         self.t=t.extend(self.t)
         self.thread+=thread
+        try:
+            self.nn.ec=np.concatenate((self.nn.ec,np.zeros(thread)))
+        except AttributeError:
+            pass
+        try:
+            self.nn.bc=np.concatenate((self.nn.bc,np.zeros(thread)))
+        except AttributeError:
+            pass
         if self.PO==None:
-            self.train_loss=np.concatenate((self.train_loss,np.zeros(self.t)))
-            self.train_acc=np.concatenate((self.train_acc,np.zeros(self.t)))
-            self.train_loss_list.extend([[] for _ in range(len(self.t))])
-            self.train_acc_list.extend([[] for _ in range(len(self.t))])
+            self.train_loss=np.concatenate((self.train_loss,np.zeros(thread)))
+            self.train_acc=np.concatenate((self.train_acc,np.zeros(thread)))
+            self.train_loss_list.extend([[] for _ in range(thread)])
+            self.train_acc_list.extend([[] for _ in range(thread)])
         if self.test_flag==True:
             if self.PO==None:
-                self.test_loss=np.concatenate((self.test_loss,np.zeros(self.t)))
-                self.test_acc=np.concatenate((self.test_acc,np.zeros(self.t)))
-                self.test_loss_list.extend([[] for _ in range(len(self.t))])
-                self.test_acc_list.extend([[] for _ in range(len(self.t))])
-        self.stop=np.concatenate((self.stop,np.zeros(self.t)))
-        self.epoch=np.concatenate((self.epoch,np.zeros(self.t)))
-        self.total_epoch=np.concatenate((self.total_epoch,np.zeros(self.t)))
-        self.time=np.concatenate((self.time,np.zeros(self.t)))
-        self.total_time=np.concatenate((self.total_time,np.zeros(self.t)))
+                self.test_loss=np.concatenate((self.test_loss,np.zeros(thread)))
+                self.test_acc=np.concatenate((self.test_acc,np.zeros(thread)))
+                self.test_loss_list.extend([[] for _ in range(thread)])
+                self.test_acc_list.extend([[] for _ in range(thread)])
+        self.stop=np.concatenate((self.stop,np.zeros(thread)))
+        self.epoch=np.concatenate((self.epoch,np.zeros(thread)))
+        self.total_epoch=np.concatenate((self.total_epoch,np.zeros(thread)))
+        self.time=np.concatenate((self.time,np.zeros(thread)))
+        self.total_time=np.concatenate((self.total_time,np.zeros(thread)))
         return
     
     
