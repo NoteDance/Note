@@ -1107,7 +1107,7 @@ class kernel:
             else:
                 self.time=int(self.time)+1
             self.total_time+=self.time
-        else:
+        elif type(self.total_time)==list:
             self.time[t]=self.time[t]-int(self.time[t])
             if self.time[t]<0.5:
                 self.time[t]=int(self.time[t])
