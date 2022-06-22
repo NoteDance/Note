@@ -83,7 +83,6 @@ class kernel:
                     self.test_acc=np.zeros(self.thread)
                     self.test_loss_list=[[] for _ in range(self.thread)]
                     self.test_acc_list=[[] for _ in range(self.thread)]
-            self.stop=np.zeros(self.thread)
             self.epoch=np.zeros(self.thread)
             self.total_epoch=np.zeros(self.thread)
             self.time=np.zeros(self.thread)
@@ -129,7 +128,6 @@ class kernel:
                 self.test_acc=np.concatenate((self.test_acc,np.zeros(thread)))
                 self.test_loss_list.extend([[] for _ in range(thread)])
                 self.test_acc_list.extend([[] for _ in range(thread)])
-        self.stop=np.concatenate((self.stop,np.zeros(thread)))
         self.epoch=np.concatenate((self.epoch,np.zeros(thread)))
         self.total_epoch=np.concatenate((self.total_epoch,np.zeros(thread)))
         self.time=np.concatenate((self.time,np.zeros(thread)))
@@ -434,6 +432,8 @@ class kernel:
     
     
     def _train(self,batch=None,epoch=None,test_batch=None,_data_batch=None,_labels_batch=None,t=None,i=None):
+        if self.stop==True:
+            return
         if self.end_loss!=None or self.end_acc!=None or self.end_test_loss!=None or self.end_test_acc!=None:
             self._param=self.nn.param
         if batch!=None:
@@ -461,7 +461,7 @@ class kernel:
                             break
                         except:
                             if self.thread==None:
-                                print('\ncore unsuccessfully be replaced,try again.')
+                                print('\nCore unsuccessfully be replaced,try again.')
                             continue
                 total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc,t=t)
                 if i==epoch-1:
@@ -500,7 +500,7 @@ class kernel:
                             break
                         except:
                             if self.thread==None:
-                                print('\ncore unsuccessfully be replaced,try again.')
+                                print('\nCore unsuccessfully be replaced,try again.')
                             continue
                 total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc,t=t)
                 if i==epoch-1:
@@ -604,7 +604,7 @@ class kernel:
                         break
                     except:
                         if self.thread==None:
-                            print('\ncore unsuccessfully be replaced,try again.')
+                            print('\nCore unsuccessfully be replaced,try again.')
                         continue
             self.loss_acc(output=output,labels_batch=labels_batch,loss=train_loss,test_batch=test_batch,total_loss=total_loss,total_acc=total_acc,t=t)
             if i==epoch-1:
@@ -615,8 +615,6 @@ class kernel:
                 train_loss=self.nn.loss(output,self.train_labels)
                 self.loss_acc(output=output,labels_batch=labels_batch,loss=train_loss,test_batch=test_batch,total_loss=_total_loss,total_acc=_total_acc,t=t)
         else:
-            if self.stop==True:
-                return
             self.suspend_func()
             data=self.ol()
             output=self.nn.fp(data[0])
@@ -629,7 +627,7 @@ class kernel:
                         break
                     except:
                         if self.thread==None:
-                            print('\ncore unsuccessfully be replaced,try again.')
+                            print('\nCore unsuccessfully be replaced,try again.')
                         continue
             train_loss=self.nn.loss(output,data[1])
             loss=train_loss.numpy()
@@ -915,6 +913,8 @@ class kernel:
             labels_batch=None
         if epoch!=None:
             for i in range(epoch):
+                if self.stop==True:
+                    return
                 self._save()
                 t1=time.time()
                 if self.thread==None:
@@ -933,7 +933,7 @@ class kernel:
                     try:
                         t=self.t.pop()
                     except IndexError:
-                        print('Error,please add thread.')
+                        print('\nError,please add thread.')
                         return
                     if self.PO==1:
                         self.thread_lock.acquire()
@@ -982,12 +982,6 @@ class kernel:
                     self.time+=(t2-t1)
                 else:
                     self.time[t]+=(t2-t1)
-                if self.thread==None:
-                    if self.stop==True:
-                        break
-                else:
-                    if self.stop[t]==True:
-                        break
                 if self.end_flag==True and self.end()==True:
                     self.nn.param=self._param
                     self._param=None
@@ -996,6 +990,8 @@ class kernel:
             self.suspend_func()
             i=0
             while True:
+                if self.stop==True:
+                    return
                 t1=time.time()
                 if self.thread==None:
                     self._train(epoch=epoch,test_batch=test_batch,i=i)
@@ -1059,12 +1055,6 @@ class kernel:
                     self.time+=(t2-t1)
                 else:
                     self.time[t]+=(t2-t1)
-                if self.thread==None:
-                    if self.stop==True:
-                        break
-                else:
-                    if self.stop[t]==True:
-                        break
                 if self.end_flag==True and self.end()==True:
                     self.nn.param=self._param
                     self._param=None
@@ -1278,11 +1268,11 @@ class kernel:
     def suspend_func(self):
         if self.suspend==True:
             if self.thread==None:
-                print('training have suspended.')
+                print('Training have suspended.')
             while True:
                 if self.suspend==False:
                     if self.thread==None:
-                        print('training have continued.')
+                        print('Training have continued.')
                     break
         return
     
@@ -1296,11 +1286,11 @@ class kernel:
                     self.save(self.file_path,self.total_epoch,False)
                     self.save_epoch=None
                     self.save_and_stop=None
-                    print('\nneural network have saved and training have stopped.')
+                    print('\nNeural network have saved and training have stopped.')
                     return
                 self.save(self.file_path,self.total_epoch,False)
                 self.save_epoch=None
-                print('\nneural network have saved.')
+                print('\nNeural network have saved.')
             elif self.save_epoch>self.total_epoch:
                 print('\nsave_epoch>total_epoch')
         return
