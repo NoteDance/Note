@@ -30,7 +30,7 @@ class kernel:
         self.update_step=None
         self.end_loss=None
         self.thread=thread
-        self.t=-np.arange(-self.thread,1)
+        self.t=list(-np.arange(-self.thread,1))
         self.thread_lock=thread_lock
         self.state_list=None
         self._state_list=[]
@@ -83,9 +83,9 @@ class kernel:
         self.t=t.extend(self.t)
         self.thread+=thread
         if self.PO!=True:
-            self.loss=np.concatenate((self.train_loss,np.zeros(self.t)))
-            self.loss_list.extend([[] for _ in range(len(self.t))])
-        self.episode_num=np.concatenate((self.epoch,np.zeros(self.t)))
+            self.loss=np.concatenate((self.train_loss,np.zeros(thread)))
+            self.loss_list.extend([[] for _ in range(thread)])
+        self.episode_num=np.concatenate((self.epoch,np.zeros(thread)))
         return
     
     
