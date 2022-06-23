@@ -20,6 +20,9 @@ class kernel:
         self.thread=None
         self.ol=None
         self.suspend=False
+        self.stop=None
+        self.stop_flag=None
+        self.end_flag=None
         self.file_path=None
         self.save_epoch=None
         self.save_and_stop=None
@@ -431,6 +434,23 @@ class kernel:
     
     
     def _train(self,batch=None,epoch=None,test_batch=None,_data_batch=None,_labels_batch=None,t=None,i=None):
+        if self.stop==True:
+            if self.thread_lock==None:
+                self.save(self.file_path,self.total_epoch,True)
+                print('\nSystem have stopped training,Neural network have been saved.')
+                return
+            elif self.end() and self.end_flag==True:
+                self.thread_lock.acquire()
+                self.save(self.file_path,self.total_epoch,True)
+                self.stop_flag=2
+                self.thread_lock.release()
+                return
+            else:
+                self.thread_lock.acquire()
+                self.save(self.file_path,self.total_epoch,True)
+                self.stop_flag=2
+                self.thread_lock.release()
+                return
         if self.end_loss!=None or self.end_acc!=None or self.end_test_loss!=None or self.end_test_acc!=None:
             self._param=self.nn.param
         if batch!=None:
@@ -644,10 +664,29 @@ class kernel:
                 except AttributeError:
                     pass
                 self.total_epoch+=1
+            if self.stop==True:
+                self.stop_flag=1
         return
     
     
     def train_(self,_data_batch=None,_labels_batch=None,batches=None,batch=None,epoch=None,test_batch=None,index1=None,index2=None,j=None,t=None,i=None):
+        if self.stop==True:
+            if self.thread_lock==None:
+                self.save(self.file_path,self.total_epoch,True)
+                print('\nSystem have stopped training,Neural network have been saved.')
+                return
+            elif self.end() and self.end_flag==True:
+                self.thread_lock.acquire()
+                self.save(self.file_path,self.total_epoch,True)
+                self.stop_flag=2
+                self.thread_lock.release()
+                return
+            else:
+                self.thread_lock.acquire()
+                self.save(self.file_path,self.total_epoch,True)
+                self.stop_flag=2
+                self.thread_lock.release()
+                return
         if self.end_loss!=None or self.end_acc!=None or self.end_test_loss!=None or self.end_test_acc!=None:
             self._param=self.nn.param
         if batch!=None:
@@ -795,10 +834,29 @@ class kernel:
                         except AttributeError:
                             pass
                 self.thread_lock.release()
+            if self.stop==True:
+                self.stop_flag=1
             return
     
     
     def _train_(self,batch=None,epoch=None,data_batch=None,labels_batch=None,test_batch=None,t=None,i=None):
+        if self.stop==True:
+            if self.thread_lock==None:
+                self.save(self.file_path,self.total_epoch,True)
+                print('\nSystem have stopped training,Neural network have been saved.')
+                return
+            elif self.end() and self.end_flag==True:
+                self.thread_lock.acquire()
+                self.save(self.file_path,self.total_epoch,True)
+                self.stop_flag=2
+                self.thread_lock.release()
+                return
+            else:
+                self.thread_lock.acquire()
+                self.save(self.file_path,self.total_epoch,True)
+                self.stop_flag=2
+                self.thread_lock.release()
+                return
         total_loss=0
         _total_loss=0
         total_acc=0
@@ -910,6 +968,23 @@ class kernel:
             labels_batch=None
         if epoch!=None:
             for i in range(epoch):
+                if self.stop==True:
+                    if self.thread_lock==None:
+                        self.save(self.file_path,self.total_epoch,True)
+                        print('\nSystem have stopped training,Neural network have been saved.')
+                        return
+                    elif self.end() and self.end_flag==True:
+                        self.thread_lock.acquire()
+                        self.save(self.file_path,self.total_epoch,True)
+                        self.stop_flag=2
+                        self.thread_lock.release()
+                        return
+                    else:
+                        self.thread_lock.acquire()
+                        self.save(self.file_path,self.total_epoch,True)
+                        self.stop_flag=2
+                        self.thread_lock.release()
+                        return
                 self._save()
                 t1=time.time()
                 if self.thread==None:
@@ -938,6 +1013,26 @@ class kernel:
                         self._train_(batch,epoch,data_batch,labels_batch,test_batch,t,i)
                     else:
                         self._train(batch,epoch,test_batch,data_batch,labels_batch,t,i)
+                if self.stop==True:
+                    if self.stop_flag==1:
+                        if self.thread_lock==None:
+                            self.save(self.file_path,self.total_epoch,True)
+                            print('\nSystem have stopped training,Neural network have been saved.')
+                            return
+                        elif self.end() and self.end_flag==True:
+                            self.thread_lock.acquire()
+                            self.save(self.file_path,self.total_epoch,True)
+                            self.stop_flag=2
+                            self.thread_lock.release()
+                            return
+                        else:
+                            self.thread_lock.acquire()
+                            self.save(self.file_path,self.total_epoch,True)
+                            self.stop_flag=2
+                            self.thread_lock.release()
+                            return
+                    else:
+                        return
                 if type(self.total_epoch)!=list:
                     if self.thread_lock!=None:
                         self.thread_lock.acquire()
@@ -1443,6 +1538,8 @@ class kernel:
     
     
     def save(self,path,i=None,one=True):
+        if self.stop_flag==2:
+            return
         if one==True:
             output_file=open(path+'\save.dat','wb')
             path=path+'\save.dat'
@@ -1486,6 +1583,8 @@ class kernel:
         pickle.dump(self.total_time,output_file)
         output_file.close()
         parameter_file.close()
+        if self.stop==True and self.stop_flag!=None:
+            print('\nSystem have stopped,Neural network have saved.')
         return
     
 	
