@@ -1325,7 +1325,7 @@ class kernel:
     def stop_func(self):
         if self.thread_lock==None:
             if self.file_path!=None:
-                self.save(self.file_path,self.total_epoch,True)
+                self.save(self.file_path)
                 print('\nSystem have stopped training,Neural network have been saved.')
                 return
             else:
@@ -1333,14 +1333,14 @@ class kernel:
                 return
         elif self.end() and self.end_flag==True:
             self.thread_lock.acquire()
-            self.save(self.file_path,self.total_epoch,True)
+            self.save(self.file_path)
             self.stop_flag=2
             self.thread_lock.release()
             return
         else:
             if self.file_path!=None:
                 self.thread_lock.acquire()
-                self.save(self.file_path,self.total_epoch,True)
+                self.save(self.file_path)
                 self.stop_flag=2
                 self.thread_lock.release()
                 return
