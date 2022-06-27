@@ -1325,7 +1325,7 @@ class kernel:
     def stop_func(self):
         if self.thread_lock==None:
             if self.file_path!=None:
-                self.save(self.file_path)
+                self.save(self.file_path,self.total_epoch,True)
                 print('\nSystem have stopped training,Neural network have been saved.')
                 return
             else:
@@ -1333,14 +1333,14 @@ class kernel:
                 return
         elif self.end() and self.end_flag==True:
             self.thread_lock.acquire()
-            self.save(self.file_path)
+            self.save(self.file_path,self.total_epoch,True)
             self.stop_flag=2
             self.thread_lock.release()
             return
         else:
             if self.file_path!=None:
                 self.thread_lock.acquire()
-                self.save(self.file_path)
+                self.save(self.file_path,self.total_epoch,True)
                 self.stop_flag=2
                 self.thread_lock.release()
                 return
@@ -1497,10 +1497,10 @@ class kernel:
             index=path.rfind('\\')
             parameter_file=open(path.replace(path[index+1:],'parameter.dat'),'wb')
         else:
-            output_file=open(path+'\save-{0}.dat'.format(i+1),'wb')
+            output_file=open(path+'\save-{0}.dat'.format(i),'wb')
             path=path+'\save-{0}.dat'.format(i+1)
             index=path.rfind('\\')
-            parameter_file=open(path.replace(path[index+1:],'parameter-{0}.dat'.format(i+1)),'wb')
+            parameter_file=open(path.replace(path[index+1:],'parameter-{0}.dat'.format(i)),'wb')
             self.file_list.append(['save-{0}.dat','parameter-{0}.dat'])
             if len(self.file_list)>self.s+1:
                 os.remove(self.file_list[0][0])
