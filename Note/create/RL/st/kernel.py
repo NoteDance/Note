@@ -791,12 +791,12 @@ class kernel:
                 pickle.dump(self.episode,episode_file)
                 episode_file.close()
         else:
-            output_file=open(path+'\save-{0}.dat'.format(i+1),'wb')
-            path=path+'\save-{0}.dat'.format(i+1)
+            output_file=open(path+'\save-{0}.dat'.format(i),'wb')
+            path=path+'\save-{0}.dat'.format(i)
             index=path.rfind('\\')
-            parameter_file=open(path.replace(path[index+1:],'parameter-{0}.dat'.format(i+1)),'wb')
+            parameter_file=open(path.replace(path[index+1:],'parameter-{0}.dat'.format(i)),'wb')
             if self.save_episode==True:
-                episode_file=open(path.replace(path[index+1:],'episode-{0}.dat'.format(i+1)),'wb')
+                episode_file=open(path.replace(path[index+1:],'episode-{0}.dat'.format(i)),'wb')
                 pickle.dump(self.episode,episode_file)
                 episode_file.close()
         self.episode_num=self.epi_num
