@@ -637,10 +637,10 @@ class kernel:
             index=path.rfind('\\')
             parameter_file=open(path.replace(path[index+1:],'parameter.dat'),'wb')
         else:
-            output_file=open(path+'\save-{0}.dat'.format(i+1),'wb')
-            path=path+'\save-{0}.dat'.format(i+1)
+            output_file=open(path+'\save-{0}.dat'.format(i),'wb')
+            path=path+'\save-{0}.dat'.format(i)
             index=path.rfind('\\')
-            parameter_file=open(path.replace(path[index+1:],'parameter-{0}.dat'.format(i+1)),'wb')
+            parameter_file=open(path.replace(path[index+1:],'parameter-{0}.dat'.format(i)),'wb')
         pickle.dump(self.param,parameter_file)
         pickle.dump(self.nn,output_file)
         pickle.dump(self.ol,output_file)
