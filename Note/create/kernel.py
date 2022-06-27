@@ -1498,7 +1498,7 @@ class kernel:
             parameter_file=open(path.replace(path[index+1:],'parameter.dat'),'wb')
         else:
             output_file=open(path+'\save-{0}.dat'.format(i),'wb')
-            path=path+'\save-{0}.dat'.format(i+1)
+            path=path+'\save-{0}.dat'.format(i)
             index=path.rfind('\\')
             parameter_file=open(path.replace(path[index+1:],'parameter-{0}.dat'.format(i)),'wb')
             self.file_list.append(['save-{0}.dat','parameter-{0}.dat'])
