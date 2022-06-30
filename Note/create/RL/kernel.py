@@ -10,8 +10,7 @@ class kernel:
             self.nn=nn
             self.opt=nn.opt
             try:
-                if self.nn.km==0:
-                    self.nn.km=1
+                self.nn.km=1
             except AttributeError:
                 pass
         self.state_pool=[]
@@ -1001,8 +1000,7 @@ class kernel:
         self.nn.param=param
         param=None
         try:
-            if self.nn.km==0:
-                self.nn.km=1
+            self.nn.km=1
         except AttributeError:
             pass
         self.opt=self.nn.opt
