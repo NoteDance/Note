@@ -10,8 +10,7 @@ class kernel:
         if nn!=None:
             self.nn=nn
             try:
-                if self.nn.km==0:
-                    self.nn.km=1
+                self.nn.km=1
             except AttributeError:
                 pass
         self.core=None
@@ -1156,12 +1155,6 @@ class kernel:
             except AttributeError:
                 pass
             print('time:{0}s'.format(self.time))
-        if self.thread==None:
-            try:
-                if self.nn.km==1:
-                    self.nn.km=0
-            except AttributeError:
-                pass
         return
     
     
@@ -1547,8 +1540,7 @@ class kernel:
         self.nn.param=param
         param=None
         try:
-            if self.nn.km==0:
-                self.nn.km=1
+            self.nn.km=1
         except AttributeError:
             pass
         self.ol=pickle.load(input_file)
