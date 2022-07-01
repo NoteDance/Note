@@ -4,7 +4,7 @@ documentation:https://github.com/7NoteDancing/Note-documentation
 
 If you done your neural network,you can use kernel to train.
 simple example:
-'''
+```
 import Note.create.kernel as k   #import kernel
 import tensorflow as tf              #import core
 import cnn as c                          #import your class's python file
@@ -19,7 +19,7 @@ kernel.data(train_data,train_labels)   #input you data,if you have test data can
 kernel.train(32,5)         #train neural network
                                                 #batch: batch size
                                                 #epoch:epoch
-'''                                              
+```                                             
 
 
 # Parallel optimization:
@@ -31,7 +31,7 @@ Note have two types of parallel optimization:
 
 # Multithreading：
 simple example:
-'''
+```
 import Note.create.kernel as k   #import kernel
 import tensorflow as tf              #import core
 import threading
@@ -52,11 +52,11 @@ for _ in range(7):
 	_thread.start()
 for _ in range(thread count):
 	_thread.join()
-'''
+```
 
 Support stop and save in multithreading training.
 simple example:
-'''
+```
 import Note.create.kernel as k   #import kernel
 import tensorflow as tf              #import core
 import threading
@@ -81,4 +81,4 @@ for _ in range(7):
 	_thread.start()
 for _ in range(thread count):
 	_thread.join()
-'''
+```
