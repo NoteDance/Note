@@ -1,7 +1,8 @@
 # Note
-documentation:https://github.com/7NoteDancing/Note-documentation
+## documentation:https://github.com/7NoteDancing/Note-documentation
 
 
+# Train:
 If you done your neural network,you can use kernel to train.
 simple example:
 ```
