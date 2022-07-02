@@ -32,7 +32,6 @@ class kernel:
         self.end_test_loss=None
         self.end_test_acc=None
         self.acc_flag='%'
-        self.flag=None
         self.train_loss=None
         self.train_acc=None
         self.train_loss_list=[]
@@ -901,8 +900,6 @@ class kernel:
         self.epoch=0
         t1=None
         t2=None
-        if self.flag==None:
-            self.flag=True
         if self.p==None:
             self.p=9
         else:
@@ -984,7 +981,7 @@ class kernel:
                     if s==0:
                         s=1
                     if i%p==0:
-                        if self.flag==None:
+                        if self.total_epoch==None:
                             if self.test_flag==False:
                                 print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
                             else:
@@ -1061,7 +1058,7 @@ class kernel:
                     if s==0:
                         s=1
                     if i%p==0:
-                        if self.flag==None:
+                        if self.total_epoch==None:
                             if self.test_flag==False:
                                 print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
                             else:
@@ -1511,7 +1508,6 @@ class kernel:
         pickle.dump(self.p,output_file)
         pickle.dump(self.s,output_file)
         pickle.dump(self.file_list,output_file)
-        pickle.dump(self.flag,output_file)
         pickle.dump(self.train_loss,output_file)
         pickle.dump(self.train_acc,output_file)
         pickle.dump(self.train_loss_list,output_file)
@@ -1553,7 +1549,6 @@ class kernel:
         self.p=pickle.load(input_file)
         self.s=pickle.load(input_file)
         self.file_list=pickle.load(input_file)
-        self.flag=pickle.load(input_file)
         self.train_loss=pickle.load(input_file)
         self.train_acc=pickle.load(input_file)
         self.train_loss_list=pickle.load(input_file)
