@@ -19,7 +19,7 @@ class kernel:
         self.end_test_acc=None
         self.acc_flag1=None
         self.acc_flag2='%'
-        self.flag=None
+        self.train_counter=0
         self.train_loss=None
         self.train_acc=None
         self.train_loss_list=[]
@@ -287,8 +287,7 @@ class kernel:
         self.epoch=0
         t1=None
         t2=None
-        if self.flag==None:
-            self.flag=True
+        self.train_counter+=1
         if type(self.train_data)==list:
             data_batch=[x for x in range(len(self.train_data))]
         else:
@@ -316,7 +315,7 @@ class kernel:
                     d=1
                 e=d*2
                 if i%d==0:
-                    if self.flag==None:
+                    if self.train_counter==1:
                         if self.test_flag==False:
                             print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
                         else:
@@ -351,7 +350,7 @@ class kernel:
                     d=1
                 e=d*2
                 if i%d==0:
-                    if self.flag==None:
+                    if self.train_counter==1:
                         if self.test_flag==False:
                             print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
                         else:
@@ -651,7 +650,7 @@ class kernel:
         pickle.dump(self.end_test_acc,output_file)
         pickle.dump(self.acc_flag1,output_file)
         pickle.dump(self.acc_flag2,output_file)
-        pickle.dump(self.flag,output_file)
+        pickle.dump(self.train_counter,output_file)
         pickle.dump(self.train_loss,output_file)
         pickle.dump(self.train_acc,output_file)
         pickle.dump(self.train_loss_list,output_file)
@@ -684,7 +683,7 @@ class kernel:
         self.end_test_acc=pickle.load(input_file)
         self.acc_flag1=pickle.load(input_file)
         self.acc_flag2=pickle.load(input_file)
-        self.flag=pickle.load(input_file)
+        self.train_counter=pickle.load(input_file)
         self.train_loss=pickle.load(input_file)
         self.train_acc=pickle.load(input_file)
         self.train_loss_list=pickle.load(input_file)
