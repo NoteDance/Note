@@ -813,11 +813,11 @@ class kernel:
         t2=None
         t=None
         self.train_counter+=1
-        if self.p==None:
+        if p==None:
             self.p=9
         else:
             self.p=p-1
-        if self.s==None:
+        if s==None:
             self.s=1
         else:
             self.s=s-1
