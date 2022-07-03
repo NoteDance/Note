@@ -288,14 +288,14 @@ class kernel:
                 index2=batch-(self.shape0-batches*batch)
                 if type(self.train_data)==list:
                     for i in range(len(self.train_data)):
-                        data_batch[i]=tf.concat([self.train_data[i][index1:],self.train_data[i][:index2]])
+                        data_batch[i]=tf.concat([self.train_data[i][index1:],self.train_data[i][:index2]],0)
                 else:
-                    data_batch=tf.concat([self.train_data[index1:],self.train_data[:index2]])
+                    data_batch=tf.concat([self.train_data[index1:],self.train_data[:index2]],0)
                 if type(self.train_labels)==list:
                     for i in range(len(self.train_data)):
-                        labels_batch[i]=tf.concat([self.train_labels[i][index1:],self.train_labels[i][:index2]])
+                        labels_batch[i]=tf.concat([self.train_labels[i][index1:],self.train_labels[i][:index2]],0)
                 else:
-                    labels_batch=tf.concat([self.train_labels[index1:],self.train_labels[:index2]])
+                    labels_batch=tf.concat([self.train_labels[index1:],self.train_labels[:index2]],0)
                 with tf.GradientTape() as tape:
                     if self.thread==None:
                         output=self.nn.fp(data_batch)
@@ -485,14 +485,14 @@ class kernel:
             if index1==batches*batch:
                 if type(self.train_data)==list:
                     for i in range(len(self.train_data)):
-                        data_batch[i]=tf.concat([self.train_data[i][index1:],self.train_data[i][:index2]])
+                        data_batch[i]=tf.concat([self.train_data[i][index1:],self.train_data[i][:index2]],0)
                 else:
-                    data_batch=tf.concat([self.train_data[index1:],self.train_data[:index2]])
+                    data_batch=tf.concat([self.train_data[index1:],self.train_data[:index2]],0)
                 if type(self.train_labels)==list:
                     for i in range(len(self.train_data)):
-                        labels_batch[i]=tf.concat([self.train_labels[i][index1:],self.train_labels[i][:index2]])
+                        labels_batch[i]=tf.concat([self.train_labels[i][index1:],self.train_labels[i][:index2]],0)
                 else:
-                    labels_batch=tf.concat([self.train_labels[index1:],self.train_labels[:index2]])
+                    labels_batch=tf.concat([self.train_labels[index1:],self.train_labels[:index2]],0)
                 if self.PO==1:
                     with tf.GradientTape() as tape:
                         self.output=self.nn.fp(data_batch)
@@ -1049,26 +1049,14 @@ class kernel:
                 index2=batch-(shape0-batches*batch)
                 if type(test_data)==list:
                     for i in range(len(test_data)):
-                        if type(test_data)==np.ndarray:
-                            data_batch[i]=np.concatenate(test_data[i][index1:],test_data[i][:index2])
-                        else:
-                            data_batch[i]=tf.concat(test_data[i][index1:],test_data[i][:index2])
+                        data_batch[i]=tf.concat(test_data[i][index1:],test_data[i][:index2],0)
                 else:
-                    if type(test_data)==np.ndarray:
-                        data_batch=np.concatenate(test_data[index1:],test_data[:index2])
-                    else:
-                        data_batch=tf.concat(test_data[index1:],test_data[:index2])
+                    data_batch=tf.concat(test_data[index1:],test_data[:index2],0)
                 if type(self.test_labels)==list:
                     for i in range(len(test_labels)):
-                        if type(test_labels)==np.ndarray:
-                            labels_batch[i]=np.concatenate(test_labels[i][index1:],test_labels[i][:index2])
-                        else:
-                            labels_batch[i]=tf.concat(test_labels[i][index1:],test_labels[i][:index2])
+                        labels_batch[i]=tf.concat(test_labels[i][index1:],test_labels[i][:index2],0)
                 else:
-                    if type(test_labels)==np.ndarray:
-                        labels_batch=np.concatenate(test_labels[index1:],test_labels[:index2])
-                    else:
-                        labels_batch=tf.concat(test_labels[index1:],test_labels[:index2])
+                    labels_batch=tf.concat(test_labels[index1:],test_labels[:index2],0)
                 if self.thread==None:
                     output=self.nn.fp(data_batch)
                 else:
