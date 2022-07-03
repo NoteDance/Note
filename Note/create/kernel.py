@@ -876,7 +876,7 @@ class kernel:
             batches+=1
             index1=batches*batch
             index2=batch-(self.shape0-batches*batch)
-            self.train_(data_batch,labels_batch,batch,epoch,batches,test_batch,index1,index2,t,i)
+            self.train_(data_batch,labels_batch,batch,epoch,batches,test_batch,index1,index2,None,t,i)
             try:
                 if self.nn.accuracy!=None:
                     pass
