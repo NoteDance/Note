@@ -281,7 +281,7 @@ class kernel:
         return
     
     
-    def _train(self,episode_num,i):
+    def _train(self):
         if self.end_loss!=None:
             self.param=self.nn.param
         if len(self.state_pool)<self.batch:
@@ -359,25 +359,9 @@ class kernel:
                     else:
                         self.core_opt(value=value,TD=TD,action_batch=action_batch)
                     if type(self.nn.nn)!=list:
-                        if j>=1:
-                            loss+=batch_loss
-                        if i==episode_num-1:
-                            batch_loss=self.nn.loss(self.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
-                            self.loss+=batch_loss
-                    elif len(self.nn.param)==4:
-                        if j>=1:
-                            loss+=TD
-                        if i==episode_num-1:
-                            value=self.nn.nn[0](state_batch,p=0)
-                            TD=self.core.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch,p=2)-value)**2)
-                            self.loss+=TD 
+                        loss+=batch_loss
                     else:
-                        if j>=1:
-                            loss+=TD
-                        if i==episode_num-1:
-                            value=self.nn.nn[0](state_batch)
-                            TD=self.core.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch)-value)**2)
-                            self.loss+=TD 
+                        loss+=TD
                     try:
                         self.nn.bc=j
                     except AttributeError:
@@ -413,25 +397,9 @@ class kernel:
                     else:
                         self.core_opt(value=value,TD=TD,action_batch=action_batch)
                     if type(self.nn.nn)!=list:
-                        if j>=1:
-                            loss+=batch_loss
-                        if i==episode_num-1:
-                            batch_loss=self.nn.loss(self.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
-                            self.loss+=batch_loss
-                    elif len(self.nn.param)==4:
-                        if j>=1:
-                            loss+=TD
-                        if i==episode_num-1:
-                            value=self.nn.nn[0](state_batch,p=0)
-                            TD=self.core.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch,p=2)-value)**2)
-                            self.loss+=TD 
+                        loss+=batch_loss
                     else:
-                        if j>=1:
-                            loss+=TD
-                        if i==episode_num-1:
-                            value=self.nn.nn[0](state_batch)
-                            TD=self.core.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch)-value)**2)
-                            self.loss+=TD 
+                        loss+=TD
                     try:
                         self.nn.bc+=1
                     except AttributeError:
@@ -473,25 +441,9 @@ class kernel:
                     else:
                         self.core_opt(value=value,TD=TD,action_batch=action_batch)
                     if type(self.nn.nn)!=list:
-                        if j>=1:
-                            loss+=batch_loss
-                        if i==episode_num-1:
-                            batch_loss=self.nn.loss(self.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
-                            self.loss+=batch_loss
-                    elif len(self.nn.param)==4:
-                        if j>=1:
-                            loss+=TD
-                        if i==episode_num-1:
-                            value=self.nn.nn[0](state_batch,p=0)
-                            TD=self.core.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch,p=2)-value)**2)
-                            self.loss+=TD 
+                        loss+=batch_loss
                     else:
-                        if j>=1:
-                            loss+=TD
-                        if i==episode_num-1:
-                            value=self.nn.nn[0](state_batch)
-                            TD=self.core.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch)-value)**2)
-                            self.loss+=TD 
+                        loss+=TD
                     j+=1
                     try:
                         self.nn.bc+=1
@@ -506,12 +458,10 @@ class kernel:
                 loss=loss.numpy()
             else:
                 loss=loss.numpy()/batches
-                if i==episode_num-1:
-                    self.loss=self.loss.numpy()/batches
         return loss
     
     
-    def train_(self,episode_num,i):
+    def train_(self):
         episode=[]
         if self.state_name==None:
             s=self.nn.explore(init=True)
@@ -612,7 +562,7 @@ class kernel:
                     else:
                         episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r]
                 s=next_s
-                loss=self._train(episode_num,i)
+                loss=self._train()
                 t2=time.time()
                 self.time+=(t2-t1)
         else:
@@ -698,7 +648,7 @@ class kernel:
                     else:
                         episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r]
                 s=next_s
-                loss=self._train(episode_num,i)
+                loss=self._train()
                 t2=time.time()
                 self.time+=(t2-t1)
         return loss,episode,end
@@ -718,8 +668,6 @@ class kernel:
             for i in range(episode_num):
                 loss,episode,end=self.train_(episode_num,i)
                 self.loss_list.append(loss)
-                if i==episode_num-1:
-                    self.loss_list.append(self.loss)
                 if episode_num%10!=0:
                     d=episode_num-episode_num%self.p
                     d=int(d/self.p)
@@ -752,8 +700,6 @@ class kernel:
             while True:
                 loss,episode,end=self.train_(episode_num,i)
                 self.loss_list.append(loss)
-                if i==episode_num-1:
-                    self.loss_list.append(self.loss)
                 i+=1
                 if episode_num%10!=0:
                     d=episode_num-episode_num%self.p
