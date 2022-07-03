@@ -312,7 +312,7 @@ class kernel:
                 else:
                     d=epoch/10
                 if d==0:
-                    d=1
+                    d=epoch
                 e=d*2
                 if i%d==0:
                     if self.train_counter==1:
