@@ -284,7 +284,7 @@ class kernel:
         return data_batch,labels_batch
     
     
-    def core_opt(self,output,loss,t=None):
+    def core_opt(self,output,loss,t=None,tape=None):
         try:
             if self.core.DType!=None:
                 pass
@@ -293,17 +293,17 @@ class kernel:
                     if self.thread==None:
                         if self.nn.opt!=None:
                             pass
-                        self.apply_gradient(self.tape,self.nn.opt,loss,self.nn.param)
+                        self.apply_gradient(tape,self.nn.opt,loss,self.nn.param)
                     else:
                         if self.nn.opt!=None:
                             pass
-                        self.apply_gradient(self.tape,self.nn.opt[t],loss,self.nn.param[t])
+                        self.apply_gradient(tape,self.nn.opt[t],loss,self.nn.param[t])
                 except AttributeError:
                     if self.thread==None:
-                        gradient=self.nn.gradient(self.tape,loss,self.nn.param)
+                        gradient=self.nn.gradient(tape,loss,self.nn.param)
                         self.nn.oopt(gradient,self.nn.param)
                     else:
-                        gradient=self.nn.gradient(self.tape,loss,self.nn.param[t])
+                        gradient=self.nn.gradient(tape,loss,self.nn.param[t])
                         self.nn.oopt(gradient,self.nn.param,t)
             else:
                 if self.thread_lock!=None:
@@ -311,22 +311,22 @@ class kernel:
                         if self.nn.opt!=None:
                             pass
                         if self.PO==1:
-                            self.apply_gradient(self.tape,self.nn.opt,loss,self.nn.param)
+                            self.apply_gradient(tape,self.nn.opt,loss,self.nn.param)
                         else:
                             self.thread_lock.acquire()
                             self.param=self.nn.param
-                            self.gradient=self.tape.gradient(loss,self.param)
+                            self.gradient=tape.gradient(loss,self.param)
                             self.thread_lock.release()
                             self.thread_lock.acquire()
                             self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
                             self.thread_lock.release()
                     except AttributeError:
                         if self.PO==1:
-                            self.gradient=self.nn.gradient(self.tape,loss,self.nn.param)
+                            self.gradient=self.nn.gradient(tape,loss,self.nn.param)
                             self.nn.oopt(self.gradient,self.nn.param)
                         else:
                             self.thread_lock.acquire()
-                            self.gradient=self.nn.gradient(self.tape,loss,self.nn.param)
+                            self.gradient=self.nn.gradient(tape,loss,self.nn.param)
                             self.thread_lock.release()
                             self.thread_lock.acquire()
                             self.nn.oopt(self.gradient,self.nn.param)
@@ -335,9 +335,9 @@ class kernel:
                     try:
                         if self.nn.opt!=None:
                             pass
-                        self.apply_gradient(self.tape,self.nn.opt,loss,self.nn.param)
+                        self.apply_gradient(tape,self.nn.opt,loss,self.nn.param)
                     except AttributeError:
-                        gradient=self.nn.gradient(self.tape,loss,self.nn.param)
+                        gradient=self.nn.gradient(tape,loss,self.nn.param)
                         self.nn.oopt(gradient,self.nn.param)
         except AttributeError:
             self.nn.opt.zero_grad()
@@ -451,19 +451,19 @@ class kernel:
                         else:
                             output=self.nn.fp(data_batch,t)
                         batch_loss=self.nn.loss(output,labels_batch)
-                    self.tape=tape
                 except AttributeError:
                     if self.thread==None:
                         output=self.nn.fp(data_batch)
                     else:
                         output=self.nn.fp(data_batch,t)
                     batch_loss=self.nn.loss(output,labels_batch)
+                    tape=None
                 try:
-                    self.core_opt(output,batch_loss,t)
+                    self.core_opt(output,batch_loss,t,tape)
                 except:
                     while True:
                         try:
-                            self.core_opt(output,batch_loss,t)
+                            self.core_opt(output,batch_loss,t,tape)
                             break
                         except:
                             if self.thread==None:
@@ -501,19 +501,19 @@ class kernel:
                         else:
                             output=self.nn.fp(data_batch,t)
                         batch_loss=self.nn.loss(output,labels_batch)
-                    self.tape=tape
                 except AttributeError:
                     if self.thread==None:
                         output=self.nn.fp(data_batch)
                     else:
                         output=self.nn.fp(data_batch,t)
                     batch_loss=self.nn.loss(output,labels_batch)
+                    tape=None
                 try:
-                    self.core_opt(output,batch_loss,t)
+                    self.core_opt(output,batch_loss,t,tape)
                 except:
                     while True:
                         try:
-                            self.core_opt(output,batch_loss,t)
+                            self.core_opt(output,batch_loss,t,tape)
                             break
                         except:
                             if self.thread==None:
@@ -616,20 +616,19 @@ class kernel:
                     else:
                         output=self.nn.fp(data_batch,t)
                     train_loss=self.nn.loss(output,self.train_labels)
-                self.tape=tape
             except AttributeError:
-                with self.core.GradientTape() as tape:
-                    if self.thread==None:
-                        output=self.nn.fp(self.train_data)
-                    else:
-                        output=self.nn.fp(data_batch,t)
-                    train_loss=self.nn.loss(output,self.train_labels)
+                if self.thread==None:
+                    output=self.nn.fp(self.train_data)
+                else:
+                    output=self.nn.fp(data_batch,t)
+                train_loss=self.nn.loss(output,self.train_labels)
+                tape=None
             try:
-                self.core_opt(output,batch_loss,t)
+                self.core_opt(output,batch_loss,t,tape)
             except:
                 while True:
                     try:
-                        self.core_opt(output,batch_loss,t)
+                        self.core_opt(output,batch_loss,t,tape)
                         break
                     except:
                         if self.thread==None:
@@ -651,16 +650,16 @@ class kernel:
                 with self.core.GradientTape() as tape:
                     data=self.ol()
                     output=self.nn.fp(data[0])
-                self.tape=tape
             except AttributeError:
                 data=self.ol()
                 output=self.nn.fp(data[0])
+                tape=None
             try:
-                self.core_opt(output,train_loss)
+                self.core_opt(output,train_loss,tape=tape)
             except:
                 while True:
                     try:
-                        self.core_opt(output,train_loss)
+                        self.core_opt(output,train_loss,tape=tape)
                         break
                     except:
                         if self.thread==None:
