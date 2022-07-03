@@ -149,9 +149,6 @@ class kernel:
     
     
     def apply_gradient(self,tape,opt,loss,parameter):
-        self._l=loss
-        self._p=parameter
-        self.tape=tape
         gradient=tape.gradient(loss,parameter)
         opt.apply_gradients(zip(gradient,parameter))
         return
@@ -174,63 +171,61 @@ class kernel:
     
     def loss_acc(self,output=None,labels_batch=None,loss=None,test_batch=None,total_loss=None,total_acc=None,t=None):
         if self.batch!=None:
-            if self.total_epoch>=1:
-                total_loss+=loss
-                try:
-                    if self.nn.accuracy!=None:
-                        pass
-                    batch_acc=self.nn.accuracy(output,labels_batch)
-                    total_acc+=batch_acc
-                except AttributeError:
+            total_loss+=loss
+            try:
+                if self.nn.accuracy!=None:
                     pass
+                batch_acc=self.nn.accuracy(output,labels_batch)
+                total_acc+=batch_acc
+            except AttributeError:
+                pass
             return total_loss,total_acc
         elif self.ol==None:
-            if self.total_epoch>=1:
-                loss=loss.numpy()
-                if self.thread==None:
-                    self.train_loss_list.append(loss.astype(np.float32))
-                    self.train_loss=loss
-                    self.train_loss=self.train_loss.astype(np.float32)
-                else:
-                    self.train_loss_list[t].append(loss.astype(np.float32))
-                    self.train_loss[t]=loss
-                    self.train_loss[t]=self.train_loss[t].astype(np.float32)
-                try:
-                    if self.nn.accuracy!=None:
-                        pass
-                    if self.thread==None:
-                        acc=self.nn.accuracy(output,self.train_labels)
-                        acc=acc.numpy()
-                        self.train_acc_list.append(acc.astype(np.float32))
-                        self.train_acc=acc
-                        self.train_acc=self.train_acc.astype(np.float32)
-                    else:
-                        acc=self.nn.accuracy(output,self.train_labels[t])
-                        acc=acc.numpy()
-                        self.train_acc_list[t].append(acc.astype(np.float32))
-                        self.train_acc[t]=acc
-                        self.train_acc[t]=self.train_acc[t].astype(np.float32)
-                except AttributeError:
+            loss=loss.numpy()
+            if self.thread==None:
+                self.train_loss_list.append(loss.astype(np.float32))
+                self.train_loss=loss
+                self.train_loss=self.train_loss.astype(np.float32)
+            else:
+                self.train_loss_list[t].append(loss.astype(np.float32))
+                self.train_loss[t]=loss
+                self.train_loss[t]=self.train_loss[t].astype(np.float32)
+            try:
+                if self.nn.accuracy!=None:
                     pass
-                if self.test_flag==True:
-                    if self.thread==None:
-                        self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
-                        self.test_loss_list.append(self.test_loss)
-                        try:
-                            if self.nn.accuracy!=None:
-                                pass
-                            self.test_acc_list.append(self.test_acc)
-                        except AttributeError:
+                if self.thread==None:
+                    acc=self.nn.accuracy(output,self.train_labels)
+                    acc=acc.numpy()
+                    self.train_acc_list.append(acc.astype(np.float32))
+                    self.train_acc=acc
+                    self.train_acc=self.train_acc.astype(np.float32)
+                else:
+                    acc=self.nn.accuracy(output,self.train_labels[t])
+                    acc=acc.numpy()
+                    self.train_acc_list[t].append(acc.astype(np.float32))
+                    self.train_acc[t]=acc
+                    self.train_acc[t]=self.train_acc[t].astype(np.float32)
+            except AttributeError:
+                pass
+            if self.test_flag==True:
+                if self.thread==None:
+                    self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
+                    self.test_loss_list.append(self.test_loss)
+                    try:
+                        if self.nn.accuracy!=None:
                             pass
-                    else:
-                        self.test_loss[t],self.test_acc[t]=self.test(self.test_data,self.test_labels,test_batch,t)
-                        self.test_loss_list[t].append(self.test_loss[t])
-                        try:
-                            if self.nn.accuracy!=None:
-                                pass
-                            self.test_acc_list[t].append(self.test_acc[t])
-                        except AttributeError:
+                        self.test_acc_list.append(self.test_acc)
+                    except AttributeError:
+                        pass
+                else:
+                    self.test_loss[t],self.test_acc[t]=self.test(self.test_data,self.test_labels,test_batch,t)
+                    self.test_loss_list[t].append(self.test_loss[t])
+                    try:
+                        if self.nn.accuracy!=None:
                             pass
+                        self.test_acc_list[t].append(self.test_acc[t])
+                    except AttributeError:
+                        pass
             return
     
     
@@ -426,14 +421,10 @@ class kernel:
         return
     
     
-    def _train(self,batch=None,epoch=None,test_batch=None,_data_batch=None,_labels_batch=None,t=None,i=None):
+    def _train(self,batch=None,epoch=None,test_batch=None,_data_batch=None,_labels_batch=None,t=None):
         if self.stop==True:
             self.stop_func()
-        if self.end_loss!=None or self.end_acc!=None or self.end_test_loss!=None or self.end_test_acc!=None:
-            self._param=self.nn.param
         if batch!=None:
-            _total_loss=0
-            _total_acc=0
             total_loss=0
             total_acc=0
             batches=int((self.shape0-self.shape0%batch)/batch)
@@ -470,13 +461,6 @@ class kernel:
                                 print('\nCore unsuccessfully be replaced,try again.')
                             continue
                 total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc,t=t)
-                if i==epoch-1:
-                    if self.thread==None:
-                        output=self.nn.fp(data_batch)
-                    else:
-                        output=self.nn.fp(data_batch,t)
-                    _batch_loss=self.nn.loss(output,labels_batch)
-                    _total_loss,_total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=_batch_loss,total_loss=_total_loss,total_acc=_total_acc,t=t)
                 if self.thread==None:
                     try:
                         self.nn.bc=j
@@ -520,13 +504,6 @@ class kernel:
                                 print('\nCore unsuccessfully be replaced,try again.')
                             continue
                 total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc,t=t)
-                if i==epoch-1:
-                    if self.thread==None:
-                        output=self.nn.fp(data_batch)
-                    else:
-                        output=self.nn.fp(data_batch,t)
-                    _batch_loss=self.nn.loss(output,labels_batch)
-                    _total_loss,_total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=_batch_loss,total_loss=_total_loss,total_acc=_total_acc,t=t)
                 if self.thread==None:
                     try:
                         self.nn.bc+=1
@@ -537,74 +514,53 @@ class kernel:
                         self.nn.bc[t]+=1
                     except AttributeError:
                         pass
-            if self.total_epoch>=1:
-                loss=total_loss.numpy()/batches
-                try:
-                    if self.nn.accuracy!=None:
-                        pass
-                    train_acc=total_acc/batches
-                except AttributeError:
+            loss=total_loss.numpy()/batches
+            try:
+                if self.nn.accuracy!=None:
+                    pass
+                train_acc=total_acc/batches
+            except AttributeError:
+                pass
+            if self.thread==None:
+                self.train_loss_list.append(loss.astype(np.float32))
+                self.train_loss=loss
+                self.train_loss=self.train_loss.astype(np.float32)
+            else:
+                self.train_loss_list[t].append(loss.astype(np.float32))
+                self.train_loss[t]=loss
+                self.train_loss[t]=self.train_loss[t].astype(np.float32)
+            try:
+                if self.nn.accuracy!=None:
                     pass
                 if self.thread==None:
-                    self.train_loss_list.append(loss.astype(np.float32))
-                    self.train_loss=loss
-                    self.train_loss=self.train_loss.astype(np.float32)
-                    if i==epoch-1:
-                        loss=_total_loss.numpy()/batches
-                        self.train_loss_list.append(loss.astype(np.float32))
-                        self.train_loss=loss
-                        self.train_loss=self.train_loss.astype(np.float32) 
+                    self.train_acc_list.append(train_acc.astype(np.float32))
+                    self.train_acc=train_acc
+                    self.train_acc=self.train_acc.astype(np.float32)
                 else:
-                    self.train_loss_list[t].append(loss.astype(np.float32))
-                    self.train_loss[t]=loss
-                    self.train_loss[t]=self.train_loss[t].astype(np.float32)
-                    if i==epoch-1:
-                        loss=_total_loss.numpy()/batches
-                        self.train_loss_list[t].append(loss.astype(np.float32))
-                        self.train_loss[t]=loss
-                        self.train_loss[t]=self.train_loss[t].astype(np.float32)
-                try:
-                    if self.nn.accuracy!=None:
+                    self.train_acc_list[t].append(train_acc.astype(np.float32))
+                    self.train_acc[t]=train_acc
+                    self.train_acc[t]=self.train_acc[t].astype(np.float32)
+            except AttributeError:
+                pass
+            if self.test_flag==True:
+                if self.thread==None:
+                    self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
+                    self.test_loss_list.append(self.test_loss)
+                    try:
+                        if self.nn.accuracy!=None:
+                            pass
+                        self.test_acc_list.append(self.test_acc)
+                    except AttributeError:
                         pass
-                    if self.thread==None:
-                        self.train_acc_list.append(train_acc.astype(np.float32))
-                        self.train_acc=train_acc
-                        self.train_acc=self.train_acc.astype(np.float32)
-                        if i==epoch-1:
-                            train_acc=_total_acc.numpy()/batches
-                            self.train_acc_list.append(train_acc.astype(np.float32))
-                            self.train_acc=train_acc
-                            self.train_acc=self.train_acc.astype(np.float32)
-                    else:
-                        self.train_acc_list[t].append(train_acc.astype(np.float32))
-                        self.train_acc[t]=train_acc
-                        self.train_acc[t]=self.train_acc[t].astype(np.float32)
-                        if i==epoch-1:
-                            train_acc=_total_acc.numpy()/batches
-                            self.train_acc_list[t].append(train_acc.astype(np.float32))
-                            self.train_acc[t]=train_acc
-                            self.train_acc[t]=self.train_acc[t].astype(np.float32)
-                except AttributeError:
-                    pass
-                if self.test_flag==True:
-                    if self.thread==None:
-                        self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
-                        self.test_loss_list.append(self.test_loss)
-                        try:
-                            if self.nn.accuracy!=None:
-                                pass
-                            self.test_acc_list.append(self.test_acc)
-                        except AttributeError:
+                else:
+                    self.test_loss[t],self.test_acc[t]=self.test(self.test_data,self.test_labels,test_batch,t)
+                    self.test_loss_list[t].append(self.test_loss[t])
+                    try:
+                        if self.nn.accuracy!=None:
                             pass
-                    else:
-                        self.test_loss[t],self.test_acc[t]=self.test(self.test_data,self.test_labels,test_batch,t)
-                        self.test_loss_list[t].append(self.test_loss[t])
-                        try:
-                            if self.nn.accuracy!=None:
-                                pass
-                            self.test_acc_list[t].append(self.test_acc[t])
-                        except AttributeError:
-                            pass
+                        self.test_acc_list[t].append(self.test_acc[t])
+                    except AttributeError:
+                        pass
         elif self.ol==None:
             self.suspend_func()
             try:
@@ -635,13 +591,6 @@ class kernel:
                             print('\nCore unsuccessfully be replaced,try again.')
                         continue
             self.loss_acc(output=output,labels_batch=labels_batch,loss=train_loss,test_batch=test_batch,total_loss=total_loss,total_acc=total_acc,t=t)
-            if i==epoch-1:
-                if self.thread==None:
-                    output=self.nn.fp(self.train_data)
-                else:
-                    output=self.nn.fp(data_batch,t)
-                train_loss=self.nn.loss(output,self.train_labels)
-                self.loss_acc(output=output,labels_batch=labels_batch,loss=train_loss,test_batch=test_batch,total_loss=_total_loss,total_acc=_total_acc,t=t)
         else:
             self.suspend_func()
             try:
@@ -688,7 +637,7 @@ class kernel:
         return
     
     
-    def train_(self,_data_batch=None,_labels_batch=None,batches=None,batch=None,epoch=None,test_batch=None,index1=None,index2=None,j=None,t=None,i=None):
+    def train_(self,_data_batch=None,_labels_batch=None,batches=None,batch=None,epoch=None,test_batch=None,index1=None,index2=None,j=None,t=None):
         if self.stop==True:
             self.stop_func()
         if self.end_loss!=None or self.end_acc!=None or self.end_test_loss!=None or self.end_test_acc!=None:
@@ -717,33 +666,24 @@ class kernel:
                    except:
                        continue
             if self.PO==1:
-                if self.total_epoch[t]>=1:
-                    try:
-                        if self.nn.accuracy!=None:
-                            pass
-                        self.batch_acc=self.nn.accuracy(self.output,labels_batch)
-                    except AttributeError:
+                try:
+                    if self.nn.accuracy!=None:
                         pass
-                if i==epoch-1:
-                    self.output=self.nn.fp(data_batch)
-                    self._batch_loss=self.nn.loss(self.output,labels_batch)
-                    self._batch_acc=self.nn.accuracy(self.output,labels_batch)
+                    self.batch_acc=self.nn.accuracy(self.output,labels_batch)
+                except AttributeError:
+                    pass
                 try:
                     self.nn.bc=j
                 except AttributeError:
                     pass
             else:
                 self.thread_lock.acquire()
-                if self.total_epoch[t]>=1:
-                    try:
-                        if self.nn.accuracy!=None:
-                            pass
-                        self.batch_acc=self.nn.accuracy(self.output,labels_batch)
-                    except AttributeError:
+                try:
+                    if self.nn.accuracy!=None:
                         pass
-                if i==epoch-1:
-                    self.output=self.nn.fp(data_batch)
-                    self._batch_loss=self.nn.loss(self.output,labels_batch)
+                    self.batch_acc=self.nn.accuracy(self.output,labels_batch)
+                except AttributeError:
+                    pass
                 try:
                     self.nn.bc+=1
                 except AttributeError:
@@ -761,95 +701,65 @@ class kernel:
         else:
             self.core_opt_t(self.train_data,self.train_labels,t)
             if self.PO==1:
-                if self.total_epoch[t]>=1:
-                    self.loss=self._train_loss.numpy()
-                    self.train_loss_list.append(self.loss.astype(np.float32))
-                    self.train_loss=self.loss
-                    self.train_loss=self.train_loss.astype(np.float32)
-                    if i==epoch-1:
-                        self.output=self.nn.fp(self.train_data)
-                        self._train_loss=self.nn.loss(self.output,self.train_labels)
-                        self.loss=self._train_loss_.numpy()
-                        self.train_loss_list.append(self.loss.astype(np.float32))
-                        self.train_loss=self.loss
-                        self.train_loss=self.train_loss.astype(np.float32)
+                self.loss=self._train_loss.numpy()
+                self.train_loss_list.append(self.loss.astype(np.float32))
+                self.train_loss=self.loss
+                self.train_loss=self.train_loss.astype(np.float32)
+                try:
+                    if self.nn.accuracy!=None:
+                        pass
+                    self.acc=self.nn.accuracy(self.output,self.train_labels)
+                    self.acc=self.acc.numpy()
+                    self.train_acc_list.append(self.acc.astype(np.float32))
+                    self.train_acc=self.acc
+                    self.train_acc=self.train_acc.astype(np.float32)
+                except AttributeError:
+                    pass
+                if self.test_flag==True:
+                    self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
+                    self.test_loss_list.append(self.test_loss)
                     try:
                         if self.nn.accuracy!=None:
                             pass
-                        self.acc=self.nn.accuracy(self.output,self.train_labels)
-                        self.acc=self.acc.numpy()
-                        self.train_acc_list.append(self.acc.astype(np.float32))
-                        self.train_acc=self.acc
-                        self.train_acc=self.train_acc.astype(np.float32)
-                        if i==epoch-1:
-                            self.acc=self.nn.accuracy(self.output,self.train_labels)
-                            self.acc=self.acc.numpy()
-                            self.train_acc_list.append(self.acc.astype(np.float32))
-                            self.train_acc=self.acc
-                            self.train_acc=self.train_acc.astype(np.float32)
+                        self.test_acc_list.append(self.test_acc)
                     except AttributeError:
                         pass
-                    if self.test_flag==True:
-                        self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
-                        self.test_loss_list.append(self.test_loss)
-                        try:
-                            if self.nn.accuracy!=None:
-                                pass
-                            self.test_acc_list.append(self.test_acc)
-                        except AttributeError:
-                            pass
             else:
                 self.thread_lock.acquire()
-                if self.total_epoch[t]>=1:
-                    self.loss=self._train_loss.numpy()
-                    self.train_loss_list.append(self.loss.astype(np.float32))
-                    self.train_loss=self.loss
-                    self.train_loss=self.train_loss.astype(np.float32)
-                    if i==epoch-1:
-                        self.output=self.nn.fp(self.train_data)
-                        self._train_loss=self.nn.loss(self.output,self.train_labels)
-                        self.loss=self._train_loss.numpy()
-                        self.train_loss_list.append(self.loss.astype(np.float32))
-                        self.train_loss=self.loss
-                        self.train_loss=self.train_loss.astype(np.float32)
+                self.loss=self._train_loss.numpy()
+                self.train_loss_list.append(self.loss.astype(np.float32))
+                self.train_loss=self.loss
+                self.train_loss=self.train_loss.astype(np.float32)
+                try:
+                    if self.nn.accuracy!=None:
+                        pass
+                    self.acc=self.nn.accuracy(self.output,self.train_labels)
+                    self.acc=self.acc.numpy()
+                    self.train_acc_list.append(self.acc.astype(np.float32))
+                    self.train_acc=self.acc
+                    self.train_acc=self.train_acc.astype(np.float32)
+                except AttributeError:
+                    pass
+                if self.test_flag==True:
+                    self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
+                    self.test_loss_list.append(self.test_loss)
                     try:
                         if self.nn.accuracy!=None:
                             pass
-                        self.acc=self.nn.accuracy(self.output,self.train_labels)
-                        self.acc=self.acc.numpy()
-                        self.train_acc_list.append(self.acc.astype(np.float32))
-                        self.train_acc=self.acc
-                        self.train_acc=self.train_acc.astype(np.float32)
-                        if i==epoch-1:
-                            self.acc=self.nn.accuracy(self.output,self.train_labels)
-                            self.acc=self.acc.numpy()
-                            self.train_acc_list.append(self.acc.astype(np.float32))
-                            self.train_acc=self.acc
-                            self.train_acc=self.train_acc.astype(np.float32)
+                        self.test_acc_list.append(self.test_acc)
                     except AttributeError:
                         pass
-                    if self.test_flag==True:
-                        self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
-                        self.test_loss_list.append(self.test_loss)
-                        try:
-                            if self.nn.accuracy!=None:
-                                pass
-                            self.test_acc_list.append(self.test_acc)
-                        except AttributeError:
-                            pass
                 self.thread_lock.release()
             if self.stop==True:
                 self.stop_flag=1
             return
     
     
-    def _train_(self,batch=None,epoch=None,data_batch=None,labels_batch=None,test_batch=None,t=None,i=None):
+    def _train_(self,batch=None,epoch=None,data_batch=None,labels_batch=None,test_batch=None,t=None):
         if self.stop==True:
             self.stop_func()
         total_loss=0
-        _total_loss=0
         total_acc=0
-        _total_acc=0
         batches=int((self.shape0-self.shape0%batch)/batch)
         for j in range(batches):
             self.suspend_func()
@@ -858,76 +768,51 @@ class kernel:
             try:
                 if self.nn.accuracy!=None:
                     pass
-                self.train_(data_batch,labels_batch,batch,epoch,batches,test_batch,index1,index2,j,t,i)
-                if self.total_epoch[t]>=1:
-                    total_loss+=self.batch_loss
-                    total_acc+=self.batch_acc
-                    if i==epoch-1:
-                        _total_loss+=self._batch_loss
-                        _total_acc+=self._batch_acc 
+                self.train_(data_batch,labels_batch,batch,epoch,batches,test_batch,index1,index2,j,t)
+                total_loss+=self.batch_loss
+                total_acc+=self.batch_acc
             except AttributeError:
-                self.train_(data_batch,labels_batch,batch,epoch,batches,test_batch,index1,index2,j,t,i)
-                if self.total_epoch[t]>=1:
-                    total_loss+=self.batch_loss
-                    if i==epoch-1:
-                        _total_loss+=self._batch_loss
+                self.train_(data_batch,labels_batch,batch,epoch,batches,test_batch,index1,index2,j,t)
+                total_loss+=self.batch_loss
         if self.shape0%batch!=0:
             batches+=1
             index1=batches*batch
             index2=batch-(self.shape0-batches*batch)
-            self.train_(data_batch,labels_batch,batch,epoch,batches,test_batch,index1,index2,None,t,i)
+            self.train_(data_batch,labels_batch,batch,epoch,batches,test_batch,index1,index2,None,t)
             try:
                 if self.nn.accuracy!=None:
                     pass
-                if self.total_epoch[t]>=1:
-                    total_loss+=self.batch_loss
-                    total_acc+=self.batch_acc
-                    if i==epoch-1:
-                        _total_loss+=self._batch_loss
-                        _total_acc+=self._batch_acc
+                total_loss+=self.batch_loss
+                total_acc+=self.batch_acc
             except AttributeError:
-                if self.total_epoch[t]>=1:
-                    total_loss+=self.batch_loss
-                    if i==epoch-1:
-                        _total_loss+=self._batch_loss
-        if self.total_epoch[t]>=1:
-            loss=total_loss.numpy()/batches
-            try:
-                if self.nn.accuracy!=None:
-                    pass
-                train_acc=total_acc.numpy()/batches
-            except AttributeError:
+                total_loss+=self.batch_loss
+        loss=total_loss.numpy()/batches
+        try:
+            if self.nn.accuracy!=None:
                 pass
-            self.train_loss_list.append(loss.astype(np.float32))
-            self.train_loss=loss
-            self.train_loss=self.train_loss.astype(np.float32)
-            if i==epoch-1:
-                loss=_total_loss.numpy()/batches
-                self.train_loss_list.append(loss.astype(np.float32))
-                self.train_loss=loss
-                self.train_loss=self.train_loss.astype(np.float32)
-            try:
-                if self.nn.accuracy!=None:
-                    pass
-                self.train_acc_list.append(train_acc.astype(np.float32))
-                self.train_acc=train_acc
-                self.train_acc=self.train_acc.astype(np.float32)
-                if i==epoch-1:
-                    train_acc=_total_acc.numpy()/batches
-                    self.train_acc_list.append(train_acc.astype(np.float32))
-                    self.train_acc=train_acc
-                    self.train_acc=self.train_acc.astype(np.float32)
-            except AttributeError:
+            train_acc=total_acc.numpy()/batches
+        except AttributeError:
+            pass
+        self.train_loss_list.append(loss.astype(np.float32))
+        self.train_loss=loss
+        self.train_loss=self.train_loss.astype(np.float32)
+        try:
+            if self.nn.accuracy!=None:
                 pass
-            if self.test_flag==True:
-                self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
-                self.test_loss_list.append(self.test_loss)
-            try:
-                if self.nn.accuracy!=None:
-                    pass
-                self.test_acc_list.append(self.test_acc)
-            except AttributeError:
+            self.train_acc_list.append(train_acc.astype(np.float32))
+            self.train_acc=train_acc
+            self.train_acc=self.train_acc.astype(np.float32)
+        except AttributeError:
+            pass
+        if self.test_flag==True:
+            self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
+            self.test_loss_list.append(self.test_loss)
+        try:
+            if self.nn.accuracy!=None:
                 pass
+            self.test_acc_list.append(self.test_acc)
+        except AttributeError:
+            pass
         return
     
     
@@ -971,7 +856,7 @@ class kernel:
                     except:
                         pass
                 if self.thread==None:
-                    self._train(batch,epoch,test_batch,data_batch,labels_batch,i=i)
+                    self._train(batch,epoch,test_batch,data_batch,labels_batch)
                 else:
                     try:
                         t=self.t.pop()
@@ -980,12 +865,12 @@ class kernel:
                         return
                     if self.PO==1:
                         self.thread_lock.acquire()
-                        self._train_(batch,epoch,data_batch,labels_batch,test_batch,t,i)
+                        self._train_(batch,epoch,data_batch,labels_batch,test_batch,t)
                         self.thread_lock.release()
                     elif self.PO!=None:
-                        self._train_(batch,epoch,data_batch,labels_batch,test_batch,t,i)
+                        self._train_(batch,epoch,data_batch,labels_batch,test_batch,t)
                     else:
-                        self._train(batch,epoch,test_batch,data_batch,labels_batch,t,i)
+                        self._train(batch,epoch,test_batch,data_batch,labels_batch,t)
                 if self.stop==True:
                     if self.stop_flag==1:
                         self.stop_func()
@@ -1046,27 +931,23 @@ class kernel:
                         self.time+=(t2-t1)
                 else:
                     self.time[t]+=(t2-t1)
-                if self.end_flag==True and self.end()==True:
-                    self.nn.param=self._param
-                    self._param=None
-                    break
         elif self.ol==None:
             self.suspend_func()
             i=0
             while True:
                 t1=time.time()
                 if self.thread==None:
-                    self._train(epoch=epoch,test_batch=test_batch,i=i)
+                    self._train(epoch=epoch,test_batch=test_batch)
                 else:
                     t=self.t.pop()
                     if self.PO==1:
                         self.thread_lock.acquire()
-                        self._train_(epoch=epoch,test_batch=test_batch,t=t,i=i)
+                        self._train_(epoch=epoch,test_batch=test_batch,t=t)
                         self.thread_lock.release()
                     elif self.PO!=None:
-                        self._train_(epoch=epoch,test_batch=test_batch,t=t,i=i)
+                        self._train_(epoch=epoch,test_batch=test_batch,t=t)
                     else:
-                        self._train(epoch=epoch,test_batch=test_batch,t=t,i=i)
+                        self._train(epoch=epoch,test_batch=test_batch,t=t)
                 i+=1
                 if type(self.total_epoch)!=list:
                     if self.thread_lock!=None:
@@ -1133,10 +1014,6 @@ class kernel:
                         self.time+=(t2-t1)
                 else:
                     self.time[t]+=(t2-t1)
-                if self.end_flag==True and self.end()==True:
-                    self.nn.param=self._param
-                    self._param=None
-                    break
         else:
             while True:
                 self._train()
@@ -1332,7 +1209,7 @@ class kernel:
                 print('\nSystem have stopped training,Neural network have been saved.')
                 return
             else:
-                print('\nSystem have stopped training,Neural network have been saved.')
+                print('\nSystem have stopped training.')
                 return
         elif self.end() and self.end_flag==True:
             self.thread_lock.acquire()
