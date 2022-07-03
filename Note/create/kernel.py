@@ -921,7 +921,7 @@ class kernel:
                         s=epoch/(self.s+1)
                         s=int(s)
                     if p==0:
-                        p=1
+                        p=epoch
                     if s==0:
                         s=1
                     if i%p==0:
