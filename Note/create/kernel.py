@@ -282,7 +282,7 @@ class kernel:
         return
         
     
-    def train(self,batch=None,epoch=None,test_batch=None,file_path=None,one=True):
+    def train(self,batch=None,epoch=None,test_batch=None,save=None,one=True):
         self.batch=batch
         self.epoch=0
         t1=None
@@ -325,7 +325,7 @@ class kernel:
                             print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
                         else:
                             print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
-                    if file_path!=None and i%e==0:
+                    if save!=None and i%e==0:
                         self.save(self.total_epoch,one)
                 t2=time.time()
                 self.time+=(t2-t1)
@@ -360,7 +360,7 @@ class kernel:
                             print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
                         else:
                             print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
-                    if file_path!=None and i%e==0:
+                    if save!=None and i%e==0:
                         self.save(self.total_epoch,one)
                 try:
                     self.nn.ec+=1
@@ -380,13 +380,13 @@ class kernel:
                 train_loss=self.nn.loss(output,data[1])
                 loss=train_loss.numpy()
                 self.nn.train_loss=loss.astype(np.float32)
-                if file_path!=None:
+                if save!=None:
                     self.save()
                 try:
                     self.nn.ec+=1
                 except AttributeError:
                     pass
-        if file_path!=None:
+        if save!=None:
             self.save()
         self._time=self.time-int(self.time)
         if self._time<0.5:
@@ -541,12 +541,13 @@ class kernel:
         plt.title('train loss')
         plt.xlabel('epoch')
         plt.ylabel('loss')
-        plt.figure(2)
-        plt.plot(np.arange(self.total_epoch),self.train_acc_list)
-        plt.title('train acc')
-        plt.xlabel('epoch')
-        plt.ylabel('acc')
         print('train loss:{0:.6f}'.format(self.train_loss))
+        if self.acc_flag1==1:
+            plt.figure(2)
+            plt.plot(np.arange(self.total_epoch),self.train_acc_list)
+            plt.title('train acc')
+            plt.xlabel('epoch')
+            plt.ylabel('acc')
         if self.acc_flag2=='%':
             print('train acc:{0:.1f}'.format(self.train_acc*100))
         else:
@@ -561,12 +562,13 @@ class kernel:
         plt.title('test loss')
         plt.xlabel('epoch')
         plt.ylabel('loss')
-        plt.figure(2)
-        plt.plot(np.arange(self.total_epoch),self.test_acc_list)
-        plt.title('test acc')
-        plt.xlabel('epoch')
-        plt.ylabel('acc')
         print('test loss:{0:.6f}'.format(self.test_loss))
+        if self.acc_flag1==1:
+            plt.figure(2)
+            plt.plot(np.arange(self.total_epoch),self.test_acc_list)
+            plt.title('test acc')
+            plt.xlabel('epoch')
+            plt.ylabel('acc')
         if self.acc_flag2=='%':
             print('test acc:{0:.1f}'.format(self.test_acc*100))
         else:
@@ -583,20 +585,21 @@ class kernel:
         plt.title('loss')
         plt.xlabel('epoch')
         plt.ylabel('loss')
-        plt.legend()
-        plt.figure(2)
-        plt.plot(np.arange(self.total_epoch),self.train_acc_list,'b-',label='train acc')
-        if self.test_flag==True:
-            plt.plot(np.arange(self.total_epoch),self.test_acc_list,'r-',label='test acc')
-        plt.title('accuracy')
-        plt.xlabel('epoch')
-        plt.ylabel('acc')
-        plt.legend()
         print('train loss:{0}'.format(self.train_loss))
-        if self.acc_flag2=='%':
-            print('train acc:{0:.1f}'.format(self.train_acc*100))
-        else:
-            print('train acc:{0:.6f}'.format(self.train_acc))     
+        plt.legend()
+        if self.acc_flag1==1:
+            plt.figure(2)
+            plt.plot(np.arange(self.total_epoch),self.train_acc_list,'b-',label='train acc')
+            if self.test_flag==True:
+                plt.plot(np.arange(self.total_epoch),self.test_acc_list,'r-',label='test acc')
+            plt.title('accuracy')
+            plt.xlabel('epoch')
+            plt.ylabel('acc')
+            plt.legend()
+            if self.acc_flag2=='%':
+                print('train acc:{0:.1f}'.format(self.train_acc*100))
+            else:
+                print('train acc:{0:.6f}'.format(self.train_acc))     
         if self.test_flag==True:        
             print()
             print('-------------------------------------')
