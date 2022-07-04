@@ -688,7 +688,7 @@ class kernel:
         return
     
     
-    def train(self,batch=None,epoch=None,test_batch=None,file_path=None,one=True,p=None,s=None):
+    def train(self,batch=None,epoch=None,test_batch=None,save=None,one=True,p=None,s=None):
         self.batch=batch
         self.epoch=0
         t1=None
@@ -763,8 +763,8 @@ class kernel:
                                 print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
                             else:
                                 print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
-                    if file_path!=None and i%s==0:
-                        self.save(file_path,self.total_epoch,one)
+                    if save!=None and i%s==0:
+                        self.save(self.total_epoch,one)
                 t2=time.time()
                 if self.thread==None:
                     self.time+=(t2-t1)
@@ -817,8 +817,8 @@ class kernel:
                                 print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
                             else:
                                 print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
-                    if file_path!=None and i%s==0:
-                        self.save(file_path,self.total_epoch,one)
+                    if save!=None and i%s==0:
+                        self.save(self.total_epoch,one)
                 if self.thread==None:
                     try:
                         self.nn.ec+=1
@@ -846,14 +846,14 @@ class kernel:
                 train_loss=self.nn.loss(output,data[1])
                 loss=train_loss.numpy()
                 self.nn.train_loss=loss.astype(np.float32)
-                if file_path!=None:
-                    self.save(file_path)
+                if save!=None:
+                    self.save()
                 try:
                     self.nn.ec+=1
                 except AttributeError:
                     pass
-        if file_path!=None:
-            self.save(file_path)
+        if save!=None:
+            self.save()
         if self.thread==None:
             self._time=self.time-int(self.time)
             if self._time<0.5:
@@ -1109,8 +1109,8 @@ class kernel:
         return
     
     
-    def save_p(self,path):
-        parameter_file=open(path+'.dat','wb')
+    def save_p(self):
+        parameter_file=open('parameter.dat','wb')
         pickle.dump(self.nn.param,parameter_file)
         parameter_file.close()
         return
@@ -1118,15 +1118,11 @@ class kernel:
     
     def save(self,path,i=None,one=True):
         if one==True:
-            output_file=open(path+'\save.dat','wb')
-            path=path+'\save.dat'
-            index=path.rfind('\\')
-            parameter_file=open(path.replace(path[index+1:],'parameter.dat'),'wb')
+            output_file=open('save.dat','wb')
+            parameter_file=open('parameter.dat','wb')
         else:
-            output_file=open(path+'\save-{0}.dat'.format(i),'wb')
-            path=path+'\save-{0}.dat'.format(i)
-            index=path.rfind('\\')
-            parameter_file=open(path.replace(path[index+1:],'parameter-{0}.dat'.format(i)),'wb')
+            output_file=open('save-{0}.dat'.format(i),'wb')
+            parameter_file=open('parameter-{0}.dat'.format(i),'wb')
             self.file_list.append(['save-{0}.dat','parameter-{0}.dat'])
             if len(self.file_list)>self.s+1:
                 os.remove(self.file_list[0][0])
