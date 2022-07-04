@@ -463,7 +463,7 @@ class kernel:
                 if i%d==0:
                     print('episode num:{0}   loss:{1:.6f}'.format(i+1,loss))
                     if path!=None and i%e==0:
-                        self.save(path,i,one)
+                        self.save(i,one)
                 self.epi_num+=1
                 self.total_episode+=1
                 if self.save_episode==True:
@@ -495,7 +495,7 @@ class kernel:
                 if i%d==0:
                     print('episode num:{0}   loss:{1:.6f}'.format(i+1,loss))
                     if path!=None and i%e==0:
-                        self.save(path,i,one)
+                        self.save(i,one)
                 self.epi_num+=1
                 self.total_e+=1
                 if self.save_episode==True:
@@ -525,7 +525,7 @@ class kernel:
                     else:
                         self.loss_list[0]=loss.numpy()
                     if path!=None:
-                        self.save(path)
+                        self.save()
                     return
                 self.total_e+=1
                 with tf.GradientTape() as tape:
@@ -551,7 +551,7 @@ class kernel:
                 except AttributeError:
                     pass
         if path!=None:
-            self.save(path)
+            self.save()
         self._time=self.time-int(self.time)
         if self._time<0.5:
             self.time=int(self.time)
@@ -592,21 +592,17 @@ class kernel:
     def save(self,path,i=None,one=True):
         self.nn.param=None
         if one==True:
-            output_file=open(path+'\save.dat','wb')
-            path=path+'\save.dat'
-            index=path.rfind('\\')
-            parameter_file=open(path.replace(path[index+1:],'parameter.dat'),'wb')
+            output_file=open('save.dat','wb')
+            parameter_file=open('parameter.dat','wb')
             if self.save_episode==True:
-                episode_file=open(path.replace(path[index+1:],'episode.dat'),'wb')
+                episode_file=open('episode.dat','wb')
                 pickle.dump(self.episode,episode_file)
                 episode_file.close()
         else:
-            output_file=open(path+'\save-{0}.dat'.format(i),'wb')
-            path=path+'\save-{0}.dat'.format(i)
-            index=path.rfind('\\')
-            parameter_file=open(path.replace(path[index+1:],'parameter-{0}.dat'.format(i)),'wb')
+            output_file=open('save-{0}.dat'.format(i),'wb')
+            parameter_file=open('parameter-{0}.dat'.format(i),'wb')
             if self.save_episode==True:
-                episode_file=open(path.replace(path[index+1:],'episode-{0}.dat'.format(i)),'wb')
+                episode_file=open('episode-{0}.dat'.format(i),'wb')
                 pickle.dump(self.episode,episode_file)
                 episode_file.close()
         self.episode_num=self.epi_num
