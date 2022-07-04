@@ -931,14 +931,6 @@ class kernel:
                         self.thread_lock.acquire()
                         self.time+=(t2-t1)
                         self.thread_lock.release()
-                    elif self.thread_lock==None:
-                        self.time+=(t2-t1)
-                        self._time=self.time-int(self.time)
-                        if self._time<0.5:
-                            self.time=int(self.time)
-                        else:
-                            self.time=int(self.time)+1
-                        self.total_time+=self.time
                     else:
                         self.time+=(t2-t1)
                 else:
@@ -1016,14 +1008,6 @@ class kernel:
                         self.thread_lock.acquire()
                         self.time+=(t2-t1)
                         self.thread_lock.release()
-                    elif self.thread_lock==None:
-                        self.time+=(t2-t1)
-                        self._time=self.time-int(self.time)
-                        if self._time<0.5:
-                            self.time=int(self.time)
-                        else:
-                            self.time=int(self.time)+1
-                        self.total_time+=self.time
                     else:
                         self.time+=(t2-t1)
                 else:
