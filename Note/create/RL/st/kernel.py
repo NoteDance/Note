@@ -444,7 +444,7 @@ class kernel:
         return loss,episode,end
     
     
-    def learn(self,episode_num,path=None,one=True):
+    def learn(self,episode_num,save=None,one=True):
         loss=0
         if episode_num!=None:
             for i in range(episode_num):
@@ -462,7 +462,7 @@ class kernel:
                 e=d*2
                 if i%d==0:
                     print('episode num:{0}   loss:{1:.6f}'.format(i+1,loss))
-                    if path!=None and i%e==0:
+                    if save!=None and i%e==0:
                         self.save(i,one)
                 self.epi_num+=1
                 self.total_episode+=1
@@ -494,7 +494,7 @@ class kernel:
                 e=d*2
                 if i%d==0:
                     print('episode num:{0}   loss:{1:.6f}'.format(i+1,loss))
-                    if path!=None and i%e==0:
+                    if save!=None and i%e==0:
                         self.save(i,one)
                 self.epi_num+=1
                 self.total_e+=1
@@ -524,7 +524,7 @@ class kernel:
                         self.loss_list.append(loss.numpy())
                     else:
                         self.loss_list[0]=loss.numpy()
-                    if path!=None:
+                    if save!=None:
                         self.save()
                     return
                 self.total_e+=1
@@ -550,7 +550,7 @@ class kernel:
                     self.nn.ec+=1
                 except AttributeError:
                     pass
-        if path!=None:
+        if save!=None:
             self.save()
         self._time=self.time-int(self.time)
         if self._time<0.5:
@@ -575,21 +575,21 @@ class kernel:
         return
     
     
-    def save_p(self,path):
-        parameter_file=open(path+'.dat','wb')
+    def save_p(self):
+        parameter_file=open('parameter.dat','wb')
         pickle.dump(self.param,parameter_file)
         parameter_file.close()
         return
     
     
-    def save_e(self,path):
-        episode_file=open(path+'.dat','wb')
+    def save_e(self):
+        episode_file=open('episode.dat','wb')
         pickle.dump(self.episode,episode_file)
         episode_file.close()
         return
     
     
-    def save(self,path,i=None,one=True):
+    def save(self,i=None,one=True):
         self.nn.param=None
         if one==True:
             output_file=open('save.dat','wb')
