@@ -654,7 +654,7 @@ class kernel:
         return loss,episode,end
     
     
-    def train(self,episode_num,path=None,one=True,p=None,s=None):
+    def train(self,episode_num,save=None,one=True,p=None,s=None):
         if self.p==None:
             self.p=9
         else:
@@ -679,8 +679,8 @@ class kernel:
                 e=d*self.s
                 if i%d==0:
                     print('episode num:{0}   loss:{1:.6f}'.format(i+1,loss))
-                    if path!=None and i%e==0:
-                        self.save(path,i,one)
+                    if save!=None and i%e==0:
+                        self.save(i,one)
                 self.epi_num+=1
                 self.total_episode+=1
                 if self.save_episode==True:
@@ -712,8 +712,8 @@ class kernel:
                 e=d*self.s
                 if i%d==0:
                     print('episode num:{0}   loss:{1:.6f}'.format(i+1,loss))
-                    if path!=None and i%e==0:
-                        self.save(path,i,one)
+                    if save!=None and i%e==0:
+                        self.save(i,one)
                 self.epi_num+=1
                 self.total_e+=1
                 if self.save_episode==True:
@@ -781,8 +781,8 @@ class kernel:
                     except AttributeError:
                         pass
                     self.total_e+=1
-        if path!=None:
-            self.save(path)
+        if save!=None:
+            self.save()
         self._time=self.time-int(self.time)
         if self._time<0.5:
             self.time=int(self.time)
@@ -806,37 +806,33 @@ class kernel:
         return
     
     
-    def save_p(self,path):
-        parameter_file=open(path+'.dat','wb')
+    def save_p(self):
+        parameter_file=open('parameter.dat','wb')
         pickle.dump(self.nn.param,parameter_file)
         parameter_file.close()
         return
     
     
-    def save_e(self,path):
-        episode_file=open(path+'.dat','wb')
+    def save_e(self):
+        episode_file=open('episode.dat','wb')
         pickle.dump(self.episode,episode_file)
         episode_file.close()
         return
     
     
-    def save(self,path,i=None,one=True):
+    def save(self,i=None,one=True):
         if one==True:
-            output_file=open(path+'\save.dat','wb')
-            path=path+'\save.dat'
-            index=path.rfind('\\')
-            parameter_file=open(path.replace(path[index+1:],'parameter.dat'),'wb')
+            output_file=open('save.dat','wb')
+            parameter_file=open('parameter.dat','wb')
             if self.save_episode==True:
-                episode_file=open(path.replace(path[index+1:],'episode.dat'),'wb')
+                episode_file=open('episode.dat','wb')
                 pickle.dump(self.episode,episode_file)
                 episode_file.close()
         else:
-            output_file=open(path+'\save-{0}.dat'.format(i),'wb')
-            path=path+'\save-{0}.dat'.format(i)
-            index=path.rfind('\\')
-            parameter_file=open(path.replace(path[index+1:],'parameter-{0}.dat'.format(i)),'wb')
+            output_file=open('save-{0}.dat'.format(i),'wb')
+            parameter_file=open('parameter-{0}.dat'.format(i),'wb')
             if self.save_episode==True:
-                episode_file=open(path.replace(path[index+1:],'episode-{0}.dat'.format(i)),'wb')
+                episode_file=open('episode-{0}.dat'.format(i),'wb')
                 pickle.dump(self.episode,episode_file)
                 episode_file.close()
         self.episode_num=self.epi_num
