@@ -679,26 +679,18 @@ class kernel:
                 except AttributeError:
                     pass
             else:
-                self.thread_lock.acquire()
                 try:
                     if self.nn.accuracy!=None:
                         pass
+                    self.thread_lock.acquire()
                     self.batch_acc=self.nn.accuracy(self.output,labels_batch)
+                    self.thread_lock.release()
                 except AttributeError:
                     pass
                 try:
                     self.nn.bc[t]=j
                 except AttributeError:
                     pass
-                try:
-                    if self.nn.accuracy!=None:
-                        pass
-                    return self.batch_loss,self.batch_acc
-                except AttributeError:
-                    pass
-                else:
-                    return self.batch_loss
-                self.thread_lock.release()
             return
         else:
             self.core_opt_t(self.train_data,self.train_labels,t)
