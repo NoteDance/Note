@@ -326,7 +326,7 @@ class kernel:
                         else:
                             print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
                     if file_path!=None and i%e==0:
-                        self.save(file_path,self.total_epoch,one)
+                        self.save(self.total_epoch,one)
                 t2=time.time()
                 self.time+=(t2-t1)
                 if self.end_flag==True and self.end()==True:
@@ -361,7 +361,7 @@ class kernel:
                         else:
                             print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
                     if file_path!=None and i%e==0:
-                        self.save(file_path,self.total_epoch,one)
+                        self.save(self.total_epoch,one)
                 try:
                     self.nn.ec+=1
                 except AttributeError:
@@ -381,13 +381,13 @@ class kernel:
                 loss=train_loss.numpy()
                 self.nn.train_loss=loss.astype(np.float32)
                 if file_path!=None:
-                    self.save(file_path)
+                    self.save()
                 try:
                     self.nn.ec+=1
                 except AttributeError:
                     pass
         if file_path!=None:
-            self.save(file_path)
+            self.save()
         self._time=self.time-int(self.time)
         if self._time<0.5:
             self.time=int(self.time)
@@ -609,25 +609,21 @@ class kernel:
         return
     
     
-    def save_p(self,path):
-        parameter_file=open(path+'.dat','wb')
+    def save_p(self):
+        parameter_file=open('parameter.dat','wb')
         pickle.dump(self.param,parameter_file)
         parameter_file.close()
         return
     
     
-    def save(self,path,i=None,one=True):
+    def save(self,i=None,one=True):
         self.nn.param=None
         if one==True:
-            output_file=open(path+'\save.dat','wb')
-            path=path+'\save.dat'
-            index=path.rfind('\\')
-            parameter_file=open(path.replace(path[index+1:],'parameter.dat'),'wb')
+            output_file=open('save.dat','wb')
+            parameter_file=open('parameter.dat','wb')
         else:
-            output_file=open(path+'\save-{0}.dat'.format(i),'wb')
-            path=path+'\save-{0}.dat'.format(i)
-            index=path.rfind('\\')
-            parameter_file=open(path.replace(path[index+1:],'parameter-{0}.dat'.format(i)),'wb')
+            output_file=open('save-{0}.dat'.format(i),'wb')
+            parameter_file=open('parameter-{0}.dat'.format(i),'wb')
         pickle.dump(self.param,parameter_file)
         pickle.dump(self.nn,output_file)
         pickle.dump(self.ol,output_file)
