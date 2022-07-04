@@ -573,15 +573,15 @@ class kernel:
         return
     
     
-    def save_p(self,path):
-        parameter_file=open(path+'.dat','wb')
+    def save_p(self):
+        parameter_file=open('episode.dat','wb')
         pickle.dump(self.value_p,parameter_file)
         parameter_file.close()
         return
     
     
-    def save_e(self,path):
-        episode_file=open(path+'.dat','wb')
+    def save_e(self):
+        episode_file=open('parameter.dat','wb')
         pickle.dump(self.episode,episode_file)
         episode_file.close()
         return
@@ -589,12 +589,10 @@ class kernel:
     
     def save(self,path):
         self.nn.param=None
-        output_file=open(path+'\save.dat','wb')
-        path=path+'\save.dat'
-        index=path.rfind('\\')
-        parameter_file=open(path.replace(path[index+1:],'parameter.dat'),'wb')
+        output_file=open('save.dat','wb')
+        parameter_file=open('parameter.dat','wb')
         if self.save_episode==True:
-            episode_file=open(path.replace(path[index+1:],'episode.dat'),'wb')
+            episode_file=open('episode.dat','wb')
             pickle.dump(self.episode,episode_file)
             episode_file.close()
         self.one_list=self.one_list*0
