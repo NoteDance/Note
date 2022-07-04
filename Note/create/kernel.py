@@ -63,7 +63,7 @@ class kernel:
         else:
             self.shape0=train_data.shape[0]
         if self.thread!=None:
-            self.t=-np.arange(-self.thread,1)
+            self.t=-np.arange(-(self.thread-1),1)
             self.t=list(self.t)
             try:
                 self.nn.ec=np.zeros(self.thread)
@@ -78,16 +78,16 @@ class kernel:
                 self.train_acc=np.zeros(self.thread)
                 self.train_loss_list=[[] for _ in range(self.thread)]
                 self.train_acc_list=[[] for _ in range(self.thread)]
+                self.epoch=np.zeros(self.thread)
+                self.total_epoch=np.zeros(self.thread)
+                self.time=np.zeros(self.thread)
+                self.total_time=np.zeros(self.thread)
             if test_data!=None:
                 if self.PO==None:
                     self.test_loss=np.zeros(self.thread)
                     self.test_acc=np.zeros(self.thread)
                     self.test_loss_list=[[] for _ in range(self.thread)]
                     self.test_acc_list=[[] for _ in range(self.thread)]
-            self.epoch=np.zeros(self.thread)
-            self.total_epoch=np.zeros(self.thread)
-            self.time=np.zeros(self.thread)
-            self.total_time=np.zeros(self.thread)
         return
     
     
@@ -421,7 +421,7 @@ class kernel:
         return
     
     
-    def _train(self,batch=None,epoch=None,test_batch=None,_data_batch=None,_labels_batch=None,t=None):
+    def _train(self,batch=None,_data_batch=None,_labels_batch=None,test_batch=None,t=None):
         if self.stop==True:
             self.stop_func()
         if batch!=None:
@@ -637,11 +637,9 @@ class kernel:
         return
     
     
-    def train_(self,_data_batch=None,_labels_batch=None,batches=None,batch=None,epoch=None,test_batch=None,index1=None,index2=None,j=None,t=None):
+    def train_(self,_data_batch=None,_labels_batch=None,batch=None,batches=None,test_batch=None,index1=None,index2=None,j=None,t=None):
         if self.stop==True:
             self.stop_func()
-        if self.end_loss!=None or self.end_acc!=None or self.end_test_loss!=None or self.end_test_acc!=None:
-            self._param=self.nn.param
         if batch!=None:
             if index1==batches*batch:
                 data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j,True)
@@ -654,6 +652,10 @@ class kernel:
                            break
                        except:
                            continue
+                try:
+                    self.nn.bc[t]+=1
+                except AttributeError:
+                    pass
                 return
             data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j)
             try:
@@ -673,7 +675,7 @@ class kernel:
                 except AttributeError:
                     pass
                 try:
-                    self.nn.bc=j
+                    self.nn.bc[t]=j
                 except AttributeError:
                     pass
             else:
@@ -685,7 +687,7 @@ class kernel:
                 except AttributeError:
                     pass
                 try:
-                    self.nn.bc+=1
+                    self.nn.bc[t]=j
                 except AttributeError:
                     pass
                 try:
@@ -755,7 +757,7 @@ class kernel:
             return
     
     
-    def _train_(self,batch=None,epoch=None,data_batch=None,labels_batch=None,test_batch=None,t=None):
+    def _train_(self,batch=None,data_batch=None,labels_batch=None,test_batch=None,t=None):
         if self.stop==True:
             self.stop_func()
         total_loss=0
@@ -765,20 +767,29 @@ class kernel:
             self.suspend_func()
             index1=j*batch
             index2=(j+1)*batch
+            if self.PO==1:
+                self.thread_lock.acquire()
+                self.train_(data_batch,labels_batch,batch,batches,test_batch,index1,index2,j,t)
+                self.thread_lock.release()
+            else:
+                self.train_(data_batch,labels_batch,batch,batches,test_batch,index1,index2,j,t)
             try:
                 if self.nn.accuracy!=None:
                     pass
-                self.train_(data_batch,labels_batch,batch,epoch,batches,test_batch,index1,index2,j,t)
                 total_loss+=self.batch_loss
                 total_acc+=self.batch_acc
             except AttributeError:
-                self.train_(data_batch,labels_batch,batch,epoch,batches,test_batch,index1,index2,j,t)
                 total_loss+=self.batch_loss
         if self.shape0%batch!=0:
             batches+=1
             index1=batches*batch
             index2=batch-(self.shape0-batches*batch)
-            self.train_(data_batch,labels_batch,batch,epoch,batches,test_batch,index1,index2,None,t)
+            if self.PO==1:
+                self.thread_lock.acquire()
+                self.train_(data_batch,labels_batch,batch,batches,test_batch,index1,index2,None,t)
+                self.thread_lock.release()
+            else:
+                self.train_(data_batch,labels_batch,batch,batches,test_batch,index1,index2,None,t)
             try:
                 if self.nn.accuracy!=None:
                     pass
@@ -839,6 +850,12 @@ class kernel:
             labels_batch=[x for x in range(len(self.train_labels))]
         else:
             labels_batch=None
+        if self.thread!=None:
+            try:
+                t=self.t.pop()
+            except IndexError:
+                print('\nError,please add thread.')
+                return
         if epoch!=None:
             for i in range(epoch):
                 if self.stop==True:
@@ -856,21 +873,14 @@ class kernel:
                     except:
                         pass
                 if self.thread==None:
-                    self._train(batch,epoch,test_batch,data_batch,labels_batch)
+                    self._train(batch,data_batch,labels_batch,test_batch)
                 else:
-                    try:
-                        t=self.t.pop()
-                    except IndexError:
-                        print('\nError,please add thread.')
-                        return
                     if self.PO==1:
-                        self.thread_lock.acquire()
-                        self._train_(batch,epoch,data_batch,labels_batch,test_batch,t)
-                        self.thread_lock.release()
+                        self._train_(batch,data_batch,labels_batch,test_batch,t)
                     elif self.PO!=None:
-                        self._train_(batch,epoch,data_batch,labels_batch,test_batch,t)
+                        self._train_(batch,data_batch,labels_batch,test_batch,t)
                     else:
-                        self._train(batch,epoch,test_batch,data_batch,labels_batch,t)
+                        self._train(batch,data_batch,labels_batch,test_batch,t)
                 if self.stop==True:
                     if self.stop_flag==1:
                         self.stop_func()
@@ -920,13 +930,15 @@ class kernel:
                     if self.thread_lock!=None:
                         self.thread_lock.acquire()
                         self.time+=(t2-t1)
+                        self.thread_lock.release()
+                    elif self.thread_lock==None:
+                        self.time+=(t2-t1)
                         self._time=self.time-int(self.time)
                         if self._time<0.5:
                             self.time=int(self.time)
                         else:
                             self.time=int(self.time)+1
                         self.total_time+=self.time
-                        self.thread_lock.release()
                     else:
                         self.time+=(t2-t1)
                 else:
@@ -937,17 +949,17 @@ class kernel:
             while True:
                 t1=time.time()
                 if self.thread==None:
-                    self._train(epoch=epoch,test_batch=test_batch)
+                    self._train(test_batch=test_batch)
                 else:
                     t=self.t.pop()
                     if self.PO==1:
                         self.thread_lock.acquire()
-                        self._train_(epoch=epoch,test_batch=test_batch,t=t)
+                        self._train_(test_batch=test_batch,t=t)
                         self.thread_lock.release()
                     elif self.PO!=None:
-                        self._train_(epoch=epoch,test_batch=test_batch,t=t)
+                        self._train_(test_batch=test_batch,t=t)
                     else:
-                        self._train(epoch=epoch,test_batch=test_batch,t=t)
+                        self._train(test_batch=test_batch,t=t)
                 i+=1
                 if type(self.total_epoch)!=list:
                     if self.thread_lock!=None:
@@ -1003,13 +1015,15 @@ class kernel:
                     if self.thread_lock!=None:
                         self.thread_lock.acquire()
                         self.time+=(t2-t1)
+                        self.thread_lock.release()
+                    elif self.thread_lock==None:
+                        self.time+=(t2-t1)
                         self._time=self.time-int(self.time)
                         if self._time<0.5:
                             self.time=int(self.time)
                         else:
                             self.time=int(self.time)+1
                         self.total_time+=self.time
-                        self.thread_lock.release()
                     else:
                         self.time+=(t2-t1)
                 else:
