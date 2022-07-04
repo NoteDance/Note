@@ -910,9 +910,9 @@ class kernel:
                                 print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
                         else:
                             if self.test_flag==False:
-                                print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
+                                print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
                             else:
-                                print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
+                                print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch,self.train_loss,self.test_loss))
                     if save!=None and i%s==0:
                         self.save(self.total_epoch,one)
                 t2=time.time()
@@ -983,9 +983,9 @@ class kernel:
                                 print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
                         else:
                             if self.test_flag==False:
-                                print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
+                                print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
                             else:
-                                print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch+i+1,self.train_loss,self.test_loss))
+                                print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch,self.train_loss,self.test_loss))
                     if save!=None and i%s==0:
                         self.save(self.total_epoch,one)
                 if self.thread==None:
