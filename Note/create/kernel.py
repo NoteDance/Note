@@ -1293,16 +1293,21 @@ class kernel:
         plt.title('train loss')
         plt.xlabel('epoch')
         plt.ylabel('loss')
-        plt.figure(2)
-        plt.plot(np.arange(self.total_epoch),self.train_acc_list)
-        plt.title('train acc')
-        plt.xlabel('epoch')
-        plt.ylabel('acc')
         print('train loss:{0:.6f}'.format(self.train_loss))
-        if self.acc_flag=='%':
-            print('train acc:{0:.1f}'.format(self.train_acc*100))
-        else:
-            print('train acc:{0:.6f}'.format(self.train_acc))    
+        try:
+            if self.nn.accuracy!=None:
+                pass
+            plt.figure(2)
+            plt.plot(np.arange(self.total_epoch),self.train_acc_list)
+            plt.title('train acc')
+            plt.xlabel('epoch')
+            plt.ylabel('acc')
+            if self.acc_flag=='%':
+                print('train acc:{0:.1f}'.format(self.train_acc*100))
+            else:
+                print('train acc:{0:.6f}'.format(self.train_acc)) 
+        except AttributeError:
+            pass
         return
     
     
@@ -1313,16 +1318,21 @@ class kernel:
         plt.title('test loss')
         plt.xlabel('epoch')
         plt.ylabel('loss')
-        plt.figure(2)
-        plt.plot(np.arange(self.total_epoch),self.test_acc_list)
-        plt.title('test acc')
-        plt.xlabel('epoch')
-        plt.ylabel('acc')
         print('test loss:{0:.6f}'.format(self.test_loss))
-        if self.acc_flag=='%':
-            print('test acc:{0:.1f}'.format(self.test_acc*100))
-        else:
-            print('test acc:{0:.6f}'.format(self.test_acc))  
+        try:
+            if self.nn.accuracy!=None:
+                pass
+            plt.figure(2)
+            plt.plot(np.arange(self.total_epoch),self.test_acc_list)
+            plt.title('test acc')
+            plt.xlabel('epoch')
+            plt.ylabel('acc')
+            if self.acc_flag=='%':
+                print('test acc:{0:.1f}'.format(self.test_acc*100))
+            else:
+                print('test acc:{0:.6f}'.format(self.test_acc))  
+        except AttributeError:
+            pass
         return 
     
     
@@ -1335,20 +1345,25 @@ class kernel:
         plt.title('loss')
         plt.xlabel('epoch')
         plt.ylabel('loss')
-        plt.legend()
-        plt.figure(2)
-        plt.plot(np.arange(self.total_epoch),self.train_acc_list,'b-',label='train acc')
-        if self.test_flag==True:
-            plt.plot(np.arange(self.total_epoch),self.test_acc_list,'r-',label='test acc')
-        plt.title('accuracy')
-        plt.xlabel('epoch')
-        plt.ylabel('acc')
-        plt.legend()
         print('train loss:{0}'.format(self.train_loss))
-        if self.acc_flag=='%':
-            print('train acc:{0:.1f}'.format(self.train_acc*100))
-        else:
-            print('train acc:{0:.6f}'.format(self.train_acc))     
+        plt.legend()
+        try:
+            if self.nn.accuracy!=None:
+                pass
+            plt.figure(2)
+            plt.plot(np.arange(self.total_epoch),self.train_acc_list,'b-',label='train acc')
+            if self.test_flag==True:
+                plt.plot(np.arange(self.total_epoch),self.test_acc_list,'r-',label='test acc')
+            plt.title('accuracy')
+            plt.xlabel('epoch')
+            plt.ylabel('acc')
+            plt.legend()
+            if self.acc_flag=='%':
+                print('train acc:{0:.1f}'.format(self.train_acc*100))
+            else:
+                print('train acc:{0:.6f}'.format(self.train_acc))
+        except AttributeError:
+            pass
         if self.test_flag==True:        
             print()
             print('-------------------------------------')
