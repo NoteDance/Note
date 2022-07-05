@@ -36,11 +36,13 @@ simple example:
 ```python
 import Note.create.kernel as k   #import kernel
 import tensorflow as tf              #import core
+import cnn as c                          #import your class's python file
 import threading
 mnist=tf.keras.datasets.mnist
 (x_train,y_train),(x_test,y_test)=mnist.load_data()
 x_train,x_test =x_train/255.0,x_test/255.0
-kernel=k.kernel(your neural network object)   #start kernel
+cnn=c.cnn()                                #create class object
+kernel=k.kernel(cnn)   #start kernel
 kernel.core=tf                            #use core
 kernel.thread=7                        #thread count
 kernel.data(x_train,y_train)   #input you data
@@ -62,11 +64,13 @@ simple example:
 ```python
 import Note.create.kernel as k   #import kernel
 import tensorflow as tf              #import core
+import cnn as c                          #import your class's python file
 import threading
 mnist=tf.keras.datasets.mnist
 (x_train,y_train),(x_test,y_test)=mnist.load_data()
 x_train,x_test =x_train/255.0,x_test/255.0
-kernel=k.kernel(your neural network object)   #start kernel
+cnn=c.cnn()                                #create class object
+kernel=k.kernel(cnn)   #start kernel
 kernel.core=tf                            #use core
 kernel.stop=True
 kernel.file_path='example'
