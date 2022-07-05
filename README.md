@@ -57,6 +57,7 @@ for _ in range(thread count):
 ```
 
 Support stop and save in multithreading training.
+
 simple example:
 ```python
 import Note.create.kernel as k   #import kernel
