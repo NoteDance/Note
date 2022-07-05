@@ -25,6 +25,7 @@ kernel.train(32,5)         #train neural network
 
 # Parallel optimization:
 You can use parallel optimization to speed up your training,parallel optimization speed up training by multithreading.
+
 Note have two types of parallel optimization:
 1. not parallel computing gradient and optimizing.
 2. parallel computing gradient and optimizing.
