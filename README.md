@@ -49,17 +49,17 @@ y_train=tf.one_hot(y_train,10)
 cnn=c.cnn()                                #create class object
 kernel=k.kernel(cnn)   #start kernel
 kernel.core=tf                            #use core
-kernel.thread=7                        #thread count
+kernel.thread=2                        #thread count
 kernel.data(x_train,y_train)   #input you data
 kernel.PO=1 or kernel.PO=2
 kernel.thread_lock=threading.Lock()
 class thread(threading.Thread):
 	def run(self):
-		kernel.train(32,5)
-for _ in range(7):
+		kernel.train(32,3)
+for _ in range(2):
 	_thread=thread()
 	_thread.start()
-for _ in range(7):
+for _ in range(2):
 	_thread.join()
 ```
 
@@ -82,16 +82,16 @@ kernel.stop=True
 kernel.file_path='example'
 kernel.end_loss=0.7
 kernel.end_flag=True
-kernel.thread=7                        #thread count
+kernel.thread=2                        #thread count
 kernel.data(x_train,y_train)   #input you data
 kernel.PO=1 or kernel.PO=2
 kernel.thread_lock=threading.Lock()
 class thread(threading.Thread):
 	def run(self):
-		kernel.train(32,5)
-for _ in range(7):
+		kernel.train(32,3)
+for _ in range(2):
 	_thread=thread()
 	_thread.start()
-for _ in range(7):
+for _ in range(2):
 	_thread.join()
 ```
