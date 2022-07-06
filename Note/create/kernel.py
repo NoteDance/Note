@@ -946,7 +946,7 @@ class kernel:
                         s=epoch/(self.s+1)
                         s=int(s)
                     if p==0:
-                        p=epoch
+                        p=1
                     if s==0:
                         s=1
                     if i%p==0:
@@ -1117,7 +1117,7 @@ class kernel:
                         labels_batch[i]=test_labels[i][index1:index2]
                 else:
                     labels_batch=test_labels[index1:index2]
-                if self.thread==None:
+                if self.thread==None or t==None:
                     output=self.nn.fp(data_batch)
                 else:
                     output=self.nn.fp(data_batch,t)
@@ -1137,26 +1137,26 @@ class kernel:
                 try:
                     if type(test_data)==list:
                         for i in range(len(test_data)):
-                            data_batch[i]=self.core.concat(test_data[i][index1:],test_data[i][:index2])
+                            data_batch[i]=self.core.concat([test_data[i][index1:],test_data[i][:index2]],0)
                     else:
-                        data_batch=self.core.concat(test_data[index1:],test_data[:index2],0)
+                        data_batch=self.core.concat([test_data[index1:],test_data[:index2]],0)
                     if type(self.test_labels)==list:
                         for i in range(len(test_labels)):
-                            labels_batch[i]=self.core.concat(test_labels[i][index1:],test_labels[i][:index2],0)
+                            labels_batch[i]=self.core.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
                     else:
-                        labels_batch=self.core.concat(test_labels[index1:],test_labels[:index2],0)
+                        labels_batch=self.core.concat([test_labels[index1:],test_labels[:index2]],0)
                 except:
                     if type(test_data)==list:
                         for i in range(len(test_data)):
-                            data_batch[i]=self.core.concat(test_data[i][index1:],test_data[i][:index2],0)
+                            data_batch[i]=self.core.concat([test_data[i][index1:],test_data[i][:index2]],0)
                     else:
-                        data_batch=self.core.concat(test_data[index1:],test_data[:index2],0)
+                        data_batch=self.core.concat([test_data[index1:],test_data[:index2]],0)
                     if type(self.test_labels)==list:
                         for i in range(len(test_labels)):
-                            labels_batch[i]=self.core.concat(test_labels[i][index1:],test_labels[i][:index2],0)
+                            labels_batch[i]=self.core.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
                     else:
-                        labels_batch=self.core.concat(test_labels[index1:],test_labels[:index2],0)
-                if self.thread==None:
+                        labels_batch=self.core.concat([test_labels[index1:],test_labels[:index2]],0)
+                if self.thread==None or t==None:
                     output=self.nn.fp(data_batch)
                 else:
                     output=self.nn.fp(data_batch,t)
@@ -1181,7 +1181,7 @@ class kernel:
             except AttributeError:
                 pass
         else:
-            if self.thread==None:
+            if self.thread==None or t==None:
                 output=self.nn.fp(test_data)
             else:
                 output=self.nn.fp(test_data,t)
@@ -1194,7 +1194,7 @@ class kernel:
                 test_acc=test_acc.numpy().astype(np.float32)
             except AttributeError:
                 pass
-        if self.thread==None:
+        if self.thread==None or t==None:
             print('test loss:{0:.6f}'.format(test_loss))
             try:
                 if self.nn.accuracy!=None:
