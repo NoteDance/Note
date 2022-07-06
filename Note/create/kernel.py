@@ -474,8 +474,11 @@ class kernel:
                             break
                         except:
                             if self.thread==None:
-                                print('\nCore unsuccessfully be replaced,try again.')
-                            continue
+                                _try=input('\nCore unsuccessfully be replaced,try again?:')
+                            if _try==True:
+                                continue
+                            else:
+                                return
                 total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc,t=t)
                 if self.thread==None:
                     try:
@@ -517,8 +520,11 @@ class kernel:
                             break
                         except:
                             if self.thread==None:
-                                print('\nCore unsuccessfully be replaced,try again.')
-                            continue
+                                _try=input('\nCore unsuccessfully be replaced,try again?:')
+                            if _try==True:
+                                continue
+                            else:
+                                return
                 total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc,t=t)
                 if self.thread==None:
                     try:
@@ -604,8 +610,11 @@ class kernel:
                         break
                     except:
                         if self.thread==None:
-                            print('\nCore unsuccessfully be replaced,try again.')
-                        continue
+                            _try=input('\nCore unsuccessfully be replaced,try again?:')
+                        if _try==True:
+                            continue
+                        else:
+                            return
             self.loss_acc(output=output,labels_batch=labels_batch,loss=train_loss,test_batch=test_batch,total_loss=total_loss,total_acc=total_acc,t=t)
         else:
             self.suspend_func()
@@ -628,8 +637,11 @@ class kernel:
                         break
                     except:
                         if self.thread==None:
-                            print('\nCore unsuccessfully be replaced,try again.')
-                        continue
+                            _try=input('\nCore unsuccessfully be replaced,try again?:')
+                        if _try==True:
+                            continue
+                        else:
+                            return
             train_loss=self.nn.loss(output,data[1])
             loss=train_loss.numpy()
             if self.thread_lock!=None:
