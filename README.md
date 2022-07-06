@@ -57,7 +57,7 @@ class thread(threading.Thread):
 for _ in range(7):
 	_thread=thread()
 	_thread.start()
-for _ in range(thread count):
+for _ in range(7):
 	_thread.join()
 ```
 
@@ -89,6 +89,6 @@ class thread(threading.Thread):
 for _ in range(7):
 	_thread=thread()
 	_thread.start()
-for _ in range(thread count):
+for _ in range(7):
 	_thread.join()
 ```
