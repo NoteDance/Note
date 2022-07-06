@@ -1419,7 +1419,21 @@ class kernel:
                 os.remove(self.file_list[0][1])
         pickle.dump(self.nn.param,parameter_file)
         self.nn.param=None
-        pickle.dump(self.nn,output_file)
+        try:
+            if self.nn.opt:
+                pass
+            opt=self.nn.opt
+            self.nn.opt=None
+            pickle.dump(self.nn,output_file)
+            self.nn.opt=opt
+        except AttributeError:
+            try:
+                pickle.dump(self.nn,output_file)
+            except:
+                opt=self.nn.oopt
+                self.nn.oopt=None
+                pickle.dump(self.nn,output_file)
+                self.nn.oopt=opt
         pickle.dump(self.ol,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.end_loss,output_file)
