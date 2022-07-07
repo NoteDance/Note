@@ -350,6 +350,11 @@ class kernel:
                         gradient=self.nn.gradient(output,loss,self.nn.param)
                         self.nn.oopt(gradient,self.nn.param)
         except AttributeError:
+            if self.thread==None:
+                output=self.nn.fp(data)
+            else:
+                output=self.nn.fp(data,t)
+            loss=self.nn.loss(output,labels)
             self.nn.opt.zero_grad()
             loss.backward()
             self.nn.opt.step()
@@ -361,55 +366,58 @@ class kernel:
         try:
             if self.core.DType!=None:
                 pass
+            try:
+                if self.nn.gradient!=None:
+                    pass
+                if self.thread==None:
+                    output=self.nn.fp(data)
+                else:
+                    output=self.nn.fp(data,t)
+                loss=self.nn.loss(output,labels)
+            except AttributeError:
+                with self.core.GradientTape() as tape:
+                    if self.thread==None:
+                        output=self.nn.fp(data)
+                    else:
+                        output=self.nn.fp(data,t)
+                    loss=self.nn.loss(output,labels)
             if self.PO==1:
                 if self.batch!=None:
-                    with self.core.GradientTape() as tape:
-                        output=self.nn.fp(data)
-                        batch_loss=self.nn.loss(output,labels)
                     try:
                         if self.nn.opt!=None:
                             pass
-                        self.gradient=tape.gradient(batch_loss,self.nn.param)
+                        gradient=tape.gradient(loss,self.nn.param)
+                        self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
                     except AttributeError:
-                        self.gradient=self.nn.gradient(tape,batch_loss,self.nn.param)
-                    try:
-                        if self.nn.opt!=None:
-                            pass
-                        self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
-                    except AttributeError:
+                        gradient=self.nn.gradient(output,loss,self.nn.param)
                         try:
                             self.nn.oopt(self.gradient,self.nn.param,t)
                         except TypeError:
                             self.nn.oopt(self.gradient,self.nn.param)
-                    return batch_loss,output
+                    return loss,output
                 else:
-                    with self.core.GradientTape() as tape:
-                        output=self.nn.fp(self.train_data)
-                        train_loss=self.nn.loss(output,self.train_labels)
-                    self.gradient=tape.gradient(train_loss,self.nn.param)
                     try:
                         if self.nn.opt!=None:
                             pass
-                        self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
+                        gradient=tape.gradient(loss,self.nn.param)
+                        self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
                     except AttributeError:
+                        gradient=self.nn.gradient(output,loss,self.nn.param)
                         try:
                             self.nn.oopt(self.gradient,self.nn.param,t)
                         except TypeError:
                             self.nn.oopt(self.gradient,self.nn.param)
-                    return train_loss,output
+                    return loss,output
             else:
                 if self.batch!=None:
                     self.thread_lock.acquire()
                     self.param=self.nn.param
-                    with self.core.GradientTape() as tape:
-                        output=self.nn.fp(data)
-                        batch_loss=self.nn.loss(output,labels)
                     try:
                         if self.nn.opt!=None:
                             pass
-                        self.gradient=tape.gradient(batch_loss,self.param)
+                        self.gradient=tape.gradient(loss,self.param)
                     except AttributeError:
-                        self.gradient=self.nn.gradient(tape,batch_loss,self.param)
+                        self.gradient=self.nn.gradient(output,loss,self.param)
                     self.thread_lock.release()
                     self.thread_lock.acquire()
                     try:
@@ -421,20 +429,17 @@ class kernel:
                             self.nn.oopt(self.gradient,self.nn.param,t)
                         except TypeError:
                             self.nn.oopt(self.gradient,self.nn.param)
-                    return batch_loss,output
+                    return loss,output
                     self.thread_lock.release()
                 else:
                     self.thread_lock.acquire()
                     self.param=self.nn.param
-                    with self.core.GradientTape() as tape:
-                        output=self.nn.fp(self.train_data)
-                        train_loss=self.nn.loss(output,self.train_labels)
                     try:
                         if self.nn.opt!=None:
                             pass
-                        self.gradient=tape.gradient(train_loss,self.param)
+                        self.gradient=tape.gradient(loss,self.param)
                     except AttributeError:
-                        self.gradient=self.nn.gradient(tape,train_loss,self.param)
+                        self.gradient=self.nn.gradient(output,loss,self.param)
                     self.thread_lock.release()
                     self.thread_lock.acquire()
                     try:
@@ -446,7 +451,7 @@ class kernel:
                             self.nn.oopt(self.gradient,self.nn.param,t)
                         except TypeError:
                             self.nn.oopt(self.gradient,self.nn.param)
-                    return train_loss,output
+                    return loss,output
                     self.thread_lock.release()
         except AttributeError:
             pass
