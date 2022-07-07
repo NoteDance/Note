@@ -15,7 +15,7 @@ import cnn as c                          #import your class's python file
 mnist=tf.keras.datasets.mnist
 (x_train,y_train),(x_test,y_test)=mnist.load_data()
 x_train,x_test =x_train/255.0,x_test/255.0
-y_train=tf.one_hot(y_train,10)
+y_train=tf.one_hot(y_train,10).numpy()
 cnn=c.cnn()                                #create class object
 kernel=k.kernel(cnn)                 #start kernel
 kernel.core=tf                           #use core
@@ -45,7 +45,7 @@ import threading
 mnist=tf.keras.datasets.mnist
 (x_train,y_train),(x_test,y_test)=mnist.load_data()
 x_train,x_test =x_train/255.0,x_test/255.0
-y_train=tf.one_hot(y_train,10)
+y_train=tf.one_hot(y_train,10).numpy()
 cnn=c.cnn()                                #create class object
 kernel=k.kernel(cnn)   #start kernel
 kernel.core=tf                            #use core
@@ -74,7 +74,7 @@ import threading
 mnist=tf.keras.datasets.mnist
 (x_train,y_train),(x_test,y_test)=mnist.load_data()
 x_train,x_test =x_train/255.0,x_test/255.0
-y_train=tf.one_hot(y_train,10)
+y_train=tf.one_hot(y_train,10).numpy()
 cnn=c.cnn()                                #create class object
 kernel=k.kernel(cnn)   #start kernel
 kernel.core=tf                            #use core
