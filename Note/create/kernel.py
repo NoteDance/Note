@@ -275,7 +275,7 @@ class kernel:
     
     
     @function
-    def opt(self,data_batch,labels_batch,t=None):
+    def opt(self,data,labels,t=None):
         try:
             if self.core.DType!=None:
                 pass
@@ -283,17 +283,17 @@ class kernel:
                 if self.nn.gradient!=None:
                     pass
                 if self.thread==None:
-                    output=self.nn.fp(data_batch)
+                    output=self.nn.fp(data)
                 else:
-                    output=self.nn.fp(data_batch,t)
-                loss=self.nn.loss(output,labels_batch)
+                    output=self.nn.fp(data,t)
+                loss=self.nn.loss(output,labels)
             except AttributeError:
-                with self.core.GradientTape(persistent=True) as tape:
+                with self.core.GradientTape() as tape:
                     if self.thread==None:
-                        output=self.nn.fp(data_batch)
+                        output=self.nn.fp(data)
                     else:
-                        output=self.nn.fp(data_batch,t)
-                    loss=self.nn.loss(output,labels_batch)
+                        output=self.nn.fp(data,t)
+                    loss=self.nn.loss(output,labels)
             if self.ol==None:
                 try:
                     if self.thread==None:
