@@ -182,137 +182,138 @@ class kernel:
         return episode
     
     
-    def core_opt(self,loss=None,value=None,TD=None,action_batch=None):
-        try:
-            if self.core.DType!=None:
-                pass
-            if len(self.state_pool)<self.batch:
+    def tf_opt(self,state_batch=None,action_batch=None,next_state_batch=None,reward_batch=None):
+        if len(self.state_pool)<self.batch:
+            state_batch=self.state_pool 
+            action_batch=self.action_pool
+            next_state_batch=self.next_state_pool
+            reward_batch=self.reward_pool  
+        with self.core.GradientTape() as tape:
+            if type(self.nn.nn)!=list:
+                loss=self.nn.loss(self.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
+            elif len(self.nn.param)==4:
+                value=self.nn.nn[0](self.state_pool,p=0)
+                TD=self.core.reduce_mean((self.reward_pool+self.discount*self.nn.nn[0](self.next_state_pool,p=2)-value)**2)
+            else:
+                value=self.nn.nn[0](state_batch)
+                TD=self.core.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch)-value)**2)  
+        if type(self.nn.nn)!=list:
+            gradient=tape.gradient(loss,self.nn.param[0])
+            self.opt(gradient,self.nn.param[0])
+            return loss
+        elif len(self.nn.param)==4:
+            value_gradient=tape.gradient(TD,self.nn.param[0])
+            actor_gradient=tape.gradient(value,self.action_pool)*tape.gradient(self.action_pool,self.nn.param[1])
+            self.opt(value_gradient,actor_gradient,self.nn.param)
+            return TD
+        else:
+            value_gradient=tape.gradient(TD,self.nn.param[0])
+            actor_gradient=TD*tape.gradient(self.core.math.log(action_batch),self.nn.param[1])
+            self.opt(value_gradient,actor_gradient,self.nn.param)
+            return TD
+    
+    
+    def tf_opt_t(self,data):
+        with self.core.GradientTape() as tape:
+            if type(self.nn.nn)!=list:
+                loss=self.nn.loss(self.nn.nn,data[0],data[1],data[2],data[3])				
+            elif len(self.nn.param)==4:
+                value=self.nn.nn[0](data[0],p=0)
+                TD=self.core.reduce_mean((data[3]+self.discount*self.nn.nn[0](data[2],p=2)-value)**2)
+            else:  
+                value=self.nn.nn[0](data[0])
+                TD=self.core.reduce_mean((data[3]+self.discount*self.nn.nn[0](data[2])-value)**2)
+        if self.thread_lock!=None:
+            if self.PO==1:
                 if type(self.nn.nn)!=list:
-                    gradient=self.tape.gradient(loss,self.nn.param[0])
+                    gradient=tape.gradient(loss,self.nn.param[0])
                     self.opt(gradient,self.nn.param[0])
                 elif len(self.nn.param)==4:
-                    value_gradient=self.tape.gradient(TD,self.nn.param[0])
-                    actor_gradient=self.tape.gradient(value,self.action_pool)*self.tape.gradient(self.action_pool,self.nn.param[1])
+                    value_gradient=tape.gradient(TD,self.nn.param[0])				
+                    actor_gradient=tape.gradient(value,data[1])*tape.gradient(data[1],self.nn.param[1])
+                    loss=TD
                     self.opt(value_gradient,actor_gradient,self.nn.param)
                 else:
-                    value_gradient=self.tape.gradient(TD,self.nn.param[0])				
-                    actor_gradient=TD*self.tape.gradient(self.core.math.log(self.action_pool),self.nn.param[1])
+                    value_gradient=tape.gradient(TD,self.nn.param[0])				
+                    actor_gradient=TD*tape.gradient(self.core.math.log(data[1]),self.nn.param[1])
+                    loss=TD
                     self.opt(value_gradient,actor_gradient,self.nn.param)
             else:
                 if type(self.nn.nn)!=list:
-                    gradient=self.tape.gradient(loss,self.nn.param[0])
-                    self.opt(gradient,self.nn.param[0])
+                    self.thread_lock.acquire()
+                    self.param=self.nn.param
+                    self.gradient=tape.gradient(loss,self.param[0])
+                    self.thread_lock.release()
+                    self.thread_lock.acquire()
+                    self.opt(self.gradient,self.param[0])
+                    self.thread_lock.release()
                 elif len(self.nn.param)==4:
-                    value_gradient=self.tape.gradient(TD,self.nn.param[0])
-                    actor_gradient=self.tape.gradient(value,self.action_pool)*self.tape.gradient(self.action_pool,self.nn.param[1])
-                    self.opt(value_gradient,actor_gradient,self.nn.param)
+                    self.thread_lock.acquire()
+                    self.param=self.nn.param
+                    self.value_gradient=tape.gradient(TD,self.param[0])				
+                    self.actor_gradient=tape.gradient(value,data[1])*tape.gradient(data[1],self.param[1])
+                    self.thread_lock.release()
+                    loss=TD
+                    self.thread_lock.acquire()
+                    self.opt(self.value_gradient,self.actor_gradient,self.param)
+                    self.thread_lock.release()
                 else:
-                    value_gradient=self.tape.gradient(TD,self.nn.param[0])
-                    actor_gradient=TD*self.tape.gradient(self.core.math.log(action_batch),self.nn.param[1])
-                    self.opt(value_gradient,actor_gradient,self.nn.param)
+                    self.thread_lock.acquire()
+                    self.param=self.nn.param
+                    self.value_gradient=tape.gradient(TD,self.param[0])				
+                    self.actor_gradient=TD*tape.gradient(self.core.math.log(data[1]),self.param[1])
+                    self.thread_lock.release()
+                    loss=TD
+                    self.thread_lock.acquire()
+                    self.opt(self.value_gradient,self.actor_gradient,self.nn.param)
+                    self.thread_lock.release()
+        else:
+            if type(self.nn.nn)!=list:
+                gradient=tape.gradient(loss,self.nn.param[0])
+                self.opt(gradient,self.nn.param[0])
+            elif len(self.nn.param)==4:
+                value_gradient=tape.gradient(TD,self.nn.param[0])				
+                actor_gradient=tape.gradient(value,data[1])*tape.gradient(data[1],self.nn.param[1])
+                loss=TD
+                self.opt(value_gradient,actor_gradient,self.nn.param)
+            else:
+                value_gradient=tape.gradient(TD,self.nn.param[0])				
+                actor_gradient=TD*tape.gradient(self.core.math.log(data[1]),self.nn.param[1])
+                loss=TD
+                self.opt(value_gradient,actor_gradient,self.nn.param)
+        return loss
+    
+    
+    def opt(self,state_batch=None,action_batch=None,next_state_batch=None,reward_batch=None):
+        try:
+            if self.core.DType!=None:
+                pass
+            loss,TD=self.opt(state_batch,action_batch,next_state_batch,reward_batch)
+            if type(self.nn.nn)!=list:
+                return loss
+            elif len(self.nn.param)==4:
+                return TD
+            else:
+                return TD
         except AttributeError:
             pass
     
     
-    def core_opt_t(self,data=None,loss=None,value=None,TD=None):
+    def opt_t(self,data=None):
         try:
             if self.core.DType!=None:
                 pass
-            if self.thread_lock!=None:
-                if self.PO==1:
-                    if type(self.nn.nn)!=list:
-                        gradient=self.tape.gradient(loss,self.nn.param[0])
-                        self.opt(gradient,self.nn.param[0])
-                    elif len(self.nn.param)==4:
-                        value_gradient=self.tape.gradient(TD,self.nn.param[0])				
-                        actor_gradient=self.tape.gradient(value,data[1])*self.tape.gradient(data[1],self.nn.param[1])
-                        loss=TD
-                        self.opt(value_gradient,actor_gradient,self.nn.param)
-                    else:
-                        value_gradient=self.tape.gradient(TD,self.nn.param[0])				
-                        actor_gradient=TD*self.tape.gradient(self.core.math.log(data[1]),self.nn.param[1])
-                        loss=TD
-                        self.opt(value_gradient,actor_gradient,self.nn.param)
-                else:
-                    if type(self.nn.nn)!=list:
-                        self.thread_lock.acquire()
-                        self.param=self.nn.param
-                        self.gradient=self.tape.gradient(loss,self.param[0])
-                        self.thread_lock.release()
-                        self.thread_lock.acquire()
-                        self.opt(self.gradient,self.param[0])
-                        self.thread_lock.release()
-                    elif len(self.nn.param)==4:
-                        self.thread_lock.acquire()
-                        self.param=self.nn.param
-                        self.value_gradient=self.tape.gradient(TD,self.param[0])				
-                        self.actor_gradient=self.tape.gradient(value,data[1])*self.tape.gradient(data[1],self.param[1])
-                        self.thread_lock.release()
-                        loss=TD
-                        self.thread_lock.acquire()
-                        self.opt(self.value_gradient,self.actor_gradient,self.param)
-                        self.thread_lock.release()
-                    else:
-                        self.thread_lock.acquire()
-                        self.param=self.nn.param
-                        self.value_gradient=self.tape.gradient(TD,self.param[0])				
-                        self.actor_gradient=TD*self.tape.gradient(self.core.math.log(data[1]),self.param[1])
-                        self.thread_lock.release()
-                        loss=TD
-                        self.thread_lock.acquire()
-                        self.opt(self.value_gradient,self.actor_gradient,self.nn.param)
-                        self.thread_lock.release()
-            else:
-                if type(self.nn.nn)!=list:
-                    gradient=self.tape.gradient(loss,self.nn.param[0])
-                    self.opt(gradient,self.nn.param[0])
-                elif len(self.nn.param)==4:
-                    value_gradient=self.tape.gradient(TD,self.nn.param[0])				
-                    actor_gradient=self.tape.gradient(value,data[1])*self.tape.gradient(data[1],self.nn.param[1])
-                    loss=TD
-                    self.opt(value_gradient,actor_gradient,self.nn.param)
-                else:
-                    value_gradient=self.tape.gradient(TD,self.nn.param[0])				
-                    actor_gradient=TD*self.tape.gradient(self.core.math.log(data[1]),self.nn.param[1])
-                    loss=TD
-                    self.opt(value_gradient,actor_gradient,self.nn.param)
+            loss=self.tf_opt_t(data)
         except AttributeError:
             pass
-        return
+        return loss
     
     
     def _train(self):
         if self.end_loss!=None:
             self.param=self.nn.param
         if len(self.state_pool)<self.batch:
-            try:
-                if self.core.DType!=None:
-                    pass
-                with self.core.GradientTape() as tape:
-                    self.tape=tape
-                    if type(self.nn.nn)!=list:
-                        loss=self.nn.loss(self.nn.nn,self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool)				
-                    elif len(self.nn.param)==4:
-                        value=self.nn.nn[0](self.state_pool,p=0)
-                        TD=self.core.reduce_mean((self.reward_pool+self.discount*self.nn.nn[0](self.next_state_pool,p=2)-value)**2)
-                    else:
-                        value=self.nn.nn[0](self.state_pool)
-                        TD=self.core.reduce_mean((self.reward_pool+self.discount*self.nn.nn[0](self.next_state_pool)-value)**2)
-            except AttributeError:
-                if type(self.nn.nn)!=list:
-                    loss=self.nn.loss(self.nn.nn,self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool)				
-                elif len(self.nn.param)==4:
-                    value=self.nn.nn[0](self.state_pool,p=0)
-                    TD=self.core.reduce_mean((self.reward_pool+self.discount*self.nn.nn[0](self.next_state_pool,p=2)-value)**2)
-                else:
-                    value=self.nn.nn[0](self.state_pool)
-                    TD=self.core.reduce_mean((self.reward_pool+self.discount*self.nn.nn[0](self.next_state_pool)-value)**2)
-            if type(self.nn.nn)!=list:
-                self.core_opt(loss=loss)
-            elif len(self.nn.param)==4:
-                self.core_opt(value=value,TD=TD)
-            else:
-                self.core_opt(value=value,TD=TD)
+            self.opt()
             if self.update_step!=None:
                 if self.a%self.update_step==0:
                     self.nn.update_param(self.nn.param)
@@ -330,76 +331,16 @@ class kernel:
                     pass
                 for j in range(batches):
                     state_batch,action_batch,next_state_batch,reward_batch=self.nn.data_func(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
-                    try:
-                        if self.core.DType!=None:
-                            pass
-                        with self.core.GradientTape() as tape:
-                            self.tape=tape
-                            if type(self.nn.nn)!=list:
-                                batch_loss=self.nn.loss(self.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
-                            elif len(self.nn.param)==4:
-                                value=self.nn.nn[0](self.state_pool,p=0)
-                                TD=self.core.reduce_mean((self.reward_pool+self.discount*self.nn.nn[0](self.next_state_pool,p=2)-value)**2)
-                            else:
-                                value=self.nn.nn[0](state_batch)
-                                TD=self.core.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch)-value)**2)
-                    except AttributeError:
-                        if type(self.nn.nn)!=list:
-                            batch_loss=self.nn.loss(self.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
-                        elif len(self.nn.param)==4:
-                            value=self.nn.nn[0](self.state_pool,p=0)
-                            TD=self.core.reduce_mean((self.reward_pool+self.discount*self.nn.nn[0](self.next_state_pool,p=2)-value)**2)
-                        else:
-                            value=self.nn.nn[0](state_batch)
-                            TD=self.core.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch)-value)**2)
-                    if type(self.nn.nn)!=list:
-                        self.core_opt(loss=batch_loss)
-                    elif len(self.nn.param)==4:
-                        self.core_opt(value=value,TD=TD)
-                    else:
-                        self.core_opt(value=value,TD=TD,action_batch=action_batch)
-                    if type(self.nn.nn)!=list:
-                        loss+=batch_loss
-                    else:
-                        loss+=TD
+                    batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch)
+                    loss+=batch_loss
                     try:
                         self.nn.bc=j
                     except AttributeError:
                         pass
                 if len(self.state_pool)%self.batch!=0:
                     state_batch,action_batch,next_state_batch,reward_batch=self.nn.data_func(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
-                    try:
-                        if self.core.DType!=None:
-                            pass
-                        with self.core.GradientTape() as tape:
-                            self.tape=tape
-                            if type(self.nn.nn)!=list:
-                                batch_loss=self.nn.loss(self.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
-                            elif len(self.nn.param)==4:
-                                value=self.nn.nn[0](self.state_pool,p=0)
-                                TD=self.core.reduce_mean((self.reward_pool+self.discount*self.nn.nn[0](self.next_state_pool,p=2)-value)**2)
-                            else:
-                                value=self.nn.nn[0](state_batch)
-                                TD=self.core.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch)-value)**2)
-                    except AttributeError:
-                        if type(self.nn.nn)!=list:
-                            batch_loss=self.nn.loss(self.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
-                        elif len(self.nn.param)==4:
-                            value=self.nn.nn[0](self.state_pool,p=0)
-                            TD=self.core.reduce_mean((self.reward_pool+self.discount*self.nn.nn[0](self.next_state_pool,p=2)-value)**2)
-                        else:
-                            value=self.nn.nn[0](state_batch)
-                            TD=self.core.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch)-value)**2)
-                    if type(self.nn.nn)!=list:
-                        self.core_opt(loss=batch_loss)
-                    elif len(self.nn.param)==4:
-                        self.core_opt(value=value,TD=TD)
-                    else:
-                        self.core_opt(value=value,TD=TD,action_batch=action_batch)
-                    if type(self.nn.nn)!=list:
-                        loss+=batch_loss
-                    else:
-                        loss+=TD
+                    batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch)
+                    loss+=batch_loss
                     try:
                         self.nn.bc+=1
                     except AttributeError:
@@ -412,38 +353,8 @@ class kernel:
                 except AttributeError:
                     pass
                 for state_batch,action_batch,next_state_batch,reward_batch in train_ds:
-                    try:
-                        if self.core.DType!=None:
-                            pass
-                        with self.core.GradientTape() as tape:
-                            self.tape=tape
-                            if type(self.nn.nn)!=list:
-                                batch_loss=self.nn.loss(self.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
-                            elif len(self.nn.param)==4:
-                                value=self.nn.nn[0](self.state_pool,p=0)
-                                TD=self.core.reduce_mean((self.reward_pool+self.discount*self.nn.nn[0](self.next_state_pool,p=2)-value)**2)
-                            else:
-                                value=self.nn.nn[0](state_batch)
-                                TD=self.core.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch)-value)**2)
-                    except AttributeError:
-                        if type(self.nn.nn)!=list:
-                            batch_loss=self.nn.loss(self.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
-                        elif len(self.nn.param)==4:
-                            value=self.nn.nn[0](self.state_pool,p=0)
-                            TD=self.core.reduce_mean((self.reward_pool+self.discount*self.nn.nn[0](self.next_state_pool,p=2)-value)**2)
-                        else:
-                            value=self.nn.nn[0](state_batch)
-                            TD=self.core.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch)-value)**2)
-                    if type(self.nn.nn)!=list:
-                        self.core_opt(loss=batch_loss)
-                    elif len(self.nn.param)==4:
-                        self.core_opt(value=value,TD=TD)
-                    else:
-                        self.core_opt(value=value,TD=TD,action_batch=action_batch)
-                    if type(self.nn.nn)!=list:
-                        loss+=batch_loss
-                    else:
-                        loss+=TD
+                    batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch)
+                    loss+=batch_loss
                     j+=1
                     try:
                         self.nn.bc+=1
@@ -731,40 +642,11 @@ class kernel:
         else:
             while True:
                 data=self.ol()
-                try:
-                    if self.core.DType!=None:
-                        pass
-                    with self.core.GradientTape() as tape:
-                        self.tape=tape
-                        if type(self.nn.nn)!=list:
-                            loss=self.nn.loss(self.nn.nn,data[0],data[1],data[2],data[3])				
-                        elif len(self.nn.param)==4:
-                            value=self.nn.nn[0](data[0],p=0)
-                            TD=self.core.reduce_mean((data[3]+self.discount*self.nn.nn[0](data[2],p=2)-value)**2)
-                        else:  
-                            value=self.nn.nn[0](data[0])
-                            TD=self.core.reduce_mean((data[3]+self.discount*self.nn.nn[0](data[2])-value)**2)
-                except AttributeError:
-                    if type(self.nn.nn)!=list:
-                        loss=self.nn.loss(self.nn.nn,data[0],data[1],data[2],data[3])				
-                    elif len(self.nn.param)==4:
-                        value=self.nn.nn[0](data[0],p=0)
-                        TD=self.core.reduce_mean((data[3]+self.discount*self.nn.nn[0](data[2],p=2)-value)**2)
-                    else:  
-                        value=self.nn.nn[0](data[0])
-                        TD=self.core.reduce_mean((data[3]+self.discount*self.nn.nn[0](data[2])-value)**2)
-                if type(self.nn.nn)!=list:
-                    self.core_opt_t(data=data,loss=loss)
-                elif len(self.nn.param)==4:
-                    self.core_opt_t(data=data,value=value,TD=TD)
-                else:  
-                    self.core_opt_t(data=data,value=value,TD=TD)
+                loss=self.opt_t(data)
                 if self.thread_lock!=None:
                     self.thread_lock.acquire()
-                    if len(self.loss_list)==0:
-                        self.loss_list.append(loss.numpy())
-                    else:
-                        self.loss_list[0]=loss.numpy()
+                    loss=loss.numpy()
+                    self.nn.train_loss.append(loss.astype(np.float32))
                     try:
                         self.nn.ec+=1
                     except AttributeError:
@@ -772,10 +654,8 @@ class kernel:
                     self.total_e+=1
                     self.thread_lock.release()
                 else:
-                    if len(self.loss_list)==0:
-                        self.loss_list.append(loss.numpy())
-                    else:
-                        self.loss_list[0]=loss.numpy()
+                    loss=loss.numpy()
+                    self.nn.train_loss.append(loss.astype(np.float32))
                     try:
                         self.nn.ec+=1
                     except AttributeError:
