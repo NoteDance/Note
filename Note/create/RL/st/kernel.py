@@ -1,3 +1,4 @@
+from tensorflow import function
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
@@ -182,6 +183,7 @@ class kernel:
         return episode
     
     
+    @function
     def tf_opt(self,state_batch=None,action_batch=None,next_state_batch=None,reward_batch=None):
         if len(self.state_pool)<self.batch:
             state_batch=self.state_pool 
@@ -213,6 +215,7 @@ class kernel:
             return TD
     
     
+    @function
     def tf_opt_t(self,data):
         with self.core.GradientTape() as tape:
             if type(self.nn.nn)!=list:
