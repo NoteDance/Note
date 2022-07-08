@@ -1025,7 +1025,7 @@ class kernel:
                 output=self.nn.fp(data[0])
                 train_loss=self.nn.loss(output,data[1])
                 loss=train_loss.numpy()
-                self.nn.train_loss=loss.astype(np.float32)
+                self.nn.train_loss.append(loss.astype(np.float32))
                 if save!=None:
                     self.save()
                 try:
