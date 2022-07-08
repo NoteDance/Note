@@ -1417,6 +1417,7 @@ class kernel:
                 self.nn.oopt=None
                 pickle.dump(self.nn,output_file)
                 self.nn.oopt=opt
+        pickle.dump(opt.get_config(),output_file)
         pickle.dump(self.ol,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.end_loss,output_file)
@@ -1459,6 +1460,7 @@ class kernel:
             self.nn.km=1
         except AttributeError:
             pass
+        self.config=pickle.load(input_file)
         self.ol=pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
