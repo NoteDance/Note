@@ -34,6 +34,8 @@ Note have two types of parallel optimization:
 1. not parallel computing gradient and optimizing.
 2. parallel computing gradient and optimizing.
 
+**Use second parallel optimization to train on mnist,speed was increased by two times!**
+
 
 # Multithreading：
 simple example:
