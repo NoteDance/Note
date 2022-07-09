@@ -354,17 +354,11 @@ class kernel:
         try:
             if self.nn.gradient!=None:
                 pass
-            if self.thread==None:
-                output=self.nn.fp(data)
-            else:
-                output=self.nn.fp(data,t)
+            output=self.nn.fp(data)
             loss=self.nn.loss(output,labels)
         except AttributeError:
             with self.core.GradientTape() as tape:
-                if self.thread==None:
-                    output=self.nn.fp(data)
-                else:
-                    output=self.nn.fp(data,t)
+                output=self.nn.fp(data)
                 loss=self.nn.loss(output,labels)
         if self.PO==1:
             try:
@@ -399,7 +393,7 @@ class kernel:
                 except TypeError:
                     self.nn.oopt(self.gradient,self.nn.param)
             self.thread_lock.release()
-        return loss,output
+        return output,loss
     
     
     def opt(self,data,labels,t=None):
