@@ -367,73 +367,38 @@ class kernel:
                     output=self.nn.fp(data,t)
                 loss=self.nn.loss(output,labels)
         if self.PO==1:
-            if self.batch!=None:
+            try:
+                if self.nn.opt!=None:
+                    pass
+                gradient=tape.gradient(loss,self.nn.param)
+                self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+            except AttributeError:
+                gradient=self.nn.gradient(output,loss,self.nn.param)
                 try:
-                    if self.nn.opt!=None:
-                        pass
-                    gradient=tape.gradient(loss,self.nn.param)
-                    self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
-                except AttributeError:
-                    gradient=self.nn.gradient(output,loss,self.nn.param)
-                    try:
-                        self.nn.oopt(self.gradient,self.nn.param,t)
-                    except TypeError:
-                        self.nn.oopt(self.gradient,self.nn.param)
-            else:
-                try:
-                    if self.nn.opt!=None:
-                        pass
-                    gradient=tape.gradient(loss,self.nn.param)
-                    self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
-                except AttributeError:
-                    gradient=self.nn.gradient(output,loss,self.nn.param)
-                    try:
-                        self.nn.oopt(self.gradient,self.nn.param,t)
-                    except TypeError:
-                        self.nn.oopt(self.gradient,self.nn.param)
+                    self.nn.oopt(self.gradient,self.nn.param,t)
+                except TypeError:
+                    self.nn.oopt(self.gradient,self.nn.param)
         else:
-            if self.batch!=None:
-                self.thread_lock.acquire()
-                self.param=self.nn.param
+            self.thread_lock.acquire()
+            self.param=self.nn.param
+            try:
+                if self.nn.opt!=None:
+                    pass
+                self.gradient=tape.gradient(loss,self.param)
+            except AttributeError:
+                self.gradient=self.nn.gradient(output,loss,self.param)
+            self.thread_lock.release()
+            self.thread_lock.acquire()
+            try:
+                if self.nn.opt!=None:
+                    pass
+                self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
+            except AttributeError:
                 try:
-                    if self.nn.opt!=None:
-                        pass
-                    self.gradient=tape.gradient(loss,self.param)
-                except AttributeError:
-                    self.gradient=self.nn.gradient(output,loss,self.param)
-                self.thread_lock.release()
-                self.thread_lock.acquire()
-                try:
-                    if self.nn.opt!=None:
-                        pass
-                    self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
-                except AttributeError:
-                    try:
-                        self.nn.oopt(self.gradient,self.nn.param,t)
-                    except TypeError:
-                        self.nn.oopt(self.gradient,self.nn.param)
-                self.thread_lock.release()
-            else:
-                self.thread_lock.acquire()
-                self.param=self.nn.param
-                try:
-                    if self.nn.opt!=None:
-                        pass
-                    self.gradient=tape.gradient(loss,self.param)
-                except AttributeError:
-                    self.gradient=self.nn.gradient(output,loss,self.param)
-                self.thread_lock.release()
-                self.thread_lock.acquire()
-                try:
-                    if self.nn.opt!=None:
-                        pass
-                    self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
-                except AttributeError:
-                    try:
-                        self.nn.oopt(self.gradient,self.nn.param,t)
-                    except TypeError:
-                        self.nn.oopt(self.gradient,self.nn.param)
-                self.thread_lock.release()
+                    self.nn.oopt(self.gradient,self.nn.param,t)
+                except TypeError:
+                    self.nn.oopt(self.gradient,self.nn.param)
+            self.thread_lock.release()
         return loss,output
     
     
