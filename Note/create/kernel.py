@@ -319,24 +319,24 @@ class kernel:
                         gradient=tape.gradient(loss,self.nn.param)
                         self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
                     else:
-                        self.thread_lock.acquire()
+                        self.thread_lock[0].acquire()
                         self.param=self.nn.param
                         self.gradient=tape.gradient(loss,self.param)
-                        self.thread_lock.release()
-                        self.thread_lock.acquire()
+                        self.thread_lock[0].release()
+                        self.thread_lock[0].acquire()
                         self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
-                        self.thread_lock.release()
+                        self.thread_lock[0].release()
                 except AttributeError:
                     if self.PO==1:
                         gradient=self.nn.gradient(output,loss,self.nn.param)
                         self.nn.oopt(gradient,self.nn.param)
                     else:
-                        self.thread_lock.acquire()
+                        self.thread_lock[0].acquire()
                         self.gradient=self.nn.gradient(output,loss,self.nn.param)
-                        self.thread_lock.release()
-                        self.thread_lock.acquire()
+                        self.thread_lock[0].release()
+                        self.thread_lock[0].acquire()
                         self.nn.oopt(self.gradient,self.nn.param)
-                        self.thread_lock.release()
+                        self.thread_lock[0].release()
             else:
                 try:
                     if self.nn.opt!=None:
@@ -373,7 +373,7 @@ class kernel:
                 except TypeError:
                     self.nn.oopt(self.gradient,self.nn.param)
         else:
-            self.thread_lock.acquire()
+            self.thread_lock[0].acquire()
             self.param=self.nn.param
             try:
                 if self.nn.opt!=None:
@@ -381,8 +381,8 @@ class kernel:
                 self.gradient=tape.gradient(loss,self.param)
             except AttributeError:
                 self.gradient=self.nn.gradient(output,loss,self.param)
-            self.thread_lock.release()
-            self.thread_lock.acquire()
+            self.thread_lock[0].release()
+            self.thread_lock[0].acquire()
             try:
                 if self.nn.opt!=None:
                     pass
@@ -392,7 +392,7 @@ class kernel:
                     self.nn.oopt(self.gradient,self.nn.param,t)
                 except TypeError:
                     self.nn.oopt(self.gradient,self.nn.param)
-            self.thread_lock.release()
+            self.thread_lock[0].release()
         return output,loss
     
     
@@ -625,9 +625,9 @@ class kernel:
                     try:
                         if self.nn.accuracy!=None:
                             pass
-                        self.thread_lock.acquire()
+                        self.thread_lock[0].acquire()
                         batch_acc=self.nn.accuracy(output,labels_batch)
-                        self.thread_lock.release()
+                        self.thread_lock[0].release()
                     except AttributeError:
                         pass
                 try:
@@ -661,9 +661,9 @@ class kernel:
                 try:
                     if self.nn.accuracy!=None:
                         pass
-                    self.thread_lock.acquire()
+                    self.thread_lock[0].acquire()
                     batch_acc=self.nn.accuracy(output,labels_batch)
-                    self.thread_lock.release()
+                    self.thread_lock[0].release()
                 except AttributeError:
                     pass
                 try:
@@ -701,7 +701,7 @@ class kernel:
                     except AttributeError:
                         pass
             else:
-                self.thread_lock.acquire()
+                self.thread_lock[1].acquire()
                 self._train_loss=train_loss.numpy()
                 self.train_loss_list.append(self._train_loss.astype(np.float32))
                 self.train_loss=self._train_loss.astype(np.float32)
@@ -723,7 +723,7 @@ class kernel:
                         self.test_acc_list.append(self.test_acc)
                     except AttributeError:
                         pass
-                self.thread_lock.release()
+                self.thread_lock[1].release()
             if self.stop==True:
                 self.stop_flag=1
             return
@@ -777,7 +777,7 @@ class kernel:
                 train_acc=total_acc.numpy()/batches
             except AttributeError:
                 pass
-            self.thread_lock.acquire()
+            self.thread_lock[1].acquire()
             self.train_loss_list.append(loss.astype(np.float32))
             self.train_loss=loss.astype(np.float32)
             try:
@@ -796,7 +796,7 @@ class kernel:
                 self.test_acc_list.append(self.test_acc)
             except AttributeError:
                 pass
-            self.thread_lock.release()
+            self.thread_lock[1].release()
             return
         else:
             if self.PO==1:
@@ -867,9 +867,14 @@ class kernel:
                         return
                 if type(self.total_epoch)!=list:
                     if self.thread_lock!=None:
-                        self.thread_lock.acquire()
-                        self.total_epoch+=1
-                        self.thread_lock.release()
+                        if type(self.thread_lock)!=list:
+                            self.thread_lock.acquire()
+                            self.total_epoch+=1
+                            self.thread_lock.release()
+                        else:
+                            self.thread_lock[1].acquire()
+                            self.total_epoch+=1
+                            self.thread_lock[1].release() 
                     else:
                         self.epoch+=1
                         self.total_epoch+=1
@@ -925,9 +930,14 @@ class kernel:
                 i+=1
                 if type(self.total_epoch)!=list:
                     if self.thread_lock!=None:
-                        self.thread_lock.acquire()
-                        self.total_epoch+=1
-                        self.thread_lock.release()
+                        if type(self.thread_lock)!=list:
+                            self.thread_lock.acquire()
+                            self.total_epoch+=1
+                            self.thread_lock.release()
+                        else:
+                            self.thread_lock[1].acquire()
+                            self.total_epoch+=1
+                            self.thread_lock[1].release() 
                     else:
                         self.epoch+=1
                         self.total_epoch+=1
