@@ -63,7 +63,7 @@ kernel.core=tf                            #use core
 kernel.thread=2                        #thread count
 kernel.data(x_train,y_train)   #input you data
 kernel.PO=1 or kernel.PO=2
-kernel.thread_lock=threading.Lock()
+kernel.thread_lock=threading.Lock() or kernel.thread_lock=[threading.Lock(),threading.Lock()]
 class thread(threading.Thread):
 	def run(self):
 		kernel.train(32,3)
@@ -96,7 +96,7 @@ kernel.end_flag=True
 kernel.thread=2                        #thread count
 kernel.data(x_train,y_train)   #input you data
 kernel.PO=1 or kernel.PO=2
-kernel.thread_lock=threading.Lock()
+kernel.thread_lock=threading.Lock() or kernel.thread_lock=[threading.Lock(),threading.Lock()]
 class thread(threading.Thread):
 	def run(self):
 		kernel.train(32,3)
