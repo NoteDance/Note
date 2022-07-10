@@ -35,6 +35,13 @@ Note have two types of parallel optimization:
 2. parallel computing gradient and optimizing.
 
 **Use second parallel optimization to train on mnist,speed was increased by more than two times!**
+
+**batch size:32**
+
+**epoch:6**
+
+**thread count:2**
+
 ![1](https://github.com/7NoteDancing/Note-documentation/blob/main/1.png)
 ![2](https://github.com/7NoteDancing/Note-documentation/blob/main/2.png)
 
