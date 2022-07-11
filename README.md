@@ -31,8 +31,8 @@ kernel.train(32,5)         #train neural network
 You can use parallel optimization to speed up neural network training,parallel optimization speed up training by multithreading.
 
 Note have two types of parallel optimization:
-1. not parallel computing gradient and optimizing.
-2. parallel computing gradient and optimizing.
+1. not parallel computing gradient and optimizing.(kernel.PO=1)
+2. parallel computing gradient and optimizing.(kernel.PO=2)
 
 **Use second parallel optimization to train on mnist,speed was increased by more than two times!**
 
@@ -41,6 +41,8 @@ Note have two types of parallel optimization:
 **epoch:6**
 
 **thread count:2**
+
+**Not use parallel optimization to train spending 15s,use parallel optimization to train spending 6.5s.**
 
 ![1](https://github.com/7NoteDancing/Note-documentation/blob/main/1.png)
 ![2](https://github.com/7NoteDancing/Note-documentation/blob/main/2.png)
