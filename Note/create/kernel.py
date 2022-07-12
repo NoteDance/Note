@@ -840,7 +840,6 @@ class kernel:
             for i in range(epoch):
                 if self.stop==True:
                     self.stop_func()
-                self._save()
                 t1=time.time()
                 if self.thread==None:
                     try:
