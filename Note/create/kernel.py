@@ -25,7 +25,6 @@ class kernel:
         self.end_flag=None
         self.save_flag=None
         self.save_epoch=None
-        self.save_and_stop=None
         self.batch=None
         self.epoch=0
         self.end_loss=None
@@ -1166,7 +1165,10 @@ class kernel:
     def suspend_func(self):
         if self.suspend==True:
             if self.thread==None:
-                print('Training have suspended.')
+                if self.save_epoch==None:
+                    print('Training have suspended.')
+                else:
+                    self._save()
             while True:
                 if self.suspend==False:
                     if self.thread==None:
@@ -1202,21 +1204,13 @@ class kernel:
     
     
     def _save(self):
-        if self.thread==None:
-            if self.save_epoch!=None and self.save_and_stop==None:
-                self.save_and_stop=input('Whether to stop training:')
-            if self.save_epoch==self.total_epoch:
-                if self.save_and_stop==True:
-                    self.save(self.total_epoch,False)
-                    self.save_epoch=None
-                    self.save_and_stop=None
-                    print('\nNeural network have saved and training have stopped.')
-                    return
-                self.save(self.total_epoch,False)
-                self.save_epoch=None
-                print('\nNeural network have saved.')
-            elif self.save_epoch!=None and self.save_epoch>self.total_epoch:
-                print('\nsave_epoch>total_epoch')
+        if self.save_epoch==self.total_epoch:
+            self.save(self.total_epoch,False)
+            self.save_epoch=None
+            print('\nNeural network have saved and training have suspended.')
+            return
+        elif self.save_epoch!=None and self.save_epoch>self.total_epoch:
+            print('\nsave_epoch>total_epoch')
         return
     
     
