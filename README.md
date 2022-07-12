@@ -74,7 +74,7 @@ for _ in range(2):
 	_thread.start()
 for _ in range(2):
 	_thread.join()
-kernel.train_loss_list or kernel.train_loss       #view train loss
+kernel.train_loss_list or kernel.train_loss       #view training loss
 ```
 
 Support stop and save in multithreading training.
@@ -108,5 +108,5 @@ for _ in range(2):
 	_thread.start()
 for _ in range(2):
 	_thread.join()
-kernel.train_loss_list or kernel.train_loss       #view train loss
+kernel.train_loss_list or kernel.train_loss       #view training loss
 ```
