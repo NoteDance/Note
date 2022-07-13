@@ -99,6 +99,7 @@ class kernel:
         self.test_loss_list.clear()
         self.test_acc_list.clear()
         self.test_flag=False
+        self.train_counter=0
         self.epoch=0
         self.total_epoch=0
         self.time=0
