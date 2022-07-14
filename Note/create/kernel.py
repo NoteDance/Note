@@ -279,18 +279,30 @@ class kernel:
         try:
             if self.nn.gradient!=None:
                 pass
-            if self.thread==None:
-                output=self.nn.fp(data)
-            else:
-                output=self.nn.fp(data,t)
-            loss=self.nn.loss(output,labels)
-        except AttributeError:
-            with self.core.GradientTape() as tape:
+            try:
                 if self.thread==None:
                     output=self.nn.fp(data)
                 else:
                     output=self.nn.fp(data,t)
                 loss=self.nn.loss(output,labels)
+            except TypeError:
+                if self.thread==None:
+                    output,loss=self.nn.fp(data,labels)
+                else:
+                    output,loss=self.nn.fp(data,labels,t)
+        except AttributeError:
+            with self.core.GradientTape() as tape:
+                try:
+                    if self.thread==None:
+                        output=self.nn.fp(data)
+                    else:
+                        output=self.nn.fp(data,t)
+                    loss=self.nn.loss(output,labels)
+                except TypeError:
+                    if self.thread==None:
+                        output,loss=self.nn.fp(data,labels)
+                    else:
+                        output,loss=self.nn.fp(data,labels,t)
         if self.ol==None:
             try:
                 if self.thread==None:
@@ -354,12 +366,18 @@ class kernel:
         try:
             if self.nn.gradient!=None:
                 pass
-            output=self.nn.fp(data)
-            loss=self.nn.loss(output,labels)
-        except AttributeError:
-            with self.core.GradientTape() as tape:
+            try:
                 output=self.nn.fp(data)
                 loss=self.nn.loss(output,labels)
+            except TypeError:
+                output,loss=self.nn.fp(data,labels)
+        except AttributeError:
+            with self.core.GradientTape() as tape:
+                try:
+                    output=self.nn.fp(data)
+                    loss=self.nn.loss(output,labels)
+                except TypeError:
+                    output,loss=self.nn.fp(data,labels)
         if self.PO==1:
             try:
                 if self.nn.opt!=None:
