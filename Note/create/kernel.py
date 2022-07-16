@@ -400,7 +400,7 @@ class kernel:
             except AttributeError:
                 self.gradient=self.nn.gradient(output,loss,self.param)
             self.thread_lock[0].release()
-            self.thread_lock[0].acquire()
+            self.thread_lock[1].acquire()
             try:
                 if self.nn.opt!=None:
                     pass
@@ -410,7 +410,7 @@ class kernel:
                     self.nn.oopt(self.gradient,self.nn.param,t)
                 except TypeError:
                     self.nn.oopt(self.gradient,self.nn.param)
-            self.thread_lock[0].release()
+            self.thread_lock[1].release()
         return output,loss
     
     
@@ -719,7 +719,7 @@ class kernel:
                     except AttributeError:
                         pass
             else:
-                self.thread_lock[1].acquire()
+                self.thread_lock[2].acquire()
                 self._train_loss=train_loss.numpy()
                 self.train_loss_list.append(self._train_loss.astype(np.float32))
                 self.train_loss=self._train_loss.astype(np.float32)
@@ -741,7 +741,7 @@ class kernel:
                         self.test_acc_list.append(self.test_acc)
                     except AttributeError:
                         pass
-                self.thread_lock[1].release()
+                self.thread_lock[2].release()
             if self.stop==True:
                 self.stop_flag=1
             return
@@ -795,7 +795,7 @@ class kernel:
                 train_acc=total_acc.numpy()/batches
             except AttributeError:
                 pass
-            self.thread_lock[1].acquire()
+            self.thread_lock[2].acquire()
             self.train_loss_list.append(loss.astype(np.float32))
             self.train_loss=loss.astype(np.float32)
             try:
@@ -814,7 +814,7 @@ class kernel:
                 self.test_acc_list.append(self.test_acc)
             except AttributeError:
                 pass
-            self.thread_lock[1].release()
+            self.thread_lock[2].release()
             return
         else:
             if self.PO==1:
@@ -889,9 +889,9 @@ class kernel:
                             self.total_epoch+=1
                             self.thread_lock.release()
                         else:
-                            self.thread_lock[1].acquire()
+                            self.thread_lock[2].acquire()
                             self.total_epoch+=1
-                            self.thread_lock[1].release() 
+                            self.thread_lock[2].release() 
                     else:
                         self.epoch+=1
                         self.total_epoch+=1
@@ -952,9 +952,9 @@ class kernel:
                             self.total_epoch+=1
                             self.thread_lock.release()
                         else:
-                            self.thread_lock[1].acquire()
+                            self.thread_lock[2].acquire()
                             self.total_epoch+=1
-                            self.thread_lock[1].release() 
+                            self.thread_lock[2].release() 
                     else:
                         self.epoch+=1
                         self.total_epoch+=1
