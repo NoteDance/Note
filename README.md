@@ -45,7 +45,7 @@ Note have two types of parallel optimization:
 **Not use parallel optimization to train spending 15s,use parallel optimization to train spending 6.5s.**
 
 ![1](https://github.com/7NoteDancing/Note-documentation/blob/main/1.png)
-
+![2](https://github.com/7NoteDancing/Note-documentation/blob/main/2.png)
 
 
 # Multithreading：
