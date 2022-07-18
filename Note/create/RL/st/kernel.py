@@ -316,7 +316,7 @@ class kernel:
         if self.end_loss!=None:
             self.param=self.nn.param
         if len(self.state_pool)<self.batch:
-            self.opt()
+            _=self.opt()
             if self.update_step!=None:
                 if self.a%self.update_step==0:
                     self.nn.update_param(self.nn.param)
