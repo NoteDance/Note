@@ -51,6 +51,8 @@ neural network example:https://github.com/7NoteDancing/Note-documentation/tree/m
 
 
 # Multithreading：
+neural network example:https://github.com/7NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/DL
+
 simple example:
 ```python
 import Note.create.kernel as k   #import kernel
