@@ -335,9 +335,9 @@ class kernel:
                         self.param=self.nn.param
                         self.gradient=tape.gradient(loss,self.param)
                         self.thread_lock[0].release()
-                        self.thread_lock[0].acquire()
+                        self.thread_lock[1].acquire()
                         self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
-                        self.thread_lock[0].release()
+                        self.thread_lock[1].release()
                 except AttributeError:
                     if self.PO==1:
                         gradient=self.nn.gradient(output,loss,self.nn.param)
@@ -346,9 +346,9 @@ class kernel:
                         self.thread_lock[0].acquire()
                         self.gradient=self.nn.gradient(output,loss,self.nn.param)
                         self.thread_lock[0].release()
-                        self.thread_lock[0].acquire()
+                        self.thread_lock[1].acquire()
                         self.nn.oopt(self.gradient,self.nn.param)
-                        self.thread_lock[0].release()
+                        self.thread_lock[1].release()
             else:
                 try:
                     if self.nn.opt!=None:
