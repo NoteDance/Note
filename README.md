@@ -44,6 +44,8 @@ neural network example:https://github.com/7NoteDancing/Note-documentation/tree/m
 
 **thread count:2**
 
+**PO:2**
+
 **Not use parallel optimization to train spending 15s,use parallel optimization to train spending 6.8s.**
 
 ![1](https://github.com/7NoteDancing/Note-documentation/blob/main/1.png)
