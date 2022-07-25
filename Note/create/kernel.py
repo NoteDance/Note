@@ -1,5 +1,5 @@
 import tensorflow as tf
-import Note.creat.nn as n
+import Note.creat.DL.nn as n
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
@@ -94,7 +94,7 @@ class kernel:
             return
     
     
-    def train(self,batch=None,epoch=None,test=False,test_batch=None,nn_path=None,one=True,processor=None):
+    def train(self,batch=None,epoch=None,test=False,test_batch=None,save=None,one=True,processor=None):
         with tf.name_scope('parameter'):
             self.parameter=self.nn.parameter
         with tf.name_scope('hyperparameter'):
@@ -266,12 +266,12 @@ class kernel:
                     print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
                 else:
                     print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
-                if nn_path!=None and i%epoch*2==0:
-                    self.save(nn_path,i,one)
+                if save!=None and i%epoch*2==0:
+                    self.save(i,one)
             t2=time.time()
             self.time+=(t2-t1)
-        if nn_path!=None:
-            self.save(nn_path)
+        if save!=None:
+            self.save()
         self.time=self.time-int(self.time)
         if self.time<0.5:
             self.time=int(self.time)
@@ -517,17 +517,13 @@ class kernel:
         return
     
     
-    def save(self,path,i=None,one=True):
+    def save(self,i=None,one=True):
         if one==True:
-            output_file=open(path+'\save.dat','wb')
-            path=path+'\save.dat'
-            index=path.rfind('\\')
-            parameter_file=open(path.replace(path[index+1:],'parameter.dat'),'wb')
+            output_file=open('save.dat','wb')
+            parameter_file=open('parameter.dat','wb')
         else:
-            output_file=open(path+'\save-{0}.dat'.format(i+1),'wb')
-            path=path+'\save-{0}.dat'.format(i+1)
-            index=path.rfind('\\')
-            parameter_file=open(path.replace(path[index+1:],'parameter-{0}.dat'.format(i+1)),'wb')
+            output_file=open('save-{0}.dat'.format(i+1),'wb')
+            parameter_file=open('parameter-{0}.dat'.format(i+1),'wb')
         with tf.name_scope('save_parameter'):  
             pickle.dump(self.parameter,parameter_file)
         with tf.name_scope('save_hyperparameter'):
