@@ -40,7 +40,7 @@ Note have two types of parallel optimization:
 
 neural network example:https://github.com/7NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/DL
 
-**Use second parallel optimization to train on mnist,speed was increased by more than two times!**
+**Use second parallel optimization to train on MNIST,speed was increased by more than 2 times!**
 
 **batch size:32**
 
@@ -50,10 +50,24 @@ neural network example:https://github.com/7NoteDancing/Note-documentation/tree/m
 
 **PO:2**
 
+**GPU:GTX 1050 Ti**
+
 **Not use parallel optimization to train spending 15s,use parallel optimization to train spending 6.8s.**
 
 ![1](https://github.com/7NoteDancing/Note-documentation/blob/main/1.png)
 ![2](https://github.com/7NoteDancing/Note-documentation/blob/main/2.png)
+
+**Use second parallel optimization to train on CIFAR10,speed was increased by more than 1.2 times,Loss was reduced by 34 percent.**
+
+**batch size:32**
+
+**epoch:10**
+
+**thread count:5**
+
+**PO:2**
+
+**GPU:GTX 1050 Ti**
 
 
 # Multithreading：
