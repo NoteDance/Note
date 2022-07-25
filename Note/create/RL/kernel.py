@@ -587,7 +587,7 @@ class kernel:
         return
     
     
-    def save(self,path):
+    def save(self):
         self.nn.param=None
         output_file=open('save.dat','wb')
         parameter_file=open('parameter.dat','wb')
