@@ -2,6 +2,10 @@
 ## documentation:https://github.com/7NoteDancing/Note-documentation/blob/main/Note%204.0%20documentation/DL/kernel.txt
 
 
+# Introduction:
+Note is an AI system that have kernel for deep learning and reinforcement learning.It retains the freedom of tensorflow to implement neural networks,eliminates a lot of tedious work and has many functions.
+
+
 # Train:
 If you done your neural network,you can use kernel to train.
 
@@ -70,8 +74,8 @@ kernel=k.kernel(cnn)   #start kernel
 kernel.core=tf                            #use core
 kernel.thread=2                        #thread count
 kernel.data(x_train,y_train)   #input you data
-kernel.PO=1 or kernel.PO=2
-kernel.thread_lock=threading.Lock() or kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock()]
+kernel.PO=2
+kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock()]
 class thread(threading.Thread):
 	def run(self):
 		kernel.train(32,3)
@@ -104,8 +108,8 @@ kernel.end_loss=0.7
 kernel.end_flag=True
 kernel.thread=2                        #thread count
 kernel.data(x_train,y_train)   #input you data
-kernel.PO=1 or kernel.PO=2
-kernel.thread_lock=threading.Lock() or kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock()]
+kernel.PO=2
+kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock()]
 class thread(threading.Thread):
 	def run(self):
 		kernel.train(32,3)
