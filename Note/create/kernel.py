@@ -397,7 +397,7 @@ class kernel:
                     pass
                 self.gradient=tape.gradient(loss,self.nn.param)
             except AttributeError:
-                self.gradient=self.nn.gradient(output,loss,self.param)
+                self.gradient=self.nn.gradient(output,loss,self.nn.param)
             self.thread_lock[0].release()
             self.thread_lock[1].acquire()
             try:
