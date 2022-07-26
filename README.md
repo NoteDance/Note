@@ -42,6 +42,8 @@ neural network example:https://github.com/7NoteDancing/Note-documentation/tree/m
 
 **Use second parallel optimization to train on MNIST,speed was increased by more than 2 times!**
 
+**Tensorflow version:2.9.1**
+
 **batch size:32**
 
 **epoch:6**
@@ -58,6 +60,8 @@ neural network example:https://github.com/7NoteDancing/Note-documentation/tree/m
 ![2](https://github.com/7NoteDancing/Note-documentation/blob/main/2.png)
 
 **Use second parallel optimization to train on CIFAR10,speed was increased by more than 1.2 times,loss was reduced by 34 percent.**
+
+**Tensorflow version:2.9.1**
 
 **batch size:32**
 
