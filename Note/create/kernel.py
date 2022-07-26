@@ -332,8 +332,7 @@ class kernel:
                         self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
                     else:
                         self.thread_lock[0].acquire()
-                        self.param=self.nn.param
-                        self.gradient=tape.gradient(loss,self.param)
+                        self.gradient=tape.gradient(loss,self.nn.param)
                         self.thread_lock[0].release()
                         self.thread_lock[1].acquire()
                         self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
