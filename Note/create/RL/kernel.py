@@ -438,6 +438,7 @@ class kernel:
                 self.actor_gradient=TD*tape.gradient(self.core.math.log(action_pool),self.nn.param[1])
                 self.opt(self.value_gradient,self.actor_gradient,self.nn.param)
         else:
+            self.param=self.nn.param
             with self.core.GradientTape() as tape:
                 if type(self.nn.nn)!=list:
                     self.loss[i]=self.nn.loss(self.nn.nn,state_pool,action_pool,next_state_pool,reward_pool)
@@ -448,13 +449,13 @@ class kernel:
                     self.value=self.nn.nn[0](state_pool)
                     self.TD=self.core.reduce_mean((reward_pool+self.discount*self.nn.nn[0](next_state_pool)-self.value)**2)
             if type(self.nn.nn)!=list:
-                self.gradient=tape.gradient(self.loss[i],self.nn.param[0])
+                self.gradient=tape.gradient(self.loss[i],self.param[0])
             elif len(self.nn.param)==4:
-                self.value_gradient=tape.gradient(self.TD,self.nn.param[0])
-                self.actor_gradient=tape.gradient(self.value,action_pool)*tape.gradient(action_pool,self.nn.param[1])
+                self.value_gradient=tape.gradient(self.TD,self.param[0])
+                self.actor_gradient=tape.gradient(self.value,action_pool)*tape.gradient(action_pool,self.param[1])
             else:
-                self.value_gradient=tape.gradient(self.TD,self.nn.param[0])
-                self.actor_gradient=self.TD*tape.gradient(self.core.math.log(action_pool),self.nn.param[1])
+                self.value_gradient=tape.gradient(self.TD,self.param[0])
+                self.actor_gradient=self.TD*tape.gradient(self.core.math.log(action_pool),self.param[1])
         return
     
     
