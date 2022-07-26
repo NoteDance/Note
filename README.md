@@ -57,7 +57,7 @@ neural network example:https://github.com/7NoteDancing/Note-documentation/tree/m
 ![1](https://github.com/7NoteDancing/Note-documentation/blob/main/1.png)
 ![2](https://github.com/7NoteDancing/Note-documentation/blob/main/2.png)
 
-**Use second parallel optimization to train on CIFAR10,speed was increased by more than 1.2 times,Loss was reduced by 34 percent.**
+**Use second parallel optimization to train on CIFAR10,speed was increased by more than 1.2 times,loss was reduced by 34 percent.**
 
 **batch size:32**
 
