@@ -452,20 +452,7 @@ class kernel:
                 index1=j*batch
                 index2=(j+1)*batch
                 data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j)
-                try:
-                    output,batch_loss=self.opt(data_batch,labels_batch,t)
-                except:
-                    while True:
-                        try:
-                            output,batch_loss=self.opt(data_batch,labels_batch,t)
-                            break
-                        except:
-                            if self.thread==None:
-                                _try=input('\nCore unsuccessfully be replaced,try again?:')
-                            if _try==True:
-                                continue
-                            else:
-                                return
+                output,batch_loss=self.opt(data_batch,labels_batch,t)
                 total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc,t=t)
                 if self.thread==None:
                     try:
@@ -482,20 +469,7 @@ class kernel:
                 index1=batches*batch
                 index2=batch-(self.shape0-batches*batch)
                 data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,flag=True)
-                try:
-                    output,batch_loss=self.opt(data_batch,labels_batch,t)
-                except:
-                    while True:
-                        try:
-                            output,batch_loss=self.opt(data_batch,labels_batch,t)
-                            break
-                        except:
-                            if self.thread==None:
-                                _try=input('\nCore unsuccessfully be replaced,try again?:')
-                            if _try==True:
-                                continue
-                            else:
-                                return
+                output,batch_loss=self.opt(data_batch,labels_batch,t)
                 total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc,t=t)
                 if self.thread==None:
                     try:
@@ -556,38 +530,12 @@ class kernel:
                         pass
         elif self.ol==None:
             self.suspend_func()
-            try:
-                output,train_loss=self.opt(self.train_data,self.train_labels,t)
-            except:
-                while True:
-                    try:
-                        output,train_loss=self.opt(self.train_data,self.train_labels,t)
-                        break
-                    except:
-                        if self.thread==None:
-                            _try=input('\nCore unsuccessfully be replaced,try again?:')
-                        if _try==True:
-                            continue
-                        else:
-                            return
+            output,train_loss=self.opt(self.train_data,self.train_labels,t)
             self.loss_acc(output=output,labels_batch=labels_batch,loss=train_loss,test_batch=test_batch,total_loss=total_loss,total_acc=total_acc,t=t)
         else:
             self.suspend_func()
             data=self.ol()
-            try:
-                output,_=self.opt(data[0],output)
-            except:
-                while True:
-                    try:
-                        output,_=self.opt(data[0],output)
-                        break
-                    except:
-                        if self.thread==None:
-                            _try=input('\nCore unsuccessfully be replaced,try again?:')
-                        if _try==True:
-                            continue
-                        else:
-                            return
+            output,_=self.opt(data[0],output)
             train_loss=self.nn.loss(output,data[1])
             loss=train_loss.numpy()
             if self.thread_lock!=None:
