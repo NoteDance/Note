@@ -360,7 +360,7 @@ class kernel:
         return output,loss
     
     
-    @function(reduce_retracing=True)
+    @function
     def tf_opt_t(self,data,labels,t):
         try:
             if self.nn.gradient!=None:
