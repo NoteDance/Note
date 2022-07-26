@@ -244,27 +244,24 @@ class kernel:
             else:
                 if type(self.nn.nn)!=list:
                     self.thread_lock.acquire()
-                    self.param=self.nn.param
-                    self.gradient=tape.gradient(loss,self.param[0])
+                    self.gradient=tape.gradient(loss,self.nn.param[0])
                     self.thread_lock.release()
                     self.thread_lock.acquire()
-                    self.opt(self.gradient,self.param[0])
+                    self.opt(self.gradient,self.nn.param[0])
                     self.thread_lock.release()
                 elif len(self.nn.param)==4:
                     self.thread_lock.acquire()
-                    self.param=self.nn.param
-                    self.value_gradient=tape.gradient(TD,self.param[0])				
-                    self.actor_gradient=tape.gradient(value,data[1])*tape.gradient(data[1],self.param[1])
+                    self.value_gradient=tape.gradient(TD,self.nn.param[0])				
+                    self.actor_gradient=tape.gradient(value,data[1])*tape.gradient(data[1],self.nn.param[1])
                     self.thread_lock.release()
                     loss=TD
                     self.thread_lock.acquire()
-                    self.opt(self.value_gradient,self.actor_gradient,self.param)
+                    self.opt(self.value_gradient,self.actor_gradient,self.nn.param)
                     self.thread_lock.release()
                 else:
                     self.thread_lock.acquire()
-                    self.param=self.nn.param
-                    self.value_gradient=tape.gradient(TD,self.param[0])				
-                    self.actor_gradient=TD*tape.gradient(self.core.math.log(data[1]),self.param[1])
+                    self.value_gradient=tape.gradient(TD,self.nn.param[0])				
+                    self.actor_gradient=TD*tape.gradient(self.core.math.log(data[1]),self.nn.param[1])
                     self.thread_lock.release()
                     loss=TD
                     self.thread_lock.acquire()
