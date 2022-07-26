@@ -534,12 +534,6 @@ class kernel:
             pickle.dump(self.hyperparameter,output_file)
         with tf.name_scope('save_regulation'):
             pickle.dump(self.regulation,output_file)
-        with tf.name_scope('save_optimizer'):
-            pickle.dump(self.opt,output_file)
-            if self.optimizer!=None:
-                pickle.dump(self.optimizer,output_file)
-            else:
-                pickle.dump(self.optimizern,output_file)
         pickle.dump(self.acc_flag1,output_file)
         pickle.dump(self.acc_flag2,output_file)
         pickle.dump(self.shape0,output_file)
@@ -576,12 +570,6 @@ class kernel:
             self.hyperparameter=pickle.load(input_file)
         with tf.name_scope('restore_regulation'):
             self.regulation=pickle.load(input_file)
-        with tf.name_scope('restore_optimizer'):
-            self.opt=pickle.load(input_file)
-            if self.optimizer!=None:
-                self.optimizer=pickle.load(input_file)
-            else:
-                self.optimizern=pickle.load(input_file)
         self.acc_flag1=pickle.load(input_file)
         self.acc_flag2=pickle.load(input_file)
         self.shape0=pickle.load(input_file)
