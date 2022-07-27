@@ -750,7 +750,9 @@ class kernel:
         self.episode_num=self.epi_num
         pickle.dump(self.nn.param,parameter_file)
         self.nn.param=None
+        self.nn.opt=None
         pickle.dump(self.nn,output_file)
+        pickle.dump(self.opt.get_config(),output_file)
         pickle.dump(self.ol,output_file)
         pickle.dump(self.state_pool,output_file)
         pickle.dump(self.action_pool,output_file)
@@ -794,7 +796,7 @@ class kernel:
             self.nn.km=1
         except AttributeError:
             pass
-        self.opt=self.nn.opt
+        self.config=pickle.load(input_file)
         self.ol=pickle.load(input_file)
         self.state_pool=pickle.load(input_file)
         self.action_pool=pickle.load(input_file)
