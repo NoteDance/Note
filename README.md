@@ -38,6 +38,8 @@ Note have two types of parallel optimization:
 1. not parallel computing gradient and optimizing.(kernel.PO=1)
 2. parallel computing gradient and optimizing.(kernel.PO=2)
 
+Second parallel optimization may cause training instability but it can make the loss function jump out of the local minimum.
+
 neural network example:https://github.com/7NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/DL
 
 **Use second parallel optimization to train on MNIST,speed was increased by more than 2 times!**
