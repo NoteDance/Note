@@ -3,6 +3,7 @@ class compiler:
         self.filename=filename
         self.init={'z':'tf.zeros(','n':'tf.random.normal(','u':'tf.random.uniform(','o':'tf.ones('}
         self.operator=['.*','.^','.|','.||','./','.=']
+        self._operator=['*','^','|','||','/','=']
         self.define=dict()
         self.define_list=None
         self.index_list=None
@@ -13,6 +14,7 @@ class compiler:
         self.oj5=''
         self.oj6=['','']
         self.line=''
+        self.test=[]
     
     
     def tf_function(self,oj1=None,oj2=None,oj3=None,oj4=None,oj5=None,oj6=None,init=None):
@@ -33,23 +35,9 @@ class compiler:
             return 'state_ops.assign('+oj6[0]+','+oj6[1]+')'
     
     
-    def concat(self,string_list):
-        line=''
-        for i in range(len(string_list)):
-            if i!=len(string_list)-1:
-                if i==0:
-                    line+=self.line[string_list[i][0]-1:]+self.line.replace(self.line[string_list[i][0]:],string_list[i][2])+self.line[string_list[i][1]+1:string_list[i+1][0]]
-                else:
-                    line+=string_list[i][2]+self.line[string_list[i][1]+1:string_list[i+1][0]]
-            else:
-                line+=string_list[i][2]+self.line[string_list[i][1]+1:]
-        self.line=line
-        return
-    
-    
     def getchar(self,line):
         self.line=line
-        string_list=[]
+        flag=None
         if len(self.define)!=0:
             index=[define in line for define in self.define]
             for i in range(len(index)):
@@ -61,102 +49,116 @@ class compiler:
                             break
         for i in range(len(line)):
             if self.line[i]=='.' and self.line[i+1]==' ':
-                if '=' in self.line:
+                if 'tf.Variable' not in self.line and '=' in self.line:
                     indexf=self.line.find('=')+1
+                    init=self.line[indexf]
+                elif 'tf.Variable' in self.line:
+                    indexf=self.line.find('(')+1
                     init=self.line[indexf]
                 else:
                     indexf=self.line.find('r')+7
                     init=self.line[indexf]
                 self.oj1[1]='tf.'+self.line[indexf+1:i]
-            elif self.line[i]=='[':
-                index1=i
-            elif self.line[i]==']':
-                self.oj1[0]=self.line[index1:i+1]+','
-                indexl=i
-            elif self.line[i]=='(':
-                self.oj1[2]=self.line[i+1]+','
-            elif self.line[i]==')':
-                self.oj1[3]=self.line[i-1]
-                indexl=i
-            else:
-                line=self.tf_function(oj1=self.oj1,init=init)+self.index[indexl+1:]
-                self.line=self.line.replace(self.line[indexf:],line)
-                self.oj1=['','','','']
+                flag=True
+                continue
+            if flag==True:
+                if self.line[i]=='[':
+                    index1=i
+                elif self.line[i]==']':
+                    self.oj1[0]=self.line[index1:i+1]+','
+                    indexl=i
+                elif self.line[i]=='(':
+                    if self.line[i+1]!=init:
+                        self.oj1[2]=self.line[i+1]+','
+                elif self.line[i]==')':
+                    if self.line[i+1]!='\n':
+                        self.oj1[3]=self.line[i-1]
+                        indexl=i
+                    line=self.tf_function(oj1=self.oj1,init=init)+self.line[indexl+1:]
+                    self.line=self.line.replace(self.line[indexf:],line)
+                    self.oj1=['','','','']
+                    flag=False
+                    return
+                continue
             if self.line[i]=='(':
                 index1=i
                 continue
-            elif self.line[i]=='.':
+            elif self.line[i]=='.' and (self.line[i+1] in self._operator or self.line[i+1:i+3] in self._operator):
                 index2=i
                 continue
-            elif self.line[i]==')' and index1!=None:
-                index3=i
+            elif self.line[i]==')':
+                try:
+                    if self.line[index2+2:i]==self.line[index2+2:i] or self.self.line[index2+3:i]==self.line[index2+2:i]:
+                        index3=i
+                except IndexError:
+                    pass
                 if '.*' in self.line[index1:index3+1]:
-                    self.oj1[0]=self.line[index1+1:index2]
+                    self.oj2[0]=self.line[index1+1:index2]
                     self.oj2[1]=self.line[index2+2:index3]
                     string=self.tf_function(oj2=self.oj2)
-                    string_list.append([index1,index3,string])
+                    self.line=self.line.replace(self.line[index1:index3+1],string)
                 if '.^' in self.line[index1:index3+1]:
                     self.oj2=self.line[index1+1:index2]
                     string=self.tf_function(oj3=self.oj3)
-                    string_list.append([index1,index3,string])
+                    self.line=self.line.replace(self.line[index1:index3+1],string)
                 if '.|' in self.line[index1:index3+1]:
                     self.oj4[0]=self.line[index1+1:index2]
                     self.oj4[1]=self.line[index2+2:index3]
                     self.oj4[2]='.|'
                     string=self.tf_function(oj4=self.oj4)
-                    string_list.append([index1,index3,string])
+                    self.line=self.line.replace(self.line[index1:index3+1],string)
                 if '.||' in self.line[index1:index3+1]:
                     self.oj4[0]=self.line[index1+1:index2]
                     self.oj4[1]=self.line[index2+3:index3]
                     self.oj4[2]='.||'
                     string=self.tf_function(oj4=self.oj4)
-                    string_list.append([index1,index3,string])
+                    self.line=self.line.replace(self.line[index1:index3+1],string)
                 if './' in self.line[index1:index3+1]:
                     self.oj5=self.line[index1+1:index2]
                     string=self.tf_function(oj5=self.oj5)
-                    string_list.append([index1,index3,string])
+                    self.line=self.line.replace(self.line[index1:index3+1],string)
                 if '.=' in self.line[index1:index3+1]:
                     self.oj6[0]=self.line[index1+1:index2]
                     self.oj6[1]=self.line[index2+2:index3]
                     string=self.tf_function(oj6=self.oj6)
-                    string_list.append([index1,index3,string])
-                index1=None
-        self.concat(string_list)
+                    self.line=self.line.replace(self.line[index1:index3+1],string)
         return
     
     
     def readlines(self,line):
-        return self.getchar(line)
+        self.getchar(line)
+        return
     
     
     def writelines(self):
+        flag=None
         outfile=self.filename
-        outfile=outfile.replace(outfile[outfile.rfind('n')],'py')
+        outfile=outfile[:outfile.rfind('.')]+'.py'
         outfile=open(outfile,'w')
         with open(self.filename) as infile:
             while 1:
                 line=infile.readline()
+                if line=='':
+                    break
+                if line=='"""' or line=="'''":
+                    flag=False
+                    outfile.write(line)
+                elif flag==False:
+                    outfile.write(line)
+                    if line=='"""' or line=="'''":
+                        flag=True
+                    continue
                 if 'define. ' in line:
                     self.define[line[line.find(' ')+1,line.rfine(' ')]]=line[line.rfind(' ')+1:]
                     continue
                 if len(self.define)!=0 and self.define_list==None:
                     self.define_list=[define for define in self.define]
-                if ('. ' in line and "'" not in line or '"' not in line) or ("'" not in line and True in [operator in line for operator in self.operator]):
+                if ('. ' in line and ("'" not in line or '"' not in line)) or ("'" not in line and True in [operator in line for operator in self.operator]):
                     self.readlines(line)
                     outfile.write(self.line)
                     self.line=''
                 elif '#' in line:
                     outfile.write(line)
-                elif line=='"""' or line=="'''":
-                    flag=False
-                    outfile.write(line)
-                elif flag==False:
-                    outfile.write(line)
-                elif flag==False and line=='"""' or  line=="'''":
-                    flag=True
-                    outfile.write(line)
-                elif line=='':
-                    break
                 else:
                     outfile.write(line)
             outfile.close()
