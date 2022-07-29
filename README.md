@@ -142,3 +142,7 @@ for _ in range(2):
 kernel.train_loss_list or kernel.train_loss       #view training loss
 kernel.train_visual()
 ```
+
+
+# Note Compiler:
+documentation:https://github.com/7NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/compiler
