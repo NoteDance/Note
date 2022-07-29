@@ -80,12 +80,6 @@ class kernel:
         return
     
     
-    def apply_gradient(self,tape,opt,loss,parameter):
-        gradient=tape.gradient(loss,parameter)
-        opt.apply_gradients(zip(gradient,parameter))
-        return
-    
-    
     def end(self):
         if self.end_loss!=None and self.train_loss<=self.end_loss:
             return True
@@ -169,7 +163,8 @@ class kernel:
                 try:
                     if self.nn.opt!=None:
                         pass
-                    self.apply_gradient(tape,self.nn.opt,batch_loss,self.param)
+                    gradient=tape.gradient(batch_loss,self.param)
+                    self.nn.opt.apply_gradients(zip(gradient,self.param))
                 except AttributeError:
                     gradient=self.nn.gradient(tape,batch_loss,self.param)
                     self.nn.oopt(gradient,self.param)
@@ -202,7 +197,8 @@ class kernel:
                 try:
                     if self.nn.opt!=None:
                         pass
-                    self.apply_gradient(tape,self.nn.opt,batch_loss,self.param)
+                    gradient=tape.gradient(batch_loss,self.param)
+                    self.nn.opt.apply_gradients(zip(gradient,self.param))
                 except AttributeError:
                     gradient=self.nn.gradient(tape,batch_loss,self.param)
                     self.nn.oopt(gradient,self.param)
@@ -248,7 +244,8 @@ class kernel:
             try:
                 if self.nn.opt!=None:
                     pass
-                self.apply_gradient(tape,self.nn.opt,train_loss,self.param)
+                gradient=tape.gradient(train_loss,self.param)
+                self.nn.opt.apply_gradients(zip(gradient,self.param))
             except AttributeError:
                 gradient=self.nn.gradient(tape,train_loss,self.param)
                 self.nn.oopt(gradient,self.param)
@@ -267,7 +264,8 @@ class kernel:
             try:
                 if self.nn.opt!=None:
                     pass
-                self.apply_gradient(tape,self.nn.opt,train_loss,self.param)
+                gradient=tape.gradient(train_loss,self.param)
+                self.nn.opt.apply_gradients(zip(gradient,self.param))
             except AttributeError:
                 gradient=tape.gradient(train_loss,self.param)
                 self.nn.oopt(gradient,self.param)
