@@ -501,8 +501,6 @@ class kernel:
         print()
         print('epoch:{0}'.format(self.total_epoch))
         print()
-        print('learning rate:{0}'.format(self.nn.lr))
-        print()
         print('time:{0:.3f}s'.format(self.total_time))
         print()
         print('-------------------------------------')
