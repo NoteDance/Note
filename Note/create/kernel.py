@@ -23,6 +23,7 @@ class kernel:
         self.stop=None
         self.stop_flag=None
         self.end_flag=None
+        self.train_flag=None
         self.save_flag=None
         self.save_epoch=None
         self.batch=None
@@ -538,9 +539,8 @@ class kernel:
         else:
             self.suspend_func()
             data=self.ol()
-            output,_=self.opt(data[0],output)
-            train_loss=self.nn.loss(output,data[1])
-            loss=train_loss.numpy()
+            output,loss=self.opt(data[0],data[1])
+            loss=loss.numpy()
             if self.thread_lock!=None:
                 self.thread_lock.acquire()
                 self.nn.train_loss=loss.astype(np.float32)
@@ -776,6 +776,7 @@ class kernel:
     
     
     def train(self,batch=None,epoch=None,test_batch=None,save=None,one=True,p=None,s=None):
+        self.train_flag=True
         self.batch=batch
         self.epoch=0
         t1=None
@@ -816,7 +817,7 @@ class kernel:
                         pass
                 else:
                     try:
-                        self.nn.ec[self.t[-1]]+=1
+                        self.nn.ec[t]+=1
                     except:
                         pass
                 if self.thread==None:
@@ -956,17 +957,6 @@ class kernel:
         else:
             while True:
                 self._train()
-                data=self.ol()
-                output=self.nn.fp(data[0])
-                train_loss=self.nn.loss(output,data[1])
-                loss=train_loss.numpy()
-                self.nn.train_loss.append(loss.astype(np.float32))
-                if save!=None:
-                    self.save()
-                try:
-                    self.nn.ec+=1
-                except AttributeError:
-                    pass
         if save!=None:
             self.save()
         if self.thread==None:
@@ -1005,6 +995,7 @@ class kernel:
             except AttributeError:
                 pass
             print('time:{0}s'.format(self.time))
+        self.train_flag=False
         return
     
     
@@ -1147,6 +1138,7 @@ class kernel:
     def stop_func(self):
         if self.thread_lock==None:
             if self.save_flag==True:
+                self.train_flag=False
                 self.save(self.total_epoch,True)
                 print('\nSystem have stopped training,Neural network have been saved.')
                 return
@@ -1182,13 +1174,25 @@ class kernel:
     
     
     def train_info(self):
+        params=1
+        total_params=0
+        for i in range(len(self.nn.param)):
+            for j in range(len(self.nn.param[i].shape)):
+                params*=self.nn.param[i].shape[j]
+            total_params+=params
+            params=1
+        print()
+        print('total params:{0}'.format(total_params))
         print()
         print('batch:{0}'.format(self.batch))
         print()
         print('epoch:{0}'.format(self.total_epoch))
         print()
-        print('learning rate:{0}'.format(self.nn.lr))
-        print()
+        try:
+            print('learning rate:{0}'.format(self.nn.lr))
+            print()
+        except AttributeError:
+            pass
         print('time:{0:.3f}s'.format(self.total_time))
         print()
         print('-------------------------------------')
@@ -1331,7 +1335,8 @@ class kernel:
                 os.remove(self.file_list[0][0])
                 os.remove(self.file_list[0][1])
         pickle.dump(self.nn.param,parameter_file)
-        self.nn.param=None
+        if self.train_flag==False:
+            self.nn.param=None
         try:
             if self.nn.opt:
                 pass
