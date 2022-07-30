@@ -88,19 +88,15 @@ class compiler:
             elif line[i]=='.' and (line[i+1] in self._operator or line[i+1:i+3] in self._operator):
                 index2=i
                 continue
-            elif line[i]==')':
-                try:
-                    if line[index2+2:i]==line[index2+2:i] or line[index2+3:i]==line[index2+2:i]:
-                        index3=i
-                except IndexError:
-                    pass
+            elif line[i]==')' and index1!=None and index2!=None:
+                index3=i
                 if '.*' in line[index1:index3+1]:
                     self.oj2[0]=line[index1+1:index2]
                     self.oj2[1]=line[index2+2:index3]
                     string=self.tf_function(oj2=self.oj2)
                     self.line=self.line.replace(line[index1:index3+1],string)
                 if '.^' in line[index1:index3+1]:
-                    self.oj2=line[index1+1:index2]
+                    self.oj3=line[index1+1:index2]
                     string=self.tf_function(oj3=self.oj3)
                     self.line=self.line.replace(line[index1:index3+1],string)
                 if '.|' in line[index1:index3+1]:
@@ -124,6 +120,7 @@ class compiler:
                     self.oj6[1]=line[index2+2:index3]
                     string=self.tf_function(oj6=self.oj6)
                     self.line=self.line.replace(line[index1:index3+1],string)
+                index1,index2,index3=None,None,None
         return
     
     
