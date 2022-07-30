@@ -48,80 +48,82 @@ class compiler:
                         else:
                             break
         for i in range(len(line)):
-            if self.line[i]=='.' and self.line[i+1]==' ':
-                if 'tf.Variable' not in self.line and '=' in self.line:
-                    indexf=self.line.find('=')+1
-                    init=self.line[indexf]
-                elif 'tf.Variable' in self.line:
-                    indexf=self.line.find('(')+1
-                    init=self.line[indexf]
-                else:
-                    indexf=self.line.find('r')+7
-                    init=self.line[indexf]
-                self.oj1[1]='tf.'+self.line[indexf+1:i]
-                flag=True
-                continue
+            try:
+                if line[i]=='.' and line[i+1]==' ':
+                    if 'tf.Variable' not in line and '=' in line:
+                        indexf=line.find('=')+1
+                        init=line[indexf]
+                    elif 'tf.Variable' in line:
+                        indexf=line.find('(')+1
+                        init=line[indexf]
+                    else:
+                        indexf=line.find('r')+7
+                        init=line[indexf]
+                    self.oj1[1]='tf.'+line[indexf+1:i]
+                    flag=True
+                    continue
+            except IndexError:
+                pass
             if flag==True:
-                if self.line[i]=='[':
+                if line[i]=='[':
                     index1=i
-                elif self.line[i]==']':
-                    self.oj1[0]=self.line[index1:i+1]+','
+                elif line[i]==']':
+                    self.oj1[0]=line[index1:i+1]+','
                     indexl=i
-                elif self.line[i]=='(':
-                    if self.line[i+1]!=init:
-                        self.oj1[2]=self.line[i+1]+','
-                elif self.line[i]==')':
-                    if self.line[i+1]!='\n':
-                        self.oj1[3]=self.line[i-1]
+                elif line[i]=='(':
+                    if line[i+1]!=init:
+                        self.oj1[2]=line[i+1]+','
+                elif line[i]==')':
+                    if line[i+1]!='\n':
+                        self.oj1[3]=line[i-1]
                         indexl=i
-                    line=self.tf_function(oj1=self.oj1,init=init)+self.line[indexl+1:]
-                    self.line=self.line.replace(self.line[indexf:],line)
+                    string=self.tf_function(oj1=self.oj1,init=init)
+                    self.line=self.line.replace(line[indexf:indexl+1],string)
                     self.oj1=['','','','']
                     flag=False
-                    return
                 continue
-            if self.line[i]=='(':
+            if line[i]=='(':
                 index1=i
                 continue
-            elif self.line[i]=='.' and (self.line[i+1] in self._operator or self.line[i+1:i+3] in self._operator):
+            elif line[i]=='.' and (line[i+1] in self._operator or line[i+1:i+3] in self._operator):
                 index2=i
                 continue
-            elif self.line[i]==')':
+            elif line[i]==')':
                 try:
-                    if self.line[index2+2:i]==self.line[index2+2:i] or self.self.line[index2+3:i]==self.line[index2+2:i]:
+                    if line[index2+2:i]==line[index2+2:i] or line[index2+3:i]==line[index2+2:i]:
                         index3=i
                 except IndexError:
                     pass
-                if '.*' in self.line[index1:index3+1]:
-                    self.oj2[0]=self.line[index1+1:index2]
-                    self.oj2[1]=self.line[index2+2:index3]
+                if '.*' in line[index1:index3+1]:
+                    self.oj2[0]=line[index1+1:index2]
+                    self.oj2[1]=line[index2+2:index3]
                     string=self.tf_function(oj2=self.oj2)
-                    self.line=self.line.replace(self.line[index1:index3+1],string)
-                if '.^' in self.line[index1:index3+1]:
-                    self.oj2=self.line[index1+1:index2]
+                    self.line=self.line.replace(line[index1:index3+1],string)
+                if '.^' in line[index1:index3+1]:
+                    self.oj2=line[index1+1:index2]
                     string=self.tf_function(oj3=self.oj3)
-                    self.line=self.line.replace(self.line[index1:index3+1],string)
-                if '.|' in self.line[index1:index3+1]:
-                    self.oj4[0]=self.line[index1+1:index2]
-                    self.oj4[1]=self.line[index2+2:index3]
+                    self.line=self.line.replace(line[index1:index3+1],string)
+                if '.|' in line[index1:index3+1]:
+                    self.oj4[0]=line[index1+1:index2]
+                    self.oj4[1]=line[index2+2:index3]
                     self.oj4[2]='.|'
                     string=self.tf_function(oj4=self.oj4)
-                    self.line=self.line.replace(self.line[index1:index3+1],string)
-                if '.||' in self.line[index1:index3+1]:
-                    self.oj4[0]=self.line[index1+1:index2]
-                    self.oj4[1]=self.line[index2+3:index3]
+                    self.line=self.line.replace(line[index1:index3+1],string)
+                if '.||' in line[index1:index3+1]:
+                    self.oj4[0]=line[index1+1:index2]
+                    self.oj4[1]=line[index2+3:index3]
                     self.oj4[2]='.||'
                     string=self.tf_function(oj4=self.oj4)
-                    self.line=self.line.replace(self.line[index1:index3+1],string)
-                if './' in self.line[index1:index3+1]:
-                    self.oj5=self.line[index1+1:index2]
+                    self.line=self.line.replace(line[index1:index3+1],string)
+                if './' in line[index1:index3+1]:
+                    self.oj5=line[index1+1:index2]
                     string=self.tf_function(oj5=self.oj5)
-                    self.line=self.line.replace(self.line[index1:index3+1],string)
-                if '.=' in self.line[index1:index3+1]:
-                    self.oj6[0]=self.line[index1+1:index2]
-                    self.oj6[1]=self.line[index2+2:index3]
+                    self.line=self.line.replace(line[index1:index3+1],string)
+                if '.=' in line[index1:index3+1]:
+                    self.oj6[0]=line[index1+1:index2]
+                    self.oj6[1]=line[index2+2:index3]
                     string=self.tf_function(oj6=self.oj6)
-                    self.line=self.line.replace(self.line[index1:index3+1],string)
+                    self.line=self.line.replace(line[index1:index3+1],string)
         return
     
     
