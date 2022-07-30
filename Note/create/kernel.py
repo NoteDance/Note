@@ -1148,17 +1148,17 @@ class kernel:
                 print('\nSystem have stopped training.')
                 return
         elif self.end() and self.end_flag==True:
-            self.thread_lock.acquire()
+            self.thread_lock[2].acquire()
             self.save(self.total_epoch,True)
             self.stop_flag=2
-            self.thread_lock.release()
+            self.thread_lock[2].release()
             return
         else:
             if self.save_flag==True:
-                self.thread_lock.acquire()
+                self.thread_lock[2].acquire()
                 self.save(self.total_epoch,True)
                 self.stop_flag=2
-                self.thread_lock.release()
+                self.thread_lock[2].release()
                 return
             else:
                 return
