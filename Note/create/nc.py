@@ -35,16 +35,15 @@ class compiler:
             return 'state_ops.assign('+oj6[0]+','+oj6[1]+')'
     
     
-    def getchar(self,line):
+    def getchar(self,line,index):
         self.line=line
         flag=None
         if len(self.define)!=0:
-            index=[define in line for define in self.define]
             for i in range(len(index)):
                 if index[i]==True:
                     while 1:
-                        if self.define_list[i] in line:
-                            line=line.replace(self.define_list[i],self.define[self.define_list[i]])
+                        if self.define_list[i] in self.line:
+                            self.line=self.line.replace(self.define_list[i],self.define[self.define_list[i]])
                         else:
                             break
         for i in range(len(line)):
@@ -124,8 +123,8 @@ class compiler:
         return
     
     
-    def readlines(self,line):
-        self.getchar(line)
+    def readlines(self,line,index):
+        self.getchar(line,index)
         return
     
     
@@ -148,12 +147,13 @@ class compiler:
                         flag=True
                     continue
                 if 'define. ' in line:
-                    self.define[line[line.find(' ')+1,line.rfine(' ')]]=line[line.rfind(' ')+1:]
+                    self.define[line[line.find(' ')+1:line.rfind(' ')]]=line[line.rfind(' ')+1:-1]
                     continue
                 if len(self.define)!=0 and self.define_list==None:
                     self.define_list=[define for define in self.define]
-                if ('. ' in line and ("'" not in line or '"' not in line)) or ("'" not in line and True in [operator in line for operator in self.operator]):
-                    self.readlines(line)
+                index=[define in line for define in self.define]
+                if ('. ' in line and ("'" not in line or '"' not in line)) or ("'" not in line and True in [operator in line for operator in self.operator]) or True in index:
+                    self.readlines(line,index)
                     outfile.write(self.line)
                     self.line=''
                 elif '#' in line:
