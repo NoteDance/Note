@@ -146,6 +146,8 @@ kernel.train_visual()
 
 # Note Compiler:
 documentation:https://github.com/7NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/compiler
+```python
 import Note.create.nc as nc
 c=nc.compiler('nn.n')
 c.Compile()
+```
