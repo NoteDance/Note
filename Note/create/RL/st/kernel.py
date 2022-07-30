@@ -31,6 +31,7 @@ class kernel:
         self.pool_size=None
         self.batch=None
         self.update_step=None
+        self.train_flag=None
         self.end_loss=None
         self.save_episode=save_episode
         self.loss_list=[]
@@ -520,6 +521,7 @@ class kernel:
     
     
     def learn(self,episode_num,save=None,one=True,p=None,s=None):
+        self.train_flag=True
         if p==None and s==None:
             self.p=9
             self.s=2
@@ -550,7 +552,7 @@ class kernel:
                 e=d*self.s
                 if i%d==0:
                     print('episode num:{0}   loss:{1:.6f}'.format(i+1,loss))
-                    if path!=None and i%e==0:
+                    if save!=None and i%e==0:
                         self.save(i,one)
                 self.epi_num+=1
                 self.total_episode+=1
@@ -704,6 +706,7 @@ class kernel:
         print()
         print('last loss:{0:.6f}'.format(loss))
         print('time:{0}s'.format(self.time))
+        self.train_flag=False
         return
     
     
@@ -749,7 +752,8 @@ class kernel:
                 episode_file.close()
         self.episode_num=self.epi_num
         pickle.dump(self.nn.param,parameter_file)
-        self.nn.param=None
+        if self.train_flag==False:
+            self.nn.param=None
         self.nn.opt=None
         pickle.dump(self.nn,output_file)
         pickle.dump(self.opt.get_config(),output_file)
