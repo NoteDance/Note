@@ -776,7 +776,8 @@ class kernel:
     
     
     def train(self,batch=None,epoch=None,test_batch=None,save=None,one=True,p=None,s=None):
-        self.train_flag=True
+        if self.thread!=None:
+            self.train_flag=True
         self.batch=batch
         self.epoch=0
         t1=None
@@ -995,7 +996,8 @@ class kernel:
             except AttributeError:
                 pass
             print('time:{0}s'.format(self.time))
-        self.train_flag=False
+        if self.thread!=None:
+            self.train_flag=False
         return
     
     
