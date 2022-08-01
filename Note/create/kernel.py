@@ -789,6 +789,7 @@ class kernel:
             self.p=p-1
         if s==None:
             self.s=1
+            self.file_list=None
         else:
             self.s=s-1
             self.file_list=[]
@@ -1317,7 +1318,7 @@ class kernel:
     
     
     def save_p(self):
-        parameter_file=open('parameter.dat','wb')
+        parameter_file=open('param.dat','wb')
         pickle.dump(self.nn.param,parameter_file)
         parameter_file.close()
         return
@@ -1328,11 +1329,11 @@ class kernel:
             return
         if one==True:
             output_file=open('save.dat','wb')
-            parameter_file=open('parameter.dat','wb')
+            parameter_file=open('param.dat','wb')
         else:
             output_file=open('save-{0}.dat'.format(i),'wb')
-            parameter_file=open('parameter-{0}.dat'.format(i),'wb')
-            self.file_list.append(['save-{0}.dat','parameter-{0}.dat'])
+            parameter_file=open('param-{0}.dat'.format(i),'wb')
+            self.file_list.append(['save-{0}.dat','param-{0}.dat'])
             if len(self.file_list)>self.s+1:
                 os.remove(self.file_list[0][0])
                 os.remove(self.file_list[0][1])
