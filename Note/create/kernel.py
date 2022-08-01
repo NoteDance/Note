@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import pickle
 import os
 import time
+
+
 class kernel:
     def __init__(self,nn=None):
         if nn!=None:
@@ -734,6 +736,7 @@ class kernel:
             self.p=p-1
         if s==None:
             self.s=1
+            self.file_list=None
         else:
             self.s=s-1
             self.file_list=[]
