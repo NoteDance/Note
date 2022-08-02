@@ -784,7 +784,7 @@ class kernel:
     
     
     def save_p(self):
-        parameter_file=open('parameter.dat','wb')
+        parameter_file=open('param.dat','wb')
         pickle.dump(self.value_p,parameter_file)
         parameter_file.close()
         return
@@ -799,7 +799,7 @@ class kernel:
     
     def save(self):
         output_file=open('save.dat','wb')
-        parameter_file=open('parameter.dat','wb')
+        parameter_file=open('param.dat','wb')
         if self.save_episode==True:
             episode_file=open('episode.dat','wb')
             pickle.dump(self.episode,episode_file)
