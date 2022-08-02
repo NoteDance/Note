@@ -1,4 +1,5 @@
 import tensorflow as tf
+from tensorflow.python.ops import state_ops
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
@@ -1038,6 +1039,12 @@ class kernel:
                 return test_loss
     
     
+    def assign(self):
+        for i in range(len(self.nn.model.weights)):
+            state_ops.assign(self.nn.model.weights[i],self.nn.param[i])
+        return
+    
+    
     def train_info(self):
         print()
         print('batch:{0}'.format(self.batch))
@@ -1196,15 +1203,36 @@ class kernel:
                 pass
             opt=self.nn.opt
             self.nn.opt=None
-            pickle.dump(self.nn,output_file)
+            try:
+                if self.nn.model!=None:
+                    pass
+                model=self.nn.model
+                pickle.dump(self.nn.param,parameter_file)
+                self.nn.model=model
+            except:
+                pickle.dump(self.nn,output_file)
             self.nn.opt=opt
         except AttributeError:
             try:
-                pickle.dump(self.nn,output_file)
+                try:
+                    if self.nn.model!=None:
+                        pass
+                    model=self.nn.model
+                    pickle.dump(self.nn.param,parameter_file)
+                    self.nn.model=model
+                except:
+                    pickle.dump(self.nn,output_file)
             except:
                 opt=self.nn.oopt
                 self.nn.oopt=None
-                pickle.dump(self.nn,output_file)
+                try:
+                    if self.nn.model!=None:
+                        pass
+                    model=self.nn.model
+                    pickle.dump(self.nn.param,parameter_file)
+                    self.nn.model=model
+                except:
+                    pickle.dump(self.nn,output_file)
                 self.nn.oopt=opt
         pickle.dump(opt.get_config(),output_file)
         pickle.dump(self.ol,output_file)
