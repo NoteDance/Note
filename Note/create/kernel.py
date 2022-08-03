@@ -953,8 +953,6 @@ class kernel:
                 else:
                     self.time[t]+=(t2-t1)
         else:
-            if self.stop==True:
-                self.stop_func()
             self._train()
         if save!=None:
             self.save()
