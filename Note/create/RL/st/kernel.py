@@ -654,8 +654,6 @@ class kernel:
                     self.param=None
                     break
         else:
-            if self.stop==True:
-                self.stop_func()
             data=self.ol()
             loss=self.opt_t(data)
             if self.thread_lock!=None:
