@@ -124,9 +124,7 @@ cnn=c.cnn()                                #create class object
 kernel=k.kernel(cnn)   #start kernel
 kernel.core=tf                            #use core
 kernel.stop=True
-kernel.save_flag=True
 kernel.end_loss=0.7
-kernel.end_flag=True
 kernel.thread=2                        #thread count
 kernel.data(x_train,y_train)   #input you data
 kernel.PO=2
