@@ -32,7 +32,10 @@ class kernel:
         self.pool_size=None
         self.batch=None
         self.update_step=None
+        self.suspend=False
+        self.stop=None
         self.train_flag=None
+        self.save_epoch=None
         self.end_loss=None
         self.save_episode=save_episode
         self.loss_list=[]
@@ -334,6 +337,7 @@ class kernel:
                 if self.nn.data_func!=None:
                     pass
                 for j in range(batches):
+                    self.suspend_func()
                     state_batch,action_batch,next_state_batch,reward_batch=self.nn.data_func(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
                     batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch)
                     loss+=batch_loss
@@ -342,6 +346,7 @@ class kernel:
                     except AttributeError:
                         pass
                 if len(self.state_pool)%self.batch!=0:
+                    self.suspend_func()
                     state_batch,action_batch,next_state_batch,reward_batch=self.nn.data_func(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
                     batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch)
                     loss+=batch_loss
@@ -582,6 +587,8 @@ class kernel:
         loss=0
         if episode_num!=None:
             for i in range(episode_num):
+                if self.stop==True:
+                    self.stop_func()
                 loss,episode,end=self.train_(episode_num,i)
                 self.loss_list.append(loss)
                 if episode_num%10!=0:
@@ -614,6 +621,8 @@ class kernel:
         elif self.ol==None:
             i=0
             while True:
+                if self.stop==True:
+                    self.stop_func()
                 loss,episode,end=self.train_(episode_num,i)
                 self.loss_list.append(loss)
                 i+=1
@@ -645,27 +654,28 @@ class kernel:
                     self.param=None
                     break
         else:
-            while True:
-                data=self.ol()
-                loss=self.opt_t(data)
-                if self.thread_lock!=None:
-                    self.thread_lock.acquire()
-                    loss=loss.numpy()
-                    self.nn.train_loss.append(loss.astype(np.float32))
-                    try:
-                        self.nn.ec+=1
-                    except AttributeError:
-                        pass
-                    self.total_e+=1
-                    self.thread_lock.release()
-                else:
-                    loss=loss.numpy()
-                    self.nn.train_loss.append(loss.astype(np.float32))
-                    try:
-                        self.nn.ec+=1
-                    except AttributeError:
-                        pass
-                    self.total_e+=1
+            if self.stop==True:
+                self.stop_func()
+            data=self.ol()
+            loss=self.opt_t(data)
+            if self.thread_lock!=None:
+                self.thread_lock.acquire()
+                loss=loss.numpy()
+                self.nn.train_loss.append(loss.astype(np.float32))
+                try:
+                    self.nn.ec+=1
+                except AttributeError:
+                    pass
+                self.total_e+=1
+                self.thread_lock.release()
+            else:
+                loss=loss.numpy()
+                self.nn.train_loss.append(loss.astype(np.float32))
+                try:
+                    self.nn.ec+=1
+                except AttributeError:
+                    pass
+                self.total_e+=1
         if save!=None:
             self.save()
         self._time=self.time-int(self.time)
@@ -679,6 +689,30 @@ class kernel:
         print('time:{0}s'.format(self.time))
         self.train_flag=False
         return
+        
+    
+    def suspend_func(self):
+        if self.suspend==True:
+            if self.save_epoch==None:
+                print('Training have suspended.')
+            else:
+                self._save()
+            while True:
+                if self.suspend==False:
+                    print('Training have continued.')
+                    break
+        return
+    
+    
+    def stop_func(self):
+        if self.end():
+            self.train_flag=False
+            self.save(self.total_epoch,True)
+            print('\nSystem have stopped training,Neural network have been saved.')
+            return
+        else:
+            print('\nSystem have stopped training.')
+            return
     
     
     def train_visual(self):
