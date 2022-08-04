@@ -1208,7 +1208,7 @@ class kernel:
                     os.remove(self.file_list[0][1])
         try:
             if len(self.nn.model.weights)!=self.nn.param:
-                pickle.dump(self.nn.param[:-len(self.nn.model)],parameter_file)
+                pickle.dump(self.nn.param[:-len(self.nn.model.weights)],parameter_file)
         except AttributeError:
             pickle.dump(self.nn.param,parameter_file)
         if self.train_flag==False:
