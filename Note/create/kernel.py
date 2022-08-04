@@ -1,5 +1,4 @@
 import tensorflow as tf
-from tensorflow.python.ops import state_ops
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
@@ -1039,12 +1038,6 @@ class kernel:
                 return test_loss
     
     
-    def assign(self):
-        for i in range(len(self.nn.model.weights)):
-            state_ops.assign(self.nn.model.weights[i],self.nn.param[i])
-        return
-    
-    
     def train_info(self):
         print()
         print('batch:{0}'.format(self.batch))
@@ -1187,15 +1180,37 @@ class kernel:
     def save(self,i=None,one=True):
         if one==True:
             output_file=open('save.dat','wb')
-            parameter_file=open('parameter.dat','wb')
+            try:
+                if len(self.nn.model.weights)==self.nn.param:
+                    pass
+                else:
+                    parameter_file=open('param.dat','wb')
+            except AttributeError:
+                parameter_file=open('param.dat','wb')
         else:
             output_file=open('save-{0}.dat'.format(i),'wb')
-            parameter_file=open('parameter-{0}.dat'.format(i),'wb')
-            self.file_list.append(['save-{0}.dat','parameter-{0}.dat'])
-            if len(self.file_list)>self.s+1:
-                os.remove(self.file_list[0][0])
-                os.remove(self.file_list[0][1])
-        pickle.dump(self.nn.param,parameter_file)
+            try:
+                if len(self.nn.model.weights)==self.nn.param:
+                    self.file_list.append(['save-{0}.dat'])
+                    if len(self.file_list)>self.s+1:
+                        os.remove(self.file_list[0][0])
+                else:
+                    parameter_file=open('param-{0}.dat'.format(i),'wb')
+                    self.file_list.append(['save-{0}.dat','param-{0}.dat'])
+                    if len(self.file_list)>self.s+1:
+                        os.remove(self.file_list[0][0])
+                        os.remove(self.file_list[0][1])
+            except AttributeError:
+                parameter_file=open('param-{0}.dat'.format(i),'wb')
+                self.file_list.append(['save-{0}.dat','param-{0}.dat'])
+                if len(self.file_list)>self.s+1:
+                    os.remove(self.file_list[0][0])
+                    os.remove(self.file_list[0][1])
+        try:
+            if len(self.nn.model.weights)!=self.nn.param:
+                pickle.dump(self.nn.param[:-len(self.nn.model)],parameter_file)
+        except AttributeError:
+            pickle.dump(self.nn.param,parameter_file)
         if self.train_flag==False:
             self.nn.param=None
         try:
@@ -1203,36 +1218,15 @@ class kernel:
                 pass
             opt=self.nn.opt
             self.nn.opt=None
-            try:
-                if self.nn.model!=None:
-                    pass
-                model=self.nn.model
-                pickle.dump(self.nn.param,parameter_file)
-                self.nn.model=model
-            except:
-                pickle.dump(self.nn,output_file)
+            pickle.dump(self.nn,output_file)
             self.nn.opt=opt
         except AttributeError:
             try:
-                try:
-                    if self.nn.model!=None:
-                        pass
-                    model=self.nn.model
-                    pickle.dump(self.nn.param,parameter_file)
-                    self.nn.model=model
-                except:
-                    pickle.dump(self.nn,output_file)
+                pickle.dump(self.nn,output_file)
             except:
                 opt=self.nn.oopt
                 self.nn.oopt=None
-                try:
-                    if self.nn.model!=None:
-                        pass
-                    model=self.nn.model
-                    pickle.dump(self.nn.param,parameter_file)
-                    self.nn.model=model
-                except:
-                    pickle.dump(self.nn,output_file)
+                pickle.dump(self.nn,output_file)
                 self.nn.oopt=opt
         pickle.dump(opt.get_config(),output_file)
         pickle.dump(self.ol,output_file)
@@ -1261,17 +1255,28 @@ class kernel:
         pickle.dump(self.total_epoch,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
-        parameter_file.close()
+        try:
+            if len(self.nn.model.weights)==self.nn.param:
+                pass
+            else:
+                parameter_file.close()
+        except AttributeError:
+            parameter_file.close()
         return
     
 	
-    def restore(self,s_path,p_path):
+    def restore(self,s_path,p_path=None):
         input_file=open(s_path,'rb')
-        parameter_file=open(p_path,'rb')
-        param=pickle.load(parameter_file)
+        if p_path!=None:
+            parameter_file=open(p_path,'rb')
+            param=pickle.load(parameter_file)
         self.nn=pickle.load(input_file)
-        self.nn.param=param
-        param=None
+        try:
+            if self.nn.model!=None:
+                pass
+            self.nn.param=param.extend(self.nn.model.weights)
+        except AttributeError:
+            self.nn.param=param
         try:
             self.nn.km=1
         except AttributeError:
@@ -1302,5 +1307,6 @@ class kernel:
         self.total_epoch=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
         input_file.close()
-        parameter_file.close()
+        if p_path!=None:
+            parameter_file.close()
         return
