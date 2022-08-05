@@ -2,6 +2,7 @@ from tensorflow import function
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
+import os
 import time
 
 
@@ -35,7 +36,8 @@ class kernel:
         self.suspend=False
         self.stop=None
         self.train_flag=None
-        self.save_epoch=None
+        self.save_epi=None
+        self.train_counter=0
         self.end_loss=None
         self.save_episode=save_episode
         self.loss_list=[]
@@ -576,14 +578,17 @@ class kernel:
     
     def train(self,episode_num,save=None,one=True,p=None,s=None):
         self.train_flag=True
+        self.train_counter+=1
         if self.p==None:
             self.p=9
         else:
             self.p=p-1
         if self.s==None:
             self.s=1
+            self.file_list=None
         else:
             self.s=s-1
+            self.file_list=[]
         loss=0
         if episode_num!=None:
             for i in range(episode_num):
@@ -591,21 +596,31 @@ class kernel:
                     self.stop_func()
                 loss,episode,end=self.train_(episode_num,i)
                 self.loss_list.append(loss)
-                if episode_num%10!=0:
-                    d=episode_num-episode_num%self.p
-                    d=int(d/self.p)
-                else:
-                    d=episode_num/(self.p+1)
-                    d=int(d)
-                if d==0:
-                    d=1
-                e=d*self.s
-                if i%d==0:
-                    print('episode num:{0}   loss:{1:.6f}'.format(i+1,loss))
-                    if save!=None and i%e==0:
-                        self.save(i,one)
                 self.epi_num+=1
                 self.total_episode+=1
+                if episode_num%10!=0:
+                    p=episode_num-episode_num%self.p
+                    p=int(p/self.p)
+                    s=episode_num-episode_num%self.s
+                    s=int(s/self.s)
+                else:
+                    p=episode_num/(self.p+1)
+                    p=int(p)
+                    s=episode_num/(self.s+1)
+                    s=int(s)
+                if p==0:
+                    p=1
+                if s==0:
+                    s=1
+                if i%p==0:
+                    if self.train_counter==1:
+                        print('episode num:{0}   loss:{1:.6f}'.format(i+1,loss))
+                        print()
+                    else:
+                        print('episode num:{0}   loss:{1:.6f}'.format(self.total_episode,loss))
+                        print()
+                if save!=None and i%s==0:
+                    self.save(self.total_episode,one)
                 if self.save_episode==True:
                     if end:
                         episode.append('end')
@@ -626,21 +641,31 @@ class kernel:
                 loss,episode,end=self.train_(episode_num,i)
                 self.loss_list.append(loss)
                 i+=1
-                if episode_num%10!=0:
-                    d=episode_num-episode_num%self.p
-                    d=int(d/self.p)
-                else:
-                    d=episode_num/(self.p+1)
-                    d=int(d)
-                if d==0:
-                    d=1
-                e=d*self.s
-                if i%d==0:
-                    print('episode num:{0}   loss:{1:.6f}'.format(i+1,loss))
-                    if save!=None and i%e==0:
-                        self.save(i,one)
                 self.epi_num+=1
-                self.total_e+=1
+                self.total_episode+=1
+                if episode_num%10!=0:
+                    p=episode_num-episode_num%self.p
+                    p=int(p/self.p)
+                    s=episode_num-episode_num%self.s
+                    s=int(s/self.s)
+                else:
+                    p=episode_num/(self.p+1)
+                    p=int(p)
+                    s=episode_num/(self.s+1)
+                    s=int(s)
+                if p==0:
+                    p=1
+                if s==0:
+                    s=1
+                if i%p==0:
+                    if self.train_counter==1:
+                        print('episode num:{0}   loss:{1:.6f}'.format(i+1,loss))
+                        print()
+                    else:
+                        print('episode num:{0}   loss:{1:.6f}'.format(self.total_episode,loss))
+                        print()
+                if save!=None and i%s==0:
+                    self.save(self.total_episode,one)
                 if self.save_episode==True:
                     if end:
                         episode.append('end')
@@ -682,8 +707,8 @@ class kernel:
         else:
             self.time=int(self.time)+1
         self.total_time+=self.time
-        print()
         print('last loss:{0:.6f}'.format(loss))
+        print()
         print('time:{0}s'.format(self.time))
         self.train_flag=False
         return
@@ -705,12 +730,23 @@ class kernel:
     def stop_func(self):
         if self.end():
             self.train_flag=False
-            self.save(self.total_epoch,True)
+            self.save(self.total_episode,True)
             print('\nSystem have stopped training,Neural network have been saved.')
             return
         else:
             print('\nSystem have stopped training.')
             return
+    
+        
+    def _save(self):
+        if self.save_epi==self.total_episode:
+            self.save(self.total_episode,False)
+            self.save_epi=None
+            print('\nNeural network have saved and training have suspended.')
+            return
+        elif self.save_epi!=None and self.save_epi>self.total_episode:
+            print('\nsave_epoch>total_epoch')
+        return
     
     
     def train_visual(self):
@@ -753,6 +789,15 @@ class kernel:
                 episode_file=open('episode-{0}.dat'.format(i),'wb')
                 pickle.dump(self.episode,episode_file)
                 episode_file.close()
+            if self.save_episode==True:
+                self.file_list.append(['save-{0}.dat','param-{0}.dat','episode-{0}.dat'])
+            else:
+                self.file_list.append(['save-{0}.dat','param-{0}.dat'])
+            if len(self.file_list)>self.s+1:
+                os.remove(self.file_list[0][0])
+                os.remove(self.file_list[0][1])
+                os.remove(self.file_list[0][2])
+                del self.file_list[0]
         self.episode_num=self.epi_num
         pickle.dump(self.nn.param,parameter_file)
         if self.train_flag==False:
@@ -774,6 +819,7 @@ class kernel:
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.update_step,output_file)
+        pickle.dump(self.train_counter,output_file)
         pickle.dump(self.end_loss,output_file)
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.loss_list,output_file)
@@ -817,6 +863,7 @@ class kernel:
         self.pool_size=pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.update_step=pickle.load(input_file)
+        self.train_counter=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
