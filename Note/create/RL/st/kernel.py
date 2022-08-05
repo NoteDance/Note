@@ -47,7 +47,6 @@ class kernel:
         self.epi_num=0
         self.episode_num=0
         self.total_episode=0
-        self.total_e=0
         self.time=0
         self.total_time=0
     
@@ -689,7 +688,7 @@ class kernel:
                     self.nn.ec+=1
                 except AttributeError:
                     pass
-                self.total_e+=1
+                self.total_episode+=1
                 self.thread_lock.release()
             else:
                 loss=loss.numpy()
@@ -698,7 +697,7 @@ class kernel:
                     self.nn.ec+=1
                 except AttributeError:
                     pass
-                self.total_e+=1
+                self.total_episode+=1
         if save!=None:
             self.save()
         self._time=self.time-int(self.time)
@@ -828,7 +827,6 @@ class kernel:
         pickle.dump(self.s,output_file)
         pickle.dump(self.episode_num,output_file)
         pickle.dump(self.total_episode,output_file)
-        pickle.dump(self.total_e,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
         return
@@ -872,7 +870,6 @@ class kernel:
         self.s=pickle.load(input_file)
         self.episode_num=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
-        self.total_e=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
         input_file.close()
         return
