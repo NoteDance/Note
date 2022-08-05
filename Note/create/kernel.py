@@ -861,14 +861,58 @@ class kernel:
                     if i%p==0:
                         if self.train_counter==1:
                             if self.test_flag==False:
-                                print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
+                                try:
+                                    if self.nn.accuracy!=None:
+                                        pass
+                                    print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
+                                    if self.acc_flag=='%':
+                                        print('epoch:{0}   accuracy:{1:.1f}'.format(i+1,self.train_acc*100))
+                                    else:
+                                        print('epoch:{0}   accuracy:{1:.6f}'.format(i+1,self.train_acc))
+                                    print()
+                                except AttributeError:
+                                    print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
+                                    print()
                             else:
-                                print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
+                                try:
+                                    if self.nn.accuracy!=None:
+                                        pass
+                                    print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
+                                    if self.acc_flag=='%':
+                                        print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(i+1,self.train_acc*100,self.test_acc*100))
+                                    else:
+                                        print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(i+1,self.train_acc,self.test_acc))
+                                    print()
+                                except AttributeError:   
+                                    print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
+                                    print()
                         else:
                             if self.test_flag==False:
-                                print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
+                                try:
+                                    if self.nn.accuracy!=None:
+                                        pass
+                                    print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
+                                    if self.acc_flag=='%':
+                                        print('epoch:{0}   accuracy:{1:.1f}'.format(self.total_epoch,self.train_acc*100))
+                                    else:
+                                        print('epoch:{0}   accuracy:{1:.6f}'.format(self.total_epoch,self.train_acc))
+                                    print()
+                                except AttributeError:
+                                    print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
+                                    print()
                             else:
-                                print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch,self.train_loss,self.test_loss))
+                                try:
+                                    if self.nn.accuracy!=None:
+                                        pass
+                                    print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch,self.train_loss,self.test_loss))
+                                    if self.acc_flag=='%':
+                                        print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(self.total_epoch,self.train_acc*100,self.test_acc*100))
+                                    else:
+                                        print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(self.total_epoch,self.train_acc,self.test_acc))
+                                    print()
+                                except AttributeError:   
+                                    print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch,self.train_loss,self.test_loss))
+                                    print()
                     if save!=None and i%s==0:
                         self.save(self.total_epoch,one)
                 t2=time.time()
@@ -926,14 +970,58 @@ class kernel:
                     if i%p==0:
                         if self.train_counter==1:
                             if self.test_flag==False:
-                                print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
+                                try:
+                                    if self.nn.accuracy!=None:
+                                        pass
+                                    print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
+                                    if self.acc_flag=='%':
+                                        print('epoch:{0}   accuracy:{1:.1f}'.format(i+1,self.train_acc*100))
+                                    else:
+                                        print('epoch:{0}   accuracy:{1:.6f}'.format(i+1,self.train_acc))
+                                    print()
+                                except AttributeError:
+                                    print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
+                                    print()
                             else:
-                                print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
+                                try:
+                                    if self.nn.accuracy!=None:
+                                        pass
+                                    print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
+                                    if self.acc_flag=='%':
+                                        print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(i+1,self.train_acc*100,self.test_acc*100))
+                                    else:
+                                        print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(i+1,self.train_acc,self.test_acc))
+                                    print()
+                                except AttributeError:   
+                                    print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
+                                    print()
                         else:
                             if self.test_flag==False:
-                                print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
+                                try:
+                                    if self.nn.accuracy!=None:
+                                        pass
+                                    print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
+                                    if self.acc_flag=='%':
+                                        print('epoch:{0}   accuracy:{1:.1f}'.format(self.total_epoch,self.train_acc*100))
+                                    else:
+                                        print('epoch:{0}   accuracy:{1:.6f}'.format(self.total_epoch,self.train_acc))
+                                    print()
+                                except AttributeError:
+                                    print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
+                                    print()
                             else:
-                                print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch,self.train_loss,self.test_loss))
+                                try:
+                                    if self.nn.accuracy!=None:
+                                        pass
+                                    print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch,self.train_loss,self.test_loss))
+                                    if self.acc_flag=='%':
+                                        print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(self.total_epoch,self.train_acc*100,self.test_acc*100))
+                                    else:
+                                        print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(self.total_epoch,self.train_acc,self.test_acc))
+                                    print()
+                                except AttributeError:   
+                                    print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch,self.train_loss,self.test_loss))
+                                    print()
                     if save!=None and i%s==0:
                         self.save(self.total_epoch,one)
                 if self.thread==None:
@@ -970,7 +1058,6 @@ class kernel:
                 self.time[t]=int(self.time[t])+1
             self.total_time[t]+=self.time[t]
         if self.thread==None:
-            print()
             if self.test_flag==False:
                 print('last loss:{0:.6f}'.format(self.train_loss))
             else:
@@ -980,16 +1067,17 @@ class kernel:
                     pass
                 if self.acc_flag=='%':
                     if self.test_flag==False:
-                        print('accuracy:{0:.1f}'.format(self.train_acc*100))
+                        print('last accuracy:{0:.1f}'.format(self.train_acc*100))
                     else:
-                        print('accuracy:{0:.1f},test_flag accuracy:{1:.1f}'.format(self.train_acc*100,self.test_acc*100))
+                        print('last accuracy:{0:.1f},last test accuracy:{1:.1f}'.format(self.train_acc*100,self.test_acc*100))
                 else:
                     if self.test_flag==False:
-                        print('accuracy:{0:.6f}'.format(self.train_acc))
+                        print('last accuracy:{0:.6f}'.format(self.train_acc))
                     else:
-                        print('accuracy:{0:.6f},test_flag accuracy:{1:.6f}'.format(self.train_acc,self.test_acc))   
+                        print('last accuracy:{0:.6f},last test accuracy:{1:.6f}'.format(self.train_acc,self.test_acc))   
             except AttributeError:
                 pass
+            print()
             print('time:{0}s'.format(self.time))
         if self.thread==None:
             self.train_flag=False
@@ -1331,18 +1419,21 @@ class kernel:
                     self.file_list.append(['save-{0}.dat'])
                     if len(self.file_list)>self.s+1:
                         os.remove(self.file_list[0][0])
+                        del self.file_list[0]
                 else:
                     parameter_file=open('param-{0}.dat'.format(i),'wb')
                     self.file_list.append(['save-{0}.dat','param-{0}.dat'])
                     if len(self.file_list)>self.s+1:
                         os.remove(self.file_list[0][0])
                         os.remove(self.file_list[0][1])
+                        del self.file_list[0]
             except AttributeError:
                 parameter_file=open('param-{0}.dat'.format(i),'wb')
                 self.file_list.append(['save-{0}.dat','param-{0}.dat'])
                 if len(self.file_list)>self.s+1:
                     os.remove(self.file_list[0][0])
                     os.remove(self.file_list[0][1])
+                    del self.file_list[0]
         try:
             if len(self.nn.model.weights)!=self.nn.param:
                 pickle.dump(self.nn.param[:-len(self.nn.model.weights)],parameter_file)
