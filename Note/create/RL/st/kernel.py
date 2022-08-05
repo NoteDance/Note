@@ -41,7 +41,6 @@ class kernel:
         self.epi_num=0
         self.episode_num=0
         self.total_episode=0
-        self.total_e=0
         self.time=0
         self.total_time=0
     
@@ -86,7 +85,6 @@ class kernel:
         self.epi_num=0
         self.episode_num=0
         self.total_episode=0
-        self.total_e=0
         self.time=0
         self.total_time=0
         return
@@ -539,6 +537,8 @@ class kernel:
             for i in range(episode_num):
                 loss,episode,end=self.learn2()
                 self.loss_list.append(loss)
+                self.epi_num+=1
+                self.total_episode+=1
                 if i==episode_num-1:
                     self.loss_list.append(self.loss)
                 if episode_num%10!=0:
@@ -553,9 +553,7 @@ class kernel:
                 if i%d==0:
                     print('episode num:{0}   loss:{1:.6f}'.format(i+1,loss))
                     if save!=None and i%e==0:
-                        self.save(i,one)
-                self.epi_num+=1
-                self.total_episode+=1
+                        self.save(self.total_episode,one)
                 if self.save_episode==True:
                     if end:
                         episode.append('end')
@@ -573,6 +571,8 @@ class kernel:
             while True:
                 loss,episode,end=self.learn2()
                 self.loss_list.append(loss)
+                self.epi_num+=1
+                self.total_episode+=1
                 if i==episode_num-1:
                     self.loss_list.append(self.loss)
                 i+=1
@@ -588,9 +588,7 @@ class kernel:
                 if i%d==0:
                     print('episode num:{0}   loss:{1:.6f}'.format(i+1,loss))
                     if save!=None and i%e==0:
-                        self.save(i,one)
-                self.epi_num+=1
-                self.total_eisode+=1
+                        self.save(self.total_episode,one)
                 if self.save_episode==True:
                     if end:
                         episode.append('end')
@@ -683,7 +681,7 @@ class kernel:
                         self.nn.ec+=1
                     except AttributeError:
                         pass
-                    self.total_e+=1
+                    self.total_episode+=1
                     self.thread_lock.release()
                 else:
                     if len(self.loss_list)==0:
@@ -694,7 +692,7 @@ class kernel:
                         self.nn.ec+=1
                     except AttributeError:
                         pass
-                    self.total_e+=1
+                    self.total_episode+=1
         if save!=None:
             self.save()
         self._time=self.time-int(self.time)
@@ -779,7 +777,6 @@ class kernel:
         pickle.dump(self.s,output_file)
         pickle.dump(self.episode_num,output_file)
         pickle.dump(self.total_episode,output_file)
-        pickle.dump(self.total_e,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
         return
@@ -823,7 +820,6 @@ class kernel:
         self.s=pickle.load(input_file)
         self.episode_num=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
-        self.total_e=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
         input_file.close()
         return
