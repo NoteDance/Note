@@ -497,7 +497,7 @@ class kernel:
                     if save!=None and i%e==0:
                         self.save(i,one)
                 self.epi_num+=1
-                self.total_e+=1
+                self.total_eisode+=1
                 if self.save_episode==True:
                     if end:
                         episode.append('end')
