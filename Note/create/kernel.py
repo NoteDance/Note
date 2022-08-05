@@ -936,12 +936,12 @@ class kernel:
                     if self.test_flag==False:
                         print('accuracy:{0:.1f}'.format(self.train_acc*100))
                     else:
-                        print('accuracy:{0:.1f},test_flag accuracy:{1:.1f}'.format(self.train_acc*100,self.test_acc*100))
+                        print('accuracy:{0:.1f},test accuracy:{1:.1f}'.format(self.train_acc*100,self.test_acc*100))
                 else:
                     if self.test_flag==False:
                         print('accuracy:{0:.6f}'.format(self.train_acc))
                     else:
-                        print('accuracy:{0:.6f},test_flag accuracy:{1:.6f}'.format(self.train_acc,self.test_acc))   
+                        print('accuracy:{0:.6f},test accuracy:{1:.6f}'.format(self.train_acc,self.test_acc))   
             print('time:{0}s'.format(self.time))
         self.train_flag=False
         return
