@@ -1,5 +1,5 @@
 import tensorflow as tf
-import Note.creat.nn as n
+import Note.creat.DL.nn as n
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
@@ -24,6 +24,7 @@ class kernel:
             self.opt=self.nn.opt
         self.acc_flag1=self.nn.acc_flag1
         self.acc_flag2=self.nn.acc_flag2
+        self.train_counter=0
         self.train_loss=None
         self.train_acc=None
         self.train_loss_list=[]
@@ -95,6 +96,7 @@ class kernel:
     
     
     def train(self,batch=None,epoch=None,test=False,test_batch=None,save=None,one=True,processor=None):
+        self.train_counter+=1
         with tf.name_scope('parameter'):
             self.parameter=self.nn.parameter
         with tf.name_scope('hyperparameter'):
@@ -262,12 +264,12 @@ class kernel:
             if d==0:
                 d=1
             if i%d==0:
-                if self.total_epoch==0:
+                if self.train_counter==1:
                     print('epoch:{0}   loss:{1:.6f}'.format(i,self.train_loss))
                 else:
-                    print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch+i+1,self.train_loss))
+                    print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
                 if save!=None and i%epoch*2==0:
-                    self.save(i,one)
+                    self.save(self.total_epoch,one)
             t2=time.time()
             self.time+=(t2-t1)
         if save!=None:
@@ -543,6 +545,7 @@ class kernel:
         pickle.dump(self.acc_flag1,output_file)
         pickle.dump(self.acc_flag2,output_file)
         pickle.dump(self.shape0,output_file)
+        pickle.dump(self.train_counter,output_file)
         pickle.dump(self.train_loss,output_file)
         pickle.dump(self.train_acc,output_file)
         pickle.dump(self.train_loss_list,output_file)
@@ -585,6 +588,7 @@ class kernel:
         self.acc_flag1=pickle.load(input_file)
         self.acc_flag2=pickle.load(input_file)
         self.shape0=pickle.load(input_file)
+        self.train_counter=pickle.load(input_file)
         self.train_loss=pickle.load(input_file)
         self.train_acc=pickle.load(input_file)
         self.train_loss_list=pickle.load(input_file)
