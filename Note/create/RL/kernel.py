@@ -416,7 +416,6 @@ class kernel:
     
     @function
     def tf_opt_t(self,state_pool,action_pool,next_state_pool,reward_pool,i):
-        self.param=self.nn.param
         with self.core.GradientTape() as tape:
             if type(self.nn.nn)!=list:
                 self.loss[i]=self.nn.loss(self.nn.nn,state_pool,action_pool,next_state_pool,reward_pool)
@@ -427,6 +426,7 @@ class kernel:
                 value=self.nn.nn[0](state_pool)
                 TD=self.core.reduce_mean((reward_pool+self.discount*self.nn.nn[0](next_state_pool)-value)**2)
         self.thread_lock[1].acquire()
+        self.param=self.nn.param
         if type(self.nn.nn)!=list:
             self.gradient=tape.gradient(self.loss[i],self.param[0])
         elif len(self.nn.param)==4:
