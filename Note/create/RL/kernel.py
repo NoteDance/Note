@@ -81,9 +81,7 @@ class kernel:
         t=-np.arange(-thread,1)+self.thread+1
         self.t=t.extend(self.t)
         self.thread+=thread
-        if self.PO!=True:
-            self.loss=np.concatenate((self.train_loss,np.zeros(thread)))
-            self.loss_list.extend([[] for _ in range(thread)])
+        self.loss=np.concatenate((self.train_loss,np.zeros(thread)))
         self.episode_num=np.concatenate((self.epoch,np.zeros(thread)))
         return
     
@@ -251,7 +249,6 @@ class kernel:
         if self.pool_net==True:
             self.thread_lock.acquire()
             if len(self.state_pool[index])>self.pool_size:
-                self.thread_lock.acquire()
                 self.state_pool[index]=self.state_pool[index][1:]
                 self.action_pool[index]=self.action_pool[index][1:]
                 self.next_state_pool[index]=self.next_state_pool[index][1:]
