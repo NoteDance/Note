@@ -28,6 +28,9 @@ class kernel:
         self.pool_size=None
         self.batch=None
         self.update_step=None
+        self.suspend=False
+        self.stop=None
+        self.save_flag=None
         self.end_loss=None
         self.thread=thread
         self.t=list(-np.arange(-self.thread,1))
@@ -448,6 +451,9 @@ class kernel:
     
     def _train(self,i,j=None,batches=None,length=None):
         if len(self.state_pool[i])<self.batch:
+            if self.stop==True:
+                self.stop_func()
+            self.suspend_func()
             length=min(len(self.state_pool[i]),len(self.action_pool[i]),len(self.next_state_pool[i]),len(self.reward_pool[i]))
             state_pool=self.state_pool[i][:length]
             action_pool=self.action_pool[i][:length]
@@ -467,6 +473,9 @@ class kernel:
             self.thread_lock[2].release()
             self.loss[i]=0
         else:
+            if self.stop==True:
+                self.stop_func()
+            self.suspend_func()
             try:
                 if self.nn.data_func!=None:
                     pass
@@ -524,6 +533,9 @@ class kernel:
         length=min(len(self.state_pool[i]),len(self.action_pool[i]),len(self.next_state_pool[i]),len(self.reward_pool[i]))
         train_ds=self.core.data.Dataset.from_tensor_slices((self.state_pool[i][:length],self.action_pool[i][:length],self.next_state_pool[i][:length],self.reward_pool[i][:length])).shuffle(length).batch(self.batch)
         for state_pool,action_pool,next_state_pool,reward_pool in train_ds:
+            if self.stop==True:
+                self.stop_func()
+            self.suspend_func()
             self.opt_t(state_pool,action_pool,next_state_pool,reward_pool)
             self.thread_lock[2].acquire()
             if type(self.nn.nn)!=list:
@@ -578,7 +590,11 @@ class kernel:
     
     
     def train(self,epsilon,episode_num):
-        i=self.t.pop()
+        try:
+            i=self.t.pop()
+        except IndexError:
+            print('\nError,please add thread.')
+            return
         self.thread_lock[3].acquire()
         self.thread+=1
         self._loss.append(0)
@@ -611,6 +627,8 @@ class kernel:
         elif i not in self.finish_lis and self.state_list!=None:
             self.state_list[i+1]=1
         for k in range(episode_num):
+            if self.stop==True:
+                self.stop_func()
             if self.episode_num[i]==self.epi_num[i]:
                 break
             self.episode_num[i]+=1
@@ -621,6 +639,8 @@ class kernel:
                 s=int(np.random.uniform(0,len(self.state_name)))
             if self.episode_step==None:
                 while True:
+                    if self.stop==True:
+                        self.stop_func()
                     next_s,end,_episode,index=self._explore(s,self.epsilon[i],i)
                     s=next_s
                     if self.state_pool[i]!=None and self.action_pool[i]!=None and self.next_state_pool[i]!=None and self.reward_pool[i]!=None:
@@ -638,6 +658,8 @@ class kernel:
                         self.thread_lock[3].release()
             else:
                 for _ in range(self.episode_step):
+                    if self.stop==True:
+                        self.stop_func()
                     next_s,end,episode,index=self._explore(s,self.epsilon[i],i)
                     s=next_s
                     if self.state_pool[i]!=None and self.action_pool[i]!=None and self.next_state_pool[i]!=None and self.reward_pool[i]!=None:
@@ -670,6 +692,25 @@ class kernel:
         return
     
     
+    def suspend_func(self):
+        if self.suspend==True:
+            while True:
+                if self.suspend==False:
+                    break
+        return
+    
+    
+    def stop_func(self):
+        if self.end():
+            self.thread_lock[4].acquire()
+            self.save(self.total_epoch,True)
+            self.save_flag=True
+            self.thread_lock[4].release()
+            return
+        else:
+            return
+    
+    
     def train_visual(self):
         print()
         plt.figure(1)
@@ -696,6 +737,8 @@ class kernel:
     
     
     def save(self):
+        if self.save_flag==True:
+            return
         output_file=open('save.dat','wb')
         parameter_file=open('param.dat','wb')
         if self.save_episode==True:
@@ -741,6 +784,8 @@ class kernel:
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
+        if self.save_flag==True:
+            print('\nSystem have stopped,Neural network have saved.')
         return
     
     
