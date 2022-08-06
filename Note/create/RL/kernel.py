@@ -82,9 +82,7 @@ class kernel:
         t=-np.arange(-thread,1)+self.thread+1
         self.t=t.extend(self.t)
         self.thread+=thread
-        if self.PO!=True:
-            self.loss=np.concatenate((self.train_loss,np.zeros(thread)))
-            self.loss_list.extend([[] for _ in range(thread)])
+        self.loss=np.concatenate((self.train_loss,np.zeros(thread)))
         self.episode_num=np.concatenate((self.epoch,np.zeros(thread)))
         return
     
@@ -228,18 +226,18 @@ class kernel:
                 while len(self._state_list)<i:
                     pass
                 if len(self._state_list)==i:
-                    self.thread_lock.acquire()
+                    self.thread_lock[0].acquire()
                     self._state_list.append(self.state_list[1:])
-                    self.thread_lock.release()
+                    self.thread_lock[0].release()
                 else:
                     if len(self._state_list[i])<self.thread_sum:
                         self._state_list[i]=self.state_list[1:]
                 while len(self.p)<i:
                     pass
                 if len(self.p)==i:
-                    self.thread_lock.acquire()
+                    self.thread_lock[0].acquire()
                     self.p.append(np.array(self._state_list[i],dtype=np.float16)/np.sum(self._state_list[i]))
-                    self.thread_lock.release()
+                    self.thread_lock[0].release()
                 else:
                     if len(self.p[i])<self.thread_sum:
                         self.p[i]=np.array(self._state_list[i],dtype=np.float16)/np.sum(self._state_list[i])
@@ -250,9 +248,8 @@ class kernel:
                     else:
                         break
         if self.pool_net==True:
-            self.thread_lock.acquire()
+            self.thread_lock[0].acquire()
             if len(self.state_pool[index])>self.pool_size:
-                self.thread_lock.acquire()
                 self.state_pool[index]=self.state_pool[index][1:]
                 self.action_pool[index]=self.action_pool[index][1:]
                 self.next_state_pool[index]=self.next_state_pool[index][1:]
@@ -282,7 +279,7 @@ class kernel:
                         self.reward_pool[index]=self.core.concat([self.reward_pool[index],self.core.expand_dims(r,axis=0)],0)
                 except:
                     pass
-            self.thread_lock.release()
+            self.thread_lock[0].release()
         else:
             if self.state==None:
                 self.state_pool[i]=self.core.concat([self.state_pool[i],self.core.expand_dims(s,axis=0)],0)
@@ -416,46 +413,26 @@ class kernel:
     
     @function
     def tf_opt_t(self,state_pool,action_pool,next_state_pool,reward_pool,i):
-        if self.PO==1:
-            with self.core.GradientTape() as tape:
-                if type(self.nn.nn)!=list:
-                    self.loss[i]=self.nn.loss(self.nn.nn,state_pool,action_pool,next_state_pool,reward_pool)
-                elif len(self.nn.param)==4:
-                    value=self.nn.nn[0](state_pool,p=0)
-                    TD=self.core.reduce_mean((reward_pool+self.discount*self.nn.nn[0](next_state_pool,p=2)-value)**2)
-                else:
-                    value=self.nn.nn[0](state_pool)
-                    TD=self.core.reduce_mean((reward_pool+self.discount*self.nn.nn[0](next_state_pool)-value)**2)
+        self.param=self.nn.param
+        with self.core.GradientTape() as tape:
             if type(self.nn.nn)!=list:
-                self.gradient=tape.gradient(self.loss[i],self.nn.param[0])
-                self.opt(self.gradient,self.nn.param[0])
+                self.loss[i]=self.nn.loss(self.nn.nn,state_pool,action_pool,next_state_pool,reward_pool)
             elif len(self.nn.param)==4:
-                self.value_gradient=tape.gradient(TD,self.nn.param[0])
-                self.actor_gradient=tape.gradient(value,action_pool)*tape.gradient(action_pool,self.nn.param[1])
-                self.opt(self.value_gradient,self.actor_gradient,self.nn.param)
+                value=self.nn.nn[0](state_pool,p=0)
+                TD=self.core.reduce_mean((reward_pool+self.discount*self.nn.nn[0](next_state_pool,p=2)-value)**2)
             else:
-                self.value_gradient=tape.gradient(TD,self.nn.param[0])
-                self.actor_gradient=TD*tape.gradient(self.core.math.log(action_pool),self.nn.param[1])
-                self.opt(self.value_gradient,self.actor_gradient,self.nn.param)
+                value=self.nn.nn[0](state_pool)
+                TD=self.core.reduce_mean((reward_pool+self.discount*self.nn.nn[0](next_state_pool)-value)**2)
+        self.thread_lock[1].acquire()
+        if type(self.nn.nn)!=list:
+            self.gradient=tape.gradient(self.loss[i],self.param[0])
+        elif len(self.nn.param)==4:
+            self.value_gradient=tape.gradient(TD,self.param[0])
+            self.actor_gradient=tape.gradient(value,action_pool)*tape.gradient(action_pool,self.param[1])
         else:
-            self.param=self.nn.param
-            with self.core.GradientTape() as tape:
-                if type(self.nn.nn)!=list:
-                    self.loss[i]=self.nn.loss(self.nn.nn,state_pool,action_pool,next_state_pool,reward_pool)
-                elif len(self.nn.param)==4:
-                    self.value=self.nn.nn[0](state_pool,p=0)
-                    self.TD=self.core.reduce_mean((reward_pool+self.discount*self.nn.nn[0](next_state_pool,p=2)-self.value)**2)
-                else:
-                    self.value=self.nn.nn[0](state_pool)
-                    self.TD=self.core.reduce_mean((reward_pool+self.discount*self.nn.nn[0](next_state_pool)-self.value)**2)
-            if type(self.nn.nn)!=list:
-                self.gradient=tape.gradient(self.loss[i],self.param[0])
-            elif len(self.nn.param)==4:
-                self.value_gradient=tape.gradient(self.TD,self.param[0])
-                self.actor_gradient=tape.gradient(self.value,action_pool)*tape.gradient(action_pool,self.param[1])
-            else:
-                self.value_gradient=tape.gradient(self.TD,self.param[0])
-                self.actor_gradient=self.TD*tape.gradient(self.core.math.log(action_pool),self.param[1])
+            self.value_gradient=tape.gradient(TD,self.param[0])
+            self.actor_gradient=self.TD*tape.gradient(self.core.math.log(action_pool),self.param[1])
+        self.thread_lock[1].release()
         return
     
     
@@ -476,30 +453,19 @@ class kernel:
             action_pool=self.action_pool[i][:length]
             next_state_pool=self.next_state_pool[i][:length]
             reward_pool=self.reward_pool[i][:length]
-            if self.PO==1:
-                self.opt_t(state_pool,action_pool,next_state_pool,reward_pool)
-                if self.update_step!=None:
-                    if self.a%self.update_step==0:
-                        self.nn.update_param(self.nn.param)
-                else:
-                    self.nn.update_param(self.nn.param)
-                self.loss[i]=0
+            self.opt_t(state_pool,action_pool,next_state_pool,reward_pool)
+            self.thread_lock[2].acquire()
+            if type(self.nn.nn)!=list:
+                self.opt(self.gradient,self.nn.param[0])
             else:
-                self.thread_lock[0].acquire()
-                self.opt_t(state_pool,action_pool,next_state_pool,reward_pool)
-                self.thread_lock[0].release()
-                self.thread_lock[1].acquire()
-                if type(self.nn.nn)!=list:
-                    self.opt(self.gradient,self.nn.param[0])
-                else:
-                    self.opt(self.value_gradient,self.actor_gradient,self.nn.param)
-                if self.update_step!=None:
-                    if self.a%self.update_step==0:
-                        self.nn.update_param(self.nn.param)
-                else:
+                self.opt(self.value_gradient,self.actor_gradient,self.nn.param)
+            if self.update_step!=None:
+                if self.a%self.update_step==0:
                     self.nn.update_param(self.nn.param)
-                self.thread_lock[1].release()
-                self.loss[i]=0
+            else:
+                self.nn.update_param(self.nn.param)
+            self.thread_lock[2].release()
+            self.loss[i]=0
         else:
             try:
                 if self.nn.data_func!=None:
@@ -512,20 +478,15 @@ class kernel:
                 action_pool=self.action_pool[i][index1:index2]
                 next_state_pool=self.next_state_pool[i][index1:index2]
                 reward_pool=self.reward_pool[i][index1:index2]
-                if self.PO==1:
-                    self.opt_t(state_pool,action_pool,next_state_pool,reward_pool)
+                self.opt_t(state_pool,action_pool,next_state_pool,reward_pool)
+                self.thread_lock[2].acquire()
+                if type(self.nn.nn)!=list:
+                    self.opt(self.gradient,self.nn.param[0],self.lr)
+                    self.loss[i]+=self.batch_loss
                 else:
-                    self.thread_lock[0].acquire()
-                    self.opt_t(state_pool,action_pool,next_state_pool,reward_pool)
-                    self.thread_lock[0].release()
-                    self.thread_lock[1].acquire()
-                    if type(self.nn.nn)!=list:
-                        self.opt(self.gradient,self.nn.param[0],self.lr)
-                        self.loss[i]+=self.batch_loss
-                    else:
-                        self.opt(self.value_gradient,self.actor_gradient,self.nn.param)
-                        self.loss[i]+=self.TD
-                    self.thread_lock[1].release()
+                    self.opt(self.value_gradient,self.actor_gradient,self.nn.param)
+                    self.loss[i]+=self.TD
+                self.thread_lock[2].release()
             try:
                 self.nn.bc[i]=j
             except AttributeError:
@@ -543,20 +504,15 @@ class kernel:
                     action_pool=self.core.concat([self.action_pool[i][index1:length],self.action_pool[i][:index2]],0)
                     next_state_pool=self.core.concat([self.next_state_pool[i][index1:length],self.next_state_pool[i][:index2]],0)
                     reward_pool=self.core.concat([self.reward_pool[i][index1:length],self.reward_pool[i][:index2]],0)
-                if self.PO==1:
-                    self.opt_t(state_pool,action_pool,next_state_pool,reward_pool)
+                self.opt_t(state_pool,action_pool,next_state_pool,reward_pool)
+                self.thread_lock[2].acquire()
+                if type(self.nn.nn)!=list:
+                    self.opt(self.gradient,self.nn.param[0],self.lr)
+                    self.loss[i]+=self.batch_loss
                 else:
-                    self.thread_lock[0].acquire()
-                    self.opt_t(state_pool,action_pool,next_state_pool,reward_pool)
-                    self.thread_lock[0].release()
-                    self.thread_lock[1].acquire()
-                    if type(self.nn.nn)!=list:
-                        self.opt(self.gradient,self.nn.param[0],self.lr)
-                        self.loss[i]+=self.batch_loss
-                    else:
-                        self.opt(self.value_gradient,self.actor_gradient,self.nn.param)
-                        self.loss[i]+=self.TD
-                    self.thread_lock[1].release()
+                    self.opt(self.value_gradient,self.actor_gradient,self.nn.param)
+                    self.loss[i]+=self.TD
+                self.thread_lock[2].release()
                 try:
                     self.nn.bc[i]+=1
                 except AttributeError:
@@ -568,20 +524,15 @@ class kernel:
         length=min(len(self.state_pool[i]),len(self.action_pool[i]),len(self.next_state_pool[i]),len(self.reward_pool[i]))
         train_ds=self.core.data.Dataset.from_tensor_slices((self.state_pool[i][:length],self.action_pool[i][:length],self.next_state_pool[i][:length],self.reward_pool[i][:length])).shuffle(length).batch(self.batch)
         for state_pool,action_pool,next_state_pool,reward_pool in train_ds:
-            if self.PO==1:
-                self.opt_t(state_pool,action_pool,next_state_pool,reward_pool)
+            self.opt_t(state_pool,action_pool,next_state_pool,reward_pool)
+            self.thread_lock[2].acquire()
+            if type(self.nn.nn)!=list:
+                self.opt(self.gradient,self.nn.param[0],self.lr)
+                self.loss[i]+=self.batch_loss
             else:
-                self.thread_lock[0].acquire()
-                self.opt_t(state_pool,action_pool,next_state_pool,reward_pool)
-                self.thread_lock[0].release()
-                self.thread_lock[1].acquire()
-                if type(self.nn.nn)!=list:
-                    self.opt(self.gradient,self.nn.param[0],self.lr)
-                    self.loss[i]+=self.batch_loss
-                else:
-                    self.opt(self.value_gradient,self.actor_gradient,self.nn.param)
-                    self.loss[i]+=self.TD
-                self.thread_lock[1].release()
+                self.opt(self.value_gradient,self.actor_gradient,self.nn.param)
+                self.loss[i]+=self.TD
+            self.thread_lock[2].release()
             try:
                 self.nn.bc[i]+=1
             except AttributeError:
@@ -608,20 +559,13 @@ class kernel:
                 except AttributeError:
                     pass
                 self.train_(i)
-            if self.PO==1:
-                if self.update_step!=None:
-                    if self.a%self.update_step==0:
-                        self.nn.update_param(self.nn.param)
-                else:
+            self.thread_lock[2].acquire()
+            if self.update_step!=None:
+                if self.a%self.update_step==0:
                     self.nn.update_param(self.nn.param)
             else:
-                self.thread_lock[2].acquire()
-                if self.update_step!=None:
-                    if self.a%self.update_step==0:
-                        self.nn.update_param(self.nn.param)
-                else:
-                    self.nn.update_param(self.nn.param)
-                self.thread_lock[2].release()
+                self.nn.update_param(self.nn.param)
+            self.thread_lock[2].release()
             if len(self.state_pool[i])<self.batch:
                 self.loss[i]=self.loss[i].numpy()
             else:
@@ -635,23 +579,14 @@ class kernel:
     
     def train(self,epsilon,episode_num):
         i=self.t.pop()
-        if type(self.thread_lock)==list:
-            self.thread_lock[2].acquire()
-        else:
-            self.thread_lock.acquire()
+        self.thread_lock[3].acquire()
         self.thread+=1
         self._loss.append(0)
-        if type(self.thread_lock)==list:
-            self.thread_lock[2].release()
-        else:
-            self.thread_lock.release()
+        self.thread_lock[3].release()
         while len(self.state_pool)<i:
             pass
         if len(self.state_pool)==i:
-            if type(self.thread_lock)==list:
-                self.thread_lock[2].acquire()
-            else:
-                self.thread_lock.acquire()
+            self.thread_lock[3].acquire()
             self.index_matrix(i)
             self.row_p.append(None)
             self.rank_one.append(None)
@@ -672,10 +607,7 @@ class kernel:
             if self.state_list!=None:
                 self.state_list=np.append(self.state_list,np.array(1,dtype='int8'))
             self.thread_sum+=1
-            if type(self.thread_lock)==list:
-                self.thread_lock[2].release()
-            else:
-                self.thread_lock.release()
+            self.thread_lock[3].release()
         elif i not in self.finish_lis and self.state_list!=None:
             self.state_list[i+1]=1
         for k in range(episode_num):
@@ -692,78 +624,44 @@ class kernel:
                     next_s,end,_episode,index=self._explore(s,self.epsilon[i],i)
                     s=next_s
                     if self.state_pool[i]!=None and self.action_pool[i]!=None and self.next_state_pool[i]!=None and self.reward_pool[i]!=None:
-                        if self.PO==1:
-                            self.thread_lock.acquire()
-                            self._train_(i)
-                            self.thread_lock.release()
-                        else:
-                            self._train_(i)
+                        self._train_(i)
                     if self.save_episode==True:
                         if index not in self.finish_list:
                             episode.append(_episode)
                     if end:
-                        if type(self.thread_lock)==list:
-                            self.thread_lock[2].acquire()
-                        else:
-                            self.thread_lock.acquire()
+                        self.thread_lock[3].acquire()
                         self.loss_list.append(self.loss[i])
                         if self.save_episode==True:
                             episode.append('end')
                             self.episode.append(episode)
                         break
-                        if type(self.thread_lock)==list:
-                            self.thread_lock[2].release()
-                        else:
-                            self.thread_lock.release()
+                        self.thread_lock[3].release()
             else:
                 for _ in range(self.episode_step):
                     next_s,end,episode,index=self._explore(s,self.epsilon[i],i)
                     s=next_s
                     if self.state_pool[i]!=None and self.action_pool[i]!=None and self.next_state_pool[i]!=None and self.reward_pool[i]!=None:
-                        if self.PO==1:
-                            self.thread_lock.acquire()
-                            self._train_(i)
-                            self.thread_lock.release()
-                        else:
-                            self._train_(i)
+                        self._train_(i)
                     if self.save_episode==True:
                         if index not in self.finish_list:
                             episode.append(_episode)
                     if end:
-                        if type(self.thread_lock)==list:
-                            self.thread_lock[2].acquire()
-                        else:
-                            self.thread_lock.acquire()
+                        self.thread_lock[3].acquire()
                         self.loss_list.append(self.loss[i])
                         if self.save_episode==True:
                             episode.append('end')
                             self.episode.append(episode)
                         break
-                        if type(self.thread_lock)==list:
-                            self.thread_lock[2].release()
-                        else:
-                            self.thread_lock.release()
+                        self.thread_lock[3].release()
                 if self.save_episode==True:
-                    if type(self.thread_lock)==list:
-                        self.thread_lock[2].acquire()
-                    else:
-                        self.thread_lock.acquire()
+                    self.thread_lock[3].acquire()
                     self.episode.append(episode)
-                    if type(self.thread_lock)==list:
-                        self.thread_lock[2].release()
-                    else:
-                        self.thread_lock.release()
-        if type(self.thread_lock)==list:
-            self.thread_lock[2].acquire()
-        else:
-            self.thread_lock.acquire()
+                    self.thread_lock[3].release()
+        self.thread_lock[3].acquire()
         if i not in self.finish_list:
             self.finish_list.append(i)
         self.thread-=1
-        if type(self.thread_lock)==list:
-            self.thread_lock[2].release()
-        else:
-            self.thread_lock.release()
+        self.thread_lock[3].release()
         if self.pool_net==True:
             self.state_pool[i]=None
             self.action_pool[i]=None
