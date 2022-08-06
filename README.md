@@ -34,11 +34,10 @@ kernel.train(32,5)         #train neural network
 # Parallel optimization:
 You can use parallel optimization to speed up neural network training,parallel optimization speed up training by multithreading.
 
-Note have two types of parallel optimization:
-1. not parallel computing gradient and optimizing.(kernel.PO=1)
-2. parallel computing gradient and optimizing.(kernel.PO=2)
+parallel optimization:
+parallel computing gradient and optimizing.
 
-Second parallel optimization may cause training instability but it can make the loss function jump out of the local minimum.
+parallel optimization may cause training instability but it can make the loss function jump out of the local minimum.
 
 neural network example:https://github.com/7NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/DL
 
@@ -52,7 +51,7 @@ neural network example:https://github.com/7NoteDancing/Note-documentation/tree/m
 
 **thread count:2**
 
-**PO:2**
+**PO:True**
 
 **GPU:GTX 1050 Ti**
 
@@ -71,7 +70,7 @@ neural network example:https://github.com/7NoteDancing/Note-documentation/tree/m
 
 **thread count:5**
 
-**PO:2**
+**PO:True**
 
 **GPU:GTX 1050 Ti**
 
@@ -94,7 +93,7 @@ kernel=k.kernel(cnn)   #start kernel
 kernel.core=tf                            #use core
 kernel.thread=2                        #thread count
 kernel.data(x_train,y_train)   #input you data
-kernel.PO=2
+kernel.PO=True
 kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock()]
 class thread(threading.Thread):
 	def run(self):
@@ -127,7 +126,7 @@ kernel.stop=True
 kernel.end_loss=0.7
 kernel.thread=2                        #thread count
 kernel.data(x_train,y_train)   #input you data
-kernel.PO=2
+kernel.PO=True
 kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock()]
 class thread(threading.Thread):
 	def run(self):
