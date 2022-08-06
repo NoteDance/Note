@@ -21,9 +21,8 @@ class kernel:
         self.ol=None
         self.suspend=False
         self.stop=None
-        self.stop_flag=None
-        self.train_flag=None
         self.save_flag=None
+        self.train_flag=None
         self.save_epoch=None
         self.batch=None
         self.epoch=0
@@ -534,8 +533,6 @@ class kernel:
                 except AttributeError:
                     pass
                 self.total_epoch+=1
-            if self.stop==True:
-                self.stop_flag=1
         return
     
     
@@ -623,8 +620,6 @@ class kernel:
                 except AttributeError:
                     pass
             self.thread_lock[2].release()
-            if self.stop==True:
-                self.stop_flag=1
             return
     
     
@@ -1143,10 +1138,10 @@ class kernel:
                 return
         else:
             if self.end():
-                self.thread_lock[2].acquire()
+                self.thread_lock[3].acquire()
                 self.save(self.total_epoch,True)
-                self.stop_flag=2
-                self.thread_lock[2].release()
+                self.save_flag=True
+                self.thread_lock[3].release()
                 return
             else:
                 return
@@ -1312,7 +1307,7 @@ class kernel:
     
     
     def save(self,i=None,one=True):
-        if self.stop_flag==2:
+        if self.save_flag==True:
             return
         if one==True:
             output_file=open('save.dat','wb')
@@ -1400,7 +1395,7 @@ class kernel:
                 parameter_file.close()
         except AttributeError:
             parameter_file.close()
-        if self.stop==True and self.stop_flag!=None:
+        if self.save_flag==True:
             print('\nSystem have stopped,Neural network have saved.')
         return
     
