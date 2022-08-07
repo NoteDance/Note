@@ -613,20 +613,20 @@ class kernel:
             if self.PO==1:
                 with tf.GradientTape() as tape:
                     self.output=self.nn.fp(self.train_data)
-                    self._train_loss=self.nn.loss(self.output,self.train_labels)
+                    self.train_loss=self.nn.loss(self.output,self.train_labels)
                 try:
                     if self.nn.opt!=None:
                         pass
-                    self.gradient=tape.gradient(self._train_loss,self.nn.param)
+                    self.gradient=tape.gradient(self.train_loss,self.nn.param)
                 except AttributeError:
-                    self.gradient=self.nn.gradient(tape,self._train_loss,self.nn.param)
+                    self.gradient=self.nn.gradient(tape,self.train_loss,self.nn.param)
                 try:
                     if self.nn.opt!=None:
                         pass
                     self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
                 except AttributeError:
                     self.nn.oopt(self.gradient,self.nn.param)
-                self.loss=self._train_loss.numpy()
+                self.loss=self.train_loss.numpy()
                 self.train_loss_list.append(self.loss.astype(np.float32))
                 self.train_loss=self.loss
                 self.train_loss=self.train_loss.astype(np.float32)
@@ -646,13 +646,13 @@ class kernel:
                 self.param=self.nn.param
                 with tf.GradientTape() as tape:
                     self.output=self.nn.fp(self.train_data)
-                    self._train_loss=self.nn.loss(self.output,self.train_labels)
+                    self.train_loss=self.nn.loss(self.output,self.train_labels)
                 try:
                     if self.nn.opt!=None:
                         pass
-                    self.gradient=tape.gradient(self._train_loss,self.param)
+                    self.gradient=tape.gradient(self.train_loss,self.param)
                 except AttributeError:
-                    self.gradient=self.nn.gradient(tape,self._train_loss,self.param)
+                    self.gradient=self.nn.gradient(tape,self.train_loss,self.param)
                 self.thread_lock[0].release()
                 self.thread_lock[1].acquire()
                 try:
@@ -661,7 +661,7 @@ class kernel:
                     self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
                 except AttributeError:
                     self.nn.oopt(self.gradient,self.nn.param,t)
-                self.loss=self._train_loss.numpy()
+                self.loss=self.train_loss.numpy()
                 self.train_loss_list.append(self.loss.astype(np.float32))
                 self.train_loss=self.loss
                 self.train_loss=self.train_loss.astype(np.float32)
