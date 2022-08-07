@@ -22,6 +22,7 @@ class kernel:
         self.suspend=False
         self.stop=None
         self.save_flag=None
+        self.stop_flag=None
         self.train_flag=None
         self.save_epoch=None
         self.batch=None
@@ -700,7 +701,8 @@ class kernel:
         if batch!=None:
             for j in range(batches):
                 if self.stop==True:
-                    self.stop_func()
+                    if self.stop_func() or self.stop_flag==1:
+                        return
                 self.suspend_func()
                 index1=j*batch
                 index2=(j+1)*batch
@@ -714,7 +716,8 @@ class kernel:
                     total_loss+=batch_loss
             if self.shape0%batch!=0:
                 if self.stop==True:
-                    self.stop_func()
+                    if self.stop_func() or self.stop_flag==1:
+                        return
                 batches+=1
                 index1=batches*batch
                 index2=batch-(self.shape0-batches*batch)
@@ -800,7 +803,8 @@ class kernel:
         if epoch!=None:
             for i in range(epoch):
                 if self.stop==True:
-                    self.stop_func()
+                    if self.stop_func() or self.stop_flag==1:
+                        return
                 t1=time.time()
                 if self.thread==None:
                     try:
@@ -819,6 +823,8 @@ class kernel:
                         self._train_(batch,data_batch,labels_batch,test_batch,t)
                     else:
                         self._train(batch,data_batch,labels_batch,test_batch,t)
+                if self.stop_flag==1:
+                    return
                 if type(self.total_epoch)!=list:
                     if self.thread_lock!=None:
                         if self.PO==1:
@@ -918,7 +924,8 @@ class kernel:
             i=0
             while True:
                 if self.stop==True:
-                    self.stop_func()
+                    if self.stop_func() or self.stop_flag==1:
+                        return
                 t1=time.time()
                 if self.thread==None:
                     self._train(test_batch=test_batch)
@@ -928,6 +935,8 @@ class kernel:
                         self._train_(test_batch=test_batch,t=t)
                     else:
                         self._train(test_batch=test_batch,t=t)
+                if self.stop_flag==1:
+                    return
                 i+=1
                 if type(self.total_epoch)!=list:
                     if self.thread_lock!=None:
@@ -1220,19 +1229,24 @@ class kernel:
                 self.train_flag=False
                 self.save(self.total_epoch,True)
                 print('\nSystem have stopped training,Neural network have been saved.')
-                return
-            else:
+                self.stop_flag=1
+                return True
+            elif self.stop_flag==0:
                 print('\nSystem have stopped training.')
-                return
+                self.stop_flag=1
+                return True
         else:
             if self.end():
                 self.thread_lock[3].acquire()
                 self.save(self.total_epoch,True)
                 self.save_flag=True
                 self.thread_lock[3].release()
-                return
-            else:
-                return
+                self.stop_flag=1
+                return True
+            elif self.stop_flag==0:
+                self.stop_flag=1
+                return True
+        return False
     
     
     def _save(self):
