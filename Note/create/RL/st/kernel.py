@@ -35,6 +35,7 @@ class kernel:
         self.update_step=None
         self.suspend=False
         self.stop=None
+        self.stop_flag=None
         self.train_flag=None
         self.save_epi=None
         self.train_counter=0
@@ -232,34 +233,51 @@ class kernel:
                 value=self.nn.nn[0](data[0])
                 TD=self.core.reduce_mean((data[3]+self.discount*self.nn.nn[0](data[2])-value)**2)
         if self.thread_lock!=None:
-            if type(self.nn.nn)!=list:
+            if self.PO==1:
                 self.thread_lock[0].acquire()
-                self.param=self.nn.param
-                self.gradient=tape.gradient(loss,self.param[0])
+                if type(self.nn.nn)!=list:
+                    self.gradient=tape.gradient(loss,self.nn.param[0])
+                    self.opt(self.gradient,self.nn.param[0])
+                elif len(self.nn.param)==4:
+                    self.value_gradient=tape.gradient(TD,self.nn.param[0])				
+                    self.actor_gradient=tape.gradient(value,data[1])*tape.gradient(data[1],self.nn.param[1])
+                    loss=TD
+                    self.opt(self.value_gradient,self.actor_gradient,self.nn.param)
+                else:
+                    self.value_gradient=tape.gradient(TD,self.nn.param[0])				
+                    self.actor_gradient=TD*tape.gradient(self.core.math.log(data[1]),self.nn.param[1])
+                    loss=TD
+                    self.opt(self.value_gradient,self.actor_gradient,self.nn.param)
                 self.thread_lock[0].release()
-                self.thread_lock[1].acquire()
-                self.opt(self.gradient,self.nn.param[0])
-                self.thread_lock[1].release()
-            elif len(self.nn.param)==4:
-                self.thread_lock[0].acquire()
-                self.param=self.nn.param
-                self.value_gradient=tape.gradient(TD,self.param[0])				
-                self.actor_gradient=tape.gradient(value,data[1])*tape.gradient(data[1],self.param[1])
-                self.thread_lock[0].release()
-                loss=TD
-                self.thread_lock[1].acquire()
-                self.opt(self.value_gradient,self.actor_gradient,self.nn.param)
-                self.thread_lock[1].release()
             else:
-                self.thread_lock[0].acquire()
-                self.param=self.nn.param
-                self.value_gradient=tape.gradient(TD,self.param[0])				
-                self.actor_gradient=TD*tape.gradient(self.core.math.log(data[1]),self.param[1])
-                self.thread_lock[0].release()
-                loss=TD
-                self.thread_lock[1].acquire()
-                self.opt(self.value_gradient,self.actor_gradient,self.nn.param)
-                self.thread_lock[1].release()
+                if type(self.nn.nn)!=list:
+                    self.thread_lock[0].acquire()
+                    self.param=self.nn.param
+                    self.gradient=tape.gradient(loss,self.param[0])
+                    self.thread_lock[0].release()
+                    self.thread_lock[1].acquire()
+                    self.opt(self.gradient,self.nn.param[0])
+                    self.thread_lock[1].release()
+                elif len(self.nn.param)==4:
+                    self.thread_lock[0].acquire()
+                    self.param=self.nn.param
+                    self.value_gradient=tape.gradient(TD,self.param[0])				
+                    self.actor_gradient=tape.gradient(value,data[1])*tape.gradient(data[1],self.param[1])
+                    self.thread_lock[0].release()
+                    loss=TD
+                    self.thread_lock[1].acquire()
+                    self.opt(self.value_gradient,self.actor_gradient,self.nn.param)
+                    self.thread_lock[1].release()
+                else:
+                    self.thread_lock[0].acquire()
+                    self.param=self.nn.param
+                    self.value_gradient=tape.gradient(TD,self.param[0])				
+                    self.actor_gradient=TD*tape.gradient(self.core.math.log(data[1]),self.param[1])
+                    self.thread_lock[0].release()
+                    loss=TD
+                    self.thread_lock[1].acquire()
+                    self.opt(self.value_gradient,self.actor_gradient,self.nn.param)
+                    self.thread_lock[1].release()
         else:
             if type(self.nn.nn)!=list:
                 gradient=tape.gradient(loss,self.nn.param[0])
@@ -577,7 +595,8 @@ class kernel:
         if episode_num!=None:
             for i in range(episode_num):
                 if self.stop==True:
-                    self.stop_func()
+                    if self.stop_func():
+                        return
                 loss,episode,end=self.train_(episode_num,i)
                 self.loss_list.append(loss)
                 self.epi_num+=1
@@ -621,7 +640,8 @@ class kernel:
             i=0
             while True:
                 if self.stop==True:
-                    self.stop_func()
+                    if self.stop_func():
+                        return
                 loss,episode,end=self.train_(episode_num,i)
                 self.loss_list.append(loss)
                 i+=1
@@ -666,7 +686,10 @@ class kernel:
             data=self.ol()
             loss=self.opt_t(data)
             if self.thread_lock!=None:
-                self.thread_lock[2].acquire()
+                if self.PO==1:
+                    self.thread_lock[1].acquire()
+                else:
+                    self.thread_lock[2].acquire()
                 loss=loss.numpy()
                 self.nn.train_loss.append(loss.astype(np.float32))
                 try:
@@ -674,7 +697,10 @@ class kernel:
                 except AttributeError:
                     pass
                 self.total_episode+=1
-                self.thread_lock[2].release()
+                if self.PO==1:
+                    self.thread_lock[1].release()
+                else:
+                    self.thread_lock[2].release()
             else:
                 loss=loss.numpy()
                 self.nn.train_loss.append(loss.astype(np.float32))
@@ -716,10 +742,11 @@ class kernel:
             self.train_flag=False
             self.save(self.total_episode,True)
             print('\nSystem have stopped training,Neural network have been saved.')
-            return
-        else:
+            return True
+        elif self.stop_flag==0:
             print('\nSystem have stopped training.')
-            return
+            return True
+        return False
     
         
     def _save(self):
