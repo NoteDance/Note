@@ -590,20 +590,7 @@ class kernel:
                 try:
                     if self.nn.accuracy!=None:
                         pass
-                    if self.PO==1:
-                        self.thread_lock[1].acquire()
-                    else:
-                        self.thread_lock[2].acquire()
                     batch_acc=self.nn.accuracy(output,labels_batch)
-                    if self.PO==1:
-                        self.thread_lock[1].release()
-                    else:
-                        self.thread_lock[2].release()
-                except AttributeError:
-                    pass
-                try:
-                    if self.nn.accuracy!=None:
-                        pass
                     return batch_loss,batch_acc
                 except AttributeError:
                     return batch_loss,None
@@ -618,26 +605,13 @@ class kernel:
                    except:
                        continue
             try:
-                if self.nn.accuracy!=None:
-                    pass
-                if self.PO==1:
-                    self.thread_lock[1].acquire()
-                else:
-                    self.thread_lock[2].acquire()
-                batch_acc=self.nn.accuracy(output,labels_batch)
-                if self.PO==1:
-                    self.thread_lock[1].release()
-                else:
-                    self.thread_lock[2].release()
-            except AttributeError:
-                pass
-            try:
                 self.nn.bc[t]=j
             except AttributeError:
                 pass
             try:
                 if self.nn.accuracy!=None:
                     pass
+                batch_acc=self.nn.accuracy(output,labels_batch)
                 return batch_loss,batch_acc
             except AttributeError:
                 return batch_loss,None
