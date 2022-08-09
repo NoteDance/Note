@@ -103,7 +103,7 @@ class kernel:
     
     
     def add_threads(self,thread):
-        t=-np.arange(-thread,1)+self.thread+1
+        t=-np.arange(-thread+1,1)+self.thread
         self.t=t.extend(self.t)
         self.thread+=thread
         try:
