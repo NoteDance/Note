@@ -425,10 +425,12 @@ class kernel:
     
     
     def opt(self,data,labels,t=None):
+        if t!=None:
+            t=self._threadnum[t]
         try:
             if self.core.DType!=None:
                 pass
-            output,loss=self.tf_opt(data,labels,self._threadnum[t])
+            output,loss=self.tf_opt(data,labels,t)
         except AttributeError:
             if self.thread==None:
                 output=self.nn.fp(data)
