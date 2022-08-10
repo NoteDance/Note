@@ -34,7 +34,9 @@ class kernel:
         self.stop_flag=None
         self.end_loss=None
         self.thread=thread
-        self.t=list(-np.arange(-self.thread,1))
+        self.thread_counter=0
+        self.threadnum=list(-np.arange(-self.thread,1))
+        self._threadnum=[i for i in range(self.thread)]
         self.thread_lock=thread_lock
         self.state_list=None
         self._state_list=[]
@@ -83,8 +85,9 @@ class kernel:
     
     
     def add_threads(self,thread):
-        t=-np.arange(-thread+1,1)+self.thread
-        self.t=t.extend(self.t)
+        threadnum=-np.arange(-thread+1,1)+self.thread
+        self.threadnum=threadnum.extend(self.threadnum)
+        self._threadnum=self._threadnum.extend([i+self.thread for i in range(thread)])
         self.thread+=thread
         self.loss=np.concatenate((self.train_loss,np.zeros(thread)))
         self.episode_num=np.concatenate((self.epoch,np.zeros(thread)))
@@ -234,7 +237,7 @@ class kernel:
                     self._state_list.append(self.state_list[1:])
                     self.thread_lock[0].release()
                 else:
-                    if len(self._state_list[i])<self.thread_sum:
+                    if len(self._state_list[i])<self.thread_counter:
                         self._state_list[i]=self.state_list[1:]
                 while len(self.p)<i:
                     pass
@@ -243,7 +246,7 @@ class kernel:
                     self.p.append(np.array(self._state_list[i],dtype=np.float16)/np.sum(self._state_list[i]))
                     self.thread_lock[0].release()
                 else:
-                    if len(self.p[i])<self.thread_sum:
+                    if len(self.p[i])<self.thread_counter:
                         self.p[i]=np.array(self._state_list[i],dtype=np.float16)/np.sum(self._state_list[i])
                 while True:
                     index=np.random.choice(len(self.p[i]),p=self.p[i])
@@ -648,18 +651,15 @@ class kernel:
     
     def train(self,epsilon,episode_num):
         try:
-            i=self.t.pop()
+            i=self.threadnum.pop()
         except IndexError:
             print('\nError,please add thread.')
             return
-        self.thread_lock[3].acquire()
-        self.thread+=1
-        self._loss.append(0)
-        self.thread_lock[3].release()
         while len(self.state_pool)<i:
             pass
         if len(self.state_pool)==i:
             self.thread_lock[3].acquire()
+            self._loss.append(0)
             self.index_matrix(i)
             self.row_p.append(None)
             self.rank_one.append(None)
@@ -679,7 +679,7 @@ class kernel:
                 pass
             if self.state_list!=None:
                 self.state_list=np.append(self.state_list,np.array(1,dtype='int8'))
-            self.thread_sum+=1
+            self.thread_counter+=1
             self.thread_lock[3].release()
         elif i not in self.finish_lis and self.state_list!=None:
             self.state_list[i+1]=1
@@ -833,6 +833,7 @@ class kernel:
         pickle.dump(self.batch,output_file)
         pickle.dump(self.update_step,output_file)
         pickle.dump(self.end_loss,output_file)
+        pickle.dump(self.thread_counter,output_file)
         pickle.dump(self.state_list,output_file)
         pickle.dump(self._state_list,output_file)
         pickle.dump(self.p,output_file)
@@ -887,6 +888,7 @@ class kernel:
         self.batch=pickle.load(input_file)
         self.update_step=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
+        self.thread_counter=pickle.load(input_file)
         self.state_list=pickle.load(input_file)
         self._state_list=pickle.load(input_file)
         self.p=pickle.load(input_file)
