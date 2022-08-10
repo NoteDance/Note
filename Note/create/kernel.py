@@ -579,15 +579,7 @@ class kernel:
         if batch!=None:
             if index1==batches*batch:
                 data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j,True)
-                try:
-                    output,batch_loss=self.opt_t(data_batch,labels_batch,t)
-                except:
-                    while True:
-                       try:
-                           output,batch_loss=self.opt_t(data_batch,labels_batch,t)
-                           break
-                       except:
-                           continue
+                output,batch_loss=self.opt_t(data_batch,labels_batch,t)
                 try:
                     self.nn.bc[t]+=1
                 except AttributeError:
@@ -600,15 +592,7 @@ class kernel:
                 except AttributeError:
                     return batch_loss,None
             data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j)
-            try:
-                output,batch_loss=self.opt_t(data_batch,labels_batch,t)
-            except:
-                while True:
-                   try:
-                       output,batch_loss=self.opt_t(data_batch,labels_batch,t)
-                       break
-                   except:
-                       continue
+            output,batch_loss=self.opt_t(data_batch,labels_batch,t)
             try:
                 self.nn.bc[t]=j
             except AttributeError:
