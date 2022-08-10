@@ -726,7 +726,6 @@ class kernel:
     def learn(self,epsilon,episode_num):
         i=self.t.pop()
         self.thread_lock.acquire()
-        self.thread+=1
         self._loss.append(0)
         self.thread_lock.release()
         while len(self.state_pool)<i:
