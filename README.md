@@ -123,6 +123,7 @@ y_train=tf.one_hot(y_train,10).numpy()
 cnn=c.cnn()                                #create class object
 kernel=k.kernel(cnn)   #start kernel
 kernel.core=tf                            #use core
+kernel.stop=True
 kernel.end_loss=0.7
 kernel.thread=2                        #thread count
 kernel.PO=2
