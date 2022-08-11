@@ -578,8 +578,9 @@ class kernel:
         length=min(len(self.state_pool[i]),len(self.action_pool[i]),len(self.next_state_pool[i]),len(self.reward_pool[i]))
         train_ds=self.core.data.Dataset.from_tensor_slices((self.state_pool[i][:length],self.action_pool[i][:length],self.next_state_pool[i][:length],self.reward_pool[i][:length])).shuffle(length).batch(self.batch)
         for state_pool,action_pool,next_state_pool,reward_pool in train_ds:
-            if self.stop_func() or self.stop_flag==0:
-                return
+            if self.stop==True:
+                if self.stop_func() or self.stop_flag==0:
+                    return
             self.suspend_func()
             loss=self.opt_t(state_pool,action_pool,next_state_pool,reward_pool)
             if self.PO==1:
@@ -617,8 +618,9 @@ class kernel:
                 if length%self.batch!=0:
                     batches+=1
                 for j in range(batches):
-                    if self.stop_func() or self.stop_flag==0:
-                        return
+                    if self.stop==True:
+                        if self.stop_func() or self.stop_flag==0:
+                            return
                     self._train(i,j,batches,length)
             else:
                 try:
@@ -679,8 +681,9 @@ class kernel:
         elif i not in self.finish_lis and self.state_list!=None:
             self.state_list[i+1]=1
         for k in range(episode_num):
-            if self.stop_func() or self.stop_flag==0:
-                return
+            if self.stop==True:
+                if self.stop_func() or self.stop_flag==0:
+                    return
             if self.episode_num[i]==self.epi_num[i]:
                 break
             self.episode_num[i]+=1
@@ -691,8 +694,9 @@ class kernel:
                 s=int(np.random.uniform(0,len(self.state_name)))
             if self.episode_step==None:
                 while True:
-                    if self.stop_func() or self.stop_flag==0:
-                        return
+                    if self.stop==True:
+                        if self.stop_func() or self.stop_flag==0:
+                            return
                     next_s,end,_episode,index=self._explore(s,self.epsilon[i],i)
                     s=next_s
                     if self.state_pool[i]!=None and self.action_pool[i]!=None and self.next_state_pool[i]!=None and self.reward_pool[i]!=None:
@@ -712,8 +716,9 @@ class kernel:
                         self.thread_lock[3].release()
             else:
                 for _ in range(self.episode_step):
-                    if self.stop_func() or self.stop_flag==0:
-                        return
+                    if self.stop==True:
+                        if self.stop_func() or self.stop_flag==0:
+                            return
                     next_s,end,episode,index=self._explore(s,self.epsilon[i],i)
                     s=next_s
                     if self.state_pool[i]!=None and self.action_pool[i]!=None and self.next_state_pool[i]!=None and self.reward_pool[i]!=None:
