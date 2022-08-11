@@ -663,8 +663,9 @@ class kernel:
         batches=int((self.shape0-self.shape0%batch)/batch)
         if batch!=None:
             for j in range(batches):
-                if self.stop_func() or self.stop_flag==0:
-                    return
+                if self.stop==True:
+                    if self.stop_func() or self.stop_flag==0:
+                        return
                 self.suspend_func()
                 index1=j*batch
                 index2=(j+1)*batch
@@ -677,8 +678,9 @@ class kernel:
                 except AttributeError:
                     total_loss+=batch_loss
             if self.shape0%batch!=0:
-                if self.stop_func() or self.stop_flag==0:
-                    return
+                if self.stop==True:
+                    if self.stop_func() or self.stop_flag==0:
+                        return
                 batches+=1
                 index1=batches*batch
                 index2=batch-(self.shape0-batches*batch)
@@ -773,8 +775,9 @@ class kernel:
                 return
         if epoch!=None:
             for i in range(epoch):
-                if self.stop_func() or self.stop_flag==0:
-                    return
+                if self.stop==True:
+                    if self.stop_func() or self.stop_flag==0:
+                        return
                 t1=time.time()
                 if self.thread==None:
                     try:
@@ -893,8 +896,9 @@ class kernel:
             self.suspend_func()
             i=0
             while True:
-                if self.stop_func() or self.stop_flag==0:
-                    return
+                if self.stop==True:
+                    if self.stop_func() or self.stop_flag==0:
+                        return
                 t1=time.time()
                 if self.thread==None:
                     self._train(test_batch=test_batch)
