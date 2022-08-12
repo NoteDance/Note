@@ -23,7 +23,7 @@ class kernel:
         self.suspend=False
         self.stop=None
         self.save_flag=None
-        self.stop_flag=None
+        self.stop_flag=1
         self.train_flag=None
         self.save_epoch=None
         self.batch=None
