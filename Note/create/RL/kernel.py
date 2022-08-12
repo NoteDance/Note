@@ -31,7 +31,7 @@ class kernel:
         self.suspend=False
         self.stop=None
         self.save_flag=None
-        self.stop_flag=None
+        self.stop_flag=1
         self.end_loss=None
         self.thread=thread
         self.thread_counter=0
@@ -58,7 +58,7 @@ class kernel:
                 self.rank_one=np.array(0,dtype='int8')
             except AttributeError:
                 self.state_list=np.array(0,dtype='int8')
-        self.pool_net=True
+        self.PN=True
         self.PO=None
         self.save_episode=save_episode
         self.loss=np.zeros(self.thread)
@@ -129,7 +129,7 @@ class kernel:
             self.rank_one=np.array(0,dtype='int8')
         except AttributeError:
             self.state_list=np.array(0,dtype='int8')
-        self.pool_net=True
+        self.PN=True
         self.episode=[]
         self.epsilon=[]
         self.state_pool=None
@@ -210,7 +210,7 @@ class kernel:
                     next_s,r,end=self.nn.transition(self.state_name[s],self.action_name[a])
                 else:
                     next_s,r,end=self.nn.transition(self.state_name[s],a)
-        if self.pool_net==True:
+        if self.PN==True:
             if self.state_list==None:
                 while True:
                     row_sum=np.sum(self.row_one)
@@ -254,7 +254,7 @@ class kernel:
                         continue
                     else:
                         break
-        if self.pool_net==True:
+        if self.PN==True:
             self.thread_lock[0].acquire()
             if len(self.state_pool[index])>self.pool_size:
                 self.state_pool[index]=self.state_pool[index][1:]
@@ -612,7 +612,7 @@ class kernel:
             self._train(i)
         else:
             self.loss[i]=0
-            if self.pool_net==True:
+            if self.PN==True:
                 length=min(len(self.state_pool[i]),len(self.action_pool[i]),len(self.next_state_pool[i]),len(self.reward_pool[i]))
                 batches=int((length-length%self.batch)/self.batch)
                 if length%self.batch!=0:
@@ -745,7 +745,7 @@ class kernel:
             self.finish_list.append(i)
         self.thread-=1
         self.thread_lock[3].release()
-        if self.pool_net==True:
+        if self.PN==True:
             self.state_pool[i]=None
             self.action_pool[i]=None
             self.next_state_pool[i]=None
@@ -840,7 +840,7 @@ class kernel:
         pickle.dump(self.row_one,output_file)
         pickle.dump(self.row_p,output_file)
         pickle.dump(self.finish_list,output_file)
-        pickle.dump(self.pool_net,output_file)
+        pickle.dump(self.PN,output_file)
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.loss_list,output_file)
         pickle.dump(self.a,output_file)
@@ -895,7 +895,7 @@ class kernel:
         self.row_one=pickle.load(input_file)
         self.row_p=pickle.load(input_file)
         self.finish_list=pickle.load(input_file)
-        self.pool_net=pickle.load(input_file)
+        self.PN=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
         self.a=pickle.load(input_file)
