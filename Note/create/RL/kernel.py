@@ -418,6 +418,11 @@ class kernel:
         return
     
     
+    def end(self):
+        if self.end_loss!=None and self.loss_list[-1]<=self.end_loss:
+            return True
+    
+    
     @function
     def tf_opt_t(self,state_pool,action_pool,next_state_pool,reward_pool,i):
         with self.core.GradientTape() as tape:
