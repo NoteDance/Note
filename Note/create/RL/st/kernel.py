@@ -189,6 +189,11 @@ class kernel:
         return episode
     
     
+    def end(self):
+        if self.end_loss!=None and self.loss_list[-1]<=self.end_loss:
+            return True
+    
+    
     @function
     def tf_opt(self,state_batch=None,action_batch=None,next_state_batch=None,reward_batch=None):
         if len(self.state_pool)<self.batch:
@@ -632,10 +637,6 @@ class kernel:
                     self.nn.ec+=1
                 except AttributeError:
                     pass
-                if self.end_loss!=None and loss<=self.end_loss:
-                    self.nn.param=self.param
-                    self.param=None
-                    break
         elif self.ol==None:
             i=0
             while True:
@@ -678,10 +679,6 @@ class kernel:
                     self.nn.ec+=1
                 except AttributeError:
                     pass
-                if self.end_loss!=None and loss<=self.end_loss:
-                    self.nn.param=self.param
-                    self.param=None
-                    break
         else:
             data=self.ol()
             loss=self.opt_t(data)
