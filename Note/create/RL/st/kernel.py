@@ -300,7 +300,7 @@ class kernel:
         return loss
     
     
-    def opt(self,state_batch=None,action_batch=None,next_state_batch=None,reward_batch=None):
+    def _opt(self,state_batch=None,action_batch=None,next_state_batch=None,reward_batch=None):
         try:
             if self.core.DType!=None:
                 pass
@@ -329,7 +329,7 @@ class kernel:
         if self.end_loss!=None:
             self.param=self.nn.param
         if len(self.state_pool)<self.batch:
-            _=self.opt()
+            _=self._opt()
             if self.update_step!=None:
                 if self.a%self.update_step==0:
                     self.nn.update_param(self.nn.param)
@@ -348,7 +348,7 @@ class kernel:
                 for j in range(batches):
                     self.suspend_func()
                     state_batch,action_batch,next_state_batch,reward_batch=self.nn.data_func(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
-                    batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch)
+                    batch_loss=self._opt(state_batch,action_batch,next_state_batch,reward_batch)
                     loss+=batch_loss
                     try:
                         self.nn.bc=j
@@ -357,7 +357,7 @@ class kernel:
                 if len(self.state_pool)%self.batch!=0:
                     self.suspend_func()
                     state_batch,action_batch,next_state_batch,reward_batch=self.nn.data_func(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
-                    batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch)
+                    batch_loss=self._opt(state_batch,action_batch,next_state_batch,reward_batch)
                     loss+=batch_loss
                     try:
                         self.nn.bc+=1
@@ -371,7 +371,7 @@ class kernel:
                 except AttributeError:
                     pass
                 for state_batch,action_batch,next_state_batch,reward_batch in train_ds:
-                    batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch)
+                    batch_loss=self._opt(state_batch,action_batch,next_state_batch,reward_batch)
                     loss+=batch_loss
                     j+=1
                     try:
