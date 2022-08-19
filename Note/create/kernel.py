@@ -444,14 +444,8 @@ class kernel:
     
     
     def opt_t(self,data,labels,t):
-        try:
-            if self.core.DType!=None:
-                pass
-            output,loss=self.tf_opt_t(data,labels,self._threadnum[t])
-            return output,loss
-        except AttributeError:
-            pass
-            return
+        output,loss=self.tf_opt_t(data,labels,self._threadnum[t])
+        return output,loss
     
     
     def _train(self,batch=None,_data_batch=None,_labels_batch=None,test_batch=None,t=None):
@@ -1156,11 +1150,11 @@ class kernel:
             else:
                 output=self.nn.fp(test_data,t)
             test_loss=self.nn.loss(output,test_labels)
+            test_loss=test_loss.numpy().astype(np.float32)
             try:
                 if self.nn.accuracy!=None:
                     pass
                 test_acc=self.nn.accuracy(output,test_labels)
-                test_loss=test_loss.numpy().astype(np.float32)
                 test_acc=test_acc.numpy().astype(np.float32)
             except AttributeError:
                 pass
