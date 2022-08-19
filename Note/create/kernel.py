@@ -294,7 +294,7 @@ class kernel:
                 else:
                     output,loss=self.nn.fp(data,labels,t)
         except AttributeError:
-            with self.core.GradientTape() as tape:
+            with self.core.GradientTape(persistent=True) as tape:
                 try:
                     if self.thread==None:
                         output=self.nn.fp(data)
@@ -320,10 +320,10 @@ class kernel:
                     self.nn.opt[t].apply_gradients(zip(gradient,self.nn.param[t]))
             except AttributeError:
                 if self.thread==None:
-                    gradient=self.nn.gradient(output,loss,self.nn.param)
+                    gradient=self.nn.gradient(tape,self.nn.param)
                     self.nn.oopt(gradient,self.nn.param)
                 else:
-                    gradient=self.nn.gradient(output,loss,self.nn.param[t])
+                    gradient=self.nn.gradient(tape,self.nn.param[t])
                     self.nn.oopt(gradient,self.nn.param,t)
         else:
             if self.thread_lock!=None:
@@ -346,13 +346,13 @@ class kernel:
                 except AttributeError:
                     if self.PO==1:
                         self.thread_lock[0].acquire()
-                        gradient=self.nn.gradient(output,loss,self.nn.param)
+                        gradient=self.nn.gradient(tape,self.nn.param)
                         self.nn.oopt(gradient,self.nn.param)
                         self.thread_lock[0].release()
                     else:
                         self.thread_lock[0].acquire()
                         self.param=self.nn.param
-                        self.gradient=self.nn.gradient(output,loss,self.param)
+                        self.gradient=self.nn.gradient(tape,self.param)
                         self.thread_lock[0].release()
                         self.thread_lock[1].acquire()
                         self.nn.oopt(self.gradient,self.nn.param)
@@ -380,7 +380,7 @@ class kernel:
             except TypeError:
                 output,loss=self.nn.fp(data,labels)
         except AttributeError:
-            with self.core.GradientTape() as tape:
+            with self.core.GradientTape(persistent=True) as tape:
                 try:
                     output=self.nn.fp(data)
                     loss=self.nn.loss(output,labels)
@@ -394,7 +394,7 @@ class kernel:
                 self.gradient=tape.gradient(loss,self.nn.param)
                 self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
             except AttributeError:
-                self.gradient=self.nn.gradient(output,loss,self.nn.param)
+                self.gradient=self.nn.gradient(tape,self.nn.param)
                 try:
                     self.nn.oopt(self.gradient,self.nn.param,t)
                 except TypeError:
@@ -408,7 +408,7 @@ class kernel:
                 self.param=self.nn.param
                 self.gradient=tape.gradient(loss,self.param)
             except AttributeError:
-                self.gradient=self.nn.gradient(output,loss,self.param)
+                self.gradient=self.nn.gradient(tape,self.param)
             self.thread_lock[0].release()
             self.thread_lock[1].acquire()
             try:
