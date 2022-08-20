@@ -280,19 +280,12 @@ class kernel:
     @function
     def tf_opt(self,data,labels,t=None):
         try:
-            if self.nn.gradient!=None:
+            if self.nn.GradientTape!=None:
                 pass
-            try:
-                if self.thread==None:
-                    output=self.nn.fp(data)
-                else:
-                    output=self.nn.fp(data,t)
-                loss=self.nn.loss(output,labels)
-            except TypeError:
-                if self.thread==None:
-                    output,loss=self.nn.fp(data,labels)
-                else:
-                    output,loss=self.nn.fp(data,labels,t)
+            if self.thread==None:
+                tape,output,loss=self.nn.GradientTape(data,labels)
+            else:
+                tape,output,loss=self.nn.GradientTape(data,labels,t)
         except AttributeError:
             with self.core.GradientTape(persistent=True) as tape:
                 try:
@@ -372,13 +365,9 @@ class kernel:
     @function
     def tf_opt_t(self,data,labels,t):
         try:
-            if self.nn.gradient!=None:
+            if self.nn.GradientTape!=None:
                 pass
-            try:
-                output=self.nn.fp(data)
-                loss=self.nn.loss(output,labels)
-            except TypeError:
-                output,loss=self.nn.fp(data,labels)
+            tape,output,loss=self.nn.GradientTape(data,labels)
         except AttributeError:
             with self.core.GradientTape(persistent=True) as tape:
                 try:
