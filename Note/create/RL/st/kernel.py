@@ -127,7 +127,9 @@ class kernel:
         self.end_flag=False
         while True:
             s=next_s
-            if type(self.nn.nn)!=list:
+            try:
+                if self.nn.Qnet!=None:
+                    pass
                 try:
                     if self.nn.explore!=None:
                         pass
@@ -140,7 +142,7 @@ class kernel:
                 except AttributeError:
                     a=np.argmax(self.nn.Qnet(s,target=False))
                     next_s,r,done=self.nn.transition(self.state_name[s],self.action_name[a])
-            else:
+            except AttributeError:
                 try:
                     if self.nn.explore!=None:
                         pass
@@ -301,7 +303,9 @@ class kernel:
             while True:
                 t1=time.time()
                 self.step_counter+=1
-                if type(self.nn.nn)!=list:
+                try:
+                    if self.nn.Qnet!=None:
+                        pass
                     try:
                         if self.nn.explore!=None:
                             pass
@@ -317,7 +321,7 @@ class kernel:
                         a=np.random.choice(self.action,p=action_prob)
                         next_s,r,done=self.nn.transition(self.state_name[s],self.action_name[a])
                     self.pool(s,a,next_s,r)
-                else:
+                except AttributeError:
                     try:
                         if self.nn.explore!=None:
                             pass 
@@ -361,7 +365,9 @@ class kernel:
             for _ in range(self.episode_step):
                 t1=time.time()
                 self.step_counter+=1
-                if type(self.nn.nn)!=list:
+                try:
+                    if self.nn.Qnet!=None:
+                        pass
                     try:
                         if self.nn.explore!=None:
                             pass
@@ -377,7 +383,7 @@ class kernel:
                         a=np.random.choice(self.action,p=action_prob)
                         next_s,r,done=self.nn.transition(self.state_name[s],self.action_name[a])
                     self.pool(s,a,next_s,r)
-                else:
+                except AttributeError:
                     try:
                         if self.nn.explore!=None:
                             pass 
