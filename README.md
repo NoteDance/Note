@@ -6,7 +6,7 @@
 Note is an AI system that have kernel for deep learning and reinforcement learning.It retains the freedom of tensorflow to implement neural networks,eliminates a lot of tedious work and has many functions.
 
 
-# Train:
+# Deep Learning:
 If you done your neural network,you can use kernel to train.
 
 simple example:
@@ -15,12 +15,12 @@ neural network example:https://github.com/7NoteDancing/Note-documentation/tree/m
 ```python
 import Note.create.kernel as k   #import kernel
 import tensorflow as tf              #import core
-import cnn as c                          #import your class's python file
+import cnn as c                          #import neural network
 mnist=tf.keras.datasets.mnist
 (x_train,y_train),(x_test,y_test)=mnist.load_data()
 x_train,x_test =x_train/255.0,x_test/255.0
 y_train=tf.one_hot(y_train,10).numpy()
-cnn=c.cnn()                                #create class object
+cnn=c.cnn()                                #create neural network object
 kernel=k.kernel(cnn)                 #start kernel
 kernel.core=tf                           #use core
 kernel.data(x_train,y_train)   #input you data,if you have test data can transfer to kernel API data()
@@ -31,7 +31,7 @@ kernel.train(32,5)         #train neural network
 ```                                             
 
 
-# Parallel optimization:
+## Parallel optimization:
 You can use parallel optimization to speed up neural network training,parallel optimization speed up training by multithreading.
 
 Note have two types of parallel optimization:
@@ -76,20 +76,20 @@ neural network example:https://github.com/7NoteDancing/Note-documentation/tree/m
 **GPU:GTX 1050 Ti**
 
 
-# Multithreading：
+## Multithreading：
 neural network example:https://github.com/7NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/DL
 
 simple example:
 ```python
 import Note.create.kernel as k   #import kernel
 import tensorflow as tf              #import core
-import cnn as c                          #import your class's python file
+import cnn as c                          #import neural network
 import threading
 mnist=tf.keras.datasets.mnist
 (x_train,y_train),(x_test,y_test)=mnist.load_data()
 x_train,x_test =x_train/255.0,x_test/255.0
 y_train=tf.one_hot(y_train,10).numpy()
-cnn=c.cnn()                                #create class object
+cnn=c.cnn()                                #create neural network object
 kernel=k.kernel(cnn)   #start kernel
 kernel.core=tf                            #use core
 kernel.thread=2                        #thread count
@@ -114,13 +114,13 @@ simple example:
 ```python
 import Note.create.kernel as k   #import kernel
 import tensorflow as tf              #import core
-import cnn as c                          #import your class's python file
+import cnn as c                          #import neural network
 import threading
 mnist=tf.keras.datasets.mnist
 (x_train,y_train),(x_test,y_test)=mnist.load_data()
 x_train,x_test =x_train/255.0,x_test/255.0
 y_train=tf.one_hot(y_train,10).numpy()
-cnn=c.cnn()                                #create class object
+cnn=c.cnn()                                #create neural network object
 kernel=k.kernel(cnn)   #start kernel
 kernel.core=tf                            #use core
 kernel.stop=True
@@ -139,6 +139,21 @@ for _ in range(2):
 	_thread.join()
 kernel.train_loss_list or kernel.train_loss       #view training loss
 kernel.train_visual()
+```
+
+
+# Reinforcement Learning:
+```python
+import Note.create.RL.st.kernel as k   #import kernel
+import DQN as d
+dqn=d.DQN()                               #create neural network object
+kernel=k.kernel(dqn)   #start kernel
+kernel.set_up(epsilon=0.01,discount=0.98,pool_size=10000,batch=64,update_step=10,trial_num=10)
+kernel.train(500)
+kernel.loss_list or kernel.loss       #view training loss
+kernel.train_visual()
+kernel.reward                         #view reward
+kernel.reward_visual()
 ```
 
 
