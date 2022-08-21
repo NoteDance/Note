@@ -45,6 +45,7 @@ class kernel:
         self.train_counter=0
         self.end_loss=None
         self.save_episode=save_episode
+        self.loss=None
         self.loss_list=[]
         self.step_counter=0
         self.total_episode=0
@@ -77,9 +78,7 @@ class kernel:
         return
     
     
-    def set_up(self,param=None,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_num=None,criterion=None,end_loss=None):
-        if param!=None:
-            self.nn.param=param
+    def set_up(self,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_num=None,criterion=None,end_loss=None):
         if epsilon!=None:
             self.epsilon=epsilon
         if discount!=None:
@@ -200,7 +199,7 @@ class kernel:
                 self.thread_lock[0].release()
         else:
             self.nn.opt(loss)
-        return loss
+        return loss.numpy()
     
     
     def pool(self,s,a,next_s,r):
@@ -450,7 +449,7 @@ class kernel:
                     self.trial_list.append(self.reward)
                     if len(self.trial_list)==self.trial_num:
                         avg_reward=statistics.mean(self.reward_list)
-                        if avg_reward>=self.criterion:
+                        if self.criterion!=None and avg_reward>=self.criterion:
                             self._time=self.time-int(self.time)
                             if self._time<0.5:
                                 self.time=int(self.time)
@@ -465,10 +464,10 @@ class kernel:
                                 print('episode:{0}'.format(self.total_episode))
                             print()
                             print('time:{0}s'.format(self.time))
-                            self.train_flag=False
                             return
                         else:
-                            self.trial_list.clear()
+                            self.trial_list.pop(0)
+                self.loss=loss
                 self.loss_list.append(loss)
                 self.epi_num+=1
                 self.total_episode+=1
@@ -543,6 +542,7 @@ class kernel:
                             return
                         else:
                             self.reward_list.pop(0)
+                self.loss=loss
                 self.loss_list.append(loss)
                 i+=1
                 self.epi_num+=1
@@ -590,7 +590,7 @@ class kernel:
             if self.thread_lock!=None:
                 if self.PO==1:
                     self.thread_lock[1].acquire()
-                loss=loss.numpy()
+                self.loss=loss
                 self.nn.train_loss.append(loss.astype(np.float32))
                 try:
                     self.nn.ec+=1
@@ -600,7 +600,7 @@ class kernel:
                 if self.PO==1:
                     self.thread_lock[1].release()
             else:
-                loss=loss.numpy()
+                self.loss=loss
                 self.nn.train_loss.append(loss.astype(np.float32))
                 try:
                     self.nn.ec+=1
