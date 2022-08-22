@@ -114,9 +114,9 @@ class kernel:
     def epsilon_greedy_policy(self,s,action_one):
         action_prob=action_one*self.epsilon/len(action_one)
         if self.state==None:
-            best_a=np.argmax(self.nn.Qnet(s,target=False))
+            best_a=np.argmax(self.nn.nn(s,target=False))
         else:
-            best_a=np.argmax(self.nn.Qnet(self.state[self.state_name[s]]))
+            best_a=np.argmax(self.nn.nn(self.state[self.state_name[s]]))
         action_prob[best_a.numpy()]+=1-self.epsilon
         return action_prob
     
@@ -128,19 +128,19 @@ class kernel:
         while True:
             s=next_s
             try:
-                if self.nn.Qnet!=None:
+                if self.nn.nn!=None:
                     pass
                 try:
                     if self.nn.explore!=None:
                         pass
                     s=np.expand_dims(s,axis=0)
-                    a=np.argmax(self.nn.Qnet(s,target=False)).numpy()
+                    a=np.argmax(self.nn.nn(s,target=False)).numpy()
                     if self.action_name==None:
                         next_s,r,done=self.nn.explore(a)
                     else:
                         next_s,r,done=self.nn.explore(self.action_name[a])
                 except AttributeError:
-                    a=np.argmax(self.nn.Qnet(s,target=False))
+                    a=np.argmax(self.nn.nn(s,target=False))
                     next_s,r,done=self.nn.transition(self.state_name[s],self.action_name[a])
             except AttributeError:
                 try:
@@ -282,12 +282,7 @@ class kernel:
                 if self.step_counter%self.update_step==0:
                     self.nn.update_param()
             else:
-                try:
-                    if self.nn.update_param!=None:
-                        pass
-                    self.nn.update_param()
-                except AttributeError:
-                    pass
+                self.nn.update_param()
         loss=loss.numpy()/batches
         return loss
     
@@ -302,23 +297,36 @@ class kernel:
         if self.episode_step==None:
             while True:
                 t1=time.time()
-                self.step_counter+=1
                 try:
-                    if self.nn.Qnet!=None:
+                    if self.nn.nn!=None:
                         pass
                     try:
                         if self.nn.explore!=None:
                             pass
                         s=np.expand_dims(s,axis=0)
-                        action_prob=self.epsilon_greedy_policy(s,self.action_one)
-                        a=np.random.choice(self.action,p=action_prob)
+                        if self.epsilon==None:
+                            self.epsilon=self.nn.epsilon(self.step_counter)
+                        try:
+                            if self.nn.action!=None:
+                                pass
+                            a=self.nn.action(s)
+                        except AttributeError:
+                            action_prob=self.epsilon_greedy_policy(s,self.action_one)
+                            a=np.random.choice(self.action,p=action_prob)
                         if self.action_name==None:
                             next_s,r,done=self.nn.explore(a)
                         else:
                             next_s,r,done=self.nn.explore(self.action_name[a])
                     except AttributeError:
-                        action_prob=self.epsilon_greedy_policy(s,self.action_one)
-                        a=np.random.choice(self.action,p=action_prob)
+                        if self.epsilon==None:
+                            self.epsilon=self.nn.epsilon(self.step_counter)
+                        try:
+                            if self.nn.action!=None:
+                                pass
+                            a=self.nn.action(s)
+                        except AttributeError:
+                            action_prob=self.epsilon_greedy_policy(s,self.action_one)
+                            a=np.random.choice(self.action,p=action_prob)
                         next_s,r,done=self.nn.transition(self.state_name[s],self.action_name[a])
                     self.pool(s,a,next_s,r)
                 except AttributeError:
@@ -336,6 +344,8 @@ class kernel:
                         next_s,r,done=self.nn.transition(self.state_name[s],a)
                     self.pool(s,a,next_s,r)
                 self.reward=r+self.discount*self.reward
+                loss=self._train()
+                self.step_counter+=1
                 if done:
                     if self.save_episode==True:
                         if self.state_name==None and self.action_name==None:
@@ -347,7 +357,9 @@ class kernel:
                         else:
                             episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r]
                     self.reward_list.append(self.reward)
-                    break
+                    t2=time.time()
+                    self.time+=(t2-t1)
+                    return loss,episode,done
                 elif self.save_episode==True:
                     if self.state_name==None and self.action_name==None:
                         episode=[s,a,next_s,r]
@@ -358,29 +370,39 @@ class kernel:
                     else:
                         episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r]
                 s=next_s
-                loss=self._train()
-                t2=time.time()
-                self.time+=(t2-t1)
         else:
             for _ in range(self.episode_step):
                 t1=time.time()
-                self.step_counter+=1
                 try:
-                    if self.nn.Qnet!=None:
+                    if self.nn.nn!=None:
                         pass
                     try:
                         if self.nn.explore!=None:
                             pass
                         s=np.expand_dims(s,axis=0)
-                        action_prob=self.epsilon_greedy_policy(s,self.action_one)
-                        a=np.random.choice(self.action,p=action_prob)
+                        if self.epsilon==None:
+                            self.epsilon=self.nn.epsilon(self.step_counter)
+                        try:
+                            if self.nn.action!=None:
+                                pass
+                            a=self.nn.action(s)
+                        except AttributeError:
+                            action_prob=self.epsilon_greedy_policy(s,self.action_one)
+                            a=np.random.choice(self.action,p=action_prob)
                         if self.action_name==None:
                             next_s,r,done=self.nn.explore(a)
                         else:
                             next_s,r,done=self.nn.explore(self.action_name[a])
                     except AttributeError:
-                        action_prob=self.epsilon_greedy_policy(s,self.action_one)
-                        a=np.random.choice(self.action,p=action_prob)
+                        if self.epsilon==None:
+                            self.epsilon=self.nn.epsilon(self.step_counter)
+                        try:
+                            if self.nn.action!=None:
+                                pass
+                            a=self.nn.action(s)
+                        except AttributeError:
+                            action_prob=self.epsilon_greedy_policy(s,self.action_one)
+                            a=np.random.choice(self.action,p=action_prob)
                         next_s,r,done=self.nn.transition(self.state_name[s],self.action_name[a])
                     self.pool(s,a,next_s,r)
                 except AttributeError:
@@ -398,6 +420,8 @@ class kernel:
                         next_s,r,done=self.nn.transition(self.state_name[s],a)
                     self.pool(s,a,next_s,r)
                 self.reward=r+self.reward
+                loss=self._train()
+                self.step_counter+=1
                 if done:
                     if self.save_episode==True:
                         if self.state_name==None and self.action_name==None:
@@ -409,7 +433,9 @@ class kernel:
                         else:
                             episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r]
                     self.reward_list.append(self.reward)
-                    break
+                    t2=time.time()
+                    self.time+=(t2-t1)
+                    return loss,episode,done
                 elif self.save_episode==True:
                     if self.state_name==None and self.action_name==None:
                         episode=[s,a,next_s,r]
@@ -420,10 +446,9 @@ class kernel:
                     else:
                         episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r]
                 s=next_s
-                loss=self._train()
-                t2=time.time()
-                self.time+=(t2-t1)
         self.reward_list.append(self.reward)
+        t2=time.time()
+        self.time+=(t2-t1)
         return loss,episode,done
     
     
@@ -730,6 +755,7 @@ class kernel:
         pickle.dump(self.end_loss,output_file)
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.reward_list,output_file)
+        pickle.dump(self.loss,output_file)
         pickle.dump(self.loss_list,output_file)
         pickle.dump(self.step_counter,output_file)
         pickle.dump(self.p,output_file)
@@ -769,6 +795,7 @@ class kernel:
         self.end_loss=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
         self.reward_list=pickle.load(input_file)
+        self.loss=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
         self.step_counter=pickle.load(input_file)
         self.p=pickle.load(input_file)
