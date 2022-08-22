@@ -36,7 +36,6 @@ class kernel:
         self.trial_num=None
         self.criterion=None
         self.reward_list=[]
-        self.trial_list=[]
         self.suspend=False
         self.stop=None
         self.stop_flag=None
@@ -102,6 +101,8 @@ class kernel:
         self.action_pool=None
         self.next_state_pool=None
         self.reward_pool=None
+        self.reward_list=[]
+        self.loss=0
         self.loss_list=[]
         self.step_counter=0
         self.total_episode=0
@@ -446,9 +447,8 @@ class kernel:
                         return
                 loss,episode,done=self.train_()
                 if self.trial_num!=None:
-                    self.trial_list.append(self.reward)
-                    if len(self.trial_list)==self.trial_num:
-                        avg_reward=statistics.mean(self.reward_list)
+                    if len(self.reward_list)>=self.trial_num:
+                        avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
                         if self.criterion!=None and avg_reward>=self.criterion:
                             self._time=self.time-int(self.time)
                             if self._time<0.5:
@@ -465,8 +465,6 @@ class kernel:
                             print()
                             print('time:{0}s'.format(self.time))
                             return
-                        else:
-                            self.trial_list.clear()
                 self.loss=loss
                 self.loss_list.append(loss)
                 self.epi_num+=1
@@ -493,6 +491,8 @@ class kernel:
                             print('episode:{0}   loss:{1:.6f}'.format(i+1,loss))
                         if avg_reward!=None:
                             print('episode:{0}   average reward:{1}'.format(i+1,avg_reward))
+                        else:
+                            print('episode:{0}   reward:{1}'.format(i+1,self.reward))
                         print()
                     else:
                         if self.state_pool!=None and len(self.state_pool)>=self.batch:
@@ -501,6 +501,8 @@ class kernel:
                             print('episode:{0}   loss:{1:.6f}'.format(self.total_episode,loss))
                         if avg_reward!=None:
                             print('episode:{0}   average reward:{1}'.format(self.total_episode,avg_reward))
+                        else:
+                            print('episode:{0}   reward:{1}'.format(self.total_episode,self.reward))
                         print()
                 if save!=None and i%s==0:
                     self.save(self.total_episode,one)
@@ -520,9 +522,8 @@ class kernel:
                         return
                 loss,episode,done=self.train_()
                 if self.trial_num!=None:
-                    self.reward_list.append(self.reward)
                     if len(self.reward_list)==self.trial_num:
-                        avg_reward=statistics.mean(self.reward_list)
+                        avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
                         if avg_reward>=self.criterion:
                             self._time=self.time-int(self.time)
                             if self._time<0.5:
@@ -540,8 +541,6 @@ class kernel:
                             print('time:{0}s'.format(self.time))
                             self.train_flag=False
                             return
-                        else:
-                            self.reward_list.clear()
                 self.loss=loss
                 self.loss_list.append(loss)
                 i+=1
@@ -567,12 +566,16 @@ class kernel:
                             print('episode:{0}   loss:{1:.6f}'.format(i+1,loss))
                         if avg_reward!=None:
                             print('episode:{0}   average reward:{1}'.format(i+1,avg_reward))
+                        else:
+                            print('episode:{0}   reward:{1}'.format(i+1,self.reward))
                         print()
                     else:
                         if len(self.state_pool)>=self.batch:
                             print('episode:{0}   loss:{1:.6f}'.format(self.total_episode,loss))
                         if avg_reward!=None:
                             print('episode:{0}   average reward:{1}'.format(self.total_episode,avg_reward))
+                        else:
+                            print('episode:{0}   reward:{1}'.format(self.total_episode,self.reward))
                         print()
                 if save!=None and i%s==0:
                     self.save(self.total_episode,one)
@@ -616,6 +619,7 @@ class kernel:
             self.time=int(self.time)+1
         self.total_time+=self.time
         print('last loss:{0:.6f}'.format(loss))
+        print('last reward:{0}'.format(self.reward))
         print()
         print('time:{0}s'.format(self.time))
         return
