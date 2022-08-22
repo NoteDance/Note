@@ -148,6 +148,7 @@ import Note.create.RL.st.kernel as k   #import kernel
 import DQN as d
 dqn=d.DQN()                               #create neural network object
 kernel=k.kernel(dqn)   #start kernel
+kernel.action_init(4)
 kernel.set_up(epsilon=0.01,discount=0.98,pool_size=10000,batch=64,update_step=10,trial_num=10)
 kernel.train(500)
 kernel.loss_list or kernel.loss       #view training loss
