@@ -64,9 +64,8 @@ class kernel:
         else:
             self.shape0=train_data.shape[0]
         if self.thread!=None:
-            self.threadnum=-np.arange(-(self.thread-1),1)
+            self.threadnum=np.arange(self.thread)
             self.threadnum=list(self.threadnum)
-            self._threadnum=[i for i in range(self.thread)]
             try:
                 self.nn.ec=np.zeros(self.thread)
             except AttributeError:
@@ -110,9 +109,8 @@ class kernel:
     
     
     def add_threads(self,thread):
-        threadnum=-np.arange(-thread+1,1)+self.thread
-        self.threadnum=threadnum.extend(self.threadnum)
-        self._threadnum=self._threadnum.extend([i+self.thread for i in range(thread)])
+        threadnum=np.arange(thread)+self.thread
+        self.threadnum=self.threadnum.extend(threadnum)
         self.thread+=thread
         try:
             self.nn.ec=np.concatenate((self.nn.ec,np.zeros(thread)))
@@ -415,7 +413,7 @@ class kernel:
     
     def opt(self,data,labels,t=None):
         if t!=None:
-            t=self._threadnum[t]
+            t=int(t)
         try:
             if self.core.DType!=None:
                 pass
@@ -433,7 +431,7 @@ class kernel:
     
     
     def opt_t(self,data,labels,t):
-        output,loss=self.tf_opt_t(data,labels,self._threadnum[t])
+        output,loss=self.tf_opt_t(data,labels,int(t))
         return output,loss
     
     
@@ -752,7 +750,7 @@ class kernel:
             labels_batch=None
         if self.thread!=None:
             try:
-                t=self.threadnum.pop()
+                t=self.threadnum.pop(0)
             except IndexError:
                 print('\nError,please add thread.')
                 return
@@ -1037,7 +1035,7 @@ class kernel:
             except AttributeError:
                 pass
             print()
-            print('time:{0}s'.format(self.time))
+            print('time:{0}s'.format(self.total_time))
         if self.thread==None:
             self.train_flag=False
         return
@@ -1185,10 +1183,68 @@ class kernel:
                 self.train_flag=False
                 self.save(self.total_epoch,True)
                 print('\nSystem have stopped training,Neural network have been saved.')
+                self._time=self.time-int(self.time)
+                if self._time<0.5:
+                    self.time=int(self.time)
+                else:
+                    self.time=int(self.time)+1
+                self.total_time+=self.time
+                print()
+                print('epoch:{0}'.format(self.total_epoch))
+                if self.test_flag==False:
+                    print('last loss:{0:.6f}'.format(self.train_loss))
+                else:
+                    print('last loss:{0:.6f},last test loss:{1:.6f}'.format(self.train_loss,self.test_loss))
+                try:
+                    if self.nn.accuracy!=None:
+                        pass
+                    if self.acc_flag=='%':
+                        if self.test_flag==False:
+                            print('last accuracy:{0:.1f}'.format(self.train_acc*100))
+                        else:
+                            print('last accuracy:{0:.1f},last test accuracy:{1:.1f}'.format(self.train_acc*100,self.test_acc*100))
+                    else:
+                        if self.test_flag==False:
+                            print('last accuracy:{0:.6f}'.format(self.train_acc))
+                        else:
+                            print('last accuracy:{0:.6f},last test accuracy:{1:.6f}'.format(self.train_acc,self.test_acc))   
+                except AttributeError:
+                    pass
+                print()
+                print('time:{0}s'.format(self.total_time))
                 self.stop_flag=0
                 return True
             elif self.stop_flag==1:
                 print('\nSystem have stopped training.')
+                self._time=self.time-int(self.time)
+                if self._time<0.5:
+                    self.time=int(self.time)
+                else:
+                    self.time=int(self.time)+1
+                self.total_time+=self.time
+                print()
+                print('epoch:{0}'.format(self.total_epoch))
+                if self.test_flag==False:
+                    print('last loss:{0:.6f}'.format(self.train_loss))
+                else:
+                    print('last loss:{0:.6f},last test loss:{1:.6f}'.format(self.train_loss,self.test_loss))
+                try:
+                    if self.nn.accuracy!=None:
+                        pass
+                    if self.acc_flag=='%':
+                        if self.test_flag==False:
+                            print('last accuracy:{0:.1f}'.format(self.train_acc*100))
+                        else:
+                            print('last accuracy:{0:.1f},last test accuracy:{1:.1f}'.format(self.train_acc*100,self.test_acc*100))
+                    else:
+                        if self.test_flag==False:
+                            print('last accuracy:{0:.6f}'.format(self.train_acc))
+                        else:
+                            print('last accuracy:{0:.6f},last test accuracy:{1:.6f}'.format(self.train_acc,self.test_acc))   
+                except AttributeError:
+                    pass
+                print()
+                print('time:{0}s'.format(self.total_time))
                 self.stop_flag=0
                 return True
         else:
