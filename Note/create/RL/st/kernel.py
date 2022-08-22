@@ -481,14 +481,11 @@ class kernel:
                             else:
                                 self.time=int(self.time)+1
                             self.total_time+=self.time
+                            print('episode:{0}'.format(self.total_episode))
                             print('last loss:{0:.6f}'.format(loss))
                             print('average reward:{0}'.format(avg_reward))
-                            if self.train_counter==1:
-                                print('episode:{0}'.format(i+1))
-                            else:
-                                print('episode:{0}'.format(self.total_episode))
                             print()
-                            print('time:{0}s'.format(self.time))
+                            print('time:{0}s'.format(self.total_time))
                             return
                 self.loss=loss
                 self.loss_list.append(loss)
@@ -556,14 +553,11 @@ class kernel:
                             else:
                                 self.time=int(self.time)+1
                             self.total_time+=self.time
+                            print('episode:{0}'.format(self.total_episode))
                             print('last loss:{0:.6f}'.format(loss))
                             print('average reward:{0}'.format(avg_reward))
-                            if self.train_counter==1:
-                                print('episode:{0}'.format(i+1))
-                            else:
-                                print('episode:{0}'.format(self.total_episode))
                             print()
-                            print('time:{0}s'.format(self.time))
+                            print('time:{0}s'.format(self.total_time))
                             self.train_flag=False
                             return
                 self.loss=loss
@@ -646,7 +640,7 @@ class kernel:
         print('last loss:{0:.6f}'.format(loss))
         print('last reward:{0}'.format(self.reward))
         print()
-        print('time:{0}s'.format(self.time))
+        print('time:{0}s'.format(self.total_time))
         return
         
     
@@ -668,9 +662,43 @@ class kernel:
             self.train_flag=False
             self.save(self.total_episode,True)
             print('\nSystem have stopped training,Neural network have been saved.')
+            if self.trial_num!=None:
+                if len(self.reward_list)>=self.trial_num:
+                    avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
+            self._time=self.time-int(self.time)
+            if self._time<0.5:
+                self.time=int(self.time)
+            else:
+                self.time=int(self.time)+1
+            self.total_time+=self.time
+            print('episode:{0}'.format(self.total_episode))
+            print('last loss:{0:.6f}'.format(self.loss))
+            try:
+                print('average reward:{0}'.format(avg_reward))
+            except:
+                print('reward:{0}'.format(self.reward))
+            print()
+            print('time:{0}s'.format(self.total_time))
             return True
         elif self.stop_flag==0:
             print('\nSystem have stopped training.')
+            if self.trial_num!=None:
+                if len(self.reward_list)>=self.trial_num:
+                    avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
+            self._time=self.time-int(self.time)
+            if self._time<0.5:
+                self.time=int(self.time)
+            else:
+                self.time=int(self.time)+1
+            self.total_time+=self.time
+            print('episode:{0}'.format(self.total_episode))
+            print('last loss:{0:.6f}'.format(self.loss))
+            try:
+                print('average reward:{0}'.format(avg_reward))
+            except:
+                print('reward:{0}'.format(self.reward))
+            print()
+            print('time:{0}s'.format(self.total_time))
             return True
         return False
     
