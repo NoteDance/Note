@@ -466,7 +466,7 @@ class kernel:
                             print('time:{0}s'.format(self.time))
                             return
                         else:
-                            self.trial_list.pop(0)
+                            self.trial_list.clear()
                 self.loss=loss
                 self.loss_list.append(loss)
                 self.epi_num+=1
@@ -541,7 +541,7 @@ class kernel:
                             self.train_flag=False
                             return
                         else:
-                            self.reward_list.pop(0)
+                            self.reward_list.clear()
                 self.loss=loss
                 self.loss_list.append(loss)
                 i+=1
