@@ -38,7 +38,7 @@ class kernel:
         self.reward_list=[]
         self.suspend=False
         self.stop=None
-        self.stop_flag=None
+        self.stop_flag=1
         self.save_epi=None
         self.action_prob=0
         self.train_counter=0
@@ -343,7 +343,7 @@ class kernel:
                         a=(self.nn.actor(self.state[self.state_name[s]],target=False)+np.random.normal([1])).numpy()
                         next_s,r,done=self.nn.transition(self.state_name[s],a)
                     self.pool(s,a,next_s,r)
-                self.reward=r+self.discount*self.reward
+                self.reward=r+self.reward
                 loss=self._train()
                 self.step_counter+=1
                 if done:
@@ -659,12 +659,8 @@ class kernel:
     
     def stop_func(self):
         if self.end():
-            self.train_flag=False
             self.save(self.total_episode,True)
             print('\nSystem have stopped training,Neural network have been saved.')
-            if self.trial_num!=None:
-                if len(self.reward_list)>=self.trial_num:
-                    avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
             self._time=self.time-int(self.time)
             if self._time<0.5:
                 self.time=int(self.time)
@@ -673,18 +669,12 @@ class kernel:
             self.total_time+=self.time
             print('episode:{0}'.format(self.total_episode))
             print('last loss:{0:.6f}'.format(self.loss))
-            try:
-                print('average reward:{0}'.format(avg_reward))
-            except:
-                print('reward:{0}'.format(self.reward))
+            print('reward:{0}'.format(self.reward))
             print()
             print('time:{0}s'.format(self.total_time))
             return True
-        elif self.stop_flag==0:
+        elif self.stop_flag==1:
             print('\nSystem have stopped training.')
-            if self.trial_num!=None:
-                if len(self.reward_list)>=self.trial_num:
-                    avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
             self._time=self.time-int(self.time)
             if self._time<0.5:
                 self.time=int(self.time)
@@ -693,10 +683,7 @@ class kernel:
             self.total_time+=self.time
             print('episode:{0}'.format(self.total_episode))
             print('last loss:{0:.6f}'.format(self.loss))
-            try:
-                print('average reward:{0}'.format(avg_reward))
-            except:
-                print('reward:{0}'.format(self.reward))
+            print('reward:{0}'.format(self.reward))
             print()
             print('time:{0}s'.format(self.total_time))
             return True
