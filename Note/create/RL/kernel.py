@@ -348,7 +348,7 @@ class kernel:
             return True
     
     
-    def _opt(self,state_pool,action_pool,next_state_pool,reward_pool):
+    def opt(self,state_pool,action_pool,next_state_pool,reward_pool):
         loss=self.nn.loss(state_pool,action_pool,next_state_pool,reward_pool)
         self.thread_lock[1].acquire()
         self.nn.opt(loss)
@@ -357,7 +357,7 @@ class kernel:
     
     
     def opt_t(self,state_pool,action_pool,next_state_pool,reward_pool):
-        loss=self._opt(state_pool,action_pool,next_state_pool,reward_pool)
+        loss=self.opt(state_pool,action_pool,next_state_pool,reward_pool)
         return loss
     
     
@@ -376,10 +376,10 @@ class kernel:
                     batches+=1
                     index1=batches*self.batch
                     index2=self.batch-(length-batches*self.batch)
-                    state_pool=self.core.concat([self.state_pool[i][index1:length],self.state_pool[i][:index2]],0)
-                    action_pool=self.core.concat([self.action_pool[i][index1:length],self.action_pool[i][:index2]],0)
-                    next_state_pool=self.core.concat([self.next_state_pool[i][index1:length],self.next_state_pool[i][:index2]],0)
-                    reward_pool=self.core.concat([self.reward_pool[i][index1:length],self.reward_pool[i][:index2]],0)
+                    state_pool=np.concatenate((self.state_pool[i][index1:length],self.state_pool[i][:index2]),0)
+                    action_pool=np.concatenate((self.action_pool[i][index1:length],self.action_pool[i][:index2]),0)
+                    next_state_pool=np.concatenate((self.next_state_pool[i][index1:length],self.next_state_pool[i][:index2]),0)
+                    reward_pool=np.concatenate((self.reward_pool[i][index1:length],self.reward_pool[i][:index2]),0)
                 loss=self.opt_t(state_pool,action_pool,next_state_pool,reward_pool)
                 self.loss[i]+=loss
                 try:
@@ -462,7 +462,7 @@ class kernel:
     
     def train(self,episode_num):
         try:
-            i=self.threadnum.pop()
+            i=self.threadnum.pop(0)
         except IndexError:
             print('\nError,please add thread.')
             return
@@ -486,8 +486,6 @@ class kernel:
                 self.state_list=np.append(self.state_list,np.array(1,dtype='int8'))
             self.thread_counter+=1
             self.thread_lock[3].release()
-        elif i not in self.finish_lis and self.state_list!=None:
-            self.state_list[i+1]=1
         for k in range(episode_num):
             print(self.index_matrix)
             if self.stop==True:
@@ -644,7 +642,6 @@ class kernel:
             episode_file=open('episode.dat','wb')
             pickle.dump(self.episode,episode_file)
             episode_file.close()
-        self.one_list=self.one_list*0
         pickle.dump(self.nn,output_file)
         pickle.dump(self.state_pool,output_file)
         pickle.dump(self.action_pool,output_file)
