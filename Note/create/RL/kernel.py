@@ -348,16 +348,16 @@ class kernel:
             return True
     
     
-    def opt(self,state_pool,action_pool,next_state_pool,reward_pool):
-        loss=self.nn.loss(state_pool,action_pool,next_state_pool,reward_pool)
+    def opt(self,state_batch,action_batch,next_state_batch,reward_batch):
+        loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch)
         self.thread_lock[1].acquire()
         self.nn.opt(loss)
         self.thread_lock[1].release()
         return loss
     
     
-    def opt_t(self,state_pool,action_pool,next_state_pool,reward_pool):
-        loss=self.opt(state_pool,action_pool,next_state_pool,reward_pool)
+    def opt_t(self,state_batch,action_batch,next_state_batch,reward_batch):
+        loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch)
         return loss
     
     
@@ -376,11 +376,11 @@ class kernel:
                     batches+=1
                     index1=batches*self.batch
                     index2=self.batch-(length-batches*self.batch)
-                    state_pool=np.concatenate((self.state_pool[i][index1:length],self.state_pool[i][:index2]),0)
-                    action_pool=np.concatenate((self.action_pool[i][index1:length],self.action_pool[i][:index2]),0)
-                    next_state_pool=np.concatenate((self.next_state_pool[i][index1:length],self.next_state_pool[i][:index2]),0)
-                    reward_pool=np.concatenate((self.reward_pool[i][index1:length],self.reward_pool[i][:index2]),0)
-                loss=self.opt_t(state_pool,action_pool,next_state_pool,reward_pool)
+                    state_batch=np.concatenate((self.state_pool[i][index1:length],self.state_pool[i][:index2]),0)
+                    action_batch=np.concatenate((self.action_pool[i][index1:length],self.action_pool[i][:index2]),0)
+                    next_state_batch=np.concatenate((self.next_state_pool[i][index1:length],self.next_state_pool[i][:index2]),0)
+                    reward_batch=np.concatenate((self.reward_pool[i][index1:length],self.reward_pool[i][:index2]),0)
+                loss=self.opt_t(state_batch,action_batch,next_state_batch,reward_batch)
                 self.loss[i]+=loss
                 try:
                     self.nn.bc[i]+=1
@@ -394,11 +394,11 @@ class kernel:
             except AttributeError:
                 index1=j*self.batch
                 index2=(j+1)*self.batch
-                state_pool=self.state_pool[i][index1:index2]
-                action_pool=self.action_pool[i][index1:index2]
-                next_state_pool=self.next_state_pool[i][index1:index2]
-                reward_pool=self.reward_pool[i][index1:index2]
-                loss=self.opt_t(state_pool,action_pool,next_state_pool,reward_pool)
+                state_batch=self.state_batch[i][index1:index2]
+                action_batch=self.action_batch[i][index1:index2]
+                next_state_batch=self.next_state_batch[i][index1:index2]
+                reward_batch=self.reward_batch[i][index1:index2]
+                loss=self.opt_t(state_batch,action_batch,next_state_batch,reward_batch)
                 self.loss[i]+=loss
             try:
                 self.nn.bc[i]=j
@@ -409,12 +409,12 @@ class kernel:
     
     def train_(self,i):
         train_ds=tf_data.Dataset.from_tensor_slices((self.state_pool[i],self.action_pool[i],self.next_state_pool[i],self.reward_pool[i])).shuffle(len(self.state_pool[i])).batch(self.batch)
-        for state_pool,action_pool,next_state_pool,reward_pool in train_ds:
+        for state_batch,action_batch,next_state_batch,reward_batch in train_ds:
             if self.stop==True:
                 if self.stop_func() or self.stop_flag==0:
                     return
             self.suspend_func()
-            loss=self.opt_t(state_pool,action_pool,next_state_pool,reward_pool)
+            loss=self.opt_t(state_batch,action_batch,next_state_batch,reward_batch)
             self.loss[i]+=loss
             try:
                 self.nn.bc[i]+=1
