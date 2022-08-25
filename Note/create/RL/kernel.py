@@ -9,7 +9,6 @@ class kernel:
     def __init__(self,nn=None,thread=None,thread_lock=None,state=None,state_name=None,action_name=None,save_episode=True):
         if nn!=None:
             self.nn=nn
-            self.opt=nn.opt
             self.state_list=np.array(0,dtype='int8')
             try:
                 self.nn.km=1
@@ -90,7 +89,9 @@ class kernel:
     
     
     def set_up(self,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_num=None,criterion=None,end_loss=None,init=None):
-        if epsilon!=None:
+        if type(epsilon)!=list:
+            self.epsilon=np.ones(self.thread)*epsilon
+        else:
             self.epsilon=epsilon
         if discount!=None:
             self.discount=discount
