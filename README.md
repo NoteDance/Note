@@ -165,8 +165,7 @@ import DQN as d
 dqn=d.DQN()                               #create neural network object
 thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock()]
 kernel=k.kernel(dqn,5,thread_lock)   #start kernel
-epsilon=[0.01,0.01,0.01,0.01,0.01]
-kernel.set_up(epsilon=epsilon,discount=0.98,pool_size=10000,batch=64,update_step=10)
+kernel.set_up(epsilon=0.01,discount=0.98,pool_size=10000,batch=64,update_step=10)
 kernel.action_init(4)
 class thread(threading.Thread):
 	def run(self):
