@@ -89,8 +89,10 @@ class kernel:
     
     
     def set_up(self,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_num=None,criterion=None,end_loss=None,init=None):
-        if type(epsilon)!=list:
+        if type(epsilon)!=list and epsilon!=None:
             self.epsilon=np.ones(self.thread)*epsilon
+        elif epsilon==None:
+            self.epsilon=np.zeros(self.thread)
         else:
             self.epsilon=epsilon
         if discount!=None:
@@ -209,7 +211,7 @@ class kernel:
                     pass
                 s=np.expand_dims(s,axis=0)
                 if self.epsilon==None:
-                    self.epsilon=self.nn.epsilon(self.step_counter[i])
+                    self.epsilon[i]=self.nn.epsilon(self.step_counter[i],i)
                 try:
                     if self.nn.action!=None:
                         pass
@@ -223,7 +225,7 @@ class kernel:
                     next_s,r,done=self.nn.explore(self.action_name[a])
             except AttributeError:
                 if self.epsilon==None:
-                    self.epsilon=self.nn.epsilon(self.step_counter[i])
+                    self.epsilon[i]=self.nn.epsilon(self.step_counter[i],i)
                 try:
                     if self.nn.action!=None:
                         pass
