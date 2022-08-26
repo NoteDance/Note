@@ -22,13 +22,13 @@ class kernel:
         self.action_pool=None
         self.next_state_pool=None
         self.reward_pool=None
+        self.done_pool=None
         self.episode=[]
         self.state=state
         self.state_name=state_name
         self.action_name=action_name
         self.action_num=None
         self.epsilon=None
-        self.discount=None
         self.episode_step=None
         self.pool_size=None
         self.batch=None
@@ -77,11 +77,9 @@ class kernel:
         return
     
     
-    def set_up(self,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_num=None,criterion=None,end_loss=None):
+    def set_up(self,epsilon=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_num=None,criterion=None,end_loss=None):
         if epsilon!=None:
             self.epsilon=epsilon
-        if discount!=None:
-            self.discount=discount
         if episode_step!=None:
             self.episode_step=episode_step
         if pool_size!=None:
@@ -185,8 +183,8 @@ class kernel:
             return True
     
     
-    def opt(self,state_batch=None,action_batch=None,next_state_batch=None,reward_batch=None):
-        loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch)
+    def opt(self,state_batch,action_batch,next_state_batch,reward_batch,done_batch):
+        loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
         self.nn.opt(loss)
         return loss
     
@@ -203,38 +201,43 @@ class kernel:
         return loss.numpy()
     
     
-    def pool(self,s,a,next_s,r):
+    def pool(self,s,a,next_s,r,done):
         if type(self.state_pool)!=np.ndarray and self.state_pool==None:
             if self.state==None:
                 self.state_pool=s
                 self.action_pool=np.expand_dims(a,axis=0)
                 self.next_state_pool=np.expand_dims(next_s,axis=0)
                 self.reward_pool=np.expand_dims(r,axis=0)
+                self.done_pool=np.expand_dims(done,axis=0)
             else:
                 self.state_pool=np.expand_dims(self.state[self.state_name[s]],axis=0)
                 self.action_pool=np.expand_dims(a,axis=0)
                 self.next_state_pool=np.expand_dims(self.state[self.state_name[next_s]],axis=0)
                 self.reward_pool=np.expand_dims(r,axis=0)
+                self.done_pool=np.expand_dims(done,axis=0)
         else:
             if self.state==None:
                 self.state_pool=np.concatenate((self.state_pool,s),0)
                 self.action_pool=np.concatenate((self.action_pool,np.expand_dims(a,axis=0)),0)
                 self.next_state_pool=np.concatenate((self.next_state_pool,np.expand_dims(next_s,axis=0)),0)
                 self.reward_pool=np.concatenate((self.reward_pool,np.expand_dims(r,axis=0)),0)
+                self.done_pool=np.concatenate((self.done_pool,np.expand_dims(done,axis=0)),0)
             else:
                 self.state_pool=np.concatenate((self.state_pool,np.expand_dims(self.state[self.state_name[s]],axis=0)),0)
                 self.action_pool=np.concatenate((self.action_pool,np.expand_dims(a,axis=0)),0)
                 self.next_state_pool=np.concatenate((self.next_state_pool,np.expand_dims(self.state[self.state_name[next_s]],axis=0)),0)
                 self.reward_pool=np.concatenate((self.reward_pool,np.expand_dims(r,axis=0)),0)
+                self.done_pool=np.concatenate((self.done_pool,np.expand_dims(done,axis=0)),0)
         if len(self.state_pool)>self.pool_size:
             self.state_pool=self.state_pool[1:]
             self.action_pool=self.action_pool[1:]
             self.next_state_pool=self.next_state_pool[1:]
             self.reward_pool=self.reward_pool[1:]
+            self.done_pool=self.done_pool[1:]
         return
     
     
-    def _train(self,state=None,action=None,next_state=None,reward=None):
+    def _train(self):
         if len(self.state_pool)<self.batch:
             return
         else:
@@ -247,8 +250,8 @@ class kernel:
                     pass
                 for j in range(batches):
                     self.suspend_func()
-                    state_batch,action_batch,next_state_batch,reward_batch=self.nn.data_func(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
-                    batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch)
+                    state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
+                    batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
                     loss+=batch_loss
                     try:
                         self.nn.bc=j
@@ -256,8 +259,8 @@ class kernel:
                         pass
                 if len(self.state_pool)%self.batch!=0:
                     self.suspend_func()
-                    state_batch,action_batch,next_state_batch,reward_batch=self.nn.data_func(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
-                    batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch)
+                    state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
+                    batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
                     loss+=batch_loss
                     try:
                         self.nn.bc+=1
@@ -265,13 +268,13 @@ class kernel:
                         pass
             except AttributeError:
                 j=0
-                train_ds=tf_data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool)).shuffle(len(self.state_pool)).batch(self.batch)
+                train_ds=tf_data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).shuffle(len(self.state_pool)).batch(self.batch)
                 try:
                     self.nn.bc=0
                 except AttributeError:
                     pass
-                for state_batch,action_batch,next_state_batch,reward_batch in train_ds:
-                    batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch)
+                for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
+                    batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
                     loss+=batch_loss
                     j+=1
                     try:
@@ -328,7 +331,7 @@ class kernel:
                             action_prob=self.epsilon_greedy_policy(s,self.action_one)
                             a=np.random.choice(self.action,p=action_prob)
                         next_s,r,done=self.nn.transition(self.state_name[s],self.action_name[a])
-                    self.pool(s,a,next_s,r)
+                    self.pool(s,a,next_s,r,done)
                 except AttributeError:
                     try:
                         if self.nn.explore!=None:
@@ -342,7 +345,7 @@ class kernel:
                     except AttributeError:
                         a=(self.nn.actor(self.state[self.state_name[s]],target=False)+np.random.normal([1])).numpy()
                         next_s,r,done=self.nn.transition(self.state_name[s],a)
-                    self.pool(s,a,next_s,r)
+                    self.pool(s,a,next_s,r,done)
                 self.reward=r+self.reward
                 loss=self._train()
                 self.step_counter+=1
@@ -404,7 +407,7 @@ class kernel:
                             action_prob=self.epsilon_greedy_policy(s,self.action_one)
                             a=np.random.choice(self.action,p=action_prob)
                         next_s,r,done=self.nn.transition(self.state_name[s],self.action_name[a])
-                    self.pool(s,a,next_s,r)
+                    self.pool(s,a,next_s,r,done)
                 except AttributeError:
                     try:
                         if self.nn.explore!=None:
@@ -418,7 +421,7 @@ class kernel:
                     except AttributeError:
                         a=(self.nn.actor(self.state[self.state_name[s]],target=False)+np.random.normal([1])).numpy()
                         next_s,r,done=self.nn.transition(self.state_name[s],a)
-                    self.pool(s,a,next_s,r)
+                    self.pool(s,a,next_s,r,done)
                 self.reward=r+self.reward
                 loss=self._train()
                 self.step_counter+=1
@@ -761,7 +764,6 @@ class kernel:
         pickle.dump(self.action,output_file)
         pickle.dump(self.action_one,output_file)
         pickle.dump(self.epsilon,output_file)
-        pickle.dump(self.discount,output_file)
         pickle.dump(self.episode_step,output_file)
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
@@ -801,7 +803,6 @@ class kernel:
         self.action=pickle.load(input_file)
         self.action_one=pickle.load(input_file)
         self.epsilon=pickle.load(input_file)
-        self.discount=pickle.load(input_file)
         self.episode_step=pickle.load(input_file)
         self.pool_size=pickle.load(input_file)
         self.batch=pickle.load(input_file)
