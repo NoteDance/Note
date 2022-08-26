@@ -133,9 +133,9 @@ class kernel:
     def epsilon_greedy_policy(self,s,action_one,epsilon):
         action_prob=action_one*epsilon/len(action_one)
         if self.state==None:
-            best_a=np.argmax(self.nn.nn(s,target=False))
+            best_a=np.argmax(self.nn.nn(s).numpy())
         else:
-            best_a=np.argmax(self.nn.nn(self.state[self.state_name[s]]))
+            best_a=np.argmax(self.nn.nn(self.state[self.state_name[s]]).numpy())
         action_prob[best_a.numpy()]+=1-epsilon
         return action_prob
     
@@ -247,12 +247,12 @@ class kernel:
                     pass 
                 if self.state_name==None:
                     s=np.expand_dims(s,axis=0)
-                    a=(self.nn.actor(s,target=False)+np.random.normal([1])).numpy()
+                    a=(self.nn.actor(s)+np.random.normal([1])).numpy()
                 else:
-                    a=(self.nn.actor(self.state[self.state_name[s]],target=False)+np.random.normal([1])).numpy()
+                    a=(self.nn.actor(self.state[self.state_name[s]])+np.random.normal([1])).numpy()
                 next_s,r,done=self.nn.explore(a)
             except AttributeError:
-                a=(self.nn.actor(self.state[self.state_name[s]],target=False)+np.random.normal([1])).numpy()
+                a=(self.nn.actor(self.state[self.state_name[s]])+np.random.normal([1])).numpy()
                 next_s,r,done=self.nn.transition(self.state_name[s],a)
         if self.PN==True:
             while len(self._state_list)<i:
@@ -305,13 +305,13 @@ class kernel:
                     if self.nn.explore!=None:
                         pass
                     s=np.expand_dims(s,axis=0)
-                    a=np.argmax(self.nn.nn(s,target=False)).numpy()
+                    a=np.argmax(self.nn.nn(s)).numpy()
                     if self.action_name==None:
                         next_s,r,done=self.nn.explore(a)
                     else:
                         next_s,r,done=self.nn.explore(self.action_name[a])
                 except AttributeError:
-                    a=np.argmax(self.nn.nn(s,target=False))
+                    a=np.argmax(self.nn.nn(s))
                     next_s,r,done=self.nn.transition(self.state_name[s],self.action_name[a])
             except AttributeError:
                 try:
@@ -319,12 +319,12 @@ class kernel:
                         pass
                     if self.state_name==None:
                         s=np.expand_dims(s,axis=0)
-                        a=self.nn.actor(s,target=False).numpy()
+                        a=self.nn.actor(s).numpy()
                     else:
-                        a=self.nn.actor(self.state[self.state_name[s]],target=False).numpy()
+                        a=self.nn.actor(self.state[self.state_name[s]]).numpy()
                     next_s,r,done=self.nn.explore(a)
                 except AttributeError:
-                    a=self.nn.actor(self.state[self.state_name[s]],target=False).numpy()
+                    a=self.nn.actor(self.state[self.state_name[s]]).numpy()
                     next_s,r,done=self.nn.transition(self.state_name[s],a)
             if done:
                 if self.state_name==None and self.action_name==None:
