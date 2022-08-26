@@ -143,13 +143,14 @@ kernel.train_visual()
 
 
 # Reinforcement Learning:
+neural network example:https://github.com/7NoteDancing/Note-documentation/blob/main/Note%204.0%20documentation/RL/DQN.py
 ```python
 import Note.create.RL.st.kernel as k   #import kernel
 import DQN as d
-dqn=d.DQN()                               #create neural network object
+dqn=d.DQN(4,128,2)                               #create neural network object
 kernel=k.kernel(dqn)   #start kernel
-kernel.set_up(epsilon=0.01,discount=0.98,pool_size=10000,batch=64,update_step=10,trial_num=10)
-kernel.action_init(4)
+kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10,trial_num=10)
+kernel.action_init(2)
 kernel.train(500)
 kernel.loss_list or kernel.loss       #view training loss
 kernel.train_visual()
@@ -159,13 +160,14 @@ kernel.reward_visual()
 
 
 ## Pool Net:
+neural network example:https://github.com/7NoteDancing/Note-documentation/blob/main/Note%204.0%20documentation/RL/DQN.py
 ```python
 import Note.create.RL.st.kernel as k   #import kernel
 import DQN as d
-dqn=d.DQN()                               #create neural network object
+dqn=d.DQN(4,128,2)                               #create neural network object
 thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock()]
 kernel=k.kernel(dqn,5,thread_lock)   #start kernel
-kernel.set_up(epsilon=0.01,discount=0.98,pool_size=10000,batch=64,update_step=10)
+kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
 kernel.action_init(4)
 class thread(threading.Thread):
 	def run(self):
