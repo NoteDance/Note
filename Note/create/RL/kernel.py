@@ -18,12 +18,12 @@ class kernel:
         self.action_pool=[]
         self.next_state_pool=[]
         self.reward_pool=[]
+        self.done_pool=[]
         self.episode=[]
         self.state=state
         self.state_name=state_name
         self.action_name=action_name
         self.epsilon=None
-        self.discount=None
         self.episode_step=None
         self.pool_size=None
         self.batch=None
@@ -88,15 +88,13 @@ class kernel:
         return
     
     
-    def set_up(self,epsilon=None,discount=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_num=None,criterion=None,end_loss=None,init=None):
+    def set_up(self,epsilon=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_num=None,criterion=None,end_loss=None,init=None):
         if type(epsilon)!=list and epsilon!=None:
             self.epsilon=np.ones(self.thread)*epsilon
         elif epsilon==None:
             self.epsilon=np.zeros(self.thread)
         else:
             self.epsilon=epsilon
-        if discount!=None:
-            self.discount=discount
         if episode_step!=None:
             self.episode_step=episode_step
         if pool_size!=None:
@@ -142,7 +140,7 @@ class kernel:
         return action_prob
     
     
-    def pool(self,s,a,next_s,r,i,index):
+    def pool(self,s,a,next_s,r,done,i,index):
         if self.PN==True:
             self.thread_lock[0].acquire()
             if self.state_pool[index]==None and type(self.state_pool[index])!=np.ndarray:
@@ -151,11 +149,13 @@ class kernel:
                     self.action_pool[index]=np.expand_dims(a,axis=0)
                     self.next_state_pool[index]=np.expand_dims(next_s,axis=0)
                     self.reward_pool[index]=np.expand_dims(r,axis=0)
+                    self.done_pool[index]=np.expand_dims(done,axis=0)
                 else:
                     self.state_pool[index]=np.expand_dims(self.state[self.state_name[s]],axis=0)
                     self.action_pool[index]=np.expand_dims(a,axis=0)
                     self.next_state_pool[index]=np.expand_dims(self.state[self.state_name[next_s]],axis=0)
                     self.reward_pool[index]=np.expand_dims(r,axis=0)
+                    self.done_pool[index]=np.expand_dims(done,axis=0)
             else:
                 try:
                     if self.state==None:
@@ -163,11 +163,13 @@ class kernel:
                         self.action_pool[index]=np.concatenate((self.action_pool[index],np.expand_dims(a,axis=0)),0)
                         self.next_state_pool[index]=np.concatenate((self.next_state_pool[index],np.expand_dims(next_s,axis=0)),0)
                         self.reward_pool[index]=np.concatenate((self.reward_pool[index],np.expand_dims(r,axis=0)),0)
+                        self.done_pool[index]=np.concatenate((self.done_pool[index],np.expand_dims(done,axis=0)),0)
                     else:
                         self.state_pool[index]=np.concatenate((self.state_pool[index],np.expand_dims(self.state[self.state_name[s]],axis=0)),0)
                         self.action_pool[index]=np.concatenate((self.action_pool[index],np.expand_dims(a,axis=0)),0)
                         self.next_state_pool[index]=np.concatenate((self.next_state_pool[index],np.expand_dims(self.state[self.state_name[next_s]],axis=0)),0)
                         self.reward_pool[index]=np.concatenate((self.reward_pool[index],np.expand_dims(r,axis=0)),0)
+                        self.done_pool[index]=np.concatenate((self.done_pool[index],np.expand_dims(done,axis=0)),0)
                 except:
                     pass
             self.thread_lock[0].release()
@@ -178,27 +180,32 @@ class kernel:
                     self.action_pool[index]=np.expand_dims(a,axis=0)
                     self.next_state_pool[index]=np.expand_dims(next_s,axis=0)
                     self.reward_pool[index]=np.expand_dims(r,axis=0)
+                    self.done_pool[index]=np.expand_dims(done,axis=0)
                 else:
                     self.state_pool[index]=np.expand_dims(self.state[self.state_name[s]],axis=0)
                     self.action_pool[index]=np.expand_dims(a,axis=0)
                     self.next_state_pool[index]=np.expand_dims(self.state[self.state_name[next_s]],axis=0)
                     self.reward_pool[index]=np.expand_dims(r,axis=0)
+                    self.done_pool[index]=np.expand_dims(done,axis=0)
             else:
                 if self.state==None:
                     self.state_pool[index]=np.concatenate((self.state_pool[index],s),0)
                     self.action_pool[index]=np.concatenate((self.action_pool[index],np.expand_dims(a,axis=0)),0)
                     self.next_state_pool[index]=np.concatenate((self.next_state_pool[index],np.expand_dims(next_s,axis=0)),0)
                     self.reward_pool[index]=np.concatenate((self.reward_pool[index],np.expand_dims(r,axis=0)),0)
+                    self.done_pool[index]=np.concatenate((self.done_pool[index],np.expand_dims(done,axis=0)),0)
                 else:
                     self.state_pool[index]=np.concatenate((self.state_pool[index],np.expand_dims(self.state[self.state_name[s]],axis=0)),0)
                     self.action_pool[index]=np.concatenate((self.action_pool[index],np.expand_dims(a,axis=0)),0)
                     self.next_state_pool[index]=np.concatenate((self.next_state_pool[index],np.expand_dims(self.state[self.state_name[next_s]],axis=0)),0)
                     self.reward_pool[index]=np.concatenate((self.reward_pool[index],np.expand_dims(r,axis=0)),0)
+                    self.done_pool[index]=np.concatenate((self.done_pool[index],np.expand_dims(done,axis=0)),0)
         if self.state_pool[i]!=None and len(self.state_pool[i])>self.pool_size:
             self.state_pool[i]=self.state_pool[i][1:]
             self.action_pool[i]=self.action_pool[i][1:]
             self.next_state_pool[i]=self.next_state_pool[i][1:]
             self.reward_pool[i]=self.reward_pool[i][1:]
+            self.done_pool[i]=self.done_pool[i][1:]
         return
     
     
@@ -272,7 +279,7 @@ class kernel:
                     continue
                 else:
                     break
-        self.pool(s,a,next_s,r,i,index)
+        self.pool(s,a,next_s,r,done,i,index)
         if self.save_episode==True:
             if self.state_name==None and self.action_name==None:
                 episode=[s,a,next_s,r]
@@ -350,16 +357,16 @@ class kernel:
             return True
     
     
-    def opt(self,state_batch,action_batch,next_state_batch,reward_batch):
-        loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch)
+    def opt(self,state_batch,action_batch,next_state_batch,reward_batch,done_batch):
+        loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
         self.thread_lock[1].acquire()
         self.nn.opt(loss)
         self.thread_lock[1].release()
         return loss
     
     
-    def opt_t(self,state_batch,action_batch,next_state_batch,reward_batch):
-        loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch)
+    def opt_t(self,state_batch,action_batch,next_state_batch,reward_batch,done_batch):
+        loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
         return loss
     
     
@@ -382,7 +389,8 @@ class kernel:
                     action_batch=np.concatenate((self.action_pool[i][index1:length],self.action_pool[i][:index2]),0)
                     next_state_batch=np.concatenate((self.next_state_pool[i][index1:length],self.next_state_pool[i][:index2]),0)
                     reward_batch=np.concatenate((self.reward_pool[i][index1:length],self.reward_pool[i][:index2]),0)
-                loss=self.opt_t(state_batch,action_batch,next_state_batch,reward_batch)
+                    done_batch=np.concatenate((self.done_pool[i][index1:length],self.done_pool[i][:index2]),0)
+                loss=self.opt_t(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
                 self.loss[i]+=loss
                 try:
                     self.nn.bc[i]+=1
@@ -400,7 +408,8 @@ class kernel:
                 action_batch=self.action_batch[i][index1:index2]
                 next_state_batch=self.next_state_batch[i][index1:index2]
                 reward_batch=self.reward_batch[i][index1:index2]
-                loss=self.opt_t(state_batch,action_batch,next_state_batch,reward_batch)
+                done_batch=self.done_batch[i][index1:index2]
+                loss=self.opt_t(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
                 self.loss[i]+=loss
             try:
                 self.nn.bc[i]=j
@@ -653,7 +662,6 @@ class kernel:
         pickle.dump(self.action,output_file)
         pickle.dump(self.action_one,output_file)
         pickle.dump(self.epsilon,output_file)
-        pickle.dump(self.discount,output_file)
         pickle.dump(self.episode_step,output_file)
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
@@ -694,7 +702,6 @@ class kernel:
         self.action=pickle.load(input_file)
         self.action_one=pickle.load(input_file)
         self.epsilon=pickle.load(input_file)
-        self.discount=pickle.load(input_file)
         self.episode_step=pickle.load(input_file)
         self.pool_size=pickle.load(input_file)
         self.batch=pickle.load(input_file)
