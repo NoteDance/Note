@@ -11,7 +11,7 @@ If you done your neural network,you can use kernel to train.
 
 simple example:
 
-neural network example:https://github.com/7NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/DL
+neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/DL/neural%20network
 ```python
 import Note.create.kernel as k   #import kernel
 import tensorflow as tf              #import core
@@ -40,7 +40,7 @@ Note have two types of parallel optimization:
 
 parallel optimization may cause training instability but it can make the loss function jump out of the local minimum.
 
-neural network example:https://github.com/7NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/DL
+neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/DL/neural%20network
 
 **Use second parallel optimization to train on MNIST,speed was increased by more than 2 times!**
 
@@ -77,7 +77,7 @@ neural network example:https://github.com/7NoteDancing/Note-documentation/tree/m
 
 
 ## Multithreading：
-neural network example:https://github.com/7NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/DL
+neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/DL/neural%20network
 
 simple example:
 ```python
@@ -143,7 +143,7 @@ kernel.train_visual()
 
 
 # Reinforcement Learning:
-neural network example:https://github.com/7NoteDancing/Note-documentation/blob/main/Note%204.0%20documentation/RL/DQN.py
+neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/RL/neural%20network
 ```python
 import Note.create.RL.st.kernel as k   #import kernel
 import DQN as d
@@ -160,7 +160,7 @@ kernel.reward_visual()
 
 
 ## Pool Net:
-neural network example:https://github.com/7NoteDancing/Note-documentation/blob/main/Note%204.0%20documentation/RL/DQN.py
+neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/RL/neural%20network
 ```python
 import Note.create.RL.st.kernel as k   #import kernel
 import DQN as d
