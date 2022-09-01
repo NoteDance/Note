@@ -9,9 +9,9 @@ Note is an AI system that have kernel for deep learning and reinforcement learni
 # Deep Learning:
 If you done your neural network,you can use kernel to train.
 
-simple example:
-
 neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/DL/neural%20network
+
+example:
 ```python
 import Note.create.kernel as k   #import kernel
 import tensorflow as tf              #import core
@@ -79,7 +79,7 @@ neural network example:https://github.com/NoteDancing/Note-documentation/tree/ma
 ## Multithreading：
 neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/DL/neural%20network
 
-simple example:
+example:
 ```python
 import Note.create.kernel as k   #import kernel
 import tensorflow as tf              #import core
@@ -108,9 +108,9 @@ kernel.train_loss_list or kernel.train_loss       #view training loss
 kernel.train_visual()
 ```
 
-Support stop and save in multithreading training.
+Stop multithreading training and saving when condition is met.
 
-simple example:
+example:
 ```python
 import Note.create.kernel as k   #import kernel
 import tensorflow as tf              #import core
@@ -144,6 +144,8 @@ kernel.train_visual()
 
 # Reinforcement Learning:
 neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/RL/neural%20network
+
+example:
 ```python
 import Note.create.RL.st.kernel as k   #import kernel
 import DQN as d
@@ -161,6 +163,8 @@ kernel.reward_visual()
 
 ## Pool Net:
 neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/RL/neural%20network
+
+example:
 ```python
 import Note.create.RL.st.kernel as k   #import kernel
 import DQN as d
@@ -168,7 +172,33 @@ dqn=d.DQN(4,128,2)                               #create neural network object
 thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock()]
 kernel=k.kernel(dqn,5,thread_lock)   #start kernel
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
-kernel.action_init(4)
+kernel.action_init(2)
+class thread(threading.Thread):
+	def run(self):
+		kernel.train(100)
+for _ in range(5):
+	_thread=thread()
+	_thread.start()
+for _ in range(5):
+	_thread.join()
+kernel.loss_list or kernel.loss       #view training loss
+kernel.train_visual()
+kernel.reward                         #view reward
+kernel.reward_visual()
+```
+
+Stop multithreading training and saving when condition is met.
+
+example:
+```python
+import Note.create.RL.st.kernel as k   #import kernel
+import DQN as d
+dqn=d.DQN(4,128,2)                               #create neural network object
+thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock()]
+kernel=k.kernel(dqn,5,thread_lock)   #start kernel
+kernel.stop=True
+kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10,trial_num=10,criterion=200)
+kernel.action_init(2)
 class thread(threading.Thread):
 	def run(self):
 		kernel.train(100)
