@@ -159,6 +159,24 @@ kernel.train_visual()
 kernel.reward                         #view reward
 kernel.reward_visual()
 ```
+```python
+import Note.create.RL.st.kernel as k   #import kernel
+import DDPG as d
+import gym
+env=gym.make('Pendulum-v0')
+state_dim=env.observation_spave.shape[0]
+action_dim=env.action_spave.shape[0]
+action_bound=env.action_spave.high[0]
+ddpg=d.DDPG(state_dim,64,action_dim,action_bound,0.01,0.98,0.005,5e-4,5e-3)         #create neural network object
+ddpg.env=env
+kernel=k.kernel(ddpg)   #start kernel
+kernel.set_up(pool_size=10000,batch=64)
+kernel.train(200)
+kernel.loss_list or kernel.loss       #view training loss
+kernel.train_visual()
+kernel.reward                         #view reward
+kernel.reward_visual()
+```
 
 
 ## Pool Net:
@@ -166,7 +184,7 @@ neural network example:https://github.com/NoteDancing/Note-documentation/tree/ma
 
 example:
 ```python
-import Note.create.RL.st.kernel as k   #import kernel
+import Note.create.RL.kernel as k   #import kernel
 import DQN as d
 dqn=d.DQN(4,128,2)                               #create neural network object
 thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock()]
@@ -191,7 +209,7 @@ Stop multithreading training and saving when condition is met.
 
 example:
 ```python
-import Note.create.RL.st.kernel as k   #import kernel
+import Note.create.RL.kernel as k   #import kernel
 import DQN as d
 dqn=d.DQN(4,128,2)                               #create neural network object
 thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock()]
