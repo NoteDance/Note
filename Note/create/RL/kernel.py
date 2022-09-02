@@ -9,11 +9,18 @@ class kernel:
     def __init__(self,nn=None,thread=None,thread_lock=None,state=None,state_name=None,action_name=None,save_episode=True):
         if nn!=None:
             self.nn=nn
-            self.state_list=np.array(0,dtype='int8')
             try:
                 self.nn.km=1
             except AttributeError:
                 pass
+        if thread!=None:
+            self.state_list=np.array(0,dtype='int8')
+            self.threadnum=np.arange(thread)
+            self.threadnum=list(self.threadnum)
+            self.reward=np.zeros(thread)
+            self.loss=np.zeros(thread)
+            self.step_counter=np.zeros(thread)
+            self.episode_num=np.zeros(thread)
         self.state_pool=[]
         self.action_pool=[]
         self.next_state_pool=[]
@@ -35,20 +42,14 @@ class kernel:
         self.end_loss=None
         self.thread=thread
         self.thread_counter=0
-        self.threadnum=np.arange(thread)
-        self.threadnum=list(self.threadnum)
         self.thread_lock=thread_lock
         self.p=[]
         self._state_list=[]
         self.finish_list=[]
         self.PN=True
         self.save_episode=save_episode
-        self.reward=np.zeros(thread)
-        self.loss=np.zeros(thread)
         self.reward_list=[]
         self.loss_list=[]
-        self.step_counter=np.zeros(thread)
-        self.episode_num=np.zeros(thread)
         self.total_time=0
     
     
