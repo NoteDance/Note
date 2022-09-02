@@ -300,6 +300,8 @@ class kernel:
                     continue
                 else:
                     break
+        else:
+            index=None
         self.pool(s,a,next_s,r,done,i,index)
         if self.save_episode==True:
             if self.state_name==None and self.action_name==None:
