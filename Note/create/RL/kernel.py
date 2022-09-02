@@ -229,7 +229,7 @@ class kernel:
         return
     
     
-    def _explore(self,s,epsilon,i):
+    def explore(self,s,epsilon,i):
         try:
             if self.nn.nn!=None:
                 pass
@@ -267,12 +267,12 @@ class kernel:
                     pass 
                 if self.state_name==None:
                     s=np.expand_dims(s,axis=0)
-                    a=(self.nn.actor(s)+np.random.normal([1])).numpy()
+                    a=(self.nn.actor(s)+self.nn.noise()).numpy()
                 else:
-                    a=(self.nn.actor(self.state[self.state_name[s]])+np.random.normal([1])).numpy()
+                    a=(self.nn.actor(self.state[self.state_name[s]])+self.nn.noise()).numpy()
                 next_s,r,done=self.nn.explore(a)
             except AttributeError:
-                a=(self.nn.actor(self.state[self.state_name[s]])+np.random.normal([1])).numpy()
+                a=(self.nn.actor(self.state[self.state_name[s]])+self.nn.noise()).numpy()
                 next_s,r,done=self.nn.transition(self.state_name[s],a)
         if self.PN==True:
             while len(self._state_list)<i:
@@ -537,7 +537,7 @@ class kernel:
                         epsilon=self.epsilon[i]
                     except:
                         pass
-                    next_s,r,done,_episode,index=self._explore(s,epsilon,i)
+                    next_s,r,done,_episode,index=self.explore(s,epsilon,i)
                     self.reward[i]+=r
                     s=next_s
                     if self.state_pool[i]!=None and self.action_pool[i]!=None and self.next_state_pool[i]!=None and self.reward_pool[i]!=None:
@@ -566,7 +566,7 @@ class kernel:
                         epsilon=self.epsilon[i]
                     except:
                         pass
-                    next_s,r,done,episode,index=self._explore(s,epsilon,i)
+                    next_s,r,done,episode,index=self.explore(s,epsilon,i)
                     self.reward[i]+=r
                     s=next_s
                     if self.state_pool[i]!=None and self.action_pool[i]!=None and self.next_state_pool[i]!=None and self.reward_pool[i]!=None:
