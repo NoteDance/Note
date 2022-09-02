@@ -1,5 +1,7 @@
 # Note
-## documentation:https://github.com/7NoteDancing/Note-documentation/blob/main/Note%204.0%20documentation/DL/kernel.txt
+
+
+# documentation:https://github.com/7NoteDancing/Note-documentation/blob/main/Note%204.0%20documentation/DL/kernel.txt
 
 
 # Introduction:
