@@ -59,19 +59,15 @@ class kernel:
             action_num=self.action_num
             self.action_num=action_num
         if self.action_name!=None and len(self.action_name)>self.action_num:
-            self.action=np.concatenate((self.action,np.arange(len(self.action_name)-self.action_num,dtype=dtype)+self.action_num))
             if self.epsilon!=None:
                 self.action_one=np.concatenate((self.action_one,np.ones(len(self.action_name)-self.action_num,dtype=dtype)))
         elif self.action_name!=None:
-            self.action=np.arange(len(self.action_name),dtype=dtype)
             if self.epsilon!=None:
                 self.action_one=np.ones(len(self.action_name),dtype=dtype)
         if self.action_num>action_num:
-            self.action=np.concatenate((self.action,np.arange(self.action_num-action_num,dtype=dtype)+action_num))
             if self.epsilon!=None:
                 self.action_one=np.concatenate((self.action_one,np.ones(self.action_num-action_num,dtype=dtype)))
         else:
-            self.action=np.arange(self.action_num,dtype=dtype)
             if self.epsilon!=None:
                 self.action_one=np.ones(self.action_num,dtype=dtype)
         return
@@ -112,9 +108,9 @@ class kernel:
     def epsilon_greedy_policy(self,s,action_one):
         action_prob=action_one*self.epsilon/len(action_one)
         if self.state==None:
-            best_a=np.argmax(self.nn.nn(s).numpy())
+            best_a=np.argmax(self.nn.nn(s))
         else:
-            best_a=np.argmax(self.nn.nn(self.state[self.state_name[s]]).numpy())
+            best_a=np.argmax(self.nn.nn(self.state[self.state_name[s]]))
         action_prob[best_a.numpy()]+=1-self.epsilon
         return action_prob
     
@@ -205,26 +201,38 @@ class kernel:
         if type(self.state_pool)!=np.ndarray and self.state_pool==None:
             if self.state==None:
                 self.state_pool=s
-                self.action_pool=np.expand_dims(a,axis=0)
+                if len(a.shape)==1:
+                    self.action_pool=np.expand_dims(a,axis=0)
+                else:
+                    self.action_pool=a
                 self.next_state_pool=np.expand_dims(next_s,axis=0)
                 self.reward_pool=np.expand_dims(r,axis=0)
                 self.done_pool=np.expand_dims(done,axis=0)
             else:
                 self.state_pool=np.expand_dims(self.state[self.state_name[s]],axis=0)
-                self.action_pool=np.expand_dims(a,axis=0)
+                if len(a.shape)==1:
+                    self.action_pool=np.expand_dims(a,axis=0)
+                else:
+                    self.action_pool=a
                 self.next_state_pool=np.expand_dims(self.state[self.state_name[next_s]],axis=0)
                 self.reward_pool=np.expand_dims(r,axis=0)
                 self.done_pool=np.expand_dims(done,axis=0)
         else:
             if self.state==None:
                 self.state_pool=np.concatenate((self.state_pool,s),0)
-                self.action_pool=np.concatenate((self.action_pool,np.expand_dims(a,axis=0)),0)
+                if len(a.shape)==1:
+                    self.action_pool=np.concatenate((self.action_pool,np.expand_dims(a,axis=0)),0)
+                else:
+                    self.action_pool=np.concatenate((self.action_pool,a),0)
                 self.next_state_pool=np.concatenate((self.next_state_pool,np.expand_dims(next_s,axis=0)),0)
                 self.reward_pool=np.concatenate((self.reward_pool,np.expand_dims(r,axis=0)),0)
                 self.done_pool=np.concatenate((self.done_pool,np.expand_dims(done,axis=0)),0)
             else:
                 self.state_pool=np.concatenate((self.state_pool,np.expand_dims(self.state[self.state_name[s]],axis=0)),0)
-                self.action_pool=np.concatenate((self.action_pool,np.expand_dims(a,axis=0)),0)
+                if len(a.shape)==1:
+                    self.action_pool=np.concatenate((self.action_pool,np.expand_dims(a,axis=0)),0)
+                else:
+                    self.action_pool=np.concatenate((self.action_pool,a),0)
                 self.next_state_pool=np.concatenate((self.next_state_pool,np.expand_dims(self.state[self.state_name[next_s]],axis=0)),0)
                 self.reward_pool=np.concatenate((self.reward_pool,np.expand_dims(r,axis=0)),0)
                 self.done_pool=np.concatenate((self.done_pool,np.expand_dims(done,axis=0)),0)
@@ -315,7 +323,7 @@ class kernel:
                             a=self.nn.action(s)
                         except AttributeError:
                             action_prob=self.epsilon_greedy_policy(s,self.action_one)
-                            a=np.random.choice(self.action,p=action_prob)
+                            a=np.random.choice(self.action_num,p=action_prob)
                         if self.action_name==None:
                             next_s,r,done=self.nn.explore(a)
                         else:
@@ -329,7 +337,7 @@ class kernel:
                             a=self.nn.action(s)
                         except AttributeError:
                             action_prob=self.epsilon_greedy_policy(s,self.action_one)
-                            a=np.random.choice(self.action,p=action_prob)
+                            a=np.random.choice(self.action_num,p=action_prob)
                         next_s,r,done=self.nn.transition(self.state_name[s],self.action_name[a])
                     self.pool(s,a,next_s,r,done)
                 except AttributeError:
@@ -391,7 +399,7 @@ class kernel:
                             a=self.nn.action(s)
                         except AttributeError:
                             action_prob=self.epsilon_greedy_policy(s,self.action_one)
-                            a=np.random.choice(self.action,p=action_prob)
+                            a=np.random.choice(self.action_num,p=action_prob)
                         if self.action_name==None:
                             next_s,r,done=self.nn.explore(a)
                         else:
@@ -405,7 +413,7 @@ class kernel:
                             a=self.nn.action(s)
                         except AttributeError:
                             action_prob=self.epsilon_greedy_policy(s,self.action_one)
-                            a=np.random.choice(self.action,p=action_prob)
+                            a=np.random.choice(self.action_num,p=action_prob)
                         next_s,r,done=self.nn.transition(self.state_name[s],self.action_name[a])
                     self.pool(s,a,next_s,r,done)
                 except AttributeError:
