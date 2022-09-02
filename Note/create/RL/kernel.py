@@ -59,19 +59,15 @@ class kernel:
             action_num=self.action_num
             self.action_num=action_num
         if self.action_name!=None and len(self.action_name)>self.action_num:
-            self.action=np.concatenate((self.action,np.arange(len(self.action_name)-self.action_num,dtype=dtype)+self.action_num))
             if self.epsilon!=None:
                 self.action_one=np.concatenate((self.action_one,np.ones(len(self.action_name)-self.action_num,dtype=dtype)))
         elif self.action_name!=None:
-            self.action=np.arange(len(self.action_name),dtype=dtype)
             if self.epsilon!=None:
                 self.action_one=np.ones(len(self.action_name),dtype=dtype)
         if self.action_num>action_num:
-            self.action=np.concatenate((self.action,np.arange(self.action_num-action_num,dtype=dtype)+action_num))
             if self.epsilon!=None:
                 self.action_one=np.concatenate((self.action_one,np.ones(self.action_num-action_num,dtype=dtype)))
         else:
-            self.action=np.arange(self.action_num,dtype=dtype)
             if self.epsilon!=None:
                 self.action_one=np.ones(self.action_num,dtype=dtype)
         return
@@ -133,9 +129,9 @@ class kernel:
     def epsilon_greedy_policy(self,s,action_one,epsilon):
         action_prob=action_one*epsilon/len(action_one)
         if self.state==None:
-            best_a=np.argmax(self.nn.nn(s).numpy())
+            best_a=np.argmax(self.nn.nn(s))
         else:
-            best_a=np.argmax(self.nn.nn(self.state[self.state_name[s]]).numpy())
+            best_a=np.argmax(self.nn.nn(self.state[self.state_name[s]]))
         action_prob[best_a.numpy()]+=1-epsilon
         return action_prob
     
@@ -146,13 +142,19 @@ class kernel:
             if self.state_pool[index]==None and type(self.state_pool[index])!=np.ndarray:
                 if self.state==None:
                     self.state_pool[index]=s
-                    self.action_pool[index]=np.expand_dims(a,axis=0)
+                    if len(a.shape)==1:
+                        self.action_pool[index]=np.expand_dims(a,axis=0)
+                    else:
+                        self.action_pool[index]=a
                     self.next_state_pool[index]=np.expand_dims(next_s,axis=0)
                     self.reward_pool[index]=np.expand_dims(r,axis=0)
                     self.done_pool[index]=np.expand_dims(done,axis=0)
                 else:
                     self.state_pool[index]=np.expand_dims(self.state[self.state_name[s]],axis=0)
-                    self.action_pool[index]=np.expand_dims(a,axis=0)
+                    if len(a.shape)==1:
+                        self.action_pool[index]=np.expand_dims(a,axis=0)
+                    else:
+                        self.action_pool[index]=a
                     self.next_state_pool[index]=np.expand_dims(self.state[self.state_name[next_s]],axis=0)
                     self.reward_pool[index]=np.expand_dims(r,axis=0)
                     self.done_pool[index]=np.expand_dims(done,axis=0)
@@ -160,13 +162,19 @@ class kernel:
                 try:
                     if self.state==None:
                         self.state_pool[index]=np.concatenate((self.state_pool[index],s),0)
-                        self.action_pool[index]=np.concatenate((self.action_pool[index],np.expand_dims(a,axis=0)),0)
+                        if len(a.shape)==1:
+                            self.action_pool[index]=np.concatenate((self.action_pool[index],np.expand_dims(a,axis=0)),0)
+                        else:
+                            self.action_pool[index]=np.concatenate((self.action_pool[index],a),0)
                         self.next_state_pool[index]=np.concatenate((self.next_state_pool[index],np.expand_dims(next_s,axis=0)),0)
                         self.reward_pool[index]=np.concatenate((self.reward_pool[index],np.expand_dims(r,axis=0)),0)
                         self.done_pool[index]=np.concatenate((self.done_pool[index],np.expand_dims(done,axis=0)),0)
                     else:
                         self.state_pool[index]=np.concatenate((self.state_pool[index],np.expand_dims(self.state[self.state_name[s]],axis=0)),0)
-                        self.action_pool[index]=np.concatenate((self.action_pool[index],np.expand_dims(a,axis=0)),0)
+                        if len(a.shape)==1:
+                            self.action_pool[index]=np.concatenate((self.action_pool[index],np.expand_dims(a,axis=0)),0)
+                        else:
+                            self.action_pool[index]=np.concatenate((self.action_pool[index],a),0)
                         self.next_state_pool[index]=np.concatenate((self.next_state_pool[index],np.expand_dims(self.state[self.state_name[next_s]],axis=0)),0)
                         self.reward_pool[index]=np.concatenate((self.reward_pool[index],np.expand_dims(r,axis=0)),0)
                         self.done_pool[index]=np.concatenate((self.done_pool[index],np.expand_dims(done,axis=0)),0)
@@ -174,32 +182,44 @@ class kernel:
                     pass
             self.thread_lock[0].release()
         else:
-            if self.state_pool[index]==None and type(self.state_pool[index])!=np.ndarray:
+            if self.state_pool[i]==None and type(self.state_pool[i])!=np.ndarray:
                 if self.state==None:
-                    self.state_pool[index]=s
-                    self.action_pool[index]=np.expand_dims(a,axis=0)
-                    self.next_state_pool[index]=np.expand_dims(next_s,axis=0)
-                    self.reward_pool[index]=np.expand_dims(r,axis=0)
-                    self.done_pool[index]=np.expand_dims(done,axis=0)
+                    self.state_pool[i]=s
+                    if len(a.shape)==1:
+                        self.action_pool[i]=np.expand_dims(a,axis=0)
+                    else:
+                        self.action_pool[i]=a
+                    self.next_state_pool[i]=np.expand_dims(next_s,axis=0)
+                    self.reward_pool[i]=np.expand_dims(r,axis=0)
+                    self.done_pool[i]=np.expand_dims(done,axis=0)
                 else:
-                    self.state_pool[index]=np.expand_dims(self.state[self.state_name[s]],axis=0)
-                    self.action_pool[index]=np.expand_dims(a,axis=0)
-                    self.next_state_pool[index]=np.expand_dims(self.state[self.state_name[next_s]],axis=0)
-                    self.reward_pool[index]=np.expand_dims(r,axis=0)
-                    self.done_pool[index]=np.expand_dims(done,axis=0)
+                    self.state_pool[i]=np.expand_dims(self.state[self.state_name[s]],axis=0)
+                    if len(a.shape)==1:
+                        self.action_pool[i]=np.expand_dims(a,axis=0)
+                    else:
+                        self.action_pool[i]=a
+                    self.next_state_pool[i]=np.expand_dims(self.state[self.state_name[next_s]],axis=0)
+                    self.reward_pool[i]=np.expand_dims(r,axis=0)
+                    self.done_pool[i]=np.expand_dims(done,axis=0)
             else:
                 if self.state==None:
-                    self.state_pool[index]=np.concatenate((self.state_pool[index],s),0)
-                    self.action_pool[index]=np.concatenate((self.action_pool[index],np.expand_dims(a,axis=0)),0)
-                    self.next_state_pool[index]=np.concatenate((self.next_state_pool[index],np.expand_dims(next_s,axis=0)),0)
-                    self.reward_pool[index]=np.concatenate((self.reward_pool[index],np.expand_dims(r,axis=0)),0)
-                    self.done_pool[index]=np.concatenate((self.done_pool[index],np.expand_dims(done,axis=0)),0)
+                    self.state_pool[i]=np.concatenate((self.state_pool[i],s),0)
+                    if len(a.shape)==1:
+                        self.action_pool[i]=np.concatenate((self.action_pool[i],np.expand_dims(a,axis=0)),0)
+                    else:
+                        self.action_pool[i]=np.concatenate((self.action_pool[i],a),0)
+                    self.next_state_pool[i]=np.concatenate((self.next_state_pool[i],np.expand_dims(next_s,axis=0)),0)
+                    self.reward_pool[i]=np.concatenate((self.reward_pool[i],np.expand_dims(r,axis=0)),0)
+                    self.done_pool[i]=np.concatenate((self.done_pool[i],np.expand_dims(done,axis=0)),0)
                 else:
-                    self.state_pool[index]=np.concatenate((self.state_pool[index],np.expand_dims(self.state[self.state_name[s]],axis=0)),0)
-                    self.action_pool[index]=np.concatenate((self.action_pool[index],np.expand_dims(a,axis=0)),0)
-                    self.next_state_pool[index]=np.concatenate((self.next_state_pool[index],np.expand_dims(self.state[self.state_name[next_s]],axis=0)),0)
-                    self.reward_pool[index]=np.concatenate((self.reward_pool[index],np.expand_dims(r,axis=0)),0)
-                    self.done_pool[index]=np.concatenate((self.done_pool[index],np.expand_dims(done,axis=0)),0)
+                    self.state_pool[i]=np.concatenate((self.state_pool[i],np.expand_dims(self.state[self.state_name[s]],axis=0)),0)
+                    if len(a.shape)==1:
+                        self.action_pool[i]=np.concatenate((self.action_pool[i],np.expand_dims(a,axis=0)),0)
+                    else:
+                        self.action_pool[i]=np.concatenate((self.action_pool[i],a),0)
+                    self.next_state_pool[i]=np.concatenate((self.next_state_pool[i],np.expand_dims(self.state[self.state_name[next_s]],axis=0)),0)
+                    self.reward_pool[i]=np.concatenate((self.reward_pool[i],np.expand_dims(r,axis=0)),0)
+                    self.done_pool[i]=np.concatenate((self.done_pool[i],np.expand_dims(done,axis=0)),0)
         if self.state_pool[i]!=None and len(self.state_pool[i])>self.pool_size:
             self.state_pool[i]=self.state_pool[i][1:]
             self.action_pool[i]=self.action_pool[i][1:]
@@ -225,7 +245,7 @@ class kernel:
                     a=self.nn.action(s)
                 except AttributeError:
                     action_prob=self.epsilon_greedy_policy(s,self.action_one)
-                    a=np.random.choice(self.action,p=action_prob)
+                    a=np.random.choice(self.action_num,p=action_prob)
                 if self.action_name==None:
                     next_s,r,done=self.nn.explore(a)
                 else:
@@ -239,7 +259,7 @@ class kernel:
                     a=self.nn.action(s)
                 except AttributeError:
                     action_prob=self.epsilon_greedy_policy(s,self.action_one)
-                    a=np.random.choice(self.action,p=action_prob)
+                    a=np.random.choice(self.action_num,p=action_prob)
                 next_s,r,done=self.nn.transition(self.state_name[s],self.action_name[a])
         except AttributeError:
             try:
