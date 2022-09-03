@@ -8,12 +8,11 @@ import time
 
 class kernel:
     def __init__(self,nn=None):
-        if nn!=None:
-            self.nn=nn
-            try:
-                self.nn.km=1
-            except AttributeError:
-                pass
+        self.nn=nn
+        try:
+            self.nn.km=1
+        except AttributeError:
+            pass
         self.core=None
         self.PO=None
         self.thread_lock=None
