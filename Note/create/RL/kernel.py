@@ -7,12 +7,11 @@ import pickle
 
 class kernel:
     def __init__(self,nn=None,thread=None,thread_lock=None,state=None,state_name=None,action_name=None,save_episode=True):
-        if nn!=None:
-            self.nn=nn
-            try:
-                self.nn.km=1
-            except AttributeError:
-                pass
+        self.nn=nn
+        try:
+            self.nn.km=1
+        except AttributeError:
+            pass
         if thread!=None:
             self.state_list=np.array(0,dtype='int8')
             self.threadnum=np.arange(thread)
