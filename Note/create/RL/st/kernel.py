@@ -9,12 +9,11 @@ import time
 
 class kernel:
     def __init__(self,nn=None,state=None,state_name=None,action_name=None,save_episode=True):
-        if nn!=None:
-            self.nn=nn
-            try:
-                self.nn.km=1
-            except AttributeError:
-                pass
+        self.nn=nn
+        try:
+            self.nn.km=1
+        except AttributeError:
+            pass
         self.ol=None
         self.PO=None
         self.thread_lock=None
