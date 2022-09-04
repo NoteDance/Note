@@ -23,7 +23,7 @@ class kernel:
         self.stop=None
         self.save_flag=None
         self.stop_flag=1
-        self.train_flag=None
+        self.training_flag=None
         self.save_epoch=None
         self.batch=None
         self.epoch=0
@@ -713,7 +713,7 @@ class kernel:
     
     def train(self,batch=None,epoch=None,test_batch=None,save=None,one=True,p=None,s=None):
         if self.thread==None:
-            self.train_flag=True
+            self.training_flag=True
         elif self.thread_lock!=None:
             if self.PO==1:
                 self.thread_lock[1].acquire()
@@ -1036,7 +1036,7 @@ class kernel:
             print()
             print('time:{0}s'.format(self.total_time))
         if self.thread==None:
-            self.train_flag=False
+            self.training_flag=False
         return
     
     
@@ -1179,7 +1179,7 @@ class kernel:
     def stop_func(self):
         if self.thread_lock==None:
             if self.end():
-                self.train_flag=False
+                self.training_flag=False
                 self.save(self.total_epoch,True)
                 print('\nSystem have stopped training,Neural network have been saved.')
                 self._time=self.time-int(self.time)
@@ -1458,7 +1458,7 @@ class kernel:
                 pickle.dump(self.nn.param[:-len(self.nn.model.weights)],parameter_file)
         except AttributeError:
             pickle.dump(self.nn.param,parameter_file)
-        if self.train_flag==False:
+        if self.training_flag==False:
             self.nn.param=None
         try:
             if self.nn.opt:
