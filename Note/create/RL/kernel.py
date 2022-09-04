@@ -594,7 +594,7 @@ class kernel:
             if self.save_episode==True:
                 self.episode.append(episode)
             self.thread_lock[3].release()
-        self.running_flag[i]=0
+        self.running_flag[i+1]=0
         self.thread_lock[3].acquire()
         if i not in self.finish_list:
             self.finish_list.append(i)
