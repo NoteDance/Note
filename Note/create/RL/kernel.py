@@ -13,7 +13,7 @@ class kernel:
         except AttributeError:
             pass
         if thread!=None:
-            self.state_list=np.array(0,dtype='int8')
+            self.running_flag=np.array(0,dtype='int8')
             self.threadnum=np.arange(thread)
             self.threadnum=list(self.threadnum)
             self.reward=np.zeros(thread)
@@ -43,7 +43,7 @@ class kernel:
         self.thread_counter=0
         self.thread_lock=thread_lock
         self.p=[]
-        self._state_list=[]
+        self._running_flag=[]
         self.finish_list=[]
         self.PN=True
         self.save_episode=save_episode
@@ -107,9 +107,9 @@ class kernel:
             self.end_loss=end_loss
         if init==True:
             self.p=[]
-            self._state_list=[]
+            self._running_flag=[]
             self.finish_list=[]
-            self.state_list=np.array(0,dtype='int8')
+            self.running_flag=np.array(0,dtype='int8')
             self.PN=True
             self.episode=[]
             self.epsilon=[]
@@ -275,24 +275,24 @@ class kernel:
                 a=(self.nn.actor(self.state[self.state_name[s]])+self.nn.noise()).numpy()
                 next_s,r,done=self.nn.transition(self.state_name[s],a)
         if self.PN==True:
-            while len(self._state_list)<i:
+            while len(self._running_flag)<i:
                 pass
-            if len(self._state_list)==i:
+            if len(self._running_flag)==i:
                 self.thread_lock[2].acquire()
-                self._state_list.append(self.state_list[1:])
+                self._running_flag.append(self.running_flag[1:])
                 self.thread_lock[2].release()
             else:
-                if len(self._state_list[i])<self.thread_counter:
-                    self._state_list[i]=self.state_list[1:]
+                if len(self._running_flag[i])<self.thread_counter:
+                    self._running_flag[i]=self.running_flag[1:]
             while len(self.p)<i:
                 pass
             if len(self.p)==i:
                 self.thread_lock[2].acquire()
-                self.p.append(np.array(self._state_list[i],dtype=np.float16)/np.sum(self._state_list[i]))
+                self.p.append(np.array(self._running_flag[i],dtype=np.float16)/np.sum(self._running_flag[i]))
                 self.thread_lock[2].release()
             else:
                 if len(self.p[i])<self.thread_counter:
-                    self.p[i]=np.array(self._state_list[i],dtype=np.float16)/np.sum(self._state_list[i])
+                    self.p[i]=np.array(self._running_flag[i],dtype=np.float16)/np.sum(self._running_flag[i])
             while True:
                 index=np.random.choice(len(self.p[i]),p=self.p[i])
                 if index in self.finish_list:
@@ -515,8 +515,8 @@ class kernel:
                 self.nn.bc.append(0)
             except AttributeError:
                 pass
-            if type(self.state_list)==np.ndarray:
-                self.state_list=np.append(self.state_list,np.array(1,dtype='int8'))
+            if type(self.running_flag)==np.ndarray:
+                self.running_flag=np.append(self.running_flag,np.array(1,dtype='int8'))
             self.thread_counter+=1
             self.thread_lock[3].release()
         for k in range(episode_num):
@@ -594,10 +594,11 @@ class kernel:
             if self.save_episode==True:
                 self.episode.append(episode)
             self.thread_lock[3].release()
+        self.running_flag[i]=0
         self.thread_lock[3].acquire()
         if i not in self.finish_list:
             self.finish_list.append(i)
-        self.thread-=1
+        self.thread_counter-=1
         self.thread_lock[3].release()
         if self.PN==True:
             self.state_pool[i]=None
@@ -693,8 +694,8 @@ class kernel:
         pickle.dump(self.end_loss,output_file)
         pickle.dump(self.thread_counter,output_file)
         pickle.dump(self.p,output_file)
-        pickle.dump(self.state_list,output_file)
-        pickle.dump(self._state_list,output_file)
+        pickle.dump(self.running_flag,output_file)
+        pickle.dump(self._running_flag,output_file)
         pickle.dump(self.finish_list,output_file)
         pickle.dump(self.PN,output_file)
         pickle.dump(self.save_episode,output_file)
@@ -734,8 +735,8 @@ class kernel:
         self.end_loss=pickle.load(input_file)
         self.thread_counter=pickle.load(input_file)
         self.p=pickle.load(input_file)
-        self.state_list=pickle.load(input_file)
-        self._state_list=pickle.load(input_file)
+        self.running_flag=pickle.load(input_file)
+        self._running_flag=pickle.load(input_file)
         self.finish_list=pickle.load(input_file)
         self.PN=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
