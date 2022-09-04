@@ -1,26 +1,25 @@
-import tensorflow as tf
 import numpy as np
 
 
-def epsilon_greedy_policy(action,value,action_one,epsilon):
+def epsilon_greedy_policy(action_num,value,action_one,epsilon):
     action_prob=action_one
     action_prob=action_prob*epsilon/len(action_one)
     best_a=np.argmax(value)
     action_prob[best_a]+=1-epsilon
-    return np.random.choice(action,p=action_prob)
+    return np.random.choice(action_num,p=action_prob)
 
 
-def pool(state,action,next_state,reward,pool_size,state_pool=None,action_pool=None,next_state_pool=None,reward_pool=None):
+def pool(state,action,next_state,reward,state_pool=None,action_pool=None,next_state_pool=None,reward_pool=None,pool_size=None):
    if state_pool==None:
-       state_pool=tf.expand_dims(state,axis=0)
-       action_pool=tf.expand_dims(action,axis=0)
-       next_state_pool=tf.expand_dims(next_state,axis=0)
-       reward_pool=tf.expand_dims(reward,axis=0)
+       state_pool=np.expand_dims(state,axis=0)
+       action_pool=np.expand_dims(action,axis=0)
+       next_state_pool=np.expand_dims(next_state,axis=0)
+       reward_pool=np.expand_dims(reward,axis=0)
    else:
-       state_pool=tf.concatenate(state_pool,tf.expand_dims(state,axis=0))
-       action_pool=tf.concatenate(action_pool,tf.expand_dims(action,axis=0))
-       next_state_pool=tf.concatenate(next_state_pool,tf.expand_dims(next_state,axis=0))
-       reward_pool=tf.concatenate(reward_pool,tf.expand_dims(reward,axis=0))
+       state_pool=np.concatenate((state_pool,np.expand_dims(state,axis=0)),0)
+       action_pool=np.concatenate((action_pool,np.expand_dims(action,axis=0)),0)
+       next_state_pool=np.concatenate((next_state_pool,np.expand_dims(next_state,axis=0)),0)
+       reward_pool=np.concatenate((reward_pool,np.expand_dims(reward,axis=0)),0)
    if len(state_pool)>pool_size:
        state_pool=state_pool[1:]
        action_pool=action_pool[1:]
@@ -29,41 +28,28 @@ def pool(state,action,next_state,reward,pool_size,state_pool=None,action_pool=No
    return state_pool,action_pool,next_state_pool,reward_pool
 
 
-def _noise(x):
-    return tf.math.sign(x)*tf.math.sqrt(tf.math.abs(x))
-
-
-def Gaussian_noise(value_p,dtype=tf.float32):
-    noise=[]
-    for i in range(len(value_p)):
-        noise_row=_noise(tf.random.normal([value_p[i].shape[0],1]),dtype=dtype)
-        noise_column=_noise(tf.random.normal([value_p[i].shape[1],1]),dtype=dtype)
-        noise_bias=_noise(tf.random.normal([value_p[i].shape[1],1]),dtype=dtype)
-        noise.append([noise_row,noise_column,noise_bias])
-    return noise
-
-
-def update_param(param,tau=None):
+def update_param(target_net,net,tau=None):
     if tau==None:
-        for i in range(len(param[0])):
-            param[1][i]=param[0][i].copy()
+        target_net.load_state_dict(net.state_dict())
     else:
-        for i in range(len(param[0])):
-            param[1][i]=tau*param[1][i]+(1-tau)*param[0][i]
+        for target_param,param in zip(target_net[0].parameters(),net[0].parameters()):
+            target_param.data.copy_(target_param.data*(1.0-tau)+param.data*tau)
+        for target_param,param in zip(target_net[1].parameters(),net[1].parameters()):
+            target_param.data.copy_(target_param.data*(1.0-tau)+param.data*tau)
     return
 
 
 def pr(state_pool,action_pool,next_state_pool,reward_pool,t,pool_size,batch,K,alpha,beta,p=None):
     if p==None:
-        p=tf.ones([len(state_pool)],dtype=tf.float32)
-        prob=p**alpha/tf.reduce_sum(p**alpha)
+        p=np.ones([len(state_pool)],dtype=np.float32)
+        prob=p**alpha/np.sum(p**alpha)
         w=(pool_size*prob)**-beta
-        w=w/tf.reduce_max(w)
+        w=w/np.max(w)
     else:
-        p=tf.concat([p,tf.ones([len(state_pool)-len(p)])*tf.reduce_max(p)])
-        prob=p**alpha/tf.reduce_sum(p**alpha)
+        p=np.concatenate([p,np.ones([len(state_pool)-len(p)])*np.max(p)])
+        prob=p**alpha/np.sum(p**alpha)
         w=(pool_size*prob)**-beta
-        w=w/tf.reduce_max(w)
+        w=w/np.max(w)
     if t%K==0:
         index=np.random.choice(np.arange(len(state_pool),dtype=np.int8),size=[pool_size],p=prob)
     t+=1
