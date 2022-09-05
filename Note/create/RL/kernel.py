@@ -43,7 +43,7 @@ class kernel:
         self.thread_counter=0
         self.thread_lock=thread_lock
         self.p=[]
-        self._running_flag=[]
+        self.running_flag_list=[]
         self.finish_list=[]
         self.PN=True
         self.save_episode=save_episode
@@ -106,8 +106,8 @@ class kernel:
         if end_loss!=None:
             self.end_loss=end_loss
         if init==True:
-            self.p=[]
-            self._running_flag=[]
+            self.probability_list=[]
+            self.running_flag_list=[]
             self.finish_list=[]
             self.running_flag=np.array(0,dtype='int8')
             self.PN=True
@@ -275,26 +275,26 @@ class kernel:
                 a=(self.nn.actor(self.state[self.state_name[s]])+self.nn.noise()).numpy()
                 next_s,r,done=self.nn.transition(self.state_name[s],a)
         if self.PN==True:
-            while len(self._running_flag)<i:
+            while len(self.running_flag_list)<i:
                 pass
-            if len(self._running_flag)==i:
+            if len(self.running_flag_list)==i:
                 self.thread_lock[2].acquire()
-                self._running_flag.append(self.running_flag[1:])
+                self.running_flag_list.append(self.running_flag[1:])
                 self.thread_lock[2].release()
             else:
-                if len(self._running_flag[i])<self.thread_counter:
-                    self._running_flag[i]=self.running_flag[1:]
-            while len(self.p)<i:
+                if len(self.running_flag_list[i])<self.thread_counter or np.sum(self.running_flag_list[i])>self.thread_counter:
+                    self.running_flag_list[i]=self.running_flag[1:]
+            while len(self.probability_list)<i:
                 pass
-            if len(self.p)==i:
+            if len(self.probability_list)==i:
                 self.thread_lock[2].acquire()
-                self.p.append(np.array(self._running_flag[i],dtype=np.float16)/np.sum(self._running_flag[i]))
+                self.probability_list.append(np.array(self.running_flag_list[i],dtype=np.float16)/np.sum(self.running_flag_list[i]))
                 self.thread_lock[2].release()
             else:
-                if len(self.p[i])<self.thread_counter:
-                    self.p[i]=np.array(self._running_flag[i],dtype=np.float16)/np.sum(self._running_flag[i])
+                if len(self.probability_list[i])<self.thread_counter or np.sum(self.running_flag_list[i])>self.thread_counter:
+                    self.probability_list[i]=np.array(self.running_flag_list[i],dtype=np.float16)/np.sum(self.running_flag_list[i])
             while True:
-                index=np.random.choice(len(self.p[i]),p=self.p[i])
+                index=np.random.choice(len(self.probability_list[i]),p=self.probability_list[i])
                 if index in self.finish_list:
                     continue
                 else:
@@ -693,9 +693,9 @@ class kernel:
         pickle.dump(self.update_step,output_file)
         pickle.dump(self.end_loss,output_file)
         pickle.dump(self.thread_counter,output_file)
-        pickle.dump(self.p,output_file)
+        pickle.dump(self.probability_list,output_file)
         pickle.dump(self.running_flag,output_file)
-        pickle.dump(self._running_flag,output_file)
+        pickle.dump(self.running_flag_list,output_file)
         pickle.dump(self.finish_list,output_file)
         pickle.dump(self.PN,output_file)
         pickle.dump(self.save_episode,output_file)
@@ -734,9 +734,9 @@ class kernel:
         self.update_step=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
         self.thread_counter=pickle.load(input_file)
-        self.p=pickle.load(input_file)
+        self.probability_list=pickle.load(input_file)
         self.running_flag=pickle.load(input_file)
-        self._running_flag=pickle.load(input_file)
+        self.running_flag_list=pickle.load(input_file)
         self.finish_list=pickle.load(input_file)
         self.PN=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
