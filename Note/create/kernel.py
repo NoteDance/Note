@@ -419,18 +419,44 @@ class kernel:
             output,loss=self.tf_opt(data,labels,t)
         except AttributeError:
             if self.thread==None:
-                output=self.nn.fp(data)
+                output=self.nn.fp(data.to(self.nn.device))
             else:
-                output=self.nn.fp(data,t)
-            loss=self.nn.loss(output,labels)
-            self.nn.opt.zero_grad()
-            loss.backward()
-            self.nn.opt.step()
+                output=self.nn.fp(data.to(self.nn.device),t)
+            loss=self.nn.loss(output,labels.to(self.nn.device))
+            try:
+                self.nn.opt.zero_grad()
+                loss.backward()
+                self.nn.opt.step()
+            except:
+                self.nn.opt(loss)
         return output,loss
     
     
     def opt_t(self,data,labels,t):
-        output,loss=self.tf_opt_t(data,labels,int(t))
+        try:
+            if self.core.DType!=None:
+                pass
+            output,loss=self.tf_opt_t(data,labels,int(t))
+        except AttributeError:
+            try:
+                output=self.nn.fp(data.to(self.nn.device))
+            except:
+                output=self.nn.fp(data.to(self.nn.device),t)
+            loss=self.nn.loss(output,labels.to(self.nn.device))
+            if self.PO==1:
+                try:
+                    self.thread_lock[0].acquire()
+                    self.nn.opt.zero_grad()
+                    loss.backward()
+                    self.nn.opt.step()
+                    self.thread_lock[0].release()
+                except:
+                    self.thread_lock[0].acquire()
+                    try:
+                        self.nn.opt(loss)
+                    except:
+                        self.nn.opt(loss,t)
+                    self.thread_lock[0].release()
         return output,loss
     
     
@@ -712,6 +738,12 @@ class kernel:
     
     
     def train(self,batch=None,epoch=None,test_batch=None,save=None,one=True,p=None,s=None):
+        if self.thread!=None:
+            try:
+                t=self.threadnum.pop(0)
+            except IndexError:
+                print('\nError,please add thread.')
+                return
         if self.thread==None:
             self.training_flag=True
         elif self.thread_lock!=None:
@@ -747,12 +779,6 @@ class kernel:
             labels_batch=[x for x in range(len(self.train_labels))]
         else:
             labels_batch=None
-        if self.thread!=None:
-            try:
-                t=self.threadnum.pop(0)
-            except IndexError:
-                print('\nError,please add thread.')
-                return
         if epoch!=None:
             for i in range(epoch):
                 if self.stop==True:
@@ -1037,6 +1063,16 @@ class kernel:
             print('time:{0}s'.format(self.total_time))
         if self.thread==None:
             self.training_flag=False
+        if self.thread_lock!=None:
+            if self.PO==1:
+                self.thread_lock[1].acquire()
+            else:
+                self.thread_lock[2].acquire()
+            self.thread_counter-=1
+            if self.PO==1:
+                self.thread_lock[1].release()
+            else:
+                self.thread_lock[2].release()
         return
     
     
@@ -1430,7 +1466,12 @@ class kernel:
                 else:
                     parameter_file=open('param.dat','wb')
             except AttributeError:
-                parameter_file=open('param.dat','wb')
+                try:
+                    if self.core.DType!=None:
+                        pass 
+                    parameter_file=open('param.dat','wb')
+                except AttributeError:
+                    pass
         else:
             output_file=open('save-{0}.dat'.format(i),'wb')
             try:
@@ -1447,35 +1488,48 @@ class kernel:
                         os.remove(self.file_list[0][1])
                         del self.file_list[0]
             except AttributeError:
-                parameter_file=open('param-{0}.dat'.format(i),'wb')
-                self.file_list.append(['save-{0}.dat','param-{0}.dat'])
-                if len(self.file_list)>self.s+1:
-                    os.remove(self.file_list[0][0])
-                    os.remove(self.file_list[0][1])
-                    del self.file_list[0]
+                try:
+                    if self.core.DType!=None:
+                        pass   
+                    parameter_file=open('param-{0}.dat'.format(i),'wb')
+                    self.file_list.append(['save-{0}.dat','param-{0}.dat'])
+                    if len(self.file_list)>self.s+1:
+                        os.remove(self.file_list[0][0])
+                        os.remove(self.file_list[0][1])
+                        del self.file_list[0]
+                except AttributeError:
+                    self.file_list.append(['save-{0}.dat'])
+                    if len(self.file_list)>self.s+1:
+                        os.remove(self.file_list[0][0])
+                        del self.file_list[0]
         try:
-            if len(self.nn.model.weights)!=self.nn.param:
-                pickle.dump(self.nn.param[:-len(self.nn.model.weights)],parameter_file)
-        except AttributeError:
-            pickle.dump(self.nn.param,parameter_file)
-        if self.training_flag==False:
-            self.nn.param=None
-        try:
-            if self.nn.opt:
-                pass
-            opt=self.nn.opt
-            self.nn.opt=None
-            pickle.dump(self.nn,output_file)
-            self.nn.opt=opt
-        except AttributeError:
+            if self.core.DType!=None:
+                pass  
             try:
+                if len(self.nn.model.weights)!=self.nn.param:
+                    pickle.dump(self.nn.param[:-len(self.nn.model.weights)],parameter_file)
+            except AttributeError:
+                pickle.dump(self.nn.param,parameter_file)
+            if self.training_flag==False:
+                self.nn.param=None
+            try:
+                if self.nn.opt:
+                    pass
+                opt=self.nn.opt
+                self.nn.opt=None
                 pickle.dump(self.nn,output_file)
-            except:
-                opt=self.nn.oopt
-                self.nn.oopt=None
-                pickle.dump(self.nn,output_file)
-                self.nn.oopt=opt
-        pickle.dump(opt.get_config(),output_file)
+                self.nn.opt=opt
+            except AttributeError:
+                try:
+                    pickle.dump(self.nn,output_file)
+                except:
+                    opt=self.nn.oopt
+                    self.nn.oopt=None
+                    pickle.dump(self.nn,output_file)
+                    self.nn.oopt=opt
+            pickle.dump(opt.get_config(),output_file)
+        except AttributeError:
+            pass
         pickle.dump(self.ol,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.end_loss,output_file)
@@ -1508,7 +1562,12 @@ class kernel:
             else:
                 parameter_file.close()
         except AttributeError:
-            parameter_file.close()
+            try:
+                if self.core.DType!=None:
+                    pass  
+                parameter_file.close()
+            except AttributeError:
+                pass
         if self.save_flag==True:
             print('\nSystem have stopped,Neural network have saved.')
         return
@@ -1521,16 +1580,21 @@ class kernel:
             param=pickle.load(parameter_file)
         self.nn=pickle.load(input_file)
         try:
-            if self.nn.model!=None:
+            if self.core.DType!=None:
+                pass 
+            try:
+                if self.nn.model!=None:
+                    pass
+                self.nn.param=param.extend(self.nn.model.weights)
+            except AttributeError:
+                self.nn.param=param
+            try:
+                self.nn.km=1
+            except AttributeError:
                 pass
-            self.nn.param=param.extend(self.nn.model.weights)
-        except AttributeError:
-            self.nn.param=param
-        try:
-            self.nn.km=1
+            self.config=pickle.load(input_file)
         except AttributeError:
             pass
-        self.config=pickle.load(input_file)
         self.ol=pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
