@@ -45,6 +45,7 @@ kernel.core=tf                    #use core
 kernel.data(x_train,y_train)   #input you data,if you have test data can transfer to kernel API data()
                                #data can be a list,[data1,data2,...,datan]
 kernel.restore('save.dat')     #restore neural network
+kernel.nn.opt=tf.keras.optimizers.Adam().from_config(kernel.config)
 kernel.train(32,1)             #train again
 ```
 
