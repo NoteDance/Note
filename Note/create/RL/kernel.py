@@ -42,7 +42,7 @@ class kernel:
         self.thread=thread
         self.thread_counter=0
         self.thread_lock=thread_lock
-        self.p=[]
+        self.probability_list=[]
         self.running_flag_list=[]
         self.finish_list=[]
         self.PN=True
