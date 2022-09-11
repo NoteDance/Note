@@ -82,8 +82,7 @@ class kernel:
                 self.total_epoch=np.zeros(self.thread)
                 self.time=np.zeros(self.thread)
                 self.total_time=np.zeros(self.thread)
-            if test_data!=None:
-                if self.PO==None:
+                if test_data!=None:
                     self.test_loss=np.zeros(self.thread)
                     self.test_acc=np.zeros(self.thread)
                     self.test_loss_list=[[] for _ in range(self.thread)]
@@ -94,6 +93,32 @@ class kernel:
     def init(self,param=None):
         if param!=None:
             self.nn.param=param
+        if self.thread!=None:
+            self.threadnum=np.arange(self.thread)
+            self.threadnum=list(self.threadnum)
+            try:
+                self.nn.ec=np.zeros(self.thread)
+            except AttributeError:
+                pass
+            try:
+                self.nn.bc=np.zeros(self.thread)
+            except AttributeError:
+                pass
+            if self.PO==None:
+                self.train_loss=np.zeros(self.thread)
+                self.train_acc=np.zeros(self.thread)
+                self.train_loss_list=[[] for _ in range(self.thread)]
+                self.train_acc_list=[[] for _ in range(self.thread)]
+                self.epoch=np.zeros(self.thread)
+                self.total_epoch=np.zeros(self.thread)
+                self.time=np.zeros(self.thread)
+                self.total_time=np.zeros(self.thread)
+                if self.test_data!=None:
+                    self.test_loss=np.zeros(self.thread)
+                    self.test_acc=np.zeros(self.thread)
+                    self.test_loss_list=[[] for _ in range(self.thread)]
+                    self.test_acc_list=[[] for _ in range(self.thread)]
+                return
         self.train_loss_list.clear()
         self.train_acc_list.clear()
         self.test_loss_list.clear()
