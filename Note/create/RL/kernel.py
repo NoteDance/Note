@@ -106,10 +106,13 @@ class kernel:
         if end_loss!=None:
             self.end_loss=end_loss
         if init==True:
+            self.thread_counter=0
+            self.threadnum=np.arange(self.thread)
+            self.threadnum=list(self.threadnum)
             self.probability_list=[]
+            self.running_flag=np.array(0,dtype='int8')
             self.running_flag_list=[]
             self.finish_list=[]
-            self.running_flag=np.array(0,dtype='int8')
             self.PN=True
             self.episode=[]
             self.epsilon=[]
@@ -117,7 +120,9 @@ class kernel:
             self.action_pool=[]
             self.next_state_pool=[]
             self.reward_pool=[]
+            self.reward=np.zeros(self.thread)
             self.loss=np.zeros(self.thread)
+            self.reward_list=[]
             self.loss_list=[]
             self.step_counter=np.zeros(self.thread)
             self.episode_num=np.zeros(self.thread)
