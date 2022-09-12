@@ -301,9 +301,9 @@ class kernel:
         episode=[]
         self.reward=0
         if self.state_name==None:
-            s=self.nn.env(init=True)
+            s=self.nn.env(initial=True)
         else:
-            s=self.nn.transition(init=True)
+            s=self.nn.transition(initial=True)
         if self.episode_step==None:
             while True:
                 t1=time.time()
