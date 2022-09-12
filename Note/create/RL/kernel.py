@@ -531,9 +531,9 @@ class kernel:
             self.episode_num[i]+=1
             episode=[]
             if self.state_name==None:
-                s=self.nn.env(init=True)
+                s=self.nn.env(initial=True)
             else:
-                s=self.nn.transition(init=True)
+                s=self.nn.transition(initial=True)
             if self.episode_step==None:
                 while True:
                     if self.stop==True:
