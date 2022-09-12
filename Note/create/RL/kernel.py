@@ -141,6 +141,65 @@ class kernel:
         return action_prob
     
     
+    def get_episode(self,s):
+        next_s=None
+        episode=[]
+        self.end_flag=False
+        while True:
+            s=next_s
+            try:
+                if self.nn.nn!=None:
+                    pass
+                try:
+                    if self.nn.env!=None:
+                        pass
+                    s=np.expand_dims(s,axis=0)
+                    a=np.argmax(self.nn.nn(s)).numpy()
+                    if self.action_name==None:
+                        next_s,r,done=self.nn.env(a)
+                    else:
+                        next_s,r,done=self.nn.env(self.action_name[a])
+                except AttributeError:
+                    a=np.argmax(self.nn.nn(s))
+                    next_s,r,done=self.nn.transition(self.state_name[s],self.action_name[a])
+            except AttributeError:
+                try:
+                    if self.nn.env!=None:
+                        pass
+                    if self.state_name==None:
+                        s=np.expand_dims(s,axis=0)
+                        a=self.nn.actor(s).numpy()
+                    else:
+                        a=self.nn.actor(self.state[self.state_name[s]]).numpy()
+                    next_s,r,done=self.nn.env(a)
+                except AttributeError:
+                    a=self.nn.actor(self.state[self.state_name[s]]).numpy()
+                    next_s,r,done=self.nn.transition(self.state_name[s],a)
+            if done:
+                if self.state_name==None and self.action_name==None:
+                    episode.append([s,a,next_s,r])
+                elif self.state_name==None:
+                    episode.append([s,self.action_name[a],next_s,r])
+                elif self.action_name==None:
+                    episode.append([self.state_name[s],a,self.state_name[next_s],r])
+                else:
+                    episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s],r])
+                episode.append('done')
+                break
+            elif self.end_flag==True:
+                break
+            else:
+                if self.state_name==None and self.action_name==None:
+                    episode.append([s,a,next_s,r])
+                elif self.state_name==None:
+                    episode.append([s,self.action_name[a],next_s,r])
+                elif self.action_name==None:
+                    episode.append([self.state_name[s],a,self.state_name[next_s],r])
+                else:
+                    episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s],r])
+        return episode
+    
+    
     def pool(self,s,a,next_s,r,done,i,index):
         if self.PN==True:
             self.thread_lock[0].acquire()
@@ -239,7 +298,7 @@ class kernel:
             if self.nn.nn!=None:
                 pass
             try:
-                if self.nn.explore!=None:
+                if self.nn.env!=None:
                     pass
                 s=np.expand_dims(s,axis=0)
                 if self.epsilon==None:
@@ -252,9 +311,9 @@ class kernel:
                     action_prob=self.epsilon_greedy_policy(s,self.action_one)
                     a=np.random.choice(self.action_num,p=action_prob)
                 if self.action_name==None:
-                    next_s,r,done=self.nn.explore(a)
+                    next_s,r,done=self.nn.env(a)
                 else:
-                    next_s,r,done=self.nn.explore(self.action_name[a])
+                    next_s,r,done=self.nn.env(self.action_name[a])
             except AttributeError:
                 if self.epsilon==None:
                     self.epsilon[i]=self.nn.epsilon(self.step_counter[i],i)
@@ -268,14 +327,14 @@ class kernel:
                 next_s,r,done=self.nn.transition(self.state_name[s],self.action_name[a])
         except AttributeError:
             try:
-                if self.nn.explore!=None:
+                if self.nn.env!=None:
                     pass 
                 if self.state_name==None:
                     s=np.expand_dims(s,axis=0)
                     a=(self.nn.actor(s)+self.nn.noise()).numpy()
                 else:
                     a=(self.nn.actor(self.state[self.state_name[s]])+self.nn.noise()).numpy()
-                next_s,r,done=self.nn.explore(a)
+                next_s,r,done=self.nn.env(a)
             except AttributeError:
                 a=(self.nn.actor(self.state[self.state_name[s]])+self.nn.noise()).numpy()
                 next_s,r,done=self.nn.transition(self.state_name[s],a)
@@ -317,66 +376,6 @@ class kernel:
             else:
                 episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r]
         return next_s,r,done,episode,index
-    
-        
-    def get_episode(self,s):
-        next_s=None
-        episode=[]
-        self.end_flag=False
-        while True:
-            s=next_s
-            try:
-                if self.nn.nn!=None:
-                    pass
-                try:
-                    if self.nn.explore!=None:
-                        pass
-                    s=np.expand_dims(s,axis=0)
-                    a=np.argmax(self.nn.nn(s)).numpy()
-                    if self.action_name==None:
-                        next_s,r,done=self.nn.explore(a)
-                    else:
-                        next_s,r,done=self.nn.explore(self.action_name[a])
-                except AttributeError:
-                    a=np.argmax(self.nn.nn(s))
-                    next_s,r,done=self.nn.transition(self.state_name[s],self.action_name[a])
-            except AttributeError:
-                try:
-                    if self.nn.explore!=None:
-                        pass
-                    if self.state_name==None:
-                        s=np.expand_dims(s,axis=0)
-                        a=self.nn.actor(s).numpy()
-                    else:
-                        a=self.nn.actor(self.state[self.state_name[s]]).numpy()
-                    next_s,r,done=self.nn.explore(a)
-                except AttributeError:
-                    a=self.nn.actor(self.state[self.state_name[s]]).numpy()
-                    next_s,r,done=self.nn.transition(self.state_name[s],a)
-            if done:
-                if self.state_name==None and self.action_name==None:
-                    episode.append([s,a,next_s,r])
-                elif self.state_name==None:
-                    episode.append([s,self.action_name[a],next_s,r])
-                elif self.action_name==None:
-                    episode.append([self.state_name[s],a,self.state_name[next_s],r])
-                else:
-                    episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s],r])
-                episode.append('done')
-                break
-            elif self.end_flag==True:
-                break
-            else:
-                if self.state_name==None and self.action_name==None:
-                    episode.append([s,a,next_s,r])
-                elif self.state_name==None:
-                    episode.append([s,self.action_name[a],next_s,r])
-                elif self.action_name==None:
-                    episode.append([self.state_name[s],a,self.state_name[next_s],r])
-                else:
-                    episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s],r])
-        return episode
-    
     
     
     def end(self):
@@ -532,9 +531,9 @@ class kernel:
             self.episode_num[i]+=1
             episode=[]
             if self.state_name==None:
-                s=self.nn.explore(init=True)
+                s=self.nn.env(init=True)
             else:
-                s=int(np.random.uniform(0,len(self.state_name)))
+                s=self.nn.transition(init=True)
             if self.episode_step==None:
                 while True:
                     if self.stop==True:
