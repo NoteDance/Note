@@ -46,7 +46,7 @@ class kernel:
         self.running_flag_list=[]
         self.index_matrix=[]
         self.one_matrix=[]
-        self.rank_list=[]
+        self.row_list=[]
         self.row_sum_list=[]
         self.rank_sum_list=[]
         self.row_probability=[]
@@ -135,7 +135,7 @@ class kernel:
             self.running_flag_list=[]
             self.index_matrix=[]
             self.one_matrix=[]
-            self.rank_list=[]
+            self.row_list=[]
             self.row_sum_list=[]
             self.rank_sum_list=[]
             self.row_probability=[]
@@ -330,35 +330,35 @@ class kernel:
     
     def index_matrix(self,i):
         if self.add_flag==None and len(self.index_matrix)!=self.nn.row:
-            if len(self.rank_list)!=self.nn.rank:
-                self.rank_list.append(i)
+            if len(self.row_list)!=self.nn.rank:
+                self.row_list.append(i)
                 self.rank_one=np.append(self.rank_one,np.array(1,dtype='int8'))
-                if len(self.rank_list)==self.nn.rank:
-                    self.index_matrix.append(self.rank_list.copy())
-                    self.rank_list=[]
+                if len(self.row_list)==self.nn.rank:
+                    self.index_matrix.append(self.row_list.copy())
+                    self.row_list=[]
                     self.one_matrix.append(self.rank_one)
                     self.rank_one=np.array(0,dtype='int8')
                     self.row_one=np.append(self.row_one,np.array(1,dtype='int8'))
         elif self.add_flag==True:
             if len(self.index_matrix)!=self.nn.row:
-                if self.direction_index>len(self.index_matrix) and self.rank_list==[]:
+                if self.direction_index>len(self.index_matrix) and self.row_list==[]:
                     self.index_matrix.append([])
                     self.one_matrix.append(np.array(0,dtype='int8'))
                     self.row_one=np.append(self.row_one,np.array(1,dtype='int8'))
-                self.rank_list.append(i)
+                self.row_list.append(i)
                 self.one_matrix[self.direction_index]=np.append(self.one_matrix[self.direction_index],np.array(1,dtype='int8'))
-                if len(self.index_matrix[self.direction_index])+len(self.rank_list)==self.nn.rank:
-                    self.index_matrix[self.direction_index].extend(self.rank_list.copy())
-                    self.rank_list=[]
+                if len(self.index_matrix[self.direction_index])+len(self.row_list)==self.nn.rank:
+                    self.index_matrix[self.direction_index].extend(self.row_list.copy())
+                    self.row_list=[]
                     self.direction_index+=1
                     if len(self.index_matrix)==self.nn.row and len(self.index_matrix[-1])==self.nn.rank:
                         self.direction_index=0
             else:
-                self.rank_list.append(i)
+                self.row_list.append(i)
                 self.one_matrix[self.direction_index]=np.append(self.one_matrix[self.direction_index],np.array(1,dtype='int8'))
-                if len(self.index_matrix[self.direction_index])+len(self.rank_list)==self.nn.rank:
-                    self.index_matrix[self.direction_index].extend(self.rank_list.copy())
-                    self.rank_list=[]
+                if len(self.index_matrix[self.direction_index])+len(self.row_list)==self.nn.rank:
+                    self.index_matrix[self.direction_index].extend(self.row_list.copy())
+                    self.row_list=[]
                     self.direction_index+=1
                     if len(self.index_matrix[-1])==self.nn.rank:
                         self.direction_index=0
