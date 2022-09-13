@@ -570,11 +570,12 @@ class kernel:
                     if done:
                         if self.PN==True:
                             self.thread_lock[3].acquire()
-                            self.loss_list.append(self.loss[i])
-                            self.thread_lock[3].release()
                         else:
                             self.thread_lock[0].acquire()
-                            self.loss_list.append(self.loss[i])
+                        self.loss_list.append(self.loss[i])
+                        if self.PN==True:
+                            self.thread_lock[3].release()
+                        else:
                             self.thread_lock[0].release()
                         if self.save_episode==True:
                             episode.append('done')
@@ -604,28 +605,27 @@ class kernel:
                     if done:
                         if self.PN==True:
                             self.thread_lock[3].acquire()
-                            self.loss_list.append(self.loss[i])
-                            self.thread_lock[3].release()
                         else:
                             self.thread_lock[0].acquire()
-                            self.loss_list.append(self.loss[i])
+                        self.loss_list.append(self.loss[i])
+                        if self.PN==True:
+                            self.thread_lock[3].release()
+                        else:
                             self.thread_lock[0].release()
                         if self.save_episode==True:
                             episode.append('done')
                         break
             if self.PN==True:
                 self.thread_lock[3].acquire()
-                self.reward_list.append(self.reward[i])
-                self.reward[i]=0
-                if self.save_episode==True:
-                    self.episode.append(episode)
-                self.thread_lock[3].release()
             else:
                 self.thread_lock[0].acquire()
-                self.reward_list.append(self.reward[i])
-                self.reward[i]=0
-                if self.save_episode==True:
-                    self.episode.append(episode)
+            self.reward_list.append(self.reward[i])
+            self.reward[i]=0
+            if self.save_episode==True:
+                self.episode.append(episode)
+            if self.PN==True:
+                self.thread_lock[3].release()
+            else:
                 self.thread_lock[0].release()
         if self.PN==True:
             self.running_flag[i+1]=0
