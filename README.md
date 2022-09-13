@@ -33,6 +33,7 @@ kernel.train(32,5)         #train neural network
                            #epoch:epoch
 kernel.save()              #save neural network
 ```
+
 ```python
 import Note.create.kernel as k   #import kernel
 import tensorflow as tf              #import core
@@ -71,8 +72,6 @@ kernel.train(64,5)         #train neural network
                            #batch: batch size
                            #epoch:epoch
 ```
-
-
 ## Parallel optimization:
 You can use parallel optimization to speed up neural network training,parallel optimization speed up training by multithreading.
 
@@ -116,8 +115,6 @@ neural network example:https://github.com/NoteDancing/Note-documentation/tree/ma
 **PO:2**
 
 **GPU:GTX 1050 Ti**
-
-
 ## Multithreading：
 neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/DL/neural%20network
 
@@ -269,6 +266,7 @@ kernel.train_visual()
 kernel.reward                         #view reward
 kernel.reward_visual()
 ```
+
 ```python
 import Note.create.RL.st.kernel as k   #import kernel
 import DDPG as d
@@ -287,11 +285,9 @@ kernel.train_visual()
 kernel.reward                         #view reward
 kernel.reward_visual()
 ```
-
-
 ## Pool Net:
 neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/RL/neural%20network
-
+### list:
 example:
 ```python
 import Note.create.RL.kernel as k   #import kernel
@@ -334,6 +330,29 @@ for _ in range(5):
 	_thread=thread()
 	_thread.start()
 for _ in range(5):
+	_thread.join()
+kernel.loss_list or kernel.loss       #view training loss
+kernel.train_visual()
+kernel.reward                         #view reward
+kernel.reward_visual()
+```
+### matrix:
+example:
+```python
+import Note.create.RL.kernel as k   #import kernel
+import DQNm as d
+dqn=d.DQN(4,128,2)                               #create neural network object
+thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock()]
+kernel=k.kernel(dqn,6,thread_lock)   #start kernel
+kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
+kernel.action_init(2)
+class thread(threading.Thread):
+	def run(self):
+		kernel.train(100)
+for _ in range(6):
+	_thread=thread()
+	_thread.start()
+for _ in range(6):
 	_thread.join()
 kernel.loss_list or kernel.loss       #view training loss
 kernel.train_visual()
