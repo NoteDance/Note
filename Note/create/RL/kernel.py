@@ -13,7 +13,6 @@ class kernel:
         except AttributeError:
             pass
         if thread!=None:
-            self.running_flag=np.array(0,dtype='int8')
             self.threadnum=np.arange(thread)
             self.threadnum=list(self.threadnum)
             self.reward=np.zeros(thread)
@@ -38,13 +37,29 @@ class kernel:
         self.stop=None
         self.save_flag=None
         self.stop_flag=1
+        self.add_flag=None
         self.end_loss=None
         self.thread=thread
         self.thread_counter=0
         self.thread_lock=thread_lock
         self.probability_list=[]
         self.running_flag_list=[]
+        self.index_matrix=[]
+        self.one_matrix=[]
+        self.rank_list=[]
+        self.row_sum_list=[]
+        self.rank_sum_list=[]
+        self.row_probability=[]
+        self.rank_probability=[]
+        self.direction_index=0
         self.finish_list=[]
+        try:
+            if self.nn.row!=None:
+                pass
+            self.row_one=np.array(0,dtype='int8')
+            self.rank_one=np.array(0,dtype='int8')
+        except AttributeError:
+            self.running_flag=np.array(0,dtype='int8')
         self.PN=True
         self.save_episode=save_episode
         self.reward_list=[]
@@ -73,7 +88,12 @@ class kernel:
         return
     
     
-    def add_threads(self,thread):
+    def add_threads(self,thread,row=None,rank=None):
+        if row!=None:
+            self.thread=row*rank-self.nn.row*self.nn.rank
+            self.nn.row=row
+            self.nn.rank=rank
+            self.add_flag=True
         threadnum=np.arange(thread)+self.thread
         self.threadnum=self.threadnum.extend(threadnum)
         self.thread+=thread
@@ -106,13 +126,28 @@ class kernel:
         if end_loss!=None:
             self.end_loss=end_loss
         if init==True:
+            self.add_flag=None
             self.thread_counter=0
             self.threadnum=np.arange(self.thread)
             self.threadnum=list(self.threadnum)
             self.probability_list=[]
             self.running_flag=np.array(0,dtype='int8')
             self.running_flag_list=[]
+            self.index_matrix=[]
+            self.one_matrix=[]
+            self.rank_list=[]
+            self.row_sum_list=[]
+            self.rank_sum_list=[]
+            self.row_probability=[]
+            self.direction_index=0
             self.finish_list=[]
+            try:
+                if self.nn.row!=None:
+                    pass
+                self.row_one=np.array(0,dtype='int8')
+                self.rank_one=np.array(0,dtype='int8')
+            except AttributeError:
+                self.running_flag=np.array(0,dtype='int8')
             self.PN=True
             self.episode=[]
             self.epsilon=[]
@@ -293,6 +328,107 @@ class kernel:
         return
     
     
+    def index_matrix(self,i):
+        if self.add_flag==None and len(self.index_matrix)!=self.nn.row:
+            if len(self.rank_list)!=self.nn.rank:
+                self.rank_list.append(i)
+                self.rank_one=np.append(self.rank_one,np.array(1,dtype='int8'))
+                if len(self.rank_list)==self.nn.rank:
+                    self.index_matrix.append(self.rank_list.copy())
+                    self.rank_list=[]
+                    self.one_matrix.append(self.rank_one)
+                    self.rank_one=np.array(0,dtype='int8')
+                    self.row_one=np.append(self.row_one,np.array(1,dtype='int8'))
+        elif self.add_flag==True:
+            if len(self.index_matrix)!=self.nn.row:
+                if self.direction_index>len(self.index_matrix) and self.rank_list==[]:
+                    self.index_matrix.append([])
+                    self.one_matrix.append(np.array(0,dtype='int8'))
+                    self.row_one=np.append(self.row_one,np.array(1,dtype='int8'))
+                self.rank_list.append(i)
+                self.one_matrix[self.direction_index]=np.append(self.one_matrix[self.direction_index],np.array(1,dtype='int8'))
+                if len(self.index_matrix[self.direction_index])+len(self.rank_list)==self.nn.rank:
+                    self.index_matrix[self.direction_index].extend(self.rank_list.copy())
+                    self.rank_list=[]
+                    self.direction_index+=1
+                    if len(self.index_matrix)==self.nn.row and len(self.index_matrix[-1])==self.nn.rank:
+                        self.direction_index=0
+            else:
+                self.rank_list.append(i)
+                self.one_matrix[self.direction_index]=np.append(self.one_matrix[self.direction_index],np.array(1,dtype='int8'))
+                if len(self.index_matrix[self.direction_index])+len(self.rank_list)==self.nn.rank:
+                    self.index_matrix[self.direction_index].extend(self.rank_list.copy())
+                    self.rank_list=[]
+                    self.direction_index+=1
+                    if len(self.index_matrix[-1])==self.nn.rank:
+                        self.direction_index=0
+        return
+    
+    
+    def index(self,i):
+        if self.PN==True:
+            try:
+                if self.nn.row!=None:
+                    pass
+                while True:
+                    row_sum=np.sum(self.row_one)
+                    if self.row_sum_list[i]==None:
+                        self.row_sum_list[i]=row_sum
+                    if self.row_sum_list[i]==row_sum:
+                        row_index=np.random.choice(self.nn.row,p=self.row_probability[i])-1
+                    else:
+                        self.row_sum_list[i]=row_sum
+                        self.row_probability[i]=self.row_one/row_sum
+                        row_index=np.random.choice(self.nn.row,p=self.row_probability[i])-1
+                    rank_sum=np.sum(self.one_matrix[row_index])
+                    if rank_sum==0:
+                        self.row_one[row_index]=0
+                        continue
+                    if self.rank_sum_list[i]==None:
+                       self.rank_sum_list[i]=rank_sum
+                    if self.rank_sum_list[i]==rank_sum:
+                        rank_index=np.random.choice(self.nn.rank,p=self.rank_probability[i])-1
+                    else:
+                        self.rank_sum_list[i]=rank_sum
+                        self.rank_probability[i]=self.one_matrix[row_index]/rank_sum
+                        rank_index=np.random.choice(self.nn.rank,p=self.rank_probability[i])-1
+                    index=self.index_matrix[row_index][rank_index]
+                    if index in self.finish_list:
+                        self.one_matrix[row_index][rank_index]=0
+                        continue
+                    else:
+                        break
+            except AttributeError:
+                while len(self.running_flag_list)<i:
+                    pass
+                if len(self.running_flag_list)==i:
+                    self.thread_lock[2].acquire()
+                    self.running_flag_list.append(self.running_flag[1:])
+                    self.thread_lock[2].release()
+                else:
+                    if len(self.running_flag_list[i])<self.thread_counter or np.sum(self.running_flag_list[i])>self.thread_counter:
+                        self.running_flag_list[i]=self.running_flag[1:]
+                while len(self.probability_list)<i:
+                    pass
+                if len(self.probability_list)==i:
+                    self.thread_lock[2].acquire()
+                    self.probability_list.append(np.array(self.running_flag_list[i],dtype=np.float16)/np.sum(self.running_flag_list[i]))
+                    self.thread_lock[2].release()
+                else:
+                    if len(self.probability_list[i])<self.thread_counter or np.sum(self.running_flag_list[i])>self.thread_counter:
+                        self.probability_list[i]=np.array(self.running_flag_list[i],dtype=np.float16)/np.sum(self.running_flag_list[i])
+                while True:
+                    index=np.random.choice(len(self.probability_list[i]),p=self.probability_list[i])
+                    if index in self.finish_list:
+                        continue
+                    else:
+                        break
+        else:
+            index=None
+        return index
+    
+    
+    
     def explore(self,s,epsilon,i):
         try:
             if self.nn.nn!=None:
@@ -307,6 +443,12 @@ class kernel:
                     if self.nn.action!=None:
                         pass
                     a=self.nn.action(s)
+                    try:
+                        if self.nn.discriminator!=None:
+                            pass
+                        reward=self.nn.discriminator(s,a)
+                    except AttributeError:
+                        pass
                 except AttributeError:
                     action_prob=self.epsilon_greedy_policy(s,self.action_one)
                     a=np.random.choice(self.action_num,p=action_prob)
@@ -321,6 +463,12 @@ class kernel:
                     if self.nn.action!=None:
                         pass
                     a=self.nn.action(s)
+                    try:
+                        if self.nn.discriminator!=None:
+                            pass
+                        reward=self.nn.discriminator(s,a)
+                    except AttributeError:
+                        pass
                 except AttributeError:
                     action_prob=self.epsilon_greedy_policy(s,self.action_one)
                     a=np.random.choice(self.action_num,p=action_prob)
@@ -338,34 +486,13 @@ class kernel:
             except AttributeError:
                 a=(self.nn.actor(self.state[self.state_name[s]])+self.nn.noise()).numpy()
                 next_s,r,done=self.nn.transition(self.state_name[s],a)
-        if self.PN==True:
-            while len(self.running_flag_list)<i:
+        index=self.index(i)
+        try:
+            if self.nn.discriminator!=None:
                 pass
-            if len(self.running_flag_list)==i:
-                self.thread_lock[2].acquire()
-                self.running_flag_list.append(self.running_flag[1:])
-                self.thread_lock[2].release()
-            else:
-                if len(self.running_flag_list[i])<self.thread_counter or np.sum(self.running_flag_list[i])>self.thread_counter:
-                    self.running_flag_list[i]=self.running_flag[1:]
-            while len(self.probability_list)<i:
-                pass
-            if len(self.probability_list)==i:
-                self.thread_lock[2].acquire()
-                self.probability_list.append(np.array(self.running_flag_list[i],dtype=np.float16)/np.sum(self.running_flag_list[i]))
-                self.thread_lock[2].release()
-            else:
-                if len(self.probability_list[i])<self.thread_counter or np.sum(self.running_flag_list[i])>self.thread_counter:
-                    self.probability_list[i]=np.array(self.running_flag_list[i],dtype=np.float16)/np.sum(self.running_flag_list[i])
-            while True:
-                index=np.random.choice(len(self.probability_list[i]),p=self.probability_list[i])
-                if index in self.finish_list:
-                    continue
-                else:
-                    break
-        else:
-            index=None
-        self.pool(s,a,next_s,r,done,i,index)
+            self.pool(s,a,next_s,reward,done,i,index)
+        except AttributeError:
+            self.pool(s,a,next_s,r,done,i,index)
         if self.save_episode==True:
             if self.state_name==None and self.action_name==None:
                 episode=[s,a,next_s,r]
@@ -520,7 +647,16 @@ class kernel:
             self.action_pool.append(None)
             self.next_state_pool.append(None)
             self.reward_pool.append(None)
-            self.running_flag=np.append(self.running_flag,np.array(1,dtype='int8'))
+            try:
+                if self.nn.row!=None:
+                    pass
+                self.index_matrix(i)
+                self.row_sum_list.append(None)
+                self.rank_sum_list.append(None)
+                self.row_probability.append(None)
+                self.rank_probability.append(None)
+            except AttributeError:
+                self.running_flag=np.append(self.running_flag,np.array(1,dtype='int8'))
             self.thread_counter+=1
             try:
                 self.nn.ec.append(0)
@@ -628,7 +764,11 @@ class kernel:
             else:
                 self.thread_lock[0].release()
         if self.PN==True:
-            self.running_flag[i+1]=0
+            try:
+                if self.nn.row!=None:
+                    pass
+            except AttributeError:
+                self.running_flag[i+1]=0
             self.thread_lock[3].acquire()
             if i not in self.finish_list:
                 self.finish_list.append(i)
@@ -741,6 +881,11 @@ class kernel:
         pickle.dump(self.probability_list,output_file)
         pickle.dump(self.running_flag,output_file)
         pickle.dump(self.running_flag_list,output_file)
+        pickle.dump(self.index_matrix,output_file)
+        pickle.dump(self.one_matrix,output_file)
+        pickle.dump(self.row_one,output_file)
+        pickle.dump(self.row_probability,output_file)
+        pickle.dump(self.rank_probability,output_file)
         pickle.dump(self.finish_list,output_file)
         pickle.dump(self.PN,output_file)
         pickle.dump(self.save_episode,output_file)
@@ -782,6 +927,11 @@ class kernel:
         self.probability_list=pickle.load(input_file)
         self.running_flag=pickle.load(input_file)
         self.running_flag_list=pickle.load(input_file)
+        self.index_matrix=pickle.load(input_file)
+        self.one_matrix=pickle.load(input_file)
+        self.row_one=pickle.load(input_file)
+        self.row_probability=pickle.load(input_file)
+        self.rank_probability=pickle.load(input_file)
         self.finish_list=pickle.load(input_file)
         self.PN=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
