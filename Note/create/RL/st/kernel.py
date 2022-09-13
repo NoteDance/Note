@@ -320,6 +320,12 @@ class kernel:
                             if self.nn.action!=None:
                                 pass
                             a=self.nn.action(s)
+                            try:
+                                if self.nn.discriminator!=None:
+                                    pass
+                                reward=self.nn.discriminator(s,a)
+                            except AttributeError:
+                                pass
                         except AttributeError:
                             action_prob=self.epsilon_greedy_policy(s,self.action_one)
                             a=np.random.choice(self.action_num,p=action_prob)
@@ -334,11 +340,22 @@ class kernel:
                             if self.nn.action!=None:
                                 pass
                             a=self.nn.action(s)
+                            try:
+                                if self.nn.discriminator!=None:
+                                    pass
+                                reward=self.nn.discriminator(s,a)
+                            except AttributeError:
+                                pass
                         except AttributeError:
                             action_prob=self.epsilon_greedy_policy(s,self.action_one)
                             a=np.random.choice(self.action_num,p=action_prob)
                         next_s,r,done=self.nn.transition(self.state_name[s],self.action_name[a])
-                    self.pool(s,a,next_s,r,done)
+                    try:
+                        if self.nn.discriminator!=None:
+                            pass
+                        self.pool(s,a,next_s,reward,done)
+                    except AttributeError:
+                        self.pool(s,a,next_s,r,done)
                 except AttributeError:
                     try:
                         if self.nn.env!=None:
@@ -396,6 +413,12 @@ class kernel:
                             if self.nn.action!=None:
                                 pass
                             a=self.nn.action(s)
+                            try:
+                                if self.nn.discriminator!=None:
+                                    pass
+                                reward=self.nn.discriminator(s,a)
+                            except AttributeError:
+                                pass
                         except AttributeError:
                             action_prob=self.epsilon_greedy_policy(s,self.action_one)
                             a=np.random.choice(self.action_num,p=action_prob)
@@ -410,11 +433,22 @@ class kernel:
                             if self.nn.action!=None:
                                 pass
                             a=self.nn.action(s)
+                            try:
+                                if self.nn.discriminator!=None:
+                                    pass
+                                reward=self.nn.discriminator(s,a)
+                            except AttributeError:
+                                pass
                         except AttributeError:
                             action_prob=self.epsilon_greedy_policy(s,self.action_one)
                             a=np.random.choice(self.action_num,p=action_prob)
                         next_s,r,done=self.nn.transition(self.state_name[s],self.action_name[a])
-                    self.pool(s,a,next_s,r,done)
+                    try:
+                        if self.nn.discriminator!=None:
+                            pass
+                        self.pool(s,a,next_s,reward,done)
+                    except AttributeError:
+                        self.pool(s,a,next_s,r,done)
                 except AttributeError:
                     try:
                         if self.nn.env!=None:
