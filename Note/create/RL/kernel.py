@@ -519,7 +519,7 @@ class kernel:
                 self.nn.bc.append(0)
             except AttributeError:
                 pass
-            if type(self.running_flag)==np.ndarray:
+            if self.PN==True:
                 self.running_flag=np.append(self.running_flag,np.array(1,dtype='int8'))
             self.thread_counter+=1
             self.thread_lock[3].release()
@@ -598,7 +598,8 @@ class kernel:
             if self.save_episode==True:
                 self.episode.append(episode)
             self.thread_lock[3].release()
-        self.running_flag[i+1]=0
+        if self.PN==True:
+            self.running_flag[i+1]=0
         self.thread_lock[3].acquire()
         if i not in self.finish_list:
             self.finish_list.append(i)
