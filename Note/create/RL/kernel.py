@@ -481,13 +481,19 @@ class kernel:
                 except AttributeError:
                     pass
                 self.train_(i)
-            self.thread_lock[2].acquire()
+            if self.PN==True:
+                self.thread_lock[2].acquire()
+            else:
+                self.thread_lock[1].acquire()
             if self.update_step!=None:
                 if self.step_counter[i]%self.update_step==0:
                     self.nn.update_param()
             else:
                 self.nn.update_param()
-            self.thread_lock[2].release()
+            if self.PN==True:
+                self.thread_lock[2].release()
+            else:
+                self.thread_lock[1].release()
             self.loss[i]=self.loss[i]/batches
         self.step_counter[i]+=1
         try:
@@ -506,11 +512,16 @@ class kernel:
         while self.state_pool!=None and len(self.state_pool)<i:
             pass
         if self.state_pool!=None and len(self.state_pool)==i:
-            self.thread_lock[3].acquire()
+            if self.PN==True:
+                self.thread_lock[3].acquire()
+            else:
+                self.thread_lock[0].acquire()
             self.state_pool.append(None)
             self.action_pool.append(None)
             self.next_state_pool.append(None)
             self.reward_pool.append(None)
+            self.running_flag=np.append(self.running_flag,np.array(1,dtype='int8'))
+            self.thread_counter+=1
             try:
                 self.nn.ec.append(0)
             except AttributeError:
@@ -520,9 +531,9 @@ class kernel:
             except AttributeError:
                 pass
             if self.PN==True:
-                self.running_flag=np.append(self.running_flag,np.array(1,dtype='int8'))
-            self.thread_counter+=1
-            self.thread_lock[3].release()
+                self.thread_lock[3].release()
+            else:
+                self.thread_lock[0].release()
         for k in range(episode_num):
             print(self.index_matrix)
             if self.stop==True:
@@ -557,9 +568,14 @@ class kernel:
                         except UnboundLocalError:
                             pass
                     if done:
-                        self.thread_lock[3].acquire()
-                        self.loss_list.append(self.loss[i])
-                        self.thread_lock[3].release()
+                        if self.PN==True:
+                            self.thread_lock[3].acquire()
+                            self.loss_list.append(self.loss[i])
+                            self.thread_lock[3].release()
+                        else:
+                            self.thread_lock[0].acquire()
+                            self.loss_list.append(self.loss[i])
+                            self.thread_lock[0].release()
                         if self.save_episode==True:
                             episode.append('done')
                         break
@@ -586,26 +602,38 @@ class kernel:
                         except UnboundLocalError:
                             pass
                     if done:
-                        self.thread_lock[3].acquire()
-                        self.loss_list.append(self.loss[i])
-                        self.thread_lock[3].release()
+                        if self.PN==True:
+                            self.thread_lock[3].acquire()
+                            self.loss_list.append(self.loss[i])
+                            self.thread_lock[3].release()
+                        else:
+                            self.thread_lock[0].acquire()
+                            self.loss_list.append(self.loss[i])
+                            self.thread_lock[0].release()
                         if self.save_episode==True:
                             episode.append('done')
                         break
-            self.thread_lock[3].acquire()
-            self.reward_list.append(self.reward[i])
-            self.reward[i]=0
-            if self.save_episode==True:
-                self.episode.append(episode)
-            self.thread_lock[3].release()
+            if self.PN==True:
+                self.thread_lock[3].acquire()
+                self.reward_list.append(self.reward[i])
+                self.reward[i]=0
+                if self.save_episode==True:
+                    self.episode.append(episode)
+                self.thread_lock[3].release()
+            else:
+                self.thread_lock[0].acquire()
+                self.reward_list.append(self.reward[i])
+                self.reward[i]=0
+                if self.save_episode==True:
+                    self.episode.append(episode)
+                self.thread_lock[0].release()
         if self.PN==True:
             self.running_flag[i+1]=0
-        self.thread_lock[3].acquire()
-        if i not in self.finish_list:
-            self.finish_list.append(i)
-        self.thread_counter-=1
-        self.thread_lock[3].release()
-        if self.PN==True:
+            self.thread_lock[3].acquire()
+            if i not in self.finish_list:
+                self.finish_list.append(i)
+            self.thread_counter-=1
+            self.thread_lock[3].release()
             self.state_pool[i]=None
             self.action_pool[i]=None
             self.next_state_pool[i]=None
@@ -626,17 +654,29 @@ class kernel:
             if len(self.reward_list)>=self.trial_num:
                 avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
                 if self.criterion!=None and avg_reward>=self.criterion:
-                    self.thread_lock[4].acquire()
+                    if self.PN==True:
+                        self.thread_lock[4].acquire()
+                    else:
+                        self.thread_lock[2].acquire()
                     self.save(self.total_episode,True)
                     self.save_flag=True
-                    self.thread_lock[4].release()
+                    if self.PN==True:
+                        self.thread_lock[4].release()
+                    else:
+                        self.thread_lock[2].release()
                     self.stop_flag=0
                     return True
         elif self.end():
-            self.thread_lock[4].acquire()
+            if self.PN==True:
+                self.thread_lock[4].acquire()
+            else:
+                self.thread_lock[2].acquire()
             self.save(self.total_episode,True)
             self.save_flag=True
-            self.thread_lock[4].release()
+            if self.PN==True:
+                self.thread_lock[4].release()
+            else:
+                self.thread_lock[2].release()
             self.stop_flag=0
             return True
         elif self.stop_flag==1:
