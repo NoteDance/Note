@@ -406,7 +406,6 @@ class kernel:
                         pass
                     state_batch,action_batch,next_state_batch,reward_batch=self.nn.data_func(self.state_pool[i],self.action_pool[i],self.next_state_pool[i],self.reward_pool[i],self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
                 except AttributeError:
-                    batches+=1
                     index1=batches*self.batch
                     index2=self.batch-(length-batches*self.batch)
                     state_batch=np.concatenate((self.state_pool[i][index1:length],self.state_pool[i][:index2]),0)
