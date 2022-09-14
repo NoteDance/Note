@@ -35,8 +35,8 @@ class kernel:
         self.update_step=None
         self.suspend=False
         self.suspend_list=[]
-        self.end_list=[]
         self.stop=None
+        self.stop_list=[]
         self.save_flag=None
         self.stop_flag=1
         self.add_flag=None
@@ -571,7 +571,7 @@ class kernel:
             if self.stop==True:
                 if self.stop_func() or self.stop_flag==0:
                     return
-            if i in self.end_list:
+            if i in self.stop_list:
                 return
             self.suspend_func(i)
             loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch)
@@ -597,7 +597,7 @@ class kernel:
                     if self.stop==True:
                         if self.stop_func() or self.stop_flag==0:
                             return
-                    if i in self.end_list:
+                    if i in self.stop_list:
                         return
                     self.suspend_func(i)
                     self._train(i,j,batches,length)
