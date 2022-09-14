@@ -256,6 +256,9 @@ class kernel:
                 if self.nn.data_func!=None:
                     pass
                 for j in range(batches):
+                    if self.stop==True:
+                        if self.stop_func():
+                            return
                     self.suspend_func()
                     state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
                     batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
@@ -265,6 +268,9 @@ class kernel:
                     except AttributeError:
                         pass
                 if len(self.state_pool)%self.batch!=0:
+                    if self.stop==True:
+                        if self.stop_func():
+                            return
                     self.suspend_func()
                     state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
                     batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
@@ -281,6 +287,10 @@ class kernel:
                 except AttributeError:
                     pass
                 for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
+                    if self.stop==True:
+                        if self.stop_func():
+                            return
+                    self.suspend_func()
                     batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
                     loss+=batch_loss
                     j+=1
@@ -477,9 +487,6 @@ class kernel:
             self.file_list=[]
         if episode_num!=None:
             for i in range(episode_num):
-                if self.stop==True:
-                    if self.stop_func():
-                        return
                 loss,episode,done=self.train_()
                 if self.trial_num!=None:
                     if len(self.reward_list)>=self.trial_num:
@@ -549,9 +556,6 @@ class kernel:
         elif self.ol==None:
             i=0
             while True:
-                if self.stop==True:
-                    if self.stop_func():
-                        return
                 loss,episode,done=self.train_()
                 if self.trial_num!=None:
                     if len(self.reward_list)==self.trial_num:
