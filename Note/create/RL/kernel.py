@@ -398,10 +398,8 @@ class kernel:
     
     def _train(self,i,j=None,batches=None,length=None):
         if len(self.state_pool[i])<self.batch:
-            self.suspend_func()
             return
         else:
-            self.suspend_func()
             if length%self.batch!=0:
                 try:
                     if self.nn.data_func!=None:
@@ -474,6 +472,7 @@ class kernel:
                     if self.stop==True:
                         if self.stop_func() or self.stop_flag==0:
                             return
+                    self.suspend_func()
                     self._train(i,j,batches,length)
             else:
                 try:
