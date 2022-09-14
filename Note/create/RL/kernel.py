@@ -34,6 +34,8 @@ class kernel:
         self.batch=None
         self.update_step=None
         self.suspend=False
+        self.suspend_list=[]
+        self.end_list=[]
         self.stop=None
         self.save_flag=None
         self.stop_flag=1
@@ -518,17 +520,10 @@ class kernel:
         return loss
     
     
-    def opt_t(self,state_batch,action_batch,next_state_batch,reward_batch,done_batch):
-        loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
-        return loss
-    
-    
     def _train(self,i,j=None,batches=None,length=None):
         if len(self.state_pool[i])<self.batch:
-            self.suspend_func()
             return
         else:
-            self.suspend_func()
             if length%self.batch!=0:
                 try:
                     if self.nn.data_func!=None:
@@ -543,7 +538,7 @@ class kernel:
                     next_state_batch=np.concatenate((self.next_state_pool[i][index1:length],self.next_state_pool[i][:index2]),0)
                     reward_batch=np.concatenate((self.reward_pool[i][index1:length],self.reward_pool[i][:index2]),0)
                     done_batch=np.concatenate((self.done_pool[i][index1:length],self.done_pool[i][:index2]),0)
-                loss=self.opt_t(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
+                loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
                 self.loss[i]+=loss
                 try:
                     self.nn.bc[i]+=1
@@ -562,7 +557,7 @@ class kernel:
                 next_state_batch=self.next_state_batch[i][index1:index2]
                 reward_batch=self.reward_batch[i][index1:index2]
                 done_batch=self.done_batch[i][index1:index2]
-                loss=self.opt_t(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
+                loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
                 self.loss[i]+=loss
             try:
                 self.nn.bc[i]=j
@@ -577,8 +572,10 @@ class kernel:
             if self.stop==True:
                 if self.stop_func() or self.stop_flag==0:
                     return
-            self.suspend_func()
-            loss=self.opt_t(state_batch,action_batch,next_state_batch,reward_batch)
+            if i in self.end_list:
+                return
+            self.suspend_func(i)
+            loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch)
             self.loss[i]+=loss
             try:
                 self.nn.bc[i]+=1
@@ -601,6 +598,9 @@ class kernel:
                     if self.stop==True:
                         if self.stop_func() or self.stop_flag==0:
                             return
+                    if i in self.end_list:
+                        return
+                    self.suspend_func(i)
                     self._train(i,j,batches,length)
             else:
                 try:
@@ -671,10 +671,6 @@ class kernel:
             else:
                 self.thread_lock[0].release()
         for k in range(episode_num):
-            print(self.index_matrix)
-            if self.stop==True:
-                if self.stop_func() or self.stop_flag==0:
-                    return
             self.episode_num[i]+=1
             episode=[]
             if self.state_name==None:
@@ -683,9 +679,6 @@ class kernel:
                 s=self.nn.transition(initial=True)
             if self.episode_step==None:
                 while True:
-                    if self.stop==True:
-                        if self.stop_func() or self.stop_flag==0:
-                            return
                     try:
                         epsilon=self.epsilon[i]
                     except:
@@ -718,9 +711,6 @@ class kernel:
                         break
             else:
                 for _ in range(self.episode_step):
-                    if self.stop==True:
-                        if self.stop_func() or self.stop_flag==0:
-                            return
                     try:
                         epsilon=self.epsilon[i]
                     except:
@@ -781,7 +771,11 @@ class kernel:
         return
     
     
-    def suspend_func(self):
+    def suspend_func(self,i):
+        if i in self.suspend_list:
+            while True:
+                if i not in self.suspend_list:
+                    break
         if self.suspend==True:
             while True:
                 if self.suspend==False:
