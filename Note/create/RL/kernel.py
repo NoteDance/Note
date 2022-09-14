@@ -35,8 +35,10 @@ class kernel:
         self.update_step=None
         self.suspend=False
         self.suspend_list=[]
+        self.suspended_list=[]
         self.stop=None
         self.stop_list=[]
+        self.stopped_list=[]
         self.save_flag=None
         self.stop_flag=1
         self.add_flag=None
@@ -689,6 +691,17 @@ class kernel:
                     s=next_s
                     if self.state_pool[i]!=None and self.action_pool[i]!=None and self.next_state_pool[i]!=None and self.reward_pool[i]!=None:
                         self._train_(i)
+                    if i in self.stop_list:
+                        if self.PN==True:
+                            self.thread_lock[3].acquire()
+                        else:
+                            self.thread_lock[0].acquire()
+                        self.stopped_list.append(i)
+                        if self.PN==True:
+                            self.thread_lock[3].release()
+                        else:
+                            self.thread_lock[0].release()
+                        return
                     if self.stop_flag==0:
                         return
                     if self.save_episode==True:
@@ -721,6 +734,17 @@ class kernel:
                     s=next_s
                     if self.state_pool[i]!=None and self.action_pool[i]!=None and self.next_state_pool[i]!=None and self.reward_pool[i]!=None:
                         self._train_(i)
+                    if i in self.stop_list:
+                        if self.PN==True:
+                            self.thread_lock[3].acquire()
+                        else:
+                            self.thread_lock[0].acquire()
+                        self.stopped_list.append(i)
+                        if self.PN==True:
+                            self.thread_lock[3].release()
+                        else:
+                            self.thread_lock[0].release()
+                        return
                     if self.stop_flag==0:
                         return
                     if self.save_episode==True:
@@ -774,8 +798,10 @@ class kernel:
     
     def suspend_func(self,i):
         if i in self.suspend_list:
+            self.suspended_list.append(i)
             while True:
                 if i not in self.suspend_list:
+                    self.suspended_list.remove(i)
                     break
         if self.suspend==True:
             while True:
