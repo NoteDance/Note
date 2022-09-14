@@ -21,8 +21,10 @@ class kernel:
         self.ol=None
         self.suspend=False
         self.suspend_list=[]
+        self.suspended_list=[]
         self.stop=None
         self.stop_list=[]
+        self.stopped_list=[]
         self.save_flag=None
         self.stop_flag=1
         self.training_flag=None
@@ -843,6 +845,17 @@ class kernel:
                         self._train_(batch,data_batch,labels_batch,test_batch,t)
                     else:
                         self._train(batch,data_batch,labels_batch,test_batch,t)
+                if t in self.stop_list:
+                    if self.PO==1:
+                        self.thread_lock[1].acquire()
+                    else:
+                        self.thread_lock[2].acquire()
+                    self.stopped_list.append(t)
+                    if self.PO==1:
+                        self.thread_lock[1].release()
+                    else:
+                        self.thread_lock[2].release()
+                    return
                 if self.stop_flag==0:
                     return
                 if type(self.total_epoch)!=list:
@@ -951,6 +964,17 @@ class kernel:
                         self._train_(test_batch=test_batch,t=t)
                     else:
                         self._train(test_batch=test_batch,t=t)
+                if t in self.stop_list:
+                    if self.PO==1:
+                        self.thread_lock[1].acquire()
+                    else:
+                        self.thread_lock[2].acquire()
+                    self.stopped_list.append(t)
+                    if self.PO==1:
+                        self.thread_lock[1].release()
+                    else:
+                        self.thread_lock[2].release()
+                    return
                 if self.stop_flag==0:
                     return
                 i+=1
@@ -1236,8 +1260,10 @@ class kernel:
     
     def suspend_func(self,t=None):
         if t in self.suspend_list:
+            self.suspended_list.append(t)
             while True:
                 if t not in self.suspend_list:
+                    self.suspended_list.remove(t)
                     break
         if self.suspend==True:
             if self.thread==None:
