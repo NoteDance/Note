@@ -21,8 +21,8 @@ class kernel:
         self.ol=None
         self.suspend=False
         self.suspend_list=[]
-        self.end_list=[]
         self.stop=None
+        self.stop_list=[]
         self.save_flag=None
         self.stop_flag=1
         self.training_flag=None
@@ -705,7 +705,7 @@ class kernel:
                 if self.stop==True:
                     if self.stop_func() or self.stop_flag==0:
                         return
-                if t in self.end_list:
+                if t in self.stop_list:
                     return
                 self.suspend_func(t)
                 index1=j*batch
@@ -722,7 +722,7 @@ class kernel:
                 if self.stop==True:
                     if self.stop_func() or self.stop_flag==0:
                         return
-                if t in self.end_list:
+                if t in self.stop_list:
                     return
                 self.suspend_func(t)
                 batches+=1
@@ -774,7 +774,7 @@ class kernel:
             if self.stop==True:
                 if self.stop_func() or self.stop_flag==0:
                     return
-            if t in self.end_list:
+            if t in self.stop_list:
                 return
             self.suspend_func(t)
             batch_loss,batch_acc=self.train_(data_batch,labels_batch,batch,batches,test_batch,index1,index2,j,t)
