@@ -535,7 +535,6 @@ class kernel:
             else:
                 self.thread_lock[0].release()
         for k in range(episode_num):
-            print(self.index_matrix)
             if self.stop==True:
                 if self.stop_func() or self.stop_flag==0:
                     return
