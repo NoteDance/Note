@@ -293,7 +293,7 @@ class kernel:
         return
     
     
-    def explore(self,s,epsilon,i):
+    def env(self,s,epsilon,i):
         try:
             if self.nn.nn!=None:
                 pass
@@ -551,7 +551,7 @@ class kernel:
                         epsilon=self.epsilon[i]
                     except:
                         pass
-                    next_s,r,done,_episode,index=self.explore(s,epsilon,i)
+                    next_s,r,done,_episode,index=self.env(s,epsilon,i)
                     self.reward[i]+=r
                     s=next_s
                     if self.state_pool[i]!=None and self.action_pool[i]!=None and self.next_state_pool[i]!=None and self.reward_pool[i]!=None:
@@ -586,7 +586,7 @@ class kernel:
                         epsilon=self.epsilon[i]
                     except:
                         pass
-                    next_s,r,done,episode,index=self.explore(s,epsilon,i)
+                    next_s,r,done,episode,index=self.env(s,epsilon,i)
                     self.reward[i]+=r
                     s=next_s
                     if self.state_pool[i]!=None and self.action_pool[i]!=None and self.next_state_pool[i]!=None and self.reward_pool[i]!=None:
