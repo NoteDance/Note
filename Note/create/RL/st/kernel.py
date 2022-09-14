@@ -334,6 +334,7 @@ class kernel:
                                 if self.nn.discriminator!=None:
                                     pass
                                 reward=self.nn.discriminator(s,a)
+                                s=s.reshape(s.shape[1])
                             except AttributeError:
                                 pass
                         except AttributeError:
@@ -354,6 +355,7 @@ class kernel:
                                 if self.nn.discriminator!=None:
                                     pass
                                 reward=self.nn.discriminator(s,a)
+                                s=s.reshape(s.shape[1])
                             except AttributeError:
                                 pass
                         except AttributeError:
@@ -427,6 +429,7 @@ class kernel:
                                 if self.nn.discriminator!=None:
                                     pass
                                 reward=self.nn.discriminator(s,a)
+                                s=s.reshape(s.shape[1])
                             except AttributeError:
                                 pass
                         except AttributeError:
@@ -447,6 +450,7 @@ class kernel:
                                 if self.nn.discriminator!=None:
                                     pass
                                 reward=self.nn.discriminator(s,a)
+                                s=s.reshape(s.shape[1])
                             except AttributeError:
                                 pass
                         except AttributeError:
