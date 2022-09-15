@@ -13,7 +13,7 @@ class kernel:
             self.nn.km=1
         except AttributeError:
             pass
-        self.core=None
+        self.platform=None
         self.PO=None
         self.thread_lock=None
         self.thread=None
@@ -277,25 +277,25 @@ class kernel:
             try:
                 if type(self.train_data)==list:
                     for i in range(len(self.train_data)):
-                        data_batch[i]=self.core.concat([self.train_data[i][index1:],self.train_data[i][:index2]],0)
+                        data_batch[i]=self.platform.concat([self.train_data[i][index1:],self.train_data[i][:index2]],0)
                 else:
-                    data_batch=self.core.concat([self.train_data[index1:],self.train_data[:index2]],0)
+                    data_batch=self.platform.concat([self.train_data[index1:],self.train_data[:index2]],0)
                 if type(self.train_labels)==list:
                     for i in range(len(self.train_data)):
-                        labels_batch[i]=self.core.concat([self.train_labels[i][index1:],self.train_labels[i][:index2]],0)
+                        labels_batch[i]=self.platform.concat([self.train_labels[i][index1:],self.train_labels[i][:index2]],0)
                 else:
-                    labels_batch=self.core.concat([self.train_labels[index1:],self.train_labels[:index2]],0)
+                    labels_batch=self.platform.concat([self.train_labels[index1:],self.train_labels[:index2]],0)
             except:
                 if type(self.train_data)==list:
                     for i in range(len(self.train_data)):
-                        data_batch[i]=self.core.concat([self.train_data[i][index1:],self.train_data[i][:index2]],0)
+                        data_batch[i]=self.platform.concat([self.train_data[i][index1:],self.train_data[i][:index2]],0)
                 else:
-                    data_batch=self.core.concat([self.train_data[index1:],self.train_data[:index2]],0)
+                    data_batch=self.platform.concat([self.train_data[index1:],self.train_data[:index2]],0)
                 if type(self.train_labels)==list:
                     for i in range(len(self.train_data)):
-                        labels_batch[i]=self.core.concat([self.train_labels[i][index1:],self.train_labels[i][:index2]],0)
+                        labels_batch[i]=self.platform.concat([self.train_labels[i][index1:],self.train_labels[i][:index2]],0)
                 else:
-                    labels_batch=self.core.concat([self.train_labels[index1:],self.train_labels[:index2]],0)
+                    labels_batch=self.platform.concat([self.train_labels[index1:],self.train_labels[:index2]],0)
         return data_batch,labels_batch
     
     
@@ -309,7 +309,7 @@ class kernel:
             else:
                 tape,output,loss=self.nn.GradientTape(data,labels,t)
         except AttributeError:
-            with self.core.GradientTape(persistent=True) as tape:
+            with self.platform.GradientTape(persistent=True) as tape:
                 try:
                     if self.thread==None:
                         output=self.nn.fp(data)
@@ -391,7 +391,7 @@ class kernel:
                 pass
             tape,output,loss=self.nn.GradientTape(data,labels)
         except AttributeError:
-            with self.core.GradientTape(persistent=True) as tape:
+            with self.platform.GradientTape(persistent=True) as tape:
                 try:
                     output=self.nn.fp(data)
                     loss=self.nn.loss(output,labels)
@@ -439,7 +439,7 @@ class kernel:
         if t!=None:
             t=int(t)
         try:
-            if self.core.DType!=None:
+            if self.platform.DType!=None:
                 pass
             output,loss=self.tf_opt(data,labels,t)
         except AttributeError:
@@ -459,7 +459,7 @@ class kernel:
     
     def opt_t(self,data,labels,t):
         try:
-            if self.core.DType!=None:
+            if self.platform.DType!=None:
                 pass
             output,loss=self.tf_opt_t(data,labels,int(t))
         except AttributeError:
@@ -1161,25 +1161,25 @@ class kernel:
                 try:
                     if type(test_data)==list:
                         for i in range(len(test_data)):
-                            data_batch[i]=self.core.concat([test_data[i][index1:],test_data[i][:index2]],0)
+                            data_batch[i]=self.platform.concat([test_data[i][index1:],test_data[i][:index2]],0)
                     else:
-                        data_batch=self.core.concat([test_data[index1:],test_data[:index2]],0)
+                        data_batch=self.platform.concat([test_data[index1:],test_data[:index2]],0)
                     if type(self.test_labels)==list:
                         for i in range(len(test_labels)):
-                            labels_batch[i]=self.core.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
+                            labels_batch[i]=self.platform.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
                     else:
-                        labels_batch=self.core.concat([test_labels[index1:],test_labels[:index2]],0)
+                        labels_batch=self.platform.concat([test_labels[index1:],test_labels[:index2]],0)
                 except:
                     if type(test_data)==list:
                         for i in range(len(test_data)):
-                            data_batch[i]=self.core.concat([test_data[i][index1:],test_data[i][:index2]],0)
+                            data_batch[i]=self.platform.concat([test_data[i][index1:],test_data[i][:index2]],0)
                     else:
-                        data_batch=self.core.concat([test_data[index1:],test_data[:index2]],0)
+                        data_batch=self.platform.concat([test_data[index1:],test_data[:index2]],0)
                     if type(self.test_labels)==list:
                         for i in range(len(test_labels)):
-                            labels_batch[i]=self.core.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
+                            labels_batch[i]=self.platform.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
                     else:
-                        labels_batch=self.core.concat([test_labels[index1:],test_labels[:index2]],0)
+                        labels_batch=self.platform.concat([test_labels[index1:],test_labels[:index2]],0)
                 if self.thread==None or t==None:
                     output=self.nn.fp(data_batch)
                 else:
@@ -1511,7 +1511,7 @@ class kernel:
                     parameter_file=open('param.dat','wb')
             except AttributeError:
                 try:
-                    if self.core.DType!=None:
+                    if self.platform.DType!=None:
                         pass 
                     parameter_file=open('param.dat','wb')
                 except AttributeError:
@@ -1533,7 +1533,7 @@ class kernel:
                         del self.file_list[0]
             except AttributeError:
                 try:
-                    if self.core.DType!=None:
+                    if self.platform.DType!=None:
                         pass   
                     parameter_file=open('param-{0}.dat'.format(i),'wb')
                     self.file_list.append(['save-{0}.dat','param-{0}.dat'])
@@ -1547,7 +1547,7 @@ class kernel:
                         os.remove(self.file_list[0][0])
                         del self.file_list[0]
         try:
-            if self.core.DType!=None:
+            if self.platform.DType!=None:
                 pass  
             try:
                 if len(self.nn.model.weights)!=self.nn.param:
@@ -1607,7 +1607,7 @@ class kernel:
                 parameter_file.close()
         except AttributeError:
             try:
-                if self.core.DType!=None:
+                if self.platform.DType!=None:
                     pass  
                 parameter_file.close()
             except AttributeError:
@@ -1624,7 +1624,7 @@ class kernel:
             param=pickle.load(parameter_file)
         self.nn=pickle.load(input_file)
         try:
-            if self.core.DType!=None:
+            if self.platform.DType!=None:
                 pass 
             try:
                 if self.nn.model!=None:
