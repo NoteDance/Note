@@ -338,10 +338,10 @@ class kernel:
         return
     
     
-    def index_matrix(self,i):
+    def index_m(self,t):
         if self.add_flag==None and len(self.index_matrix)!=self.nn.row:
             if len(self.row_list)!=self.nn.rank:
-                self.row_list.append(i)
+                self.row_list.append(t)
                 self.rank_one=np.append(self.rank_one,np.array(1,dtype='int8'))
                 if len(self.row_list)==self.nn.rank:
                     self.index_matrix.append(self.row_list.copy())
@@ -355,7 +355,7 @@ class kernel:
                     self.index_matrix.append([])
                     self.one_matrix.append(np.array(0,dtype='int8'))
                     self.row_one=np.append(self.row_one,np.array(1,dtype='int8'))
-                self.row_list.append(i)
+                self.row_list.append(t)
                 self.one_matrix[self.direction_index]=np.append(self.one_matrix[self.direction_index],np.array(1,dtype='int8'))
                 if len(self.index_matrix[self.direction_index])+len(self.row_list)==self.nn.rank:
                     self.index_matrix[self.direction_index].extend(self.row_list.copy())
@@ -364,7 +364,7 @@ class kernel:
                     if len(self.index_matrix)==self.nn.row and len(self.index_matrix[-1])==self.nn.rank:
                         self.direction_index=0
             else:
-                self.row_list.append(i)
+                self.row_list.append(t)
                 self.one_matrix[self.direction_index]=np.append(self.one_matrix[self.direction_index],np.array(1,dtype='int8'))
                 if len(self.index_matrix[self.direction_index])+len(self.row_list)==self.nn.rank:
                     self.index_matrix[self.direction_index].extend(self.row_list.copy())
@@ -439,7 +439,7 @@ class kernel:
     
     
     
-    def env(self,s,epsilon,i):
+    def env(self,s,epsilon,t):
         try:
             if self.nn.nn!=None:
                 pass
@@ -448,7 +448,7 @@ class kernel:
                     pass
                 s=np.expand_dims(s,axis=0)
                 if self.epsilon==None:
-                    self.epsilon[i]=self.nn.epsilon(self.step_counter[i],i)
+                    self.epsilon[t]=self.nn.epsilon(self.step_counter[t],t)
                 try:
                     if self.nn.action!=None:
                         pass
@@ -469,7 +469,7 @@ class kernel:
                     next_s,r,done=self.nn.env(self.action_name[a])
             except AttributeError:
                 if self.epsilon==None:
-                    self.epsilon[i]=self.nn.epsilon(self.step_counter[i],i)
+                    self.epsilon[t]=self.nn.epsilon(self.step_counter[t],t)
                 try:
                     if self.nn.action!=None:
                         pass
@@ -498,13 +498,13 @@ class kernel:
             except AttributeError:
                 a=(self.nn.actor(self.state[self.state_name[s]])+self.nn.noise()).numpy()
                 next_s,r,done=self.nn.transition(self.state_name[s],a)
-        index=self.index(i)
+        index=self.index(t)
         try:
             if self.nn.discriminator!=None:
                 pass
-            self.pool(s,a,next_s,reward,done,i,index)
+            self.pool(s,a,next_s,reward,done,t,index)
         except AttributeError:
-            self.pool(s,a,next_s,r,done,i,index)
+            self.pool(s,a,next_s,r,done,t,index)
         if self.save_episode==True:
             if self.state_name==None and self.action_name==None:
                 episode=[s,a,next_s,r]
@@ -530,76 +530,76 @@ class kernel:
         return loss
     
     
-    def _train(self,i,j=None,batches=None,length=None):
-        if len(self.state_pool[i])<self.batch:
+    def _train(self,t,j=None,batches=None,length=None):
+        if len(self.state_pool[t])<self.batch:
             return
         else:
             if length%self.batch!=0:
                 try:
                     if self.nn.data_func!=None:
                         pass
-                    state_batch,action_batch,next_state_batch,reward_batch=self.nn.data_func(self.state_pool[i],self.action_pool[i],self.next_state_pool[i],self.reward_pool[i],self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
+                    state_batch,action_batch,next_state_batch,reward_batch=self.nn.data_func(self.state_pool[t],self.action_pool[t],self.next_state_pool[t],self.reward_pool[t],self.done_pool[t],self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
                 except AttributeError:
                     index1=batches*self.batch
                     index2=self.batch-(length-batches*self.batch)
-                    state_batch=np.concatenate((self.state_pool[i][index1:length],self.state_pool[i][:index2]),0)
-                    action_batch=np.concatenate((self.action_pool[i][index1:length],self.action_pool[i][:index2]),0)
-                    next_state_batch=np.concatenate((self.next_state_pool[i][index1:length],self.next_state_pool[i][:index2]),0)
-                    reward_batch=np.concatenate((self.reward_pool[i][index1:length],self.reward_pool[i][:index2]),0)
-                    done_batch=np.concatenate((self.done_pool[i][index1:length],self.done_pool[i][:index2]),0)
+                    state_batch=np.concatenate((self.state_pool[t][index1:length],self.state_pool[t][:index2]),0)
+                    action_batch=np.concatenate((self.action_pool[t][index1:length],self.action_pool[t][:index2]),0)
+                    next_state_batch=np.concatenate((self.next_state_pool[t][index1:length],self.next_state_pool[t][:index2]),0)
+                    reward_batch=np.concatenate((self.reward_pool[t][index1:length],self.reward_pool[t][:index2]),0)
+                    done_batch=np.concatenate((self.done_pool[t][index1:length],self.done_pool[t][:index2]),0)
                 loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
-                self.loss[i]+=loss
+                self.loss[t]+=loss
                 try:
-                    self.nn.bc[i]+=1
+                    self.nn.bc[t]+=1
                 except AttributeError:
                     pass
                 return
             try:
                 if self.nn.data_func!=None:
                     pass
-                state_batch,action_batch,next_state_batch,reward_batch=self.nn.data_func(self.state_pool[i],self.action_pool[i],self.next_state_pool[i],self.reward_pool[i],self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
+                state_batch,action_batch,next_state_batch,reward_batch=self.nn.data_func(self.state_pool[t],self.action_pool[t],self.next_state_pool[t],self.reward_pool[t],self.done_pool[t],self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
             except AttributeError:
                 index1=j*self.batch
                 index2=(j+1)*self.batch
-                state_batch=self.state_batch[i][index1:index2]
-                action_batch=self.action_batch[i][index1:index2]
-                next_state_batch=self.next_state_batch[i][index1:index2]
-                reward_batch=self.reward_batch[i][index1:index2]
-                done_batch=self.done_batch[i][index1:index2]
+                state_batch=self.state_batch[t][index1:index2]
+                action_batch=self.action_batch[t][index1:index2]
+                next_state_batch=self.next_state_batch[t][index1:index2]
+                reward_batch=self.reward_batch[t][index1:index2]
+                done_batch=self.done_batch[t][index1:index2]
                 loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
-                self.loss[i]+=loss
+                self.loss[t]+=loss
             try:
-                self.nn.bc[i]=j
+                self.nn.bc[t]=j
             except AttributeError:
                 pass
         return
     
     
-    def train_(self,i):
-        train_ds=tf_data.Dataset.from_tensor_slices((self.state_pool[i],self.action_pool[i],self.next_state_pool[i],self.reward_pool[i])).shuffle(len(self.state_pool[i])).batch(self.batch)
-        for state_batch,action_batch,next_state_batch,reward_batch in train_ds:
+    def train_(self,t):
+        train_ds=tf_data.Dataset.from_tensor_slices((self.state_pool[t],self.action_pool[t],self.next_state_pool[t],self.reward_pool[t],self.done_pool[t])).shuffle(len(self.state_pool[t])).batch(self.batch)
+        for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
             if self.stop==True:
                 if self.stop_func() or self.stop_flag==0:
                     return
-            if i in self.stop_list:
+            if t in self.stop_list:
                 return
-            self.suspend_func(i)
-            loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch)
-            self.loss[i]+=loss
+            self.suspend_func(t)
+            loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
+            self.loss[t]+=loss
             try:
-                self.nn.bc[i]+=1
+                self.nn.bc[t]+=1
             except AttributeError:
                 pass
         return
             
     
-    def _train_(self,i):
-        if len(self.state_pool[i])<self.batch:
-            self._train(i)
+    def _train_(self,t):
+        if len(self.state_pool[t])<self.batch:
+            self._train(t)
         else:
-            self.loss[i]=0
+            self.loss[t]=0
             if self.PN==True:
-                length=min(len(self.state_pool[i]),len(self.action_pool[i]),len(self.next_state_pool[i]),len(self.reward_pool[i]))
+                length=min(len(self.state_pool[t]),len(self.action_pool[t]),len(self.next_state_pool[t]),len(self.reward_pool[t]),len(self.done_pool[t]))
                 batches=int((length-length%self.batch)/self.batch)
                 if length%self.batch!=0:
                     batches+=1
@@ -607,22 +607,22 @@ class kernel:
                     if self.stop==True:
                         if self.stop_func() or self.stop_flag==0:
                             return
-                    if i in self.stop_list:
+                    if t in self.stop_list:
                         return
-                    self.suspend_func(i)
-                    self._train(i,j,batches,length)
+                    self.suspend_func(t)
+                    self._train(t,j,batches,length)
             else:
                 try:
-                    self.nn.bc[i]=0
+                    self.nn.bc[t]=0
                 except AttributeError:
                     pass
-                self.train_(i)
+                self.train_(t)
             if self.PN==True:
                 self.thread_lock[2].acquire()
             else:
                 self.thread_lock[1].acquire()
             if self.update_step!=None:
-                if self.step_counter[i]%self.update_step==0:
+                if self.step_counter[t]%self.update_step==0:
                     self.nn.update_param()
             else:
                 self.nn.update_param()
@@ -630,10 +630,10 @@ class kernel:
                 self.thread_lock[2].release()
             else:
                 self.thread_lock[1].release()
-            self.loss[i]=self.loss[i]/batches
-        self.step_counter[i]+=1
+            self.loss[t]=self.loss[t]/batches
+        self.step_counter[t]+=1
         try:
-            self.nn.ec[i]+=1
+            self.nn.ec[t]+=1
         except AttributeError:
             pass
         return
@@ -641,13 +641,13 @@ class kernel:
     
     def train(self,episode_num):
         try:
-            i=self.threadnum.pop(0)
+            t=self.threadnum.pop(0)
         except IndexError:
             print('\nError,please add thread.')
             return
-        while self.state_pool!=None and len(self.state_pool)<i:
+        while self.state_pool!=None and len(self.state_pool)<t:
             pass
-        if self.state_pool!=None and len(self.state_pool)==i:
+        if self.state_pool!=None and len(self.state_pool)==t:
             if self.PN==True:
                 self.thread_lock[3].acquire()
             else:
@@ -659,7 +659,7 @@ class kernel:
             try:
                 if self.nn.row!=None:
                     pass
-                self.index_matrix(i)
+                self.index_m(t)
                 self.row_sum_list.append(None)
                 self.rank_sum_list.append(None)
                 self.row_probability.append(None)
@@ -680,7 +680,7 @@ class kernel:
             else:
                 self.thread_lock[0].release()
         for k in range(episode_num):
-            self.episode_num[i]+=1
+            self.episode_num[t]+=1
             episode=[]
             if self.state_name==None:
                 s=self.nn.env(initial=True)
@@ -689,20 +689,20 @@ class kernel:
             if self.episode_step==None:
                 while True:
                     try:
-                        epsilon=self.epsilon[i]
+                        epsilon=self.epsilon[t]
                     except:
                         pass
-                    next_s,r,done,_episode,index=self.env(s,epsilon,i)
-                    self.reward[i]+=r
+                    next_s,r,done,_episode,index=self.env(s,epsilon,t)
+                    self.reward[t]+=r
                     s=next_s
-                    if self.state_pool[i]!=None and self.action_pool[i]!=None and self.next_state_pool[i]!=None and self.reward_pool[i]!=None:
-                        self._train_(i)
-                    if i in self.stop_list:
+                    if self.state_pool[t]!=None and self.action_pool[t]!=None and self.next_state_pool[t]!=None and self.reward_pool[t]!=None and self.done_pool[t]!=None:
+                        self._train_(t)
+                    if t in self.stop_list:
                         if self.PN==True:
                             self.thread_lock[3].acquire()
                         else:
                             self.thread_lock[0].acquire()
-                        self.stopped_list.append(i)
+                        self.stopped_list.append(t)
                         if self.PN==True:
                             self.thread_lock[3].release()
                         else:
@@ -721,7 +721,7 @@ class kernel:
                             self.thread_lock[3].acquire()
                         else:
                             self.thread_lock[0].acquire()
-                        self.loss_list.append(self.loss[i])
+                        self.loss_list.append(self.loss[t])
                         if self.PN==True:
                             self.thread_lock[3].release()
                         else:
@@ -732,20 +732,20 @@ class kernel:
             else:
                 for _ in range(self.episode_step):
                     try:
-                        epsilon=self.epsilon[i]
+                        epsilon=self.epsilon[t]
                     except:
                         pass
-                    next_s,r,done,episode,index=self.env(s,epsilon,i)
-                    self.reward[i]+=r
+                    next_s,r,done,episode,index=self.env(s,epsilon,t)
+                    self.reward[t]+=r
                     s=next_s
-                    if self.state_pool[i]!=None and self.action_pool[i]!=None and self.next_state_pool[i]!=None and self.reward_pool[i]!=None:
-                        self._train_(i)
-                    if i in self.stop_list:
+                    if self.state_pool[t]!=None and self.action_pool[t]!=None and self.next_state_pool[t]!=None and self.reward_pool[t]!=None and self.done_pool[t]!=None:
+                        self._train_(t)
+                    if t in self.stop_list:
                         if self.PN==True:
                             self.thread_lock[3].acquire()
                         else:
                             self.thread_lock[0].acquire()
-                        self.stopped_list.append(i)
+                        self.stopped_list.append(t)
                         if self.PN==True:
                             self.thread_lock[3].release()
                         else:
@@ -764,7 +764,7 @@ class kernel:
                             self.thread_lock[3].acquire()
                         else:
                             self.thread_lock[0].acquire()
-                        self.loss_list.append(self.loss[i])
+                        self.loss_list.append(self.loss[t])
                         if self.PN==True:
                             self.thread_lock[3].release()
                         else:
@@ -776,8 +776,8 @@ class kernel:
                 self.thread_lock[3].acquire()
             else:
                 self.thread_lock[0].acquire()
-            self.reward_list.append(self.reward[i])
-            self.reward[i]=0
+            self.reward_list.append(self.reward[t])
+            self.reward[t]=0
             if self.save_episode==True:
                 self.episode.append(episode)
             if self.PN==True:
@@ -789,16 +789,17 @@ class kernel:
                 if self.nn.row!=None:
                     pass
             except AttributeError:
-                self.running_flag[i+1]=0
+                self.running_flag[t+1]=0
             self.thread_lock[3].acquire()
-            if i not in self.finish_list:
-                self.finish_list.append(i)
+            if t not in self.finish_list:
+                self.finish_list.append(t)
             self.thread_counter-=1
             self.thread_lock[3].release()
-            self.state_pool[i]=None
-            self.action_pool[i]=None
-            self.next_state_pool[i]=None
-            self.reward_pool[i]=None
+            self.state_pool[t]=None
+            self.action_pool[t]=None
+            self.next_state_pool[t]=None
+            self.reward_pool[t]=None
+            self.done_pool[t]=None
         return
     
     
