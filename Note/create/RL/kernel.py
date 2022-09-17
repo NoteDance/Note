@@ -283,6 +283,12 @@ class kernel:
                         self.done_pool[index]=np.concatenate((self.done_pool[index],np.expand_dims(done,axis=0)),0)
                 except:
                     pass
+            if self.state_pool[index]!=None and len(self.state_pool[index])>self.pool_size:
+                self.state_pool[index]=self.state_pool[index][1:]
+                self.action_pool[index]=self.action_pool[index][1:]
+                self.next_state_pool[index]=self.next_state_pool[index][1:]
+                self.reward_pool[index]=self.reward_pool[index][1:]
+                self.done_pool[index]=self.done_pool[index][1:]
             self.thread_lock[0].release()
         else:
             if self.state_pool[i]==None and type(self.state_pool[i])!=np.ndarray:
@@ -323,12 +329,12 @@ class kernel:
                     self.next_state_pool[i]=np.concatenate((self.next_state_pool[i],np.expand_dims(self.state[self.state_name[next_s]],axis=0)),0)
                     self.reward_pool[i]=np.concatenate((self.reward_pool[i],np.expand_dims(r,axis=0)),0)
                     self.done_pool[i]=np.concatenate((self.done_pool[i],np.expand_dims(done,axis=0)),0)
-        if self.state_pool[i]!=None and len(self.state_pool[i])>self.pool_size:
-            self.state_pool[i]=self.state_pool[i][1:]
-            self.action_pool[i]=self.action_pool[i][1:]
-            self.next_state_pool[i]=self.next_state_pool[i][1:]
-            self.reward_pool[i]=self.reward_pool[i][1:]
-            self.done_pool[i]=self.done_pool[i][1:]
+            if self.state_pool[i]!=None and len(self.state_pool[i])>self.pool_size:
+                self.state_pool[i]=self.state_pool[i][1:]
+                self.action_pool[i]=self.action_pool[i][1:]
+                self.next_state_pool[i]=self.next_state_pool[i][1:]
+                self.reward_pool[i]=self.reward_pool[i][1:]
+                self.done_pool[i]=self.done_pool[i][1:]
         return
     
     
