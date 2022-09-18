@@ -17,7 +17,7 @@ class kernel:
             self.threadnum=list(self.threadnum)
             self.reward=np.zeros(thread)
             self.loss=np.zeros(thread)
-            self.step_counter=np.zeros(thread)
+            self.sc=np.zeros(thread)
             self.episode_num=np.zeros(thread)
         self.state_pool=[]
         self.action_pool=[]
@@ -101,7 +101,7 @@ class kernel:
         threadnum=np.arange(thread)+self.thread
         self.threadnum=self.threadnum.extend(threadnum)
         self.thread+=thread
-        self.step_counter=np.concatenate((self.step_counter,np.zeros(thread)))
+        self.sc=np.concatenate((self.sc,np.zeros(thread)))
         self.reward=np.concatenate((self.reward,np.zeros(thread)))
         self.loss=np.concatenate((self.loss,np.zeros(thread)))
         self.episode_num=np.concatenate((self.episode_num,np.zeros(thread)))
@@ -163,7 +163,7 @@ class kernel:
             self.loss=np.zeros(self.thread)
             self.reward_list=[]
             self.loss_list=[]
-            self.step_counter=np.zeros(self.thread)
+            self.sc=np.zeros(self.thread)
             self.episode_num=np.zeros(self.thread)
             self.total_episode=0
             self.total_time=0
@@ -448,7 +448,7 @@ class kernel:
                     pass
                 s=np.expand_dims(s,axis=0)
                 if self.epsilon==None:
-                    self.epsilon[t]=self.nn.epsilon(self.step_counter[t],t)
+                    self.epsilon[t]=self.nn.epsilon(self.sc[t],t)
                 try:
                     if self.nn.action!=None:
                         pass
@@ -469,7 +469,7 @@ class kernel:
                     next_s,r,done=self.nn.env(self.action_name[a])
             except AttributeError:
                 if self.epsilon==None:
-                    self.epsilon[t]=self.nn.epsilon(self.step_counter[t],t)
+                    self.epsilon[t]=self.nn.epsilon(self.sc[t],t)
                 try:
                     if self.nn.action!=None:
                         pass
@@ -622,7 +622,7 @@ class kernel:
             else:
                 self.thread_lock[1].acquire()
             if self.update_step!=None:
-                if self.step_counter[t]%self.update_step==0:
+                if self.sc[t]%self.update_step==0:
                     self.nn.update_param()
             else:
                 self.nn.update_param()
@@ -631,7 +631,7 @@ class kernel:
             else:
                 self.thread_lock[1].release()
             self.loss[t]=self.loss[t]/batches
-        self.step_counter[t]+=1
+        self.sc[t]+=1
         try:
             self.nn.ec[t]+=1
         except AttributeError:
@@ -902,7 +902,7 @@ class kernel:
         pickle.dump(self.episode_step,output_file)
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
-        pickle.dump(self.step_counter,output_file)
+        pickle.dump(self.sc,output_file)
         pickle.dump(self.update_step,output_file)
         pickle.dump(self.end_loss,output_file)
         pickle.dump(self.thread_counter,output_file)
@@ -948,7 +948,7 @@ class kernel:
         self.episode_step=pickle.load(input_file)
         self.pool_size=pickle.load(input_file)
         self.batch=pickle.load(input_file)
-        self.step_counter=pickle.load(input_file)
+        self.sc=pickle.load(input_file)
         self.update_step=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
         self.thread_counter=pickle.load(input_file)
