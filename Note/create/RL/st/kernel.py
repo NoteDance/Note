@@ -45,7 +45,7 @@ class kernel:
         self.save_episode=save_episode
         self.loss=None
         self.loss_list=[]
-        self.step_counter=0
+        self.sc=0
         self.total_episode=0
         self.time=0
         self.total_time=0
@@ -97,7 +97,7 @@ class kernel:
         self.reward_list=[]
         self.loss=0
         self.loss_list=[]
-        self.step_counter=0
+        self.sc=0
         self.total_episode=0
         self.time=0
         self.total_time=0
@@ -299,7 +299,7 @@ class kernel:
                     except AttributeError:
                         pass
             if self.update_step!=None:
-                if self.step_counter%self.update_step==0:
+                if self.sc%self.update_step==0:
                     self.nn.update_param()
             else:
                 self.nn.update_param()
@@ -325,7 +325,7 @@ class kernel:
                             pass
                         s=np.expand_dims(s,axis=0)
                         if self.epsilon==None:
-                            self.epsilon=self.nn.epsilon(self.step_counter)
+                            self.epsilon=self.nn.epsilon(self.sc)
                         try:
                             if self.nn.action!=None:
                                 pass
@@ -339,7 +339,7 @@ class kernel:
                             next_s,r,done=self.nn.env(self.action_name[a])
                     except AttributeError:
                         if self.epsilon==None:
-                            self.epsilon=self.nn.epsilon(self.step_counter)
+                            self.epsilon=self.nn.epsilon(self.sc)
                         try:
                             if self.nn.action!=None:
                                 pass
@@ -365,7 +365,7 @@ class kernel:
                     self.pool(s,a,next_s,r,done)
                 self.reward=r+self.reward
                 loss=self._train()
-                self.step_counter+=1
+                self.sc+=1
                 if done:
                     if self.save_episode==True:
                         if self.state_name==None and self.action_name==None:
@@ -401,7 +401,7 @@ class kernel:
                             pass
                         s=np.expand_dims(s,axis=0)
                         if self.epsilon==None:
-                            self.epsilon=self.nn.epsilon(self.step_counter)
+                            self.epsilon=self.nn.epsilon(self.sc)
                         try:
                             if self.nn.action!=None:
                                 pass
@@ -415,7 +415,7 @@ class kernel:
                             next_s,r,done=self.nn.env(self.action_name[a])
                     except AttributeError:
                         if self.epsilon==None:
-                            self.epsilon=self.nn.epsilon(self.step_counter)
+                            self.epsilon=self.nn.epsilon(self.sc)
                         try:
                             if self.nn.action!=None:
                                 pass
@@ -441,7 +441,7 @@ class kernel:
                     self.pool(s,a,next_s,r,done)
                 self.reward=r+self.reward
                 loss=self._train()
-                self.step_counter+=1
+                self.sc+=1
                 if done:
                     if self.save_episode==True:
                         if self.state_name==None and self.action_name==None:
@@ -786,7 +786,7 @@ class kernel:
         pickle.dump(self.reward_list,output_file)
         pickle.dump(self.loss,output_file)
         pickle.dump(self.loss_list,output_file)
-        pickle.dump(self.step_counter,output_file)
+        pickle.dump(self.sc,output_file)
         pickle.dump(self.p,output_file)
         pickle.dump(self.s,output_file)
         pickle.dump(self.total_episode,output_file)
@@ -826,7 +826,7 @@ class kernel:
         self.reward_list=pickle.load(input_file)
         self.loss=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
-        self.step_counter=pickle.load(input_file)
+        self.sc=pickle.load(input_file)
         self.p=pickle.load(input_file)
         self.s=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
