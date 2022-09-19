@@ -299,7 +299,7 @@ class kernel:
                     except AttributeError:
                         pass
             if self.update_step!=None:
-                if self.sc%self.update_step==0:
+                if self.sc+1%self.update_step==0:
                     self.nn.update_param()
             else:
                 self.nn.update_param()
