@@ -133,7 +133,7 @@ class kernel:
                     else:
                         next_s,r,done=self.nn.env(self.action_name[a])
                 except AttributeError:
-                    a=np.argmax(self.nn.nn(s))
+                    a=np.argmax(self.nn.nn(s)).numpy()
                     next_s,r,done=self.nn.transition(self.state_name[s],self.action_name[a])
             except AttributeError:
                 try:
