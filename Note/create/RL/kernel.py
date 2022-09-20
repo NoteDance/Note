@@ -682,7 +682,7 @@ class kernel:
         return False
     
     
-    def reward_visual(self):
+    def visualize_reward(self):
         print()
         plt.figure(1)
         plt.plot(np.arange(len(self.reward_list)),self.reward_list)
@@ -692,7 +692,7 @@ class kernel:
         return
     
     
-    def train_visual(self):
+    def visualize_train(self):
         print()
         plt.figure(1)
         plt.plot(np.arange(len(self.loss_list)),self.loss_list)
