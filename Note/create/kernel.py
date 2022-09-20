@@ -649,6 +649,7 @@ class kernel:
             output,train_loss=self.opt_t(self.train_data,self.train_labels,t)
             if self.PO==1:
                 self.thread_lock[1].release()
+                self.total_epoch+=1
                 self.loss=train_loss.numpy()
                 self.train_loss_list.append(self.loss.astype(np.float32))
                 self.train_loss=self.loss.astype(np.float32)
@@ -673,6 +674,7 @@ class kernel:
                 self.thread_lock[1].release()
             else:
                 self.thread_lock[2].acquire()
+                self.total_epoch+=1
                 self.train_loss=train_loss.numpy()
                 self.train_loss_list.append(self.train_loss.astype(np.float32))
                 self.train_loss=self.train_loss.astype(np.float32)
@@ -749,6 +751,7 @@ class kernel:
                 self.thread_lock[1].acquire()
             else:
                 self.thread_lock[2].acquire()
+            self.total_epoch+=1
             self.train_loss_list.append(loss.astype(np.float32))
             self.train_loss=loss.astype(np.float32)
             try:
@@ -858,21 +861,10 @@ class kernel:
                     return
                 if self.stop_flag==0:
                     return
-                if type(self.total_epoch)!=list:
-                    if self.thread_lock!=None:
-                        if self.PO==1:
-                            self.thread_lock[1].acquire()
-                        else:
-                            self.thread_lock[2].acquire()
-                        self.total_epoch+=1
-                        if self.PO==1:
-                            self.thread_lock[1].release()
-                        else:
-                            self.thread_lock[2].release()
-                    else:
-                        self.epoch+=1
-                        self.total_epoch+=1
-                else:
+                if self.thread_lock==None and type(self.total_epoch)!=list:
+                    self.epoch+=1
+                    self.total_epoch+=1
+                elif type(self.total_epoch)==list:
                     self.epoch[t]+=1
                     self.total_epoch[t]+=1
                 if self.thread==None:
@@ -978,21 +970,10 @@ class kernel:
                 if self.stop_flag==0:
                     return
                 i+=1
-                if type(self.total_epoch)!=list:
-                    if self.thread_lock!=None:
-                        if self.PO==1:
-                            self.thread_lock[1].acquire()
-                        else:
-                            self.thread_lock[2].acquire()
-                        self.total_epoch+=1
-                        if self.PO==1:
-                            self.thread_lock[1].release()
-                        else:
-                            self.thread_lock[2].release() 
-                    else:
-                        self.epoch+=1
-                        self.total_epoch+=1
-                else:
+                if self.thread_lock==None and type(self.total_epoch)!=list:
+                    self.epoch+=1
+                    self.total_epoch+=1
+                elif type(self.total_epoch)==list:
                     self.epoch[t]+=1
                     self.total_epoch[t]+=1
                 if self.thread==None:
