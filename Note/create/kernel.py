@@ -1431,7 +1431,7 @@ class kernel:
         return
 
 
-    def train_visual(self):
+    def visualize_train(self):
         print()
         plt.figure(1)
         plt.plot(np.arange(self.total_epoch),self.train_loss_list)
@@ -1456,7 +1456,7 @@ class kernel:
         return
     
     
-    def test_visual(self):
+    def visualize_test(self):
         print()
         plt.figure(1)
         plt.plot(np.arange(self.total_epoch),self.test_loss_list)
