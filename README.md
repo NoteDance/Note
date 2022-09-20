@@ -147,7 +147,7 @@ for _ in range(2):
 for _ in range(2):
 	_thread.join()
 kernel.train_loss_list or kernel.train_loss       #view training loss
-kernel.train_visual()
+kernel.visualize_train()
 ```
 
 pytorch:
@@ -180,7 +180,7 @@ for _ in range(2):
 for _ in range(2):
 	_thread.join()
 kernel.train_loss_list or kernel.train_loss       #view training loss
-kernel.train_visual()
+kernel.visualize_train()
 ```
 
 Stop multithreading training and saving when condition is met.
@@ -213,7 +213,7 @@ for _ in range(2):
 for _ in range(2):
 	_thread.join()
 kernel.train_loss_list or kernel.train_loss       #view training loss
-kernel.train_visual()
+kernel.visualize_train()
 ```
 
 pytorch:
@@ -248,7 +248,7 @@ for _ in range(2):
 for _ in range(2):
 	_thread.join()
 kernel.train_loss_list or kernel.train_loss       #view training loss
-kernel.train_visual()
+kernel.visualize_train()
 ```
 
 
@@ -265,9 +265,9 @@ kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10,trial_num=10)
 kernel.action_init(2)
 kernel.train(500)
 kernel.loss_list or kernel.loss       #view training loss
-kernel.train_visual()
+kernel.visualize_train()
 kernel.reward                         #view reward
-kernel.reward_visual()
+kernel.visualize_reward()
 ```
 ```python
 import Note.create.RL.st.kernel as k   #import kernel
@@ -283,9 +283,9 @@ kernel=k.kernel(ddpg)   #start kernel
 kernel.set_up(pool_size=10000,batch=64)
 kernel.train(200)
 kernel.loss_list or kernel.loss       #view training loss
-kernel.train_visual()
+kernel.visualize_train()
 kernel.reward                         #view reward
-kernel.reward_visual()
+kernel.visualize_reward()
 ```
 
 
@@ -310,9 +310,9 @@ for _ in range(5):
 for _ in range(5):
 	_thread.join()
 kernel.loss_list or kernel.loss       #view training loss
-kernel.train_visual()
+kernel.visualize_train()
 kernel.reward                         #view reward
-kernel.reward_visual()
+kernel.visualize_reward()
 ```
 
 Stop multithreading training and saving when condition is met.
@@ -336,9 +336,9 @@ for _ in range(5):
 for _ in range(5):
 	_thread.join()
 kernel.loss_list or kernel.loss       #view training loss
-kernel.train_visual()
+kernel.visualize_train()
 kernel.reward                         #view reward
-kernel.reward_visual()
+kernel.visualize_reward()
 ```
 
 
@@ -349,3 +349,9 @@ import Note.create.nc as nc
 c=nc.compiler('nn.n')
 c.Compile()
 ```
+
+
+# Patreon:
+You can support this project on Patreon.
+
+https://www.patreon.com/NoteDancing
