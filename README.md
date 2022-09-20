@@ -33,7 +33,6 @@ kernel.train(32,5)         #train neural network
                            #epoch:epoch
 kernel.save()              #save neural network
 ```
-
 ```python
 import Note.create.kernel as k   #import kernel
 import tensorflow as tf              #import platform
@@ -253,6 +252,8 @@ kernel.visualize_train()
 neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/RL/neural%20network
 
 example:
+
+DQN:
 ```python
 import Note.create.RL.st.kernel as k   #import kernel
 import DQN as d
@@ -266,7 +267,18 @@ kernel.visualize_train()
 kernel.reward                         #view reward
 kernel.visualize_reward()
 ```
+```python
+import Note.create.RL.rl.visual as v
+from IPython import display as ipythondisplay
+from pyvirtualdisplay import Display
+display = Display(visible=0, size=(400, 300))
+display.start()
+visual=v.visual(dqn,dqn.env,1000,10)
+images=visual.render_episode()
+visual.visualize_episode(images,'cartpole-v0.gif',append_images=images[1:])
+```
 
+DDPG:
 ```python
 import Note.create.RL.st.kernel as k   #import kernel
 import DDPG as d
@@ -285,6 +297,7 @@ kernel.visualize_train()
 kernel.reward                         #view reward
 kernel.visualize_reward()
 ```
+
 ## Pool Net:
 neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/RL/neural%20network
 ### list:
@@ -336,6 +349,7 @@ kernel.visualize_train()
 kernel.reward                         #view reward
 kernel.visualize_reward()
 ```
+
 ### matrix:
 example:
 ```python
