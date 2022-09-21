@@ -25,7 +25,7 @@ class visual:
                 if self.nn.nn!=None:
                     pass
                 action_prob=self.nn.nn(state.to(self.device))
-                action=np.argmax(np.squeeze(action_prob)).numpy()
+                action=np.argmax(action_prob).numpy()
             except AttributeError:
                 action=self.nn.actor(state.to(self.device))
                 action=np.squeeze(action).numpy()
