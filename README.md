@@ -16,7 +16,7 @@ neural network example:https://github.com/NoteDancing/Note-documentation/tree/ma
 
 example:
 ```python
-import Note.create.kernel as k   #import kernel
+import Note.create.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
 import cnn as c                          #import neural network
 mnist=tf.keras.datasets.mnist
@@ -34,7 +34,7 @@ kernel.train(32,5)         #train neural network
 kernel.save()              #save neural network
 ```
 ```python
-import Note.create.kernel as k   #import kernel
+import Note.create.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
 mnist=tf.keras.datasets.mnist
 (x_train,y_train),(x_test,y_test)=mnist.load_data()
@@ -51,8 +51,8 @@ kernel.train(32,1)             #train again
 
 pytorch:
 ```python
-import Note.create.kernel as k   #import kernel
-import torch              #import platform
+import Note.create.DL.kernel as k   #import kernel
+import torch                         #import platform
 import nn as n                          #import neural network
 from torchvision import datasets
 training_data=datasets.FashionMNIST(
@@ -123,7 +123,7 @@ neural network example:https://github.com/NoteDancing/Note-documentation/tree/ma
 
 example:
 ```python
-import Note.create.kernel as k   #import kernel
+import Note.create.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
 import cnn as c                          #import neural network
 import threading
@@ -152,8 +152,8 @@ kernel.visualize_train()
 
 pytorch:
 ```python
-import Note.create.kernel as k   #import kernel
-import torch              #import platform
+import Note.create.DL.kernel as k   #import kernel
+import torch                         #import platform
 import nn as n                        #import neural network
 import threading
 from torchvision import datasets
@@ -187,7 +187,7 @@ Stop multithreading training and saving when condition is met.
 
 example:
 ```python
-import Note.create.kernel as k   #import kernel
+import Note.create.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
 import cnn as c                          #import neural network
 import threading
@@ -218,7 +218,7 @@ kernel.visualize_train()
 
 pytorch:
 ```python
-import Note.create.kernel as k   #import kernel
+import Note.create.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
 import cnn as c                          #import neural network
 import threading
@@ -257,7 +257,7 @@ neural network example:https://github.com/NoteDancing/Note-documentation/tree/ma
 
 example:
 ```python
-import Note.create.RL.st.kernel as k   #import kernel
+import Note.create.RL.nspn.kernel as k   #import kernel
 import DQN as d
 dqn=d.DQN(4,128,2)                               #create neural network object
 kernel=k.kernel(dqn)   #start kernel
@@ -270,7 +270,7 @@ kernel.reward                         #view reward
 kernel.visualize_reward()
 ```
 ```python
-import Note.create.RL.st.kernel as k   #import kernel
+import Note.create.RL.nspn.kernel as k   #import kernel
 import DDPG as d
 import gym
 env=gym.make('Pendulum-v0')
