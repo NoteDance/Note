@@ -49,6 +49,7 @@ class kernel:
         self.save_episode=save_episode
         self.reward_list=[]
         self.loss_list=[]
+        self.total_episode=0
         self.total_time=0
     
     
@@ -570,6 +571,7 @@ class kernel:
                             self.thread_lock[3].acquire()
                         else:
                             self.thread_lock[0].acquire()
+                        self.total_episode+=1
                         self.loss_list.append(self.loss[t])
                         if self.PN==True:
                             self.thread_lock[3].release()
@@ -579,7 +581,7 @@ class kernel:
                             episode.append('done')
                         break
             else:
-                for _ in range(self.episode_step):
+                for l in range(self.episode_step):
                     if self.stop==True:
                         if self.stop_func() or self.stop_flag==0:
                             return
@@ -605,6 +607,7 @@ class kernel:
                             self.thread_lock[3].acquire()
                         else:
                             self.thread_lock[0].acquire()
+                        self.total_episode+=1
                         self.loss_list.append(self.loss[t])
                         if self.PN==True:
                             self.thread_lock[3].release()
@@ -613,6 +616,17 @@ class kernel:
                         if self.save_episode==True:
                             episode.append('done')
                         break
+                    if l==self.episode_step-1:
+                        if self.PN==True:
+                            self.thread_lock[3].acquire()
+                        else:
+                            self.thread_lock[0].acquire()
+                        self.total_episode+=1
+                        self.loss_list.append(self.loss[t])
+                        if self.PN==True:
+                            self.thread_lock[3].release()
+                        else:
+                            self.thread_lock[0].release()
             if self.PN==True:
                 self.thread_lock[3].acquire()
             else:
@@ -744,6 +758,8 @@ class kernel:
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.reward_list,output_file)
         pickle.dump(self.loss_list,output_file)
+        pickle.dump(self.total_episode,output_file)
+        pickle.dump(self.total_time,output_file)
         output_file.close()
         if self.save_flag==True:
             print('\nSystem have stopped,Neural network have saved.')
@@ -785,5 +801,7 @@ class kernel:
         self.save_episode=pickle.load(input_file)
         self.reward_list=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
+        self.total_episode=pickle.load(input_file)
+        self.total_time=pickle.load(input_file)
         input_file.close()
         return
