@@ -144,6 +144,7 @@ class kernel:
                         a=self.nn.actor(s).numpy()
                     else:
                         a=self.nn.actor(self.state[self.state_name[s]]).numpy()
+                    a=np.squeeze(a)
                     next_s,r,done=self.nn.env(a)
                 except AttributeError:
                     a=self.nn.actor(self.state[self.state_name[s]]).numpy()
