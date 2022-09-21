@@ -144,6 +144,7 @@ class kernel:
                         a=self.nn.actor(s).numpy()
                     else:
                         a=self.nn.actor(self.state[self.state_name[s]]).numpy()
+                    a=np.squeeze(a)
                     next_s,r,done=self.nn.env(a)
                 except AttributeError:
                     a=self.nn.actor(self.state[self.state_name[s]]).numpy()
@@ -334,7 +335,7 @@ class kernel:
                                 if self.nn.discriminator!=None:
                                     pass
                                 reward=self.nn.discriminator(s,a)
-                                s=s.reshape(s.shape[1])
+                                s=np.squeeze(s)
                             except AttributeError:
                                 pass
                         except AttributeError:
@@ -355,7 +356,7 @@ class kernel:
                                 if self.nn.discriminator!=None:
                                     pass
                                 reward=self.nn.discriminator(s,a)
-                                s=s.reshape(s.shape[1])
+                                s=np.squeeze(s)
                             except AttributeError:
                                 pass
                         except AttributeError:
@@ -429,7 +430,7 @@ class kernel:
                                 if self.nn.discriminator!=None:
                                     pass
                                 reward=self.nn.discriminator(s,a)
-                                s=s.reshape(s.shape[1])
+                                s=np.squeeze(s)
                             except AttributeError:
                                 pass
                         except AttributeError:
@@ -450,7 +451,7 @@ class kernel:
                                 if self.nn.discriminator!=None:
                                     pass
                                 reward=self.nn.discriminator(s,a)
-                                s=s.reshape(s.shape[1])
+                                s=np.squeeze(s)
                             except AttributeError:
                                 pass
                         except AttributeError:
