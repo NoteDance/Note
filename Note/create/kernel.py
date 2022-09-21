@@ -1222,21 +1222,15 @@ class kernel:
                 test_acc=test_acc.numpy().astype(np.float32)
             except AttributeError:
                 pass
-        if self.thread==None or t==None:
-            print('test loss:{0:.6f}'.format(test_loss))
-            try:
-                if self.nn.accuracy!=None:
-                    pass
-                if self.acc_flag=='%':
-                    print('accuracy:{0:.1f}'.format(test_acc*100))
-                else:
-                    print('accuracy:{0:.6f}'.format(test_acc))
-                if self.acc_flag=='%':
-                    return test_loss,test_acc*100
-                else:
-                    return test_loss,test_acc
-            except AttributeError:
-                return test_loss
+        try:
+            if self.nn.accuracy!=None:
+                pass
+            if self.acc_flag=='%':
+                return test_loss,test_acc*100
+            else:
+                return test_loss,test_acc
+        except AttributeError:
+            return test_loss
     
     
     def suspend_func(self,t=None):
