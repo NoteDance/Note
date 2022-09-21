@@ -271,11 +271,15 @@ kernel.visualize_reward()
 import Note.create.RL.rl.visual as v
 from IPython import display as ipythondisplay
 from pyvirtualdisplay import Display
-display = Display(visible=0, size=(400, 300))
+display=Display(visible=0, size=(400, 300))
 display.start()
-visual=v.visual(dqn,dqn.env,1000,10)
+visual=v.visual(dqn,dqn.genv,1000,10)
 images=visual.render_episode()
-visual.visualize_episode(images,'cartpole-v0.gif',append_images=images[1:])
+visual.visualize_episode(images,'cartpole-v0.gif',append_images=images[1:]) #visualize episode
+```
+```python
+import Note.create.RL.rl.reward as r
+reward=r.reward(dqn,dqn.genv,1000) #test neural network
 ```
 
 DDPG:
@@ -288,7 +292,7 @@ state_dim=env.observation_spave.shape[0]
 action_dim=env.action_spave.shape[0]
 action_bound=env.action_spave.high[0]
 ddpg=d.DDPG(state_dim,64,action_dim,action_bound,0.01,0.98,0.005,5e-4,5e-3)         #create neural network object
-ddpg.env=env
+ddpg.genv=env
 kernel=k.kernel(ddpg)   #start kernel
 kernel.set_up(pool_size=10000,batch=64)
 kernel.train(200)
