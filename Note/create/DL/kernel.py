@@ -1462,7 +1462,6 @@ class kernel:
         plt.plot(np.arange(self.total_epoch),self.train_loss_list,'b-',label='train loss')
         if self.test_flag==True:
             plt.plot(np.arange(self.total_epoch),self.test_loss_list,'r-',label='test loss')
-        plt.title('loss')
         plt.xlabel('epoch')
         plt.ylabel('loss')
         print('train loss:{0}'.format(self.train_loss))
@@ -1474,7 +1473,6 @@ class kernel:
             plt.plot(np.arange(self.total_epoch),self.train_acc_list,'b-',label='train acc')
             if self.test_flag==True:
                 plt.plot(np.arange(self.total_epoch),self.test_acc_list,'r-',label='test acc')
-            plt.title('accuracy')
             plt.xlabel('epoch')
             plt.ylabel('acc')
             plt.legend()
