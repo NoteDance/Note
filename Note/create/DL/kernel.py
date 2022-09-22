@@ -132,7 +132,7 @@ class kernel:
         return
     
     
-    def add_threads(self,thread):
+    def add_thread(self,thread):
         threadnum=np.arange(thread)+self.thread
         self.threadnum=self.threadnum.extend(threadnum)
         self.thread+=thread
