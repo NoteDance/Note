@@ -24,8 +24,13 @@ class visual:
             try:
                 if self.nn.nn!=None:
                     pass
-                action_prob=self.nn.nn(state.to(self.device))
-                action=np.argmax(action_prob).numpy()
+                try:
+                    if self.nn.action!=None:
+                        pass
+                    action=self.nn.action(state.to(self.device))
+                except AttributeError:
+                    action_prob=self.nn.nn(state.to(self.device))
+                    action=np.argmax(action_prob).numpy()
             except AttributeError:
                 action=self.nn.actor(state.to(self.device))
                 action=np.squeeze(action).numpy()
