@@ -5,8 +5,8 @@ from PIL import Image
 
 
 class visual:
-    def __init__(self,nn,env,max_step,rendering_step,mode='rgb_array',device='cuda'):
-        self.nn=nn
+    def __init__(self,agent,env,max_step,rendering_step,mode='rgb_array',device='cuda'):
+        self.agent=agent
         self.env=env
         self.mode=mode
         self.max_step=max_step
@@ -22,17 +22,17 @@ class visual:
         for i in range(self.max_step):
             state=torch.tensor(np.expand_dims(state,0),dtype=torch.float)
             try:
-                if self.nn.nn!=None:
+                if self.agent.nn!=None:
                     pass
                 try:
-                    if self.nn.action!=None:
+                    if self.agent.action!=None:
                         pass
-                    action=self.nn.action(state.to(self.device))
+                    action=self.agent.action(state.to(self.device))
                 except AttributeError:
-                    action_prob=self.nn.nn(state.to(self.device))
+                    action_prob=self.agent.nn(state.to(self.device))
                     action=np.argmax(action_prob).numpy()
             except AttributeError:
-                action=self.nn.actor(state.to(self.device))
+                action=self.agent.actor(state.to(self.device))
                 action=np.squeeze(action).numpy()
             state,_,done,_=self.env.step(action)
             state=state
