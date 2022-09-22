@@ -29,6 +29,13 @@ class episode:
                 a=self.agent.actor(s).numpy()
                 a=np.squeeze(a)
                 next_s,r,done=self.agent.env(a)
+            try:
+                if self.nn.stop!=None:
+                    pass
+                if self.nn.stop(next_s):
+                    break
+            except AttributeError:
+                pass
             if self.end_flag==True:
                 break
             elif done:
