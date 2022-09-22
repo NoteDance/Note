@@ -1,13 +1,11 @@
-import torch
 import numpy as np
 
 
 class reward:
-    def __init__(self,agent,env,device='cuda'):
+    def __init__(self,agent,env):
         self.agent=agent
         self.env=env
         self.end_flag=False
-        self.device=device
         
     
     def reward(self,max_step=None):
@@ -17,7 +15,7 @@ class reward:
             for i in range(max_step):
                 if self.end_flag==True:
                     break
-                state=torch.tensor(np.expand_dims(state,0),dtype=torch.float).to(self.device)
+                state=np.expand_dims(state,0)
                 try:
                     if self.agent.nn!=None:
                         pass
@@ -41,7 +39,7 @@ class reward:
             while True:
                 if self.end_flag==True:
                     break
-                state=torch.tensor(np.expand_dims(state,0),dtype=torch.float).to(self.device)
+                state=np.expand_dims(state,0)
                 try:
                     if self.agent.nn!=None:
                         pass
