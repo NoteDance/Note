@@ -3,8 +3,8 @@ import numpy as np
 
 
 class reward:
-    def __init__(self,nn,env,device='cuda'):
-        self.nn=nn
+    def __init__(self,agent,env,device='cuda'):
+        self.agent=agent
         self.env=env
         self.end_flag=False
         self.device=device
@@ -19,17 +19,17 @@ class reward:
                     break
                 state=torch.tensor(np.expand_dims(state,0),dtype=torch.float).to(self.device)
                 try:
-                    if self.nn.nn!=None:
+                    if self.agent.nn!=None:
                         pass
                     try:
-                        if self.nn.action!=None:
+                        if self.agent.action!=None:
                             pass
-                        action=self.nn.action(state)
+                        action=self.agent.action(state)
                     except AttributeError:
-                        action_prob=self.nn.nn(state)
+                        action_prob=self.agent.nn(state)
                         action=np.argmax(action_prob).numpy()
                 except AttributeError:
-                    action=self.nn.actor(state)
+                    action=self.agent.actor(state)
                     action=np.squeeze(action).numpy()
                 state,reward,done,_=self.env.step(action)
                 state=state
@@ -43,12 +43,12 @@ class reward:
                     break
                 state=torch.tensor(np.expand_dims(state,0),dtype=torch.float).to(self.device)
                 try:
-                    if self.nn.nn!=None:
+                    if self.agent.nn!=None:
                         pass
-                    action_prob=self.nn.nn(state)
+                    action_prob=self.agent.nn(state)
                     action=np.argmax(action_prob).numpy()
                 except AttributeError:
-                    action=self.nn.actor(state)
+                    action=self.agent.actor(state)
                     action=np.squeeze(action).numpy()
                 state,reward,done,_=self.env.step(action)
                 state=state
