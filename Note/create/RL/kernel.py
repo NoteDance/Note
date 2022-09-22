@@ -142,20 +142,25 @@ class kernel:
         return action_prob
     
     
-    def get_episode(self,s):
-        next_s=None
+    def get_episode(self):
         episode=[]
+        s=self.nn.env.reset()
         self.end_flag=False
         while True:
-            s=next_s
             try:
                 if self.nn.nn!=None:
                     pass
                 try:
                     if self.nn.env!=None:
                         pass
-                    s=np.expand_dims(s,axis=0)
-                    a=np.argmax(self.nn.nn(s)).numpy()
+                    try:
+                        if self.nn.action!=None:
+                            pass
+                        s=np.expand_dims(s,axis=0)
+                        a=self.nn.action(s)
+                    except AttributeError:
+                        s=np.expand_dims(s,axis=0)
+                        a=np.argmax(self.nn.nn(s)).numpy()
                     if self.action_name==None:
                         next_s,r,done=self.nn.env(a)
                     else:
@@ -176,6 +181,7 @@ class kernel:
                     next_s,r,done=self.nn.env(a)
                 except AttributeError:
                     a=self.nn.actor(self.state[self.state_name[s]]).numpy()
+                    a=np.squeeze(a)
                     next_s,r,done=self.nn.transition(self.state_name[s],a)
             if done:
                 if self.state_name==None and self.action_name==None:
@@ -199,6 +205,7 @@ class kernel:
                     episode.append([self.state_name[s],a,self.state_name[next_s],r])
                 else:
                     episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s],r])
+            s=next_s
         return episode
     
     
