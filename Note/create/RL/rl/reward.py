@@ -9,29 +9,36 @@ class reward:
         
     
     def reward(self,max_step=None):
-        r=0
-        state=self.env.reset()
+        reward=0
+        s=self.env.reset()
         if max_step!=None:
             for i in range(max_step):
                 if self.end_flag==True:
                     break
-                state=np.expand_dims(state,0)
+                s=np.expand_dims(s,0)
                 try:
                     if self.agent.nn!=None:
                         pass
                     try:
                         if self.agent.action!=None:
                             pass
-                        action=self.agent.action(state)
+                        a=self.agent.action(s)
                     except AttributeError:
-                        action_prob=self.agent.nn(state)
-                        action=np.argmax(action_prob).numpy()
+                        action_prob=self.agent.nn(s)
+                        a=np.argmax(action_prob).numpy()
                 except AttributeError:
-                    action=self.agent.actor(state)
-                    action=np.squeeze(action).numpy()
-                state,reward,done,_=self.env.step(action)
-                state=state
-                r+=reward
+                    a=self.agent.actor(s)
+                    a=np.squeeze(a).numpy()
+                next_s,r,done,_=self.env.step(a)
+                s=next_s
+                reward+=r
+                try:
+                    if self.nn.stop!=None:
+                        pass
+                    if self.nn.stop(next_s):
+                        break
+                except AttributeError:
+                    pass
                 if done:
                     break
             return r
@@ -39,18 +46,25 @@ class reward:
             while True:
                 if self.end_flag==True:
                     break
-                state=np.expand_dims(state,0)
+                s=np.expand_dims(s,0)
                 try:
                     if self.agent.nn!=None:
                         pass
-                    action_prob=self.agent.nn(state)
-                    action=np.argmax(action_prob).numpy()
+                    action_prob=self.agent.nn(s)
+                    a=np.argmax(action_prob).numpy()
                 except AttributeError:
-                    action=self.agent.actor(state)
-                    action=np.squeeze(action).numpy()
-                state,reward,done,_=self.env.step(action)
-                state=state
-                r+=reward
+                    a=self.agent.actor(s)
+                    a=np.squeeze(a).numpy()
+                next_s,r,done,_=self.env.step(a)
+                s=next_s
+                reward+=r
+                try:
+                    if self.nn.stop!=None:
+                        pass
+                    if self.nn.stop(next_s):
+                        break
+                except AttributeError:
+                    pass
                 if done:
                     break
             return r
