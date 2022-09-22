@@ -144,6 +144,30 @@ for _ in range(2):
 	_thread.join()
 kernel.train_loss_list or kernel.train_loss       #view training loss
 kernel.visualize_train()
+kernel.save()              #save neural network
+```
+```python
+import Note.create.DL.kernel as k   #import kernel
+import tensorflow as tf              #import platform
+import threading
+mnist=tf.keras.datasets.mnist
+(x_train,y_train),(x_test,y_test)=mnist.load_data()
+x_train,x_test =x_train/255.0,x_test/255.0
+y_train=tf.one_hot(y_train,10).numpy()
+kernel=k.kernel()                 #start kernel
+kernel.platform=tf                    #use platform
+kernel.restore('save.dat')     #restore neural network
+kernel.data(x_train,y_train)   #input you data,if you have test data can transfer to kernel API data()
+                               #data can be a list,[data1,data2,...,datan]
+kernel.add_thread(2)
+class thread(threading.Thread):
+	def run(self):
+		kernel.train(32,1)
+for _ in range(2):
+	_thread=thread()
+	_thread.start()
+for _ in range(2):
+	_thread.join()
 ```
 
 pytorch:
