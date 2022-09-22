@@ -66,7 +66,7 @@ class kernel:
             self.shape0=train_data[0].shape[0]
         else:
             self.shape0=train_data.shape[0]
-        if self.thread!=None:
+        if self.train_counter==0 and self.thread!=None:
             self.threadnum=np.arange(self.thread)
             self.threadnum=list(self.threadnum)
             try:
