@@ -181,7 +181,8 @@ class kernel:
         return action_prob
     
     
-    def get_episode(self):
+    def get_episode(self,max_step=None):
+        counter=0
         episode=[]
         s=self.nn.env.reset()
         self.end_flag=False
@@ -222,6 +223,13 @@ class kernel:
                     a=self.nn.actor(self.state[self.state_name[s]]).numpy()
                     a=np.squeeze(a)
                     next_s,r,done=self.nn.transition(self.state_name[s],a)
+            try:
+                if self.nn.stop!=None:
+                    pass
+                if self.nn.stop(next_s):
+                    break
+            except AttributeError:
+                pass
             if done:
                 if self.state_name==None and self.action_name==None:
                     episode.append([s,a,next_s,r])
@@ -244,7 +252,10 @@ class kernel:
                     episode.append([self.state_name[s],a,self.state_name[next_s],r])
                 else:
                     episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s],r])
+            if max_step!=None and counter==max_step-1:
+                break
             s=next_s
+            counter+=1
         return episode
     
     
