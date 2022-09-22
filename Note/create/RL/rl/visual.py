@@ -1,17 +1,15 @@
-import torch
 import numpy as np
 import tensorflow_docs.vis.embed as embed
 from PIL import Image
 
 
 class visual:
-    def __init__(self,agent,env,max_step,rendering_step,mode='rgb_array',device='cuda'):
+    def __init__(self,agent,env,max_step,rendering_step,mode='rgb_array'):
         self.agent=agent
         self.env=env
         self.mode=mode
         self.max_step=max_step
         self.rendering_step=rendering_step
-        self.device=device
     
     
     def render_episode(self):
@@ -20,19 +18,19 @@ class visual:
         images=[im]
         state=self.env.reset()
         for i in range(self.max_step):
-            state=torch.tensor(np.expand_dims(state,0),dtype=torch.float)
+            state=np.expand_dims(state,0)
             try:
                 if self.agent.nn!=None:
                     pass
                 try:
                     if self.agent.action!=None:
                         pass
-                    action=self.agent.action(state.to(self.device))
+                    action=self.agent.action(state)
                 except AttributeError:
-                    action_prob=self.agent.nn(state.to(self.device))
+                    action_prob=self.agent.nn(state)
                     action=np.argmax(action_prob).numpy()
             except AttributeError:
-                action=self.agent.actor(state.to(self.device))
+                action=self.agent.actor(state)
                 action=np.squeeze(action).numpy()
             state,_,done,_=self.env.step(action)
             state=state
