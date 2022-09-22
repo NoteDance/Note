@@ -1,20 +1,17 @@
-import torch
 import numpy as np
 
 
 class episode:
-    def __init__(self,agent,env,device='cuda'):
+    def __init__(self,agent,env):
         self.agent=agent
         self.env=env
         self.end_flag=False
-        self.device=device
     
     
     def get_episode(self):
         s=self.env.reset()
         episode=[]
         while True:
-            s=torch.tensor(s,dtype=torch.float).to(self.device)
             try:
                 if self.agent.nn!=None:
                     pass
