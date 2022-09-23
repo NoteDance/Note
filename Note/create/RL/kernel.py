@@ -19,7 +19,6 @@ class kernel:
             self.reward=np.zeros(thread)
             self.loss=np.zeros(thread)
             self.sc=np.zeros(thread)
-            self.episode_num=np.zeros(thread)
         self.state_pool=[]
         self.action_pool=[]
         self.next_state_pool=[]
@@ -81,7 +80,6 @@ class kernel:
         self.sc=np.concatenate((self.sc,np.zeros(thread)))
         self.reward=np.concatenate((self.reward,np.zeros(thread)))
         self.loss=np.concatenate((self.loss,np.zeros(thread)))
-        self.episode_num=np.concatenate((self.episode_num,np.zeros(thread)))
         return
     
     
@@ -126,7 +124,6 @@ class kernel:
             self.reward_list=[]
             self.loss_list=[]
             self.sc=np.zeros(self.thread)
-            self.episode_num=np.zeros(self.thread)
             self.total_episode=0
             self.total_time=0
         return
@@ -191,7 +188,9 @@ class kernel:
                     break
             except AttributeError:
                 pass
-            if done:
+            if self.end_flag==True:
+                break
+            elif done:
                 if self.state_name==None and self.action_name==None:
                     episode.append([s,a,next_s,r])
                 elif self.state_name==None:
@@ -201,8 +200,6 @@ class kernel:
                 else:
                     episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s],r])
                 episode.append('done')
-                break
-            elif self.end_flag==True:
                 break
             else:
                 if self.state_name==None and self.action_name==None:
@@ -556,7 +553,6 @@ class kernel:
             if self.stop==True:
                 if self.stop_func() or self.stop_flag==0:
                     return
-            self.episode_num[t]+=1
             episode=[]
             if self.state_name==None:
                 s=self.nn.env(initial=True)
