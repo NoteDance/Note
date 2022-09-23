@@ -727,6 +727,11 @@ class kernel:
                             self.thread_lock[3].release()
                         else:
                             self.thread_lock[0].release()
+                        self.state_pool[t]=None
+                        self.action_pool[t]=None
+                        self.next_state_pool[t]=None
+                        self.reward_pool[t]=None
+                        self.done_pool[t]=None
                         return
                     if self.stop_flag==0:
                         return
@@ -771,6 +776,11 @@ class kernel:
                             self.thread_lock[3].release()
                         else:
                             self.thread_lock[0].release()
+                        self.state_pool[t]=None
+                        self.action_pool[t]=None
+                        self.next_state_pool[t]=None
+                        self.reward_pool[t]=None
+                        self.done_pool[t]=None
                         return
                     if self.stop_flag==0:
                         return
