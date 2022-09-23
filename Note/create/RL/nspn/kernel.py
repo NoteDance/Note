@@ -8,7 +8,7 @@ import time
 
 
 class kernel:
-    def __init__(self,nn=None,state=None,state_name=None,action_name=None,save_episode=True):
+    def __init__(self,nn=None,save_episode=True):
         self.nn=nn
         try:
             self.nn.km=1
@@ -23,9 +23,6 @@ class kernel:
         self.reward_pool=None
         self.done_pool=None
         self.episode=[]
-        self.state=state
-        self.state_name=state_name
-        self.action_name=action_name
         self.action_num=None
         self.epsilon=None
         self.episode_step=None
@@ -52,17 +49,8 @@ class kernel:
     
     
     def action_init(self,action_num=None,dtype=np.int32):
-        if self.action_name!=None:
-            self.action_num=len(self.action_name)
-        else:
-            action_num=self.action_num
-            self.action_num=action_num
-        if self.action_name!=None and len(self.action_name)>self.action_num:
-            if self.epsilon!=None:
-                self.action_one=np.concatenate((self.action_one,np.ones(len(self.action_name)-self.action_num,dtype=dtype)))
-        elif self.action_name!=None:
-            if self.epsilon!=None:
-                self.action_one=np.ones(len(self.action_name),dtype=dtype)
+        action_num=self.action_num
+        self.action_num=action_num
         if self.action_num>action_num:
             if self.epsilon!=None:
                 self.action_one=np.concatenate((self.action_one,np.ones(self.action_num-action_num,dtype=dtype)))
@@ -163,28 +151,30 @@ class kernel:
                     break
             except AttributeError:
                 pass
+            if self.end_flag==True:
+                break
             if done:
-                if self.state_name==None and self.action_name==None:
+                try:
+                    if self.nn.state_name==None:
+                        episode.append([s,self.nn.action_name[a],next_s,r])
+                    elif self.nn.action_name==None:
+                        episode.append([self.nn.state_name[s],a,self.nn.state_name[next_s],r])
+                    else:
+                        episode.append([self.nn.state_name[s],self.nn.action_name[a],self.nn.state_name[next_s],r])
+                except AttributeError:
                     episode.append([s,a,next_s,r])
-                elif self.state_name==None:
-                    episode.append([s,self.action_name[a],next_s,r])
-                elif self.action_name==None:
-                    episode.append([self.state_name[s],a,self.state_name[next_s],r])
-                else:
-                    episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s],r])
                 episode.append('done')
                 break
-            elif self.end_flag==True:
-                break
             else:
-                if self.state_name==None and self.action_name==None:
+                try:
+                    if self.nn.state_name==None:
+                        episode.append([s,self.nn.action_name[a],next_s,r])
+                    elif self.nn.action_name==None:
+                        episode.append([self.nn.state_name[s],a,self.nn.state_name[next_s],r])
+                    else:
+                        episode.append([self.nn.state_name[s],self.nn.action_name[a],self.nn.state_name[next_s],r])
+                except AttributeError:
                     episode.append([s,a,next_s,r])
-                elif self.state_name==None:
-                    episode.append([s,self.action_name[a],next_s,r])
-                elif self.action_name==None:
-                    episode.append([self.state_name[s],a,self.state_name[next_s],r])
-                else:
-                    episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s],r])
             if max_step!=None and counter==max_step-1:
                 break
             s=next_s
@@ -217,43 +207,23 @@ class kernel:
     
     def pool(self,s,a,next_s,r,done):
         if type(self.state_pool)!=np.ndarray and self.state_pool==None:
-            if self.state==None:
-                self.state_pool=s
-                if len(a.shape)==1:
-                    self.action_pool=np.expand_dims(a,axis=0)
-                else:
-                    self.action_pool=a
-                self.next_state_pool=np.expand_dims(next_s,axis=0)
-                self.reward_pool=np.expand_dims(r,axis=0)
-                self.done_pool=np.expand_dims(done,axis=0)
+            self.state_pool=s
+            if len(a.shape)==1:
+                self.action_pool=np.expand_dims(a,axis=0)
             else:
-                self.state_pool=np.expand_dims(self.state[self.state_name[s]],axis=0)
-                if len(a.shape)==1:
-                    self.action_pool=np.expand_dims(a,axis=0)
-                else:
-                    self.action_pool=a
-                self.next_state_pool=np.expand_dims(self.state[self.state_name[next_s]],axis=0)
-                self.reward_pool=np.expand_dims(r,axis=0)
-                self.done_pool=np.expand_dims(done,axis=0)
+                self.action_pool=a
+            self.next_state_pool=np.expand_dims(next_s,axis=0)
+            self.reward_pool=np.expand_dims(r,axis=0)
+            self.done_pool=np.expand_dims(done,axis=0)
         else:
-            if self.state==None:
-                self.state_pool=np.concatenate((self.state_pool,s),0)
-                if len(a.shape)==1:
-                    self.action_pool=np.concatenate((self.action_pool,np.expand_dims(a,axis=0)),0)
-                else:
-                    self.action_pool=np.concatenate((self.action_pool,a),0)
-                self.next_state_pool=np.concatenate((self.next_state_pool,np.expand_dims(next_s,axis=0)),0)
-                self.reward_pool=np.concatenate((self.reward_pool,np.expand_dims(r,axis=0)),0)
-                self.done_pool=np.concatenate((self.done_pool,np.expand_dims(done,axis=0)),0)
+            self.state_pool=np.concatenate((self.state_pool,s),0)
+            if len(a.shape)==1:
+                self.action_pool=np.concatenate((self.action_pool,np.expand_dims(a,axis=0)),0)
             else:
-                self.state_pool=np.concatenate((self.state_pool,np.expand_dims(self.state[self.state_name[s]],axis=0)),0)
-                if len(a.shape)==1:
-                    self.action_pool=np.concatenate((self.action_pool,np.expand_dims(a,axis=0)),0)
-                else:
-                    self.action_pool=np.concatenate((self.action_pool,a),0)
-                self.next_state_pool=np.concatenate((self.next_state_pool,np.expand_dims(self.state[self.state_name[next_s]],axis=0)),0)
-                self.reward_pool=np.concatenate((self.reward_pool,np.expand_dims(r,axis=0)),0)
-                self.done_pool=np.concatenate((self.done_pool,np.expand_dims(done,axis=0)),0)
+                self.action_pool=np.concatenate((self.action_pool,a),0)
+            self.next_state_pool=np.concatenate((self.next_state_pool,np.expand_dims(next_s,axis=0)),0)
+            self.reward_pool=np.concatenate((self.reward_pool,np.expand_dims(r,axis=0)),0)
+            self.done_pool=np.concatenate((self.done_pool,np.expand_dims(done,axis=0)),0)
         if len(self.state_pool)>self.pool_size:
             self.state_pool=self.state_pool[1:]
             self.action_pool=self.action_pool[1:]
@@ -329,58 +299,31 @@ class kernel:
     def train_(self):
         episode=[]
         self.reward=0
-        if self.state_name==None:
-            s=self.nn.env(initial=True)
-        else:
-            s=self.nn.transition(initial=True)
+        s=self.nn.env(initial=True)
         if self.episode_step==None:
             while True:
                 t1=time.time()
                 try:
                     if self.nn.nn!=None:
                         pass
+                    s=np.expand_dims(s,axis=0)
+                    if self.epsilon==None:
+                        self.epsilon=self.nn.epsilon(self.sc)
                     try:
-                        if self.nn.env!=None:
+                        if self.nn.action!=None:
                             pass
-                        s=np.expand_dims(s,axis=0)
-                        if self.epsilon==None:
-                            self.epsilon=self.nn.epsilon(self.sc)
+                        a=self.nn.action(s)
                         try:
-                            if self.nn.action!=None:
+                            if self.nn.discriminator!=None:
                                 pass
-                            a=self.nn.action(s)
-                            try:
-                                if self.nn.discriminator!=None:
-                                    pass
-                                reward=self.nn.discriminator(s,a)
-                                s=np.squeeze(s)
-                            except AttributeError:
-                                pass
+                            reward=self.nn.discriminator(s,a)
+                            s=np.squeeze(s)
                         except AttributeError:
-                            action_prob=self.epsilon_greedy_policy(s,self.action_one)
-                            a=np.random.choice(self.action_num,p=action_prob)
-                        if self.action_name==None:
-                            next_s,r,done=self.nn.env(a)
-                        else:
-                            next_s,r,done=self.nn.env(self.action_name[a])
+                            pass
                     except AttributeError:
-                        if self.epsilon==None:
-                            self.epsilon=self.nn.epsilon(self.sc)
-                        try:
-                            if self.nn.action!=None:
-                                pass
-                            a=self.nn.action(s)
-                            try:
-                                if self.nn.discriminator!=None:
-                                    pass
-                                reward=self.nn.discriminator(s,a)
-                                s=np.squeeze(s)
-                            except AttributeError:
-                                pass
-                        except AttributeError:
-                            action_prob=self.epsilon_greedy_policy(s,self.action_one)
-                            a=np.random.choice(self.action_num,p=action_prob)
-                        next_s,r,done=self.nn.transition(self.state_name[s],self.action_name[a])
+                        action_prob=self.epsilon_greedy_policy(s,self.action_one)
+                        a=np.random.choice(self.action_num,p=action_prob)
+                    next_s,r,done=self.nn.env(a)
                     try:
                         if self.nn.discriminator!=None:
                             pass
@@ -388,45 +331,38 @@ class kernel:
                     except AttributeError:
                         self.pool(s,a,next_s,r,done)
                 except AttributeError:
-                    try:
-                        if self.nn.env!=None:
-                            pass 
-                        if self.state_name==None:
-                            s=np.expand_dims(s,axis=0)
-                            a=(self.nn.actor(s)+self.nn.noise()).numpy()
-                        else:
-                            a=(self.nn.actor(self.state[self.state_name[s]])+self.nn.noise()).numpy()
-                        next_s,r,done=self.nn.env(a)
-                    except AttributeError:
-                        a=(self.nn.actor(self.state[self.state_name[s]])+self.nn.noise()).numpy()
-                        next_s,r,done=self.nn.transition(self.state_name[s],a)
+                    s=np.expand_dims(s,axis=0)
+                    a=(self.nn.actor(s)+self.nn.noise()).numpy()
+                    next_s,r,done=self.nn.env(a)
                     self.pool(s,a,next_s,r,done)
                 self.reward=r+self.reward
                 loss=self._train()
                 self.sc+=1
                 if done:
                     if self.save_episode==True:
-                        if self.state_name==None and self.action_name==None:
+                        try:
+                            if self.nn.state_name==None:
+                                episode=[s,self.nn.action_name[a],next_s,r]
+                            elif self.nn.action_name==None:
+                                episode=[self.nn.state_name[s],a,self.nn.state_name[next_s],r]
+                            else:
+                                episode=[self.nn.state_name[s],self.nn.action_name[a],self.nn.state_name[next_s],r]
+                        except AttributeError:
                             episode=[s,a,next_s,r]
-                        elif self.state_name==None:
-                            episode=[s,self.action_name[a],next_s,r]
-                        elif self.action_name==None:
-                            episode=[self.state_name[s],a,self.state_name[next_s],r]
-                        else:
-                            episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r]
                     self.reward_list.append(self.reward)
                     t2=time.time()
                     self.time+=(t2-t1)
                     return loss,episode,done
                 elif self.save_episode==True:
-                    if self.state_name==None and self.action_name==None:
+                    try:
+                        if self.nn.state_name==None:
+                            episode=[s,self.nn.action_name[a],next_s,r]
+                        elif self.nn.action_name==None:
+                            episode=[self.nn.state_name[s],a,self.nn.state_name[next_s],r]
+                        else:
+                            episode=[self.nn.state_name[s],self.nn.action_name[a],self.nn.state_name[next_s],r]
+                    except AttributeError:
                         episode=[s,a,next_s,r]
-                    elif self.state_name==None:
-                        episode=[s,self.action_name[a],next_s,r]
-                    elif self.action_name==None:
-                        episode=[self.state_name[s],a,self.state_name[next_s],r]
-                    else:
-                        episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r]
                 s=next_s
         else:
             for _ in range(self.episode_step):
@@ -434,48 +370,24 @@ class kernel:
                 try:
                     if self.nn.nn!=None:
                         pass
+                    s=np.expand_dims(s,axis=0)
+                    if self.epsilon==None:
+                        self.epsilon=self.nn.epsilon(self.sc)
                     try:
-                        if self.nn.env!=None:
+                        if self.nn.action!=None:
                             pass
-                        s=np.expand_dims(s,axis=0)
-                        if self.epsilon==None:
-                            self.epsilon=self.nn.epsilon(self.sc)
+                        a=self.nn.action(s)
                         try:
-                            if self.nn.action!=None:
+                            if self.nn.discriminator!=None:
                                 pass
-                            a=self.nn.action(s)
-                            try:
-                                if self.nn.discriminator!=None:
-                                    pass
-                                reward=self.nn.discriminator(s,a)
-                                s=np.squeeze(s)
-                            except AttributeError:
-                                pass
+                            reward=self.nn.discriminator(s,a)
+                            s=np.squeeze(s)
                         except AttributeError:
-                            action_prob=self.epsilon_greedy_policy(s,self.action_one)
-                            a=np.random.choice(self.action_num,p=action_prob)
-                        if self.action_name==None:
-                            next_s,r,done=self.nn.env(a)
-                        else:
-                            next_s,r,done=self.nn.env(self.action_name[a])
+                            pass
                     except AttributeError:
-                        if self.epsilon==None:
-                            self.epsilon=self.nn.epsilon(self.sc)
-                        try:
-                            if self.nn.action!=None:
-                                pass
-                            a=self.nn.action(s)
-                            try:
-                                if self.nn.discriminator!=None:
-                                    pass
-                                reward=self.nn.discriminator(s,a)
-                                s=np.squeeze(s)
-                            except AttributeError:
-                                pass
-                        except AttributeError:
-                            action_prob=self.epsilon_greedy_policy(s,self.action_one)
-                            a=np.random.choice(self.action_num,p=action_prob)
-                        next_s,r,done=self.nn.transition(self.state_name[s],self.action_name[a])
+                        action_prob=self.epsilon_greedy_policy(s,self.action_one)
+                        a=np.random.choice(self.action_num,p=action_prob)
+                    next_s,r,done=self.nn.env(a)
                     try:
                         if self.nn.discriminator!=None:
                             pass
@@ -483,45 +395,38 @@ class kernel:
                     except AttributeError:
                         self.pool(s,a,next_s,r,done)
                 except AttributeError:
-                    try:
-                        if self.nn.env!=None:
-                            pass 
-                        if self.state_name==None:
-                            s=np.expand_dims(s,axis=0)
-                            a=(self.nn.actor(s)+self.nn.noise()).numpy()
-                        else:
-                            a=(self.nn.actor(self.state[self.state_name[s]])+self.nn.noise()).numpy()
-                        next_s,r,done=self.nn.env(a)
-                    except AttributeError:
-                        a=(self.nn.actor(self.state[self.state_name[s]])+self.nn.noise()).numpy()
-                        next_s,r,done=self.nn.transition(self.state_name[s],a)
+                    s=np.expand_dims(s,axis=0)
+                    a=(self.nn.actor(s)+self.nn.noise()).numpy()
+                    next_s,r,done=self.nn.env(a)
                     self.pool(s,a,next_s,r,done)
                 self.reward=r+self.reward
                 loss=self._train()
                 self.sc+=1
                 if done:
                     if self.save_episode==True:
-                        if self.state_name==None and self.action_name==None:
+                        try:
+                            if self.nn.state_name==None:
+                                episode=[s,self.nn.action_name[a],next_s,r]
+                            elif self.nn.action_name==None:
+                                episode=[self.nn.state_name[s],a,self.nn.state_name[next_s],r]
+                            else:
+                                episode=[self.nn.state_name[s],self.nn.action_name[a],self.nn.state_name[next_s],r]
+                        except AttributeError:
                             episode=[s,a,next_s,r]
-                        elif self.state_name==None:
-                            episode=[s,self.action_name[a],next_s,r]
-                        elif self.action_name==None:
-                            episode=[self.state_name[s],a,self.state_name[next_s],r]
-                        else:
-                            episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r]
                     self.reward_list.append(self.reward)
                     t2=time.time()
                     self.time+=(t2-t1)
                     return loss,episode,done
                 elif self.save_episode==True:
-                    if self.state_name==None and self.action_name==None:
+                    try:
+                        if self.nn.state_name==None:
+                            episode=[s,self.nn.action_name[a],next_s,r]
+                        elif self.nn.action_name==None:
+                            episode=[self.nn.state_name[s],a,self.nn.state_name[next_s],r]
+                        else:
+                            episode=[self.nn.state_name[s],self.nn.action_name[a],self.nn.state_name[next_s],r]
+                    except AttributeError:
                         episode=[s,a,next_s,r]
-                    elif self.state_name==None:
-                        episode=[s,self.action_name[a],next_s,r]
-                    elif self.action_name==None:
-                        episode=[self.state_name[s],a,self.state_name[next_s],r]
-                    else:
-                        episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r]
                 s=next_s
         self.reward_list.append(self.reward)
         t2=time.time()
