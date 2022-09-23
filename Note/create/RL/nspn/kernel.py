@@ -163,7 +163,9 @@ class kernel:
                     break
             except AttributeError:
                 pass
-            if done:
+            if self.end_flag==True:
+                break
+            elif done:
                 if self.state_name==None and self.action_name==None:
                     episode.append([s,a,next_s,r])
                 elif self.state_name==None:
@@ -173,8 +175,6 @@ class kernel:
                 else:
                     episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s],r])
                 episode.append('done')
-                break
-            elif self.end_flag==True:
                 break
             else:
                 if self.state_name==None and self.action_name==None:
