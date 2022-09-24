@@ -328,6 +328,8 @@ kernel.visualize_reward()
 ```
 
 ## Pool Net:
+![3](https://github.com/NoteDancing/Note-documentation/blob/main/Pool%20Net.png)
+
 neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/RL/neural%20network
 ### list:
 example:
