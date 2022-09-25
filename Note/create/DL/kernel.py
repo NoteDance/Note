@@ -401,6 +401,9 @@ class kernel:
                     loss=self.nn.loss(output,labels)
                 except TypeError:
                     output,loss=self.nn.fp(data,labels)
+        if self.stop==True:
+            if self.stop_func() or self.stop_flag==0:
+                return output,loss
         if self.PO==1:
             self.thread_lock[0].acquire()
             try:
@@ -472,6 +475,9 @@ class kernel:
             except:
                 output=self.nn.fp(data.to(self.nn.device),t)
             loss=self.nn.loss(output,labels.to(self.nn.device))
+            if self.stop==True:
+                if self.stop_func() or self.stop_flag==0:
+                    return output,loss
             if self.PO==1:
                 try:
                     self.thread_lock[0].acquire()
@@ -706,15 +712,14 @@ class kernel:
         batches=int((self.shape0-self.shape0%batch)/batch)
         if batch!=None:
             for j in range(batches):
-                if self.stop==True:
-                    if self.stop_func() or self.stop_flag==0:
-                        return
                 if t in self.stop_list:
                     return
                 self.suspend_func(t)
                 index1=j*batch
                 index2=(j+1)*batch
                 batch_loss,batch_acc=self.train_(data_batch,labels_batch,batch,batches,test_batch,index1,index2,j,t)
+                if self.stop_flag==0:
+                    return
                 try:
                     if self.nn.accuracy!=None:
                         pass
@@ -723,9 +728,6 @@ class kernel:
                 except AttributeError:
                     total_loss+=batch_loss
             if self.shape0%batch!=0:
-                if self.stop==True:
-                    if self.stop_func() or self.stop_flag==0:
-                        return
                 if t in self.stop_list:
                     return
                 self.suspend_func(t)
@@ -733,6 +735,8 @@ class kernel:
                 index1=batches*batch
                 index2=batch-(self.shape0-batches*batch)
                 batch_loss,batch_acc=self.train_(data_batch,labels_batch,batch,batches,test_batch,index1,index2,None,t)
+                if self.stop_flag==0:
+                    return
                 try:
                     if self.nn.accuracy!=None:
                         pass
