@@ -459,6 +459,9 @@ class kernel:
     
     def opt(self,state_batch,action_batch,next_state_batch,reward_batch,done_batch):
         loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
+        if self.stop==True:
+            if self.stop_func() or self.stop_flag==0:
+                return loss
         self.thread_lock[1].acquire()
         self.nn.opt(loss)
         self.thread_lock[1].release()
@@ -466,47 +469,44 @@ class kernel:
     
     
     def _train(self,t,j=None,batches=None,length=None):
-        if len(self.state_pool[t])<self.batch:
-            return
-        else:
-            if length%self.batch!=0:
-                try:
-                    if self.nn.data_func!=None:
-                        pass
-                    state_batch,action_batch,next_state_batch,reward_batch=self.nn.data_func(self.state_pool[t],self.action_pool[t],self.next_state_pool[t],self.reward_pool[t],self.done_pool[t],self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
-                except AttributeError:
-                    index1=batches*self.batch
-                    index2=self.batch-(length-batches*self.batch)
-                    state_batch=np.concatenate((self.state_pool[t][index1:length],self.state_pool[t][:index2]),0)
-                    action_batch=np.concatenate((self.action_pool[t][index1:length],self.action_pool[t][:index2]),0)
-                    next_state_batch=np.concatenate((self.next_state_pool[t][index1:length],self.next_state_pool[t][:index2]),0)
-                    reward_batch=np.concatenate((self.reward_pool[t][index1:length],self.reward_pool[t][:index2]),0)
-                    done_batch=np.concatenate((self.done_pool[t][index1:length],self.done_pool[t][:index2]),0)
-                loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
-                self.loss[t]+=loss
-                try:
-                    self.nn.bc[t]+=1
-                except AttributeError:
-                    pass
-                return
+        if length%self.batch!=0:
             try:
                 if self.nn.data_func!=None:
                     pass
                 state_batch,action_batch,next_state_batch,reward_batch=self.nn.data_func(self.state_pool[t],self.action_pool[t],self.next_state_pool[t],self.reward_pool[t],self.done_pool[t],self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
             except AttributeError:
-                index1=j*self.batch
-                index2=(j+1)*self.batch
-                state_batch=self.state_batch[t][index1:index2]
-                action_batch=self.action_batch[t][index1:index2]
-                next_state_batch=self.next_state_batch[t][index1:index2]
-                reward_batch=self.reward_batch[t][index1:index2]
-                done_batch=self.done_batch[t][index1:index2]
-                loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
-                self.loss[t]+=loss
+                index1=batches*self.batch
+                index2=self.batch-(length-batches*self.batch)
+                state_batch=np.concatenate((self.state_pool[t][index1:length],self.state_pool[t][:index2]),0)
+                action_batch=np.concatenate((self.action_pool[t][index1:length],self.action_pool[t][:index2]),0)
+                next_state_batch=np.concatenate((self.next_state_pool[t][index1:length],self.next_state_pool[t][:index2]),0)
+                reward_batch=np.concatenate((self.reward_pool[t][index1:length],self.reward_pool[t][:index2]),0)
+                done_batch=np.concatenate((self.done_pool[t][index1:length],self.done_pool[t][:index2]),0)
+            loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
+            self.loss[t]+=loss
             try:
-                self.nn.bc[t]=j
+                self.nn.bc[t]+=1
             except AttributeError:
                 pass
+            return
+        try:
+            if self.nn.data_func!=None:
+                pass
+            state_batch,action_batch,next_state_batch,reward_batch=self.nn.data_func(self.state_pool[t],self.action_pool[t],self.next_state_pool[t],self.reward_pool[t],self.done_pool[t],self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
+        except AttributeError:
+            index1=j*self.batch
+            index2=(j+1)*self.batch
+            state_batch=self.state_batch[t][index1:index2]
+            action_batch=self.action_batch[t][index1:index2]
+            next_state_batch=self.next_state_batch[t][index1:index2]
+            reward_batch=self.reward_batch[t][index1:index2]
+            done_batch=self.done_batch[t][index1:index2]
+            loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
+            self.loss[t]+=loss
+        try:
+            self.nn.bc[t]=j
+        except AttributeError:
+            pass
         return
     
     
@@ -530,7 +530,7 @@ class kernel:
     
     def _train_(self,t):
         if len(self.state_pool[t])<self.batch:
-            self._train(t)
+            return
         else:
             self.loss[t]=0
             if self.PN==True:
@@ -539,19 +539,20 @@ class kernel:
                 if length%self.batch!=0:
                     batches+=1
                 for j in range(batches):
-                    if self.stop==True:
-                        if self.stop_func() or self.stop_flag==0:
-                            return
                     if t in self.stop_list:
                         return
                     self.suspend_func(t)
                     self._train(t,j,batches,length)
+                    if self.stop_flag==0:
+                        return
             else:
                 try:
                     self.nn.bc[t]=0
                 except AttributeError:
                     pass
                 self.train_(t)
+                if self.stop_flag==0:
+                    return
             if self.PN==True:
                 self.thread_lock[2].acquire()
             else:
