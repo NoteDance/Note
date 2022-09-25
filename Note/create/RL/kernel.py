@@ -513,9 +513,6 @@ class kernel:
     def train_(self,t):
         train_ds=tf_data.Dataset.from_tensor_slices((self.state_pool[t],self.action_pool[t],self.next_state_pool[t],self.reward_pool[t],self.done_pool[t])).shuffle(len(self.state_pool[t])).batch(self.batch)
         for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
-            if self.stop==True:
-                if self.stop_func() or self.stop_flag==0:
-                    return
             if t in self.stop_list:
                 return
             self.suspend_func(t)
