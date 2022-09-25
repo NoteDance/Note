@@ -517,6 +517,8 @@ class kernel:
                 return
             self.suspend_func(t)
             loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
+            if self.stop_flag==0:
+                return
             self.loss[t]+=loss
             try:
                 self.nn.bc[t]+=1
