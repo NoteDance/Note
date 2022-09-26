@@ -145,7 +145,6 @@ class kernel:
         self.train_acc_list.clear()
         self.test_loss_list.clear()
         self.test_acc_list.clear()
-        self.acc_flag='%'
         self.test_flag=False
         self.train_counter=0
         self.epoch=0
