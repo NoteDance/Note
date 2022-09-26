@@ -117,6 +117,14 @@ class kernel:
         if end_loss!=None:
             self.end_loss=end_loss
         if init==True:
+            self.suspend=False
+            self.suspend_list=[]
+            self.suspended_list=[]
+            self.stop=None
+            self.stop_list=[]
+            self.stopped_list=[]
+            self.save_flag=None
+            self.stop_flag=1
             self.add_flag=None
             self.thread_counter=0
             self.threadnum=np.arange(self.thread)
