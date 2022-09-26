@@ -39,7 +39,6 @@ class kernel:
         self.stop=None
         self.stop_flag=1
         self.save_epi=None
-        self.action_prob=0
         self.train_counter=0
         self.end_loss=None
         self.save_episode=save_episode
@@ -72,7 +71,7 @@ class kernel:
         return
     
     
-    def set_up(self,epsilon=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_num=None,criterion=None,end_loss=None):
+    def set_up(self,epsilon=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_num=None,criterion=None,end_loss=None,init=None):
         if epsilon!=None:
             self.epsilon=epsilon
         if episode_step!=None:
@@ -89,18 +88,19 @@ class kernel:
             self.criterion=criterion
         if end_loss!=None:
             self.end_loss=end_loss
-        self.episode=[]
-        self.state_pool=None
-        self.action_pool=None
-        self.next_state_pool=None
-        self.reward_pool=None
-        self.reward_list=[]
-        self.loss=0
-        self.loss_list=[]
-        self.sc=0
-        self.total_episode=0
-        self.time=0
-        self.total_time=0
+        if init==True:
+            self.episode=[]
+            self.state_pool=None
+            self.action_pool=None
+            self.next_state_pool=None
+            self.reward_pool=None
+            self.reward_list=[]
+            self.loss=0
+            self.loss_list=[]
+            self.sc=0
+            self.total_episode=0
+            self.time=0
+            self.total_time=0
         return
     
     
