@@ -1360,16 +1360,8 @@ class kernel:
                 return True
         else:
             if self.end():
-                if self.PO==1:
-                   self.thread_lock[2].acquire()
-                else:
-                    self.thread_lock[3].acquire()
                 self.save(self.total_epoch,True)
                 self.save_flag=True
-                if self.PO==1:
-                    self.thread_lock[2].release()
-                else:
-                    self.thread_lock[3].release()
                 self.stop_flag=0
                 return True
             elif self.stop_flag==2:
