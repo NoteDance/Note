@@ -402,10 +402,13 @@ class kernel:
                 except TypeError:
                     output,loss=self.nn.fp(data,labels)
         if self.stop==True:
-            if self.stop_func() or self.stop_flag==0:
+            if self.stop_flag==0 or self.stop_func():
                 return output,loss
         if self.PO==1:
             self.thread_lock[0].acquire()
+            if self.stop==True:
+                if self.stop_flag==0 or self.stop_func():
+                    pass
             try:
                 if self.nn.opt!=None:
                     pass
@@ -420,6 +423,9 @@ class kernel:
             self.thread_lock[0].release()
         else:
             self.thread_lock[0].acquire()
+            if self.stop==True:
+                if self.stop_flag==0 or self.stop_func():
+                    pass
             try:
                 if self.nn.opt!=None:
                     pass
@@ -429,6 +435,9 @@ class kernel:
                 self.gradient=self.nn.gradient(tape,loss,self.param)
             self.thread_lock[0].release()
             self.thread_lock[1].acquire()
+            if self.stop==True:
+                if self.stop_flag==0 or self.stop_func():
+                    pass
             try:
                 if self.nn.opt!=None:
                     pass
@@ -476,17 +485,23 @@ class kernel:
                 output=self.nn.fp(data.to(self.nn.device),t)
             loss=self.nn.loss(output,labels.to(self.nn.device))
             if self.stop==True:
-                if self.stop_func() or self.stop_flag==0:
+                if self.stop_flag==0 or self.stop_func():
                     return output,loss
             if self.PO==1:
                 try:
                     self.thread_lock[0].acquire()
+                    if self.stop==True:
+                        if self.stop_flag==0 or self.stop_func():
+                            pass
                     self.nn.opt.zero_grad()
                     loss.backward()
                     self.nn.opt.step()
                     self.thread_lock[0].release()
                 except:
                     self.thread_lock[0].acquire()
+                    if self.stop==True:
+                        if self.stop_flag==0 or self.stop_func():
+                            pass
                     try:
                         self.nn.opt(loss)
                     except:
@@ -502,7 +517,7 @@ class kernel:
             batches=int((self.shape0-self.shape0%batch)/batch)
             for j in range(batches):
                 if self.stop==True:
-                    if self.stop_func() or self.stop_flag==0:
+                    if self.stop_func():
                         return
                 self.suspend_func()
                 index1=j*batch
@@ -522,7 +537,7 @@ class kernel:
                         pass
             if self.shape0%batch!=0:
                 if self.stop==True:
-                    if self.stop_func() or self.stop_flag==0:
+                    if self.stop_func():
                         return
                 self.suspend_func()
                 batches+=1
@@ -780,9 +795,6 @@ class kernel:
                 self.thread_lock[2].release()
             return
         else:
-            if self.stop==True:
-                if self.stop_func() or self.stop_flag==0:
-                    return
             if t in self.stop_list:
                 return
             self.suspend_func(t)
