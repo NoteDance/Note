@@ -800,29 +800,13 @@ class kernel:
             if len(self.reward_list)>=self.trial_num:
                 avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
                 if self.criterion!=None and avg_reward>=self.criterion:
-                    if self.PN==True:
-                        self.thread_lock[4].acquire()
-                    else:
-                        self.thread_lock[2].acquire()
                     self.save(self.total_episode,True)
                     self.save_flag=True
-                    if self.PN==True:
-                        self.thread_lock[4].release()
-                    else:
-                        self.thread_lock[2].release()
                     self.stop_flag=0
                     return True
         elif self.end():
-            if self.PN==True:
-                self.thread_lock[4].acquire()
-            else:
-                self.thread_lock[2].acquire()
             self.save(self.total_episode,True)
             self.save_flag=True
-            if self.PN==True:
-                self.thread_lock[4].release()
-            else:
-                self.thread_lock[2].release()
             self.stop_flag=0
             return True
         elif self.stop_flag==2:
