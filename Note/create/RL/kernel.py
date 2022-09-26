@@ -467,11 +467,8 @@ class kernel:
     
     def opt(self,state_batch,action_batch,next_state_batch,reward_batch,done_batch):
         loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
-        if self.stop==True:
-            if self.stop_flag==0 or self.stop_func():
-                return loss
         self.thread_lock[1].acquire()
-        if self.stop==True:
+        if self.stop==True and self.stop_flag==1:
             if self.stop_flag==0 or self.stop_func():
                 pass
         self.nn.opt(loss)
@@ -526,6 +523,9 @@ class kernel:
         for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
             if t in self.stop_list:
                 return
+            if self.stop==True and self.stop_flag==2:
+                if self.stop_flag==0 or self.stop_func():
+                    return
             self.suspend_func(t)
             loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
             if self.stop_flag==0:
@@ -551,6 +551,9 @@ class kernel:
                 for j in range(batches):
                     if t in self.stop_list:
                         return
+                    if self.stop==True and self.stop_flag==2:
+                        if self.stop_flag==0 or self.stop_func():
+                            return
                     self.suspend_func(t)
                     self._train(t,j,batches,length)
                     if self.stop_flag==0:
@@ -822,7 +825,7 @@ class kernel:
                 self.thread_lock[2].release()
             self.stop_flag=0
             return True
-        elif self.stop_flag==1:
+        elif self.stop_flag==2:
             self.stop_flag=0
             return True
         return False
