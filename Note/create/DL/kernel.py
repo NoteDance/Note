@@ -419,12 +419,9 @@ class kernel:
                     loss=self.nn.loss(output,labels)
                 except TypeError:
                     output,loss=self.nn.fp(data,labels)
-        if self.stop==True:
-            if self.stop_flag==0 or self.stop_func():
-                return output,loss
         if self.PO==1:
             self.thread_lock[0].acquire()
-            if self.stop==True:
+            if self.stop==True and self.stop_flag==1:
                 if self.stop_flag==0 or self.stop_func():
                     pass
             try:
@@ -441,9 +438,6 @@ class kernel:
             self.thread_lock[0].release()
         else:
             self.thread_lock[0].acquire()
-            if self.stop==True:
-                if self.stop_flag==0 or self.stop_func():
-                    pass
             try:
                 if self.nn.opt!=None:
                     pass
@@ -453,7 +447,7 @@ class kernel:
                 self.gradient=self.nn.gradient(tape,loss,self.param)
             self.thread_lock[0].release()
             self.thread_lock[1].acquire()
-            if self.stop==True:
+            if self.stop==True and self.stop_flag==1:
                 if self.stop_flag==0 or self.stop_func():
                     pass
             try:
@@ -502,13 +496,10 @@ class kernel:
             except:
                 output=self.nn.fp(data.to(self.nn.device),t)
             loss=self.nn.loss(output,labels.to(self.nn.device))
-            if self.stop==True:
-                if self.stop_flag==0 or self.stop_func():
-                    return output,loss
             if self.PO==1:
                 try:
                     self.thread_lock[0].acquire()
-                    if self.stop==True:
+                    if self.stop==True and self.stop_flag==1:
                         if self.stop_flag==0 or self.stop_func():
                             pass
                     self.nn.opt.zero_grad()
@@ -517,7 +508,7 @@ class kernel:
                     self.thread_lock[0].release()
                 except:
                     self.thread_lock[0].acquire()
-                    if self.stop==True:
+                    if self.stop==True and self.stop_flag==1:
                         if self.stop_flag==0 or self.stop_func():
                             pass
                     try:
@@ -747,6 +738,9 @@ class kernel:
             for j in range(batches):
                 if t in self.stop_list:
                     return
+                if self.stop==True and self.stop_flag==2:
+                    if self.stop_flag==0 or self.stop_func():
+                        return
                 self.suspend_func(t)
                 index1=j*batch
                 index2=(j+1)*batch
@@ -763,6 +757,9 @@ class kernel:
             if self.shape0%batch!=0:
                 if t in self.stop_list:
                     return
+                if self.stop==True and self.stop_flag==2:
+                    if self.stop_flag==0 or self.stop_func():
+                        return
                 self.suspend_func(t)
                 batches+=1
                 index1=batches*batch
@@ -815,6 +812,9 @@ class kernel:
         else:
             if t in self.stop_list:
                 return
+            if self.stop==True and self.stop_flag==2:
+                if self.stop_flag==0 or self.stop_func():
+                    return
             self.suspend_func(t)
             batch_loss,batch_acc=self.train_(data_batch,labels_batch,batch,batches,test_batch,index1,index2,j,t)
             return
@@ -1325,7 +1325,7 @@ class kernel:
                 print('time:{0}s'.format(self.total_time))
                 self.stop_flag=0
                 return True
-            elif self.stop_flag==1:
+            elif self.stop_flag==2:
                 print('\nSystem have stopped training.')
                 self._time=self.time-int(self.time)
                 if self._time<0.5:
@@ -1372,7 +1372,7 @@ class kernel:
                     self.thread_lock[3].release()
                 self.stop_flag=0
                 return True
-            elif self.stop_flag==1:
+            elif self.stop_flag==2:
                 self.stop_flag=0
                 return True
         return False
