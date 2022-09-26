@@ -123,10 +123,29 @@ class kernel:
                     self.test_loss_list=[[] for _ in range(self.thread)]
                     self.test_acc_list=[[] for _ in range(self.thread)]
                 return
+        self.suspend=False
+        self.suspend_list=[]
+        self.suspended_list=[]
+        self.stop=None
+        self.stop_list=[]
+        self.stopped_list=[]
+        self.save_flag=None
+        self.stop_flag=1
+        self.training_flag=None
+        self.save_epoch=None
+        self.end_loss=None
+        self.end_acc=None
+        self.end_test_loss=None
+        self.end_test_acc=None
+        self.train_loss=None
+        self.train_acc=None
+        self.test_loss=None
+        self.test_acc=None
         self.train_loss_list.clear()
         self.train_acc_list.clear()
         self.test_loss_list.clear()
         self.test_acc_list.clear()
+        self.acc_flag='%'
         self.test_flag=False
         self.train_counter=0
         self.epoch=0
