@@ -305,9 +305,17 @@ class kernel:
             if self.nn.GradientTape!=None:
                 pass
             if self.thread==None:
-                tape,output,loss=self.nn.GradientTape(data,labels)
+                try:
+                    tape,output,loss=self.nn.GradientTape(data,labels)
+                except ValueError:
+                    output=None
+                    tape,loss=self.nn.GradientTape(data,labels)
             else:
-                tape,output,loss=self.nn.GradientTape(data,labels,t)
+                try:
+                    tape,output,loss=self.nn.GradientTape(data,labels,t)
+                except ValueError:
+                    output=None
+                    tape,loss=self.nn.GradientTape(data,labels,t)
         except AttributeError:
             with self.platform.GradientTape(persistent=True) as tape:
                 try:
@@ -318,9 +326,17 @@ class kernel:
                     loss=self.nn.loss(output,labels)
                 except TypeError:
                     if self.thread==None:
-                        output,loss=self.nn.fp(data,labels)
+                        try:
+                            output,loss=self.nn.fp(data,labels)
+                        except TypeError:
+                            output=None
+                            loss=self.nn.fp(data,labels)
                     else:
-                        output,loss=self.nn.fp(data,labels,t)
+                        try:
+                            output,loss=self.nn.fp(data,labels,t)
+                        except TypeError:
+                            output=None
+                            loss=self.nn.fp(data,labels,t)
         if self.ol==None:
             try:
                 if self.thread==None:
@@ -389,14 +405,22 @@ class kernel:
         try:
             if self.nn.GradientTape!=None:
                 pass
-            tape,output,loss=self.nn.GradientTape(data,labels)
+            try:
+                tape,output,loss=self.nn.GradientTape(data,labels)
+            except ValueError:
+                output=None
+                tape,loss=self.nn.GradientTape(data,labels)
         except AttributeError:
             with self.platform.GradientTape(persistent=True) as tape:
                 try:
                     output=self.nn.fp(data)
                     loss=self.nn.loss(output,labels)
                 except TypeError:
-                    output,loss=self.nn.fp(data,labels)
+                    try:
+                        output,loss=self.nn.fp(data,labels)
+                    except TypeError:
+                        output=None
+                        loss=self.nn.fp(data,labels)
         if self.PO==1:
             self.thread_lock[0].acquire()
             try:
