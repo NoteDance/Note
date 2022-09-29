@@ -94,12 +94,14 @@ neural network example:https://github.com/NoteDancing/Note-documentation/tree/ma
 
 **PO:2**
 
+**CPU:i5-8400**
+
 **GPU:GTX 1050 Ti**
 
 **Not use parallel optimization to train spending 15s,use parallel optimization to train spending 6.8s.**
 
-![1](https://github.com/7NoteDancing/Note-documentation/blob/main/1.png)
-![2](https://github.com/7NoteDancing/Note-documentation/blob/main/2.png)
+![1](https://github.com/NoteDancing/Note-documentation/blob/main/picture/time.png)
+![2](https://github.com/NoteDancing/Note-documentation/blob/main/picture/time(PO).png)
 
 **Use second parallel optimization to train on CIFAR10,speed was increased by more than 1.2 times,loss was reduced by 34 percent.**
 
@@ -113,7 +115,10 @@ neural network example:https://github.com/NoteDancing/Note-documentation/tree/ma
 
 **PO:2**
 
+**CPU:i5-8400**
+
 **GPU:GTX 1050 Ti**
+
 ## Multithreading：
 neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/DL/neural%20network
 
@@ -328,7 +333,7 @@ kernel.visualize_reward()
 ```
 
 ## Pool Net:
-![3](https://github.com/NoteDancing/Note-documentation/blob/main/Pool%20Net.png)
+![3](https://github.com/NoteDancing/Note-documentation/blob/main/picture/Pool%20Net.png)
 
 neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/RL/neural%20network
 ### list:
