@@ -253,7 +253,7 @@ class kernel:
                         if self.stop_func():
                             return
                     self.suspend_func()
-                    state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
+                    state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.batch)
                     batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
                     loss+=batch_loss
                     try:
@@ -265,7 +265,7 @@ class kernel:
                         if self.stop_func():
                             return
                     self.suspend_func()
-                    state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
+                    state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.batch)
                     batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
                     loss+=batch_loss
                     try:
@@ -339,6 +339,14 @@ class kernel:
                     a=(self.nn.actor(s)+self.nn.noise()).numpy()
                     next_s,r,done=self.nn.env(a)
                     self.pool(s,a,next_s,r,done)
+                try:
+                    if self.nn.pr!=None:
+                        self.nn.pr.TD=np.append(self.nn.pr.TD,self.nn.initial_TD)
+                    if len(self.state_pool)>self.pool_size:
+                        TD=np.array(0)
+                        self.nn.pr.TD=np.append(TD,self.nn.pr.TD[2:])
+                except AttributeError: 
+                    pass
                 self.reward=r+self.reward
                 loss=self._train()
                 self.sc+=1
@@ -403,6 +411,14 @@ class kernel:
                     a=(self.nn.actor(s)+self.nn.noise()).numpy()
                     next_s,r,done=self.nn.env(a)
                     self.pool(s,a,next_s,r,done)
+                try:
+                    if self.nn.pr!=None:
+                        self.nn.pr.TD=np.append(self.nn.pr.TD,self.nn.initial_TD)
+                    if len(self.state_pool)>self.pool_size:
+                        TD=np.array(0)
+                        self.nn.pr.TD=np.append(TD,self.nn.pr.TD[2:])
+                except AttributeError: 
+                    pass
                 self.reward=r+self.reward
                 loss=self._train()
                 self.sc+=1
