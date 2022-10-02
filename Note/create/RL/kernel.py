@@ -147,6 +147,12 @@ class kernel:
                 self.rank_one=np.array(0,dtype='int8')
             except AttributeError:
                 self.running_flag=np.array(0,dtype='int8')
+            try:
+                if self.nn.pr!=None:
+                    self.nn.pr.TD=[]
+                    self.nn.pr.index=[]
+            except AttributeError:
+                pass
             self.PN=True
             self.episode=[]
             self.epsilon=[]
@@ -481,7 +487,8 @@ class kernel:
             try:
                 if self.nn.data_func!=None:
                     pass
-                state_batch,action_batch,next_state_batch,reward_batch=self.nn.data_func(self.state_pool[t],self.action_pool[t],self.next_state_pool[t],self.reward_pool[t],self.done_pool[t],self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
+                state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool[t],self.action_pool[t],self.next_state_pool[t],self.reward_pool[t],self.done_pool[t],self.batch,t)
+                loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t)
             except AttributeError:
                 index1=batches*self.batch
                 index2=self.batch-(length-batches*self.batch)
@@ -490,7 +497,7 @@ class kernel:
                 next_state_batch=np.concatenate((self.next_state_pool[t][index1:length],self.next_state_pool[t][:index2]),0)
                 reward_batch=np.concatenate((self.reward_pool[t][index1:length],self.reward_pool[t][:index2]),0)
                 done_batch=np.concatenate((self.done_pool[t][index1:length],self.done_pool[t][:index2]),0)
-            loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
+                loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
             self.loss[t]+=loss
             try:
                 self.nn.bc[t]+=1
@@ -500,7 +507,8 @@ class kernel:
         try:
             if self.nn.data_func!=None:
                 pass
-            state_batch,action_batch,next_state_batch,reward_batch=self.nn.data_func(self.state_pool[t],self.action_pool[t],self.next_state_pool[t],self.reward_pool[t],self.done_pool[t],self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
+            state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool[t],self.action_pool[t],self.next_state_pool[t],self.reward_pool[t],self.done_pool[t],self.batch,t)
+            loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t)
         except AttributeError:
             index1=j*self.batch
             index2=(j+1)*self.batch
@@ -615,6 +623,12 @@ class kernel:
                 self.rank_probability.append(None)
             except AttributeError:
                 self.running_flag=np.append(self.running_flag,np.array(1,dtype='int8'))
+            try:
+                if self.nn.pr!=None:
+                    self.nn.pr.TD.append(np.array(0))
+                    self.nn.pr.index.append(None)
+            except AttributeError:
+                pass
             self.thread_counter+=1
             try:
                 self.nn.ec.append(0)
