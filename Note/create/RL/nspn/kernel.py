@@ -77,6 +77,11 @@ class kernel:
         if end_loss!=None:
             self.end_loss=end_loss
         if init==True:
+            try:
+                if self.nn.pr!=None:
+                    self.nn.pr.TD=np.array(0)
+            except AttributeError:
+                pass
             self.suspend=False
             self.stop=None
             self.stop_flag=1
