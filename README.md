@@ -123,7 +123,7 @@ neural network example:https://github.com/NoteDancing/Note-documentation/tree/ma
 
 
 ## Multithreading：
-**Note use multithreading parallel forward propagation and optimize neural network.**
+**Note uses multithreading parallel forward propagation and optimizes neural network.**
 
 neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/DL/neural%20network
 
