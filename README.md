@@ -78,7 +78,7 @@ Note have two types of parallel optimization:
 1. not parallel computing gradient and optimizing.(kernel.PO=1)
 2. parallel computing gradient and optimizing.(kernel.PO=2)
 
-parallel optimization may cause training instability but it can make the loss function jump out of the local minimum.
+parallel optimization may cause unstable training but it can make the loss function jump out of the local minimum.
 
 neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/DL/neural%20network
 
@@ -120,6 +120,8 @@ neural network example:https://github.com/NoteDancing/Note-documentation/tree/ma
 **GPU:GTX 1050 Ti**
 
 ## Multithreading:
+**Note can speed up training by multithreading and has stop mechanism to resolve unstable training.**
+
 **Note uses multithreading parallel forward propagation and optimizes neural network.**
 
 neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/DL/neural%20network
