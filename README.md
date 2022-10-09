@@ -169,6 +169,7 @@ kernel.restore('save.dat')     #restore neural network
 kernel.data(x_train,y_train)   #input you data,if you have test data can transfer to kernel API data()
                                #data can be a list,[data1,data2,...,datan]
 kernel.add_thread(2)
+kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock()]
 class thread(threading.Thread):
 	def run(self):
 		kernel.train(32,1)
