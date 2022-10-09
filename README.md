@@ -346,7 +346,7 @@ example:
 import Note.create.RL.kernel as k   #import kernel
 import DQN as d
 dqn=d.DQN(4,128,2)                               #create neural network object
-thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock()]
+kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock()]
 kernel=k.kernel(dqn,5,thread_lock)   #start kernel
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
 kernel.action_init(2)
@@ -371,7 +371,7 @@ example:
 import Note.create.RL.kernel as k   #import kernel
 import DQN as d
 dqn=d.DQN(4,128,2)                               #create neural network object
-thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock()]
+kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock()]
 kernel=k.kernel(dqn,5,thread_lock)   #start kernel
 kernel.stop=True
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10,trial_num=10,criterion=200)
@@ -396,7 +396,7 @@ example:
 import Note.create.RL.kernel as k   #import kernel
 import DQNm as d
 dqn=d.DQN(4,128,2)                               #create neural network object
-thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock()]
+kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock()]
 kernel=k.kernel(dqn,6,thread_lock)   #start kernel
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
 kernel.action_init(2)
