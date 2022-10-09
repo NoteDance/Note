@@ -521,6 +521,8 @@ class kernel:
         except IndexError:
             print('\nError,please add thread.')
             return
+        if t in self.finish_list:
+            return
         while self.state_pool!=None and len(self.state_pool)<t:
             pass
         if self.state_pool!=None and len(self.state_pool)==t:
@@ -745,6 +747,7 @@ class kernel:
             pickle.dump(self.episode,episode_file)
             episode_file.close()
         pickle.dump(self.nn,output_file)
+        pickle.dump(self.thread,output_file)
         pickle.dump(self.state_pool,output_file)
         pickle.dump(self.action_pool,output_file)
         pickle.dump(self.next_state_pool,output_file)
@@ -788,6 +791,10 @@ class kernel:
             self.nn.km=1
         except AttributeError:
             pass
+        self.thread=pickle.load(input_file)
+        if self.thread!=None:
+            self.threadnum=np.arange(self.thread)
+            self.threadnum=list(self.threadnum)
         self.state_pool=pickle.load(input_file)
         self.action_pool=pickle.load(input_file)
         self.next_state_pool=pickle.load(input_file)
