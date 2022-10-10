@@ -38,6 +38,7 @@ class kernel:
         self.save_flag=None
         self.stop_flag=1
         self.add_flag=None
+        self.continuance_flag=False
         self.end_loss=None
         self.thread=thread
         self.thread_counter=0
@@ -64,7 +65,6 @@ class kernel:
         self.save_episode=save_episode
         self.reward_list=[]
         self.loss_list=[]
-        self.continuance_flag=False
         self.total_episode=0
         self.total_time=0
     
