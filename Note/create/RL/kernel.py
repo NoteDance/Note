@@ -879,6 +879,7 @@ class kernel:
             episode_file.close()
         pickle.dump(self.nn,output_file)
         pickle.dump(self.thread,output_file)
+        pickle.dump(self.finish_list,output_file)
         pickle.dump(self.state_pool,output_file)
         pickle.dump(self.action_pool,output_file)
         pickle.dump(self.next_state_pool,output_file)
@@ -903,7 +904,6 @@ class kernel:
         pickle.dump(self.row_one,output_file)
         pickle.dump(self.row_probability,output_file)
         pickle.dump(self.rank_probability,output_file)
-        pickle.dump(self.finish_list,output_file)
         pickle.dump(self.PN,output_file)
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.reward_list,output_file)
@@ -928,7 +928,8 @@ class kernel:
         except AttributeError:
             pass
         self.thread=pickle.load(input_file)
-        if self.thread!=None:
+        self.finish_list=pickle.load(input_file)
+        if self.thread!=None and self.thread!=len(self.finish_list):
             self.threadnum=np.arange(self.thread)
             self.threadnum=list(self.threadnum)
         self.state_pool=pickle.load(input_file)
@@ -955,7 +956,6 @@ class kernel:
         self.row_one=pickle.load(input_file)
         self.row_probability=pickle.load(input_file)
         self.rank_probability=pickle.load(input_file)
-        self.finish_list=pickle.load(input_file)
         self.PN=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
         self.reward_list=pickle.load(input_file)
