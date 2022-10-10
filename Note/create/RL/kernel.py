@@ -37,6 +37,7 @@ class kernel:
         self.stop=None
         self.save_flag=None
         self.stop_flag=1
+        self.continuance_flag=False
         self.end_loss=None
         self.thread=thread
         self.thread_counter=0
@@ -48,6 +49,7 @@ class kernel:
         self.save_episode=save_episode
         self.reward_list=[]
         self.loss_list=[]
+        self.continuance_flag=False
         self.total_episode=0
         self.total_time=0
     
@@ -748,7 +750,6 @@ class kernel:
             episode_file.close()
         pickle.dump(self.nn,output_file)
         pickle.dump(self.thread,output_file)
-        pickle.dump(self.finish_list,output_file)
         pickle.dump(self.state_pool,output_file)
         pickle.dump(self.action_pool,output_file)
         pickle.dump(self.next_state_pool,output_file)
@@ -793,8 +794,7 @@ class kernel:
         except AttributeError:
             pass
         self.thread=pickle.load(input_file)
-        self.finish_list=pickle.load(input_file)
-        if self.thread!=None and self.thread!=len(self.finish_list):
+        if self.continuance_flag==True:
             self.threadnum=np.arange(self.thread)
             self.threadnum=list(self.threadnum)
         self.state_pool=pickle.load(input_file)
