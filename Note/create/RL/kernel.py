@@ -951,7 +951,6 @@ class kernel:
                     self.finish_list[index]=index
                     if index not in self.threadnum:
                         self.threadnum.append(index)
-                    self.pool_lock[index]=self.threading.Lock()
                 except ValueError:
                     break
         self.state_pool=pickle.load(input_file)
