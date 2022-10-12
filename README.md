@@ -2,7 +2,7 @@
 
 
 # documentation:
-https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation
+https://github.com/NoteDancing/Note-documentation/tree/main/Note%20pv%20documentation
 
 
 # Introduction:
@@ -12,7 +12,7 @@ Note is an AI system that have kernel for deep learning and reinforcement learni
 # Deep Learning:
 If you done your neural network,you can use kernel to train.
 
-neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/DL/neural%20network
+neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%20pv%20documentation/DL/neural%20network
 
 example:
 ```python
@@ -80,7 +80,7 @@ Note have two types of parallel optimization:
 
 parallel optimization may cause unstable training but it can make the loss function jump out of the local minimum.
 
-neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/DL/neural%20network
+neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%20pv%20documentation/DL/neural%20network
 
 **Use second parallel optimization to train on MNIST,speed was increased by more than 2 times!**
 
@@ -100,8 +100,8 @@ neural network example:https://github.com/NoteDancing/Note-documentation/tree/ma
 
 **Not use parallel optimization to train spending 15s,use parallel optimization to train spending 6.8s.**
 
-![1](https://github.com/NoteDancing/Note-documentation/blob/main/picture/time.png)
-![2](https://github.com/NoteDancing/Note-documentation/blob/main/picture/time(PO).png)
+![1](https://github.com/NoteDancing/Note-documentation/blob/main/Note%20pv%20documentation/picture/time.png)
+![2](https://github.com/NoteDancing/Note-documentation/blob/main/Note%20pv%20documentation/picture/time(PO).png)
 
 **Use second parallel optimization to train on CIFAR10,speed was increased by more than 1.2 times,loss was reduced by 34 percent.**
 
@@ -124,7 +124,7 @@ neural network example:https://github.com/NoteDancing/Note-documentation/tree/ma
 
 **Note uses multithreading parallel forward propagation and optimizes neural network.**
 
-neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/DL/neural%20network
+neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%20pv%20documentation/DL/neural%20network
 
 example:
 ```python
@@ -283,7 +283,7 @@ kernel.visualize_train()
 
 
 # Reinforcement Learning:
-neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/RL/neural%20network
+neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%20pv%20documentation/RL/neural%20network
 
 example:
 
@@ -338,15 +338,16 @@ kernel.visualize_reward()
 ```
 
 ## Pool Net:
-![3](https://github.com/NoteDancing/Note-documentation/blob/main/picture/Pool%20Net.png)
+![3](https://github.com/NoteDancing/Note-documentation/blob/main/Note%20pv%20documentation/picture/Pool%20Net.png)
 
-neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/RL/neural%20network
+neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%20pv%20documentation/RL/neural%20network
 ### list:
 example:
 ```python
 import Note.create.RL.kernel as k   #import kernel
 import DQN as d
 dqn=d.DQN(4,128,2)                               #create neural network object
+kernel.threading=threading
 kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock()]
 kernel=k.kernel(dqn,5,thread_lock)   #start kernel
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
@@ -372,6 +373,7 @@ example:
 import Note.create.RL.kernel as k   #import kernel
 import DQN as d
 dqn=d.DQN(4,128,2)                               #create neural network object
+kernel.threading=threading
 kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock()]
 kernel=k.kernel(dqn,5,thread_lock)   #start kernel
 kernel.stop=True
@@ -397,6 +399,7 @@ example:
 import Note.create.RL.kernel as k   #import kernel
 import DQNm as d
 dqn=d.DQN(4,128,2)                               #create neural network object
+kernel.threading=threading
 kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock()]
 kernel=k.kernel(dqn,6,thread_lock)   #start kernel
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
@@ -417,7 +420,7 @@ kernel.visualize_reward()
 
 
 # Note Compiler:
-documentation:https://github.com/7NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/compiler
+documentation:https://github.com/NoteDancing/Note-documentation/tree/main/Note%20pv%20documentation/compiler
 ```python
 import Note.create.nc as nc
 c=nc.compiler('nn.n')
