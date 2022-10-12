@@ -18,6 +18,7 @@ class kernel:
             self.reward=np.zeros(thread)
             self.loss=np.zeros(thread)
             self.sc=np.zeros(thread)
+        self.threading=None
         self.state_pool=[]
         self.action_pool=[]
         self.next_state_pool=[]
@@ -43,6 +44,7 @@ class kernel:
         self.thread=thread
         self.thread_counter=0
         self.thread_lock=thread_lock
+        self.pool_lock={}
         self.probability_list=[]
         self.running_flag_list=[]
         self.index_matrix=[]
@@ -263,7 +265,10 @@ class kernel:
     
     def pool(self,s,a,next_s,r,done,i,index):
         if self.PN==True:
-            self.thread_lock[0].acquire()
+            if self.threading!=None:
+                self.pool_lock[index].acquire()
+            else:
+                self.thread_lock[0].acquire()
             if self.state_pool[index]==None and type(self.state_pool[index])!=np.ndarray:
                 self.state_pool[index]=s
                 if len(a.shape)==1:
@@ -291,7 +296,10 @@ class kernel:
                 self.next_state_pool[index]=self.next_state_pool[index][1:]
                 self.reward_pool[index]=self.reward_pool[index][1:]
                 self.done_pool[index]=self.done_pool[index][1:]
-            self.thread_lock[0].release()
+            if self.threading!=None:
+                self.pool_lock[index].release()
+            else:
+                self.thread_lock[0].release()
         else:
             if self.state_pool[i]==None and type(self.state_pool[i])!=np.ndarray:
                 self.state_pool[i]=s
@@ -633,6 +641,7 @@ class kernel:
             except AttributeError:
                 pass
             self.thread_counter+=1
+            self.finish_list.append(None)
             try:
                 self.nn.ec.append(0)
             except AttributeError:
@@ -645,6 +654,11 @@ class kernel:
                 self.thread_lock[3].release()
             else:
                 self.thread_lock[0].release()
+        if self.threading!=None:
+            self.thread_lock[3].acquire()
+        self.pool_lock[t]=self.threading.Lock()
+        if self.threading!=None:
+            self.thread_lock[3].release()
         for k in range(episode_num):
             episode=[]
             s=self.nn.env(initial=True)
@@ -787,7 +801,7 @@ class kernel:
                 self.running_flag[t+1]=0
             self.thread_lock[3].acquire()
             if t not in self.finish_list:
-                self.finish_list.append(t)
+                self.finish_list[t]=t
             self.thread_counter-=1
             self.thread_lock[3].release()
             self.state_pool[t]=None
@@ -880,6 +894,7 @@ class kernel:
             episode_file.close()
         pickle.dump(self.nn,output_file)
         pickle.dump(self.thread,output_file)
+        pickle.dump(self.finish_list,output_file)
         pickle.dump(self.state_pool,output_file)
         pickle.dump(self.action_pool,output_file)
         pickle.dump(self.next_state_pool,output_file)
@@ -904,7 +919,6 @@ class kernel:
         pickle.dump(self.row_one,output_file)
         pickle.dump(self.row_probability,output_file)
         pickle.dump(self.rank_probability,output_file)
-        pickle.dump(self.finish_list,output_file)
         pickle.dump(self.PN,output_file)
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.reward_list,output_file)
@@ -929,9 +943,17 @@ class kernel:
         except AttributeError:
             pass
         self.thread=pickle.load(input_file)
+        self.finish_list=pickle.load(input_file)
         if self.continuance_flag==True:
-            self.threadnum=np.arange(self.thread)
-            self.threadnum=list(self.threadnum)
+            while True:
+                try:
+                    index=self.finish_list.index(0)
+                    self.finish_list[index]=index
+                    if index not in self.threadnum:
+                        self.threadnum.append(index)
+                    self.pool_lock[index]=self.threading.Lock()
+                except ValueError:
+                    break
         self.state_pool=pickle.load(input_file)
         self.action_pool=pickle.load(input_file)
         self.next_state_pool=pickle.load(input_file)
@@ -956,7 +978,6 @@ class kernel:
         self.row_one=pickle.load(input_file)
         self.row_probability=pickle.load(input_file)
         self.rank_probability=pickle.load(input_file)
-        self.finish_list=pickle.load(input_file)
         self.PN=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
         self.reward_list=pickle.load(input_file)
