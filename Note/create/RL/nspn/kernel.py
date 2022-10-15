@@ -119,36 +119,32 @@ class kernel:
         while True:
             try:
                 if self.nn.nn!=None:
-                    pass
-                try:
-                    if self.nn.env!=None:
-                        pass
                     try:
-                        if self.nn.action!=None:
-                            pass
-                        s=np.expand_dims(s,axis=0)
-                        a=self.nn.action(s)
+                        if self.nn.env!=None:
+                            try:
+                                if self.nn.action!=None:
+                                    s=np.expand_dims(s,axis=0)
+                                    a=self.nn.action(s)
+                            except AttributeError:
+                                s=np.expand_dims(s,axis=0)
+                                a=np.argmax(self.nn.nn(s)).numpy()
+                            if self.action_name==None:
+                                next_s,r,done=self.nn.env(a)
+                            else:
+                                next_s,r,done=self.nn.env(self.action_name[a])
                     except AttributeError:
-                        s=np.expand_dims(s,axis=0)
                         a=np.argmax(self.nn.nn(s)).numpy()
-                    if self.action_name==None:
-                        next_s,r,done=self.nn.env(a)
-                    else:
-                        next_s,r,done=self.nn.env(self.action_name[a])
-                except AttributeError:
-                    a=np.argmax(self.nn.nn(s)).numpy()
-                    next_s,r,done=self.nn.transition(self.state_name[s],self.action_name[a])
+                        next_s,r,done=self.nn.transition(self.state_name[s],self.action_name[a])
             except AttributeError:
                 try:
                     if self.nn.env!=None:
-                        pass
-                    if self.state_name==None:
-                        s=np.expand_dims(s,axis=0)
-                        a=self.nn.actor(s).numpy()
-                    else:
-                        a=self.nn.actor(self.state[self.state_name[s]]).numpy()
-                    a=np.squeeze(a)
-                    next_s,r,done=self.nn.env(a)
+                        if self.state_name==None:
+                            s=np.expand_dims(s,axis=0)
+                            a=self.nn.actor(s).numpy()
+                        else:
+                            a=self.nn.actor(self.state[self.state_name[s]]).numpy()
+                        a=np.squeeze(a)
+                        next_s,r,done=self.nn.env(a)
                 except AttributeError:
                     a=self.nn.actor(self.state[self.state_name[s]]).numpy()
                     a=np.squeeze(a)
@@ -252,31 +248,30 @@ class kernel:
                 batches+=1
             try:
                 if self.nn.data_func!=None:
-                    pass
-                for j in range(batches):
-                    if self.stop==True:
-                        if self.stop_func():
-                            return
-                    self.suspend_func()
-                    state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.batch)
-                    batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
-                    loss+=batch_loss
-                    try:
-                        self.nn.bc=j
-                    except AttributeError:
-                        pass
-                if len(self.state_pool)%self.batch!=0:
-                    if self.stop==True:
-                        if self.stop_func():
-                            return
-                    self.suspend_func()
-                    state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.batch)
-                    batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
-                    loss+=batch_loss
-                    try:
-                        self.nn.bc+=1
-                    except AttributeError:
-                        pass
+                    for j in range(batches):
+                        if self.stop==True:
+                            if self.stop_func():
+                                return
+                        self.suspend_func()
+                        state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.batch)
+                        batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
+                        loss+=batch_loss
+                        try:
+                            self.nn.bc=j
+                        except AttributeError:
+                            pass
+                    if len(self.state_pool)%self.batch!=0:
+                        if self.stop==True:
+                            if self.stop_func():
+                                return
+                        self.suspend_func()
+                        state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.batch)
+                        batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
+                        loss+=batch_loss
+                        try:
+                            self.nn.bc+=1
+                        except AttributeError:
+                            pass
             except AttributeError:
                 j=0
                 train_ds=tf_data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).shuffle(len(self.state_pool)).batch(self.batch)
@@ -314,31 +309,27 @@ class kernel:
                 t1=time.time()
                 try:
                     if self.nn.nn!=None:
-                        pass
-                    s=np.expand_dims(s,axis=0)
-                    if self.epsilon==None:
-                        self.epsilon=self.nn.epsilon(self.sc)
-                    try:
-                        if self.nn.action!=None:
-                            pass
-                        a=self.nn.action(s)
+                        s=np.expand_dims(s,axis=0)
+                        if self.epsilon==None:
+                            self.epsilon=self.nn.epsilon(self.sc)
+                        try:
+                            if self.nn.action!=None:
+                                a=self.nn.action(s)
+                                try:
+                                    if self.nn.discriminator!=None:
+                                        reward=self.nn.discriminator(s,a)
+                                        s=np.squeeze(s)
+                                except AttributeError:
+                                    pass
+                        except AttributeError:
+                            action_prob=self.epsilon_greedy_policy(s,self.action_one)
+                            a=np.random.choice(self.action_num,p=action_prob)
+                        next_s,r,done=self.nn.env(a)
                         try:
                             if self.nn.discriminator!=None:
-                                pass
-                            reward=self.nn.discriminator(s,a)
-                            s=np.squeeze(s)
+                                self.pool(s,a,next_s,reward,done)
                         except AttributeError:
-                            pass
-                    except AttributeError:
-                        action_prob=self.epsilon_greedy_policy(s,self.action_one)
-                        a=np.random.choice(self.action_num,p=action_prob)
-                    next_s,r,done=self.nn.env(a)
-                    try:
-                        if self.nn.discriminator!=None:
-                            pass
-                        self.pool(s,a,next_s,reward,done)
-                    except AttributeError:
-                        self.pool(s,a,next_s,r,done)
+                            self.pool(s,a,next_s,r,done)
                 except AttributeError:
                     s=np.expand_dims(s,axis=0)
                     a=(self.nn.actor(s)+self.nn.noise()).numpy()
@@ -386,31 +377,27 @@ class kernel:
                 t1=time.time()
                 try:
                     if self.nn.nn!=None:
-                        pass
-                    s=np.expand_dims(s,axis=0)
-                    if self.epsilon==None:
-                        self.epsilon=self.nn.epsilon(self.sc)
-                    try:
-                        if self.nn.action!=None:
-                            pass
-                        a=self.nn.action(s)
+                        s=np.expand_dims(s,axis=0)
+                        if self.epsilon==None:
+                            self.epsilon=self.nn.epsilon(self.sc)
+                        try:
+                            if self.nn.action!=None:
+                                a=self.nn.action(s)
+                                try:
+                                    if self.nn.discriminator!=None:
+                                        reward=self.nn.discriminator(s,a)
+                                        s=np.squeeze(s)
+                                except AttributeError:
+                                    pass
+                        except AttributeError:
+                            action_prob=self.epsilon_greedy_policy(s,self.action_one)
+                            a=np.random.choice(self.action_num,p=action_prob)
+                        next_s,r,done=self.nn.env(a)
                         try:
                             if self.nn.discriminator!=None:
-                                pass
-                            reward=self.nn.discriminator(s,a)
-                            s=np.squeeze(s)
+                                self.pool(s,a,next_s,reward,done)
                         except AttributeError:
-                            pass
-                    except AttributeError:
-                        action_prob=self.epsilon_greedy_policy(s,self.action_one)
-                        a=np.random.choice(self.action_num,p=action_prob)
-                    next_s,r,done=self.nn.env(a)
-                    try:
-                        if self.nn.discriminator!=None:
-                            pass
-                        self.pool(s,a,next_s,reward,done)
-                    except AttributeError:
-                        self.pool(s,a,next_s,r,done)
+                            self.pool(s,a,next_s,r,done)
                 except AttributeError:
                     s=np.expand_dims(s,axis=0)
                     a=(self.nn.actor(s)+self.nn.noise()).numpy()
