@@ -56,9 +56,8 @@ class kernel:
         self.finish_list=[]
         try:
             if self.nn.row!=None:
-                pass
-            self.row_one=np.array(0,dtype='int8')
-            self.rank_one=np.array(0,dtype='int8')
+                self.row_one=np.array(0,dtype='int8')
+                self.rank_one=np.array(0,dtype='int8')
         except AttributeError:
             self.running_flag=np.array(0,dtype='int8')
         self.PN=True
@@ -143,9 +142,8 @@ class kernel:
             self.finish_list=[]
             try:
                 if self.nn.row!=None:
-                    pass
-                self.row_one=np.array(0,dtype='int8')
-                self.rank_one=np.array(0,dtype='int8')
+                    self.row_one=np.array(0,dtype='int8')
+                    self.rank_one=np.array(0,dtype='int8')
             except AttributeError:
                 self.running_flag=np.array(0,dtype='int8')
             try:
@@ -189,36 +187,32 @@ class kernel:
         while True:
             try:
                 if self.nn.nn!=None:
-                    pass
-                try:
-                    if self.nn.env!=None:
-                        pass
                     try:
-                        if self.nn.action!=None:
-                            pass
-                        s=np.expand_dims(s,axis=0)
-                        a=self.nn.action(s)
+                        if self.nn.env!=None:
+                            try:
+                                if self.nn.action!=None:
+                                    s=np.expand_dims(s,axis=0)
+                                    a=self.nn.action(s)
+                            except AttributeError:
+                                s=np.expand_dims(s,axis=0)
+                                a=np.argmax(self.nn.nn(s)).numpy()
+                            if self.action_name==None:
+                                next_s,r,done=self.nn.env(a)
+                            else:
+                                next_s,r,done=self.nn.env(self.action_name[a])
                     except AttributeError:
-                        s=np.expand_dims(s,axis=0)
                         a=np.argmax(self.nn.nn(s)).numpy()
-                    if self.action_name==None:
-                        next_s,r,done=self.nn.env(a)
-                    else:
-                        next_s,r,done=self.nn.env(self.action_name[a])
-                except AttributeError:
-                    a=np.argmax(self.nn.nn(s)).numpy()
-                    next_s,r,done=self.nn.transition(self.state_name[s],self.action_name[a])
+                        next_s,r,done=self.nn.transition(self.state_name[s],self.action_name[a])
             except AttributeError:
                 try:
                     if self.nn.env!=None:
-                        pass
-                    if self.state_name==None:
-                        s=np.expand_dims(s,axis=0)
-                        a=self.nn.actor(s).numpy()
-                    else:
-                        a=self.nn.actor(self.state[self.state_name[s]]).numpy()
-                    a=np.squeeze(a)
-                    next_s,r,done=self.nn.env(a)
+                        if self.state_name==None:
+                            s=np.expand_dims(s,axis=0)
+                            a=self.nn.actor(s).numpy()
+                        else:
+                            a=self.nn.actor(self.state[self.state_name[s]]).numpy()
+                        a=np.squeeze(a)
+                        next_s,r,done=self.nn.env(a)
                 except AttributeError:
                     a=self.nn.actor(self.state[self.state_name[s]]).numpy()
                     a=np.squeeze(a)
@@ -361,35 +355,34 @@ class kernel:
         if self.PN==True:
             try:
                 if self.nn.row!=None:
-                    pass
-                while True:
-                    row_sum=np.sum(self.row_one)
-                    if self.row_sum_list[i]==None:
-                        self.row_sum_list[i]=row_sum
-                    if self.row_sum_list[i]==row_sum:
-                        row_index=np.random.choice(self.nn.row,p=self.row_probability[i])-1
-                    else:
-                        self.row_sum_list[i]=row_sum
-                        self.row_probability[i]=self.row_one/row_sum
-                        row_index=np.random.choice(self.nn.row,p=self.row_probability[i])-1
-                    rank_sum=np.sum(self.one_matrix[row_index])
-                    if rank_sum==0:
-                        self.row_one[row_index]=0
-                        continue
-                    if self.rank_sum_list[i]==None:
-                       self.rank_sum_list[i]=rank_sum
-                    if self.rank_sum_list[i]==rank_sum:
-                        rank_index=np.random.choice(self.nn.rank,p=self.rank_probability[i])-1
-                    else:
-                        self.rank_sum_list[i]=rank_sum
-                        self.rank_probability[i]=self.one_matrix[row_index]/rank_sum
-                        rank_index=np.random.choice(self.nn.rank,p=self.rank_probability[i])-1
-                    index=self.index_matrix[row_index][rank_index]
-                    if index in self.finish_list:
-                        self.one_matrix[row_index][rank_index]=0
-                        continue
-                    else:
-                        break
+                    while True:
+                        row_sum=np.sum(self.row_one)
+                        if self.row_sum_list[i]==None:
+                            self.row_sum_list[i]=row_sum
+                        if self.row_sum_list[i]==row_sum:
+                            row_index=np.random.choice(self.nn.row,p=self.row_probability[i])-1
+                        else:
+                            self.row_sum_list[i]=row_sum
+                            self.row_probability[i]=self.row_one/row_sum
+                            row_index=np.random.choice(self.nn.row,p=self.row_probability[i])-1
+                        rank_sum=np.sum(self.one_matrix[row_index])
+                        if rank_sum==0:
+                            self.row_one[row_index]=0
+                            continue
+                        if self.rank_sum_list[i]==None:
+                           self.rank_sum_list[i]=rank_sum
+                        if self.rank_sum_list[i]==rank_sum:
+                            rank_index=np.random.choice(self.nn.rank,p=self.rank_probability[i])-1
+                        else:
+                            self.rank_sum_list[i]=rank_sum
+                            self.rank_probability[i]=self.one_matrix[row_index]/rank_sum
+                            rank_index=np.random.choice(self.nn.rank,p=self.rank_probability[i])-1
+                        index=self.index_matrix[row_index][rank_index]
+                        if index in self.finish_list:
+                            self.one_matrix[row_index][rank_index]=0
+                            continue
+                        else:
+                            break
             except AttributeError:
                 while len(self.running_flag_list)<i:
                     pass
@@ -424,25 +417,22 @@ class kernel:
     def env(self,s,epsilon,t):
         try:
             if self.nn.nn!=None:
-                pass
-            s=np.expand_dims(s,axis=0)
-            if self.epsilon==None:
-                self.epsilon[t]=self.nn.epsilon(self.sc[t],t)
-            try:
-                if self.nn.action!=None:
-                    pass
-                a=self.nn.action(s)
+                s=np.expand_dims(s,axis=0)
+                if self.epsilon==None:
+                    self.epsilon[t]=self.nn.epsilon(self.sc[t],t)
                 try:
-                    if self.nn.discriminator!=None:
-                        pass
-                    reward=self.nn.discriminator(s,a)
-                    s=np.squeeze(s)
+                    if self.nn.action!=None:
+                        a=self.nn.action(s)
+                        try:
+                            if self.nn.discriminator!=None:
+                                reward=self.nn.discriminator(s,a)
+                                s=np.squeeze(s)
+                        except AttributeError:
+                            pass
                 except AttributeError:
-                    pass
-            except AttributeError:
-                action_prob=self.epsilon_greedy_policy(s,self.action_one)
-                a=np.random.choice(self.action_num,p=action_prob)
-            next_s,r,done=self.nn.env(a)
+                    action_prob=self.epsilon_greedy_policy(s,self.action_one)
+                    a=np.random.choice(self.action_num,p=action_prob)
+                next_s,r,done=self.nn.env(a)
         except AttributeError:
             s=np.expand_dims(s,axis=0)
             a=(self.nn.actor(s)+self.nn.noise()).numpy()
@@ -450,8 +440,7 @@ class kernel:
         index=self.index(t)
         try:
             if self.nn.discriminator!=None:
-                pass
-            self.pool(s,a,next_s,reward,done,t,index)
+                self.pool(s,a,next_s,reward,done,t,index)
         except AttributeError:
             self.pool(s,a,next_s,r,done,t,index)
         if self.save_episode==True:
@@ -487,9 +476,8 @@ class kernel:
         if length%self.batch!=0:
             try:
                 if self.nn.data_func!=None:
-                    pass
-                state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool[t],self.action_pool[t],self.next_state_pool[t],self.reward_pool[t],self.done_pool[t],self.batch,t)
-                loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t)
+                    state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool[t],self.action_pool[t],self.next_state_pool[t],self.reward_pool[t],self.done_pool[t],self.batch,t)
+                    loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t)
             except AttributeError:
                 index1=batches*self.batch
                 index2=self.batch-(length-batches*self.batch)
@@ -507,9 +495,8 @@ class kernel:
             return
         try:
             if self.nn.data_func!=None:
-                pass
-            state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool[t],self.action_pool[t],self.next_state_pool[t],self.reward_pool[t],self.done_pool[t],self.batch,t)
-            loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t)
+                state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool[t],self.action_pool[t],self.next_state_pool[t],self.reward_pool[t],self.done_pool[t],self.batch,t)
+                loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t)
         except AttributeError:
             index1=j*self.batch
             index2=(j+1)*self.batch
@@ -618,12 +605,11 @@ class kernel:
             self.reward_pool.append(None)
             try:
                 if self.nn.row!=None:
-                    pass
-                self.index_m(t)
-                self.row_sum_list.append(None)
-                self.rank_sum_list.append(None)
-                self.row_probability.append(None)
-                self.rank_probability.append(None)
+                    self.index_m(t)
+                    self.row_sum_list.append(None)
+                    self.rank_sum_list.append(None)
+                    self.row_probability.append(None)
+                    self.rank_probability.append(None)
             except AttributeError:
                 self.running_flag=np.append(self.running_flag,np.array(1,dtype='int8'))
             try:
