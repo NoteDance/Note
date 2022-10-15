@@ -37,6 +37,7 @@ class kernel:
         self.end_test_acc=None
         self.acc_flag='%'
         self.train_counter=0
+        self.opt_counter=None
         self.train_loss=None
         self.train_acc=None
         self.train_loss_list=[]
@@ -69,6 +70,11 @@ class kernel:
         if self.train_counter==0 and self.thread!=None:
             self.threadnum=np.arange(self.thread)
             self.threadnum=list(self.threadnum)
+            try:
+                if self.nn.attenuation!=None:
+                    self.opt_counter=np.zeros(self.thread)
+            except AttributeError:
+                pass
             try:
                 self.nn.ec=np.zeros(self.thread)
             except AttributeError:
@@ -159,6 +165,13 @@ class kernel:
         self.threadnum=self.threadnum.extend(threadnum)
         self.thread+=thread
         try:
+            if self.nn.attenuation!=None and self.opt_counter!=None:
+                self.opt_counter=np.concatenate((self.opt_counter,np.zeros(thread)))
+            else:
+                self.opt_counter=np.zeros(self.thread)
+        except AttributeError:
+            pass
+        try:
             self.nn.ec=np.concatenate((self.nn.ec,np.zeros(thread)))
         except AttributeError:
             pass
@@ -216,9 +229,8 @@ class kernel:
             total_loss+=loss
             try:
                 if self.nn.accuracy!=None:
-                    pass
-                batch_acc=self.nn.accuracy(output,labels_batch)
-                total_acc+=batch_acc
+                    batch_acc=self.nn.accuracy(output,labels_batch)
+                    total_acc+=batch_acc
             except AttributeError:
                 pass
             return total_loss,total_acc
@@ -234,19 +246,18 @@ class kernel:
                 self.train_loss[t]=self.train_loss[t].astype(np.float32)
             try:
                 if self.nn.accuracy!=None:
-                    pass
-                if self.thread==None:
-                    acc=self.nn.accuracy(output,self.train_labels)
-                    acc=acc.numpy()
-                    self.train_acc_list.append(acc.astype(np.float32))
-                    self.train_acc=acc
-                    self.train_acc=self.train_acc.astype(np.float32)
-                else:
-                    acc=self.nn.accuracy(output,self.train_labels[t])
-                    acc=acc.numpy()
-                    self.train_acc_list[t].append(acc.astype(np.float32))
-                    self.train_acc[t]=acc
-                    self.train_acc[t]=self.train_acc[t].astype(np.float32)
+                    if self.thread==None:
+                        acc=self.nn.accuracy(output,self.train_labels)
+                        acc=acc.numpy()
+                        self.train_acc_list.append(acc.astype(np.float32))
+                        self.train_acc=acc
+                        self.train_acc=self.train_acc.astype(np.float32)
+                    else:
+                        acc=self.nn.accuracy(output,self.train_labels[t])
+                        acc=acc.numpy()
+                        self.train_acc_list[t].append(acc.astype(np.float32))
+                        self.train_acc[t]=acc
+                        self.train_acc[t]=self.train_acc[t].astype(np.float32)
             except AttributeError:
                 pass
             if self.test_flag==True:
@@ -255,8 +266,7 @@ class kernel:
                     self.test_loss_list.append(self.test_loss)
                     try:
                         if self.nn.accuracy!=None:
-                            pass
-                        self.test_acc_list.append(self.test_acc)
+                            self.test_acc_list.append(self.test_acc)
                     except AttributeError:
                         pass
                 else:
@@ -264,8 +274,7 @@ class kernel:
                     self.test_loss_list[t].append(self.test_loss[t])
                     try:
                         if self.nn.accuracy!=None:
-                            pass
-                        self.test_acc_list[t].append(self.test_acc[t])
+                            self.test_acc_list[t].append(self.test_acc[t])
                     except AttributeError:
                         pass
             return
@@ -325,11 +334,10 @@ class kernel:
     def tf_opt(self,data,labels,t=None):
         try:
             if self.nn.GradientTape!=None:
-                pass
-            if self.thread==None:
-                tape,output,loss=self.nn.GradientTape(data,labels)
-            else:
-                tape,output,loss=self.nn.GradientTape(data,labels,t)
+                if self.thread==None:
+                    tape,output,loss=self.nn.GradientTape(data,labels)
+                else:
+                    tape,output,loss=self.nn.GradientTape(data,labels,t)
         except AttributeError:
             with self.platform.GradientTape(persistent=True) as tape:
                 try:
@@ -347,14 +355,12 @@ class kernel:
             try:
                 if self.thread==None:
                     if self.nn.opt!=None:
-                        pass
-                    gradient=tape.gradient(loss,self.nn.param)
-                    self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+                        gradient=tape.gradient(loss,self.nn.param)
+                        self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
                 else:
                     if self.nn.opt!=None:
-                        pass
-                    gradient=tape.gradient(loss,self.nn.param[t])
-                    self.nn.opt[t].apply_gradients(zip(gradient,self.nn.param[t]))
+                        gradient=tape.gradient(loss,self.nn.param[t])
+                        self.nn.opt[t].apply_gradients(zip(gradient,self.nn.param[t]))
             except AttributeError:
                 if self.thread==None:
                     gradient=self.nn.gradient(tape,loss,self.nn.param)
@@ -366,20 +372,19 @@ class kernel:
             if self.thread_lock!=None:
                 try:
                     if self.nn.opt!=None:
-                        pass
-                    if self.PO==1:
-                        self.thread_lock[0].acquire()
-                        gradient=tape.gradient(loss,self.nn.param)
-                        self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
-                        self.thread_lock[0].release()
-                    else:
-                        self.thread_lock[0].acquire()
-                        self.param=self.nn.param
-                        self.gradient=tape.gradient(loss,self.param)
-                        self.thread_lock[0].release()
-                        self.thread_lock[1].acquire()
-                        self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
-                        self.thread_lock[1].release()
+                        if self.PO==1:
+                            self.thread_lock[0].acquire()
+                            gradient=tape.gradient(loss,self.nn.param)
+                            self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+                            self.thread_lock[0].release()
+                        else:
+                            self.thread_lock[0].acquire()
+                            self.param=self.nn.param
+                            self.gradient=tape.gradient(loss,self.param)
+                            self.thread_lock[0].release()
+                            self.thread_lock[1].acquire()
+                            self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
+                            self.thread_lock[1].release()
                 except AttributeError:
                     if self.PO==1:
                         self.thread_lock[0].acquire()
@@ -397,9 +402,8 @@ class kernel:
             else:
                 try:
                     if self.nn.opt!=None:
-                        pass
-                    gradient=tape.gradient(loss,self.nn.param)
-                    self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+                        gradient=tape.gradient(loss,self.nn.param)
+                        self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
                 except AttributeError:
                     gradient=self.nn.gradient(tape,loss,self.nn.param)
                     self.nn.oopt(gradient,self.nn.param)
@@ -410,8 +414,7 @@ class kernel:
     def tf_opt_t(self,data,labels,t):
         try:
             if self.nn.GradientTape!=None:
-                pass
-            tape,output,loss=self.nn.GradientTape(data,labels)
+                tape,output,loss=self.nn.GradientTape(data,labels)
         except AttributeError:
             with self.platform.GradientTape(persistent=True) as tape:
                 try:
@@ -419,6 +422,7 @@ class kernel:
                     loss=self.nn.loss(output,labels)
                 except TypeError:
                     output,loss=self.nn.fp(data,labels)
+        self.opt_counter[t]=0
         if self.PO==1:
             self.thread_lock[0].acquire()
             if self.stop==True and self.stop_flag==1:
@@ -426,25 +430,45 @@ class kernel:
                     pass
             try:
                 if self.nn.opt!=None:
+                    self.gradient=tape.gradient(loss,self.nn.param)
+                try:
+                    if self.nn.attenuation!=None:
+                        self.gradient=self.attenuation(self.gradient,self.opt_counter[t])
+                except AttributeError:
                     pass
-                self.gradient=tape.gradient(loss,self.nn.param)
                 self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
             except AttributeError:
                 self.gradient=self.nn.gradient(tape,loss,self.nn.param)
                 try:
+                    if self.nn.attenuation!=None:
+                        self.gradient=self.attenuation(self.gradient,self.opt_counter[t])
+                except AttributeError:
+                    pass
+                try:
                     self.nn.oopt(self.gradient,self.nn.param,t)
                 except TypeError:
                     self.nn.oopt(self.gradient,self.nn.param)
+            self.opt_counter+=1
+            self.opt_counter[t]-1
             self.thread_lock[0].release()
         else:
             self.thread_lock[0].acquire()
             try:
                 if self.nn.opt!=None:
+                    self.param=self.nn.param
+                    self.gradient=tape.gradient(loss,self.param)
+                try:
+                    if self.nn.attenuation!=None:
+                        self.gradient=self.attenuation(self.gradient,self.opt_counter[t])
+                except AttributeError:
                     pass
-                self.param=self.nn.param
-                self.gradient=tape.gradient(loss,self.param)
             except AttributeError:
                 self.gradient=self.nn.gradient(tape,loss,self.param)
+                try:
+                    if self.nn.attenuation!=None:
+                        self.gradient=self.attenuation(self.gradient,self.opt_counter[t])
+                except AttributeError:
+                    pass
             self.thread_lock[0].release()
             self.thread_lock[1].acquire()
             if self.stop==True and self.stop_flag==1:
@@ -452,13 +476,14 @@ class kernel:
                     pass
             try:
                 if self.nn.opt!=None:
-                    pass
-                self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
+                    self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
             except AttributeError:
                 try:
                     self.nn.oopt(self.gradient,self.nn.param,t)
                 except TypeError:
                     self.nn.oopt(self.gradient,self.nn.param)
+            self.opt_counter+=1
+            self.opt_counter[t]-1
             self.thread_lock[1].release()
         return output,loss
     
@@ -468,8 +493,7 @@ class kernel:
             t=int(t)
         try:
             if self.platform.DType!=None:
-                pass
-            output,loss=self.tf_opt(data,labels,t)
+                output,loss=self.tf_opt(data,labels,t)
         except AttributeError:
             if self.thread==None:
                 output=self.nn.fp(data.to(self.nn.device))
@@ -488,8 +512,7 @@ class kernel:
     def opt_t(self,data,labels,t):
         try:
             if self.platform.DType!=None:
-                pass
-            output,loss=self.tf_opt_t(data,labels,int(t))
+                output,loss=self.tf_opt_t(data,labels,int(t))
         except AttributeError:
             try:
                 output=self.nn.fp(data.to(self.nn.device))
@@ -568,8 +591,7 @@ class kernel:
             loss=total_loss.numpy()/batches
             try:
                 if self.nn.accuracy!=None:
-                    pass
-                train_acc=total_acc/batches
+                    train_acc=total_acc/batches
             except AttributeError:
                 pass
             if self.thread==None:
@@ -582,15 +604,14 @@ class kernel:
                 self.train_loss[t]=self.train_loss[t].astype(np.float32)
             try:
                 if self.nn.accuracy!=None:
-                    pass
-                if self.thread==None:
-                    self.train_acc_list.append(train_acc.astype(np.float32))
-                    self.train_acc=train_acc
-                    self.train_acc=self.train_acc.astype(np.float32)
-                else:
-                    self.train_acc_list[t].append(train_acc.astype(np.float32))
-                    self.train_acc[t]=train_acc
-                    self.train_acc[t]=self.train_acc[t].astype(np.float32)
+                    if self.thread==None:
+                        self.train_acc_list.append(train_acc.astype(np.float32))
+                        self.train_acc=train_acc
+                        self.train_acc=self.train_acc.astype(np.float32)
+                    else:
+                        self.train_acc_list[t].append(train_acc.astype(np.float32))
+                        self.train_acc[t]=train_acc
+                        self.train_acc[t]=self.train_acc[t].astype(np.float32)
             except AttributeError:
                 pass
             if self.test_flag==True:
@@ -599,8 +620,7 @@ class kernel:
                     self.test_loss_list.append(self.test_loss)
                     try:
                         if self.nn.accuracy!=None:
-                            pass
-                        self.test_acc_list.append(self.test_acc)
+                            self.test_acc_list.append(self.test_acc)
                     except AttributeError:
                         pass
                 else:
@@ -608,8 +628,7 @@ class kernel:
                     self.test_loss_list[t].append(self.test_loss[t])
                     try:
                         if self.nn.accuracy!=None:
-                            pass
-                        self.test_acc_list[t].append(self.test_acc[t])
+                            self.test_acc_list[t].append(self.test_acc[t])
                     except AttributeError:
                         pass
         elif self.ol==None:
@@ -657,9 +676,8 @@ class kernel:
                     pass
                 try:
                     if self.nn.accuracy!=None:
-                        pass
-                    batch_acc=self.nn.accuracy(output,labels_batch)
-                    return batch_loss,batch_acc
+                        batch_acc=self.nn.accuracy(output,labels_batch)
+                        return batch_loss,batch_acc
                 except AttributeError:
                     return batch_loss,None
             data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j)
@@ -670,9 +688,8 @@ class kernel:
                 pass
             try:
                 if self.nn.accuracy!=None:
-                    pass
-                batch_acc=self.nn.accuracy(output,labels_batch)
-                return batch_loss,batch_acc
+                    batch_acc=self.nn.accuracy(output,labels_batch)
+                    return batch_loss,batch_acc
             except AttributeError:
                 return batch_loss,None
         else:
@@ -685,11 +702,10 @@ class kernel:
                 self.train_loss=self.loss.astype(np.float32)
                 try:
                     if self.nn.accuracy!=None:
-                        pass
-                    self.acc=self.nn.accuracy(output,self.train_labels)
-                    self.acc=self.acc.numpy()
-                    self.train_acc_list.append(self.acc.astype(np.float32))
-                    self.train_acc=self.acc.astype(np.float32)
+                        self.acc=self.nn.accuracy(output,self.train_labels)
+                        self.acc=self.acc.numpy()
+                        self.train_acc_list.append(self.acc.astype(np.float32))
+                        self.train_acc=self.acc.astype(np.float32)
                 except AttributeError:
                     pass
                 if self.test_flag==True:
@@ -697,8 +713,7 @@ class kernel:
                     self.test_loss_list.append(self.test_loss)
                     try:
                         if self.nn.accuracy!=None:
-                            pass
-                        self.test_acc_list.append(self.test_acc)
+                            self.test_acc_list.append(self.test_acc)
                     except AttributeError:
                         pass
                 self.thread_lock[1].release()
@@ -710,11 +725,10 @@ class kernel:
                 self.train_loss=self.train_loss.astype(np.float32)
                 try:
                     if self.nn.accuracy!=None:
-                        pass
-                    self.acc=self.nn.accuracy(output,self.train_labels)
-                    self.acc=self.acc.numpy()
-                    self.train_acc_list.append(self.acc.astype(np.float32))
-                    self.train_acc=self.acc.astype(np.float32)
+                        self.acc=self.nn.accuracy(output,self.train_labels)
+                        self.acc=self.acc.numpy()
+                        self.train_acc_list.append(self.acc.astype(np.float32))
+                        self.train_acc=self.acc.astype(np.float32)
                 except AttributeError:
                     pass
                 if self.test_flag==True:
@@ -722,8 +736,7 @@ class kernel:
                     self.test_loss_list.append(self.test_loss)
                     try:
                         if self.nn.accuracy!=None:
-                            pass
-                        self.test_acc_list.append(self.test_acc)
+                            self.test_acc_list.append(self.test_acc)
                     except AttributeError:
                         pass
                 self.thread_lock[2].release()
@@ -749,9 +762,8 @@ class kernel:
                     return
                 try:
                     if self.nn.accuracy!=None:
-                        pass
-                    total_loss+=batch_loss
-                    total_acc+=batch_acc
+                        total_loss+=batch_loss
+                        total_acc+=batch_acc
                 except AttributeError:
                     total_loss+=batch_loss
             if self.shape0%batch!=0:
@@ -769,16 +781,14 @@ class kernel:
                     return
                 try:
                     if self.nn.accuracy!=None:
-                        pass
-                    total_loss+=batch_loss
-                    total_acc+=batch_acc
+                        total_loss+=batch_loss
+                        total_acc+=batch_acc
                 except AttributeError:
                     total_loss+=batch_loss
             loss=total_loss.numpy()/batches
             try:
                 if self.nn.accuracy!=None:
-                    pass
-                train_acc=total_acc.numpy()/batches
+                    train_acc=total_acc.numpy()/batches
             except AttributeError:
                 pass
             if self.PO==1:
@@ -790,9 +800,8 @@ class kernel:
             self.train_loss=loss.astype(np.float32)
             try:
                 if self.nn.accuracy!=None:
-                    pass
-                self.train_acc_list.append(train_acc.astype(np.float32))
-                self.train_acc=train_acc.astype(np.float32)
+                    self.train_acc_list.append(train_acc.astype(np.float32))
+                    self.train_acc=train_acc.astype(np.float32)
             except AttributeError:
                 pass
             if self.test_flag==True:
@@ -800,8 +809,7 @@ class kernel:
                 self.test_loss_list.append(self.test_loss)
             try:
                 if self.nn.accuracy!=None:
-                    pass
-                self.test_acc_list.append(self.test_acc)
+                    self.test_acc_list.append(self.test_acc)
             except AttributeError:
                 pass
             if self.PO==1:
@@ -921,26 +929,24 @@ class kernel:
                             if self.test_flag==False:
                                 try:
                                     if self.nn.accuracy!=None:
-                                        pass
-                                    print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
-                                    if self.acc_flag=='%':
-                                        print('epoch:{0}   accuracy:{1:.1f}'.format(i+1,self.train_acc*100))
-                                    else:
-                                        print('epoch:{0}   accuracy:{1:.6f}'.format(i+1,self.train_acc))
-                                    print()
+                                        print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
+                                        if self.acc_flag=='%':
+                                            print('epoch:{0}   accuracy:{1:.1f}'.format(i+1,self.train_acc*100))
+                                        else:
+                                            print('epoch:{0}   accuracy:{1:.6f}'.format(i+1,self.train_acc))
+                                        print()
                                 except AttributeError:
                                     print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
                                     print()
                             else:
                                 try:
                                     if self.nn.accuracy!=None:
-                                        pass
-                                    print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
-                                    if self.acc_flag=='%':
-                                        print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(i+1,self.train_acc*100,self.test_acc*100))
-                                    else:
-                                        print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(i+1,self.train_acc,self.test_acc))
-                                    print()
+                                        print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
+                                        if self.acc_flag=='%':
+                                            print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(i+1,self.train_acc*100,self.test_acc*100))
+                                        else:
+                                            print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(i+1,self.train_acc,self.test_acc))
+                                        print()
                                 except AttributeError:   
                                     print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
                                     print()
@@ -948,26 +954,24 @@ class kernel:
                             if self.test_flag==False:
                                 try:
                                     if self.nn.accuracy!=None:
-                                        pass
-                                    print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
-                                    if self.acc_flag=='%':
-                                        print('epoch:{0}   accuracy:{1:.1f}'.format(self.total_epoch,self.train_acc*100))
-                                    else:
-                                        print('epoch:{0}   accuracy:{1:.6f}'.format(self.total_epoch,self.train_acc))
-                                    print()
+                                        print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
+                                        if self.acc_flag=='%':
+                                            print('epoch:{0}   accuracy:{1:.1f}'.format(self.total_epoch,self.train_acc*100))
+                                        else:
+                                            print('epoch:{0}   accuracy:{1:.6f}'.format(self.total_epoch,self.train_acc))
+                                        print()
                                 except AttributeError:
                                     print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
                                     print()
                             else:
                                 try:
                                     if self.nn.accuracy!=None:
-                                        pass
-                                    print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch,self.train_loss,self.test_loss))
-                                    if self.acc_flag=='%':
-                                        print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(self.total_epoch,self.train_acc*100,self.test_acc*100))
-                                    else:
-                                        print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(self.total_epoch,self.train_acc,self.test_acc))
-                                    print()
+                                        print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch,self.train_loss,self.test_loss))
+                                        if self.acc_flag=='%':
+                                            print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(self.total_epoch,self.train_acc*100,self.test_acc*100))
+                                        else:
+                                            print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(self.total_epoch,self.train_acc,self.test_acc))
+                                        print()
                                 except AttributeError:   
                                     print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch,self.train_loss,self.test_loss))
                                     print()
@@ -1030,26 +1034,24 @@ class kernel:
                             if self.test_flag==False:
                                 try:
                                     if self.nn.accuracy!=None:
-                                        pass
-                                    print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
-                                    if self.acc_flag=='%':
-                                        print('epoch:{0}   accuracy:{1:.1f}'.format(i+1,self.train_acc*100))
-                                    else:
-                                        print('epoch:{0}   accuracy:{1:.6f}'.format(i+1,self.train_acc))
-                                    print()
+                                        print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
+                                        if self.acc_flag=='%':
+                                            print('epoch:{0}   accuracy:{1:.1f}'.format(i+1,self.train_acc*100))
+                                        else:
+                                            print('epoch:{0}   accuracy:{1:.6f}'.format(i+1,self.train_acc))
+                                        print()
                                 except AttributeError:
                                     print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
                                     print()
                             else:
                                 try:
                                     if self.nn.accuracy!=None:
-                                        pass
-                                    print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
-                                    if self.acc_flag=='%':
-                                        print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(i+1,self.train_acc*100,self.test_acc*100))
-                                    else:
-                                        print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(i+1,self.train_acc,self.test_acc))
-                                    print()
+                                        print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
+                                        if self.acc_flag=='%':
+                                            print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(i+1,self.train_acc*100,self.test_acc*100))
+                                        else:
+                                            print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(i+1,self.train_acc,self.test_acc))
+                                        print()
                                 except AttributeError:   
                                     print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
                                     print()
@@ -1057,26 +1059,24 @@ class kernel:
                             if self.test_flag==False:
                                 try:
                                     if self.nn.accuracy!=None:
-                                        pass
-                                    print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
-                                    if self.acc_flag=='%':
-                                        print('epoch:{0}   accuracy:{1:.1f}'.format(self.total_epoch,self.train_acc*100))
-                                    else:
-                                        print('epoch:{0}   accuracy:{1:.6f}'.format(self.total_epoch,self.train_acc))
-                                    print()
+                                        print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
+                                        if self.acc_flag=='%':
+                                            print('epoch:{0}   accuracy:{1:.1f}'.format(self.total_epoch,self.train_acc*100))
+                                        else:
+                                            print('epoch:{0}   accuracy:{1:.6f}'.format(self.total_epoch,self.train_acc))
+                                        print()
                                 except AttributeError:
                                     print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
                                     print()
                             else:
                                 try:
                                     if self.nn.accuracy!=None:
-                                        pass
-                                    print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch,self.train_loss,self.test_loss))
-                                    if self.acc_flag=='%':
-                                        print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(self.total_epoch,self.train_acc*100,self.test_acc*100))
-                                    else:
-                                        print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(self.total_epoch,self.train_acc,self.test_acc))
-                                    print()
+                                        print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch,self.train_loss,self.test_loss))
+                                        if self.acc_flag=='%':
+                                            print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(self.total_epoch,self.train_acc*100,self.test_acc*100))
+                                        else:
+                                            print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(self.total_epoch,self.train_acc,self.test_acc))
+                                        print()
                                 except AttributeError:   
                                     print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch,self.train_loss,self.test_loss))
                                     print()
@@ -1122,17 +1122,16 @@ class kernel:
                 print('last loss:{0:.6f},last test loss:{1:.6f}'.format(self.train_loss,self.test_loss))
             try:
                 if self.nn.accuracy!=None:
-                    pass
-                if self.acc_flag=='%':
-                    if self.test_flag==False:
-                        print('last accuracy:{0:.1f}'.format(self.train_acc*100))
+                    if self.acc_flag=='%':
+                        if self.test_flag==False:
+                            print('last accuracy:{0:.1f}'.format(self.train_acc*100))
+                        else:
+                            print('last accuracy:{0:.1f},last test accuracy:{1:.1f}'.format(self.train_acc*100,self.test_acc*100))
                     else:
-                        print('last accuracy:{0:.1f},last test accuracy:{1:.1f}'.format(self.train_acc*100,self.test_acc*100))
-                else:
-                    if self.test_flag==False:
-                        print('last accuracy:{0:.6f}'.format(self.train_acc))
-                    else:
-                        print('last accuracy:{0:.6f},last test accuracy:{1:.6f}'.format(self.train_acc,self.test_acc))   
+                        if self.test_flag==False:
+                            print('last accuracy:{0:.6f}'.format(self.train_acc))
+                        else:
+                            print('last accuracy:{0:.6f},last test accuracy:{1:.6f}'.format(self.train_acc,self.test_acc))   
             except AttributeError:
                 pass
             print()
@@ -1187,9 +1186,8 @@ class kernel:
                 total_loss+=batch_loss
                 try:
                     if self.nn.accuracy!=None:
-                        pass
-                    batch_acc=self.nn.accuracy(output,labels_batch)
-                    total_acc+=batch_acc
+                        batch_acc=self.nn.accuracy(output,labels_batch)
+                        total_acc+=batch_acc
                 except AttributeError:
                     pass
             if shape0%batch!=0:
@@ -1226,9 +1224,8 @@ class kernel:
                 total_loss+=batch_loss
                 try:
                     if self.nn.accuracy!=None:
-                        pass
-                    batch_acc=self.nn.accuracy(output,labels_batch)
-                    total_acc+=batch_acc
+                        batch_acc=self.nn.accuracy(output,labels_batch)
+                        total_acc+=batch_acc
                 except AttributeError:
                     pass
             test_loss=total_loss.numpy()/batches
@@ -1236,10 +1233,9 @@ class kernel:
             test_loss=test_loss.astype(np.float32)
             try:
                 if self.nn.accuracy!=None:
-                    pass
-                test_acc=total_acc.numpy()/batches
-                test_acc=test_acc
-                test_acc=test_acc.astype(np.float32)
+                    test_acc=total_acc.numpy()/batches
+                    test_acc=test_acc
+                    test_acc=test_acc.astype(np.float32)
             except AttributeError:
                 pass
         else:
@@ -1251,18 +1247,16 @@ class kernel:
             test_loss=test_loss.numpy().astype(np.float32)
             try:
                 if self.nn.accuracy!=None:
-                    pass
-                test_acc=self.nn.accuracy(output,test_labels)
-                test_acc=test_acc.numpy().astype(np.float32)
+                    test_acc=self.nn.accuracy(output,test_labels)
+                    test_acc=test_acc.numpy().astype(np.float32)
             except AttributeError:
                 pass
         try:
             if self.nn.accuracy!=None:
-                pass
-            if self.acc_flag=='%':
-                return test_loss,test_acc*100
-            else:
-                return test_loss,test_acc
+                if self.acc_flag=='%':
+                    return test_loss,test_acc*100
+                else:
+                    return test_loss,test_acc
         except AttributeError:
             return test_loss
     
@@ -1308,17 +1302,16 @@ class kernel:
                     print('last loss:{0:.6f},last test loss:{1:.6f}'.format(self.train_loss,self.test_loss))
                 try:
                     if self.nn.accuracy!=None:
-                        pass
-                    if self.acc_flag=='%':
-                        if self.test_flag==False:
-                            print('last accuracy:{0:.1f}'.format(self.train_acc*100))
+                        if self.acc_flag=='%':
+                            if self.test_flag==False:
+                                print('last accuracy:{0:.1f}'.format(self.train_acc*100))
+                            else:
+                                print('last accuracy:{0:.1f},last test accuracy:{1:.1f}'.format(self.train_acc*100,self.test_acc*100))
                         else:
-                            print('last accuracy:{0:.1f},last test accuracy:{1:.1f}'.format(self.train_acc*100,self.test_acc*100))
-                    else:
-                        if self.test_flag==False:
-                            print('last accuracy:{0:.6f}'.format(self.train_acc))
-                        else:
-                            print('last accuracy:{0:.6f},last test accuracy:{1:.6f}'.format(self.train_acc,self.test_acc))   
+                            if self.test_flag==False:
+                                print('last accuracy:{0:.6f}'.format(self.train_acc))
+                            else:
+                                print('last accuracy:{0:.6f},last test accuracy:{1:.6f}'.format(self.train_acc,self.test_acc))   
                 except AttributeError:
                     pass
                 print()
@@ -1341,17 +1334,16 @@ class kernel:
                     print('last loss:{0:.6f},last test loss:{1:.6f}'.format(self.train_loss,self.test_loss))
                 try:
                     if self.nn.accuracy!=None:
-                        pass
-                    if self.acc_flag=='%':
-                        if self.test_flag==False:
-                            print('last accuracy:{0:.1f}'.format(self.train_acc*100))
+                        if self.acc_flag=='%':
+                            if self.test_flag==False:
+                                print('last accuracy:{0:.1f}'.format(self.train_acc*100))
+                            else:
+                                print('last accuracy:{0:.1f},last test accuracy:{1:.1f}'.format(self.train_acc*100,self.test_acc*100))
                         else:
-                            print('last accuracy:{0:.1f},last test accuracy:{1:.1f}'.format(self.train_acc*100,self.test_acc*100))
-                    else:
-                        if self.test_flag==False:
-                            print('last accuracy:{0:.6f}'.format(self.train_acc))
-                        else:
-                            print('last accuracy:{0:.6f},last test accuracy:{1:.6f}'.format(self.train_acc,self.test_acc))   
+                            if self.test_flag==False:
+                                print('last accuracy:{0:.6f}'.format(self.train_acc))
+                            else:
+                                print('last accuracy:{0:.6f},last test accuracy:{1:.6f}'.format(self.train_acc,self.test_acc))   
                 except AttributeError:
                     pass
                 print()
@@ -1442,16 +1434,15 @@ class kernel:
         print('train loss:{0:.6f}'.format(self.train_loss))
         try:
             if self.nn.accuracy!=None:
-                pass
-            plt.figure(2)
-            plt.plot(np.arange(self.total_epoch),self.train_acc_list)
-            plt.title('train acc')
-            plt.xlabel('epoch')
-            plt.ylabel('acc')
-            if self.acc_flag=='%':
-                print('train acc:{0:.1f}'.format(self.train_acc*100))
-            else:
-                print('train acc:{0:.6f}'.format(self.train_acc)) 
+                plt.figure(2)
+                plt.plot(np.arange(self.total_epoch),self.train_acc_list)
+                plt.title('train acc')
+                plt.xlabel('epoch')
+                plt.ylabel('acc')
+                if self.acc_flag=='%':
+                    print('train acc:{0:.1f}'.format(self.train_acc*100))
+                else:
+                    print('train acc:{0:.6f}'.format(self.train_acc)) 
         except AttributeError:
             pass
         return
@@ -1467,16 +1458,15 @@ class kernel:
         print('test loss:{0:.6f}'.format(self.test_loss))
         try:
             if self.nn.accuracy!=None:
-                pass
-            plt.figure(2)
-            plt.plot(np.arange(self.total_epoch),self.test_acc_list)
-            plt.title('test acc')
-            plt.xlabel('epoch')
-            plt.ylabel('acc')
-            if self.acc_flag=='%':
-                print('test acc:{0:.1f}'.format(self.test_acc*100))
-            else:
-                print('test acc:{0:.6f}'.format(self.test_acc))  
+                plt.figure(2)
+                plt.plot(np.arange(self.total_epoch),self.test_acc_list)
+                plt.title('test acc')
+                plt.xlabel('epoch')
+                plt.ylabel('acc')
+                if self.acc_flag=='%':
+                    print('test acc:{0:.1f}'.format(self.test_acc*100))
+                else:
+                    print('test acc:{0:.6f}'.format(self.test_acc))  
         except AttributeError:
             pass
         return 
@@ -1494,18 +1484,17 @@ class kernel:
         plt.legend()
         try:
             if self.nn.accuracy!=None:
-                pass
-            plt.figure(2)
-            plt.plot(np.arange(self.total_epoch),self.train_acc_list,'b-',label='train acc')
-            if self.test_flag==True:
-                plt.plot(np.arange(self.total_epoch),self.test_acc_list,'r-',label='test acc')
-            plt.xlabel('epoch')
-            plt.ylabel('acc')
-            plt.legend()
-            if self.acc_flag=='%':
-                print('train acc:{0:.1f}'.format(self.train_acc*100))
-            else:
-                print('train acc:{0:.6f}'.format(self.train_acc))
+                plt.figure(2)
+                plt.plot(np.arange(self.total_epoch),self.train_acc_list,'b-',label='train acc')
+                if self.test_flag==True:
+                    plt.plot(np.arange(self.total_epoch),self.test_acc_list,'r-',label='test acc')
+                plt.xlabel('epoch')
+                plt.ylabel('acc')
+                plt.legend()
+                if self.acc_flag=='%':
+                    print('train acc:{0:.1f}'.format(self.train_acc*100))
+                else:
+                    print('train acc:{0:.6f}'.format(self.train_acc))
         except AttributeError:
             pass
         if self.test_flag==True:        
@@ -1540,8 +1529,7 @@ class kernel:
             except AttributeError:
                 try:
                     if self.platform.DType!=None:
-                        pass 
-                    parameter_file=open('param.dat','wb')
+                        parameter_file=open('param.dat','wb')
                 except AttributeError:
                     pass
         else:
@@ -1562,13 +1550,12 @@ class kernel:
             except AttributeError:
                 try:
                     if self.platform.DType!=None:
-                        pass   
-                    parameter_file=open('param-{0}.dat'.format(i),'wb')
-                    self.file_list.append(['save-{0}.dat','param-{0}.dat'])
-                    if len(self.file_list)>self.s+1:
-                        os.remove(self.file_list[0][0])
-                        os.remove(self.file_list[0][1])
-                        del self.file_list[0]
+                        parameter_file=open('param-{0}.dat'.format(i),'wb')
+                        self.file_list.append(['save-{0}.dat','param-{0}.dat'])
+                        if len(self.file_list)>self.s+1:
+                            os.remove(self.file_list[0][0])
+                            os.remove(self.file_list[0][1])
+                            del self.file_list[0]
                 except AttributeError:
                     self.file_list.append(['save-{0}.dat'])
                     if len(self.file_list)>self.s+1:
@@ -1576,30 +1563,28 @@ class kernel:
                         del self.file_list[0]
         try:
             if self.platform.DType!=None:
-                pass  
-            try:
-                if len(self.nn.model.weights)!=self.nn.param:
-                    pickle.dump(self.nn.param[:-len(self.nn.model.weights)],parameter_file)
-            except AttributeError:
-                pickle.dump(self.nn.param,parameter_file)
-            if self.training_flag==False:
-                self.nn.param=None
-            try:
-                if self.nn.opt:
-                    pass
-                opt=self.nn.opt
-                self.nn.opt=None
-                pickle.dump(self.nn,output_file)
-                self.nn.opt=opt
-            except AttributeError:
                 try:
-                    pickle.dump(self.nn,output_file)
-                except:
-                    opt=self.nn.oopt
-                    self.nn.oopt=None
-                    pickle.dump(self.nn,output_file)
-                    self.nn.oopt=opt
-            pickle.dump(opt.get_config(),output_file)
+                    if len(self.nn.model.weights)!=self.nn.param:
+                        pickle.dump(self.nn.param[:-len(self.nn.model.weights)],parameter_file)
+                except AttributeError:
+                    pickle.dump(self.nn.param,parameter_file)
+                if self.training_flag==False:
+                    self.nn.param=None
+                try:
+                    if self.nn.opt:
+                        opt=self.nn.opt
+                        self.nn.opt=None
+                        pickle.dump(self.nn,output_file)
+                        self.nn.opt=opt
+                except AttributeError:
+                    try:
+                        pickle.dump(self.nn,output_file)
+                    except:
+                        opt=self.nn.oopt
+                        self.nn.oopt=None
+                        pickle.dump(self.nn,output_file)
+                        self.nn.oopt=opt
+                pickle.dump(opt.get_config(),output_file)
         except AttributeError:
             pass
         pickle.dump(self.ol,output_file)
@@ -1636,8 +1621,7 @@ class kernel:
         except AttributeError:
             try:
                 if self.platform.DType!=None:
-                    pass  
-                parameter_file.close()
+                    parameter_file.close()
             except AttributeError:
                 pass
         if self.save_flag==True:
@@ -1653,18 +1637,16 @@ class kernel:
         self.nn=pickle.load(input_file)
         try:
             if self.platform.DType!=None:
-                pass 
-            try:
-                if self.nn.model!=None:
+                try:
+                    if self.nn.model!=None:
+                        self.nn.param=param.extend(self.nn.model.weights)
+                except AttributeError:
+                    self.nn.param=param
+                try:
+                    self.nn.km=1
+                except AttributeError:
                     pass
-                self.nn.param=param.extend(self.nn.model.weights)
-            except AttributeError:
-                self.nn.param=param
-            try:
-                self.nn.km=1
-            except AttributeError:
-                pass
-            self.config=pickle.load(input_file)
+                self.config=pickle.load(input_file)
         except AttributeError:
             pass
         self.ol=pickle.load(input_file)
