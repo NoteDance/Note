@@ -6,7 +6,7 @@ https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documen
 
 
 # Introduction:
-Note is an AI system that have kernel for deep learning and reinforcement learning.
+Note is an AI system that be used for deep learning and reinforcement learning.
 
 
 # Deep Learning:
