@@ -213,7 +213,8 @@ class kernel:
     def pool(self,s,a,next_s,r,done):
         if type(self.state_pool)!=np.ndarray and self.state_pool==None:
             self.state_pool=s
-            if len(a.shape)==1:
+            if type(a)==int:
+                a=np.array(a,np.int64)
                 self.action_pool=np.expand_dims(a,axis=0)
             else:
                 self.action_pool=a
@@ -222,7 +223,8 @@ class kernel:
             self.done_pool=np.expand_dims(done,axis=0)
         else:
             self.state_pool=np.concatenate((self.state_pool,s),0)
-            if len(a.shape)==1:
+            if type(a)==int:
+                a=np.array(a,np.int64)
                 self.action_pool=np.concatenate((self.action_pool,np.expand_dims(a,axis=0)),0)
             else:
                 self.action_pool=np.concatenate((self.action_pool,a),0)
