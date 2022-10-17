@@ -265,7 +265,8 @@ class kernel:
                 self.thread_lock[0].acquire()
             if self.state_pool[index]==None and type(self.state_pool[index])!=np.ndarray:
                 self.state_pool[index]=s
-                if len(a.shape)==1:
+                if type(a)==int:
+                    a=np.array(a,np.int64)
                     self.action_pool[index]=np.expand_dims(a,axis=0)
                 else:
                     self.action_pool[index]=a
@@ -275,7 +276,8 @@ class kernel:
             else:
                 try:
                     self.state_pool[index]=np.concatenate((self.state_pool[index],s),0)
-                    if len(a.shape)==1:
+                    if type(a)==int:
+                        a=np.array(a,np.int64)
                         self.action_pool[index]=np.concatenate((self.action_pool[index],np.expand_dims(a,axis=0)),0)
                     else:
                         self.action_pool[index]=np.concatenate((self.action_pool[index],a),0)
@@ -297,7 +299,8 @@ class kernel:
         else:
             if self.state_pool[i]==None and type(self.state_pool[i])!=np.ndarray:
                 self.state_pool[i]=s
-                if len(a.shape)==1:
+                if type(a)==int:
+                    a=np.array(a,np.int64)
                     self.action_pool[i]=np.expand_dims(a,axis=0)
                 else:
                     self.action_pool[i]=a
@@ -306,7 +309,8 @@ class kernel:
                 self.done_pool[i]=np.expand_dims(done,axis=0)
             else:
                 self.state_pool[i]=np.concatenate((self.state_pool[i],s),0)
-                if len(a.shape)==1:
+                if type(a)==int:
+                    a=np.array(a,np.int64)
                     self.action_pool[i]=np.concatenate((self.action_pool[i],np.expand_dims(a,axis=0)),0)
                 else:
                     self.action_pool[i]=np.concatenate((self.action_pool[i],a),0)
