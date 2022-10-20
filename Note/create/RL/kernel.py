@@ -481,7 +481,7 @@ class kernel:
             try:
                 if self.nn.data_func!=None:
                     state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool[t],self.action_pool[t],self.next_state_pool[t],self.reward_pool[t],self.done_pool[t],self.batch,t)
-                    loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t)
+                    loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
             except AttributeError:
                 index1=batches*self.batch
                 index2=self.batch-(length-batches*self.batch)
@@ -500,7 +500,7 @@ class kernel:
         try:
             if self.nn.data_func!=None:
                 state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool[t],self.action_pool[t],self.next_state_pool[t],self.reward_pool[t],self.done_pool[t],self.batch,t)
-                loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t)
+                loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
         except AttributeError:
             index1=j*self.batch
             index2=(j+1)*self.batch
