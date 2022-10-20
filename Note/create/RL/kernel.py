@@ -18,6 +18,7 @@ class kernel:
             self.reward=np.zeros(thread)
             self.loss=np.zeros(thread)
             self.sc=np.zeros(thread)
+            self.opt_counter=np.zeros(thread)
         self.threading=None
         self.state_pool=[]
         self.action_pool=[]
@@ -473,13 +474,20 @@ class kernel:
             return True
     
     
-    def opt(self,state_batch,action_batch,next_state_batch,reward_batch,done_batch):
+    def opt(self,state_batch,action_batch,next_state_batch,reward_batch,done_batch,t):
         loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
+        self.opt_counter[t]=0
         self.thread_lock[1].acquire()
         if self.stop==True and self.stop_flag==1:
             if self.stop_flag==0 or self.stop_func():
                 pass
-        self.nn.opt(loss)
+        try:
+            if self.nn.attenuate!=None:
+                self.nn.opt(loss,t)
+        except AttributeError:
+            self.nn.opt(loss)
+        self.opt_counter+=1
+        self.opt_counter[t]-1
         self.thread_lock[1].release()
         return loss
     
@@ -498,7 +506,7 @@ class kernel:
                 next_state_batch=np.concatenate((self.next_state_pool[t][index1:length],self.next_state_pool[t][:index2]),0)
                 reward_batch=np.concatenate((self.reward_pool[t][index1:length],self.reward_pool[t][:index2]),0)
                 done_batch=np.concatenate((self.done_pool[t][index1:length],self.done_pool[t][:index2]),0)
-                loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
+                loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t)
             self.loss[t]+=loss
             try:
                 self.nn.bc[t]+=1
@@ -517,7 +525,7 @@ class kernel:
             next_state_batch=self.next_state_batch[t][index1:index2]
             reward_batch=self.reward_batch[t][index1:index2]
             done_batch=self.done_batch[t][index1:index2]
-            loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
+            loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t)
             self.loss[t]+=loss
         try:
             self.nn.bc[t]=j
@@ -535,7 +543,7 @@ class kernel:
                 if self.stop_flag==0 or self.stop_func():
                     return
             self.suspend_func(t)
-            loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
+            loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t)
             if self.stop_flag==0:
                 return
             self.loss[t]+=loss
