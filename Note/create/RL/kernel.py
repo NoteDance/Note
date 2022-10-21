@@ -95,6 +95,7 @@ class kernel:
         self.sc=np.concatenate((self.sc,np.zeros(thread)))
         self.reward=np.concatenate((self.reward,np.zeros(thread)))
         self.loss=np.concatenate((self.loss,np.zeros(thread)))
+        self.opt_counter=np.concatenate((self.opt_counter,np.zeros(thread)))
         return
     
     
@@ -951,6 +952,11 @@ class kernel:
                         self.threadnum.append(index)
                 except ValueError:
                     break
+        try:
+            if self.nn.attenuate!=None:
+                self.opt_counter=np.zeros(self.thread)
+        except AttributeError:
+            pass
         self.state_pool=pickle.load(input_file)
         self.action_pool=pickle.load(input_file)
         self.next_state_pool=pickle.load(input_file)
