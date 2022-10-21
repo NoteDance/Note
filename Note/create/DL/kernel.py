@@ -449,7 +449,6 @@ class kernel:
                 except TypeError:
                     self.nn.oopt(self.gradient,self.nn.param)
             self.opt_counter+=1
-            self.opt_counter[t]-1
             self.thread_lock[0].release()
         else:
             self.thread_lock[0].acquire()
@@ -483,7 +482,6 @@ class kernel:
                 except TypeError:
                     self.nn.oopt(self.gradient,self.nn.param)
             self.opt_counter+=1
-            self.opt_counter[t]-1
             self.thread_lock[1].release()
         return output,loss
     
