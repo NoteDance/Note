@@ -488,7 +488,6 @@ class kernel:
         except AttributeError:
             self.nn.opt(loss)
         self.opt_counter+=1
-        self.opt_counter[t]-1
         self.thread_lock[1].release()
         return loss
     
