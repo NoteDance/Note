@@ -477,7 +477,11 @@ class kernel:
     
     def opt(self,state_batch,action_batch,next_state_batch,reward_batch,done_batch,t):
         loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
-        self.opt_counter[t]=0
+        try:
+            if self.nn.attenuate!=None:
+                self.opt_counter[t]=0
+        except AttributeError:
+            pass
         self.thread_lock[1].acquire()
         if self.stop==True and self.stop_flag==1:
             if self.stop_flag==0 or self.stop_func():
@@ -487,7 +491,11 @@ class kernel:
                 self.nn.opt(loss,self.opt_counter[t])
         except AttributeError:
             self.nn.opt(loss)
-        self.opt_counter+=1
+        try:
+            if self.nn.attenuate!=None:
+                self.opt_counter+=1
+        except AttributeError:
+            pass
         self.thread_lock[1].release()
         return loss
     
