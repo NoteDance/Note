@@ -422,7 +422,11 @@ class kernel:
                     loss=self.nn.loss(output,labels)
                 except TypeError:
                     output,loss=self.nn.fp(data,labels)
-        self.opt_counter[t]=0
+        try:
+            if self.nn.attenuate!=None:
+                self.opt_counter[t]=0
+        except AttributeError:
+            pass
         if self.PO==1:
             self.thread_lock[0].acquire()
             if self.stop==True and self.stop_flag==1:
@@ -448,7 +452,11 @@ class kernel:
                     self.nn.oopt(self.gradient,self.nn.param,t)
                 except TypeError:
                     self.nn.oopt(self.gradient,self.nn.param)
-            self.opt_counter+=1
+            try:
+                if self.nn.attenuate!=None:
+                    self.opt_counter+=1
+            except AttributeError:
+                pass
             self.thread_lock[0].release()
         else:
             self.thread_lock[0].acquire()
@@ -481,7 +489,11 @@ class kernel:
                     self.nn.oopt(self.gradient,self.nn.param,t)
                 except TypeError:
                     self.nn.oopt(self.gradient,self.nn.param)
-            self.opt_counter+=1
+            try:
+                if self.nn.attenuate!=None:
+                    self.opt_counter+=1
+            except AttributeError:
+                pass
             self.thread_lock[1].release()
         return output,loss
     
@@ -517,6 +529,11 @@ class kernel:
             except:
                 output=self.nn.fp(data.to(self.nn.device),t)
             loss=self.nn.loss(output,labels.to(self.nn.device))
+            try:
+                if self.nn.attenuate!=None:
+                    self.opt_counter[t]=0
+            except AttributeError:
+                pass
             if self.PO==1:
                 try:
                     self.thread_lock[0].acquire()
@@ -535,7 +552,15 @@ class kernel:
                     try:
                         self.nn.opt(loss)
                     except:
-                        self.nn.opt(loss,t)
+                        if self.nn.attenuate!=None:
+                            self.nn.opt(loss,self.opt_counter[t])
+                        else:
+                            self.nn.opt(loss,t)
+                    try:
+                        if self.nn.attenuate!=None:
+                            self.opt_counter+=1
+                    except AttributeError:
+                        pass
                     self.thread_lock[0].release()
         return output,loss
     
