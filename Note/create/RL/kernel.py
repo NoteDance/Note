@@ -484,7 +484,7 @@ class kernel:
                 pass
         try:
             if self.nn.attenuate!=None:
-                self.nn.opt(loss,t)
+                self.nn.opt(loss,self.opt_counter[t])
         except AttributeError:
             self.nn.opt(loss)
         self.opt_counter+=1
