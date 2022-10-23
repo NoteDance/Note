@@ -2,7 +2,7 @@
 
 
 # documentation:
-https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation
+https://github.com/NoteDancing/Note-documentation/tree/main/Note%206.0%20documentation
 
 
 # Introduction:
@@ -12,7 +12,7 @@ Note is an AI system that be used for deep learning and reinforcement learning.
 # Deep Learning:
 If you done your neural network,you can use kernel to train.
 
-neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/DL/neural%20network
+neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%206.0%20documentation/DL/neural%20network
 
 example:
 ```python
@@ -80,7 +80,7 @@ Note have two types of parallel optimization:
 
 parallel optimization may cause unstable training but it can make the loss function jump out of the local minimum.
 
-neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/DL/neural%20network
+neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%206.0%20documentation/DL/neural%20network
 
 **Use second parallel optimization to train on MNIST,speed was increased by more than 2 times!**
 
@@ -124,7 +124,7 @@ neural network example:https://github.com/NoteDancing/Note-documentation/tree/ma
 
 **Note uses multithreading parallel forward propagation and optimizes neural network.**
 
-neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/DL/neural%20network
+neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%206.0%20documentation/DL/neural%20network
 
 example:
 ```python
@@ -283,7 +283,7 @@ kernel.visualize_train()
 
 
 # Reinforcement Learning:
-neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/RL/neural%20network
+neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%206.0%20documentation/RL/neural%20network
 
 example:
 
@@ -340,7 +340,7 @@ kernel.visualize_reward()
 ## Pool Net:
 ![3](https://github.com/NoteDancing/Note-documentation/blob/main/picture/Pool%20Net.png)
 
-neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/RL/neural%20network
+neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%206.0%20documentation/RL/neural%20network
 ### list:
 example:
 ```python
@@ -417,7 +417,7 @@ kernel.visualize_reward()
 
 
 # Note Compiler:
-documentation:https://github.com/7NoteDancing/Note-documentation/tree/main/Note%204.0%20documentation/compiler
+documentation:https://github.com/NoteDancing/Note-documentation/tree/main/Note%206.0%20documentation/compiler
 ```python
 import Note.create.nc as nc
 c=nc.compiler('nn.n')
