@@ -78,7 +78,7 @@ Note have two types of parallel optimization:
 1. not parallel computing gradient and optimizing.(kernel.PO=1)
 2. parallel computing gradient and optimizing.(kernel.PO=2)
 
-parallel optimization may cause unstable training but it can make the loss function jump out of the local minimum.
+parallel optimization may cause unstable training(the estimate of the gradient is biased) but it can make the loss function jump out of the local minimum.
 
 neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv/DL/neural%20network
 
