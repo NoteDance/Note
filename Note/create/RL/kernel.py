@@ -580,6 +580,7 @@ class kernel:
             else:
                 self.thread_lock[1].release()
             self.loss[t]=self.loss[t]/batches
+            self.loss[t]=self.loss[t].astype(np.float32)
         self.sc[t]+=1
         try:
             self.nn.ec[t]+=1
