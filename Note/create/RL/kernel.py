@@ -497,7 +497,7 @@ class kernel:
         except AttributeError:
             pass
         self.thread_lock[1].release()
-        return loss
+        return loss.numpy()
     
     
     def _train(self,t,j=None,batches=None,length=None):
