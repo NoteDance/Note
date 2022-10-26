@@ -237,27 +237,27 @@ class kernel:
         elif self.ol==None:
             loss=loss.numpy()
             if self.thread==None:
-                self.train_loss_list.append(loss.astype(np.float32))
+                loss=loss.astype(np.float32)
                 self.train_loss=loss
-                self.train_loss=self.train_loss.astype(np.float32)
+                self.train_loss_list.append(loss)
             else:
-                self.train_loss_list[t].append(loss.astype(np.float32))
+                loss=loss.astype(np.float32)
                 self.train_loss[t]=loss
-                self.train_loss[t]=self.train_loss[t].astype(np.float32)
+                self.train_loss_list[t].append(loss)
             try:
                 if self.nn.accuracy!=None:
                     if self.thread==None:
                         acc=self.nn.accuracy(output,self.train_labels)
                         acc=acc.numpy()
-                        self.train_acc_list.append(acc.astype(np.float32))
+                        acc=acc.astype(np.float32)
                         self.train_acc=acc
-                        self.train_acc=self.train_acc.astype(np.float32)
+                        self.train_acc_list.append(acc)
                     else:
                         acc=self.nn.accuracy(output,self.train_labels[t])
                         acc=acc.numpy()
-                        self.train_acc_list[t].append(acc.astype(np.float32))
+                        acc=acc.astype(np.float32)
                         self.train_acc[t]=acc
-                        self.train_acc[t]=self.train_acc[t].astype(np.float32)
+                        self.train_acc_list[t].append(acc)
             except AttributeError:
                 pass
             if self.test_flag==True:
@@ -720,17 +720,17 @@ class kernel:
             if self.PO==1:
                 self.thread_lock[1].release()
                 self.total_epoch+=1
-                self.loss=train_loss.numpy()
-                self.loss=self.loss.astype(np.float32)
-                self.train_loss=self.loss
-                self.train_loss_list.append(self.loss)
+                train_loss=train_loss.numpy()
+                train_loss=train_loss.astype(np.float32)
+                self.train_loss=train_loss
+                self.train_loss_list.append(train_loss)
                 try:
                     if self.nn.accuracy!=None:
-                        self.acc=self.nn.accuracy(output,self.train_labels)
-                        self.acc=self.acc.numpy()
-                        self.acc=self.acc.astype(np.float32)
-                        self.train_acc=self.acc
-                        self.train_acc_list.append(self.acc)
+                        acc=self.nn.accuracy(output,self.train_labels)
+                        acc=acc.numpy()
+                        acc=acc.astype(np.float32)
+                        self.train_acc=acc
+                        self.train_acc_list.append(acc)
                 except AttributeError:
                     pass
                 if self.test_flag==True:
@@ -746,15 +746,17 @@ class kernel:
                 self.thread_lock[2].acquire()
                 self.total_epoch+=1
                 self.train_loss=train_loss.numpy()
-                self.train_loss_list.append(self.train_loss.astype(np.float32))
-                self.train_loss=self.train_loss.astype(np.float32)
+                train_loss=train_loss.numpy()
+                train_loss=train_loss.astype(np.float32)
+                self.train_loss=train_loss
+                self.train_loss_list.append(train_loss)
                 try:
                     if self.nn.accuracy!=None:
-                        self.acc=self.nn.accuracy(output,self.train_labels)
-                        self.acc=self.acc.numpy()
-                        self.acc=self.acc.astype(np.float32)
-                        self.train_acc=self.acc
-                        self.train_acc_list.append(self.acc)
+                        acc=self.nn.accuracy(output,self.train_labels)
+                        acc=acc.numpy()
+                        acc=acc.astype(np.float32)
+                        self.train_acc=acc
+                        self.train_acc_list.append(acc)
                 except AttributeError:
                     pass
                 if self.test_flag==True:
