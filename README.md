@@ -6,7 +6,7 @@ https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv
 
 
 # Introduction:
-Note is an AI system that be used for deep learning and reinforcement learning.
+Note is an AI system for deep learning and reinforcement learning.
 
 
 # Deep Learning:
