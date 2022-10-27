@@ -410,17 +410,9 @@ class kernel:
             return True
     
     
-    def opt(self,state_batch,action_batch,next_state_batch,reward_batch,done_batch):
-        loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
-        self.thread_lock[1].acquire()
-        self.nn.opt(loss)
-        self.thread_lock[1].release()
-        return loss
-    
-    
     def opt_t(self,state_batch,action_batch,next_state_batch,reward_batch,done_batch):
         loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
-        return loss
+        return loss.numpy()
     
     
     def _train(self,t,j=None,batches=None,length=None):
@@ -517,6 +509,7 @@ class kernel:
             else:
                 self.thread_lock[1].release()
             self.loss[t]=self.loss[t]/batches
+            self.loss[t]=self.loss[t].astype(np.float32)
         self.sc[t]+=1
         try:
             self.nn.ec[t]+=1
