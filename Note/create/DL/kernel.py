@@ -596,7 +596,7 @@ class kernel:
         elif self.ol==None:
             self.suspend_func()
             output,train_loss=self.opt(self.train_data,self.train_labels,t)
-            self.loss_acc(output=output,labels_batch=labels_batch,loss=train_loss,test_batch=test_batch,total_loss=total_loss,total_acc=total_acc,t=t)
+            total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=train_loss,test_batch=test_batch,total_loss=total_loss,total_acc=total_acc,t=t)
         else:
             self.suspend_func()
             data=self.ol()
@@ -858,17 +858,18 @@ class kernel:
                         self._train_(batch,data_batch,labels_batch,test_batch,t)
                     else:
                         self._train(batch,data_batch,labels_batch,test_batch,t)
-                if t in self.stop_list:
-                    if self.PO==1:
-                        self.thread_lock[1].acquire()
-                    else:
-                        self.thread_lock[2].acquire()
-                    self.stopped_list.append(t)
-                    if self.PO==1:
-                        self.thread_lock[1].release()
-                    else:
-                        self.thread_lock[2].release()
-                    return
+                if self.thread_lock!=None:
+                    if t in self.stop_list:
+                        if self.PO==1:
+                            self.thread_lock[1].acquire()
+                        else:
+                            self.thread_lock[2].acquire()
+                        self.stopped_list.append(t)
+                        if self.PO==1:
+                            self.thread_lock[1].release()
+                        else:
+                            self.thread_lock[2].release()
+                        return
                 if self.stop_flag==0:
                     return
                 if self.thread_lock==None and type(self.total_epoch)!=list:
@@ -1197,12 +1198,10 @@ class kernel:
                 except AttributeError:
                     pass
             test_loss=total_loss.numpy()/batches
-            test_loss=test_loss
             test_loss=test_loss.astype(np.float32)
             try:
                 if self.nn.accuracy!=None:
                     test_acc=total_acc.numpy()/batches
-                    test_acc=test_acc
                     test_acc=test_acc.astype(np.float32)
             except AttributeError:
                 pass
