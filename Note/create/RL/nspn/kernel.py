@@ -527,6 +527,7 @@ class kernel:
                             print()
                             print('time:{0}s'.format(self.total_time))
                             return
+                loss=loss.astype(np.float32)
                 self.loss=loss
                 self.loss_list.append(loss)
                 self.epi_num+=1
@@ -597,6 +598,7 @@ class kernel:
                             print('time:{0}s'.format(self.total_time))
                             self.train_flag=False
                             return
+                loss=loss.astype(np.float32)
                 self.loss=loss
                 self.loss_list.append(loss)
                 i+=1
