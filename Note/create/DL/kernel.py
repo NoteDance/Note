@@ -596,7 +596,7 @@ class kernel:
         elif self.ol==None:
             self.suspend_func()
             output,train_loss=self.opt(self.train_data,self.train_labels,t)
-            total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=train_loss,test_batch=test_batch,total_loss=total_loss,total_acc=total_acc,t=t)
+            self.loss_acc(output=output,labels_batch=labels_batch,loss=train_loss,test_batch=test_batch,total_loss=total_loss,total_acc=total_acc,t=t)
         else:
             self.suspend_func()
             data=self.ol()
