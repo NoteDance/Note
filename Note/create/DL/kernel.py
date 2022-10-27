@@ -591,7 +591,7 @@ class kernel:
                     return
             self.suspend_func()
             data=self.ol()
-            output,loss=self.opt(data[0],data[1])
+            loss=self.opt(data[0],data[1])
             loss=loss.numpy()
             if self.thread_lock!=None:
                 if self.PO==1:
