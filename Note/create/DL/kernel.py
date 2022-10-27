@@ -224,13 +224,12 @@ class kernel:
             return True
     
     
-    def loss_acc(self,output=None,labels_batch=None,loss=None,test_batch=None,total_loss=None,total_acc=None,t=None):
+    def loss_acc(self,loss=None,acc=None,test_batch=None,total_loss=None,total_acc=None,t=None):
         if self.batch!=None:
             total_loss+=loss
             try:
                 if self.nn.accuracy!=None:
-                    batch_acc=self.nn.accuracy(output,labels_batch)
-                    total_acc+=batch_acc
+                    total_acc+=acc
             except AttributeError:
                 pass
             return total_loss,total_acc
@@ -244,22 +243,6 @@ class kernel:
                 loss=loss.astype(np.float32)
                 self.train_loss[t]=loss
                 self.train_loss_list[t].append(loss)
-            try:
-                if self.nn.accuracy!=None:
-                    if self.thread==None:
-                        acc=self.nn.accuracy(output,self.train_labels)
-                        acc=acc.numpy()
-                        acc=acc.astype(np.float32)
-                        self.train_acc=acc
-                        self.train_acc_list.append(acc)
-                    else:
-                        acc=self.nn.accuracy(output,self.train_labels[t])
-                        acc=acc.numpy()
-                        acc=acc.astype(np.float32)
-                        self.train_acc[t]=acc
-                        self.train_acc_list[t].append(acc)
-            except AttributeError:
-                pass
             if self.test_flag==True:
                 if self.thread==None:
                     self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
@@ -579,7 +562,36 @@ class kernel:
                 index2=(j+1)*batch
                 data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j)
                 output,batch_loss=self.opt(data_batch,labels_batch,t)
-                total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc,t=t)
+                if j==0:
+                    batch_loss=0
+                    batch_acc=0
+                elif self.shape0%batch==0 and j==batches-1:
+                    try:
+                        if self.platform.DType!=None:
+                            try:
+                                if self.thread==None:
+                                    output=self.nn.fp(data_batch)
+                                else:
+                                    output=self.nn.fp(data_batch,t)
+                                loss=self.nn.loss(output,labels_batch)
+                            except TypeError:
+                                if self.thread==None:
+                                    output,loss=self.nn.fp(data_batch,labels_batch)
+                                else:
+                                    output,loss=self.nn.fp(data_batch,labels_batch,t)
+                    except AttributeError:
+                        if self.thread==None:
+                            output=self.nn.fp(data_batch.to(self.nn.device))
+                        else:
+                            output=self.nn.fp(data_batch.to(self.nn.device),t)
+                        loss=self.nn.loss(output,labels_batch.to(self.nn.device))
+                    batch_loss+=loss
+                    try:
+                        if self.nn.accuracy!=None:
+                            batch_acc+=self.nn.accuracy(output,labels_batch)
+                    except AttributeError:
+                        pass
+                total_loss,total_acc=self.loss_acc(loss=batch_loss,acc=batch_acc,total_loss=total_loss,total_acc=total_acc,t=t)
                 if self.thread==None:
                     try:
                         self.nn.bc=j
@@ -600,7 +612,32 @@ class kernel:
                 index2=batch-(self.shape0-batches*batch)
                 data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,flag=True)
                 output,batch_loss=self.opt(data_batch,labels_batch,t)
-                total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc,t=t)
+                try:
+                    if self.platform.DType!=None:
+                        try:
+                            if self.thread==None:
+                                output=self.nn.fp(data_batch)
+                            else:
+                                output=self.nn.fp(data_batch,t)
+                            loss=self.nn.loss(output,labels_batch)
+                        except TypeError:
+                            if self.thread==None:
+                                output,loss=self.nn.fp(data_batch,labels_batch)
+                            else:
+                                output,loss=self.nn.fp(data_batch,labels_batch,t)
+                except AttributeError:
+                    if self.thread==None:
+                        output=self.nn.fp(data_batch.to(self.nn.device))
+                    else:
+                        output=self.nn.fp(data_batch.to(self.nn.device),t)
+                    loss=self.nn.loss(output,labels_batch.to(self.nn.device))
+                batch_loss+=loss
+                try:
+                    if self.nn.accuracy!=None:
+                        batch_acc+=self.nn.accuracy(output,labels_batch)
+                except AttributeError:
+                    pass
+                total_loss,total_acc=self.loss_acc(loss=batch_loss,acc=batch_acc,total_loss=total_loss,total_acc=total_acc,t=t)
                 if self.thread==None:
                     try:
                         self.nn.bc+=1
@@ -657,7 +694,23 @@ class kernel:
         elif self.ol==None:
             self.suspend_func()
             output,train_loss=self.opt(self.train_data,self.train_labels,t)
-            self.loss_acc(output=output,labels_batch=labels_batch,loss=train_loss,test_batch=test_batch,total_loss=total_loss,total_acc=total_acc,t=t)
+            self.loss_acc(loss=train_loss,test_batch=test_batch,total_loss=total_loss,total_acc=total_acc,t=t)
+            try:
+                if self.nn.accuracy!=None:
+                    if self.thread==None:
+                        acc=self.nn.accuracy(output,self.train_labels)
+                        acc=acc.numpy()
+                        acc=acc.astype(np.float32)
+                        self.train_acc=acc
+                        self.train_acc_list.append(acc)
+                    else:
+                        acc=self.nn.accuracy(output,self.train_labels[t])
+                        acc=acc.numpy()
+                        acc=acc.astype(np.float32)
+                        self.train_acc[t]=acc
+                        self.train_acc_list[t].append(acc)
+            except AttributeError:
+                pass
         else:
             self.suspend_func()
             data=self.ol()
@@ -728,6 +781,25 @@ class kernel:
                     return batch_loss,None
             data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j)
             output,batch_loss=self.opt_t(data_batch,labels_batch,t)
+            if j==0:
+                batch_loss=0
+                batch_acc=0
+            elif j==None or self.shape0%batch==0 and j==batches-1:
+                try:
+                    if self.platform.DType!=None:
+                        output,loss=self.tf_opt_t(data_batch,labels_batch,int(t))
+                except AttributeError:
+                    try:
+                        output=self.nn.fp(data_batch.to(self.nn.device))
+                    except:
+                        output=self.nn.fp(data_batch.to(self.nn.device),t)
+                    loss=self.nn.loss(output,labels_batch.to(self.nn.device))
+                batch_loss+=loss
+                try:
+                    if self.nn.accuracy!=None:
+                        batch_acc+=self.nn.accuracy(output,labels_batch)
+                except AttributeError:
+                    pass
             try:
                 self.nn.bc[t]=j
             except AttributeError:
