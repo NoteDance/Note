@@ -745,7 +745,6 @@ class kernel:
             else:
                 self.thread_lock[2].acquire()
                 self.total_epoch+=1
-                self.train_loss=train_loss.numpy()
                 train_loss=train_loss.numpy()
                 train_loss=train_loss.astype(np.float32)
                 self.train_loss=train_loss
