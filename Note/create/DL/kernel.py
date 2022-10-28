@@ -416,14 +416,14 @@ class kernel:
                     pass
             try:
                 if self.nn.opt!=None:
-                    self.gradient=tape.gradient(loss,self.nn.param)
-                    self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
+                    gradient=tape.gradient(loss,self.nn.param)
+                    self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
             except AttributeError:
-                self.gradient=self.nn.gradient(tape,loss,self.nn.param)
+                gradient=self.nn.gradient(tape,loss,self.nn.param)
                 try:
-                    self.nn.oopt(self.gradient,self.nn.param,t)
+                    self.nn.oopt(gradient,self.nn.param,t)
                 except TypeError:
-                    self.nn.oopt(self.gradient,self.nn.param)
+                    self.nn.oopt(gradient,self.nn.param)
             self.thread_lock[0].release()
         else:
             self.thread_lock[0].acquire()
