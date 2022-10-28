@@ -679,9 +679,7 @@ class kernel:
                 try:
                     if self.nn.accuracy!=None:
                         train_acc=self.nn.accuracy(output,data[1])
-                        train_acc=train_acc.astype(np.float32)
-                        self.train_acc=train_acc
-                        self.train_acc_list.append(train_acc)
+                        self.train_acc_list.append(train_acc.astype(np.float32))
                 except AttributeError:
                     pass
                 try:
@@ -694,13 +692,11 @@ class kernel:
                 else:
                     self.thread_lock[2].release()
             else:
-                self.nn.train_loss.append(loss.astype(np.float32))
+                self.nn.train_loss_list.append(loss.astype(np.float32))
                 try:
                     if self.nn.accuracy!=None:
                         train_acc=self.nn.accuracy(output,data[1])
-                        train_acc=train_acc.astype(np.float32)
-                        self.train_acc=train_acc
-                        self.train_acc.append(train_acc)
+                        self.train_acc_list.append(train_acc.astype(np.float32))
                 except AttributeError:
                     pass
                 try:
