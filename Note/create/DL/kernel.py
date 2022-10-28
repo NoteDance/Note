@@ -1200,13 +1200,11 @@ class kernel:
                 except AttributeError:
                     pass
             test_loss=total_loss.numpy()/batches
-            test_loss=test_loss
             test_loss=test_loss.astype(np.float32)
             try:
                 if self.nn.accuracy!=None:
                     pass
                 test_acc=total_acc.numpy()/batches
-                test_acc=test_acc
                 test_acc=test_acc.astype(np.float32)
             except AttributeError:
                 pass
