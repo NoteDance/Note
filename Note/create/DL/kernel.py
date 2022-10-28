@@ -369,18 +369,33 @@ class kernel:
                     gradient=self.nn.gradient(tape,loss,self.nn.param[t])
                     self.nn.oopt(gradient,self.nn.param,t)
         else:
+            try:
+                if self.nn.attenuate!=None:
+                    self.opt_counter[t]=0
+            except AttributeError:
+                pass
             if self.thread_lock!=None:
                 try:
                     if self.nn.opt!=None:
                         if self.PO==1:
                             self.thread_lock[0].acquire()
                             gradient=tape.gradient(loss,self.nn.param)
+                            try:
+                                if self.nn.attenuate!=None:
+                                    gradient=self.nn.attenuate(gradient,self.opt_counter[t])
+                            except AttributeError:
+                                pass
                             self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
                             self.thread_lock[0].release()
                         else:
                             self.thread_lock[0].acquire()
                             self.param=self.nn.param
                             self.gradient=tape.gradient(loss,self.param)
+                            try:
+                                if self.nn.attenuate!=None:
+                                    self.gradient=self.nn.attenuate(self.gradient,self.opt_counter[t])
+                            except AttributeError:
+                                pass
                             self.thread_lock[0].release()
                             self.thread_lock[1].acquire()
                             self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
@@ -389,12 +404,22 @@ class kernel:
                     if self.PO==1:
                         self.thread_lock[0].acquire()
                         gradient=self.nn.gradient(tape,loss,self.nn.param)
+                        try:
+                            if self.nn.attenuate!=None:
+                                gradient=self.nn.attenuate(gradient,self.opt_counter[t])
+                        except AttributeError:
+                            pass
                         self.nn.oopt(gradient,self.nn.param)
                         self.thread_lock[0].release()
                     else:
                         self.thread_lock[0].acquire()
                         self.param=self.nn.param
                         self.gradient=self.nn.gradient(tape,loss,self.param)
+                        try:
+                            if self.nn.attenuate!=None:
+                                self.gradient=self.nn.attenuate(self.gradient,self.opt_counter[t])
+                        except AttributeError:
+                            pass
                         self.thread_lock[0].release()
                         self.thread_lock[1].acquire()
                         self.nn.oopt(self.gradient,self.nn.param)
@@ -434,24 +459,24 @@ class kernel:
                     pass
             try:
                 if self.nn.opt!=None:
-                    self.gradient=tape.gradient(loss,self.nn.param)
+                    gradient=tape.gradient(loss,self.nn.param)
                 try:
                     if self.nn.attenuate!=None:
-                        self.gradient=self.attenuate(self.gradient,self.opt_counter[t])
+                        gradient=self.nn.attenuate(gradient,self.opt_counter[t])
                 except AttributeError:
                     pass
-                self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
+                self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
             except AttributeError:
-                self.gradient=self.nn.gradient(tape,loss,self.nn.param)
+                gradient=self.nn.gradient(tape,loss,self.nn.param)
                 try:
                     if self.nn.attenuate!=None:
-                        self.gradient=self.attenuate(self.gradient,self.opt_counter[t])
+                        gradient=self.nn.attenuate(gradient,self.opt_counter[t])
                 except AttributeError:
                     pass
                 try:
-                    self.nn.oopt(self.gradient,self.nn.param,t)
+                    self.nn.oopt(gradient,self.nn.param,t)
                 except TypeError:
-                    self.nn.oopt(self.gradient,self.nn.param)
+                    self.nn.oopt(gradient,self.nn.param)
             try:
                 if self.nn.attenuate!=None:
                     self.opt_counter+=1
@@ -466,14 +491,14 @@ class kernel:
                     self.gradient=tape.gradient(loss,self.param)
                 try:
                     if self.nn.attenuate!=None:
-                        self.gradient=self.attenuate(self.gradient,self.opt_counter[t])
+                        self.gradient=self.nn.attenuate(self.gradient,self.opt_counter[t])
                 except AttributeError:
                     pass
             except AttributeError:
                 self.gradient=self.nn.gradient(tape,loss,self.param)
                 try:
                     if self.nn.attenuate!=None:
-                        self.gradient=self.attenuate(self.gradient,self.opt_counter[t])
+                        self.gradient=self.nn.attenuate(self.gradient,self.opt_counter[t])
                 except AttributeError:
                     pass
             self.thread_lock[0].release()
