@@ -706,6 +706,15 @@ class kernel:
         else:
             while True:
                 if t in self.stop_list:
+                    if self.PO==1:
+                        self.thread_lock[1].acquire()
+                    else:
+                        self.thread_lock[2].acquire()
+                    self.stopped_list.append(t)
+                    if self.PO==1:
+                        self.thread_lock[1].release()
+                    else:
+                        self.thread_lock[2].release()
                     return
                 self.suspend_func(t)
                 if self.thread==None:
@@ -1092,17 +1101,18 @@ class kernel:
                         self._train_(test_batch=test_batch,t=t)
                     else:
                         self._train(test_batch=test_batch,t=t)
-                if t in self.stop_list:
-                    if self.PO==1:
-                        self.thread_lock[1].acquire()
-                    else:
-                        self.thread_lock[2].acquire()
-                    self.stopped_list.append(t)
-                    if self.PO==1:
-                        self.thread_lock[1].release()
-                    else:
-                        self.thread_lock[2].release()
-                    return
+                if self.thread_lock!=None:
+                    if t in self.stop_list:
+                        if self.PO==1:
+                            self.thread_lock[1].acquire()
+                        else:
+                            self.thread_lock[2].acquire()
+                        self.stopped_list.append(t)
+                        if self.PO==1:
+                            self.thread_lock[1].release()
+                        else:
+                            self.thread_lock[2].release()
+                        return
                 if self.stop_flag==0:
                     return
                 i+=1
@@ -1359,10 +1369,26 @@ class kernel:
     
     def suspend_func(self,t=None):
         if t in self.suspend_list:
+            if self.PO==1:
+                self.thread_lock[1].acquire()
+            else:
+                self.thread_lock[2].acquire()
             self.suspended_list.append(t)
+            if self.PO==1:
+                self.thread_lock[1].release()
+            else:
+                self.thread_lock[2].release()
             while True:
                 if t not in self.suspend_list:
+                    if self.PO==1:
+                        self.thread_lock[1].acquire()
+                    else:
+                        self.thread_lock[2].acquire()
                     self.suspended_list.remove(t)
+                    if self.PO==1:
+                        self.thread_lock[1].release()
+                    else:
+                        self.thread_lock[2].release()
                     break
         if self.suspend==True:
             if self.thread==None:
