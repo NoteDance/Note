@@ -789,12 +789,28 @@ class kernel:
         return
     
     
-    def suspend_func(self,i):
-        if i in self.suspend_list:
-            self.suspended_list.append(i)
+    def suspend_func(self,t):
+        if t in self.suspend_list:
+            if self.PN==True:
+                self.thread_lock[3].acquire()
+            else:
+                self.thread_lock[0].acquire()
+            self.suspended_list.append(t)
+            if self.PN==True:
+                self.thread_lock[3].release()
+            else:
+                self.thread_lock[0].release()
             while True:
-                if i not in self.suspend_list:
-                    self.suspended_list.remove(i)
+                if t not in self.suspend_list:
+                    if self.PN==True:
+                        self.thread_lock[3].acquire()
+                    else:
+                        self.thread_lock[0].acquire()
+                    self.suspended_list.remove(t)
+                    if self.PN==True:
+                        self.thread_lock[3].release()
+                    else:
+                        self.thread_lock[0].release()
                     break
         if self.suspend==True:
             while True:
