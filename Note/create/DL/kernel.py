@@ -719,14 +719,14 @@ class kernel:
                 self.suspend_func(t)
                 if self.thread==None:
                     data=self.ol()
-                    output,loss=self.opt(data)
+                    output,loss=self.opt(data[0],data[1])
                 else:
                     data=self.ol(t)
                     try:
                         if self.platform.DType!=None:
-                            output,loss=self.opt(data,t)
+                            output,loss=self.opt(data[0],data[1],t)
                     except AttributeError:
-                        output,loss=self.opt_t(data,t)
+                        output,loss=self.opt_t(data[0],data[1],t)
                 loss=loss.numpy()
                 if self.thread_lock!=None:
                     if self.PO==1:
@@ -738,17 +738,16 @@ class kernel:
                     self.nn.train_loss_list.append(loss.astype(np.float32))
                     try:
                         if self.nn.accuracy!=None:
-                            train_acc=self.nn.accuracy(output,data)
+                            train_acc=self.nn.accuracy(output,data[1])
                             if len(self.nn.train_acc_list)==self.nn.max_length:
                                 del self.nn.train_acc_list[0]
                             self.train_acc_list.append(train_acc.astype(np.float32))
                     except AttributeError:
                         pass
                     try:
-                        self.nn.ec+=1
+                        self.nn.c+=1
                     except AttributeError:
                         pass
-                    self.total_epoch+=1
                     if self.PO==1:
                         self.thread_lock[1].release()
                     else:
@@ -759,17 +758,16 @@ class kernel:
                     self.nn.train_loss_list.append(loss.astype(np.float32))
                     try:
                         if self.nn.accuracy!=None:
-                            train_acc=self.nn.accuracy(output,data)
+                            train_acc=self.nn.accuracy(output,data[1])
                             if len(self.nn.train_acc_list)==self.nn.max_length:
                                 del self.nn.train_acc_list[0]
                             self.train_acc_list.append(train_acc.astype(np.float32))
                     except AttributeError:
                         pass
                     try:
-                        self.nn.ec+=1
+                        self.nn.c+=1
                     except AttributeError:
                         pass
-                    self.total_epoch+=1
         return
     
     
