@@ -719,24 +719,28 @@ class kernel:
                 self.suspend_func(t)
                 if self.thread==None:
                     data=self.ol()
-                    output,loss=self.opt(data[0],data[1])
+                    output,loss=self.opt(data)
                 else:
                     data=self.ol(t)
                     try:
                         if self.platform.DType!=None:
-                            output,loss=self.opt(data[0],data[1],t)
+                            output,loss=self.opt(data,t)
                     except AttributeError:
-                        output,loss=self.opt_t(data[0],data[1],t)
+                        output,loss=self.opt_t(data,t)
                 loss=loss.numpy()
                 if self.thread_lock!=None:
                     if self.PO==1:
                         self.thread_lock[1].acquire()
                     else:
                         self.thread_lock[2].acquire()
+                    if len(self.nn.train_loss_list)==self.nn.max_length:
+                        del self.nn.train_loss_list[0]
                     self.nn.train_loss_list.append(loss.astype(np.float32))
                     try:
                         if self.nn.accuracy!=None:
-                            train_acc=self.nn.accuracy(output,data[1])
+                            train_acc=self.nn.accuracy(output,data)
+                            if len(self.nn.train_acc_list)==self.nn.max_length:
+                                del self.nn.train_acc_list[0]
                             self.train_acc_list.append(train_acc.astype(np.float32))
                     except AttributeError:
                         pass
@@ -750,10 +754,14 @@ class kernel:
                     else:
                         self.thread_lock[2].release()
                 else:
+                    if len(self.nn.train_loss_list)==self.nn.max_length:
+                        del self.nn.train_loss_list[0]
                     self.nn.train_loss_list.append(loss.astype(np.float32))
                     try:
                         if self.nn.accuracy!=None:
-                            train_acc=self.nn.accuracy(output,data[1])
+                            train_acc=self.nn.accuracy(output,data)
+                            if len(self.nn.train_acc_list)==self.nn.max_length:
+                                del self.nn.train_acc_list[0]
                             self.train_acc_list.append(train_acc.astype(np.float32))
                     except AttributeError:
                         pass
