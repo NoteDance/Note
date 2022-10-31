@@ -64,6 +64,7 @@ class kernel:
         except AttributeError:
             self.running_flag=np.array(0,dtype='int8')
         self.PN=True
+        self.PO=1
         self.save_episode=save_episode
         self.reward_list=[]
         self.loss_list=[]
@@ -259,7 +260,7 @@ class kernel:
         return episode
     
     
-    def pool(self,s,a,next_s,r,done,i,index):
+    def pool(self,s,a,next_s,r,done,t,index):
         if self.PN==True:
             if self.threading!=None:
                 self.pool_lock[index].acquire()
@@ -299,32 +300,32 @@ class kernel:
             else:
                 self.thread_lock[0].release()
         else:
-            if self.state_pool[i]==None and type(self.state_pool[i])!=np.ndarray:
-                self.state_pool[i]=s
+            if self.state_pool[t]==None and type(self.state_pool[t])!=np.ndarray:
+                self.state_pool[t]=s
                 if type(a)==int:
                     a=np.array(a,np.int64)
-                    self.action_pool[i]=np.expand_dims(a,axis=0)
+                    self.action_pool[t]=np.expand_dims(a,axis=0)
                 else:
-                    self.action_pool[i]=a
-                self.next_state_pool[i]=np.expand_dims(next_s,axis=0)
-                self.reward_pool[i]=np.expand_dims(r,axis=0)
-                self.done_pool[i]=np.expand_dims(done,axis=0)
+                    self.action_pool[t]=a
+                self.next_state_pool[t]=np.expand_dims(next_s,axis=0)
+                self.reward_pool[t]=np.expand_dims(r,axis=0)
+                self.done_pool[t]=np.expand_dims(done,axis=0)
             else:
-                self.state_pool[i]=np.concatenate((self.state_pool[i],s),0)
+                self.state_pool[t]=np.concatenate((self.state_pool[t],s),0)
                 if type(a)==int:
                     a=np.array(a,np.int64)
-                    self.action_pool[i]=np.concatenate((self.action_pool[i],np.expand_dims(a,axis=0)),0)
+                    self.action_pool[t]=np.concatenate((self.action_pool[t],np.expand_dims(a,axis=0)),0)
                 else:
-                    self.action_pool[i]=np.concatenate((self.action_pool[i],a),0)
-                self.next_state_pool[i]=np.concatenate((self.next_state_pool[i],np.expand_dims(next_s,axis=0)),0)
-                self.reward_pool[i]=np.concatenate((self.reward_pool[i],np.expand_dims(r,axis=0)),0)
-                self.done_pool[i]=np.concatenate((self.done_pool[i],np.expand_dims(done,axis=0)),0)
-            if self.state_pool[i]!=None and len(self.state_pool[i])>self.pool_size:
-                self.state_pool[i]=self.state_pool[i][1:]
-                self.action_pool[i]=self.action_pool[i][1:]
-                self.next_state_pool[i]=self.next_state_pool[i][1:]
-                self.reward_pool[i]=self.reward_pool[i][1:]
-                self.done_pool[i]=self.done_pool[i][1:]
+                    self.action_pool[t]=np.concatenate((self.action_pool[t],a),0)
+                self.next_state_pool[t]=np.concatenate((self.next_state_pool[t],np.expand_dims(next_s,axis=0)),0)
+                self.reward_pool[t]=np.concatenate((self.reward_pool[t],np.expand_dims(r,axis=0)),0)
+                self.done_pool[t]=np.concatenate((self.done_pool[t],np.expand_dims(done,axis=0)),0)
+            if self.state_pool[t]!=None and len(self.state_pool[t])>self.pool_size:
+                self.state_pool[t]=self.state_pool[t][1:]
+                self.action_pool[t]=self.action_pool[t][1:]
+                self.next_state_pool[t]=self.next_state_pool[t][1:]
+                self.reward_pool[t]=self.reward_pool[t][1:]
+                self.done_pool[t]=self.done_pool[t][1:]
         return
     
     
@@ -365,32 +366,32 @@ class kernel:
         return
     
     
-    def index(self,i):
+    def index(self,t):
         if self.PN==True:
             try:
                 if self.nn.row!=None:
                     while True:
                         row_sum=np.sum(self.row_one)
-                        if self.row_sum_list[i]==None:
-                            self.row_sum_list[i]=row_sum
-                        if self.row_sum_list[i]==row_sum:
-                            row_index=np.random.choice(self.nn.row,p=self.row_probability[i])-1
+                        if self.row_sum_list[t]==None:
+                            self.row_sum_list[t]=row_sum
+                        if self.row_sum_list[t]==row_sum:
+                            row_index=np.random.choice(self.nn.row,p=self.row_probability[t])-1
                         else:
-                            self.row_sum_list[i]=row_sum
-                            self.row_probability[i]=self.row_one/row_sum
-                            row_index=np.random.choice(self.nn.row,p=self.row_probability[i])-1
+                            self.row_sum_list[t]=row_sum
+                            self.row_probability[t]=self.row_one/row_sum
+                            row_index=np.random.choice(self.nn.row,p=self.row_probability[t])-1
                         rank_sum=np.sum(self.one_matrix[row_index])
                         if rank_sum==0:
                             self.row_one[row_index]=0
                             continue
-                        if self.rank_sum_list[i]==None:
-                           self.rank_sum_list[i]=rank_sum
-                        if self.rank_sum_list[i]==rank_sum:
-                            rank_index=np.random.choice(self.nn.rank,p=self.rank_probability[i])-1
+                        if self.rank_sum_list[t]==None:
+                           self.rank_sum_list[t]=rank_sum
+                        if self.rank_sum_list[t]==rank_sum:
+                            rank_index=np.random.choice(self.nn.rank,p=self.rank_probability[t])-1
                         else:
-                            self.rank_sum_list[i]=rank_sum
-                            self.rank_probability[i]=self.one_matrix[row_index]/rank_sum
-                            rank_index=np.random.choice(self.nn.rank,p=self.rank_probability[i])-1
+                            self.rank_sum_list[t]=rank_sum
+                            self.rank_probability[t]=self.one_matrix[row_index]/rank_sum
+                            rank_index=np.random.choice(self.nn.rank,p=self.rank_probability[t])-1
                         index=self.index_matrix[row_index][rank_index]
                         if index in self.finish_list:
                             self.one_matrix[row_index][rank_index]=0
@@ -398,26 +399,26 @@ class kernel:
                         else:
                             break
             except AttributeError:
-                while len(self.running_flag_list)<i:
+                while len(self.running_flag_list)<t:
                     pass
-                if len(self.running_flag_list)==i:
+                if len(self.running_flag_list)==t:
                     self.thread_lock[2].acquire()
                     self.running_flag_list.append(self.running_flag[1:])
                     self.thread_lock[2].release()
                 else:
-                    if len(self.running_flag_list[i])<self.thread_counter or np.sum(self.running_flag_list[i])>self.thread_counter:
-                        self.running_flag_list[i]=self.running_flag[1:]
-                while len(self.probability_list)<i:
+                    if len(self.running_flag_list[t])<self.thread_counter or np.sum(self.running_flag_list[t])>self.thread_counter:
+                        self.running_flag_list[t]=self.running_flag[1:]
+                while len(self.probability_list)<t:
                     pass
-                if len(self.probability_list)==i:
+                if len(self.probability_list)==t:
                     self.thread_lock[2].acquire()
-                    self.probability_list.append(np.array(self.running_flag_list[i],dtype=np.float16)/np.sum(self.running_flag_list[i]))
+                    self.probability_list.append(np.array(self.running_flag_list[t],dtype=np.float16)/np.sum(self.running_flag_list[t]))
                     self.thread_lock[2].release()
                 else:
-                    if len(self.probability_list[i])<self.thread_counter or np.sum(self.running_flag_list[i])>self.thread_counter:
-                        self.probability_list[i]=np.array(self.running_flag_list[i],dtype=np.float16)/np.sum(self.running_flag_list[i])
+                    if len(self.probability_list[t])<self.thread_counter or np.sum(self.running_flag_list[t])>self.thread_counter:
+                        self.probability_list[t]=np.array(self.running_flag_list[t],dtype=np.float16)/np.sum(self.running_flag_list[t])
                 while True:
-                    index=np.random.choice(len(self.probability_list[i]),p=self.probability_list[i])
+                    index=np.random.choice(len(self.probability_list[t]),p=self.probability_list[t])
                     if index in self.finish_list:
                         continue
                     else:
@@ -497,6 +498,31 @@ class kernel:
         except AttributeError:
             pass
         self.thread_lock[1].release()
+        return loss.numpy()
+    
+    
+    def opt_ol(self,data,t=None):
+        loss=self.nn.loss(data)
+        if self.thread!=None:
+            try:
+                if self.nn.attenuate!=None:
+                    self.opt_counter[t]=0
+            except AttributeError:
+                pass
+            self.thread_lock[0].acquire()
+            try:
+                if self.nn.attenuate!=None:
+                    self.nn.opt(loss,self.opt_counter[t])
+            except AttributeError:
+                self.nn.opt(loss)
+            try:
+                if self.nn.attenuate!=None:
+                    self.opt_counter+=1
+            except AttributeError:
+                pass
+            self.thread_lock[0].release()
+        else:
+            self.nn.opt(loss)
         return loss.numpy()
     
     
@@ -816,6 +842,57 @@ class kernel:
             self.next_state_pool[t]=None
             self.reward_pool[t]=None
             self.done_pool[t]=None
+        return
+    
+    
+    def train_ol(self,t):
+        while True:
+            if self.thread!=None:
+                if self.save_flag==True:
+                    if self.PO==1:
+                        self.thread_lock[1].acquire()
+                    self.save(one=True)
+                    if self.PO==1:
+                        self.thread_lock[1].release()
+                    if self.stop_flag==2:
+                        return
+                if t in self.stop_list:
+                    if self.PO==1:
+                        self.thread_lock[1].acquire()
+                    self.stopped_list.append(t)
+                    if self.PO==1:
+                        self.thread_lock[1].release()
+                    return
+                self.suspend_func(t)
+                data=self.nn.ol()
+                loss=self.opt_ol(data,t)
+                if self.thread_lock!=None:
+                    if self.PO==1:
+                        self.thread_lock[1].acquire()
+                    self.nn.train_loss_list.append(loss.astype(np.float32))
+                    if len(self.nn.train_acc_list)==self.nn.max_length:
+                        del self.nn.train_acc_list[0]
+                    try:
+                        self.nn.c+=1
+                    except AttributeError:
+                        pass
+                    if self.PO==1:
+                        self.thread_lock[1].release()
+            else:
+                if self.save_flag==True:
+                    self.save(one=True)
+                if self.stop_flag==2:
+                    return
+                self.suspend_func()
+                data=self.nn.ol()
+                loss=self.opt_ol(data)
+                self.nn.train_loss_list.append(loss.astype(np.float32))
+                if len(self.nn.train_acc_list)==self.nn.max_length:
+                    del self.nn.train_acc_list[0]
+                try:
+                    self.nn.c+=1
+                except AttributeError:
+                    pass
         return
     
     
