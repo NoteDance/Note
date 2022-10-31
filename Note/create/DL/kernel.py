@@ -18,7 +18,6 @@ class kernel:
         self.thread_lock=None
         self.thread=None
         self.thread_counter=0
-        self.ol=None
         self.suspend=False
         self.suspend_list=[]
         self.suspended_list=[]
@@ -699,75 +698,10 @@ class kernel:
                             self.test_acc_list[t].append(self.test_acc[t])
                     except AttributeError:
                         pass
-        elif self.ol==None:
+        else:
             self.suspend_func()
             output,train_loss=self.opt(self.train_data,self.train_labels,t)
             self.loss_acc(output=output,labels_batch=labels_batch,loss=train_loss,test_batch=test_batch,total_loss=total_loss,total_acc=total_acc,t=t)
-        else:
-            while True:
-                if t in self.stop_list:
-                    if self.PO==1:
-                        self.thread_lock[1].acquire()
-                    else:
-                        self.thread_lock[2].acquire()
-                    self.stopped_list.append(t)
-                    if self.PO==1:
-                        self.thread_lock[1].release()
-                    else:
-                        self.thread_lock[2].release()
-                    return
-                self.suspend_func(t)
-                if self.thread==None:
-                    data=self.ol()
-                    output,loss=self.opt(data[0],data[1])
-                else:
-                    data=self.ol(t)
-                    try:
-                        if self.platform.DType!=None:
-                            output,loss=self.opt(data[0],data[1],t)
-                    except AttributeError:
-                        output,loss=self.opt_t(data[0],data[1],t)
-                loss=loss.numpy()
-                if self.thread_lock!=None:
-                    if self.PO==1:
-                        self.thread_lock[1].acquire()
-                    else:
-                        self.thread_lock[2].acquire()
-                    if len(self.nn.train_loss_list)==self.nn.max_length:
-                        del self.nn.train_loss_list[0]
-                    self.nn.train_loss_list.append(loss.astype(np.float32))
-                    try:
-                        if self.nn.accuracy!=None:
-                            train_acc=self.nn.accuracy(output,data[1])
-                            if len(self.nn.train_acc_list)==self.nn.max_length:
-                                del self.nn.train_acc_list[0]
-                            self.train_acc_list.append(train_acc.astype(np.float32))
-                    except AttributeError:
-                        pass
-                    try:
-                        self.nn.c+=1
-                    except AttributeError:
-                        pass
-                    if self.PO==1:
-                        self.thread_lock[1].release()
-                    else:
-                        self.thread_lock[2].release()
-                else:
-                    if len(self.nn.train_loss_list)==self.nn.max_length:
-                        del self.nn.train_loss_list[0]
-                    self.nn.train_loss_list.append(loss.astype(np.float32))
-                    try:
-                        if self.nn.accuracy!=None:
-                            train_acc=self.nn.accuracy(output,data[1])
-                            if len(self.nn.train_acc_list)==self.nn.max_length:
-                                del self.nn.train_acc_list[0]
-                            self.train_acc_list.append(train_acc.astype(np.float32))
-                    except AttributeError:
-                        pass
-                    try:
-                        self.nn.c+=1
-                    except AttributeError:
-                        pass
         return
     
     
@@ -1095,7 +1029,7 @@ class kernel:
                     self.time+=(t2-t1)
                 else:
                     self.time[t]+=(t2-t1)
-        elif self.ol==None:
+        else:
             i=0
             while True:
                 t1=time.time()
@@ -1211,8 +1145,6 @@ class kernel:
                     self.time+=(t2-t1)
                 else:
                     self.time[t]+=(t2-t1)
-        else:
-            self._train()
         if save!=None:
             self.save()
         if self.thread==None:
@@ -1262,6 +1194,90 @@ class kernel:
                 self.thread_lock[1].release()
             else:
                 self.thread_lock[2].release()
+        return
+    
+    
+    def train_ol(self,t):
+        while True:
+            if self.thread==None:
+                if self.save_flag==True:
+                    if self.PO==1:
+                        self.thread_lock[1].acquire()
+                    else:
+                        self.thread_lock[2].acquire()
+                    self.save(one=True)
+                    if self.PO==1:
+                        self.thread_lock[1].release()
+                    else:
+                        self.thread_lock[2].release()
+                    if self.stop_flag==2:
+                        return
+                if t in self.stop_list:
+                    if self.PO==1:
+                        self.thread_lock[1].acquire()
+                    else:
+                        self.thread_lock[2].acquire()
+                    self.stopped_list.append(t)
+                    if self.PO==1:
+                        self.thread_lock[1].release()
+                    else:
+                        self.thread_lock[2].release()
+                    return
+                self.suspend_func(t)
+                data=self.nn.ol(t)
+                try:
+                    if self.platform.DType!=None:
+                        output,loss=self.opt(data[0],data[1],t)
+                except AttributeError:
+                    output,loss=self.opt_t(data[0],data[1],t)
+                loss=loss.numpy()
+                if self.thread_lock!=None:
+                    if self.PO==1:
+                        self.thread_lock[1].acquire()
+                    else:
+                        self.thread_lock[2].acquire()
+                    if len(self.nn.train_loss_list)==self.nn.max_length:
+                        del self.nn.train_loss_list[0]
+                    self.nn.train_loss_list.append(loss.astype(np.float32))
+                    try:
+                        if self.nn.accuracy!=None:
+                            train_acc=self.nn.accuracy(output,data[1])
+                            if len(self.nn.train_acc_list)==self.nn.max_length:
+                                del self.nn.train_acc_list[0]
+                            self.train_acc_list.append(train_acc.astype(np.float32))
+                    except AttributeError:
+                        pass
+                    try:
+                        self.nn.c+=1
+                    except AttributeError:
+                        pass
+                    if self.PO==1:
+                        self.thread_lock[1].release()
+                    else:
+                        self.thread_lock[2].release()
+            else:
+                if self.save_flag==True:
+                    self.save(one=True)
+                if self.stop_flag==2:
+                    return
+                self.suspend_func()
+                data=self.nn.ol()
+                output,loss=self.opt(data[0],data[1])
+                if len(self.nn.train_loss_list)==self.nn.max_length:
+                    del self.nn.train_loss_list[0]
+                self.nn.train_loss_list.append(loss.astype(np.float32))
+                try:
+                    if self.nn.accuracy!=None:
+                        train_acc=self.nn.accuracy(output,data[1])
+                        if len(self.nn.train_acc_list)==self.nn.max_length:
+                            del self.nn.train_acc_list[0]
+                        self.train_acc_list.append(train_acc.astype(np.float32))
+                except AttributeError:
+                    pass
+                try:
+                    self.nn.c+=1
+                except AttributeError:
+                    pass
         return
     
     
