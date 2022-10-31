@@ -14,8 +14,6 @@ class kernel:
             self.nn.km=1
         except AttributeError:
             pass
-        self.ol=None
-        self.PO=None
         self.thread_lock=None
         self.state_pool=None
         self.action_pool=None
@@ -196,18 +194,6 @@ class kernel:
         loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
         self.nn.opt(loss)
         return loss
-    
-    
-    def opt_t(self,data):
-        loss=self.nn.loss(data)
-        if self.thread_lock!=None:
-            if self.PO==1:
-                self.thread_lock[0].acquire()
-                self.nn.opt(loss)
-                self.thread_lock[0].release()
-        else:
-            self.nn.opt(loss)
-        return loss.numpy()
     
     
     def pool(self,s,a,next_s,r,done):
@@ -530,7 +516,7 @@ class kernel:
                     self.nn.ec+=1
                 except AttributeError:
                     pass
-        elif self.ol==None:
+        else:
             i=0
             while True:
                 loss,episode,done=self.train_()
@@ -598,29 +584,6 @@ class kernel:
                     self.nn.ec+=1
                 except AttributeError:
                     pass
-        else:
-            data=self.ol()
-            loss=self.opt_t(data)
-            if self.thread_lock!=None:
-                if self.PO==1:
-                    self.thread_lock[1].acquire()
-                self.loss=loss
-                self.nn.train_loss_list.append(loss.astype(np.float32))
-                try:
-                    self.nn.ec+=1
-                except AttributeError:
-                    pass
-                self.total_episode+=1
-                if self.PO==1:
-                    self.thread_lock[1].release()
-            else:
-                self.loss=loss
-                self.nn.train_loss_list.append(loss.astype(np.float32))
-                try:
-                    self.nn.ec+=1
-                except AttributeError:
-                    pass
-                self.total_episode+=1
         if save!=None:
             self.save()
         self._time=self.time-int(self.time)
@@ -744,7 +707,6 @@ class kernel:
                 os.remove(self.file_list[0][2])
                 del self.file_list[0]
         pickle.dump(self.nn,output_file)
-        pickle.dump(self.ol,output_file)
         pickle.dump(self.state_pool,output_file)
         pickle.dump(self.action_pool,output_file)
         pickle.dump(self.next_state_pool,output_file)
@@ -784,7 +746,6 @@ class kernel:
             self.nn.km=1
         except AttributeError:
             pass
-        self.ol=pickle.load(input_file)
         self.state_pool=pickle.load(input_file)
         self.action_pool=pickle.load(input_file)
         self.next_state_pool=pickle.load(input_file)
