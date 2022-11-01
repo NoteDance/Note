@@ -16,6 +16,7 @@ class kernel:
         self.platform=None
         self.PO=None
         self.thread_lock=None
+        self.gradient_lock=None
         self.thread=None
         self.thread_counter=0
         self.suspend=False
@@ -39,6 +40,7 @@ class kernel:
         self.opt_counter=None
         self.train_loss=None
         self.train_acc=None
+        self.ln_list=[]
         self.train_loss_list=[]
         self.train_acc_list=[]
         self.test_loss=None
@@ -502,24 +504,18 @@ class kernel:
             except AttributeError:
                 pass
             self.thread_lock[0].release()
-        else:
+        elif self.PO==2:
             self.thread_lock[0].acquire()
             try:
                 if self.nn.opt!=None:
-                    self.param=self.nn.param
-                    self.gradient=tape.gradient(loss,self.param)
-                try:
-                    if self.nn.attenuate!=None:
-                        self.gradient=self.nn.attenuate(self.gradient,self.opt_counter[t])
-                except AttributeError:
-                    pass
+                    self.gradient=tape.gradient(loss,self.nn.param)
             except AttributeError:
-                self.gradient=self.nn.gradient(tape,loss,self.param)
-                try:
-                    if self.nn.attenuate!=None:
-                        self.gradient=self.nn.attenuate(self.gradient,self.opt_counter[t])
-                except AttributeError:
-                    pass
+                self.gradient=self.nn.gradient(tape,loss,self.nn.param)
+            try:
+                if self.nn.attenuate!=None:
+                    self.gradient=self.nn.attenuate(self.gradient,self.opt_counter[t])
+            except AttributeError:
+                pass
             self.thread_lock[0].release()
             self.thread_lock[1].acquire()
             if self.stop==True and self.stop_flag==1:
@@ -533,6 +529,45 @@ class kernel:
                     self.nn.oopt(self.gradient,self.nn.param,t)
                 except TypeError:
                     self.nn.oopt(self.gradient,self.nn.param)
+            try:
+                if self.nn.attenuate!=None:
+                    self.opt_counter+=1
+            except AttributeError:
+                pass
+            self.thread_lock[1].release()
+        elif self.PO==3:
+            while True:
+                ln=np.random.choice(len(self.gradient_lock))
+                if ln in self.ln_list:
+                    continue
+                else:
+                    break
+            self.gradient_lock[ln].acquire()
+            self.ln_list.append(ln)
+            try:
+                if self.nn.opt!=None:
+                    gradient=tape.gradient(loss,self.nn.param)
+            except AttributeError:
+                gradient=self.nn.gradient(tape,loss,self.nn.param)
+            try:
+                if self.nn.attenuate!=None:
+                    gradient=self.nn.attenuate(gradient,self.opt_counter[t])
+            except AttributeError:
+                pass
+            self.ln_list.remove(ln)
+            self.gradient_lock[ln].release()
+            self.thread_lock[1].acquire()
+            if self.stop==True and self.stop_flag==1:
+                if self.stop_flag==0 or self.stop_func():
+                    pass
+            try:
+                if self.nn.opt!=None:
+                    self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+            except AttributeError:
+                try:
+                    self.nn.oopt(gradient,self.nn.param,t)
+                except TypeError:
+                    self.nn.oopt(gradient,self.nn.param)
             try:
                 if self.nn.attenuate!=None:
                     self.opt_counter+=1
@@ -606,6 +641,39 @@ class kernel:
                     except AttributeError:
                         pass
                     self.thread_lock[0].release()
+            elif self.PO==2:
+                try:
+                    self.thread_lock[0].acquire()
+                    if self.stop==True and self.stop_flag==1:
+                        if self.stop_flag==0 or self.stop_func():
+                            pass
+                    self.nn.opt.zero_grad()
+                    loss.backward()
+                    self.thread_lock[0].release()
+                    self.thread_lock[1].acquire()
+                    self.nn.opt.step()
+                    self.thread_lock[1].release()
+                except:
+                    self.thread_lock[0].acquire()
+                    if self.stop==True and self.stop_flag==1:
+                        if self.stop_flag==0 or self.stop_func():
+                            pass
+                    self.nn.backward(loss)
+                    self.thread_lock[0].release()
+                    self.thread_lock[1].acquire()
+                    try:
+                        self.nn.opt()
+                    except:
+                        if self.nn.attenuate!=None:
+                            self.nn.opt(self.opt_counter[t])
+                        else:
+                            self.nn.opt(t)
+                    try:
+                        if self.nn.attenuate!=None:
+                            self.opt_counter+=1
+                    except AttributeError:
+                        pass
+                    self.thread_lock[1].release()
         return output,loss
     
     
