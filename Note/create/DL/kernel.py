@@ -488,15 +488,15 @@ class kernel:
                     try:
                         if self.nn.opt!=None:
                             pass
-                        self.gradient=tape.gradient(self.batch_loss,self.nn.param)
+                        gradient=tape.gradient(self.batch_loss,self.nn.param)
                     except AttributeError:
-                        self.gradient=self.nn.gradient(tape,self.batch_loss,self.nn.param)
+                        gradient=self.nn.gradient(tape,self.batch_loss,self.nn.param)
                     try:
                         if self.nn.opt!=None:
                             pass
-                        self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
+                        self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
                     except AttributeError:
-                        self.nn.oopt(self.gradient,self.param,t)
+                        self.nn.oopt(gradient,self.param,t)
                     if self.acc_flag1==1:
                         self.batch_acc=self.nn.accuracy(self.output,labels_batch)
                     try:
@@ -505,16 +505,15 @@ class kernel:
                         pass
                 else:
                     self.thread_lock[0].acquire()
-                    self.param=self.nn.param
                     with tf.GradientTape() as tape:
                         self.output=self.nn.fp(data_batch)
                         self.batch_loss=self.nn.loss(self.output,labels_batch)
                     try:
                         if self.nn.opt!=None:
                             pass
-                        self.gradient=tape.gradient(self.batch_loss,self.param)
+                        self.gradient=tape.gradient(self.batch_loss,self.nn.param)
                     except AttributeError:
-                        self.gradient=self.nn.gradient(tape,self.batch_loss,self.param)
+                        self.gradient=self.nn.gradient(tape,self.batch_loss,self.nn.param)
                     self.thread_lock[0].release()
                     self.thread_lock[1].acquire()
                     try:
@@ -563,15 +562,15 @@ class kernel:
                 try:
                     if self.nn.opt!=None:
                         pass
-                    self.gradient=tape.gradient(self.batch_loss,self.nn.param)
+                    gradient=tape.gradient(self.batch_loss,self.nn.param)
                 except AttributeError:
-                    self.gradient=self.nn.gradient(tape,self.batch_loss,self.nn.param)
+                    gradient=self.nn.gradient(tape,self.batch_loss,self.nn.param)
                 try:
                     if self.nn.opt!=None:
                         pass
-                    self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
+                    self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
                 except AttributeError:
-                    self.nn.oopt(self.gradient,self.nn.param,t)
+                    self.nn.oopt(gradient,self.nn.param,t)
                 if self.acc_flag1==1:
                     self.batch_acc=self.nn.accuracy(self.output,labels_batch)
                 try:
@@ -580,16 +579,15 @@ class kernel:
                     pass
             else:
                 self.thread_lock[0].acquire()
-                self.param=self.nn.param
                 with tf.GradientTape() as tape:
                     self.output=self.nn.fp(data_batch)
                     self.batch_loss=self.nn.loss(self.output,labels_batch)
                 try:
                     if self.nn.opt!=None:
                         pass
-                    self.gradient=tape.gradient(self.batch_loss,self.param)
+                    self.gradient=tape.gradient(self.batch_loss,self.nn.param)
                 except AttributeError:
-                    self.gradient=self.nn.gradient(tape,self.batch_loss,self.param)
+                    self.gradient=self.nn.gradient(tape,self.batch_loss,self.nn.param)
                 self.thread_lock[0].release()
                 self.thread_lock[1].acquire()
                 try:
@@ -617,15 +615,15 @@ class kernel:
                 try:
                     if self.nn.opt!=None:
                         pass
-                    self.gradient=tape.gradient(self.train_loss,self.nn.param)
+                    gradient=tape.gradient(self.train_loss,self.nn.param)
                 except AttributeError:
-                    self.gradient=self.nn.gradient(tape,self.train_loss,self.nn.param)
+                    gradient=self.nn.gradient(tape,self.train_loss,self.nn.param)
                 try:
                     if self.nn.opt!=None:
                         pass
-                    self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
+                    self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
                 except AttributeError:
-                    self.nn.oopt(self.gradient,self.nn.param)
+                    self.nn.oopt(gradient,self.nn.param)
                 self.loss=self.train_loss.numpy()
                 self.train_loss_list.append(self.loss.astype(np.float32))
                 self.train_loss=self.loss
@@ -643,16 +641,15 @@ class kernel:
                         self.test_acc_list.append(self.test_acc)
             else:
                 self.thread_lock[0].acquire()
-                self.param=self.nn.param
                 with tf.GradientTape() as tape:
                     self.output=self.nn.fp(self.train_data)
                     self.train_loss=self.nn.loss(self.output,self.train_labels)
                 try:
                     if self.nn.opt!=None:
                         pass
-                    self.gradient=tape.gradient(self.train_loss,self.param)
+                    self.gradient=tape.gradient(self.train_loss,self.nn.param)
                 except AttributeError:
-                    self.gradient=self.nn.gradient(tape,self.train_loss,self.param)
+                    self.gradient=self.nn.gradient(tape,self.train_loss,self.nn.param)
                 self.thread_lock[0].release()
                 self.thread_lock[1].acquire()
                 try:
