@@ -429,10 +429,9 @@ class kernel:
             self.thread_lock[0].acquire()
             try:
                 if self.nn.opt!=None:
-                    self.param=self.nn.param
-                    self.gradient=tape.gradient(loss,self.param)
+                    self.gradient=tape.gradient(loss,self.nn.param)
             except AttributeError:
-                self.gradient=self.nn.gradient(tape,loss,self.param)
+                self.gradient=self.nn.gradient(tape,loss,self.nn.param)
             self.thread_lock[0].release()
             self.thread_lock[1].acquire()
             if self.stop==True and self.stop_flag==1:
