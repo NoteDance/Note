@@ -17,7 +17,9 @@ class kernel:
         self.PO=None
         self.thread_lock=None
         self.gradient_lock=None
+        self.max_lock=None
         self.thread=None
+        self.threading=None
         self.thread_counter=0
         self.suspend=False
         self.suspend_list=[]
@@ -536,12 +538,15 @@ class kernel:
                 pass
             self.thread_lock[1].release()
         elif self.PO==3:
-            while True:
-                ln=np.random.choice(len(self.gradient_lock))
-                if ln in self.ln_list:
-                    continue
-                else:
-                    break
+            if len(self.gradient_lock)==self.thread:
+                ln=t
+            else:
+                while True:
+                    ln=np.random.choice(len(self.gradient_lock))
+                    if ln in self.ln_list:
+                        continue
+                    else:
+                        break
             self.gradient_lock[ln].acquire()
             self.ln_list.append(ln)
             try:
@@ -960,6 +965,11 @@ class kernel:
             if self.PO==1:
                 self.thread_lock[1].release()
             else:
+                self.thread_lock[2].release()
+        if self.thredding!=None:
+            if self.PO==3 and len(self.gradient_lock)<self.max_lock:
+                self.thread_lock[2].acquire()
+                self.gradient_lock.append(self.threading.Lock())
                 self.thread_lock[2].release()
         self.batch=batch
         self.epoch=0
