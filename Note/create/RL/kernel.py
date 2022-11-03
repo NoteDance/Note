@@ -485,7 +485,7 @@ class kernel:
             pass
         if self.PO==1:
             self.thread_lock[1].acquire()
-            if self.stop==True and self.stop_flag==1 or self.stop_flag==2:
+            if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
                 if self.stop_flag==0 or self.stop_func():
                     return 0
             try:
@@ -501,7 +501,7 @@ class kernel:
             self.thread_lock[1].release()
         else:
             self.thread_lock[1].acquire()
-            if self.stop==True and self.stop_flag==1 or self.stop_flag==2:
+            if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
                 if self.stop_flag==0 or self.stop_func():
                     return 0
             self.nn.backward(loss)
