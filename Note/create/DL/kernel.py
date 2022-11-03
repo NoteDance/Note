@@ -411,7 +411,7 @@ class kernel:
                     output,loss=self.nn.fp(data,labels)
         if self.PO==1:
             self.thread_lock[0].acquire()
-            if self.stop==True and self.stop_flag==1 or self.stop_flag==2:
+            if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
                 if self.stop_flag==0 or self.stop_func():
                     return 0,0
             try:
@@ -434,7 +434,7 @@ class kernel:
                 self.gradient=self.nn.gradient(tape,loss,self.nn.param)
             self.thread_lock[0].release()
             self.thread_lock[1].acquire()
-            if self.stop==True and self.stop_flag==1 or self.stop_flag==2:
+            if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
                 if self.stop_flag==0 or self.stop_func():
                     return 0,0
             try:
@@ -483,7 +483,7 @@ class kernel:
             if self.PO==1:
                 try:
                     self.thread_lock[0].acquire()
-                    if self.stop==True and self.stop_flag==1 or self.stop_flag==2:
+                    if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
                         if self.stop_flag==0 or self.stop_func():
                             return 0,0
                     self.nn.opt.zero_grad()
@@ -492,7 +492,7 @@ class kernel:
                     self.thread_lock[0].release()
                 except:
                     self.thread_lock[0].acquire()
-                    if self.stop==True and self.stop_flag==1 or self.stop_flag==2:
+                    if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
                         if self.stop_flag==0 or self.stop_func():
                             return 0,0
                     try:
