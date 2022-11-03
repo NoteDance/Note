@@ -74,7 +74,7 @@ kernel.train(64,5)         #train neural network
 ## Parallel optimization:
 You can use parallel optimization to speed up neural network training,parallel optimization speed up training by multithreading.
 
-Note have two types of parallel optimization:
+Note have three types of parallel optimization:
 1. not parallel computing gradient and optimizing.(kernel.PO=1)
 2. parallel computing gradient and optimizing.(kernel.PO=2)
 
@@ -211,6 +211,35 @@ for _ in range(2):
 	_thread.join()
 kernel.train_loss_list or kernel.train_loss       #view training loss
 kernel.visualize_train()
+```
+
+PO3:
+```python
+import Note.create.DL.kernel as k   #import kernel
+import tensorflow as tf              #import platform
+import cnn as c                          #import neural network
+import threading
+mnist=tf.keras.datasets.mnist
+(x_train,y_train),(x_test,y_test)=mnist.load_data()
+x_train,x_test =x_train/255.0,x_test/255.0
+y_train=tf.one_hot(y_train,10).numpy()
+cnn=c.cnn()                                #create neural network object
+kernel=k.kernel(cnn)   #start kernel
+kernel.platform=tf                            #use platform
+kernel.thread=7                        #thread count
+kernel.PO=3
+kernel.threading=threading
+kernel.max_lock=7
+kernel.data(x_train,y_train)   #input you data
+kernel.thread_lock=[threading.Lock(),threading.Lock()]
+class thread(threading.Thread):
+	def run(self):
+		kernel.train(32,1)
+for _ in range(7):
+	_thread=thread()
+	_thread.start()
+for _ in range(7):
+	_thread.join()
 ```
 
 Stop multithreading training and saving when condition is met.
