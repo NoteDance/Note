@@ -411,9 +411,9 @@ class kernel:
                     output,loss=self.nn.fp(data,labels)
         if self.PO==1:
             self.thread_lock[0].acquire()
-            if self.stop==True and self.stop_flag==1:
+            if self.stop==True and self.stop_flag==1 or self.stop_flag==2:
                 if self.stop_flag==0 or self.stop_func():
-                    pass
+                    return 0,0
             try:
                 if self.nn.opt!=None:
                     gradient=tape.gradient(loss,self.nn.param)
@@ -434,9 +434,9 @@ class kernel:
                 self.gradient=self.nn.gradient(tape,loss,self.nn.param)
             self.thread_lock[0].release()
             self.thread_lock[1].acquire()
-            if self.stop==True and self.stop_flag==1:
+            if self.stop==True and self.stop_flag==1 or self.stop_flag==2:
                 if self.stop_flag==0 or self.stop_func():
-                    pass
+                    return 0,0
             try:
                 if self.nn.opt!=None:
                     self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
@@ -483,18 +483,18 @@ class kernel:
             if self.PO==1:
                 try:
                     self.thread_lock[0].acquire()
-                    if self.stop==True and self.stop_flag==1:
+                    if self.stop==True and self.stop_flag==1 or self.stop_flag==2:
                         if self.stop_flag==0 or self.stop_func():
-                            pass
+                            return 0,0
                     self.nn.opt.zero_grad()
                     loss.backward()
                     self.nn.opt.step()
                     self.thread_lock[0].release()
                 except:
                     self.thread_lock[0].acquire()
-                    if self.stop==True and self.stop_flag==1:
+                    if self.stop==True and self.stop_flag==1 or self.stop_flag==2:
                         if self.stop_flag==0 or self.stop_func():
-                            pass
+                            return 0,0
                     try:
                         self.nn.opt(loss)
                     except:
@@ -716,9 +716,6 @@ class kernel:
             for j in range(batches):
                 if t in self.stop_list:
                     return
-                if self.stop==True and self.stop_flag==2:
-                    if self.stop_flag==0 or self.stop_func():
-                        return
                 self.suspend_func(t)
                 index1=j*batch
                 index2=(j+1)*batch
@@ -734,9 +731,6 @@ class kernel:
             if self.shape0%batch!=0:
                 if t in self.stop_list:
                     return
-                if self.stop==True and self.stop_flag==2:
-                    if self.stop_flag==0 or self.stop_func():
-                        return
                 self.suspend_func(t)
                 batches+=1
                 index1=batches*batch
@@ -787,9 +781,6 @@ class kernel:
         else:
             if t in self.stop_list:
                 return
-            if self.stop==True and self.stop_flag==2:
-                if self.stop_flag==0 or self.stop_func():
-                    return
             self.suspend_func(t)
             batch_loss,batch_acc=self.train_(data_batch,labels_batch,batch,batches,test_batch,index1,index2,j,t)
             return
