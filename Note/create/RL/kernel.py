@@ -468,7 +468,7 @@ class kernel:
     def opt(self,state_batch,action_batch,next_state_batch,reward_batch,done_batch):
         loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
         self.thread_lock[1].acquire()
-        if self.stop==True and self.stop_flag==1 or self.stop_flag==2:
+        if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
             if self.stop_flag==0 or self.stop_func():
                 return 0
         self.nn.opt(loss)
