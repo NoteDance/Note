@@ -477,7 +477,7 @@ class kernel:
             pass
         if self.PO==1:
             self.thread_lock[0].acquire()
-            if self.stop==True and self.stop_flag==1 or self.stop_flag==2:
+            if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
                 if self.stop_flag==0 or self.stop_func():
                     return 0,0
             try:
@@ -520,7 +520,7 @@ class kernel:
                 pass
             self.thread_lock[0].release()
             self.thread_lock[1].acquire()
-            if self.stop==True and self.stop_flag==1 or self.stop_flag==2:
+            if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
                 if self.stop_flag==0 or self.stop_func():
                     return 0,0
             try:
@@ -562,7 +562,7 @@ class kernel:
             self.ln_list.remove(ln)
             self.gradient_lock[ln].release()
             self.thread_lock[0].acquire()
-            if self.stop==True and self.stop_flag==1 or self.stop_flag==2:
+            if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
                 if self.stop_flag==0 or self.stop_func():
                     return 0,0
             try:
@@ -621,7 +621,7 @@ class kernel:
             if self.PO==1:
                 try:
                     self.thread_lock[0].acquire()
-                    if self.stop==True and self.stop_flag==1 or self.stop_flag==2:
+                    if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
                         if self.stop_flag==0 or self.stop_func():
                             return 0,0
                     self.nn.opt.zero_grad()
@@ -630,7 +630,7 @@ class kernel:
                     self.thread_lock[0].release()
                 except:
                     self.thread_lock[0].acquire()
-                    if self.stop==True and self.stop_flag==1 or self.stop_flag==2:
+                    if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
                         if self.stop_flag==0 or self.stop_func():
                             return 0,0
                     try:
@@ -649,7 +649,7 @@ class kernel:
             elif self.PO==2:
                 try:
                     self.thread_lock[0].acquire()
-                    if self.stop==True and self.stop_flag==1 or self.stop_flag==2:
+                    if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
                         if self.stop_flag==0 or self.stop_func():
                             return 0,0
                     self.nn.opt.zero_grad()
@@ -660,7 +660,7 @@ class kernel:
                     self.thread_lock[1].release()
                 except:
                     self.thread_lock[0].acquire()
-                    if self.stop==True and self.stop_flag==1 or self.stop_flag==2:
+                    if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
                         if self.stop_flag==0 or self.stop_func():
                             return 0,0
                     self.nn.backward(loss)
