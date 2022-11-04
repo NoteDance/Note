@@ -43,6 +43,9 @@ class kernel:
         self.train_loss=None
         self.train_acc=None
         self.ln_list=[]
+        self.muti_p=None
+        self.muti_s=None
+        self.muti_save=None
         self.train_loss_list=[]
         self.train_acc_list=[]
         self.test_loss=None
@@ -831,6 +834,7 @@ class kernel:
                             self.test_acc_list.append(self.test_acc)
                     except AttributeError:
                         pass
+                self.print_save()
                 self.thread_lock[1].release()
             else:
                 self.thread_lock[2].acquire()
@@ -856,6 +860,7 @@ class kernel:
                             self.test_acc_list.append(self.test_acc)
                     except AttributeError:
                         pass
+                self.print_save()
                 self.thread_lock[2].release()
             return
     
@@ -925,6 +930,7 @@ class kernel:
                     self.test_acc_list.append(self.test_acc)
             except AttributeError:
                 pass
+            self.print_save()
             if self.PO==1 or self.PO==3:
                 self.thread_lock[1].release()
             else:
@@ -1583,6 +1589,64 @@ class kernel:
             return
         elif self.save_epoch!=None and self.save_epoch>self.total_epoch:
             print('\nsave_epoch>total_epoch')
+        return
+    
+    
+    def print_save(self):
+        if self.muti_p!=None or self.muti_s!=None:
+            if self.epoch%10!=0:
+                if self.muti_p!=None:
+                    p=self.epoch-self.epoch%self.muti_p
+                    p=int(p/self.muti_p)
+                    if p==0:
+                        p=1
+                if self.muti_s!=None:
+                    s=self.epoch-self.epoch%self.muti_s
+                    s=int(s/self.muti_s)
+                    if s==0:
+                        s=1
+            else:
+                if self.muti_p!=None:
+                    p=self.epoch/(self.muti_p+1)
+                    p=int(p)
+                    if p==0:
+                        p=1
+                if self.muti_s!=None:
+                    s=self.epoch/(self.muti_s+1)
+                    s=int(s)
+                    if s==0:
+                        s=1
+            if self.muti_p!=None and self.epoch%p==0:
+                if self.test_flag==False:
+                    try:
+                        if self.nn.accuracy!=None:
+                            print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
+                            if self.acc_flag=='%':
+                                print('epoch:{0}   accuracy:{1:.1f}'.format(self.total_epoch,self.train_acc*100))
+                            else:
+                                print('epoch:{0}   accuracy:{1:.6f}'.format(self.total_epoch,self.train_acc))
+                            print()
+                    except AttributeError:
+                        print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
+                        print()
+                else:
+                    try:
+                        if self.nn.accuracy!=None:
+                            print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch,self.train_loss,self.test_loss))
+                            if self.acc_flag=='%':
+                                print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(self.total_epoch,self.train_acc*100,self.test_acc*100))
+                            else:
+                                print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(self.total_epoch,self.train_acc,self.test_acc))
+                            print()
+                    except AttributeError:   
+                        print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch,self.train_loss,self.test_loss))
+                        print()
+            if self.muti_s!=None and self.muti_save!=None and self.epoch%s==0:
+                if self.muti_save==1:
+                    self.save(self.total_epoch)
+                else:
+                    self.save(self.total_epoch,False)
+            self.epoch+=1
         return
     
     
