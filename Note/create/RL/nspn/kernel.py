@@ -469,7 +469,6 @@ class kernel:
                 loss=loss.astype(np.float32)
                 self.loss=loss
                 self.loss_list.append(loss)
-                self.epi_num+=1
                 self.total_episode+=1
                 if episode_num%10!=0:
                     p=episode_num-episode_num%self.p
@@ -541,7 +540,6 @@ class kernel:
                 self.loss=loss
                 self.loss_list.append(loss)
                 i+=1
-                self.epi_num+=1
                 self.total_episode+=1
                 if episode_num%10!=0:
                     p=episode_num-episode_num%self.p
