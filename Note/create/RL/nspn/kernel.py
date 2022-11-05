@@ -242,7 +242,7 @@ class kernel:
     
     def _train(self):
         if len(self.state_pool)<self.batch:
-            return
+            return 0
         else:
             loss=0
             batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
@@ -500,9 +500,7 @@ class kernel:
                     s=1
                 if i%p==0:
                     if self.train_counter==1:
-                        if self.state_pool!=None and len(self.state_pool)>=self.batch:
-                            print('episode:{0}   loss:{1:.6f}'.format(i+1,loss))
-                        else:
+                        if len(self.state_pool)>=self.batch:
                             print('episode:{0}   loss:{1:.6f}'.format(i+1,loss))
                         if avg_reward!=None:
                             print('episode:{0}   average reward:{1}'.format(i+1,avg_reward))
@@ -510,9 +508,7 @@ class kernel:
                             print('episode:{0}   reward:{1}'.format(i+1,self.reward))
                         print()
                     else:
-                        if self.state_pool!=None and len(self.state_pool)>=self.batch:
-                            print('episode:{0}   loss:{1:.6f}'.format(self.total_episode,loss))
-                        else:
+                        if len(self.state_pool)>=self.batch:
                             print('episode:{0}   loss:{1:.6f}'.format(self.total_episode,loss))
                         if avg_reward!=None:
                             print('episode:{0}   average reward:{1}'.format(self.total_episode,avg_reward))
