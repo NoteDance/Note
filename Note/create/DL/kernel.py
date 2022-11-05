@@ -82,7 +82,6 @@ class kernel:
                 self.train_acc=np.zeros(self.thread)
                 self.train_loss_list=[[] for _ in range(self.thread)]
                 self.train_acc_list=[[] for _ in range(self.thread)]
-                self.epoch=np.zeros(self.thread)
                 self.total_epoch=np.zeros(self.thread)
                 self.time=np.zeros(self.thread)
                 self.total_time=np.zeros(self.thread)
@@ -113,7 +112,6 @@ class kernel:
                 self.train_acc=np.zeros(self.thread)
                 self.train_loss_list=[[] for _ in range(self.thread)]
                 self.train_acc_list=[[] for _ in range(self.thread)]
-                self.epoch=np.zeros(self.thread)
                 self.total_epoch=np.zeros(self.thread)
                 self.time=np.zeros(self.thread)
                 self.total_time=np.zeros(self.thread)
@@ -177,7 +175,6 @@ class kernel:
                 self.test_acc=np.concatenate((self.test_acc,np.zeros(thread)))
                 self.test_loss_list.extend([[] for _ in range(thread)])
                 self.test_acc_list.extend([[] for _ in range(thread)])
-        self.epoch=np.concatenate((self.epoch,np.zeros(thread)))
         self.total_epoch=np.concatenate((self.total_epoch,np.zeros(thread)))
         self.time=np.concatenate((self.time,np.zeros(thread)))
         self.total_time=np.concatenate((self.total_time,np.zeros(thread)))
@@ -863,10 +860,8 @@ class kernel:
                 if self.stop_flag==0:
                     return
                 if self.thread_lock==None and type(self.total_epoch)!=list:
-                    self.epoch+=1
                     self.total_epoch+=1
                 elif type(self.total_epoch)==list:
-                    self.epoch[t]+=1
                     self.total_epoch[t]+=1
                 if self.thread==None:
                     if epoch%10!=0:
@@ -969,10 +964,8 @@ class kernel:
                     return
                 i+=1
                 if self.thread_lock==None and type(self.total_epoch)!=list:
-                    self.epoch+=1
                     self.total_epoch+=1
                 elif type(self.total_epoch)==list:
-                    self.epoch[t]+=1
                     self.total_epoch[t]+=1
                 if self.thread==None:
                     if epoch%10!=0:
