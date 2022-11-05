@@ -30,6 +30,7 @@ class kernel:
         self.episode_step=None
         self.pool_size=None
         self.batch=None
+        self.episode_num=0
         self.update_step=None
         self.suspend=False
         self.suspend_list=[]
@@ -66,6 +67,9 @@ class kernel:
         self.PN=True
         self.PO=None
         self.save_episode=save_episode
+        self.muti_p=None
+        self.muti_s=None
+        self.muti_save=1
         self.reward_list=[]
         self.loss_list=[]
         self.total_episode=0
@@ -800,6 +804,11 @@ class kernel:
                             self.thread_lock[0].acquire()
                         self.total_episode+=1
                         self.loss_list.append(self.loss[t])
+                        if self.trial_num!=None and len(self.reward_list)>=self.trial_num:
+                            avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
+                            self.print_save(avg_reward)
+                        else:
+                            self.print_save()
                         if self.PN==True:
                             if self.PO==1:
                                 self.thread_lock[3].release()
@@ -866,6 +875,11 @@ class kernel:
                             self.thread_lock[0].acquire()
                         self.total_episode+=1
                         self.loss_list.append(self.loss[t])
+                        if self.trial_num!=None and len(self.reward_list)>=self.trial_num:
+                            avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
+                            self.print_save(avg_reward)
+                        else:
+                            self.print_save()
                         if self.PN==True:
                             if self.PO==1:
                                 self.thread_lock[3].release()
@@ -886,6 +900,11 @@ class kernel:
                             self.thread_lock[0].acquire()
                         self.total_episode+=1
                         self.loss_list.append(self.loss[t])
+                        if self.trial_num!=None and len(self.reward_list)>=self.trial_num:
+                            avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
+                            self.print_save(avg_reward)
+                        else:
+                            self.print_save()
                         if self.PN==True:
                             if self.PO==1:
                                 self.thread_lock[3].release()
@@ -1059,6 +1078,48 @@ class kernel:
             self.stop_flag=0
             return True
         return False
+    
+    
+    def print_save(self,avg_reward=None):
+        if self.muti_p!=None or self.muti_s!=None:
+            if self.episode_num%10!=0:
+                if self.muti_p!=None:
+                    p=self.episode_num-self.episode_num%self.muti_p
+                    p=int(p/self.muti_p)
+                    if p==0:
+                        p=1
+                if self.muti_s!=None:
+                    s=self.episode_num-self.episode_num%self.muti_s
+                    s=int(s/self.muti_s)
+                    if s==0:
+                        s=1
+            else:
+                if self.muti_p!=None:
+                    p=self.episode_num/(self.muti_p+1)
+                    p=int(p)
+                    if p==0:
+                        p=1
+                if self.muti_s!=None:
+                    s=self.episode_num/(self.muti_s+1)
+                    s=int(s)
+                    if s==0:
+                        s=1
+            try:
+                print('episode:{0}   loss:{1:.6f}'.format(self.total_episode,self.loss_list[-1]))
+            except IndexError:
+                pass
+            if avg_reward!=None:
+                print('episode:{0}   average reward:{1}'.format(self.total_episode,avg_reward))
+            else:
+                print('episode:{0}   reward:{1}'.format(self.total_episode,self.reward_list[-1]))
+            print()
+            if self.muti_s!=None and self.muti_save!=None and self.episode_num%s==0:
+                if self.muti_save==1:
+                    self.save(self.total_episode)
+                else:
+                    self.save(self.total_episode,False)
+            self.episode_num+=1
+        return
     
     
     def visualize_reward(self):
