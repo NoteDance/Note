@@ -402,10 +402,17 @@ class kernel:
         except AttributeError:
             with self.platform.GradientTape(persistent=True) as tape:
                 try:
-                    output=self.nn.fp(data)
-                    loss=self.nn.loss(output,labels)
-                except TypeError:
-                    output,loss=self.nn.fp(data,labels)
+                    try:
+                        output=self.nn.fp(data)
+                        loss=self.nn.loss(output,labels)
+                    except TypeError:
+                        output,loss=self.nn.fp(data,labels)
+                except:
+                    try:
+                        output=self.nn.fp(data,t)
+                        loss=self.nn.loss(output,labels,t)
+                    except TypeError:
+                        output,loss=self.nn.fp(data,labels,t)
         if self.PO==1:
             self.thread_lock[0].acquire()
             if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
@@ -424,6 +431,9 @@ class kernel:
             self.thread_lock[0].release()
         else:
             self.thread_lock[0].acquire()
+            if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
+                if self.stop_flag==0 or self.stop_func():
+                    return 0,0
             try:
                 if self.nn.opt!=None:
                     self.gradient=tape.gradient(loss,self.nn.param)
@@ -473,10 +483,11 @@ class kernel:
                 output,loss=self.tf_opt_t(data,labels,int(t))
         except AttributeError:
             try:
-                output=self.nn.fp(data.to(self.nn.device))
+                output=self.nn.fp(data)
+                loss=self.nn.loss(output,labels)
             except:
-                output=self.nn.fp(data.to(self.nn.device),t)
-            loss=self.nn.loss(output,labels.to(self.nn.device))
+                output=self.nn.fp(data,t)
+                loss=self.nn.loss(output,labels,t)
             if self.PO==1:
                 try:
                     self.thread_lock[0].acquire()
