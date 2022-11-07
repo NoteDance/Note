@@ -103,7 +103,6 @@ neural network example:https://github.com/NoteDancing/Note-documentation/tree/ma
 ![1](https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv/picture/time.png)
 ![2](https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv/picture/time(PO).png)
 
-
 ## Multithreading:
 **Note can speed up training by multithreading and has stop mechanism to resolve unstable training.**
 
