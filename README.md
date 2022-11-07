@@ -105,23 +105,6 @@ neural network example:https://github.com/NoteDancing/Note-documentation/tree/ma
 ![1](https://github.com/NoteDancing/Note-documentation/blob/main/picture/time.png)
 ![2](https://github.com/NoteDancing/Note-documentation/blob/main/picture/time(PO).png)
 
-**Use second parallel optimization to train on CIFAR10,speed was increased by more than 1.2 times,loss was reduced by 34 percent.**
-
-**Tensorflow version:2.9.1**
-
-**batch size:32**
-
-**epoch:10**
-
-**thread count:5**
-
-**PO:2**
-
-**CPU:i5-8400**
-
-**GPU:GTX 1050 Ti**
-
-
 ## Multithreading：
 **Note can speed up training by multithreading and has stop mechanism to resolve unstable training.**
 
