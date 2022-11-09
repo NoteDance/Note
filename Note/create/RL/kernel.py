@@ -14,8 +14,8 @@ class kernel:
             pass
         if thread!=None:
             self.running_flag=np.array(0,dtype='int8')
-            self.threadnum=np.arange(thread)
-            self.threadnum=list(self.threadnum)
+            self.thread_num=np.arange(thread)
+            self.thread_num=list(self.thread_num)
             self.reward=np.zeros(thread)
             self.loss=np.zeros(thread)
             self.sc=np.zeros(thread)
@@ -76,8 +76,8 @@ class kernel:
     
     
     def add_threads(self,thread):
-        threadnum=np.arange(thread)+self.thread
-        self.threadnum=self.threadnum.extend(threadnum)
+        thread_num=np.arange(thread)+self.thread
+        self.thread_num=self.thread_num.extend(thread_num)
         self.thread+=thread
         self.sc=np.concatenate((self.sc,np.zeros(thread)))
         self.reward=np.concatenate((self.reward,np.zeros(thread)))
@@ -108,8 +108,8 @@ class kernel:
             self.end_loss=end_loss
         if init==True:
             self.thread_counter=0
-            self.threadnum=np.arange(self.thread)
-            self.threadnum=list(self.threadnum)
+            self.thread_num=np.arange(self.thread)
+            self.thread_num=list(self.thread_num)
             self.probability_list=[]
             self.running_flag=np.array(0,dtype='int8')
             self.running_flag_list=[]
@@ -520,7 +520,7 @@ class kernel:
     
     def train(self,episode_num):
         try:
-            t=self.threadnum.pop(0)
+            t=self.thread_num.pop(0)
         except IndexError:
             print('\nError,please add thread.')
             return
@@ -796,8 +796,8 @@ class kernel:
             pass
         self.thread=pickle.load(input_file)
         if self.continuance_flag==True:
-            self.threadnum=np.arange(self.thread)
-            self.threadnum=list(self.threadnum)
+            self.thread_num=np.arange(self.thread)
+            self.thread_num=list(self.thread_num)
         self.state_pool=pickle.load(input_file)
         self.action_pool=pickle.load(input_file)
         self.next_state_pool=pickle.load(input_file)
