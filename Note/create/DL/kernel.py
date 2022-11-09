@@ -417,6 +417,7 @@ class kernel:
             self.thread_lock[0].acquire()
             if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
                 if self.stop_flag==0 or self.stop_func():
+                    self.thread_lock[0].release()
                     return 0,0
             try:
                 if self.nn.opt!=None:
@@ -433,6 +434,7 @@ class kernel:
             self.thread_lock[0].acquire()
             if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
                 if self.stop_flag==0 or self.stop_func():
+                    self.thread_lock[0].release()
                     return 0,0
             try:
                 if self.nn.opt!=None:
@@ -443,6 +445,7 @@ class kernel:
             self.thread_lock[1].acquire()
             if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
                 if self.stop_flag==0 or self.stop_func():
+                    self.thread_lock[1].release()
                     return 0,0
             try:
                 if self.nn.opt!=None:
@@ -493,6 +496,7 @@ class kernel:
                     self.thread_lock[0].acquire()
                     if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
                         if self.stop_flag==0 or self.stop_func():
+                            self.thread_lock[0].release()
                             return 0,0
                     self.nn.opt.zero_grad()
                     loss.backward()
@@ -502,6 +506,7 @@ class kernel:
                     self.thread_lock[0].acquire()
                     if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
                         if self.stop_flag==0 or self.stop_func():
+                            self.thread_lock[0].release()
                             return 0,0
                     try:
                         self.nn.opt(loss)
