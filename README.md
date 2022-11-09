@@ -225,6 +225,35 @@ for _ in range(7):
 for _ in range(7):
 	_thread.join()
 ```
+matrix:
+```python
+import Note.create.DL.kernel as k   #import kernel
+import tensorflow as tf              #import platform
+import cnn as c                          #import neural network
+import threading
+mnist=tf.keras.datasets.mnist
+(x_train,y_train),(x_test,y_test)=mnist.load_data()
+x_train,x_test =x_train/255.0,x_test/255.0
+y_train=tf.one_hot(y_train,10).numpy()
+cnn=c.cnn()                                #create neural network object
+kernel=k.kernel(cnn)   #start kernel
+kernel.platform=tf                            #use platform
+kernel.thread=6                        #thread count
+kernel.PO=3
+kernel.threading=threading
+kernel.row=2
+kernel.rank=3
+kernel.data(x_train,y_train)   #input you data
+kernel.thread_lock=[threading.Lock(),threading.Lock()]
+class thread(threading.Thread):
+	def run(self):
+		kernel.train(32,1)
+for _ in range(6):
+	_thread=thread()
+	_thread.start()
+for _ in range(6):
+	_thread.join()
+```
 
 Stop multithreading training and saving when condition is met.
 
