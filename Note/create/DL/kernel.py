@@ -63,8 +63,8 @@ class kernel:
         else:
             self.shape0=train_data.shape[0]
         if self.train_counter==0 and self.thread!=None:
-            self.threadnum=np.arange(self.thread)
-            self.threadnum=list(self.threadnum)
+            self.thread_num=np.arange(self.thread)
+            self.thread_num=list(self.thread_num)
             try:
                 self.nn.ec=np.zeros(self.thread)
             except AttributeError:
@@ -93,8 +93,8 @@ class kernel:
         if param!=None:
             self.nn.param=param
         if self.thread!=None:
-            self.threadnum=np.arange(self.thread)
-            self.threadnum=list(self.threadnum)
+            self.thread_num=np.arange(self.thread)
+            self.thread_num=list(self.thread_num)
             try:
                 self.nn.ec=np.zeros(self.thread)
             except AttributeError:
@@ -131,8 +131,8 @@ class kernel:
     
     
     def add_thread(self,thread):
-        threadnum=np.arange(thread)+self.thread
-        self.threadnum=self.threadnum.extend(threadnum)
+        thread_num=np.arange(thread)+self.thread
+        self.thread_num=self.thread_num.extend(thread_num)
         self.thread+=thread
         try:
             self.nn.ec=np.concatenate((self.nn.ec,np.zeros(thread)))
@@ -784,7 +784,7 @@ class kernel:
     def train(self,batch=None,epoch=None,test_batch=None,save=None,one=True,p=None,s=None):
         if self.thread!=None:
             try:
-                t=self.threadnum.pop(0)
+                t=self.thread_num.pop(0)
             except IndexError:
                 print('\nError,please add thread.')
                 return
