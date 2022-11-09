@@ -13,8 +13,8 @@ class kernel:
         except AttributeError:
             pass
         if thread!=None:
-            self.threadnum=np.arange(thread)
-            self.threadnum=list(self.threadnum)
+            self.thread_num=np.arange(thread)
+            self.thread_num=list(self.thread_num)
             self.reward=np.zeros(thread)
             self.loss=np.zeros(thread)
             self.sc=np.zeros(thread)
@@ -101,8 +101,8 @@ class kernel:
             self.nn.row=row
             self.nn.rank=rank
             self.add_flag=True
-        threadnum=np.arange(thread)+self.thread
-        self.threadnum=self.threadnum.extend(threadnum)
+        thread_num=np.arange(thread)+self.thread
+        self.thread_num=self.thread_num.extend(thread_num)
         self.thread+=thread
         self.sc=np.concatenate((self.sc,np.zeros(thread)))
         self.reward=np.concatenate((self.reward,np.zeros(thread)))
@@ -143,8 +143,8 @@ class kernel:
             self.stop_flag=1
             self.add_flag=None
             self.thread_counter=0
-            self.threadnum=np.arange(self.thread)
-            self.threadnum=list(self.threadnum)
+            self.thread_num=np.arange(self.thread)
+            self.thread_num=list(self.thread_num)
             self.probability_list=[]
             self.running_flag=np.array(0,dtype='int8')
             self.running_flag_list=[]
@@ -835,7 +835,7 @@ class kernel:
     
     def train(self,episode_num):
         try:
-            t=self.threadnum.pop(0)
+            t=self.thread_num.pop(0)
         except IndexError:
             print('\nError,please add thread.')
             return
@@ -1395,8 +1395,8 @@ class kernel:
                 try:
                     index=self.finish_list.index(0)
                     self.finish_list[index]=index
-                    if index not in self.threadnum:
-                        self.threadnum.append(index)
+                    if index not in self.thread_num:
+                        self.thread_num.append(index)
                 except ValueError:
                     break
         try:
