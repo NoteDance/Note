@@ -473,6 +473,7 @@ class kernel:
         self.thread_lock[1].acquire()
         if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
             if self.stop_flag==0 or self.stop_func():
+                self.thread_lock[1].release()
                 return 0
         try:
             self.nn.opt(loss)
