@@ -566,8 +566,8 @@ class kernel:
                         else:
                             break
             if self.row!=None:
-                self.gradient_lock[row_index,rank_index].acquire()
-                if self.stop_func_(self.gradient_lock[row_index,rank_index]):
+                self.gradient_lock[rank_index][row_index].acquire()
+                if self.stop_func_(self.gradient_lock[rank_index][row_index]):
                     return 0,0
                 self.ln_list.append([rank_index,row_index])
             else:
@@ -587,7 +587,7 @@ class kernel:
                 pass
             if self.row!=None:
                 self.ln_list.remove([rank_index,row_index])
-                self.gradient_lock[row_index,rank_index].release()
+                self.gradient_lock[rank_index][row_index].release()
             else:
                 self.ln_list.remove(ln)
                 self.gradient_lock[ln].release()
@@ -621,8 +621,6 @@ class kernel:
                 pass
             if self.PO==1:
                 self.thread_lock[0].acquire()
-                if self.stop_func_(self.thread_lock[0]):
-                    return 0
                 try:
                     try:
                         if self.nn.attenuate!=None:
@@ -643,8 +641,6 @@ class kernel:
                 self.thread_lock[0].release()
             elif self.PO==2:
                 self.thread_lock[0].acquire()
-                if self.stop_func_(self.thread_lock[0]):
-                    return 0
                 try:
                     self.nn.backward(loss)
                 except:
@@ -656,8 +652,6 @@ class kernel:
                     pass
                 self.thread_lock[0].release()
                 self.thread_lock[1].acquire()
-                if self.stop_func_(self.thread_lock[1]):
-                    return 0
                 try:
                     self.nn.opt()
                 except:
@@ -688,14 +682,10 @@ class kernel:
                             else:
                                 break
                 if self.row!=None:
-                    self.gradient_lock[row_index,rank_index].acquire()
-                    if self.stop_func_(self.gradient_lock[row_index,rank_index]):
-                        return 0,0
+                    self.gradient_lock[rank_index][row_index].acquire()
                     self.ln_list.append([rank_index,row_index])
                 else:
                     self.gradient_lock[ln].acquire()
-                    if self.stop_func_(self.gradient_lock[ln]):
-                        return 0,0
                     self.ln_list.append(ln)
                 try:
                     self.nn.backward(loss)
@@ -709,13 +699,11 @@ class kernel:
                     pass
                 if self.row!=None:
                     self.ln_list.remove([rank_index,row_index])
-                    self.gradient_lock[row_index,rank_index].release()
+                    self.gradient_lock[rank_index][row_index].release()
                 else:
                     self.ln_list.remove(ln)
                     self.gradient_lock[ln].release()
                 self.thread_lock[1].acquire()
-                if self.stop_func_(self.thread_lock[1]):
-                    return 0
                 try:
                     self.nn.opt(self.gradient_list[t])
                 except:
