@@ -225,7 +225,7 @@ for _ in range(7):
 for _ in range(7):
 	_thread.join()
 ```
-matrix:
+PO3(matrix):
 ```python
 import Note.create.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
