@@ -1494,6 +1494,31 @@ class kernel:
                     return
                 self.suspend_func(t)
                 data=self.nn.ol(t)
+                if data=='stop':
+                    if self.PO==1 or self.PO==3:
+                        self.thread_lock[1].acquire()
+                    else:
+                        self.thread_lock[2].acquire()
+                    self.stopped_list.append(t)
+                    if self.PO==1 or self.PO==3:
+                        self.thread_lock[1].release()
+                    else:
+                        self.thread_lock[2].release()
+                    return
+                elif data=='suspend':
+                    if self.PO==1 or self.PO==3:
+                        self.thread_lock[1].acquire()
+                    else:
+                        self.thread_lock[2].acquire()
+                    self.suspended_list.append(t)
+                    if self.PO==1 or self.PO==3:
+                        self.thread_lock[1].release()
+                    else:
+                        self.thread_lock[2].release() 
+                    while True:
+                        if t not in self.suspended_list:
+                            break
+                    continue
                 try:
                     if self.platform.DType!=None:
                         output,loss=self.opt(data[0],data[1],t)
@@ -1531,6 +1556,15 @@ class kernel:
                     return
                 self.suspend_func()
                 data=self.nn.ol()
+                if data=='stop':
+                    self.stopped_list.append(t)
+                    return
+                elif data=='suspend':
+                    self.suspended_list.append(t)
+                    while True:
+                        if t not in self.suspended_list:
+                            break
+                    continue
                 output,loss=self.opt(data[0],data[1])
                 if len(self.nn.train_loss_list)==self.nn.max_length:
                     del self.nn.train_loss_list[0]
