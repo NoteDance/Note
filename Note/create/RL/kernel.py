@@ -805,7 +805,7 @@ class kernel:
                 if self.stop_flag==0:
                     return
             if self.PN==True:
-                if self.PO==1:
+                if self.PO==1 or self.PO==3:
                     self.thread_lock[2].acquire()
                 else:
                     self.thread_lock[3].acquire()
@@ -817,7 +817,7 @@ class kernel:
             else:
                 self.nn.update_param()
             if self.PN==True:
-                if self.PO==1:
+                if self.PO==1 or self.PO==3:
                     self.thread_lock[2].release()
                 else:
                     self.thread_lock[3].release()
@@ -898,13 +898,13 @@ class kernel:
             else:
                 self.thread_lock[0].release()
         if self.threading!=None:
-            if self.PO==1:
+            if self.PO==1 or self.PO==3:
                 self.thread_lock[3].acquire()
             else:
                 self.thread_lock[4].acquire()
         self.pool_lock[t]=self.threading.Lock()
         if self.threading!=None:
-            if self.PO==1:
+            if self.PO==1 or self.PO==3:
                 self.thread_lock[3].release()
             else:
                 self.thread_lock[4].release()
@@ -924,7 +924,7 @@ class kernel:
                         self._train_(t)
                     if t in self.stop_list:
                         if self.PN==True:
-                            if self.PO==1:
+                            if self.PO==1 or self.PO==3:
                                 self.thread_lock[3].acquire()
                             else:
                                 self.thread_lock[4].acquire()
@@ -932,7 +932,7 @@ class kernel:
                             self.thread_lock[0].acquire()
                         self.stopped_list.append(t)
                         if self.PN==True:
-                            if self.PO==1:
+                            if self.PO==1 or self.PO==3:
                                 self.thread_lock[3].release()
                             else:
                                 self.thread_lock[4].release()
@@ -959,7 +959,7 @@ class kernel:
                             pass
                     if done:
                         if self.PN==True:
-                            if self.PO==1:
+                            if self.PO==1 or self.PO==3:
                                 self.thread_lock[3].acquire()
                             else:
                                 self.thread_lock[4].acquire()
@@ -973,7 +973,7 @@ class kernel:
                         else:
                             self.print_save()
                         if self.PN==True:
-                            if self.PO==1:
+                            if self.PO==1 or self.PO==3:
                                 self.thread_lock[3].release()
                             else:
                                 self.thread_lock[4].release()
@@ -995,7 +995,7 @@ class kernel:
                         self._train_(t)
                     if t in self.stop_list:
                         if self.PN==True:
-                            if self.PO==1:
+                            if self.PO==1 or self.PO==3:
                                 self.thread_lock[3].acquire()
                             else:
                                 self.thread_lock[4].acquire()
@@ -1003,7 +1003,7 @@ class kernel:
                             self.thread_lock[0].acquire()
                         self.stopped_list.append(t)
                         if self.PN==True:
-                            if self.PO==1:
+                            if self.PO==1 or self.PO==3:
                                 self.thread_lock[3].release()
                             else:
                                 self.thread_lock[4].release()
@@ -1030,7 +1030,7 @@ class kernel:
                             pass
                     if done:
                         if self.PN==True:
-                            if self.PO==1:
+                            if self.PO==1 or self.PO==3:
                                 self.thread_lock[3].acquire()
                             else:
                                 self.thread_lock[4].acquire()
@@ -1044,7 +1044,7 @@ class kernel:
                         else:
                             self.print_save()
                         if self.PN==True:
-                            if self.PO==1:
+                            if self.PO==1 or self.PO==3:
                                 self.thread_lock[3].release()
                             else:
                                 self.thread_lock[4].release()
@@ -1055,7 +1055,7 @@ class kernel:
                         break
                     if l==self.episode_step-1:
                         if self.PN==True:
-                            if self.PO==1:
+                            if self.PO==1 or self.PO==3:
                                 self.thread_lock[3].acquire()
                             else:
                                 self.thread_lock[4].acquire()
@@ -1069,14 +1069,14 @@ class kernel:
                         else:
                             self.print_save()
                         if self.PN==True:
-                            if self.PO==1:
+                            if self.PO==1 or self.PO==3:
                                 self.thread_lock[3].release()
                             else:
                                 self.thread_lock[4].release()
                         else:
                             self.thread_lock[0].release()
             if self.PN==True:
-                if self.PO==1:
+                if self.PO==1 or self.PO==3:
                     self.thread_lock[3].acquire()
                 else:
                     self.thread_lock[4].acquire()
@@ -1087,7 +1087,7 @@ class kernel:
             if self.save_episode==True:
                 self.episode.append(episode)
             if self.PN==True:
-                if self.PO==1:
+                if self.PO==1 or self.PO==3:
                     self.thread_lock[3].release()
                 else:
                     self.thread_lock[4].release()
@@ -1099,14 +1099,14 @@ class kernel:
                     pass
             except AttributeError:
                 self.running_flag[t+1]=0
-            if self.PO==1:
+            if self.PO==1 or self.PO==3:
                 self.thread_lock[3].acquire()
             else:
                 self.thread_lock[4].acquire()
             if t not in self.finish_list:
                 self.finish_list[t]=t
             self.thread_counter-=1
-            if self.PO==1:
+            if self.PO==1 or self.PO==3:
                 self.thread_lock[3].release()
             else:
                 self.thread_lock[4].release()
@@ -1122,33 +1122,58 @@ class kernel:
         while True:
             if self.thread!=None:
                 if self.save_flag==True:
-                    if self.PO==1:
+                    if self.PO==1 or self.PO==3:
                         self.thread_lock[1].acquire()
                     else:
                         self.thread_lock[2].acquire()
                     self.save(one=True)
-                    if self.PO==1:
+                    if self.PO==1 or self.PO==3:
                         self.thread_lock[1].release()
                     else:
                         self.thread_lock[2].release()
                     if self.stop_flag==2:
                         return
                 if t in self.stop_list:
-                    if self.PO==1:
+                    if self.PO==1 or self.PO==3:
                         self.thread_lock[1].acquire()
                     else:
                         self.thread_lock[2].acquire()
                     self.stopped_list.append(t)
-                    if self.PO==1:
+                    if self.PO==1 or self.PO==3:
                         self.thread_lock[1].release()
                     else:
                         self.thread_lock[2].release()
                     return
                 self.suspend_func(t)
                 data=self.nn.ol()
+                if data=='stop':
+                    if self.PO==1 or self.PO==3:
+                        self.thread_lock[1].acquire()
+                    else:
+                        self.thread_lock[2].acquire()
+                    self.stopped_list.append(t)
+                    if self.PO==1 or self.PO==3:
+                        self.thread_lock[1].release()
+                    else:
+                        self.thread_lock[2].release()
+                    return
+                elif data=='suspend':
+                    if self.PO==1 or self.PO==3:
+                        self.thread_lock[1].acquire()
+                    else:
+                        self.thread_lock[2].acquire()
+                    self.suspended_list.append(t)
+                    if self.PO==1 or self.PO==3:
+                        self.thread_lock[1].release()
+                    else:
+                        self.thread_lock[2].release() 
+                    while True:
+                        if t not in self.suspended_list:
+                            break
+                    continue
                 loss=self.opt_ol(data,t)
                 if self.thread_lock!=None:
-                    if self.PO==1:
+                    if self.PO==1 or self.PO==3:
                         self.thread_lock[1].acquire()
                     else:
                         self.thread_lock[2].acquire()
@@ -1159,7 +1184,7 @@ class kernel:
                         self.nn.c+=1
                     except AttributeError:
                         pass
-                    if self.PO==1:
+                    if self.PO==1 or self.PO==3:
                         self.thread_lock[1].release()
                     else:
                         self.thread_lock[2].release()
@@ -1170,6 +1195,15 @@ class kernel:
                     return
                 self.suspend_func()
                 data=self.nn.ol()
+                if data=='stop':
+                    self.stopped_list.append(t)
+                    return
+                elif data=='suspend':
+                    self.suspended_list.append(t)
+                    while True:
+                        if t not in self.suspended_list:
+                            break
+                    continue
                 loss=self.opt_ol(data)
                 self.nn.train_loss_list.append(loss.astype(np.float32))
                 if len(self.nn.train_acc_list)==self.nn.max_length:
@@ -1184,7 +1218,7 @@ class kernel:
     def suspend_func(self,t):
         if t in self.suspend_list:
             if self.PN==True:
-                if self.PO==1:
+                if self.PO==1 or self.PO==3:
                     self.thread_lock[3].acquire()
                 else:
                     self.thread_lock[4].acquire()
@@ -1192,7 +1226,7 @@ class kernel:
                 self.thread_lock[0].acquire()
             self.suspended_list.append(t)
             if self.PN==True:
-                if self.PO==1:
+                if self.PO==1 or self.PO==3:
                     self.thread_lock[3].release()
                 else:
                     self.thread_lock[4].release()
@@ -1201,7 +1235,7 @@ class kernel:
             while True:
                 if t not in self.suspend_list:
                     if self.PN==True:
-                        if self.PO==1:
+                        if self.PO==1 or self.PO==3:
                             self.thread_lock[3].acquire()
                         else:
                             self.thread_lock[4].acquire()
@@ -1209,7 +1243,7 @@ class kernel:
                         self.thread_lock[0].acquire()
                     self.suspended_list.remove(t)
                     if self.PN==True:
-                        if self.PO==1:
+                        if self.PO==1 or self.PO==3:
                             self.thread_lock[3].release()
                         else:
                             self.thread_lock[4].release()
