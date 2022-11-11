@@ -539,6 +539,7 @@ class kernel:
             self.reward_pool.append(None)
             self.running_flag=np.append(self.running_flag,np.array(1,dtype='int8'))
             self.thread_counter+=1
+            self.finish_list.append(None)
             try:
                 self.nn.ec.append(0)
             except AttributeError:
@@ -564,6 +565,7 @@ class kernel:
                 while True:
                     if self.stop==True:
                         if self.stop_func() or self.stop_flag==0:
+                            self.finish_list[t]=t
                             return
                     try:
                         epsilon=self.epsilon[t]
@@ -575,6 +577,7 @@ class kernel:
                     if self.state_pool[t]!=None and self.action_pool[t]!=None and self.next_state_pool[t]!=None and self.reward_pool[t]!=None and self.done_pool[t]!=None:
                         self._train_(t)
                     if self.stop_flag==0:
+                        self.finish_list[t]=t
                         return
                     if self.save_episode==True:
                         try:
@@ -600,6 +603,7 @@ class kernel:
                 for l in range(self.episode_step):
                     if self.stop==True:
                         if self.stop_func() or self.stop_flag==0:
+                            self.finish_list[t]=t
                             return
                     try:
                         epsilon=self.epsilon[t]
@@ -611,6 +615,7 @@ class kernel:
                     if self.state_pool[t]!=None and self.action_pool[t]!=None and self.next_state_pool[t]!=None and self.reward_pool[t]!=None and self.done_pool[t]!=None:
                         self._train_(t)
                     if self.stop_flag==0:
+                        self.finish_list[t]=t
                         return
                     if self.save_episode==True:
                         try:
@@ -659,7 +664,7 @@ class kernel:
             self.running_flag[t+1]=0
             self.thread_lock[3].acquire()
             if t not in self.finish_list:
-                self.finish_list.append(t)
+                self.finish_list[t]=t
             self.thread_counter-=1
             self.thread_lock[3].release()
             self.state_pool[t]=None
