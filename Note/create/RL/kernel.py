@@ -625,6 +625,7 @@ class kernel:
             except AttributeError:
                 pass
             self.thread_counter+=1
+            self.finish_list.append(None)
             try:
                 self.nn.ec.append(0)
             except AttributeError:
