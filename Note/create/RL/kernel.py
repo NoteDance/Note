@@ -657,6 +657,7 @@ class kernel:
                         else:
                             self.thread_lock[0].acquire()
                         self.stopped_list.append(t)
+                        self.finish_list[t]=t
                         if self.PN==True:
                             self.thread_lock[3].release()
                         else:
@@ -711,6 +712,7 @@ class kernel:
                         else:
                             self.thread_lock[0].acquire()
                         self.stopped_list.append(t)
+                        self.finish_list[t]=t
                         if self.PN==True:
                             self.thread_lock[3].release()
                         else:
@@ -779,7 +781,7 @@ class kernel:
                 self.running_flag[t+1]=0
             self.thread_lock[3].acquire()
             if t not in self.finish_list:
-                self.finish_list.append(t)
+                self.finish_list[t]=t
             self.thread_counter-=1
             self.thread_lock[3].release()
             self.state_pool[t]=None
