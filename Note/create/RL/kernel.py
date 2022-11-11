@@ -931,6 +931,7 @@ class kernel:
                         else:
                             self.thread_lock[0].acquire()
                         self.stopped_list.append(t)
+                        self.finish_list[t]=t
                         if self.PN==True:
                             if self.PO==1 or self.PO==3:
                                 self.thread_lock[3].release()
@@ -1002,6 +1003,7 @@ class kernel:
                         else:
                             self.thread_lock[0].acquire()
                         self.stopped_list.append(t)
+                        self.finish_list[t]=t
                         if self.PN==True:
                             if self.PO==1 or self.PO==3:
                                 self.thread_lock[3].release()
