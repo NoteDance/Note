@@ -2093,7 +2093,6 @@ class kernel:
                 pickle.dump(opt.get_config(),output_file)
         except AttributeError:
             pass
-        pickle.dump(self.ol,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.end_loss,output_file)
         pickle.dump(self.end_acc,output_file)
@@ -2153,7 +2152,6 @@ class kernel:
                 self.config=pickle.load(input_file)
         except AttributeError:
             pass
-        self.ol=pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
         self.end_acc=pickle.load(input_file)
