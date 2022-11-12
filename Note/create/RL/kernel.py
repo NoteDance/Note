@@ -74,6 +74,7 @@ class kernel:
         self.save_episode=save_episode
         self.ln_list=[]
         self.gradient_list=[]
+        self.exception_list=[]
         self.muti_p=None
         self.muti_s=None
         self.muti_save=1
@@ -1121,6 +1122,7 @@ class kernel:
     
     
     def train_ol(self,t):
+        self.exception_list.append(False)
         while True:
             if self.thread!=None:
                 if self.save_flag==True:
@@ -1147,7 +1149,11 @@ class kernel:
                         self.thread_lock[2].release()
                     return
                 self.suspend_func(t)
-                data=self.nn.ol()
+                try:
+                    data=self.nn.ol()
+                except:
+                    self.exception_list[t]=True
+                    continue
                 if data=='stop':
                     if self.PO==1 or self.PO==3:
                         self.thread_lock[1].acquire()
@@ -1173,7 +1179,11 @@ class kernel:
                         if t not in self.suspended_list:
                             break
                     continue
-                loss=self.opt_ol(data,t)
+                try:
+                    loss=self.opt_ol(data,t)
+                except:
+                    self.exception_list[t]=True
+                    continue
                 if self.thread_lock!=None:
                     if self.PO==1 or self.PO==3:
                         self.thread_lock[1].acquire()
@@ -1196,7 +1206,11 @@ class kernel:
                 if self.stop_flag==2:
                     return
                 self.suspend_func()
-                data=self.nn.ol()
+                try:
+                    data=self.nn.ol()
+                except:
+                    self.exception_list[t]=True
+                    continue
                 if data=='stop':
                     self.stopped_list.append(t)
                     return
@@ -1206,7 +1220,11 @@ class kernel:
                         if t not in self.suspended_list:
                             break
                     continue
-                loss=self.opt_ol(data)
+                try:
+                    loss=self.opt_ol(data)
+                except:
+                    self.exception_list[t]=True
+                    continue
                 self.nn.train_loss_list.append(loss.astype(np.float32))
                 if len(self.nn.train_acc_list)==self.nn.max_length:
                     del self.nn.train_acc_list[0]
@@ -1214,6 +1232,7 @@ class kernel:
                     self.nn.c+=1
                 except AttributeError:
                     pass
+            self.exception_list[t]=False
         return
     
     
