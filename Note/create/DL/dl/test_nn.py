@@ -1,4 +1,4 @@
-def test_nn(nn,platform,data,labels):
+def test(nn,platform,data,labels):
     try:
         if platform.DType!=None:
             try:
