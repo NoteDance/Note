@@ -323,6 +323,20 @@ kernel.train_loss_list or kernel.train_loss       #view training loss
 kernel.visualize_train()
 ```
 
+## Test neural network：
+```python
+import Note.create.DL.kernel as k   #import kernel
+import Note.create.DL.dl.test_nn
+import tensorflow as tf              #import platform
+import cnn as c                          #import neural network
+mnist=tf.keras.datasets.mnist
+(x_train,y_train),(x_test,y_test)=mnist.load_data()
+x_train,x_test =x_train/255.0,x_test/255.0
+y_train=tf.one_hot(y_train,10).numpy()
+cnn=c.cnn()
+test_nn.test(cnn,tf,x_train[:32],y_train[:32])
+```
+
 
 # Reinforcement Learning:
 neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv/RL/neural%20network
