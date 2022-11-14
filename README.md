@@ -325,7 +325,6 @@ kernel.visualize_train()
 
 ## Test neural network：
 ```python
-import Note.create.DL.kernel as k   #import kernel
 import Note.create.DL.dl.test_nn
 import tensorflow as tf              #import platform
 import cnn as c                          #import neural network
@@ -472,6 +471,14 @@ kernel.loss_list or kernel.loss       #view training loss
 kernel.visualize_train()
 kernel.reward                         #view reward
 kernel.visualize_reward()
+```
+
+## Test neural network：
+```python
+import DQN as d
+import Note.create.RL.rl.test_nn
+dqn=d.DQN(4,128,2)                               #create neural network object
+test_nn.test(dqn,2)
 ```
 
 
