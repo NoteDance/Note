@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def test(nn,epsilon=None,action_num=None):
+def test(nn,action_num=None):
     s=nn.env(initial=True)
     try:
         if nn.nn!=None:
