@@ -543,7 +543,7 @@ class kernel:
             
     
     def _train_(self,t):
-        if len(self.state_pool[t])<self.batch:
+        if len(self.done_pool[t])<self.batch:
             return
         else:
             self.loss[t]=0
