@@ -479,7 +479,7 @@ class kernel:
         else:
             self.loss[t]=0
             if self.PN==True:
-                length=min(len(self.state_pool[t]),len(self.action_pool[t]),len(self.next_state_pool[t]),len(self.reward_pool[t]),len(self.done_pool[t]))
+                length=len(self.done_pool[t])
                 batches=int((length-length%self.batch)/self.batch)
                 if length%self.batch!=0:
                     batches+=1
