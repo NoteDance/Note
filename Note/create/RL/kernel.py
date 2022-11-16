@@ -530,7 +530,7 @@ class kernel:
                 self.nn.backward(loss,t)
             try:
                 if self.nn.attenuate!=None:
-                    self.attenuate(self.opt_counter[t])
+                    self.nn.attenuate(self.opt_counter[t])
             except AttributeError:
                 pass
             self.thread_lock[1].release()
@@ -583,7 +583,7 @@ class kernel:
             self.gradient_list[t]=self.nn.grad()
             try:
                 if self.nn.attenuate!=None:
-                    self.attenuate(self.opt_counter[t],self.gradient_list[t])
+                    self.nn.attenuate(self.opt_counter[t],self.gradient_list[t])
             except AttributeError:
                 pass
             if self.row!=None:
@@ -648,7 +648,7 @@ class kernel:
                     self.nn.backward(loss,t)
                 try:
                     if self.nn.attenuate!=None:
-                        self.attenuate(self.opt_counter[t])
+                        self.nn.attenuate(self.opt_counter[t])
                 except AttributeError:
                     pass
                 self.thread_lock[0].release()
@@ -695,7 +695,7 @@ class kernel:
                 self.gradient_list[t]=self.nn.grad()
                 try:
                     if self.nn.attenuate!=None:
-                        self.attenuate(self.opt_counter[t],self.gradient_list[t])
+                        self.nn.attenuate(self.opt_counter[t],self.gradient_list[t])
                 except AttributeError:
                     pass
                 if self.row!=None:
