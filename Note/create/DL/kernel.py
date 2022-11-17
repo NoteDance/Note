@@ -1,6 +1,7 @@
 from tensorflow import function
 import numpy as np
 import matplotlib.pyplot as plt
+from sys import getsizeof
 import pickle
 import os
 import time
@@ -27,12 +28,19 @@ class kernel:
         self.suspend=False
         self.suspend_list=[]
         self.suspended_list=[]
-        self.stop=None
+        self.stop=False
         self.stop_list=[]
         self.stopped_list=[]
-        self.save_flag=None
+        self.save_flag=False
         self.stop_flag=1
-        self.training_flag=None
+        self.training_flag=False
+        self.memory_flag=False
+        self.data_memory=None
+        self.param_memory=0
+        self.grad_memory=0
+        self.c_memory=0
+        self.max_memory=0
+        self.grad_memory_list=[]
         self.save_epoch=None
         self.batch=None
         self.epoch=0
@@ -107,6 +115,20 @@ class kernel:
                     self.test_acc=np.zeros(self.thread)
                     self.test_loss_list=[[] for _ in range(self.thread)]
                     self.test_acc_list=[[] for _ in range(self.thread)]
+        if self.memory_flag==True:
+            self.data_memory=getsizeof(self.train_data)+getsizeof(self.train_labels)
+            for i in range(self.nn.param):
+                self.param_memory+=getsizeof(self.nn.param[i])
+                self.grad_memory+=self.param_memory
+            if self.PO==1 or self.PO==2:
+                self.max_memory=self.data_memory+self.param_memory+self.grad_memory
+            elif self.PO==3:
+                if self.row!=None:
+                    self.max_memory=self.data_memory+self.param_memory+self.grad_memory*self.row*self.rank
+                elif self.max_lock!=None:
+                    self.max_memory=self.data_memory+self.param_memory+self.grad_memory*self.max_lock
+                else:
+                    self.max_memory=self.data_memory+self.param_memory+self.grad_memory*len(self.gradient_lock)
         return
     
     
@@ -141,12 +163,18 @@ class kernel:
         self.suspend=False
         self.suspend_list=[]
         self.suspended_list=[]
-        self.stop=None
+        self.stop=False
         self.stop_list=[]
         self.stopped_list=[]
-        self.save_flag=None
+        self.save_flag=False
         self.stop_flag=1
-        self.training_flag=None
+        self.training_flag=False
+        self.memory_flag=False
+        self.data_memory=None
+        self.param_memory=0
+        self.grad_memory=0
+        self.c_memory=0
+        self.max_memory=0
         self.save_epoch=None
         self.end_loss=None
         self.end_acc=None
@@ -438,12 +466,12 @@ class kernel:
                 return 0,0
             try:
                 if self.nn.opt!=None:
-                    self.gradient=tape.gradient(loss,self.nn.param)
+                    gradient=tape.gradient(loss,self.nn.param)
             except AttributeError:
-                self.gradient=self.nn.gradient(tape,loss,self.nn.param)
+                gradient=self.nn.gradient(tape,loss,self.nn.param)
             try:
                 if self.nn.attenuate!=None:
-                    self.gradient=self.nn.attenuate(self.gradient,self.opt_counter[t])
+                    gradient=self.nn.attenuate(gradient,self.opt_counter[t])
             except AttributeError:
                 pass
             self.thread_lock[0].release()
@@ -452,12 +480,12 @@ class kernel:
                 return 0,0
             try:
                 if self.nn.opt!=None:
-                    self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
+                    self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
             except AttributeError:
                 try:
-                    self.nn.oopt(self.gradient,self.nn.param,t)
+                    self.nn.oopt(gradient,self.nn.param,t)
                 except TypeError:
-                    self.nn.oopt(self.gradient,self.nn.param)
+                    self.nn.oopt(gradient,self.nn.param)
             try:
                 if self.nn.attenuate!=None:
                     self.opt_counter+=1
@@ -504,6 +532,9 @@ class kernel:
                     gradient=self.nn.attenuate(gradient,self.opt_counter[t])
             except AttributeError:
                 pass
+            if self.memory_flag==True:
+                self.grad_memory_list[ln]=self.grad_memory
+                self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)
             if self.row!=None:
                 self.ln_list.remove([rank_index,row_index])
                 self.gradient_lock[rank_index][row_index].release()
@@ -526,6 +557,8 @@ class kernel:
                     self.opt_counter+=1
             except AttributeError:
                 pass
+            if self.memory_flag==True:
+                self.grad_memory_list[ln]=0
             self.thread_lock[0].release()
         return output,loss
     
@@ -684,6 +717,9 @@ class kernel:
                         self.nn.attenuate(self.opt_counter[t],self.gradient_list[t])
                 except AttributeError:
                     pass
+                if self.memory_flag==True:
+                    self.grad_memory_list[ln]=self.grad_memory
+                    self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)
                 if self.row!=None:
                     self.ln_list.remove([rank_index,row_index])
                     self.gradient_lock[rank_index][row_index].release()
@@ -703,6 +739,8 @@ class kernel:
                         self.opt_counter+=1
                 except AttributeError:
                     pass
+                if self.memory_flag==True:
+                    self.grad_memory_list[ln]=0
                 self.thread_lock[0].release()
         return output,loss
     
@@ -769,12 +807,12 @@ class kernel:
                     return 0,0
                 try:
                     if self.nn.opt!=None:
-                        self.gradient=tape.gradient(loss,self.nn.param)
+                        gradient=tape.gradient(loss,self.nn.param)
                 except AttributeError:
-                    self.gradient=self.nn.gradient(tape,loss,self.nn.param)
+                    gradient=self.nn.gradient(tape,loss,self.nn.param)
                 try:
                     if self.nn.attenuate!=None:
-                        self.gradient=self.nn.attenuate(self.gradient,self.opt_counter[t])
+                        gradient=self.nn.attenuate(gradient,self.opt_counter[t])
                 except AttributeError:
                     pass
                 self.thread_lock[0].release()
@@ -783,12 +821,12 @@ class kernel:
                     return 0,0
                 try:
                     if self.nn.opt!=None:
-                        self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
+                        self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
                 except AttributeError:
                     try:
-                        self.nn.oopt(self.gradient,self.nn.param,t)
+                        self.nn.oopt(gradient,self.nn.param,t)
                     except TypeError:
-                        self.nn.oopt(self.gradient,self.nn.param)
+                        self.nn.oopt(gradient,self.nn.param)
                 try:
                     if self.nn.attenuate!=None:
                         self.opt_counter+=1
@@ -835,6 +873,9 @@ class kernel:
                         gradient=self.nn.attenuate(gradient,self.opt_counter[t])
                 except AttributeError:
                     pass
+                if self.memory_flag==True:
+                    self.grad_memory_list[ln]=self.grad_memory
+                    self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)
                 if self.row!=None:
                     self.ln_list.remove([rank_index,row_index])
                     self.gradient_lock[rank_index][row_index].release()
@@ -857,6 +898,8 @@ class kernel:
                         self.opt_counter+=1
                 except AttributeError:
                     pass
+                if self.memory_flag==True:
+                    self.grad_memory_list[ln]=0
                 self.thread_lock[0].release()
         else:
             try:
@@ -1160,6 +1203,8 @@ class kernel:
         if self.PO==3:
             self.thread_lock[1].acquire()
             self.gradient_list.append(None)
+            if self.memory_flag==True:
+                self.grad_memory_list.append(0)
             self.thread_lock[1].release()
         self.batch=batch
         self.epoch=0
