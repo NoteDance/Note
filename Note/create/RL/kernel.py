@@ -32,10 +32,10 @@ class kernel:
         self.suspend=False
         self.suspend_list=[]
         self.suspended_list=[]
-        self.stop=None
+        self.stop=False
         self.stop_list=[]
         self.stopped_list=[]
-        self.save_flag=None
+        self.save_flag=False
         self.stop_flag=1
         self.add_flag=None
         self.continuance_flag=False
@@ -120,10 +120,10 @@ class kernel:
             self.suspend=False
             self.suspend_list=[]
             self.suspended_list=[]
-            self.stop=None
+            self.stop=False
             self.stop_list=[]
             self.stopped_list=[]
-            self.save_flag=None
+            self.save_flag=False
             self.stop_flag=1
             self.add_flag=None
             self.thread_counter=0
