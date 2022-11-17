@@ -34,8 +34,8 @@ class kernel:
         self.batch=None
         self.update_step=None
         self.suspend=False
-        self.stop=None
-        self.save_flag=None
+        self.stop=False
+        self.save_flag=False
         self.stop_flag=1
         self.continuance_flag=False
         self.end_loss=None
