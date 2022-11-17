@@ -24,6 +24,7 @@ class kernel:
         self.reward_pool=[]
         self.done_pool=[]
         self.episode=[]
+        self.action_num=None
         self.epsilon=None
         self.episode_step=None
         self.pool_size=None
@@ -56,10 +57,10 @@ class kernel:
         self.finish_list=[]
         try:
             if self.nn.row!=None:
-                self.row_one=np.array(0,dtype='int8')
-                self.rank_one=np.array(0,dtype='int8')
+                self.row_one=np.array(0,dtype=np.int8)
+                self.rank_one=np.array(0,dtype=np.int8)
         except AttributeError:
-            self.running_flag=np.array(0,dtype='int8')
+            self.running_flag=np.array(0,dtype=np.int8)
         self.PN=True
         self.save_episode=save_episode
         self.reward_list=[]
@@ -68,15 +69,14 @@ class kernel:
         self.total_time=0
     
     
-    def action_init(self,action_num=None,dtype=np.int32):
-        action_num=self.action_num
-        self.action_num=action_num
-        if self.action_num>action_num:
+    def action_vec(self,action_num=None):
+        if action_num>self.action_num:
             if self.epsilon!=None:
-                self.action_one=np.concatenate((self.action_one,np.ones(self.action_num-action_num,dtype=dtype)))
+                self.action_one=np.concatenate((self.action_one,np.ones(action_num-self.action_num,dtype=np.int8)))
+            self.action_num=action_num
         else:
             if self.epsilon!=None:
-                self.action_one=np.ones(self.action_num,dtype=dtype)
+                self.action_one=np.ones(self.action_num,dtype=np.int8)
         return
     
     
@@ -116,6 +116,7 @@ class kernel:
             self.criterion=criterion
         if end_loss!=None:
             self.end_loss=end_loss
+        self.action_vec(self.action_num)
         if init==True:
             self.suspend=False
             self.suspend_list=[]
