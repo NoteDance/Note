@@ -37,7 +37,7 @@ class kernel:
         self.stopped_list=[]
         self.save_flag=False
         self.stop_flag=1
-        self.add_flag=None
+        self.add_flag=False
         self.continuance_flag=False
         self.end_loss=None
         self.thread=thread
@@ -125,7 +125,7 @@ class kernel:
             self.stopped_list=[]
             self.save_flag=False
             self.stop_flag=1
-            self.add_flag=None
+            self.add_flag=False
             self.thread_counter=0
             self.thread_num=np.arange(self.thread)
             self.thread_num=list(self.thread_num)
