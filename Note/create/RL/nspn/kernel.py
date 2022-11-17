@@ -47,15 +47,16 @@ class kernel:
         self.total_time=0
     
     
-    def action_init(self,action_num=None,dtype=np.int32):
+    def action_vec(self,action_num=None):
         action_num=self.action_num
         self.action_num=action_num
-        if self.action_num>action_num:
+        if action_num>self.action_num:
             if self.epsilon!=None:
-                self.action_one=np.concatenate((self.action_one,np.ones(self.action_num-action_num,dtype=dtype)))
+                self.action_one=np.concatenate((self.action_one,np.ones(action_num-self.action_num,dtype=np.int8)))
+                self.action_num=action_num
         else:
             if self.epsilon!=None:
-                self.action_one=np.ones(self.action_num,dtype=dtype)
+                self.action_one=np.ones(self.action_num,dtype=np.int8)
         return
     
     
@@ -76,6 +77,7 @@ class kernel:
             self.criterion=criterion
         if end_loss!=None:
             self.end_loss=end_loss
+        self.action_vec(self.action_num)
         if init==True:
             try:
                 if self.nn.pr!=None:
