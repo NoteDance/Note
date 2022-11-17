@@ -22,12 +22,12 @@ class kernel:
         self.suspend=False
         self.suspend_list=[]
         self.suspended_list=[]
-        self.stop=None
+        self.stop=False
         self.stop_list=[]
         self.stopped_list=[]
-        self.save_flag=None
+        self.save_flag=False
         self.stop_flag=1
-        self.training_flag=None
+        self.training_flag=False
         self.save_epoch=None
         self.batch=None
         self.epoch=0
@@ -124,12 +124,12 @@ class kernel:
         self.suspend=False
         self.suspend_list=[]
         self.suspended_list=[]
-        self.stop=None
+        self.stop=False
         self.stop_list=[]
         self.stopped_list=[]
-        self.save_flag=None
+        self.save_flag=False
         self.stop_flag=1
-        self.training_flag=None
+        self.training_flag=False
         self.save_epoch=None
         self.end_loss=None
         self.end_acc=None
@@ -438,9 +438,9 @@ class kernel:
                     return 0,0
             try:
                 if self.nn.opt!=None:
-                    self.gradient=tape.gradient(loss,self.nn.param)
+                    gradient=tape.gradient(loss,self.nn.param)
             except AttributeError:
-                self.gradient=self.nn.gradient(tape,loss,self.nn.param)
+                gradient=self.nn.gradient(tape,loss,self.nn.param)
             self.thread_lock[0].release()
             self.thread_lock[1].acquire()
             if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
@@ -449,12 +449,12 @@ class kernel:
                     return 0,0
             try:
                 if self.nn.opt!=None:
-                    self.nn.opt.apply_gradients(zip(self.gradient,self.nn.param))
+                    self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
             except AttributeError:
                 try:
-                    self.nn.oopt(self.gradient,self.nn.param,t)
+                    self.nn.oopt(gradient,self.nn.param,t)
                 except TypeError:
-                    self.nn.oopt(self.gradient,self.nn.param)
+                    self.nn.oopt(gradient,self.nn.param)
             self.thread_lock[1].release()
         return output,loss
     
