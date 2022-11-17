@@ -50,7 +50,7 @@ class kernel:
         self.total_time=0
     
     
-    def action_init(self,action_num=None,dtype=np.int32):
+    def action_vec(self,action_num=None):
         if self.action_name!=None:
             self.action_num=len(self.action_name)
         else:
@@ -58,16 +58,16 @@ class kernel:
             self.action_num=action_num
         if self.action_name!=None and len(self.action_name)>self.action_num:
             if self.epsilon!=None:
-                self.action_one=np.concatenate((self.action_one,np.ones(len(self.action_name)-self.action_num,dtype=dtype)))
+                self.action_one=np.concatenate((self.action_one,np.ones(len(self.action_name)-self.action_num,dtype=np.int8)))
         elif self.action_name!=None:
             if self.epsilon!=None:
-                self.action_one=np.ones(len(self.action_name),dtype=dtype)
+                self.action_one=np.ones(len(self.action_name),dtype=np.int8)
         if self.action_num>action_num:
             if self.epsilon!=None:
-                self.action_one=np.concatenate((self.action_one,np.ones(self.action_num-action_num,dtype=dtype)))
+                self.action_one=np.concatenate((self.action_one,np.ones(self.action_num-action_num,dtype=np.int8)))
         else:
             if self.epsilon!=None:
-                self.action_one=np.ones(self.action_num,dtype=dtype)
+                self.action_one=np.ones(self.action_num,dtype=np.int8)
         return
     
     
@@ -88,6 +88,7 @@ class kernel:
             self.criterion=criterion
         if end_loss!=None:
             self.end_loss=end_loss
+        self.action_vec(self.action_num)
         if init==True:
             self.episode=[]
             self.state_pool=None
