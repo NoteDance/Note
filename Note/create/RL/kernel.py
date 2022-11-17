@@ -2,6 +2,7 @@ from tensorflow import data as tf_data
 import numpy as np
 import matplotlib.pyplot as plt
 import statistics
+from sys import getsizeof
 import pickle
 
 
@@ -40,13 +41,20 @@ class kernel:
         self.suspend=False
         self.suspend_list=[]
         self.suspended_list=[]
-        self.stop=None
+        self.stop=False
         self.stop_list=[]
         self.stopped_list=[]
-        self.save_flag=None
+        self.save_flag=False
         self.stop_flag=1
-        self.add_flag=None
+        self.add_flag=False
         self.continuance_flag=False
+        self.memory_flag=False
+        self.param_memory=0
+        self.grad_memory=0
+        self.c_memory=0
+        self.max_memory=0
+        self.grad_memory_list=[]
+        self.pool_memory_list=[]
         self.end_loss=None
         self.thread=thread
         self.thread_counter=0
@@ -65,10 +73,10 @@ class kernel:
         self.finish_list=[]
         try:
             if self.nn.row!=None:
-                self.row_one=np.array(0,dtype='int8')
-                self.rank_one=np.array(0,dtype='int8')
+                self.row_one=np.array(0,dtype=np.int8)
+                self.rank_one=np.array(0,dtype=np.int8)
         except AttributeError:
-            self.running_flag=np.array(0,dtype='int8')
+            self.running_flag=np.array(0,dtype=np.int8)
         self.PN=True
         self.PO=None
         self.save_episode=save_episode
@@ -84,15 +92,31 @@ class kernel:
         self.total_time=0
     
     
-    def action_init(self,action_num=None,dtype=np.int32):
-        action_num=self.action_num
-        self.action_num=action_num
-        if self.action_num>action_num:
+    def action_vec(self,action_num=None):
+        if action_num>self.action_num:
             if self.epsilon!=None:
-                self.action_one=np.concatenate((self.action_one,np.ones(self.action_num-action_num,dtype=dtype)))
+                self.action_one=np.concatenate((self.action_one,np.ones(self.action_num-action_num,dtype=np.int8)))
+                self.action_num=action_num
         else:
             if self.epsilon!=None:
-                self.action_one=np.ones(self.action_num,dtype=dtype)
+                self.action_one=np.ones(self.action_num,dtype=np.int8)
+        return
+    
+    
+    def count_memory(self):
+        if self.memory_flag==True:
+            for i in range(self.nn.param):
+                self.param_memory+=getsizeof(self.nn.param[i])
+                self.grad_memory+=self.param_memory
+            if self.PO==1 or self.PO==2:
+                self.max_memory=self.data_memory+self.param_memory+self.grad_memory
+            elif self.PO==3:
+                if self.row!=None:
+                    self.max_memory=self.data_memory+self.param_memory+self.grad_memory*self.row*self.rank
+                elif self.max_lock!=None:
+                    self.max_memory=self.data_memory+self.param_memory+self.grad_memory*self.max_lock
+                else:
+                    self.max_memory=self.data_memory+self.param_memory+self.grad_memory*len(self.gradient_lock)
         return
     
     
@@ -133,6 +157,7 @@ class kernel:
             self.criterion=criterion
         if end_loss!=None:
             self.end_loss=end_loss
+        self.action_vec(self.action_num)
         if init==True:
             self.suspend=False
             self.suspend_list=[]
@@ -140,9 +165,15 @@ class kernel:
             self.stop=None
             self.stop_list=[]
             self.stopped_list=[]
-            self.save_flag=None
+            self.save_flag=False
             self.stop_flag=1
-            self.add_flag=None
+            self.add_flag=False
+            self.memory_flag=False
+            self.param_memory=0
+            self.grad_memory=0
+            self.c_memory=0
+            self.max_memory=0
+            self.grad_memory_list=[]
             self.thread_counter=0
             self.thread_num=np.arange(self.thread)
             self.thread_num=list(self.thread_num)
@@ -586,6 +617,10 @@ class kernel:
                     self.nn.attenuate(self.opt_counter[t],self.gradient_list[t])
             except AttributeError:
                 pass
+            if self.memory_flag==True:
+                self.grad_memory_list[ln]=self.grad_memory
+                self.pool_memory_list[t]=getsizeof(self.state_pool[t][0])*len(self.state_pool[t])+getsizeof(self.action_pool[t][0])*len(self.action_pool[t])+getsizeof(self.next_state_pool[t][0])*len(self.next_state_pool[t])+getsizeof(self.reward_pool[t][0])*len(self.reward_pool[t])+getsizeof(self.done_pool[t][0])*len(self.done_pool[t])
+                self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)+sum(self.pool_memory_list)
             if self.row!=None:
                 self.ln_list.remove([rank_index,row_index])
                 self.gradient_lock[rank_index][row_index].release()
@@ -605,6 +640,8 @@ class kernel:
                     self.opt_counter+=1
             except AttributeError:
                 pass
+            if self.memory_flag==True:
+                self.grad_memory_list[ln]=0
             self.thread_lock[1].release()
         return loss.numpy()
     
@@ -698,6 +735,9 @@ class kernel:
                         self.nn.attenuate(self.opt_counter[t],self.gradient_list[t])
                 except AttributeError:
                     pass
+                if self.memory_flag==True:
+                    self.grad_memory_list[ln]=self.grad_memory
+                    self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)
                 if self.row!=None:
                     self.ln_list.remove([rank_index,row_index])
                     self.gradient_lock[rank_index][row_index].release()
@@ -715,6 +755,8 @@ class kernel:
                         self.opt_counter+=1
                 except AttributeError:
                     pass
+                if self.memory_flag==True:
+                    self.grad_memory_list[ln]=0
                 self.thread_lock[1].release()
         else:
             self.nn.opt(loss)
@@ -882,6 +924,9 @@ class kernel:
             if self.PO==3:
                 self.gradient_list.append(None)
             self.thread_counter+=1
+            if self.memory_flag==True:
+                self.grad_memory_list.append(0)
+                self.pool_memory_list.append(0)
             self.finish_list.append(None)
             try:
                 self.nn.ec.append(0)
