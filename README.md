@@ -407,6 +407,7 @@ kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading
 kernel=k.kernel(dqn,5,thread_lock)   #start kernel
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
 kernel.action_init(2)
+kernel.PO=2
 class thread(threading.Thread):
 	def run(self):
 		kernel.train(100)
@@ -434,6 +435,7 @@ kernel=k.kernel(dqn,5,thread_lock)   #start kernel
 kernel.stop=True
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10,trial_num=10,criterion=200)
 kernel.action_init(2)
+kernel.PO=2
 class thread(threading.Thread):
 	def run(self):
 		kernel.train(100)
@@ -459,6 +461,7 @@ kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading
 kernel=k.kernel(dqn,6,thread_lock)   #start kernel
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
 kernel.action_init(2)
+kernel.PO=2
 class thread(threading.Thread):
 	def run(self):
 		kernel.train(100)
