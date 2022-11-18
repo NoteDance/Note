@@ -749,16 +749,6 @@ class kernel:
             for i in range(epoch):
                 t1=time.time()
                 if self.thread==None:
-                    try:
-                        self.nn.ec+=1
-                    except AttributeError:
-                        pass
-                else:
-                    try:
-                        self.nn.ec[t]+=1
-                    except AttributeError:
-                        pass
-                if self.thread==None:
                     self._train(batch,data_batch,labels_batch,test_batch)
                 else:
                     t=self.t.pop()
@@ -770,6 +760,16 @@ class kernel:
                         self._train_(batch,data_batch,labels_batch,test_batch,t)
                     else:
                         self._train(batch,data_batch,labels_batch,test_batch,t)
+                if self.thread==None:
+                    try:
+                        self.nn.ec+=1
+                    except AttributeError:
+                        pass
+                else:
+                    try:
+                        self.nn.ec[t]+=1
+                    except AttributeError:
+                        pass
                 if type(self.total_epoch)!=list:
                     if self.thread_lock!=None:
                         if type(self.thread_lock)!=list:
@@ -840,6 +840,16 @@ class kernel:
                     else:
                         self._train(test_batch=test_batch,t=t)
                 i+=1
+                if self.thread==None:
+                    try:
+                        self.nn.ec+=1
+                    except AttributeError:
+                        pass
+                else:
+                    try:
+                        self.nn.ec[t]+=1
+                    except AttributeError:
+                        pass
                 if type(self.total_epoch)!=list:
                     if self.thread_lock!=None:
                         if type(self.thread_lock)!=list:
@@ -884,16 +894,6 @@ class kernel:
                                 print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch,self.train_loss,self.test_loss))
                     if save!=None and i%s==0:
                         self.save(self.total_epoch,one)
-                if self.thread==None:
-                    try:
-                        self.nn.ec+=1
-                    except AttributeError:
-                        pass
-                else:
-                    try:
-                        self.nn.ec[t]+=1
-                    except AttributeError:
-                        pass
                 t2=time.time()
                 if self.thread==None:
                     self.time+=(t2-t1)
