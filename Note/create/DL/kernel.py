@@ -297,11 +297,11 @@ class kernel:
         if epoch!=None:
             for i in range(epoch):
                 t1=time.time()
+                self._train(batch,epoch,test_batch,data_batch,labels_batch,i)
                 try:
                     self.nn.ec+=1
                 except AttributeError:
                     pass
-                self._train(batch,epoch,test_batch,data_batch,labels_batch,i)
                 self.epoch+=1
                 self.total_epoch+=1
                 if epoch%10!=0:
@@ -337,6 +337,10 @@ class kernel:
                 t1=time.time()
                 self._train(epoch=epoch,test_batch=test_batch,i=i)
                 i+=1
+                try:
+                    self.nn.ec+=1
+                except AttributeError:
+                    pass
                 self.epoch+=1
                 self.total_epoch+=1
                 if epoch%10!=0:
@@ -360,10 +364,6 @@ class kernel:
                             print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch,self.train_loss,self.test_loss))
                     if save!=None and i%e==0:
                         self.save(self.total_epoch,one)
-                try:
-                    self.nn.ec+=1
-                except AttributeError:
-                    pass
                 t2=time.time()
                 self.time+=(t2-t1)
                 if self.end_flag==True and self.end()==True:
