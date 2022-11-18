@@ -1233,16 +1233,6 @@ class kernel:
             for i in range(epoch):
                 t1=time.time()
                 if self.thread==None:
-                    try:
-                        self.nn.ec+=1
-                    except AttributeError:
-                        pass
-                else:
-                    try:
-                        self.nn.ec[t]+=1
-                    except:
-                        pass
-                if self.thread==None:
                     self._train(batch,data_batch,labels_batch,test_batch)
                 else:
                     if self.PO!=None:
@@ -1263,6 +1253,16 @@ class kernel:
                         return
                 if self.stop_flag==0:
                     return
+                if self.thread==None:
+                    try:
+                        self.nn.ec+=1
+                    except AttributeError:
+                        pass
+                else:
+                    try:
+                        self.nn.ec[t]+=1
+                    except:
+                        pass
                 if self.thread_lock==None and type(self.total_epoch)!=list:
                     self.total_epoch+=1
                 elif type(self.total_epoch)==list:
@@ -1367,6 +1367,16 @@ class kernel:
                 if self.stop_flag==0:
                     return
                 i+=1
+                if self.thread==None:
+                    try:
+                        self.nn.ec+=1
+                    except AttributeError:
+                        pass
+                else:
+                    try:
+                        self.nn.ec[t]+=1
+                    except:
+                        pass
                 if self.thread_lock==None and type(self.total_epoch)!=list:
                     self.total_epoch+=1
                 elif type(self.total_epoch)==list:
@@ -1439,16 +1449,6 @@ class kernel:
                                     print()
                     if save!=None and i%s==0:
                         self.save(self.total_epoch,one)
-                if self.thread==None:
-                    try:
-                        self.nn.ec+=1
-                    except AttributeError:
-                        pass
-                else:
-                    try:
-                        self.nn.ec[t]+=1
-                    except AttributeError:
-                        pass
                 t2=time.time()
                 if type(self.time)!=list:
                     self.time+=(t2-t1)
