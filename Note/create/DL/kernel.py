@@ -532,9 +532,6 @@ class kernel:
                     gradient=self.nn.attenuate(gradient,self.opt_counter[t])
             except AttributeError:
                 pass
-            if self.memory_flag==True:
-                self.grad_memory_list[ln]=self.grad_memory
-                self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)
             if self.row!=None:
                 self.ln_list.remove([rank_index,row_index])
                 self.gradient_lock[rank_index][row_index].release()
@@ -544,6 +541,9 @@ class kernel:
             self.thread_lock[0].acquire()
             if self.stop_func_(self.thread_lock[0]):
                 return 0,0
+            if self.memory_flag==True:
+                self.grad_memory_list[ln]=self.grad_memory
+                self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)
             try:
                 if self.nn.opt!=None:
                     self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
@@ -717,9 +717,6 @@ class kernel:
                         self.nn.attenuate(self.opt_counter[t],self.gradient_list[t])
                 except AttributeError:
                     pass
-                if self.memory_flag==True:
-                    self.grad_memory_list[ln]=self.grad_memory
-                    self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)
                 if self.row!=None:
                     self.ln_list.remove([rank_index,row_index])
                     self.gradient_lock[rank_index][row_index].release()
@@ -729,6 +726,9 @@ class kernel:
                 self.thread_lock[0].acquire()
                 if self.stop_func_(self.thread_lock[0]):
                     return 0,0
+                if self.memory_flag==True:
+                    self.grad_memory_list[ln]=self.grad_memory
+                    self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)
                 try:
                     self.nn.opt(self.gradient_list[t])
                 except:
@@ -873,9 +873,6 @@ class kernel:
                         gradient=self.nn.attenuate(gradient,self.opt_counter[t])
                 except AttributeError:
                     pass
-                if self.memory_flag==True:
-                    self.grad_memory_list[ln]=self.grad_memory
-                    self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)
                 if self.row!=None:
                     self.ln_list.remove([rank_index,row_index])
                     self.gradient_lock[rank_index][row_index].release()
@@ -885,6 +882,9 @@ class kernel:
                 self.thread_lock[0].acquire()
                 if self.stop_func_(self.thread_lock[0]):
                     return 0,0
+                if self.memory_flag==True:
+                    self.grad_memory_list[ln]=self.grad_memory
+                    self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)
                 try:
                     if self.nn.opt!=None:
                         self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
