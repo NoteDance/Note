@@ -107,7 +107,7 @@ class kernel:
         if self.memory_flag==True:
             for i in range(self.nn.param):
                 self.param_memory+=getsizeof(self.nn.param[i])
-                self.grad_memory+=self.param_memory
+            self.grad_memory=self.param_memory
             if self.PO==1 or self.PO==2:
                 self.max_memory=self.data_memory+self.param_memory+self.grad_memory
             elif self.PO==3:
