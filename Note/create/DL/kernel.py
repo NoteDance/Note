@@ -86,9 +86,7 @@ class kernel:
         return
     
     
-    def init(self,param=None):
-        if param!=None:
-            self.nn.param=param
+    def init(self):
         self.train_loss_list.clear()
         self.train_acc_list.clear()
         self.test_loss_list.clear()
