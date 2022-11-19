@@ -1229,6 +1229,8 @@ class kernel:
                 except:
                     self.exception_list[t]=True
                     continue
+                if self.stop_flag==0:
+                    return
                 if self.thread_lock!=None:
                     if self.PO==1 or self.PO==3:
                         self.thread_lock[1].acquire()
@@ -1270,6 +1272,8 @@ class kernel:
                 except:
                     self.exception_list[t]=True
                     continue
+                if self.stop_flag==0:
+                    return
                 self.nn.train_loss_list.append(loss.astype(np.float32))
                 if len(self.nn.train_acc_list)==self.nn.max_length:
                     del self.nn.train_acc_list[0]
