@@ -89,9 +89,7 @@ class kernel:
         return
     
     
-    def init(self,param=None):
-        if param!=None:
-            self.nn.param=param
+    def init(self):
         if self.thread!=None:
             self.thread_num=np.arange(self.thread)
             self.thread_num=list(self.thread_num)
