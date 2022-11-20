@@ -431,8 +431,6 @@ class kernel:
             pass
         if self.PO==1:
             self.thread_lock[0].acquire()
-            if self.stop_func_m(self.thread_lock[0],t):
-                return 0,0
             if self.stop_func_(self.thread_lock[0]):
                 return 0,0
             try:
@@ -477,8 +475,6 @@ class kernel:
                 pass
             self.thread_lock[0].release()
             self.thread_lock[1].acquire()
-            if self.stop_func_m(self.thread_lock[1]):
-                return 0,0
             if self.stop_func_(self.thread_lock[1]):
                 return 0,0
             try:
@@ -542,13 +538,13 @@ class kernel:
                 self.ln_list.remove(ln)
                 self.gradient_lock[ln].release()
             self.thread_lock[0].acquire()
-            if self.stop_func_m(self.thread_lock[0]):
-                return 0,0
             if self.stop_func_(self.thread_lock[0]):
                 return 0,0
             if self.memory_flag==True:
                 self.grad_memory_list[ln]=self.grad_memory
                 self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)
+            if self.stop_func_m(self.thread_lock[0]):
+                return 0,0
             try:
                 if self.nn.opt!=None:
                     self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
@@ -608,8 +604,6 @@ class kernel:
             if self.PO==1:
                 try:
                     self.thread_lock[0].acquire()
-                    if self.stop_func_m(self.thread_lock[0],t):
-                        return 0,0
                     if self.stop_func_(self.thread_lock[0]):
                         return 0,0
                     self.nn.opt.zero_grad()
@@ -618,8 +612,6 @@ class kernel:
                     self.thread_lock[0].release()
                 except:
                     self.thread_lock[0].acquire()
-                    if self.stop_func_m(self.thread_lock[0],t):
-                        return 0,0
                     if self.stop_func_(self.thread_lock[0]):
                         return 0,0
                     try:
@@ -656,8 +648,6 @@ class kernel:
                         pass
                     self.thread_lock[0].release()
                     self.thread_lock[1].acquire()
-                    if self.stop_func_m(self.thread_lock[1],t):
-                        return 0,0
                     if self.stop_func_(self.thread_lock[1]):
                         return 0,0
                     self.nn.opt.step()
@@ -677,10 +667,6 @@ class kernel:
                         pass
                     self.thread_lock[0].release()
                     self.thread_lock[1].acquire()
-                    if self.stop_func_m(self.thread_lock[1],t):
-                        return 0,0
-                    if self.stop_func_(self.thread_lock[1]):
-                        return 0,0
                     if self.stop_func_(self.thread_lock[1]):
                         return 0,0
                     try:
@@ -739,13 +725,13 @@ class kernel:
                     self.ln_list.remove(ln)
                     self.gradient_lock[ln].release()
                 self.thread_lock[0].acquire()
-                if self.stop_func_m(self.thread_lock[0]):
-                    return 0,0
                 if self.stop_func_(self.thread_lock[0]):
                     return 0,0
                 if self.memory_flag==True:
                     self.grad_memory_list[ln]=self.grad_memory
                     self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)
+                if self.stop_func_m(self.thread_lock[0]):
+                    return 0,0
                 try:
                     self.nn.opt(self.gradient_list[t])
                 except:
@@ -790,8 +776,6 @@ class kernel:
         if self.thread_lock!=None:
             if self.PO==1:
                 self.thread_lock[0].acquire()
-                if self.stop_func_m(self.thread_lock[0],t):
-                    return 0,0
                 if self.stop_func_(self.thread_lock[0]):
                     return 0,0
                 try:
@@ -836,8 +820,6 @@ class kernel:
                     pass
                 self.thread_lock[0].release()
                 self.thread_lock[1].acquire()
-                if self.stop_func_m(self.thread_lock[1],t):
-                    return 0,0
                 if self.stop_func_(self.thread_lock[1]):
                     return 0,0
                 try:
@@ -901,13 +883,13 @@ class kernel:
                     self.ln_list.remove(ln)
                     self.gradient_lock[ln].release()
                 self.thread_lock[0].acquire()
-                if self.stop_func_m(self.thread_lock[0],t):
-                    return 0,0
                 if self.stop_func_(self.thread_lock[0]):
                     return 0,0
                 if self.memory_flag==True:
                     self.grad_memory_list[ln]=self.grad_memory
                     self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)
+                if self.stop_func_m(self.thread_lock[0],t):
+                    return 0,0
                 try:
                     if self.nn.opt!=None:
                         self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
