@@ -19,6 +19,7 @@ class kernel:
         self.thread=None
         self.thread_counter=0
         self.ol=None
+        self.running_list=[]
         self.suspend=False
         self.suspend_list=[]
         self.suspended_list=[]
@@ -812,6 +813,7 @@ class kernel:
             else:
                 self.thread_lock[2].acquire()
             self.thread_counter+=1
+            self.running_list.append(t)
             if self.PO==1:
                 self.thread_lock[1].release()
             else:
@@ -855,6 +857,7 @@ class kernel:
                             self.thread_lock[1].acquire()
                         else:
                             self.thread_lock[2].acquire()
+                        self.running_list.remove(t)
                         self.stopped_list.append(t)
                         if self.PO==1:
                             self.thread_lock[1].release()
@@ -968,6 +971,7 @@ class kernel:
                             self.thread_lock[1].acquire()
                         else:
                             self.thread_lock[2].acquire()
+                        self.running_list.remove(t)
                         self.stopped_list.append(t)
                         if self.PO==1:
                             self.thread_lock[1].release()
@@ -1111,6 +1115,7 @@ class kernel:
             else:
                 self.thread_lock[2].acquire()
             self.thread_counter-=1
+            self.running_list.remove(t)
             if self.PO==1:
                 self.thread_lock[1].release()
             else:
