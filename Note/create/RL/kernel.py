@@ -62,7 +62,7 @@ class kernel:
         self.thread=thread
         self.thread_counter=0
         self.thread_lock=thread_lock
-        self.pool_lock={}
+        self.pool_lock=[]
         self.probability_list=[]
         self.running_flag_list=[]
         self.index_matrix=[]
@@ -981,7 +981,7 @@ class kernel:
                 self.thread_lock[3].acquire()
             else:
                 self.thread_lock[4].acquire()
-        self.pool_lock[t]=self.threading.Lock()
+        self.pool_lock.append(self.threading.Lock())
         if self.threading!=None:
             if self.PO==1 or self.PO==3:
                 self.thread_lock[3].release()
