@@ -7,7 +7,7 @@ import pickle
 
 
 class kernel:
-    def __init__(self,nn=None,thread=None,thread_lock=None,save_episode=True):
+    def __init__(self,nn=None,thread=None,thread_lock=None,save_episode=False):
         self.nn=nn
         try:
             self.nn.km=1
@@ -55,6 +55,9 @@ class kernel:
         self.max_memory=0
         self.grad_memory_list=[]
         self.pool_memory_list=[]
+        self.episode_memory_list=[]
+        self.episode_memory_t_value=None
+        self.memory_t_value=None
         self.end_loss=None
         self.thread=thread
         self.thread_counter=0
@@ -103,7 +106,13 @@ class kernel:
         return
     
     
-    def count_memory(self):
+    def count_memory(self,s=None,a=None,next_s=None,r=None,t=None):
+        if s!=None:
+            self.episode_memory_list[t]+=getsizeof(s)
+            self.episode_memory_list[t]+=getsizeof(a)
+            self.episode_memory_list[t]+=getsizeof(next_s)
+            self.episode_memory_list[t]+=getsizeof(r)
+            return
         if self.memory_flag==True:
             for i in range(self.nn.param):
                 self.param_memory+=getsizeof(self.nn.param[i])
@@ -117,7 +126,7 @@ class kernel:
                     self.max_memory=self.data_memory+self.param_memory+self.grad_memory*self.max_lock
                 else:
                     self.max_memory=self.data_memory+self.param_memory+self.grad_memory*len(self.gradient_lock)
-        return
+            return
     
     
     def add_threads(self,thread,row=None,rank=None):
@@ -505,12 +514,19 @@ class kernel:
             try:
                 if self.nn.state_name==None:
                     episode=[s,self.nn.action_name[a],next_s,r]
+                    if self.memory_flag==True:
+                        self.count_memory(s,self.nn.action_name[a],next_s,r,t)
                 elif self.nn.action_name==None:
                     episode=[self.nn.state_name[s],a,self.nn.state_name[next_s],r]
+                    if self.memory_flag==True:
+                        self.count_memory(self.nn.state_name[s],self.nn.action_name[a],self.nn.state_name[next_s],r,t)
                 else:
                     episode=[self.nn.state_name[s],self.nn.action_name[a],self.nn.state_name[next_s],r]
+                    if self.memory_flag==True:
+                        self.count_memory(self.nn.state_name[s],self.nn.action_name[a],self.nn.state_name[next_s],r,t)
             except AttributeError:  
                 episode=[s,a,next_s,r]
+                self.count_memory(s,a,next_s,r,t)
         return next_s,r,done,episode,index
     
     
@@ -531,6 +547,8 @@ class kernel:
             pass
         if self.PO==1:
             self.thread_lock[1].acquire()
+            if self.episode_memory_t_value!=None and sum(self.episode_memory_list)>self.episode_memory_t_value:
+                self.save_episode=False
             if self.stop_func_(self.thread_lock[1]):
                 return 0
             try:
@@ -553,6 +571,8 @@ class kernel:
             self.thread_lock[1].release()
         elif self.PO==2:
             self.thread_lock[1].acquire()
+            if self.episode_memory_t_value!=None and sum(self.episode_memory_list)>self.episode_memory_t_value:
+                self.save_episode=False
             if self.stop_func_(self.thread_lock[1]):
                 return 0
             try:
@@ -566,6 +586,8 @@ class kernel:
                 pass
             self.thread_lock[1].release()
             self.thread_lock[2].acquire()
+            if self.episode_memory_t_value!=None and sum(self.episode_memory_list)>self.episode_memory_t_value:
+                self.save_episode=False
             if self.stop_func_(self.thread_lock[2]):
                 return 0
             try:
@@ -629,7 +651,15 @@ class kernel:
             if self.memory_flag==True:
                 self.grad_memory_list[ln]=self.grad_memory
                 self.pool_memory_list[t]=getsizeof(self.state_pool[t][0])*len(self.state_pool[t])+getsizeof(self.action_pool[t][0])*len(self.action_pool[t])+getsizeof(self.next_state_pool[t][0])*len(self.next_state_pool[t])+getsizeof(self.reward_pool[t][0])*len(self.reward_pool[t])+getsizeof(self.done_pool[t][0])*len(self.done_pool[t])
-                self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)+sum(self.pool_memory_list)
+                if self.save_episode==False:
+                    self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)+sum(self.pool_memory_list)
+                else:
+                    episode_memory=sum(self.episode_memory_list)
+                    self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)+sum(self.pool_memory_list)+episode_memory
+                    if self.episode_memory_t_value!=None and episode_memory>self.episode_memory_t_value:
+                        self.save_episode=False
+            if self.stop_func_m(self.thread_lock[1]):
+                return 0
             try:
                 self.nn.opt(self.gradient_list[t])
             except:
@@ -745,6 +775,8 @@ class kernel:
                 if self.memory_flag==True:
                     self.grad_memory_list[ln]=self.grad_memory
                     self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)
+                if self.stop_func_m(self.thread_lock[1]):
+                    return 0
                 try:
                     self.nn.opt(self.gradient_list[t])
                 except:
@@ -927,6 +959,7 @@ class kernel:
             if self.memory_flag==True:
                 self.grad_memory_list.append(0)
                 self.pool_memory_list.append(0)
+                self.episode_memory_list.append(0)
             self.finish_list.append(None)
             try:
                 self.nn.ec.append(0)
@@ -1035,7 +1068,7 @@ class kernel:
                         epsilon=self.epsilon[t]
                     except:
                         pass
-                    next_s,r,done,episode,index=self.env(s,epsilon,t)
+                    next_s,r,done,_episode,index=self.env(s,epsilon,t)
                     self.reward[t]+=r
                     s=next_s
                     if self.state_pool[t]!=None and self.action_pool[t]!=None and self.next_state_pool[t]!=None and self.reward_pool[t]!=None and self.done_pool[t]!=None:
@@ -1352,6 +1385,14 @@ class kernel:
             if self.stop_flag==0 or self.stop_func():
                 thread_lock.release
                 return True
+    
+    
+    def stop_func_m(self,thread_lock,t):
+        if self.memory_t_value!=None and self.c_memory>self.memory_t_value:
+            self.stop_list.append(t)
+            return True
+        else:
+            return False
     
     
     def print_save(self,avg_reward=None):
