@@ -597,47 +597,44 @@ class kernel:
         except IndexError:
             print('\nError,please add thread.')
             return
-        while self.state_pool!=None and len(self.state_pool)<t:
+        if self.PN==True:
+            self.thread_lock[3].acquire()
+        else:
+            self.thread_lock[0].acquire()
+        self.state_pool.append(None)
+        self.action_pool.append(None)
+        self.next_state_pool.append(None)
+        self.reward_pool.append(None)
+        try:
+            if self.nn.row!=None:
+                self.index_m(t)
+                self.row_sum_list.append(None)
+                self.rank_sum_list.append(None)
+                self.row_probability.append(None)
+                self.rank_probability.append(None)
+        except AttributeError:
+            self.running_flag=np.append(self.running_flag,np.array(1,dtype='int8'))
+        try:
+            if self.nn.pr!=None:
+                self.nn.pr.TD.append(np.array(0))
+                self.nn.pr.index.append(None)
+        except AttributeError:
             pass
-        if self.state_pool!=None and len(self.state_pool)==t:
-            if self.PN==True:
-                self.thread_lock[3].acquire()
-            else:
-                self.thread_lock[0].acquire()
-            self.state_pool.append(None)
-            self.action_pool.append(None)
-            self.next_state_pool.append(None)
-            self.reward_pool.append(None)
-            try:
-                if self.nn.row!=None:
-                    self.index_m(t)
-                    self.row_sum_list.append(None)
-                    self.rank_sum_list.append(None)
-                    self.row_probability.append(None)
-                    self.rank_probability.append(None)
-            except AttributeError:
-                self.running_flag=np.append(self.running_flag,np.array(1,dtype='int8'))
-            try:
-                if self.nn.pr!=None:
-                    self.nn.pr.TD.append(np.array(0))
-                    self.nn.pr.index.append(None)
-            except AttributeError:
-                pass
-            self.thread_counter+=1
-            self.running_list.append(t)
-            self.finish_list.append(None)
-            try:
-                self.nn.ec.append(0)
-            except AttributeError:
-                pass
-            try:
-                self.nn.bc.append(0)
-            except AttributeError:
-                pass
-            if self.PN==True:
-                self.thread_lock[3].release()
-            else:
-                self.thread_lock[0].release()
+        self.thread_counter+=1
+        self.running_list.append(t)
+        self.finish_list.append(None)
+        try:
+            self.nn.ec.append(0)
+        except AttributeError:
+            pass
+        try:
+            self.nn.bc.append(0)
+        except AttributeError:
+            pass
+        if self.PN==True:
+            self.thread_lock[3].release()
+        else:
+            self.thread_lock[0].release()
         for k in range(episode_num):
             episode=[]
             s=self.nn.env(initial=True)
