@@ -6,7 +6,7 @@ import pickle
 
 
 class kernel:
-    def __init__(self,nn=None,thread=None,thread_lock=None,state=None,state_name=None,action_name=None,save_episode=True):
+    def __init__(self,nn=None,thread=None,thread_lock=None,state=None,state_name=None,action_name=None,save_episode=False):
         self.nn=nn
         try:
             self.nn.km=1
