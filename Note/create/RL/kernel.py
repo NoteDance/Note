@@ -609,7 +609,7 @@ class kernel:
                         epsilon=self.epsilon[t]
                     except:
                         pass
-                    next_s,r,done,episode,index=self.env(s,epsilon,t)
+                    next_s,r,done,_episode,index=self.env(s,epsilon,t)
                     self.reward[t]+=r
                     s=next_s
                     if self.state_pool[t]!=None and self.action_pool[t]!=None and self.next_state_pool[t]!=None and self.reward_pool[t]!=None and self.done_pool[t]!=None:
