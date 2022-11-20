@@ -39,7 +39,6 @@ class kernel:
         self.save_flag=False
         self.stop_flag=1
         self.add_flag=False
-        self.continuance_flag=False
         self.end_loss=None
         self.thread=thread
         self.thread_counter=0
@@ -891,7 +890,6 @@ class kernel:
             pickle.dump(self.episode,episode_file)
             episode_file.close()
         pickle.dump(self.nn,output_file)
-        pickle.dump(self.thread,output_file)
         pickle.dump(self.state_pool,output_file)
         pickle.dump(self.action_pool,output_file)
         pickle.dump(self.next_state_pool,output_file)
@@ -907,16 +905,6 @@ class kernel:
         pickle.dump(self.sc,output_file)
         pickle.dump(self.update_step,output_file)
         pickle.dump(self.end_loss,output_file)
-        pickle.dump(self.thread_counter,output_file)
-        pickle.dump(self.probability_list,output_file)
-        pickle.dump(self.running_flag,output_file)
-        pickle.dump(self.running_flag_list,output_file)
-        pickle.dump(self.index_matrix,output_file)
-        pickle.dump(self.one_matrix,output_file)
-        pickle.dump(self.row_one,output_file)
-        pickle.dump(self.row_probability,output_file)
-        pickle.dump(self.rank_probability,output_file)
-        pickle.dump(self.finish_list,output_file)
         pickle.dump(self.PN,output_file)
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.reward_list,output_file)
@@ -940,10 +928,6 @@ class kernel:
             self.nn.km=1
         except AttributeError:
             pass
-        self.thread=pickle.load(input_file)
-        if self.continuance_flag==True:
-            self.thread_num=np.arange(self.thread)
-            self.thread_num=list(self.thread_num)
         self.state_pool=pickle.load(input_file)
         self.action_pool=pickle.load(input_file)
         self.next_state_pool=pickle.load(input_file)
@@ -959,16 +943,6 @@ class kernel:
         self.sc=pickle.load(input_file)
         self.update_step=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
-        self.thread_counter=pickle.load(input_file)
-        self.probability_list=pickle.load(input_file)
-        self.running_flag=pickle.load(input_file)
-        self.running_flag_list=pickle.load(input_file)
-        self.index_matrix=pickle.load(input_file)
-        self.one_matrix=pickle.load(input_file)
-        self.row_one=pickle.load(input_file)
-        self.row_probability=pickle.load(input_file)
-        self.rank_probability=pickle.load(input_file)
-        self.finish_list=pickle.load(input_file)
         self.PN=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
         self.reward_list=pickle.load(input_file)
