@@ -47,7 +47,6 @@ class kernel:
         self.save_flag=False
         self.stop_flag=1
         self.add_flag=False
-        self.continuance_flag=False
         self.memory_flag=False
         self.param_memory=0
         self.grad_memory=0
