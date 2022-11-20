@@ -30,6 +30,7 @@ class kernel:
         self.pool_size=None
         self.batch=None
         self.update_step=None
+        self.running_list=[]
         self.suspend=False
         self.suspend_list=[]
         self.suspended_list=[]
@@ -596,8 +597,6 @@ class kernel:
         except IndexError:
             print('\nError,please add thread.')
             return
-        if t in self.finish_list:
-            return
         while self.state_pool!=None and len(self.state_pool)<t:
             pass
         if self.state_pool!=None and len(self.state_pool)==t:
@@ -625,6 +624,7 @@ class kernel:
             except AttributeError:
                 pass
             self.thread_counter+=1
+            self.running_list.append(t)
             self.finish_list.append(None)
             try:
                 self.nn.ec.append(0)
@@ -657,6 +657,7 @@ class kernel:
                             self.thread_lock[3].acquire()
                         else:
                             self.thread_lock[0].acquire()
+                        self.running_list.remove(t)
                         self.stopped_list.append(t)
                         self.finish_list[t]=t
                         if self.PN==True:
@@ -712,6 +713,7 @@ class kernel:
                             self.thread_lock[3].acquire()
                         else:
                             self.thread_lock[0].acquire()
+                        self.running_list.remove(t)
                         self.stopped_list.append(t)
                         self.finish_list[t]=t
                         if self.PN==True:
@@ -784,6 +786,7 @@ class kernel:
             if t not in self.finish_list:
                 self.finish_list[t]=t
             self.thread_counter-=1
+            self.running_list.remove(t)
             self.thread_lock[3].release()
             self.state_pool[t]=None
             self.action_pool[t]=None
