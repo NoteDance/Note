@@ -523,32 +523,29 @@ class kernel:
         except IndexError:
             print('\nError,please add thread.')
             return
-        while self.state_pool!=None and len(self.state_pool)<t:
+        if self.PN==True:
+            self.thread_lock[3].acquire()
+        else:
+            self.thread_lock[0].acquire()
+        self.state_pool.append(None)
+        self.action_pool.append(None)
+        self.next_state_pool.append(None)
+        self.reward_pool.append(None)
+        self.running_flag=np.append(self.running_flag,np.array(1,dtype='int8'))
+        self.thread_counter+=1
+        self.finish_list.append(None)
+        try:
+            self.nn.ec.append(0)
+        except AttributeError:
             pass
-        if self.state_pool!=None and len(self.state_pool)==t:
-            if self.PN==True:
-                self.thread_lock[3].acquire()
-            else:
-                self.thread_lock[0].acquire()
-            self.state_pool.append(None)
-            self.action_pool.append(None)
-            self.next_state_pool.append(None)
-            self.reward_pool.append(None)
-            self.running_flag=np.append(self.running_flag,np.array(1,dtype='int8'))
-            self.thread_counter+=1
-            self.finish_list.append(None)
-            try:
-                self.nn.ec.append(0)
-            except AttributeError:
-                pass
-            try:
-                self.nn.bc.append(0)
-            except AttributeError:
-                pass
-            if self.PN==True:
-                self.thread_lock[3].release()
-            else:
-                self.thread_lock[0].release()
+        try:
+            self.nn.bc.append(0)
+        except AttributeError:
+            pass
+        if self.PN==True:
+            self.thread_lock[3].release()
+        else:
+            self.thread_lock[0].release()
         for k in range(episode_num):
             if self.stop==True:
                 if self.stop_func() or self.stop_flag==0:
