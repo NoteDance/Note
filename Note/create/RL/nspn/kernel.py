@@ -8,7 +8,7 @@ import time
 
 
 class kernel:
-    def __init__(self,nn=None,save_episode=True):
+    def __init__(self,nn=None,save_episode=False):
         self.nn=nn
         try:
             self.nn.km=1
