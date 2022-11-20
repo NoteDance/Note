@@ -523,8 +523,6 @@ class kernel:
         except IndexError:
             print('\nError,please add thread.')
             return
-        if t in self.finish_list:
-            return
         while self.state_pool!=None and len(self.state_pool)<t:
             pass
         if self.state_pool!=None and len(self.state_pool)==t:
