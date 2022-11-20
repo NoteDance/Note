@@ -788,7 +788,7 @@ class kernel:
                         self.thread_lock.release()
             else:
                 for _ in range(self.episode_step):
-                    next_s,end,episode,index=self._explore(s,self.epsilon[i],i)
+                    next_s,end,_episode,index=self._explore(s,self.epsilon[i],i)
                     s=next_s
                     if self.state_pool[i]!=None and self.action_pool[i]!=None and self.next_state_pool[i]!=None and self.reward_pool[i]!=None:
                         if self.PO==1:
