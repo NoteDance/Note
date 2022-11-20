@@ -6,7 +6,7 @@ import time
 
 
 class kernel:
-    def __init__(self,nn=None,state=None,state_name=None,action_name=None,save_episode=True):
+    def __init__(self,nn=None,state=None,state_name=None,action_name=None,save_episode=False):
         if nn!=None:
             self.nn=nn
             self.param=nn.param
