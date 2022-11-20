@@ -25,6 +25,7 @@ class kernel:
         self.thread=None
         self.threading=None
         self.thread_counter=0
+        self.running_list=[]
         self.suspend=False
         self.suspend_list=[]
         self.suspended_list=[]
@@ -1191,6 +1192,7 @@ class kernel:
             else:
                 self.thread_lock[2].acquire()
             self.thread_counter+=1
+            self.running_list.append(t)
             if self.PO==1 or self.PO==3:
                 self.thread_lock[1].release()
             else:
@@ -1250,6 +1252,7 @@ class kernel:
                             self.thread_lock[1].acquire()
                         else:
                             self.thread_lock[2].acquire()
+                        self.running_list.remove(t)
                         self.stopped_list.append(t)
                         if self.PO==1 or self.PO==3:
                             self.thread_lock[1].release()
@@ -1363,6 +1366,7 @@ class kernel:
                             self.thread_lock[1].acquire()
                         else:
                             self.thread_lock[2].acquire()
+                        self.running_list.remove(t)
                         self.stopped_list.append(t)
                         if self.PO==1 or self.PO==3:
                             self.thread_lock[1].release()
@@ -1504,6 +1508,7 @@ class kernel:
             else:
                 self.thread_lock[2].acquire()
             self.thread_counter-=1
+            self.running_list.remove(t)
             if self.PO==1 or self.PO==3:
                 self.thread_lock[1].release()
             else:
@@ -1513,6 +1518,16 @@ class kernel:
     
     def train_ol(self,t):
         self.exception_list.append(False)
+        if self.PO==1 or self.PO==3:
+            self.thread_lock[1].acquire()
+        else:
+            self.thread_lock[2].acquire()
+        self.thread_counter+=1
+        self.running_list.append(t)
+        if self.PO==1 or self.PO==3:
+            self.thread_lock[1].release()
+        else:
+            self.thread_lock[2].release()
         while True:
             if self.thread==None:
                 if self.save_flag==True:
@@ -1657,6 +1672,16 @@ class kernel:
                 except AttributeError:
                     pass
             self.exception_list[t]=False
+        if self.PO==1 or self.PO==3:
+            self.thread_lock[1].acquire()
+        else:
+            self.thread_lock[2].acquire()
+        self.thread_counter-=1
+        self.running_list.remove(t)
+        if self.PO==1 or self.PO==3:
+            self.thread_lock[1].release()
+        else:
+            self.thread_lock[2].release()
         return
     
     
