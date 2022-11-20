@@ -26,11 +26,11 @@ class kernel:
         self.row=None
         self.rank=None
         self.d_index=0
-        self.state_pool=[]
-        self.action_pool=[]
-        self.next_state_pool=[]
-        self.reward_pool=[]
-        self.done_pool=[]
+        self.state_pool={}
+        self.action_pool={}
+        self.next_state_pool={}
+        self.reward_pool={}
+        self.done_pool={}
         self.episode=[]
         self.epsilon=None
         self.episode_step=None
@@ -341,12 +341,20 @@ class kernel:
                     self.done_pool[index]=np.concatenate((self.done_pool[index],np.expand_dims(done,axis=0)),0)
                 except:
                     pass
-            if self.state_pool[index]!=None and len(self.state_pool[index])>self.pool_size:
-                self.state_pool[index]=self.state_pool[index][1:]
-                self.action_pool[index]=self.action_pool[index][1:]
-                self.next_state_pool[index]=self.next_state_pool[index][1:]
-                self.reward_pool[index]=self.reward_pool[index][1:]
-                self.done_pool[index]=self.done_pool[index][1:]
+            try:
+                if self.state_pool[index]!=None and len(self.state_pool[index])>self.pool_size:
+                    self.state_pool[index]=self.state_pool[index][1:]
+                    self.action_pool[index]=self.action_pool[index][1:]
+                    self.next_state_pool[index]=self.next_state_pool[index][1:]
+                    self.reward_pool[index]=self.reward_pool[index][1:]
+                    self.done_pool[index]=self.done_pool[index][1:]
+                    del self.state_pool[t]
+                    del self.action_pool[t]
+                    del self.next_state_pool[t]
+                    del self.reward_pool[t]
+                    del self.done_pool[t]
+            except:
+                pass
             if self.threading!=None:
                 self.pool_lock[index].release()
             else:
@@ -914,67 +922,65 @@ class kernel:
         except IndexError:
             print('\nError,please add thread.')
             return
-        while self.state_pool!=None and len(self.state_pool)<t:
+        if self.PN==True:
+            if self.PO==1 or self.PO==3:
+                self.thread_lock[3].acquire()
+            else:
+                self.thread_lock[4].acquire()
+        else:
+            self.thread_lock[0].acquire()
+        self.state_pool[t]=None
+        self.action_pool[t]=None
+        self.next_state_pool[t]=None
+        self.reward_pool[t]=None
+        self.done_pool[t]=None
+        try:
+            if self.nn.row!=None:
+                self.index_m(t)
+                self.row_sum_list.append(None)
+                self.rank_sum_list.append(None)
+                self.row_probability.append(None)
+                self.rank_probability.append(None)
+        except AttributeError:
+            self.running_flag=np.append(self.running_flag,np.array(1,dtype='int8'))
+        try:
+            if self.nn.pr!=None:
+                self.nn.pr.TD.append(np.array(0))
+                self.nn.pr.index.append(None)
+        except AttributeError:
             pass
-        if self.state_pool!=None and len(self.state_pool)==t:
-            if self.PN==True:
-                if self.PO==1 or self.PO==3:
-                    self.thread_lock[3].acquire()
-                else:
-                    self.thread_lock[4].acquire()
+        if self.threading!=None:
+            if self.row!=None:
+                if self.d_index==0 or len(self.gradient_lock)<self.rank and len(self.gradient_lock[self.d_index-1])==self.row:
+                    self.gradient_lock.append([])
+                    self.d_index+=1
+                self.gradient_lock[self.d_index-1].append(self.threading.Lock())
+            elif self.PO==3 and len(self.gradient_lock)<self.max_lock:
+                self.gradient_lock.append(self.threading.Lock())
+        if self.PO==3:
+            self.gradient_list.append(None)
+        self.thread_counter+=1
+        self.running_list.append(t)
+        if self.memory_flag==True:
+            self.grad_memory_list.append(0)
+            self.pool_memory_list.append(0)
+            self.episode_memory_list.append(0)
+        self.finish_list.append(None)
+        try:
+            self.nn.ec.append(0)
+        except AttributeError:
+            pass
+        try:
+            self.nn.bc.append(0)
+        except AttributeError:
+            pass
+        if self.PN==True:
+            if self.PO==1 or self.PO==3:
+                self.thread_lock[3].release()
             else:
-                self.thread_lock[0].acquire()
-            self.state_pool.append(None)
-            self.action_pool.append(None)
-            self.next_state_pool.append(None)
-            self.reward_pool.append(None)
-            try:
-                if self.nn.row!=None:
-                    self.index_m(t)
-                    self.row_sum_list.append(None)
-                    self.rank_sum_list.append(None)
-                    self.row_probability.append(None)
-                    self.rank_probability.append(None)
-            except AttributeError:
-                self.running_flag=np.append(self.running_flag,np.array(1,dtype='int8'))
-            try:
-                if self.nn.pr!=None:
-                    self.nn.pr.TD.append(np.array(0))
-                    self.nn.pr.index.append(None)
-            except AttributeError:
-                pass
-            if self.thredding!=None:
-                if self.row!=None:
-                    if self.d_index==0 or len(self.gradient_lock)<self.rank and len(self.gradient_lock[self.d_index-1])==self.row:
-                        self.gradient_lock.append([])
-                        self.d_index+=1
-                    self.gradient_lock[self.d_index-1].append(self.threading.Lock())
-                elif self.PO==3 and len(self.gradient_lock)<self.max_lock:
-                    self.gradient_lock.append(self.threading.Lock())
-            if self.PO==3:
-                self.gradient_list.append(None)
-            self.thread_counter+=1
-            self.running_list.append(t)
-            if self.memory_flag==True:
-                self.grad_memory_list.append(0)
-                self.pool_memory_list.append(0)
-                self.episode_memory_list.append(0)
-            self.finish_list.append(None)
-            try:
-                self.nn.ec.append(0)
-            except AttributeError:
-                pass
-            try:
-                self.nn.bc.append(0)
-            except AttributeError:
-                pass
-            if self.PN==True:
-                if self.PO==1 or self.PO==3:
-                    self.thread_lock[3].release()
-                else:
-                    self.thread_lock[4].release()
-            else:
-                self.thread_lock[0].release()
+                self.thread_lock[4].release()
+        else:
+            self.thread_lock[0].release()
         if self.threading!=None:
             if self.PO==1 or self.PO==3:
                 self.thread_lock[3].acquire()
@@ -1018,18 +1024,18 @@ class kernel:
                                 self.thread_lock[4].release()
                         else:
                             self.thread_lock[0].release()
-                        self.state_pool[t]=None
-                        self.action_pool[t]=None
-                        self.next_state_pool[t]=None
-                        self.reward_pool[t]=None
-                        self.done_pool[t]=None
+                        del self.state_pool[t]
+                        del self.action_pool[t]
+                        del self.next_state_pool[t]
+                        del self.reward_pool[t]
+                        del self.done_pool[t]
                         return
                     if self.stop_flag==0:
-                        self.state_pool[t]=None
-                        self.action_pool[t]=None
-                        self.next_state_pool[t]=None
-                        self.reward_pool[t]=None
-                        self.done_pool[t]=None
+                        del self.state_pool[t]
+                        del self.action_pool[t]
+                        del self.next_state_pool[t]
+                        del self.reward_pool[t]
+                        del self.done_pool[t]
                         return
                     if self.save_episode==True:
                         try:
@@ -1091,18 +1097,18 @@ class kernel:
                                 self.thread_lock[4].release()
                         else:
                             self.thread_lock[0].release()
-                        self.state_pool[t]=None
-                        self.action_pool[t]=None
-                        self.next_state_pool[t]=None
-                        self.reward_pool[t]=None
-                        self.done_pool[t]=None
+                        del self.state_pool[t]
+                        del self.action_pool[t]
+                        del self.next_state_pool[t]
+                        del self.reward_pool[t]
+                        del self.done_pool[t]
                         return
                     if self.stop_flag==0:
-                        self.state_pool[t]=None
-                        self.action_pool[t]=None
-                        self.next_state_pool[t]=None
-                        self.reward_pool[t]=None
-                        self.done_pool[t]=None
+                        del self.state_pool[t]
+                        del self.action_pool[t]
+                        del self.next_state_pool[t]
+                        del self.reward_pool[t]
+                        del self.done_pool[t]
                         return
                     if self.save_episode==True:
                         try:
@@ -1193,11 +1199,11 @@ class kernel:
                 self.thread_lock[3].release()
             else:
                 self.thread_lock[4].release()
-            self.state_pool[t]=None
-            self.action_pool[t]=None
-            self.next_state_pool[t]=None
-            self.reward_pool[t]=None
-            self.done_pool[t]=None
+            del self.state_pool[t]
+            del self.action_pool[t]
+            del self.next_state_pool[t]
+            del self.reward_pool[t]
+            del self.done_pool[t]
         return
     
     
