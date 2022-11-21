@@ -26,8 +26,7 @@ y_train=tf.one_hot(y_train,10).numpy()
 cnn=c.cnn()                                #create neural network object
 kernel=k.kernel(cnn)                 #start kernel
 kernel.platform=tf                       #use platform
-kernel.data(x_train,y_train)   #input you data,if you have test data can transfer to kernel API data()
-                               #data can be a list,[data1,data2,...,datan]
+kernel.data(x_train,y_train)   #input you data
 kernel.train(32,5)         #train neural network
                            #batch: batch size
                            #epoch:epoch
@@ -42,8 +41,7 @@ x_train,x_test =x_train/255.0,x_test/255.0
 y_train=tf.one_hot(y_train,10).numpy()
 kernel=k.kernel()                 #start kernel
 kernel.platform=tf                    #use platform
-kernel.data(x_train,y_train)   #input you data,if you have test data can transfer to kernel API data()
-                               #data can be a list,[data1,data2,...,datan]
+kernel.data(x_train,y_train)   #input you data
 kernel.restore('save.dat')     #restore neural network
 kernel.nn.opt=tf.keras.optimizers.Adam().from_config(kernel.config)
 kernel.train(32,1)             #train again
@@ -65,8 +63,7 @@ train_data,train_labels=training_data
 nn=n.nn()                                #create neural network object
 kernel=k.kernel(nn)                 #start kernel
 kernel.platform=torch                   #use platform
-kernel.data(train_data,train_labels)   #input you data,if you have test data can transfer to kernel API data()
-                                       #data can be a list,[data1,data2,...,datan]
+kernel.data(train_data,train_labels)   #input you data
 kernel.train(64,5)         #train neural network
                            #batch: batch size
                            #epoch:epoch
@@ -152,8 +149,7 @@ kernel.platform=tf                    #use platform
 kernel.restore('save.dat')     #restore neural network
 kernel.thread=2                        #thread count
 kernel.PO=2
-kernel.data(x_train,y_train)   #input you data,if you have test data can transfer to kernel API data()
-                               #data can be a list,[data1,data2,...,datan]
+kernel.data(x_train,y_train)   #input you data
 kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock()]
 class thread(threading.Thread):
 	def run(self):
