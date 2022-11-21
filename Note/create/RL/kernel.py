@@ -950,6 +950,7 @@ class kernel:
         except AttributeError:
             pass
         if self.threading!=None:
+            self.pool_lock.append(self.threading.Lock())
             if self.row!=None:
                 if self.d_index==0 or len(self.gradient_lock)<self.rank and len(self.gradient_lock[self.d_index-1])==self.row:
                     self.gradient_lock.append([])
@@ -981,17 +982,6 @@ class kernel:
                 self.thread_lock[4].release()
         else:
             self.thread_lock[0].release()
-        if self.threading!=None:
-            if self.PO==1 or self.PO==3:
-                self.thread_lock[3].acquire()
-            else:
-                self.thread_lock[4].acquire()
-        self.pool_lock.append(self.threading.Lock())
-        if self.threading!=None:
-            if self.PO==1 or self.PO==3:
-                self.thread_lock[3].release()
-            else:
-                self.thread_lock[4].release()
         for k in range(episode_num):
             episode=[]
             s=self.nn.env(initial=True)
