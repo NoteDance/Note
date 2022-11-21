@@ -314,10 +314,7 @@ class kernel:
     
     def pool(self,s,a,next_s,r,done,t,index):
         if self.PN==True:
-            if self.threading!=None:
-                self.pool_lock[index].acquire()
-            else:
-                self.thread_lock[0].acquire()
+            self.pool_lock[index].acquire()
             if self.state_pool[index]==None and type(self.state_pool[index])!=np.ndarray:
                 self.state_pool[index]=s
                 if type(a)==int:
@@ -355,10 +352,7 @@ class kernel:
                     del self.done_pool[t]
             except:
                 pass
-            if self.threading!=None:
-                self.pool_lock[index].release()
-            else:
-                self.thread_lock[0].release()
+            self.pool_lock[index].release()
         else:
             if self.state_pool[t]==None and type(self.state_pool[t])!=np.ndarray:
                 self.state_pool[t]=s
@@ -554,10 +548,10 @@ class kernel:
         except AttributeError:
             pass
         if self.PO==1:
-            self.thread_lock[1].acquire()
+            self.thread_lock[0].acquire()
             if self.episode_memory_t_value!=None and sum(self.episode_memory_list)>self.episode_memory_t_value:
                 self.save_episode=False
-            if self.stop_func_(self.thread_lock[1]):
+            if self.stop_func_(self.thread_lock[0]):
                 return 0
             try:
                 try:
@@ -576,12 +570,12 @@ class kernel:
                     self.opt_counter+=1
             except AttributeError:
                 pass
-            self.thread_lock[1].release()
+            self.thread_lock[0].release()
         elif self.PO==2:
-            self.thread_lock[1].acquire()
+            self.thread_lock[0].acquire()
             if self.episode_memory_t_value!=None and sum(self.episode_memory_list)>self.episode_memory_t_value:
                 self.save_episode=False
-            if self.stop_func_(self.thread_lock[1]):
+            if self.stop_func_(self.thread_lock[0]):
                 return 0
             try:
                 self.nn.backward(loss)
@@ -592,8 +586,8 @@ class kernel:
                     self.nn.attenuate(self.opt_counter[t])
             except AttributeError:
                 pass
-            self.thread_lock[1].release()
-            self.thread_lock[2].acquire()
+            self.thread_lock[0].release()
+            self.thread_lock[1].acquire()
             if self.episode_memory_t_value!=None and sum(self.episode_memory_list)>self.episode_memory_t_value:
                 self.save_episode=False
             if self.stop_func_(self.thread_lock[2]):
@@ -607,7 +601,7 @@ class kernel:
                     self.opt_counter+=1
             except AttributeError:
                 pass
-            self.thread_lock[2].release()
+            self.thread_lock[1].release()
         elif self.PO==3:
             if self.row==None and len(self.gradient_lock)==self.thread:
                 ln=t
@@ -653,8 +647,8 @@ class kernel:
             else:
                 self.ln_list.remove(ln)
                 self.gradient_lock[ln].release()
-            self.thread_lock[1].acquire()
-            if self.stop_func_(self.thread_lock[1]):
+            self.thread_lock[0].acquire()
+            if self.stop_func_(self.thread_lock[0]):
                 return 0
             if self.memory_flag==True:
                 self.grad_memory_list[ln]=self.grad_memory
@@ -666,7 +660,7 @@ class kernel:
                     self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)+sum(self.pool_memory_list)+episode_memory
                     if self.episode_memory_t_value!=None and episode_memory>self.episode_memory_t_value:
                         self.save_episode=False
-            if self.stop_func_m(self.thread_lock[1]):
+            if self.stop_func_m(self.thread_lock[0]):
                 return 0
             try:
                 self.nn.opt(self.gradient_list[t])
@@ -680,7 +674,7 @@ class kernel:
                 pass
             if self.memory_flag==True:
                 self.grad_memory_list[ln]=0
-            self.thread_lock[1].release()
+            self.thread_lock[0].release()
         return loss.numpy()
     
     
@@ -779,11 +773,11 @@ class kernel:
                 else:
                     self.ln_list.remove(ln)
                     self.gradient_lock[ln].release()
-                self.thread_lock[1].acquire()
+                self.thread_lock[0].acquire()
                 if self.memory_flag==True:
                     self.grad_memory_list[ln]=self.grad_memory
                     self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)
-                if self.stop_func_m(self.thread_lock[1]):
+                if self.stop_func_m(self.thread_lock[0]):
                     return 0
                 try:
                     self.nn.opt(self.gradient_list[t])
@@ -797,7 +791,7 @@ class kernel:
                     pass
                 if self.memory_flag==True:
                     self.grad_memory_list[ln]=0
-                self.thread_lock[1].release()
+                self.thread_lock[0].release()
         else:
             self.nn.opt(loss)
         return loss.numpy()
@@ -889,9 +883,9 @@ class kernel:
                     return
             if self.PN==True:
                 if self.PO==1 or self.PO==3:
-                    self.thread_lock[2].acquire()
+                    self.thread_lock[1].acquire()
                 else:
-                    self.thread_lock[3].acquire()
+                    self.thread_lock[2].acquire()
             else:
                 self.thread_lock[1].acquire()
             if self.update_step!=None:
@@ -901,9 +895,9 @@ class kernel:
                 self.nn.update_param()
             if self.PN==True:
                 if self.PO==1 or self.PO==3:
-                    self.thread_lock[2].release()
+                    self.thread_lock[1].release()
                 else:
-                    self.thread_lock[3].release()
+                    self.thread_lock[2].release()
             else:
                 self.thread_lock[1].release()
             self.loss[t]=self.loss[t]/batches
@@ -924,9 +918,9 @@ class kernel:
             return
         if self.PN==True:
             if self.PO==1 or self.PO==3:
-                self.thread_lock[3].acquire()
+                self.thread_lock[2].acquire()
             else:
-                self.thread_lock[4].acquire()
+                self.thread_lock[3].acquire()
         else:
             self.thread_lock[0].acquire()
         self.state_pool[t]=None
@@ -977,9 +971,9 @@ class kernel:
             pass
         if self.PN==True:
             if self.PO==1 or self.PO==3:
-                self.thread_lock[3].release()
+                self.thread_lock[2].release()
             else:
-                self.thread_lock[4].release()
+                self.thread_lock[3].release()
         else:
             self.thread_lock[0].release()
         for k in range(episode_num):
@@ -999,9 +993,9 @@ class kernel:
                     if t in self.stop_list:
                         if self.PN==True:
                             if self.PO==1 or self.PO==3:
-                                self.thread_lock[3].acquire()
+                                self.thread_lock[2].acquire()
                             else:
-                                self.thread_lock[4].acquire()
+                                self.thread_lock[3].acquire()
                         else:
                             self.thread_lock[0].acquire()
                         self.running_list.remove(t)
@@ -1009,9 +1003,9 @@ class kernel:
                         self.finish_list[t]=t
                         if self.PN==True:
                             if self.PO==1 or self.PO==3:
-                                self.thread_lock[3].release()
+                                self.thread_lock[2].release()
                             else:
-                                self.thread_lock[4].release()
+                                self.thread_lock[3].release()
                         else:
                             self.thread_lock[0].release()
                         del self.state_pool[t]
@@ -1036,9 +1030,9 @@ class kernel:
                     if done:
                         if self.PN==True:
                             if self.PO==1 or self.PO==3:
-                                self.thread_lock[3].acquire()
+                                self.thread_lock[2].acquire()
                             else:
-                                self.thread_lock[4].acquire()
+                                self.thread_lock[3].acquire()
                         else:
                             self.thread_lock[0].acquire()
                         self.total_episode+=1
@@ -1050,9 +1044,9 @@ class kernel:
                             self.print_save()
                         if self.PN==True:
                             if self.PO==1 or self.PO==3:
-                                self.thread_lock[3].release()
+                                self.thread_lock[2].release()
                             else:
-                                self.thread_lock[4].release()
+                                self.thread_lock[3].release()
                         else:
                             self.thread_lock[0].release()
                         if self.save_episode==True:
@@ -1072,9 +1066,9 @@ class kernel:
                     if t in self.stop_list:
                         if self.PN==True:
                             if self.PO==1 or self.PO==3:
-                                self.thread_lock[3].acquire()
+                                self.thread_lock[2].acquire()
                             else:
-                                self.thread_lock[4].acquire()
+                                self.thread_lock[3].acquire()
                         else:
                             self.thread_lock[0].acquire()
                         self.running_list.remove(t)
@@ -1082,9 +1076,9 @@ class kernel:
                         self.finish_list[t]=t
                         if self.PN==True:
                             if self.PO==1 or self.PO==3:
-                                self.thread_lock[3].release()
+                                self.thread_lock[2].release()
                             else:
-                                self.thread_lock[4].release()
+                                self.thread_lock[3].release()
                         else:
                             self.thread_lock[0].release()
                         del self.state_pool[t]
@@ -1109,9 +1103,9 @@ class kernel:
                     if done:
                         if self.PN==True:
                             if self.PO==1 or self.PO==3:
-                                self.thread_lock[3].acquire()
+                                self.thread_lock[2].acquire()
                             else:
-                                self.thread_lock[4].acquire()
+                                self.thread_lock[3].acquire()
                         else:
                             self.thread_lock[0].acquire()
                         self.total_episode+=1
@@ -1123,9 +1117,9 @@ class kernel:
                             self.print_save()
                         if self.PN==True:
                             if self.PO==1 or self.PO==3:
-                                self.thread_lock[3].release()
+                                self.thread_lock[2].release()
                             else:
-                                self.thread_lock[4].release()
+                                self.thread_lock[3].release()
                         else:
                             self.thread_lock[0].release()
                         if self.save_episode==True:
@@ -1134,9 +1128,9 @@ class kernel:
                     if l==self.episode_step-1:
                         if self.PN==True:
                             if self.PO==1 or self.PO==3:
-                                self.thread_lock[3].acquire()
+                                self.thread_lock[2].acquire()
                             else:
-                                self.thread_lock[4].acquire()
+                                self.thread_lock[3].acquire()
                         else:
                             self.thread_lock[0].acquire()
                         self.total_episode+=1
@@ -1148,16 +1142,16 @@ class kernel:
                             self.print_save()
                         if self.PN==True:
                             if self.PO==1 or self.PO==3:
-                                self.thread_lock[3].release()
+                                self.thread_lock[2].release()
                             else:
-                                self.thread_lock[4].release()
+                                self.thread_lock[3].release()
                         else:
                             self.thread_lock[0].release()
             if self.PN==True:
                 if self.PO==1 or self.PO==3:
-                    self.thread_lock[3].acquire()
+                    self.thread_lock[2].acquire()
                 else:
-                    self.thread_lock[4].acquire()
+                    self.thread_lock[3].acquire()
             else:
                 self.thread_lock[0].acquire()
             self.reward_list.append(self.reward[t])
@@ -1166,9 +1160,9 @@ class kernel:
                 self.episode.append(episode)
             if self.PN==True:
                 if self.PO==1 or self.PO==3:
-                    self.thread_lock[3].release()
+                    self.thread_lock[2].release()
                 else:
-                    self.thread_lock[4].release()
+                    self.thread_lock[3].release()
             else:
                 self.thread_lock[0].release()
         if self.PN==True:
@@ -1178,22 +1172,25 @@ class kernel:
             except AttributeError:
                 self.running_flag[t+1]=0
             if self.PO==1 or self.PO==3:
-                self.thread_lock[3].acquire()
+                self.thread_lock[2].acquire()
             else:
-                self.thread_lock[4].acquire()
+                self.thread_lock[3].acquire()
             self.thread_counter-=1
             self.running_list.remove(t)
             if t not in self.finish_list:
                 self.finish_list[t]=t
             if self.PO==1 or self.PO==3:
-                self.thread_lock[3].release()
+                self.thread_lock[2].release()
             else:
-                self.thread_lock[4].release()
-            del self.state_pool[t]
-            del self.action_pool[t]
-            del self.next_state_pool[t]
-            del self.reward_pool[t]
-            del self.done_pool[t]
+                self.thread_lock[3].release()
+            try:
+                del self.state_pool[t]
+                del self.action_pool[t]
+                del self.next_state_pool[t]
+                del self.reward_pool[t]
+                del self.done_pool[t]
+            except:
+                pass
         return
     
     
@@ -1320,34 +1317,34 @@ class kernel:
         if t in self.suspend_list:
             if self.PN==True:
                 if self.PO==1 or self.PO==3:
-                    self.thread_lock[3].acquire()
+                    self.thread_lock[2].acquire()
                 else:
-                    self.thread_lock[4].acquire()
+                    self.thread_lock[3].acquire()
             else:
                 self.thread_lock[0].acquire()
             self.suspended_list.append(t)
             if self.PN==True:
                 if self.PO==1 or self.PO==3:
-                    self.thread_lock[3].release()
+                    self.thread_lock[2].release()
                 else:
-                    self.thread_lock[4].release()
+                    self.thread_lock[3].release()
             else:
                 self.thread_lock[0].release()
             while True:
                 if t not in self.suspend_list:
                     if self.PN==True:
                         if self.PO==1 or self.PO==3:
-                            self.thread_lock[3].acquire()
+                            self.thread_lock[2].acquire()
                         else:
-                            self.thread_lock[4].acquire()
+                            self.thread_lock[3].acquire()
                     else:
                         self.thread_lock[0].acquire()
                     self.suspended_list.remove(t)
                     if self.PN==True:
                         if self.PO==1 or self.PO==3:
-                            self.thread_lock[3].release()
+                            self.thread_lock[2].release()
                         else:
-                            self.thread_lock[4].release()
+                            self.thread_lock[3].release()
                     else:
                         self.thread_lock[0].release()
                     break
