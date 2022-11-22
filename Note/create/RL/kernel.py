@@ -106,7 +106,7 @@ class kernel:
         return
     
     
-    def count_memory(self,s=None,a=None,next_s=None,r=None,t=None):
+    def calculate_memory(self,s=None,a=None,next_s=None,r=None,t=None):
         if s!=None:
             self.episode_memory_list[t]+=getsizeof(s)
             self.episode_memory_list[t]+=getsizeof(a)
@@ -129,15 +129,22 @@ class kernel:
             return
     
     
-    def count_memory_(self,ln,t):
+    def calculate_memory_(self,t,ln=None):
         if self.memory_flag==True:
-            self.grad_memory_list[ln]=self.grad_memory
+            if self.PO==3:
+                self.grad_memory_list[ln]=self.grad_memory
             self.pool_memory_list[t]=getsizeof(self.state_pool[t][0])*len(self.state_pool[t])+getsizeof(self.action_pool[t][0])*len(self.action_pool[t])+getsizeof(self.next_state_pool[t][0])*len(self.next_state_pool[t])+getsizeof(self.reward_pool[t][0])*len(self.reward_pool[t])+getsizeof(self.done_pool[t][0])*len(self.done_pool[t])
             if self.save_episode==False:
-                self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)+sum(self.pool_memory_list)
+                if self.PO==3:
+                    self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)+sum(self.pool_memory_list)
+                else:
+                    self.c_memory=self.data_memory+self.param_memory+sum(self.pool_memory_list)
             else:
                 episode_memory=sum(self.episode_memory_list)
-                self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)+sum(self.pool_memory_list)+episode_memory
+                if self.PO==3:
+                    self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)+sum(self.pool_memory_list)+episode_memory
+                else:
+                    self.c_memory=self.data_memory+self.param_memory+sum(self.pool_memory_list)+episode_memory
                 if self.episode_memory_t_value!=None and episode_memory>self.episode_memory_t_value:
                     self.save_episode=False
         return
@@ -565,6 +572,9 @@ class kernel:
             self.thread_lock[0].acquire()
             if self.episode_memory_t_value!=None and sum(self.episode_memory_list)>self.episode_memory_t_value:
                 self.save_episode=False
+            self.calculate_memory_(t)
+            if self.stop_func_m(self.thread_lock[0]):
+                return 0
             if self.stop_func_(self.thread_lock[0]):
                 return 0
             self.nn.backward(loss)
@@ -599,7 +609,10 @@ class kernel:
             self.thread_lock[1].acquire()
             if self.episode_memory_t_value!=None and sum(self.episode_memory_list)>self.episode_memory_t_value:
                 self.save_episode=False
-            if self.stop_func_(self.thread_lock[2]):
+            self.calculate_memory_(t)
+            if self.stop_func_m(self.thread_lock[1]):
+                return 0
+            if self.stop_func_(self.thread_lock[1]):
                 return 0
             try:
                 self.nn.opt()
@@ -655,10 +668,10 @@ class kernel:
                 self.ln_list.remove(ln)
                 self.gradient_lock[ln].release()
             self.thread_lock[0].acquire()
-            if self.stop_func_(self.thread_lock[0]):
-                return 0
-            self.count_memory_(ln,t)
+            self.calculate_memory_(t,ln)
             if self.stop_func_m(self.thread_lock[0]):
+                return 0
+            if self.stop_func_(self.thread_lock[0]):
                 return 0
             try:
                 self.nn.opt()
@@ -691,6 +704,9 @@ class kernel:
             self.thread_lock[0].acquire()
             if self.episode_memory_t_value!=None and sum(self.episode_memory_list)>self.episode_memory_t_value:
                 self.save_episode=False
+            self.calculate_memory_(t)
+            if self.stop_func_m(self.thread_lock[0]):
+                return 0
             if self.stop_func_(self.thread_lock[0]):
                 return 0
             self.nn.backward(loss)
@@ -725,7 +741,10 @@ class kernel:
             self.thread_lock[1].acquire()
             if self.episode_memory_t_value!=None and sum(self.episode_memory_list)>self.episode_memory_t_value:
                 self.save_episode=False
-            if self.stop_func_(self.thread_lock[2]):
+            self.calculate_memory_(t)
+            if self.stop_func_m(self.thread_lock[1]):
+                return 0
+            if self.stop_func_(self.thread_lock[1]):
                 return 0
             try:
                 self.nn.opt()
@@ -781,10 +800,10 @@ class kernel:
                 self.ln_list.remove(ln)
                 self.gradient_lock[ln].release()
             self.thread_lock[0].acquire()
-            if self.stop_func_(self.thread_lock[0]):
-                return 0
-            self.count_memory_(ln,t)
+            self.calculate_memory_(t,ln)
             if self.stop_func_m(self.thread_lock[0]):
+                return 0
+            if self.stop_func_(self.thread_lock[0]):
                 return 0
             try:
                 self.nn.opt()
