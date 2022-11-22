@@ -138,13 +138,13 @@ class kernel:
                 if self.PO==3:
                     self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)+sum(self.pool_memory_list)
                 else:
-                    self.c_memory=self.data_memory+self.param_memory+sum(self.pool_memory_list)
+                    self.c_memory=self.data_memory+self.param_memory+self.grad_memory+sum(self.pool_memory_list)
             else:
                 episode_memory=sum(self.episode_memory_list)
                 if self.PO==3:
                     self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)+sum(self.pool_memory_list)+episode_memory
                 else:
-                    self.c_memory=self.data_memory+self.param_memory+sum(self.pool_memory_list)+episode_memory
+                    self.c_memory=self.data_memory+self.param_memory+self.grad_memory+sum(self.pool_memory_list)+episode_memory
                 if self.episode_memory_t_value!=None and episode_memory>self.episode_memory_t_value:
                     self.save_episode=False
         return
