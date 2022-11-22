@@ -2115,22 +2115,18 @@ class kernel:
                 if self.training_flag==False:
                     self.nn.param=None
                 try:
-                    if self.nn.opt:
-                        opt=self.nn.opt
-                        self.nn.opt=None
-                        pickle.dump(self.nn,output_file)
-                        self.nn.opt=opt
+                    pickle.dump(self.nn,output_file)
                 except AttributeError:
-                    try:
-                        pickle.dump(self.nn,output_file)
-                    except:
-                        opt=self.nn.oopt
-                        self.nn.oopt=None
-                        pickle.dump(self.nn,output_file)
-                        self.nn.oopt=opt
-                pickle.dump(opt.get_config(),output_file)
+                    opt=self.nn.opt
+                    self.nn.opt=None
+                    pickle.dump(self.nn,output_file)
+                    self.nn.opt=opt
         except AttributeError:
             pass
+        try:
+            pickle.dump(opt.get_config(),output_file)
+        except:
+            pickle.dump(None,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.end_loss,output_file)
         pickle.dump(self.end_acc,output_file)
@@ -2186,9 +2182,9 @@ class kernel:
                     self.nn.km=1
                 except AttributeError:
                     pass
-                self.config=pickle.load(input_file)
         except AttributeError:
             pass
+        self.config=pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
         self.end_acc=pickle.load(input_file)
