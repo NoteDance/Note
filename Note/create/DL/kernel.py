@@ -1268,15 +1268,15 @@ class kernel:
             param=pickle.load(parameter_file)
         self.nn=pickle.load(input_file)
         try:
+            self.nn.km=1
+        except AttributeError:
+            pass
+        try:
             if self.nn.model!=None:
                 pass
             self.nn.param=param.extend(self.nn.model.weights)
         except AttributeError:
             self.nn.param=param
-        try:
-            self.nn.km=1
-        except AttributeError:
-            pass
         self.config=pickle.load(input_file)
         self.ol=pickle.load(input_file)
         self.batch=pickle.load(input_file)
