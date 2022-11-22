@@ -194,7 +194,7 @@ class kernel:
         loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
         self.nn.backward(loss)
         self.nn.opt()
-        return loss.numpy()
+        return loss
     
     
     def pool(self,s,a,next_s,r,done):
