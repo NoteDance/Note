@@ -199,7 +199,7 @@ class kernel:
     def opt(self,state_batch,action_batch,next_state_batch,reward_batch,done_batch):
         loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
         self.nn.opt(loss)
-        return loss.numpy()
+        return loss
     
     
     def opt_t(self,data):
