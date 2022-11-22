@@ -366,7 +366,7 @@ class kernel:
         return data_batch,labels_batch
     
     
-    def count_memory(self):
+    def calculate_memory(self,ln):
         if self.memory_flag==True:
             self.grad_memory_list[ln]=self.grad_memory
             self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)
@@ -527,10 +527,10 @@ class kernel:
                 self.ln_list.remove(ln)
                 self.gradient_lock[ln].release()
             self.thread_lock[0].acquire()
-            if self.stop_func_(self.thread_lock[0]):
-                return 0,0
-            self.count_memory()
+            self.calculate_memory()
             if self.stop_func_m(self.thread_lock[0]):
+                return 0,0
+            if self.stop_func_(self.thread_lock[0]):
                 return 0,0
             try:
                 self.nn.opt(gradient,self.nn.param)
@@ -672,10 +672,10 @@ class kernel:
                 self.ln_list.remove(ln)
                 self.gradient_lock[ln].release()
             self.thread_lock[0].acquire()
-            if self.stop_func_(self.thread_lock[0]):
-                return 0,0
-            self.count_memory()
+            self.calculate_memory()
             if self.stop_func_m(self.thread_lock[0]):
+                return 0,0
+            if self.stop_func_(self.thread_lock[0]):
                 return 0,0
             try:
                 self.nn.opt()
@@ -815,10 +815,10 @@ class kernel:
                     self.ln_list.remove(ln)
                     self.gradient_lock[ln].release()
                 self.thread_lock[0].acquire()
-                if self.stop_func_(self.thread_lock[0]):
-                    return 0,0
-                self.count_memory()
+                self.calculate_memory()
                 if self.stop_func_m(self.thread_lock[0]):
+                    return 0,0
+                if self.stop_func_(self.thread_lock[0]):
                     return 0,0
                 try:
                     self.nn.opt(gradient,self.nn.param)
