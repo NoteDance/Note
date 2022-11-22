@@ -129,6 +129,20 @@ class kernel:
             return
     
     
+    def count_memory_(self,ln,t):
+        if self.memory_flag==True:
+            self.grad_memory_list[ln]=self.grad_memory
+            self.pool_memory_list[t]=getsizeof(self.state_pool[t][0])*len(self.state_pool[t])+getsizeof(self.action_pool[t][0])*len(self.action_pool[t])+getsizeof(self.next_state_pool[t][0])*len(self.next_state_pool[t])+getsizeof(self.reward_pool[t][0])*len(self.reward_pool[t])+getsizeof(self.done_pool[t][0])*len(self.done_pool[t])
+            if self.save_episode==False:
+                self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)+sum(self.pool_memory_list)
+            else:
+                episode_memory=sum(self.episode_memory_list)
+                self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)+sum(self.pool_memory_list)+episode_memory
+                if self.episode_memory_t_value!=None and episode_memory>self.episode_memory_t_value:
+                    self.save_episode=False
+        return
+    
+    
     def add_threads(self,thread,row=None,rank=None):
         if row!=None:
             self.thread=row*rank-self.nn.row*self.nn.rank
@@ -643,16 +657,7 @@ class kernel:
             self.thread_lock[0].acquire()
             if self.stop_func_(self.thread_lock[0]):
                 return 0
-            if self.memory_flag==True:
-                self.grad_memory_list[ln]=self.grad_memory
-                self.pool_memory_list[t]=getsizeof(self.state_pool[t][0])*len(self.state_pool[t])+getsizeof(self.action_pool[t][0])*len(self.action_pool[t])+getsizeof(self.next_state_pool[t][0])*len(self.next_state_pool[t])+getsizeof(self.reward_pool[t][0])*len(self.reward_pool[t])+getsizeof(self.done_pool[t][0])*len(self.done_pool[t])
-                if self.save_episode==False:
-                    self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)+sum(self.pool_memory_list)
-                else:
-                    episode_memory=sum(self.episode_memory_list)
-                    self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)+sum(self.pool_memory_list)+episode_memory
-                    if self.episode_memory_t_value!=None and episode_memory>self.episode_memory_t_value:
-                        self.save_episode=False
+            self.count_memory_(ln,t)
             if self.stop_func_m(self.thread_lock[0]):
                 return 0
             try:
@@ -778,16 +783,7 @@ class kernel:
             self.thread_lock[0].acquire()
             if self.stop_func_(self.thread_lock[0]):
                 return 0
-            if self.memory_flag==True:
-                self.grad_memory_list[ln]=self.grad_memory
-                self.pool_memory_list[t]=getsizeof(self.state_pool[t][0])*len(self.state_pool[t])+getsizeof(self.action_pool[t][0])*len(self.action_pool[t])+getsizeof(self.next_state_pool[t][0])*len(self.next_state_pool[t])+getsizeof(self.reward_pool[t][0])*len(self.reward_pool[t])+getsizeof(self.done_pool[t][0])*len(self.done_pool[t])
-                if self.save_episode==False:
-                    self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)+sum(self.pool_memory_list)
-                else:
-                    episode_memory=sum(self.episode_memory_list)
-                    self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)+sum(self.pool_memory_list)+episode_memory
-                    if self.episode_memory_t_value!=None and episode_memory>self.episode_memory_t_value:
-                        self.save_episode=False
+            self.count_memory_(ln,t)
             if self.stop_func_m(self.thread_lock[0]):
                 return 0
             try:
