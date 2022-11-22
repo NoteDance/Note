@@ -1223,7 +1223,10 @@ class kernel:
                 self.nn.oopt=None
                 pickle.dump(self.nn,output_file)
                 self.nn.oopt=opt
-        pickle.dump(opt.get_config(),output_file)
+        try:
+            pickle.dump(opt.get_config(),output_file)
+        except:
+            pickle.dump(None,output_file)
         pickle.dump(self.ol,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.end_loss,output_file)
