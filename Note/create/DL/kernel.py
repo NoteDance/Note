@@ -1843,7 +1843,7 @@ class kernel:
         if self.memory_t_value!=None and self.c_memory>self.memory_t_value:
             if self.memory_priority==False:
                 if self.epoch_list_copy==None:
-                    self.epoch_list_copy=self.epoch_list
+                    self.epoch_list_copy=self.epoch_list.copy()
                 index=np.argmax(self.epoch_list_copy)
                 self.stop_list_m.append(index)
                 self.epoch_list_copy[index]=0
