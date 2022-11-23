@@ -80,9 +80,9 @@ kernel.train(64,5)         #train neural network
 
 **1. parallel forward propagation and optimizing.(kernel.PO=1)**
 
-**2. parallel forward propagation and computing gradient and optimizing.(kernel.PO=2)**
+**2. parallel forward propagation and calculate a gradient and optimizing.(kernel.PO=2)**
 
-**3. parallel forward propagation and computing multiple gradient and optimizing.(kernel.PO=3)**
+**3. parallel forward propagation and calculate multiple gradients and optimizing.(kernel.PO=3)**
 
 **parallel optimization may cause unstable training(the estimate of the gradient is biased) but it can make the loss function jump out of the local minimum.**
 
