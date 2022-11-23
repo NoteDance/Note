@@ -150,6 +150,16 @@ class kernel:
         return
     
     
+    def calculate_memory_ol(self,t,ln=None):
+        if self.memory_flag==True:
+            if self.PO==3:
+                self.grad_memory_list[ln]=self.grad_memory
+                self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)
+            else:
+                self.c_memory=self.data_memory+self.param_memory+self.grad_memory
+        return
+    
+    
     def add_threads(self,thread,row=None,rank=None):
         if row!=None:
             self.thread=row*rank-self.nn.row*self.nn.rank
@@ -702,12 +712,8 @@ class kernel:
                 pass
         if self.PO==1:
             self.thread_lock[0].acquire()
-            if self.episode_memory_t_value!=None and sum(self.episode_memory_list)>self.episode_memory_t_value:
-                self.save_episode=False
-            self.calculate_memory_(t)
+            self.calculate_memory_ol(t)
             if self.stop_func_m(self.thread_lock[0]):
-                return 0
-            if self.stop_func_(self.thread_lock[0]):
                 return 0
             self.nn.backward(loss)
             try:
@@ -727,8 +733,6 @@ class kernel:
             self.thread_lock[0].release()
         elif self.PO==2:
             self.thread_lock[0].acquire()
-            if self.episode_memory_t_value!=None and sum(self.episode_memory_list)>self.episode_memory_t_value:
-                self.save_episode=False
             if self.stop_func_(self.thread_lock[0]):
                 return 0
             self.nn.backward(loss)
@@ -739,9 +743,7 @@ class kernel:
                 pass
             self.thread_lock[0].release()
             self.thread_lock[1].acquire()
-            if self.episode_memory_t_value!=None and sum(self.episode_memory_list)>self.episode_memory_t_value:
-                self.save_episode=False
-            self.calculate_memory_(t)
+            self.calculate_memory_ol(t)
             if self.stop_func_m(self.thread_lock[1]):
                 return 0
             if self.stop_func_(self.thread_lock[1]):
@@ -800,7 +802,7 @@ class kernel:
                 self.ln_list.remove(ln)
                 self.gradient_lock[ln].release()
             self.thread_lock[0].acquire()
-            self.calculate_memory_(t,ln)
+            self.calculate_memory_ol(t,ln)
             if self.stop_func_m(self.thread_lock[0]):
                 return 0
             if self.stop_func_(self.thread_lock[0]):
