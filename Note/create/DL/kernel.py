@@ -32,10 +32,14 @@ class kernel:
         self.stop=False
         self.stop_list=[]
         self.stopped_list=[]
+        self.stop_list_m=[]
         self.save_flag=False
         self.stop_flag=1
         self.training_flag=False
         self.memory_flag=False
+        self.memory_priority=False
+        self.epoch_list=np.array(0,dtype=np.int8)
+        self.epoch_list_copy=None
         self.data_memory=None
         self.param_memory=0
         self.grad_memory=0
@@ -522,7 +526,9 @@ class kernel:
                 self.gradient_lock[ln].release()
             self.thread_lock[0].acquire()
             self.calculate_memory()
-            if self.stop_func_m(self.thread_lock[0]):
+            if self.stop_func_m(self.thread_lock[0],ln):
+                return 0,0
+            if self.stop_func_m_p(self.thread_lock[0],t,ln):
                 return 0,0
             if self.stop_func_(self.thread_lock[0]):
                 return 0,0
@@ -661,7 +667,9 @@ class kernel:
                 self.gradient_lock[ln].release()
             self.thread_lock[0].acquire()
             self.calculate_memory()
-            if self.stop_func_m(self.thread_lock[0]):
+            if self.stop_func_m(self.thread_lock[0],ln):
+                return 0,0
+            if self.stop_func_m_p(self.thread_lock[0],t,ln):
                 return 0,0
             if self.stop_func_(self.thread_lock[0]):
                 return 0,0
@@ -794,7 +802,9 @@ class kernel:
                     self.gradient_lock[ln].release()
                 self.thread_lock[0].acquire()
                 self.calculate_memory()
-                if self.stop_func_m(self.thread_lock[0]):
+                if self.stop_func_m(self.thread_lock[0],ln):
+                    return 0,0
+                if self.stop_func_m_p(self.thread_lock[0],t,ln):
                     return 0,0
                 try:
                     self.nn.opt(gradient,self.nn.param)
@@ -1093,11 +1103,14 @@ class kernel:
                 self.thread_lock[2].acquire()
             self.thread_counter+=1
             self.running_list.append(t)
+            if self.memory_flag==True and self.memory_priority==False:
+                if t>0:
+                    self.epoch_list=np.append(self.epoch_list,np.array(0,dtype=np.int8))
             if self.PO==1 or self.PO==3:
                 self.thread_lock[1].release()
             else:
                 self.thread_lock[2].release()
-        if self.thredding!=None:
+        if self.threading!=None:
             if self.row!=None:
                 if self.d_index==0 or len(self.gradient_lock)<self.rank and len(self.gradient_lock[self.d_index-1])==self.row:
                     self.gradient_lock.append([])
@@ -1147,7 +1160,7 @@ class kernel:
                     else:
                         self._train(batch,data_batch,labels_batch,test_batch,t)
                 if self.thread_lock!=None:
-                    if t in self.stop_list:
+                    if t in self.stop_list or t in self.stop_list_m:
                         if self.PO==1 or self.PO==3:
                             self.thread_lock[1].acquire()
                         else:
@@ -1173,8 +1186,10 @@ class kernel:
                         pass
                 if self.thread_lock==None and type(self.total_epoch)!=list:
                     self.total_epoch+=1
+                    self.epoch_list[t]+=1
                 elif type(self.total_epoch)==list:
                     self.total_epoch[t]+=1
+                    self.epoch_list[t]+=1
                 if self.thread==None:
                     if epoch%10!=0:
                         p=epoch-epoch%self.p
@@ -1261,7 +1276,7 @@ class kernel:
                     else:
                         self._train(test_batch=test_batch,t=t)
                 if self.thread_lock!=None:
-                    if t in self.stop_list:
+                    if t in self.stop_list or t in self.stop_list_m:
                         if self.PO==1 or self.PO==3:
                             self.thread_lock[1].acquire()
                         else:
@@ -1442,7 +1457,7 @@ class kernel:
                         self.thread_lock[2].release()
                     if self.stop_flag==2:
                         return
-                if t in self.stop_list:
+                if t in self.stop_list or t in self.stop_list_m:
                     if self.PO==1 or self.PO==3:
                         self.thread_lock[1].acquire()
                     else:
@@ -1817,12 +1832,32 @@ class kernel:
                 return True
     
     
-    def stop_func_m(self,thread_lock,t):
+    def stop_func_m(self,thread_lock,ln):
         if self.memory_t_value!=None and self.c_memory>self.memory_t_value:
-            self.stop_list.append(t)
-            return True
+            if self.memory_priority==False:
+                if self.epoch_list_copy==None:
+                    self.epoch_list_copy=self.epoch_list
+                index=np.argmax(self.epoch_list_copy)
+                self.stop_list_m.append(index)
+                self.epoch_list_copy[index]=0
+                return False
+            else:
+                if self.PO==3 and self.memory_flag==True:
+                    self.grad_memory_list[ln]=0
+                thread_lock.release()
+                return True
         else:
+            if self.memory_priority==False:
+                self.stop_list_m.clear()
+                self.epoch_list_copy=None
             return False
+    
+    
+    def stop_func_m_p(self,thread_lock,t,ln):
+        if t in self.stop_list_m:
+            self.grad_memory_list[ln]=0
+            thread_lock.release()
+            return True
     
     
     def _save(self):
