@@ -371,9 +371,8 @@ class kernel:
     
     
     def calculate_memory(self,ln):
-        if self.memory_flag==True:
-            self.grad_memory_list[ln]=self.grad_memory
-            self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)
+        self.grad_memory_list[ln]=self.grad_memory
+        self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)
         return
     
     
@@ -525,11 +524,12 @@ class kernel:
                 self.ln_list.remove(ln)
                 self.gradient_lock[ln].release()
             self.thread_lock[0].acquire()
-            self.calculate_memory()
-            if self.stop_func_m(self.thread_lock[0],ln):
-                return 0,0
-            if self.stop_func_m_p(self.thread_lock[0],t,ln):
-                return 0,0
+            if self.memory_flag==True:
+                self.calculate_memory()
+                if self.stop_func_m(self.thread_lock[0],ln):
+                    return 0,0
+                if self.stop_func_m_p(self.thread_lock[0],t,ln):
+                    return 0,0
             if self.stop_func_(self.thread_lock[0]):
                 return 0,0
             try:
@@ -666,11 +666,12 @@ class kernel:
                 self.ln_list.remove(ln)
                 self.gradient_lock[ln].release()
             self.thread_lock[0].acquire()
-            self.calculate_memory()
-            if self.stop_func_m(self.thread_lock[0],ln):
-                return 0,0
-            if self.stop_func_m_p(self.thread_lock[0],t,ln):
-                return 0,0
+            if self.memory_flag==True:
+                self.calculate_memory()
+                if self.stop_func_m(self.thread_lock[0],ln):
+                    return 0,0
+                if self.stop_func_m_p(self.thread_lock[0],t,ln):
+                    return 0,0
             if self.stop_func_(self.thread_lock[0]):
                 return 0,0
             try:
@@ -801,11 +802,12 @@ class kernel:
                     self.ln_list.remove(ln)
                     self.gradient_lock[ln].release()
                 self.thread_lock[0].acquire()
-                self.calculate_memory()
-                if self.stop_func_m(self.thread_lock[0],ln):
-                    return 0,0
-                if self.stop_func_m_p(self.thread_lock[0],t,ln):
-                    return 0,0
+                if self.memory_flag==True:
+                    self.calculate_memory()
+                    if self.stop_func_m(self.thread_lock[0],ln):
+                        return 0,0
+                    if self.stop_func_m_p(self.thread_lock[0],t,ln):
+                        return 0,0
                 try:
                     self.nn.opt(gradient,self.nn.param)
                 except TypeError:
@@ -1103,9 +1105,8 @@ class kernel:
                 self.thread_lock[2].acquire()
             self.thread_counter+=1
             self.running_list.append(t)
-            if self.memory_flag==True and self.memory_priority==False:
-                if t>0:
-                    self.epoch_list=np.append(self.epoch_list,np.array(0,dtype=np.int8))
+            if t>0:
+                self.epoch_list=np.append(self.epoch_list,np.array(0,dtype=np.int8))
             if self.PO==1 or self.PO==3:
                 self.thread_lock[1].release()
             else:
