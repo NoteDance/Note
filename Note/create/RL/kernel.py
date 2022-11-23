@@ -218,7 +218,7 @@ class kernel:
             self.thread_num=np.arange(self.thread)
             self.thread_num=list(self.thread_num)
             self.probability_list=[]
-            self.running_flag=np.array(0,dtype='int8')
+            self.running_flag=np.array(0,dtype=np.int8)
             self.running_flag_list=[]
             self.index_matrix=[]
             self.one_matrix=[]
@@ -230,10 +230,10 @@ class kernel:
             self.finish_list=[]
             try:
                 if self.nn.row!=None:
-                    self.row_one=np.array(0,dtype='int8')
-                    self.rank_one=np.array(0,dtype='int8')
+                    self.row_one=np.array(0,dtype=np.int8)
+                    self.rank_one=np.array(0,dtype=np.int8)
             except AttributeError:
-                self.running_flag=np.array(0,dtype='int8')
+                self.running_flag=np.array(0,dtype=np.int8)
             try:
                 if self.nn.pr!=None:
                     self.nn.pr.TD=[]
@@ -418,19 +418,19 @@ class kernel:
         if self.add_flag==None and len(self.index_matrix)!=self.nn.row:
             if len(self.row_list)!=self.nn.rank:
                 self.row_list.append(t)
-                self.rank_one=np.append(self.rank_one,np.array(1,dtype='int8'))
+                self.rank_one=np.append(self.rank_one,np.array(1,dtype=np.int8))
                 if len(self.row_list)==self.nn.rank:
                     self.index_matrix.append(self.row_list.copy())
                     self.row_list=[]
                     self.one_matrix.append(self.rank_one)
-                    self.rank_one=np.array(0,dtype='int8')
-                    self.row_one=np.append(self.row_one,np.array(1,dtype='int8'))
+                    self.rank_one=np.array(0,dtype=np.int8)
+                    self.row_one=np.append(self.row_one,np.array(1,dtype=np.int8))
         elif self.add_flag==True:
             if len(self.index_matrix)!=self.nn.row:
                 if self.direction_index>len(self.index_matrix) and self.row_list==[]:
                     self.index_matrix.append([])
-                    self.one_matrix.append(np.array(0,dtype='int8'))
-                    self.row_one=np.append(self.row_one,np.array(1,dtype='int8'))
+                    self.one_matrix.append(np.array(0,dtype=np.int8))
+                    self.row_one=np.append(self.row_one,np.array(1,dtype=np.int8))
                 self.row_list.append(t)
                 self.one_matrix[self.direction_index]=np.append(self.one_matrix[self.direction_index],np.array(1,dtype='int8'))
                 if len(self.index_matrix[self.direction_index])+len(self.row_list)==self.nn.rank:
@@ -948,7 +948,7 @@ class kernel:
                 self.row_probability.append(None)
                 self.rank_probability.append(None)
         except AttributeError:
-            self.running_flag=np.append(self.running_flag,np.array(1,dtype='int8'))
+            self.running_flag=np.append(self.running_flag,np.array(1,dtype=np.int8))
         try:
             if self.nn.pr!=None:
                 self.nn.pr.TD.append(np.array(0))
