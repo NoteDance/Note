@@ -456,8 +456,6 @@ class kernel:
             self.thread_lock[0].release()
         elif self.PO==2:
             self.thread_lock[0].acquire()
-            if self.stop_func_(self.thread_lock[0]):
-                return 0,0
             try:
                 gradient=tape.gradient(loss,self.nn.param)
             except AttributeError:
@@ -503,13 +501,9 @@ class kernel:
             self.gradient_lock[ln].acquire()
             if self.row!=None:
                 self.gradient_lock[rank_index][row_index].acquire()
-                if self.stop_func_(self.gradient_lock[rank_index][row_index]):
-                    return 0,0
                 self.ln_list.append([rank_index,row_index])
             else:
                 self.gradient_lock[ln].acquire()
-                if self.stop_func_(self.gradient_lock[ln]):
-                    return 0,0
                 self.ln_list.append(ln)
             try:
                 gradient=tape.gradient(loss,self.nn.param)
@@ -606,8 +600,6 @@ class kernel:
             self.thread_lock[0].release()
         elif self.PO==2:
             self.thread_lock[0].acquire()
-            if self.stop_func_(self.thread_lock[0]):
-                return 0,0
             self.nn.backward(loss)
             try:
                 if self.nn.attenuate!=None:
@@ -649,13 +641,9 @@ class kernel:
                             break
             if self.row!=None:
                 self.gradient_lock[rank_index][row_index].acquire()
-                if self.stop_func_(self.gradient_lock[rank_index][row_index]):
-                    return 0,0
                 self.ln_list.append([rank_index,row_index])
             else:
                 self.gradient_lock[ln].acquire()
-                if self.stop_func_(self.gradient_lock[ln]):
-                    return 0,0
                 self.ln_list.append(ln)
             self.nn.backward(loss)
             self.gradient_list[t]=self.nn.grad()
@@ -721,8 +709,6 @@ class kernel:
                 pass
             if self.PO==1:
                 self.thread_lock[0].acquire()
-                if self.stop_func_(self.thread_lock[0]):
-                    return 0,0
                 try:
                     gradient=tape.gradient(loss,self.nn.param)
                 except AttributeError:
@@ -744,8 +730,6 @@ class kernel:
                 self.thread_lock[0].release()
             elif self.PO==2:
                 self.thread_lock[0].acquire()
-                if self.stop_func_(self.thread_lock[0]):
-                    return 0,0
                 try:
                     gradient=tape.gradient(loss,self.nn.param)
                 except AttributeError:
@@ -757,8 +741,6 @@ class kernel:
                     pass
                 self.thread_lock[0].release()
                 self.thread_lock[1].acquire()
-                if self.stop_func_(self.thread_lock[1]):
-                    return 0,0
                 try:
                     self.nn.opt(gradient,self.nn.param)
                 except TypeError:
@@ -791,13 +773,9 @@ class kernel:
                 self.gradient_lock[ln].acquire()
                 if self.row!=None:
                     self.gradient_lock[rank_index][row_index].acquire()
-                    if self.stop_func_(self.gradient_lock[rank_index][row_index]):
-                        return 0,0
                     self.ln_list.append([rank_index,row_index])
                 else:
                     self.gradient_lock[ln].acquire()
-                    if self.stop_func_(self.gradient_lock[ln]):
-                        return 0,0
                     self.ln_list.append(ln)
                 try:
                     gradient=tape.gradient(loss,self.nn.param)
@@ -817,8 +795,6 @@ class kernel:
                 self.thread_lock[0].acquire()
                 self.calculate_memory()
                 if self.stop_func_m(self.thread_lock[0]):
-                    return 0,0
-                if self.stop_func_(self.thread_lock[0]):
                     return 0,0
                 try:
                     self.nn.opt(gradient,self.nn.param)
