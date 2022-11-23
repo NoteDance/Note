@@ -45,10 +45,14 @@ class kernel:
         self.stop=False
         self.stop_list=[]
         self.stopped_list=[]
+        self.stop_list_m=[]
         self.save_flag=False
         self.stop_flag=1
         self.add_flag=False
         self.memory_flag=False
+        self.memory_priority=False
+        self.epoch_list=np.array(0,dtype=np.int8)
+        self.epoch_list_copy=None
         self.param_memory=0
         self.grad_memory=0
         self.c_memory=0
@@ -150,13 +154,10 @@ class kernel:
         return
     
     
-    def calculate_memory_ol(self,t,ln=None):
+    def calculate_memory_ol(self,ln=None):
         if self.memory_flag==True:
-            if self.PO==3:
-                self.grad_memory_list[ln]=self.grad_memory
-                self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)
-            else:
-                self.c_memory=self.data_memory+self.param_memory+self.grad_memory
+            self.grad_memory_list[ln]=self.grad_memory
+            self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)
         return
     
     
@@ -585,6 +586,8 @@ class kernel:
             self.calculate_memory_(t)
             if self.stop_func_m(self.thread_lock[0]):
                 return 0
+            if self.stop_func_m_p(self.thread_lock[0],t):
+                return 0
             if self.stop_func_(self.thread_lock[0]):
                 return 0
             self.nn.backward(loss)
@@ -617,6 +620,8 @@ class kernel:
                 self.save_episode=False
             self.calculate_memory_(t)
             if self.stop_func_m(self.thread_lock[1]):
+                return 0
+            if self.stop_func_m_p(self.thread_lock[1],t):
                 return 0
             if self.stop_func_(self.thread_lock[1]):
                 return 0
@@ -672,6 +677,8 @@ class kernel:
             self.thread_lock[0].acquire()
             self.calculate_memory_(t,ln)
             if self.stop_func_m(self.thread_lock[0]):
+                return 0
+            if self.stop_func_m_p(self.thread_lock[0],t,ln):
                 return 0
             if self.stop_func_(self.thread_lock[0]):
                 return 0
@@ -780,9 +787,7 @@ class kernel:
                 self.ln_list.remove(ln)
                 self.gradient_lock[ln].release()
             self.thread_lock[0].acquire()
-            self.calculate_memory_ol(t,ln)
-            if self.stop_func_m(self.thread_lock[0]):
-                return 0
+            self.calculate_memory_ol(ln)
             try:
                 self.nn.opt()
             except:
@@ -965,6 +970,9 @@ class kernel:
             self.grad_memory_list.append(0)
             self.pool_memory_list.append(0)
             self.episode_memory_list.append(0)
+            if self.memory_priority==False:
+                if t>0:
+                    self.epoch_list=np.append(self.epoch_list,np.array(0,dtype=np.int8))
         self.finish_list.append(None)
         try:
             self.nn.ec.append(0)
@@ -1041,6 +1049,7 @@ class kernel:
                         else:
                             self.thread_lock[0].acquire()
                         self.total_episode+=1
+                        self.epoch_list[t]+=1
                         self.loss_list.append(self.loss[t])
                         if self.trial_num!=None and len(self.reward_list)>=self.trial_num:
                             avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
@@ -1114,6 +1123,7 @@ class kernel:
                         else:
                             self.thread_lock[0].acquire()
                         self.total_episode+=1
+                        self.epoch_list[t]+=1
                         self.loss_list.append(self.loss[t])
                         if self.trial_num!=None and len(self.reward_list)>=self.trial_num:
                             avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
@@ -1139,6 +1149,7 @@ class kernel:
                         else:
                             self.thread_lock[0].acquire()
                         self.total_episode+=1
+                        self.epoch_list[t]+=1
                         self.loss_list.append(self.loss[t])
                         if self.trial_num!=None and len(self.reward_list)>=self.trial_num:
                             avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
@@ -1387,12 +1398,35 @@ class kernel:
                 return True
     
     
-    def stop_func_m(self,thread_lock,t):
+    def stop_func_m(self,thread_lock,ln=None):
         if self.memory_t_value!=None and self.c_memory>self.memory_t_value:
-            self.stop_list.append(t)
-            return True
+            if self.memory_priority==False:
+                if self.epoch_list_copy==None:
+                    self.epoch_list_copy=self.epoch_list
+                index=np.argmax(self.epoch_list_copy)
+                self.stop_list_m.append(index)
+                self.epoch_list_copy[index]=0
+                return False
+            else:
+                if self.PO==3:
+                    self.grad_memory_list[ln]=0
+                thread_lock.release()
+                return True
         else:
+            if self.memory_priority==False:
+                self.stop_list_m.clear()
+                self.epoch_list_copy=None
             return False
+    
+    
+    def stop_func_m_p(self,thread_lock,t,ln=None):
+        if t in self.stop_list_m:
+            self.pool_memory_list[t]=0
+            if self.PO==3:
+                self.grad_memory_list[ln]=0
+            self.epoch_list[t]=0
+            thread_lock.release()
+            return True
     
     
     def print_save(self,avg_reward=None):
