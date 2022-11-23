@@ -605,10 +605,6 @@ class kernel:
             self.thread_lock[0].release()
         elif self.PO==2:
             self.thread_lock[0].acquire()
-            if self.episode_memory_t_value!=None and sum(self.episode_memory_list)>self.episode_memory_t_value:
-                self.save_episode=False
-            if self.stop_func_(self.thread_lock[0]):
-                return 0
             self.nn.backward(loss)
             try:
                 if self.nn.attenuate!=None:
@@ -655,13 +651,9 @@ class kernel:
                             break
             if self.row!=None:
                 self.gradient_lock[rank_index][row_index].acquire()
-                if self.stop_func_(self.gradient_lock[rank_index][row_index]):
-                    return 0,0
                 self.ln_list.append([rank_index,row_index])
             else:
                 self.gradient_lock[ln].acquire()
-                if self.stop_func_(self.gradient_lock[ln]):
-                    return 0,0
                 self.ln_list.append(ln)
             self.nn.backward(loss)
             self.gradient_list[t]=self.nn.grad()
@@ -712,9 +704,6 @@ class kernel:
                 pass
         if self.PO==1:
             self.thread_lock[0].acquire()
-            self.calculate_memory_ol(t)
-            if self.stop_func_m(self.thread_lock[0]):
-                return 0
             self.nn.backward(loss)
             try:
                 if self.nn.attenuate!=None:
@@ -733,8 +722,6 @@ class kernel:
             self.thread_lock[0].release()
         elif self.PO==2:
             self.thread_lock[0].acquire()
-            if self.stop_func_(self.thread_lock[0]):
-                return 0
             self.nn.backward(loss)
             try:
                 if self.nn.attenuate!=None:
@@ -743,11 +730,6 @@ class kernel:
                 pass
             self.thread_lock[0].release()
             self.thread_lock[1].acquire()
-            self.calculate_memory_ol(t)
-            if self.stop_func_m(self.thread_lock[1]):
-                return 0
-            if self.stop_func_(self.thread_lock[1]):
-                return 0
             try:
                 self.nn.opt()
             except:
@@ -779,13 +761,9 @@ class kernel:
                             break
             if self.row!=None:
                 self.gradient_lock[rank_index][row_index].acquire()
-                if self.stop_func_(self.gradient_lock[rank_index][row_index]):
-                    return 0,0
                 self.ln_list.append([rank_index,row_index])
             else:
                 self.gradient_lock[ln].acquire()
-                if self.stop_func_(self.gradient_lock[ln]):
-                    return 0,0
                 self.ln_list.append(ln)
             self.nn.backward(loss)
             self.gradient_list[t]=self.nn.grad()
@@ -804,8 +782,6 @@ class kernel:
             self.thread_lock[0].acquire()
             self.calculate_memory_ol(t,ln)
             if self.stop_func_m(self.thread_lock[0]):
-                return 0
-            if self.stop_func_(self.thread_lock[0]):
                 return 0
             try:
                 self.nn.opt()
