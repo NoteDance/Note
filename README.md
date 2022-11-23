@@ -2,7 +2,7 @@
 
 
 # documentation:
-https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv
+https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation
 
 
 # Introduction:
@@ -12,7 +12,7 @@ Note is an AI system for deep learning and reinforcement learning.
 # Deep Learning:
 If you done your neural network,you can use kernel to train.
 
-neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv/DL/neural%20network
+neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/DL/neural%20network
 
 example:
 ```python
@@ -68,16 +68,25 @@ kernel.train(64,5)         #train neural network
                            #batch: batch size
                            #epoch:epoch
 ```
-## Parallel optimization:
-You can use parallel optimization to speed up neural network training,parallel optimization speed up training by multithreading.
+## Multithreading:
+**Note can speed up training by multithreading and has stop mechanism and gradient attenuation to resolve unstable training.**
 
-Note have three types of parallel optimization:
-1. not parallel computing gradient and optimizing.(kernel.PO=1)
-2. parallel computing gradient and optimizing.(kernel.PO=2)
+**Note uses multithreading parallel forward propagation and optimizes neural network.**
 
-parallel optimization may cause unstable training(the estimate of the gradient is biased) but it can make the loss function jump out of the local minimum.
+### Parallel optimization:
+**You can use parallel optimization to speed up neural network training,parallel optimization speed up training by multithreading.**
 
-neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv/DL/neural%20network
+**Note have three types of parallel optimization:**
+
+**1. parallel forward propagation and optimizing.(kernel.PO=1)**
+
+**2. parallel forward propagation and computing gradient and optimizing.(kernel.PO=2)**
+
+**3. parallel forward propagation and computing multiple gradient and optimizing.(kernel.PO=3)**
+
+**parallel optimization may cause unstable training(the estimate of the gradient is biased) but it can make the loss function jump out of the local minimum.**
+
+neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/DL/neural%20network
 
 **Use second parallel optimization to train on MNIST,speed was increased by more than 2 times!**
 
@@ -97,15 +106,10 @@ neural network example:https://github.com/NoteDancing/Note-documentation/tree/ma
 
 **Not use parallel optimization to train spending 15s,use parallel optimization to train spending 6.8s.**
 
-![1](https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv/picture/time.png)
-![2](https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv/picture/time(PO).png)
+![1](https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/picture/time.png)
+![2](https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/picture/time(PO).png)
 
-## Multithreading:
-**Note can speed up training by multithreading and has stop mechanism to resolve unstable training.**
-
-**Note uses multithreading parallel forward propagation and optimizes neural network.**
-
-neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv/DL/neural%20network
+neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/DL/neural%20network
 
 example:
 ```python
@@ -335,7 +339,7 @@ test_nn.test(cnn,tf,x_train[:32],y_train[:32])
 
 
 # Reinforcement Learning:
-neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv/RL/neural%20network
+neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/RL/neural%20network
 
 example:
 
@@ -390,9 +394,9 @@ kernel.visualize_reward()
 ```
 
 ## Pool Net:
-![3](https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv/picture/Pool%20Net.png)
+![3](https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/picture/Pool%20Net.png)
 
-neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv/RL/neural%20network
+neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/RL/neural%20network
 ### list:
 example:
 ```python
@@ -483,7 +487,7 @@ test_nn.test(dqn,2)
 
 
 # Note Compiler:
-documentation:https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv/compiler
+documentation:https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/compiler
 ```python
 import Note.create.nc as nc
 c=nc.compiler('nn.n')
