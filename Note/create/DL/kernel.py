@@ -1856,6 +1856,7 @@ class kernel:
     def stop_func_m_p(self,thread_lock,t,ln):
         if t in self.stop_list_m:
             self.grad_memory_list[ln]=0
+            self.epoch_list[t]=0
             thread_lock.release()
             return True
     
