@@ -134,23 +134,22 @@ class kernel:
     
     
     def calculate_memory_(self,t,ln=None):
-        if self.memory_flag==True:
+        if self.PO==3:
+            self.grad_memory_list[ln]=self.grad_memory
+        self.pool_memory_list[t]=getsizeof(self.state_pool[t][0])*len(self.state_pool[t])+getsizeof(self.action_pool[t][0])*len(self.action_pool[t])+getsizeof(self.next_state_pool[t][0])*len(self.next_state_pool[t])+getsizeof(self.reward_pool[t][0])*len(self.reward_pool[t])+getsizeof(self.done_pool[t][0])*len(self.done_pool[t])
+        if self.save_episode==False:
             if self.PO==3:
-                self.grad_memory_list[ln]=self.grad_memory
-            self.pool_memory_list[t]=getsizeof(self.state_pool[t][0])*len(self.state_pool[t])+getsizeof(self.action_pool[t][0])*len(self.action_pool[t])+getsizeof(self.next_state_pool[t][0])*len(self.next_state_pool[t])+getsizeof(self.reward_pool[t][0])*len(self.reward_pool[t])+getsizeof(self.done_pool[t][0])*len(self.done_pool[t])
-            if self.save_episode==False:
-                if self.PO==3:
-                    self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)+sum(self.pool_memory_list)
-                else:
-                    self.c_memory=self.data_memory+self.param_memory+self.grad_memory+sum(self.pool_memory_list)
+                self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)+sum(self.pool_memory_list)
             else:
-                episode_memory=sum(self.episode_memory_list)
-                if self.PO==3:
-                    self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)+sum(self.pool_memory_list)+episode_memory
-                else:
-                    self.c_memory=self.data_memory+self.param_memory+self.grad_memory+sum(self.pool_memory_list)+episode_memory
-                if self.episode_memory_t_value!=None and episode_memory>self.episode_memory_t_value:
-                    self.save_episode=False
+                self.c_memory=self.data_memory+self.param_memory+self.grad_memory+sum(self.pool_memory_list)
+        else:
+            episode_memory=sum(self.episode_memory_list)
+            if self.PO==3:
+                self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)+sum(self.pool_memory_list)+episode_memory
+            else:
+                self.c_memory=self.data_memory+self.param_memory+self.grad_memory+sum(self.pool_memory_list)+episode_memory
+            if self.episode_memory_t_value!=None and episode_memory>self.episode_memory_t_value:
+                self.save_episode=False
         return
     
     
@@ -583,11 +582,12 @@ class kernel:
             self.thread_lock[0].acquire()
             if self.episode_memory_t_value!=None and sum(self.episode_memory_list)>self.episode_memory_t_value:
                 self.save_episode=False
-            self.calculate_memory_(t)
-            if self.stop_func_m(self.thread_lock[0]):
-                return 0
-            if self.stop_func_m_p(self.thread_lock[0],t):
-                return 0
+            if self.memory_flag==True:
+                self.calculate_memory_(t)
+                if self.stop_func_m(self.thread_lock[0]):
+                    return 0
+                if self.stop_func_m_p(self.thread_lock[0],t):
+                    return 0
             if self.stop_func_(self.thread_lock[0]):
                 return 0
             self.nn.backward(loss)
@@ -618,11 +618,12 @@ class kernel:
             self.thread_lock[1].acquire()
             if self.episode_memory_t_value!=None and sum(self.episode_memory_list)>self.episode_memory_t_value:
                 self.save_episode=False
-            self.calculate_memory_(t)
-            if self.stop_func_m(self.thread_lock[1]):
-                return 0
-            if self.stop_func_m_p(self.thread_lock[1],t):
-                return 0
+            if self.memory_flag==True:
+                self.calculate_memory_(t)
+                if self.stop_func_m(self.thread_lock[1]):
+                    return 0
+                if self.stop_func_m_p(self.thread_lock[1],t):
+                    return 0
             if self.stop_func_(self.thread_lock[1]):
                 return 0
             try:
@@ -675,11 +676,12 @@ class kernel:
                 self.ln_list.remove(ln)
                 self.gradient_lock[ln].release()
             self.thread_lock[0].acquire()
-            self.calculate_memory_(t,ln)
-            if self.stop_func_m(self.thread_lock[0]):
-                return 0
-            if self.stop_func_m_p(self.thread_lock[0],t,ln):
-                return 0
+            if self.memory_flag==True:
+                self.calculate_memory_(t,ln)
+                if self.stop_func_m(self.thread_lock[0]):
+                    return 0
+                if self.stop_func_m_p(self.thread_lock[0],t,ln):
+                    return 0
             if self.stop_func_(self.thread_lock[0]):
                 return 0
             try:
@@ -970,9 +972,8 @@ class kernel:
             self.grad_memory_list.append(0)
             self.pool_memory_list.append(0)
             self.episode_memory_list.append(0)
-            if self.memory_priority==False:
-                if t>0:
-                    self.epoch_list=np.append(self.epoch_list,np.array(0,dtype=np.int8))
+        if t>0:
+            self.epoch_list=np.append(self.epoch_list,np.array(0,dtype=np.int8))
         self.finish_list.append(None)
         try:
             self.nn.ec.append(0)
