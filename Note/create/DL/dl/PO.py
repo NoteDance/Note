@@ -11,7 +11,7 @@ class PO:
         self.grad=grad
     
     
-    def PO(self,fp,gradient,opt,data,labels,param,PO,thread_lock,t=None,platform='tensorflow',opt_counter=None,gradient_lock=None,gradient_list=None):
+    def PO(self,fp,gradient,opt,data,labels,param,PO,thread_lock,t=None,platform='tensorflow',opt_counter=None,gradient_lock=None,gradient_list=None,ln=None):
         if platform=='tensorflow':
             try:
                 tape,output,loss=fp(data,labels)
@@ -52,30 +52,11 @@ class PO:
                     opt_counter+=1
                 thread_lock[1].release()
             elif PO==3:
-                if self.row==None and len(gradient_lock)==self.thread:
-                    ln=t
-                else:
-                    if self.row!=None:
-                        while True:
-                            rank_index=np.random.choice(len(gradient_lock))
-                            row_index=np.random.choice(len(gradient_lock[rank_index]))
-                            if [rank_index,row_index] in self.ln_list:
-                                continue
-                            else:
-                                break
-                    else:
-                        while True:
-                            ln=np.random.choice(len(gradient_lock))
-                            if ln in self.ln_list:
-                                continue
-                            else:
-                                break
-                gradient_lock[ln].acquire()
                 if self.row!=None:
-                    gradient_lock[rank_index][row_index].acquire()
-                    if self.stop_func!=None and self.stop_func(gradient_lock[rank_index][row_index]):
+                    gradient_lock[ln[0]][ln[1]].acquire()
+                    if self.stop_func!=None and self.stop_func(gradient_lock[ln[0]][ln[1]]):
                         return 0,0
-                    self.ln_list.append([rank_index,row_index])
+                    self.ln_list.append([ln[0],ln[1]])
                 else:
                     gradient_lock[ln].acquire()
                     if self.stop_func!=None and self.stop_func(gradient_lock[ln]):
@@ -85,8 +66,8 @@ class PO:
                 if self.attenuate!=None:
                     gradient=self.attenuate(gradient,opt_counter[t])
                 if self.row!=None:
-                    self.ln_list.remove([rank_index,row_index])
-                    self.gradient_lock[rank_index][row_index].release()
+                    self.ln_list.remove([ln[0],ln[1]])
+                    self.gradient_lock[ln[0]][ln[1]].release()
                 else:
                     self.ln_list.remove(ln)
                     self.gradient_lock[ln].release()
@@ -190,3 +171,25 @@ class PO:
                     opt_counter+=1
                 thread_lock.release()
             return output,loss
+    
+    
+    def get_ln(self,gradient_lock,t):
+        if self.row==None and len(gradient_lock)==self.thread:
+            ln=t
+        else:
+            if self.row!=None:
+                while True:
+                    rank_index=int(np.random.choice(len(gradient_lock)))
+                    row_index=int(np.random.choice(len(gradient_lock[rank_index])))
+                    if [rank_index,row_index] in self.ln_list:
+                        continue
+                    else:
+                        break
+            else:
+                while True:
+                    ln=int(np.random.choice(len(gradient_lock)))
+                    if ln in self.ln_list:
+                        continue
+                    else:
+                        break
+        return ln
