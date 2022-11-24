@@ -1150,6 +1150,7 @@ class kernel:
                             self.thread_lock[1].acquire()
                         else:
                             self.thread_lock[2].acquire()
+                        self.thread_counter-=1
                         self.running_list.remove(t)
                         self.stopped_list.append(t)
                         if self.PO==1 or self.PO==3:
@@ -1266,6 +1267,7 @@ class kernel:
                             self.thread_lock[1].acquire()
                         else:
                             self.thread_lock[2].acquire()
+                        self.thread_counter-=1
                         self.running_list.remove(t)
                         self.stopped_list.append(t)
                         if self.PO==1 or self.PO==3:
