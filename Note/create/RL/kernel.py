@@ -1004,7 +1004,7 @@ class kernel:
                     s=next_s
                     if self.state_pool[t]!=None and self.action_pool[t]!=None and self.next_state_pool[t]!=None and self.reward_pool[t]!=None and self.done_pool[t]!=None:
                         self._train_(t)
-                    if t in self.stop_list:
+                    if t in self.stop_list or t in self.stop_list_m:
                         if self.PN==True:
                             if self.PO==1 or self.PO==3:
                                 self.thread_lock[2].acquire()
@@ -1012,6 +1012,7 @@ class kernel:
                                 self.thread_lock[3].acquire()
                         else:
                             self.thread_lock[0].acquire()
+                        self.thread_counter-=1
                         self.running_list.remove(t)
                         self.stopped_list.append(t)
                         self.finish_list[t]=t
@@ -1078,7 +1079,7 @@ class kernel:
                     s=next_s
                     if self.state_pool[t]!=None and self.action_pool[t]!=None and self.next_state_pool[t]!=None and self.reward_pool[t]!=None and self.done_pool[t]!=None:
                         self._train_(t)
-                    if t in self.stop_list:
+                    if t in self.stop_list or t in self.stop_list_m:
                         if self.PN==True:
                             if self.PO==1 or self.PO==3:
                                 self.thread_lock[2].acquire()
@@ -1086,6 +1087,7 @@ class kernel:
                                 self.thread_lock[3].acquire()
                         else:
                             self.thread_lock[0].acquire()
+                        self.thread_counter-=1
                         self.running_list.remove(t)
                         self.stopped_list.append(t)
                         self.finish_list[t]=t
