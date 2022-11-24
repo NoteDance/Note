@@ -160,6 +160,7 @@ class kernel:
             self.action_pool=[]
             self.next_state_pool=[]
             self.reward_pool=[]
+            self.done_pool=[]
             self.reward=np.zeros(self.thread)
             self.loss=np.zeros(self.thread)
             self.reward_list=[]
