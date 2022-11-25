@@ -89,6 +89,7 @@ class kernel:
             self.action_pool=None
             self.next_state_pool=None
             self.reward_pool=None
+            self.done_pool=None
             self.reward_list=[]
             self.loss=0
             self.loss_list=[]
