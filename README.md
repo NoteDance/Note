@@ -84,7 +84,7 @@ kernel.train(64,5)         #train neural network
 
 **3. parallel forward propagation and calculate multiple gradients and optimizing.(kernel.PO=3)**
 
-**parallel optimization may cause unstable training(the estimate of the gradient is biased) but it can make the loss function jump out of the local minimum.**
+**parallel optimization may cause unstable training(the estimate of the gradient is biased) but it can speed up training and make the loss function jump out of the local minimum.**
 
 neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/DL/neural%20network
 
