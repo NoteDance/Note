@@ -243,10 +243,11 @@ class kernel:
             self.PN=True
             self.episode=[]
             self.epsilon=[]
-            self.state_pool=[]
-            self.action_pool=[]
-            self.next_state_pool=[]
-            self.reward_pool=[]
+            self.state_pool={}
+            self.action_pool={}
+            self.next_state_pool={}
+            self.reward_pool={}
+            self.done_pool={}
             self.reward=np.zeros(self.thread)
             self.loss=np.zeros(self.thread)
             self.reward_list=[]
@@ -586,7 +587,7 @@ class kernel:
                 self.calculate_memory_(t)
                 if self.stop_func_m(self.thread_lock[0]):
                     return 0
-                if self.stop_func_m_p(self.thread_lock[0],t):
+                if self.stop_func_t_p(self.thread_lock[0],t):
                     return 0
             if self.stop_func_(self.thread_lock[0]):
                 return 0
@@ -622,7 +623,7 @@ class kernel:
                 self.calculate_memory_(t)
                 if self.stop_func_m(self.thread_lock[1]):
                     return 0
-                if self.stop_func_m_p(self.thread_lock[1],t):
+                if self.stop_func_t_p(self.thread_lock[1],t):
                     return 0
             if self.stop_func_(self.thread_lock[1]):
                 return 0
@@ -656,10 +657,16 @@ class kernel:
                         else:
                             break
             if self.row!=None:
-                self.gradient_lock[rank_index][row_index].acquire()
+                try:
+                    self.gradient_lock[rank_index][row_index].acquire()
+                except:
+                    self.gradient_lock[0][0].acquire()
                 self.ln_list.append([rank_index,row_index])
             else:
-                self.gradient_lock[ln].acquire()
+                try:
+                    self.gradient_lock[ln].acquire()
+                except:
+                    self.gradient_lock[0].acquire()
                 self.ln_list.append(ln)
             self.nn.backward(loss)
             self.gradient_list[t]=self.nn.grad()
@@ -671,16 +678,22 @@ class kernel:
                 pass
             if self.row!=None:
                 self.ln_list.remove([rank_index,row_index])
-                self.gradient_lock[rank_index][row_index].release()
+                try:
+                    self.gradient_lock[rank_index][row_index].release()
+                except:
+                    self.gradient_lock[0][0].release()
             else:
                 self.ln_list.remove(ln)
-                self.gradient_lock[ln].release()
+                try:
+                    self.gradient_lock[ln].release()
+                except:
+                    self.gradient_lock[0].release()
             self.thread_lock[0].acquire()
             if self.memory_flag==True:
                 self.calculate_memory_(t,ln)
                 if self.stop_func_m(self.thread_lock[0]):
                     return 0
-                if self.stop_func_m_p(self.thread_lock[0],t,ln):
+                if self.stop_func_t_p(self.thread_lock[0],t,ln):
                     return 0
             if self.stop_func_(self.thread_lock[0]):
                 return 0
@@ -769,10 +782,16 @@ class kernel:
                         else:
                             break
             if self.row!=None:
-                self.gradient_lock[rank_index][row_index].acquire()
+                try:
+                    self.gradient_lock[rank_index][row_index].acquire()
+                except:
+                    self.gradient_lock[0][0].acquire()
                 self.ln_list.append([rank_index,row_index])
             else:
-                self.gradient_lock[ln].acquire()
+                try:
+                    self.gradient_lock[ln].acquire()
+                except:
+                    self.gradient_lock[0].acquire()
                 self.ln_list.append(ln)
             self.nn.backward(loss)
             self.gradient_list[t]=self.nn.grad()
@@ -784,10 +803,16 @@ class kernel:
                 pass
             if self.row!=None:
                 self.ln_list.remove([rank_index,row_index])
-                self.gradient_lock[rank_index][row_index].release()
+                try:
+                    self.gradient_lock[rank_index][row_index].release()
+                except:
+                    self.gradient_lock[0][0].release()
             else:
                 self.ln_list.remove(ln)
-                self.gradient_lock[ln].release()
+                try:
+                    self.gradient_lock[ln].release()
+                except:
+                    self.gradient_lock[0].release()
             self.thread_lock[0].acquire()
             self.calculate_memory_ol(ln)
             try:
@@ -1422,7 +1447,7 @@ class kernel:
             return False
     
     
-    def stop_func_m_p(self,thread_lock,t,ln=None):
+    def stop_func_t_p(self,thread_lock,t,ln=None):
         if t in self.stop_list_m:
             self.pool_memory_list[t]=0
             if self.PO==3:
