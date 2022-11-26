@@ -112,21 +112,6 @@ class kernel:
             self.nn.bc=np.concatenate((self.nn.bc,np.zeros(thread)))
         except AttributeError:
             pass
-        if self.PO==None:
-            self.train_loss=np.concatenate((self.train_loss,np.zeros(thread)))
-            self.train_acc=np.concatenate((self.train_acc,np.zeros(thread)))
-            self.train_loss_list.extend([[] for _ in range(thread)])
-            self.train_acc_list.extend([[] for _ in range(thread)])
-        if self.test_flag==True:
-            if self.PO==None:
-                self.test_loss=np.concatenate((self.test_loss,np.zeros(thread)))
-                self.test_acc=np.concatenate((self.test_acc,np.zeros(thread)))
-                self.test_loss_list.extend([[] for _ in range(thread)])
-                self.test_acc_list.extend([[] for _ in range(thread)])
-        self.epoch=np.concatenate((self.epoch,np.zeros(thread)))
-        self.total_epoch=np.concatenate((self.total_epoch,np.zeros(thread)))
-        self.time=np.concatenate((self.time,np.zeros(thread)))
-        self.total_time=np.concatenate((self.total_time,np.zeros(thread)))
         return
     
     
