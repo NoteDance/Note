@@ -78,19 +78,6 @@ class kernel:
                 self.nn.bc=np.zeros(self.thread)
             except AttributeError:
                 pass
-            if self.PO==None:
-                self.train_loss=np.zeros(self.thread)
-                self.train_acc=np.zeros(self.thread)
-                self.train_loss_list=[[] for _ in range(self.thread)]
-                self.train_acc_list=[[] for _ in range(self.thread)]
-                self.total_epoch=np.zeros(self.thread)
-                self.time=np.zeros(self.thread)
-                self.total_time=np.zeros(self.thread)
-                if test_data!=None:
-                    self.test_loss=np.zeros(self.thread)
-                    self.test_acc=np.zeros(self.thread)
-                    self.test_loss_list=[[] for _ in range(self.thread)]
-                    self.test_acc_list=[[] for _ in range(self.thread)]
         return
     
     
@@ -106,20 +93,6 @@ class kernel:
                 self.nn.bc=np.zeros(self.thread)
             except AttributeError:
                 pass
-            if self.PO==None:
-                self.train_loss=np.zeros(self.thread)
-                self.train_acc=np.zeros(self.thread)
-                self.train_loss_list=[[] for _ in range(self.thread)]
-                self.train_acc_list=[[] for _ in range(self.thread)]
-                self.total_epoch=np.zeros(self.thread)
-                self.time=np.zeros(self.thread)
-                self.total_time=np.zeros(self.thread)
-                if self.test_data!=None:
-                    self.test_loss=np.zeros(self.thread)
-                    self.test_acc=np.zeros(self.thread)
-                    self.test_loss_list=[[] for _ in range(self.thread)]
-                    self.test_acc_list=[[] for _ in range(self.thread)]
-                return
         self.suspend=False
         self.suspend_list=[]
         self.suspended_list=[]
@@ -300,45 +273,27 @@ class kernel:
     
     
     @function
-    def tf_opt(self,data,labels,t=None):
+    def tf_opt(self,data,labels):
         try:
             if self.nn.GradientTape!=None:
-                if self.thread==None:
-                    tape,output,loss=self.nn.GradientTape(data,labels)
-                else:
-                    tape,output,loss=self.nn.GradientTape(data,labels,t)
+                tape,output,loss=self.nn.GradientTape(data,labels)
         except AttributeError:
             with self.platform.GradientTape(persistent=True) as tape:
                 try:
-                    if self.thread==None:
-                        output=self.nn.fp(data)
-                    else:
-                        output=self.nn.fp(data,t)
+                    output=self.nn.fp(data)
                     loss=self.nn.loss(output,labels)
                 except TypeError:
-                    if self.thread==None:
-                        output,loss=self.nn.fp(data,labels)
-                    else:
-                        output,loss=self.nn.fp(data,labels,t)
+                    output,loss=self.nn.fp(data,labels)
         if self.ol==None:
             try:
-                if self.thread==None:
-                    if self.nn.opt!=None:
-                        gradient=tape.gradient(loss,self.nn.param)
-                        self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
-                else:
-                    if self.nn.opt!=None:
-                        gradient=tape.gradient(loss,self.nn.param[t])
-                        self.nn.opt[t].apply_gradients(zip(gradient,self.nn.param[t]))
+                if self.nn.opt!=None:
+                    gradient=tape.gradient(loss,self.nn.param)
+                    self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
             except AttributeError:
-                if self.thread==None:
-                    gradient=self.nn.gradient(tape,loss,self.nn.param)
-                    self.nn.oopt(gradient,self.nn.param)
-                else:
-                    gradient=self.nn.gradient(tape,loss,self.nn.param[t])
-                    self.nn.oopt(gradient,self.nn.param,t)
+                gradient=self.nn.gradient(tape,loss,self.nn.param)
+                self.nn.oopt(gradient,self.nn.param)
         else:
-            if self.thread_lock!=None:
+            if self.thread!=None:
                 try:
                     if self.nn.opt!=None:
                         if self.PO==1:
@@ -440,17 +395,12 @@ class kernel:
         return output,loss
     
     
-    def opt(self,data,labels,t=None):
-        if t!=None:
-            t=int(t)
+    def opt(self,data,labels):
         try:
             if self.platform.DType!=None:
-                output,loss=self.tf_opt(data,labels,t)
+                output,loss=self.tf_opt(data,labels)
         except AttributeError:
-            if self.thread==None:
-                output=self.nn.fp(data.to(self.nn.device))
-            else:
-                output=self.nn.fp(data.to(self.nn.device),t)
+            output=self.nn.fp(data.to(self.nn.device))
             loss=self.nn.loss(output,labels.to(self.nn.device))
             try:
                 self.nn.opt.zero_grad()
@@ -497,7 +447,7 @@ class kernel:
         return output,loss
     
     
-    def _train(self,batch=None,_data_batch=None,_labels_batch=None,test_batch=None,t=None):
+    def _train(self,batch=None,_data_batch=None,_labels_batch=None,test_batch=None):
         if batch!=None:
             total_loss=0
             total_acc=0
@@ -510,18 +460,12 @@ class kernel:
                 index1=j*batch
                 index2=(j+1)*batch
                 data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j)
-                output,batch_loss=self.opt(data_batch,labels_batch,t)
-                total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc,t=t)
-                if self.thread==None:
-                    try:
-                        self.nn.bc=j
-                    except AttributeError:
-                        pass
-                else:
-                    try:
-                        self.nn.bc[t]=j
-                    except AttributeError:
-                        pass
+                output,batch_loss=self.opt(data_batch,labels_batch)
+                total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc)
+                try:
+                    self.nn.bc=j
+                except AttributeError:
+                    pass
             if self.shape0%batch!=0:
                 if self.stop==True:
                     if self.stop_func():
@@ -531,71 +475,46 @@ class kernel:
                 index1=batches*batch
                 index2=batch-(self.shape0-batches*batch)
                 data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,flag=True)
-                output,batch_loss=self.opt(data_batch,labels_batch,t)
-                total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc,t=t)
-                if self.thread==None:
-                    try:
-                        self.nn.bc+=1
-                    except AttributeError:
-                        pass
-                else:
-                    try:
-                        self.nn.bc[t]+=1
-                    except AttributeError:
-                        pass
+                output,batch_loss=self.opt(data_batch,labels_batch)
+                total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc)
+                try:
+                    self.nn.bc+=1
+                except AttributeError:
+                    pass
             loss=total_loss.numpy()/batches
             try:
                 if self.nn.accuracy!=None:
                     train_acc=total_acc/batches
             except AttributeError:
                 pass
-            if self.thread==None:
-                loss=loss.astype(np.float32)
-                self.train_loss=loss
-                self.train_loss_list.append(loss)
-            else:
-                loss=loss.astype(np.float32)
-                self.train_loss[t]=loss
-                self.train_loss_list[t].append(loss)
+            loss=loss.astype(np.float32)
+            self.train_loss=loss
+            self.train_loss_list.append(loss)
             try:
                 if self.nn.accuracy!=None:
-                    if self.thread==None:
-                        train_acc=train_acc.astype(np.float32)
-                        self.train_acc=train_acc
-                        self.train_acc_list.append(train_acc)
-                    else:
-                        train_acc=train_acc.astype(np.float32)
-                        self.train_acc[t]=train_acc
-                        self.train_acc_list[t].append(train_acc)
+                    train_acc=train_acc.astype(np.float32)
+                    self.train_acc=train_acc
+                    self.train_acc_list.append(train_acc)
             except AttributeError:
                 pass
             if self.test_flag==True:
-                if self.thread==None:
-                    self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
-                    self.test_loss_list.append(self.test_loss)
-                    try:
-                        if self.nn.accuracy!=None:
-                            self.test_acc_list.append(self.test_acc)
-                    except AttributeError:
-                        pass
-                else:
-                    self.test_loss[t],self.test_acc[t]=self.test(self.test_data,self.test_labels,test_batch,t)
-                    self.test_loss_list[t].append(self.test_loss[t])
-                    try:
-                        if self.nn.accuracy!=None:
-                            self.test_acc_list[t].append(self.test_acc[t])
-                    except AttributeError:
-                        pass
+                self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
+                self.test_loss_list.append(self.test_loss)
+                try:
+                    if self.nn.accuracy!=None:
+                        self.test_acc_list.append(self.test_acc)
+                except AttributeError:
+                    pass
         elif self.ol==None:
             self.suspend_func()
-            output,train_loss=self.opt(self.train_data,self.train_labels,t)
-            self.loss_acc(output=output,labels_batch=labels_batch,loss=train_loss,test_batch=test_batch,total_loss=total_loss,total_acc=total_acc,t=t)
+            output,train_loss=self.opt(self.train_data,self.train_labels)
+            self.loss_acc(output=output,labels_batch=labels_batch,loss=train_loss,test_batch=test_batch,total_loss=total_loss,total_acc=total_acc)
         else:
             self.suspend_func()
             data=self.ol()
             loss=self.opt(data[0],data[1])
             loss=loss.numpy()
-            if self.thread_lock!=None:
+            if self.thread!=None:
                 if self.PO==1:
                     self.thread_lock[1].acquire()
                 else:
@@ -833,7 +752,7 @@ class kernel:
                         self._train_(batch,data_batch,labels_batch,test_batch,t)
                     else:
                         self._train(batch,data_batch,labels_batch,test_batch,t)
-                if self.thread_lock!=None:
+                if self.thread!=None:
                     if t in self.stop_list:
                         if self.PO==1:
                             self.thread_lock[1].acquire()
@@ -858,10 +777,8 @@ class kernel:
                         self.nn.ec[t]+=1
                     except:
                         pass
-                if self.thread_lock==None and type(self.total_epoch)!=list:
+                if self.thread==None:
                     self.total_epoch+=1
-                elif type(self.total_epoch)==list:
-                    self.total_epoch[t]+=1
                 if self.thread==None:
                     if epoch%10!=0:
                         p=epoch-epoch%self.p
@@ -947,7 +864,7 @@ class kernel:
                         self._train_(test_batch=test_batch,t=t)
                     else:
                         self._train(test_batch=test_batch,t=t)
-                if self.thread_lock!=None:
+                if self.thread!=None:
                     if t in self.stop_list:
                         if self.PO==1:
                             self.thread_lock[1].acquire()
@@ -973,10 +890,8 @@ class kernel:
                         self.nn.ec[t]+=1
                     except AttributeError:
                         pass
-                if self.thread_lock==None and type(self.total_epoch)!=list:
+                if self.thread_lock==None:
                     self.total_epoch+=1
-                elif type(self.total_epoch)==list:
-                    self.total_epoch[t]+=1
                 if self.thread==None:
                     if epoch%10!=0:
                         p=epoch-epoch%self.p
@@ -1061,13 +976,6 @@ class kernel:
             else:
                 self.time=int(self.time)+1
             self.total_time+=self.time
-        elif type(self.total_time)==list:
-            self.time[t]=self.time[t]-int(self.time[t])
-            if self.time[t]<0.5:
-                self.time[t]=int(self.time[t])
-            else:
-                self.time[t]=int(self.time[t])+1
-            self.total_time[t]+=self.time[t]
         if self.thread==None:
             if self.test_flag==False:
                 print('last loss:{0:.6f}'.format(self.train_loss))
@@ -1091,7 +999,7 @@ class kernel:
             print('time:{0}s'.format(self.total_time))
         if self.thread==None:
             self.training_flag=False
-        if self.thread_lock!=None:
+        if self.thread!=None:
             if self.PO==1:
                 self.thread_lock[1].acquire()
             else:
