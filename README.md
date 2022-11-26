@@ -86,6 +86,18 @@ kernel.train(64,5)         #train neural network
 
 **parallel optimization may cause unstable training(the estimate of the gradient is biased) but it can speed up training and make the loss function jump out of the local minimum.**
 
+**Gradient Attenuation：**
+
+**Calculate the attenuation coefficient based on the optimization counter using the attenuation function.**
+
+**attenuation coefficient:ac**
+
+**original gradient estimation value：Vgrad**
+
+**parallel optimization gradient estimation value:V'grad**
+
+**ac*V'grad**-**ac*E[Vgrad]**=__ac*(V'grad-E[Vgrad])__
+
 neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/DL/neural%20network
 
 **Use second parallel optimization to train on MNIST,speed was increased by more than 2 times!**
