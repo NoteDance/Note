@@ -1316,13 +1316,6 @@ class kernel:
             else:
                 self.time=int(self.time)+1
             self.total_time+=self.time
-        elif type(self.total_time)==list:
-            self.time[t]=self.time[t]-int(self.time[t])
-            if self.time[t]<0.5:
-                self.time[t]=int(self.time[t])
-            else:
-                self.time[t]=int(self.time[t])+1
-            self.total_time[t]+=self.time[t]
         if self.thread==None:
             if self.test_flag==False:
                 print('last loss:{0:.6f}'.format(self.train_loss))
