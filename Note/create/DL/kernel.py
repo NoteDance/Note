@@ -140,20 +140,6 @@ class kernel:
             self.nn.bc=np.concatenate((self.nn.bc,np.zeros(thread)))
         except AttributeError:
             pass
-        if self.PO==None:
-            self.train_loss=np.concatenate((self.train_loss,np.zeros(thread)))
-            self.train_acc=np.concatenate((self.train_acc,np.zeros(thread)))
-            self.train_loss_list.extend([[] for _ in range(thread)])
-            self.train_acc_list.extend([[] for _ in range(thread)])
-        if self.test_flag==True:
-            if self.PO==None:
-                self.test_loss=np.concatenate((self.test_loss,np.zeros(thread)))
-                self.test_acc=np.concatenate((self.test_acc,np.zeros(thread)))
-                self.test_loss_list.extend([[] for _ in range(thread)])
-                self.test_acc_list.extend([[] for _ in range(thread)])
-        self.total_epoch=np.concatenate((self.total_epoch,np.zeros(thread)))
-        self.time=np.concatenate((self.time,np.zeros(thread)))
-        self.total_time=np.concatenate((self.total_time,np.zeros(thread)))
         return
     
     
@@ -644,7 +630,7 @@ class kernel:
         else:
             output,train_loss=self.opt_t(self.train_data,self.train_labels,t)
             if self.PO==1:
-                self.thread_lock[1].release()
+                self.thread_lock[1].acquire()
                 train_loss=train_loss.numpy()
                 train_loss=train_loss.astype(np.float32)
                 self.train_loss=train_loss
