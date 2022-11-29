@@ -1039,6 +1039,7 @@ class kernel:
                             self.thread_lock[0].acquire()
                         self.thread_counter-=1
                         self.running_list.remove(t)
+                        self.stop_list.remove(t)
                         self.stopped_list.append(t)
                         self.finish_list[t]=t
                         if self.PN==True:
@@ -1114,6 +1115,7 @@ class kernel:
                             self.thread_lock[0].acquire()
                         self.thread_counter-=1
                         self.running_list.remove(t)
+                        self.stop_list.remove(t)
                         self.stopped_list.append(t)
                         self.finish_list[t]=t
                         if self.PN==True:
