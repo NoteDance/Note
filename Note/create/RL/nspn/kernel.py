@@ -35,9 +35,9 @@ class kernel:
         self.stop=None
         self.stop_flag=1
         self.save_epi=None
-        self.max_episode_num=None
         self.train_counter=0
         self.end_loss=None
+        self.max_episode_num=None
         self.save_episode=save_episode
         self.loss=None
         self.loss_list=[]
