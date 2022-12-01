@@ -23,7 +23,6 @@ class kernel:
         self.reward_pool=None
         self.done_pool=None
         self.episode=[]
-        self.action_num=None
         self.epsilon=None
         self.episode_step=None
         self.pool_size=None
@@ -36,6 +35,7 @@ class kernel:
         self.stop=None
         self.stop_flag=1
         self.save_epi=None
+        self.max_episode_num=None
         self.train_counter=0
         self.end_loss=None
         self.save_episode=save_episode
@@ -47,16 +47,9 @@ class kernel:
         self.total_time=0
     
     
-    def action_vec(self,action_num=None):
-        action_num=self.action_num
-        self.action_num=action_num
-        if action_num>self.action_num:
-            if self.epsilon!=None:
-                self.action_one=np.concatenate((self.action_one,np.ones(action_num-self.action_num,dtype=np.int8)))
-                self.action_num=action_num
-        else:
-            if self.epsilon!=None:
-                self.action_one=np.ones(self.action_num,dtype=np.int8)
+    def action_vec(self):
+        if self.epsilon!=None:
+            self.action_one=np.ones(self.action_num,dtype=np.int8)
         return
     
     
@@ -77,7 +70,7 @@ class kernel:
             self.criterion=criterion
         if end_loss!=None:
             self.end_loss=end_loss
-        self.action_vec(self.action_num)
+        self.action_vec()
         if init==True:
             try:
                 if self.nn.pr!=None:
@@ -524,6 +517,8 @@ class kernel:
                     if done:
                         episode.append('done')
                     self.episode.append(episode)
+                    if self.max_episode_num!=None and len(self.episode)>=self.max_episode_num:
+                        self.save_episode=False
                 try:
                     self.nn.ec+=1
                 except AttributeError:
@@ -591,6 +586,8 @@ class kernel:
                     if done:
                         episode.append('done')
                     self.episode.append(episode)
+                    if self.max_episode_num!=None and len(self.episode)>=self.max_episode_num:
+                        self.save_episode=False
                 try:
                     self.nn.ec+=1
                 except AttributeError:
@@ -742,14 +739,6 @@ class kernel:
                 del self.file_list[0]
         pickle.dump(self.nn,output_file)
         pickle.dump(self.ol,output_file)
-        pickle.dump(self.state_pool,output_file)
-        pickle.dump(self.action_pool,output_file)
-        pickle.dump(self.next_state_pool,output_file)
-        pickle.dump(self.reward_pool,output_file)
-        pickle.dump(self.done_pool,output_file)
-        pickle.dump(self.action_num,output_file)
-        pickle.dump(self.action,output_file)
-        pickle.dump(self.action_one,output_file)
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.episode_step,output_file)
         pickle.dump(self.pool_size,output_file)
@@ -757,6 +746,7 @@ class kernel:
         pickle.dump(self.update_step,output_file)
         pickle.dump(self.train_counter,output_file)
         pickle.dump(self.end_loss,output_file)
+        pickle.dump(self.max_episode_num,output_file)
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.reward_list,output_file)
         pickle.dump(self.loss,output_file)
@@ -780,14 +770,6 @@ class kernel:
         except AttributeError:
             pass
         self.ol=pickle.load(input_file)
-        self.state_pool=pickle.load(input_file)
-        self.action_pool=pickle.load(input_file)
-        self.next_state_pool=pickle.load(input_file)
-        self.reward_pool=pickle.load(input_file)
-        self.done_pool=pickle.load(input_file)
-        self.action_num=pickle.load(input_file)
-        self.action=pickle.load(input_file)
-        self.action_one=pickle.load(input_file)
         self.epsilon=pickle.load(input_file)
         self.episode_step=pickle.load(input_file)
         self.pool_size=pickle.load(input_file)
@@ -795,6 +777,7 @@ class kernel:
         self.update_step=pickle.load(input_file)
         self.train_counter=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
+        self.max_episode_num=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
         self.reward_list=pickle.load(input_file)
         self.loss=pickle.load(input_file)
