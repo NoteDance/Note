@@ -86,6 +86,7 @@ class kernel:
             self.running_flag=np.array(0,dtype=np.int8)
         self.PN=True
         self.PO=None
+        self.max_episode_num=None
         self.save_episode=save_episode
         self.ln_list=[]
         self.gradient_list=[]
@@ -99,14 +100,9 @@ class kernel:
         self.total_time=0
     
     
-    def action_vec(self,action_num=None):
-        if action_num>self.action_num:
-            if self.epsilon!=None:
-                self.action_one=np.concatenate((self.action_one,np.ones(self.action_num-action_num,dtype=np.int8)))
-                self.action_num=action_num
-        else:
-            if self.epsilon!=None:
-                self.action_one=np.ones(self.action_num,dtype=np.int8)
+    def action_vec(self):
+        if self.epsilon!=None:
+            self.action_one=np.ones(self.action_num,dtype=np.int8)
         return
     
     
@@ -197,7 +193,7 @@ class kernel:
             self.criterion=criterion
         if end_loss!=None:
             self.end_loss=end_loss
-        self.action_vec(self.action_num)
+        self.action_vec()
         if init==True:
             self.suspend=False
             self.suspend_list=[]
@@ -1204,6 +1200,8 @@ class kernel:
             self.reward[t]=0
             if self.save_episode==True:
                 self.episode.append(episode)
+                if self.max_episode_num!=None and len(self.episode)>=self.max_episode_num:
+                    self.save_episode=False
             if self.PN==True:
                 if self.PO==1 or self.PO==3:
                     self.thread_lock[2].release()
@@ -1548,7 +1546,6 @@ class kernel:
             pickle.dump(self.episode,episode_file)
             episode_file.close()
         pickle.dump(self.nn,output_file)
-        pickle.dump(self.action_one,output_file)
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.episode_step,output_file)
         pickle.dump(self.pool_size,output_file)
@@ -1557,6 +1554,9 @@ class kernel:
         pickle.dump(self.update_step,output_file)
         pickle.dump(self.end_loss,output_file)
         pickle.dump(self.PN,output_file)
+        pickle.dump(self.episode_memory_t_value,output_file)
+        pickle.dump(self.memory_t_value,output_file)
+        pickle.dump(self.max_episode_num,output_file)
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.reward_list,output_file)
         pickle.dump(self.loss_list,output_file)
@@ -1579,7 +1579,6 @@ class kernel:
             self.nn.km=1
         except AttributeError:
             pass
-        self.action_one=pickle.load(input_file)
         self.epsilon=pickle.load(input_file)
         self.episode_step=pickle.load(input_file)
         self.pool_size=pickle.load(input_file)
@@ -1588,6 +1587,9 @@ class kernel:
         self.update_step=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
         self.PN=pickle.load(input_file)
+        self.episode_memory_t_value=pickle.load(input_file)
+        self.memory_t_value=pickle.load(input_file)
+        self.max_episode_num=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
         self.reward_list=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
