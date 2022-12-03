@@ -606,11 +606,6 @@ class kernel:
         elif self.PO==2:
             self.thread_lock[0].acquire()
             self.nn.backward(loss)
-            try:
-                if self.nn.attenuate!=None:
-                    self.nn.oc[t]=self.opt_counter[t]
-            except AttributeError:
-                pass
             self.thread_lock[0].release()
             self.thread_lock[1].acquire()
             if self.episode_memory_t_value!=None and sum(self.episode_memory_list)>self.episode_memory_t_value:
@@ -623,6 +618,11 @@ class kernel:
                     return 0
             if self.stop_func_(self.thread_lock[1]):
                 return 0
+            try:
+                if self.nn.attenuate!=None:
+                    self.nn.oc[t]=self.opt_counter[t]
+            except AttributeError:
+                pass
             try:
                 self.nn.opt()
             except:
@@ -666,12 +666,6 @@ class kernel:
                 self.ln_list.append(ln)
             self.nn.backward(loss)
             self.gradient_list[t]=self.nn.grad()
-            try:
-                if self.nn.attenuate!=None:
-                    self.nn.oc[t]=self.opt_counter[t]
-                    self.nn.grad[t]=self.gradient_list[t]
-            except AttributeError:
-                pass
             if self.row!=None:
                 self.ln_list.remove([rank_index,row_index])
                 try:
@@ -693,6 +687,12 @@ class kernel:
                     return 0
             if self.stop_func_(self.thread_lock[0]):
                 return 0
+            try:
+                if self.nn.attenuate!=None:
+                    self.nn.oc[t]=self.opt_counter[t]
+                    self.nn.grad[t]=self.gradient_list[t]
+            except AttributeError:
+                pass
             try:
                 self.nn.opt()
             except:
@@ -741,13 +741,13 @@ class kernel:
         elif self.PO==2:
             self.thread_lock[0].acquire()
             self.nn.backward(loss)
+            self.thread_lock[0].release()
+            self.thread_lock[1].acquire()
             try:
                 if self.nn.attenuate!=None:
                     self.nn.oc[t]=self.opt_counter[t]
             except AttributeError:
                 pass
-            self.thread_lock[0].release()
-            self.thread_lock[1].acquire()
             try:
                 self.nn.opt()
             except:
@@ -791,12 +791,6 @@ class kernel:
                 self.ln_list.append(ln)
             self.nn.backward(loss)
             self.gradient_list[t]=self.nn.grad()
-            try:
-                if self.nn.attenuate!=None:
-                    self.nn.oc[t]=self.opt_counter[t]
-                    self.nn.grad[t]=self.gradient_list[t]
-            except AttributeError:
-                pass
             if self.row!=None:
                 self.ln_list.remove([rank_index,row_index])
                 try:
@@ -811,6 +805,12 @@ class kernel:
                     self.gradient_lock[0].release()
             self.thread_lock[0].acquire()
             self.calculate_memory_ol(ln)
+            try:
+                if self.nn.attenuate!=None:
+                    self.nn.oc[t]=self.opt_counter[t]
+                    self.nn.grad[t]=self.gradient_list[t]
+            except AttributeError:
+                pass
             try:
                 self.nn.opt()
             except:
