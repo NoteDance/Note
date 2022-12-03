@@ -9,10 +9,23 @@ https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20do
 Note is an AI system for deep learning and reinforcement learning.
 
 
-# Deep Learning:
-If you accomplish your neural network,you can use kernel to train.
+# Create neural network:
+You can refer to the neural network examples in the documentation to create your neural network.
 
-neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/DL/neural%20network
+neural network example:
+
+https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/DL/neural%20network
+
+https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/RL/neural%20network
+
+If you accomplish your neural network,you can use kernel to train,examples are shown below.
+
+
+# Deep Learning:
+
+You can download the neural network example at this link.
+
+https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/DL/neural%20network
 
 example:
 ```python
@@ -113,7 +126,6 @@ neural network example:https://github.com/NoteDancing/Note-documentation/tree/ma
 ![1](https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/picture/time.png)
 ![2](https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/picture/time(PO).png)
 
-neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/DL/neural%20network
 
 example:
 ```python
@@ -343,7 +355,10 @@ test_nn.test(cnn,tf,x_train[:32],y_train[:32])
 
 
 # Reinforcement Learning:
-neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/RL/neural%20network
+
+You can download the neural network example at this link.
+
+https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/RL/neural%20network
 
 example:
 
@@ -400,7 +415,6 @@ kernel.visualize_reward()
 ## Pool Net:
 ![3](https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/picture/Pool%20Net.png)
 
-neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/RL/neural%20network
 ### list:
 example:
 ```python
