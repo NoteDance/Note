@@ -10,7 +10,7 @@ Note is an AI system for deep learning and reinforcement learning.
 
 
 # Deep Learning:
-If you done your neural network,you can use kernel to train.
+If you accomplish your neural network,you can use kernel to train.
 
 neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/DL/neural%20network
 
