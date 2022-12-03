@@ -6,7 +6,7 @@ import pickle
 
 
 class kernel:
-    def __init__(self,nn=None,thread=None,thread_lock=None,save_episode=False):
+    def __init__(self,nn=None,thread=None,save_episode=False):
         self.nn=nn
         try:
             self.nn.km=1
@@ -42,7 +42,7 @@ class kernel:
         self.end_loss=None
         self.thread=thread
         self.thread_counter=0
-        self.thread_lock=thread_lock
+        self.thread_lock=None
         self.probability_list=[]
         self.running_flag_list=[]
         self.index_matrix=[]
