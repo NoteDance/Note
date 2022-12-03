@@ -423,7 +423,7 @@ import DQN as d
 dqn=d.DQN(4,128,2)                               #create neural network object
 kernel.threading=threading
 kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock()]
-kernel=k.kernel(dqn,5,thread_lock)   #start kernel
+kernel=k.kernel(dqn,5)   #start kernel
 kernel.action_num=2
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
 kernel.PO=2
@@ -450,7 +450,7 @@ import DQN as d
 dqn=d.DQN(4,128,2)                               #create neural network object
 kernel.threading=threading
 kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock()]
-kernel=k.kernel(dqn,5,thread_lock)   #start kernel
+kernel=k.kernel(dqn,5)   #start kernel
 kernel.stop=True
 kernel.action_num=2
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10,trial_num=10,criterion=200)
@@ -477,7 +477,7 @@ import DQNm as d
 dqn=d.DQN(4,128,2)                               #create neural network object
 kernel.threading=threading
 kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock()]
-kernel=k.kernel(dqn,6,thread_lock)   #start kernel
+kernel=k.kernel(dqn,6)   #start kernel
 kernel.action_num=2
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
 kernel.PO=2
