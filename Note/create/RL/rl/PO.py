@@ -35,12 +35,12 @@ class PO:
                 gradient(loss)
             except:
                 gradient(loss,t)
-            if self.attenuate!=None:
-                self.attenuate(opt_counter[t])
             thread_lock[0].release()
             thread_lock[1].acquire()
             if self.stop_func!=None and self.stop_func(thread_lock[1]):
                 return 0,0
+            if self.attenuate!=None:
+                self.attenuate(opt_counter[t])
             try:
                 opt()
             except:
@@ -80,8 +80,6 @@ class PO:
             except:
                 gradient(loss,t)
             gradient_list[t]=self.grad()
-            if self.attenuate!=None:
-                self.attenuate(opt_counter[t],gradient_list[t])
             if self.row!=None:
                 self.ln_list.remove([rank_index,row_index])
                 gradient_lock[rank_index][row_index].release()
@@ -91,6 +89,8 @@ class PO:
             thread_lock.acquire()
             if self.stop_func!=None and self.stop_func(thread_lock):
                 return 0,0
+            if self.attenuate!=None:
+                self.attenuate(opt_counter[t],gradient_list[t])
             try:
                 opt(gradient_list[t])
             except:
