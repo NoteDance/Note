@@ -420,6 +420,7 @@ example:
 ```python
 import Note.create.RL.kernel as k   #import kernel
 import DQN as d
+import threading
 dqn=d.DQN(4,128,2)                               #create neural network object
 kernel.threading=threading
 kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock()]
@@ -447,6 +448,7 @@ example:
 ```python
 import Note.create.RL.kernel as k   #import kernel
 import DQN as d
+import threading
 dqn=d.DQN(4,128,2)                               #create neural network object
 kernel.threading=threading
 kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock()]
@@ -474,6 +476,7 @@ example:
 ```python
 import Note.create.RL.kernel as k   #import kernel
 import DQNm as d
+import threading
 dqn=d.DQN(4,128,2)                               #create neural network object
 kernel.threading=threading
 kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock()]
