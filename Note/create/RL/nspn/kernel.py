@@ -16,7 +16,6 @@ class kernel:
             pass
         self.ol=None
         self.PO=None
-        self.thread_lock=None
         self.state_pool=None
         self.action_pool=None
         self.next_state_pool=None
