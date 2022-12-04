@@ -369,7 +369,7 @@ import DQN as d
 dqn=d.DQN(4,128,2)                               #create neural network object
 kernel=k.kernel(dqn)   #start kernel
 kernel.action_num=2
-kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10,trial_num=10)
+kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
 kernel.train(500)
 kernel.loss_list or kernel.loss       #view training loss
 kernel.visualize_train()
