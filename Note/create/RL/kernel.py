@@ -241,7 +241,7 @@ class kernel:
             except:
                 s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
             if epsilon==None:
-                epsilon]=self.nn.epsilon(self.sc[t],t)
+                epsilon=self.nn.epsilon(self.sc[t],t)
             try:
                 if self.nn.action!=None:
                     pass
@@ -391,7 +391,7 @@ class kernel:
             else:
                 self.thread_lock[1].acquire()
             if self.update_step!=None:
-                if self.sc[t]+1%self.update_step==0:
+                if self.sc[t]%self.update_step==0:
                     self.nn.update_param()
             else:
                 self.nn.update_param()
