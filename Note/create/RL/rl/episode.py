@@ -1,3 +1,4 @@
+import torch
 import numpy as np
 
 
@@ -19,14 +20,16 @@ class episode:
                     if self.agent.action!=None:
                         pass
                     s=np.expand_dims(s,axis=0)
-                    a=self.agent.action(s)
+                    s=torch.tensor(s,dtype=torch.float).to(self.agent.device_d)
+                    a=self.agent.action(s).detach().numpy()
                 except AttributeError:
                     s=np.expand_dims(s,axis=0)
-                    a=np.argmax(self.agent.nn(s)).numpy()
+                    s=torch.tensor(s,dtype=torch.float).to(self.agent.device_d)
+                    a=self.agent.nn(s).detach().numpy().argmax()
                 next_s,r,done=self.env(a)
             except AttributeError:
                 s=np.expand_dims(s,axis=0)
-                a=self.agent.actor(s).numpy()
+                a=self.agent.actor(s).detach().numpy()
                 a=np.squeeze(a)
                 next_s,r,done=self.agent.env(a)
             try:
