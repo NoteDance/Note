@@ -459,12 +459,11 @@ class kernel:
                     if len(self.reward_list)>=self.trial_num:
                         avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
                         if self.criterion!=None and avg_reward>=self.criterion:
-                            self._time=self.time-int(self.time)
+                            self._time=self.total_time-int(self.total_time)
                             if self._time<0.5:
-                                self.time=int(self.time)
+                                self.total_time=int(self.total_time)
                             else:
-                                self.time=int(self.time)+1
-                            self.total_time+=self.time
+                                self.total_time=int(self.total_time)+1
                             print('episode:{0}'.format(self.total_episode))
                             print('last loss:{0:.6f}'.format(loss))
                             print('average reward:{0}'.format(avg_reward))
@@ -518,11 +517,6 @@ class kernel:
                     self.nn.ec+=1
                 except AttributeError:
                     pass
-                self._time=self.time-int(self.time)
-                if self._time<0.5:
-                    self.time=int(self.time)
-                else:
-                    self.time=int(self.time)+1
                 self.total_time+=self.time
         else:
             i=0
@@ -532,12 +526,11 @@ class kernel:
                     if len(self.reward_list)==self.trial_num:
                         avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
                         if avg_reward>=self.criterion:
-                            self._time=self.time-int(self.time)
+                            self._time=self.total_time-int(self.total_time)
                             if self._time<0.5:
-                                self.time=int(self.time)
+                                self.total_time=int(self.total_time)
                             else:
-                                self.time=int(self.time)+1
-                            self.total_time+=self.time
+                                self.total_time=int(self.total_time)+1
                             print('episode:{0}'.format(self.total_episode))
                             print('last loss:{0:.6f}'.format(loss))
                             print('average reward:{0}'.format(avg_reward))
@@ -593,12 +586,12 @@ class kernel:
                     self.nn.ec+=1
                 except AttributeError:
                     pass
-                self._time=self.time-int(self.time)
-                if self._time<0.5:
-                    self.time=int(self.time)
-                else:
-                    self.time=int(self.time)+1
                 self.total_time+=self.time
+        self._time=self.total_time-int(self.total_time)
+        if self._time<0.5:
+            self.total_time=int(self.total_time)
+        else:
+            self.total_time=int(self.total_time)+1
         print('last loss:{0:.6f}'.format(loss))
         print('last reward:{0}'.format(self.reward))
         print()
