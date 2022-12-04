@@ -274,10 +274,13 @@ class kernel:
         return action_prob
     
     
-    def get_episode(self,max_step=None):
+    def get_episode(self,max_step=None,seed=None):
         counter=0
         episode=[]
-        s=self.nn.env.reset()
+        if seed==None:
+            s=self.nn.env.reset()
+        else:
+            s=self.nn.env.reset(seed=seed)
         self.end_flag=False
         while True:
             try:
