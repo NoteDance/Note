@@ -1,3 +1,4 @@
+import torch
 import numpy as np
 import tensorflow_docs.vis.embed as embed
 from PIL import Image
@@ -16,23 +17,24 @@ class visual:
         screen=self.env.render(mode=self.mode)
         im=Image.fromarray(screen)
         images=[im]
-        state=self.env.reset()
+        s=self.env.reset()
         for i in range(self.max_step):
-            state=np.expand_dims(state,0)
+            s=np.expand_dims(s,0)
+            s=torch.tensor(s,dtype=torch.float).to(self.agent.device_d)
             try:
                 if self.agent.nn!=None:
                     pass
                 try:
                     if self.agent.action!=None:
                         pass
-                    action=self.agent.action(state)
+                    a=self.agent.action(s).detach().numpy()
                 except AttributeError:
-                    action_prob=self.agent.nn(state)
-                    action=np.argmax(action_prob).numpy()
+                    action_prob=self.agent.nn(s).detach().numpy()
+                    a=np.argmax(action_prob)
             except AttributeError:
-                action=self.agent.actor(state)
-                action=np.squeeze(action).numpy()
-            state,_,done,_=self.env.step(action)
+                a=self.agent.actor(s).detach().numpy()
+                a=np.squeeze(a)
+            state,_,done,_=self.env.step(a)
             state=state
             if i%self.rendering_step==0:
               screen=self.env.render(mode=self.mode)
