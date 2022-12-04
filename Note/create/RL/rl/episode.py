@@ -9,8 +9,11 @@ class episode:
         self.end_flag=False
     
     
-    def get_episode(self):
-        s=self.env.reset()
+    def get_episode(self,seed=None):
+        if seed==None:
+            s=self.nn.env.reset()
+        else:
+            s=self.nn.env.reset(seed=seed)
         episode=[]
         while True:
             try:
