@@ -1,3 +1,4 @@
+import torch
 from tensorflow import data as tf_data
 import numpy as np
 import matplotlib.pyplot as plt
@@ -166,20 +167,32 @@ class kernel:
         return
     
     
-    def epsilon_greedy_policy(self,s,action_one,epsilon):
+    def epsilon_greedy_policy(self,s,action_one,epsilon,t):
         action_prob=action_one*epsilon/len(action_one)
-        if self.state==None:
-            best_a=np.argmax(self.nn.nn(s))
-        else:
-            best_a=np.argmax(self.nn.nn(self.state[self.state_name[s]]))
+        try:
+            if self.nn.state!=None:
+                try:
+                    s=torch.tensor(self.nn.state[self.nn.state_name[s]],dtype=torch.float).to(self.nn.device_d[t])
+                except:
+                    s=torch.tensor(self.nn.state[self.nn.state_name[s]],dtype=torch.float).to(self.nn.device_d)
+                best_a=self.nn.nn(self.nn.state[self.nn.state_name[s]]).argmax()
+        except AttributeError:
+            try:
+                s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d[t])
+            except:
+                s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
+            best_a=self.nn.nn(s).argmax()
         action_prob[best_a.numpy()]+=1-epsilon
         return action_prob
     
     
-    def get_episode(self,max_step=None):
+    def get_episode(self,max_step=None,seed=None):
         counter=0
         episode=[]
-        s=self.nn.env.reset()
+        if seed==None:
+            s=self.nn.env.reset()
+        else:
+            s=self.nn.env.reset(seed=seed)
         self.end_flag=False
         while True:
             try:
@@ -192,28 +205,28 @@ class kernel:
                                     a=self.nn.action(s)
                             except AttributeError:
                                 s=np.expand_dims(s,axis=0)
-                                a=np.argmax(self.nn.nn(s)).numpy()
+                                a=self.nn.nn(s).detach().numpy().argmax()
                             if self.action_name==None:
                                 next_s,r,done=self.nn.env(a)
                             else:
                                 next_s,r,done=self.nn.env(self.action_name[a])
                     except AttributeError:
-                        a=np.argmax(self.nn.nn(s)).numpy()
+                        a=self.nn.nn(s).detach().numpy().argmax()
                         next_s,r,done=self.nn.transition(self.state_name[s],self.action_name[a])
             except AttributeError:
                 try:
                     if self.nn.env!=None:
-                        if self.state_name==None:
+                        if self.nn.state_name==None:
                             s=np.expand_dims(s,axis=0)
-                            a=self.nn.actor(s).numpy()
+                            a=self.nn.actor(s).detach().numpy()
                         else:
-                            a=self.nn.actor(self.state[self.state_name[s]]).numpy()
+                            a=self.nn.actor(self.nn.state[self.nn.state_name[s]]).detach().numpy()
                         a=np.squeeze(a)
                         next_s,r,done=self.nn.env(a)
                 except AttributeError:
-                    a=self.nn.actor(self.state[self.state_name[s]]).numpy()
+                    a=self.nn.actor(self.nn.state[self.nn.state_name[s]]).detach().numpy()
                     a=np.squeeze(a)
-                    next_s,r,done=self.nn.transition(self.state_name[s],a)
+                    next_s,r,done=self.nn.transition(self.nn.state_name[s],a)
             try:
                 if self.nn.stop!=None:
                     pass
@@ -419,8 +432,9 @@ class kernel:
         try:
             if self.nn.nn!=None:
                 s=np.expand_dims(s,axis=0)
-                if self.epsilon==None:
+                if epsilon==None:
                     self.epsilon[t]=self.nn.epsilon(self.sc[t],t)
+                    epsilon=self.epsilon[t]
                 try:
                     if self.nn.action!=None:
                         a=self.nn.action(s)
@@ -431,12 +445,12 @@ class kernel:
                         except AttributeError:
                             pass
                 except AttributeError:
-                    action_prob=self.epsilon_greedy_policy(s,self.action_one)
+                    action_prob=self.epsilon_greedy_policy(s,self.action_one,epsilon,t)
                     a=np.random.choice(self.action_num,p=action_prob)
                 next_s,r,done=self.nn.env(a)
         except AttributeError:
             s=np.expand_dims(s,axis=0)
-            a=(self.nn.actor(s)+self.nn.noise()).numpy()
+            a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
             next_s,r,done=self.nn.env(a)
         index=self.index(t)
         try:
@@ -448,12 +462,19 @@ class kernel:
             try:
                 if self.nn.state_name==None:
                     episode=[s,self.nn.action_name[a],next_s,r]
+                    if self.memory_flag==True:
+                        self.count_memory(s,self.nn.action_name[a],next_s,r,t)
                 elif self.nn.action_name==None:
                     episode=[self.nn.state_name[s],a,self.nn.state_name[next_s],r]
+                    if self.memory_flag==True:
+                        self.count_memory(self.nn.state_name[s],self.nn.action_name[a],self.nn.state_name[next_s],r,t)
                 else:
                     episode=[self.nn.state_name[s],self.nn.action_name[a],self.nn.state_name[next_s],r]
+                    if self.memory_flag==True:
+                        self.count_memory(self.nn.state_name[s],self.nn.action_name[a],self.nn.state_name[next_s],r,t)
             except AttributeError:  
                 episode=[s,a,next_s,r]
+                self.count_memory(s,a,next_s,r,t)
         return next_s,r,done,episode,index
     
     
@@ -477,7 +498,7 @@ class kernel:
         except:
             self.nn.opt(loss,t)
         self.thread_lock[1].release()
-        return loss.numpy()
+        return loss.detach().numpy()
     
     
     def _train(self,t,j=None,batches=None,length=None):
@@ -528,6 +549,11 @@ class kernel:
             if t in self.stop_list:
                 return
             self.suspend_func(t)
+            state_batch=state_batch.numpy()
+            action_batch=action_batch.numpy()
+            next_state_batch=next_state_batch.numpy()
+            reward_batch=reward_batch.numpy()
+            done_batch=done_batch.numpy()
             loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t)
             if self.stop_flag==0:
                 return
