@@ -1,3 +1,4 @@
+import torch
 import numpy as np
 
 
@@ -16,55 +17,57 @@ class reward:
                 if self.end_flag==True:
                     break
                 s=np.expand_dims(s,0)
+                s=torch.tensor(s,dtype=torch.float).to(self.agent.device_d)
                 try:
                     if self.agent.nn!=None:
                         pass
                     try:
                         if self.agent.action!=None:
                             pass
-                        a=self.agent.action(s)
+                        a=self.agent.action(s).detach().numpy()
                     except AttributeError:
-                        action_prob=self.agent.nn(s)
-                        a=np.argmax(action_prob).numpy()
+                        action_prob=self.agent.nn(s).detach().numpy()
+                        a=np.argmax(action_prob)
                 except AttributeError:
-                    a=self.agent.actor(s)
-                    a=np.squeeze(a).numpy()
+                    a=self.agent.actor(s).detach().numpy()
+                    a=np.squeeze(a)
                 next_s,r,done,_=self.env.step(a)
                 s=next_s
                 reward+=r
                 try:
                     if self.nn.stop!=None:
                         pass
-                    if self.nn.stop(next_s):
+                    if self.nn.stop(torch.tensor(next_s,dtype=torch.float).to(self.agent.device_d)):
                         break
                 except AttributeError:
                     pass
                 if done:
                     break
-            return r
+            return reward
         else:
             while True:
                 if self.end_flag==True:
                     break
                 s=np.expand_dims(s,0)
+                s=torch.tensor(s,dtype=torch.float).to(self.agent.device_d)
                 try:
                     if self.agent.nn!=None:
                         pass
-                    action_prob=self.agent.nn(s)
-                    a=np.argmax(action_prob).numpy()
+                    action_prob=self.agent.nn(s).detach().numpy()
+                    a=np.argmax(action_prob)
                 except AttributeError:
-                    a=self.agent.actor(s)
-                    a=np.squeeze(a).numpy()
+                    a=self.agent.actor(s).detach().numpy()
+                    a=np.squeeze(a)
                 next_s,r,done,_=self.env.step(a)
                 s=next_s
                 reward+=r
                 try:
                     if self.nn.stop!=None:
                         pass
-                    if self.nn.stop(next_s):
+                    if self.nn.stop(torch.tensor(next_s,dtype=torch.float).to(self.agent.device_d)):
                         break
                 except AttributeError:
                     pass
                 if done:
                     break
-            return r
+            return reward
