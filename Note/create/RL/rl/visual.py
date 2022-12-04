@@ -13,11 +13,14 @@ class visual:
         self.rendering_step=rendering_step
     
     
-    def render_episode(self):
+    def render_episode(self,seed=None):
         screen=self.env.render(mode=self.mode)
         im=Image.fromarray(screen)
         images=[im]
-        s=self.env.reset()
+        if seed==None:
+            s=self.nn.env.reset()
+        else:
+            s=self.nn.env.reset(seed=seed)
         for i in range(self.max_step):
             s=np.expand_dims(s,0)
             s=torch.tensor(s,dtype=torch.float).to(self.agent.device_d)
