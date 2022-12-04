@@ -251,7 +251,10 @@ class kernel:
                         self.nn.bc+=1
                     except AttributeError:
                         pass
-            if self.sc%self.update_step==0:
+            if self.update_step!=None:
+                if self.sc%self.update_step==0:
+                    self.nn.update_param()
+            else:
                 self.nn.update_param()
         loss=loss.detach().numpy()/batches
         return loss
