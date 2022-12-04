@@ -884,10 +884,7 @@ class kernel:
                     self.thread_lock[2].acquire()
             else:
                 self.thread_lock[1].acquire()
-            if self.update_step!=None:
-                if self.sc[t]%self.update_step==0:
-                    self.nn.update_param()
-            else:
+            if self.sc[t]%self.update_step==0:
                 self.nn.update_param()
             if self.PN==True:
                 if self.PO==1 or self.PO==3:
