@@ -575,7 +575,10 @@ class kernel:
                 self.thread_lock[2].acquire()
             else:
                 self.thread_lock[1].acquire()
-            if self.sc[t]%self.update_step==0:
+            if self.update_step!=None:
+                if self.sc[t]%self.update_step==0:
+                    self.nn.update_param()
+            else:
                 self.nn.update_param()
             if self.PN==True:
                 self.thread_lock[2].release()
