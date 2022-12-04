@@ -255,21 +255,9 @@ class kernel:
         return
     
     
-    def epsilon_greedy_policy(self,s,action_one,epsilon,t):
-        action_prob=action_one*epsilon/len(action_one)
-        try:
-            if self.nn.state!=None:
-                try:
-                    s=torch.tensor(self.nn.state[self.nn.state_name[s]],dtype=torch.float).to(self.nn.device_d[t])
-                except:
-                    s=torch.tensor(self.nn.state[self.nn.state_name[s]],dtype=torch.float).to(self.nn.device_d)
-                best_a=self.nn.nn(self.nn.state[self.nn.state_name[s]]).argmax()
-        except AttributeError:
-            try:
-                s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d[t])
-            except:
-                s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
-            best_a=self.nn.nn(s).argmax()
+    def epsilon_greedy_policy(self,s,epsilon):
+        action_prob=self.action_one*epsilon/len(self.action_one)
+        best_a=self.nn.nn(s).argmax()
         action_prob[best_a.numpy()]+=1-epsilon
         return action_prob
     
@@ -286,35 +274,18 @@ class kernel:
             try:
                 if self.nn.nn!=None:
                     try:
-                        if self.nn.env!=None:
-                            try:
-                                if self.nn.action!=None:
-                                    s=np.expand_dims(s,axis=0)
-                                    a=self.nn.action(s)
-                            except AttributeError:
-                                s=np.expand_dims(s,axis=0)
-                                a=self.nn.nn(s).detach().numpy().argmax()
-                            if self.action_name==None:
-                                next_s,r,done=self.nn.env(a)
-                            else:
-                                next_s,r,done=self.nn.env(self.action_name[a])
-                    except AttributeError:
-                        a=self.nn.nn(s).detach().numpy().argmax()
-                        next_s,r,done=self.nn.transition(self.state_name[s],self.action_name[a])
-            except AttributeError:
-                try:
-                    if self.nn.env!=None:
-                        if self.nn.state_name==None:
+                        if self.nn.action!=None:
                             s=np.expand_dims(s,axis=0)
-                            a=self.nn.actor(s).detach().numpy()
-                        else:
-                            a=self.nn.actor(self.nn.state[self.nn.state_name[s]]).detach().numpy()
-                        a=np.squeeze(a)
-                        next_s,r,done=self.nn.env(a)
-                except AttributeError:
-                    a=self.nn.actor(self.nn.state[self.nn.state_name[s]]).detach().numpy()
-                    a=np.squeeze(a)
-                    next_s,r,done=self.nn.transition(self.nn.state_name[s],a)
+                            a=self.nn.action(s)
+                    except AttributeError:
+                        s=np.expand_dims(s,axis=0)
+                        a=self.nn.nn(s).detach().numpy().argmax()
+                    next_s,r,done=self.nn.env(a)
+            except AttributeError:
+                s=np.expand_dims(s,axis=0)
+                a=self.nn.actor(s).detach().numpy()
+                a=np.squeeze(a)
+                next_s,r,done=self.nn.env(a)
             try:
                 if self.nn.stop!=None:
                     pass
@@ -325,27 +296,11 @@ class kernel:
             if self.end_flag==True:
                 break
             if done:
-                try:
-                    if self.nn.state_name==None:
-                        episode.append([s,self.nn.action_name[a],next_s,r])
-                    elif self.nn.action_name==None:
-                        episode.append([self.nn.state_name[s],a,self.nn.state_name[next_s],r])
-                    else:
-                        episode.append([self.nn.state_name[s],self.nn.action_name[a],self.nn.state_name[next_s],r])
-                except AttributeError:
-                    episode.append([s,a,next_s,r])
+                episode.append([s,a,next_s,r])
                 episode.append('done')
                 break
             else:
-                try:
-                    if self.nn.state_name==None:
-                        episode.append([s,self.nn.action_name[a],next_s,r])
-                    elif self.nn.action_name==None:
-                        episode.append([self.nn.state_name[s],a,self.nn.state_name[next_s],r])
-                    else:
-                        episode.append([self.nn.state_name[s],self.nn.action_name[a],self.nn.state_name[next_s],r])
-                except AttributeError:
-                    episode.append([s,a,next_s,r])
+                episode.append([s,a,next_s,r])
             if max_step!=None and counter==max_step-1:
                 break
             s=next_s
@@ -528,20 +483,24 @@ class kernel:
         try:
             if self.nn.nn!=None:
                 s=np.expand_dims(s,axis=0)
+                try:
+                    s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d[t])
+                except:
+                    s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
                 if epsilon==None:
                     self.epsilon[t]=self.nn.epsilon(self.sc[t],t)
                     epsilon=self.epsilon[t]
                 try:
                     if self.nn.action!=None:
-                        a=self.nn.action(s)
                         try:
                             if self.nn.discriminator!=None:
+                                a=self.nn.action(s)
                                 reward=self.nn.discriminator(s,a)
                                 s=np.squeeze(s)
                         except AttributeError:
-                            pass
+                            a=self.nn.action(s).detach().numpy()
                 except AttributeError:
-                    action_prob=self.epsilon_greedy_policy(s,self.action_one,epsilon,t)
+                    action_prob=self.epsilon_greedy_policy(s,epsilon)
                     a=np.random.choice(self.action_num,p=action_prob)
                 next_s,r,done=self.nn.env(a)
         except AttributeError:
@@ -550,27 +509,13 @@ class kernel:
             next_s,r,done=self.nn.env(a)
         index=self.index(t)
         try:
-            if self.nn.discriminator!=None:
-                self.pool(s,a,next_s,reward,done,t,index)
+            if self.nn.pool!=None:
+                self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done],t,index,self.pool_lock)
         except AttributeError:
             self.pool(s,a,next_s,r,done,t,index)
         if self.save_episode==True:
-            try:
-                if self.nn.state_name==None:
-                    episode=[s,self.nn.action_name[a],next_s,r]
-                    if self.memory_flag==True:
-                        self.count_memory(s,self.nn.action_name[a],next_s,r,t)
-                elif self.nn.action_name==None:
-                    episode=[self.nn.state_name[s],a,self.nn.state_name[next_s],r]
-                    if self.memory_flag==True:
-                        self.count_memory(self.nn.state_name[s],self.nn.action_name[a],self.nn.state_name[next_s],r,t)
-                else:
-                    episode=[self.nn.state_name[s],self.nn.action_name[a],self.nn.state_name[next_s],r]
-                    if self.memory_flag==True:
-                        self.count_memory(self.nn.state_name[s],self.nn.action_name[a],self.nn.state_name[next_s],r,t)
-            except AttributeError:  
-                episode=[s,a,next_s,r]
-                self.count_memory(s,a,next_s,r,t)
+            episode=[s,a,next_s,r]
+            self.count_memory(s,a,next_s,r,t)
         return next_s,r,done,episode,index
     
     
