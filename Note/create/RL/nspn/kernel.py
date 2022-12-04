@@ -170,7 +170,7 @@ class kernel:
     
     
     def pool(self,s,a,next_s,r,done):
-        if type(self.state_pool)!=np.ndarray and self.state_pool==None:
+        if type(self.state_pool)!=np.ndarray:
             self.state_pool=s
             if type(a)==int:
                 a=np.array(a,np.int64)
