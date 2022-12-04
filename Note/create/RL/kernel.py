@@ -488,8 +488,7 @@ class kernel:
                 except:
                     s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
                 if epsilon==None:
-                    self.epsilon[t]=self.nn.epsilon(self.sc[t],t)
-                    epsilon=self.epsilon[t]
+                    epsilon=self.nn.epsilon(self.sc[t],t)
                 try:
                     if self.nn.action!=None:
                         try:
@@ -961,6 +960,10 @@ class kernel:
             self.epoch_list=np.append(self.epoch_list,np.array(0,dtype=np.int8))
         self.finish_list.append(None)
         try:
+            epsilon=self.epsilon[t]
+        except:
+            epsilon=None
+        try:
             self.nn.ec.append(0)
         except AttributeError:
             pass
@@ -980,10 +983,6 @@ class kernel:
             s=self.nn.env(initial=True)
             if self.episode_step==None:
                 while True:
-                    try:
-                        epsilon=self.epsilon[t]
-                    except:
-                        epsilon=None
                     next_s,r,done,_episode,index=self.env(s,epsilon,t)
                     self.reward[t]+=r
                     s=next_s
@@ -1056,10 +1055,6 @@ class kernel:
                         break
             else:
                 for l in range(self.episode_step):
-                    try:
-                        epsilon=self.epsilon[t]
-                    except:
-                        pass
                     next_s,r,done,_episode,index=self.env(s,epsilon,t)
                     self.reward[t]+=r
                     s=next_s
