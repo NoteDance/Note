@@ -1,3 +1,4 @@
+import torch
 from tensorflow import data as tf_data
 import numpy as np
 import matplotlib.pyplot as plt
@@ -6,7 +7,7 @@ import pickle
 
 
 class kernel:
-    def __init__(self,nn=None,thread=None,state=None,state_name=None,action_name=None,save_episode=False):
+    def __init__(self,nn=None,thread=None,save_episode=False):
         self.nn=nn
         try:
             self.nn.km=1
@@ -25,9 +26,6 @@ class kernel:
         self.reward_pool=[]
         self.done_pool=[]
         self.episode=[]
-        self.state=state
-        self.state_name=state_name
-        self.action_name=action_name
         self.epsilon=None
         self.episode_step=None
         self.pool_size=None
@@ -55,12 +53,8 @@ class kernel:
     
     
     def action_vec(self):
-        if self.action_name!=None:
-            if self.epsilon!=None:
-                self.action_one=np.ones(len(self.action_name),dtype=np.int8)
-        else:
-            if self.epsilon!=None:
-                self.action_one=np.ones(self.action_num,dtype=np.int8)
+        if self.epsilon!=None:
+            self.action_one=np.ones(self.action_num,dtype=np.int8)
         return
     
     
@@ -122,58 +116,42 @@ class kernel:
         return
     
     
-    def epsilon_greedy_policy(self,s,action_one,epsilon):
-        action_prob=action_one*epsilon/len(action_one)
-        if self.state==None:
-            best_a=np.argmax(self.nn.nn(s))
-        else:
-            best_a=np.argmax(self.nn.nn(self.state[self.state_name[s]]))
+    def epsilon_greedy_policy(self,s,epsilon):
+        action_prob=self.action_one*epsilon/len(self.action_one)
+        best_a=np.argmax(self.nn.nn(s))
         action_prob[best_a.numpy()]+=1-epsilon
         return action_prob
     
     
-    def get_episode(self,max_step=None):
+    def get_episode(self,max_step=None,seed=None):
         counter=0
         episode=[]
-        s=self.nn.env.reset()
+        if seed==None:
+            s=self.nn.env.reset()
+        else:
+            s=self.nn.env.reset(seed=seed)
         self.end_flag=False
         while True:
             try:
                 if self.nn.nn!=None:
                     pass
                 try:
-                    if self.nn.env!=None:
+                    if self.nn.action!=None:
                         pass
-                    try:
-                        if self.nn.action!=None:
-                            pass
-                        s=np.expand_dims(s,axis=0)
-                        a=self.nn.action(s)
-                    except AttributeError:
-                        s=np.expand_dims(s,axis=0)
-                        a=np.argmax(self.nn.nn(s)).numpy()
-                    if self.action_name==None:
-                        next_s,r,done=self.nn.env(a)
-                    else:
-                        next_s,r,done=self.nn.env(self.action_name[a])
+                    s=np.expand_dims(s,axis=0)
+                    s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
+                    a=self.nn.action(s).detach().numpy()
                 except AttributeError:
-                    a=np.argmax(self.nn.nn(s)).numpy()
-                    next_s,r,done=self.nn.transition(self.state_name[s],self.action_name[a])
+                    s=np.expand_dims(s,axis=0)
+                    s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
+                    a=self.nn.nn(s).detach().numpy().argmax()
+                next_s,r,done=self.nn.env(a)
             except AttributeError:
-                try:
-                    if self.nn.env!=None:
-                        pass
-                    if self.state_name==None:
-                        s=np.expand_dims(s,axis=0)
-                        a=self.nn.actor(s).numpy()
-                    else:
-                        a=self.nn.actor(self.state[self.state_name[s]]).numpy()
-                    a=np.squeeze(a)
-                    next_s,r,done=self.nn.env(a)
-                except AttributeError:
-                    a=self.nn.actor(self.state[self.state_name[s]]).numpy()
-                    a=np.squeeze(a)
-                    next_s,r,done=self.nn.transition(self.state_name[s],a)
+                s=np.expand_dims(s,axis=0)
+                s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
+                a=self.nn.actor(s).detach().numpy()
+                a=np.squeeze(a)
+                next_s,r,done=self.nn.env(a)
             try:
                 if self.nn.stop!=None:
                     pass
@@ -184,25 +162,11 @@ class kernel:
             if self.end_flag==True:
                 break
             elif done:
-                if self.state_name==None and self.action_name==None:
-                    episode.append([s,a,next_s,r])
-                elif self.state_name==None:
-                    episode.append([s,self.action_name[a],next_s,r])
-                elif self.action_name==None:
-                    episode.append([self.state_name[s],a,self.state_name[next_s],r])
-                else:
-                    episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s],r])
+                episode.append([s,a,next_s,r])
                 episode.append('done')
                 break
             else:
-                if self.state_name==None and self.action_name==None:
-                    episode.append([s,a,next_s,r])
-                elif self.state_name==None:
-                    episode.append([s,self.action_name[a],next_s,r])
-                elif self.action_name==None:
-                    episode.append([self.state_name[s],a,self.state_name[next_s],r])
-                else:
-                    episode.append([self.state_name[s],self.action_name[a],self.state_name[next_s],r])
+                episode.append([s,a,next_s,r])
             if max_step!=None and counter==max_step-1:
                 break
             s=next_s
@@ -214,94 +178,50 @@ class kernel:
         if self.PN==True:
             self.thread_lock[0].acquire()
             if self.state_pool[index]==None and type(self.state_pool[index])!=np.ndarray:
-                if self.state==None:
-                    self.state_pool[index]=s
-                    if type(a)==int:
-                        a=np.array(a,np.int64)
-                        self.action_pool[index]=np.expand_dims(a,axis=0)
-                    else:
-                        self.action_pool[index]=a
-                    self.next_state_pool[index]=np.expand_dims(next_s,axis=0)
-                    self.reward_pool[index]=np.expand_dims(r,axis=0)
-                    self.done_pool[index]=np.expand_dims(done,axis=0)
+                self.state_pool[index]=s
+                if type(a)==int:
+                    a=np.array(a,np.int64)
+                    self.action_pool[index]=np.expand_dims(a,axis=0)
                 else:
-                    self.state_pool[index]=np.expand_dims(self.state[self.state_name[s]],axis=0)
-                    if type(a)==int:
-                        a=np.array(a,np.int64)
-                        self.action_pool[index]=np.expand_dims(a,axis=0)
-                    else:
-                        self.action_pool[index]=a
-                    self.next_state_pool[index]=np.expand_dims(self.state[self.state_name[next_s]],axis=0)
-                    self.reward_pool[index]=np.expand_dims(r,axis=0)
-                    self.done_pool[index]=np.expand_dims(done,axis=0)
+                    self.action_pool[index]=a
+                self.next_state_pool[index]=np.expand_dims(next_s,axis=0)
+                self.reward_pool[index]=np.expand_dims(r,axis=0)
+                self.done_pool[index]=np.expand_dims(done,axis=0)
             else:
                 try:
-                    if self.state==None:
-                        self.state_pool[index]=np.concatenate((self.state_pool[index],s),0)
-                        if type(a)==int:
-                            a=np.array(a,np.int64)
-                            self.action_pool[index]=np.concatenate((self.action_pool[index],np.expand_dims(a,axis=0)),0)
-                        else:
-                            self.action_pool[index]=np.concatenate((self.action_pool[index],a),0)
-                        self.next_state_pool[index]=np.concatenate((self.next_state_pool[index],np.expand_dims(next_s,axis=0)),0)
-                        self.reward_pool[index]=np.concatenate((self.reward_pool[index],np.expand_dims(r,axis=0)),0)
-                        self.done_pool[index]=np.concatenate((self.done_pool[index],np.expand_dims(done,axis=0)),0)
+                    self.state_pool[index]=np.concatenate((self.state_pool[index],s),0)
+                    if type(a)==int:
+                        a=np.array(a,np.int64)
+                        self.action_pool[index]=np.concatenate((self.action_pool[index],np.expand_dims(a,axis=0)),0)
                     else:
-                        self.state_pool[index]=np.concatenate((self.state_pool[index],np.expand_dims(self.state[self.state_name[s]],axis=0)),0)
-                        if type(a)==int:
-                            a=np.array(a,np.int64)
-                            self.action_pool[index]=np.concatenate((self.action_pool[index],np.expand_dims(a,axis=0)),0)
-                        else:
-                            self.action_pool[index]=np.concatenate((self.action_pool[index],a),0)
-                        self.next_state_pool[index]=np.concatenate((self.next_state_pool[index],np.expand_dims(self.state[self.state_name[next_s]],axis=0)),0)
-                        self.reward_pool[index]=np.concatenate((self.reward_pool[index],np.expand_dims(r,axis=0)),0)
-                        self.done_pool[index]=np.concatenate((self.done_pool[index],np.expand_dims(done,axis=0)),0)
+                        self.action_pool[index]=np.concatenate((self.action_pool[index],a),0)
+                    self.next_state_pool[index]=np.concatenate((self.next_state_pool[index],np.expand_dims(next_s,axis=0)),0)
+                    self.reward_pool[index]=np.concatenate((self.reward_pool[index],np.expand_dims(r,axis=0)),0)
+                    self.done_pool[index]=np.concatenate((self.done_pool[index],np.expand_dims(done,axis=0)),0)
                 except:
                     pass
             self.thread_lock[0].release()
         else:
             if self.state_pool[t]==None and type(self.state_pool[t])!=np.ndarray:
-                if self.state==None:
-                    self.state_pool[t]=s
-                    if type(a)==int:
-                        a=np.array(a,np.int64)
-                        self.action_pool[t]=np.expand_dims(a,axis=0)
-                    else:
-                        self.action_pool[t]=a
-                    self.next_state_pool[t]=np.expand_dims(next_s,axis=0)
-                    self.reward_pool[t]=np.expand_dims(r,axis=0)
-                    self.done_pool[t]=np.expand_dims(done,axis=0)
+                self.state_pool[t]=s
+                if type(a)==int:
+                    a=np.array(a,np.int64)
+                    self.action_pool[t]=np.expand_dims(a,axis=0)
                 else:
-                    self.state_pool[t]=np.expand_dims(self.state[self.state_name[s]],axis=0)
-                    if type(a)==int:
-                        a=np.array(a,np.int64)
-                        self.action_pool[t]=np.expand_dims(a,axis=0)
-                    else:
-                        self.action_pool[t]=a
-                    self.next_state_pool[t]=np.expand_dims(self.state[self.state_name[next_s]],axis=0)
-                    self.reward_pool[t]=np.expand_dims(r,axis=0)
-                    self.done_pool[t]=np.expand_dims(done,axis=0)
+                    self.action_pool[t]=a
+                self.next_state_pool[t]=np.expand_dims(next_s,axis=0)
+                self.reward_pool[t]=np.expand_dims(r,axis=0)
+                self.done_pool[t]=np.expand_dims(done,axis=0)
             else:
-                if self.state==None:
-                    self.state_pool[t]=np.concatenate((self.state_pool[t],s),0)
-                    if type(a)==int:
-                        a=np.array(a,np.int64)
-                        self.action_pool[t]=np.concatenate((self.action_pool[t],np.expand_dims(a,axis=0)),0)
-                    else:
-                        self.action_pool[t]=np.concatenate((self.action_pool[t],a),0)
-                    self.next_state_pool[t]=np.concatenate((self.next_state_pool[t],np.expand_dims(next_s,axis=0)),0)
-                    self.reward_pool[t]=np.concatenate((self.reward_pool[t],np.expand_dims(r,axis=0)),0)
-                    self.done_pool[t]=np.concatenate((self.done_pool[t],np.expand_dims(done,axis=0)),0)
+                self.state_pool[t]=np.concatenate((self.state_pool[t],s),0)
+                if type(a)==int:
+                    a=np.array(a,np.int64)
+                    self.action_pool[t]=np.concatenate((self.action_pool[t],np.expand_dims(a,axis=0)),0)
                 else:
-                    self.state_pool[t]=np.concatenate((self.state_pool[t],np.expand_dims(self.state[self.state_name[s]],axis=0)),0)
-                    if type(a)==int:
-                        a=np.array(a,np.int64)
-                        self.action_pool[t]=np.concatenate((self.action_pool[t],np.expand_dims(a,axis=0)),0)
-                    else:
-                        self.action_pool[t]=np.concatenate((self.action_pool[t],a),0)
-                    self.next_state_pool[t]=np.concatenate((self.next_state_pool[t],np.expand_dims(self.state[self.state_name[next_s]],axis=0)),0)
-                    self.reward_pool[t]=np.concatenate((self.reward_pool[t],np.expand_dims(r,axis=0)),0)
-                    self.done_pool[t]=np.concatenate((self.done_pool[t],np.expand_dims(done,axis=0)),0)
+                    self.action_pool[t]=np.concatenate((self.action_pool[t],a),0)
+                self.next_state_pool[t]=np.concatenate((self.next_state_pool[t],np.expand_dims(next_s,axis=0)),0)
+                self.reward_pool[t]=np.concatenate((self.reward_pool[t],np.expand_dims(r,axis=0)),0)
+                self.done_pool[t]=np.concatenate((self.done_pool[t],np.expand_dims(done,axis=0)),0)
         if self.state_pool[t]!=None and len(self.state_pool[t])>self.pool_size:
             self.state_pool[t]=self.state_pool[t][1:]
             self.action_pool[t]=self.action_pool[t][1:]
@@ -315,47 +235,30 @@ class kernel:
         try:
             if self.nn.nn!=None:
                 pass
+            s=np.expand_dims(s,axis=0)
             try:
-                if self.nn.env!=None:
+                s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d[t])
+            except:
+                s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
+            if epsilon==None:
+                self.epsilon[t]=self.nn.epsilon(self.sc[t],t)
+                epsilon=self.epsilon[t]
+            try:
+                if self.nn.action!=None:
                     pass
-                s=np.expand_dims(s,axis=0)
-                if self.epsilon==None:
-                    self.epsilon[t]=self.nn.epsilon(self.sc[t],t)
-                try:
-                    if self.nn.action!=None:
-                        pass
-                    a=self.nn.action(s)
-                except AttributeError:
-                    action_prob=self.epsilon_greedy_policy(s,self.action_one)
-                    a=np.random.choice(self.action_num,p=action_prob)
-                if self.action_name==None:
-                    next_s,r,done=self.nn.env(a)
-                else:
-                    next_s,r,done=self.nn.env(self.action_name[a])
+                a=self.nn.action(s).detach().numpy()
             except AttributeError:
-                if self.epsilon==None:
-                    self.epsilon[t]=self.nn.epsilon(self.sc[t],t)
-                try:
-                    if self.nn.action!=None:
-                        pass
-                    a=self.nn.action(s)
-                except AttributeError:
-                    action_prob=self.epsilon_greedy_policy(s,self.action_one)
-                    a=np.random.choice(self.action_num,p=action_prob)
-                next_s,r,done=self.nn.transition(self.state_name[s],self.action_name[a])
+                action_prob=self.epsilon_greedy_policy(s,epsilon)
+                a=np.random.choice(self.action_num,p=action_prob)
+            next_s,r,done=self.nn.env(a)
         except AttributeError:
+            s=np.expand_dims(s,axis=0)
             try:
-                if self.nn.env!=None:
-                    pass 
-                if self.state_name==None:
-                    s=np.expand_dims(s,axis=0)
-                    a=(self.nn.actor(s)+self.nn.noise()).numpy()
-                else:
-                    a=(self.nn.actor(self.state[self.state_name[s]])+self.nn.noise()).numpy()
-                next_s,r,done=self.nn.env(a)
-            except AttributeError:
-                a=(self.nn.actor(self.state[self.state_name[s]])+self.nn.noise()).numpy()
-                next_s,r,done=self.nn.transition(self.state_name[s],a)
+                s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d[t])
+            except:
+                s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
+            a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
+            next_s,r,done=self.nn.env(a)
         if self.PN==True:
             while len(self.running_flag_list)<t:
                 pass
@@ -385,14 +288,7 @@ class kernel:
             index=None
         self.pool(s,a,next_s,r,done,t,index)
         if self.save_episode==True:
-            if self.state_name==None and self.action_name==None:
-                episode=[s,a,next_s,r]
-            elif self.state_name==None:
-                episode=[s,self.action_name[a],next_s,r]
-            elif self.action_name==None:
-                episode=[self.state_name[s],a,self.state_name[next_s],r]
-            else:
-                episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r]
+            episode=[s,a,next_s,r]
         return next_s,r,done,episode,index
     
     
@@ -403,7 +299,7 @@ class kernel:
     
     def opt_t(self,state_batch,action_batch,next_state_batch,reward_batch,done_batch):
         loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
-        return loss.numpy()
+        return loss.detach().numpy()
     
     
     def _train(self,t,j=None,batches=None,length=None):
@@ -430,7 +326,7 @@ class kernel:
         try:
             if self.nn.data_func!=None:
                 pass
-            state_batch,action_batch,next_state_batch,reward_batch=self.nn.data_func(self.state_pool[t],self.action_pool[t],self.next_state_pool[t],self.reward_pool[t],self.done_pool[t],self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
+            state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool[t],self.action_pool[t],self.next_state_pool[t],self.reward_pool[t],self.done_pool[t],self.pool_size,self.batch,self.nn.rp,self.nn.alpha,self.nn.beta)
         except AttributeError:
             index1=j*self.batch
             index2=(j+1)*self.batch
@@ -450,12 +346,17 @@ class kernel:
     
     def train_(self,t):
         train_ds=tf_data.Dataset.from_tensor_slices((self.state_pool[t],self.action_pool[t],self.next_state_pool[t],self.reward_pool[t],self.done_pool[t])).shuffle(len(self.state_pool[t])).batch(self.batch)
-        for state_batch,action_batch,next_state_batch,reward_batch in train_ds:
+        for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
             if self.stop==True:
                 if self.stop_func() or self.stop_flag==0:
                     return
             self.suspend_func()
-            loss=self.opt_t(state_batch,action_batch,next_state_batch,reward_batch)
+            state_batch=state_batch.numpy()
+            action_batch=action_batch.numpy()
+            next_state_batch=next_state_batch.numpy()
+            reward_batch=reward_batch.numpy()
+            done_batch=done_batch.numpy()
+            loss=self.opt_t(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
             self.loss[t]+=loss
             try:
                 self.nn.bc[t]+=1
