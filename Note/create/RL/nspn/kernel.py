@@ -230,7 +230,7 @@ class kernel:
     
     def _train(self):
         if len(self.state_pool)<self.batch:
-            return 0
+            return np.array(0.)
         else:
             loss=0
             batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
@@ -436,8 +436,6 @@ class kernel:
                         episode=[s,a,next_s,r]
                 s=next_s
         self.reward_list.append(self.reward)
-        t2=time.time()
-        self.time+=(t2-t1)
         return loss,episode,done
     
     
@@ -520,6 +518,12 @@ class kernel:
                     self.nn.ec+=1
                 except AttributeError:
                     pass
+                self._time=self.time-int(self.time)
+                if self._time<0.5:
+                    self.time=int(self.time)
+                else:
+                    self.time=int(self.time)+1
+                self.total_time+=self.time
         else:
             i=0
             while True:
@@ -589,14 +593,12 @@ class kernel:
                     self.nn.ec+=1
                 except AttributeError:
                     pass
-        if save!=None:
-            self.save()
-        self._time=self.time-int(self.time)
-        if self._time<0.5:
-            self.time=int(self.time)
-        else:
-            self.time=int(self.time)+1
-        self.total_time+=self.time
+                self._time=self.time-int(self.time)
+                if self._time<0.5:
+                    self.time=int(self.time)
+                else:
+                    self.time=int(self.time)+1
+                self.total_time+=self.time
         print('last loss:{0:.6f}'.format(loss))
         print('last reward:{0}'.format(self.reward))
         print()
