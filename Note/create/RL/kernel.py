@@ -1,4 +1,4 @@
-import torch
+import tensorflow as tf
 from tensorflow import data as tf_data
 import numpy as np
 import matplotlib.pyplot as plt
@@ -39,6 +39,7 @@ class kernel:
         self.batch=None
         self.episode_num=0
         self.update_step=None
+        self.trial_num=None
         self.running_list=[]
         self.suspend=False
         self.suspend_list=[]
@@ -102,12 +103,11 @@ class kernel:
     
     
     def action_vec(self):
-        if self.epsilon!=None:
-            self.action_one=np.ones(self.action_num,dtype=np.int8)
+        self.action_one=np.ones(self.action_num,dtype=np.int8)
         return
     
     
-    def calculate_memory(self,s=None,a=None,next_s=None,r=None,t=None):
+    def calculate_memory(self,s=None,a=None,next_s=None,r=None,done=None,t=None):
         if s!=None:
             self.episode_memory_list[t]+=getsizeof(s)
             self.episode_memory_list[t]+=getsizeof(a)
@@ -174,12 +174,8 @@ class kernel:
     
     
     def set_up(self,epsilon=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_num=None,criterion=None,end_loss=None,init=None):
-        if type(epsilon)!=list and epsilon!=None:
+        if epsilon!=None:
             self.epsilon=np.ones(self.thread)*epsilon
-        elif epsilon==None:
-            self.epsilon=np.zeros(self.thread)
-        else:
-            self.epsilon=epsilon
         if episode_step!=None:
             self.episode_step=episode_step
         if pool_size!=None:
@@ -194,7 +190,8 @@ class kernel:
             self.criterion=criterion
         if end_loss!=None:
             self.end_loss=end_loss
-        self.action_vec()
+        if epsilon!=None:
+            self.action_vec()
         if init==True:
             self.suspend=False
             self.suspend_list=[]
@@ -239,7 +236,7 @@ class kernel:
                 pass
             self.PN=True
             self.episode=[]
-            self.epsilon=[]
+            self.epsilon=None
             self.state_pool={}
             self.action_pool={}
             self.next_state_pool={}
@@ -257,8 +254,8 @@ class kernel:
     
     def epsilon_greedy_policy(self,s,epsilon):
         action_prob=self.action_one*epsilon/len(self.action_one)
-        best_a=self.nn.nn(s).argmax()
-        action_prob[best_a.numpy()]+=1-epsilon
+        best_a=np.argmax(self.nn.nn.fp(s))
+        action_prob[best_a]+=1-epsilon
         return action_prob
     
     
@@ -279,11 +276,11 @@ class kernel:
                             a=self.nn.action(s)
                     except AttributeError:
                         s=np.expand_dims(s,axis=0)
-                        a=self.nn.nn(s).detach().numpy().argmax()
+                        a=np.argmax(self.nn.nn.fp(s)).numpy()
                     next_s,r,done=self.nn.env(a)
             except AttributeError:
                 s=np.expand_dims(s,axis=0)
-                a=self.nn.actor(s).detach().numpy()
+                a=self.nn.actor.fp(s).numpy()
                 a=np.squeeze(a)
                 next_s,r,done=self.nn.env(a)
             try:
@@ -311,7 +308,7 @@ class kernel:
     def pool(self,s,a,next_s,r,done,t,index):
         if self.PN==True:
             self.pool_lock[index].acquire()
-            if self.state_pool[index]==None and type(self.state_pool[index])!=np.ndarray:
+            if type(self.state_pool[index])!=np.ndarray and self.state_pool[index]==None:
                 self.state_pool[index]=s
                 if type(a)==int:
                     a=np.array(a,np.int64)
@@ -350,7 +347,7 @@ class kernel:
                 pass
             self.pool_lock[index].release()
         else:
-            if self.state_pool[t]==None and type(self.state_pool[t])!=np.ndarray:
+            if type(self.state_pool[t])!=np.ndarray and self.state_pool[index]==None:
                 self.state_pool[t]=s
                 if type(a)==int:
                     a=np.array(a,np.int64)
@@ -452,18 +449,30 @@ class kernel:
                 while len(self.running_flag_list)<t:
                     pass
                 if len(self.running_flag_list)==t:
-                    self.thread_lock[2].acquire()
+                    if self.PO==1 or self.PO==3:
+                        self.thread_lock[2].acquire()
+                    else:
+                        self.thread_lock[3].acquire()
                     self.running_flag_list.append(self.running_flag[1:])
-                    self.thread_lock[2].release()
+                    if self.PO==1 or self.PO==3:
+                        self.thread_lock[2].release()
+                    else:
+                        self.thread_lock[3].release()
                 else:
                     if len(self.running_flag_list[t])<self.thread_counter or np.sum(self.running_flag_list[t])>self.thread_counter:
                         self.running_flag_list[t]=self.running_flag[1:]
                 while len(self.probability_list)<t:
                     pass
                 if len(self.probability_list)==t:
-                    self.thread_lock[2].acquire()
+                    if self.PO==1 or self.PO==3:
+                        self.thread_lock[2].acquire()
+                    else:
+                        self.thread_lock[3].acquire()
                     self.probability_list.append(np.array(self.running_flag_list[t],dtype=np.float16)/np.sum(self.running_flag_list[t]))
-                    self.thread_lock[2].release()
+                    if self.PO==1 or self.PO==3:
+                        self.thread_lock[2].release()
+                    else:
+                        self.thread_lock[3].release()
                 else:
                     if len(self.probability_list[t])<self.thread_counter or np.sum(self.running_flag_list[t])>self.thread_counter:
                         self.probability_list[t]=np.array(self.running_flag_list[t],dtype=np.float16)/np.sum(self.running_flag_list[t])
@@ -478,15 +487,10 @@ class kernel:
         return index
     
     
-    
     def env(self,s,epsilon,t):
         try:
             if self.nn.nn!=None:
                 s=np.expand_dims(s,axis=0)
-                try:
-                    s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d[t])
-                except:
-                    s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
                 if epsilon==None:
                     epsilon=self.nn.epsilon(self.sc[t],t)
                 try:
@@ -497,16 +501,18 @@ class kernel:
                                 reward=self.nn.discriminator(s,a)
                                 s=np.squeeze(s)
                         except AttributeError:
-                            a=self.nn.action(s).detach().numpy()
+                            a=self.nn.action(s).numpy()
                 except AttributeError:
                     action_prob=self.epsilon_greedy_policy(s,epsilon)
                     a=np.random.choice(self.action_num,p=action_prob)
                 next_s,r,done=self.nn.env(a)
         except AttributeError:
             s=np.expand_dims(s,axis=0)
-            a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
+            a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
             next_s,r,done=self.nn.env(a)
         index=self.index(t)
+        r=np.array(r,dtype=np.float32)
+        done=np.array(done,dtype=np.float32)
         try:
             if self.nn.pool!=None:
                 self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done],t,index,self.pool_lock)
@@ -514,8 +520,10 @@ class kernel:
             self.pool(s,a,next_s,r,done,t,index)
         if self.save_episode==True:
             episode=[s,a,next_s,r]
-            self.count_memory(s,a,next_s,r,t)
-        return next_s,r,done,episode,index
+            self.calculate_memory(s,a,next_s,r,done,t)
+            return next_s,r,done,episode,index
+        else:
+            return next_s,r,done,None,index
     
     
     def end(self):
@@ -523,11 +531,10 @@ class kernel:
             return True
     
     
+    @tf.function
     def opt(self,state_batch,action_batch,next_state_batch,reward_batch,done_batch,t):
-        try:
+        with tf.GradientTape(persistent=True) as tape:
             loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
-        except:
-            loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t)
         try:
             if self.nn.attenuate!=None:
                 self.opt_counter[t]=0
@@ -545,126 +552,20 @@ class kernel:
                     return 0
             if self.stop_func_(self.thread_lock[0]):
                 return 0
-            self.nn.backward(loss)
+            gradient=tape.gradient(loss,self.nn.param)
             try:
                 if self.nn.attenuate!=None:
                     self.nn.oc[t]=self.opt_counter[t]
             except AttributeError:
                 pass
-            try:
-                self.nn.opt()
-            except TypeError:
-                self.nn.opt(t)
+            self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
             try:
                 if self.nn.attenuate!=None:
                     self.opt_counter+=1
             except AttributeError:
                 pass
             self.thread_lock[0].release()
-        elif self.PO==2:
-            self.thread_lock[0].acquire()
-            self.nn.backward(loss)
-            self.thread_lock[0].release()
-            self.thread_lock[1].acquire()
-            if self.episode_memory_t_value!=None and sum(self.episode_memory_list)>self.episode_memory_t_value:
-                self.save_episode=False
-            if self.memory_flag==True:
-                self.calculate_memory_(t)
-                if self.stop_func_m(self.thread_lock[1]):
-                    return 0
-                if self.stop_func_t_p(self.thread_lock[1],t):
-                    return 0
-            if self.stop_func_(self.thread_lock[1]):
-                return 0
-            try:
-                if self.nn.attenuate!=None:
-                    self.nn.oc[t]=self.opt_counter[t]
-            except AttributeError:
-                pass
-            try:
-                self.nn.opt()
-            except:
-                self.nn.opt(t)
-            try:
-                if self.nn.attenuate!=None:
-                    self.opt_counter+=1
-            except AttributeError:
-                pass
-            self.thread_lock[1].release()
-        elif self.PO==3:
-            if self.row==None and len(self.gradient_lock)==self.thread:
-                ln=t
-            else:
-                if self.row!=None:
-                    while True:
-                        rank_index=np.random.choice(len(self.gradient_lock))
-                        row_index=np.random.choice(len(self.gradient_lock[rank_index]))
-                        if [rank_index,row_index] in self.ln_list:
-                            continue
-                        else:
-                            break
-                else:
-                    while True:
-                        ln=np.random.choice(len(self.gradient_lock))
-                        if ln in self.ln_list:
-                            continue
-                        else:
-                            break
-            if self.row!=None:
-                try:
-                    self.gradient_lock[rank_index][row_index].acquire()
-                except:
-                    self.gradient_lock[0][0].acquire()
-                self.ln_list.append([rank_index,row_index])
-            else:
-                try:
-                    self.gradient_lock[ln].acquire()
-                except:
-                    self.gradient_lock[0].acquire()
-                self.ln_list.append(ln)
-            self.nn.backward(loss)
-            self.gradient_list[t]=self.nn.grad()
-            if self.row!=None:
-                self.ln_list.remove([rank_index,row_index])
-                try:
-                    self.gradient_lock[rank_index][row_index].release()
-                except:
-                    self.gradient_lock[0][0].release()
-            else:
-                self.ln_list.remove(ln)
-                try:
-                    self.gradient_lock[ln].release()
-                except:
-                    self.gradient_lock[0].release()
-            self.thread_lock[0].acquire()
-            if self.memory_flag==True:
-                self.calculate_memory_(t,ln)
-                if self.stop_func_m(self.thread_lock[0]):
-                    return 0
-                if self.stop_func_t_p(self.thread_lock[0],t,ln):
-                    return 0
-            if self.stop_func_(self.thread_lock[0]):
-                return 0
-            try:
-                if self.nn.attenuate!=None:
-                    self.nn.oc[t]=self.opt_counter[t]
-                    self.nn.grad[t]=self.gradient_list[t]
-            except AttributeError:
-                pass
-            try:
-                self.nn.opt()
-            except:
-                self.nn.opt(t)
-            self.gradient_list[t]=None
-            try:
-                if self.nn.attenuate!=None:
-                    self.opt_counter+=1
-            except AttributeError:
-                pass
-            if self.memory_flag==True:
-                self.grad_memory_list[ln]=0
-            self.thread_lock[0].release()
-        return loss.detach().numpy()
+        return loss
     
     
     def opt_ol(self,data,t=None):
@@ -816,11 +717,11 @@ class kernel:
         except AttributeError:
             index1=j*self.batch
             index2=(j+1)*self.batch
-            state_batch=self.state_batch[t][index1:index2]
-            action_batch=self.action_batch[t][index1:index2]
-            next_state_batch=self.next_state_batch[t][index1:index2]
-            reward_batch=self.reward_batch[t][index1:index2]
-            done_batch=self.done_batch[t][index1:index2]
+            state_batch=self.state_pool[t][index1:index2]
+            action_batch=self.action_pool[t][index1:index2]
+            next_state_batch=self.next_state_pool[t][index1:index2]
+            reward_batch=self.reward_pool[t][index1:index2]
+            done_batch=self.done_pool[t][index1:index2]
             loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t)
             self.loss[t]+=loss
         try:
@@ -836,11 +737,6 @@ class kernel:
             if t in self.stop_list:
                 return
             self.suspend_func(t)
-            state_batch=state_batch.numpy()
-            action_batch=action_batch.numpy()
-            next_state_batch=next_state_batch.numpy()
-            reward_batch=reward_batch.numpy()
-            done_batch=done_batch.numpy()
             loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t)
             if self.stop_flag==0:
                 return
@@ -986,7 +882,7 @@ class kernel:
                     next_s,r,done,_episode,index=self.env(s,epsilon,t)
                     self.reward[t]+=r
                     s=next_s
-                    if self.state_pool[t]!=None and self.action_pool[t]!=None and self.next_state_pool[t]!=None and self.reward_pool[t]!=None and self.done_pool[t]!=None:
+                    if type(self.done_pool[t])==np.ndarray:
                         self._train_(t)
                     if t in self.stop_list or t in self.stop_list_m:
                         if self.PN==True:
@@ -1058,7 +954,7 @@ class kernel:
                     next_s,r,done,_episode,index=self.env(s,epsilon,t)
                     self.reward[t]+=r
                     s=next_s
-                    if self.state_pool[t]!=None and self.action_pool[t]!=None and self.next_state_pool[t]!=None and self.reward_pool[t]!=None and self.done_pool[t]!=None:
+                    if type(self.done_pool[t])==np.ndarray:
                         self._train_(t)
                     if t in self.stop_list or t in self.stop_list_m:
                         if self.PN==True:
