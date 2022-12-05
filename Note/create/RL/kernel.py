@@ -53,8 +53,7 @@ class kernel:
     
     
     def action_vec(self):
-        if self.epsilon!=None:
-            self.action_one=np.ones(self.action_num,dtype=np.int8)
+        self.action_one=np.ones(self.action_num,dtype=np.int8)
         return
     
     
@@ -69,12 +68,8 @@ class kernel:
     
     
     def set_up(self,epsilon=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_num=None,criterion=None,end_loss=None,init=None):
-        if type(epsilon)!=list and epsilon!=None:
+        if epsilon!=None:
             self.epsilon=np.ones(self.thread)*epsilon
-        elif epsilon==None:
-            self.epsilon=np.zeros(self.thread)
-        else:
-            self.epsilon=epsilon
         if episode_step!=None:
             self.episode_step=episode_step
         if pool_size!=None:
@@ -100,7 +95,7 @@ class kernel:
             self.finish_list=[]
             self.PN=True
             self.episode=[]
-            self.epsilon=[]
+            self.epsilon=None
             self.state_pool=[]
             self.action_pool=[]
             self.next_state_pool=[]
@@ -329,11 +324,11 @@ class kernel:
         except AttributeError:
             index1=j*self.batch
             index2=(j+1)*self.batch
-            state_batch=self.state_batch[t][index1:index2]
-            action_batch=self.action_batch[t][index1:index2]
-            next_state_batch=self.next_state_batch[t][index1:index2]
-            reward_batch=self.reward_batch[t][index1:index2]
-            done_batch=self.done_batch[t][index1:index2]
+            state_batch=self.state_pool[t][index1:index2]
+            action_batch=self.action_pool[t][index1:index2]
+            next_state_batch=self.next_state_pool[t][index1:index2]
+            reward_batch=self.reward_pool[t][index1:index2]
+            done_batch=self.done_pool[t][index1:index2]
             loss=self.opt_t(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
             self.loss[t]+=loss
         try:
