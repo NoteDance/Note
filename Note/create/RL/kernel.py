@@ -258,20 +258,17 @@ class kernel:
                 pass
             if len(self.running_flag_list)==t:
                 self.thread_lock[2].acquire()
-                self.running_flag_list.append(self.running_flag[1:])
+                self.running_flag_list.append(self.running_flag[1:].copy())
                 self.thread_lock[2].release()
-            else:
-                if len(self.running_flag_list[t])<self.thread_counter or np.sum(self.running_flag_list[t])>self.thread_counter:
-                    self.running_flag_list[t]=self.running_flag[1:]
+            if len(self.running_flag_list[t])<self.thread_counter or np.sum(self.running_flag_list[t])>self.thread_counter:
+                self.running_flag_list[t]=self.running_flag[1:].copy()
             while len(self.probability_list)<t:
                 pass
             if len(self.probability_list)==t:
                 self.thread_lock[2].acquire()
                 self.probability_list.append(np.array(self.running_flag_list[t],dtype=np.float16)/np.sum(self.running_flag_list[t]))
                 self.thread_lock[2].release()
-            else:
-                if len(self.probability_list[t])<self.thread_counter or np.sum(self.running_flag_list[t])>self.thread_counter:
-                    self.probability_list[t]=np.array(self.running_flag_list[t],dtype=np.float16)/np.sum(self.running_flag_list[t])
+            self.probability_list[t]=np.array(self.running_flag_list[t],dtype=np.float16)/np.sum(self.running_flag_list[t])
             while True:
                 index=np.random.choice(len(self.probability_list[t]),p=self.probability_list[t])
                 if index in self.finish_list:
