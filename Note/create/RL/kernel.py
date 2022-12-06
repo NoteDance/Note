@@ -172,7 +172,7 @@ class kernel:
     def pool(self,s,a,next_s,r,done,t,index):
         if self.PN==True:
             self.thread_lock[0].acquire()
-            if self.state_pool[index]==None and type(self.state_pool[index])!=np.ndarray:
+            if type(self.state_pool[index])!=np.ndarray and self.state_pool[index]==None:
                 self.state_pool[index]=s
                 if type(a)==int:
                     a=np.array(a,np.int64)
@@ -197,7 +197,7 @@ class kernel:
                     pass
             self.thread_lock[0].release()
         else:
-            if self.state_pool[t]==None and type(self.state_pool[t])!=np.ndarray:
+            if type(self.state_pool[t])!=np.ndarray and self.state_pool[t]==None:
                 self.state_pool[t]=s
                 if type(a)==int:
                     a=np.array(a,np.int64)
@@ -217,7 +217,7 @@ class kernel:
                 self.next_state_pool[t]=np.concatenate((self.next_state_pool[t],np.expand_dims(next_s,axis=0)),0)
                 self.reward_pool[t]=np.concatenate((self.reward_pool[t],np.expand_dims(r,axis=0)),0)
                 self.done_pool[t]=np.concatenate((self.done_pool[t],np.expand_dims(done,axis=0)),0)
-        if self.state_pool[t]!=None and len(self.state_pool[t])>self.pool_size:
+        if type(self.state_pool[t])==np.ndarray and len(self.state_pool[t])>self.pool_size:
             self.state_pool[t]=self.state_pool[t][1:]
             self.action_pool[t]=self.action_pool[t][1:]
             self.next_state_pool[t]=self.next_state_pool[t][1:]
