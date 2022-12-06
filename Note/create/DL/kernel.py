@@ -353,7 +353,7 @@ class kernel:
                 except:
                     try:
                         output=self.nn.fp(data,t)
-                        loss=self.nn.loss(output,labels,t)
+                        loss=self.nn.loss(output,labels)
                     except TypeError:
                         output,loss=self.nn.fp(data,labels,t) 
         try:
@@ -677,9 +677,9 @@ class kernel:
             if self.PO==1:
                 self.thread_lock[0].acquire()
                 try:
-                    gradient=tape.gradient(loss,self.nn.param)
+                    gradient=self.nn.gradient(tape,loss)
                 except AttributeError:
-                    gradient=self.nn.gradient(tape,loss,self.nn.param)
+                    gradient=tape.gradient(loss,self.nn.param)
                 try:
                     if self.nn.attenuate!=None:
                         gradient=self.nn.attenuate(gradient,self.opt_counter[t])
@@ -689,9 +689,9 @@ class kernel:
                     self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
                 except:
                     try:
-                        self.nn.opt(gradient,self.nn.param)
+                        self.nn.opt(gradient)
                     except TypeError:
-                        self.nn.opt(gradient,self.nn.param,t)
+                        self.nn.opt(gradient,t)
                 try:
                     if self.nn.attenuate!=None:
                         self.opt_counter+=1
@@ -701,9 +701,9 @@ class kernel:
             elif self.PO==2:
                 self.thread_lock[0].acquire()
                 try:
-                    gradient=tape.gradient(loss,self.nn.param)
+                    gradient=self.nn.gradient(tape,loss)
                 except AttributeError:
-                    gradient=self.nn.gradient(tape,loss,self.nn.param)
+                    gradient=tape.gradient(loss,self.nn.param)
                 self.thread_lock[0].release()
                 self.thread_lock[1].acquire()
                 try:
@@ -715,9 +715,9 @@ class kernel:
                     self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
                 except:
                     try:
-                        self.nn.opt(gradient,self.nn.param)
+                        self.nn.opt(gradient)
                     except TypeError:
-                        self.nn.opt(gradient,self.nn.param,t)
+                        self.nn.opt(gradient,t)
                 try:
                     if self.nn.attenuate!=None:
                         self.opt_counter+=1
@@ -738,9 +738,9 @@ class kernel:
                         self.gradient_lock[0].acquire()
                     self.ln_list.append(ln)
                 try:
-                    gradient=tape.gradient(loss,self.nn.param)
+                    gradient=self.nn.gradient(tape,loss)
                 except AttributeError:
-                    gradient=self.nn.gradient(tape,loss,self.nn.param)
+                    gradient=tape.gradient(loss,self.nn.param)
                 if self.row!=None:
                     self.ln_list.remove([ln[0],ln[1]])
                     try:
@@ -769,9 +769,9 @@ class kernel:
                     self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
                 except:
                     try:
-                        self.nn.opt(gradient,self.nn.param)
+                        self.nn.opt(gradient)
                     except TypeError:
-                        self.nn.opt(gradient,self.nn.param,t)
+                        self.nn.opt(gradient,t)
                 try:
                     if self.nn.attenuate!=None:
                         self.opt_counter+=1
@@ -782,14 +782,13 @@ class kernel:
                 self.thread_lock[0].release()
         else:
             try:
-                if self.nn.opt!=None:
-                    gradient=tape.gradient(loss,self.nn.param)
+                gradient=self.nn.gradient(tape,loss)
             except AttributeError:
-                gradient=self.nn.gradient(tape,loss,self.nn.param)
+                gradient=tape.gradient(loss,self.nn.param)
             try:
                 self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
             except:
-                self.nn.opt(gradient,self.nn.param)
+                self.nn.opt(gradient)
         return output,loss
     
     
