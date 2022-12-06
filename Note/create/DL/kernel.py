@@ -374,10 +374,17 @@ class kernel:
         except AttributeError:
             with self.platform.GradientTape(persistent=True) as tape:
                 try:
-                    output=self.nn.fp(data)
-                    loss=self.nn.loss(output,labels)
+                    try:
+                        output=self.nn.fp(data)
+                        loss=self.nn.loss(output,labels)
+                    except TypeError:
+                        output,loss=self.nn.fp(data,labels)
                 except TypeError:
-                    output,loss=self.nn.fp(data,labels)
+                    try:
+                        output=self.nn.fp(data,t)
+                        loss=self.nn.loss(output,labels)
+                    except TypeError:
+                        output,loss=self.nn.fp(data,labels,t)
         if self.PO==1:
             self.thread_lock[0].acquire()
             try:
