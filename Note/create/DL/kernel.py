@@ -347,7 +347,7 @@ class kernel:
                         loss=self.nn.loss(output,labels)
                     except TypeError:
                         output,loss=self.nn.fp(data,labels)
-                except:
+                except TypeError:
                     try:
                         output=self.nn.fp(data,t)
                         loss=self.nn.loss(output,labels)
@@ -421,7 +421,7 @@ class kernel:
                 loss=self.nn.loss(output,labels)
             except:
                 output=self.nn.fp(data,t)
-                loss=self.nn.loss(output,labels,t)
+                loss=self.nn.loss(output,labels)
             if self.PO==1:
                 try:
                     self.thread_lock[0].acquire()
