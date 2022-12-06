@@ -53,8 +53,8 @@ class kernel:
         self.add_flag=False
         self.memory_flag=False
         self.memory_priority=False
-        self.epoch_list=np.array(0,dtype=np.int8)
-        self.epoch_list_copy=None
+        self.episode_list=np.array(0,dtype=np.int8)
+        self.episode_list_copy=None
         self.param_memory=0
         self.grad_memory=0
         self.c_memory=0
@@ -332,7 +332,7 @@ class kernel:
                 except:
                     pass
             try:
-                if self.state_pool[index]!=None and len(self.state_pool[index])>self.pool_size:
+                if type(self.state_pool[index])==np.ndarray and len(self.state_pool[index])>self.pool_size:
                     self.state_pool[index]=self.state_pool[index][1:]
                     self.action_pool[index]=self.action_pool[index][1:]
                     self.next_state_pool[index]=self.next_state_pool[index][1:]
@@ -347,7 +347,7 @@ class kernel:
                 pass
             self.pool_lock[index].release()
         else:
-            if type(self.state_pool[t])!=np.ndarray and self.state_pool[index]==None:
+            if type(self.state_pool[t])==np.ndarray and self.state_pool[t]==None:
                 self.state_pool[t]=s
                 if type(a)==int:
                     a=np.array(a,np.int64)
@@ -453,14 +453,13 @@ class kernel:
                         self.thread_lock[2].acquire()
                     else:
                         self.thread_lock[3].acquire()
-                    self.running_flag_list.append(self.running_flag[1:])
+                    self.running_flag_list.append(self.running_flag[1:].copy())
                     if self.PO==1 or self.PO==3:
                         self.thread_lock[2].release()
                     else:
                         self.thread_lock[3].release()
-                else:
-                    if len(self.running_flag_list[t])<self.thread_counter or np.sum(self.running_flag_list[t])>self.thread_counter:
-                        self.running_flag_list[t]=self.running_flag[1:]
+                if len(self.running_flag_list[t])<self.thread_counter or np.sum(self.running_flag_list[t])>self.thread_counter:
+                    self.running_flag_list[t]=self.running_flag[1:].copy()
                 while len(self.probability_list)<t:
                     pass
                 if len(self.probability_list)==t:
@@ -473,9 +472,7 @@ class kernel:
                         self.thread_lock[2].release()
                     else:
                         self.thread_lock[3].release()
-                else:
-                    if len(self.probability_list[t])<self.thread_counter or np.sum(self.running_flag_list[t])>self.thread_counter:
-                        self.probability_list[t]=np.array(self.running_flag_list[t],dtype=np.float16)/np.sum(self.running_flag_list[t])
+                self.probability_list[t]=np.array(self.running_flag_list[t],dtype=np.float16)/np.sum(self.running_flag_list[t])
                 while True:
                     index=np.random.choice(len(self.probability_list[t]),p=self.probability_list[t])
                     if index in self.finish_list:
@@ -536,7 +533,7 @@ class kernel:
         with tf.GradientTape(persistent=True) as tape:
             try:
                 loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
-            except:
+            except TypeError:
                 loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t)
         try:
             if self.nn.attenuate!=None:
@@ -807,7 +804,7 @@ class kernel:
             self.pool_memory_list.append(0)
             self.episode_memory_list.append(0)
         if t>0:
-            self.epoch_list=np.append(self.epoch_list,np.array(0,dtype=np.int8))
+            self.episode_list=np.append(self.episode_list,np.array(0,dtype=np.int8))
         self.finish_list.append(None)
         try:
             epsilon=self.epsilon[t]
@@ -886,7 +883,7 @@ class kernel:
                         else:
                             self.thread_lock[0].acquire()
                         self.total_episode+=1
-                        self.epoch_list[t]+=1
+                        self.episode_list[t]+=1
                         self.loss_list.append(self.loss[t])
                         if self.trial_num!=None and len(self.reward_list)>=self.trial_num:
                             avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
@@ -958,7 +955,7 @@ class kernel:
                         else:
                             self.thread_lock[0].acquire()
                         self.total_episode+=1
-                        self.epoch_list[t]+=1
+                        self.episode_list[t]+=1
                         self.loss_list.append(self.loss[t])
                         if self.trial_num!=None and len(self.reward_list)>=self.trial_num:
                             avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
@@ -984,7 +981,7 @@ class kernel:
                         else:
                             self.thread_lock[0].acquire()
                         self.total_episode+=1
-                        self.epoch_list[t]+=1
+                        self.episode_list[t]+=1
                         self.loss_list.append(self.loss[t])
                         if self.trial_num!=None and len(self.reward_list)>=self.trial_num:
                             avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
@@ -1240,11 +1237,11 @@ class kernel:
     def stop_func_m(self,thread_lock,ln=None):
         if self.memory_t_value!=None and self.c_memory>self.memory_t_value:
             if self.memory_priority==False:
-                if self.epoch_list_copy==None:
-                    self.epoch_list_copy=self.epoch_list.copy()
-                index=np.argmax(self.epoch_list_copy)
+                if self.episode_list_copy==None:
+                    self.episode_list_copy=self.episode_list.copy()
+                index=np.argmax(self.episode_list_copy)
                 self.stop_list_m.append(index)
-                self.epoch_list_copy[index]=0
+                self.episode_list_copy[index]=0
                 return False
             else:
                 if self.PO==3:
@@ -1254,7 +1251,7 @@ class kernel:
         else:
             if self.memory_priority==False:
                 self.stop_list_m.clear()
-                self.epoch_list_copy=None
+                self.episode_list_copy=None
             return False
     
     
@@ -1263,7 +1260,7 @@ class kernel:
             self.pool_memory_list[t]=0
             if self.PO==3:
                 self.grad_memory_list[ln]=0
-            self.epoch_list[t]=0
+            self.episode_list[t]=0
             thread_lock.release()
             return True
     
