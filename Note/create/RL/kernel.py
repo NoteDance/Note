@@ -534,7 +534,10 @@ class kernel:
     @tf.function
     def opt(self,state_batch,action_batch,next_state_batch,reward_batch,done_batch,t):
         with tf.GradientTape(persistent=True) as tape:
-            loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
+            try:
+                loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
+            except:
+                loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t)
         try:
             if self.nn.attenuate!=None:
                 self.opt_counter[t]=0
@@ -552,13 +555,25 @@ class kernel:
                     return 0
             if self.stop_func_(self.thread_lock[0]):
                 return 0
-            gradient=tape.gradient(loss,self.nn.param)
             try:
-                if self.nn.attenuate!=None:
-                    self.nn.oc[t]=self.opt_counter[t]
+                gradient=self.nn.gradient(tape,loss)
+                try:
+                    self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+                except AttributeError:
+                    try:
+                        self.nn.opt(gradient)
+                    except TypeError:
+                        self.nn.opt(gradient,t)
             except AttributeError:
-                pass
-            self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+                try:
+                    if self.nn.nn!=None:
+                        gradient=tape.gradient(loss,self.nn.param)
+                        self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+                except AttributeError:
+                        actor_gradient=tape.gradient(loss[0],self.nn.param[0])
+                        critic_gradient=tape.gradient(loss[1],self.nn.param[1])
+                        self.nn.opt.apply_gradients(zip(actor_gradient,self.nn.param[0]))
+                        self.nn.opt.apply_gradients(zip(critic_gradient,self.nn.param[1]))
             try:
                 if self.nn.attenuate!=None:
                     self.opt_counter+=1
@@ -568,11 +583,13 @@ class kernel:
         return loss
     
     
+    @tf.function
     def opt_ol(self,data,t=None):
-        try:
-            loss=self.nn.loss(data)
-        except:
-            loss=self.nn.loss(data,t)
+        with tf.GradientTape(persistent=True) as tape:
+            try:
+                loss=self.nn.loss(data)
+            except:
+                loss=self.nn.loss(data,t)
         if self.thread!=None:
             try:
                 if self.nn.attenuate!=None:
@@ -581,112 +598,49 @@ class kernel:
                 pass
         if self.PO==1:
             self.thread_lock[0].acquire()
-            self.nn.backward(loss)
             try:
-                if self.nn.attenuate!=None:
-                    self.nn.oc[t]=self.opt_counter[t]
+                gradient=self.nn.gradient(tape,loss)
+                try:
+                    self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+                except:
+                    self.nn.opt(gradient)
             except AttributeError:
-                pass
-            try:
-                self.nn.opt()
-            except TypeError:
-                self.nn.opt(t)
+                try:
+                    if self.nn.nn!=None:
+                        gradient=tape.gradient(loss,self.nn.param)
+                        self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+                except AttributeError:
+                        actor_gradient=tape.gradient(loss[0],self.nn.param[0])
+                        critic_gradient=tape.gradient(loss[1],self.nn.param[1])
+                        self.nn.opt.apply_gradients(zip(actor_gradient,self.nn.param[0]))
+                        self.nn.opt.apply_gradients(zip(critic_gradient,self.nn.param[1]))
             try:
                 if self.nn.attenuate!=None:
                     self.opt_counter+=1
             except AttributeError:
                 pass
-            self.thread_lock[0].release()
-        elif self.PO==2:
-            self.thread_lock[0].acquire()
-            self.nn.backward(loss)
-            self.thread_lock[0].release()
-            self.thread_lock[1].acquire()
-            try:
-                if self.nn.attenuate!=None:
-                    self.nn.oc[t]=self.opt_counter[t]
-            except AttributeError:
-                pass
-            try:
-                self.nn.opt()
-            except:
-                self.nn.opt(t)
-            try:
-                if self.nn.attenuate!=None:
-                    self.opt_counter+=1
-            except AttributeError:
-                pass
-            self.thread_lock[1].release()
-        elif self.PO==3:
-            if self.row==None and len(self.gradient_lock)==self.thread:
-                ln=t
-            else:
-                if self.row!=None:
-                    while True:
-                        rank_index=np.random.choice(len(self.gradient_lock))
-                        row_index=np.random.choice(len(self.gradient_lock[rank_index]))
-                        if [rank_index,row_index] in self.ln_list:
-                            continue
-                        else:
-                            break
-                else:
-                    while True:
-                        ln=np.random.choice(len(self.gradient_lock))
-                        if ln in self.ln_list:
-                            continue
-                        else:
-                            break
-            if self.row!=None:
-                try:
-                    self.gradient_lock[rank_index][row_index].acquire()
-                except:
-                    self.gradient_lock[0][0].acquire()
-                self.ln_list.append([rank_index,row_index])
-            else:
-                try:
-                    self.gradient_lock[ln].acquire()
-                except:
-                    self.gradient_lock[0].acquire()
-                self.ln_list.append(ln)
-            self.nn.backward(loss)
-            self.gradient_list[t]=self.nn.grad()
-            if self.row!=None:
-                self.ln_list.remove([rank_index,row_index])
-                try:
-                    self.gradient_lock[rank_index][row_index].release()
-                except:
-                    self.gradient_lock[0][0].release()
-            else:
-                self.ln_list.remove(ln)
-                try:
-                    self.gradient_lock[ln].release()
-                except:
-                    self.gradient_lock[0].release()
-            self.thread_lock[0].acquire()
-            self.calculate_memory_ol(ln)
-            try:
-                if self.nn.attenuate!=None:
-                    self.nn.oc[t]=self.opt_counter[t]
-                    self.nn.grad[t]=self.gradient_list[t]
-            except AttributeError:
-                pass
-            try:
-                self.nn.opt()
-            except:
-                self.nn.opt(t)
-            self.gradient_list[t]=None
-            try:
-                if self.nn.attenuate!=None:
-                    self.opt_counter+=1
-            except AttributeError:
-                pass
-            if self.memory_flag==True:
-                self.grad_memory_list[ln]=0
             self.thread_lock[0].release()
         else:
-            self.nn.backward(loss)
-            self.nn.opt()
-        return loss.detach().numpy()
+            try:
+                gradient=self.nn.gradient(tape,loss)
+                try:
+                    self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+                except AttributeError:
+                    try:
+                        self.nn.opt(gradient)
+                    except TypeError:
+                        self.nn.opt(gradient,t)
+            except AttributeError:
+                try:
+                    if self.nn.nn!=None:
+                        gradient=tape.gradient(loss,self.nn.param)
+                        self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+                except AttributeError:
+                        actor_gradient=tape.gradient(loss[0],self.nn.param[0])
+                        critic_gradient=tape.gradient(loss[1],self.nn.param[1])
+                        self.nn.opt.apply_gradients(zip(actor_gradient,self.nn.param[0]))
+                        self.nn.opt.apply_gradients(zip(critic_gradient,self.nn.param[1]))
+        return loss
     
     
     def _train(self,t,j=None,batches=None,length=None):
@@ -1163,6 +1117,7 @@ class kernel:
                         self.thread_lock[1].acquire()
                     else:
                         self.thread_lock[2].acquire()
+                    loss=loss.numpy()
                     self.nn.train_loss_list.append(loss.astype(np.float32))
                     if len(self.nn.train_acc_list)==self.nn.max_length:
                         del self.nn.train_acc_list[0]
@@ -1201,6 +1156,7 @@ class kernel:
                     continue
                 if self.stop_flag==0:
                     return
+                loss=loss.numpy()
                 self.nn.train_loss_list.append(loss.astype(np.float32))
                 if len(self.nn.train_acc_list)==self.nn.max_length:
                     del self.nn.train_acc_list[0]
