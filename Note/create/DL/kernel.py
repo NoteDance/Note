@@ -350,7 +350,7 @@ class kernel:
                 except:
                     try:
                         output=self.nn.fp(data,t)
-                        loss=self.nn.loss(output,labels,t)
+                        loss=self.nn.loss(output,labels)
                     except TypeError:
                         output,loss=self.nn.fp(data,labels,t)
         if self.PO==1:
