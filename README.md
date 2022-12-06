@@ -415,6 +415,10 @@ kernel.visualize_reward()
 ## Pool Net:
 ![3](https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/picture/Pool%20Net.png)
 
+You can download the neural network example at this link.
+
+https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow
+
 ### list:
 example:
 ```python
@@ -423,11 +427,11 @@ import DQN as d
 import threading
 dqn=d.DQN(4,128,2)                               #create neural network object
 kernel=k.kernel(dqn,5)   #start kernel
-kernel.threading=threading
-kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock()]
 kernel.action_num=2
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
-kernel.PO=2
+kernel.PO=1
+kernel.threading=threading
+kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock()]
 class thread(threading.Thread):
 	def run(self):
 		kernel.train(100)
@@ -451,12 +455,12 @@ import DQN as d
 import threading
 dqn=d.DQN(4,128,2)                               #create neural network object
 kernel=k.kernel(dqn,5)   #start kernel
-kernel.threading=threading
-kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock()]
 kernel.stop=True
 kernel.action_num=2
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10,trial_num=10,criterion=200)
-kernel.PO=2
+kernel.PO=1
+kernel.threading=threading
+kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock()]
 class thread(threading.Thread):
 	def run(self):
 		kernel.train(100)
@@ -479,11 +483,11 @@ import DQNm as d
 import threading
 dqn=d.DQN(4,128,2)                               #create neural network object
 kernel=k.kernel(dqn,6)   #start kernel
-kernel.threading=threading
-kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock()]
 kernel.action_num=2
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
-kernel.PO=2
+kernel.PO=1
+kernel.threading=threading
+kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock()]
 class thread(threading.Thread):
 	def run(self):
 		kernel.train(100)
