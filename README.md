@@ -260,13 +260,10 @@ kernel.visualize_reward()
 ```python
 import Note.create.RL.nspn.kernel as k   #import kernel
 import DDPG as d
-import gym
-env=gym.make('Pendulum-v0')
 state_dim=env.observation_spave.shape[0]
 action_dim=env.action_spave.shape[0]
 action_bound=env.action_spave.high[0]
 ddpg=d.DDPG(state_dim,64,action_dim,action_bound,0.01,0.98,0.005,5e-4,5e-3)         #create neural network object
-ddpg.genv=env
 kernel=k.kernel(ddpg)   #start kernel
 kernel.set_up(pool_size=10000,batch=64)
 kernel.train(200)
