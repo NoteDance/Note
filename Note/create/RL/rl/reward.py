@@ -27,10 +27,10 @@ class reward:
                             pass
                         a=self.agent.action(s).numpy()
                     except AttributeError:
-                        action_prob=self.agent.nn(s).numpy()
+                        action_prob=self.agent.nn.fp(s).numpy()
                         a=np.argmax(action_prob)
                 except AttributeError:
-                    a=self.agent.actor(s).numpy()
+                    a=self.agent.actor.fp(s).numpy()
                     a=np.squeeze(a)
                 next_s,r,done,_=self.env.step(a)
                 s=next_s
@@ -53,10 +53,10 @@ class reward:
                 try:
                     if self.agent.nn!=None:
                         pass
-                    action_prob=self.agent.nn(s).numpy()
+                    action_prob=self.agent.nn.fp(s).numpy()
                     a=np.argmax(action_prob)
                 except AttributeError:
-                    a=self.agent.actor(s).numpy()
+                    a=self.agent.actor.fp(s).numpy()
                     a=np.squeeze(a)
                 next_s,r,done,_=self.env.step(a)
                 s=next_s
