@@ -12,17 +12,28 @@ def test(nn,platform,data,labels):
                     except TypeError:
                         output,loss=nn.fp(data,labels)
             try:
-                if nn.opt!=None:
-                    gradient=tape.gradient(loss,nn.param)
-                    nn.opt.apply_gradients(zip(gradient,nn.param))
+                if nn.accuracy!=None:
+                    nn.accuracy(output,labels)
             except AttributeError:
-                gradient=nn.gradient(tape,loss,nn.param)
-                nn.oopt(gradient,nn.param)
+                pass
+            try:
+                gradient=nn.gradient(tape,loss)
+            except AttributeError:
+                gradient=tape.gradient(loss,nn.param)
+            try:
+                nn.opt.apply_gradients(zip(gradient,nn.param))
+            except AttributeError:
+                nn.opt(gradient)
             print('No error')
             return
     except AttributeError:
         output=nn.fp(data)
         loss=nn.loss(output,labels)
+        try:
+            if nn.accuracy!=None:
+                nn.accuracy(output,labels)
+        except AttributeError:
+            pass
         try:
             nn.opt.zero_grad()
             loss.backward()
