@@ -1046,16 +1046,18 @@ class kernel:
                 self.thread_lock[1].release()
             else:
                 self.thread_lock[2].release()
-        if self.threading!=None:
+        if self.PO==3:
+            self.thread_lock[1].acquire()
             if self.row!=None:
                 if self.d_index==0 or len(self.gradient_lock)<self.rank and len(self.gradient_lock[self.d_index-1])==self.row:
                     self.gradient_lock.append([])
                     self.d_index+=1
                 self.gradient_lock[self.d_index-1].append(self.threading.Lock())
-            elif self.PO==3 and len(self.gradient_lock)<self.max_lock:
-                self.thread_lock[1].acquire()
+            elif self.max_lock!=None and len(self.gradient_lock)<self.max_lock:
                 self.gradient_lock.append(self.threading.Lock())
-                self.thread_lock[1].release()
+            else:
+                self.gradient_lock.append(self.threading.Lock())
+            self.thread_lock[1].release()
         if self.PO==3:
             self.thread_lock[1].acquire()
             self.gradient_list.append(None)
