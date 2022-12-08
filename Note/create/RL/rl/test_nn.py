@@ -8,7 +8,7 @@ def test(nn,action_num=None):
             s=np.expand_dims(s,axis=0)
             try:
                 if nn.action!=None:
-                    a=nn.action(s)
+                    a=nn.action(s).numpy()
                     try:
                         if nn.discriminator!=None:
                             s=np.squeeze(s)
