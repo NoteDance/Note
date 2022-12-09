@@ -1,4 +1,4 @@
-import torch
+from tensorflow import function
 from tensorflow import data as tf_data
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,6 +15,7 @@ class kernel:
             self.nn.km=1
         except AttributeError:
             pass
+        self.platform=None
         self.state_pool=None
         self.action_pool=None
         self.next_state_pool=None
@@ -41,7 +42,6 @@ class kernel:
         self.loss_list=[]
         self.sc=0
         self.total_episode=0
-        self.time=0
         self.total_time=0
     
     
@@ -90,15 +90,19 @@ class kernel:
             self.loss_list=[]
             self.sc=0
             self.total_episode=0
-            self.time=0
             self.total_time=0
         return
     
     
     def epsilon_greedy_policy(self,s):
         action_prob=self.action_one*self.epsilon/len(self.action_one)
-        best_a=self.nn.nn(s).argmax()
-        action_prob[best_a.numpy()]+=1-self.epsilon
+        try:
+            if self.platform.DType!=None:
+                best_a=np.argmax(self.nn.nn.fp(s))
+                action_prob[best_a]+=1-self.epsilon
+        except AttributeError:
+            best_a=self.nn.nn(s).argmax()
+            action_prob[best_a.numpy()]+=1-self.epsilon
         return action_prob
     
     
@@ -114,21 +118,38 @@ class kernel:
             try:
                 if self.nn.nn!=None:
                     try:
-                        if self.nn.action!=None:
-                            s=np.expand_dims(s,axis=0)
-                            s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
-                            a=self.nn.action(s).detach().numpy()
+                       if self.platform.DType!=None: 
+                           try:
+                               if self.nn.action!=None:
+                                   s=np.expand_dims(s,axis=0)
+                                   a=self.nn.action(s).numpy()
+                           except AttributeError:
+                               s=np.expand_dims(s,axis=0)
+                               a=np.argmax(self.nn.nn.fp(s))
                     except AttributeError:
-                        s=np.expand_dims(s,axis=0)
-                        s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
-                        a=self.nn.nn(s).detach().numpy().argmax()
+                        try:
+                            if self.nn.action!=None:
+                                s=np.expand_dims(s,axis=0)
+                                s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device_d)
+                                a=self.nn.action(s).detach().numpy()
+                        except AttributeError:
+                            s=np.expand_dims(s,axis=0)
+                            s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device_d)
+                            a=self.nn.nn(s).detach().numpy().argmax()
                     next_s,r,done=self.nn.env(a)
             except AttributeError:
-                s=np.expand_dims(s,axis=0)
-                s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
-                a=self.nn.actor(s).detach().numpy()
-                a=np.squeeze(a)
-                next_s,r,done=self.nn.env(a)
+                try:
+                    if self.platform.DType!=None: 
+                        s=np.expand_dims(s,axis=0)
+                        a=self.nn.actor.fp(s).numpy()
+                        a=np.squeeze(a)
+                        next_s,r,done=self.nn.env(a) 
+                except AttributeError:
+                    s=np.expand_dims(s,axis=0)
+                    s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device_d)
+                    a=self.nn.actor(s).detach().numpy()
+                    a=np.squeeze(a)
+                    next_s,r,done=self.nn.env(a)
             try:
                 if self.nn.stop!=None:
                     pass
@@ -156,10 +177,37 @@ class kernel:
             return True
     
     
+    @function
+    def tf_opt(self,state_batch,action_batch,next_state_batch,reward_batch,done_batch):
+        with self.platform.GradientTape(persistent=True) as tape:
+            loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
+        try:
+            gradient=self.nn.gradient(tape,loss)
+            try:
+                self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+            except AttributeError:
+                self.nn.opt(gradient)
+        except AttributeError:
+            try:
+                if self.nn.nn!=None:
+                    gradient=tape.gradient(loss,self.nn.param)
+                    self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+            except AttributeError:
+                    actor_gradient=tape.gradient(loss[0],self.nn.param[0])
+                    critic_gradient=tape.gradient(loss[1],self.nn.param[1])
+                    self.nn.opt.apply_gradients(zip(actor_gradient,self.nn.param[0]))
+                    self.nn.opt.apply_gradients(zip(critic_gradient,self.nn.param[1]))
+        return loss
+    
+    
     def opt(self,state_batch,action_batch,next_state_batch,reward_batch,done_batch):
-        loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
-        self.nn.backward(loss)
-        self.nn.opt()
+        try:
+            if self.platform.DType!=None: 
+                loss=self.tf_opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
+        except AttributeError:
+            loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
+            self.nn.backward(loss)
+            self.nn.opt()
         return loss
     
     
@@ -239,11 +287,15 @@ class kernel:
                         if self.stop_func():
                             return
                     self.suspend_func()
-                    state_batch=state_batch.numpy()
-                    action_batch=action_batch.numpy()
-                    next_state_batch=next_state_batch.numpy()
-                    reward_batch=reward_batch.numpy()
-                    done_batch=done_batch.numpy()
+                    try:
+                        if self.platform.DType!=None:
+                            state_batch=state_batch.numpy()
+                            action_batch=action_batch.numpy()
+                            next_state_batch=next_state_batch.numpy()
+                            reward_batch=reward_batch.numpy()
+                            done_batch=done_batch.numpy()
+                    except AttributeError:
+                        pass
                     batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
                     loss+=batch_loss
                     j+=1
@@ -256,7 +308,11 @@ class kernel:
                     self.nn.update_param()
             else:
                 self.nn.update_param()
-        loss=loss.detach().numpy()/batches
+        try:
+            if self.platform.DType!=None:
+                loss=loss.numpy()/batches
+        except AttributeError:
+            loss=loss.detach().numpy()/batches
         return loss
     
     
@@ -266,37 +322,67 @@ class kernel:
         s=self.nn.env(initial=True)
         if self.episode_step==None:
             while True:
-                t1=time.time()
                 try:
                     if self.nn.nn!=None:
-                        s=np.expand_dims(s,axis=0)
-                        s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
-                        if self.epsilon==None:
-                            self.epsilon=self.nn.epsilon(self.sc)
                         try:
-                            if self.nn.action!=None:
+                            if self.platform.DType!=None:
+                                s=np.expand_dims(s,axis=0)
+                                if self.epsilon==None:
+                                    self.epsilon=self.nn.epsilon(self.sc)
                                 try:
-                                    if self.nn.discriminator!=None:
-                                        a=self.nn.action(s)
-                                        reward=self.nn.discriminator(s,a)
-                                        s=np.squeeze(s)
+                                    if self.nn.action!=None:
+                                        try:
+                                            if self.nn.discriminator!=None:
+                                                a=self.nn.action(s)
+                                                reward=self.nn.discriminator(s,a)
+                                                s=np.squeeze(s)
+                                        except AttributeError:
+                                            a=self.nn.action(s).numpy()
                                 except AttributeError:
-                                    a=self.nn.action(s).detach().numpy()
+                                    action_prob=self.epsilon_greedy_policy(s)
+                                    a=np.random.choice(self.action_num,p=action_prob)
                         except AttributeError:
-                            action_prob=self.epsilon_greedy_policy(s)
-                            a=np.random.choice(self.action_num,p=action_prob)
+                            s=np.expand_dims(s,axis=0)
+                            s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device_d)
+                            if self.epsilon==None:
+                                self.epsilon=self.nn.epsilon(self.sc)
+                            try:
+                                if self.nn.action!=None:
+                                    try:
+                                        if self.nn.discriminator!=None:
+                                            a=self.nn.action(s)
+                                            reward=self.nn.discriminator(s,a)
+                                            s=np.squeeze(s)
+                                    except AttributeError:
+                                        a=self.nn.action(s).detach().numpy()
+                            except AttributeError:
+                                action_prob=self.epsilon_greedy_policy(s)
+                                a=np.random.choice(self.action_num,p=action_prob)
                         next_s,r,done=self.nn.env(a)
+                        r=np.array(r,dtype=np.float32)
+                        done=np.array(done,dtype=np.float32)
                         try:
                             if self.nn.pool!=None:
                                 self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done])
                         except AttributeError:
                             self.pool(s,a,next_s,r,done)
                 except AttributeError:
-                    s=np.expand_dims(s,axis=0)
-                    s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
-                    a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
+                    try:
+                        if self.platform.DType!=None:
+                            s=np.expand_dims(s,axis=0)
+                            a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
+                    except AttributeError:
+                        s=np.expand_dims(s,axis=0)
+                        s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device_d)
+                        a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
                     next_s,r,done=self.nn.env(a)
-                    self.pool(s,a,next_s,r,done)
+                    r=np.array(r,dtype=np.float32)
+                    done=np.array(done,dtype=np.float32)
+                    try:
+                        if self.nn.pool!=None:
+                            self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done])
+                    except AttributeError:
+                        self.pool(s,a,next_s,r,done)
                 try:
                     if self.nn.pr!=None:
                         self.nn.pr.TD=np.append(self.nn.pr.TD,self.nn.initial_TD)
@@ -312,45 +398,73 @@ class kernel:
                     if self.save_episode==True:
                         episode=[s,a,next_s,r]
                     self.reward_list.append(self.reward)
-                    t2=time.time()
-                    self.time+=(t2-t1)
                     return loss,episode,done
                 elif self.save_episode==True:
                     episode=[s,a,next_s,r]
                 s=next_s
         else:
             for _ in range(self.episode_step):
-                t1=time.time()
                 try:
                     if self.nn.nn!=None:
-                        s=np.expand_dims(s,axis=0)
-                        s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
-                        if self.epsilon==None:
-                            self.epsilon=self.nn.epsilon(self.sc)
                         try:
-                            if self.nn.action!=None:
+                            if self.platform.DType!=None:
+                                s=np.expand_dims(s,axis=0)
+                                if self.epsilon==None:
+                                    self.epsilon=self.nn.epsilon(self.sc)
                                 try:
-                                    if self.nn.discriminator!=None:
-                                        a=self.nn.action(s)
-                                        reward=self.nn.discriminator(s,a)
-                                        s=np.squeeze(s)
+                                    if self.nn.action!=None:
+                                        try:
+                                            if self.nn.discriminator!=None:
+                                                a=self.nn.action(s)
+                                                reward=self.nn.discriminator(s,a)
+                                                s=np.squeeze(s)
+                                        except AttributeError:
+                                            a=self.nn.action(s).numpy()
                                 except AttributeError:
-                                    a=self.nn.action(s).detach().numpy()
+                                    action_prob=self.epsilon_greedy_policy(s)
+                                    a=np.random.choice(self.action_num,p=action_prob)
                         except AttributeError:
-                            action_prob=self.epsilon_greedy_policy(s)
-                            a=np.random.choice(self.action_num,p=action_prob)
+                            s=np.expand_dims(s,axis=0)
+                            s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device_d)
+                            if self.epsilon==None:
+                                self.epsilon=self.nn.epsilon(self.sc)
+                            try:
+                                if self.nn.action!=None:
+                                    try:
+                                        if self.nn.discriminator!=None:
+                                            a=self.nn.action(s)
+                                            reward=self.nn.discriminator(s,a)
+                                            s=np.squeeze(s)
+                                    except AttributeError:
+                                        a=self.nn.action(s).detach().numpy()
+                            except AttributeError:
+                                action_prob=self.epsilon_greedy_policy(s)
+                                a=np.random.choice(self.action_num,p=action_prob)
                         next_s,r,done=self.nn.env(a)
+                        r=np.array(r,dtype=np.float32)
+                        done=np.array(done,dtype=np.float32)
                         try:
                             if self.nn.pool!=None:
                                 self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done])
                         except AttributeError:
                             self.pool(s,a,next_s,r,done)
                 except AttributeError:
-                    s=np.expand_dims(s,axis=0)
-                    s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
-                    a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
+                    try:
+                        if self.platform.DType!=None:
+                            s=np.expand_dims(s,axis=0)
+                            a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
+                    except AttributeError:
+                        s=np.expand_dims(s,axis=0)
+                        s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device_d)
+                        a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
                     next_s,r,done=self.nn.env(a)
-                    self.pool(s,a,next_s,r,done)
+                    r=np.array(r,dtype=np.float32)
+                    done=np.array(done,dtype=np.float32)
+                    try:
+                        if self.nn.pool!=None:
+                            self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done])
+                    except AttributeError:
+                        self.pool(s,a,next_s,r,done)
                 try:
                     if self.nn.pr!=None:
                         self.nn.pr.TD=np.append(self.nn.pr.TD,self.nn.initial_TD)
@@ -366,8 +480,6 @@ class kernel:
                     if self.save_episode==True:
                         episode=[s,a,next_s,r]
                     self.reward_list.append(self.reward)
-                    t2=time.time()
-                    self.time+=(t2-t1)
                     return loss,episode,done
                 elif self.save_episode==True:
                     episode=[s,a,next_s,r]
@@ -391,11 +503,14 @@ class kernel:
             self.file_list=[]
         if episode_num!=None:
             for i in range(episode_num):
+                t1=time.time()
                 loss,episode,done=self.train_()
                 if self.trial_num!=None:
                     if len(self.reward_list)>=self.trial_num:
                         avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
                         if self.criterion!=None and avg_reward>=self.criterion:
+                            t2=time.time()
+                            self.total_time+=(t2-t1)
                             self._time=self.total_time-int(self.total_time)
                             if self._time<0.5:
                                 self.total_time=int(self.total_time)
@@ -454,15 +569,19 @@ class kernel:
                     self.nn.ec+=1
                 except AttributeError:
                     pass
-                self.total_time+=self.time
+                t2=time.time()
+                self.total_time+=(t2-t1)
         else:
             i=0
             while True:
+                t1=time.time()
                 loss,episode,done=self.train_()
                 if self.trial_num!=None:
                     if len(self.reward_list)==self.trial_num:
                         avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
                         if avg_reward>=self.criterion:
+                            t2=time.time()
+                            self.total_time+=(t2-t1)
                             self._time=self.total_time-int(self.total_time)
                             if self._time<0.5:
                                 self.total_time=int(self.total_time)
@@ -523,7 +642,8 @@ class kernel:
                     self.nn.ec+=1
                 except AttributeError:
                     pass
-                self.total_time+=self.time
+                t2=time.time()
+                self.total_time+=(t2-t1)
         self._time=self.total_time-int(self.total_time)
         if self._time<0.5:
             self.total_time=int(self.total_time)
