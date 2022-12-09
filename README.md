@@ -327,14 +327,36 @@ You can download the neural network example at this link.
 
 https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/RL/neural%20network
 
+https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow
+
 example:
 
 DQN:
+
+pytorch:
 ```python
 import Note.create.RL.nspn.kernel as k   #import kernel
+import torch
 import DQN as d
 dqn=d.DQN(4,128,2)                               #create neural network object
 kernel=k.kernel(dqn)   #start kernel
+kernel.platform=torch
+kernel.action_num=2
+kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
+kernel.train(500)
+kernel.loss_list or kernel.loss       #view training loss
+kernel.visualize_train()
+kernel.reward                         #view reward
+kernel.visualize_reward()
+```
+tensorflow:
+```python
+import Note.create.RL.nspn.kernel as k   #import kernel
+import tensorflow as tf
+import DQN as d
+dqn=d.DQN(4,128,2)                               #create neural network object
+kernel=k.kernel(dqn)   #start kernel
+kernel.platform=tf
 kernel.action_num=2
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
 kernel.train(500)
