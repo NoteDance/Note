@@ -1628,9 +1628,11 @@ class kernel:
             else:
                 output=self.nn.fp(test_data,t)
             test_loss=self.nn.loss(output,test_labels)
+            test_loss=test_loss.numpy()
             try:
                 if self.nn.accuracy!=None:
                     test_acc=self.nn.accuracy(output,test_labels)
+                    test_acc=test_acc.numpy()
             except AttributeError:
                 pass
         try:
