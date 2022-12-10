@@ -7,7 +7,7 @@ def pool_t(state_pool,action_pool,next_state_pool,reward_pool,done_pool,sanrd,po
         if type(state_pool[index])!=np.ndarray and state_pool[index]==None:
             state_pool[index]=sanrd[0]
             if type(sanrd[1])==int:
-                a=np.array(sanrd[1],np.int64)
+                a=np.array(sanrd[1],np.int32)
                 action_pool[index]=np.expand_dims(a,axis=0)
             else:
                 action_pool[index]=sanrd[1]
@@ -18,7 +18,7 @@ def pool_t(state_pool,action_pool,next_state_pool,reward_pool,done_pool,sanrd,po
             try:
                 state_pool[index]=np.concatenate((state_pool[index],sanrd[0]),0)
                 if type(sanrd[1])==int:
-                    a=np.array(sanrd[1],np.int64)
+                    a=np.array(sanrd[1],np.int32)
                     action_pool[index]=np.concatenate((action_pool[index],np.expand_dims(a,axis=0)),0)
                 else:
                     action_pool[index]=np.concatenate((action_pool[index],sanrd[1]),0)
@@ -46,7 +46,7 @@ def pool_t(state_pool,action_pool,next_state_pool,reward_pool,done_pool,sanrd,po
         if type(state_pool[t])==np.ndarray and state_pool[t]==None:
             state_pool[t]=sanrd[0]
             if type(sanrd[1])==int:
-                a=np.array(sanrd[1],np.int64)
+                a=np.array(sanrd[1],np.int32)
                 action_pool[t]=np.expand_dims(a,axis=0)
             else:
                 action_pool[t]=sanrd[1]
@@ -56,7 +56,7 @@ def pool_t(state_pool,action_pool,next_state_pool,reward_pool,done_pool,sanrd,po
         else:
             state_pool[t]=np.concatenate((state_pool[t],sanrd[0]),0)
             if type(sanrd[1])==int:
-                a=np.array(sanrd[1],np.int64)
+                a=np.array(sanrd[1],np.int32)
                 action_pool[t]=np.concatenate((action_pool[t],np.expand_dims(a,axis=0)),0)
             else:
                 action_pool[t]=np.concatenate((action_pool[t],a),0)
@@ -76,7 +76,7 @@ def pool(state_pool,action_pool,next_state_pool,reward_pool,done_pool,sanrd,pool
     if type(state_pool)!=np.ndarray and state_pool==None:
         state_pool=sanrd[0]
         if type(sanrd[1])==int:
-            a=np.array(sanrd[1],np.int64)
+            a=np.array(sanrd[1],np.int32)
             action_pool=np.expand_dims(a,axis=0)
         else:
             action_pool=sanrd[1]
@@ -86,7 +86,7 @@ def pool(state_pool,action_pool,next_state_pool,reward_pool,done_pool,sanrd,pool
     else:
         state_pool=np.concatenate((state_pool,sanrd[0]),0)
         if type(sanrd[1])==int:
-            a=np.array(sanrd[1],np.int64)
+            a=np.array(sanrd[1],np.int32)
             action_pool=np.concatenate((action_pool,np.expand_dims(a,axis=0)),0)
         else:
             action_pool=np.concatenate((action_pool,sanrd[1]),0)
