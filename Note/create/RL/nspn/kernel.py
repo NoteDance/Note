@@ -417,7 +417,6 @@ class kernel:
                             print()
                             print('time:{0}s'.format(self.total_time))
                             return
-                loss=loss.astype(np.float32)
                 self.loss=loss
                 self.loss_list.append(loss)
                 self.total_episode+=1
@@ -489,7 +488,6 @@ class kernel:
                             print('time:{0}s'.format(self.total_time))
                             self.train_flag=False
                             return
-                loss=loss.astype(np.float32)
                 self.loss=loss
                 self.loss_list.append(loss)
                 i+=1
@@ -547,7 +545,7 @@ class kernel:
                 if self.PO==1:
                     self.thread_lock[1].acquire()
                 self.loss=loss
-                self.nn.train_loss.append(loss.astype(np.float32))
+                self.nn.train_loss.append(loss)
                 try:
                     self.nn.ec+=1
                 except AttributeError:
@@ -557,7 +555,7 @@ class kernel:
                     self.thread_lock[1].release()
             else:
                 self.loss=loss
-                self.nn.train_loss.append(loss.astype(np.float32))
+                self.nn.train_loss.append(loss)
                 try:
                     self.nn.ec+=1
                 except AttributeError:
