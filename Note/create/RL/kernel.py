@@ -17,10 +17,10 @@ class kernel:
         if thread!=None:
             self.thread_num=np.arange(thread)
             self.thread_num=list(self.thread_num)
-            self.reward=np.zeros(thread)
-            self.loss=np.zeros(thread)
-            self.sc=np.zeros(thread)
-            self.opt_counter=np.zeros(thread)
+            self.reward=np.zeros(thread,dtype=np.float32)
+            self.loss=np.zeros(thread,dtype=np.float32)
+            self.sc=np.zeros(thread,dtype=np.float32)
+            self.opt_counter=np.zeros(thread,dtype=np.float32)
         self.threading=None
         self.gradient_lock=None
         self.max_lock=None
@@ -166,10 +166,10 @@ class kernel:
         thread_num=np.arange(thread)+self.thread
         self.thread_num=self.thread_num.extend(thread_num)
         self.thread+=thread
-        self.sc=np.concatenate((self.sc,np.zeros(thread)))
-        self.reward=np.concatenate((self.reward,np.zeros(thread)))
-        self.loss=np.concatenate((self.loss,np.zeros(thread)))
-        self.opt_counter=np.concatenate((self.opt_counter,np.zeros(thread)))
+        self.sc=np.concatenate((self.sc,np.zeros(thread,dtype=np.float32)))
+        self.reward=np.concatenate((self.reward,np.zeros(thread,dtype=np.float32)))
+        self.loss=np.concatenate((self.loss,np.zeros(thread,dtype=np.float32)))
+        self.opt_counter=np.concatenate((self.opt_counter,np.zeros(thread,dtype=np.float32)))
         return
     
     
@@ -242,11 +242,11 @@ class kernel:
             self.next_state_pool={}
             self.reward_pool={}
             self.done_pool={}
-            self.reward=np.zeros(self.thread)
-            self.loss=np.zeros(self.thread)
+            self.reward=np.zeros(self.thread,dtype=np.float32)
+            self.loss=np.zeros(self.thread,dtype=np.float32)
             self.reward_list=[]
             self.loss_list=[]
-            self.sc=np.zeros(self.thread)
+            self.sc=np.zeros(self.thread,dtype=np.float32)
             self.total_episode=0
             self.total_time=0
         return
@@ -804,7 +804,6 @@ class kernel:
             else:
                 self.thread_lock[1].release()
             self.loss[t]=self.loss[t]/batches
-            self.loss[t]=self.loss[t].astype(np.float32)
         self.sc[t]+=1
         try:
             self.nn.ec[t]+=1
@@ -1175,7 +1174,7 @@ class kernel:
                     else:
                         self.thread_lock[2].acquire()
                     loss=loss.numpy()
-                    self.nn.train_loss_list.append(loss.astype(np.float32))
+                    self.nn.train_loss_list.append(loss)
                     if len(self.nn.train_acc_list)==self.nn.max_length:
                         del self.nn.train_acc_list[0]
                     try:
@@ -1214,7 +1213,7 @@ class kernel:
                 if self.stop_flag==0:
                     return
                 loss=loss.numpy()
-                self.nn.train_loss_list.append(loss.astype(np.float32))
+                self.nn.train_loss_list.append(loss)
                 if len(self.nn.train_acc_list)==self.nn.max_length:
                     del self.nn.train_acc_list[0]
                 try:
