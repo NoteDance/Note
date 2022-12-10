@@ -279,7 +279,6 @@ class kernel:
         s=self.nn.env(initial=True)
         if self.episode_step==None:
             while True:
-                t1=time.time()
                 try:
                     if self.nn.nn!=None:
                         s=np.expand_dims(s,axis=0)
@@ -325,15 +324,12 @@ class kernel:
                     if self.save_episode==True:
                         episode=[s,a,next_s,r]
                     self.reward_list.append(self.reward)
-                    t2=time.time()
-                    self.time+=(t2-t1)
                     return loss,episode,done
                 elif self.save_episode==True:
                     episode=[s,a,next_s,r]
                 s=next_s
         else:
             for _ in range(self.episode_step):
-                t1=time.time()
                 try:
                     if self.nn.nn!=None:
                         s=np.expand_dims(s,axis=0)
@@ -379,8 +375,6 @@ class kernel:
                     if self.save_episode==True:
                         episode=[s,a,next_s,r]
                     self.reward_list.append(self.reward)
-                    t2=time.time()
-                    self.time+=(t2-t1)
                     return loss,episode,done
                 elif self.save_episode==True:
                     episode=[s,a,next_s,r]
@@ -404,11 +398,14 @@ class kernel:
             self.file_list=[]
         if episode_num!=None:
             for i in range(episode_num):
+                t1=time.time()
                 loss,episode,done=self.train_()
                 if self.trial_num!=None:
                     if len(self.reward_list)>=self.trial_num:
                         avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
                         if self.criterion!=None and avg_reward>=self.criterion:
+                            t2=time.time()
+                            self.total_time+=(t2-t1)
                             self._time=self.total_time-int(self.total_time)
                             if self._time<0.5:
                                 self.total_time=int(self.total_time)
@@ -467,15 +464,19 @@ class kernel:
                     self.nn.ec+=1
                 except AttributeError:
                     pass
-                self.total_time+=self.time
+                t2=time.time()
+                self.total_time+=(t2-t1)
         elif self.ol==None:
             i=0
             while True:
+                t1=time.time()
                 loss,episode,done=self.train_()
                 if self.trial_num!=None:
                     if len(self.reward_list)==self.trial_num:
                         avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
                         if avg_reward>=self.criterion:
+                            t2=time.time()
+                            self.total_time+=(t2-t1)
                             self._time=self.total_time-int(self.total_time)
                             if self._time<0.5:
                                 self.total_time=int(self.total_time)
@@ -536,6 +537,8 @@ class kernel:
                     self.nn.ec+=1
                 except AttributeError:
                     pass
+                t2=time.time()
+                self.total_time+=(t2-t1)
                 self.total_time+=self.time
         else:
             data=self.ol()
