@@ -97,15 +97,15 @@ class kernel:
             self.thread_num=list(self.thread_num)
             try:
                 if self.nn.attenuate!=None:
-                    self.opt_counter=np.zeros(self.thread)
+                    self.opt_counter=np.zeros(self.thread,dtype=np.float32)
             except AttributeError:
                 pass
             try:
-                self.nn.ec=np.zeros(self.thread)
+                self.nn.ec=np.zeros(self.thread,dtype=np.float32)
             except AttributeError:
                 pass
             try:
-                self.nn.bc=np.zeros(self.thread)
+                self.nn.bc=np.zeros(self.thread,dtype=np.float32)
             except AttributeError:
                 pass
         if self.memory_flag==True:
@@ -130,11 +130,11 @@ class kernel:
             self.thread_num=np.arange(self.thread)
             self.thread_num=list(self.thread_num)
             try:
-                self.nn.ec=np.zeros(self.thread)
+                self.nn.ec=np.zeros(self.thread,dtype=np.float32)
             except AttributeError:
                 pass
             try:
-                self.nn.bc=np.zeros(self.thread)
+                self.nn.bc=np.zeros(self.thread,dtype=np.float32)
             except AttributeError:
                 pass
         self.suspend=False
@@ -180,17 +180,17 @@ class kernel:
         self.thread+=thread
         try:
             if self.nn.attenuate!=None and self.opt_counter!=None:
-                self.opt_counter=np.concatenate((self.opt_counter,np.zeros(thread)))
+                self.opt_counter=np.concatenate((self.opt_counter,np.zeros(thread,dtype=np.float32)))
             else:
-                self.opt_counter=np.zeros(self.thread)
+                self.opt_counter=np.zeros(self.thread,dtype=np.float32)
         except AttributeError:
             pass
         try:
-            self.nn.ec=np.concatenate((self.nn.ec,np.zeros(thread)))
+            self.nn.ec=np.concatenate((self.nn.ec,np.zeros(thread,dtype=np.float32)))
         except AttributeError:
             pass
         try:
-            self.nn.bc=np.concatenate((self.nn.bc,np.zeros(thread)))
+            self.nn.bc=np.concatenate((self.nn.bc,np.zeros(thread,dtype=np.float32)))
         except AttributeError:
             pass
         return
@@ -235,14 +235,12 @@ class kernel:
             return total_loss,total_acc
         else:
             loss=loss.numpy()
-            loss=loss.astype(np.float32)
             self.train_loss=loss
             self.train_loss_list.append(loss)
             try:
                 if self.nn.accuracy!=None:
                     acc=self.nn.accuracy(output,self.train_labels)
                     acc=acc.numpy()
-                    acc=acc.astype(np.float32)
                     self.train_acc=acc
                     self.train_acc_list.append(acc)
             except AttributeError:
@@ -833,12 +831,10 @@ class kernel:
                     train_acc=total_acc/batches
             except AttributeError:
                 pass
-            loss=loss.astype(np.float32)
             self.train_loss=loss
             self.train_loss_list.append(loss)
             try:
                 if self.nn.accuracy!=None:
-                    train_acc=train_acc.astype(np.float32)
                     self.train_acc=train_acc
                     self.train_acc_list.append(train_acc)
             except AttributeError:
@@ -892,14 +888,12 @@ class kernel:
                 self.total_epoch+=1
                 self.epoch_list[t]+=1
                 train_loss=train_loss.numpy()
-                train_loss=train_loss.astype(np.float32)
                 self.train_loss=train_loss
                 self.train_loss_list.append(train_loss)
                 try:
                     if self.nn.accuracy!=None:
                         acc=self.nn.accuracy(output,self.train_labels)
                         acc=acc.numpy()
-                        acc=acc.astype(np.float32)
                         self.train_acc=acc
                         self.train_acc_list.append(acc)
                 except AttributeError:
@@ -919,14 +913,12 @@ class kernel:
                 self.total_epoch+=1
                 self.epoch_list[t]+=1
                 train_loss=train_loss.numpy()
-                train_loss=train_loss.astype(np.float32)
                 self.train_loss=train_loss
                 self.train_loss_list.append(train_loss)
                 try:
                     if self.nn.accuracy!=None:
                         acc=self.nn.accuracy(output,self.train_labels)
                         acc=acc.numpy()
-                        acc=acc.astype(np.float32)
                         self.train_acc=acc
                         self.train_acc_list.append(acc)
                 except AttributeError:
@@ -992,12 +984,10 @@ class kernel:
                 self.thread_lock[2].acquire()
             self.total_epoch+=1
             self.epoch_list[t]+=1
-            loss=loss.astype(np.float32)
             self.train_loss=loss
             self.train_loss_list.append(loss)
             try:
                 if self.nn.accuracy!=None:
-                    train_acc=train_acc.astype(np.float32)
                     self.train_acc=train_acc
                     self.train_acc_list.append(train_acc)
             except AttributeError:
@@ -1467,7 +1457,7 @@ class kernel:
                         self.thread_lock[2].acquire()
                     if len(self.nn.train_loss_list)==self.nn.max_length:
                         del self.nn.train_loss_list[0]
-                    self.nn.train_loss_list.append(loss.astype(np.float32))
+                    self.nn.train_loss_list.append(loss)
                     try:
                         if self.nn.accuracy!=None:
                             try:
@@ -1477,7 +1467,7 @@ class kernel:
                                 continue
                             if len(self.nn.train_acc_list)==self.nn.max_length:
                                 del self.nn.train_acc_list[0]
-                            self.train_acc_list.append(train_acc.astype(np.float32))
+                            self.train_acc_list.append(train_acc)
                     except AttributeError:
                         pass
                     try:
@@ -1518,7 +1508,7 @@ class kernel:
                 loss=loss.numpy()
                 if len(self.nn.train_loss_list)==self.nn.max_length:
                     del self.nn.train_loss_list[0]
-                self.nn.train_loss_list.append(loss.astype(np.float32))
+                self.nn.train_loss_list.append(loss)
                 try:
                     if self.nn.accuracy!=None:
                         try:
@@ -1528,7 +1518,7 @@ class kernel:
                             continue
                         if len(self.nn.train_acc_list)==self.nn.max_length:
                             del self.nn.train_acc_list[0]
-                        self.train_acc_list.append(train_acc.astype(np.float32))
+                        self.train_acc_list.append(train_acc)
                 except AttributeError:
                     pass
                 try:
@@ -1627,11 +1617,9 @@ class kernel:
                 except AttributeError:
                     pass
             test_loss=total_loss.numpy()/batches
-            test_loss=test_loss.astype(np.float32)
             try:
                 if self.nn.accuracy!=None:
                     test_acc=total_acc.numpy()/batches
-                    test_acc=test_acc.astype(np.float32)
             except AttributeError:
                 pass
         else:
@@ -1640,11 +1628,9 @@ class kernel:
             else:
                 output=self.nn.fp(test_data,t)
             test_loss=self.nn.loss(output,test_labels)
-            test_loss=test_loss.numpy().astype(np.float32)
             try:
                 if self.nn.accuracy!=None:
                     test_acc=self.nn.accuracy(output,test_labels)
-                    test_acc=test_acc.numpy().astype(np.float32)
             except AttributeError:
                 pass
         try:
