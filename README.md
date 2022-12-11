@@ -103,7 +103,7 @@ kernel.train(64,5)         #train neural network
 
 **Calculate the attenuation coefficient based on the optimization counter using the attenuation function.**
 
-neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/DL/neural%20network
+**example:https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn_a.py**
 
 **Use second parallel optimization to train on MNIST,speed was increased by more than 2 times!**
 
