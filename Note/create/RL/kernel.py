@@ -555,6 +555,11 @@ class kernel:
             try:
                 gradient=self.nn.gradient(tape,loss)
                 try:
+                    if self.nn.attenuate!=None:
+                        gradient=self.nn.attenuate(gradient,self.opt_counter,t)
+                except AttributeError:
+                    pass
+                try:
                     self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
                 except AttributeError:
                     try:
@@ -565,10 +570,21 @@ class kernel:
                 try:
                     if self.nn.nn!=None:
                         gradient=tape.gradient(loss,self.nn.param)
+                        try:
+                            if self.nn.attenuate!=None:
+                                gradient=self.nn.attenuate(gradient,self.opt_counter,t)
+                        except AttributeError:
+                            pass
                         self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
                 except AttributeError:
                         actor_gradient=tape.gradient(loss[0],self.nn.param[0])
                         critic_gradient=tape.gradient(loss[1],self.nn.param[1])
+                        try:
+                            if self.nn.attenuate!=None:
+                                actor_gradient=self.nn.attenuate(actor_gradient,self.opt_counter,t)
+                                critic_gradient=self.nn.attenuate(critic_gradient,self.opt_counter,t)
+                        except AttributeError:
+                            pass
                         self.nn.opt.apply_gradients(zip(actor_gradient,self.nn.param[0]))
                         self.nn.opt.apply_gradients(zip(critic_gradient,self.nn.param[1]))
             try:
@@ -600,6 +616,15 @@ class kernel:
                     critic_gradient=tape.gradient(loss[1],self.nn.param[1])
             self.thread_lock[0].release()
             self.thread_lock[1].acquire()
+            try:
+                if self.nn.attenuate!=None:
+                    try:
+                        gradient=self.nn.attenuate(gradient,self.opt_counter,t)
+                    except NameError:
+                        actor_gradient=self.nn.attenuate(actor_gradient,self.opt_counter,t)
+                        critic_gradient=self.nn.attenuate(critic_gradient,self.opt_counter,t)
+            except AttributeError:
+                pass
             try:
                 if self.nn.gradient!=None:
                     try:
@@ -643,6 +668,11 @@ class kernel:
             try:
                 gradient=self.nn.gradient(tape,loss)
                 try:
+                    if self.nn.attenuate!=None:
+                        gradient=self.nn.attenuate(gradient,self.opt_counter,t)
+                except AttributeError:
+                    pass
+                try:
                     self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
                 except:
                     self.nn.opt(gradient)
@@ -650,10 +680,21 @@ class kernel:
                 try:
                     if self.nn.nn!=None:
                         gradient=tape.gradient(loss,self.nn.param)
+                        try:
+                            if self.nn.attenuate!=None:
+                                gradient=self.nn.attenuate(gradient,self.opt_counter,t)
+                        except AttributeError:
+                            pass
                         self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
                 except AttributeError:
                         actor_gradient=tape.gradient(loss[0],self.nn.param[0])
                         critic_gradient=tape.gradient(loss[1],self.nn.param[1])
+                        try:
+                            if self.nn.attenuate!=None:
+                                actor_gradient=self.nn.attenuate(actor_gradient,self.opt_counter,t)
+                                critic_gradient=self.nn.attenuate(critic_gradient,self.opt_counter,t)
+                        except AttributeError:
+                            pass
                         self.nn.opt.apply_gradients(zip(actor_gradient,self.nn.param[0]))
                         self.nn.opt.apply_gradients(zip(critic_gradient,self.nn.param[1]))
             try:
@@ -675,6 +716,15 @@ class kernel:
                     critic_gradient=tape.gradient(loss[1],self.nn.param[1])
             self.thread_lock[0].release()
             self.thread_lock[1].acquire()
+            try:
+                if self.nn.attenuate!=None:
+                    try:
+                        gradient=self.nn.attenuate(gradient,self.opt_counter,t)
+                    except NameError:
+                        actor_gradient=self.nn.attenuate(actor_gradient,self.opt_counter,t)
+                        critic_gradient=self.nn.attenuate(critic_gradient,self.opt_counter,t)
+            except AttributeError:
+                pass
             try:
                 if self.nn.gradient!=None:
                     try:
