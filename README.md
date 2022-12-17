@@ -91,10 +91,6 @@ neural network example:https://github.com/NoteDancing/Note-documentation/tree/ma
 
 **PO:2**
 
-**optimizer:Adam**
-
-**learning rate:0.001**
-
 **CPU:i5-8400**
 
 **GPU:GTX 1050 Ti**
