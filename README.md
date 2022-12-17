@@ -105,20 +105,6 @@ kernel.train(64,5)         #train neural network
 
 **example:https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn_a.py**
 
-**unstable:**
-
-![5](https://github.com/NoteDancing/Note-documentation/blob/main/picture/stability/1.png)
-
-**loss:0.045**
-**test loss:0.134**
-
-**stable:**
-
-![4](https://github.com/NoteDancing/Note-documentation/blob/main/picture/stability/2.png)
-
-**loss:0.018**
-**test loss:0.044**
-
 **Use second parallel optimization to train on MNIST,speed was increased by more than 2 times!**
 
 **Tensorflow version:2.9.1**
