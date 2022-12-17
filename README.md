@@ -117,6 +117,10 @@ kernel.train(64,5)         #train neural network
 
 **PO:2**
 
+**optimizer:Adam**
+
+**learning rate:0.001**
+
 **CPU:i5-8400**
 
 **GPU:GTX 1050 Ti**
