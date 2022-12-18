@@ -865,6 +865,7 @@ class kernel:
     def train(self,episode_num):
         try:
             t=self.thread_num.pop(0)
+            t=int(t)
         except IndexError:
             print('\nError,please add thread.')
             return
