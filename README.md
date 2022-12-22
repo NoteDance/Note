@@ -105,6 +105,8 @@ kernel.train(64,5)         #train neural network
 
 **example:https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn_a.py**
 
+**picture:https://github.com/NoteDancing/Note-documentation/tree/main/picture/gradient%20attenuation**
+
 **Use second parallel optimization to train on MNIST,speed was increased by more than 2 times!**
 
 **Tensorflow version:2.9.1**
