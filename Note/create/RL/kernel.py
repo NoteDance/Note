@@ -173,7 +173,67 @@ class kernel:
         return
     
     
-    def set_up(self,epsilon=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_num=None,criterion=None,end_loss=None,init=None):
+    def init(self):
+        self.suspend=False
+        self.suspend_list=[]
+        self.suspended_list=[]
+        self.stop=None
+        self.stop_list=[]
+        self.stopped_list=[]
+        self.save_flag=False
+        self.stop_flag=1
+        self.add_flag=False
+        self.memory_flag=False
+        self.param_memory=0
+        self.grad_memory=0
+        self.c_memory=0
+        self.max_memory=0
+        self.grad_memory_list=[]
+        self.thread_counter=0
+        self.thread_num=np.arange(self.thread)
+        self.thread_num=list(self.thread_num)
+        self.probability_list=[]
+        self.running_flag=np.array(0,dtype=np.int8)
+        self.running_flag_list=[]
+        self.index_matrix=[]
+        self.one_matrix=[]
+        self.row_list=[]
+        self.row_sum_list=[]
+        self.rank_sum_list=[]
+        self.row_probability=[]
+        self.direction_index=0
+        self.finish_list=[]
+        try:
+            if self.nn.row!=None:
+                self.row_one=np.array(0,dtype=np.int8)
+                self.rank_one=np.array(0,dtype=np.int8)
+        except AttributeError:
+            self.running_flag=np.array(0,dtype=np.int8)
+        try:
+            if self.nn.pr!=None:
+                self.nn.pr.TD=[]
+                self.nn.pr.index=[]
+        except AttributeError:
+            pass
+        self.PN=True
+        self.episode=[]
+        self.epsilon=None
+        self.state_pool={}
+        self.action_pool={}
+        self.next_state_pool={}
+        self.reward_pool={}
+        self.done_pool={}
+        self.reward=np.zeros(self.thread,dtype=np.float32)
+        self.loss=np.zeros(self.thread,dtype=np.float32)
+        self.reward_list=[]
+        self.loss_list=[]
+        self.sc=np.zeros(self.thread,dtype=np.float32)
+        self.total_episode=0
+        self.total_time=0
+        return
+    
+    
+    def set_up(self,epsilon=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_num=None,criterion=None,end_loss=None):
         if epsilon!=None:
             self.epsilon=np.ones(self.thread)*epsilon
         if episode_step!=None:
@@ -192,63 +252,6 @@ class kernel:
             self.end_loss=end_loss
         if epsilon!=None:
             self.action_vec()
-        if init==True:
-            self.suspend=False
-            self.suspend_list=[]
-            self.suspended_list=[]
-            self.stop=None
-            self.stop_list=[]
-            self.stopped_list=[]
-            self.save_flag=False
-            self.stop_flag=1
-            self.add_flag=False
-            self.memory_flag=False
-            self.param_memory=0
-            self.grad_memory=0
-            self.c_memory=0
-            self.max_memory=0
-            self.grad_memory_list=[]
-            self.thread_counter=0
-            self.thread_num=np.arange(self.thread)
-            self.thread_num=list(self.thread_num)
-            self.probability_list=[]
-            self.running_flag=np.array(0,dtype=np.int8)
-            self.running_flag_list=[]
-            self.index_matrix=[]
-            self.one_matrix=[]
-            self.row_list=[]
-            self.row_sum_list=[]
-            self.rank_sum_list=[]
-            self.row_probability=[]
-            self.direction_index=0
-            self.finish_list=[]
-            try:
-                if self.nn.row!=None:
-                    self.row_one=np.array(0,dtype=np.int8)
-                    self.rank_one=np.array(0,dtype=np.int8)
-            except AttributeError:
-                self.running_flag=np.array(0,dtype=np.int8)
-            try:
-                if self.nn.pr!=None:
-                    self.nn.pr.TD=[]
-                    self.nn.pr.index=[]
-            except AttributeError:
-                pass
-            self.PN=True
-            self.episode=[]
-            self.epsilon=None
-            self.state_pool={}
-            self.action_pool={}
-            self.next_state_pool={}
-            self.reward_pool={}
-            self.done_pool={}
-            self.reward=np.zeros(self.thread,dtype=np.float32)
-            self.loss=np.zeros(self.thread,dtype=np.float32)
-            self.reward_list=[]
-            self.loss_list=[]
-            self.sc=np.zeros(self.thread,dtype=np.float32)
-            self.total_episode=0
-            self.total_time=0
         return
     
     
