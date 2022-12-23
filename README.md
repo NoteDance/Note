@@ -274,41 +274,6 @@ kernel.train_loss_list or kernel.train_loss       #view training loss
 kernel.visualize_train()
 ```
 
-pytorch:
-```python
-import Note.create.DL.kernel as k   #import kernel
-import tensorflow as tf              #import platform
-import cnn as c                          #import neural network
-import threading
-from torchvision import datasets
-training_data=datasets.FashionMNIST(
-    root="data",
-    train=True,
-    download=True,
-    transform=ToTensor(),
-)
-train_data,train_labels=training_data
-nn=n.nn()                                #create neural network object
-kernel=k.kernel(nn)   #start kernel
-kernel.platform=torch                            #use platform
-kernel.stop=True
-kernel.end_loss=0.7
-kernel.thread=2                        #thread count
-kernel.PO=1
-kernel.data(train_data,train_labels)   #input you data
-kernel.thread_lock=[threading.Lock(),threading.Lock()]
-class thread(threading.Thread):
-	def run(self):
-		kernel.train(32,3)
-for _ in range(2):
-	_thread=thread()
-	_thread.start()
-for _ in range(2):
-	_thread.join()
-kernel.train_loss_list or kernel.train_loss       #view training loss
-kernel.visualize_train()
-```
-
 ## Test neural network：
 ```python
 import Note.create.DL.dl.test_nn
