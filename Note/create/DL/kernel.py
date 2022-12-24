@@ -1963,7 +1963,6 @@ class kernel:
             pickle.dump(self.test_loss_list,output_file)
             pickle.dump(self.test_acc_list,output_file)
         pickle.dump(self.total_epoch,output_file)
-        pickle.dump(self.total_epoch,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
         try:
