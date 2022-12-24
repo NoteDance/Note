@@ -557,7 +557,6 @@ class kernel:
             pickle.dump(self.test_acc_list,output_file)
         pickle.dump(self.test_flag,output_file)
         pickle.dump(self.total_epoch,output_file)
-        pickle.dump(self.total_epoch,output_file)
         pickle.dump(self.total_time,output_file)
         pickle.dump(self.processor,output_file)
         output_file.close()
