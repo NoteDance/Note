@@ -408,38 +408,7 @@ class kernel:
     
     
     def opt_t(self,data,labels,t):
-        try:
-            if self.platform.DType!=None:
-                output,loss=self.tf_opt_t(data,labels,int(t))
-        except AttributeError:
-            try:
-                output=self.nn.fp(data)
-                loss=self.nn.loss(output,labels)
-            except:
-                output=self.nn.fp(data,t)
-                loss=self.nn.loss(output,labels)
-            if self.PO==1:
-                try:
-                    self.thread_lock[0].acquire()
-                    if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
-                        if self.stop_flag==0 or self.stop_func():
-                            self.thread_lock[0].release()
-                            return 0,0
-                    self.nn.opt.zero_grad()
-                    loss.backward()
-                    self.nn.opt.step()
-                    self.thread_lock[0].release()
-                except:
-                    self.thread_lock[0].acquire()
-                    if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
-                        if self.stop_flag==0 or self.stop_func():
-                            self.thread_lock[0].release()
-                            return 0,0
-                    try:
-                        self.nn.opt(loss)
-                    except:
-                        self.nn.opt(loss,t)
-                    self.thread_lock[0].release()
+        output,loss=self.tf_opt_t(data,labels,int(t))
         return output,loss
     
     
