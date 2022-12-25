@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import statistics
 import pickle
+import os
 
 
 class kernel:
@@ -567,7 +568,7 @@ class kernel:
                         self.thread_lock[4].acquire()
                     else:
                         self.thread_lock[2].acquire()
-                    self.save(self.total_episode,True)
+                    self.save(self.total_episode)
                     self.save_flag=True
                     if self.PN==True:
                         self.thread_lock[4].release()
@@ -580,7 +581,7 @@ class kernel:
                 self.thread_lock[4].acquire()
             else:
                 self.thread_lock[2].acquire()
-            self.save(self.total_episode,True)
+            self.save(self.total_episode)
             self.save_flag=True
             if self.PN==True:
                 self.thread_lock[4].release()
@@ -622,14 +623,32 @@ class kernel:
         return
     
     
-    def save(self):
+    def save(self,i=None,one=True):
         if self.save_flag==True:
             return
-        output_file=open('save.dat','wb')
-        if self.save_episode==True:
-            episode_file=open('episode.dat','wb')
-            pickle.dump(self.episode,episode_file)
-            episode_file.close()
+        if one==True:
+            output_file=open('save.dat','wb')
+            if self.save_episode==True:
+                episode_file=open('episode.dat','wb')
+                pickle.dump(self.episode,episode_file)
+                episode_file.close()
+        else:
+            output_file=open('save-{0}.dat'.format(i),'wb')
+            if self.save_episode==True:
+                episode_file=open('episode-{0}.dat'.format(i),'wb')
+                pickle.dump(self.episode,episode_file)
+                episode_file.close()
+            if self.save_episode==True:
+                self.file_list.append(['save-{0}.dat','episode-{0}.dat'])
+                if len(self.file_list)>self.s+1:
+                    os.remove(self.file_list[0][0])
+                    os.remove(self.file_list[0][1])
+                    del self.file_list[0]
+            else:
+                self.file_list.append(['save-{0}.dat'])
+                if len(self.file_list)>self.s+1:
+                    os.remove(self.file_list[0][0])
+                    del self.file_list[0]
         pickle.dump(self.nn,output_file)
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.episode_step,output_file)
