@@ -1460,6 +1460,8 @@ class kernel:
     
     
     def save(self,i=None,one=True):
+        if self.save_flag==True:
+            return
         if one==True:
             output_file=open('save.dat','wb')
             if self.save_episode==True:
