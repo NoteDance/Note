@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import statistics
 from sys import getsizeof
 import pickle
+import os
 
 
 class kernel:
@@ -1166,7 +1167,7 @@ class kernel:
                         self.thread_lock[1].acquire()
                     else:
                         self.thread_lock[2].acquire()
-                    self.save(one=True)
+                    self.save()
                     if self.PO==1 or self.PO==3:
                         self.thread_lock[1].release()
                     else:
@@ -1241,7 +1242,7 @@ class kernel:
                         self.thread_lock[2].release()
             else:
                 if self.save_flag==True:
-                    self.save(one=True)
+                    self.save()
                 if self.stop_flag==2:
                     return
                 self.suspend_func()
@@ -1458,15 +1459,88 @@ class kernel:
         return
     
     
-    def save(self):
-        if self.save_flag==True:
-            return
-        output_file=open('save.dat','wb')
-        if self.save_episode==True:
-            episode_file=open('episode.dat','wb')
-            pickle.dump(self.episode,episode_file)
-            episode_file.close()
-        pickle.dump(self.nn,output_file)
+    def save(self,i=None,one=True):
+        if one==True:
+            output_file=open('save.dat','wb')
+            try:
+                if len(self.nn.model.weights)==self.nn.param:
+                    pass
+                else:
+                    parameter_file=open('param.dat','wb')
+            except AttributeError:
+                try:
+                    if self.platform.DType!=None:
+                        parameter_file=open('param.dat','wb')
+                except AttributeError:
+                    pass
+            if self.save_episode==True:
+                episode_file=open('episode.dat','wb')
+                pickle.dump(self.episode,episode_file)
+                episode_file.close()
+        else:
+            output_file=open('save-{0}.dat'.format(i),'wb')
+            try:
+                if len(self.nn.model.weights)==self.nn.param:
+                    self.file_list.append(['save-{0}.dat'])
+                    if len(self.file_list)>self.s+1:
+                        os.remove(self.file_list[0][0])
+                        del self.file_list[0]
+                else:
+                    parameter_file=open('param-{0}.dat'.format(i),'wb')
+                    self.file_list.append(['save-{0}.dat','param-{0}.dat'])
+                    if len(self.file_list)>self.s+1:
+                        os.remove(self.file_list[0][0])
+                        os.remove(self.file_list[0][1])
+                        del self.file_list[0]
+            except AttributeError:
+                try:
+                    if self.platform.DType!=None:
+                        parameter_file=open('param-{0}.dat'.format(i),'wb')
+                        self.file_list.append(['save-{0}.dat','param-{0}.dat'])
+                        if len(self.file_list)>self.s+1:
+                            os.remove(self.file_list[0][0])
+                            os.remove(self.file_list[0][1])
+                            del self.file_list[0]
+                except AttributeError:
+                    self.file_list.append(['save-{0}.dat'])
+                    if len(self.file_list)>self.s+1:
+                        os.remove(self.file_list[0][0])
+                        del self.file_list[0]
+            if self.save_episode==True:
+                episode_file=open('episode-{0}.dat'.format(i),'wb')
+                pickle.dump(self.episode,episode_file)
+                episode_file.close()
+            if self.save_episode==True:
+                self.file_list.append(['save-{0}.dat','param-{0}.dat','episode-{0}.dat'])
+            else:
+                self.file_list.append(['save-{0}.dat','param-{0}.dat'])
+            if len(self.file_list)>self.s+1:
+                os.remove(self.file_list[0][0])
+                os.remove(self.file_list[0][1])
+                os.remove(self.file_list[0][2])
+                del self.file_list[0]
+        try:
+            if self.platform.DType!=None:
+                try:
+                    if len(self.nn.model.weights)!=self.nn.param:
+                        pickle.dump(self.nn.param[:-len(self.nn.model.weights)],parameter_file)
+                except AttributeError:
+                    pickle.dump(self.nn.param,parameter_file)
+                if self.training_flag==False:
+                    self.nn.param=None
+                try:
+                    pickle.dump(self.nn,output_file)
+                except AttributeError:
+                    opt=self.nn.opt
+                    self.nn.opt=None
+                    pickle.dump(self.nn,output_file)
+                    self.nn.opt=opt
+        except AttributeError:
+            pass
+        try:
+            pickle.dump(opt.get_config(),output_file)
+        except:
+            pickle.dump(None,output_file)
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.episode_step,output_file)
         pickle.dump(self.pool_size,output_file)
