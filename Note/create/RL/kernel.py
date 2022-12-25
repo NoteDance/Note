@@ -1326,12 +1326,12 @@ class kernel:
             if len(self.reward_list)>=self.trial_num:
                 avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
                 if self.criterion!=None and avg_reward>=self.criterion:
-                    self.save(self.total_episode,True)
+                    self.save(self.total_episode)
                     self.save_flag=True
                     self.stop_flag=0
                     return True
         elif self.end():
-            self.save(self.total_episode,True)
+            self.save(self.total_episode)
             self.save_flag=True
             self.stop_flag=0
             return True
