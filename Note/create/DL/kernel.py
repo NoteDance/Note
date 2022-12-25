@@ -1238,7 +1238,7 @@ class kernel:
                         self.thread_lock[1].acquire()
                     else:
                         self.thread_lock[2].acquire()
-                    self.save(one=True)
+                    self.save()
                     if self.PO==1 or self.PO==3:
                         self.thread_lock[1].release()
                     else:
@@ -1347,7 +1347,7 @@ class kernel:
                         self.thread_lock[2].release()
             else:
                 if self.save_flag==True:
-                    self.save(one=True)
+                    self.save()
                 if self.stop_flag==2:
                     return
                 self.suspend_func()
