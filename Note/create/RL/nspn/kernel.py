@@ -672,14 +672,16 @@ class kernel:
                 pickle.dump(self.episode,episode_file)
                 episode_file.close()
             if self.save_episode==True:
-                self.file_list.append(['save-{0}.dat','param-{0}.dat','episode-{0}.dat'])
+                self.file_list.append(['save-{0}.dat','episode-{0}.dat'])
+                if len(self.file_list)>self.s+1:
+                    os.remove(self.file_list[0][0])
+                    os.remove(self.file_list[0][1])
+                    del self.file_list[0]
             else:
-                self.file_list.append(['save-{0}.dat','param-{0}.dat'])
-            if len(self.file_list)>self.s+1:
-                os.remove(self.file_list[0][0])
-                os.remove(self.file_list[0][1])
-                os.remove(self.file_list[0][2])
-                del self.file_list[0]
+                self.file_list.append(['save-{0}.dat'])
+                if len(self.file_list)>self.s+1:
+                    os.remove(self.file_list[0][0])
+                    del self.file_list[0]
         pickle.dump(self.nn,output_file)
         pickle.dump(self.ol,output_file)
         pickle.dump(self.epsilon,output_file)
