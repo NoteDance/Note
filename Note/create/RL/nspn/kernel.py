@@ -672,7 +672,7 @@ class kernel:
     
     def stop_func(self):
         if self.end():
-            self.save(self.total_episode,True)
+            self.save(self.total_episode)
             print('\nSystem have stopped training,Neural network have been saved.')
             self._time=self.time-int(self.time)
             if self._time<0.5:
