@@ -1433,6 +1433,4 @@ class kernel:
         self.total_epoch=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
         input_file.close()
-        if p_path!=None:
-            parameter_file.close()
         return
