@@ -1483,75 +1483,27 @@ class kernel:
             return
         if one==True:
             output_file=open('save.dat','wb')
-            try:
-                if len(self.nn.model.weights)==self.nn.param:
-                    pass
-                else:
-                    parameter_file=open('param.dat','wb')
-            except AttributeError:
-                try:
-                    if self.platform.DType!=None:
-                        pass 
-                    parameter_file=open('param.dat','wb')
-                except AttributeError:
-                    pass
         else:
             output_file=open('save-{0}.dat'.format(i),'wb')
-            try:
-                if len(self.nn.model.weights)==self.nn.param:
-                    self.file_list.append(['save-{0}.dat'])
-                    if len(self.file_list)>self.s+1:
-                        os.remove(self.file_list[0][0])
-                        del self.file_list[0]
-                else:
-                    parameter_file=open('param-{0}.dat'.format(i),'wb')
-                    self.file_list.append(['save-{0}.dat','param-{0}.dat'])
-                    if len(self.file_list)>self.s+1:
-                        os.remove(self.file_list[0][0])
-                        os.remove(self.file_list[0][1])
-                        del self.file_list[0]
-            except AttributeError:
-                try:
-                    if self.platform.DType!=None:
-                        pass   
-                    parameter_file=open('param-{0}.dat'.format(i),'wb')
-                    self.file_list.append(['save-{0}.dat','param-{0}.dat'])
-                    if len(self.file_list)>self.s+1:
-                        os.remove(self.file_list[0][0])
-                        os.remove(self.file_list[0][1])
-                        del self.file_list[0]
-                except AttributeError:
-                    self.file_list.append(['save-{0}.dat'])
-                    if len(self.file_list)>self.s+1:
-                        os.remove(self.file_list[0][0])
-                        del self.file_list[0]
+            self.file_list.append(['save-{0}.dat'])
+            if len(self.file_list)>self.s+1:
+                os.remove(self.file_list[0][0])
+                del self.file_list[0]
         try:
-            if self.platform.DType!=None:
-                pass  
-            try:
-                if len(self.nn.model.weights)!=self.nn.param:
-                    pickle.dump(self.nn.param[:-len(self.nn.model.weights)],parameter_file)
-            except AttributeError:
-                pickle.dump(self.nn.param,parameter_file)
-            if self.training_flag==False:
-                self.nn.param=None
-            try:
-                if self.nn.opt:
-                    pass
-                opt=self.nn.opt
-                self.nn.opt=None
-                pickle.dump(self.nn,output_file)
-                self.nn.opt=opt
-            except AttributeError:
-                try:
-                    pickle.dump(self.nn,output_file)
-                except:
-                    opt=self.nn.oopt
-                    self.nn.oopt=None
-                    pickle.dump(self.nn,output_file)
-                    self.nn.oopt=opt
+            if self.nn.opt:
+                pass
+            opt=self.nn.opt
+            self.nn.opt=None
+            pickle.dump(self.nn,output_file)
+            self.nn.opt=opt
         except AttributeError:
-            pass
+            try:
+                pickle.dump(self.nn,output_file)
+            except:
+                opt=self.nn.oopt
+                self.nn.oopt=None
+                pickle.dump(self.nn,output_file)
+                self.nn.oopt=opt
         try:
             pickle.dump(opt.get_config(),output_file)
         except:
@@ -1578,42 +1530,16 @@ class kernel:
         pickle.dump(self.total_epoch,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
-        try:
-            if len(self.nn.model.weights)==self.nn.param:
-                pass
-            else:
-                parameter_file.close()
-        except AttributeError:
-            try:
-                if self.platform.DType!=None:
-                    pass  
-                parameter_file.close()
-            except AttributeError:
-                pass
         if self.save_flag==True:
             print('\nSystem have stopped,Neural network have saved.')
         return
     
 	
-    def restore(self,s_path,p_path=None):
+    def restore(self,s_path):
         input_file=open(s_path,'rb')
-        if p_path!=None:
-            parameter_file=open(p_path,'rb')
-            param=pickle.load(parameter_file)
         self.nn=pickle.load(input_file)
         try:
             self.nn.km=1
-        except AttributeError:
-            pass
-        try:
-            if self.platform.DType!=None:
-                pass 
-            try:
-                if self.nn.model!=None:
-                    pass
-                self.nn.param=param.extend(self.nn.model.weights)
-            except AttributeError:
-                self.nn.param=param
         except AttributeError:
             pass
         self.config=pickle.load(input_file)
@@ -1639,6 +1565,4 @@ class kernel:
         self.total_epoch=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
         input_file.close()
-        if p_path!=None:
-            parameter_file.close()
         return
