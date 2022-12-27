@@ -774,7 +774,7 @@ class kernel:
             if self.platform.DType!=None:
                 try:
                     pickle.dump(self.nn,output_file)
-                except AttributeError:
+                except:
                     opt=self.nn.opt
                     self.nn.opt=None
                     pickle.dump(self.nn,output_file)
