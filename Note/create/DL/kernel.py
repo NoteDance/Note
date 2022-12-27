@@ -1890,7 +1890,7 @@ class kernel:
                 del self.file_list[0]
         try:
             pickle.dump(self.nn,output_file)
-        except AttributeError:
+        except:
             opt=self.nn.opt
             self.nn.opt=None
             pickle.dump(self.nn,output_file)
