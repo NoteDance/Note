@@ -54,7 +54,7 @@ class kernel:
         self.add_flag=False
         self.memory_flag=False
         self.memory_priority=False
-        self.episode_list=np.array(0,dtype=np.int8)
+        self.episode_list=[]
         self.episode_list_copy=None
         self.param_memory=0
         self.grad_memory=0
@@ -917,8 +917,7 @@ class kernel:
             self.grad_memory_list.append(0)
             self.pool_memory_list.append(0)
             self.episode_memory_list.append(0)
-        if t>0:
-            self.episode_list=np.append(self.episode_list,np.array(0,dtype=np.int8))
+        self.episode_list.append(0)
         self.finish_list.append(None)
         try:
             epsilon=self.epsilon[t]
@@ -1353,7 +1352,7 @@ class kernel:
             if self.memory_priority==False:
                 if self.episode_list_copy==None:
                     self.episode_list_copy=self.episode_list.copy()
-                index=np.argmax(self.episode_list_copy)
+                index=self.episode_list_copy.index(max(self.episode_list_copy))
                 self.stop_list_m.append(index)
                 self.episode_list_copy[index]=0
                 return False
