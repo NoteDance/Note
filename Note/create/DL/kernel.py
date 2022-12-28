@@ -38,7 +38,7 @@ class kernel:
         self.training_flag=False
         self.memory_flag=False
         self.memory_priority=False
-        self.epoch_list=np.array(0,dtype=np.int8)
+        self.epoch_list=[]
         self.epoch_list_copy=None
         self.data_memory=None
         self.param_memory=0
@@ -901,8 +901,7 @@ class kernel:
                 self.thread_lock[2].acquire()
             self.thread_counter+=1
             self.running_list.append(t)
-            if t>0:
-                self.epoch_list=np.append(self.epoch_list,np.array(0,dtype=np.int8))
+            self.epoch_list.append(0)
             if self.PO==1 or self.PO==3:
                 self.thread_lock[1].release()
             else:
@@ -1641,7 +1640,7 @@ class kernel:
             if self.memory_priority==False:
                 if self.epoch_list_copy==None:
                     self.epoch_list_copy=self.epoch_list.copy()
-                index=np.argmax(self.epoch_list_copy)
+                index=self.epoch_list_copy.index(max(self.epoch_list_copy))
                 self.stop_list_m.append(index)
                 self.epoch_list_copy[index]=0
                 return False
