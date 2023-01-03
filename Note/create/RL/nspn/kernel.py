@@ -594,7 +594,6 @@ class kernel:
                             print('average reward:{0}'.format(avg_reward))
                             print()
                             print('time:{0}s'.format(self.total_time))
-                            self.train_flag=False
                             return
                 self.loss=loss
                 self.loss_list.append(loss)
