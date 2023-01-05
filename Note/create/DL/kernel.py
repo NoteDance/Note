@@ -38,6 +38,7 @@ class kernel:
         self.end_test_acc=None
         self.acc_flag='%'
         self.train_counter=0
+        self.filename='save.dat'
         self.train_loss=None
         self.train_acc=None
         self.train_loss_list=[]
@@ -1351,10 +1352,11 @@ class kernel:
         if self.save_flag==True:
             return
         if one==True:
-            output_file=open('save.dat','wb')
+            output_file=open(self.filename,'wb')
         else:
-            output_file=open('save-{0}.dat'.format(i),'wb')
-            self.file_list.append(['save-{0}.dat'])
+            filename=self.filename.replace(self.filename[self.filename.find('.'):],'-{0}.dat'.format(i))
+            output_file=open(filename,'wb')
+            self.file_list.append([filename])
             if len(self.file_list)>self.s+1:
                 os.remove(self.file_list[0][0])
                 del self.file_list[0]
