@@ -355,7 +355,7 @@ class kernel:
             if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
                 if self.stop_flag==0 or self.stop_func():
                     self.thread_lock[0].release()
-                    return 0,0
+                    return None,0
             try:
                 if self.nn.opt!=None:
                     gradient=tape.gradient(loss,self.nn.param)
@@ -379,7 +379,7 @@ class kernel:
             if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
                 if self.stop_flag==0 or self.stop_func():
                     self.thread_lock[1].release()
-                    return 0,0
+                    return None,0
             try:
                 if self.nn.opt!=None:
                     self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
