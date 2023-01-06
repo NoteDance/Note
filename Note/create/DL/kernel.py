@@ -363,7 +363,7 @@ class kernel:
         if self.PO==1:
             self.thread_lock[0].acquire()
             if self.stop_func_(self.thread_lock[0]):
-                return 0,0
+                return None,0
             try:
                 gradient=self.nn.gradient(tape,loss)
             except AttributeError:
@@ -395,7 +395,7 @@ class kernel:
             self.thread_lock[0].release()
             self.thread_lock[1].acquire()
             if self.stop_func_(self.thread_lock[1]):
-                return 0,0
+                return None,0
             try:
                 if self.nn.attenuate!=None:
                     gradient=self.nn.attenuate(gradient,self.opt_counter,t)
@@ -451,7 +451,7 @@ class kernel:
                 if self.stop_func_t_p(self.thread_lock[0],t,ln):
                     return 0,0
             if self.stop_func_(self.thread_lock[0]):
-                return 0,0
+                return None,0
             try:
                 if self.nn.attenuate!=None:
                     gradient=self.nn.attenuate(gradient,self.opt_counter,t)
