@@ -34,7 +34,7 @@ class kernel:
         self.stopped_list=[]
         self.stop_list_m=[]
         self.save_flag=False
-        self.stop_flag=1
+        self.stop_flag=False
         self.training_flag=False
         self.memory_flag=False
         self.memory_priority=False
@@ -145,7 +145,7 @@ class kernel:
         self.stop_list=[]
         self.stopped_list=[]
         self.save_flag=False
-        self.stop_flag=1
+        self.stop_flag=False
         self.training_flag=False
         self.memory_flag=False
         self.data_memory=None
@@ -820,7 +820,7 @@ class kernel:
                 index1=j*batch
                 index2=(j+1)*batch
                 batch_loss,batch_acc=self.train_(data_batch,labels_batch,batch,batches,test_batch,index1,index2,j,t)
-                if self.stop_flag==0:
+                if self.stop_flag==True:
                     return
                 try:
                     if self.nn.accuracy!=None:
@@ -836,7 +836,7 @@ class kernel:
                 index1=batches*batch
                 index2=batch-(self.shape0-batches*batch)
                 batch_loss,batch_acc=self.train_(data_batch,labels_batch,batch,batches,test_batch,index1,index2,None,t)
-                if self.stop_flag==0:
+                if self.stop_flag==True:
                     return
                 try:
                     if self.nn.accuracy!=None:
@@ -973,7 +973,7 @@ class kernel:
                         else:
                             self.thread_lock[2].release()
                         return
-                if self.stop_flag==0:
+                if self.stop_flag==True:
                     return
                 if self.thread==None:
                     try:
@@ -1085,7 +1085,7 @@ class kernel:
                         else:
                             self.thread_lock[2].release()
                         return
-                if self.stop_flag==0:
+                if self.stop_flag==True:
                     return
                 i+=1
                 if self.thread==None:
@@ -1232,6 +1232,8 @@ class kernel:
         else:
             self.thread_lock[2].release()
         while True:
+            if self.stop_flag==True:
+                return
             if self.thread==None:
                 if self.save_flag==True:
                     if self.PO==1 or self.PO==3:
@@ -1243,8 +1245,6 @@ class kernel:
                         self.thread_lock[1].release()
                     else:
                         self.thread_lock[2].release()
-                    if self.stop_flag==2:
-                        return
                 if t in self.stop_list or t in self.stop_list_m:
                     if self.PO==1 or self.PO==3:
                         self.thread_lock[1].acquire()
@@ -1314,8 +1314,6 @@ class kernel:
                 except:
                     self.exception_list[t]=True
                     continue
-                if self.stop_flag==0:
-                    return
                 loss=loss.numpy()
                 if self.thread_lock!=None:
                     if self.PO==1 or self.PO==3:
@@ -1346,10 +1344,10 @@ class kernel:
                     else:
                         self.thread_lock[2].release()
             else:
+                if self.stop_flag==True:
+                    return
                 if self.save_flag==True:
                     self.save()
-                if self.stop_flag==2:
-                    return
                 self.suspend_func()
                 try:
                     data=self.nn.ol()
@@ -1370,8 +1368,6 @@ class kernel:
                 except:
                     self.exception_list[t]=True
                     continue
-                if self.stop_flag==0:
-                    return
                 loss=loss.numpy()
                 if len(self.nn.train_loss_list)==self.nn.max_length:
                     del self.nn.train_loss_list[0]
@@ -1583,9 +1579,9 @@ class kernel:
                     pass
                 print()
                 print('time:{0}s'.format(self.total_time))
-                self.stop_flag=0
+                self.stop_flag=True
                 return True
-            elif self.stop_flag==2:
+            else:
                 print('\nSystem have stopped training.')
                 self._time=self.time-int(self.time)
                 if self._time<0.5:
@@ -1615,23 +1611,23 @@ class kernel:
                     pass
                 print()
                 print('time:{0}s'.format(self.total_time))
-                self.stop_flag=0
+                self.stop_flag=True
                 return True
         else:
             if self.end():
                 self.save(self.total_epoch,True)
                 self.save_flag=True
-                self.stop_flag=0
+                self.stop_flag=True
                 return True
-            elif self.stop_flag==2:
-                self.stop_flag=0
+            else:
+                self.stop_flag=True
                 return True
         return False
     
     
     def stop_func_(self,thread_lock):
-        if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
-            if self.stop_flag==0 or self.stop_func():
+        if self.stop==True:
+            if self.stop_flag==True or self.stop_func():
                 thread_lock.release()
                 return True
     
