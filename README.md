@@ -6,7 +6,7 @@ https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20do
 
 
 # Introduction:
-Note is a system for deep learning and reinforcement learning.It makes easier to create and train neural network for you.It makes easier to speed up training neural network with multithreading.
+Note is a system for deep learning and reinforcement learning.It makes it easy to create and train neural network.It can speed up the training of neural network by multithreading.
 
 
 # Create neural network:
