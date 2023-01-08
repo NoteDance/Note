@@ -1546,7 +1546,7 @@ class kernel:
     
     
     def stop_func(self):
-        if self.thread_lock==None:
+        if self.thread==None:
             if self.end():
                 self.training_flag=False
                 self.save(self.total_epoch,True)
