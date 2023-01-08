@@ -39,7 +39,7 @@ class kernel:
         self.stop_list=[]
         self.stopped_list=[]
         self.save_flag=False
-        self.stop_flag=1
+        self.stop_flag=False
         self.add_flag=False
         self.end_loss=None
         self.thread=thread
@@ -118,7 +118,7 @@ class kernel:
             self.stop_list=[]
             self.stopped_list=[]
             self.save_flag=False
-            self.stop_flag=1
+            self.stop_flag=False
             self.add_flag=False
             self.thread_counter=0
             self.thread_num=np.arange(self.thread)
@@ -464,8 +464,8 @@ class kernel:
         except:
             loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t)
         self.thread_lock[1].acquire()
-        if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
-            if self.stop_flag==0 or self.stop_func():
+        if self.stop==True:
+            if self.stop_flag==True or self.stop_func():
                 self.thread_lock[1].release()
                 return 0
         try:
@@ -530,7 +530,7 @@ class kernel:
             reward_batch=reward_batch.numpy()
             done_batch=done_batch.numpy()
             loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t)
-            if self.stop_flag==0:
+            if self.stop_flag==True:
                 return
             self.loss[t]+=loss
             try:
@@ -555,7 +555,7 @@ class kernel:
                         return
                     self.suspend_func(t)
                     self._train(t,j,batches,length)
-                    if self.stop_flag==0:
+                    if self.stop_flag==True:
                         return
             else:
                 try:
@@ -563,7 +563,7 @@ class kernel:
                 except AttributeError:
                     pass
                 self.train_(t)
-                if self.stop_flag==0:
+                if self.stop_flag==True:
                     return
             if self.PN==True:
                 self.thread_lock[2].acquire()
@@ -663,7 +663,7 @@ class kernel:
                         self.reward_pool[t]=None
                         self.done_pool[t]=None
                         return
-                    if self.stop_flag==0:
+                    if self.stop_flag==True:
                         self.state_pool[t]=None
                         self.action_pool[t]=None
                         self.next_state_pool[t]=None
@@ -715,7 +715,7 @@ class kernel:
                         self.reward_pool[t]=None
                         self.done_pool[t]=None
                         return
-                    if self.stop_flag==0:
+                    if self.stop_flag==True:
                         self.state_pool[t]=None
                         self.action_pool[t]=None
                         self.next_state_pool[t]=None
@@ -824,15 +824,15 @@ class kernel:
                 if self.criterion!=None and avg_reward>=self.criterion:
                     self.save(self.total_episode)
                     self.save_flag=True
-                    self.stop_flag=0
+                    self.stop_flag=True
                     return True
         elif self.end():
             self.save(self.total_episode)
             self.save_flag=True
-            self.stop_flag=0
+            self.stop_flag=True
             return True
-        elif self.stop_flag==2:
-            self.stop_flag=0
+        else:
+            self.stop_flag=True
             return True
         return False
     
