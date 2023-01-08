@@ -33,7 +33,6 @@ class kernel:
         self.reward_list=[]
         self.suspend=False
         self.stop=None
-        self.stop_flag=1
         self.save_epi=None
         self.train_counter=0
         self.end_loss=None
@@ -80,7 +79,6 @@ class kernel:
                 pass
             self.suspend=False
             self.stop=None
-            self.stop_flag=1
             self.save_epi=None
             self.episode=[]
             self.state_pool=None
@@ -603,7 +601,7 @@ class kernel:
             print()
             print('time:{0}s'.format(self.total_time))
             return True
-        elif self.stop_flag==1:
+        else:
             print('\nSystem have stopped training.')
             self._time=self.time-int(self.time)
             if self._time<0.5:
