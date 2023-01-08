@@ -35,7 +35,7 @@ class kernel:
         self.suspend=False
         self.stop=False
         self.save_flag=False
-        self.stop_flag=1
+        self.stop_flag=False
         self.end_loss=None
         self.thread=thread
         self.thread_counter=0
@@ -88,6 +88,10 @@ class kernel:
             self.end_loss=end_loss
         self.action_vec()
         if init==True:
+            self.suspend=False
+            self.stop=False
+            self.save_flag=False
+            self.stop_flag=False
             self.thread_counter=0
             self.thread_num=np.arange(self.thread)
             self.thread_num=list(self.thread_num)
@@ -341,7 +345,7 @@ class kernel:
         train_ds=tf_data.Dataset.from_tensor_slices((self.state_pool[t],self.action_pool[t],self.next_state_pool[t],self.reward_pool[t],self.done_pool[t])).shuffle(len(self.state_pool[t])).batch(self.batch)
         for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
             if self.stop==True:
-                if self.stop_func() or self.stop_flag==0:
+                if self.stop_flag==True or self.stop_func():
                     return
             self.suspend_func()
             state_batch=state_batch.numpy()
@@ -370,7 +374,7 @@ class kernel:
                     batches+=1
                 for j in range(batches):
                     if self.stop==True:
-                        if self.stop_func() or self.stop_flag==0:
+                        if self.stop_flag==True or self.stop_func():
                             return
                     self.suspend_func()
                     self._train(t,j,batches,length)
@@ -438,7 +442,7 @@ class kernel:
             self.thread_lock[0].release()
         for k in range(episode_num):
             if self.stop==True:
-                if self.stop_func() or self.stop_flag==0:
+                if self.stop_flag==True or self.stop_func():
                     return
             episode=[]
             if self.state_name==None:
@@ -448,7 +452,7 @@ class kernel:
             if self.episode_step==None:
                 while True:
                     if self.stop==True:
-                        if self.stop_func() or self.stop_flag==0:
+                        if self.stop_flag==True or self.stop_func():
                             self.finish_list[t]=t
                             return
                     next_s,r,done,_episode,index=self.env(s,epsilon,t)
@@ -456,7 +460,7 @@ class kernel:
                     s=next_s
                     if self.state_pool[t]!=None and self.action_pool[t]!=None and self.next_state_pool[t]!=None and self.reward_pool[t]!=None and self.done_pool[t]!=None:
                         self._train_(t)
-                    if self.stop_flag==0:
+                    if self.stop_flag==True:
                         self.finish_list[t]=t
                         return
                     if self.save_episode==True:
@@ -482,7 +486,7 @@ class kernel:
             else:
                 for l in range(self.episode_step):
                     if self.stop==True:
-                        if self.stop_func() or self.stop_flag==0:
+                        if self.stop_flag==True or self.stop_func():
                             self.finish_list[t]=t
                             return
                     next_s,r,done,_episode,index=self.env(s,epsilon,t)
@@ -490,7 +494,7 @@ class kernel:
                     s=next_s
                     if self.state_pool[t]!=None and self.action_pool[t]!=None and self.next_state_pool[t]!=None and self.reward_pool[t]!=None and self.done_pool[t]!=None:
                         self._train_(t)
-                    if self.stop_flag==0:
+                    if self.stop_flag==True:
                         self.finish_list[t]=t
                         return
                     if self.save_episode==True:
@@ -575,7 +579,7 @@ class kernel:
                         self.thread_lock[4].release()
                     else:
                         self.thread_lock[2].release()
-                    self.stop_flag=0
+                    self.stop_flag=True
                     return True
         elif self.end():
             if self.PN==True:
@@ -588,10 +592,10 @@ class kernel:
                 self.thread_lock[4].release()
             else:
                 self.thread_lock[2].release()
-            self.stop_flag=0
+            self.stop_flag=True
             return True
-        elif self.stop_flag==1:
-            self.stop_flag=0
+        else:
+            self.stop_flag=True
             return True
         return False
     
