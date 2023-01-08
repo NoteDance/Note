@@ -50,7 +50,7 @@ class kernel:
         self.stopped_list=[]
         self.stop_list_m=[]
         self.save_flag=False
-        self.stop_flag=1
+        self.stop_flag=False
         self.add_flag=False
         self.memory_flag=False
         self.memory_priority=False
@@ -183,7 +183,7 @@ class kernel:
         self.stop_list=[]
         self.stopped_list=[]
         self.save_flag=False
-        self.stop_flag=1
+        self.stop_flag=False
         self.add_flag=False
         self.memory_flag=False
         self.param_memory=0
@@ -804,7 +804,7 @@ class kernel:
                 return
             self.suspend_func(t)
             loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t)
-            if self.stop_flag==0:
+            if self.stop_flag==True:
                 return
             self.loss[t]+=loss
             try:
@@ -829,7 +829,7 @@ class kernel:
                         return
                     self.suspend_func(t)
                     self._train(t,j,batches,length)
-                    if self.stop_flag==0:
+                    if self.stop_flag==True:
                         return
             else:
                 try:
@@ -837,7 +837,7 @@ class kernel:
                 except AttributeError:
                     pass
                 self.train_(t)
-                if self.stop_flag==0:
+                if self.stop_flag==True:
                     return
             if self.PN==True:
                 if self.PO==1 or self.PO==3:
@@ -975,7 +975,7 @@ class kernel:
                         del self.reward_pool[t]
                         del self.done_pool[t]
                         return
-                    if self.stop_flag==0:
+                    if self.stop_flag==True:
                         del self.state_pool[t]
                         del self.action_pool[t]
                         del self.next_state_pool[t]
@@ -1047,7 +1047,7 @@ class kernel:
                         del self.reward_pool[t]
                         del self.done_pool[t]
                         return
-                    if self.stop_flag==0:
+                    if self.stop_flag==True:
                         del self.state_pool[t]
                         del self.action_pool[t]
                         del self.next_state_pool[t]
@@ -1161,6 +1161,8 @@ class kernel:
     def train_ol(self,t):
         self.exception_list.append(False)
         while True:
+            if self.stop_flag==True:
+                return
             if self.thread!=None:
                 if self.save_flag==True:
                     if self.PO==1 or self.PO==3:
@@ -1172,8 +1174,6 @@ class kernel:
                         self.thread_lock[1].release()
                     else:
                         self.thread_lock[2].release()
-                    if self.stop_flag==2:
-                        return
                 if t in self.stop_list:
                     if self.PO==1 or self.PO==3:
                         self.thread_lock[1].acquire()
@@ -1221,8 +1221,6 @@ class kernel:
                 except:
                     self.exception_list[t]=True
                     continue
-                if self.stop_flag==0:
-                    return
                 if self.thread_lock!=None:
                     if self.PO==1 or self.PO==3:
                         self.thread_lock[1].acquire()
@@ -1241,10 +1239,10 @@ class kernel:
                     else:
                         self.thread_lock[2].release()
             else:
+                if self.stop_flag==True:
+                    return
                 if self.save_flag==True:
                     self.save()
-                if self.stop_flag==2:
-                    return
                 self.suspend_func()
                 try:
                     data=self.nn.ol()
@@ -1265,8 +1263,6 @@ class kernel:
                 except:
                     self.exception_list[t]=True
                     continue
-                if self.stop_flag==0:
-                    return
                 loss=loss.numpy()
                 self.nn.train_loss_list.append(loss)
                 if len(self.nn.train_acc_list)==self.nn.max_length:
@@ -1328,22 +1324,22 @@ class kernel:
                 if self.criterion!=None and avg_reward>=self.criterion:
                     self.save(self.total_episode)
                     self.save_flag=True
-                    self.stop_flag=0
+                    self.stop_flag=True
                     return True
         elif self.end():
             self.save(self.total_episode)
             self.save_flag=True
-            self.stop_flag=0
+            self.stop_flag=True
             return True
-        elif self.stop_flag==2:
-            self.stop_flag=0
+        else:
+            self.stop_flag=True
             return True
         return False
     
     
     def stop_func_(self,thread_lock):
-        if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
-            if self.stop_flag==0 or self.stop_func():
+        if self.stop==True:
+            if self.stop_flag==True or self.stop_func():
                 thread_lock.release
                 return True
     
