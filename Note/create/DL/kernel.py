@@ -27,7 +27,7 @@ class kernel:
         self.stop_list=[]
         self.stopped_list=[]
         self.save_flag=False
-        self.stop_flag=1
+        self.stop_flag=False
         self.training_flag=False
         self.save_epoch=None
         self.batch=None
@@ -101,7 +101,7 @@ class kernel:
         self.stop_list=[]
         self.stopped_list=[]
         self.save_flag=False
-        self.stop_flag=1
+        self.stop_flag=False
         self.training_flag=False
         self.save_epoch=None
         self.end_loss=None
@@ -352,8 +352,8 @@ class kernel:
                         output,loss=self.nn.fp(data,labels,t)
         if self.PO==1:
             self.thread_lock[0].acquire()
-            if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
-                if self.stop_flag==0 or self.stop_func():
+            if self.stop==True:
+                if self.stop_flag==True or self.stop_func():
                     self.thread_lock[0].release()
                     return None,0
             try:
@@ -376,8 +376,8 @@ class kernel:
                 gradient=self.nn.gradient(tape,loss,self.nn.param)
             self.thread_lock[0].release()
             self.thread_lock[1].acquire()
-            if self.stop==True and (self.stop_flag==1 or self.stop_flag==2):
-                if self.stop_flag==0 or self.stop_func():
+            if self.stop==True:
+                if self.stop_flag==True or self.stop_func():
                     self.thread_lock[1].release()
                     return None,0
             try:
@@ -593,7 +593,7 @@ class kernel:
                 index1=j*batch
                 index2=(j+1)*batch
                 batch_loss,batch_acc=self.train_(data_batch,labels_batch,batch,batches,test_batch,index1,index2,j,t)
-                if self.stop_flag==0:
+                if self.stop_flag==True:
                     return
                 try:
                     if self.nn.accuracy!=None:
@@ -609,7 +609,7 @@ class kernel:
                 index1=batches*batch
                 index2=batch-(self.shape0-batches*batch)
                 batch_loss,batch_acc=self.train_(data_batch,labels_batch,batch,batches,test_batch,index1,index2,None,t)
-                if self.stop_flag==0:
+                if self.stop_flag==True:
                     return
                 try:
                     if self.nn.accuracy!=None:
@@ -723,7 +723,7 @@ class kernel:
                         else:
                             self.thread_lock[2].release()
                         return
-                if self.stop_flag==0:
+                if self.stop_flag==True:
                     return
                 if self.thread==None:
                     try:
@@ -835,7 +835,7 @@ class kernel:
                         else:
                             self.thread_lock[2].release()
                         return
-                if self.stop_flag==0:
+                if self.stop_flag==True:
                     return
                 i+=1
                 if self.thread==None:
@@ -1148,9 +1148,9 @@ class kernel:
                     pass
                 print()
                 print('time:{0}s'.format(self.total_time))
-                self.stop_flag=0
+                self.stop_flag=True
                 return True
-            elif self.stop_flag==2:
+            else:
                 print('\nSystem have stopped training.')
                 self._time=self.time-int(self.time)
                 if self._time<0.5:
@@ -1180,16 +1180,16 @@ class kernel:
                     pass
                 print()
                 print('time:{0}s'.format(self.total_time))
-                self.stop_flag=0
+                self.stop_flag=True
                 return True
         else:
             if self.end():
                 self.save(self.total_epoch,True)
                 self.save_flag=True
-                self.stop_flag=0
+                self.stop_flag=True
                 return True
-            elif self.stop_flag==2:
-                self.stop_flag=0
+            else:
+                self.stop_flag=True
                 return True
         return False
     
