@@ -22,7 +22,7 @@ class kernel:
         self.suspend=False
         self.stop=False
         self.save_flag=False
-        self.stop_flag=1
+        self.stop_flag=False
         self.training_flag=False
         self.save_epoch=None
         self.batch=None
@@ -480,7 +480,7 @@ class kernel:
             batches=int((self.shape0-self.shape0%batch)/batch)
             for j in range(batches):
                 if self.stop==True:
-                    if self.stop_func() or self.stop_flag==0:
+                    if self.stop_flag==True or self.stop_func():
                         return
                 self.suspend_func()
                 index1=j*batch
@@ -500,7 +500,7 @@ class kernel:
                         pass
             if self.shape0%batch!=0:
                 if self.stop==True:
-                    if self.stop_func() or self.stop_flag==0:
+                    if self.stop_flag==True or self.stop_func():
                         return
                 self.suspend_func()
                 batches+=1
@@ -568,14 +568,14 @@ class kernel:
                         pass
         elif self.ol==None:
             if self.stop==True:
-                if self.stop_func() or self.stop_flag==0:
+                if self.stop_flag==True or self.stop_func():
                     return
             self.suspend_func()
             output,train_loss=self.opt(self.train_data,self.train_labels,t)
             self.loss_acc(output=output,labels_batch=labels_batch,loss=train_loss,test_batch=test_batch,total_loss=total_loss,total_acc=total_acc,t=t)
         else:
             if self.stop==True:
-                if self.stop_func() or self.stop_flag==0:
+                if self.stop_flag==True or self.stop_func():
                     return
             self.suspend_func()
             data=self.ol()
@@ -699,7 +699,7 @@ class kernel:
         if batch!=None:
             for j in range(batches):
                 if self.stop==True:
-                    if self.stop_func() or self.stop_flag==0:
+                    if self.stop_flag==True or self.stop_func():
                         return
                 self.suspend_func()
                 index1=j*batch
@@ -714,7 +714,7 @@ class kernel:
                     total_loss+=batch_loss
             if self.shape0%batch!=0:
                 if self.stop==True:
-                    if self.stop_func() or self.stop_flag==0:
+                    if self.stop_flag==True or self.stop_func():
                         return
                 self.suspend_func()
                 batches+=1
@@ -766,7 +766,7 @@ class kernel:
             return
         else:
             if self.stop==True:
-                if self.stop_func() or self.stop_flag==0:
+                if self.stop_flag==True or self.stop_func():
                     return
             self.suspend_func()
             batch_loss,batch_acc=self.train_(data_batch,labels_batch,batch,batches,test_batch,index1,index2,j,t)
@@ -825,7 +825,7 @@ class kernel:
                         self._train_(batch,data_batch,labels_batch,test_batch,t)
                     else:
                         self._train(batch,data_batch,labels_batch,test_batch,t)
-                if self.stop_flag==0:
+                if self.stop_flag==True:
                     return
                 if self.thread==None:
                     try:
@@ -933,7 +933,7 @@ class kernel:
             i=0
             while True:
                 if self.stop==True:
-                    if self.stop_func() or self.stop_flag==0:
+                    if self.stop_flag==True or self.stop_func():
                         return
                 t1=time.time()
                 if self.thread==None:
@@ -944,7 +944,7 @@ class kernel:
                         self._train_(test_batch=test_batch,t=t)
                     else:
                         self._train(test_batch=test_batch,t=t)
-                if self.stop_flag==0:
+                if self.stop_flag==True:
                     return
                 i+=1
                 if self.thread==None:
@@ -1267,9 +1267,9 @@ class kernel:
                     pass
                 print()
                 print('time:{0}s'.format(self.total_time))
-                self.stop_flag=0
+                self.stop_flag=True
                 return True
-            elif self.stop_flag==1:
+            else:
                 print('\nSystem have stopped training.')
                 self._time=self.time-int(self.time)
                 if self._time<0.5:
@@ -1300,7 +1300,7 @@ class kernel:
                     pass
                 print()
                 print('time:{0}s'.format(self.total_time))
-                self.stop_flag=0
+                self.stop_flag=True
                 return True
         else:
             if self.end():
@@ -1314,10 +1314,10 @@ class kernel:
                     self.thread_lock[2].release()
                 else:
                     self.thread_lock[3].release()
-                self.stop_flag=0
+                self.stop_flag=True
                 return True
-            elif self.stop_flag==1:
-                self.stop_flag=0
+            else:
+                self.stop_flag=True
                 return True
         return False
     
