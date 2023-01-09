@@ -291,13 +291,13 @@ class kernel:
                     self.suspend_func()
                     try:
                         if self.platform.DType!=None:
-                            state_batch=state_batch.numpy()
-                            action_batch=action_batch.numpy()
-                            next_state_batch=next_state_batch.numpy()
-                            reward_batch=reward_batch.numpy()
-                            done_batch=done_batch.numpy()
+                            pass
                     except AttributeError:
-                        pass
+                        state_batch=state_batch.numpy()
+                        action_batch=action_batch.numpy()
+                        next_state_batch=next_state_batch.numpy()
+                        reward_batch=reward_batch.numpy()
+                        done_batch=done_batch.numpy()
                     batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
                     loss+=batch_loss
                     j+=1
