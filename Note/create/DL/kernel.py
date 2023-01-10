@@ -270,14 +270,14 @@ class kernel:
             except:
                 if type(self.train_data)==list:
                     for i in range(len(self.train_data)):
-                        data_batch[i]=self.platform.concat([self.train_data[i][index1:],self.train_data[i][:index2]],0)
+                        data_batch[i]=np.concatenate([self.train_data[i][index1:],self.train_data[i][:index2]],0)
                 else:
-                    data_batch=self.platform.concat([self.train_data[index1:],self.train_data[:index2]],0)
+                    data_batch=np.concatenate([self.train_data[index1:],self.train_data[:index2]],0)
                 if type(self.train_labels)==list:
                     for i in range(len(self.train_data)):
-                        labels_batch[i]=self.platform.concat([self.train_labels[i][index1:],self.train_labels[i][:index2]],0)
+                        labels_batch[i]=np.concatenate([self.train_labels[i][index1:],self.train_labels[i][:index2]],0)
                 else:
-                    labels_batch=self.platform.concat([self.train_labels[index1:],self.train_labels[:index2]],0)
+                    labels_batch=np.concatenate([self.train_labels[index1:],self.train_labels[:index2]],0)
         return data_batch,labels_batch
     
     
@@ -432,10 +432,10 @@ class kernel:
             output,loss=self.tf_opt(data,labels,t)
         except AttributeError:
             if self.thread==None:
-                output=self.nn.fp(data.to(self.nn.device))
+                output=self.nn.fp(data)
             else:
-                output=self.nn.fp(data.to(self.nn.device),t)
-            loss=self.nn.loss(output,labels.to(self.nn.device))
+                output=self.nn.fp(data,t)
+            loss=self.nn.loss(output,labels)
             try:
                 self.nn.opt.zero_grad()
                 loss.backward()
