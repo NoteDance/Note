@@ -283,6 +283,8 @@ class kernel:
                     labels_batch=self.train_labels[j]
         else:
             try:
+                if self.platform.DType!=None:
+                    pass
                 if type(self.train_data)==list:
                     for i in range(len(self.train_data)):
                         data_batch[i]=self.platform.concat([self.train_data[i][index1:],self.train_data[i][:index2]],0)
@@ -293,17 +295,17 @@ class kernel:
                         labels_batch[i]=self.platform.concat([self.train_labels[i][index1:],self.train_labels[i][:index2]],0)
                 else:
                     labels_batch=self.platform.concat([self.train_labels[index1:],self.train_labels[:index2]],0)
-            except:
+            except AttributeError:
                 if type(self.train_data)==list:
                     for i in range(len(self.train_data)):
-                        data_batch[i]=self.platform.concat([self.train_data[i][index1:],self.train_data[i][:index2]],0)
+                        data_batch[i]=np.concatenate([self.train_data[i][index1:],self.train_data[i][:index2]],0)
                 else:
-                    data_batch=self.platform.concat([self.train_data[index1:],self.train_data[:index2]],0)
+                    data_batch=np.concatenate([self.train_data[index1:],self.train_data[:index2]],0)
                 if type(self.train_labels)==list:
                     for i in range(len(self.train_data)):
-                        labels_batch[i]=self.platform.concat([self.train_labels[i][index1:],self.train_labels[i][:index2]],0)
+                        labels_batch[i]=np.concatenate([self.train_labels[i][index1:],self.train_labels[i][:index2]],0)
                 else:
-                    labels_batch=self.platform.concat([self.train_labels[index1:],self.train_labels[:index2]],0)
+                    labels_batch=np.concatenate([self.train_labels[index1:],self.train_labels[:index2]],0)
         return data_batch,labels_batch
     
     
@@ -697,7 +699,11 @@ class kernel:
                     self.nn.bc+=1
                 except AttributeError:
                     pass
-            loss=total_loss.numpy()/batches
+            try:
+                if self.platform.DType!=None:
+                    loss=total_loss.numpy()/batches
+            except AttributeError:
+                loss=total_loss.detach().numpy()/batches
             try:
                 if self.nn.accuracy!=None:
                     train_acc=total_acc/batches
