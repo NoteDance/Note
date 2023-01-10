@@ -52,6 +52,7 @@ pytorch:
 import Note.create.DL.kernel as k   #import kernel
 import torch                         #import platform
 import nn as n                          #import neural network
+from torch.utils.data import DataLoader
 from torchvision import datasets
 from torchvision.transforms import ToTensor
 training_data=datasets.FashionMNIST(
@@ -60,7 +61,9 @@ training_data=datasets.FashionMNIST(
     download=True,
     transform=ToTensor(),
 )
-train_data,train_labels=training_data
+train_dataloader=DataLoader(training_data,batch_size=60000)
+for train_data,train_labels in train_dataloader:
+    break
 nn=n.neuralnetwork()                                #create neural network object
 kernel=k.kernel(nn)                 #start kernel
 kernel.platform=torch                   #use platform
