@@ -60,7 +60,7 @@ training_data=datasets.FashionMNIST(
     transform=ToTensor(),
 )
 train_data,train_labels=training_data
-nn=n.nn()                                #create neural network object
+nn=n.neuralnetwork()                                #create neural network object
 kernel=k.kernel(nn)                 #start kernel
 kernel.platform=torch                   #use platform
 kernel.data(train_data,train_labels)   #input you data
