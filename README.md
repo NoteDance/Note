@@ -211,35 +211,6 @@ for _ in range(7):
 for _ in range(7):
 	_thread.join()
 ```
-PO3(matrix):
-```python
-import Note.create.DL.kernel as k   #import kernel
-import tensorflow as tf              #import platform
-import cnn as c                          #import neural network
-import threading
-mnist=tf.keras.datasets.mnist
-(x_train,y_train),(x_test,y_test)=mnist.load_data()
-x_train,x_test =x_train/255.0,x_test/255.0
-y_train=tf.one_hot(y_train,10).numpy()
-cnn=c.cnn()                                #create neural network object
-kernel=k.kernel(cnn)   #start kernel
-kernel.platform=tf                            #use platform
-kernel.thread=6                        #thread count
-kernel.PO=3
-kernel.threading=threading
-kernel.row=2
-kernel.rank=3
-kernel.data(x_train,y_train)   #input you data
-kernel.thread_lock=[threading.Lock(),threading.Lock()]
-class thread(threading.Thread):
-	def run(self):
-		kernel.train(32,1)
-for _ in range(6):
-	_thread=thread()
-	_thread.start()
-for _ in range(6):
-	_thread.join()
-```
 
 Stop multithreading training and saving when condition is met.
 
@@ -372,7 +343,6 @@ You can download the neural network example at this link.
 
 https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow
 
-### list:
 example:
 ```python
 import Note.create.RL.kernel as k   #import kernel
@@ -421,33 +391,6 @@ for _ in range(5):
 	_thread=thread()
 	_thread.start()
 for _ in range(5):
-	_thread.join()
-kernel.loss_list or kernel.loss       #view training loss
-kernel.visualize_train()
-kernel.reward                         #view reward
-kernel.visualize_reward()
-```
-
-### matrix:
-example:
-```python
-import Note.create.RL.kernel as k   #import kernel
-import DQNm as d
-import threading
-dqn=d.DQN(4,128,2)                               #create neural network object
-kernel=k.kernel(dqn,6)   #start kernel
-kernel.action_num=2
-kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
-kernel.PO=1
-kernel.threading=threading
-kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock()]
-class thread(threading.Thread):
-	def run(self):
-		kernel.train(100)
-for _ in range(6):
-	_thread=thread()
-	_thread.start()
-for _ in range(6):
 	_thread.join()
 kernel.loss_list or kernel.loss       #view training loss
 kernel.visualize_train()
