@@ -283,8 +283,6 @@ class kernel:
                     labels_batch=self.train_labels[j]
         else:
             try:
-                if self.platform.DType!=None:
-                    pass
                 if type(self.train_data)==list:
                     for i in range(len(self.train_data)):
                         data_batch[i]=self.platform.concat([self.train_data[i][index1:],self.train_data[i][:index2]],0)
@@ -295,7 +293,7 @@ class kernel:
                         labels_batch[i]=self.platform.concat([self.train_labels[i][index1:],self.train_labels[i][:index2]],0)
                 else:
                     labels_batch=self.platform.concat([self.train_labels[index1:],self.train_labels[:index2]],0)
-            except AttributeError:
+            except:
                 if type(self.train_data)==list:
                     for i in range(len(self.train_data)):
                         data_batch[i]=np.concatenate([self.train_data[i][index1:],self.train_data[i][:index2]],0)
