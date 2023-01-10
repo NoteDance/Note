@@ -251,7 +251,7 @@ kernel.visualize_reward()
 ![3](https://github.com/NoteDancing/Note-documentation/blob/main/picture/Pool%20Net.png)
 
 neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%206.0%20documentation/RL/neural%20network
-### list:
+
 example:
 ```python
 import Note.create.RL.kernel as k   #import kernel
@@ -296,31 +296,6 @@ for _ in range(5):
 	_thread=thread()
 	_thread.start()
 for _ in range(5):
-	_thread.join()
-kernel.loss_list or kernel.loss       #view training loss
-kernel.visualize_train()
-kernel.reward                         #view reward
-kernel.visualize_reward()
-```
-
-### matrix:
-example:
-```python
-import Note.create.RL.kernel as k   #import kernel
-import DQNm as d
-import threading
-dqn=d.DQN(4,128,2)                               #create neural network object
-kernel=k.kernel(dqn,6)   #start kernel
-kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock()]
-kernel.action_num=2
-kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
-class thread(threading.Thread):
-	def run(self):
-		kernel.train(100)
-for _ in range(6):
-	_thread=thread()
-	_thread.start()
-for _ in range(6):
 	_thread.join()
 kernel.loss_list or kernel.loss       #view training loss
 kernel.visualize_train()
