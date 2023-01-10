@@ -53,6 +53,7 @@ import Note.create.DL.kernel as k   #import kernel
 import torch                         #import platform
 import nn as n                          #import neural network
 from torchvision import datasets
+from torchvision.transforms import ToTensor
 training_data=datasets.FashionMNIST(
     root="data",
     train=True,
