@@ -322,7 +322,7 @@ class kernel:
                         pass
             loss=total_loss.numpy()/batches
             if self.acc_flag1==1:
-                train_acc=total_acc/batches
+                train_acc=total_acc.numpy()/batches
             if self.thread==None:
                 self.train_loss_list.append(loss.astype(np.float32))
                 self.train_loss=loss
