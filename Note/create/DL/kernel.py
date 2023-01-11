@@ -447,7 +447,12 @@ class kernel:
                     self.nn.bc+=1
                 except AttributeError:
                     pass
-            loss=total_loss.numpy()/batches
+            
+            try:
+                if self.platform.DType!=None:
+                    loss=total_loss.numpy()/batches
+            except AttributeError:
+                loss=total_loss.detach().numpy()/batches
             try:
                 if self.nn.accuracy!=None:
                     train_acc=total_acc/batches
