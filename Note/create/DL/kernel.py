@@ -527,7 +527,7 @@ class kernel:
             try:
                 if self.nn.accuracy!=None:
                     pass
-                train_acc=total_acc/batches
+                train_acc=total_acc.numpy()/batches
             except AttributeError:
                 pass
             if self.thread==None:
