@@ -455,7 +455,7 @@ class kernel:
                 loss=total_loss.detach().numpy()/batches
             try:
                 if self.nn.accuracy!=None:
-                    train_acc=total_acc/batches
+                    train_acc=total_acc.numpy()/batches
             except AttributeError:
                 pass
             self.train_loss=loss
