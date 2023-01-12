@@ -1066,11 +1066,7 @@ class kernel:
                 if self.thread==None:
                     self._train(test_batch=test_batch)
                 else:
-                    t=self.t.pop()
-                    if self.PO!=None:
-                        self._train_(test_batch=test_batch,t=t)
-                    else:
-                        self._train(test_batch=test_batch,t=t)
+                    self._train_(test_batch=test_batch,t=t)
                 if self.thread!=None:
                     if t in self.stop_list or t in self.stop_list_m:
                         if self.PO==1 or self.PO==3:
