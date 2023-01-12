@@ -23,11 +23,13 @@ If you accomplish your neural network,you can use kernel to train,examples are s
 
 # Deep Learning:
 
-You can download the neural network example at this link.
-
-https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/DL/neural%20network
-
 example:
+
+tensorflow:
+
+You can get neural network example in this link.
+
+https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn.py
 ```python
 import Note.create.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
@@ -61,6 +63,10 @@ kernel.train(32,1)             #train again
 ```
 
 pytorch:
+
+You can get neural network example in this link.
+
+https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/pytorch/nn.py
 ```python
 import Note.create.DL.kernel as k   #import kernel
 import torch                         #import platform
@@ -265,17 +271,15 @@ test_nn.test(cnn,tf,x_train[:32],y_train[:32])
 
 # Reinforcement Learning:
 
-You can download the neural network example at this link.
-
-https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/RL/neural%20network
-
-https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow
-
 example:
 
 DQN:
 
 pytorch:
+
+You can get neural network example in this link.
+
+https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/RL/neural%20network/pytorch/DQN.py
 ```python
 import Note.create.RL.nspn.kernel as k   #import kernel
 import torch
@@ -292,6 +296,10 @@ kernel.reward                         #view reward
 kernel.visualize_reward()
 ```
 tensorflow:
+
+You can get neural network example in this link.
+
+https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow/DQN.py
 ```python
 import Note.create.RL.nspn.kernel as k   #import kernel
 import tensorflow as tf
@@ -324,14 +332,20 @@ reward=r.reward(1000) #test neural network
 ```
 
 DDPG:
+
+You can get neural network example in this link.
+
+https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow/DDPG.py
 ```python
 import Note.create.RL.nspn.kernel as k   #import kernel
+import tensorflow as tf
 import DDPG as d
 state_dim=env.observation_spave.shape[0]
 action_dim=env.action_spave.shape[0]
 action_bound=env.action_spave.high[0]
 ddpg=d.DDPG(state_dim,64,action_dim,action_bound,0.01,0.98,0.005,5e-4,5e-3)         #create neural network object
 kernel=k.kernel(ddpg)   #start kernel
+kernel.platform=tf
 kernel.set_up(pool_size=10000,batch=64)
 kernel.train(200)
 kernel.loss_list or kernel.loss       #view training loss
@@ -343,9 +357,9 @@ kernel.visualize_reward()
 ## Pool Net:
 ![3](https://github.com/NoteDancing/Note-documentation/blob/main/picture/Pool%20Net.png)
 
-You can download the neural network example at this link.
+You can get neural network example in this link.
 
-https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow
+https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow/DQN.py
 
 example:
 ```python
