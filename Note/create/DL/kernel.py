@@ -711,10 +711,7 @@ class kernel:
                 if self.thread==None:
                     self._train(batch,data_batch,labels_batch,test_batch)
                 else:
-                    if self.PO!=None:
-                        self._train_(batch,data_batch,labels_batch,test_batch,t)
-                    else:
-                        self._train(batch,data_batch,labels_batch,test_batch,t)
+                    self._train_(batch,data_batch,labels_batch,test_batch,t)
                 if self.thread!=None:
                     if t in self.stop_list:
                         if self.PO==1:
@@ -822,11 +819,7 @@ class kernel:
                 if self.thread==None:
                     self._train(test_batch=test_batch)
                 else:
-                    t=self.t.pop()
-                    if self.PO!=None:
-                        self._train_(test_batch=test_batch,t=t)
-                    else:
-                        self._train(test_batch=test_batch,t=t)
+                    self._train_(test_batch=test_batch,t=t)
                 if self.thread!=None:
                     if t in self.stop_list:
                         if self.PO==1:
