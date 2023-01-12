@@ -958,10 +958,7 @@ class kernel:
                 if self.thread==None:
                     self._train(batch,data_batch,labels_batch,test_batch)
                 else:
-                    if self.PO!=None:
-                        self._train_(batch,data_batch,labels_batch,test_batch,t)
-                    else:
-                        self._train(batch,data_batch,labels_batch,test_batch,t)
+                    self._train_(batch,data_batch,labels_batch,test_batch,t)
                 if self.thread!=None:
                     if t in self.stop_list or t in self.stop_list_m:
                         if self.PO==1 or self.PO==3:
