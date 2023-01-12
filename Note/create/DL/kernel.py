@@ -231,8 +231,8 @@ class kernel:
             return
     
     
-    def data_func(self,data_batch=None,labels_batch=None,batch=None,index1=None,index2=None,j=None,flag=None):
-        if flag==None:
+    def data_func(self,data_batch=None,labels_batch=None,batch=None,index1=None,index2=None,j=None,flag=False):
+        if flag==False:
             if type(self.train_data)==list:
                 for i in range(len(self.train_data)):
                     if batch!=1:
