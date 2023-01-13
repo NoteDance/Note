@@ -733,7 +733,7 @@ class kernel:
                 else:
                     try:
                         self.nn.ec[t]+=1
-                    except:
+                    except AttributeError:
                         pass
                 if self.thread==None:
                     self.total_epoch+=1
