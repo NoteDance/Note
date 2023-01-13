@@ -798,8 +798,6 @@ class kernel:
                 self.thread_lock[2].release()
         self.batch=batch
         self.epoch=0
-        t1=None
-        t2=None
         self.train_counter+=1
         if p==None:
             self.p=9
