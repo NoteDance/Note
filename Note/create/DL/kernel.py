@@ -706,9 +706,6 @@ class kernel:
         self.train_flag=True
         self.batch=batch
         self.epoch=0
-        t1=None
-        t2=None
-        t=None
         self.train_counter+=1
         if p==None:
             self.p=9
