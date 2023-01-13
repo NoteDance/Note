@@ -837,7 +837,7 @@ class kernel:
                 else:
                     try:
                         self.nn.ec[t]+=1
-                    except:
+                    except AttributeError:
                         pass
                 if type(self.total_epoch)!=list:
                     if self.thread_lock!=None:
