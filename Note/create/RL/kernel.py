@@ -717,7 +717,7 @@ class kernel:
             else:
                 self.loss[i]=self.loss[i].numpy()/batches
         try:
-            self.nn.ec+=1
+            self.nn.ec[i]+=1
         except AttributeError:
             pass
         return
@@ -741,6 +741,10 @@ class kernel:
             self.reward_pool.append(None)
             self.epsilon.append(epsilon)
             self.epi_num.append(episode_num)
+            try:
+                self.nn.ec.append(0)
+            except AttributeError:
+                pass
             try:
                 self.nn.bc.append(0)
             except AttributeError:
