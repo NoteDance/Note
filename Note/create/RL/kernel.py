@@ -581,7 +581,7 @@ class kernel:
             self.loss[t]=self.loss[t]/batches
         self.sc[t]+=1
         try:
-            self.nn.ec[t]+=1
+            self.nn.ec+=1
         except AttributeError:
             pass
         return
@@ -623,10 +623,6 @@ class kernel:
             epsilon=self.epsilon[t]
         except:
             epsilon=None
-        try:
-            self.nn.ec.append(0)
-        except AttributeError:
-            pass
         try:
             self.nn.bc.append(0)
         except AttributeError:
