@@ -95,10 +95,6 @@ class kernel:
             self.thread_num=np.arange(self.thread)
             self.thread_num=list(self.thread_num)
             try:
-                self.nn.ec=np.zeros(self.thread)
-            except AttributeError:
-                pass
-            try:
                 self.nn.bc=np.zeros(self.thread)
             except AttributeError:
                 pass
@@ -133,10 +129,6 @@ class kernel:
         thread_num=np.arange(thread)+self.thread
         self.thread_num=self.thread_num.extend(thread_num)
         self.thread+=thread
-        try:
-            self.nn.ec=np.concatenate((self.nn.ec,np.zeros(thread)))
-        except AttributeError:
-            pass
         try:
             self.nn.bc=np.concatenate((self.nn.bc,np.zeros(thread)))
         except AttributeError:
@@ -829,16 +821,10 @@ class kernel:
                         self._train(batch,data_batch,labels_batch,test_batch,t)
                 if self.stop_flag==True:
                     return
-                if self.thread==None:
-                    try:
-                        self.nn.ec+=1
-                    except AttributeError:
-                        pass
-                else:
-                    try:
-                        self.nn.ec[t]+=1
-                    except AttributeError:
-                        pass
+                try:
+                    self.nn.ec+=1
+                except AttributeError:
+                    pass
                 if type(self.total_epoch)!=list:
                     if self.thread_lock!=None:
                         if self.PO==1:
@@ -949,16 +935,10 @@ class kernel:
                 if self.stop_flag==True:
                     return
                 i+=1
-                if self.thread==None:
-                    try:
-                        self.nn.ec+=1
-                    except AttributeError:
-                        pass
-                else:
-                    try:
-                        self.nn.ec[t]+=1
-                    except AttributeError:
-                        pass
+                try:
+                    self.nn.ec+=1
+                except AttributeError:
+                    pass
                 if type(self.total_epoch)!=list:
                     if self.thread_lock!=None:
                         if self.PO==1:
