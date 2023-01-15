@@ -102,6 +102,10 @@ class kernel:
             except AttributeError:
                 pass
             try:
+                self.nn.ec=np.zeros(self.thread,dtype=np.float32)
+            except AttributeError:
+                pass
+            try:
                 self.nn.bc=np.zeros(self.thread,dtype=np.float32)
             except AttributeError:
                 pass
@@ -126,6 +130,10 @@ class kernel:
         if self.thread!=None:
             self.thread_num=np.arange(self.thread)
             self.thread_num=list(self.thread_num)
+            try:
+                self.nn.ec=np.zeros(self.thread,dtype=np.float32)
+            except AttributeError:
+                pass
             try:
                 self.nn.bc=np.zeros(self.thread,dtype=np.float32)
             except AttributeError:
@@ -176,6 +184,10 @@ class kernel:
                 self.opt_counter=np.concatenate((self.opt_counter,np.zeros(thread,dtype=np.float32)))
             else:
                 self.opt_counter=np.zeros(self.thread,dtype=np.float32)
+        except AttributeError:
+            pass
+        try:
+            self.nn.ec=np.concatenate((self.nn.ec,np.zeros(thread,dtype=np.float32)))
         except AttributeError:
             pass
         try:
@@ -962,10 +974,16 @@ class kernel:
                         return
                 if self.stop_flag==True:
                     return
-                try:
-                    self.nn.ec+=1
-                except AttributeError:
-                    pass
+                if self.thread==None:
+                    try:
+                        self.nn.ec+=1
+                    except AttributeError:
+                        pass
+                else:
+                    try:
+                        self.nn.ec[t]+=1
+                    except AttributeError:
+                        pass
                 if self.thread==None:
                     self.total_epoch+=1
                 if self.thread==None:
@@ -1065,10 +1083,16 @@ class kernel:
                 if self.stop_flag==True:
                     return
                 i+=1
-                try:
-                    self.nn.ec+=1
-                except AttributeError:
-                    pass
+                if self.thread==None:
+                    try:
+                        self.nn.ec+=1
+                    except AttributeError:
+                        pass
+                else:
+                    try:
+                        self.nn.ec[t]+=1
+                    except AttributeError:
+                        pass
                 if self.thread==None:
                     self.total_epoch+=1
                 if self.thread==None:
