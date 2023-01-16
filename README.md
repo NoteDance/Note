@@ -458,7 +458,7 @@ kernel=k.kernel(cnn)   #start kernel
 kernel.platform=tf                            #use platform
 kernel.thread=7                        #thread count
 kernel.flag7=True
-kernel.epoch7=7
+kernel.epoch7=6
 kernel.PO=2
 kernel.data(x_train,y_train)   #input you data
 kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock()]
@@ -490,7 +490,7 @@ kernel.thread=7                        #thread count
 kernel.flag7=True
 kernel.data_segment_flag=True
 kernel.batches=1875
-kernel.epoch7=7
+kernel.epoch7=6
 kernel.PO=2
 kernel.data(data,labels)   #input you data
 kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock()]
