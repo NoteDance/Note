@@ -470,6 +470,7 @@ for _ in range(7):
 	_thread.start()
 for _ in range(7):
 	_thread.join()
+kernel.visualize_train()
 ```
 ```python
 import kernel_pv as k   #import kernel
@@ -501,4 +502,5 @@ for _ in range(7):
 	_thread.start()
 for _ in range(7):
 	_thread.join()
+kernel.visualize_train()
 ```
