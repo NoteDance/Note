@@ -1054,8 +1054,6 @@ class kernel:
                         self.thread_lock[1].release()
                     else:
                         self.thread_lock[2].release()
-                    if self.epoch_counter==self.epoch7:
-                        return
                     if self.thread!=None:
                         if t in self.stop_list or t in self.stop_list_m:
                             if self.PO==1 or self.PO==3:
@@ -1072,6 +1070,8 @@ class kernel:
                                 self.thread_lock[2].release()
                             return
                     if self.stop_flag==True:
+                        return
+                    if self.epoch_counter==self.epoch7:
                         return
         elif epoch!=None:
             for i in range(epoch):
