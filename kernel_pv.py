@@ -95,6 +95,8 @@ class kernel:
     def data(self,train_data,train_labels,test_data=None,test_labels=None):
         self.train_data=train_data
         self.train_labels=train_labels
+        if self.data_segment_flag==True:
+            self.train_data,self.train_labels=self.segment_data()
         if type(train_data)==list:
             self.data_batch=[x for x in range(len(train_data))]
         if type(train_labels)==list:
@@ -139,6 +141,29 @@ class kernel:
                     self.max_memory=self.data_memory+self.param_memory+self.grad_memory*len(self.gradient_lock)
         return
     
+    
+    def segment_data(self):
+        if len(self.train_data)!=self.thread:
+            data=None
+            labels=None
+            segments=int((len(self.train_data)-len(self.train_data)%self.thread)/self.thread)
+            for i in range(self.thread):
+                index1=i*segments
+                index2=(i+1)*segments
+                if i==0:
+                    data=np.expand_dims(self.train_data[index1:index2],axis=0)
+                    labels=np.expand_dims(self.train_labels[index1:index2],axis=0)
+                else:
+                    data=np.concatenate((data,np.expand_dims(self.train_data[index1:index2],axis=0)))
+                    labels=np.concatenate((labels,np.expand_dims(self.train_labels[index1:index2],axis=0)))
+            if len(data)%self.thread!=0:
+                segments+=1
+                index1=segments*self.thread
+                index2=self.thread-(len(self.train_data)-segments*self.thread)
+                data=np.concatenate((data,np.expand_dims(self.train_data[index1:index2],axis=0)))
+                labels=np.concatenate((labels,np.expand_dims(self.train_labels[index1:index2],axis=0)))
+            return data,labels
+                
     
     def init(self):
         if self.thread!=None:
