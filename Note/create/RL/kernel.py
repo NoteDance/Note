@@ -1495,7 +1495,7 @@ class kernel:
         except AttributeError:
             pass
         try:
-            pickle.dump(opt.get_config(),output_file)
+            pickle.dump(self.platform.keras.optimizers.serialize(opt),output_file)
         except:
             pickle.dump(None,output_file)
         pickle.dump(self.epsilon,output_file)
@@ -1531,6 +1531,8 @@ class kernel:
             self.nn.km=1
         except AttributeError:
             pass
+        opt_serialized=pickle.load(input_file)
+        self.nn.opt=self.platform.keras.optimizers.deserialize(opt_serialized)
         self.epsilon=pickle.load(input_file)
         self.episode_step=pickle.load(input_file)
         self.pool_size=pickle.load(input_file)
