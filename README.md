@@ -58,7 +58,6 @@ kernel=k.kernel()                 #start kernel
 kernel.platform=tf                    #use platform
 kernel.data(x_train,y_train)   #input you data
 kernel.restore('save.dat')     #restore neural network
-kernel.nn.opt=tf.keras.optimizers.Adam().from_config(kernel.config)
 kernel.train(32,1)             #train again
 ```
 
