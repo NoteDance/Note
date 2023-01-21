@@ -1888,7 +1888,7 @@ class kernel:
             pickle.dump(self.nn,output_file)
             self.nn.opt=opt
         try:
-            pickle.dump(opt.get_config(),output_file)
+            pickle.dump(self.platform.keras.optimizers.serialize(opt),output_file)
         except:
             pickle.dump(None,output_file)
         pickle.dump(self.batch,output_file)
@@ -1924,7 +1924,8 @@ class kernel:
             self.nn.km=1
         except AttributeError:
             pass
-        self.config=pickle.load(input_file)
+        opt_serialized=pickle.load(input_file)
+        self.nn.opt=self.platform.keras.optimizers.deserialize(opt_serialized)
         self.batch=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
         self.end_acc=pickle.load(input_file)
