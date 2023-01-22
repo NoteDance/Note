@@ -170,10 +170,6 @@ class kernel:
             self.thread_num=np.arange(self.thread)
             self.thread_num=list(self.thread_num)
             try:
-                self.nn.ec=np.zeros(self.thread,dtype=np.float32)
-            except AttributeError:
-                pass
-            try:
                 self.nn.bc=np.zeros(self.thread,dtype=np.float32)
             except AttributeError:
                 pass
@@ -223,10 +219,6 @@ class kernel:
                 self.opt_counter=np.concatenate((self.opt_counter,np.zeros(thread,dtype=np.float32)))
             else:
                 self.opt_counter=np.zeros(self.thread,dtype=np.float32)
-        except AttributeError:
-            pass
-        try:
-            self.nn.ec=np.concatenate((self.nn.ec,np.zeros(thread,dtype=np.float32)))
         except AttributeError:
             pass
         try:
@@ -915,6 +907,10 @@ class kernel:
                     self.test_acc_list.append(self.test_acc)
             except AttributeError:
                 pass
+            try:
+                self.nn.ec+=1
+            except AttributeError:
+                pass
             self.print_save()
             if self.PO==1 or self.PO==3:
                 self.thread_lock[1].release()
@@ -1127,11 +1123,6 @@ class kernel:
                         self.nn.ec+=1
                     except AttributeError:
                         pass
-                else:
-                    try:
-                        self.nn.ec[t]+=1
-                    except AttributeError:
-                        pass
                 if self.thread==None:
                     self.total_epoch+=1
                 if self.thread==None:
@@ -1234,11 +1225,6 @@ class kernel:
                 if self.thread==None:
                     try:
                         self.nn.ec+=1
-                    except AttributeError:
-                        pass
-                else:
-                    try:
-                        self.nn.ec[t]+=1
                     except AttributeError:
                         pass
                 if self.thread==None:
