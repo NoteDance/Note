@@ -2038,6 +2038,8 @@ class kernel:
         try:
             pickle.dump(self.platform.keras.optimizers.serialize(opt),output_file)
         except:
+            pickle.dump(self.nn.serialize(),output_file)
+        else:
             pickle.dump(None,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.end_loss,output_file)
@@ -2075,7 +2077,9 @@ class kernel:
         opt_serialized=pickle.load(input_file)
         try:
             self.nn.opt=self.platform.keras.optimizers.deserialize(opt_serialized)
-        except TypeError:
+        except:
+            self.nn.opt=self.nn.deserialize(opt_serialized)
+        else:
             pass
         self.batch=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
