@@ -1537,7 +1537,7 @@ class kernel:
         try:
             self.nn.opt=self.platform.keras.optimizers.deserialize(opt_serialized)
         except:
-            self.nn.opt=self.nn.deserialize(opt_serialized)
+            self.nn.deserialize(opt_serialized)
         else:
             pass
         self.epsilon=pickle.load(input_file)
