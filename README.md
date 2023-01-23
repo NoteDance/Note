@@ -521,7 +521,7 @@ kernel.data_segment_flag=True
 kernel.batches=1875
 kernel.epoch7=6
 kernel.PO=2
-kernel.data(data,labels)   #input you data
+kernel.data(x_train,y_train)   #input you data
 kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock()]
 class thread(threading.Thread):
 	def run(self):
