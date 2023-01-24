@@ -1090,16 +1090,6 @@ class kernel:
                             else:
                                 self.thread_lock[2].release()
                             return
-                        if self.PO==1 or self.PO==3:
-                            self.thread_lock[1].acquire()
-                        else:
-                            self.thread_lock[2].acquire()
-                        self.thread_counter-=1
-                        self.running_list.remove(t)
-                        if self.PO==1 or self.PO==3:
-                            self.thread_lock[1].release()
-                        else:
-                            self.thread_lock[2].release()
                     if self.stop_flag==True:
                         return
                     if self.epoch_counter==self.epoch7:
