@@ -1179,7 +1179,7 @@ class kernel:
             except AttributeError:
                 pass
             print()
-            print('time:{0}s'.format(self.total_time))
+            print('time:{0}s'.format(self.time))
         if self.thread==None:
             self.training_flag=False
         if self.thread!=None:
