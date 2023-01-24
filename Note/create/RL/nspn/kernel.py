@@ -427,7 +427,7 @@ class kernel:
                 except AttributeError:
                     pass
                 t2=time.time()
-                self.total_time+=(t2-t1)
+                self.time+=(t2-t1)
         elif self.ol==None:
             i=0
             while True:
@@ -500,7 +500,7 @@ class kernel:
                 except AttributeError:
                     pass
                 t2=time.time()
-                self.total_time+=(t2-t1)
+                self.time+=(t2-t1)
         else:
             data=self.ol()
             loss=self.opt_t(data)
@@ -524,15 +524,16 @@ class kernel:
                 except AttributeError:
                     pass
                 self.total_episode+=1
-        self._time=self.total_time-int(self.total_time)
+        self._time=self.time-int(self.time)
         if self._time<0.5:
-            self.total_time=int(self.total_time)
+            self.total_time=int(self.time)
         else:
-            self.total_time=int(self.total_time)+1
+            self.total_time=int(self.time)+1
+        self.total_time+=self.time
         print('last loss:{0:.6f}'.format(loss))
         print('last reward:{0}'.format(self.reward))
         print()
-        print('time:{0}s'.format(self.total_time))
+        print('time:{0}s'.format(self.time))
         return
         
     
