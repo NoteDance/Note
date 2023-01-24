@@ -72,6 +72,7 @@ class kernel:
         self.loss_list=[]
         self.sc=0
         self.total_episode=0
+        self.time=0
         self.total_time=0
         return
     
