@@ -19,7 +19,6 @@ class kernel:
         self.end_test_acc=None
         self.acc_flag1=None
         self.acc_flag2='%'
-        self.train_counter=0
         self.train_loss=None
         self.train_acc=None
         self.train_loss_list=[]
@@ -283,7 +282,6 @@ class kernel:
         self.epoch=0
         t1=None
         t2=None
-        self.train_counter+=1
         if type(self.train_data)==list:
             data_batch=[x for x in range(len(self.train_data))]
         else:
@@ -311,16 +309,10 @@ class kernel:
                     d=epoch
                 e=d*2
                 if i%d==0:
-                    if self.train_counter==1:
-                        if self.test_flag==False:
-                            print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
-                        else:
-                            print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
+                    if self.test_flag==False:
+                        print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
                     else:
-                        if self.test_flag==False:
-                            print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
-                        else:
-                            print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch,self.train_loss,self.test_loss))
+                        print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
                     if save!=None and i%e==0:
                         self.save(self.total_epoch,one)
                 t2=time.time()
@@ -350,16 +342,10 @@ class kernel:
                     d=1
                 e=d*2
                 if i%d==0:
-                    if self.train_counter==1:
-                        if self.test_flag==False:
-                            print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
-                        else:
-                            print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
+                    if self.test_flag==False:
+                        print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
                     else:
-                        if self.test_flag==False:
-                            print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
-                        else:
-                            print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch,self.train_loss,self.test_loss))
+                        print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
                     if save!=None and i%e==0:
                         self.save(self.total_epoch,one)
                 t2=time.time()
@@ -631,7 +617,6 @@ class kernel:
         pickle.dump(self.end_test_acc,output_file)
         pickle.dump(self.acc_flag1,output_file)
         pickle.dump(self.acc_flag2,output_file)
-        pickle.dump(self.train_counter,output_file)
         pickle.dump(self.train_loss,output_file)
         pickle.dump(self.train_acc,output_file)
         pickle.dump(self.train_loss_list,output_file)
@@ -663,7 +648,6 @@ class kernel:
         self.end_test_acc=pickle.load(input_file)
         self.acc_flag1=pickle.load(input_file)
         self.acc_flag2=pickle.load(input_file)
-        self.train_counter=pickle.load(input_file)
         self.train_loss=pickle.load(input_file)
         self.train_acc=pickle.load(input_file)
         self.train_loss_list=pickle.load(input_file)
