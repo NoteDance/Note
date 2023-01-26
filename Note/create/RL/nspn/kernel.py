@@ -33,7 +33,6 @@ class kernel:
         self.suspend=False
         self.stop=None
         self.save_epi=None
-        self.train_counter=0
         self.end_loss=None
         self.max_episode_num=None
         self.save_episode=save_episode
@@ -493,7 +492,6 @@ class kernel:
     
     
     def train(self,episode_num,save=None,one=True,p=None,s=None):
-        self.train_counter+=1
         avg_reward=None
         if p==None:
             self.p=9
@@ -544,22 +542,13 @@ class kernel:
                 if s==0:
                     s=1
                 if i%p==0:
-                    if self.train_counter==1:
-                        if len(self.state_pool)>=self.batch:
-                            print('episode:{0}   loss:{1:.6f}'.format(i+1,loss))
-                        if avg_reward!=None:
-                            print('episode:{0}   average reward:{1}'.format(i+1,avg_reward))
-                        else:
-                            print('episode:{0}   reward:{1}'.format(i+1,self.reward))
-                        print()
+                    if len(self.state_pool)>=self.batch:
+                        print('episode:{0}   loss:{1:.6f}'.format(i+1,loss))
+                    if avg_reward!=None:
+                        print('episode:{0}   average reward:{1}'.format(i+1,avg_reward))
                     else:
-                        if len(self.state_pool)>=self.batch:
-                            print('episode:{0}   loss:{1:.6f}'.format(self.total_episode,loss))
-                        if avg_reward!=None:
-                            print('episode:{0}   average reward:{1}'.format(self.total_episode,avg_reward))
-                        else:
-                            print('episode:{0}   reward:{1}'.format(self.total_episode,self.reward))
-                        print()
+                        print('episode:{0}   reward:{1}'.format(i+1,self.reward))
+                    print()
                 if save!=None and i%s==0:
                     self.save(self.total_episode,one)
                 if self.save_episode==True:
@@ -615,22 +604,13 @@ class kernel:
                 if s==0:
                     s=1
                 if i%p==0:
-                    if self.train_counter==1:
-                        if len(self.state_pool)>=self.batch:
-                            print('episode:{0}   loss:{1:.6f}'.format(i+1,loss))
-                        if avg_reward!=None:
-                            print('episode:{0}   average reward:{1}'.format(i+1,avg_reward))
-                        else:
-                            print('episode:{0}   reward:{1}'.format(i+1,self.reward))
-                        print()
+                    if len(self.state_pool)>=self.batch:
+                        print('episode:{0}   loss:{1:.6f}'.format(i+1,loss))
+                    if avg_reward!=None:
+                        print('episode:{0}   average reward:{1}'.format(i+1,avg_reward))
                     else:
-                        if len(self.state_pool)>=self.batch:
-                            print('episode:{0}   loss:{1:.6f}'.format(self.total_episode,loss))
-                        if avg_reward!=None:
-                            print('episode:{0}   average reward:{1}'.format(self.total_episode,avg_reward))
-                        else:
-                            print('episode:{0}   reward:{1}'.format(self.total_episode,self.reward))
-                        print()
+                        print('episode:{0}   reward:{1}'.format(i+1,self.reward))
+                    print()
                 if save!=None and i%s==0:
                     self.save(self.total_episode,one)
                 if self.save_episode==True:
@@ -791,7 +771,6 @@ class kernel:
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.update_step,output_file)
-        pickle.dump(self.train_counter,output_file)
         pickle.dump(self.end_loss,output_file)
         pickle.dump(self.max_episode_num,output_file)
         pickle.dump(self.save_episode,output_file)
@@ -828,7 +807,6 @@ class kernel:
         self.pool_size=pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.update_step=pickle.load(input_file)
-        self.train_counter=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
         self.max_episode_num=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
