@@ -166,6 +166,14 @@ class kernel:
         if self.thread!=None:
             self.thread_num=np.arange(self.thread)
             self.thread_num=list(self.thread_num)
+            if self.flag7==True:
+                self.batch_counter=np.zeros(self.thread,dtype=np.int32)
+                self.total_loss=np.zeros(self.thread,dtype=np.float32)
+                try:
+                    if self.nn.accuracy!=None:
+                        self.total_acc=np.zeros(self.thread,dtype=np.float32)
+                except AttributeError:
+                    pass
             try:
                 self.nn.bc=np.zeros(self.thread,dtype=np.float32)
             except AttributeError:
