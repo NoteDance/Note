@@ -26,18 +26,11 @@ class kernel:
         self.threading=None
         self.thread_counter=0
         self.train_ds=None
-        self.total_loss=np.array(0.)
-        try:
-            if self.nn.accuracy!=None:
-                self.total_acc=np.array(0.)
-        except AttributeError:
-            pass
         self.flag7=False
         self.data_segment_flag=False
         self.batches=None
         self.buffer_size=None
         self.epoch7=None
-        self.batch_counter=np.array(0)
         self.epoch_counter=0
         self.running_list=[]
         self.suspend=False
@@ -112,13 +105,17 @@ class kernel:
         if self.train_counter==0 and self.thread!=None:
             self.thread_num=np.arange(self.thread)
             self.thread_num=list(self.thread_num)
+            if self.flag7==True:
+                self.batch_counter=np.zeros(self.thread,dtype=np.int32)
+                self.total_loss=np.zeros(self.thread,dtype=np.float32)
+                try:
+                    if self.nn.accuracy!=None:
+                        self.total_acc=np.zeros(self.thread,dtype=np.float32)
+                except AttributeError:
+                    pass
             try:
                 if self.nn.attenuate!=None:
                     self.opt_counter=np.zeros(self.thread,dtype=np.float32)
-            except AttributeError:
-                pass
-            try:
-                self.nn.ec=np.zeros(self.thread,dtype=np.float32)
             except AttributeError:
                 pass
             try:
@@ -214,6 +211,14 @@ class kernel:
         thread_num=np.arange(thread)+self.thread
         self.thread_num=self.thread_num.extend(thread_num)
         self.thread+=thread
+        if self.flag7==True:
+            self.batch_counter=np.concatenate((self.batch_counter,np.zeros(thread,dtype=np.int32)))
+            self.total_loss=np.concatenate((self.total_loss,np.zeros(thread,dtype=np.float32)))
+            try:
+                if self.nn.accuracy!=None:
+                    self.total_acc=np.concatenate((self.total_acc,np.zeros(thread,dtype=np.float32)))
+            except AttributeError:
+                pass
         try:
             if self.nn.attenuate!=None and self.opt_counter!=None:
                 self.opt_counter=np.concatenate((self.opt_counter,np.zeros(thread,dtype=np.float32)))
@@ -943,18 +948,11 @@ class kernel:
             self.running_list.append(t)
             self.epoch_list.append(0)
             if self.flag7==True:
-                self.batch_counter=np.append(self.batch_counter,np.array(0))
                 if t==0:
                     if self.batches==None:
                         self.batches=int((self.shape0-self.shape0%batch)/batch)
                         if self.shape0%batch!=0:
                             self.batches+=1
-                self.total_loss=np.append(self.total_loss,np.array(0.))
-                try:
-                    if self.nn.accuracy!=None:
-                        self.total_acc=np.append(self.total_acc,np.array(0.))
-                except AttributeError:
-                    pass
             if self.PO==1 or self.PO==3:
                 self.thread_lock[1].release()
             else:
