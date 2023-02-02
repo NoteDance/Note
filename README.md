@@ -485,14 +485,14 @@ labels=[y_train[0:10001],y_train[10000:20001],y_train[20000:30001],y_train[30000
 cnn=c.cnn()                                #create neural network object
 kernel=k.kernel(cnn)   #start kernel
 kernel.platform=tf                            #use platform
-kernel.thread=7                        #thread count
+kernel.process_thread=7                        #thread count
 kernel.flag7=True
 kernel.data_segment_flag=True
 kernel.batches=1875
 kernel.epoch7=6
 kernel.PO=2
 kernel.data(data,labels)   #input you data
-kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock()]
+kernel.process_thread_lock=[threading.Lock(),threading.Lock(),threading.Lock()]
 class thread(threading.Thread):
 	def run(self):
 		kernel.train(32)
@@ -515,14 +515,14 @@ y_train=tf.one_hot(y_train,10).numpy()
 cnn=c.cnn()                                #create neural network object
 kernel=k.kernel(cnn)   #start kernel
 kernel.platform=tf                            #use platform
-kernel.thread=7                        #thread count
+kernel.process_thread=7                        #thread count
 kernel.flag7=True
 kernel.data_segment_flag=True
 kernel.batches=1875
 kernel.epoch7=6
 kernel.PO=2
 kernel.data(x_train,y_train)   #input you data
-kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock()]
+kernel.process_thread_lock=[threading.Lock(),threading.Lock(),threading.Lock()]
 class thread(threading.Thread):
 	def run(self):
 		kernel.train(32)
@@ -531,5 +531,63 @@ for _ in range(7):
 	_thread.start()
 for _ in range(7):
 	_thread.join()
+kernel.visualize_train()
+```
+
+
+# Multiprocessing:
+kernel:https://github.com/NoteDancing/Note/blob/Note-7.0-pv/kernel_pv.py
+
+neural network:https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn.py
+```python
+import kernel_pv as k   #import kernel
+import tensorflow as tf              #import platform
+import cnn as c                          #import neural network
+from multiprocessing import Process,Lock
+mnist=tf.keras.datasets.mnist
+(x_train,y_train),(x_test,y_test)=mnist.load_data()
+x_train,x_test =x_train/255.0,x_test/255.0
+y_train=tf.one_hot(y_train,10).numpy()
+cnn=c.cnn()                                #create neural network object
+kernel=k.kernel(cnn)   #start kernel
+kernel.platform=tf                            #use platform
+kernel.process_thread=7                        #thread count
+kernel.flag7=True
+kernel.epoch7=6
+kernel.PO=2
+kernel.data(x_train,y_train)   #input you data
+kernel.process_thread_lock=[Lock(),Lock(),Lock()]
+for _ in range(7):
+	p=Process(target=kernel.train(32))
+	p.start()
+for _ in range(7):
+	p.join()
+kernel.visualize_train()
+```
+```python
+import kernel_pv as k   #import kernel
+import tensorflow as tf              #import platform
+import cnn as c                          #import neural network
+from multiprocessing import Process,Lock
+mnist=tf.keras.datasets.mnist
+(x_train,y_train),(x_test,y_test)=mnist.load_data()
+x_train,x_test =x_train/255.0,x_test/255.0
+y_train=tf.one_hot(y_train,10).numpy()
+cnn=c.cnn()                                #create neural network object
+kernel=k.kernel(cnn)   #start kernel
+kernel.platform=tf                            #use platform
+kernel.process_thread=7                        #thread count
+kernel.flag7=True
+kernel.data_segment_flag=True
+kernel.batches=1875
+kernel.epoch7=6
+kernel.PO=2
+kernel.data(x_train,y_train)   #input you data
+kernel.process_thread_lock=[Lock(),Lock(),Lock()]
+for _ in range(7):
+	p=Process(target=kernel.train(32))
+	p.start()
+for _ in range(7):
+	p.join()
 kernel.visualize_train()
 ```
