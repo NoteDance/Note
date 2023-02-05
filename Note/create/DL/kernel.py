@@ -16,15 +16,22 @@ class kernel:
             pass
         self.platform=None
         self.PO=None
-        self.thread_lock=None
+        self.lock=None
         self.gradient_lock=[]
         self.max_lock=None
         self.row=None
         self.rank=None
         self.d_index=0
-        self.thread=None
+        self.process_thread=None
         self.threading=None
-        self.thread_counter=0
+        self.process_thread_counter=0
+        self.train_ds=None
+        self.restrained_parallelism=False
+        self.data_segment_flag=False
+        self.batches=None
+        self.buffer_size=None
+        self.epoch_=None
+        self.epoch_counter=0
         self.running_list=[]
         self.suspend=False
         self.suspend_list=[]
@@ -81,6 +88,8 @@ class kernel:
     def data(self,train_data,train_labels,test_data=None,test_labels=None):
         self.train_data=train_data
         self.train_labels=train_labels
+        if self.data_segment_flag==True:
+            self.train_data,self.train_labels=self.segment_data()
         if type(train_data)==list:
             self.data_batch=[x for x in range(len(train_data))]
         if type(train_labels)==list:
@@ -93,16 +102,24 @@ class kernel:
             self.shape0=train_data[0].shape[0]
         else:
             self.shape0=train_data.shape[0]
-        if self.train_counter==0 and self.thread!=None:
-            self.thread_num=np.arange(self.thread)
-            self.thread_num=list(self.thread_num)
+        if self.train_counter==0 and self.process_thread!=None:
+            self.process_thread_num=np.arange(self.process_thread)
+            self.process_thread_num=list(self.process_thread_num)
+            if self.restrained_parallelism==True:
+                self.batch_counter=np.zeros(self.process_thread,dtype=np.int32)
+                self.total_loss=np.zeros(self.process_thread,dtype=np.float32)
+                try:
+                    if self.nn.accuracy!=None:
+                        self.total_acc=np.zeros(self.process_thread,dtype=np.float32)
+                except AttributeError:
+                    pass
             try:
                 if self.nn.attenuate!=None:
-                    self.opt_counter=np.zeros(self.thread,dtype=np.float32)
+                    self.opt_counter=np.zeros(self.process_thread,dtype=np.float32)
             except AttributeError:
                 pass
             try:
-                self.nn.bc=np.zeros(self.thread,dtype=np.float32)
+                self.nn.bc=np.zeros(self.process_thread,dtype=np.float32)
             except AttributeError:
                 pass
         if self.memory_flag==True:
@@ -122,12 +139,43 @@ class kernel:
         return
     
     
+    def segment_data(self):
+        if len(self.train_data)!=self.process_thread:
+            data=None
+            labels=None
+            segments=int((len(self.train_data)-len(self.train_data)%self.process_thread)/self.process_thread)
+            for i in range(self.process_thread):
+                index1=i*segments
+                index2=(i+1)*segments
+                if i==0:
+                    data=np.expand_dims(self.train_data[index1:index2],axis=0)
+                    labels=np.expand_dims(self.train_labels[index1:index2],axis=0)
+                else:
+                    data=np.concatenate((data,np.expand_dims(self.train_data[index1:index2],axis=0)))
+                    labels=np.concatenate((labels,np.expand_dims(self.train_labels[index1:index2],axis=0)))
+            if len(data)%self.process_thread!=0:
+                segments+=1
+                index1=segments*self.process_thread
+                index2=self.process_thread-(len(self.train_data)-segments*self.process_thread)
+                data=np.concatenate((data,np.expand_dims(self.train_data[index1:index2],axis=0)))
+                labels=np.concatenate((labels,np.expand_dims(self.train_labels[index1:index2],axis=0)))
+            return data,labels
+                
+    
     def init(self):
-        if self.thread!=None:
-            self.thread_num=np.arange(self.thread)
-            self.thread_num=list(self.thread_num)
+        if self.process_thread!=None:
+            self.process_thread_num=np.arange(self.process_thread)
+            self.process_thread_num=list(self.process_thread_num)
+            if self.restrained_parallelism==True:
+                self.batch_counter=np.zeros(self.process_thread,dtype=np.int32)
+                self.total_loss=np.zeros(self.process_thread,dtype=np.float32)
+                try:
+                    if self.nn.accuracy!=None:
+                        self.total_acc=np.zeros(self.process_thread,dtype=np.float32)
+                except AttributeError:
+                    pass
             try:
-                self.nn.bc=np.zeros(self.thread,dtype=np.float32)
+                self.nn.bc=np.zeros(self.process_thread,dtype=np.float32)
             except AttributeError:
                 pass
         self.suspend=False
@@ -167,19 +215,27 @@ class kernel:
         return
     
     
-    def add_thread(self,thread):
-        thread_num=np.arange(thread)+self.thread
-        self.thread_num=self.thread_num.extend(thread_num)
-        self.thread+=thread
+    def add_thread(self,process_thread):
+        process_thread_num=np.arange(process_thread)+self.process_thread
+        self.process_thread_num=self.process_thread_num.extend(process_thread_num)
+        self.process_thread+=process_thread
+        if self.restrained_parallelism==True:
+            self.batch_counter=np.concatenate((self.batch_counter,np.zeros(process_thread,dtype=np.int32)))
+            self.total_loss=np.concatenate((self.total_loss,np.zeros(process_thread,dtype=np.float32)))
+            try:
+                if self.nn.accuracy!=None:
+                    self.total_acc=np.concatenate((self.total_acc,np.zeros(process_thread,dtype=np.float32)))
+            except AttributeError:
+                pass
         try:
             if self.nn.attenuate!=None and self.opt_counter!=None:
-                self.opt_counter=np.concatenate((self.opt_counter,np.zeros(thread,dtype=np.float32)))
+                self.opt_counter=np.concatenate((self.opt_counter,np.zeros(process_thread,dtype=np.float32)))
             else:
-                self.opt_counter=np.zeros(self.thread,dtype=np.float32)
+                self.opt_counter=np.zeros(self.process_thread,dtype=np.float32)
         except AttributeError:
             pass
         try:
-            self.nn.bc=np.concatenate((self.nn.bc,np.zeros(thread,dtype=np.float32)))
+            self.nn.bc=np.concatenate((self.nn.bc,np.zeros(process_thread,dtype=np.float32)))
         except AttributeError:
             pass
         return
@@ -245,8 +301,8 @@ class kernel:
             return
     
     
-    def data_func(self,data_batch=None,labels_batch=None,batch=None,index1=None,index2=None,j=None,flag=False):
-        if flag==False:
+    def data_func(self,data_batch=None,labels_batch=None,batch=None,index1=None,index2=None,j=None,flag=None):
+        if flag==None:
             if type(self.train_data)==list:
                 for i in range(len(self.train_data)):
                     if batch!=1:
@@ -349,8 +405,8 @@ class kernel:
         except AttributeError:
             pass
         if self.PO==1:
-            self.thread_lock[0].acquire()
-            if self.stop_func_(self.thread_lock[0]):
+            self.lock[0].acquire()
+            if self.stop_func_(self.lock[0]):
                 return None,0
             try:
                 gradient=self.nn.gradient(tape,loss)
@@ -373,16 +429,16 @@ class kernel:
                     self.opt_counter+=1
             except AttributeError:
                 pass
-            self.thread_lock[0].release()
+            self.lock[0].release()
         elif self.PO==2:
-            self.thread_lock[0].acquire()
+            self.lock[0].acquire()
             try:
                 gradient=self.nn.gradient(tape,loss)
             except AttributeError:
                 gradient=tape.gradient(loss,self.nn.param)
-            self.thread_lock[0].release()
-            self.thread_lock[1].acquire()
-            if self.stop_func_(self.thread_lock[1]):
+            self.lock[0].release()
+            self.lock[1].acquire()
+            if self.stop_func_(self.lock[1]):
                 return None,0
             try:
                 if self.nn.attenuate!=None:
@@ -401,7 +457,7 @@ class kernel:
                     self.opt_counter+=1
             except AttributeError:
                 pass
-            self.thread_lock[1].release()
+            self.lock[1].release()
         elif self.PO==3:
             if self.row!=None:
                 try:
@@ -431,14 +487,14 @@ class kernel:
                     self.gradient_lock[ln].release()
                 except:
                     self.gradient_lock[0].release()
-            self.thread_lock[0].acquire()
+            self.lock[0].acquire()
             if self.memory_flag==True:
                 self.calculate_memory()
-                if self.stop_func_m(self.thread_lock[0],ln):
+                if self.stop_func_m(self.lock[0],ln):
                     return 0,0
-                if self.stop_func_t_p(self.thread_lock[0],t,ln):
+                if self.stop_func_t_p(self.lock[0],t,ln):
                     return 0,0
-            if self.stop_func_(self.thread_lock[0]):
+            if self.stop_func_(self.lock[0]):
                 return None,0
             try:
                 if self.nn.attenuate!=None:
@@ -459,7 +515,7 @@ class kernel:
                 pass
             if self.memory_flag==True:
                 self.grad_memory_list[ln]=0
-            self.thread_lock[0].release()
+            self.lock[0].release()
         return output,loss
     
     
@@ -481,7 +537,7 @@ class kernel:
     
     def opt_t(self,data,labels,t):
         if self.PO==3:
-            if self.row==None and len(self.gradient_lock)==self.thread:
+            if self.row==None and len(self.gradient_lock)==self.process_thread:
                 ln=int(t)
             else:
                 if self.row!=None:
@@ -509,7 +565,7 @@ class kernel:
     def opt_ol(self,data,labels,t,ln=None):
         try:
             if self.nn.GradientTape!=None:
-                if self.thread==None:
+                if self.process_thread==None:
                     tape,output,loss=self.nn.GradientTape(data,labels)
                 else:
                     tape,output,loss=self.nn.GradientTape(data,labels,t)
@@ -527,14 +583,14 @@ class kernel:
                         loss=self.nn.loss(output,labels)
                     except TypeError:
                         output,loss=self.nn.fp(data,labels,t) 
-        if self.thread_lock!=None:
+        if self.lock!=None:
             try:
                 if self.nn.attenuate!=None:
                     self.opt_counter[t]=0
             except AttributeError:
                 pass
             if self.PO==1:
-                self.thread_lock[0].acquire()
+                self.lock[0].acquire()
                 try:
                     gradient=self.nn.gradient(tape,loss)
                 except AttributeError:
@@ -556,15 +612,15 @@ class kernel:
                         self.opt_counter+=1
                 except AttributeError:
                     pass
-                self.thread_lock[0].release()
+                self.lock[0].release()
             elif self.PO==2:
-                self.thread_lock[0].acquire()
+                self.lock[0].acquire()
                 try:
                     gradient=self.nn.gradient(tape,loss)
                 except AttributeError:
                     gradient=tape.gradient(loss,self.nn.param)
-                self.thread_lock[0].release()
-                self.thread_lock[1].acquire()
+                self.lock[0].release()
+                self.lock[1].acquire()
                 try:
                     if self.nn.attenuate!=None:
                         gradient=self.nn.attenuate(gradient,self.opt_counter,t)
@@ -582,7 +638,7 @@ class kernel:
                         self.opt_counter+=1
                 except AttributeError:
                     pass
-                self.thread_lock[1].release()
+                self.lock[1].release()
             elif self.PO==3:
                 if self.row!=None:
                     try:
@@ -612,12 +668,12 @@ class kernel:
                         self.gradient_lock[ln].release()
                     except:
                         self.gradient_lock[0].release()
-                self.thread_lock[0].acquire()
+                self.lock[0].acquire()
                 if self.memory_flag==True:
                     self.calculate_memory()
-                    if self.stop_func_m(self.thread_lock[0],ln):
+                    if self.stop_func_m(self.lock[0],ln):
                         return 0,0
-                    if self.stop_func_t_p(self.thread_lock[0],t,ln):
+                    if self.stop_func_t_p(self.lock[0],t,ln):
                         return 0,0
                 try:
                     if self.nn.attenuate!=None:
@@ -638,7 +694,7 @@ class kernel:
                     pass
                 if self.memory_flag==True:
                     self.grad_memory_list[ln]=0
-                self.thread_lock[0].release()
+                self.lock[0].release()
         else:
             try:
                 gradient=self.nn.gradient(tape,loss)
@@ -748,7 +804,7 @@ class kernel:
         else:
             output,train_loss=self.opt_t(self.train_data,self.train_labels,t)
             if self.PO==1 or self.PO==3:
-                self.thread_lock[1].acquire()
+                self.lock[1].acquire()
                 self.total_epoch+=1
                 self.epoch_list[t]+=1
                 train_loss=train_loss.numpy()
@@ -771,9 +827,9 @@ class kernel:
                     except AttributeError:
                         pass
                 self.print_save()
-                self.thread_lock[1].release()
+                self.lock[1].release()
             else:
-                self.thread_lock[2].acquire()
+                self.lock[2].acquire()
                 self.total_epoch+=1
                 self.epoch_list[t]+=1
                 train_loss=train_loss.numpy()
@@ -796,7 +852,7 @@ class kernel:
                     except AttributeError:
                         pass
                 self.print_save()
-                self.thread_lock[2].release()
+                self.lock[2].release()
             return
     
     
@@ -843,9 +899,9 @@ class kernel:
             except AttributeError:
                 pass
             if self.PO==1 or self.PO==3:
-                self.thread_lock[1].acquire()
+                self.lock[1].acquire()
             else:
-                self.thread_lock[2].acquire()
+                self.lock[2].acquire()
             self.total_epoch+=1
             self.epoch_list[t]+=1
             self.train_loss=loss
@@ -870,9 +926,9 @@ class kernel:
                 pass
             self.print_save()
             if self.PO==1 or self.PO==3:
-                self.thread_lock[1].release()
+                self.lock[1].release()
             else:
-                self.thread_lock[2].release()
+                self.lock[2].release()
             return
         else:
             if t in self.stop_list:
@@ -883,47 +939,60 @@ class kernel:
     
     
     def train(self,batch=None,epoch=None,test_batch=None,save=None,one=True,p=None,s=None):
-        if self.thread!=None:
+        if self.process_thread!=None:
             try:
-                t=self.thread_num.pop(0)
+                t=self.process_thread_num.pop(0)
             except IndexError:
-                print('\nError,please add thread.')
+                print('\nError,please add process_thread.')
                 return
-        if self.thread==None:
+        if self.process_thread==None:
             self.training_flag=True
-        elif self.thread!=None:
+        elif self.process_thread!=None:
             if self.PO==1 or self.PO==3:
-                self.thread_lock[1].acquire()
+                self.lock[1].acquire()
             else:
-                self.thread_lock[2].acquire()
-            self.thread_counter+=1
+                self.lock[2].acquire()
+            self.process_thread_counter+=1
             self.running_list.append(t)
             self.epoch_list.append(0)
+            if self.restrained_parallelism==True:
+                if t==0:
+                    if self.batches==None:
+                        self.batches=int((self.shape0-self.shape0%batch)/batch)
+                        if self.shape0%batch!=0:
+                            self.batches+=1
             if self.PO==1 or self.PO==3:
-                self.thread_lock[1].release()
+                self.lock[1].release()
             else:
-                self.thread_lock[2].release()
+                self.lock[2].release()
         if self.PO==3:
-            self.thread_lock[1].acquire()
+            self.lock[1].acquire()
             if self.row!=None:
                 if self.d_index==0 or len(self.gradient_lock)<self.rank and len(self.gradient_lock[self.d_index-1])==self.row:
                     self.gradient_lock.append([])
                     self.d_index+=1
-                self.gradient_lock[self.d_index-1].append(self.threading.Lock())
+                self.gradient_lock[self.d_index-1].append(self.multiprocessing_threading.Lock())
             elif self.max_lock!=None and len(self.gradient_lock)<self.max_lock:
-                self.gradient_lock.append(self.threading.Lock())
+                self.gradient_lock.append(self.multiprocessing_threading.Lock())
             else:
-                self.gradient_lock.append(self.threading.Lock())
-            self.thread_lock[1].release()
+                self.gradient_lock.append(self.multiprocessing_threading.Lock())
+            self.lock[1].release()
         if self.PO==3:
-            self.thread_lock[1].acquire()
+            self.lock[1].acquire()
             self.gradient_list.append(None)
             if self.memory_flag==True:
                 self.grad_memory_list.append(0)
-            self.thread_lock[1].release()
+            self.lock[1].release()
         self.batch=batch
         self.epoch=0
         self.train_counter+=1
+        if self.restrained_parallelism==True:
+            if self.data_segment_flag==True:
+                train_ds=self.platform.data.Dataset.from_tensor_slices((self.train_data[t],self.train_labels[t])).batch(batch)
+            elif self.buffer_size!=None:
+                train_ds=self.platform.data.Dataset.from_tensor_slices((self.train_data,self.train_labels)).shuffle(self.buffer_size).batch(batch)
+            else:
+                train_ds=self.platform.data.Dataset.from_tensor_slices((self.train_data,self.train_labels)).batch(batch)
         if p==None:
             self.p=9
         else:
@@ -934,46 +1003,135 @@ class kernel:
         else:
             self.s=s-1
             self.file_list=[]
-        if type(self.train_data)==list:
+        if self.restrained_parallelism!=True and type(self.train_data)==list:
             data_batch=[x for x in range(len(self.train_data))]
         else:
             data_batch=None
-        if type(self.train_labels)==list:
+        if self.restrained_parallelism!=True and type(self.train_labels)==list:
             labels_batch=[x for x in range(len(self.train_labels))]
         else:
             labels_batch=None
-        if epoch!=None:
+        if self.restrained_parallelism==True:
+            while True:
+                for data_batch,labels_batch in train_ds:
+                    output,batch_loss=self.opt_t(data_batch,labels_batch,t)
+                    try:
+                        self.nn.bc+=1
+                    except AttributeError:
+                        pass
+                    try:
+                        if self.nn.accuracy!=None:
+                            batch_acc=self.nn.accuracy(output,labels_batch)
+                    except AttributeError:
+                        pass
+                    try:
+                        if self.nn.accuracy!=None:
+                            self.total_loss[t]+=batch_loss
+                            self.total_acc[t]+=batch_acc
+                    except AttributeError:
+                        self.total_loss[t]+=batch_loss
+                    self.batch_counter[t]+=1
+                    if self.PO==1 or self.PO==3:
+                        self.lock[1].acquire()
+                    else:
+                        self.lock[2].acquire()
+                    batches=np.sum(self.batch_counter)
+                    if batches>=self.batches:
+                        self.batch_counter=self.batch_counter*0
+                        loss=np.sum(self.total_loss)/batches
+                        try:
+                            if self.nn.accuracy!=None:
+                                train_acc=np.sum(self.total_acc)/batches
+                        except AttributeError:
+                            pass
+                        self.total_epoch+=1
+                        self.train_loss=loss
+                        self.train_loss_list.append(loss)
+                        try:
+                            if self.nn.accuracy!=None:
+                                self.train_acc=train_acc
+                                self.train_acc_list.append(train_acc)
+                        except AttributeError:
+                            pass
+                        if self.test_flag==True:
+                            self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
+                            self.test_loss_list.append(self.test_loss)
+                        try:
+                            if self.nn.accuracy!=None:
+                                self.test_acc_list.append(self.test_acc)
+                        except AttributeError:
+                            pass
+                        self.print_save()
+                        self.epoch_counter+=1
+                        try:
+                            self.nn.bc=0
+                        except AttributeError:
+                            pass
+                        try:
+                            self.nn.ec+=1
+                        except AttributeError:
+                            pass
+                        self.total_loss=self.total_loss*0
+                        try:
+                            if self.nn.accuracy!=None:
+                                self.total_acc=self.total_acc*0
+                        except AttributeError:
+                            pass
+                    if self.PO==1 or self.PO==3:
+                        self.lock[1].release()
+                    else:
+                        self.lock[2].release()
+                    if self.process_thread!=None:
+                        if t in self.stop_list or t in self.stop_list_m:
+                            if self.PO==1 or self.PO==3:
+                                self.lock[1].acquire()
+                            else:
+                                self.lock[2].acquire()
+                            self.process_thread_counter-=1
+                            self.running_list.remove(t)
+                            self.stop_list.remove(t)
+                            self.stopped_list.append(t)
+                            if self.PO==1 or self.PO==3:
+                                self.lock[1].release()
+                            else:
+                                self.lock[2].release()
+                            return
+                    if self.stop_flag==True:
+                        return
+                    if self.epoch_counter==self.epoch_:
+                        return
+        elif epoch!=None:
             for i in range(epoch):
                 t1=time.time()
-                if self.thread==None:
+                if self.process_thread==None:
                     self._train(batch,data_batch,labels_batch,test_batch)
                 else:
                     self._train_(batch,data_batch,labels_batch,test_batch,t)
-                if self.thread!=None:
+                if self.process_thread!=None:
                     if t in self.stop_list or t in self.stop_list_m:
                         if self.PO==1 or self.PO==3:
-                            self.thread_lock[1].acquire()
+                            self.lock[1].acquire()
                         else:
-                            self.thread_lock[2].acquire()
-                        self.thread_counter-=1
+                            self.lock[2].acquire()
+                        self.process_thread_counter-=1
                         self.running_list.remove(t)
                         self.stop_list.remove(t)
                         self.stopped_list.append(t)
                         if self.PO==1 or self.PO==3:
-                            self.thread_lock[1].release()
+                            self.lock[1].release()
                         else:
-                            self.thread_lock[2].release()
+                            self.lock[2].release()
                         return
                 if self.stop_flag==True:
                     return
-                if self.thread==None:
+                if self.process_thread==None:
                     try:
                         self.nn.ec+=1
                     except AttributeError:
                         pass
-                if self.thread==None:
+                if self.process_thread==None:
                     self.total_epoch+=1
-                if self.thread==None:
+                if self.process_thread==None:
                     if epoch%10!=0:
                         p=epoch-epoch%self.p
                         p=int(p/self.p)
@@ -1016,42 +1174,42 @@ class kernel:
                     if save!=None and i%s==0:
                         self.save(self.total_epoch,one)
                 t2=time.time()
-                if self.thread==None:
+                if self.process_thread==None:
                     self.time+=(t2-t1)
         else:
             i=0
             while True:
                 t1=time.time()
-                if self.thread==None:
+                if self.process_thread==None:
                     self._train(test_batch=test_batch)
                 else:
                     self._train_(test_batch=test_batch,t=t)
-                if self.thread!=None:
+                if self.process_thread!=None:
                     if t in self.stop_list or t in self.stop_list_m:
                         if self.PO==1 or self.PO==3:
-                            self.thread_lock[1].acquire()
+                            self.lock[1].acquire()
                         else:
-                            self.thread_lock[2].acquire()
-                        self.thread_counter-=1
+                            self.lock[2].acquire()
+                        self.process_thread_counter-=1
                         self.running_list.remove(t)
                         self.stop_list.remove(t)
                         self.stopped_list.append(t)
                         if self.PO==1 or self.PO==3:
-                            self.thread_lock[1].release()
+                            self.lock[1].release()
                         else:
-                            self.thread_lock[2].release()
+                            self.lock[2].release()
                         return
                 if self.stop_flag==True:
                     return
                 i+=1
-                if self.thread==None:
+                if self.process_thread==None:
                     try:
                         self.nn.ec+=1
                     except AttributeError:
                         pass
-                if self.thread==None:
+                if self.process_thread==None:
                     self.total_epoch+=1
-                if self.thread==None:
+                if self.process_thread==None:
                     if epoch%10!=0:
                         p=epoch-epoch%self.p
                         p=int(p/self.p)
@@ -1100,14 +1258,14 @@ class kernel:
                     self.time[t]+=(t2-t1)
         if save!=None:
             self.save()
-        if self.thread==None:
+        if self.process_thread==None:
             self._time=self.time-int(self.time)
             if self._time<0.5:
                 self.time=int(self.time)
             else:
                 self.time=int(self.time)+1
             self.total_time+=self.time
-        if self.thread==None:
+        if self.process_thread==None:
             if self.test_flag==False:
                 print('last loss:{0:.6f}'.format(self.train_loss))
             else:
@@ -1128,58 +1286,58 @@ class kernel:
                 pass
             print()
             print('time:{0}s'.format(self.time))
-        if self.thread==None:
+        if self.process_thread==None:
             self.training_flag=False
-        if self.thread!=None:
+        if self.process_thread!=None:
             if self.PO==1 or self.PO==3:
-                self.thread_lock[1].acquire()
+                self.lock[1].acquire()
             else:
-                self.thread_lock[2].acquire()
-            self.thread_counter-=1
+                self.lock[2].acquire()
+            self.process_thread_counter-=1
             self.running_list.remove(t)
             if self.PO==1 or self.PO==3:
-                self.thread_lock[1].release()
+                self.lock[1].release()
             else:
-                self.thread_lock[2].release()
+                self.lock[2].release()
         return
     
     
     def train_ol(self,t):
         self.exception_list.append(False)
         if self.PO==1 or self.PO==3:
-            self.thread_lock[1].acquire()
+            self.lock[1].acquire()
         else:
-            self.thread_lock[2].acquire()
-        self.thread_counter+=1
+            self.lock[2].acquire()
+        self.process_thread_counter+=1
         self.running_list.append(t)
         if self.PO==1 or self.PO==3:
-            self.thread_lock[1].release()
+            self.lock[1].release()
         else:
-            self.thread_lock[2].release()
+            self.lock[2].release()
         while True:
             if self.stop_flag==True:
                 return
-            if self.thread==None:
+            if self.process_thread==None:
                 if self.save_flag==True:
                     if self.PO==1 or self.PO==3:
-                        self.thread_lock[1].acquire()
+                        self.lock[1].acquire()
                     else:
-                        self.thread_lock[2].acquire()
+                        self.lock[2].acquire()
                     self.save()
                     if self.PO==1 or self.PO==3:
-                        self.thread_lock[1].release()
+                        self.lock[1].release()
                     else:
-                        self.thread_lock[2].release()
+                        self.lock[2].release()
                 if t in self.stop_list or t in self.stop_list_m:
                     if self.PO==1 or self.PO==3:
-                        self.thread_lock[1].acquire()
+                        self.lock[1].acquire()
                     else:
-                        self.thread_lock[2].acquire()
+                        self.lock[2].acquire()
                     self.stopped_list.append(t)
                     if self.PO==1 or self.PO==3:
-                        self.thread_lock[1].release()
+                        self.lock[1].release()
                     else:
-                        self.thread_lock[2].release()
+                        self.lock[2].release()
                     return
                 self.suspend_func(t)
                 try:
@@ -1189,32 +1347,32 @@ class kernel:
                     continue
                 if data=='stop':
                     if self.PO==1 or self.PO==3:
-                        self.thread_lock[1].acquire()
+                        self.lock[1].acquire()
                     else:
-                        self.thread_lock[2].acquire()
+                        self.lock[2].acquire()
                     self.stopped_list.append(t)
                     if self.PO==1 or self.PO==3:
-                        self.thread_lock[1].release()
+                        self.lock[1].release()
                     else:
-                        self.thread_lock[2].release()
+                        self.lock[2].release()
                     return
                 elif data=='suspend':
                     if self.PO==1 or self.PO==3:
-                        self.thread_lock[1].acquire()
+                        self.lock[1].acquire()
                     else:
-                        self.thread_lock[2].acquire()
+                        self.lock[2].acquire()
                     self.suspended_list.append(t)
                     if self.PO==1 or self.PO==3:
-                        self.thread_lock[1].release()
+                        self.lock[1].release()
                     else:
-                        self.thread_lock[2].release() 
+                        self.lock[2].release() 
                     while True:
                         if t not in self.suspended_list:
                             break
                     continue
                 try:
                     if self.PO==3:
-                        if self.row==None and len(self.gradient_lock)==self.thread:
+                        if self.row==None and len(self.gradient_lock)==self.process_thread:
                             ln=int(t)
                         else:
                             if self.row!=None:
@@ -1240,11 +1398,11 @@ class kernel:
                     self.exception_list[t]=True
                     continue
                 loss=loss.numpy()
-                if self.thread_lock!=None:
+                if self.lock!=None:
                     if self.PO==1 or self.PO==3:
-                        self.thread_lock[1].acquire()
+                        self.lock[1].acquire()
                     else:
-                        self.thread_lock[2].acquire()
+                        self.lock[2].acquire()
                     if len(self.nn.train_loss_list)==self.nn.max_length:
                         del self.nn.train_loss_list[0]
                     self.nn.train_loss_list.append(loss)
@@ -1265,9 +1423,9 @@ class kernel:
                     except AttributeError:
                         pass
                     if self.PO==1 or self.PO==3:
-                        self.thread_lock[1].release()
+                        self.lock[1].release()
                     else:
-                        self.thread_lock[2].release()
+                        self.lock[2].release()
             else:
                 if self.stop_flag==True:
                     return
@@ -1315,15 +1473,15 @@ class kernel:
                     pass
             self.exception_list[t]=False
         if self.PO==1 or self.PO==3:
-            self.thread_lock[1].acquire()
+            self.lock[1].acquire()
         else:
-            self.thread_lock[2].acquire()
-        self.thread_counter-=1
+            self.lock[2].acquire()
+        self.process_thread_counter-=1
         self.running_list.remove(t)
         if self.PO==1 or self.PO==3:
-            self.thread_lock[1].release()
+            self.lock[1].release()
         else:
-            self.thread_lock[2].release()
+            self.lock[2].release()
         return
     
     
@@ -1354,7 +1512,7 @@ class kernel:
                         labels_batch[i]=test_labels[i][index1:index2]
                 else:
                     labels_batch=test_labels[index1:index2]
-                if self.thread==None or t==None:
+                if self.process_thread==None or t==None:
                     output=self.nn.fp(data_batch)
                 else:
                     output=self.nn.fp(data_batch,t)
@@ -1392,7 +1550,7 @@ class kernel:
                             labels_batch[i]=self.platform.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
                     else:
                         labels_batch=self.platform.concat([test_labels[index1:],test_labels[:index2]],0)
-                if self.thread==None or t==None:
+                if self.process_thread==None or t==None:
                     output=self.nn.fp(data_batch)
                 else:
                     output=self.nn.fp(data_batch,t)
@@ -1411,7 +1569,7 @@ class kernel:
             except AttributeError:
                 pass
         else:
-            if self.thread==None or t==None:
+            if self.process_thread==None or t==None:
                 output=self.nn.fp(test_data)
             else:
                 output=self.nn.fp(test_data,t)
@@ -1436,42 +1594,42 @@ class kernel:
     def suspend_func(self,t=None):
         if t in self.suspend_list:
             if self.PO==1 or self.PO==3:
-                self.thread_lock[1].acquire()
+                self.lock[1].acquire()
             else:
-                self.thread_lock[2].acquire()
+                self.lock[2].acquire()
             self.suspended_list.append(t)
             if self.PO==1 or self.PO==3:
-                self.thread_lock[1].release()
+                self.lock[1].release()
             else:
-                self.thread_lock[2].release()
+                self.lock[2].release()
             while True:
                 if t not in self.suspend_list:
                     if self.PO==1 or self.PO==3:
-                        self.thread_lock[1].acquire()
+                        self.lock[1].acquire()
                     else:
-                        self.thread_lock[2].acquire()
+                        self.lock[2].acquire()
                     self.suspended_list.remove(t)
                     if self.PO==1 or self.PO==3:
-                        self.thread_lock[1].release()
+                        self.lock[1].release()
                     else:
-                        self.thread_lock[2].release()
+                        self.lock[2].release()
                     break
         if self.suspend==True:
-            if self.thread==None:
+            if self.process_thread==None:
                 if self.save_epoch==None:
                     print('Training have suspended.')
                 else:
                     self._save()
             while True:
                 if self.suspend==False:
-                    if self.thread==None:
+                    if self.process_thread==None:
                         print('Training have continued.')
                     break
         return
     
     
     def stop_func(self):
-        if self.thread==None:
+        if self.process_thread==None:
             if self.end():
                 self.training_flag=False
                 self.save(self.total_epoch,True)
@@ -1550,14 +1708,14 @@ class kernel:
         return False
     
     
-    def stop_func_(self,thread_lock):
+    def stop_func_(self,lock):
         if self.stop==True:
             if self.stop_flag==True or self.stop_func():
-                thread_lock.release()
+                lock.release()
                 return True
     
     
-    def stop_func_m(self,thread_lock,ln):
+    def stop_func_m(self,lock,ln):
         if self.memory_t_value!=None and self.c_memory>self.memory_t_value:
             if self.memory_priority==False:
                 if self.epoch_list_copy==None:
@@ -1569,7 +1727,7 @@ class kernel:
             else:
                 if self.PO==3 and self.memory_flag==True:
                     self.grad_memory_list[ln]=0
-                thread_lock.release()
+                lock.release()
                 return True
         else:
             if self.memory_priority==False:
@@ -1578,11 +1736,11 @@ class kernel:
             return False
     
     
-    def stop_func_t_p(self,thread_lock,t,ln):
+    def stop_func_t_p(self,lock,t,ln):
         if t in self.stop_list_m:
             self.grad_memory_list[ln]=0
             self.epoch_list[t]=0
-            thread_lock.release()
+            lock.release()
             return True
     
     
