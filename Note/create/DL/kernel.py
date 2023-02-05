@@ -23,7 +23,7 @@ class kernel:
         self.rank=None
         self.d_index=0
         self.process_thread=None
-        self.threading=None
+        self.multiprocessing_threading=None
         self.process_thread_counter=0
         self.train_ds=None
         self.restrained_parallelism=False
