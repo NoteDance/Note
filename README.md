@@ -23,11 +23,11 @@ If you accomplish your neural network,you can use kernel to train,examples are s
 
 # Deep Learning:
 
-example:
+**example:**
 
-tensorflow:
+**tensorflow:**
 
-You can get neural network example in this link.
+**You can get neural network example in this link.**
 
 https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn.py
 ```python
@@ -61,9 +61,9 @@ kernel.restore('save.dat')     #restore neural network
 kernel.train(32,1)             #train again
 ```
 
-pytorch:
+**pytorch:**
 
-You can get neural network example in this link.
+**You can get neural network example in this link.**
 
 https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/pytorch/nn.py
 ```python
@@ -138,7 +138,7 @@ kernel.train(64,5)         #train neural network
 ![2](https://github.com/NoteDancing/Note-documentation/blob/main/picture/time(PO).png)
 
 
-example:
+**multithreading example:**
 ```python
 import Note.create.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
@@ -151,10 +151,11 @@ y_train=tf.one_hot(y_train,10).numpy()
 cnn=c.cnn()                                #create neural network object
 kernel=k.kernel(cnn)   #start kernel
 kernel.platform=tf                            #use platform
-kernel.thread=2                        #thread count
+kernel.restrained_parallelism=True
+kernel.process_thread=2                        #thread count
 kernel.PO=2
 kernel.data(x_train,y_train)   #input you data
-kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock()]
+kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
 class thread(threading.Thread):
 	def run(self):
 		kernel.train(32,3)
@@ -178,10 +179,11 @@ y_train=tf.one_hot(y_train,10).numpy()
 kernel=k.kernel()                 #start kernel
 kernel.platform=tf                    #use platform
 kernel.restore('save.dat')     #restore neural network
-kernel.thread=2                        #thread count
+kernel.restrained_parallelism=True
+kernel.process_thread=2                        #thread count
 kernel.PO=2
 kernel.data(x_train,y_train)   #input you data
-kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock()]
+kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
 class thread(threading.Thread):
 	def run(self):
 		kernel.train(32,1)
@@ -192,7 +194,7 @@ for _ in range(2):
 	_thread.join()
 ```
 
-PO3:
+**multithreading example(PO3):**
 ```python
 import Note.create.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
@@ -205,12 +207,13 @@ y_train=tf.one_hot(y_train,10).numpy()
 cnn=c.cnn()                                #create neural network object
 kernel=k.kernel(cnn)   #start kernel
 kernel.platform=tf                            #use platform
-kernel.thread=7                        #thread count
+kernel.restrained_parallelism=True
+kernel.process_thread=7                        #thread count
 kernel.PO=3
-kernel.threading=threading
+kernel.multiprocessing_threading=threading
 kernel.max_lock=7
 kernel.data(x_train,y_train)   #input you data
-kernel.thread_lock=[threading.Lock(),threading.Lock()]
+kernel.lock=[threading.Lock(),threading.Lock()]
 class thread(threading.Thread):
 	def run(self):
 		kernel.train(32,1)
@@ -221,9 +224,65 @@ for _ in range(7):
 	_thread.join()
 ```
 
-Stop multithreading training and saving when condition is met.
+**multithreading example(unrestricted parallelism):**
+```python
+import kernel_pv as k   #import kernel
+import tensorflow as tf              #import platform
+import cnn as c                          #import neural network
+import threading
+mnist=tf.keras.datasets.mnist
+(x_train,y_train),(x_test,y_test)=mnist.load_data()
+x_train,x_test =x_train/255.0,x_test/255.0
+y_train=tf.one_hot(y_train,10).numpy()
+cnn=c.cnn()                                #create neural network object
+kernel=k.kernel(cnn)   #start kernel
+kernel.platform=tf                            #use platform
+kernel.process_thread=7                        #thread count
+kernel.epoch_=6
+kernel.PO=2
+kernel.data(x_train,y_train)   #input you data
+kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
+class thread(threading.Thread):
+	def run(self):
+		kernel.train(32)
+for _ in range(7):
+	_thread=thread()
+	_thread.start()
+for _ in range(7):
+	_thread.join()
+kernel.visualize_train()
+```
+```python
+import kernel_pv as k   #import kernel
+import tensorflow as tf              #import platform
+import cnn as c                          #import neural network
+import threading
+mnist=tf.keras.datasets.mnist
+(x_train,y_train),(x_test,y_test)=mnist.load_data()
+x_train,x_test =x_train/255.0,x_test/255.0
+y_train=tf.one_hot(y_train,10).numpy()
+cnn=c.cnn()                                #create neural network object
+kernel=k.kernel(cnn)   #start kernel
+kernel.platform=tf                            #use platform
+kernel.process_thread=7                        #thread count
+kernel.data_segment_flag=True
+kernel.batches=1875
+kernel.epoch_=6
+kernel.PO=2
+kernel.data(x_train,y_train)   #input you data
+kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
+class thread(threading.Thread):
+	def run(self):
+		kernel.train(32)
+for _ in range(7):
+	_thread=thread()
+	_thread.start()
+for _ in range(7):
+	_thread.join()
+kernel.visualize_train()
+```
 
-example:
+**multithreading example(Stop multithreading training and saving when condition is met.):**
 ```python
 import Note.create.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
@@ -238,10 +297,11 @@ kernel=k.kernel(cnn)   #start kernel
 kernel.platform=tf                            #use platform
 kernel.stop=True
 kernel.end_loss=0.7
-kernel.thread=2                        #thread count
+kernel.restrained_parallelism=True
+kernel.process_thread=2                        #thread count
 kernel.PO=2
 kernel.data(x_train,y_train)   #input you data
-kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock()]
+kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
 class thread(threading.Thread):
 	def run(self):
 		kernel.train(32,3)
@@ -251,6 +311,59 @@ for _ in range(2):
 for _ in range(2):
 	_thread.join()
 kernel.train_loss_list or kernel.train_loss       #view training loss
+kernel.visualize_train()
+```
+
+## Multiprocessing:
+**multiprocessing example(unrestricted parallelism):**
+```python
+import kernel_pv as k   #import kernel
+import tensorflow as tf              #import platform
+import cnn as c                          #import neural network
+from multiprocessing import Process,Lock
+mnist=tf.keras.datasets.mnist
+(x_train,y_train),(x_test,y_test)=mnist.load_data()
+x_train,x_test =x_train/255.0,x_test/255.0
+y_train=tf.one_hot(y_train,10).numpy()
+cnn=c.cnn()                                #create neural network object
+kernel=k.kernel(cnn)   #start kernel
+kernel.platform=tf                            #use platform
+kernel.process_thread=7                        #thread count
+kernel.epoch_=6
+kernel.PO=2
+kernel.data(x_train,y_train)   #input you data
+kernel.lock=[Lock(),Lock(),Lock()]
+for _ in range(7):
+	p=Process(target=kernel.train(32))
+	p.start()
+for _ in range(7):
+	p.join()
+kernel.visualize_train()
+```
+```python
+import kernel_pv as k   #import kernel
+import tensorflow as tf              #import platform
+import cnn as c                          #import neural network
+from multiprocessing import Process,Lock
+mnist=tf.keras.datasets.mnist
+(x_train,y_train),(x_test,y_test)=mnist.load_data()
+x_train,x_test =x_train/255.0,x_test/255.0
+y_train=tf.one_hot(y_train,10).numpy()
+cnn=c.cnn()                                #create neural network object
+kernel=k.kernel(cnn)   #start kernel
+kernel.platform=tf                            #use platform
+kernel.process_thread=7                        #thread count
+kernel.data_segment_flag=True
+kernel.batches=1875
+kernel.epoch_=6
+kernel.PO=2
+kernel.data(x_train,y_train)   #input you data
+kernel.lock=[Lock(),Lock(),Lock()]
+for _ in range(7):
+	p=Process(target=kernel.train(32))
+	p.start()
+for _ in range(7):
+	p.join()
 kernel.visualize_train()
 ```
 
@@ -270,13 +383,13 @@ test_nn.test(cnn,tf,x_train[:32],y_train[:32])
 
 # Reinforcement Learning:
 
-example:
+**example:**
 
-DQN:
+**DQN:**
 
-pytorch:
+**pytorch:**
 
-You can get neural network example in this link.
+**You can get neural network example in this link.**
 
 https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/RL/neural%20network/pytorch/DQN.py
 ```python
@@ -294,9 +407,9 @@ kernel.visualize_train()
 kernel.reward                         #view reward
 kernel.visualize_reward()
 ```
-tensorflow:
+**tensorflow:**
 
-You can get neural network example in this link.
+**You can get neural network example in this link.**
 
 https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow/DQN.py
 ```python
@@ -330,9 +443,9 @@ r=r.reward(dqn,dqn.genv)
 reward=r.reward(1000) #test neural network
 ```
 
-DDPG:
+**DDPG:**
 
-You can get neural network example in this link.
+**You can get neural network example in this link.**
 
 https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow/DDPG.py
 ```python
@@ -356,11 +469,11 @@ kernel.visualize_reward()
 ## Pool Net:
 ![3](https://github.com/NoteDancing/Note-documentation/blob/main/picture/Pool%20Net.png)
 
-You can get neural network example in this link.
+**You can get neural network example in this link.**
 
 https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow/DQN.py
 
-example:
+**example:**
 ```python
 import Note.create.RL.kernel as k   #import kernel
 import DQN as d
@@ -370,8 +483,8 @@ kernel=k.kernel(dqn,5)   #start kernel
 kernel.action_num=2
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
 kernel.PO=1
-kernel.threading=threading
-kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock()]
+kernel.multiprocessing_threading=threading
+kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
 class thread(threading.Thread):
 	def run(self):
 		kernel.train(100)
@@ -386,9 +499,7 @@ kernel.reward                         #view reward
 kernel.visualize_reward()
 ```
 
-Stop multithreading training and saving when condition is met.
-
-example:
+**example(Stop multithreading training and saving when condition is met.):**
 ```python
 import Note.create.RL.kernel as k   #import kernel
 import DQN as d
@@ -399,8 +510,8 @@ kernel.stop=True
 kernel.action_num=2
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10,trial_num=10,criterion=200)
 kernel.PO=1
-kernel.threading=threading
-kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock()]
+kernel.multiprocessing_threading=threading
+kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
 class thread(threading.Thread):
 	def run(self):
 		kernel.train(100)
@@ -437,157 +548,3 @@ c.Compile()
 You can support this project on Patreon.
 
 https://www.patreon.com/NoteDancing
-
-
-# kernel_pv:
-kernel:https://github.com/NoteDancing/Note/blob/Note-7.0-pv/kernel_pv.py
-
-neural network:https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn.py
-```python
-import kernel_pv as k   #import kernel
-import tensorflow as tf              #import platform
-import cnn as c                          #import neural network
-import threading
-mnist=tf.keras.datasets.mnist
-(x_train,y_train),(x_test,y_test)=mnist.load_data()
-x_train,x_test =x_train/255.0,x_test/255.0
-y_train=tf.one_hot(y_train,10).numpy()
-cnn=c.cnn()                                #create neural network object
-kernel=k.kernel(cnn)   #start kernel
-kernel.platform=tf                            #use platform
-kernel.thread=7                        #thread count
-kernel.flag7=True
-kernel.epoch7=6
-kernel.PO=2
-kernel.data(x_train,y_train)   #input you data
-kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock()]
-class thread(threading.Thread):
-	def run(self):
-		kernel.train(32)
-for _ in range(7):
-	_thread=thread()
-	_thread.start()
-for _ in range(7):
-	_thread.join()
-kernel.visualize_train()
-```
-```python
-import kernel_pv as k   #import kernel
-import tensorflow as tf              #import platform
-import cnn as c                          #import neural network
-import threading
-mnist=tf.keras.datasets.mnist
-(x_train,y_train),(x_test,y_test)=mnist.load_data()
-x_train,x_test =x_train/255.0,x_test/255.0
-y_train=tf.one_hot(y_train,10).numpy()
-data=[x_train[0:10001],x_train[10000:20001],x_train[20000:30001],x_train[30000:40001],x_train[40000:50001],x_train[50000:60001]]
-labels=[y_train[0:10001],y_train[10000:20001],y_train[20000:30001],y_train[30000:40001],y_train[40000:50001],y_train[50000:60001]]
-cnn=c.cnn()                                #create neural network object
-kernel=k.kernel(cnn)   #start kernel
-kernel.platform=tf                            #use platform
-kernel.process_thread=7                        #thread count
-kernel.flag7=True
-kernel.data_segment_flag=True
-kernel.batches=1875
-kernel.epoch7=6
-kernel.PO=2
-kernel.data(data,labels)   #input you data
-kernel.process_thread_lock=[threading.Lock(),threading.Lock(),threading.Lock()]
-class thread(threading.Thread):
-	def run(self):
-		kernel.train(32)
-for _ in range(7):
-	_thread=thread()
-	_thread.start()
-for _ in range(7):
-	_thread.join()
-kernel.visualize_train()
-```
-```python
-import kernel_pv as k   #import kernel
-import tensorflow as tf              #import platform
-import cnn as c                          #import neural network
-import threading
-mnist=tf.keras.datasets.mnist
-(x_train,y_train),(x_test,y_test)=mnist.load_data()
-x_train,x_test =x_train/255.0,x_test/255.0
-y_train=tf.one_hot(y_train,10).numpy()
-cnn=c.cnn()                                #create neural network object
-kernel=k.kernel(cnn)   #start kernel
-kernel.platform=tf                            #use platform
-kernel.process_thread=7                        #thread count
-kernel.flag7=True
-kernel.data_segment_flag=True
-kernel.batches=1875
-kernel.epoch7=6
-kernel.PO=2
-kernel.data(x_train,y_train)   #input you data
-kernel.process_thread_lock=[threading.Lock(),threading.Lock(),threading.Lock()]
-class thread(threading.Thread):
-	def run(self):
-		kernel.train(32)
-for _ in range(7):
-	_thread=thread()
-	_thread.start()
-for _ in range(7):
-	_thread.join()
-kernel.visualize_train()
-```
-
-
-# Multiprocessing:
-kernel:https://github.com/NoteDancing/Note/blob/Note-7.0-pv/kernel_pv.py
-
-neural network:https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn.py
-```python
-import kernel_pv as k   #import kernel
-import tensorflow as tf              #import platform
-import cnn as c                          #import neural network
-from multiprocessing import Process,Lock
-mnist=tf.keras.datasets.mnist
-(x_train,y_train),(x_test,y_test)=mnist.load_data()
-x_train,x_test =x_train/255.0,x_test/255.0
-y_train=tf.one_hot(y_train,10).numpy()
-cnn=c.cnn()                                #create neural network object
-kernel=k.kernel(cnn)   #start kernel
-kernel.platform=tf                            #use platform
-kernel.process_thread=7                        #thread count
-kernel.flag7=True
-kernel.epoch7=6
-kernel.PO=2
-kernel.data(x_train,y_train)   #input you data
-kernel.process_thread_lock=[Lock(),Lock(),Lock()]
-for _ in range(7):
-	p=Process(target=kernel.train(32))
-	p.start()
-for _ in range(7):
-	p.join()
-kernel.visualize_train()
-```
-```python
-import kernel_pv as k   #import kernel
-import tensorflow as tf              #import platform
-import cnn as c                          #import neural network
-from multiprocessing import Process,Lock
-mnist=tf.keras.datasets.mnist
-(x_train,y_train),(x_test,y_test)=mnist.load_data()
-x_train,x_test =x_train/255.0,x_test/255.0
-y_train=tf.one_hot(y_train,10).numpy()
-cnn=c.cnn()                                #create neural network object
-kernel=k.kernel(cnn)   #start kernel
-kernel.platform=tf                            #use platform
-kernel.process_thread=7                        #thread count
-kernel.flag7=True
-kernel.data_segment_flag=True
-kernel.batches=1875
-kernel.epoch7=6
-kernel.PO=2
-kernel.data(x_train,y_train)   #input you data
-kernel.process_thread_lock=[Lock(),Lock(),Lock()]
-for _ in range(7):
-	p=Process(target=kernel.train(32))
-	p.start()
-for _ in range(7):
-	p.join()
-kernel.visualize_train()
-```
