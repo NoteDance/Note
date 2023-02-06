@@ -34,7 +34,7 @@ class kernel:
         self.stop=None
         self.save_epi=None
         self.end_loss=None
-        self.max_episode_num=None
+        self.max_episode_count=None
         self.save_episode=save_episode
         self.filename='save.dat'
         self.loss=None
@@ -555,7 +555,7 @@ class kernel:
                     if done:
                         episode.append('done')
                     self.episode.append(episode)
-                    if self.max_episode_num!=None and len(self.episode)>=self.max_episode_num:
+                    if self.max_episode_count!=None and len(self.episode)>=self.max_episode_count:
                         self.save_episode=False
                 try:
                     self.nn.ec+=1
@@ -617,7 +617,7 @@ class kernel:
                     if done:
                         episode.append('done')
                     self.episode.append(episode)
-                    if self.max_episode_num!=None and len(self.episode)>=self.max_episode_num:
+                    if self.max_episode_count!=None and len(self.episode)>=self.max_episode_count:
                         self.save_episode=False
                 try:
                     self.nn.ec+=1
@@ -772,7 +772,7 @@ class kernel:
         pickle.dump(self.batch,output_file)
         pickle.dump(self.update_step,output_file)
         pickle.dump(self.end_loss,output_file)
-        pickle.dump(self.max_episode_num,output_file)
+        pickle.dump(self.max_episode_count,output_file)
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.reward_list,output_file)
         pickle.dump(self.loss,output_file)
@@ -808,7 +808,7 @@ class kernel:
         self.batch=pickle.load(input_file)
         self.update_step=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
-        self.max_episode_num=pickle.load(input_file)
+        self.max_episode_count=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
         self.reward_list=pickle.load(input_file)
         self.loss=pickle.load(input_file)
