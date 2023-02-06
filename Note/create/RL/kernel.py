@@ -58,8 +58,8 @@ class kernel:
         self._loss=[]
         self.loss_list=[]
         self.a=0
-        self.epi_num=[]
-        self.episode_num=np.zeros(self.thread)
+        self.epi_count=[]
+        self.episode_count=np.zeros(self.thread)
         self.total_episode=0
         self.total_time=0
         
@@ -82,17 +82,17 @@ class kernel:
         self.t=t.extend(self.t)
         self.thread+=thread
         self.loss=np.concatenate((self.train_loss,np.zeros(thread)))
-        self.episode_num=np.concatenate((self.epoch,np.zeros(thread)))
+        self.episode_count=np.concatenate((self.epoch,np.zeros(thread)))
         return
     
     
-    def set_up(self,param=None,discount=None,episode_num=None,episode_step=None,pool_size=None,batch=None,update_step=None,end_loss=None):
+    def set_up(self,param=None,discount=None,episode_count=None,episode_step=None,pool_size=None,batch=None,update_step=None,end_loss=None):
         if param!=None:
             self.nn.param=param
         if discount!=None:
             self.discount=discount
-        if episode_num!=None:
-            self.epi_num=episode_num
+        if episode_count!=None:
+            self.epi_count=episode_count
         if episode_step!=None:
             self.episode_step=episode_step
         if pool_size!=None:
@@ -132,8 +132,8 @@ class kernel:
         self._loss=[]
         self.loss_list=[]
         self.a=0
-        self.epi_num=[]
-        self.episode_num=np.zeros(self.thread)
+        self.epi_count=[]
+        self.episode_count=np.zeros(self.thread)
         self.total_episode=0
         self.total_time=0
         return
@@ -723,7 +723,7 @@ class kernel:
         return
     
     
-    def learn(self,epsilon,episode_num):
+    def learn(self,epsilon,episode_count):
         i=self.t.pop()
         self.thread_lock.acquire()
         self._loss.append(0)
@@ -740,7 +740,7 @@ class kernel:
             self.next_state_pool.append(None)
             self.reward_pool.append(None)
             self.epsilon.append(epsilon)
-            self.epi_num.append(episode_num)
+            self.epi_count.append(episode_count)
             try:
                 self.nn.ec.append(0)
             except AttributeError:
@@ -755,10 +755,10 @@ class kernel:
             self.thread_lock.release()
         elif i not in self.finish_lis and self.state_list!=None:
             self.state_list[i+1]=1
-        for k in range(episode_num):
-            if self.episode_num[i]==self.epi_num[i]:
+        for k in range(episode_count):
+            if self.episode_count[i]==self.epi_count[i]:
                 break
-            self.episode_num[i]+=1
+            self.episode_count[i]+=1
             episode=[]
             if self.state_name==None:
                 s=self.nn.explore(init=True)
@@ -893,8 +893,8 @@ class kernel:
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.loss_list,output_file)
         pickle.dump(self.a,output_file)
-        pickle.dump(self.epi_num,output_file)
-        pickle.dump(self.episode_num,output_file)
+        pickle.dump(self.epi_count,output_file)
+        pickle.dump(self.episode_count,output_file)
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
@@ -945,8 +945,8 @@ class kernel:
         self.save_episode=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
         self.a=pickle.load(input_file)
-        self.epi_num=pickle.load(input_file)
-        self.episode_num=pickle.load(input_file)
+        self.epi_count=pickle.load(input_file)
+        self.episode_count=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
         input_file.close()
