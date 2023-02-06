@@ -32,8 +32,8 @@ class kernel:
         self.a=0
         self.d=None
         self.e=None
-        self.epi_num=0
-        self.episode_num=0
+        self.epi_count=0
+        self.episode_count=0
         self.total_episode=0
         self.total_e=0
         self.time=0
@@ -77,8 +77,8 @@ class kernel:
         self.reward_pool=None
         self.loss_list=[]
         self.a=0
-        self.epi_num=0
-        self.episode_num=0
+        self.epi_count=0
+        self.episode_count=0
         self.total_episode=0
         self.total_e=0
         self.time=0
@@ -105,7 +105,7 @@ class kernel:
         return action_prob
     
     
-    def learn1(self,episode_num,i):
+    def learn1(self,episode_count,i):
         if self.end_loss!=None:
             self._param=self.param
         if len(self.state_pool)<self.batch:
@@ -150,7 +150,7 @@ class kernel:
                         self.opt(gradient,self.nn.param[0])
                         if j>=1:
                             loss+=batch_loss
-                        if i==episode_num-1:
+                        if i==episode_count-1:
                             batch_loss=self.nn.loss(self.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
                             self.loss+=batch_loss
                     else:
@@ -159,7 +159,7 @@ class kernel:
                         self.opt(value_gradient,actor_gradient,self.nn.param)
                         if j>=1:
                             loss+=TD
-                        if i==episode_num-1:
+                        if i==episode_count-1:
                             value=self.nn.nn[0](state_batch)
                             TD=tf.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch)-value)**2)
                             self.loss+=TD
@@ -184,7 +184,7 @@ class kernel:
                         gradient=tape.gradient(batch_loss,self.nn.param[0])
                         self.opt(gradient,self.nn.param[0])
                         loss+=batch_loss
-                        if i==episode_num-1:
+                        if i==episode_count-1:
                             batch_loss=self.nn.loss(self.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
                             self.loss+=batch_loss
                     else:
@@ -192,7 +192,7 @@ class kernel:
                         actor_gradient=TD*tape.gradient(tf.math.log(action_batch),self.nn.param[1])
                         self.opt(value_gradient,actor_gradient,self.nn.param)
                         loss+=TD
-                        if i==episode_num-1:
+                        if i==episode_count-1:
                             value=self.nn.nn[0](state_batch)
                             TD=tf.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch)-value)**2)
                             self.loss+=TD
@@ -219,7 +219,7 @@ class kernel:
                         self.opt(gradient,self.nn.param[0])
                         if j>=1:
                             loss+=batch_loss
-                        if i==episode_num-1:
+                        if i==episode_count-1:
                             batch_loss=self.nn.loss(self.nn.nn,state_batch,action_batch,next_state_batch,reward_batch)
                             self.loss+=batch_loss
                     else:
@@ -228,7 +228,7 @@ class kernel:
                         self.opt(value_gradient,actor_gradient,self.nn.param)
                         if j>=1:
                             loss+=TD
-                        if i==episode_num-1:
+                        if i==episode_count-1:
                             value=self.nn.nn[0](state_batch)
                             TD=tf.reduce_mean((reward_batch+self.discount*self.nn.nn[0](next_state_batch)-value)**2)
                             self.loss+=TD
@@ -246,12 +246,12 @@ class kernel:
                 loss=loss.numpy()
             else:
                 loss=loss.numpy()/batches
-                if i==episode_num-1:
+                if i==episode_count-1:
                     self.loss=self.loss.numpy()/batches
         return loss
     
     
-    def learn2(self,episode_num,i):
+    def learn2(self,episode_count,i):
         episode=[]
         if self.state_name==None:
             s=self.nn.explore(init=True)
@@ -352,7 +352,7 @@ class kernel:
                     else:
                         episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r]
                 s=next_s
-                loss=self.learn1(episode_num,i)
+                loss=self.learn1(episode_count,i)
                 t2=time.time()
                 self.time+=(t2-t1)
         else:
@@ -438,25 +438,25 @@ class kernel:
                     else:
                         episode=[self.state_name[s],self.action_name[a],self.state_name[next_s],r]
                 s=next_s
-                loss=self.learn1(episode_num,i)
+                loss=self.learn1(episode_count,i)
                 t2=time.time()
                 self.time+=(t2-t1)
         return loss,episode,end
     
     
-    def learn(self,episode_num,save=None,one=True):
+    def learn(self,episode_count,save=None,one=True):
         loss=0
-        if episode_num!=None:
-            for i in range(episode_num):
-                loss,episode,end=self.learn2(episode_num,i)
+        if episode_count!=None:
+            for i in range(episode_count):
+                loss,episode,end=self.learn2(episode_count,i)
                 self.loss_list.append(loss)
-                if i==episode_num-1:
+                if i==episode_count-1:
                     self.loss_list.append(self.loss)
-                if episode_num%10!=0:
-                    d=episode_num-episode_num%10
+                if episode_count%10!=0:
+                    d=episode_count-episode_count%10
                     d=int(d/10)
                 else:
-                    d=episode_num/10
+                    d=episode_count/10
                 if d==0:
                     d=1
                 e=d*2
@@ -464,7 +464,7 @@ class kernel:
                     print('episode num:{0}   loss:{1:.6f}'.format(i+1,loss))
                     if save!=None and i%e==0:
                         self.save(i,one)
-                self.epi_num+=1
+                self.epi_count+=1
                 self.total_episode+=1
                 if self.save_episode==True:
                     if end:
@@ -480,15 +480,15 @@ class kernel:
                     break
         elif self.ol==None:
             while True:
-                loss,episode,end=self.learn2(episode_num,i)
+                loss,episode,end=self.learn2(episode_count,i)
                 self.loss_list.append(loss)
-                if i==episode_num-1:
+                if i==episode_count-1:
                     self.loss_list.append(self.loss)
-                if episode_num%10!=0:
-                    d=episode_num-episode_num%10
+                if episode_count%10!=0:
+                    d=episode_count-episode_count%10
                     d=int(d/10)
                 else:
-                    d=episode_num/10
+                    d=episode_count/10
                 if d==0:
                     d=1
                 e=d*2
@@ -496,7 +496,7 @@ class kernel:
                     print('episode num:{0}   loss:{1:.6f}'.format(i+1,loss))
                     if save!=None and i%e==0:
                         self.save(i,one)
-                self.epi_num+=1
+                self.epi_count+=1
                 self.total_eisode+=1
                 if self.save_episode==True:
                     if end:
@@ -605,7 +605,7 @@ class kernel:
                 episode_file=open('episode-{0}.dat'.format(i),'wb')
                 pickle.dump(self.episode,episode_file)
                 episode_file.close()
-        self.episode_num=self.epi_num
+        self.episode_count=self.epi_count
         pickle.dump(self.param,parameter_file)
         pickle.dump(self.nn,output_file)
         pickle.dump(self.ol,output_file)
@@ -627,7 +627,7 @@ class kernel:
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.loss_list,output_file)
         pickle.dump(self.a,output_file)
-        pickle.dump(self.episode_num,output_file)
+        pickle.dump(self.episode_count,output_file)
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_e,output_file)
         pickle.dump(self.total_time,output_file)
@@ -665,7 +665,7 @@ class kernel:
         self.save_episode=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
         self.a=pickle.load(input_file)
-        self.episode_num=pickle.load(input_file)
+        self.episode_count=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         self.total_e=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
