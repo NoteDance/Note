@@ -38,9 +38,9 @@ class kernel:
         self.episode_step=None
         self.pool_size=None
         self.batch=None
-        self.episode_num=0
+        self.episode_count=0
         self.update_step=None
-        self.trial_num=None
+        self.trial_count=None
         self.running_list=[]
         self.suspend=False
         self.suspend_list=[]
@@ -235,7 +235,7 @@ class kernel:
         return
     
     
-    def set_up(self,epsilon=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_num=None,criterion=None,end_loss=None):
+    def set_up(self,epsilon=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None,end_loss=None):
         if epsilon!=None:
             self.epsilon=np.ones(self.process_thread)*epsilon
         if episode_step!=None:
@@ -246,8 +246,8 @@ class kernel:
             self.batch=batch
         if update_step!=None:
             self.update_step=update_step
-        if trial_num!=None:
-            self.trial_num=trial_num
+        if trial_count!=None:
+            self.trial_count=trial_count
         if criterion!=None:
             self.criterion=criterion
         if end_loss!=None:
@@ -867,7 +867,7 @@ class kernel:
         return
     
     
-    def train(self,episode_num):
+    def train(self,episode_count):
         try:
             t=self.thread_num.pop(0)
             t=int(t)
@@ -939,7 +939,7 @@ class kernel:
                 self.thread_lock[3].release()
         else:
             self.thread_lock[0].release()
-        for k in range(episode_num):
+        for k in range(episode_count):
             episode=[]
             s=self.nn.env(initial=True)
             if self.episode_step==None:
@@ -999,8 +999,8 @@ class kernel:
                         self.total_episode+=1
                         self.episode_list[t]+=1
                         self.loss_list.append(self.loss[t])
-                        if self.trial_num!=None and len(self.reward_list)>=self.trial_num:
-                            avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
+                        if self.trial_count!=None and len(self.reward_list)>=self.trial_count:
+                            avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
                             self.print_save(avg_reward)
                         else:
                             self.print_save()
@@ -1071,8 +1071,8 @@ class kernel:
                         self.total_episode+=1
                         self.episode_list[t]+=1
                         self.loss_list.append(self.loss[t])
-                        if self.trial_num!=None and len(self.reward_list)>=self.trial_num:
-                            avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
+                        if self.trial_count!=None and len(self.reward_list)>=self.trial_count:
+                            avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
                             self.print_save(avg_reward)
                         else:
                             self.print_save()
@@ -1097,8 +1097,8 @@ class kernel:
                         self.total_episode+=1
                         self.episode_list[t]+=1
                         self.loss_list.append(self.loss[t])
-                        if self.trial_num!=None and len(self.reward_list)>=self.trial_num:
-                            avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
+                        if self.trial_count!=None and len(self.reward_list)>=self.trial_count:
+                            avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
                             self.print_save(avg_reward)
                         else:
                             self.print_save()
@@ -1318,9 +1318,9 @@ class kernel:
     
     
     def stop_func(self):
-        if self.trial_num!=None:
-            if len(self.reward_list)>=self.trial_num:
-                avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
+        if self.trial_count!=None:
+            if len(self.reward_list)>=self.trial_count:
+                avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
                 if self.criterion!=None and avg_reward>=self.criterion:
                     self.save(self.total_episode)
                     self.save_flag=True
@@ -1377,25 +1377,25 @@ class kernel:
     
     def print_save(self,avg_reward=None):
         if self.muti_p!=None or self.muti_s!=None:
-            if self.episode_num%10!=0:
+            if self.episode_count%10!=0:
                 if self.muti_p!=None:
-                    p=self.episode_num-self.episode_num%self.muti_p
+                    p=self.episode_count-self.episode_count%self.muti_p
                     p=int(p/self.muti_p)
                     if p==0:
                         p=1
                 if self.muti_s!=None:
-                    s=self.episode_num-self.episode_num%self.muti_s
+                    s=self.episode_count-self.episode_count%self.muti_s
                     s=int(s/self.muti_s)
                     if s==0:
                         s=1
             else:
                 if self.muti_p!=None:
-                    p=self.episode_num/(self.muti_p+1)
+                    p=self.episode_count/(self.muti_p+1)
                     p=int(p)
                     if p==0:
                         p=1
                 if self.muti_s!=None:
-                    s=self.episode_num/(self.muti_s+1)
+                    s=self.episode_count/(self.muti_s+1)
                     s=int(s)
                     if s==0:
                         s=1
@@ -1408,12 +1408,12 @@ class kernel:
             else:
                 print('episode:{0}   reward:{1}'.format(self.total_episode,self.reward_list[-1]))
             print()
-            if self.muti_s!=None and self.muti_save!=None and self.episode_num%s==0:
+            if self.muti_s!=None and self.muti_save!=None and self.episode_count%s==0:
                 if self.muti_save==1:
                     self.save(self.total_episode)
                 else:
                     self.save(self.total_episode,False)
-            self.episode_num+=1
+            self.episode_count+=1
         return
     
     
