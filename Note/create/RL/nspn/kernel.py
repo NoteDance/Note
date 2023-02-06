@@ -38,8 +38,8 @@ class kernel:
         self.a=0
         self.d=None
         self.e=None
-        self.epi_num=0
-        self.episode_num=0
+        self.epi_count=0
+        self.episode_count=0
         self.total_episode=0
         self.time=0
         self.total_time=0
@@ -82,8 +82,8 @@ class kernel:
         self.reward_pool=None
         self.loss_list=[]
         self.a=0
-        self.epi_num=0
-        self.episode_num=0
+        self.epi_count=0
+        self.episode_count=0
         self.total_episode=0
         self.time=0
         self.total_time=0
@@ -518,7 +518,7 @@ class kernel:
         return loss,episode,end
     
     
-    def learn(self,episode_num,save=None,one=True,p=None,s=None):
+    def learn(self,episode_count,save=None,one=True,p=None,s=None):
         self.train_flag=True
         if p==None and s==None:
             self.p=9
@@ -533,19 +533,19 @@ class kernel:
             self.p=p-1
             self.s=s
         loss=0
-        if episode_num!=None:
-            for i in range(episode_num):
+        if episode_count!=None:
+            for i in range(episode_count):
                 loss,episode,end=self.learn2()
                 self.loss_list.append(loss)
-                self.epi_num+=1
+                self.epi_count+=1
                 self.total_episode+=1
-                if i==episode_num-1:
+                if i==episode_count-1:
                     self.loss_list.append(self.loss)
-                if episode_num%10!=0:
-                    d=episode_num-episode_num%self.p
+                if episode_count%10!=0:
+                    d=episode_count-episode_count%self.p
                     d=int(d/self.p)
                 else:
-                    d=episode_num/(self.p+1)
+                    d=episode_count/(self.p+1)
                     d=int(d)
                 if d==0:
                     d=1
@@ -571,16 +571,16 @@ class kernel:
             while True:
                 loss,episode,end=self.learn2()
                 self.loss_list.append(loss)
-                self.epi_num+=1
+                self.epi_count+=1
                 self.total_episode+=1
-                if i==episode_num-1:
+                if i==episode_count-1:
                     self.loss_list.append(self.loss)
                 i+=1
-                if episode_num%10!=0:
-                    d=episode_num-episode_num%self.p
+                if episode_count%10!=0:
+                    d=episode_count-episode_count%self.p
                     d=int(d/self.p)
                 else:
-                    d=episode_num/(self.p+1)
+                    d=episode_count/(self.p+1)
                     d=int(d)
                 if d==0:
                     d=1
@@ -748,7 +748,7 @@ class kernel:
                 episode_file=open('episode-{0}.dat'.format(i),'wb')
                 pickle.dump(self.episode,episode_file)
                 episode_file.close()
-        self.episode_num=self.epi_num
+        self.episode_count=self.epi_count
         pickle.dump(self.nn.param,parameter_file)
         if self.train_flag==False:
             self.nn.param=None
@@ -773,7 +773,7 @@ class kernel:
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.loss_list,output_file)
         pickle.dump(self.a,output_file)
-        pickle.dump(self.episode_num,output_file)
+        pickle.dump(self.episode_count,output_file)
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
@@ -814,7 +814,7 @@ class kernel:
         self.save_episode=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
         self.a=pickle.load(input_file)
-        self.episode_num=pickle.load(input_file)
+        self.episode_count=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
         input_file.close()
