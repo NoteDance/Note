@@ -63,7 +63,7 @@ class kernel:
         except AttributeError:
             self.running_flag=np.array(0,dtype=np.int8)
         self.PN=True
-        self.max_episode_num=None
+        self.max_episode_count=None
         self.save_episode=save_episode
         self.filename='save.dat'
         self.reward_list=[]
@@ -92,7 +92,7 @@ class kernel:
         return
     
     
-    def set_up(self,epsilon=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_num=None,criterion=None,end_loss=None,init=None):
+    def set_up(self,epsilon=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None,end_loss=None,init=None):
         if epsilon!=None:
             self.epsilon=np.ones(self.thread)*epsilon
         if episode_step!=None:
@@ -103,8 +103,8 @@ class kernel:
             self.batch=batch
         if update_step!=None:
             self.update_step=update_step
-        if trial_num!=None:
-            self.trial_num=trial_num
+        if trial_count!=None:
+            self.trial_count=trial_count
         if criterion!=None:
             self.criterion=criterion
         if end_loss!=None:
@@ -587,7 +587,7 @@ class kernel:
         return
     
     
-    def train(self,episode_num):
+    def train(self,episode_count):
         try:
             t=self.thread_num.pop(0)
         except IndexError:
@@ -635,7 +635,7 @@ class kernel:
             self.thread_lock[3].release()
         else:
             self.thread_lock[0].release()
-        for k in range(episode_num):
+        for k in range(episode_count):
             episode=[]
             s=self.nn.env(initial=True)
             if self.episode_step==None:
@@ -761,7 +761,7 @@ class kernel:
             self.reward[t]=0
             if self.save_episode==True:
                 self.episode.append(episode)
-                if self.max_episode_num!=None and len(self.episode)>=self.max_episode_num:
+                if self.max_episode_count!=None and len(self.episode)>=self.max_episode_count:
                     self.save_episode=False
             if self.PN==True:
                 self.thread_lock[3].release()
@@ -818,9 +818,9 @@ class kernel:
     
     
     def stop_func(self):
-        if self.trial_num!=None:
-            if len(self.reward_list)>=self.trial_num:
-                avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
+        if self.trial_count!=None:
+            if len(self.reward_list)>=self.trial_count:
+                avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
                 if self.criterion!=None and avg_reward>=self.criterion:
                     self.save(self.total_episode)
                     self.save_flag=True
@@ -912,7 +912,7 @@ class kernel:
         pickle.dump(self.update_step,output_file)
         pickle.dump(self.end_loss,output_file)
         pickle.dump(self.PN,output_file)
-        pickle.dump(self.max_episode_num,output_file)
+        pickle.dump(self.max_episode_count,output_file)
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.reward_list,output_file)
         pickle.dump(self.loss_list,output_file)
@@ -943,7 +943,7 @@ class kernel:
         self.update_step=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
         self.PN=pickle.load(input_file)
-        self.max_episode_num=pickle.load(input_file)
+        self.max_episode_count=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
         self.reward_list=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
