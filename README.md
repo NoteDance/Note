@@ -316,7 +316,7 @@ kernel=k.kernel(dqn,5)   #start kernel
 kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock()]
 kernel.stop=True
 kernel.action_num=2
-kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10,trial_num=10,criterion=200)
+kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10,trial_count=10,criterion=200)
 class thread(threading.Thread):
 	def run(self):
 		kernel.train(100)
