@@ -27,7 +27,7 @@ class kernel:
         self.pool_size=None
         self.batch=None
         self.update_step=None
-        self.trial_num=None
+        self.trial_count=None
         self.criterion=None
         self.reward_list=[]
         self.suspend=False
@@ -76,7 +76,7 @@ class kernel:
         return
     
     
-    def set_up(self,epsilon=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_num=None,criterion=None,end_loss=None):
+    def set_up(self,epsilon=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None,end_loss=None):
         if epsilon!=None:
             self.epsilon=epsilon
         if episode_step!=None:
@@ -87,8 +87,8 @@ class kernel:
             self.batch=batch
         if update_step!=None:
             self.update_step=update_step
-        if trial_num!=None:
-            self.trial_num=trial_num
+        if trial_count!=None:
+            self.trial_count=trial_count
         if criterion!=None:
             self.criterion=criterion
         if end_loss!=None:
@@ -491,7 +491,7 @@ class kernel:
         return loss,episode,done
     
     
-    def train(self,episode_num,save=None,one=True,p=None,s=None):
+    def train(self,episode_count,save=None,one=True,p=None,s=None):
         avg_reward=None
         if p==None:
             self.p=9
@@ -503,13 +503,13 @@ class kernel:
         else:
             self.s=s-1
             self.file_list=[]
-        if episode_num!=None:
-            for i in range(episode_num):
+        if episode_count!=None:
+            for i in range(episode_count):
                 t1=time.time()
                 loss,episode,done=self.train_()
-                if self.trial_num!=None:
-                    if len(self.reward_list)>=self.trial_num:
-                        avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
+                if self.trial_count!=None:
+                    if len(self.reward_list)>=self.trial_count:
+                        avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
                         if self.criterion!=None and avg_reward>=self.criterion:
                             t2=time.time()
                             self.total_time+=(t2-t1)
@@ -527,15 +527,15 @@ class kernel:
                 self.loss=loss
                 self.loss_list.append(loss)
                 self.total_episode+=1
-                if episode_num%10!=0:
-                    p=episode_num-episode_num%self.p
+                if episode_count%10!=0:
+                    p=episode_count-episode_count%self.p
                     p=int(p/self.p)
-                    s=episode_num-episode_num%self.s
+                    s=episode_count-episode_count%self.s
                     s=int(s/self.s)
                 else:
-                    p=episode_num/(self.p+1)
+                    p=episode_count/(self.p+1)
                     p=int(p)
-                    s=episode_num/(self.s+1)
+                    s=episode_count/(self.s+1)
                     s=int(s)
                 if p==0:
                     p=1
@@ -568,9 +568,9 @@ class kernel:
             while True:
                 t1=time.time()
                 loss,episode,done=self.train_()
-                if self.trial_num!=None:
-                    if len(self.reward_list)==self.trial_num:
-                        avg_reward=statistics.mean(self.reward_list[-self.trial_num:])
+                if self.trial_count!=None:
+                    if len(self.reward_list)==self.trial_count:
+                        avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
                         if avg_reward>=self.criterion:
                             t2=time.time()
                             self.total_time+=(t2-t1)
@@ -589,15 +589,15 @@ class kernel:
                 self.loss_list.append(loss)
                 i+=1
                 self.total_episode+=1
-                if episode_num%10!=0:
-                    p=episode_num-episode_num%self.p
+                if episode_count%10!=0:
+                    p=episode_count-episode_count%self.p
                     p=int(p/self.p)
-                    s=episode_num-episode_num%self.s
+                    s=episode_count-episode_count%self.s
                     s=int(s/self.s)
                 else:
-                    p=episode_num/(self.p+1)
+                    p=episode_count/(self.p+1)
                     p=int(p)
-                    s=episode_num/(self.s+1)
+                    s=episode_count/(self.s+1)
                     s=int(s)
                 if p==0:
                     p=1
