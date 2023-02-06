@@ -89,7 +89,7 @@ class kernel:
             self.running_flag=np.array(0,dtype=np.int8)
         self.PN=True
         self.PO=None
-        self.max_episode_num=None
+        self.max_episode_count=None
         self.save_episode=save_episode
         self.ln_list=[]
         self.gradient_list=[]
@@ -1120,7 +1120,7 @@ class kernel:
             self.reward[t]=0
             if self.save_episode==True:
                 self.episode.append(episode)
-                if self.max_episode_num!=None and len(self.episode)>=self.max_episode_num:
+                if self.max_episode_count!=None and len(self.episode)>=self.max_episode_count:
                     self.save_episode=False
             if self.PN==True:
                 if self.PO==1 or self.PO==3:
@@ -1510,7 +1510,7 @@ class kernel:
         pickle.dump(self.PN,output_file)
         pickle.dump(self.episode_memory_t_value,output_file)
         pickle.dump(self.memory_t_value,output_file)
-        pickle.dump(self.max_episode_num,output_file)
+        pickle.dump(self.max_episode_count,output_file)
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.reward_list,output_file)
         pickle.dump(self.loss_list,output_file)
@@ -1550,7 +1550,7 @@ class kernel:
         self.PN=pickle.load(input_file)
         self.episode_memory_t_value=pickle.load(input_file)
         self.memory_t_value=pickle.load(input_file)
-        self.max_episode_num=pickle.load(input_file)
+        self.max_episode_count=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
         self.reward_list=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
