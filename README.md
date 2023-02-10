@@ -116,7 +116,7 @@ kernel.train(64,5)         #train neural network
 
 **picture:https://github.com/NoteDancing/Note-documentation/tree/main/picture/gradient%20attenuation**
 
-**Use second parallel optimization to train on MNIST,speed was increased by more than 2 times!**
+**Use second parallel optimization to train on MNIST,speed was increased by more than 2 times!Not use parallel optimization to train spending 15s,use parallel optimization to train spending 6.8s.**
 
 **Tensorflow version:2.9.1**
 
@@ -129,13 +129,6 @@ kernel.train(64,5)         #train neural network
 **PO:2**
 
 **CPU:i5-8400**
-
-**GPU:GTX 1050 Ti**
-
-**Not use parallel optimization to train spending 15s,use parallel optimization to train spending 6.8s.**
-
-![1](https://github.com/NoteDancing/Note-documentation/blob/main/picture/time.png)
-![2](https://github.com/NoteDancing/Note-documentation/blob/main/picture/time(PO).png)
 
 
 **multithreading example:**
