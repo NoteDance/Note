@@ -595,6 +595,16 @@ class kernel:
             self.stop_flag=True
             return True
         elif self.end_loss==None:
+            if self.PN==True:
+                self.thread_lock[4].acquire()
+            else:
+                self.thread_lock[2].acquire()
+            self.save(self.total_episode)
+            self.save_flag=True
+            if self.PN==True:
+                self.thread_lock[4].release()
+            else:
+                self.thread_lock[2].release()
             self.stop_flag=True
             return True
         return False
