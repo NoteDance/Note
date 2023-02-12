@@ -1332,6 +1332,8 @@ class kernel:
             self.stop_flag=True
             return True
         elif self.end_loss==None:
+            self.save(self.total_episode)
+            self.save_flag=True
             self.stop_flag=True
             return True
         return False
