@@ -61,6 +61,26 @@ kernel.restore('save.dat')     #restore neural network
 kernel.train(32,1)             #train again
 ```
 
+**example(Stop multithreading training and saving when condition is met.):**
+```python
+import Note.create.DL.kernel as k   #import kernel
+import tensorflow as tf              #import platform
+import cnn as c                          #import neural network
+mnist=tf.keras.datasets.mnist
+(x_train,y_train),(x_test,y_test)=mnist.load_data()
+x_train,x_test =x_train/255.0,x_test/255.0
+y_train=tf.one_hot(y_train,10).numpy()
+cnn=c.cnn()                                #create neural network object
+kernel=k.kernel(cnn)                 #start kernel
+kernel.platform=tf                       #use platform
+kernel.stop=True
+kernel.end_loss=0.7
+kernel.data(x_train,y_train)   #input you data
+kernel.train(32,5)         #train neural network
+                           #batch: batch size
+                           #epoch:epoch
+```
+
 **pytorch:**
 
 **You can get neural network example in this link.**
