@@ -26,7 +26,6 @@ class kernel:
         self.end_test_acc=None
         self.acc_flag1=None
         self.acc_flag2='%'
-        self.train_flag=None
         self.train_loss=None
         self.train_acc=None
         self.train_loss_list=[]
@@ -701,7 +700,6 @@ class kernel:
     
     
     def train(self,batch=None,epoch=None,test_batch=None,save=None,one=True,p=None,s=None):
-        self.train_flag=True
         self.batch=batch
         self.epoch=0
         if p==None:
@@ -905,7 +903,6 @@ class kernel:
                     else:
                         print('accuracy:{0:.6f},test accuracy:{1:.6f}'.format(self.train_acc,self.test_acc))   
             print('time:{0}s'.format(self.time))
-        self.train_flag=False
         return
     
     
