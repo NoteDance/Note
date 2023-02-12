@@ -149,17 +149,17 @@ class kernel:
     
     
     def end(self):
-        if self.end_loss!=None and self.train_loss_list[-1]<=self.end_loss:
+        if len(self.train_loss_list)!=0 and self.end_loss!=None and self.train_loss_list[-1]<=self.end_loss:
             return True
-        elif self.end_acc!=None and self.train_acc_list[-1]>=self.end_acc:
+        elif len(self.train_acc_list)!=0 and self.end_acc!=None and self.train_acc_list[-1]>=self.end_acc:
             return True
-        elif self.end_loss!=None and self.end_acc!=None and self.train_loss_list[-1]<=self.end_loss and self.train_acc_list[-1]>=self.end_acc:
+        elif len(self.train_loss_list)!=0 and self.end_loss!=None and self.end_acc!=None and self.train_loss_list[-1]<=self.end_loss and self.train_acc_list[-1]>=self.end_acc:
             return True
-        elif self.end_test_loss!=None and self.test_loss_list[-1]<=self.end_test_loss:
+        elif len(self.test_loss_list)!=0 and self.end_test_loss!=None and self.test_loss_list[-1]<=self.end_test_loss:
             return True
-        elif self.end_test_acc!=None and self.test_acc_list[-1]>=self.end_test_acc:
+        elif len(self.test_acc_list)!=0 and self.end_test_acc!=None and self.test_acc_list[-1]>=self.end_test_acc:
             return True
-        elif self.end_test_loss!=None and self.end_test_acc!=None and self.test_loss_list[-1]<=self.end_test_loss and self.test_acc_list[-1]>=self.end_test_acc:
+        elif len(self.test_loss_list)!=0 and self.end_test_loss!=None and self.end_test_acc!=None and self.test_loss_list[-1]<=self.end_test_loss and self.test_acc_list[-1]>=self.end_test_acc:
             return True
     
     
@@ -1201,7 +1201,7 @@ class kernel:
                 print('time:{0}s'.format(self.total_time))
                 self.stop_flag=True
                 return True
-            else:
+            elif self.end_loss==None and self.end_acc==None and self.end_test_loss==None and self.end_test_acc==None:
                 print('\nSystem have stopped training.')
                 self._time=self.time-int(self.time)
                 if self._time<0.5:
@@ -1248,7 +1248,7 @@ class kernel:
                     self.thread_lock[3].release()
                 self.stop_flag=True
                 return True
-            else:
+            elif self.end_loss==None and self.end_acc==None and self.end_test_loss==None and self.end_test_acc==None:
                 self.stop_flag=True
                 return True
         return False
