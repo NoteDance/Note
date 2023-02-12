@@ -582,7 +582,8 @@ class kernel:
             print('time:{0}s'.format(self.total_time))
             return True
         elif self.end_loss==None:
-            print('\nSystem have stopped training.')
+            self.save(self.total_episode)
+            print('\nSystem have stopped training,Neural network have been saved.')
             self._time=self.time-int(self.time)
             if self._time<0.5:
                 self.time=int(self.time)
