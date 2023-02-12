@@ -290,7 +290,7 @@ class kernel:
     
     
     def end(self):
-        if self.end_loss!=None and self.loss_list[-1]<=self.end_loss:
+        if len(self.loss_list)!=0 and self.end_loss!=None and self.loss_list[-1]<=self.end_loss:
             return True
     
     
@@ -594,7 +594,7 @@ class kernel:
                 self.thread_lock[2].release()
             self.stop_flag=True
             return True
-        else:
+        elif self.end_loss==None:
             self.stop_flag=True
             return True
         return False
