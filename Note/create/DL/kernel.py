@@ -42,7 +42,6 @@ class kernel:
         self.stop_list_m=[]
         self.save_flag=False
         self.stop_flag=False
-        self.training_flag=False
         self.memory_flag=False
         self.memory_priority=False
         self.epoch_list=[]
@@ -186,7 +185,6 @@ class kernel:
         self.stopped_list=[]
         self.save_flag=False
         self.stop_flag=False
-        self.training_flag=False
         self.memory_flag=False
         self.data_memory=None
         self.param_memory=0
@@ -945,8 +943,6 @@ class kernel:
             except IndexError:
                 print('\nError,please add process_thread.')
                 return
-        if self.process_thread==None:
-            self.training_flag=True
         elif self.process_thread!=None:
             if self.PO==1 or self.PO==3:
                 self.lock[1].acquire()
@@ -1631,7 +1627,6 @@ class kernel:
     def stop_func(self):
         if self.process_thread==None:
             if self.end():
-                self.training_flag=False
                 self.save(self.total_epoch,True)
                 print('\nSystem have stopped training,Neural network have been saved.')
                 self._time=self.time-int(self.time)
@@ -1665,7 +1660,8 @@ class kernel:
                 self.stop_flag=True
                 return True
             elif self.end_loss==None and self.end_acc==None and self.end_test_loss==None and self.end_test_acc==None:
-                print('\nSystem have stopped training.')
+                self.save(self.total_epoch,True)
+                print('\nSystem have stopped training,Neural network have been saved.')
                 self._time=self.time-int(self.time)
                 if self._time<0.5:
                     self.time=int(self.time)
@@ -1703,6 +1699,8 @@ class kernel:
                 self.stop_flag=True
                 return True
             elif self.end_loss==None and self.end_acc==None and self.end_test_loss==None and self.end_test_acc==None:
+                self.save(self.total_epoch,True)
+                self.save_flag=True
                 self.stop_flag=True
                 return True
         return False
