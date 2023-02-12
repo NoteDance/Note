@@ -28,7 +28,6 @@ class kernel:
         self.stopped_list=[]
         self.save_flag=False
         self.stop_flag=False
-        self.training_flag=False
         self.save_epoch=None
         self.batch=None
         self.epoch=0
@@ -94,7 +93,6 @@ class kernel:
         self.stopped_list=[]
         self.save_flag=False
         self.stop_flag=False
-        self.training_flag=False
         self.save_epoch=None
         self.end_loss=None
         self.end_acc=None
@@ -661,8 +659,6 @@ class kernel:
             except IndexError:
                 print('\nError,please add thread.')
                 return
-        if self.thread==None:
-            self.training_flag=True
         elif self.thread_lock!=None:
             if self.PO==1:
                 self.thread_lock[1].acquire()
@@ -881,8 +877,6 @@ class kernel:
                 pass
             print()
             print('time:{0}s'.format(self.time))
-        if self.thread==None:
-            self.training_flag=False
         if self.thread!=None:
             if self.PO==1:
                 self.thread_lock[1].acquire()
@@ -1043,7 +1037,6 @@ class kernel:
     def stop_func(self):
         if self.thread==None:
             if self.end():
-                self.training_flag=False
                 self.save(self.total_epoch,True)
                 print('\nSystem have stopped training,Neural network have been saved.')
                 self._time=self.time-int(self.time)
@@ -1077,7 +1070,8 @@ class kernel:
                 self.stop_flag=True
                 return True
             elif self.end_loss==None and self.end_acc==None and self.end_test_loss==None and self.end_test_acc==None:
-                print('\nSystem have stopped training.')
+                self.save(self.total_epoch,True)
+                print('\nSystem have stopped training,Neural network have been saved.')
                 self._time=self.time-int(self.time)
                 if self._time<0.5:
                     self.time=int(self.time)
@@ -1115,6 +1109,8 @@ class kernel:
                 self.stop_flag=True
                 return True
             elif self.end_loss==None and self.end_acc==None and self.end_test_loss==None and self.end_test_acc==None:
+                self.save(self.total_epoch,True)
+                self.save_flag=True
                 self.stop_flag=True
                 return True
         return False
