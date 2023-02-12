@@ -146,7 +146,7 @@ class kernel:
     
     
     def end(self):
-        if self.end_loss!=None and self.loss_list[-1]<=self.end_loss:
+        if len(self.loss_list)!=0 and self.end_loss!=None and self.loss_list[-1]<=self.end_loss:
             return True
     
     
@@ -546,7 +546,7 @@ class kernel:
             print()
             print('time:{0}s'.format(self.total_time))
             return True
-        else:
+        elif self.end_loss==None:
             print('\nSystem have stopped training.')
             self._time=self.time-int(self.time)
             if self._time<0.5:
