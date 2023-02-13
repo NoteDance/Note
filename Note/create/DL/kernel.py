@@ -239,30 +239,18 @@ class kernel:
         return
     
     
-    def set_end(self,end_loss=None,end_acc=None,end_test_loss=None,end_test_acc=None):
-        if end_loss!=None:
-            self.end_loss=end_loss
-        if end_acc!=None:
-            self.end_acc=end_acc
-        if end_test_loss!=None:
-            self.end_test_loss=end_test_loss
-        if end_test_acc!=None:
-            self.end_test_acc=end_test_acc
-        return
-    
-    
     def end(self):
-        if len(self.train_loss_list)!=0 and self.end_loss!=None and self.train_loss_list[-1]<=self.end_loss:
+        if self.end_loss!=None and len(self.train_loss_list)!=0 and self.train_loss_list[-1]<=self.end_loss:
             return True
-        elif len(self.train_acc_list)!=0 and self.end_acc!=None and self.train_acc_list[-1]>=self.end_acc:
+        elif self.end_acc!=None and len(self.train_acc_list)!=0 and self.train_acc_list[-1]>=self.end_acc:
             return True
-        elif len(self.train_loss_list)!=0 and self.end_loss!=None and self.end_acc!=None and self.train_loss_list[-1]<=self.end_loss and self.train_acc_list[-1]>=self.end_acc:
+        elif self.end_loss!=None and len(self.train_loss_list)!=0 and self.end_acc!=None and self.train_loss_list[-1]<=self.end_loss and self.train_acc_list[-1]>=self.end_acc:
             return True
-        elif len(self.test_loss_list)!=0 and self.end_test_loss!=None and self.test_loss_list[-1]<=self.end_test_loss:
+        elif self.end_test_loss!=None and len(self.test_loss_list)!=0 and self.test_loss_list[-1]<=self.end_test_loss:
             return True
-        elif len(self.test_acc_list)!=0 and self.end_test_acc!=None and self.test_acc_list[-1]>=self.end_test_acc:
+        elif self.end_test_acc!=None and len(self.test_acc_list)!=0 and self.test_acc_list[-1]>=self.end_test_acc:
             return True
-        elif len(self.test_loss_list)!=0 and self.end_test_loss!=None and self.end_test_acc!=None and self.test_loss_list[-1]<=self.end_test_loss and self.test_acc_list[-1]>=self.end_test_acc:
+        elif self.end_test_loss!=None and len(self.test_loss_list)!=0 and self.end_test_acc!=None and self.test_loss_list[-1]<=self.end_test_loss and self.test_acc_list[-1]>=self.end_test_acc:
             return True
     
     
