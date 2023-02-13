@@ -456,6 +456,22 @@ r=r.reward(dqn,dqn.genv)
 reward=r.reward(1000) #test neural network
 ```
 
+**example(Stop multithreading training and saving when condition is met.):**
+```python
+import Note.create.RL.kernel as k   #import kernel
+import DQN as d
+dqn=d.DQN(4,128,2)                               #create neural network object
+kernel=k.kernel(dqn,5)   #start kernel
+kernel.stop=True
+kernel.action_num=2
+kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10,trial_count=10,criterion=200)
+kernel.train(500)
+kernel.loss_list or kernel.loss       #view training loss
+kernel.visualize_train()
+kernel.reward                         #view reward
+kernel.visualize_reward()
+```
+
 **DDPG:**
 
 **You can get neural network example in this link.**
@@ -486,7 +502,7 @@ kernel.visualize_reward()
 
 https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow/DQN.py
 
-**example:**
+**multithreading example:**
 ```python
 import Note.create.RL.kernel as k   #import kernel
 import DQN as d
@@ -512,7 +528,7 @@ kernel.reward                         #view reward
 kernel.visualize_reward()
 ```
 
-**example(Stop multithreading training and saving when condition is met.):**
+**multithreading example(Stop multithreading training and saving when condition is met.):**
 ```python
 import Note.create.RL.kernel as k   #import kernel
 import DQN as d
