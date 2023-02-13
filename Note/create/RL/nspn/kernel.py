@@ -152,7 +152,7 @@ class kernel:
     
     
     def end(self):
-        if len(self.loss_list)!=0 and self.end_loss!=None and self.loss_list[-1]<=self.end_loss:
+        if self.end_loss!=None and len(self.loss_list)!=0 and self.loss_list[-1]<=self.end_loss:
             return True
     
     
