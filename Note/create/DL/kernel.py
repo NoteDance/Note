@@ -112,18 +112,6 @@ class kernel:
         return
     
     
-    def set_end(self,end_loss=None,end_acc=None,end_test_loss=None,end_test_acc=None):
-        if end_loss!=None:
-            self.end_loss=end_loss
-        if end_acc!=None:
-            self.end_acc=end_acc
-        if end_test_loss!=None:
-            self.end_test_loss=end_test_loss
-        if end_test_acc!=None:
-            self.end_test_acc=end_test_acc
-        return
-    
-    
     def end(self):
         if self.end_loss!=None and self.train_loss<=self.end_loss:
             return True
