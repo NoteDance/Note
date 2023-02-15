@@ -113,9 +113,9 @@ class kernel:
         counter=0
         episode=[]
         if seed==None:
-            s=self.nn.env.reset()
+            s=self.nn.genv.reset()
         else:
-            s=self.nn.env.reset(seed=seed)
+            s=self.nn.genv.reset(seed=seed)
         self.end_flag=False
         while True:
             try:
@@ -139,20 +139,20 @@ class kernel:
                             s=np.expand_dims(s,axis=0)
                             s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device_d)
                             a=self.nn.nn(s).detach().numpy().argmax()
-                    next_s,r,done=self.nn.env(a)
+                    next_s,r,done,_=self.nn.env.step(a)
             except AttributeError:
                 try:
                     if self.platform.DType!=None: 
                         s=np.expand_dims(s,axis=0)
                         a=self.nn.actor.fp(s).numpy()
                         a=np.squeeze(a)
-                        next_s,r,done=self.nn.env(a) 
+                        next_s,r,done,_=self.nn.env.step(a) 
                 except AttributeError:
                     s=np.expand_dims(s,axis=0)
                     s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device_d)
                     a=self.nn.actor(s).detach().numpy()
                     a=np.squeeze(a)
-                    next_s,r,done=self.nn.env(a)
+                    next_s,r,done,_=self.nn.env.step(a)
             try:
                 if self.nn.stop!=None:
                     pass
