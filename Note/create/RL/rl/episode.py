@@ -34,7 +34,7 @@ class episode:
                 s=np.expand_dims(s,axis=0)
                 a=self.agent.actor(s).detach().numpy()
                 a=np.squeeze(a)
-                next_s,r,done,_=self.agent.env.step(a)
+                next_s,r,done,_=self.env.step(a)
             try:
                 if self.nn.stop!=None:
                     pass
