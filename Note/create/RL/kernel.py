@@ -454,7 +454,12 @@ class kernel:
     
     
     def end(self):
-        if self.end_loss!=None and len(self.loss_list)!=0 and self.loss_list[-1]<=self.end_loss:
+        if self.trial_count!=None:
+            if len(self.reward_list)>=self.trial_count:
+                avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                if self.criterion!=None and avg_reward>=self.criterion:
+                    return True
+        elif self.end_loss!=None and len(self.loss_list)!=0 and self.loss_list[-1]<self.end_loss:
             return True
     
     
@@ -818,15 +823,7 @@ class kernel:
     
     
     def stop_func(self):
-        if self.trial_count!=None:
-            if len(self.reward_list)>=self.trial_count:
-                avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
-                if self.criterion!=None and avg_reward>=self.criterion:
-                    self.save(self.total_episode)
-                    self.save_flag=True
-                    self.stop_flag=True
-                    return True
-        elif self.end():
+        if self.end():
             self.save(self.total_episode)
             self.save_flag=True
             self.stop_flag=True
