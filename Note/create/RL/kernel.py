@@ -175,43 +175,26 @@ class kernel:
         counter=0
         episode=[]
         if seed==None:
-            s=self.nn.env.reset()
+            s=self.nn.genv.reset()
         else:
-            s=self.nn.env.reset(seed=seed)
+            s=self.nn.genv.reset(seed=seed)
         self.end_flag=False
         while True:
             try:
                 if self.nn.nn!=None:
                     try:
-                        if self.nn.env!=None:
-                            try:
-                                if self.nn.action!=None:
-                                    s=np.expand_dims(s,axis=0)
-                                    a=self.nn.action(s)
-                            except AttributeError:
-                                s=np.expand_dims(s,axis=0)
-                                a=self.nn.nn(s).detach().numpy().argmax()
-                            if self.action_name==None:
-                                next_s,r,done=self.nn.env(a)
-                            else:
-                                next_s,r,done=self.nn.env(self.action_name[a])
-                    except AttributeError:
-                        a=self.nn.nn(s).detach().numpy().argmax()
-                        next_s,r,done=self.nn.transition(self.state_name[s],self.action_name[a])
-            except AttributeError:
-                try:
-                    if self.nn.env!=None:
-                        if self.nn.state_name==None:
+                        if self.nn.action!=None:
                             s=np.expand_dims(s,axis=0)
-                            a=self.nn.actor(s).detach().numpy()
-                        else:
-                            a=self.nn.actor(self.nn.state[self.nn.state_name[s]]).detach().numpy()
-                        a=np.squeeze(a)
-                        next_s,r,done=self.nn.env(a)
-                except AttributeError:
-                    a=self.nn.actor(self.nn.state[self.nn.state_name[s]]).detach().numpy()
-                    a=np.squeeze(a)
-                    next_s,r,done=self.nn.transition(self.nn.state_name[s],a)
+                            a=self.nn.action(s)
+                    except AttributeError:
+                        s=np.expand_dims(s,axis=0)
+                        a=self.nn.nn(s).detach().numpy().argmax()
+                    next_s,r,done,_=self.nn.env(a)
+            except AttributeError:
+                s=np.expand_dims(s,axis=0)
+                a=self.nn.actor(s).detach().numpy()
+                a=np.squeeze(a)
+                next_s,r,done,_=self.nn.env(a)
             try:
                 if self.nn.stop!=None:
                     pass
@@ -222,27 +205,11 @@ class kernel:
             if self.end_flag==True:
                 break
             if done:
-                try:
-                    if self.nn.state_name==None:
-                        episode.append([s,self.nn.action_name[a],next_s,r])
-                    elif self.nn.action_name==None:
-                        episode.append([self.nn.state_name[s],a,self.nn.state_name[next_s],r])
-                    else:
-                        episode.append([self.nn.state_name[s],self.nn.action_name[a],self.nn.state_name[next_s],r])
-                except AttributeError:
-                    episode.append([s,a,next_s,r])
+                episode.append([s,a,next_s,r])
                 episode.append('done')
                 break
             else:
-                try:
-                    if self.nn.state_name==None:
-                        episode.append([s,self.nn.action_name[a],next_s,r])
-                    elif self.nn.action_name==None:
-                        episode.append([self.nn.state_name[s],a,self.nn.state_name[next_s],r])
-                    else:
-                        episode.append([self.nn.state_name[s],self.nn.action_name[a],self.nn.state_name[next_s],r])
-                except AttributeError:
-                    episode.append([s,a,next_s,r])
+                episode.append([s,a,next_s,r])
             if max_step!=None and counter==max_step-1:
                 break
             s=next_s
