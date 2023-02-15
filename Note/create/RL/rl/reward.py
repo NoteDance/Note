@@ -12,9 +12,9 @@ class reward:
     def reward(self,max_step=None,seed=None):
         reward=0
         if seed==None:
-            s=self.nn.env.reset()
+            s=self.env.reset()
         else:
-            s=self.nn.env.reset(seed=seed)
+            s=self.env.reset(seed=seed)
         if max_step!=None:
             for i in range(max_step):
                 if self.end_flag==True:
