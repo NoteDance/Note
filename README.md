@@ -396,6 +396,8 @@ test_nn.test(cnn,tf,x_train[:32],y_train[:32])
 
 # Reinforcement Learning:
 
+**The version of gym used in the example is less than 0.26.0.**
+
 **example:**
 
 **DQN:**
