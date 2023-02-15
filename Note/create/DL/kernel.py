@@ -136,17 +136,17 @@ class kernel:
     
     
     def end(self):
-        if self.end_loss!=None and len(self.train_loss_list)!=0 and self.train_loss_list[-1]<=self.end_loss:
+        if self.end_loss!=None and len(self.train_loss_list)!=0 and self.train_loss_list[-1]<self.end_loss:
             return True
-        elif self.end_acc!=None and len(self.train_acc_list)!=0 and self.train_acc_list[-1]>=self.end_acc:
+        elif self.end_acc!=None and len(self.train_acc_list)!=0 and self.train_acc_list[-1]>self.end_acc:
             return True
-        elif self.end_loss!=None and len(self.train_loss_list)!=0 and self.end_acc!=None and self.train_loss_list[-1]<=self.end_loss and self.train_acc_list[-1]>=self.end_acc:
+        elif self.end_loss!=None and len(self.train_loss_list)!=0 and self.end_acc!=None and self.train_loss_list[-1]<self.end_loss and self.train_acc_list[-1]>self.end_acc:
             return True
-        elif self.end_test_loss!=None and len(self.test_loss_list)!=0 and self.test_loss_list[-1]<=self.end_test_loss:
+        elif self.end_test_loss!=None and len(self.test_loss_list)!=0 and self.test_loss_list[-1]<self.end_test_loss:
             return True
-        elif self.end_test_acc!=None and len(self.test_acc_list)!=0 and self.test_acc_list[-1]>=self.end_test_acc:
+        elif self.end_test_acc!=None and len(self.test_acc_list)!=0 and self.test_acc_list[-1]>self.end_test_acc:
             return True
-        elif self.end_test_loss!=None and len(self.test_loss_list)!=0 and self.end_test_acc!=None and self.test_loss_list[-1]<=self.end_test_loss and self.test_acc_list[-1]>=self.end_test_acc:
+        elif self.end_test_loss!=None and len(self.test_loss_list)!=0 and self.end_test_acc!=None and self.test_loss_list[-1]<self.end_test_loss and self.test_acc_list[-1]>self.end_test_acc:
             return True
     
     
