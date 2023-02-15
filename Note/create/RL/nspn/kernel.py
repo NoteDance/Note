@@ -122,13 +122,13 @@ class kernel:
                         s=np.expand_dims(s,axis=0)
                         s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
                         a=self.nn.nn(s).detach().numpy().argmax()
-                    next_s,r,done,_=self.nn.env(a)
+                    next_s,r,done=self.nn.env(a)
             except AttributeError:
                 s=np.expand_dims(s,axis=0)
                 s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
                 a=self.nn.actor(s).detach().numpy()
                 a=np.squeeze(a)
-                next_s,r,done,_=self.nn.env(a)
+                next_s,r,done=self.nn.env(a)
             try:
                 if self.nn.stop!=None:
                     pass
