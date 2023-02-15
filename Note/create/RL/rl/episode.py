@@ -1,4 +1,3 @@
-import torch
 import numpy as np
 
 
@@ -11,9 +10,9 @@ class episode:
     
     def get_episode(self,seed=None):
         if seed==None:
-            s=self.nn.env.reset()
+            s=self.env.reset()
         else:
-            s=self.nn.env.reset(seed=seed)
+            s=self.env.reset(seed=seed)
         episode=[]
         while True:
             try:
@@ -23,18 +22,16 @@ class episode:
                     if self.agent.action!=None:
                         pass
                     s=np.expand_dims(s,axis=0)
-                    s=torch.tensor(s,dtype=torch.float).to(self.agent.device_d)
-                    a=self.agent.action(s).detach().numpy()
+                    a=self.agent.action(s).numpy()
                 except AttributeError:
                     s=np.expand_dims(s,axis=0)
-                    s=torch.tensor(s,dtype=torch.float).to(self.agent.device_d)
-                    a=self.agent.nn(s).detach().numpy().argmax()
-                next_s,r,done=self.env(a)
+                    a=np.argmax(self.agent.nn.fp(s))
+                next_s,r,done,_=self.env.step(a)
             except AttributeError:
                 s=np.expand_dims(s,axis=0)
-                a=self.agent.actor(s).detach().numpy()
+                a=self.agent.actor.fp(s).numpy()
                 a=np.squeeze(a)
-                next_s,r,done=self.agent.env(a)
+                next_s,r,done,_=self.agent.env(a)
             try:
                 if self.nn.stop!=None:
                     pass
