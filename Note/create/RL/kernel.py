@@ -282,12 +282,12 @@ class kernel:
                     except AttributeError:
                         s=np.expand_dims(s,axis=0)
                         a=np.argmax(self.nn.nn.fp(s)).numpy()
-                    next_s,r,done,_=self.nn.env(a)
+                    next_s,r,done=self.nn.env(a)
             except AttributeError:
                 s=np.expand_dims(s,axis=0)
                 a=self.nn.actor.fp(s).numpy()
                 a=np.squeeze(a)
-                next_s,r,done,_=self.nn.env(a)
+                next_s,r,done=self.nn.env(a)
             try:
                 if self.nn.stop!=None:
                     pass
