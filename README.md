@@ -43,8 +43,8 @@ kernel=k.kernel(cnn)                 #start kernel
 kernel.platform=tf                       #use platform
 kernel.data(x_train,y_train)   #input you data
 kernel.train(32,5)         #train neural network
-                           #batch: batch size
-                           #epoch:epoch
+                           #batch size:32
+                           #epoch:5
 kernel.save()              #save neural network
 ```
 ```python
@@ -77,8 +77,8 @@ kernel.stop=True
 kernel.end_loss=0.7
 kernel.data(x_train,y_train)   #input you data
 kernel.train(32,5)         #train neural network
-                           #batch: batch size
-                           #epoch:epoch
+                           #batch size:32
+                           #epoch:5
 ```
 
 **pytorch:**
@@ -107,8 +107,8 @@ kernel=k.kernel(nn)                 #start kernel
 kernel.platform=torch                   #use platform
 kernel.data(train_data,train_labels)   #input you data
 kernel.train(64,5)         #train neural network
-                           #batch: batch size
-                           #epoch:epoch
+                           #batch size:32
+                           #epoch:5
 ```
 ## Multithreading:
 **Note can speed up training by multithreading and has stop mechanism and gradient attenuation to resolve unstable training.**
@@ -169,9 +169,9 @@ kernel.process_thread=2                        #thread count
 kernel.PO=2
 kernel.data(x_train,y_train)   #input you data
 kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
-class thread(threading.Thread):
-	def run(self):
-		kernel.train(32,3)
+class thread(threading.Thread):     
+	def run(self):              
+		kernel.train(32,3)  #batch size:32 epoch:3
 for _ in range(2):
 	_thread=thread()
 	_thread.start()
@@ -199,7 +199,7 @@ kernel.data(x_train,y_train)   #input you data
 kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
 class thread(threading.Thread):
 	def run(self):
-		kernel.train(32,1)
+		kernel.train(32,1) #batch size:32 epoch:1
 for _ in range(2):
 	_thread=thread()
 	_thread.start()
@@ -229,7 +229,7 @@ kernel.data(x_train,y_train)   #input you data
 kernel.lock=[threading.Lock(),threading.Lock()]
 class thread(threading.Thread):
 	def run(self):
-		kernel.train(32,1)
+		kernel.train(32,1) #batch size:32 epoch:1
 for _ in range(7):
 	_thread=thread()
 	_thread.start()
@@ -251,13 +251,13 @@ cnn=c.cnn()                                #create neural network object
 kernel=k.kernel(cnn)   #start kernel
 kernel.platform=tf                            #use platform
 kernel.process_thread=7                        #thread count
-kernel.epoch_=6
+kernel.epoch_=6                #epoch:6
 kernel.PO=2
 kernel.data(x_train,y_train)   #input you data
 kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
 class thread(threading.Thread):
 	def run(self):
-		kernel.train(32)
+		kernel.train(32) #batch size:32
 for _ in range(7):
 	_thread=thread()
 	_thread.start()
@@ -279,14 +279,14 @@ kernel=k.kernel(cnn)   #start kernel
 kernel.platform=tf                            #use platform
 kernel.process_thread=7                        #thread count
 kernel.data_segment_flag=True
-kernel.batches=1875
-kernel.epoch_=6
+kernel.batches=1875            #batches:1875
+kernel.epoch_=6                #epoch:6
 kernel.PO=2
 kernel.data(x_train,y_train)   #input you data
 kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
 class thread(threading.Thread):
 	def run(self):
-		kernel.train(32)
+		kernel.train(32) #batch size:32
 for _ in range(7):
 	_thread=thread()
 	_thread.start()
@@ -309,7 +309,7 @@ cnn=c.cnn()                                #create neural network object
 kernel=k.kernel(cnn)   #start kernel
 kernel.platform=tf                            #use platform
 kernel.stop=True
-kernel.end_loss=0.7
+kernel.end_loss=0.7                           #stop condition
 kernel.restrained_parallelism=True
 kernel.process_thread=2                        #thread count
 kernel.PO=2
@@ -317,7 +317,7 @@ kernel.data(x_train,y_train)   #input you data
 kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
 class thread(threading.Thread):
 	def run(self):
-		kernel.train(32,3)
+		kernel.train(32,3) #batch size:32 epoch:3
 for _ in range(2):
 	_thread=thread()
 	_thread.start()
@@ -342,12 +342,12 @@ cnn=c.cnn()                                #create neural network object
 kernel=k.kernel(cnn)   #start kernel
 kernel.platform=tf                            #use platform
 kernel.process_thread=7                        #thread count
-kernel.epoch_=6
+kernel.epoch_=6                #epoch:6
 kernel.PO=2
 kernel.data(x_train,y_train)   #input you data
 kernel.lock=[Lock(),Lock(),Lock()]
 for _ in range(7):
-	p=Process(target=kernel.train(32))
+	p=Process(target=kernel.train(32)) #batch size:32
 	p.start()
 for _ in range(7):
 	p.join()
@@ -368,12 +368,12 @@ kernel.platform=tf                            #use platform
 kernel.process_thread=7                        #thread count
 kernel.data_segment_flag=True
 kernel.batches=1875
-kernel.epoch_=6
+kernel.epoch_=6                #epoch:6
 kernel.PO=2
 kernel.data(x_train,y_train)   #input you data
 kernel.lock=[Lock(),Lock(),Lock()]
 for _ in range(7):
-	p=Process(target=kernel.train(32))
+	p=Process(target=kernel.train(32)) #batch size:32
 	p.start()
 for _ in range(7):
 	p.join()
