@@ -98,9 +98,9 @@ class kernel:
         counter=0
         episode=[]
         if seed==None:
-            s=self.nn.env.reset()
+            s=self.nn.genv.reset()
         else:
-            s=self.nn.env.reset(seed=seed)
+            s=self.nn.genv.reset(seed=seed)
         self.end_flag=False
         while True:
             try:
