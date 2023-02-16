@@ -382,7 +382,7 @@ kernel.visualize_train()
 
 ## Test neural network：
 ```python
-import Note.create.DL.dl.test_nn
+import Note.create.DL.dl.test_nn as t
 import tensorflow as tf              #import platform
 import cnn as c                          #import neural network
 mnist=tf.keras.datasets.mnist
@@ -390,7 +390,7 @@ mnist=tf.keras.datasets.mnist
 x_train,x_test =x_train/255.0,x_test/255.0
 y_train=tf.one_hot(y_train,10).numpy()
 cnn=c.cnn()
-test_nn.test(cnn,tf,x_train[:32],y_train[:32])
+t.test(cnn,tf,x_train[:32],y_train[:32])
 ```
 
 
@@ -560,9 +560,9 @@ kernel.visualize_reward()
 ## Test neural network：
 ```python
 import DQN as d
-import Note.create.RL.rl.test_nn
+import Note.create.RL.rl.test_nn as t
 dqn=d.DQN(4,128,2)                               #create neural network object
-test_nn.test(dqn,2)
+t.test(dqn,2)
 ```
 
 
