@@ -26,7 +26,9 @@ def test(nn,action_num=None):
             nn.pr.TD=np.append(nn.pr.TD,nn.initial_TD)
     except AttributeError: 
         pass
-    loss=nn.loss(s,a,next_s,r,done)
-    nn.opt(loss)
+    a=np.array(a)
+    a=np.expand_dims(a,axis=0)
+    next_s=np.expand_dims(next_s,axis=0)
+    nn.loss(s,a,next_s,r,done)
     print('No error')
     return
