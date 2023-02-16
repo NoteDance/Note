@@ -98,8 +98,6 @@ neural network example:https://github.com/NoteDancing/Note-documentation/tree/ma
 
 **CPU:i5-8400**
 
-**GPU:GTX 1050 Ti**
-
 **Not use parallel optimization to train spending 15s,use parallel optimization to train spending 6.8s.**
 
 ![1](https://github.com/NoteDancing/Note-documentation/blob/main/picture/time.png)
