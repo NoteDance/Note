@@ -559,10 +559,11 @@ kernel.visualize_reward()
 
 ## Test neural network：
 ```python
-import DQN as d
 import Note.create.RL.rl.test_nn as t
+import tensorflow as tf              #import platform
+import DQN as d
 dqn=d.DQN(4,128,2)                               #create neural network object
-t.test(dqn,2)
+t.test(dqn,tf,2)
 ```
 
 
