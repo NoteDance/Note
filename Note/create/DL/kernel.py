@@ -40,7 +40,7 @@ class kernel:
         self.total_time=0
     
     
-    def data(self,train_data,train_labels,test_data=None,test_labels=None):
+    def data(self,train_data,train_labels,test_data=None,test_labels=None,test_flag=False):
         self.train_data=train_data
         self.train_labels=train_labels
         if type(train_data)==list:
@@ -49,8 +49,7 @@ class kernel:
             self.labels_batch=[x for x in range(len(train_labels))]
         self.test_data=test_data
         self.test_labels=test_labels
-        if test_data!=None:
-            self.test_flag=True
+        self.test_flag=test_flag
         if type(self.train_data)==list:
             self.shape0=train_data[0].shape[0]
         else:
@@ -982,7 +981,7 @@ class kernel:
                 else:
                     return test_loss,test_acc
             else:
-                return test_loss
+                return test_loss,None
     
     
     def train_info(self):
