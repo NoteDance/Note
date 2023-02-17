@@ -74,7 +74,8 @@ y_test=tf.one_hot(y_test,10).numpy()
 cnn=c.cnn()                                #create neural network object
 kernel=k.kernel(cnn)                 #start kernel
 kernel.platform=tf                       #use platform
-kernel.data(x_train,y_train,x_test,y_test,True)   #input you data
+kernel.data(x_train,y_train,x_test,y_test)   #input you data
+kernel.test_flag=True
 kernel.train(32,5,32)         #train neural network
                            #batch size:32
 			   #test batch size:32
