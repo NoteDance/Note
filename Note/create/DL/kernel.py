@@ -84,7 +84,7 @@ class kernel:
         self.total_time=0
     
     
-    def data(self,train_data,train_labels,test_data=None,test_labels=None,test_flag=False):
+    def data(self,train_data,train_labels,test_data=None,test_labels=None):
         self.train_data=train_data
         self.train_labels=train_labels
         if self.data_segment_flag==True:
@@ -95,7 +95,6 @@ class kernel:
             self.labels_batch=[x for x in range(len(train_labels))]
         self.test_data=test_data
         self.test_labels=test_labels
-        self.test_flag=test_flag
         if type(self.train_data)==list:
             self.shape0=train_data[0].shape[0]
         else:
