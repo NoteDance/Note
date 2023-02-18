@@ -63,22 +63,14 @@ class kernel:
         if thread==None:
             self.thread_num=np.arange(self.thread)
             self.thread_num=list(self.thread_num)
-            self.finish_list=[]
-            self.running_flag=np.array(0,dtype=np.int8)
-            try:
-                self.nn.bc=np.zeros(self.thread,dtype=np.float32)
-            except AttributeError:
-                pass
         else:
             self.thread_num=np.arange(thread)
             self.thread_num=list(self.thread_num)
             self.thread=thread
-            self.finish_list=[]
-            self.running_flag=np.array(0,dtype=np.int8)
-            try:
-                self.nn.bc=np.zeros(self.thread,dtype=np.float32)
-            except AttributeError:
-                pass
+        try:
+            self.nn.bc=np.zeros(self.process_thread,dtype=np.float32)
+        except AttributeError:
+            pass
         return
     
     
