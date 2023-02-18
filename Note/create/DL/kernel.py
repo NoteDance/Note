@@ -215,54 +215,32 @@ class kernel:
         if process_thread==None:
             self.process_thread_num=np.arange(self.process_thread)
             self.process_thread_num=list(self.process_thread_num)
-            self.running_list=[]
-            self.epoch_list=[]
-            self.gradient_lock=[]
-            self.gradient_list=[]
-            self.grad_memory_list=[]
-            if self.restrained_parallelism==False:
-                self.batch_counter=np.zeros(self.process_thread,dtype=np.int32)
-                self.total_loss=np.zeros(self.process_thread,dtype=np.float32)
-                try:
-                    if self.nn.accuracy!=None:
-                        self.total_acc=np.zeros(self.process_thread,dtype=np.float32)
-                except AttributeError:
-                    pass
-            try:
-                if self.nn.attenuate!=None:
-                    self.opt_counter=np.zeros(self.process_thread,dtype=np.float32)
-            except AttributeError:
-                pass
-            try:
-                self.nn.bc=np.zeros(self.process_thread,dtype=np.float32)
-            except AttributeError:
-                pass
         else:
             self.process_thread_num=np.arange(process_thread)
             self.process_thread_num=list(self.process_thread_num)
             self.process_thread=process_thread
-            self.running_list=[]
-            self.epoch_list=[]
-            self.gradient_lock=[]
-            self.gradient_list=[]
-            self.grad_memory_list=[]
-            if self.restrained_parallelism==False:
-                self.batch_counter=np.zeros(self.process_thread,dtype=np.int32)
-                self.total_loss=np.zeros(self.process_thread,dtype=np.float32)
-                try:
-                    if self.nn.accuracy!=None:
-                        self.total_acc=np.zeros(self.process_thread,dtype=np.float32)
-                except AttributeError:
-                    pass
+        self.running_list=[]
+        self.epoch_list=[]
+        self.gradient_lock=[]
+        self.gradient_list=[]
+        self.grad_memory_list=[]
+        if self.restrained_parallelism==False:
+            self.batch_counter=np.zeros(self.process_thread,dtype=np.int32)
+            self.total_loss=np.zeros(self.process_thread,dtype=np.float32)
             try:
-                if self.nn.attenuate!=None:
-                    self.opt_counter=np.zeros(self.process_thread,dtype=np.float32)
+                if self.nn.accuracy!=None:
+                    self.total_acc=np.zeros(self.process_thread,dtype=np.float32)
             except AttributeError:
                 pass
-            try:
-                self.nn.bc=np.zeros(self.process_thread,dtype=np.float32)
-            except AttributeError:
-                pass
+        try:
+            if self.nn.attenuate!=None:
+                self.opt_counter=np.zeros(self.process_thread,dtype=np.float32)
+        except AttributeError:
+            pass
+        try:
+            self.nn.bc=np.zeros(self.process_thread,dtype=np.float32)
+        except AttributeError:
+            pass
         return
     
     
