@@ -113,6 +113,27 @@ class kernel:
         return
     
     
+    def create_pt_num(self,thread=None):
+        if thread==None:
+            self.thread_num=np.arange(self.thread)
+            self.thread_num=list(self.thread_num)
+            self.running_list=[]
+            try:
+                self.nn.bc=np.zeros(self.process_thread,dtype=np.float32)
+            except AttributeError:
+                pass
+        else:
+            self.thread_num=np.arange(thread)
+            self.thread_num=list(self.thread_num)
+            self.thread=thread
+            self.running_list=[]
+            try:
+                self.nn.bc=np.zeros(self.process_thread,dtype=np.float32)
+            except AttributeError:
+                pass
+        return
+    
+    
     def add_thread(self,thread):
         thread_num=np.arange(thread)+self.thread
         self.thread_num=self.thread_num.extend(thread_num)
