@@ -163,74 +163,42 @@ class kernel:
         if process_thread==None:
             self.process_thread_num=np.arange(self.process_thread)
             self.process_thread_num=list(self.process_thread_num)
-            self.pool_lock=[]
-            self.gradient_lock=[]
-            self.gradient_list=[]
-            self.running_list=[]
-            self.grad_memory_list=[]
-            self.pool_memory_list=[]
-            self.episode_memory_list=[]
-            self.episode_list=[]
-            self.finish_list=[]
-            try:
-                if self.nn.row!=None:
-                    self.row_sum_list=[]
-                    self.rank_sum_list=[]
-                    self.row_probability=[]
-                    self.rank_probability=[]
-            except AttributeError:
-                self.running_flag=np.array(0,dtype=np.int8)
-            try:
-                if self.nn.pr!=None:
-                    self.nn.pr.TD=[]
-                    self.nn.pr.index=[]
-            except AttributeError:
-                pass
-            try:
-                if self.nn.attenuate!=None:
-                    self.opt_counter=np.zeros(self.process_thread,dtype=np.float32)
-            except AttributeError:
-                pass
-            try:
-                self.nn.bc=np.zeros(self.process_thread,dtype=np.float32)
-            except AttributeError:
-                pass
         else:
             self.process_thread_num=np.arange(process_thread)
             self.process_thread_num=list(self.process_thread_num)
             self.process_thread=process_thread
-            self.pool_lock=[]
-            self.gradient_lock=[]
-            self.gradient_list=[]
-            self.running_list=[]
-            self.grad_memory_list=[]
-            self.pool_memory_list=[]
-            self.episode_memory_list=[]
-            self.episode_list=[]
-            self.finish_list=[]
-            try:
-                if self.nn.row!=None:
-                    self.row_sum_list.append(None)
-                    self.rank_sum_list.append(None)
-                    self.row_probability.append(None)
-                    self.rank_probability.append(None)
-            except AttributeError:
-                self.running_flag=np.array(0,dtype=np.int8)
-            try:
-                if self.nn.pr!=None:
-                    self.nn.pr.TD.append(np.array(0))
-                    self.nn.pr.index.append(None)
-            except AttributeError:
-                pass
-            try:
-                if self.nn.attenuate!=None:
-                    self.opt_counter=np.zeros(self.process_thread,dtype=np.float32)
-            except AttributeError:
-                pass
-            try:
-                self.nn.bc=np.zeros(self.process_thread,dtype=np.float32)
-            except AttributeError:
-                pass
+        self.pool_lock=[]
+        self.gradient_lock=[]
+        self.gradient_list=[]
+        self.running_list=[]
+        self.grad_memory_list=[]
+        self.pool_memory_list=[]
+        self.episode_memory_list=[]
+        self.episode_list=[]
+        self.finish_list=[]
+        try:
+            if self.nn.row!=None:
+                self.row_sum_list=[]
+                self.rank_sum_list=[]
+                self.row_probability=[]
+                self.rank_probability=[]
+        except AttributeError:
+            self.running_flag=np.array(0,dtype=np.int8)
+        try:
+            if self.nn.pr!=None:
+                self.nn.pr.TD=[]
+                self.nn.pr.index=[]
+        except AttributeError:
+            pass
+        try:
+            if self.nn.attenuate!=None:
+                self.opt_counter=np.zeros(self.process_thread,dtype=np.float32)
+        except AttributeError:
+            pass
+        try:
+            self.nn.bc=np.zeros(self.process_thread,dtype=np.float32)
+        except AttributeError:
+            pass
         return
     
     
