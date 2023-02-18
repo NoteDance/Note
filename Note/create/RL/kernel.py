@@ -591,11 +591,7 @@ class kernel:
     
     
     def train(self,episode_count):
-        try:
-            t=self.thread_num.pop(0)
-        except IndexError:
-            print('\nError,please add thread.')
-            return
+        t=self.thread_num.pop(0)
         if self.PN==True:
             self.thread_lock[3].acquire()
         else:
