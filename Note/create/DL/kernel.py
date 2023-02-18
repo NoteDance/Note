@@ -2003,10 +2003,6 @@ class kernel:
                 os.remove(self.file_list[0][0])
                 del self.file_list[0]
         try:
-            self.nn.bc=None
-        except AttributeError:
-            pass
-        try:
             pickle.dump(self.nn,output_file)
         except:
             opt=self.nn.opt
