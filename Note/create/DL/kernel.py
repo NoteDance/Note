@@ -656,22 +656,17 @@ class kernel:
     
     def train(self,batch=None,epoch=None,test_batch=None,save=None,one=True,p=None,s=None):
         if self.thread!=None:
-            try:
-                t=self.thread_num.pop(0)
-            except IndexError:
-                print('\nError,please add thread.')
-                return
-        elif self.thread_lock!=None:
-            if self.PO==1:
-                self.thread_lock[1].acquire()
-            else:
-                self.thread_lock[2].acquire()
-            self.thread_counter+=1
-            self.running_list.append(t)
-            if self.PO==1:
-                self.thread_lock[1].release()
-            else:
-                self.thread_lock[2].release()
+            t=self.thread_num.pop(0)
+        if self.PO==1:
+            self.thread_lock[1].acquire()
+        else:
+            self.thread_lock[2].acquire()
+        self.thread_counter+=1
+        self.running_list.append(t)
+        if self.PO==1:
+            self.thread_lock[1].release()
+        else:
+            self.thread_lock[2].release()
         self.batch=batch
         self.epoch=0
         self.train_counter+=1
