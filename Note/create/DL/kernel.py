@@ -119,7 +119,7 @@ class kernel:
                 self.nn.bc=np.zeros(self.process_thread,dtype=np.float32)
             except AttributeError:
                 pass
-        if self.memory_flag==True:
+        if self.train_counter==0 and self.memory_flag==True:
             self.data_memory=getsizeof(self.train_data)+getsizeof(self.train_labels)
             for i in range(self.nn.param):
                 self.param_memory+=getsizeof(self.nn.param[i])
@@ -208,6 +208,61 @@ class kernel:
         self.total_epoch=0
         self.time=0
         self.total_time=0
+        return
+    
+    
+    def create_pt_num(self,process_thread=None):
+        if process_thread==None:
+            self.process_thread_num=np.arange(self.process_thread)
+            self.process_thread_num=list(self.process_thread_num)
+            self.running_list=[]
+            self.epoch_list=[]
+            self.gradient_lock=[]
+            self.gradient_list=[]
+            self.grad_memory_list=[]
+            if self.restrained_parallelism==False:
+                self.batch_counter=np.zeros(self.process_thread,dtype=np.int32)
+                self.total_loss=np.zeros(self.process_thread,dtype=np.float32)
+                try:
+                    if self.nn.accuracy!=None:
+                        self.total_acc=np.zeros(self.process_thread,dtype=np.float32)
+                except AttributeError:
+                    pass
+            try:
+                if self.nn.attenuate!=None:
+                    self.opt_counter=np.zeros(self.process_thread,dtype=np.float32)
+            except AttributeError:
+                pass
+            try:
+                self.nn.bc=np.zeros(self.process_thread,dtype=np.float32)
+            except AttributeError:
+                pass
+        else:
+            self.process_thread_num=np.arange(process_thread)
+            self.process_thread_num=list(self.process_thread_num)
+            self.process_thread=process_thread
+            self.running_list=[]
+            self.epoch_list=[]
+            self.gradient_lock=[]
+            self.gradient_list=[]
+            self.grad_memory_list=[]
+            if self.restrained_parallelism==False:
+                self.batch_counter=np.zeros(self.process_thread,dtype=np.int32)
+                self.total_loss=np.zeros(self.process_thread,dtype=np.float32)
+                try:
+                    if self.nn.accuracy!=None:
+                        self.total_acc=np.zeros(self.process_thread,dtype=np.float32)
+                except AttributeError:
+                    pass
+            try:
+                if self.nn.attenuate!=None:
+                    self.opt_counter=np.zeros(self.process_thread,dtype=np.float32)
+            except AttributeError:
+                pass
+            try:
+                self.nn.bc=np.zeros(self.process_thread,dtype=np.float32)
+            except AttributeError:
+                pass
         return
     
     
@@ -924,29 +979,24 @@ class kernel:
     
     def train(self,batch=None,epoch=None,test_batch=None,save=None,one=True,p=None,s=None):
         if self.process_thread!=None:
-            try:
-                t=self.process_thread_num.pop(0)
-            except IndexError:
-                print('\nError,please add process_thread.')
-                return
-        elif self.process_thread!=None:
-            if self.PO==1 or self.PO==3:
-                self.lock[1].acquire()
-            else:
-                self.lock[2].acquire()
-            self.process_thread_counter+=1
-            self.running_list.append(t)
-            self.epoch_list.append(0)
-            if self.restrained_parallelism==False:
-                if t==0:
-                    if self.batches==None:
-                        self.batches=int((self.shape0-self.shape0%batch)/batch)
-                        if self.shape0%batch!=0:
-                            self.batches+=1
-            if self.PO==1 or self.PO==3:
-                self.lock[1].release()
-            else:
-                self.lock[2].release()
+            t=self.process_thread_num.pop(0)
+        if self.PO==1 or self.PO==3:
+            self.lock[1].acquire()
+        else:
+            self.lock[2].acquire()
+        self.process_thread_counter+=1
+        self.running_list.append(t)
+        self.epoch_list.append(0)
+        if self.restrained_parallelism==False:
+            if t==0:
+                if self.batches==None:
+                    self.batches=int((self.shape0-self.shape0%batch)/batch)
+                    if self.shape0%batch!=0:
+                        self.batches+=1
+        if self.PO==1 or self.PO==3:
+            self.lock[1].release()
+        else:
+            self.lock[2].release()
         if self.PO==3:
             self.lock[1].acquire()
             if self.row!=None:
@@ -1952,6 +2002,10 @@ class kernel:
             if len(self.file_list)>self.s+1:
                 os.remove(self.file_list[0][0])
                 del self.file_list[0]
+        try:
+            self.nn.bc=None
+        except AttributeError:
+            pass
         try:
             pickle.dump(self.nn,output_file)
         except:
