@@ -159,14 +159,89 @@ class kernel:
         return
     
     
+    def create_pt_num(self,process_thread=None):
+        if process_thread==None:
+            self.process_thread_num=np.arange(self.process_thread)
+            self.process_thread_num=list(self.process_thread_num)
+            self.pool_lock=[]
+            self.gradient_lock=[]
+            self.gradient_list=[]
+            self.running_list=[]
+            self.grad_memory_list=[]
+            self.pool_memory_list=[]
+            self.episode_memory_list=[]
+            self.episode_list=[]
+            self.finish_list=[]
+            try:
+                if self.nn.row!=None:
+                    self.row_sum_list=[]
+                    self.rank_sum_list=[]
+                    self.row_probability=[]
+                    self.rank_probability=[]
+            except AttributeError:
+                self.running_flag=np.array(0,dtype=np.int8)
+            try:
+                if self.nn.pr!=None:
+                    self.nn.pr.TD=[]
+                    self.nn.pr.index=[]
+            except AttributeError:
+                pass
+            try:
+                if self.nn.attenuate!=None:
+                    self.opt_counter=np.zeros(self.process_thread,dtype=np.float32)
+            except AttributeError:
+                pass
+            try:
+                self.nn.bc=np.zeros(self.process_thread,dtype=np.float32)
+            except AttributeError:
+                pass
+        else:
+            self.process_thread_num=np.arange(process_thread)
+            self.process_thread_num=list(self.process_thread_num)
+            self.process_thread=process_thread
+            self.pool_lock=[]
+            self.gradient_lock=[]
+            self.gradient_list=[]
+            self.running_list=[]
+            self.grad_memory_list=[]
+            self.pool_memory_list=[]
+            self.episode_memory_list=[]
+            self.episode_list=[]
+            self.finish_list=[]
+            try:
+                if self.nn.row!=None:
+                    self.row_sum_list.append(None)
+                    self.rank_sum_list.append(None)
+                    self.row_probability.append(None)
+                    self.rank_probability.append(None)
+            except AttributeError:
+                self.running_flag=np.array(0,dtype=np.int8)
+            try:
+                if self.nn.pr!=None:
+                    self.nn.pr.TD.append(np.array(0))
+                    self.nn.pr.index.append(None)
+            except AttributeError:
+                pass
+            try:
+                if self.nn.attenuate!=None:
+                    self.opt_counter=np.zeros(self.process_thread,dtype=np.float32)
+            except AttributeError:
+                pass
+            try:
+                self.nn.bc=np.zeros(self.process_thread,dtype=np.float32)
+            except AttributeError:
+                pass
+        return
+    
+    
     def add_threads(self,process_thread,row=None,rank=None):
         if row!=None:
             self.process_thread=row*rank-self.nn.row*self.nn.rank
             self.nn.row=row
             self.nn.rank=rank
             self.add_flag=True
-        thread_num=np.arange(process_thread)+self.process_thread
-        self.thread_num=self.thread_num.extend(thread_num)
+        process_thread_num=np.arange(process_thread)+self.process_thread
+        self.process_thread_num=self.process_thread_num.extend(process_thread_num)
         self.process_thread+=process_thread
         self.sc=np.concatenate((self.sc,np.zeros(process_thread,dtype=np.float32)))
         self.reward=np.concatenate((self.reward,np.zeros(process_thread,dtype=np.float32)))
@@ -192,8 +267,8 @@ class kernel:
         self.max_memory=0
         self.grad_memory_list=[]
         self.process_thread_counter=0
-        self.thread_num=np.arange(self.process_thread)
-        self.thread_num=list(self.thread_num)
+        self.process_thread_num=np.arange(self.process_thread)
+        self.process_thread_num=list(self.process_thread_num)
         self.probability_list=[]
         self.running_flag=np.array(0,dtype=np.int8)
         self.running_flag_list=[]
@@ -873,12 +948,8 @@ class kernel:
     
     
     def train(self,episode_count):
-        try:
-            t=self.thread_num.pop(0)
-            t=int(t)
-        except IndexError:
-            print('\nError,please add process_thread.')
-            return
+        t=self.process_thread_num.pop(0)
+        t=int(t)
         if self.PN==True:
             if self.PO==1 or self.PO==3:
                 self.thread_lock[2].acquire()
