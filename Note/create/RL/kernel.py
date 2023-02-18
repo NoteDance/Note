@@ -81,50 +81,30 @@ class kernel:
         if thread==None:
             self.thread_num=np.arange(self.thread)
             self.thread_num=list(self.thread_num)
-            self.running_list=[]
-            self.finish_list=[]
-            try:
-                if self.nn.row!=None:
-                    self.row_sum_list=[]
-                    self.rank_sum_list=[]
-                    self.row_probability=[]
-                    self.rank_probability=[]
-            except AttributeError:
-                self.running_flag=np.array(0,dtype=np.int8)
-            try:
-                if self.nn.pr!=None:
-                    self.nn.pr.TD=[]
-                    self.nn.pr.index=[]
-            except AttributeError:
-                pass
-            try:
-                self.nn.bc=np.zeros(self.thread,dtype=np.float32)
-            except AttributeError:
-                pass
         else:
             self.thread_num=np.arange(thread)
             self.thread_num=list(self.thread_num)
             self.thread=thread
-            self.running_list=[]
-            self.finish_list=[]
-            try:
-                if self.nn.row!=None:
-                    self.row_sum_list.append(None)
-                    self.rank_sum_list.append(None)
-                    self.row_probability.append(None)
-                    self.rank_probability.append(None)
-            except AttributeError:
-                self.running_flag=np.array(0,dtype=np.int8)
-            try:
-                if self.nn.pr!=None:
-                    self.nn.pr.TD.append(np.array(0))
-                    self.nn.pr.index.append(None)
-            except AttributeError:
-                pass
-            try:
-                self.nn.bc=np.zeros(self.thread,dtype=np.float32)
-            except AttributeError:
-                pass
+        self.running_list=[]
+        self.finish_list=[]
+        try:
+            if self.nn.row!=None:
+                self.row_sum_list=[]
+                self.rank_sum_list=[]
+                self.row_probability=[]
+                self.rank_probability=[]
+        except AttributeError:
+            self.running_flag=np.array(0,dtype=np.int8)
+        try:
+            if self.nn.pr!=None:
+                self.nn.pr.TD=[]
+                self.nn.pr.index=[]
+        except AttributeError:
+            pass
+        try:
+            self.nn.bc=np.zeros(self.thread,dtype=np.float32)
+        except AttributeError:
+            pass
         return
     
     
