@@ -87,6 +87,9 @@ class kernel:
             self.thread=thread
         self.running_list=[]
         self.finish_list=[]
+        self.reward=np.zeros(self.thread,dtype=np.float32)
+        self.loss=np.zeros(self.thread,dtype=np.float32)
+        self.sc=np.zeros(self.thread,dtype=np.float32)
         try:
             if self.nn.row!=None:
                 self.row_sum_list=[]
