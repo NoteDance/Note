@@ -384,7 +384,7 @@ class kernel:
                     except:
                         pass
             except:
-                if type(self.state_pool[t])==np.ndarray and len(self.state_pool[t])>self.pool_size:
+                if type(self.done_pool[t])==np.ndarray and len(self.done_pool[t])>self.pool_size:
                     self.state_pool[t]=self.state_pool[t][1:]
                     self.action_pool[t]=self.action_pool[t][1:]
                     self.next_state_pool[t]=self.next_state_pool[t][1:]
