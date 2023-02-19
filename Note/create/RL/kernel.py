@@ -18,9 +18,9 @@ class kernel:
             self.running_flag=np.array(0,dtype=np.int8)
             self.thread_num=np.arange(thread)
             self.thread_num=list(self.thread_num)
-            self.reward=np.zeros(thread)
-            self.loss=np.zeros(thread)
-            self.sc=np.zeros(thread)
+            self.reward=np.zeros(thread,dtype=np.float32)
+            self.loss=np.zeros(thread,dtype=np.float32)
+            self.sc=np.zeros(thread,dtype=np.float32)
         self.state_pool=[]
         self.action_pool=[]
         self.next_state_pool=[]
@@ -67,8 +67,11 @@ class kernel:
             self.thread_num=np.arange(thread)
             self.thread_num=list(self.thread_num)
             self.thread=thread
+        self.reward=np.zeros(self.thread,dtype=np.float32)
+        self.loss=np.zeros(self.thread,dtype=np.float32)
+        self.sc=np.zeros(self.thread,dtype=np.float32)
         try:
-            self.nn.bc=np.zeros(self.process_thread,dtype=np.float32)
+            self.nn.bc=np.zeros(self.thread,dtype=np.float32)
         except AttributeError:
             pass
         return
@@ -78,9 +81,9 @@ class kernel:
         thread_num=np.arange(thread)+self.thread
         self.thread_num=self.thread_num.extend(thread_num)
         self.thread+=thread
-        self.sc=np.concatenate((self.sc,np.zeros(thread)))
-        self.reward=np.concatenate((self.reward,np.zeros(thread)))
-        self.loss=np.concatenate((self.loss,np.zeros(thread)))
+        self.sc=np.concatenate((self.sc,np.zeros(thread,dtype=np.float32)))
+        self.reward=np.concatenate((self.reward,np.zeros(thread,dtype=np.float32)))
+        self.loss=np.concatenate((self.loss,np.zeros(thread,dtype=np.float32)))
         return
     
     
@@ -111,7 +114,7 @@ class kernel:
             self.thread_num=np.arange(self.thread)
             self.thread_num=list(self.thread_num)
             self.probability_list=[]
-            self.running_flag=np.array(0,dtype='int8')
+            self.running_flag=np.array(0,dtype=np.int8)
             self.running_flag_list=[]
             self.finish_list=[]
             self.PN=True
