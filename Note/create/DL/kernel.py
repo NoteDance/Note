@@ -131,7 +131,7 @@ class kernel:
             self.thread_num=list(self.thread_num)
             self.thread=thread
         try:
-            self.nn.bc=np.zeros(self.process_thread,dtype=np.float32)
+            self.nn.bc=np.zeros(self.thread,dtype=np.float32)
         except AttributeError:
             pass
         return
@@ -142,7 +142,7 @@ class kernel:
         self.thread_num=self.thread_num.extend(thread_num)
         self.thread+=thread
         try:
-            self.nn.bc=np.concatenate((self.nn.bc,np.zeros(thread)))
+            self.nn.bc=np.concatenate((self.nn.bc,np.zeros(thread,dtype=np.float32)))
         except AttributeError:
             pass
         return
