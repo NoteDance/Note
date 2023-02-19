@@ -123,7 +123,7 @@ class kernel:
             self.thread=thread
         self.running_list=[]
         try:
-            self.nn.bc=np.zeros(self.process_thread,dtype=np.float32)
+            self.nn.bc=np.zeros(self.thread,dtype=np.float32)
         except AttributeError:
             pass
         return
