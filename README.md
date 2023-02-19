@@ -524,7 +524,7 @@ kernel.visualize_reward()
 
 **You can get neural network example in this link.**
 
-https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow/DQN.py
+https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow/pool%20net/DQN.py
 
 **multithreading example:**
 ```python
