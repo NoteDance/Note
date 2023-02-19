@@ -176,6 +176,9 @@ class kernel:
         self.episode_memory_list=[]
         self.episode_list=[]
         self.finish_list=[]
+        self.reward=np.zeros(self.process_thread,dtype=np.float32)
+        self.loss=np.zeros(self.process_thread,dtype=np.float32)
+        self.sc=np.zeros(self.process_thread,dtype=np.float32)
         try:
             if self.nn.row!=None:
                 self.row_sum_list=[]
