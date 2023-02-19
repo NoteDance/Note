@@ -822,7 +822,6 @@ class kernel:
                 self.nn.bc[t]+=1
             except AttributeError:
                 pass
-            return
         else:
             try:
                 if self.nn.data_func!=None:
@@ -842,7 +841,7 @@ class kernel:
                 self.nn.bc[t]=j
             except AttributeError:
                 pass
-            return
+        return
     
     
     def train_(self,t):
