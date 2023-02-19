@@ -383,13 +383,19 @@ class kernel:
                         self.done_pool[index]=np.concatenate((self.done_pool[index],np.expand_dims(done,axis=0)),0)
                     except:
                         pass
+                if type(self.state_pool[index])==np.ndarray and len(self.state_pool[index])>self.pool_size:
+                    self.state_pool[index]=self.state_pool[index][1:]
+                    self.action_pool[index]=self.action_pool[index][1:]
+                    self.next_state_pool[t]=self.next_state_pool[index][1:]
+                    self.reward_pool[index]=self.reward_pool[index][1:]
+                    self.done_pool[index]=self.done_pool[index][1:]
             except:
-                if type(self.done_pool[t])==np.ndarray and len(self.done_pool[t])>self.pool_size:
-                    self.state_pool[t]=self.state_pool[t][1:]
-                    self.action_pool[t]=self.action_pool[t][1:]
-                    self.next_state_pool[t]=self.next_state_pool[t][1:]
-                    self.reward_pool[t]=self.reward_pool[t][1:]
-                    self.done_pool[t]=self.done_pool[t][1:]
+                if type(self.state_pool[index])==np.ndarray and len(self.state_pool[index])>self.pool_size:
+                    self.state_pool[index]=self.state_pool[index][1:]
+                    self.action_pool[index]=self.action_pool[index][1:]
+                    self.next_state_pool[t]=self.next_state_pool[index][1:]
+                    self.reward_pool[index]=self.reward_pool[index][1:]
+                    self.done_pool[index]=self.done_pool[index][1:]
                 self.pool_lock[index].release()
                 return
             self.pool_lock[index].release()
@@ -414,12 +420,12 @@ class kernel:
                 self.next_state_pool[t]=np.concatenate((self.next_state_pool[t],np.expand_dims(next_s,axis=0)),0)
                 self.reward_pool[t]=np.concatenate((self.reward_pool[t],np.expand_dims(r,axis=0)),0)
                 self.done_pool[t]=np.concatenate((self.done_pool[t],np.expand_dims(done,axis=0)),0)
-        if type(self.state_pool[t])==np.ndarray and len(self.state_pool[t])>self.pool_size:
-            self.state_pool[t]=self.state_pool[t][1:]
-            self.action_pool[t]=self.action_pool[t][1:]
-            self.next_state_pool[t]=self.next_state_pool[t][1:]
-            self.reward_pool[t]=self.reward_pool[t][1:]
-            self.done_pool[t]=self.done_pool[t][1:]
+            if type(self.state_pool[t])==np.ndarray and len(self.state_pool[t])>self.pool_size:
+                self.state_pool[t]=self.state_pool[t][1:]
+                self.action_pool[t]=self.action_pool[t][1:]
+                self.next_state_pool[t]=self.next_state_pool[t][1:]
+                self.reward_pool[t]=self.reward_pool[t][1:]
+                self.done_pool[t]=self.done_pool[t][1:]
         return
     
     
