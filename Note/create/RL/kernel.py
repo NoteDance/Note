@@ -390,12 +390,6 @@ class kernel:
                     self.reward_pool[index]=self.reward_pool[index][1:]
                     self.done_pool[index]=self.done_pool[index][1:]
             except:
-                if type(self.state_pool[index])==np.ndarray and len(self.state_pool[index])>self.pool_size:
-                    self.state_pool[index]=self.state_pool[index][1:]
-                    self.action_pool[index]=self.action_pool[index][1:]
-                    self.next_state_pool[t]=self.next_state_pool[index][1:]
-                    self.reward_pool[index]=self.reward_pool[index][1:]
-                    self.done_pool[index]=self.done_pool[index][1:]
                 self.pool_lock[index].release()
                 return
             self.pool_lock[index].release()
@@ -1196,14 +1190,11 @@ class kernel:
                 self.lock[2].release()
             else:
                 self.lock[3].release()
-            try:
-                del self.state_pool[t]
-                del self.action_pool[t]
-                del self.next_state_pool[t]
-                del self.reward_pool[t]
-                del self.done_pool[t]
-            except:
-                pass
+            del self.state_pool[t]
+            del self.action_pool[t]
+            del self.next_state_pool[t]
+            del self.reward_pool[t]
+            del self.done_pool[t]
         return
     
     
