@@ -956,12 +956,11 @@ class kernel:
     
     
     def train(self,batch=None,epoch=None,test_batch=None,save=None,one=True,p=None,s=None):
-        if self.process_thread!=None:
-            t=self.process_thread_num.pop(0)
         if self.PO==1 or self.PO==3:
             self.lock[1].acquire()
         else:
             self.lock[2].acquire()
+        t=self.process_thread_num.pop(0)
         self.process_thread_counter+=1
         self.running_list.append(t)
         self.epoch_list.append(0)
