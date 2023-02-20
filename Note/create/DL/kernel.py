@@ -655,12 +655,11 @@ class kernel:
     
     
     def train(self,batch=None,epoch=None,test_batch=None,save=None,one=True,p=None,s=None):
-        if self.thread!=None:
-            t=self.thread_num.pop(0)
         if self.PO==1:
             self.thread_lock[1].acquire()
         else:
             self.thread_lock[2].acquire()
+        t=self.thread_num.pop(0)
         self.thread_counter+=1
         self.running_list.append(t)
         if self.PO==1:
