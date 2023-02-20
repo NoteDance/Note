@@ -598,11 +598,12 @@ class kernel:
     
     
     def train(self,episode_count):
-        t=self.thread_num.pop(0)
         if self.PN==True:
             self.thread_lock[3].acquire()
         else:
             self.thread_lock[0].acquire()
+        t=self.thread_num.pop(0)
+        t=int(t)
         self.state_pool.append(None)
         self.action_pool.append(None)
         self.next_state_pool.append(None)
