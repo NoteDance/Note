@@ -134,7 +134,7 @@ kernel.train(64,5)         #train neural network
 ```
 
 ## Parallel optimization:
-**You can use parallel optimization to speed up neural network training,parallel optimization speed up training by multiprocessing and multithreading.**
+**You can use parallel optimization to speed up neural network training,parallel optimization speed up training by multiprocessing or multithreading.**
 
 **Note have three types of parallel optimization:**
 
@@ -521,6 +521,9 @@ kernel.visualize_reward()
 
 ## Pool Net:
 ![3](https://github.com/NoteDancing/Note-documentation/blob/main/picture/Pool%20Net.png)
+
+**Pool net use multithreading parallel and random add episode in pool,which would make data being uncorrelated in pool,
+then pools would be used parallel training agent.**
 
 **You can get neural network example in this link.**
 
