@@ -133,9 +133,8 @@ kernel.train(64,5)         #train neural network
                            #epoch:5
 ```
 
-
 ## Parallel optimization:
-**You can use parallel optimization to speed up neural network training,parallel optimization speed up training by multithreading.**
+**You can use parallel optimization to speed up neural network training,parallel optimization speed up training by multiprocessing and multithreading.**
 
 **Note have three types of parallel optimization:**
 
