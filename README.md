@@ -132,12 +132,9 @@ kernel.train(64,5)         #train neural network
                            #batch size:32
                            #epoch:5
 ```
-## Multithreading:
-**Note can speed up training by multithreading and has stop mechanism and gradient attenuation to resolve unstable training.**
 
-**Note uses multithreading parallel forward propagation and optimizes neural network.**
 
-### Parallel optimization:
+## Parallel optimization:
 **You can use parallel optimization to speed up neural network training,parallel optimization speed up training by multithreading.**
 
 **Note have three types of parallel optimization:**
@@ -172,6 +169,10 @@ kernel.train(64,5)         #train neural network
 
 **CPU:i5-8400**
 
+### Multithreading:
+**Note can speed up training by multithreading and has stop mechanism and gradient attenuation to resolve unstable training.**
+
+**Note uses multithreading parallel forward propagation and optimizes neural network.**
 
 **multithreading example:**
 ```python
@@ -349,7 +350,7 @@ kernel.train_loss_list or kernel.train_loss       #view training loss
 kernel.visualize_train()
 ```
 
-## Multiprocessing:
+### Multiprocessing:
 **multiprocessing example(unrestricted parallelism):**
 ```python
 import kernel_pv as k   #import kernel
