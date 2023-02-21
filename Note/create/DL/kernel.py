@@ -95,6 +95,11 @@ class kernel:
             self.labels_batch=[x for x in range(len(train_labels))]
         self.test_data=test_data
         self.test_labels=test_labels
+        try:
+            if test_data!=None:
+                self.test_flag=True
+        except ValueError:
+            self.test_flag=True
         if type(self.train_data)==list:
             self.shape0=train_data[0].shape[0]
         else:
