@@ -200,7 +200,7 @@ class kernel:
                 if type(self.state_pool[index])!=np.ndarray and self.state_pool[index]==None:
                     self.state_pool[index]=s
                     if type(a)==int:
-                        a=np.array(a,np.int64)
+                        a=np.array(a)
                         self.action_pool[index]=np.expand_dims(a,axis=0)
                     else:
                         self.action_pool[index]=a
@@ -234,7 +234,7 @@ class kernel:
             if type(self.state_pool[t])!=np.ndarray and self.state_pool[t]==None:
                 self.state_pool[t]=s
                 if type(a)==int:
-                    a=np.array(a,np.int64)
+                    a=np.array(a)
                     self.action_pool[t]=np.expand_dims(a,axis=0)
                 else:
                     self.action_pool[t]=a
@@ -567,18 +567,17 @@ class kernel:
                 self.thread_lock[3].release()
             else:
                 self.thread_lock[0].release()
-        if self.PN==True:
-            self.running_flag[t+1]=0
-            self.thread_lock[3].acquire()
-            if t not in self.finish_list:
-                self.finish_list[t]=t
-            self.thread_counter-=1
-            self.thread_lock[3].release()
-            self.state_pool[t]=None
-            self.action_pool[t]=None
-            self.next_state_pool[t]=None
-            self.reward_pool[t]=None
-            self.done_pool[t]=None
+        self.running_flag[t+1]=0
+        self.thread_lock[3].acquire()
+        if t not in self.finish_list:
+            self.finish_list[t]=t
+        self.thread_counter-=1
+        self.thread_lock[3].release()
+        self.state_pool[t]=None
+        self.action_pool[t]=None
+        self.next_state_pool[t]=None
+        self.reward_pool[t]=None
+        self.done_pool[t]=None
         return
     
     
