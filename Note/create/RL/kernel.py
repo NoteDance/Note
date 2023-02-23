@@ -50,8 +50,6 @@ class kernel:
         self.index_matrix=[]
         self.one_matrix=[]
         self.row_list=[]
-        self.row_sum_list=[]
-        self.rank_sum_list=[]
         self.row_probability=[]
         self.rank_probability=[]
         self.direction_index=0
@@ -92,8 +90,6 @@ class kernel:
         self.sc=np.zeros(self.thread,dtype=np.float32)
         try:
             if self.nn.row!=None:
-                self.row_sum_list=[]
-                self.rank_sum_list=[]
                 self.row_probability=[]
                 self.rank_probability=[]
         except AttributeError:
@@ -163,8 +159,6 @@ class kernel:
             self.index_matrix=[]
             self.one_matrix=[]
             self.row_list=[]
-            self.row_sum_list=[]
-            self.rank_sum_list=[]
             self.row_probability=[]
             self.direction_index=0
             self.finish_list=[]
@@ -599,8 +593,6 @@ class kernel:
         try:
             if self.nn.row!=None:
                 self.index_m(t)
-                self.row_sum_list.append(None)
-                self.rank_sum_list.append(None)
                 self.row_probability.append(None)
                 self.rank_probability.append(None)
         except AttributeError:
