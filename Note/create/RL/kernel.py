@@ -355,35 +355,23 @@ class kernel:
         return
     
     
-    def index(self,t):
+    def get_index(self,t):
         if self.PN==True:
             try:
                 if self.nn.row!=None:
                     while True:
                         row_sum=np.sum(self.row_one)
-                        if self.row_sum_list[t]==None:
-                            self.row_sum_list[t]=row_sum
-                        if self.row_sum_list[t]==row_sum:
-                            row_index=np.random.choice(self.nn.row,p=self.row_probability[t])-1
-                        else:
-                            self.row_sum_list[t]=row_sum
-                            self.row_probability[t]=self.row_one/row_sum
-                            row_index=np.random.choice(self.nn.row,p=self.row_probability[t])-1
+                        self.row_probability[t]=self.row_one[1:]/row_sum
+                        row_index=np.random.choice(len(self.row_one[1:]),p=self.row_probability[t])
                         rank_sum=np.sum(self.one_matrix[row_index])
                         if rank_sum==0:
                             self.row_one[row_index]=0
                             continue
-                        if self.rank_sum_list[t]==None:
-                           self.rank_sum_list[t]=rank_sum
-                        if self.rank_sum_list[t]==rank_sum:
-                            rank_index=np.random.choice(self.nn.rank,p=self.rank_probability[t])-1
-                        else:
-                            self.rank_sum_list[t]=rank_sum
-                            self.rank_probability[t]=self.one_matrix[row_index]/rank_sum
-                            rank_index=np.random.choice(self.nn.rank,p=self.rank_probability[t])-1
+                        self.rank_probability[t]=self.one_matrix[row_index][1:]/rank_sum
+                        rank_index=np.random.choice(len(self.one_matrix[row_index][1:]),p=self.rank_probability[t])
                         index=self.index_matrix[row_index][rank_index]
                         if index in self.finish_list:
-                            self.one_matrix[row_index][rank_index]=0
+                            self.one_matrix[row_index][rank_index+1]=0
                             continue
                         else:
                             break
@@ -446,7 +434,7 @@ class kernel:
                 s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
             a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
             next_s,r,done=self.nn.env(a,t)
-        index=self.index(t)
+        index=self.get_index(t)
         try:
             if self.nn.pool!=None:
                 self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done],t,index,self.thread_lock[0])
