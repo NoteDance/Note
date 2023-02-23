@@ -23,7 +23,6 @@ class kernel:
             self.sc=np.zeros(process_thread,dtype=np.float32)
             self.opt_counter=np.zeros(process_thread,dtype=np.float32)
         self.multiprocessing_threading=None
-        self.gradient_lock=None
         self.max_lock=None
         self.row=None
         self.rank=None
@@ -122,31 +121,16 @@ class kernel:
             self.grad_memory=self.param_memory
             if self.PO==1 or self.PO==2:
                 self.max_memory=self.data_memory+self.param_memory+self.grad_memory
-            elif self.PO==3:
-                if self.row!=None:
-                    self.max_memory=self.data_memory+self.param_memory+self.grad_memory*self.row*self.rank
-                elif self.max_lock!=None:
-                    self.max_memory=self.data_memory+self.param_memory+self.grad_memory*self.max_lock
-                else:
-                    self.max_memory=self.data_memory+self.param_memory+self.grad_memory*len(self.gradient_lock)
             return
     
     
     def calculate_memory_(self,t,ln=None):
-        if self.PO==3:
-            self.grad_memory_list[ln]=self.grad_memory
         self.pool_memory_list[t]=getsizeof(self.state_pool[t][0])*len(self.state_pool[t])+getsizeof(self.action_pool[t][0])*len(self.action_pool[t])+getsizeof(self.next_state_pool[t][0])*len(self.next_state_pool[t])+getsizeof(self.reward_pool[t][0])*len(self.reward_pool[t])+getsizeof(self.done_pool[t][0])*len(self.done_pool[t])
         if self.save_episode==False:
-            if self.PO==3:
-                self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)+sum(self.pool_memory_list)
-            else:
-                self.c_memory=self.data_memory+self.param_memory+self.grad_memory+sum(self.pool_memory_list)
+            self.c_memory=self.data_memory+self.param_memory+self.grad_memory+sum(self.pool_memory_list)
         else:
             episode_memory=sum(self.episode_memory_list)
-            if self.PO==3:
-                self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)+sum(self.pool_memory_list)+episode_memory
-            else:
-                self.c_memory=self.data_memory+self.param_memory+self.grad_memory+sum(self.pool_memory_list)+episode_memory
+            self.c_memory=self.data_memory+self.param_memory+self.grad_memory+sum(self.pool_memory_list)+episode_memory
             if self.episode_memory_t_value!=None and episode_memory>self.episode_memory_t_value:
                 self.save_episode=False
         return
@@ -424,7 +408,7 @@ class kernel:
     
     
     def index_m(self,t):
-        if self.add_flag==None and len(self.index_matrix)!=self.nn.row:
+        if self.add_flag==False and len(self.index_matrix)!=self.nn.row:
             if len(self.row_list)!=self.nn.rank:
                 self.row_list.append(t)
                 self.rank_one=np.append(self.rank_one,np.array(1,dtype=np.int8))
@@ -460,35 +444,23 @@ class kernel:
         return
     
     
-    def index(self,t):
+    def get_index(self,t):
         if self.PN==True:
             try:
                 if self.nn.row!=None:
                     while True:
                         row_sum=np.sum(self.row_one)
-                        if self.row_sum_list[t]==None:
-                            self.row_sum_list[t]=row_sum
-                        if self.row_sum_list[t]==row_sum:
-                            row_index=np.random.choice(self.nn.row,p=self.row_probability[t])-1
-                        else:
-                            self.row_sum_list[t]=row_sum
-                            self.row_probability[t]=self.row_one/row_sum
-                            row_index=np.random.choice(self.nn.row,p=self.row_probability[t])-1
+                        self.row_probability[t]=self.row_one[1:]/row_sum
+                        row_index=np.random.choice(len(self.row_one[1:]),p=self.row_probability[t])
                         rank_sum=np.sum(self.one_matrix[row_index])
                         if rank_sum==0:
                             self.row_one[row_index]=0
                             continue
-                        if self.rank_sum_list[t]==None:
-                           self.rank_sum_list[t]=rank_sum
-                        if self.rank_sum_list[t]==rank_sum:
-                            rank_index=np.random.choice(self.nn.rank,p=self.rank_probability[t])-1
-                        else:
-                            self.rank_sum_list[t]=rank_sum
-                            self.rank_probability[t]=self.one_matrix[row_index]/rank_sum
-                            rank_index=np.random.choice(self.nn.rank,p=self.rank_probability[t])-1
+                        self.rank_probability[t]=self.one_matrix[row_index][1:]/rank_sum
+                        rank_index=np.random.choice(len(self.one_matrix[row_index][1:]),p=self.rank_probability[t])
                         index=self.index_matrix[row_index][rank_index]
                         if index in self.finish_list:
-                            self.one_matrix[row_index][rank_index]=0
+                            self.one_matrix[row_index][rank_index+1]=0
                             continue
                         else:
                             break
@@ -554,7 +526,7 @@ class kernel:
             s=np.expand_dims(s,axis=0)
             a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
             next_s,r,done=self.nn.env(a,t)
-        index=self.index(t)
+        index=self.get_index(t)
         r=np.array(r,dtype=np.float32)
         done=np.array(done,dtype=np.float32)
         try:
@@ -946,13 +918,6 @@ class kernel:
             pass
         if self.multiprocessing_threading!=None:
             self.pool_lock.append(self.multiprocessing_threading.Lock())
-            if self.row!=None:
-                if self.d_index==0 or len(self.gradient_lock)<self.rank and len(self.gradient_lock[self.d_index-1])==self.row:
-                    self.gradient_lock.append([])
-                    self.d_index+=1
-                self.gradient_lock[self.d_index-1].append(self.multiprocessing_threading.Lock())
-            elif self.PO==3 and len(self.gradient_lock)<self.max_lock:
-                self.gradient_lock.append(self.multiprocessing_threading.Lock())
         if self.PO==3:
             self.gradient_list.append(None)
         self.process_thread_counter+=1
