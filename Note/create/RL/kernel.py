@@ -313,7 +313,7 @@ class kernel:
     
     
     def index_m(self,t):
-        if self.add_flag==None and len(self.index_matrix)!=self.nn.row:
+        if self.add_flag==False and len(self.index_matrix)!=self.nn.row:
             if len(self.row_list)!=self.nn.rank:
                 self.row_list.append(t)
                 self.rank_one=np.append(self.rank_one,np.array(1,dtype=np.int8))
