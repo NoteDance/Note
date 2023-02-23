@@ -88,8 +88,6 @@ class kernel:
         self.PO=None
         self.max_episode_count=None
         self.save_episode=save_episode
-        self.ln_list=[]
-        self.gradient_list=[]
         self.exception_list=[]
         self.muti_p=None
         self.muti_s=None
@@ -150,8 +148,6 @@ class kernel:
             self.process_thread_num=list(self.process_thread_num)
             self.process_thread=process_thread
         self.pool_lock=[]
-        self.gradient_lock=[]
-        self.gradient_list=[]
         self.running_list=[]
         self.grad_memory_list=[]
         self.pool_memory_list=[]
@@ -163,8 +159,6 @@ class kernel:
         self.sc=np.zeros(self.process_thread,dtype=np.float32)
         try:
             if self.nn.row!=None:
-                self.row_sum_list=[]
-                self.rank_sum_list=[]
                 self.row_probability=[]
                 self.rank_probability=[]
         except AttributeError:
@@ -912,8 +906,6 @@ class kernel:
             pass
         if self.multiprocessing_threading!=None:
             self.pool_lock.append(self.multiprocessing_threading.Lock())
-        if self.PO==3:
-            self.gradient_list.append(None)
         self.process_thread_counter+=1
         self.running_list.append(t)
         if self.memory_flag==True:
