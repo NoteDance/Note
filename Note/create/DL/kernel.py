@@ -960,24 +960,25 @@ class kernel:
     
     
     def train(self,batch=None,epoch=None,test_batch=None,save=None,one=True,p=None,s=None):
-        if self.PO==1 or self.PO==3:
-            self.lock[1].acquire()
-        else:
-            self.lock[2].acquire()
-        t=self.process_thread_num.pop(0)
-        self.process_thread_counter+=1
-        self.running_list.append(t)
-        self.epoch_list.append(0)
-        if self.epoch_!=None:
-            if t==0:
-                if self.batches==None:
-                    self.batches=int((self.shape0-self.shape0%batch)/batch)
-                    if self.shape0%batch!=0:
-                        self.batches+=1
-        if self.PO==1 or self.PO==3:
-            self.lock[1].release()
-        else:
-            self.lock[2].release()
+        if self.process_thread!=None:
+            if self.PO==1 or self.PO==3:
+                self.lock[1].acquire()
+            else:
+                self.lock[2].acquire()
+            t=self.process_thread_num.pop(0)
+            self.process_thread_counter+=1
+            self.running_list.append(t)
+            self.epoch_list.append(0)
+            if self.epoch_!=None:
+                if t==0:
+                    if self.batches==None:
+                        self.batches=int((self.shape0-self.shape0%batch)/batch)
+                        if self.shape0%batch!=0:
+                            self.batches+=1
+            if self.PO==1 or self.PO==3:
+                self.lock[1].release()
+            else:
+                self.lock[2].release()
         if self.PO==3:
             self.lock[1].acquire()
             if self.row!=None:
@@ -1596,10 +1597,7 @@ class kernel:
                 pass
         try:
             if self.nn.accuracy!=None:
-                if self.acc_flag=='%':
-                    return test_loss,test_acc*100
-                else:
-                    return test_loss,test_acc
+                return test_loss,test_acc
         except AttributeError:
             return test_loss,None
     
