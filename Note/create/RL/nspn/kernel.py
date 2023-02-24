@@ -178,7 +178,7 @@ class kernel:
         if type(self.state_pool)!=np.ndarray and self.state_pool==None:
             self.state_pool=s
             if type(a)==int:
-                a=np.array(a,np.int32)
+                a=np.array(a)
                 self.action_pool=np.expand_dims(a,axis=0)
             else:
                 self.action_pool=a
@@ -188,7 +188,7 @@ class kernel:
         else:
             self.state_pool=np.concatenate((self.state_pool,s),0)
             if type(a)==int:
-                a=np.array(a,np.int32)
+                a=np.array(a)
                 self.action_pool=np.concatenate((self.action_pool,np.expand_dims(a,axis=0)),0)
             else:
                 self.action_pool=np.concatenate((self.action_pool,a),0)
