@@ -65,12 +65,10 @@ kernel.train(32,1)             #train again
 ```python
 import Note.create.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
-import cnn as c                          #import neural network
+import cnn_acc as c                          #import neural network
 mnist=tf.keras.datasets.mnist
 (x_train,y_train),(x_test,y_test)=mnist.load_data()
 x_train,x_test =x_train/255.0,x_test/255.0
-y_train=tf.one_hot(y_train,10).numpy()
-y_test=tf.one_hot(y_test,10).numpy()
 cnn=c.cnn()                                #create neural network object
 kernel=k.kernel(cnn)                 #start kernel
 kernel.platform=tf                       #use platform
