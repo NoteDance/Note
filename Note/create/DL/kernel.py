@@ -660,17 +660,18 @@ class kernel:
     
     
     def train(self,batch=None,epoch=None,test_batch=None,save=None,one=True,p=None,s=None):
-        if self.PO==1:
-            self.thread_lock[1].acquire()
-        else:
-            self.thread_lock[2].acquire()
-        t=self.thread_num.pop(0)
-        self.thread_counter+=1
-        self.running_list.append(t)
-        if self.PO==1:
-            self.thread_lock[1].release()
-        else:
-            self.thread_lock[2].release()
+        if self.thread!=None:
+            if self.PO==1:
+                self.thread_lock[1].acquire()
+            else:
+                self.thread_lock[2].acquire()
+            t=self.thread_num.pop(0)
+            self.thread_counter+=1
+            self.running_list.append(t)
+            if self.PO==1:
+                self.thread_lock[1].release()
+            else:
+                self.thread_lock[2].release()
         self.batch=batch
         self.epoch=0
         self.train_counter+=1
@@ -990,10 +991,7 @@ class kernel:
                 pass
         try:
             if self.nn.accuracy!=None:
-                if self.acc_flag=='%':
-                    return test_loss,test_acc*100
-                else:
-                    return test_loss,test_acc
+                return test_loss,test_acc
         except AttributeError:
             return test_loss,None
     
