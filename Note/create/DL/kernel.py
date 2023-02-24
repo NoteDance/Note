@@ -26,7 +26,6 @@ class kernel:
         self.multiprocessing_threading=None
         self.process_thread_counter=0
         self.train_ds=None
-        self.restrained_parallelism=False
         self.data_segment_flag=False
         self.batches=None
         self.buffer_size=None
@@ -107,7 +106,7 @@ class kernel:
         if self.train_counter==0 and self.process_thread!=None:
             self.process_thread_num=np.arange(self.process_thread)
             self.process_thread_num=list(self.process_thread_num)
-            if self.restrained_parallelism==False:
+            if self.epoch_!=None:
                 self.batch_counter=np.zeros(self.process_thread,dtype=np.int32)
                 self.total_loss=np.zeros(self.process_thread,dtype=np.float32)
                 try:
@@ -168,7 +167,7 @@ class kernel:
         if self.process_thread!=None:
             self.process_thread_num=np.arange(self.process_thread)
             self.process_thread_num=list(self.process_thread_num)
-            if self.restrained_parallelism==False:
+            if self.epoch_!=None:
                 self.batch_counter=np.zeros(self.process_thread,dtype=np.int32)
                 self.total_loss=np.zeros(self.process_thread,dtype=np.float32)
                 try:
@@ -229,7 +228,7 @@ class kernel:
         self.gradient_lock=[]
         self.gradient_list=[]
         self.grad_memory_list=[]
-        if self.restrained_parallelism==False:
+        if self.epoch_!=None:
             self.batch_counter=np.zeros(self.process_thread,dtype=np.int32)
             self.total_loss=np.zeros(self.process_thread,dtype=np.float32)
             try:
@@ -253,7 +252,7 @@ class kernel:
         process_thread_num=np.arange(process_thread)+self.process_thread
         self.process_thread_num=self.process_thread_num.extend(process_thread_num)
         self.process_thread+=process_thread
-        if self.restrained_parallelism==False:
+        if self.epoch_!=None:
             self.batch_counter=np.concatenate((self.batch_counter,np.zeros(process_thread,dtype=np.int32)))
             self.total_loss=np.concatenate((self.total_loss,np.zeros(process_thread,dtype=np.float32)))
             try:
@@ -969,7 +968,7 @@ class kernel:
         self.process_thread_counter+=1
         self.running_list.append(t)
         self.epoch_list.append(0)
-        if self.restrained_parallelism==False:
+        if self.epoch_!=None:
             if t==0:
                 if self.batches==None:
                     self.batches=int((self.shape0-self.shape0%batch)/batch)
@@ -1000,7 +999,7 @@ class kernel:
         self.batch=batch
         self.epoch=0
         self.train_counter+=1
-        if self.restrained_parallelism==False:
+        if self.epoch_!=None:
             if self.data_segment_flag==True:
                 train_ds=self.platform.data.Dataset.from_tensor_slices((self.train_data[t],self.train_labels[t])).batch(batch)
             elif self.buffer_size!=None:
@@ -1017,15 +1016,15 @@ class kernel:
         else:
             self.s=s-1
             self.file_list=[]
-        if self.restrained_parallelism!=False and type(self.train_data)==list:
+        if self.epoch_==None and type(self.train_data)==list:
             data_batch=[x for x in range(len(self.train_data))]
         else:
             data_batch=None
-        if self.restrained_parallelism!=False and type(self.train_labels)==list:
+        if self.epoch_==None and type(self.train_labels)==list:
             labels_batch=[x for x in range(len(self.train_labels))]
         else:
             labels_batch=None
-        if self.process_thread!=None and self.restrained_parallelism==False:
+        if self.process_thread!=None and self.epoch_!=None:
             while True:
                 for data_batch,labels_batch in train_ds:
                     output,batch_loss=self.opt_t(data_batch,labels_batch,t)
