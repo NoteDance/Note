@@ -185,7 +185,6 @@ y_train=tf.one_hot(y_train,10).numpy()
 cnn=c.cnn()                                #create neural network object
 kernel=k.kernel(cnn)   #start kernel
 kernel.platform=tf                            #use platform
-kernel.restrained_parallelism=True
 kernel.process_thread=2                        #thread count
 kernel.PO=2
 kernel.data(x_train,y_train)   #input you data
@@ -213,7 +212,6 @@ y_train=tf.one_hot(y_train,10).numpy()
 kernel=k.kernel()                 #start kernel
 kernel.platform=tf                    #use platform
 kernel.restore('save.dat')     #restore neural network
-kernel.restrained_parallelism=True
 kernel.process_thread=2                        #thread count
 kernel.PO=2
 kernel.data(x_train,y_train)   #input you data
@@ -241,7 +239,6 @@ y_train=tf.one_hot(y_train,10).numpy()
 cnn=c.cnn()                                #create neural network object
 kernel=k.kernel(cnn)   #start kernel
 kernel.platform=tf                            #use platform
-kernel.restrained_parallelism=True
 kernel.process_thread=7                        #thread count
 kernel.PO=3
 kernel.multiprocessing_threading=threading
@@ -258,7 +255,7 @@ for _ in range(7):
 	_thread.join()
 ```
 
-**multithreading example(unrestricted parallelism):**
+**multithreading example:**
 ```python
 import kernel_pv as k   #import kernel
 import tensorflow as tf              #import platform
@@ -349,7 +346,7 @@ kernel.visualize_train()
 ```
 
 ### Multiprocessing:
-**multiprocessing example(unrestricted parallelism):**
+**multiprocessing example:**
 ```python
 import kernel_pv as k   #import kernel
 import tensorflow as tf              #import platform
