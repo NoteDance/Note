@@ -683,43 +683,61 @@ class kernel:
             except:
                 self.gradient_lock[0].acquire()
             self.ln_list.append(ln)
+            if self.episode_memory_t_value!=None and sum(self.episode_memory_list)>self.episode_memory_t_value:
+                self.save_episode=False
+            if self.memory_flag==True:
+                self.calculate_memory_(t)
+                if self.stop_func_m(self.lock[0]):
+                    return 0
+                if self.stop_func_t_p(self.lock[0],t):
+                    return 0
+            if self.stop_func_(self.lock[0]):
+                return 0
             try:
                 gradient=self.nn.gradient(tape,loss)
             except AttributeError:
-                gradient=tape.gradient(loss,self.nn.param)
+                try:
+                    if self.nn.nn!=None:
+                        gradient=tape.gradient(loss,self.nn.param)
+                except AttributeError:
+                    actor_gradient=tape.gradient(loss[0],self.nn.param[0])
+                    critic_gradient=tape.gradient(loss[1],self.nn.param[1])
             self.ln_list.remove(ln)
             try:
                 self.gradient_lock[ln].release()
             except:
                 self.gradient_lock[0].release()
             self.lock[0].acquire()
-            if self.memory_flag==True:
-                self.calculate_memory()
-                if self.stop_func_m(self.lock[0],ln):
-                    return 0,0
-                if self.stop_func_t_p(self.lock[0],t,ln):
-                    return 0,0
-            if self.stop_func_(self.lock[0]):
-                return None,0
             try:
                 if self.nn.attenuate!=None:
-                    gradient=self.nn.attenuate(gradient,self.opt_counter,t)
+                    try:
+                        gradient=self.nn.attenuate(gradient,self.opt_counter,t)
+                    except NameError:
+                        actor_gradient=self.nn.attenuate(actor_gradient,self.opt_counter,t)
+                        critic_gradient=self.nn.attenuate(critic_gradient,self.opt_counter,t)
             except AttributeError:
                 pass
             try:
-                self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+                if self.nn.gradient!=None:
+                    try:
+                        self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+                    except AttributeError:
+                        try:
+                            self.nn.opt(gradient)
+                        except TypeError:
+                            self.nn.opt(gradient,t)
             except AttributeError:
                 try:
-                    self.nn.opt(gradient)
-                except TypeError:
-                    self.nn.opt(gradient,t)
+                    if self.nn.nn!=None:
+                        self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+                except AttributeError:
+                    self.nn.opt.apply_gradients(zip(actor_gradient,self.nn.param[0]))
+                    self.nn.opt.apply_gradients(zip(critic_gradient,self.nn.param[1]))
             try:
                 if self.nn.attenuate!=None:
                     self.opt_counter+=1
             except AttributeError:
                 pass
-            if self.memory_flag==True:
-                self.grad_memory_list[ln]=0
             self.lock[0].release()
         return loss
     
@@ -827,43 +845,61 @@ class kernel:
             except:
                 self.gradient_lock[0].acquire()
             self.ln_list.append(ln)
+            if self.episode_memory_t_value!=None and sum(self.episode_memory_list)>self.episode_memory_t_value:
+                self.save_episode=False
+            if self.memory_flag==True:
+                self.calculate_memory_(t)
+                if self.stop_func_m(self.lock[0]):
+                    return 0
+                if self.stop_func_t_p(self.lock[0],t):
+                    return 0
+            if self.stop_func_(self.lock[0]):
+                return 0
             try:
                 gradient=self.nn.gradient(tape,loss)
             except AttributeError:
-                gradient=tape.gradient(loss,self.nn.param)
+                try:
+                    if self.nn.nn!=None:
+                        gradient=tape.gradient(loss,self.nn.param)
+                except AttributeError:
+                    actor_gradient=tape.gradient(loss[0],self.nn.param[0])
+                    critic_gradient=tape.gradient(loss[1],self.nn.param[1])
             self.ln_list.remove(ln)
             try:
                 self.gradient_lock[ln].release()
             except:
                 self.gradient_lock[0].release()
             self.lock[0].acquire()
-            if self.memory_flag==True:
-                self.calculate_memory()
-                if self.stop_func_m(self.lock[0],ln):
-                    return 0,0
-                if self.stop_func_t_p(self.lock[0],t,ln):
-                    return 0,0
-            if self.stop_func_(self.lock[0]):
-                return None,0
             try:
                 if self.nn.attenuate!=None:
-                    gradient=self.nn.attenuate(gradient,self.opt_counter,t)
+                    try:
+                        gradient=self.nn.attenuate(gradient,self.opt_counter,t)
+                    except NameError:
+                        actor_gradient=self.nn.attenuate(actor_gradient,self.opt_counter,t)
+                        critic_gradient=self.nn.attenuate(critic_gradient,self.opt_counter,t)
             except AttributeError:
                 pass
             try:
-                self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+                if self.nn.gradient!=None:
+                    try:
+                        self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+                    except AttributeError:
+                        try:
+                            self.nn.opt(gradient)
+                        except TypeError:
+                            self.nn.opt(gradient,t)
             except AttributeError:
                 try:
-                    self.nn.opt(gradient)
-                except TypeError:
-                    self.nn.opt(gradient,t)
+                    if self.nn.nn!=None:
+                        self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+                except AttributeError:
+                    self.nn.opt.apply_gradients(zip(actor_gradient,self.nn.param[0]))
+                    self.nn.opt.apply_gradients(zip(critic_gradient,self.nn.param[1]))
             try:
                 if self.nn.attenuate!=None:
                     self.opt_counter+=1
             except AttributeError:
                 pass
-            if self.memory_flag==True:
-                self.grad_memory_list[ln]=0
             self.lock[0].release()
         return loss
     
