@@ -576,6 +576,34 @@ kernel.reward                         #view reward
 kernel.visualize_reward()
 ```
 
+**multithreading example:**
+```python
+import Note.create.RL.kernel as k   #import kernel
+import DQN as d
+import threading
+dqn=d.DQN(4,128,2)                               #create neural network object
+kernel=k.kernel(dqn,5)   #start kernel
+kernel.action_num=2
+kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
+kernel.PO=3
+kernel.multiprocessing_threading=threading
+kernel.max_lock=5
+kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
+class thread(threading.Thread):
+	def run(self):
+		kernel.train(100)
+for _ in range(5):
+	_thread=thread()
+	_thread.start()
+for _ in range(5):
+	_thread.join()
+kernel.loss_list or kernel.loss       #view training loss
+kernel.visualize_train()
+kernel.reward                         #view reward
+kernel.visualize_reward()
+```
+
+
 ## Test neural network：
 ```python
 import Note.create.RL.rl.test_nn as t
