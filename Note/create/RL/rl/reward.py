@@ -8,7 +8,7 @@ class reward:
         self.end_flag=False
         
     
-    def reward(self,max_step=None,seed=None):
+    def get_reward(self,max_step=None,seed=None):
         reward=0
         if seed==None:
             s=self.env.reset()
