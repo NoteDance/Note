@@ -228,7 +228,7 @@ visual.visualize_episode(images,'cartpole-v0.gif',append_images=images[1:]) #vis
 ```python
 import Note.create.RL.rl.reward as r
 r=r.reward(dqn,dqn.genv)
-reward=r.reward(1000) #test neural network
+reward=r.get_reward(1000) #test neural network
 ```
 
 DDPG:
