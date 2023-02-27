@@ -300,6 +300,71 @@ class kernel:
         return action_prob
     
     
+    def get_reward(self,max_step=None,seed=None):
+        reward=0
+        if seed==None:
+            s=self.genv.reset()
+        else:
+            s=self.genv.reset(seed=seed)
+        if max_step!=None:
+            for i in range(max_step):
+                if self.end_flag==True:
+                    break
+                s=np.expand_dims(s,0)
+                try:
+                    if self.nn.nn!=None:
+                        pass
+                    try:
+                        if self.nn.action!=None:
+                            pass
+                        a=self.nn.action(s).numpy()
+                    except AttributeError:
+                        action_prob=self.nn.nn.fp(s).numpy()
+                        a=np.argmax(action_prob)
+                except AttributeError:
+                    a=self.nn.actor.fp(s).numpy()
+                    a=np.squeeze(a)
+                next_s,r,done,_=self.genv.step(a)
+                s=next_s
+                reward+=r
+                try:
+                    if self.nn.stop!=None:
+                        pass
+                    if self.nn.stop(next_s):
+                        break
+                except AttributeError:
+                    pass
+                if done:
+                    break
+            return reward
+        else:
+            while True:
+                if self.end_flag==True:
+                    break
+                s=np.expand_dims(s,0)
+                try:
+                    if self.nn.nn!=None:
+                        pass
+                    action_prob=self.nn.nn.fp(s).numpy()
+                    a=np.argmax(action_prob)
+                except AttributeError:
+                    a=self.nn.actor.fp(s).numpy()
+                    a=np.squeeze(a)
+                next_s,r,done,_=self.genv.step(a)
+                s=next_s
+                reward+=r
+                try:
+                    if self.nn.stop!=None:
+                        pass
+                    if self.nn.stop(next_s):
+                        break
+                except AttributeError:
+                    pass
+                if done:
+                    break
+            return reward
+    
+    
     def get_episode(self,max_step=None,seed=None):
         counter=0
         episode=[]
