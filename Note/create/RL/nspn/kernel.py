@@ -119,7 +119,6 @@ class kernel:
             for i in range(max_step):
                 if self.end_flag==True:
                     break
-                s=np.expand_dims(s,0)
                 try:
                     if self.nn.nn!=None:
                         try:
@@ -169,7 +168,6 @@ class kernel:
             while True:
                 if self.end_flag==True:
                     break
-                s=np.expand_dims(s,0)
                 try:
                     if self.nn.nn!=None:
                         try:
