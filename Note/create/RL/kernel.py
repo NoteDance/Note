@@ -153,23 +153,21 @@ class kernel:
         while True:
             try:
                 if self.nn.nn!=None:
-                    pass
+                    s=np.expand_dims(s,axis=0)
+                    s=torch.tensor(s,dtype=torch.float).to(self.nn.device)
+                    a=self.nn.nn(s).detach().numpy().argmax()
+                    next_s,r,done=self.nn.env(a)
+            except AttributeError:
                 try:
                     if self.nn.action!=None:
-                        pass
-                    s=np.expand_dims(s,axis=0)
-                    s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
-                    a=self.nn.action(s).detach().numpy()
+                        s=np.expand_dims(s,axis=0)
+                        s=torch.tensor(s,dtype=torch.float).to(self.nn.device)
+                        a=self.nn.action(s).detach().numpy()
                 except AttributeError:
                     s=np.expand_dims(s,axis=0)
-                    s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
-                    a=self.nn.nn(s).detach().numpy().argmax()
-                next_s,r,done=self.nn.env(a)
-            except AttributeError:
-                s=np.expand_dims(s,axis=0)
-                s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
-                a=self.nn.actor(s).detach().numpy()
-                a=np.squeeze(a)
+                    s=torch.tensor(s,dtype=torch.float).to(self.nn.device)
+                    a=self.nn.actor(s).detach().numpy()
+                    a=np.squeeze(a)
                 next_s,r,done=self.nn.env(a)
             try:
                 if self.nn.stop!=None:
@@ -266,27 +264,28 @@ class kernel:
                 pass
             s=np.expand_dims(s,axis=0)
             try:
-                s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d[t])
+                s=torch.tensor(s,dtype=torch.float).to(self.nn.device[t])
             except:
-                s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
+                s=torch.tensor(s,dtype=torch.float).to(self.nn.device)
             if epsilon==None:
                 epsilon=self.nn.epsilon(self.sc[t],t)
-            try:
-                if self.nn.action!=None:
-                    pass
-                a=self.nn.action(s).detach().numpy()
-            except AttributeError:
-                action_prob=self.epsilon_greedy_policy(s,epsilon)
-                a=np.random.choice(self.action_num,p=action_prob)
+            action_prob=self.epsilon_greedy_policy(s,epsilon)
+            a=np.random.choice(self.action_num,p=action_prob)
             next_s,r,done=self.nn.env(a,t)
         except AttributeError:
             s=np.expand_dims(s,axis=0)
             try:
-                s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d[t])
+                s=torch.tensor(s,dtype=torch.float).to(self.nn.device[t])
             except:
-                s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
-            a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
-            next_s,r,done=self.nn.env(a,t)
+                s=torch.tensor(s,dtype=torch.float).to(self.nn.device)
+            try:
+                if self.nn.action!=None:
+                    if epsilon==None:
+                        epsilon=self.nn.epsilon(self.sc[t],t)
+                    a=self.nn.action(s).detach().numpy()
+            except AttributeError:
+                a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
+                next_s,r,done=self.nn.env(a,t)
         if self.PN==True:
             while len(self.running_flag_list)<t:
                 pass
