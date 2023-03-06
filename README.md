@@ -1,10 +1,6 @@
 # Note
 
 
-# documentation:
-https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation
-
-
 # Introduction:
 Note is a system for deep learning and reinforcement learning.It makes it easy to create and train neural network.It can speed up the training of neural network by multithreading.
 
@@ -447,16 +443,6 @@ kernel.visualize_train()
 kernel.reward                         #view reward
 kernel.visualize_reward()
 ```
-```python
-import Note.create.RL.rl.visual as v
-from IPython import display as ipythondisplay
-from pyvirtualdisplay import Display
-display=Display(visible=0, size=(400, 300))
-display.start()
-visual=v.visual(dqn,dqn.genv,1000,10)
-images=visual.render_episode()
-visual.visualize_episode(images,'cartpole-v0.gif',append_images=images[1:]) #visualize episode
-```
 
 **example(Stop multithreading training and saving when condition is met.):**
 ```python
@@ -606,6 +592,10 @@ import Note.create.nc as nc
 c=nc.compiler('nn.n')
 c.Compile()
 ```
+
+
+# documentation:
+https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation
 
 
 # Patreon:
