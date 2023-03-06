@@ -122,17 +122,36 @@ class kernel:
                 s=np.expand_dims(s,0)
                 try:
                     if self.nn.nn!=None:
-                        pass
+                        try:
+                           if self.platform.DType!=None: 
+                               s=np.expand_dims(s,axis=0)
+                               a=np.argmax(self.nn.nn.fp(s))
+                        except AttributeError:
+                            s=np.expand_dims(s,axis=0)
+                            s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                            a=self.nn.nn(s).detach().numpy().argmax()
+                except AttributeError:
                     try:
                         if self.nn.action!=None:
-                            pass
-                        a=self.nn.action(s).numpy()
+                            try:
+                               if self.platform.DType!=None: 
+                                   s=np.expand_dims(s,axis=0)
+                                   a=self.nn.action(s).numpy()
+                            except AttributeError:
+                                s=np.expand_dims(s,axis=0)
+                                s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                                a=self.nn.action(s).detach().numpy()
                     except AttributeError:
-                        action_prob=self.nn.nn.fp(s).numpy()
-                        a=np.argmax(action_prob)
-                except AttributeError:
-                    a=self.nn.actor.fp(s).numpy()
-                    a=np.squeeze(a)
+                        try:
+                            if self.platform.DType!=None: 
+                                s=np.expand_dims(s,axis=0)
+                                a=self.nn.actor.fp(s).numpy()
+                                a=np.squeeze(a)
+                        except AttributeError:
+                            s=np.expand_dims(s,axis=0)
+                            s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                            a=self.nn.actor(s).detach().numpy()
+                            a=np.squeeze(a)
                 next_s,r,done,_=self.genv.step(a)
                 s=next_s
                 reward+=r
@@ -153,12 +172,36 @@ class kernel:
                 s=np.expand_dims(s,0)
                 try:
                     if self.nn.nn!=None:
-                        pass
-                    action_prob=self.nn.nn.fp(s).numpy()
-                    a=np.argmax(action_prob)
+                        try:
+                           if self.platform.DType!=None: 
+                               s=np.expand_dims(s,axis=0)
+                               a=np.argmax(self.nn.nn.fp(s))
+                        except AttributeError:
+                            s=np.expand_dims(s,axis=0)
+                            s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                            a=self.nn.nn(s).detach().numpy().argmax()
                 except AttributeError:
-                    a=self.nn.actor.fp(s).numpy()
-                    a=np.squeeze(a)
+                    try:
+                        if self.nn.action!=None:
+                            try:
+                               if self.platform.DType!=None: 
+                                   s=np.expand_dims(s,axis=0)
+                                   a=self.nn.action(s).numpy()
+                            except AttributeError:
+                                s=np.expand_dims(s,axis=0)
+                                s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                                a=self.nn.action(s).detach().numpy()
+                    except AttributeError:
+                        try:
+                            if self.platform.DType!=None: 
+                                s=np.expand_dims(s,axis=0)
+                                a=self.nn.actor.fp(s).numpy()
+                                a=np.squeeze(a)
+                        except AttributeError:
+                            s=np.expand_dims(s,axis=0)
+                            s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                            a=self.nn.actor(s).detach().numpy()
+                            a=np.squeeze(a)
                 next_s,r,done,_=self.genv.step(a)
                 s=next_s
                 reward+=r
@@ -187,37 +230,35 @@ class kernel:
                 if self.nn.nn!=None:
                     try:
                        if self.platform.DType!=None: 
-                           try:
-                               if self.nn.action!=None:
-                                   s=np.expand_dims(s,axis=0)
-                                   a=self.nn.action(s).numpy()
-                           except AttributeError:
-                               s=np.expand_dims(s,axis=0)
-                               a=np.argmax(self.nn.nn.fp(s))
+                           s=np.expand_dims(s,axis=0)
+                           a=np.argmax(self.nn.nn.fp(s))
                     except AttributeError:
+                        s=np.expand_dims(s,axis=0)
+                        s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                        a=self.nn.nn(s).detach().numpy().argmax()
+            except AttributeError:
+                try:
+                    if self.nn.action!=None:
                         try:
-                            if self.nn.action!=None:
-                                s=np.expand_dims(s,axis=0)
-                                s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                                a=self.nn.action(s).detach().numpy()
+                           if self.platform.DType!=None: 
+                               s=np.expand_dims(s,axis=0)
+                               a=self.nn.action(s).numpy()
                         except AttributeError:
                             s=np.expand_dims(s,axis=0)
                             s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                            a=self.nn.nn(s).detach().numpy().argmax()
-                    next_s,r,done=self.nn.env(a)
-            except AttributeError:
-                try:
-                    if self.platform.DType!=None: 
-                        s=np.expand_dims(s,axis=0)
-                        a=self.nn.actor.fp(s).numpy()
-                        a=np.squeeze(a)
-                        next_s,r,done=self.nn.env(a) 
+                            a=self.nn.action(s).detach().numpy()
                 except AttributeError:
-                    s=np.expand_dims(s,axis=0)
-                    s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                    a=self.nn.actor(s).detach().numpy()
-                    a=np.squeeze(a)
-                    next_s,r,done=self.nn.env(a)
+                    try:
+                        if self.platform.DType!=None: 
+                            s=np.expand_dims(s,axis=0)
+                            a=self.nn.actor.fp(s).numpy()
+                            a=np.squeeze(a)
+                    except AttributeError:
+                        s=np.expand_dims(s,axis=0)
+                        s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                        a=self.nn.actor(s).detach().numpy()
+                        a=np.squeeze(a)
+            next_s,r,done=self.nn.env(a)
             try:
                 if self.nn.stop!=None:
                     pass
@@ -397,25 +438,39 @@ class kernel:
                                 s=np.expand_dims(s,axis=0)
                                 if self.epsilon==None:
                                     self.epsilon=self.nn.epsilon(self.sc)
-                                try:
-                                    if self.nn.action!=None:
-                                        try:
-                                            if self.nn.discriminator!=None:
-                                                a=self.nn.action(s)
-                                                reward=self.nn.discriminator(s,a)
-                                                s=np.squeeze(s)
-                                        except AttributeError:
-                                            a=self.nn.action(s).numpy()
-                                except AttributeError:
-                                    action_prob=self.epsilon_greedy_policy(s)
-                                    a=np.random.choice(self.action_num,p=action_prob)
+                                action_prob=self.epsilon_greedy_policy(s)
+                                a=np.random.choice(self.action_num,p=action_prob)
                         except AttributeError:
                             s=np.expand_dims(s,axis=0)
                             s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                             if self.epsilon==None:
                                 self.epsilon=self.nn.epsilon(self.sc)
+                            action_prob=self.epsilon_greedy_policy(s)
+                            a=np.random.choice(self.action_num,p=action_prob)
+                        next_s,r,done=self.nn.env(a)
+                        r=np.array(r,dtype=np.float32)
+                        done=np.array(done,dtype=np.float32)
+                        self.pool(s,a,next_s,r,done)
+                except AttributeError:
+                    try:
+                        if self.nn.action!=None:
                             try:
-                                if self.nn.action!=None:
+                                if self.platform.DType!=None:
+                                    s=np.expand_dims(s,axis=0)
+                                    if self.epsilon==None:
+                                        self.epsilon=self.nn.epsilon(self.sc)
+                                    try:
+                                        if self.nn.discriminator!=None:
+                                            a=self.nn.action(s)
+                                            reward=self.nn.discriminator(s,a)
+                                            s=np.squeeze(s)
+                                    except AttributeError:
+                                        a=self.nn.action(s).numpy()
+                            except AttributeError:
+                                    s=np.expand_dims(s,axis=0)
+                                    s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                                    if self.epsilon==None:
+                                        self.epsilon=self.nn.epsilon(self.sc)
                                     try:
                                         if self.nn.discriminator!=None:
                                             a=self.nn.action(s)
@@ -423,9 +478,15 @@ class kernel:
                                             s=np.squeeze(s)
                                     except AttributeError:
                                         a=self.nn.action(s).detach().numpy()
-                            except AttributeError:
-                                action_prob=self.epsilon_greedy_policy(s)
-                                a=np.random.choice(self.action_num,p=action_prob)
+                    except AttributeError:
+                        try:
+                            if self.platform.DType!=None:
+                                s=np.expand_dims(s,axis=0)
+                                a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
+                        except AttributeError:
+                            s=np.expand_dims(s,axis=0)
+                            s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                            a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
                         next_s,r,done=self.nn.env(a)
                         r=np.array(r,dtype=np.float32)
                         done=np.array(done,dtype=np.float32)
@@ -434,23 +495,6 @@ class kernel:
                                 self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done])
                         except AttributeError:
                             self.pool(s,a,next_s,r,done)
-                except AttributeError:
-                    try:
-                        if self.platform.DType!=None:
-                            s=np.expand_dims(s,axis=0)
-                            a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
-                    except AttributeError:
-                        s=np.expand_dims(s,axis=0)
-                        s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                        a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
-                    next_s,r,done=self.nn.env(a)
-                    r=np.array(r,dtype=np.float32)
-                    done=np.array(done,dtype=np.float32)
-                    try:
-                        if self.nn.pool!=None:
-                            self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done])
-                    except AttributeError:
-                        self.pool(s,a,next_s,r,done)
                 try:
                     if self.nn.pr!=None:
                         self.nn.pr.TD=np.append(self.nn.pr.TD,self.nn.initial_TD)
@@ -479,52 +523,55 @@ class kernel:
                                 s=np.expand_dims(s,axis=0)
                                 if self.epsilon==None:
                                     self.epsilon=self.nn.epsilon(self.sc)
-                                try:
-                                    if self.nn.action!=None:
-                                        try:
-                                            if self.nn.discriminator!=None:
-                                                a=self.nn.action(s)
-                                                reward=self.nn.discriminator(s,a)
-                                                s=np.squeeze(s)
-                                        except AttributeError:
-                                            a=self.nn.action(s).numpy()
-                                except AttributeError:
-                                    action_prob=self.epsilon_greedy_policy(s)
-                                    a=np.random.choice(self.action_num,p=action_prob)
+                                action_prob=self.epsilon_greedy_policy(s)
+                                a=np.random.choice(self.action_num,p=action_prob)
                         except AttributeError:
                             s=np.expand_dims(s,axis=0)
                             s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                             if self.epsilon==None:
                                 self.epsilon=self.nn.epsilon(self.sc)
+                            action_prob=self.epsilon_greedy_policy(s)
+                            a=np.random.choice(self.action_num,p=action_prob)
+                        next_s,r,done=self.nn.env(a)
+                        r=np.array(r,dtype=np.float32)
+                        done=np.array(done,dtype=np.float32)
+                        self.pool(s,a,next_s,r,done)
+                except AttributeError:
+                    try:
+                        if self.nn.action!=None:
                             try:
-                                if self.nn.action!=None:
+                                if self.platform.DType!=None:
+                                    s=np.expand_dims(s,axis=0)
+                                    if self.epsilon==None:
+                                        self.epsilon=self.nn.epsilon(self.sc)
                                     try:
                                         if self.nn.discriminator!=None:
                                             a=self.nn.action(s)
                                             reward=self.nn.discriminator(s,a)
                                             s=np.squeeze(s)
                                     except AttributeError:
-                                        a=self.nn.action(s).detach().numpy()
+                                        a=self.nn.action(s).numpy()
                             except AttributeError:
-                                action_prob=self.epsilon_greedy_policy(s)
-                                a=np.random.choice(self.action_num,p=action_prob)
-                        next_s,r,done=self.nn.env(a)
-                        r=np.array(r,dtype=np.float32)
-                        done=np.array(done,dtype=np.float32)
-                        try:
-                            if self.nn.pool!=None:
-                                self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done])
-                        except AttributeError:
-                            self.pool(s,a,next_s,r,done)
-                except AttributeError:
-                    try:
-                        if self.platform.DType!=None:
-                            s=np.expand_dims(s,axis=0)
-                            a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
+                                s=np.expand_dims(s,axis=0)
+                                s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                                if self.epsilon==None:
+                                    self.epsilon=self.nn.epsilon(self.sc)
+                                try:
+                                    if self.nn.discriminator!=None:
+                                        a=self.nn.action(s)
+                                        reward=self.nn.discriminator(s,a)
+                                        s=np.squeeze(s)
+                                except AttributeError:
+                                    a=self.nn.action(s).detach().numpy()
                     except AttributeError:
-                        s=np.expand_dims(s,axis=0)
-                        s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                        a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
+                        try:
+                            if self.platform.DType!=None:
+                                s=np.expand_dims(s,axis=0)
+                                a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
+                        except AttributeError:
+                            s=np.expand_dims(s,axis=0)
+                            s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                            a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
                     next_s,r,done=self.nn.env(a)
                     r=np.array(r,dtype=np.float32)
                     done=np.array(done,dtype=np.float32)
