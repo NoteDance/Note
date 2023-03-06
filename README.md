@@ -225,11 +225,6 @@ visual=v.visual(dqn,dqn.genv,1000,10)
 images=visual.render_episode()
 visual.visualize_episode(images,'cartpole-v0.gif',append_images=images[1:]) #visualize episode
 ```
-```python
-import Note.create.RL.rl.reward as r
-r=r.reward(dqn,dqn.genv)
-reward=r.get_reward(1000) #test neural network
-```
 
 DDPG:
 ```python
