@@ -386,6 +386,7 @@ kernel.visualize_train()
 ```
 
 ## Test neural network：
+You can test it before using the kernel training neural network.
 ```python
 import Note.create.DL.dl.test_nn as t
 import tensorflow as tf              #import platform
@@ -593,6 +594,7 @@ kernel.visualize_reward()
 
 
 ## Test neural network：
+You can test it before using the kernel training neural network.
 ```python
 import Note.create.RL.rl.test_nn as t
 import tensorflow as tf              #import platform
