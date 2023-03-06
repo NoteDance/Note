@@ -87,7 +87,6 @@ class kernel:
         self.PO=None
         self.max_episode_count=None
         self.save_episode=save_episode
-        self.ln_list=[]
         self.gradient_list=[]
         self.exception_list=[]
         self.muti_p=None
@@ -747,7 +746,6 @@ class kernel:
                 self.gradient_lock[ln].acquire()
             except:
                 self.gradient_lock[0].acquire()
-            self.ln_list.append(ln)
             if self.episode_memory_t_value!=None and sum(self.episode_memory_list)>self.episode_memory_t_value:
                 self.save_episode=False
             if self.memory_flag==True:
@@ -767,7 +765,6 @@ class kernel:
                 except AttributeError:
                     actor_gradient=tape.gradient(loss[0],self.nn.param[0])
                     critic_gradient=tape.gradient(loss[1],self.nn.param[1])
-            self.ln_list.remove(ln)
             try:
                 self.gradient_lock[ln].release()
             except:
@@ -909,7 +906,6 @@ class kernel:
                 self.gradient_lock[ln].acquire()
             except:
                 self.gradient_lock[0].acquire()
-            self.ln_list.append(ln)
             if self.episode_memory_t_value!=None and sum(self.episode_memory_list)>self.episode_memory_t_value:
                 self.save_episode=False
             if self.memory_flag==True:
@@ -929,7 +925,6 @@ class kernel:
                 except AttributeError:
                     actor_gradient=tape.gradient(loss[0],self.nn.param[0])
                     critic_gradient=tape.gradient(loss[1],self.nn.param[1])
-            self.ln_list.remove(ln)
             try:
                 self.gradient_lock[ln].release()
             except:
@@ -1061,12 +1056,7 @@ class kernel:
                         if len(self.gradient_lock)==self.process_thread:
                             ln=int(t)
                         else:
-                            while True:
-                                ln=int(np.random.choice(len(self.gradient_lock)))
-                                if ln in self.ln_list:
-                                    continue
-                                else:
-                                    break
+                            ln=int(np.random.choice(len(self.gradient_lock)))
                         self._train(t,j,batches,length,ln)
                     else:
                         self._train(t,j,batches,length)
@@ -1081,12 +1071,7 @@ class kernel:
                     if len(self.gradient_lock)==self.process_thread:
                         ln=int(t)
                     else:
-                        while True:
-                            ln=int(np.random.choice(len(self.gradient_lock)))
-                            if ln in self.ln_list:
-                                continue
-                            else:
-                                break
+                        ln=int(np.random.choice(len(self.gradient_lock)))
                     self.train_(t,ln)
                 else:
                     self.train_(t)
@@ -1463,12 +1448,7 @@ class kernel:
                         if len(self.gradient_lock)==self.process_thread:
                             ln=int(t)
                         else:
-                            while True:
-                                ln=int(np.random.choice(len(self.gradient_lock)))
-                                if ln in self.ln_list:
-                                    continue
-                                else:
-                                    break
+                            ln=int(np.random.choice(len(self.gradient_lock)))
                         loss=self.opt_ol(data,t,ln)
                     else:
                         loss=self.opt_ol(data,t)
