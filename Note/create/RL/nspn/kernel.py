@@ -105,23 +105,21 @@ class kernel:
         while True:
             try:
                 if self.nn.nn!=None:
-                    pass
-                try:
-                    if self.nn.action!=None:
-                        pass
                     s=np.expand_dims(s,axis=0)
-                    s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
-                    a=self.nn.action(s).detach().numpy()
-                except AttributeError:
-                    s=np.expand_dims(s,axis=0)
-                    s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
+                    s=torch.tensor(s,dtype=torch.float).to(self.nn.device)
                     a=self.nn.nn(s).detach().numpy().argmax()
                 next_s,r,done=self.nn.env(a)
             except AttributeError:
-                s=np.expand_dims(s,axis=0)
-                s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
-                a=self.nn.actor(s).detach().numpy()
-                a=np.squeeze(a)
+                try:
+                    if self.nn.action!=None:
+                        s=np.expand_dims(s,axis=0)
+                        s=torch.tensor(s,dtype=torch.float).to(self.nn.device)
+                        a=self.nn.action(s).detach().numpy()
+                except AttributeError:
+                    s=np.expand_dims(s,axis=0)
+                    s=torch.tensor(s,dtype=torch.float).to(self.nn.device)
+                    a=self.nn.actor(s).detach().numpy()
+                    a=np.squeeze(a)
                 next_s,r,done=self.nn.env(a)
             try:
                 if self.nn.stop!=None:
@@ -274,24 +272,26 @@ class kernel:
             while True:
                 try:
                     if self.nn.nn!=None:
-                        pass
-                    s=np.expand_dims(s,axis=0)
-                    s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
-                    if self.epsilon==None:
-                        self.epsilon=self.nn.epsilon(self.sc)
-                    try:
-                        if self.nn.action!=None:
-                            pass
-                        a=self.nn.action(s).detach().numpy()
-                    except AttributeError:
+                        s=np.expand_dims(s,axis=0)
+                        s=torch.tensor(s,dtype=torch.float).to(self.nn.device)
+                        if self.epsilon==None:
+                            self.epsilon=self.nn.epsilon(self.sc)
                         action_prob=self.epsilon_greedy_policy(s)
                         a=np.random.choice(self.action_num,p=action_prob)
-                    next_s,r,done=self.nn.env(a)
-                    self.pool(s,a,next_s,r,done)
+                        next_s,r,done=self.nn.env(a)
+                        self.pool(s,a,next_s,r,done)
                 except AttributeError:
-                    s=np.expand_dims(s,axis=0)
-                    s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
-                    a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
+                    try:
+                        if self.nn.action!=None:
+                            s=np.expand_dims(s,axis=0)
+                            s=torch.tensor(s,dtype=torch.float).to(self.nn.device)
+                            if self.epsilon==None:
+                                self.epsilon=self.nn.epsilon(self.sc)
+                            a=self.nn.action(s).detach().numpy()
+                    except AttributeError:
+                        s=np.expand_dims(s,axis=0)
+                        s=torch.tensor(s,dtype=torch.float).to(self.nn.device)
+                        a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
                     next_s,r,done=self.nn.env(a)
                     self.pool(s,a,next_s,r,done)
                 self.reward=r+self.reward
@@ -309,24 +309,26 @@ class kernel:
             for _ in range(self.episode_step):
                 try:
                     if self.nn.nn!=None:
-                        pass
-                    s=np.expand_dims(s,axis=0)
-                    s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
-                    if self.epsilon==None:
-                        self.epsilon=self.nn.epsilon(self.sc)
-                    try:
-                        if self.nn.action!=None:
-                            pass
-                        a=self.nn.action(s).detach().numpy()
-                    except AttributeError:
+                        s=np.expand_dims(s,axis=0)
+                        s=torch.tensor(s,dtype=torch.float).to(self.nn.device)
+                        if self.epsilon==None:
+                            self.epsilon=self.nn.epsilon(self.sc)
                         action_prob=self.epsilon_greedy_policy(s)
                         a=np.random.choice(self.action_num,p=action_prob)
-                    next_s,r,done=self.nn.env(a)
-                    self.pool(s,a,next_s,r,done)
+                        next_s,r,done=self.nn.env(a)
+                        self.pool(s,a,next_s,r,done)
                 except AttributeError:
-                    s=np.expand_dims(s,axis=0)
-                    s=torch.tensor(s,dtype=torch.float).to(self.nn.device_d)
-                    a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
+                    try:
+                        if self.nn.action!=None:
+                            s=np.expand_dims(s,axis=0)
+                            s=torch.tensor(s,dtype=torch.float).to(self.nn.device)
+                            if self.epsilon==None:
+                                self.epsilon=self.nn.epsilon(self.sc)
+                            a=self.nn.action(s).detach().numpy()
+                    except AttributeError:
+                        s=np.expand_dims(s,axis=0)
+                        s=torch.tensor(s,dtype=torch.float).to(self.nn.device)
+                        a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
                     next_s,r,done=self.nn.env(a)
                     self.pool(s,a,next_s,r,done)
                 self.reward=r+self.reward
