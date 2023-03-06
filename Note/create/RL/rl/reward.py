@@ -19,7 +19,6 @@ class reward:
             for i in range(max_step):
                 if self.end_flag==True:
                     break
-                s=np.expand_dims(s,0)
                 try:
                     if self.agent.nn!=None:
                         try:
@@ -69,7 +68,6 @@ class reward:
             while True:
                 if self.end_flag==True:
                     break
-                s=np.expand_dims(s,0)
                 try:
                     if self.agent.nn!=None:
                         try:
