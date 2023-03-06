@@ -312,17 +312,15 @@ class kernel:
                 s=np.expand_dims(s,0)
                 try:
                     if self.nn.nn!=None:
-                        pass
-                    try:
-                        if self.nn.action!=None:
-                            pass
-                        a=self.nn.action(s).numpy()
-                    except AttributeError:
                         action_prob=self.nn.nn.fp(s).numpy()
                         a=np.argmax(action_prob)
                 except AttributeError:
-                    a=self.nn.actor.fp(s).numpy()
-                    a=np.squeeze(a)
+                    try:
+                        if self.nn.action!=None:
+                            a=self.nn.action(s).numpy()
+                    except AttributeError:
+                        a=self.nn.actor.fp(s).numpy()
+                        a=np.squeeze(a)
                 next_s,r,done,_=self.genv.step(a)
                 s=next_s
                 reward+=r
@@ -343,12 +341,15 @@ class kernel:
                 s=np.expand_dims(s,0)
                 try:
                     if self.nn.nn!=None:
-                        pass
-                    action_prob=self.nn.nn.fp(s).numpy()
-                    a=np.argmax(action_prob)
+                        action_prob=self.nn.nn.fp(s).numpy()
+                        a=np.argmax(action_prob)
                 except AttributeError:
-                    a=self.nn.actor.fp(s).numpy()
-                    a=np.squeeze(a)
+                    try:
+                        if self.nn.action!=None:
+                            a=self.nn.action(s).numpy()
+                    except AttributeError:
+                        a=self.nn.actor.fp(s).numpy()
+                        a=np.squeeze(a)
                 next_s,r,done,_=self.genv.step(a)
                 s=next_s
                 reward+=r
@@ -375,19 +376,18 @@ class kernel:
         while True:
             try:
                 if self.nn.nn!=None:
-                    try:
-                        if self.nn.action!=None:
-                            s=np.expand_dims(s,axis=0)
-                            a=self.nn.action(s)
-                    except AttributeError:
-                        s=np.expand_dims(s,axis=0)
-                        a=np.argmax(self.nn.nn.fp(s)).numpy()
-                    next_s,r,done=self.nn.env(a)
+                    s=np.expand_dims(s,axis=0)
+                    a=np.argmax(self.nn.nn.fp(s)).numpy()
             except AttributeError:
-                s=np.expand_dims(s,axis=0)
-                a=self.nn.actor.fp(s).numpy()
-                a=np.squeeze(a)
-                next_s,r,done=self.nn.env(a)
+                try:
+                    if self.nn.action!=None:
+                        s=np.expand_dims(s,axis=0)
+                        a=self.nn.action(s)
+                except AttributeError:
+                    s=np.expand_dims(s,axis=0)
+                    a=self.nn.actor.fp(s).numpy()
+                    a=np.squeeze(a)
+            next_s,r,done=self.nn.env(a)
             try:
                 if self.nn.stop!=None:
                     pass
@@ -579,23 +579,26 @@ class kernel:
                 s=np.expand_dims(s,axis=0)
                 if epsilon==None:
                     epsilon=self.nn.epsilon(self.sc[t],t)
-                try:
-                    if self.nn.action!=None:
-                        try:
-                            if self.nn.discriminator!=None:
-                                a=self.nn.action(s)
-                                reward=self.nn.discriminator(s,a)
-                                s=np.squeeze(s)
-                        except AttributeError:
-                            a=self.nn.action(s).numpy()
-                except AttributeError:
-                    action_prob=self.epsilon_greedy_policy(s,epsilon)
-                    a=np.random.choice(self.action_num,p=action_prob)
+                action_prob=self.epsilon_greedy_policy(s,epsilon)
+                a=np.random.choice(self.action_num,p=action_prob)
                 next_s,r,done=self.nn.env(a,t)
         except AttributeError:
-            s=np.expand_dims(s,axis=0)
-            a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
-            next_s,r,done=self.nn.env(a,t)
+            try:
+                if self.nn.action!=None:
+                    s=np.expand_dims(s,axis=0)
+                    if epsilon==None:
+                        epsilon=self.nn.epsilon(self.sc[t],t)
+                    try:
+                        if self.nn.discriminator!=None:
+                            a=self.nn.action(s)
+                            reward=self.nn.discriminator(s,a)
+                            s=np.squeeze(s)
+                    except AttributeError:
+                        a=self.nn.action(s).numpy()
+            except AttributeError:
+                s=np.expand_dims(s,axis=0)
+                a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
+                next_s,r,done=self.nn.env(a,t)
         index=self.get_index(t)
         r=np.array(r,dtype=np.float32)
         done=np.array(done,dtype=np.float32)
