@@ -62,7 +62,6 @@ class kernel:
         self.acc_flag='%'
         self.train_counter=0
         self.opt_counter=None
-        self.ln_list=[]
         self.gradient_list=[]
         self.exception_list=[]
         self.muti_p=None
@@ -485,25 +484,21 @@ class kernel:
                     self.gradient_lock[ln[0]][ln[1]].acquire()
                 except:
                     self.gradient_lock[0][0].acquire()
-                self.ln_list.append([ln[0],ln[1]])
             else:
                 try:
                     self.gradient_lock[ln].acquire()
                 except:
                     self.gradient_lock[0].acquire()
-                self.ln_list.append(ln)
             try:
                 gradient=self.nn.gradient(tape,loss)
             except AttributeError:
                 gradient=tape.gradient(loss,self.nn.param)
             if self.row!=None:
-                self.ln_list.remove([ln[0],ln[1]])
                 try:
                     self.gradient_lock[ln[0]][ln[1]].release()
                 except:
                     self.gradient_lock[0][0].release()
             else:
-                self.ln_list.remove(ln)
                 try:
                     self.gradient_lock[ln].release()
                 except:
@@ -562,21 +557,11 @@ class kernel:
                 ln=int(t)
             else:
                 if self.row!=None:
-                    while True:
-                        rank_index=int(np.random.choice(len(self.gradient_lock)))
-                        row_index=int(np.random.choice(len(self.gradient_lock[rank_index])))
-                        if [rank_index,row_index] in self.ln_list:
-                            continue
-                        else:
-                            ln=[rank_index,row_index]
-                            break
+                    rank_index=int(np.random.choice(len(self.gradient_lock)))
+                    row_index=int(np.random.choice(len(self.gradient_lock[rank_index])))
+                    ln=[rank_index,row_index]
                 else:
-                    while True:
-                        ln=int(np.random.choice(len(self.gradient_lock)))
-                        if ln in self.ln_list:
-                            continue
-                        else:
-                            break
+                    ln=int(np.random.choice(len(self.gradient_lock)))
             output,loss=self.tf_opt_t(data,labels,int(t),ln)
         else:
             output,loss=self.tf_opt_t(data,labels,int(t))
@@ -666,25 +651,21 @@ class kernel:
                         self.gradient_lock[ln[0]][ln[1]].acquire()
                     except:
                         self.gradient_lock[0][0].acquire()
-                    self.ln_list.append([ln[0],ln[1]])
                 else:
                     try:
                         self.gradient_lock[ln].acquire()
                     except:
                         self.gradient_lock[0].acquire()
-                    self.ln_list.append(ln)
                 try:
                     gradient=self.nn.gradient(tape,loss)
                 except AttributeError:
                     gradient=tape.gradient(loss,self.nn.param)
                 if self.row!=None:
-                    self.ln_list.remove([ln[0],ln[1]])
                     try:
                         self.gradient_lock[ln[0]][ln[1]].release()
                     except:
                         self.gradient_lock[0][0].release()
                 else:
-                    self.ln_list.remove(ln)
                     try:
                         self.gradient_lock[ln].release()
                     except:
@@ -1390,21 +1371,11 @@ class kernel:
                             ln=int(t)
                         else:
                             if self.row!=None:
-                                while True:
-                                    rank_index=int(np.random.choice(len(self.gradient_lock)))
-                                    row_index=int(np.random.choice(len(self.gradient_lock[rank_index])))
-                                    if [rank_index,row_index] in self.ln_list:
-                                        continue
-                                    else:
-                                        ln=[rank_index,row_index]
-                                        break
+                                rank_index=int(np.random.choice(len(self.gradient_lock)))
+                                row_index=int(np.random.choice(len(self.gradient_lock[rank_index])))
+                                ln=[rank_index,row_index]
                             else:
-                                while True:
-                                    ln=int(np.random.choice(len(self.gradient_lock)))
-                                    if ln in self.ln_list:
-                                        continue
-                                    else:
-                                        break
+                                ln=int(np.random.choice(len(self.gradient_lock)))
                             output,loss=self.opt_ol(data[0],data[1],t,ln)
                     else:
                         output,loss=self.opt_ol(data[0],data[1],t)
