@@ -448,7 +448,6 @@ class kernel:
                         next_s,r,done=self.nn.env(a)
                         r=np.array(r,dtype=np.float32)
                         done=np.array(done,dtype=np.float32)
-                        self.pool(s,a,next_s,r,done)
                 except AttributeError:
                     try:
                         if self.nn.action!=None:
@@ -488,11 +487,11 @@ class kernel:
                         next_s,r,done=self.nn.env(a)
                         r=np.array(r,dtype=np.float32)
                         done=np.array(done,dtype=np.float32)
-                        try:
-                            if self.nn.pool!=None:
-                                self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done])
-                        except AttributeError:
-                            self.pool(s,a,next_s,r,done)
+                try:
+                    if self.nn.pool!=None:
+                        self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done])
+                except AttributeError:
+                    self.pool(s,a,next_s,r,done)
                 try:
                     if self.nn.pr!=None:
                         self.nn.pr.TD=np.append(self.nn.pr.TD,self.nn.initial_TD)
@@ -533,7 +532,6 @@ class kernel:
                         next_s,r,done=self.nn.env(a)
                         r=np.array(r,dtype=np.float32)
                         done=np.array(done,dtype=np.float32)
-                        self.pool(s,a,next_s,r,done)
                 except AttributeError:
                     try:
                         if self.nn.action!=None:
@@ -573,11 +571,11 @@ class kernel:
                     next_s,r,done=self.nn.env(a)
                     r=np.array(r,dtype=np.float32)
                     done=np.array(done,dtype=np.float32)
-                    try:
-                        if self.nn.pool!=None:
-                            self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done])
-                    except AttributeError:
-                        self.pool(s,a,next_s,r,done)
+                try:
+                    if self.nn.pool!=None:
+                        self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done])
+                except AttributeError:
+                    self.pool(s,a,next_s,r,done)
                 try:
                     if self.nn.pr!=None:
                         self.nn.pr.TD=np.append(self.nn.pr.TD,self.nn.initial_TD)
