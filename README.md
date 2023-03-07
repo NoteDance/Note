@@ -27,7 +27,7 @@ If you accomplish your neural network,you can use kernel to train,examples are s
 
 https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn.py
 ```python
-import Note.create.DL.kernel as k   #import kernel
+import Note.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
 import cnn as c                          #import neural network
 mnist=tf.keras.datasets.mnist
@@ -43,7 +43,7 @@ kernel.train(32,5)         #train neural network
 kernel.save()              #save neural network
 ```
 ```python
-import Note.create.DL.kernel as k   #import kernel
+import Note.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
 mnist=tf.keras.datasets.mnist
 (x_train,y_train),(x_test,y_test)=mnist.load_data()
@@ -57,7 +57,7 @@ kernel.train(32,1)             #train again
 
 **example(test):**
 ```python
-import Note.create.DL.kernel as k   #import kernel
+import Note.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
 import cnn_acc as c                          #import neural network
 mnist=tf.keras.datasets.mnist
@@ -76,7 +76,7 @@ kernel.save()              #save neural network
 
 **example(Stop multithreading training and saving when condition is met.):**
 ```python
-import Note.create.DL.kernel as k   #import kernel
+import Note.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
 import cnn as c                          #import neural network
 mnist=tf.keras.datasets.mnist
@@ -99,7 +99,7 @@ kernel.train(32,5)         #train neural network
 
 https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/pytorch/nn.py
 ```python
-import Note.create.DL.kernel as k   #import kernel
+import Note.DL.kernel as k   #import kernel
 import torch                         #import platform
 import nn as n                          #import neural network
 from torch.utils.data import DataLoader
@@ -165,7 +165,7 @@ kernel.train(64,5)         #train neural network
 
 **multithreading example:**
 ```python
-import Note.create.DL.kernel as k   #import kernel
+import Note.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
 import cnn as c                          #import neural network
 import threading
@@ -192,7 +192,7 @@ kernel.visualize_train()
 kernel.save()              #save neural network
 ```
 ```python
-import Note.create.DL.kernel as k   #import kernel
+import Note.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
 import threading
 mnist=tf.keras.datasets.mnist
@@ -217,7 +217,7 @@ for _ in range(2):
 
 **multithreading example(PO3):**
 ```python
-import Note.create.DL.kernel as k   #import kernel
+import Note.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
 import cnn as c                          #import neural network
 import threading
@@ -245,7 +245,7 @@ for _ in range(7):
 
 **multithreading example:**
 ```python
-import kernel_pv as k   #import kernel
+import Note.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
 import cnn as c                          #import neural network
 import threading
@@ -271,7 +271,7 @@ for _ in range(7):
 kernel.visualize_train()
 ```
 ```python
-import kernel_pv as k   #import kernel
+import Note.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
 import cnn as c                          #import neural network
 import threading
@@ -301,7 +301,7 @@ kernel.visualize_train()
 
 **multithreading example(Stop multithreading training and saving when condition is met.):**
 ```python
-import Note.create.DL.kernel as k   #import kernel
+import Note.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
 import cnn as c                          #import neural network
 import threading
@@ -333,7 +333,7 @@ kernel.visualize_train()
 ### Multiprocessing:
 **multiprocessing example:**
 ```python
-import kernel_pv as k   #import kernel
+import Note.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
 import cnn as c                          #import neural network
 from multiprocessing import Process,Lock
@@ -356,7 +356,7 @@ for _ in range(7):
 kernel.visualize_train()
 ```
 ```python
-import kernel_pv as k   #import kernel
+import Note.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
 import cnn as c                          #import neural network
 from multiprocessing import Process,Lock
@@ -384,7 +384,7 @@ kernel.visualize_train()
 ## Test neural network：
 You can test it before using the kernel training neural network.
 ```python
-import Note.create.DL.dl.test_nn as t
+import Note.DL.dl.test_nn as t
 import tensorflow as tf              #import platform
 import cnn as c                          #import neural network
 mnist=tf.keras.datasets.mnist
@@ -409,7 +409,7 @@ t.test(cnn,tf,x_train[:32],y_train[:32])
 
 https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/RL/neural%20network/pytorch/DQN.py
 ```python
-import Note.create.RL.nspn.kernel as k   #import kernel
+import Note.RL.nspn.kernel as k   #import kernel
 import torch
 import DQN as d
 dqn=d.DQN(4,128,2)                               #create neural network object
@@ -429,7 +429,7 @@ kernel.visualize_reward()
 
 https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow/DQN.py
 ```python
-import Note.create.RL.nspn.kernel as k   #import kernel
+import Note.RL.nspn.kernel as k   #import kernel
 import tensorflow as tf
 import DQN as d
 dqn=d.DQN(4,128,2)                               #create neural network object
@@ -446,7 +446,7 @@ kernel.visualize_reward()
 
 **example(Stop multithreading training and saving when condition is met.):**
 ```python
-import Note.create.RL.kernel as k   #import kernel
+import Note.RL.kernel as k   #import kernel
 import DQN as d
 dqn=d.DQN(4,128,2)                               #create neural network object
 kernel=k.kernel(dqn,5)   #start kernel
@@ -466,7 +466,7 @@ kernel.visualize_reward()
 
 https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow/DDPG.py
 ```python
-import Note.create.RL.nspn.kernel as k   #import kernel
+import Note.RL.nspn.kernel as k   #import kernel
 import tensorflow as tf
 import DDPG as d
 state_dim=env.observation_spave.shape[0]
@@ -495,7 +495,7 @@ https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20do
 
 **multithreading example:**
 ```python
-import Note.create.RL.kernel as k   #import kernel
+import Note.RL.kernel as k   #import kernel
 import DQN as d
 import threading
 dqn=d.DQN(4,128,2)                               #create neural network object
@@ -521,7 +521,7 @@ kernel.visualize_reward()
 
 **multithreading example(Stop multithreading training and saving when condition is met.):**
 ```python
-import Note.create.RL.kernel as k   #import kernel
+import Note.RL.kernel as k   #import kernel
 import DQN as d
 import threading
 dqn=d.DQN(4,128,2)                               #create neural network object
@@ -548,7 +548,7 @@ kernel.visualize_reward()
 
 **multithreading example:**
 ```python
-import Note.create.RL.kernel as k   #import kernel
+import Note.RL.kernel as k   #import kernel
 import DQN as d
 import threading
 dqn=d.DQN(4,128,2)                               #create neural network object
@@ -577,7 +577,7 @@ kernel.visualize_reward()
 ## Test neural network：
 You can test it before using the kernel training neural network.
 ```python
-import Note.create.RL.rl.test_nn as t
+import Note.RL.rl.test_nn as t
 import tensorflow as tf              #import platform
 import DQN as d
 dqn=d.DQN(4,128,2)                               #create neural network object
@@ -588,7 +588,7 @@ t.test(dqn,tf,2)
 # Note Compiler:
 documentation:https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/compiler
 ```python
-import Note.create.nc as nc
+import Note.nc as nc
 c=nc.compiler('nn.n')
 c.Compile()
 ```
