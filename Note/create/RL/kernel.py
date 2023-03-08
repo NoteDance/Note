@@ -55,7 +55,7 @@ class kernel:
     
     
     def action_vec(self):
-        self.action_one=np.ones(self.action_num,dtype=np.int8)
+        self.action_one=np.ones(self.action_count,dtype=np.int8)
         return
     
     
@@ -270,7 +270,7 @@ class kernel:
             if epsilon==None:
                 epsilon=self.nn.epsilon(self.sc[t],t)
             action_prob=self.epsilon_greedy_policy(s,epsilon)
-            a=np.random.choice(self.action_num,p=action_prob)
+            a=np.random.choice(self.action_count,p=action_prob)
             next_s,r,done=self.nn.env(a,t)
         except AttributeError:
             s=np.expand_dims(s,axis=0)
