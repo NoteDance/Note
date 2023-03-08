@@ -207,7 +207,7 @@ import Note.create.RL.nspn.kernel as k   #import kernel
 import DQN as d
 dqn=d.DQN(4,128,2)                               #create neural network object
 kernel=k.kernel(dqn)   #start kernel
-kernel.action_num=2
+kernel.action_count=2
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
 kernel.train(500)
 kernel.loss_list or kernel.loss       #view training loss
@@ -230,10 +230,7 @@ DDPG:
 ```python
 import Note.create.RL.nspn.kernel as k   #import kernel
 import DDPG as d
-state_dim=env.observation_spave.shape[0]
-action_dim=env.action_spave.shape[0]
-action_bound=env.action_spave.high[0]
-ddpg=d.DDPG(state_dim,64,action_dim,action_bound,0.01,0.98,0.005,5e-4,5e-3)         #create neural network object
+ddpg=d.DDPG(64,0.01,0.98,0.005,5e-4,5e-3)         #create neural network object
 kernel=k.kernel(ddpg)   #start kernel
 kernel.set_up(pool_size=10000,batch=64)
 kernel.train(200)
@@ -256,7 +253,7 @@ import threading
 dqn=d.DQN(4,128,2)                               #create neural network object
 kernel=k.kernel(dqn,5)   #start kernel
 kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock()]
-kernel.action_num=2
+kernel.action_count=2
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
 class thread(threading.Thread):
 	def run(self):
@@ -283,7 +280,7 @@ dqn=d.DQN(4,128,2)                               #create neural network object
 kernel=k.kernel(dqn,5)   #start kernel
 kernel.thread_lock=[threading.Lock(),threading.Lock(),threading.Lock(),threading.Lock()]
 kernel.stop=True
-kernel.action_num=2
+kernel.action_count=2
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10,trial_count=10,criterion=200)
 class thread(threading.Thread):
 	def run(self):
