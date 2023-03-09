@@ -89,7 +89,7 @@ class kernel:
         self.save_episode=save_episode
         self.gradient_list=[]
         self.exception_list=[]
-        self.muti_p=7
+        self.muti_p=None
         self.muti_s=None
         self.muti_save=1
         self.filename='save.dat'
@@ -1233,11 +1233,6 @@ class kernel:
                         self.total_episode+=1
                         self.episode_list[t]+=1
                         self.loss_list.append(self.loss[t])
-                        if self.trial_count!=None and len(self.reward_list)>=self.trial_count:
-                            avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
-                            self.print_save(avg_reward)
-                        else:
-                            self.print_save()
                         if self.PN==True:
                             if self.PO==1 or self.PO==3:
                                 self.lock[2].release()
@@ -1305,11 +1300,6 @@ class kernel:
                         self.total_episode+=1
                         self.episode_list[t]+=1
                         self.loss_list.append(self.loss[t])
-                        if self.trial_count!=None and len(self.reward_list)>=self.trial_count:
-                            avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
-                            self.print_save(avg_reward)
-                        else:
-                            self.print_save()
                         if self.PN==True:
                             if self.PO==1 or self.PO==3:
                                 self.lock[2].release()
@@ -1331,11 +1321,6 @@ class kernel:
                         self.total_episode+=1
                         self.episode_list[t]+=1
                         self.loss_list.append(self.loss[t])
-                        if self.trial_count!=None and len(self.reward_list)>=self.trial_count:
-                            avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
-                            self.print_save(avg_reward)
-                        else:
-                            self.print_save()
                         if self.PN==True:
                             if self.PO==1 or self.PO==3:
                                 self.lock[2].release()
@@ -1352,6 +1337,11 @@ class kernel:
                 self.lock[0].acquire()
             self.reward_list.append(self.reward[t])
             self.reward[t]=0
+            if self.trial_count!=None and len(self.reward_list)>=self.trial_count:
+                avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                self.print_save(avg_reward)
+            else:
+                self.print_save()
             if self.save_episode==True:
                 self.episode.append(episode)
                 if self.max_episode_count!=None and len(self.episode)>=self.max_episode_count:
