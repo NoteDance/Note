@@ -31,13 +31,13 @@ class kernel:
         self.next_state_pool={}
         self.reward_pool={}
         self.done_pool={}
-        self.episode=[]
+        self.episode_set=[]
         self.epsilon=None
         self.episode_step=None
         self.pool_size=None
         self.batch=None
         self.episode_=None
-        self.episode_counter=0
+        self.episode=0
         self.update_step=None
         self.trial_count=None
         self.running_list=[]
@@ -254,7 +254,7 @@ class kernel:
         except AttributeError:
             pass
         self.PN=True
-        self.episode=[]
+        self.episode_set=[]
         self.epsilon=None
         self.state_pool={}
         self.action_pool={}
@@ -1344,8 +1344,8 @@ class kernel:
             else:
                 self.print_save()
             if self.save_episode==True:
-                self.episode.append(episode)
-                if self.max_episode_count!=None and len(self.episode)>=self.max_episode_count:
+                self.episode_set.append(episode)
+                if self.max_episode_count!=None and len(self.episode_set)>=self.max_episode_count:
                     self.save_episode=False
             if self.PN==True:
                 if self.PO==1 or self.PO==3:
@@ -1632,12 +1632,12 @@ class kernel:
                     s=int(s)
                     if s==0:
                         s=1
-                if self.muti_save!=None and self.episode_counter%s==0:
+                if self.muti_save!=None and self.episode%s==0:
                     if self.muti_save==1:
                         self.save(self.total_episode)
                     else:
                         self.save(self.total_episode,False)
-            self.episode_counter+=1
+            self.episode+=1
         return
     
     
@@ -1674,7 +1674,7 @@ class kernel:
     
     def save_e(self):
         episode_file=open('episode.dat','wb')
-        pickle.dump(self.episode,episode_file)
+        pickle.dump(self.episode_set,episode_file)
         episode_file.close()
         return
     
@@ -1686,7 +1686,7 @@ class kernel:
             output_file=open(self.filename,'wb')
             if self.save_episode==True:
                 episode_file=open('episode.dat','wb')
-                pickle.dump(self.episode,episode_file)
+                pickle.dump(self.episode_set,episode_file)
                 episode_file.close()
         else:
             filename=self.filename.replace(self.filename[self.filename.find('.'):],'-{0}.dat'.format(i))
@@ -1694,7 +1694,7 @@ class kernel:
             self.file_list.append([filename])
             if self.save_episode==True:
                 episode_file=open('episode-{0}.dat'.format(i),'wb')
-                pickle.dump(self.episode,episode_file)
+                pickle.dump(self.episode_set,episode_file)
                 episode_file.close()
             if self.save_episode==True:
                 self.file_list.append([filename,'episode-{0}.dat'])
@@ -1750,7 +1750,7 @@ class kernel:
         input_file=open(s_path,'rb')
         if e_path!=None:
             episode_file=open(e_path,'rb')
-            self.episode=pickle.load(episode_file)
+            self.episode_set=pickle.load(episode_file)
             episode_file.close()
         self.nn=pickle.load(input_file)
         try:
