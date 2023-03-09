@@ -89,7 +89,7 @@ class kernel:
         self.save_episode=save_episode
         self.gradient_list=[]
         self.exception_list=[]
-        self.muti_p=None
+        self.muti_p=7
         self.muti_s=None
         self.muti_save=1
         self.filename='save.dat'
@@ -1607,29 +1607,18 @@ class kernel:
     
     
     def print_save(self,avg_reward=None):
-        if self.muti_p!=None or self.muti_s!=None:
+        if self.muti_p!=None:
+            muti_p=self.muti_p-1
             if self.episode_count%10!=0:
-                if self.muti_p!=None:
-                    p=self.episode_count-self.episode_count%self.muti_p
-                    p=int(p/self.muti_p)
-                    if p==0:
-                        p=1
-                if self.muti_s!=None:
-                    s=self.episode_count-self.episode_count%self.muti_s
-                    s=int(s/self.muti_s)
-                    if s==0:
-                        s=1
+                p=self.episode_count-self.episode_count%muti_p
+                p=int(p/muti_p)
+                if p==0:
+                    p=1
             else:
-                if self.muti_p!=None:
-                    p=self.episode_count/(self.muti_p+1)
-                    p=int(p)
-                    if p==0:
-                        p=1
-                if self.muti_s!=None:
-                    s=self.episode_count/(self.muti_s+1)
-                    s=int(s)
-                    if s==0:
-                        s=1
+                p=self.episode_count/(muti_p+1)
+                p=int(p)
+                if p==0:
+                    p=1
             try:
                 print('episode:{0}   loss:{1:.6f}'.format(self.total_episode,self.loss_list[-1]))
             except IndexError:
@@ -1639,12 +1628,24 @@ class kernel:
             else:
                 print('episode:{0}   reward:{1}'.format(self.total_episode,self.reward_list[-1]))
             print()
-            if self.muti_s!=None and self.muti_save!=None and self.episode_count%s==0:
+        if self.muti_s!=None:
+            muti_s=self.muti_s-1
+            if self.episode_count%10!=0:
+                s=self.episode_count-self.episode_count%muti_s
+                s=int(s/muti_s)
+                if s==0:
+                    s=1
+            else:
+                s=self.episode_count/(muti_s+1)
+                s=int(s)
+                if s==0:
+                    s=1
+            if self.muti_save!=None and self.episode_count%s==0:
                 if self.muti_save==1:
                     self.save(self.total_episode)
                 else:
                     self.save(self.total_episode,False)
-            self.episode_count+=1
+        self.episode_count+=1
         return
     
     
