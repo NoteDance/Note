@@ -1598,45 +1598,46 @@ class kernel:
     
     
     def print_save(self,avg_reward=None):
-        if self.muti_p!=None:
-            muti_p=self.muti_p-1
-            if self.episode_%10!=0:
-                p=self.episode_-self.episode_%muti_p
-                p=int(p/muti_p)
-                if p==0:
-                    p=1
-            else:
-                p=self.episode_/(muti_p+1)
-                p=int(p)
-                if p==0:
-                    p=1
-            try:
-                print('episode:{0}   loss:{1:.6f}'.format(self.total_episode,self.loss_list[-1]))
-            except IndexError:
-                pass
-            if avg_reward!=None:
-                print('episode:{0}   average reward:{1}'.format(self.total_episode,avg_reward))
-            else:
-                print('episode:{0}   reward:{1}'.format(self.total_episode,self.reward_list[-1]))
-            print()
-        if self.muti_s!=None:
-            muti_s=self.muti_s-1
-            if self.episode_%10!=0:
-                s=self.episode_-self.episode_%muti_s
-                s=int(s/muti_s)
-                if s==0:
-                    s=1
-            else:
-                s=self.episode_/(muti_s+1)
-                s=int(s)
-                if s==0:
-                    s=1
-            if self.muti_save!=None and self.episode_counter%s==0:
-                if self.muti_save==1:
-                    self.save(self.total_episode)
+        if self.episode_!=None:
+            if self.muti_p!=None:
+                muti_p=self.muti_p-1
+                if self.episode_%10!=0:
+                    p=self.episode_-self.episode_%muti_p
+                    p=int(p/muti_p)
+                    if p==0:
+                        p=1
                 else:
-                    self.save(self.total_episode,False)
-        self.episode_counter+=1
+                    p=self.episode_/(muti_p+1)
+                    p=int(p)
+                    if p==0:
+                        p=1
+                try:
+                    print('episode:{0}   loss:{1:.6f}'.format(self.total_episode,self.loss_list[-1]))
+                except IndexError:
+                    pass
+                if avg_reward!=None:
+                    print('episode:{0}   average reward:{1}'.format(self.total_episode,avg_reward))
+                else:
+                    print('episode:{0}   reward:{1}'.format(self.total_episode,self.reward_list[-1]))
+                print()
+            if self.muti_s!=None:
+                muti_s=self.muti_s-1
+                if self.episode_%10!=0:
+                    s=self.episode_-self.episode_%muti_s
+                    s=int(s/muti_s)
+                    if s==0:
+                        s=1
+                else:
+                    s=self.episode_/(muti_s+1)
+                    s=int(s)
+                    if s==0:
+                        s=1
+                if self.muti_save!=None and self.episode_counter%s==0:
+                    if self.muti_save==1:
+                        self.save(self.total_episode)
+                    else:
+                        self.save(self.total_episode,False)
+            self.episode_counter+=1
         return
     
     
