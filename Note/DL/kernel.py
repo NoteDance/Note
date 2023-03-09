@@ -64,7 +64,7 @@ class kernel:
         self.opt_counter=None
         self.gradient_list=[]
         self.exception_list=[]
-        self.muti_p=None
+        self.muti_p=7
         self.muti_s=None
         self.muti_save=1
         self.filename='save.dat'
@@ -1740,30 +1740,19 @@ class kernel:
     
     
     def print_save(self):
-        if self.muti_p!=None or self.muti_s!=None:
+        if self.muti_p!=None:
+            muti_p=self.muti_p-1
             if self.epoch%10!=0:
-                if self.muti_p!=None:
-                    p=self.epoch-self.epoch%self.muti_p
-                    p=int(p/self.muti_p)
-                    if p==0:
-                        p=1
-                if self.muti_s!=None:
-                    s=self.epoch-self.epoch%self.muti_s
-                    s=int(s/self.muti_s)
-                    if s==0:
-                        s=1
+                p=self.epoch-self.epoch%muti_p
+                p=int(p/muti_p)
+                if p==0:
+                    p=1
             else:
-                if self.muti_p!=None:
-                    p=self.epoch/(self.muti_p+1)
-                    p=int(p)
-                    if p==0:
-                        p=1
-                if self.muti_s!=None:
-                    s=self.epoch/(self.muti_s+1)
-                    s=int(s)
-                    if s==0:
-                        s=1
-            if self.muti_p!=None and self.epoch%p==0:
+                p=self.epoch/(muti_p+1)
+                p=int(p)
+                if p==0:
+                    p=1
+            if self.epoch%p==0:
                 if self.test_flag==False:
                     try:
                         if self.nn.accuracy!=None:
@@ -1788,12 +1777,24 @@ class kernel:
                     except AttributeError:   
                         print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch,self.train_loss,self.test_loss))
                         print()
-            if self.muti_s!=None and self.muti_save!=None and self.epoch%s==0:
+        if self.muti_s!=None:
+            muti_s=self.muti_s-1
+            if self.epoch%10!=0:
+                s=self.epoch-self.epoch%muti_s
+                s=int(s/muti_s)
+                if s==0:
+                    s=1
+            else:
+                s=self.epoch/(muti_s+1)
+                s=int(s)
+                if s==0:
+                    s=1
+            if self.muti_save!=None and self.epoch%s==0:
                 if self.muti_save==1:
                     self.save(self.total_epoch)
                 else:
                     self.save(self.total_epoch,False)
-            self.epoch+=1
+        self.epoch+=1
         return
     
     
