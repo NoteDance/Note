@@ -36,7 +36,8 @@ class kernel:
         self.episode_step=None
         self.pool_size=None
         self.batch=None
-        self.episode_count=0
+        self.episode_=None
+        self.episode_counter=0
         self.update_step=None
         self.trial_count=None
         self.running_list=[]
@@ -89,7 +90,7 @@ class kernel:
         self.save_episode=save_episode
         self.gradient_list=[]
         self.exception_list=[]
-        self.muti_p=None
+        self.muti_p=7
         self.muti_s=None
         self.muti_save=1
         self.filename='save.dat'
@@ -1599,13 +1600,13 @@ class kernel:
     def print_save(self,avg_reward=None):
         if self.muti_p!=None:
             muti_p=self.muti_p-1
-            if self.episode_count%10!=0:
-                p=self.episode_count-self.episode_count%muti_p
+            if self.episode_%10!=0:
+                p=self.episode_-self.episode_%muti_p
                 p=int(p/muti_p)
                 if p==0:
                     p=1
             else:
-                p=self.episode_count/(muti_p+1)
+                p=self.episode_/(muti_p+1)
                 p=int(p)
                 if p==0:
                     p=1
@@ -1620,22 +1621,22 @@ class kernel:
             print()
         if self.muti_s!=None:
             muti_s=self.muti_s-1
-            if self.episode_count%10!=0:
-                s=self.episode_count-self.episode_count%muti_s
+            if self.episode_%10!=0:
+                s=self.episode_-self.episode_%muti_s
                 s=int(s/muti_s)
                 if s==0:
                     s=1
             else:
-                s=self.episode_count/(muti_s+1)
+                s=self.episode_/(muti_s+1)
                 s=int(s)
                 if s==0:
                     s=1
-            if self.muti_save!=None and self.episode_count%s==0:
+            if self.muti_save!=None and self.episode_counter%s==0:
                 if self.muti_save==1:
                     self.save(self.total_episode)
                 else:
                     self.save(self.total_episode,False)
-        self.episode_count+=1
+        self.episode_counter+=1
         return
     
     
