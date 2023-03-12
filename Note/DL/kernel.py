@@ -82,14 +82,16 @@ class kernel:
         self.total_time=0
     
     
-    def data(self,train_data,train_labels,test_data=None,test_labels=None):
+    def data(self,train_data=None,train_labels=None,train_dataset=None,test_dataset=None,test_data=None,test_labels=None):
         self.train_data=train_data
         self.train_labels=train_labels
+        self.train_dataset=train_dataset
+        self.test_dataset=test_dataset
         if self.data_segment_flag==True:
             self.train_data,self.train_labels=self.segment_data()
-        if type(train_data)==list:
+        if train_data!=None and type(train_data)==list:
             self.data_batch=[x for x in range(len(train_data))]
-        if type(train_labels)==list:
+        if train_labels!=None and type(train_labels)==list:
             self.labels_batch=[x for x in range(len(train_labels))]
         self.test_data=test_data
         self.test_labels=test_labels
@@ -98,10 +100,11 @@ class kernel:
                 self.test_flag=True
         except ValueError:
             self.test_flag=True
-        if type(self.train_data)==list:
-            self.shape0=train_data[0].shape[0]
-        else:
-            self.shape0=train_data.shape[0]
+        if train_data!=None:
+            if type(self.train_data)==list:
+                self.shape0=train_data[0].shape[0]
+            else:
+                self.shape0=train_data.shape[0]
         if self.train_counter==0 and self.process_thread!=None:
             self.process_thread_num=np.arange(self.process_thread)
             self.process_thread_num=list(self.process_thread_num)
@@ -713,36 +716,47 @@ class kernel:
         if batch!=None:
             total_loss=0
             total_acc=0
-            batches=int((self.shape0-self.shape0%batch)/batch)
-            for j in range(batches):
-                if self.stop==True:
-                    if self.stop_func():
-                        return
-                self.suspend_func()
-                index1=j*batch
-                index2=(j+1)*batch
-                data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j)
-                output,batch_loss=self.opt(data_batch,labels_batch)
-                total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc)
-                try:
-                    self.nn.bc=j
-                except AttributeError:
-                    pass
-            if self.shape0%batch!=0:
-                if self.stop==True:
-                    if self.stop_func():
-                        return
-                self.suspend_func()
-                batches+=1
-                index1=batches*batch
-                index2=batch-(self.shape0-batches*batch)
-                data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,flag=True)
-                output,batch_loss=self.opt(data_batch,labels_batch)
-                total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc)
-                try:
-                    self.nn.bc+=1
-                except AttributeError:
-                    pass
+            if self.train_dataset!=None:
+                for data_batch,labels_batch in self.train_dataset:
+                    if self.stop==True:
+                        if self.stop_func():
+                            return
+                    self.suspend_func()
+                    output,batch_loss=self.opt(data_batch,labels_batch)
+                    total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc)
+            else:
+                total_loss=0
+                total_acc=0
+                batches=int((self.shape0-self.shape0%batch)/batch)
+                for j in range(batches):
+                    if self.stop==True:
+                        if self.stop_func():
+                            return
+                    self.suspend_func()
+                    index1=j*batch
+                    index2=(j+1)*batch
+                    data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j)
+                    output,batch_loss=self.opt(data_batch,labels_batch)
+                    total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc)
+                    try:
+                        self.nn.bc=j
+                    except AttributeError:
+                        pass
+                if self.shape0%batch!=0:
+                    if self.stop==True:
+                        if self.stop_func():
+                            return
+                    self.suspend_func()
+                    batches+=1
+                    index1=batches*batch
+                    index2=batch-(self.shape0-batches*batch)
+                    data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,flag=True)
+                    output,batch_loss=self.opt(data_batch,labels_batch)
+                    total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc)
+                    try:
+                        self.nn.bc+=1
+                    except AttributeError:
+                        pass
             try:
                 if self.platform.DType!=None:
                     loss=total_loss.numpy()/batches
@@ -951,11 +965,12 @@ class kernel:
             self.running_list.append(t)
             self.epoch_list.append(0)
             if self.epoch_!=None:
-                if t==0:
-                    if self.batches==None:
-                        self.batches=int((self.shape0-self.shape0%batch)/batch)
-                        if self.shape0%batch!=0:
-                            self.batches+=1
+                if self.train_dataset==None:
+                    if t==0:
+                        if self.batches==None:
+                            self.batches=int((self.shape0-self.shape0%batch)/batch)
+                            if self.shape0%batch!=0:
+                                self.batches+=1
             if self.PO==1 or self.PO==3:
                 self.lock[1].release()
             else:
@@ -982,12 +997,15 @@ class kernel:
         self.epoch=0
         self.train_counter+=1
         if self.epoch_!=None:
-            if self.data_segment_flag==True:
-                train_ds=self.platform.data.Dataset.from_tensor_slices((self.train_data[t],self.train_labels[t])).batch(batch)
-            elif self.buffer_size!=None:
-                train_ds=self.platform.data.Dataset.from_tensor_slices((self.train_data,self.train_labels)).shuffle(self.buffer_size).batch(batch)
+            if self.train_dataset!=None:
+                train_ds=self.train_dataset
             else:
-                train_ds=self.platform.data.Dataset.from_tensor_slices((self.train_data,self.train_labels)).batch(batch)
+                if self.data_segment_flag==True:
+                    train_ds=self.platform.data.Dataset.from_tensor_slices((self.train_data[t],self.train_labels[t])).batch(batch)
+                elif self.buffer_size!=None:
+                    train_ds=self.platform.data.Dataset.from_tensor_slices((self.train_data,self.train_labels)).shuffle(self.buffer_size).batch(batch)
+                else:
+                    train_ds=self.platform.data.Dataset.from_tensor_slices((self.train_data,self.train_labels)).batch(batch)
         if p==None:
             self.p=9
         else:
@@ -1471,82 +1489,99 @@ class kernel:
     
     
     def test(self,test_data,test_labels,batch=None,t=None):
-        if type(test_data)==list:
+        if test_data!=None and type(test_data)==list:
             data_batch=[x for x in range(len(test_data))]
-        if type(test_labels)==list:
+        if test_labels!=None and type(test_labels)==list:
             labels_batch=[x for x in range(len(test_labels))]
         if batch!=None:
             total_loss=0
             total_acc=0
-            if type(test_data)==list:
-                batches=int((test_data[0].shape[0]-test_data[0].shape[0]%batch)/batch)
-                shape0=test_data[0].shape[0]
+            if self.test_dataset!=None:
+                for data_batch,labels_batch in self.test_dataset:
+                    if self.process_thread==None or t==None:
+                        output=self.nn.fp(data_batch)
+                    else:
+                        output=self.nn.fp(data_batch,t)
+                    batch_loss=self.nn.loss(output,labels_batch)
+                    total_loss+=batch_loss
+                    try:
+                        if self.nn.accuracy!=None:
+                            batch_acc=self.nn.accuracy(output,labels_batch)
+                            total_acc+=batch_acc
+                    except AttributeError:
+                        pass
             else:
-                batches=int((test_data.shape[0]-test_data.shape[0]%batch)/batch)
-                shape0=test_data.shape[0]
-            for j in range(batches):
-                index1=j*batch
-                index2=(j+1)*batch
+                total_loss=0
+                total_acc=0
                 if type(test_data)==list:
-                    for i in range(len(test_data)):
-                        data_batch[i]=test_data[i][index1:index2]
+                    batches=int((test_data[0].shape[0]-test_data[0].shape[0]%batch)/batch)
+                    shape0=test_data[0].shape[0]
                 else:
-                    data_batch=test_data[index1:index2]
-                if type(test_labels)==list:
-                    for i in range(len(test_labels)):
-                        labels_batch[i]=test_labels[i][index1:index2]
-                else:
-                    labels_batch=test_labels[index1:index2]
-                if self.process_thread==None or t==None:
-                    output=self.nn.fp(data_batch)
-                else:
-                    output=self.nn.fp(data_batch,t)
-                batch_loss=self.nn.loss(output,labels_batch)
-                total_loss+=batch_loss
-                try:
-                    if self.nn.accuracy!=None:
-                        batch_acc=self.nn.accuracy(output,labels_batch)
-                        total_acc+=batch_acc
-                except AttributeError:
-                    pass
-            if shape0%batch!=0:
-                batches+=1
-                index1=batches*batch
-                index2=batch-(shape0-batches*batch)
-                try:
+                    batches=int((test_data.shape[0]-test_data.shape[0]%batch)/batch)
+                    shape0=test_data.shape[0]
+                for j in range(batches):
+                    index1=j*batch
+                    index2=(j+1)*batch
                     if type(test_data)==list:
                         for i in range(len(test_data)):
-                            data_batch[i]=self.platform.concat([test_data[i][index1:],test_data[i][:index2]],0)
+                            data_batch[i]=test_data[i][index1:index2]
                     else:
-                        data_batch=self.platform.concat([test_data[index1:],test_data[:index2]],0)
-                    if type(self.test_labels)==list:
+                        data_batch=test_data[index1:index2]
+                    if type(test_labels)==list:
                         for i in range(len(test_labels)):
-                            labels_batch[i]=self.platform.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
+                            labels_batch[i]=test_labels[i][index1:index2]
                     else:
-                        labels_batch=self.platform.concat([test_labels[index1:],test_labels[:index2]],0)
-                except:
-                    if type(test_data)==list:
-                        for i in range(len(test_data)):
-                            data_batch[i]=self.platform.concat([test_data[i][index1:],test_data[i][:index2]],0)
+                        labels_batch=test_labels[index1:index2]
+                    if self.process_thread==None or t==None:
+                        output=self.nn.fp(data_batch)
                     else:
-                        data_batch=self.platform.concat([test_data[index1:],test_data[:index2]],0)
-                    if type(self.test_labels)==list:
-                        for i in range(len(test_labels)):
-                            labels_batch[i]=self.platform.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
+                        output=self.nn.fp(data_batch,t)
+                    batch_loss=self.nn.loss(output,labels_batch)
+                    total_loss+=batch_loss
+                    try:
+                        if self.nn.accuracy!=None:
+                            batch_acc=self.nn.accuracy(output,labels_batch)
+                            total_acc+=batch_acc
+                    except AttributeError:
+                        pass
+                if shape0%batch!=0:
+                    batches+=1
+                    index1=batches*batch
+                    index2=batch-(shape0-batches*batch)
+                    try:
+                        if type(test_data)==list:
+                            for i in range(len(test_data)):
+                                data_batch[i]=self.platform.concat([test_data[i][index1:],test_data[i][:index2]],0)
+                        else:
+                            data_batch=self.platform.concat([test_data[index1:],test_data[:index2]],0)
+                        if type(self.test_labels)==list:
+                            for i in range(len(test_labels)):
+                                labels_batch[i]=self.platform.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
+                        else:
+                            labels_batch=self.platform.concat([test_labels[index1:],test_labels[:index2]],0)
+                    except:
+                        if type(test_data)==list:
+                            for i in range(len(test_data)):
+                                data_batch[i]=self.platform.concat([test_data[i][index1:],test_data[i][:index2]],0)
+                        else:
+                            data_batch=self.platform.concat([test_data[index1:],test_data[:index2]],0)
+                        if type(self.test_labels)==list:
+                            for i in range(len(test_labels)):
+                                labels_batch[i]=self.platform.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
+                        else:
+                            labels_batch=self.platform.concat([test_labels[index1:],test_labels[:index2]],0)
+                    if self.process_thread==None or t==None:
+                        output=self.nn.fp(data_batch)
                     else:
-                        labels_batch=self.platform.concat([test_labels[index1:],test_labels[:index2]],0)
-                if self.process_thread==None or t==None:
-                    output=self.nn.fp(data_batch)
-                else:
-                    output=self.nn.fp(data_batch,t)
-                batch_loss=self.nn.loss(output,labels_batch)
-                total_loss+=batch_loss
-                try:
-                    if self.nn.accuracy!=None:
-                        batch_acc=self.nn.accuracy(output,labels_batch)
-                        total_acc+=batch_acc
-                except AttributeError:
-                    pass
+                        output=self.nn.fp(data_batch,t)
+                    batch_loss=self.nn.loss(output,labels_batch)
+                    total_loss+=batch_loss
+                    try:
+                        if self.nn.accuracy!=None:
+                            batch_acc=self.nn.accuracy(output,labels_batch)
+                            total_acc+=batch_acc
+                    except AttributeError:
+                        pass
             test_loss=total_loss.numpy()/batches
             try:
                 if self.nn.accuracy!=None:
