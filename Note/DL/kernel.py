@@ -82,16 +82,16 @@ class kernel:
         self.total_time=0
     
     
-    def data(self,train_data=None,train_labels=None,train_dataset=None,test_dataset=None,test_data=None,test_labels=None):
+    def data(self,train_data=None,train_labels=None,test_data=None,test_labels=None,train_dataset=None,test_dataset=None):
         self.train_data=train_data
         self.train_labels=train_labels
         self.train_dataset=train_dataset
         self.test_dataset=test_dataset
         if self.data_segment_flag==True:
             self.train_data,self.train_labels=self.segment_data()
-        if train_data!=None and type(train_data)==list:
+        if type(train_data)==list:
             self.data_batch=[x for x in range(len(train_data))]
-        if train_labels!=None and type(train_labels)==list:
+        if type(train_labels)==list:
             self.labels_batch=[x for x in range(len(train_labels))]
         self.test_data=test_data
         self.test_labels=test_labels
@@ -100,7 +100,7 @@ class kernel:
                 self.test_flag=True
         except ValueError:
             self.test_flag=True
-        if train_data!=None:
+        if self.train_dataset==None:
             if type(self.train_data)==list:
                 self.shape0=train_data[0].shape[0]
             else:
@@ -1489,9 +1489,9 @@ class kernel:
     
     
     def test(self,test_data,test_labels,batch=None,t=None):
-        if test_data!=None and type(test_data)==list:
+        if type(test_data)==list:
             data_batch=[x for x in range(len(test_data))]
-        if test_labels!=None and type(test_labels)==list:
+        if type(test_labels)==list:
             labels_batch=[x for x in range(len(test_labels))]
         if batch!=None:
             total_loss=0
