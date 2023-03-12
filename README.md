@@ -75,6 +75,10 @@ kernel.save()              #save neural network
 ```
 
 **example(lstm):**
+
+**You can get neural network example in this link.**
+
+https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/lstm.py
 ```python
 import Note.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
@@ -86,7 +90,7 @@ train_dataset=train_dataset.batch(64).prefetch(tf.data.AUTOTUNE)
 VOCAB_SIZE=1000
 encoder=tf.keras.layers.TextVectorization(max_tokens=VOCAB_SIZE)
 encoder.adapt(train_dataset.map(lambda text,label:text))
-lstm=l.lstm()                                #create neural network object
+lstm=l.lstm(encoder)                                #create neural network object
 kernel=k.kernel(lstm)                 #start kernel
 kernel.platform=tf                       #use platform
 kernel.data(train_dataset=train_dataset)   #input you data
