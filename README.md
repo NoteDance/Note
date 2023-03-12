@@ -74,6 +74,28 @@ kernel.train(32,5,32)         #train neural network
 kernel.save()              #save neural network
 ```
 
+**example(lstm):**
+```python
+import Note.DL.kernel as k   #import kernel
+import tensorflow as tf              #import platform
+import tensorflow_datasets as tfds
+import lstm as l                          #import neural network
+dataset,info=tfds.load('imdb_reviews',with_info=True,as_supervised=True)
+train_dataset=dataset['train']
+train_dataset=train_dataset.batch(64).prefetch(tf.data.AUTOTUNE)
+VOCAB_SIZE=1000
+encoder=tf.keras.layers.TextVectorization(max_tokens=VOCAB_SIZE)
+encoder.adapt(train_dataset.map(lambda text,label:text))
+lstm=l.lstm()                                #create neural network object
+kernel=k.kernel(lstm)                 #start kernel
+kernel.platform=tf                       #use platform
+kernel.data(train_dataset=train_dataset)   #input you data
+kernel.train(64,10)         #train neural network
+                           #batch size:64
+                           #epoch:10
+kernel.save()              #save neural network
+```
+
 **example(Stop multithreading training and saving when condition is met.):**
 ```python
 import Note.DL.kernel as k   #import kernel
