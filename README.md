@@ -2,7 +2,7 @@
 
 
 # Introduction:
-Note is a system for deep learning and reinforcement learning.It makes it easy to create and train neural network.It can speed up the training of neural network by multithreading.
+Note is a system for deep learning and reinforcement learning.It makes it easy to create and train neural network.It can speed up the training of neural network by multithreading and multiprocessing.
 
 
 # Create neural network:
