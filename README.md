@@ -19,13 +19,13 @@ If you accomplish your neural network,you can use kernel to train,examples are s
 
 # Deep Learning:
 
+**You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
+
+https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn.py
+
 **example:**
 
 **tensorflow:**
-
-**You can get neural network example in this link.**
-
-https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn.py
 ```python
 import Note.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
@@ -74,11 +74,30 @@ kernel.train(32,5,32)         #train neural network
 kernel.save()              #save neural network
 ```
 
-**example(lstm):**
+**example(Stop training and saving when condition is met.):**
+```python
+import Note.DL.kernel as k   #import kernel
+import tensorflow as tf              #import platform
+import cnn as c                          #import neural network
+mnist=tf.keras.datasets.mnist
+(x_train,y_train),(x_test,y_test)=mnist.load_data()
+x_train,x_test =x_train/255.0,x_test/255.0
+cnn=c.cnn()                                #create neural network object
+kernel=k.kernel(cnn)                 #start kernel
+kernel.platform=tf                       #use platform
+kernel.stop=True
+kernel.end_loss=0.7
+kernel.data(x_train,y_train)   #input you data
+kernel.train(32,5)         #train neural network
+                           #batch size:32
+                           #epoch:5
+```
 
-**You can get neural network example in this link.**
+**You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
 https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/lstm.py
+
+**example(lstm):**
 ```python
 import Note.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
@@ -98,55 +117,6 @@ kernel.train(64,10)         #train neural network
                            #batch size:64
                            #epoch:10
 kernel.save()              #save neural network
-```
-
-**example(Stop multithreading training and saving when condition is met.):**
-```python
-import Note.DL.kernel as k   #import kernel
-import tensorflow as tf              #import platform
-import cnn as c                          #import neural network
-mnist=tf.keras.datasets.mnist
-(x_train,y_train),(x_test,y_test)=mnist.load_data()
-x_train,x_test =x_train/255.0,x_test/255.0
-cnn=c.cnn()                                #create neural network object
-kernel=k.kernel(cnn)                 #start kernel
-kernel.platform=tf                       #use platform
-kernel.stop=True
-kernel.end_loss=0.7
-kernel.data(x_train,y_train)   #input you data
-kernel.train(32,5)         #train neural network
-                           #batch size:32
-                           #epoch:5
-```
-
-**pytorch:**
-
-**You can get neural network example in this link.**
-
-https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/pytorch/nn.py
-```python
-import Note.DL.kernel as k   #import kernel
-import torch                         #import platform
-import nn as n                          #import neural network
-from torch.utils.data import DataLoader
-from torchvision import datasets
-from torchvision.transforms import ToTensor
-training_data=datasets.FashionMNIST(
-    root="data",
-    train=True,
-    download=True,
-    transform=ToTensor(),
-)
-train_dataloader=DataLoader(training_data,batch_size=60000)
-for train_data,train_labels in train_dataloader:
-    break
-nn=n.neuralnetwork()                                #create neural network object
-kernel=k.kernel(nn)                 #start kernel
-kernel.platform=torch                   #use platform
-kernel.data(train_data,train_labels)   #input you data
-kernel.train(64,5)         #train neural network
-                           #batch size:32
-                           #epoch:5
 ```
 
 ## Parallel optimization:
@@ -407,6 +377,36 @@ for _ in range(7):
 kernel.visualize_train()
 ```
 
+**You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
+
+https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/pytorch/nn.py
+
+**pytorch:**
+```python
+import Note.DL.kernel as k   #import kernel
+import torch                         #import platform
+import nn as n                          #import neural network
+from torch.utils.data import DataLoader
+from torchvision import datasets
+from torchvision.transforms import ToTensor
+training_data=datasets.FashionMNIST(
+    root="data",
+    train=True,
+    download=True,
+    transform=ToTensor(),
+)
+train_dataloader=DataLoader(training_data,batch_size=60000)
+for train_data,train_labels in train_dataloader:
+    break
+nn=n.neuralnetwork()                                #create neural network object
+kernel=k.kernel(nn)                 #start kernel
+kernel.platform=torch                   #use platform
+kernel.data(train_data,train_labels)   #input you data
+kernel.train(64,5)         #train neural network
+                           #batch size:32
+                           #epoch:5
+```
+
 ## Test neural network：
 You can test it before using the kernel training neural network.
 ```python
@@ -427,13 +427,11 @@ t.test(cnn,tf,x_train[:32],y_train[:32])
 
 **example:**
 
-**DQN:**
-
-**pytorch:**
-
-**You can get neural network example in this link.**
+**You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
 https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/RL/neural%20network/pytorch/DQN.py
+
+**pytorch:**
 ```python
 import Note.RL.nspn.kernel as k   #import kernel
 import torch
@@ -449,11 +447,12 @@ kernel.visualize_train()
 kernel.reward                         #view reward
 kernel.visualize_reward()
 ```
-**tensorflow:**
 
-**You can get neural network example in this link.**
+**You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
 https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow/DQN.py
+
+**tensorflow:**
 ```python
 import Note.RL.nspn.kernel as k   #import kernel
 import tensorflow as tf
@@ -470,7 +469,7 @@ kernel.reward                         #view reward
 kernel.visualize_reward()
 ```
 
-**example(Stop multithreading training and saving when condition is met.):**
+**example(Stop training and saving when condition is met.):**
 ```python
 import Note.RL.kernel as k   #import kernel
 import DQN as d
@@ -486,11 +485,11 @@ kernel.reward                         #view reward
 kernel.visualize_reward()
 ```
 
-**DDPG:**
-
-**You can get neural network example in this link.**
+**You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
 https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow/DDPG.py
+
+**example:**
 ```python
 import Note.RL.nspn.kernel as k   #import kernel
 import tensorflow as tf
@@ -512,7 +511,7 @@ kernel.visualize_reward()
 **Pool net use multithreading parallel and random add episode in pool,which would make data being uncorrelated in pool,
 then pools would be used parallel training agent.**
 
-**You can get neural network example in this link.**
+**You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
 https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow/pool%20net/DQN.py
 
