@@ -380,7 +380,7 @@ class kernel:
         return
     
     
-    @function
+    @function(jit_compile=True)
     def tf_opt(self,data,labels):
         try:
             if self.nn.GradientTape!=None:
@@ -403,7 +403,7 @@ class kernel:
         return output,loss
     
     
-    @function
+    @function(jit_compile=True)
     def tf_opt_t(self,data,labels,t,ln=None):
         try:
             if self.nn.GradientTape!=None:
