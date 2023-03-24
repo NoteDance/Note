@@ -284,7 +284,7 @@ class kernel:
             return True
     
     
-    @function
+    @function(jit_compile=True)
     def tf_opt(self,state_batch,action_batch,next_state_batch,reward_batch,done_batch):
         with self.platform.GradientTape(persistent=True) as tape:
             loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
