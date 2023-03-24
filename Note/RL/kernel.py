@@ -626,7 +626,7 @@ class kernel:
             return True
     
     
-    @tf.function
+    @tf.function(jit_compile=True)
     def opt(self,state_batch,action_batch,next_state_batch,reward_batch,done_batch,t,ln=None):
         with tf.GradientTape(persistent=True) as tape:
             try:
@@ -808,7 +808,7 @@ class kernel:
         return loss
     
     
-    @tf.function
+    @tf.function(jit_compile=True)
     def opt_ol(self,data,t=None,ln=None):
         with tf.GradientTape(persistent=True) as tape:
             try:
