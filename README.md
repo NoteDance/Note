@@ -23,7 +23,7 @@ If you accomplish your neural network,you can use kernel to train,examples are s
 
 https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn.py
 
-**tensorflow:**
+## Tensorflow platform:
 
 **example:**
 ```python
@@ -119,7 +119,7 @@ kernel.train(64,10)         #train neural network
 kernel.save()              #save neural network
 ```
 
-## Parallel optimization:
+### Parallel optimization:
 **You can use parallel optimization to speed up neural network training,parallel optimization speed up training by multiprocessing or multithreading.**
 
 **Note have three types of parallel optimization:**
@@ -154,7 +154,7 @@ kernel.save()              #save neural network
 
 **CPU:i5-8400**
 
-### Multithreading:
+#### Multithreading:
 **Note can speed up training by multithreading and has stop mechanism and gradient attenuation to resolve unstable training.**
 
 **Note uses multithreading parallel forward propagation and optimizes neural network.**
@@ -326,7 +326,7 @@ kernel.train_loss_list or kernel.train_loss       #view training loss
 kernel.visualize_train()
 ```
 
-### Multiprocessing:
+#### Multiprocessing:
 **multiprocessing example:**
 ```python
 import Note.DL.kernel as k   #import kernel
@@ -381,7 +381,7 @@ kernel.visualize_train()
 
 https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/pytorch/nn.py
 
-**pytorch:**
+## Pytorch platform:
 
 **example:**
 ```python
@@ -431,7 +431,7 @@ t.test(cnn,tf,x_train[:32],y_train[:32])
 
 https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/RL/neural%20network/pytorch/DQN.py
 
-**pytorch:**
+## Pytorch platform:
 
 **example:**
 ```python
@@ -454,7 +454,7 @@ kernel.visualize_reward()
 
 https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow/DQN.py
 
-**tensorflow:**
+## Tensorflow platform:
 
 **example:**
 ```python
