@@ -2,7 +2,7 @@
 
 
 # Introduction:
-Note is a system for deep learning and reinforcement learning.It makes it easy to create and train neural network.It can speed up the training of neural network by multithreading and multiprocessing.
+Note is a system for deep learning and reinforcement learning.It makes it easy to create and train neural network.Note supports TensorFlow and PyTorch platform.It can speed up the training of neural network by multithreading and multiprocessing.
 
 
 # Create neural network:
@@ -10,9 +10,9 @@ You can refer to the neural network examples in the documentation to create your
 
 neural network example:
 
-https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/DL/neural%20network
+DL:https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/DL/neural%20network
 
-https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/RL/neural%20network
+RL:https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/RL/neural%20network
 
 If you accomplish your neural network,you can use kernel to train,examples are shown below.
 
@@ -23,9 +23,9 @@ If you accomplish your neural network,you can use kernel to train,examples are s
 
 https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn.py
 
-**example:**
-
 **tensorflow:**
+
+**example:**
 ```python
 import Note.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
@@ -382,6 +382,8 @@ kernel.visualize_train()
 https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/pytorch/nn.py
 
 **pytorch:**
+
+**example:**
 ```python
 import Note.DL.kernel as k   #import kernel
 import torch                         #import platform
@@ -425,13 +427,13 @@ t.test(cnn,tf,x_train[:32],y_train[:32])
 
 **The version of gym used in the example is less than 0.26.0.**
 
-**example:**
-
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
 https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/RL/neural%20network/pytorch/DQN.py
 
 **pytorch:**
+
+**example:**
 ```python
 import Note.RL.nspn.kernel as k   #import kernel
 import torch
@@ -453,6 +455,8 @@ kernel.visualize_reward()
 https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow/DQN.py
 
 **tensorflow:**
+
+**example:**
 ```python
 import Note.RL.nspn.kernel as k   #import kernel
 import tensorflow as tf
