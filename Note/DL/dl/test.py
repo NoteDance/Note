@@ -1,3 +1,4 @@
+import tensorflow as tf
 import numpy as np
 
 
@@ -124,3 +125,87 @@ def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
             return test_loss,test_acc
     except AttributeError:
         return test_loss
+
+
+class test_pt:
+    def __init__(self,nn,test_data=None,test_labels=None,process_thread=None,batch=None):
+        self.nn=nn
+        self.test_data=test_data
+        self.test_labels=test_labels
+        self.process_thread=process_thread
+        self.batch=batch
+        self.loss=np.zeros([process_thread],dtype=np.float32)
+        try:
+            if self.nn.accuracy!=None:
+                self.acc=np.zeros([process_thread],dtype=np.float32)
+        except AttributeError:
+                pass
+        self.process_thread_num=np.arange(process_thread)
+        self.process_thread_num=list(self.process_thread_num)
+    
+    
+    def segment_data(self):
+        if len(self.test_data)!=self.process_thread:
+            data=None
+            labels=None
+            segments=int((len(self.test_data)-len(self.test_data)%self.process_thread)/self.process_thread)
+            for i in range(self.process_thread):
+                index1=i*segments
+                index2=(i+1)*segments
+                if i==0:
+                    data=np.expand_dims(self.test_data[index1:index2],axis=0)
+                    labels=np.expand_dims(self.test_labels[index1:index2],axis=0)
+                else:
+                    data=np.concatenate((data,np.expand_dims(self.test_data[index1:index2],axis=0)))
+                    labels=np.concatenate((labels,np.expand_dims(self.test_labels[index1:index2],axis=0)))
+            if len(data)%self.process_thread!=0:
+                segments+=1
+                index1=segments*self.process_thread
+                index2=self.process_thread-(len(self.train_data)-segments*self.process_thread)
+                data=np.concatenate((data,np.expand_dims(self.test_data[index1:index2],axis=0)))
+                labels=np.concatenate((labels,np.expand_dims(self.test_labels[index1:index2],axis=0)))
+            self.test_data=data
+            self.test_labels=labels
+        return
+    
+    
+    def test(self):
+        t=self.process_thread_num.pop(0)
+        train_ds=tf.data.Dataset.from_tensor_slices((self.test_data[t],self.test_labels[t])).batch(self.batch)
+        for data_batch,labels_batch in train_ds:
+            try:
+                try:
+                    output=self.nn.fp(data_batch)
+                    batch_loss=self.nn.loss(output,labels_batch)
+                except TypeError:
+                    output,batch_loss=self.nn.fp(data_batch,labels_batch)
+            except TypeError:
+                try:
+                    output=self.nn.fp(data_batch,t)
+                    batch_loss=self.nn.loss(output,labels_batch)
+                except TypeError:
+                    output,batch_loss=self.nn.fp(data_batch,labels_batch,t) 
+            try:
+                if self.nn.accuracy!=None:
+                    batch_acc=self.nn.accuracy(output,labels_batch)
+            except AttributeError:
+                pass
+            try:
+                if self.nn.accuracy!=None:
+                    self.loss[t]+=batch_loss
+                    self.acc[t]+=batch_acc
+            except AttributeError:
+                self.loss[t]+=batch_loss
+        return
+    
+    
+    def loss_acc(self):
+        shape=len(self.test_data[0])
+        batches=int((shape-shape%self.batch)/self.batch)
+        if shape%self.batch!=0:
+            batches+=1
+        try:
+            if self.nn.accuracy!=None:
+                return np.mean(self.loss/batches),np.mean(self.acc/batches)
+        except AttributeError:
+            return np.mean(self.loss/batches)
