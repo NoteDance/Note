@@ -10,7 +10,7 @@ To use Note you need to download it and then unzip it to site-packages folder.
 
 
 # Create neural network:
-You need to create your neural network according to some rules, otherwise you might get AttributeError or other exceptions.You can refer to the neural network examples in the documentation to create your neural network.
+You need to create your neural network according to some rules, otherwise you might get AttributeError or other exceptions when you train with kernel.You can refer to the neural network examples in the documentation to create your neural network.
 
 neural network example:
 
