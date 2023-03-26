@@ -6,7 +6,7 @@ Note is a system for deep learning and reinforcement learning.It makes it easy t
 
 
 # Installation:
-To use Note you need to download it and then unzip it to site-packages.
+To use Note you need to download it and then unzip it to site-packages folder.
 
 
 # Create neural network:
