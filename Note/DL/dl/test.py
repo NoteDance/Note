@@ -203,7 +203,10 @@ class parallel_test:
     
     
     def loss_acc(self):
-        shape=len(self.test_data[0])
+        if type(self.test_data)==list:
+            shape=len(self.test_data[0])*self.batch
+        else:
+            shape=len(self.test_data[0])
         batches=int((shape-shape%self.batch)/self.batch)
         if shape%self.batch!=0:
             batches+=1
