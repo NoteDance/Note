@@ -89,7 +89,7 @@ x_train,x_test =x_train/255.0,x_test/255.0
 cnn=c.cnn()                                #create neural network object
 kernel=k.kernel(cnn)                 #start kernel
 kernel.multiprocessing_threading=threading
-kernel.process_thread_t=6
+kernel.process_thread_t=6                #test thread count
 kernel.platform=tf                       #use platform
 kernel.data(x_train,y_train,x_test,y_test)   #input you data
 kernel.train(32,5,32)         #train neural network
@@ -291,6 +291,8 @@ for _ in range(7):
 	_thread.join()
 kernel.visualize_train()
 ```
+
+**multithreading example(segment data):**
 ```python
 import Note.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
@@ -312,6 +314,36 @@ kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
 class thread(threading.Thread):
 	def run(self):
 		kernel.train(32) #batch size:32
+for _ in range(7):
+	_thread=thread()
+	_thread.start()
+for _ in range(7):
+	_thread.join()
+kernel.visualize_train()
+```
+
+**multithreading example(parallel test):**
+```python
+import Note.DL.kernel as k   #import kernel
+import tensorflow as tf              #import platform
+import cnn as c                          #import neural network
+import threading
+mnist=tf.keras.datasets.mnist
+(x_train,y_train),(x_test,y_test)=mnist.load_data()
+x_train,x_test =x_train/255.0,x_test/255.0
+cnn=c.cnn()                                #create neural network object
+kernel=k.kernel(cnn)   #start kernel
+kernel.platform=tf                            #use platform
+kernel.multiprocessing_threading=threading
+kernel.process_thread=7                        #thread count
+kernel.process_thread_t=6                      #test thread count
+kernel.epoch_=6                #epoch:6
+kernel.PO=2
+kernel.data(x_train,y_train,x_test,y_test)   #input you data
+kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
+class thread(threading.Thread):
+	def run(self):
+		kernel.train(32,test_batch=32) #batch size:32
 for _ in range(7):
 	_thread=thread()
 	_thread.start()
