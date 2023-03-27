@@ -1515,7 +1515,8 @@ class kernel:
             labels_batch=[x for x in range(len(test_labels))]
         if self.process_thread_t!=None:
             parallel_test=test_.parallel_test(self.nn,self.test_data,self.test_labels,self.process_thread_t,batch)
-            parallel_test.segment_data()
+            if type(self.test_data)!=list:
+                parallel_test.segment_data()
             class thread(self.multiprocessing_threading.Thread):     
                 def run(self):
                     parallel_test.test()
