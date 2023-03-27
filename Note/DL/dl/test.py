@@ -127,7 +127,7 @@ def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
         return test_loss
 
 
-class test_pt:
+class parallel_test:
     def __init__(self,nn,test_data=None,test_labels=None,process_thread=None,batch=None):
         self.nn=nn
         self.test_data=test_data
@@ -171,7 +171,10 @@ class test_pt:
     
     def test(self):
         t=self.process_thread_num.pop(0)
-        train_ds=tf.data.Dataset.from_tensor_slices((self.test_data[t],self.test_labels[t])).batch(self.batch)
+        if type(self.test_data)==list:
+            train_ds=self.test_data[t]
+        else:
+            train_ds=tf.data.Dataset.from_tensor_slices((self.test_data[t],self.test_labels[t])).batch(self.batch)
         for data_batch,labels_batch in train_ds:
             try:
                 try:
