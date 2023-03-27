@@ -1,6 +1,7 @@
 from tensorflow import function
 import numpy as np
 import matplotlib.pyplot as plt
+import Note.DL.dl.test as test_
 from sys import getsizeof
 import pickle
 import os
@@ -23,6 +24,7 @@ class kernel:
         self.rank=None
         self.d_index=0
         self.process_thread=None
+        self.process_thread_t=None
         self.multiprocessing_threading=None
         self.process_thread_counter=0
         self.train_ds=None
@@ -314,7 +316,10 @@ class kernel:
             except AttributeError:
                 pass
             if self.test_flag==True:
-                self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
+                if self.process_thread_t==None:
+                    self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
+                else:
+                    self.test_loss,self.test_acc=self.test(test_batch)
                 self.test_loss_list.append(self.test_loss)
                 try:
                     if self.nn.accuracy!=None:
@@ -776,7 +781,10 @@ class kernel:
             except AttributeError:
                 pass
             if self.test_flag==True:
-                self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
+                if self.process_thread_t==None:
+                    self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
+                else:
+                    self.test_loss,self.test_acc=self.test(batch=test_batch)
                 self.test_loss_list.append(self.test_loss)
                 try:
                     if self.nn.accuracy!=None:
@@ -835,7 +843,10 @@ class kernel:
                 except AttributeError:
                     pass
                 if self.test_flag==True:
-                    self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
+                    if self.process_thread_t==None:
+                        self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch,t)
+                    else:
+                        self.test_loss,self.test_acc=self.test(batch=test_batch)
                     self.test_loss_list.append(self.test_loss)
                     try:
                         if self.nn.accuracy!=None:
@@ -860,7 +871,10 @@ class kernel:
                 except AttributeError:
                     pass
                 if self.test_flag==True:
-                    self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
+                    if self.process_thread_t==None:
+                        self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch,t)
+                    else:
+                        self.test_loss,self.test_acc=self.test(batch=test_batch)
                     self.test_loss_list.append(self.test_loss)
                     try:
                         if self.nn.accuracy!=None:
@@ -929,7 +943,10 @@ class kernel:
             except AttributeError:
                 pass
             if self.test_flag==True:
-                self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
+                if self.process_thread_t==None:
+                    self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch,t)
+                else:
+                    self.test_loss,self.test_acc=self.test(batch=test_batch)
                 self.test_loss_list.append(self.test_loss)
             try:
                 if self.nn.accuracy!=None:
@@ -1067,7 +1084,10 @@ class kernel:
                         except AttributeError:
                             pass
                         if self.test_flag==True:
-                            self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
+                            if self.process_thread_t==None:
+                                self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch,t)
+                            else:
+                                self.test_loss,self.test_acc=self.test(batch=test_batch)
                             self.test_loss_list.append(self.test_loss)
                         try:
                             if self.nn.accuracy!=None:
@@ -1488,119 +1508,136 @@ class kernel:
         return
     
     
-    def test(self,test_data,test_labels,batch=None,t=None):
+    def test(self,test_data=None,test_labels=None,batch=None,t=None):
         if type(test_data)==list:
             data_batch=[x for x in range(len(test_data))]
         if type(test_labels)==list:
             labels_batch=[x for x in range(len(test_labels))]
-        if batch!=None:
-            total_loss=0
-            total_acc=0
-            if self.test_dataset!=None:
-                for data_batch,labels_batch in self.test_dataset:
-                    if self.process_thread==None or t==None:
-                        output=self.nn.fp(data_batch)
-                    else:
-                        output=self.nn.fp(data_batch,t)
-                    batch_loss=self.nn.loss(output,labels_batch)
-                    total_loss+=batch_loss
-                    try:
-                        if self.nn.accuracy!=None:
-                            batch_acc=self.nn.accuracy(output,labels_batch)
-                            total_acc+=batch_acc
-                    except AttributeError:
-                        pass
-            else:
+        if self.process_thread_t!=None:
+            parallel_test=test_.parallel_test(self.nn,self.test_data,self.test_labels,self.process_thread_t,batch)
+            parallel_test.segment_data()
+            class thread(self.multiprocessing_threading.Thread):     
+                def run(self):
+                    parallel_test.test()
+            for _ in range(self.process_thread_t):
+                _thread=thread()
+                _thread.start()
+            for _ in range(self.process_thread_t):
+                _thread.join()
+            try:
+                if self.nn.accuracy!=None:
+                    test_loss,test_acc=parallel_test.loss_acc()
+            except AttributeError:
+                test_loss=parallel_test.loss_acc()
+        else:
+            if batch!=None:
                 total_loss=0
                 total_acc=0
-                if type(test_data)==list:
-                    batches=int((test_data[0].shape[0]-test_data[0].shape[0]%batch)/batch)
-                    shape0=test_data[0].shape[0]
+                if self.test_dataset!=None:
+                    for data_batch,labels_batch in self.test_dataset:
+                        if self.process_thread==None or t==None:
+                            output=self.nn.fp(data_batch)
+                        else:
+                            output=self.nn.fp(data_batch,t)
+                        batch_loss=self.nn.loss(output,labels_batch)
+                        total_loss+=batch_loss
+                        try:
+                            if self.nn.accuracy!=None:
+                                batch_acc=self.nn.accuracy(output,labels_batch)
+                                total_acc+=batch_acc
+                        except AttributeError:
+                            pass
                 else:
-                    batches=int((test_data.shape[0]-test_data.shape[0]%batch)/batch)
-                    shape0=test_data.shape[0]
-                for j in range(batches):
-                    index1=j*batch
-                    index2=(j+1)*batch
+                    total_loss=0
+                    total_acc=0
                     if type(test_data)==list:
-                        for i in range(len(test_data)):
-                            data_batch[i]=test_data[i][index1:index2]
+                        batches=int((test_data[0].shape[0]-test_data[0].shape[0]%batch)/batch)
+                        shape0=test_data[0].shape[0]
                     else:
-                        data_batch=test_data[index1:index2]
-                    if type(test_labels)==list:
-                        for i in range(len(test_labels)):
-                            labels_batch[i]=test_labels[i][index1:index2]
-                    else:
-                        labels_batch=test_labels[index1:index2]
-                    if self.process_thread==None or t==None:
-                        output=self.nn.fp(data_batch)
-                    else:
-                        output=self.nn.fp(data_batch,t)
-                    batch_loss=self.nn.loss(output,labels_batch)
-                    total_loss+=batch_loss
-                    try:
-                        if self.nn.accuracy!=None:
-                            batch_acc=self.nn.accuracy(output,labels_batch)
-                            total_acc+=batch_acc
-                    except AttributeError:
-                        pass
-                if shape0%batch!=0:
-                    batches+=1
-                    index1=batches*batch
-                    index2=batch-(shape0-batches*batch)
-                    try:
+                        batches=int((test_data.shape[0]-test_data.shape[0]%batch)/batch)
+                        shape0=test_data.shape[0]
+                    for j in range(batches):
+                        index1=j*batch
+                        index2=(j+1)*batch
                         if type(test_data)==list:
                             for i in range(len(test_data)):
-                                data_batch[i]=self.platform.concat([test_data[i][index1:],test_data[i][:index2]],0)
+                                data_batch[i]=test_data[i][index1:index2]
                         else:
-                            data_batch=self.platform.concat([test_data[index1:],test_data[:index2]],0)
-                        if type(self.test_labels)==list:
+                            data_batch=test_data[index1:index2]
+                        if type(test_labels)==list:
                             for i in range(len(test_labels)):
-                                labels_batch[i]=self.platform.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
+                                labels_batch[i]=test_labels[i][index1:index2]
                         else:
-                            labels_batch=self.platform.concat([test_labels[index1:],test_labels[:index2]],0)
-                    except:
-                        if type(test_data)==list:
-                            for i in range(len(test_data)):
-                                data_batch[i]=self.platform.concat([test_data[i][index1:],test_data[i][:index2]],0)
+                            labels_batch=test_labels[index1:index2]
+                        if self.process_thread==None or t==None:
+                            output=self.nn.fp(data_batch)
                         else:
-                            data_batch=self.platform.concat([test_data[index1:],test_data[:index2]],0)
-                        if type(self.test_labels)==list:
-                            for i in range(len(test_labels)):
-                                labels_batch[i]=self.platform.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
+                            output=self.nn.fp(data_batch,t)
+                        batch_loss=self.nn.loss(output,labels_batch)
+                        total_loss+=batch_loss
+                        try:
+                            if self.nn.accuracy!=None:
+                                batch_acc=self.nn.accuracy(output,labels_batch)
+                                total_acc+=batch_acc
+                        except AttributeError:
+                            pass
+                    if shape0%batch!=0:
+                        batches+=1
+                        index1=batches*batch
+                        index2=batch-(shape0-batches*batch)
+                        try:
+                            if type(test_data)==list:
+                                for i in range(len(test_data)):
+                                    data_batch[i]=self.platform.concat([test_data[i][index1:],test_data[i][:index2]],0)
+                            else:
+                                data_batch=self.platform.concat([test_data[index1:],test_data[:index2]],0)
+                            if type(self.test_labels)==list:
+                                for i in range(len(test_labels)):
+                                    labels_batch[i]=self.platform.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
+                            else:
+                                labels_batch=self.platform.concat([test_labels[index1:],test_labels[:index2]],0)
+                        except:
+                            if type(test_data)==list:
+                                for i in range(len(test_data)):
+                                    data_batch[i]=self.platform.concat([test_data[i][index1:],test_data[i][:index2]],0)
+                            else:
+                                data_batch=self.platform.concat([test_data[index1:],test_data[:index2]],0)
+                            if type(self.test_labels)==list:
+                                for i in range(len(test_labels)):
+                                    labels_batch[i]=self.platform.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
+                            else:
+                                labels_batch=self.platform.concat([test_labels[index1:],test_labels[:index2]],0)
+                        if self.process_thread==None or t==None:
+                            output=self.nn.fp(data_batch)
                         else:
-                            labels_batch=self.platform.concat([test_labels[index1:],test_labels[:index2]],0)
-                    if self.process_thread==None or t==None:
-                        output=self.nn.fp(data_batch)
-                    else:
-                        output=self.nn.fp(data_batch,t)
-                    batch_loss=self.nn.loss(output,labels_batch)
-                    total_loss+=batch_loss
-                    try:
-                        if self.nn.accuracy!=None:
-                            batch_acc=self.nn.accuracy(output,labels_batch)
-                            total_acc+=batch_acc
-                    except AttributeError:
-                        pass
-            test_loss=total_loss.numpy()/batches
-            try:
-                if self.nn.accuracy!=None:
-                    test_acc=total_acc.numpy()/batches
-            except AttributeError:
-                pass
-        else:
-            if self.process_thread==None or t==None:
-                output=self.nn.fp(test_data)
+                            output=self.nn.fp(data_batch,t)
+                        batch_loss=self.nn.loss(output,labels_batch)
+                        total_loss+=batch_loss
+                        try:
+                            if self.nn.accuracy!=None:
+                                batch_acc=self.nn.accuracy(output,labels_batch)
+                                total_acc+=batch_acc
+                        except AttributeError:
+                            pass
+                test_loss=total_loss.numpy()/batches
+                try:
+                    if self.nn.accuracy!=None:
+                        test_acc=total_acc.numpy()/batches
+                except AttributeError:
+                    pass
             else:
-                output=self.nn.fp(test_data,t)
-            test_loss=self.nn.loss(output,test_labels)
-            test_loss=test_loss.numpy()
-            try:
-                if self.nn.accuracy!=None:
-                    test_acc=self.nn.accuracy(output,test_labels)
-                    test_acc=test_acc.numpy()
-            except AttributeError:
-                pass
+                if self.process_thread==None or t==None:
+                    output=self.nn.fp(test_data)
+                else:
+                    output=self.nn.fp(test_data,t)
+                test_loss=self.nn.loss(output,test_labels)
+                test_loss=test_loss.numpy()
+                try:
+                    if self.nn.accuracy!=None:
+                        test_acc=self.nn.accuracy(output,test_labels)
+                        test_acc=test_acc.numpy()
+                except AttributeError:
+                    pass
         try:
             if self.nn.accuracy!=None:
                 return test_loss,test_acc
