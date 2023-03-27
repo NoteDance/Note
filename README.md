@@ -77,6 +77,27 @@ kernel.train(32,5,32)         #train neural network
                            #epoch:5
 kernel.save()              #save neural network
 ```
+parallel test:
+```python
+import Note.DL.kernel as k   #import kernel
+import tensorflow as tf              #import platform
+import cnn_acc as c                          #import neural network
+import threading
+mnist=tf.keras.datasets.mnist
+(x_train,y_train),(x_test,y_test)=mnist.load_data()
+x_train,x_test =x_train/255.0,x_test/255.0
+cnn=c.cnn()                                #create neural network object
+kernel=k.kernel(cnn)                 #start kernel
+kernel.multiprocessing_threading=threading
+kernel.process_thread_t=6
+kernel.platform=tf                       #use platform
+kernel.data(x_train,y_train,x_test,y_test)   #input you data
+kernel.train(32,5,32)         #train neural network
+                           #batch size:32
+			   #test batch size:32
+                           #epoch:5
+kernel.save()              #save neural network
+```
 
 **example(Stop training and saving when condition is met.):**
 ```python
@@ -615,7 +636,7 @@ t.test(dqn,tf,2)
 ```
 
 
-# Parallel testing:
+# Parallel test:
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
 https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn_acc.py
