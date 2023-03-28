@@ -543,19 +543,24 @@ class kernel:
         return output,loss
     
     
+    def pytorch_opt(self,data,labels):
+        output=self.nn.fp(data)
+        loss=self.nn.loss(output,labels)
+        try:
+            self.nn.opt.zero_grad()
+            loss.backward()
+            self.nn.opt.step()
+        except:
+            self.nn.opt(loss)
+        return output,loss
+    
+    
     def opt(self,data,labels):
         try:
             if self.platform.DType!=None:
                 output,loss=self.tf_opt(data,labels)
         except AttributeError:
-            output=self.nn.fp(data)
-            loss=self.nn.loss(output,labels)
-            try:
-                self.nn.opt.zero_grad()
-                loss.backward()
-                self.nn.opt.step()
-            except:
-                self.nn.opt(loss)
+            output,loss=self.pytorch_opt(data,labels)
         return output,loss
     
     
