@@ -307,14 +307,19 @@ class kernel:
         return loss
     
     
+    def pytorch_opt(self,state_batch,action_batch,next_state_batch,reward_batch,done_batch):
+        loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
+        self.nn.backward(loss)
+        self.nn.opt()
+        return loss
+    
+    
     def opt(self,state_batch,action_batch,next_state_batch,reward_batch,done_batch):
         try:
             if self.platform.DType!=None: 
                 loss=self.tf_opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
         except AttributeError:
-            loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
-            self.nn.backward(loss)
-            self.nn.opt()
+            loss=self.pytorch_opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
         return loss
     
     
