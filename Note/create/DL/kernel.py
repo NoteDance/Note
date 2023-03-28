@@ -545,7 +545,7 @@ class kernel:
                 except AttributeError:
                     pass
                 if self.test_flag==True:
-                    self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
+                    self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch,t)
                     self.test_loss_list.append(self.test_loss)
                     try:
                         if self.nn.accuracy!=None:
@@ -568,7 +568,7 @@ class kernel:
                 except AttributeError:
                     pass
                 if self.test_flag==True:
-                    self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
+                    self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch,t)
                     self.test_loss_list.append(self.test_loss)
                     try:
                         if self.nn.accuracy!=None:
@@ -635,7 +635,7 @@ class kernel:
             except AttributeError:
                 pass
             if self.test_flag==True:
-                self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
+                self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch,t)
                 self.test_loss_list.append(self.test_loss)
             try:
                 if self.nn.accuracy!=None:
