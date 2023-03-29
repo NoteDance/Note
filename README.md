@@ -14,7 +14,7 @@ You need to create your neural network according to some rules, otherwise you ma
 
 neural network example:
 
-You can refer to cnn,cnn_acc,nn,nn_ in the documentation.
+You can refer to cnn, cnn_acc, nn, nn_ in the documentation.
 
 DL:https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/DL/neural%20network
 
