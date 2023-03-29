@@ -16,9 +16,9 @@ neural network example:
 
 You can refer to cnn, cnn_acc, nn, nn_ in the documentation.
 
-DL:https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/DL/neural%20network
+**DL:** https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/DL/neural%20network
 
-RL:https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/RL/neural%20network
+**RL:** https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/RL/neural%20network
 
 If you accomplish your neural network,you can use kernel to train,examples are shown below.
 
