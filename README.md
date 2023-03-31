@@ -159,14 +159,6 @@ kernel.save()              #save neural network
 
 **parallel optimization may cause unstable training(the estimate of the gradient is biased) but it can speed up training and make the loss function jump out of the local minimum.**
 
-**Gradient Attenuation：**
-
-**Calculate the attenuation coefficient based on the optimization counter using the attenuation function.**
-
-**example:https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn_a.py**
-
-**picture:https://github.com/NoteDancing/Note-documentation/tree/main/picture/gradient%20attenuation**
-
 **Use second parallel optimization to train on MNIST,speed was increased by more than 2 times!Not use parallel optimization to train spending 15s,use parallel optimization to train spending 6.8s.**
 
 **Tensorflow version:2.9.1**
@@ -435,6 +427,14 @@ for _ in range(7):
 	p.join()
 kernel.visualize_train()
 ```
+
+**Gradient Attenuation：**
+
+**Calculate the attenuation coefficient based on the optimization counter using the attenuation function.**
+
+**example:https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn_a.py**
+
+**picture:https://github.com/NoteDancing/Note-documentation/tree/main/picture/gradient%20attenuation**
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
