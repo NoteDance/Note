@@ -670,6 +670,24 @@ t.test(dqn,tf,2)
 ```
 
 
+# Online training:
+**You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
+
+https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn_ol.py
+```python
+import Note.DL.kernel as k   #import kernel #import platform
+import cnn_ol as c                          #import neural network
+mnist=tf.keras.datasets.mnist
+(x_train,y_train),(x_test,y_test)=mnist.load_data()
+x_train,x_test =x_train/255.0,x_test/255.0
+cnn=c.cnn(x_train,y_train)                                #create neural network object
+kernel=k.kernel(cnn)                 #start kernel
+kernel.platform=tf                       #use platform
+kernel.data(x_train,y_train)   #input you data
+kernel.train_ol()         #train neural network
+```
+
+
 # Parallel test:
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
