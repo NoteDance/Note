@@ -708,7 +708,7 @@ kernel.create_pt_num(7)   #input you data
 kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
 class thread(threading.Thread):
 	def run(self):
-		kernel.train_ol() #batch size:32
+		kernel.train_ol()
 for _ in range(7):
 	_thread=thread()
 	_thread.start()
