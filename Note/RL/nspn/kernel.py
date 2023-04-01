@@ -323,6 +323,15 @@ class kernel:
         return loss
     
     
+    def opt_ol(self,state,action,next_state,reward,done):
+        try:
+            if self.platform.DType!=None: 
+                loss=self.tf_opt(state,action,next_state,reward,done)
+        except AttributeError:
+            loss=self.pytorch_opt(state,action,next_state,reward,done)
+        return loss
+    
+    
     def pool(self,s,a,next_s,r,done):
         if type(self.state_pool)!=np.ndarray and self.state_pool==None:
             self.state_pool=s
@@ -748,6 +757,33 @@ class kernel:
         print('last reward:{0}'.format(self.reward))
         print()
         print('time:{0}s'.format(self.time))
+        return
+    
+    
+    def train_ol(self,t):
+        while True:
+            if self.stop_flag==True:
+                return
+            if self.save_flag==True:
+                self.save()
+            self.suspend_func()
+            data=self.nn.ol()
+            if data=='stop':
+                return
+            elif data=='suspend':
+                while True:
+                    if t not in self.suspended_list:
+                        break
+                continue
+            loss=self.opt_ol(data[0],data[1],data[2],data[3],data[4])
+            loss=loss.numpy()
+            self.nn.train_loss_list.append(loss)
+            if len(self.nn.train_acc_list)==self.nn.max_length:
+                del self.nn.train_acc_list[0]
+            try:
+                self.nn.c+=1
+            except AttributeError:
+                pass
         return
         
     
