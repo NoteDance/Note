@@ -583,142 +583,25 @@ class kernel:
     
     def opt_ol(self,data,labels,t,ln=None):
         try:
-            if self.nn.GradientTape!=None:
-                if self.process_thread==None:
-                    tape,output,loss=self.nn.GradientTape(data,labels)
+            if self.platform.DType!=None:
+                if self.process_thread!=None:
+                    if self.PO==3:
+                        if self.row==None and len(self.gradient_lock)==self.process_thread:
+                            ln=int(t)
+                        else:
+                            if self.row!=None:
+                                rank_index=int(np.random.choice(len(self.gradient_lock)))
+                                row_index=int(np.random.choice(len(self.gradient_lock[rank_index])))
+                                ln=[rank_index,row_index]
+                            else:
+                                ln=int(np.random.choice(len(self.gradient_lock)))
+                        output,loss=self.tf_opt_t(data,labels,int(t),ln)
+                    else:
+                        output,loss=self.tf_opt_t(data,labels,int(t))
                 else:
-                    tape,output,loss=self.nn.GradientTape(data,labels,t)
+                    output,loss=self.tf_opt(data,labels)
         except AttributeError:
-            with self.platform.GradientTape(persistent=True) as tape:
-                try:
-                    try:
-                        output=self.nn.fp(data)
-                        loss=self.nn.loss(output,labels)
-                    except TypeError:
-                        output,loss=self.nn.fp(data,labels)
-                except TypeError:
-                    try:
-                        output=self.nn.fp(data,t)
-                        loss=self.nn.loss(output,labels)
-                    except TypeError:
-                        output,loss=self.nn.fp(data,labels,t) 
-        if self.lock!=None:
-            try:
-                if self.nn.attenuate!=None:
-                    self.opt_counter[t]=0
-            except AttributeError:
-                pass
-            if self.PO==1:
-                self.lock[0].acquire()
-                try:
-                    gradient=self.nn.gradient(tape,loss)
-                except AttributeError:
-                    gradient=tape.gradient(loss,self.nn.param)
-                try:
-                    if self.nn.attenuate!=None:
-                        gradient=self.nn.attenuate(gradient,self.opt_counter,t)
-                except AttributeError:
-                    pass
-                try:
-                    self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
-                except AttributeError:
-                    try:
-                        self.nn.opt(gradient)
-                    except TypeError:
-                        self.nn.opt(gradient,t)
-                try:
-                    if self.nn.attenuate!=None:
-                        self.opt_counter+=1
-                except AttributeError:
-                    pass
-                self.lock[0].release()
-            elif self.PO==2:
-                self.lock[0].acquire()
-                try:
-                    gradient=self.nn.gradient(tape,loss)
-                except AttributeError:
-                    gradient=tape.gradient(loss,self.nn.param)
-                self.lock[0].release()
-                self.lock[1].acquire()
-                try:
-                    if self.nn.attenuate!=None:
-                        gradient=self.nn.attenuate(gradient,self.opt_counter,t)
-                except AttributeError:
-                    pass
-                try:
-                    self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
-                except AttributeError:
-                    try:
-                        self.nn.opt(gradient)
-                    except TypeError:
-                        self.nn.opt(gradient,t)
-                try:
-                    if self.nn.attenuate!=None:
-                        self.opt_counter+=1
-                except AttributeError:
-                    pass
-                self.lock[1].release()
-            elif self.PO==3:
-                if self.row!=None:
-                    try:
-                        self.gradient_lock[ln[0]][ln[1]].acquire()
-                    except:
-                        self.gradient_lock[0][0].acquire()
-                else:
-                    try:
-                        self.gradient_lock[ln].acquire()
-                    except:
-                        self.gradient_lock[0].acquire()
-                try:
-                    gradient=self.nn.gradient(tape,loss)
-                except AttributeError:
-                    gradient=tape.gradient(loss,self.nn.param)
-                if self.row!=None:
-                    try:
-                        self.gradient_lock[ln[0]][ln[1]].release()
-                    except:
-                        self.gradient_lock[0][0].release()
-                else:
-                    try:
-                        self.gradient_lock[ln].release()
-                    except:
-                        self.gradient_lock[0].release()
-                self.lock[0].acquire()
-                if self.memory_flag==True:
-                    self.calculate_memory()
-                    if self.stop_func_m(self.lock[0],ln):
-                        return 0,0
-                    if self.stop_func_t_p(self.lock[0],t,ln):
-                        return 0,0
-                try:
-                    if self.nn.attenuate!=None:
-                        gradient=self.nn.attenuate(gradient,self.opt_counter,t)
-                except AttributeError:
-                    pass
-                try:
-                    self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
-                except AttributeError:
-                    try:
-                        self.nn.opt(gradient)
-                    except TypeError:
-                        self.nn.opt(gradient,t)
-                try:
-                    if self.nn.attenuate!=None:
-                        self.opt_counter+=1
-                except AttributeError:
-                    pass
-                if self.memory_flag==True:
-                    self.grad_memory_list[ln]=0
-                self.lock[0].release()
-        else:
-            try:
-                gradient=self.nn.gradient(tape,loss)
-            except AttributeError:
-                gradient=tape.gradient(loss,self.nn.param)
-            try:
-                self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
-            except AttributeError:
-                self.nn.opt(gradient)
+            output,loss=self.pytorch_opt(data,labels)
         return output,loss
     
     
@@ -1340,22 +1223,23 @@ class kernel:
         return
     
     
-    def train_ol(self,t):
-        self.exception_list.append(False)
-        if self.PO==1 or self.PO==3:
-            self.lock[1].acquire()
-        else:
-            self.lock[2].acquire()
-        self.process_thread_counter+=1
-        self.running_list.append(t)
-        if self.PO==1 or self.PO==3:
-            self.lock[1].release()
-        else:
-            self.lock[2].release()
+    def train_ol(self,t=None):
+        if self.process_thread!=None:
+            self.exception_list.append(False)
+            if self.PO==1 or self.PO==3:
+                self.lock[1].acquire()
+            else:
+                self.lock[2].acquire()
+            self.process_thread_counter+=1
+            self.running_list.append(t)
+            if self.PO==1 or self.PO==3:
+                self.lock[1].release()
+            else:
+                self.lock[2].release()
         while True:
             if self.stop_flag==True:
                 return
-            if self.process_thread==None:
+            if self.process_thread!=None:
                 if self.save_flag==True:
                     if self.PO==1 or self.PO==3:
                         self.lock[1].acquire()
@@ -1409,19 +1293,7 @@ class kernel:
                             break
                     continue
                 try:
-                    if self.PO==3:
-                        if self.row==None and len(self.gradient_lock)==self.process_thread:
-                            ln=int(t)
-                        else:
-                            if self.row!=None:
-                                rank_index=int(np.random.choice(len(self.gradient_lock)))
-                                row_index=int(np.random.choice(len(self.gradient_lock[rank_index])))
-                                ln=[rank_index,row_index]
-                            else:
-                                ln=int(np.random.choice(len(self.gradient_lock)))
-                            output,loss=self.opt_ol(data[0],data[1],t,ln)
-                    else:
-                        output,loss=self.opt_ol(data[0],data[1],t)
+                    output,loss=self.opt_ol(data[0],data[1],t)
                 except:
                     self.exception_list[t]=True
                     continue
@@ -1460,36 +1332,22 @@ class kernel:
                 if self.save_flag==True:
                     self.save()
                 self.suspend_func()
-                try:
-                    data=self.nn.ol()
-                except:
-                    self.exception_list[t]=True
-                    continue
+                data=self.nn.ol()
                 if data=='stop':
-                    self.stopped_list.append(t)
                     return
                 elif data=='suspend':
-                    self.suspended_list.append(t)
                     while True:
                         if t not in self.suspended_list:
                             break
                     continue
-                try:
-                    output,loss=self.opt(data[0],data[1])
-                except:
-                    self.exception_list[t]=True
-                    continue
+                output,loss=self.opt(data[0],data[1])
                 loss=loss.numpy()
                 if len(self.nn.train_loss_list)==self.nn.max_length:
                     del self.nn.train_loss_list[0]
                 self.nn.train_loss_list.append(loss)
                 try:
                     if self.nn.accuracy!=None:
-                        try:
-                            train_acc=self.nn.accuracy(output,data[1])
-                        except:
-                            self.exception_list[t]=True
-                            continue
+                        train_acc=self.nn.accuracy(output,data[1])
                         if len(self.nn.train_acc_list)==self.nn.max_length:
                             del self.nn.train_acc_list[0]
                         self.train_acc_list.append(train_acc)
@@ -1499,17 +1357,17 @@ class kernel:
                     self.nn.c+=1
                 except AttributeError:
                     pass
-            self.exception_list[t]=False
-        if self.PO==1 or self.PO==3:
-            self.lock[1].acquire()
-        else:
-            self.lock[2].acquire()
-        self.process_thread_counter-=1
-        self.running_list.remove(t)
-        if self.PO==1 or self.PO==3:
-            self.lock[1].release()
-        else:
-            self.lock[2].release()
+        if self.process_thread!=None:
+            if self.PO==1 or self.PO==3:
+                self.lock[1].acquire()
+            else:
+                self.lock[2].acquire()
+            self.process_thread_counter-=1
+            self.running_list.remove(t)
+            if self.PO==1 or self.PO==3:
+                self.lock[1].release()
+            else:
+                self.lock[2].release()
         return
     
     
