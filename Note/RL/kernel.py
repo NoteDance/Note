@@ -1378,127 +1378,100 @@ class kernel:
         return
     
     
-    def train_ol(self,t):
+    def train_ol(self):
+        if self.PO==1 or self.PO==3:
+            self.lock[1].acquire()
+        else:
+            self.lock[2].acquire()
+        t=self.process_thread_num.pop(0)
         self.exception_list.append(False)
+        if self.PO==1 or self.PO==3:
+            self.lock[1].release()
+        else:
+            self.lock[2].release()
         while True:
             if self.stop_flag==True:
                 return
-            if self.process_thread!=None:
-                if self.save_flag==True:
-                    if self.PO==1 or self.PO==3:
-                        self.lock[1].acquire()
+            if self.save_flag==True:
+                if self.PO==1 or self.PO==3:
+                    self.lock[1].acquire()
+                else:
+                    self.lock[2].acquire()
+                self.save()
+                if self.PO==1 or self.PO==3:
+                    self.lock[1].release()
+                else:
+                    self.lock[2].release()
+            if t in self.stop_list:
+                if self.PO==1 or self.PO==3:
+                    self.lock[1].acquire()
+                else:
+                    self.lock[2].acquire()
+                self.stopped_list.append(t)
+                if self.PO==1 or self.PO==3:
+                    self.lock[1].release()
+                else:
+                    self.lock[2].release()
+                return
+            self.suspend_func(t)
+            try:
+                data=self.nn.ol()
+            except:
+                self.exception_list[t]=True
+                continue
+            if data=='stop':
+                if self.PO==1 or self.PO==3:
+                    self.lock[1].acquire()
+                else:
+                    self.lock[2].acquire()
+                self.stopped_list.append(t)
+                if self.PO==1 or self.PO==3:
+                    self.lock[1].release()
+                else:
+                    self.lock[2].release()
+                return
+            elif data=='suspend':
+                if self.PO==1 or self.PO==3:
+                    self.lock[1].acquire()
+                else:
+                    self.lock[2].acquire()
+                self.suspended_list.append(t)
+                if self.PO==1 or self.PO==3:
+                    self.lock[1].release()
+                else:
+                    self.lock[2].release() 
+                while True:
+                    if t not in self.suspended_list:
+                        break
+                continue
+            try:
+                if self.PO==3:
+                    if len(self.gradient_lock)==self.process_thread:
+                        ln=int(t)
                     else:
-                        self.lock[2].acquire()
-                    self.save()
-                    if self.PO==1 or self.PO==3:
-                        self.lock[1].release()
-                    else:
-                        self.lock[2].release()
-                if t in self.stop_list:
-                    if self.PO==1 or self.PO==3:
-                        self.lock[1].acquire()
-                    else:
-                        self.lock[2].acquire()
-                    self.stopped_list.append(t)
-                    if self.PO==1 or self.PO==3:
-                        self.lock[1].release()
-                    else:
-                        self.lock[2].release()
-                    return
-                self.suspend_func(t)
-                try:
-                    data=self.nn.ol()
-                except:
-                    self.exception_list[t]=True
-                    continue
-                if data=='stop':
-                    if self.PO==1 or self.PO==3:
-                        self.lock[1].acquire()
-                    else:
-                        self.lock[2].acquire()
-                    self.stopped_list.append(t)
-                    if self.PO==1 or self.PO==3:
-                        self.lock[1].release()
-                    else:
-                        self.lock[2].release()
-                    return
-                elif data=='suspend':
-                    if self.PO==1 or self.PO==3:
-                        self.lock[1].acquire()
-                    else:
-                        self.lock[2].acquire()
-                    self.suspended_list.append(t)
-                    if self.PO==1 or self.PO==3:
-                        self.lock[1].release()
-                    else:
-                        self.lock[2].release() 
-                    while True:
-                        if t not in self.suspended_list:
-                            break
-                    continue
-                try:
-                    if self.PO==3:
-                        if len(self.gradient_lock)==self.process_thread:
-                            ln=int(t)
-                        else:
-                            ln=int(np.random.choice(len(self.gradient_lock)))
-                        loss=self.opt_ol(data,t,ln)
-                    else:
-                        loss=self.opt_ol(data,t)
-                except:
-                    self.exception_list[t]=True
-                    continue
-                if self.lock!=None:
-                    if self.PO==1 or self.PO==3:
-                        self.lock[1].acquire()
-                    else:
-                        self.lock[2].acquire()
-                    loss=loss.numpy()
-                    self.nn.train_loss_list.append(loss)
-                    if len(self.nn.train_acc_list)==self.nn.max_length:
-                        del self.nn.train_acc_list[0]
-                    try:
-                        self.nn.c+=1
-                    except AttributeError:
-                        pass
-                    if self.PO==1 or self.PO==3:
-                        self.lock[1].release()
-                    else:
-                        self.lock[2].release()
+                        ln=int(np.random.choice(len(self.gradient_lock)))
+                    loss=self.opt_ol(data,t,ln)
+                else:
+                    loss=self.opt_ol(data,t)
+            except:
+                self.exception_list[t]=True
+                continue
+            if self.PO==1 or self.PO==3:
+                self.lock[1].acquire()
             else:
-                if self.stop_flag==True:
-                    return
-                if self.save_flag==True:
-                    self.save()
-                self.suspend_func()
-                try:
-                    data=self.nn.ol()
-                except:
-                    self.exception_list[t]=True
-                    continue
-                if data=='stop':
-                    self.stopped_list.append(t)
-                    return
-                elif data=='suspend':
-                    self.suspended_list.append(t)
-                    while True:
-                        if t not in self.suspended_list:
-                            break
-                    continue
-                try:
-                    loss=self.opt_ol(data)
-                except:
-                    self.exception_list[t]=True
-                    continue
-                loss=loss.numpy()
-                self.nn.train_loss_list.append(loss)
-                if len(self.nn.train_acc_list)==self.nn.max_length:
-                    del self.nn.train_acc_list[0]
-                try:
-                    self.nn.c+=1
-                except AttributeError:
-                    pass
-            self.exception_list[t]=False
+                self.lock[2].acquire()
+            loss=loss.numpy()
+            self.nn.train_loss_list.append(loss)
+            if len(self.nn.train_acc_list)==self.nn.max_length:
+                del self.nn.train_acc_list[0]
+            try:
+                self.nn.c+=1
+            except AttributeError:
+                pass
+            if self.PO==1 or self.PO==3:
+                self.lock[1].release()
+            else:
+                self.lock[2].release()
         return
     
     
