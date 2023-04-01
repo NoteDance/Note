@@ -1223,13 +1223,14 @@ class kernel:
         return
     
     
-    def train_ol(self,t=None):
+    def train_ol(self):
         if self.process_thread!=None:
-            self.exception_list.append(False)
             if self.PO==1 or self.PO==3:
                 self.lock[1].acquire()
             else:
                 self.lock[2].acquire()
+            t=self.process_thread_num.pop(0)
+            self.exception_list.append(False)
             self.process_thread_counter+=1
             self.running_list.append(t)
             if self.PO==1 or self.PO==3:
@@ -1298,34 +1299,33 @@ class kernel:
                     self.exception_list[t]=True
                     continue
                 loss=loss.numpy()
-                if self.lock!=None:
-                    if self.PO==1 or self.PO==3:
-                        self.lock[1].acquire()
-                    else:
-                        self.lock[2].acquire()
-                    if len(self.nn.train_loss_list)==self.nn.max_length:
-                        del self.nn.train_loss_list[0]
-                    self.nn.train_loss_list.append(loss)
-                    try:
-                        if self.nn.accuracy!=None:
-                            try:
-                                train_acc=self.nn.accuracy(output,data[1])
-                            except:
-                                self.exception_list[t]=True
-                                continue
-                            if len(self.nn.train_acc_list)==self.nn.max_length:
-                                del self.nn.train_acc_list[0]
-                            self.train_acc_list.append(train_acc)
-                    except AttributeError:
-                        pass
-                    try:
-                        self.nn.c+=1
-                    except AttributeError:
-                        pass
-                    if self.PO==1 or self.PO==3:
-                        self.lock[1].release()
-                    else:
-                        self.lock[2].release()
+                if self.PO==1 or self.PO==3:
+                    self.lock[1].acquire()
+                else:
+                    self.lock[2].acquire()
+                if len(self.nn.train_loss_list)==self.nn.max_length:
+                    del self.nn.train_loss_list[0]
+                self.nn.train_loss_list.append(loss)
+                try:
+                    if self.nn.accuracy!=None:
+                        try:
+                            train_acc=self.nn.accuracy(output,data[1])
+                        except:
+                            self.exception_list[t]=True
+                            continue
+                        if len(self.nn.train_acc_list)==self.nn.max_length:
+                            del self.nn.train_acc_list[0]
+                        self.train_acc_list.append(train_acc)
+                except AttributeError:
+                    pass
+                try:
+                    self.nn.c+=1
+                except AttributeError:
+                    pass
+                if self.PO==1 or self.PO==3:
+                    self.lock[1].release()
+                else:
+                    self.lock[2].release()
             else:
                 if self.stop_flag==True:
                     return
