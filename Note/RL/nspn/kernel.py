@@ -760,7 +760,7 @@ class kernel:
         return
     
     
-    def train_ol(self,t):
+    def train_ol(self):
         while True:
             if self.stop_flag==True:
                 return
@@ -772,9 +772,11 @@ class kernel:
                 return
             elif data=='suspend':
                 while True:
-                    if t not in self.suspended_list:
-                        break
-                continue
+                    self.nn.suspend=True
+                    while True:
+                        if self.nn.suspend==False:
+                            break
+                    continue
             loss=self.opt_ol(data[0],data[1],data[2],data[3],data[4])
             loss=loss.numpy()
             self.nn.train_loss_list.append(loss)
