@@ -674,6 +674,7 @@ t.test(dqn,tf,2)
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
 https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn_ol.py
+**example:**
 ```python
 import Note.DL.kernel as k   #import kernel #import platform
 import cnn_ol as c                          #import neural network
@@ -685,6 +686,34 @@ kernel=k.kernel(cnn)                 #start kernel
 kernel.platform=tf                       #use platform
 kernel.data(x_train,y_train)   #input you data
 kernel.train_ol()         #train neural network
+```
+**You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
+
+https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn_ol_p.py
+**multithreading example:**
+```python
+import Note.DL.kernel as k   #import kernel
+import tensorflow as tf              #import platform
+import cnn_ol_p as c                          #import neural network
+import threading
+mnist=tf.keras.datasets.mnist
+(x_train,y_train),(x_test,y_test)=mnist.load_data()
+x_train,x_test =x_train/255.0,x_test/255.0
+cnn=c.cnn(x_train,y_train)                                #create neural network object
+kernel=k.kernel(cnn)   #start kernel
+kernel.platform=tf                            #use platform
+kernel.process_thread=7                        #thread count,use 7 thread training #epoch:6
+kernel.PO=2
+kernel.create_pt_num(7)   #input you data
+kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
+class thread(threading.Thread):
+	def run(self):
+		kernel.train_ol() #batch size:32
+for _ in range(7):
+	_thread=thread()
+	_thread.start()
+for _ in range(7):
+	_thread.join()
 ```
 
 
