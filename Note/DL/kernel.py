@@ -1336,8 +1336,9 @@ class kernel:
                 if data=='stop':
                     return
                 elif data=='suspend':
+                    self.nn.suspend=True
                     while True:
-                        if t not in self.suspended_list:
+                        if self.nn.suspend==False:
                             break
                     continue
                 output,loss=self.opt(data[0],data[1])
