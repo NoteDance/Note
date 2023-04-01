@@ -815,12 +815,11 @@ class kernel:
                 loss=self.nn.loss(data)
             except:
                 loss=self.nn.loss(data,t)
-        if self.process_thread!=None:
-            try:
-                if self.nn.attenuate!=None:
-                    self.opt_counter[t]=0
-            except AttributeError:
-                pass
+        try:
+            if self.nn.attenuate!=None:
+                self.opt_counter[t]=0
+        except AttributeError:
+            pass
         if self.PO==1:
             self.lock[0].acquire()
             try:
