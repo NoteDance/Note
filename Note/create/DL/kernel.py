@@ -993,7 +993,7 @@ class kernel:
             if self.nn.accuracy!=None:
                 return test_loss,test_acc
         except AttributeError:
-            return test_loss
+            return test_loss,None
     
     
     def suspend_func(self,t=None):
