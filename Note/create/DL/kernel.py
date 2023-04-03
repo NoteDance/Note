@@ -985,7 +985,7 @@ class kernel:
                 else:
                     return test_loss,test_acc
             else:
-                return test_loss
+                return test_loss,None
     
     
     def train_info(self):
