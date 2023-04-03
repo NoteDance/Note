@@ -1139,7 +1139,7 @@ class kernel:
                 pass
             return test_loss,test_acc
         except AttributeError:
-            return test_loss,None
+            return test_loss
     
     
     def suspend_func(self):
