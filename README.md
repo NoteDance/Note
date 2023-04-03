@@ -428,7 +428,7 @@ for _ in range(7):
 kernel.visualize_train()
 ```
 
-## Use threads in process：
+#### Use threads in process：
 **example:**
 ```python
 import Note.DL.kernel as k   #import kernel
