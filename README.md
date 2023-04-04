@@ -190,6 +190,64 @@ x_train,x_test =x_train/255.0,x_test/255.0
 cnn=c.cnn()                                #create neural network object
 kernel=k.kernel(cnn)   #start kernel
 kernel.platform=tf                            #use platform
+kernel.process_thread=7                        #thread count,use 7 threads training
+kernel.epoch_=6                #epoch:6
+kernel.PO=2
+kernel.data(x_train,y_train)   #input you data
+kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
+class thread(threading.Thread):
+	def run(self):
+		kernel.train(32) #batch size:32
+for _ in range(7):
+	_thread=thread()
+	_thread.start()
+for _ in range(7):
+	_thread.join()
+kernel.visualize_train()
+```
+
+**multithreading example(segment data):**
+```python
+import Note.DL.kernel as k   #import kernel
+import tensorflow as tf              #import platform
+import cnn as c                          #import neural network
+import threading
+mnist=tf.keras.datasets.mnist
+(x_train,y_train),(x_test,y_test)=mnist.load_data()
+x_train,x_test =x_train/255.0,x_test/255.0
+cnn=c.cnn()                                #create neural network object
+kernel=k.kernel(cnn)   #start kernel
+kernel.platform=tf                            #use platform
+kernel.process_thread=7                        #thread count,use 7 threads training
+kernel.data_segment_flag=True
+kernel.batches=1875            #batches:1875
+kernel.epoch_=6                #epoch:6
+kernel.PO=2
+kernel.data(x_train,y_train)   #input you data
+kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
+class thread(threading.Thread):
+	def run(self):
+		kernel.train(32) #batch size:32
+for _ in range(7):
+	_thread=thread()
+	_thread.start()
+for _ in range(7):
+	_thread.join()
+kernel.visualize_train()
+```
+
+**multithreading example:**
+```python
+import Note.DL.kernel as k   #import kernel
+import tensorflow as tf              #import platform
+import cnn as c                          #import neural network
+import threading
+mnist=tf.keras.datasets.mnist
+(x_train,y_train),(x_test,y_test)=mnist.load_data()
+x_train,x_test =x_train/255.0,x_test/255.0
+cnn=c.cnn()                                #create neural network object
+kernel=k.kernel(cnn)   #start kernel
+kernel.platform=tf                            #use platform
 kernel.process_thread=2                        #thread count,use 2 threads training
 kernel.PO=2
 kernel.data(x_train,y_train)   #input you data
@@ -256,64 +314,6 @@ for _ in range(7):
 	_thread.start()
 for _ in range(7):
 	_thread.join()
-```
-
-**multithreading example:**
-```python
-import Note.DL.kernel as k   #import kernel
-import tensorflow as tf              #import platform
-import cnn as c                          #import neural network
-import threading
-mnist=tf.keras.datasets.mnist
-(x_train,y_train),(x_test,y_test)=mnist.load_data()
-x_train,x_test =x_train/255.0,x_test/255.0
-cnn=c.cnn()                                #create neural network object
-kernel=k.kernel(cnn)   #start kernel
-kernel.platform=tf                            #use platform
-kernel.process_thread=7                        #thread count,use 7 threads training
-kernel.epoch_=6                #epoch:6
-kernel.PO=2
-kernel.data(x_train,y_train)   #input you data
-kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
-class thread(threading.Thread):
-	def run(self):
-		kernel.train(32) #batch size:32
-for _ in range(7):
-	_thread=thread()
-	_thread.start()
-for _ in range(7):
-	_thread.join()
-kernel.visualize_train()
-```
-
-**multithreading example(segment data):**
-```python
-import Note.DL.kernel as k   #import kernel
-import tensorflow as tf              #import platform
-import cnn as c                          #import neural network
-import threading
-mnist=tf.keras.datasets.mnist
-(x_train,y_train),(x_test,y_test)=mnist.load_data()
-x_train,x_test =x_train/255.0,x_test/255.0
-cnn=c.cnn()                                #create neural network object
-kernel=k.kernel(cnn)   #start kernel
-kernel.platform=tf                            #use platform
-kernel.process_thread=7                        #thread count,use 7 threads training
-kernel.data_segment_flag=True
-kernel.batches=1875            #batches:1875
-kernel.epoch_=6                #epoch:6
-kernel.PO=2
-kernel.data(x_train,y_train)   #input you data
-kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
-class thread(threading.Thread):
-	def run(self):
-		kernel.train(32) #batch size:32
-for _ in range(7):
-	_thread=thread()
-	_thread.start()
-for _ in range(7):
-	_thread.join()
-kernel.visualize_train()
 ```
 
 **multithreading example(parallel test):**
