@@ -16,9 +16,9 @@ neural network example:
 
 You can refer to cnn, cnn_acc, nn, nn_ in the documentation.
 
-**DL:** https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/DL/neural%20network
+**DL:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network
 
-**RL:** https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/RL/neural%20network
+**RL:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/Note%207.0%20pv%20documentation/RL/neural%20network
 
 If you accomplish your neural network,you can use kernel to train,examples are shown below.
 
@@ -27,7 +27,7 @@ If you accomplish your neural network,you can use kernel to train,examples are s
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn.py
 
 ## Tensorflow platform:
 
@@ -82,7 +82,7 @@ kernel.save()              #save neural network
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/lstm.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/lstm.py
 
 **example(lstm):**
 ```python
@@ -300,13 +300,13 @@ for _ in range(3):
 
 **Calculate the attenuation coefficient based on the optimization counter using the attenuation function.**
 
-**example:https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn_a.py**
+**example:https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn_a.py**
 
-**picture:https://github.com/NoteDancing/Note-documentation/tree/main/picture/gradient%20attenuation**
+**picture:https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/picture/gradient%20attenuation**
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/pytorch/nn.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/pytorch/nn.py
 
 ## Pytorch platform:
 
@@ -342,7 +342,7 @@ kernel.train(64,5)         #train neural network
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/RL/neural%20network/pytorch/DQN.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/RL/neural%20network/pytorch/DQN.py
 
 ## Pytorch platform:
 
@@ -365,7 +365,7 @@ kernel.visualize_reward()
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow/DQN.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow/DQN.py
 
 ## Tensorflow platform:
 
@@ -388,7 +388,7 @@ kernel.visualize_reward()
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow/DDPG.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow/DDPG.py
 
 **example:**
 ```python
@@ -414,7 +414,7 @@ then pools would be used parallel training agent.**
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow/pool%20net/DQN.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow/pool%20net/DQN.py
 
 **multithreading example:**
 ```python
@@ -473,7 +473,7 @@ kernel.visualize_reward()
 # Parallel test:
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn_acc.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn_acc.py
 ```python
 import cnn_acc as c
 import Note.DL.dl.test as t
@@ -495,7 +495,7 @@ loss,acc=test.loss_acc()
 
 
 # Note Compiler:
-documentation:https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation/compiler
+documentation:https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/Note%207.0%20pv%20documentation/compiler
 ```python
 import Note.nc as nc
 c=nc.compiler('nn.n')
@@ -504,7 +504,7 @@ c.Compile()
 
 
 # documentation:
-https://github.com/NoteDancing/Note-documentation/tree/main/Note%207.0%20pv%20documentation
+https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/Note%207.0%20pv%20documentation
 
 
 # Patreon:
