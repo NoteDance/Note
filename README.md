@@ -336,20 +336,6 @@ kernel.train(64,5)         #train neural network
                            #epoch:5
 ```
 
-## Test neural network：
-You can test it before using the kernel training neural network.
-```python
-import Note.DL.dl.test_nn as t
-import tensorflow as tf              #import platform
-import cnn as c                          #import neural network
-mnist=tf.keras.datasets.mnist
-(x_train,y_train),(x_test,y_test)=mnist.load_data()
-x_train,x_test =x_train/255.0,x_test/255.0
-cnn=c.cnn()
-t.test(cnn,tf,x_train[:32],y_train[:32])
-```
-
-
 # Reinforcement Learning:
 
 **The version of gym used in the example is less than 0.26.0.**
@@ -481,64 +467,6 @@ kernel.loss_list or kernel.loss       #view training loss
 kernel.visualize_train()
 kernel.reward                         #view reward
 kernel.visualize_reward()
-```
-
-
-## Test neural network：
-You can test it before using the kernel training neural network.
-```python
-import Note.RL.rl.test_nn as t
-import tensorflow as tf              #import platform
-import DQN as d
-dqn=d.DQN(4,128,2)                               #create neural network object
-t.test(dqn,tf,2)
-```
-
-
-# Online training:
-**You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
-
-https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn_ol.py
-**example:**
-```python
-import Note.DL.kernel as k   #import kernel #import platform
-import cnn_ol as c                          #import neural network
-mnist=tf.keras.datasets.mnist
-(x_train,y_train),(x_test,y_test)=mnist.load_data()
-x_train,x_test =x_train/255.0,x_test/255.0
-cnn=c.cnn(x_train,y_train)                                #create neural network object
-kernel=k.kernel(cnn)                 #start kernel
-kernel.platform=tf                       #use platform
-kernel.data(x_train,y_train)   #input you data
-kernel.train_ol()         #train neural network
-```
-**You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
-
-https://github.com/NoteDancing/Note-documentation/blob/main/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn_ol_p.py
-**multithreading example:**
-```python
-import Note.DL.kernel as k   #import kernel
-import tensorflow as tf              #import platform
-import cnn_ol_p as c                          #import neural network
-import threading
-mnist=tf.keras.datasets.mnist
-(x_train,y_train),(x_test,y_test)=mnist.load_data()
-x_train,x_test =x_train/255.0,x_test/255.0
-cnn=c.cnn(x_train,y_train)                                #create neural network object
-kernel=k.kernel(cnn)   #start kernel
-kernel.platform=tf                            #use platform
-kernel.process_thread=7                        #thread count,use 7 thread to train
-kernel.PO=2
-kernel.create_pt_num(7)   #input you data
-kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
-class thread(threading.Thread):
-	def run(self):
-		kernel.train_ol()
-for _ in range(7):
-	_thread=thread()
-	_thread.start()
-for _ in range(7):
-	_thread.join()
 ```
 
 
