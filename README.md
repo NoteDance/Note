@@ -190,7 +190,7 @@ x_train,x_test =x_train/255.0,x_test/255.0
 cnn=c.cnn()                                #create neural network object
 kernel=k.kernel(cnn)   #start kernel
 kernel.platform=tf                            #use platform
-kernel.process_thread=7                        #thread count,use 7 threads training
+kernel.process_thread=7                        #thread count,use 7 threads to train
 kernel.epoch_=6                #epoch:6
 kernel.PO=2
 kernel.data(x_train,y_train)   #input you data
@@ -218,7 +218,7 @@ x_train,x_test =x_train/255.0,x_test/255.0
 cnn=c.cnn()                                #create neural network object
 kernel=k.kernel(cnn)   #start kernel
 kernel.platform=tf                            #use platform
-kernel.process_thread=7                        #thread count,use 7 threads training
+kernel.process_thread=7                        #thread count,use 7 threads to train
 kernel.data_segment_flag=True
 kernel.batches=1875            #batches:1875
 kernel.epoch_=6                #epoch:6
@@ -248,7 +248,7 @@ x_train,x_test =x_train/255.0,x_test/255.0
 cnn=c.cnn()                                #create neural network object
 kernel=k.kernel(cnn)   #start kernel
 kernel.platform=tf                            #use platform
-kernel.process_thread=2                        #thread count,use 2 threads training
+kernel.process_thread=2                        #thread count,use 2 threads to train
 kernel.PO=2
 kernel.data(x_train,y_train)   #input you data
 kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
@@ -274,7 +274,7 @@ x_train,x_test =x_train/255.0,x_test/255.0
 kernel=k.kernel()                 #start kernel
 kernel.platform=tf                    #use platform
 kernel.restore('save.dat')     #restore neural network
-kernel.process_thread=2                        #thread count,use 2 threads training
+kernel.process_thread=2                        #thread count,use 2 threads to train
 kernel.PO=2
 kernel.data(x_train,y_train)   #input you data
 kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
@@ -300,7 +300,7 @@ x_train,x_test =x_train/255.0,x_test/255.0
 cnn=c.cnn()                                #create neural network object
 kernel=k.kernel(cnn)   #start kernel
 kernel.platform=tf                            #use platform
-kernel.process_thread=7                        #thread count,use 7 threads training
+kernel.process_thread=7                        #thread count,use 7 threads to train
 kernel.PO=3
 kernel.multiprocessing_threading=threading
 kernel.max_lock=7
@@ -329,7 +329,7 @@ cnn=c.cnn()                                #create neural network object
 kernel=k.kernel(cnn)   #start kernel
 kernel.platform=tf                            #use platform
 kernel.multiprocessing_threading=threading
-kernel.process_thread=7                        #thread count,use 7 threads training
+kernel.process_thread=7                        #thread count,use 7 threads to train
 kernel.process_thread_t=6                      #test thread count
 kernel.epoch_=6                #epoch:6
 kernel.PO=2
@@ -361,7 +361,7 @@ kernel.platform=tf                            #use platform
 kernel.stop=True
 kernel.end_loss=0.7                           #stop condition
 kernel.restrained_parallelism=True
-kernel.process_thread=2                        #thread count,use 2 threads training
+kernel.process_thread=2                        #thread count,use 2 threads to train
 kernel.PO=2
 kernel.data(x_train,y_train)   #input you data
 kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
@@ -390,7 +390,7 @@ x_train,x_test =x_train/255.0,x_test/255.0
 cnn=c.cnn()                                #create neural network object
 kernel=k.kernel(cnn)   #start kernel
 kernel.platform=tf                            #use platform
-kernel.process_thread=7                        #thread count,use 7 processes training
+kernel.process_thread=7                        #thread count,use 7 processes to train
 kernel.epoch_=6                #epoch:6
 kernel.PO=2
 kernel.data(x_train,y_train)   #input you data
@@ -413,7 +413,7 @@ x_train,x_test =x_train/255.0,x_test/255.0
 cnn=c.cnn()                                #create neural network object
 kernel=k.kernel(cnn)   #start kernel
 kernel.platform=tf                            #use platform
-kernel.process_thread=7                        #thread count,use 7 processes training
+kernel.process_thread=7                        #thread count,use 7 processes to train
 kernel.data_segment_flag=True
 kernel.batches=1875
 kernel.epoch_=6                #epoch:6
@@ -442,7 +442,7 @@ x_train,x_test =x_train/255.0,x_test/255.0
 cnn=c.cnn()                                #create neural network object
 kernel=k.kernel(cnn)   #start kernel
 kernel.platform=tf                            #use platform
-kernel.process_thread=[3,7]                        #use 3 processes and 21 threads training
+kernel.process_thread=[3,7]                        #use 3 processes and 21 threads to train
 kernel.epoch_=6                #epoch:6
 kernel.PO=2
 kernel.multiprocessing_threading=threading
@@ -611,7 +611,7 @@ import Note.RL.kernel as k   #import kernel
 import DQN as d
 import threading
 dqn=d.DQN(4,128,2)                               #create neural network object
-kernel=k.kernel(dqn,5)   #start kernel,use 5 thread training
+kernel=k.kernel(dqn,5)   #start kernel,use 5 thread to train
 kernel.action_count=2
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
 kernel.PO=1
@@ -637,7 +637,7 @@ import Note.RL.kernel as k   #import kernel
 import DQN as d
 import threading
 dqn=d.DQN(4,128,2)                               #create neural network object
-kernel=k.kernel(dqn,5)   #start kernel,use 5 thread training
+kernel=k.kernel(dqn,5)   #start kernel,use 5 thread to train
 kernel.stop=True
 kernel.action_count=2
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10,trial_count=10,criterion=200)
@@ -664,7 +664,7 @@ import Note.RL.kernel as k   #import kernel
 import DQN as d
 import threading
 dqn=d.DQN(4,128,2)                               #create neural network object
-kernel=k.kernel(dqn,5)   #start kernel,use 5 thread training
+kernel=k.kernel(dqn,5)   #start kernel,use 5 thread to train
 kernel.action_count=2
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
 kernel.PO=3
@@ -729,7 +729,7 @@ x_train,x_test =x_train/255.0,x_test/255.0
 cnn=c.cnn(x_train,y_train)                                #create neural network object
 kernel=k.kernel(cnn)   #start kernel
 kernel.platform=tf                            #use platform
-kernel.process_thread=7                        #thread count,use 7 thread training #epoch:6
+kernel.process_thread=7                        #thread count,use 7 thread to train
 kernel.PO=2
 kernel.create_pt_num(7)   #input you data
 kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
