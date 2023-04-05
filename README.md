@@ -119,6 +119,10 @@ kernel.save()              #save neural network
 
 **parallel optimization may cause unstable training(the estimate of the gradient is biased) but it can speed up training and make the loss function jump out of the local minimum.**
 
+**Note can speed up training by multithreading or multiprocessing and has stop mechanism and gradient attenuation to resolve unstable training.**
+
+**Note uses multithreading or multiprocessing parallel forward propagation and optimizes neural network.**
+
 **Use second parallel optimization to train on MNIST,speed was increased by more than 2 times!Not use parallel optimization to train spending 15s,use parallel optimization to train spending 6.8s.**
 
 **Tensorflow version:2.9.1**
@@ -134,9 +138,6 @@ kernel.save()              #save neural network
 **CPU:i5-8400**
 
 #### Multithreading:
-**Note can speed up training by multithreading and has stop mechanism and gradient attenuation to resolve unstable training.**
-
-**Note uses multithreading parallel forward propagation and optimizes neural network.**
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
