@@ -518,8 +518,10 @@ c.Compile()
 ```
 
 
-# documentation:
-https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/Note%207.0%20pv%20documentation
+# Documentation:
+**Document's readme has other examples.**
+
+https://github.com/NoteDancing/Note-documentation
 
 
 # Patreon:
