@@ -486,7 +486,7 @@ kernel.visualize_reward()
 
 
 # Documentation:
-**Document's readme has other examples.**
+**Documentation's readme has other examples.**
 
 https://github.com/NoteDancing/Note-documentation
 
