@@ -485,28 +485,10 @@ kernel.visualize_reward()
 ```
 
 
-# Parallel test:
-**You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
+# Documentation:
+**Document's readme has other examples.**
 
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn_acc.py
-```python
-import cnn_acc as c
-import Note.DL.dl.test as t
-import threading
-mnist=tf.keras.datasets.mnist
-(x_train,y_train),(x_test,y_test)=mnist.load_data()
-x_train,x_test =x_train/255.0,x_test/255.0
-test=t.test_pt(cnn,x_test,y_test,6,32)
-class thread(threading.Thread):     
-	def run(self):              
-		test.test()
-for _ in range(6):
-	_thread=thread()
-	_thread.start()
-for _ in range(6):
-	_thread.join()
-loss,acc=test.loss_acc()
-```
+https://github.com/NoteDancing/Note-documentation
 
 
 # Note Compiler:
@@ -516,12 +498,6 @@ import Note.nc as nc
 c=nc.compiler('nn.n')
 c.Compile()
 ```
-
-
-# Documentation:
-**Document's readme has other examples.**
-
-https://github.com/NoteDancing/Note-documentation
 
 
 # Patreon:
