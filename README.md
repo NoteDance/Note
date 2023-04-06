@@ -35,12 +35,12 @@ https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20
 ```python
 import Note.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
-import cnn as c                          #import neural network
+import nn as n                          #import neural network
 mnist=tf.keras.datasets.mnist
 (x_train,y_train),(x_test,y_test)=mnist.load_data()
 x_train,x_test =x_train/255.0,x_test/255.0
-cnn=c.cnn()                                #create neural network object
-kernel=k.kernel(cnn)                 #start kernel
+nn=n.nn()                                #create neural network object
+kernel=k.kernel(nn)                 #start kernel
 kernel.platform=tf                       #use platform
 kernel.data(x_train,y_train)   #input you data
 kernel.train(32,5)         #train neural network
@@ -65,12 +65,12 @@ kernel.train(32,1)             #train again
 ```python
 import Note.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
-import cnn_acc as c                          #import neural network
+import nn_acc as n                          #import neural network
 mnist=tf.keras.datasets.mnist
 (x_train,y_train),(x_test,y_test)=mnist.load_data()
 x_train,x_test =x_train/255.0,x_test/255.0
-cnn=c.cnn()                                #create neural network object
-kernel=k.kernel(cnn)                 #start kernel
+nn=n.nn()                                #create neural network object
+kernel=k.kernel(nn)                 #start kernel
 kernel.platform=tf                       #use platform
 kernel.data(x_train,y_train,x_test,y_test)   #input you data
 kernel.train(32,5,32)         #train neural network
@@ -133,13 +133,13 @@ https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20
 ```python
 import Note.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
-import cnn as c                          #import neural network
+import nn as n                          #import neural network
 import threading
 mnist=tf.keras.datasets.mnist
 (x_train,y_train),(x_test,y_test)=mnist.load_data()
 x_train,x_test =x_train/255.0,x_test/255.0
-cnn=c.cnn()                                #create neural network object
-kernel=k.kernel(cnn)   #start kernel
+nn=n.nn()                                #create neural network object
+kernel=k.kernel(nn)   #start kernel
 kernel.platform=tf                            #use platform
 kernel.process_thread=7                        #thread count,use 7 threads to train
 kernel.epoch_=6                #epoch:6
@@ -161,13 +161,13 @@ kernel.visualize_train()
 ```python
 import Note.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
-import cnn as c                          #import neural network
+import nn as n                          #import neural network
 import threading
 mnist=tf.keras.datasets.mnist
 (x_train,y_train),(x_test,y_test)=mnist.load_data()
 x_train,x_test =x_train/255.0,x_test/255.0
-cnn=c.cnn()                                #create neural network object
-kernel=k.kernel(cnn)   #start kernel
+nn=n.nn()                                #create neural network object
+kernel=k.kernel(nn)   #start kernel
 kernel.platform=tf                            #use platform
 kernel.process_thread=2                        #thread count,use 2 threads to train
 kernel.PO=2                    #use PO2
@@ -219,13 +219,13 @@ https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20
 ```python
 import Note.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
-import cnn as c                          #import neural network
+import nn as n                          #import neural network
 from multiprocessing import Process,Lock
 mnist=tf.keras.datasets.mnist
 (x_train,y_train),(x_test,y_test)=mnist.load_data()
 x_train,x_test =x_train/255.0,x_test/255.0
-cnn=c.cnn()                                #create neural network object
-kernel=k.kernel(cnn)   #start kernel
+nn=n.nn()                                #create neural network object
+kernel=k.kernel(nn)   #start kernel
 kernel.platform=tf                            #use platform
 kernel.process_thread=7                        #thread count,use 7 processes to train
 kernel.epoch_=6                #epoch:6
@@ -242,13 +242,13 @@ kernel.visualize_train()
 ```python
 import Note.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
-import cnn as c                          #import neural network
+import nn as n                          #import neural network
 from multiprocessing import Process,Lock
 mnist=tf.keras.datasets.mnist
 (x_train,y_train),(x_test,y_test)=mnist.load_data()
 x_train,x_test =x_train/255.0,x_test/255.0
-cnn=c.cnn()                                #create neural network object
-kernel=k.kernel(cnn)   #start kernel
+nn=n.nn()                                #create neural network object
+kernel=k.kernel(nn)   #start kernel
 kernel.platform=tf                            #use platform
 kernel.process_thread=7                        #thread count,use 7 processes to train
 kernel.data_segment_flag=True
@@ -275,14 +275,14 @@ https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20
 ```python
 import Note.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
-import cnn as c                          #import neural network
+import nn as n                          #import neural network
 import threading
 from multiprocessing import Process
 mnist=tf.keras.datasets.mnist
 (x_train,y_train),(x_test,y_test)=mnist.load_data()
 x_train,x_test =x_train/255.0,x_test/255.0
-cnn=c.cnn()                                #create neural network object
-kernel=k.kernel(cnn)   #start kernel
+nn=n.nn()                                #create neural network object
+kernel=k.kernel(nn)   #start kernel
 kernel.platform=tf                            #use platform
 kernel.process_thread=[3,7]                        #use 3 processes and 21 threads to train
 kernel.epoch_=6                #epoch:6
