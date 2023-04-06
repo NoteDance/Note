@@ -125,18 +125,6 @@ kernel.save()              #save neural network
 
 **Use second parallel optimization to train on MNIST,speed was increased by more than 2 times!Not use parallel optimization to train spending 15s,use parallel optimization to train spending 6.8s.**
 
-**Tensorflow version:2.9.1**
-
-**batch size:32**
-
-**epoch:6**
-
-**thread count:2**
-
-**PO:2**
-
-**CPU:i5-8400**
-
 #### Multithreading:
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
