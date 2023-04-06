@@ -123,8 +123,6 @@ kernel.save()              #save neural network
 
 **Note uses multithreading or multiprocessing parallel forward propagation and optimizes neural network.**
 
-**Use second parallel optimization to train on MNIST,speed was increased by more than 2 times!Not use parallel optimization to train spending 15s,use parallel optimization to train spending 6.8s.**
-
 #### Multithreading:
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
