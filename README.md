@@ -27,7 +27,7 @@ If you accomplish your neural network,you can use kernel to train,examples are s
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/nn.py
 
 ## Tensorflow platform:
 
@@ -127,7 +127,7 @@ kernel.save()              #save neural network
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/nn.py
 
 **multithreading example:**
 ```python
@@ -213,7 +213,7 @@ for _ in range(2):
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/nn.py
 
 **multiprocessing example:**
 ```python
@@ -269,7 +269,7 @@ kernel.visualize_train()
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/nn.py
 
 **example:**
 ```python
@@ -301,7 +301,7 @@ for _ in range(3):
 
 **Calculate the attenuation coefficient based on the optimization counter using the attenuation function.**
 
-**example:https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/cnn_a.py**
+**example:https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/nn_a.py**
 
 **picture:https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/picture/gradient%20attenuation**
 
