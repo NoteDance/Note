@@ -27,12 +27,12 @@ class conv2d:
         self.activation=activation
     
     
-    def output(self,data,strides=[1,1,1,1],padding='VALID'):
+    def output(self,data,strides,padding='VALID',data_format='NHWC',dilations=None):
         if self.activation=='relu':
-            return tf.nn.relu(tf.nn.conv2d(data,self.weight,strides=strides,padding=padding))
+            return tf.nn.relu(tf.nn.conv2d(data,self.weight,strides=strides,padding=padding,data_format=data_format,dilations=dilations))
         elif self.activation=='sigmoid':
-            return tf.nn.sigmoid(tf.nn.conv2d(data,self.weight,strides=strides,padding=padding))
+            return tf.nn.sigmoid(tf.nn.conv2d(data,self.weight,strides=strides,padding=padding,data_format=data_format,dilations=dilations))
         elif self.activation=='tanh':
-            return tf.nn.tanh(tf.nn.conv2d(data,self.weight,strides=strides,padding=padding))
+            return tf.nn.tanh(tf.nn.conv2d(data,self.weight,strides=strides,padding=padding,data_format=data_format,dilations=dilations))
         else:
-            return tf.nn.conv2d(data,self.weight,strides=strides,padding=padding)
+            return tf.nn.conv2d(data,self.weight,strides=strides,padding=padding,data_format=data_format,dilations=dilations)
