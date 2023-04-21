@@ -1472,14 +1472,21 @@ class kernel:
             parallel_test=test_.parallel_test(self.nn,self.test_data,self.test_labels,self.process_thread_t,batch)
             if type(self.test_data)!=list:
                 parallel_test.segment_data()
-            class thread(self.multiprocessing_threading.Thread):     
-                def run(self):
-                    parallel_test.test()
-            for _ in range(self.process_thread_t):
-                _thread=thread()
-                _thread.start()
-            for _ in range(self.process_thread_t):
-                _thread.join()
+            try:
+                for _ in range(self.process_thread_t):
+                    p=self.multiprocessing_threading.Process(target=parallel_test.test())
+                    p.start()
+                for _ in range(self.process_thread_t):
+                    p.join()
+            except AttributeError:
+                class thread(self.multiprocessing_threading.Thread):  
+                    def run(self):
+                        parallel_test.test()
+                for _ in range(self.process_thread_t):
+                    _thread=thread()
+                    _thread.start()
+                for _ in range(self.process_thread_t):
+                    _thread.join()
             try:
                 if self.nn.accuracy!=None:
                     test_loss,test_acc=parallel_test.loss_acc()
