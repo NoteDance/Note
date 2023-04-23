@@ -477,6 +477,14 @@ kernel.visualize_reward()
 https://github.com/NoteDancing/Note-documentation
 
 
+# Reduced kernel:
+**If you want to study kernel,there is reduced kernel at link.**
+
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/DL/kernel_reduced.py
+
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/DL/kernel_annotation.py
+
+
 # Note Compiler:
 documentation:https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/Note%207.0%20pv%20documentation/compiler
 ```python
