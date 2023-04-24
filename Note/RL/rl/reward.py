@@ -56,9 +56,8 @@ class reward:
                 reward+=r
                 try:
                     if self.nn.stop!=None:
-                        pass
-                    if self.nn.stop(next_s):
-                        break
+                        if self.nn.stop(next_s):
+                            break
                 except AttributeError:
                     pass
                 if done:
@@ -105,9 +104,8 @@ class reward:
                 reward+=r
                 try:
                     if self.nn.stop!=None:
-                        pass
-                    if self.nn.stop(next_s):
-                        break
+                        if self.nn.stop(next_s):
+                            break
                 except AttributeError:
                     pass
                 if done:
