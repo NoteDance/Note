@@ -31,7 +31,7 @@ class kernel:
         self.criterion=None
         self.reward_list=[]
         self.suspend=False
-        self.stop=None
+        self.stop=False
         self.save_epi=None
         self.end_loss=None
         self.max_episode_count=None
@@ -58,7 +58,7 @@ class kernel:
         except AttributeError:
             pass
         self.suspend=False
-        self.stop=None
+        self.stop=False
         self.save_epi=None
         self.episode_set=[]
         self.state_pool=None
@@ -156,9 +156,8 @@ class kernel:
                 reward+=r
                 try:
                     if self.nn.stop!=None:
-                        pass
-                    if self.nn.stop(next_s):
-                        break
+                        if self.nn.stop(next_s):
+                            break
                 except AttributeError:
                     pass
                 if done:
@@ -205,9 +204,8 @@ class kernel:
                 reward+=r
                 try:
                     if self.nn.stop!=None:
-                        pass
-                    if self.nn.stop(next_s):
-                        break
+                        if self.nn.stop(next_s):
+                            break
                 except AttributeError:
                     pass
                 if done:
@@ -259,9 +257,8 @@ class kernel:
             next_s,r,done=self.nn.env(a)
             try:
                 if self.nn.stop!=None:
-                    pass
-                if self.nn.stop(next_s):
-                    break
+                    if self.nn.stop(next_s):
+                        break
             except AttributeError:
                 pass
             if self.end_flag==True:
