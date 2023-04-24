@@ -51,9 +51,8 @@ class episode:
             next_s,r,done,_=self.env.step(a)
             try:
                 if self.nn.stop!=None:
-                    pass
-                if self.nn.stop(next_s):
-                    break
+                    if self.nn.stop(next_s):
+                        break
             except AttributeError:
                 pass
             if self.end_flag==True:
