@@ -480,9 +480,7 @@ https://github.com/NoteDancing/Note-documentation
 # Reduced kernel:
 **If you want to study kernel,there is reduced kernel at link.**
 
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/DL/kernel_reduced.py
-
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/DL/kernel_annotation.py
+https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/DL
 
 https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/RL
 
