@@ -477,12 +477,18 @@ kernel.visualize_reward()
 https://github.com/NoteDancing/Note-documentation
 
 
-# Reduced kernel:
+# Study kernel:
 **If you want to study kernel,you can start with reduced kernel,there is reduced kernel at link.**
 
 https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/DL
 
 https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/RL
+
+
+# Layer:
+https://github.com/NoteDancing/Note/tree/Note-7.0-pv/Note/nn/layer
+
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/nn_layer.py
 
 
 # Note Compiler:
