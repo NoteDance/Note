@@ -478,7 +478,7 @@ https://github.com/NoteDancing/Note-documentation
 
 
 # Reduced kernel:
-**If you want to study kernel,there is reduced kernel at link.**
+**If you want to study kernel,you can start with reduced kernel,there is reduced kernel at link.**
 
 https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/DL
 
