@@ -486,6 +486,8 @@ https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/RL
 
 
 # Layer:
+**Layer package is still simple now and needs to be developed further.**
+
 https://github.com/NoteDancing/Note/tree/Note-7.0-pv/Note/nn/layer
 
 https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/nn_layer.py
