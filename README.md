@@ -181,7 +181,6 @@ for _ in range(2):
 	_thread.start()
 for _ in range(2):
 	_thread.join()
-kernel.train_loss_list or kernel.train_loss       #view training loss
 kernel.visualize_train()
 kernel.save()              #save neural network
 ```
@@ -358,9 +357,7 @@ kernel.platform=torch
 kernel.action_count=2
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
 kernel.train(500)
-kernel.loss_list or kernel.loss       #view training loss
 kernel.visualize_train()
-kernel.reward                         #view reward
 kernel.visualize_reward()
 ```
 
@@ -381,9 +378,7 @@ kernel.platform=tf
 kernel.action_count=2
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
 kernel.train(500)
-kernel.loss_list or kernel.loss       #view training loss
 kernel.visualize_train()
-kernel.reward                         #view reward
 kernel.visualize_reward()
 ```
 
@@ -401,9 +396,7 @@ kernel=k.kernel(ddpg)   #start kernel
 kernel.platform=tf
 kernel.set_up(pool_size=10000,batch=64)
 kernel.train(200)
-kernel.loss_list or kernel.loss       #view training loss
 kernel.visualize_train()
-kernel.reward                         #view reward
 kernel.visualize_reward()
 ```
 
@@ -437,9 +430,7 @@ for _ in range(5):
 	_thread.start()
 for _ in range(5):
 	_thread.join()
-kernel.loss_list or kernel.loss       #view training loss
 kernel.visualize_train()
-kernel.reward                         #view reward
 kernel.visualize_reward()
 ```
 
@@ -464,9 +455,7 @@ for _ in range(5):
 	_thread.start()
 for _ in range(5):
 	_thread.join()
-kernel.loss_list or kernel.loss       #view training loss
 kernel.visualize_train()
-kernel.reward                         #view reward
 kernel.visualize_reward()
 ```
 
