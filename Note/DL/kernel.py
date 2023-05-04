@@ -88,7 +88,6 @@ class kernel:
         self.train_data=train_data
         self.train_labels=train_labels
         self.train_dataset=train_dataset
-        self.test_dataset=test_dataset
         if self.data_segment_flag==True:
             self.train_data,self.train_labels=self.segment_data()
         if type(train_data)==list:
@@ -97,6 +96,7 @@ class kernel:
             self.labels_batch=[x for x in range(len(train_labels))]
         self.test_data=test_data
         self.test_labels=test_labels
+        self.test_dataset=test_dataset
         try:
             if test_data==None:
                 self.test_flag=False
