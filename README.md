@@ -460,18 +460,18 @@ kernel.visualize_reward()
 ```
 
 
-# Documentation:
-**Documentation's readme has other examples.**
-
-https://github.com/NoteDancing/Note-documentation
-
-
 # Study kernel:
 **If you want to study kernel,you can start with reduced kernel,there is reduced kernel at link.**
 
 **DL:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/reduced%20kernel/DL
 
 **RL:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/reduced%20kernel/RL
+
+
+# Documentation:
+**Documentation's readme has other examples.**
+
+https://github.com/NoteDancing/Note-documentation
 
 
 # Layer:
