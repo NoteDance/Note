@@ -276,7 +276,7 @@ import Note.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
 import nn as n                          #import neural network
 import threading
-from multiprocessing import Process
+from multiprocessing import Process,Lock
 mnist=tf.keras.datasets.mnist
 (x_train,y_train),(x_test,y_test)=mnist.load_data()
 x_train,x_test =x_train/255.0,x_test/255.0
@@ -288,7 +288,7 @@ kernel.epoch_=6                #epoch:6
 kernel.PO=2                    #use PO2
 kernel.multiprocessing_threading=threading
 kernel.data(x_train,y_train)   #input you data
-kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
+kernel.lock=[[Lock(),Lock(),Lock()],[threading.Lock(),threading.Lock(),threading.Lock()]]
 for _ in range(3):
 	p=Process(target=kernel.train(32)) #batch size:32
 	p.start()
