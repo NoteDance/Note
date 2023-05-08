@@ -26,7 +26,6 @@ class kernel:
         self.process_thread=None
         self.process_thread_t=None
         self.multiprocessing_threading=None
-        self.Thread=[]
         self.process_thread_counter=0
         self.train_ds=None
         self.data_segment_flag=False
