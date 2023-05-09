@@ -47,6 +47,10 @@ class dense:
                     self.bias=tf.Variable(tf.zeros(shape=[weight_shape[1]]))
         self.activation=activation
         self.use_bias=use_bias
+        if use_bias==True:
+            self.weight_list=[self.weight,self.bias]
+        else:
+            self.weight_list=[self.weight]
     
     
     def output(self,data):
