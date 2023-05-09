@@ -25,6 +25,7 @@ class conv2d:
                 else:
                     self.weight=tf.Variable(tf.zeros(shape=weight_shape))
         self.activation=activation
+        self.weight_list=[self.weight]
     
     
     def output(self,data,strides,padding='VALID',data_format='NHWC',dilations=None):
