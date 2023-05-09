@@ -765,10 +765,8 @@ class kernel:
                     if save!=None and i%s==0:
                         self.save(self.total_epoch,one)
                 t2=time.time()
-                if type(self.time)!=list:
+                if self.thread==None:
                     self.time+=(t2-t1)
-                else:
-                    self.time[t]+=(t2-t1)
         elif self.ol==None:
             i=0
             while True:
@@ -843,10 +841,8 @@ class kernel:
                     if save!=None and i%s==0:
                         self.save(self.total_epoch,one)
                 t2=time.time()
-                if type(self.time)!=list:
+                if self.thread==None:
                     self.time+=(t2-t1)
-                else:
-                    self.time[t]+=(t2-t1)
         else:
             self._train()
         if save!=None:
