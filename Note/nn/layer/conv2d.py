@@ -16,9 +16,9 @@ class conv2d:
                     self.weight=tf.Variable(tf.random.normal(shape=weight_shape))
             elif weight_func=='uniform':
                 if dtype!=None:
-                    self.weight=tf.Variable(tf.random.uniform(shape=weight_shape,dtype=dtype))
+                    self.weight=tf.Variable(tf.random.uniform(shape=weight_shape,maxval=0.01,dtype=dtype))
                 else:
-                    self.weight=tf.Variable(tf.random.uniform(shape=weight_shape))
+                    self.weight=tf.Variable(tf.random.uniform(shape=weight_shape,maxval=0.01))
             elif weight_func=='zero':
                 if dtype!=None:
                     self.weight=tf.Variable(tf.zeros(shape=weight_shape,dtype=dtype))
