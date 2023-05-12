@@ -128,7 +128,8 @@ class GRU:
                 self.output_list=[]
                 return output
             else:
-                return self.state
+                self.output_list=[]
+                return output
         else:
             for i in range(self.timestep):
                 R=tf.nn.sigmoid(tf.matmul(data[:][:,i],self.weight_r1)+tf.matmul(self.state,self.weight_r2))
@@ -143,4 +144,5 @@ class GRU:
                 self.output_list=[]
                 return output
             else:
-                return self.state
+                self.output_list=[]
+                return output
