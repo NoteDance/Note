@@ -232,7 +232,7 @@ kernel.PO=2                    #use PO2
 kernel.data(x_train,y_train)   #input you data
 kernel.lock=[Lock(),Lock(),Lock()]
 for _ in range(7):
-	p=Process(target=kernel.train(32)) #batch size:32
+	p=Process(target=kernel.train,args=(32,)) #batch size:32
 	p.start()
 for _ in range(7):
 	p.join()
@@ -257,7 +257,7 @@ kernel.PO=2                    #use PO2
 kernel.data(x_train,y_train)   #input you data
 kernel.lock=[Lock(),Lock(),Lock()]
 for _ in range(7):
-	p=Process(target=kernel.train(32)) #batch size:32
+	p=Process(target=kernel.train,args=(32,)) #batch size:32
 	p.start()
 for _ in range(7):
 	p.join()
@@ -290,7 +290,7 @@ kernel.multiprocessing_threading=threading
 kernel.data(x_train,y_train)   #input you data
 kernel.lock=[[Lock(),Lock(),Lock()],[threading.Lock(),threading.Lock(),threading.Lock()]]
 for _ in range(3):
-	p=Process(target=kernel.train(32)) #batch size:32
+	p=Process(target=kernel.train,args=(32,)) #batch size:32
 	p.start()
 for _ in range(3):
 	p.join()
