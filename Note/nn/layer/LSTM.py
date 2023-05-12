@@ -154,7 +154,8 @@ class LSTM:
                 self.output_list=[]
                 return output
             else:
-                return self.state
+                self.output_list=[]
+                return output
         else:
             for i in range(self.timestep):
                 I=tf.nn.sigmoid(tf.matmul(data[:][:,i],self.weight_i1)+tf.matmul(self.state,self.weight_i2))
@@ -171,4 +172,5 @@ class LSTM:
                 self.output_list=[]
                 return output
             else:
-                return self.state
+                self.output_list=[]
+                return output
