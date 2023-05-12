@@ -1690,9 +1690,10 @@ class kernel:
         try:
             pickle.dump(self.platform.keras.optimizers.serialize(opt),output_file)
         except:
-            pickle.dump(self.nn.serialize(),output_file)
-        else:
-            pickle.dump(None,output_file)
+            try:
+                pickle.dump(self.nn.serialize(),output_file)
+            except:
+                pickle.dump(None,output_file)
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.episode_step,output_file)
         pickle.dump(self.pool_size,output_file)
@@ -1730,9 +1731,10 @@ class kernel:
         try:
             self.nn.opt=self.platform.keras.optimizers.deserialize(opt_serialized)
         except:
-            self.nn.deserialize(opt_serialized)
-        else:
-            pass
+            try:
+                self.nn.deserialize(opt_serialized)
+            except:
+                pass
         self.epsilon=pickle.load(input_file)
         self.episode_step=pickle.load(input_file)
         self.pool_size=pickle.load(input_file)
