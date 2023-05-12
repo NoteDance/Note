@@ -77,7 +77,8 @@ class RNN:
                     self.output_list=[]
                     return output
                 else:
-                    return self.state
+                    self.output_list=[]
+                    return output
             elif self.activation=='sigmoid':
                 for i in range(self.timestep):
                     output=tf.nn.sigmoid(tf.matmul(data[:][:,i],self.weight_i)+tf.matmul(self.state,self.weight_s)+self.bias)
@@ -88,7 +89,8 @@ class RNN:
                     self.output_list=[]
                     return output
                 else:
-                    return self.state
+                    self.output_list=[]
+                    return output
             elif self.activation=='tanh':
                 for i in range(self.timestep):
                     output=tf.nn.tanh(tf.matmul(data[:][:,i],self.weight_i)+tf.matmul(self.state,self.weight_s)+self.bias)
@@ -99,7 +101,8 @@ class RNN:
                     self.output_list=[]
                     return output
                 else:
-                    return self.state
+                    self.output_list=[]
+                    return output
         else:
             if self.activation=='relu':
                 for i in range(self.timestep):
@@ -111,7 +114,8 @@ class RNN:
                     self.output_list=[]
                     return output
                 else:
-                    return self.state
+                    self.output_list=[]
+                    return output
             elif self.activation=='sigmoid':
                 for i in range(self.timestep):
                     output=tf.nn.sigmoid(tf.matmul(data[:][:,i],self.weight_i)+tf.matmul(self.state,self.weight_s))
@@ -122,7 +126,8 @@ class RNN:
                     self.output_list=[]
                     return output
                 else:
-                    return self.state
+                    self.output_list=[]
+                    return output
             elif self.activation=='tanh':
                 for i in range(self.timestep):
                     output=tf.nn.tanh(tf.matmul(data[:][:,i],self.weight_i)+tf.matmul(self.state,self.weight_s))
@@ -133,4 +138,5 @@ class RNN:
                     self.output_list=[]
                     return output
                 else:
-                    return self.state
+                    self.output_list=[]
+                    return output
