@@ -124,7 +124,9 @@ class GRU:
                 self.H=output
                 self.state=output
             if self.return_sequence==True:
-                return tf.stack(self.output_list,axis=1)
+                output=tf.stack(self.output_list,axis=1)
+                self.output_list=[]
+                return output
             else:
                 return self.state
         else:
@@ -137,6 +139,8 @@ class GRU:
                 self.H=output
                 self.state=output
             if self.return_sequence==True:
-                return tf.stack(self.output_list,axis=1)
+                output=tf.stack(self.output_list,axis=1)
+                self.output_list=[]
+                return output
             else:
                 return self.state
