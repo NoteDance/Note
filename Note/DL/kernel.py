@@ -1131,7 +1131,7 @@ class kernel:
             else:
                 self.gradient_lock.append(self.multiprocessing_threading.Lock())
             if type(self.process_thread)==list:
-                self.lock[0][1].acquire()
+                self.lock[0][1].release()
             else:
                 self.lock[1].release()
         if self.PO==3:
@@ -1283,18 +1283,18 @@ class kernel:
                                 self.lock[1].acquire()
                         else:
                             if type(self.process_thread)==list:
-                                self.lock[0][2].release()
+                                self.lock[0][2].acquire()
                             else:
-                                self.lock[2].release()
+                                self.lock[2].acquire()
                         self.process_thread_counter-=1
                         self.running_list.remove(t)
                         self.stop_list.remove(t)
                         self.stopped_list.append(t)
                         if self.PO==1 or self.PO==3:
                             if type(self.process_thread)==list:
-                                self.lock[0][1].acquire()
+                                self.lock[0][1].release()
                             else:
-                                self.lock[1].acquire()
+                                self.lock[1].release()
                         else:
                             if type(self.process_thread)==list:
                                 self.lock[0][2].release()
@@ -1390,16 +1390,22 @@ class kernel:
             self.training_flag=False
         if self.process_thread!=None:
             if self.PO==1 or self.PO==3:
-                self.lock[1].acquire()
-            else:
-                self.lock[2].acquire()
-            self.process_thread_counter-=1
-            self.running_list.remove(t)
-            if self.PO==1 or self.PO==3:
                 if type(self.process_thread)==list:
                     self.lock[0][1].acquire()
                 else:
                     self.lock[1].acquire()
+            else:
+                if type(self.process_thread)==list:
+                    self.lock[0][2].acquire()
+                else:
+                    self.lock[2].acquire()
+            self.process_thread_counter-=1
+            self.running_list.remove(t)
+            if self.PO==1 or self.PO==3:
+                if type(self.process_thread)==list:
+                    self.lock[0][1].release()
+                else:
+                    self.lock[1].release()
             else:
                 if type(self.process_thread)==list:
                     self.lock[0][2].release()
