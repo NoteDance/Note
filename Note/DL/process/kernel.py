@@ -385,9 +385,15 @@ class kernel:
             if self.test_dataset!=None:
                 for data_batch,labels_batch in self.test_dataset:
                     if self.process==None or t==None:
-                        output=self.nn.fp(data_batch,param)
+                        if param==None:
+                            output=self.nn.fp(data_batch)
+                        else:
+                            output=self.nn.fp(data_batch,param)
                     else:
-                        output=self.nn.fp(data_batch,t)
+                        if param==None:
+                            output=self.nn.fp(data_batch,t)
+                        else:
+                            output=self.nn.fp(data_batch,param,t)
                     batch_loss=self.nn.loss(output,labels_batch)
                     total_loss+=batch_loss
                     try:
@@ -419,9 +425,15 @@ class kernel:
                     else:
                         labels_batch=test_labels[index1:index2]
                     if self.process==None or t==None:
-                        output=self.nn.fp(data_batch,param)
+                        if param==None:
+                            output=self.nn.fp(data_batch)
+                        else:
+                            output=self.nn.fp(data_batch,param)
                     else:
-                        output=self.nn.fp(data_batch,t)
+                        if param==None:
+                            output=self.nn.fp(data_batch,t)
+                        else:
+                            output=self.nn.fp(data_batch,param,t)
                     batch_loss=self.nn.loss(output,labels_batch)
                     total_loss+=batch_loss
                     try:
@@ -457,9 +469,15 @@ class kernel:
                         else:
                             labels_batch=tf.concat([test_labels[index1:],test_labels[:index2]],0)
                     if self.process==None or t==None:
-                        output=self.nn.fp(data_batch,param)
+                        if param==None:
+                            output=self.nn.fp(data_batch)
+                        else:
+                            output=self.nn.fp(data_batch,param)
                     else:
-                        output=self.nn.fp(data_batch,t)
+                        if param==None:
+                            output=self.nn.fp(data_batch,t)
+                        else:
+                            output=self.nn.fp(data_batch,param,t)
                     batch_loss=self.nn.loss(output,labels_batch)
                     total_loss+=batch_loss
                     try:
@@ -476,9 +494,15 @@ class kernel:
                 pass
         else:
             if self.process==None or t==None:
-                output=self.nn.fp(test_data)
+                if self.param==None:
+                    output=self.nn.fp(test_data)
+                else:
+                    output=self.nn.fp(test_data,param)
             else:
-                output=self.nn.fp(test_data,t)
+                if self.param==None:
+                    output=self.nn.fp(test_data,t)
+                else:
+                    output=self.nn.fp(test_data,param,t)
             test_loss=self.nn.loss(output,test_labels)
             test_loss=test_loss.numpy()
             try:
