@@ -73,6 +73,11 @@ class kernel:
         self.process_num=list(self.process_num)
         self.batch_counter=np.zeros(self.process,dtype=np.int32)
         self.total_loss=np.zeros(self.process,dtype=np.float32)
+        try:
+            if self.nn.attenuate!=None:
+                self.opt_counter=np.zeros(self.process,dtype=np.float32)
+        except AttributeError:
+            pass
         if self.train_dataset==None:
             if type(self.train_data)==list:
                 self.shape0=train_data[0].shape[0]
@@ -113,6 +118,11 @@ class kernel:
         self.train_loss=Value('f',0)
         self.train_loss_list=manager.list([])
         self.batches=Value('i',batches)
+        try:
+            if self.nn.attenuate!=None:
+              self.opt_counter=Array('f',self.opt_counter)  
+        except AttributeError:   
+            pass
         self.stop_flag=Value('b',0)
         self.save_flag=Value('b',0)
         self.param=manager.dict()
