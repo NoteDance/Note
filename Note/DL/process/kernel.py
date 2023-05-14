@@ -78,6 +78,10 @@ class kernel:
                 self.opt_counter=np.zeros(self.process,dtype=np.float32)
         except AttributeError:
             pass
+        try:
+            self.nn.bc=np.zeros(self.process,dtype=np.float32)
+        except AttributeError:
+            pass
         if self.train_dataset==None:
             if type(self.train_data)==list:
                 self.shape0=train_data[0].shape[0]
@@ -122,6 +126,10 @@ class kernel:
             if self.nn.attenuate!=None:
               self.opt_counter=Array('f',self.opt_counter)  
         except AttributeError:   
+            pass
+        try:
+            self.nn.bc=Array('f',self.nn.bc)  
+        except AttributeError:
             pass
         self.stop_flag=Value('b',0)
         self.save_flag=Value('b',0)
