@@ -212,13 +212,38 @@ for _ in range(2):
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/nn_Momentum_process.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/process/nn.py
+
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/process/nn_.py
 
 **multiprocessing example:**
 ```python
 import Note.DL.process.kernel as k   #import kernel
 import tensorflow as tf
-import nn_Momentum_process as n                          #import neural network
+import nn as n                          #import neural network
+from multiprocessing import Process,Lock,Manager
+mnist=tf.keras.datasets.mnist
+(x_train,y_train),(x_test,y_test)=mnist.load_data()
+x_train,x_test =x_train/255.0,x_test/255.0
+x_train=x_train.reshape([60000,784])
+nn=n.nn()                                #create neural network object
+nn.build()
+kernel=k.kernel(nn)   #start kernel
+kernel.process=7      #7 processes to train
+kernel.data_segment_flag=True
+kernel.epoch_=6                #epoch:6
+kernel.PO=1                    #use PO1
+kernel.data(x_train,y_train)   #input you data
+manager=Manager()              #create manager object
+kernel.init(manager,1875)      #initialize shared data,1875 batches
+lock=[Lock(),Lock(),Lock()]
+for _ in range(7):
+	Process(target=kernel.train,args=(32,lock)).start()
+```
+```python
+import Note.DL.process.kernel as k   #import kernel
+import tensorflow as tf
+import nn_ as n                          #import neural network
 from multiprocessing import Process,Lock,Manager
 mnist=tf.keras.datasets.mnist
 (x_train,y_train),(x_test,y_test)=mnist.load_data()
