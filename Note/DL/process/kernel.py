@@ -221,6 +221,7 @@ class kernel:
         if self.PO==1:
             lock[0].acquire()
             if self.stop_func_(lock[0]):
+                self.param[7]=param
                 return None,0
             try:
                 gradient=self.nn.gradient(tape,loss)
@@ -245,6 +246,7 @@ class kernel:
         elif self.PO==2:
             lock[0].acquire()
             if self.stop_func_(lock[0]):
+                self.param[7]=param
                 return None,0
             try:
                 gradient=self.nn.gradient(tape,loss)
@@ -741,7 +743,7 @@ class kernel:
     
     def save_p(self):
         parameter_file=open('param.dat','wb')
-        pickle.dump(self.nn.param,parameter_file)
+        pickle.dump(self.param[7],parameter_file)
         parameter_file.close()
         return
     
@@ -758,20 +760,9 @@ class kernel:
             if len(self.file_list)>self.s+1:
                 os.remove(self.file_list[0][0])
                 del self.file_list[0]
-        try:
-            pickle.dump(self.nn,output_file)
-        except:
-            opt=self.nn.opt
-            self.nn.opt=None
-            pickle.dump(self.nn,output_file)
-            self.nn.opt=opt
-        try:
-            pickle.dump(tf.keras.optimizers.serialize(opt),output_file)
-        except:
-            try:
-                pickle.dump(self.nn.serialize(),output_file)
-            except:
-                pickle.dump(None,output_file)
+        self.nn.param=[]
+        pickle.dump(self.nn,output_file)
+        pickle.dump(self.param[7],output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.end_loss,output_file)
         pickle.dump(self.end_acc,output_file)
@@ -804,14 +795,7 @@ class kernel:
             self.nn.km=1
         except AttributeError:
             pass
-        opt_serialized=pickle.load(input_file)
-        try:
-            self.nn.opt=tf.keras.optimizers.deserialize(opt_serialized)
-        except:
-            try:
-                self.nn.deserialize(opt_serialized)
-            except:
-                pass
+        self.param=pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
         self.end_acc=pickle.load(input_file)
