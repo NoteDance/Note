@@ -221,7 +221,6 @@ class kernel:
         if self.PO==1:
             lock[0].acquire()
             if self.stop_func_(lock[0]):
-                self.param[7]=param
                 return None,0
             try:
                 gradient=self.nn.gradient(tape,loss)
@@ -246,7 +245,6 @@ class kernel:
         elif self.PO==2:
             lock[0].acquire()
             if self.stop_func_(lock[0]):
-                self.param[7]=param
                 return None,0
             try:
                 gradient=self.nn.gradient(tape,loss)
@@ -282,6 +280,7 @@ class kernel:
         while True:
             for data_batch,labels_batch in train_ds:
                 output,batch_loss,weight=self.opt_t(data_batch,labels_batch,t,lock=lock)
+                self.param[7]=weight
                 try:
                     self.nn.bc[t]+=1
                 except AttributeError:
@@ -355,7 +354,6 @@ class kernel:
                 else:
                     lock[2].release()
                 if self.epoch_counter.value==self.epoch_:
-                    self.param[7]=weight
                     return
     
     
