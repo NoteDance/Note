@@ -133,6 +133,7 @@ class kernel:
             pass
         self.stop_flag=Value('b',0)
         self.save_flag=Value('b',0)
+        self.file_list=manager.list([])
         self.param=manager.dict()
         return
     
