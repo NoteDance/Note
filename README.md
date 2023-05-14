@@ -141,7 +141,7 @@ x_train,x_test =x_train/255.0,x_test/255.0
 nn=n.nn()                                #create neural network object
 kernel=k.kernel(nn)   #start kernel
 kernel.platform=tf                            #use platform
-kernel.process_thread=7                        #thread count,use 7 threads to train
+kernel.thread=7                        #thread count,use 7 threads to train
 kernel.epoch_=6                #epoch:6
 kernel.PO=2                    #use PO2
 kernel.data(x_train,y_train)   #input you data
@@ -169,7 +169,7 @@ x_train,x_test =x_train/255.0,x_test/255.0
 nn=n.nn()                                #create neural network object
 kernel=k.kernel(nn)   #start kernel
 kernel.platform=tf                            #use platform
-kernel.process_thread=2                        #thread count,use 2 threads to train
+kernel.thread=2                        #thread count,use 2 threads to train
 kernel.PO=2                    #use PO2
 kernel.data(x_train,y_train)   #input you data
 kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
@@ -194,7 +194,7 @@ x_train,x_test =x_train/255.0,x_test/255.0
 kernel=k.kernel()                 #start kernel
 kernel.platform=tf                    #use platform
 kernel.restore('save.dat')     #restore neural network
-kernel.process_thread=2                        #thread count,use 2 threads to train
+kernel.thread=2                        #thread count,use 2 threads to train
 kernel.PO=2                    #use PO2
 kernel.data(x_train,y_train)   #input you data
 kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
@@ -212,88 +212,31 @@ for _ in range(2):
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/nn.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/nn_Momentum_process.py
 
 **multiprocessing example:**
 ```python
-import Note.DL.kernel as k   #import kernel
-import tensorflow as tf              #import platform
-import nn as n                          #import neural network
-from multiprocessing import Process,Lock
+import Note.DL.process.kernel as k   #import kernel
+import tensorflow as tf
+import nn_Momentum_process as n                          #import neural network
+from multiprocessing import Process,Lock,Manager
 mnist=tf.keras.datasets.mnist
 (x_train,y_train),(x_test,y_test)=mnist.load_data()
 x_train,x_test =x_train/255.0,x_test/255.0
+x_train=x_train.reshape([60000,784])
 nn=n.nn()                                #create neural network object
 kernel=k.kernel(nn)   #start kernel
-kernel.platform=tf                            #use platform
-kernel.process_thread=7                        #thread count,use 7 processes to train
-kernel.epoch_=6                #epoch:6
-kernel.PO=2                    #use PO2
-kernel.data(x_train,y_train)   #input you data
-kernel.lock=[Lock(),Lock(),Lock()]
-for _ in range(7):
-	p=Process(target=kernel.train,args=(32,)) #batch size:32
-	p.start()
-for _ in range(7):
-	p.join()
-kernel.visualize_train()
-```
-```python
-import Note.DL.kernel as k   #import kernel
-import tensorflow as tf              #import platform
-import nn as n                          #import neural network
-from multiprocessing import Process,Lock
-mnist=tf.keras.datasets.mnist
-(x_train,y_train),(x_test,y_test)=mnist.load_data()
-x_train,x_test =x_train/255.0,x_test/255.0
-nn=n.nn()                                #create neural network object
-kernel=k.kernel(nn)   #start kernel
-kernel.platform=tf                            #use platform
-kernel.process_thread=7                        #thread count,use 7 processes to train
+kernel.process=7      #7 processes to train
 kernel.data_segment_flag=True
-kernel.batches=1875
 kernel.epoch_=6                #epoch:6
-kernel.PO=2                    #use PO2
+kernel.PO=1                    #use PO1
 kernel.data(x_train,y_train)   #input you data
-kernel.lock=[Lock(),Lock(),Lock()]
+manager=Manager()              #create manager object
+kernel.init(manager,1875)      #initialize shared data,1875 batches
+lock=[Lock(),Lock(),Lock()]
 for _ in range(7):
-	p=Process(target=kernel.train,args=(32,)) #batch size:32
-	p.start()
-for _ in range(7):
-	p.join()
-kernel.visualize_train()
-```
-
-#### Use threads in process：
-
-**You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
-
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/nn.py
-
-**example:**
-```python
-import Note.DL.kernel as k   #import kernel
-import tensorflow as tf              #import platform
-import nn as n                          #import neural network
-import threading
-from multiprocessing import Process,Lock
-mnist=tf.keras.datasets.mnist
-(x_train,y_train),(x_test,y_test)=mnist.load_data()
-x_train,x_test =x_train/255.0,x_test/255.0
-nn=n.nn()                                #create neural network object
-kernel=k.kernel(nn)   #start kernel
-kernel.platform=tf                            #use platform
-kernel.process_thread=[3,7]                        #use 3 processes and 21 threads to train
-kernel.epoch_=6                #epoch:6
-kernel.PO=2                    #use PO2
-kernel.multiprocessing_threading=threading
-kernel.data(x_train,y_train)   #input you data
-kernel.lock=[[Lock(),Lock(),Lock()],[threading.Lock(),threading.Lock(),threading.Lock()]]
-for _ in range(3):
-	p=Process(target=kernel.train,args=(32,)) #batch size:32
-	p.start()
-for _ in range(3):
-	p.join()
+	Process(target=kernel.train,args=(32,lock)).start()
+kernel.test(x_train,y_train,32,kernel.param[7])  #kernel.param[7] is parameters after training
 ```
 
 **Gradient Attenuation：**
@@ -335,6 +278,7 @@ kernel.train(64,5)         #train neural network
                            #batch size:32
                            #epoch:5
 ```
+
 
 # Reinforcement Learning:
 
@@ -420,7 +364,7 @@ kernel=k.kernel(dqn,5)   #start kernel,use 5 thread to train
 kernel.action_count=2
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
 kernel.PO=1                    #use PO1
-kernel.multiprocessing_threading=threading
+kernel.threading=threading
 kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
 class thread(threading.Thread):
 	def run(self):
@@ -444,7 +388,7 @@ kernel=k.kernel(dqn,5)   #start kernel,use 5 thread to train
 kernel.action_count=2
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
 kernel.PO=3                    #use PO3
-kernel.multiprocessing_threading=threading
+kernel.threading=threading
 kernel.max_lock=5
 kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
 class thread(threading.Thread):
