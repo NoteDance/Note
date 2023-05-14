@@ -153,7 +153,7 @@ class kernel:
         return
     
     
-    def create_pt_num(self,thread=None):
+    def create_t_num(self,thread=None):
         if thread==None:
             self.thread_num=np.arange(self.thread)
             self.thread_num=list(self.thread_num)
