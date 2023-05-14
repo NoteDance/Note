@@ -9,20 +9,20 @@ import os
 
 
 class kernel:
-    def __init__(self,nn=None,process_thread=None,save_episode=False):
+    def __init__(self,nn=None,thread=None,save_episode=False):
         self.nn=nn
         try:
             self.nn.km=1
         except AttributeError:
             pass
-        if process_thread!=None:
-            self.process_thread_num=np.arange(process_thread)
-            self.process_thread_num=list(self.process_thread_num)
-            self.reward=np.zeros(process_thread,dtype=np.float32)
-            self.loss=np.zeros(process_thread,dtype=np.float32)
-            self.sc=np.zeros(process_thread,dtype=np.float32)
-            self.opt_counter=np.zeros(process_thread,dtype=np.float32)
-        self.multiprocessing_threading=None
+        if thread!=None:
+            self.thread_num=np.arange(thread)
+            self.thread_num=list(self.thread_num)
+            self.reward=np.zeros(thread,dtype=np.float32)
+            self.loss=np.zeros(thread,dtype=np.float32)
+            self.sc=np.zeros(thread,dtype=np.float32)
+            self.opt_counter=np.zeros(thread,dtype=np.float32)
+        self.threading=None
         self.gradient_lock=[]
         self.max_lock=None
         self.d_index=0
@@ -65,8 +65,8 @@ class kernel:
         self.episode_memory_t_value=None
         self.memory_t_value=None
         self.end_loss=None
-        self.process_thread=process_thread
-        self.process_thread_counter=0
+        self.thread=thread
+        self.thread_counter=0
         self.lock=None
         self.pool_lock=[]
         self.probability_list=[]
@@ -153,14 +153,14 @@ class kernel:
         return
     
     
-    def create_pt_num(self,process_thread=None):
-        if process_thread==None:
-            self.process_thread_num=np.arange(self.process_thread)
-            self.process_thread_num=list(self.process_thread_num)
+    def create_pt_num(self,thread=None):
+        if thread==None:
+            self.thread_num=np.arange(self.thread)
+            self.thread_num=list(self.thread_num)
         else:
-            self.process_thread_num=np.arange(process_thread)
-            self.process_thread_num=list(self.process_thread_num)
-            self.process_thread=process_thread
+            self.thread_num=np.arange(thread)
+            self.thread_num=list(self.thread_num)
+            self.thread=thread
         self.pool_lock=[]
         self.gradient_lock=[]
         self.gradient_list=[]
@@ -170,9 +170,9 @@ class kernel:
         self.episode_memory_list=[]
         self.episode_list=[]
         self.finish_list=[]
-        self.reward=np.zeros(self.process_thread,dtype=np.float32)
-        self.loss=np.zeros(self.process_thread,dtype=np.float32)
-        self.sc=np.zeros(self.process_thread,dtype=np.float32)
+        self.reward=np.zeros(self.thread,dtype=np.float32)
+        self.loss=np.zeros(self.thread,dtype=np.float32)
+        self.sc=np.zeros(self.thread,dtype=np.float32)
         try:
             if self.nn.row!=None:
                 self.row_probability=[]
@@ -187,29 +187,29 @@ class kernel:
             pass
         try:
             if self.nn.attenuate!=None:
-                self.opt_counter=np.zeros(self.process_thread,dtype=np.float32)
+                self.opt_counter=np.zeros(self.thread,dtype=np.float32)
         except AttributeError:
             pass
         try:
-            self.nn.bc=np.zeros(self.process_thread,dtype=np.float32)
+            self.nn.bc=np.zeros(self.thread,dtype=np.float32)
         except AttributeError:
             pass
         return
     
     
-    def add_threads(self,process_thread,row=None,rank=None):
+    def add_threads(self,thread,row=None,rank=None):
         if row!=None:
-            self.process_thread=row*rank-self.nn.row*self.nn.rank
+            self.thread=row*rank-self.nn.row*self.nn.rank
             self.nn.row=row
             self.nn.rank=rank
             self.add_flag=True
-        process_thread_num=np.arange(process_thread)+self.process_thread
-        self.process_thread_num=self.process_thread_num.extend(process_thread_num)
-        self.process_thread+=process_thread
-        self.sc=np.concatenate((self.sc,np.zeros(process_thread,dtype=np.float32)))
-        self.reward=np.concatenate((self.reward,np.zeros(process_thread,dtype=np.float32)))
-        self.loss=np.concatenate((self.loss,np.zeros(process_thread,dtype=np.float32)))
-        self.opt_counter=np.concatenate((self.opt_counter,np.zeros(process_thread,dtype=np.float32)))
+        thread_num=np.arange(thread)+self.thread
+        self.thread_num=self.thread_num.extend(thread_num)
+        self.thread+=thread
+        self.sc=np.concatenate((self.sc,np.zeros(thread,dtype=np.float32)))
+        self.reward=np.concatenate((self.reward,np.zeros(thread,dtype=np.float32)))
+        self.loss=np.concatenate((self.loss,np.zeros(thread,dtype=np.float32)))
+        self.opt_counter=np.concatenate((self.opt_counter,np.zeros(thread,dtype=np.float32)))
         return
     
     
@@ -229,9 +229,9 @@ class kernel:
         self.c_memory=0
         self.max_memory=0
         self.grad_memory_list=[]
-        self.process_thread_counter=0
-        self.process_thread_num=np.arange(self.process_thread)
-        self.process_thread_num=list(self.process_thread_num)
+        self.thread_counter=0
+        self.thread_num=np.arange(self.thread)
+        self.thread_num=list(self.thread_num)
         self.probability_list=[]
         self.running_flag=np.array(0,dtype=np.int8)
         self.running_flag_list=[]
@@ -261,11 +261,11 @@ class kernel:
         self.next_state_pool={}
         self.reward_pool={}
         self.done_pool={}
-        self.reward=np.zeros(self.process_thread,dtype=np.float32)
-        self.loss=np.zeros(self.process_thread,dtype=np.float32)
+        self.reward=np.zeros(self.thread,dtype=np.float32)
+        self.loss=np.zeros(self.thread,dtype=np.float32)
         self.reward_list=[]
         self.loss_list=[]
-        self.sc=np.zeros(self.process_thread,dtype=np.float32)
+        self.sc=np.zeros(self.thread,dtype=np.float32)
         self.total_episode=0
         self.total_time=0
         return
@@ -273,7 +273,7 @@ class kernel:
     
     def set_up(self,epsilon=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None,end_loss=None):
         if epsilon!=None:
-            self.epsilon=np.ones(self.process_thread)*epsilon
+            self.epsilon=np.ones(self.thread)*epsilon
         if episode_step!=None:
             self.episode_step=episode_step
         if pool_size!=None:
@@ -545,7 +545,7 @@ class kernel:
                         self.lock[2].release()
                     else:
                         self.lock[3].release()
-                if len(self.running_flag_list[t])<self.process_thread_counter or np.sum(self.running_flag_list[t])>self.process_thread_counter:
+                if len(self.running_flag_list[t])<self.thread_counter or np.sum(self.running_flag_list[t])>self.thread_counter:
                     self.running_flag_list[t]=self.running_flag[1:].copy()
                 while len(self.probability_list)<t:
                     pass
@@ -1053,7 +1053,7 @@ class kernel:
                         return
                     self.suspend_func(t)
                     if self.PO==3:
-                        if len(self.gradient_lock)==self.process_thread:
+                        if len(self.gradient_lock)==self.thread:
                             ln=int(t)
                         else:
                             ln=int(np.random.choice(len(self.gradient_lock)))
@@ -1068,7 +1068,7 @@ class kernel:
                 except AttributeError:
                     pass
                 if self.PO==3:
-                    if len(self.gradient_lock)==self.process_thread:
+                    if len(self.gradient_lock)==self.thread:
                         ln=int(t)
                     else:
                         ln=int(np.random.choice(len(self.gradient_lock)))
@@ -1113,7 +1113,7 @@ class kernel:
                 self.lock[3].acquire()
         else:
             self.lock[0].acquire()
-        t=self.process_thread_num.pop(0)
+        t=self.thread_num.pop(0)
         t=int(t)
         self.state_pool[t]=None
         self.action_pool[t]=None
@@ -1133,18 +1133,18 @@ class kernel:
                 self.nn.pr.index.append(None)
         except AttributeError:
             pass
-        if self.multiprocessing_threading!=None:
-            self.pool_lock.append(self.multiprocessing_threading.Lock())
+        if self.threading!=None:
+            self.pool_lock.append(self.threading.Lock())
             if self.PO==3:
                 if self.max_lock!=None and len(self.gradient_lock)<self.max_lock:
-                    self.gradient_lock.append(self.multiprocessing_threading.Lock())
+                    self.gradient_lock.append(self.threading.Lock())
                 else:
-                    self.gradient_lock.append(self.multiprocessing_threading.Lock())
+                    self.gradient_lock.append(self.threading.Lock())
         if self.PO==3:
             self.gradient_list.append(None)
             if self.memory_flag==True:
                 self.grad_memory_list.append(0)
-        self.process_thread_counter+=1
+        self.thread_counter+=1
         self.running_list.append(t)
         if self.memory_flag==True:
             self.pool_memory_list.append(0)
@@ -1188,7 +1188,7 @@ class kernel:
                                 self.lock[3].acquire()
                         else:
                             self.lock[0].acquire()
-                        self.process_thread_counter-=1
+                        self.thread_counter-=1
                         self.running_list.remove(t)
                         self.stop_list.remove(t)
                         self.stopped_list.append(t)
@@ -1255,7 +1255,7 @@ class kernel:
                                 self.lock[3].acquire()
                         else:
                             self.lock[0].acquire()
-                        self.process_thread_counter-=1
+                        self.thread_counter-=1
                         self.running_list.remove(t)
                         self.stop_list.remove(t)
                         self.stopped_list.append(t)
@@ -1359,7 +1359,7 @@ class kernel:
             self.lock[2].acquire()
         else:
             self.lock[3].acquire()
-        self.process_thread_counter-=1
+        self.thread_counter-=1
         self.running_list.remove(t)
         if t not in self.finish_list:
             self.finish_list[t]=t
@@ -1380,7 +1380,7 @@ class kernel:
             self.lock[1].acquire()
         else:
             self.lock[2].acquire()
-        t=self.process_thread_num.pop(0)
+        t=self.thread_num.pop(0)
         self.exception_list.append(False)
         if self.PO==1 or self.PO==3:
             self.lock[1].release()
@@ -1443,7 +1443,7 @@ class kernel:
                 continue
             try:
                 if self.PO==3:
-                    if len(self.gradient_lock)==self.process_thread:
+                    if len(self.gradient_lock)==self.thread:
                         ln=int(t)
                     else:
                         ln=int(np.random.choice(len(self.gradient_lock)))
