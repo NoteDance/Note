@@ -785,7 +785,7 @@ class kernel:
             self.nn.km=1
         except AttributeError:
             pass
-        self.param[7]==pickle.load(input_file)
+        self.param[7]=pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
         self.end_acc=pickle.load(input_file)
