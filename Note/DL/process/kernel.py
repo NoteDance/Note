@@ -338,10 +338,7 @@ class kernel:
                     except AttributeError:
                         pass
                     if self.test_flag==True:
-                        if self.process_thread_t==None:
-                            self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch,t)
-                        else:
-                            self.test_loss,self.test_acc=self.test(batch=test_batch)
+                        self.test_loss,self.test_acc=self.test(batch=test_batch)
                         self.test_loss_list.append(self.test_loss)
                     try:
                         if self.nn.accuracy!=None:
@@ -371,6 +368,7 @@ class kernel:
                 else:
                     lock[2].release()
                 if self.epoch_counter.value==self.epoch_:
+                    self.param[7]=param
                     return
     
     
@@ -401,7 +399,7 @@ class kernel:
         return
     
     
-    def test(self,test_data=None,test_labels=None,batch=None,t=None):
+    def test(self,test_data=None,test_labels=None,batch=None):
         if type(test_data)==list:
             data_batch=[x for x in range(len(test_data))]
         if type(test_labels)==list:
@@ -411,10 +409,7 @@ class kernel:
             total_acc=0
             if self.test_dataset!=None:
                 for data_batch,labels_batch in self.test_dataset:
-                    if self.process==None or t==None:
-                        output=self.nn.fp(data_batch)
-                    else:
-                        output=self.nn.fp(data_batch,t)
+                    output=self.nn.fp(data_batch)
                     batch_loss=self.nn.loss(output,labels_batch)
                     total_loss+=batch_loss
                     try:
@@ -445,10 +440,7 @@ class kernel:
                             labels_batch[i]=test_labels[i][index1:index2]
                     else:
                         labels_batch=test_labels[index1:index2]
-                    if self.process==None or t==None:
-                        output=self.nn.fp(data_batch)
-                    else:
-                        output=self.nn.fp(data_batch,t)
+                    output=self.nn.fp(data_batch)
                     batch_loss=self.nn.loss(output,labels_batch)
                     total_loss+=batch_loss
                     try:
@@ -483,10 +475,7 @@ class kernel:
                                 labels_batch[i]=tf.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
                         else:
                             labels_batch=tf.concat([test_labels[index1:],test_labels[:index2]],0)
-                    if self.process==None or t==None:
-                        output=self.nn.fp(data_batch)
-                    else:
-                        output=self.nn.fp(data_batch,t)
+                    output=self.nn.fp(data_batch)
                     batch_loss=self.nn.loss(output,labels_batch)
                     total_loss+=batch_loss
                     try:
@@ -502,10 +491,7 @@ class kernel:
             except AttributeError:
                 pass
         else:
-            if self.process==None or t==None:
-                output=self.nn.fp(test_data)
-            else:
-                output=self.nn.fp(test_data,t)
+            output=self.nn.fp(test_data)
             test_loss=self.nn.loss(output,test_labels)
             test_loss=test_loss.numpy()
             try:
