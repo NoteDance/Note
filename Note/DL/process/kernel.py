@@ -1,5 +1,6 @@
 import tensorflow as tf
 from tensorflow import function
+from tensorflow.python.ops import state_ops
 from multiprocessing import Value,Array
 import numpy as np
 import matplotlib.pyplot as plt
@@ -285,11 +286,18 @@ class kernel:
         return output,loss,param
     
     
+    def update_param(self):
+        for i in range(len(self.nn.param)):
+            self.param[7][i]=self.param[7][i].numpy()
+            state_ops.assign(self.nn.param[i],self.param[7][i])
+        return
+    
+    
     def train7(self,train_ds,t,test_batch,lock):
         while True:
             for data_batch,labels_batch in train_ds:
-                output,batch_loss,weight=self.opt_t(data_batch,labels_batch,t,lock=lock)
-                self.param[7]=weight
+                output,batch_loss,param=self.opt_t(data_batch,labels_batch,t,lock=lock)
+                self.param[7]=param
                 try:
                     self.nn.bc[t]+=1
                 except AttributeError:
@@ -393,7 +401,7 @@ class kernel:
         return
     
     
-    def test(self,test_data=None,test_labels=None,batch=None,param=None,t=None):
+    def test(self,test_data=None,test_labels=None,batch=None,t=None):
         if type(test_data)==list:
             data_batch=[x for x in range(len(test_data))]
         if type(test_labels)==list:
@@ -404,15 +412,9 @@ class kernel:
             if self.test_dataset!=None:
                 for data_batch,labels_batch in self.test_dataset:
                     if self.process==None or t==None:
-                        if param==None:
-                            output=self.nn.fp(data_batch)
-                        else:
-                            output=self.nn.fp(data_batch,param)
+                        output=self.nn.fp(data_batch)
                     else:
-                        if param==None:
-                            output=self.nn.fp(data_batch,t)
-                        else:
-                            output=self.nn.fp(data_batch,param,t)
+                        output=self.nn.fp(data_batch,t)
                     batch_loss=self.nn.loss(output,labels_batch)
                     total_loss+=batch_loss
                     try:
@@ -444,15 +446,9 @@ class kernel:
                     else:
                         labels_batch=test_labels[index1:index2]
                     if self.process==None or t==None:
-                        if param==None:
-                            output=self.nn.fp(data_batch)
-                        else:
-                            output=self.nn.fp(data_batch,param)
+                        output=self.nn.fp(data_batch)
                     else:
-                        if param==None:
-                            output=self.nn.fp(data_batch,t)
-                        else:
-                            output=self.nn.fp(data_batch,param,t)
+                        output=self.nn.fp(data_batch,t)
                     batch_loss=self.nn.loss(output,labels_batch)
                     total_loss+=batch_loss
                     try:
@@ -488,15 +484,9 @@ class kernel:
                         else:
                             labels_batch=tf.concat([test_labels[index1:],test_labels[:index2]],0)
                     if self.process==None or t==None:
-                        if param==None:
-                            output=self.nn.fp(data_batch)
-                        else:
-                            output=self.nn.fp(data_batch,param)
+                        output=self.nn.fp(data_batch)
                     else:
-                        if param==None:
-                            output=self.nn.fp(data_batch,t)
-                        else:
-                            output=self.nn.fp(data_batch,param,t)
+                        output=self.nn.fp(data_batch,t)
                     batch_loss=self.nn.loss(output,labels_batch)
                     total_loss+=batch_loss
                     try:
@@ -513,15 +503,9 @@ class kernel:
                 pass
         else:
             if self.process==None or t==None:
-                if self.param==None:
-                    output=self.nn.fp(test_data)
-                else:
-                    output=self.nn.fp(test_data,param)
+                output=self.nn.fp(test_data)
             else:
-                if self.param==None:
-                    output=self.nn.fp(test_data,t)
-                else:
-                    output=self.nn.fp(test_data,param,t)
+                output=self.nn.fp(test_data,t)
             test_loss=self.nn.loss(output,test_labels)
             test_loss=test_loss.numpy()
             try:
@@ -767,7 +751,6 @@ class kernel:
             if len(self.file_list)>self.s+1:
                 os.remove(self.file_list[0][0])
                 del self.file_list[0]
-        self.nn.param=[]
         pickle.dump(self.nn,output_file)
         pickle.dump(self.param[7],output_file)
         pickle.dump(self.batch,output_file)
@@ -802,7 +785,7 @@ class kernel:
             self.nn.km=1
         except AttributeError:
             pass
-        self.param=pickle.load(input_file)
+        self.param[7]==pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
         self.end_acc=pickle.load(input_file)
