@@ -154,7 +154,7 @@ kernel.init(manager,1875)      #initialize shared data,1875 batches
 lock=[Lock(),Lock(),Lock()]
 for _ in range(7):
 	Process(target=kernel.train,args=(32,lock)).start()
-kernel.update_param()
+kernel.update_nn_param()
 kernel.test(x_train,y_train,32)
 ```
 ```python
@@ -178,7 +178,7 @@ kernel.init(manager,1875)      #initialize shared data,1875 batches
 lock=[Lock(),Lock(),Lock()]
 for _ in range(7):
 	Process(target=kernel.train,args=(32,lock)).start()
-kernel.update_param()
+kernel.update_nn_param()
 kernel.test(x_train,y_train,32)
 ```
 
