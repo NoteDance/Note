@@ -286,10 +286,14 @@ class kernel:
         return output,loss,param
     
     
-    def update_param(self):
+    def update_nn_param(self,param=None):
         for i in range(len(self.nn.param)):
-            self.param[7][i]=self.param[7][i].numpy()
-            state_ops.assign(self.nn.param[i],self.param[7][i])
+            if param==None:
+                self.param[7][i]=self.param[7][i].numpy()
+                state_ops.assign(self.nn.param[i],self.param[7][i])
+            else:
+                param[7][i]=param[7][i].numpy()
+                state_ops.assign(self.nn.param[i],param[7][i])
         return
     
     
