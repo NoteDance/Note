@@ -128,28 +128,28 @@ def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
 
 
 class parallel_test:
-    def __init__(self,nn,test_data=None,test_labels=None,process_thread=None,batch=None):
+    def __init__(self,nn,test_data=None,test_labels=None,thread=None,batch=None):
         self.nn=nn
         self.test_data=test_data
         self.test_labels=test_labels
-        self.process_thread=process_thread
+        self.thread=thread
         self.batch=batch
-        self.loss=np.zeros([process_thread],dtype=np.float32)
+        self.loss=np.zeros([thread],dtype=np.float32)
         try:
             if self.nn.accuracy!=None:
-                self.acc=np.zeros([process_thread],dtype=np.float32)
+                self.acc=np.zeros([thread],dtype=np.float32)
         except AttributeError:
                 pass
-        self.process_thread_num=np.arange(process_thread)
-        self.process_thread_num=list(self.process_thread_num)
+        self.thread_num=np.arange(thread)
+        self.thread_num=list(self.thread_num)
     
     
     def segment_data(self):
-        if len(self.test_data)!=self.process_thread:
+        if len(self.test_data)!=self.thread:
             data=None
             labels=None
-            segments=int((len(self.test_data)-len(self.test_data)%self.process_thread)/self.process_thread)
-            for i in range(self.process_thread):
+            segments=int((len(self.test_data)-len(self.test_data)%self.thread)/self.thread)
+            for i in range(self.thread):
                 index1=i*segments
                 index2=(i+1)*segments
                 if i==0:
@@ -170,7 +170,7 @@ class parallel_test:
     
     
     def test(self):
-        t=self.process_thread_num.pop(0)
+        t=self.thread_num.pop(0)
         if type(self.test_data)==list:
             train_ds=self.test_data[t]
         else:
