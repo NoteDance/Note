@@ -240,7 +240,7 @@ class kernel:
             try:
                 param=self.nn.opt(gradient)
             except TypeError:
-                self.nn.opt(gradient,p)
+                param=self.nn.opt(gradient,p)
             try:
                 if self.nn.attenuate!=None:
                     for i in range(len(self.opt_counter)):
