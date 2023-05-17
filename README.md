@@ -147,13 +147,14 @@ kernel=k.kernel(nn)   #start kernel
 kernel.process=7      #7 processes to train
 kernel.data_segment_flag=True
 kernel.epoch_=6                #epoch:6
+kernel.batches=1875            #1875 batches
 kernel.PO=1                    #use PO1
 kernel.data(x_train,y_train)   #input you data
 manager=Manager()              #create manager object
-kernel.init(manager,1875)      #initialize shared data,1875 batches
+kernel.init(manager)      #initialize shared data
 lock=[Lock(),Lock(),Lock()]
-for _ in range(7):
-	Process(target=kernel.train,args=(32,lock)).start()
+for p in range(7):
+	Process(target=kernel.train,args=(p,32,lock)).start()
 kernel.update_nn_param()
 kernel.test(x_train,y_train,32)
 ```
@@ -171,13 +172,14 @@ kernel=k.kernel(nn)   #start kernel
 kernel.process=7      #7 processes to train
 kernel.data_segment_flag=True
 kernel.epoch_=6                #epoch:6
+kernel.batches=1875            #1875 batches
 kernel.PO=1                    #use PO1
 kernel.data(x_train,y_train)   #input you data
 manager=Manager()              #create manager object
-kernel.init(manager,1875)      #initialize shared data,1875 batches
+kernel.init(manager)      #initialize shared data,1875 batches
 lock=[Lock(),Lock(),Lock()]
-for _ in range(7):
-	Process(target=kernel.train,args=(32,lock)).start()
+for p in range(7):
+	Process(target=kernel.train,args=(p,32,lock)).start()
 kernel.update_nn_param()
 kernel.test(x_train,y_train,32)
 ```
