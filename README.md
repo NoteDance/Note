@@ -80,31 +80,6 @@ kernel.train(32,5,32)         #train neural network
 kernel.save()              #save neural network
 ```
 
-**You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
-
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/lstm.py
-
-**example(lstm):**
-```python
-import Note.DL.kernel as k   #import kernel
-import tensorflow as tf              #import platform
-import tensorflow_datasets as tfds
-import lstm as l                          #import neural network
-dataset,info=tfds.load('imdb_reviews',with_info=True,as_supervised=True)
-train_dataset=dataset['train']
-train_dataset=train_dataset.batch(64).prefetch(tf.data.AUTOTUNE)
-VOCAB_SIZE=1000
-encoder=tf.keras.layers.TextVectorization(max_tokens=VOCAB_SIZE)
-encoder.adapt(train_dataset.map(lambda text,label:text))
-lstm=l.lstm(encoder)                                #create neural network object
-kernel=k.kernel(lstm)                 #start kernel
-kernel.platform=tf                       #use platform
-kernel.data(train_dataset=train_dataset)   #input you data
-kernel.train(64,10)         #train neural network
-                           #batch size:64
-                           #epoch:10
-kernel.save()              #save neural network
-```
 
 ### Parallel optimization:
 **You can use parallel optimization to speed up neural network training,parallel optimization speed up training by multiprocessing or multithreading.**
@@ -243,30 +218,6 @@ for _ in range(2):
 for _ in range(2):
 	_thread.join()
 kernel.visualize_train()
-kernel.save()              #save neural network
-```
-```python
-import Note.DL.kernel as k   #import kernel
-import tensorflow as tf              #import platform
-import threading
-mnist=tf.keras.datasets.mnist
-(x_train,y_train),(x_test,y_test)=mnist.load_data()
-x_train,x_test =x_train/255.0,x_test/255.0
-kernel=k.kernel()                 #start kernel
-kernel.platform=tf                    #use platform
-kernel.restore('save.dat')     #restore neural network
-kernel.thread=2                        #thread count,use 2 threads to train
-kernel.PO=2                    #use PO2
-kernel.data(x_train,y_train)   #input you data
-kernel.lock=[threading.Lock(),threading.Lock(),threading.Lock()]
-class thread(threading.Thread):
-	def run(self):
-		kernel.train(32,1) #batch size:32 epoch:1
-for _ in range(2):
-	_thread=thread()
-	_thread.start()
-for _ in range(2):
-	_thread.join()
 ```
 
 **Gradient Attenuation：**
