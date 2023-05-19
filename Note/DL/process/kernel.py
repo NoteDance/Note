@@ -56,8 +56,6 @@ class kernel:
         self.train_data=train_data
         self.train_labels=train_labels
         self.train_dataset=train_dataset
-        if self.data_segment_flag==True:
-            self.train_data,self.train_labels=self.segment_data()
         if type(train_data)==list:
             self.data_batch=[x for x in range(len(train_data))]
         if type(train_labels)==list:
@@ -84,8 +82,16 @@ class kernel:
         if self.train_dataset==None:
             if type(self.train_data)==list:
                 self.shape0=train_data[0].shape[0]
+                self.batches=int((self.shape0-self.shape0%self.batch)/self.batch)
+                if self.shape0%self.batch!=0:
+                    self.batches+=1
             else:
                 self.shape0=train_data.shape[0]
+                self.batches=int((self.shape0-self.shape0%self.batch)/self.batch)
+                if self.shape0%self.batch!=0:
+                    self.batches+=1
+        if self.data_segment_flag==True:
+            self.train_data,self.train_labels=self.segment_data()
         return
     
     
@@ -372,19 +378,18 @@ class kernel:
                     return
     
     
-    def train(self,p,batch,lock,test_batch=None):
-        self.batch=batch
+    def train(self,p,lock,test_batch=None):
         self.train_counter+=1
         if self.epoch_!=None:
             if self.train_dataset!=None:
                 train_ds=self.train_dataset
             else:
                 if self.data_segment_flag==True:
-                    train_ds=tf.data.Dataset.from_tensor_slices((self.train_data[p],self.train_labels[p])).batch(batch)
+                    train_ds=tf.data.Dataset.from_tensor_slices((self.train_data[p],self.train_labels[p])).batch(self.batch)
                 elif self.buffer_size!=None:
-                    train_ds=tf.data.Dataset.from_tensor_slices((self.train_data,self.train_labels)).shuffle(self.buffer_size).batch(batch)
+                    train_ds=tf.data.Dataset.from_tensor_slices((self.train_data,self.train_labels)).shuffle(self.buffer_size).batch(self.batch)
                 else:
-                    train_ds=tf.data.Dataset.from_tensor_slices((self.train_data,self.train_labels)).batch(batch)
+                    train_ds=tf.data.Dataset.from_tensor_slices((self.train_data,self.train_labels)).batch(self.batch)
         self.train7(train_ds,p,test_batch,lock)
         return
     
