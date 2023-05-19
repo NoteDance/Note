@@ -21,14 +21,14 @@ class kernel:
         self.data_segment_flag=False
         self.batches=None
         self.buffer_size=None
-        self.epoch_=None
+        self.epoch=None
         self.epoch_counter=0
         self.stop=False
         self.stop_flag=False
         self.save_flag=False
         self.save_epoch=None
         self.batch=None
-        self.epoch=0
+        self.epoch_=0
         self.end_loss=None
         self.end_acc=None
         self.end_test_loss=None
@@ -373,14 +373,14 @@ class kernel:
                     lock[1].release()
                 else:
                     lock[2].release()
-                if self.epoch_counter.value==self.epoch_:
+                if self.epoch_counter.value==self.epoch:
                     self.param[7]=param
                     return
     
     
     def train(self,p,lock,test_batch=None):
         self.train_counter+=1
-        if self.epoch_!=None:
+        if self.epoch!=None:
             if self.train_dataset!=None:
                 train_ds=self.train_dataset
             else:
@@ -531,20 +531,20 @@ class kernel:
     
     
     def print_save(self):
-        if self.epoch_!=None:
+        if self.epoch!=None:
             if self.muti_p!=None:
                 muti_p=self.muti_p-1
-                if self.epoch_%10!=0:
-                    p=self.epoch_-self.epoch_%muti_p
+                if self.epoch%10!=0:
+                    p=self.epoch-self.epoch%muti_p
                     p=int(p/muti_p)
                     if p==0:
                         p=1
                 else:
-                    p=self.epoch_/(muti_p+1)
+                    p=self.epoch/(muti_p+1)
                     p=int(p)
                     if p==0:
                         p=1
-                if self.epoch%p==0:
+                if self.epoch_%p==0:
                     if self.test_flag==False:
                         try:
                             if self.nn.accuracy!=None:
@@ -571,22 +571,22 @@ class kernel:
                             print()
             if self.muti_s!=None:
                 muti_s=self.muti_s-1
-                if self.epoch_%10!=0:
-                    s=self.epoch_-self.epoch_%muti_s
+                if self.epoch%10!=0:
+                    s=self.epoch-self.epoch%muti_s
                     s=int(s/muti_s)
                     if s==0:
                         s=1
                 else:
-                    s=self.epoch_/(muti_s+1)
+                    s=self.epoch/(muti_s+1)
                     s=int(s)
                     if s==0:
                         s=1
-                if self.muti_save!=None and self.epoch%s==0:
+                if self.muti_save!=None and self.epoch_%s==0:
                     if self.muti_save==1:
                         self.save(self.total_epoch.value)
                     else:
                         self.save(self.total_epoch.value,False)
-            self.epoch+=1
+            self.epoch_+=1
         return
     
     
