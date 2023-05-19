@@ -654,13 +654,6 @@ class kernel:
                         gradient=self.nn.attenuate(gradient,self.opt_counter,t)
                 except AttributeError:
                     pass
-                try:
-                    self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
-                except AttributeError:
-                    try:
-                        self.nn.opt(gradient)
-                    except TypeError:
-                        self.nn.opt(gradient,t)
             except AttributeError:
                 try:
                     if self.nn.nn!=None:
@@ -670,7 +663,6 @@ class kernel:
                                 gradient=self.nn.attenuate(gradient,self.opt_counter,t)
                         except AttributeError:
                             pass
-                        self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
                 except AttributeError:
                         actor_gradient=tape.gradient(loss[0],self.nn.param[0])
                         critic_gradient=tape.gradient(loss[1],self.nn.param[1])
@@ -680,8 +672,22 @@ class kernel:
                                 critic_gradient=self.nn.attenuate(critic_gradient,self.opt_counter,t)
                         except AttributeError:
                             pass
-                        self.nn.opt.apply_gradients(zip(actor_gradient,self.nn.param[0]))
-                        self.nn.opt.apply_gradients(zip(critic_gradient,self.nn.param[1]))
+            try:
+                if self.nn.gradient!=None:
+                    try:
+                        self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+                    except AttributeError:
+                        try:
+                            self.nn.opt(gradient)
+                        except TypeError:
+                            self.nn.opt(gradient,t)
+            except AttributeError:
+                try:
+                    if self.nn.nn!=None:
+                        self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+                except AttributeError:
+                    self.nn.opt.apply_gradients(zip(actor_gradient,self.nn.param[0]))
+                    self.nn.opt.apply_gradients(zip(critic_gradient,self.nn.param[1]))
             try:
                 if self.nn.attenuate!=None:
                     self.opt_counter+=1
