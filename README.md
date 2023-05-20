@@ -328,16 +328,40 @@ kernel.visualize_reward()
 ## Pool Net:
 ![3](https://github.com/NoteDancing/Note-documentation/blob/main/picture/Pool%20Net.png)
 
-**Pool net use multithreading parallel and random add episode in pool,which would make data being uncorrelated in pool,
+**Pool net use multiprocessing or multithreading parallel and random add episode in pool,which would make data being uncorrelated in pool,
 then pools would be used parallel training agent.**
 
+### Multiprocessing:
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
 https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow/pool%20net/DQN.py
 
-**multithreading example:**
+**multiprocessing example:**
 ```python
 import Note.RL.kernel as k   #import kernel
+import DQN as d
+from multiprocessing import Process,Lock,Manager
+dqn=d.DQN(4,128,2)                               #create neural network object
+kernel=k.kernel(dqn,5)   #start kernel,use 5 thread to train
+manager=Manager()        #create manager object
+kernel.init(manager)     #initialize shared data
+kernel.action_count=2
+kernel.set_up(epsilon=0.01,pool_size=1000,batch=64,update_step=10)
+kernel.PO=1                    #use PO1
+pool_lock=[Lock(),Lock(),Lock(),Lock(),Lock()]
+lock=[Lock(),Lock(),Lock()]
+for p in range(5):
+    Process(target=kernel.train,args=(p,100,lock,pool_lock)).start()
+```
+
+### Multithreading:
+**You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
+
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow/pool%20net/thread/DQN.py
+
+**multithreading example:**
+```python
+import Note.RL.thread.kernel as k   #import kernel
 import DQN as d
 import threading
 dqn=d.DQN(4,128,2)                               #create neural network object
@@ -361,7 +385,7 @@ kernel.visualize_reward()
 
 **multithreading example:**
 ```python
-import Note.RL.kernel as k   #import kernel
+import Note.RL.thread.kernel as k   #import kernel
 import DQN as d
 import threading
 dqn=d.DQN(4,128,2)                               #create neural network object
