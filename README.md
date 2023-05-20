@@ -272,7 +272,7 @@ kernel.visualize_reward()
 ```
 
 
-## Pool Net:
+## Pool Network:
 neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%205.0%20documentation/RL/neural%20network
 
 example:
