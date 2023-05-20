@@ -325,7 +325,7 @@ kernel.visualize_train()
 kernel.visualize_reward()
 ```
 
-## Pool Net:
+## Pool Network:
 ![3](https://github.com/NoteDancing/Note-documentation/blob/main/picture/Pool%20Net.png)
 
 **Pool net use multiprocessing or multithreading parallel and random add episode in pool,which would make data being uncorrelated in pool,
