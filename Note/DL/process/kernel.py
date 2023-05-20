@@ -131,6 +131,10 @@ class kernel:
         except AttributeError:   
             pass
         try:
+            self.nn.ec=Value('f',self.nn.ec)  
+        except AttributeError:
+            pass
+        try:
             self.nn.bc=Array('f',self.nn.bc)  
         except AttributeError:
             pass
@@ -358,7 +362,7 @@ class kernel:
                     except AttributeError:
                         pass
                     try:
-                        self.nn.ec+=1
+                        self.nn.ec.value+=1
                     except AttributeError:
                         pass
                     for i in range(len(self.total_loss)):
