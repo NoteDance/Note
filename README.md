@@ -240,7 +240,7 @@ kernel.reward                         #view reward
 kernel.visualize_reward()
 ```
 
-## Pool Net:
+## Pool Network:
 ![3](https://github.com/NoteDancing/Note-documentation/blob/main/picture/Pool%20Net.png)
 
 neural network example:https://github.com/NoteDancing/Note-documentation/tree/main/Note%206.0%20documentation/RL/neural%20network
