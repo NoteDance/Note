@@ -35,6 +35,7 @@ class kernel:
         self.finish_list=[]
         self.running_flag=[]
         self.PO=None
+        self.stop=False
         self.save_flag=False
         self.stop_flag=False
         self.filename='save.dat'
