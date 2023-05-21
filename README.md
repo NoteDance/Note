@@ -2,7 +2,7 @@
 
 
 # Introduction:
-Note is a system for deep learning and reinforcement learning.It makes it easy to create and train neural network.Note supports TensorFlow and PyTorch platform.It can speed up the training of neural network by multithreading and multiprocessing.
+Note is a system for deep learning and reinforcement learning.It makes it easy to create and train neural network.Note supports TensorFlow and PyTorch platform.It can speed up the training of neural network by multiprocessing.
 
 
 # Installation:
@@ -82,7 +82,7 @@ kernel.save()              #save neural network
 
 
 ### Parallel optimization:
-**You can use parallel optimization to speed up neural network training,parallel optimization speed up training by multiprocessing or multithreading.**
+**You can use parallel optimization to speed up neural network training,parallel optimization speed up training by multiprocessing.**
 
 **Note have three types of parallel optimization:**
 
@@ -94,7 +94,7 @@ kernel.save()              #save neural network
 
 **parallel optimization may cause unstable training(the estimate of the gradient is biased) but it can speed up training and make the loss function jump out of the local minimum.**
 
-**Note can speed up training by multithreading or multiprocessing and has stop mechanism and gradient attenuation to resolve unstable training.**
+**Note can speed up training by multiprocessing and has stop mechanism and gradient attenuation to resolve unstable training.**
 
 **Note uses multithreading or multiprocessing parallel forward propagation and optimizes neural network.**
 
