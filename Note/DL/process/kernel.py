@@ -40,12 +40,12 @@ class kernel:
         self.muti_s=None
         self.muti_save=1
         self.filename='save.dat'
-        self.train_loss=None
-        self.train_acc=None
+        self.train_loss=0
+        self.train_acc=0
         self.train_loss_list=[]
         self.train_acc_list=[]
-        self.test_loss=None
-        self.test_acc=None
+        self.test_loss=0
+        self.test_acc=0
         self.test_loss_list=[]
         self.test_acc_list=[]
         self.test_flag=False
@@ -119,12 +119,24 @@ class kernel:
                 
     
     def init(self,manager):
-        self.epoch_counter=Value('i',0)
+        self.epoch_counter=Value('i',self.epoch_counter)
         self.batch_counter=Array('i',self.batch_counter)
         self.total_loss=Array('f',self.total_loss)
-        self.total_epoch=Value('i',0)
-        self.train_loss=Value('f',0)
-        self.train_loss_list=manager.list([])
+        self.total_epoch=Value('i',self.total_epoch)
+        self.train_loss=Value('f',self.train_loss)
+        self.train_loss_list=manager.list(self.train_loss_list)
+        if self.test_flag==True:
+            self.test_loss=Value('f',self.test_loss)
+            self.test_loss_list=manager.list(self.test_loss_list)
+        try:
+            if self.nn.accuracy!=None:
+                self.train_acc=Value('f',self.train_acc)
+                self.train_acc_list=manager.list(self.train_acc_list)
+                if self.test_flag==True:
+                    self.test_acc=Value('f',self.test_acc)
+                    self.test_acc_list=manager.list(self.test_acc_list)
+        except AttributeError:   
+            pass
         try:
             if self.nn.attenuate!=None:
               self.opt_counter=Array('f',self.opt_counter)  
@@ -138,8 +150,8 @@ class kernel:
             self.nn.bc=Array('f',self.nn.bc)  
         except AttributeError:
             pass
-        self.stop_flag=Value('b',0)
-        self.save_flag=Value('b',0)
+        self.stop_flag=Value('b',self.stop_flag)
+        self.save_flag=Value('b',self.save_flag)
         self.file_list=manager.list([])
         self.param=manager.dict()
         return
