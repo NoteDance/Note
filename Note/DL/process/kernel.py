@@ -21,6 +21,8 @@ class kernel:
         self.data_segment_flag=False
         self.batches=None
         self.buffer_size=None
+        self.priority_flag=False
+        self.priority_p=0
         self.epoch=None
         self.epoch_counter=0
         self.stop=False
@@ -71,7 +73,12 @@ class kernel:
         self.batch_counter=np.zeros(self.process,dtype=np.int32)
         self.total_loss=np.zeros(self.process,dtype=np.float32)
         try:
-            if self.nn.attenuate!=None:
+            if self.nn.accuracy!=None:
+                self.total_acc=np.zeros(self.process,dtype=np.float32)
+        except AttributeError:
+            pass
+        try:
+            if self.priority_flag==True or self.nn.attenuate!=None:
                 self.opt_counter=np.zeros(self.process,dtype=np.float32)
         except AttributeError:
             pass
@@ -125,11 +132,13 @@ class kernel:
         self.total_epoch=Value('i',self.total_epoch)
         self.train_loss=Value('f',self.train_loss)
         self.train_loss_list=manager.list(self.train_loss_list)
+        self.priority_p=Value('i',self.priority_p)
         if self.test_flag==True:
             self.test_loss=Value('f',self.test_loss)
             self.test_loss_list=manager.list(self.test_loss_list)
         try:
             if self.nn.accuracy!=None:
+                self.total_acc=Array('f',self.total_acc)
                 self.train_acc=Value('f',self.train_acc)
                 self.train_acc_list=manager.list(self.train_acc_list)
                 if self.test_flag==True:
@@ -138,7 +147,7 @@ class kernel:
         except AttributeError:   
             pass
         try:
-            if self.nn.attenuate!=None:
+            if self.priority_flag==True or self.nn.attenuate!=None:
               self.opt_counter=Array('f',self.opt_counter)  
         except AttributeError:   
             pass
@@ -241,12 +250,13 @@ class kernel:
                         loss=self.nn.loss(output,labels)
                     except TypeError:
                         output,loss=self.nn.fp(data,labels,p)
-        try:
-            if self.nn.attenuate!=None:
-                self.opt_counter[p]=0
-        except AttributeError:
-            pass
         if self.PO==1:
+            if self.priority_flag==True:
+                while True:
+                    if p==self.priority_p.value:
+                        break
+                    else:
+                        continue
             lock[0].acquire()
             if self.stop_func_(lock[0]):
                 return None,0
@@ -263,12 +273,6 @@ class kernel:
                 param=self.nn.opt(gradient)
             except TypeError:
                 param=self.nn.opt(gradient,p)
-            try:
-                if self.nn.attenuate!=None:
-                    for i in range(len(self.opt_counter)):
-                        self.opt_counter[i]+=1
-            except AttributeError:
-                pass
             lock[0].release()
         elif self.PO==2:
             lock[0].acquire()
@@ -279,6 +283,12 @@ class kernel:
             except AttributeError:
                 gradient=tape.gradient(loss,self.nn.param)
             lock[0].release()
+            if self.priority_flag==True:
+                while True:
+                    if p==self.priority_p.value:
+                        break
+                    else:
+                        continue
             lock[1].acquire()
             try:
                 if self.nn.attenuate!=None:
@@ -289,12 +299,6 @@ class kernel:
                 param=self.nn.opt(gradient)
             except TypeError:
                 param=self.nn.opt(gradient,p)
-            try:
-                if self.nn.attenuate!=None:
-                    for i in range(len(self.opt_counter)):
-                        self.opt_counter[i]+=1
-            except AttributeError:
-                pass
             lock[1].release()
         return output,loss,param
     
@@ -318,7 +322,21 @@ class kernel:
     def train7(self,train_ds,p,test_batch,lock):
         while True:
             for data_batch,labels_batch in train_ds:
+                if self.priority_flag==True:
+                    self.priority_p.value=np.argmax(self.opt_counter)
+                    self.priority_p.value=int(self.priority_p.value)
+                try:
+                    if self.priority_flag==True or self.nn.attenuate!=None:
+                        self.opt_counter[p]=0
+                except AttributeError:
+                    pass
                 output,batch_loss,param=self.opt_t(data_batch,labels_batch,p,lock)
+                try:
+                    if self.priority_flag==True or self.nn.attenuate!=None:
+                        opt_counter=np.frombuffer(self.opt_counter.get_obj(),dtype='f')
+                        opt_counter+=1
+                except AttributeError:
+                    pass
                 self.param[7]=param
                 try:
                     self.nn.bc[p]+=1
@@ -342,8 +360,8 @@ class kernel:
                     lock[2].acquire()
                 batches=np.sum(self.batch_counter)
                 if batches>=self.batches:
-                    for i in range(len(self.batch_counter)):
-                        self.batch_counter[i]=0
+                    batch_counter=np.frombuffer(self.batch_counter.get_obj(),dtype='i')
+                    batch_counter*=0
                     loss=np.sum(self.total_loss)/batches
                     try:
                         if self.nn.accuracy!=None:
@@ -377,12 +395,12 @@ class kernel:
                         self.nn.ec.value+=1
                     except AttributeError:
                         pass
-                    for i in range(len(self.total_loss)):
-                        self.total_loss[i]=0
+                    total_loss=np.frombuffer(self.total_loss.get_obj(),dtype='f')
+                    total_loss*=0
                     try:
                         if self.nn.accuracy!=None:
-                            for i in range(len(self.total_acc)):
-                                self.total_acc[i]=0
+                            total_acc=np.frombuffer(self.total_acc.get_obj(),dtype='f')
+                            total_acc*=0
                     except AttributeError:
                         pass
                 if self.PO==1:
