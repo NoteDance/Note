@@ -23,6 +23,7 @@ class kernel:
         self.buffer_size=None
         self.priority_flag=False
         self.priority_p=0
+        self.max_opt=None
         self.epoch=None
         self.epoch_counter=0
         self.stop=False
@@ -251,7 +252,7 @@ class kernel:
                     except TypeError:
                         output,loss=self.nn.fp(data,labels,p)
         if self.PO==1:
-            if self.priority_flag==True:
+            if self.priority_flag==True and self.priority_p.value!=-1:
                 while True:
                     if p==self.priority_p.value:
                         break
@@ -283,7 +284,7 @@ class kernel:
             except AttributeError:
                 gradient=tape.gradient(loss,self.nn.param)
             lock[0].release()
-            if self.priority_flag==True:
+            if self.priority_flag==True and self.priority_p.value!=-1:
                 while True:
                     if p==self.priority_p.value:
                         break
@@ -324,7 +325,12 @@ class kernel:
             for data_batch,labels_batch in train_ds:
                 if self.priority_flag==True:
                     self.priority_p.value=np.argmax(self.opt_counter)
-                    self.priority_p.value=int(self.priority_p.value)
+                    if self.max_opt!=None and self.opt_counter[self.priority_p.value]>=self.max_opt:
+                        self.priority_p.value=int(self.priority_p.value)
+                    elif self.max_opt==None:
+                        self.priority_p.value=int(self.priority_p.value)
+                    else:
+                        self.priority_p.value=-1
                 try:
                     if self.priority_flag==True or self.nn.attenuate!=None:
                         self.opt_counter[p]=0
