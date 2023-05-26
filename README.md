@@ -96,7 +96,7 @@ kernel.save()              #save neural network
 
 **Note can speed up training by multiprocessing and has stop mechanism and gradient attenuation to resolve unstable training.**
 
-**Note uses multithreading or multiprocessing parallel forward propagation and optimizes neural network.**
+**Note uses multiprocessing parallel forward propagation and optimizes neural network.**
 
 #### Multiprocessing:
 
