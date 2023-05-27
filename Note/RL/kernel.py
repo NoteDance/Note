@@ -14,7 +14,6 @@ class kernel:
             self.reward=np.zeros(process,dtype=np.float32)
             self.loss=np.zeros(process,dtype=np.float32)
             self.sc=np.zeros(process,dtype=np.float32)
-            self.opt_counter=np.zeros(process,dtype=np.float32)
         self.state_pool={}
         self.action_pool={}
         self.next_state_pool={}
@@ -24,7 +23,6 @@ class kernel:
         self.episode_step=None
         self.pool_size=None
         self.batch=None
-        self.episode_=None
         self.episode=0
         self.update_step=None
         self.trial_count=None
@@ -35,6 +33,9 @@ class kernel:
         self.finish_list=[]
         self.running_flag=[]
         self.PO=None
+        self.priority_flag=False
+        self.priority_p=0
+        self.max_opt=None
         self.stop=False
         self.save_flag=False
         self.stop_flag=False
@@ -61,9 +62,10 @@ class kernel:
         self.reward_list=manager.list(self.reward_list)
         self.loss_list=manager.list(self.loss_list)
         self.total_episode=Value('i',self.total_episode)
+        self.priority_p=Value('i',self.priority_p)
         try:
-            if self.nn.attenuate!=None:
-                self.opt_counter=Array('f',self.opt_counter)
+            if self.priority_flag==True or self.nn.attenuate!=None:
+                self.opt_counter=Array('f',np.zeros(self.process,dtype=np.float32))
         except AttributeError:
             pass
         try:
@@ -229,12 +231,13 @@ class kernel:
                 loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
             except TypeError:
                 loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch,p)
-        try:
-            if self.nn.attenuate!=None:
-                self.opt_counter[p]=0
-        except AttributeError:
-            pass
         if self.PO==1:
+            if self.priority_flag==True and self.priority_p.value!=-1:
+                while True:
+                    if p==self.priority_p.value:
+                        break
+                    else:
+                        continue
             lock[0].acquire()
             if self.stop_func_(lock[0]):
                 return 0
@@ -267,11 +270,6 @@ class kernel:
                 param=self.nn.opt(gradient)
             except TypeError:
                 param=self.nn.opt(gradient,p)
-            try:
-                if self.nn.attenuate!=None:
-                    self.opt_counter+=1
-            except AttributeError:
-                pass
             lock[0].release()
         elif self.PO==2:
             lock[0].acquire()
@@ -287,6 +285,12 @@ class kernel:
                     actor_gradient=tape.gradient(loss[0],self.nn.param[0])
                     critic_gradient=tape.gradient(loss[1],self.nn.param[1])
             lock[0].release()
+            if self.priority_flag==True and self.priority_p.value!=-1:
+                while True:
+                    if p==self.priority_p.value:
+                        break
+                    else:
+                        continue
             lock[1].acquire()
             try:
                 if self.nn.attenuate!=None:
@@ -301,11 +305,6 @@ class kernel:
                 param=self.nn.opt(gradient)
             except TypeError:
                 param=self.nn.opt(gradient,p)
-            try:
-                if self.nn.attenuate!=None:
-                    self.opt_counter+=1
-            except AttributeError:
-                pass
             lock[1].release()
         return loss,param
     
@@ -354,7 +353,26 @@ class kernel:
             if length%self.batch!=0:
                 batches+=1
             for j in range(batches):
+                if self.priority_flag==True:
+                    self.priority_p.value=np.argmax(self.opt_counter)
+                    if self.max_opt!=None and self.opt_counter[self.priority_p.value]>=self.max_opt:
+                        self.priority_p.value=int(self.priority_p.value)
+                    elif self.max_opt==None:
+                        self.priority_p.value=int(self.priority_p.value)
+                    else:
+                        self.priority_p.value=-1
+                try:
+                    if self.priority_flag==True or self.nn.attenuate!=None:
+                        self.opt_counter[p]=0
+                except AttributeError:
+                    pass
                 self._train(p,j,batches,length,lock)
+                try:
+                    if self.priority_flag==True or self.nn.attenuate!=None:
+                        opt_counter=np.frombuffer(self.opt_counter.get_obj(),dtype='f')
+                        opt_counter+=1
+                except AttributeError:
+                    pass
             if self.PO==1:
                 lock[1].acquire()
             else:
