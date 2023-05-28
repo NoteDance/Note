@@ -365,7 +365,10 @@ class kernel:
                         batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
                         loss+=batch_loss
                         try:
-                            self.nn.bc=j
+                            try:
+                                self.nn.bc.assign_add(1)
+                            except AttributeError:
+                                self.nn.bc+=1
                         except AttributeError:
                             pass
                     if len(self.state_pool)%self.batch!=0:
@@ -374,16 +377,15 @@ class kernel:
                         batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
                         loss+=batch_loss
                         try:
-                            self.nn.bc+=1
+                            try:
+                                self.nn.bc.assign_add(1)
+                            except AttributeError:
+                                self.nn.bc+=1
                         except AttributeError:
                             pass
             except AttributeError:
                 j=0
                 train_ds=tf_data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).shuffle(len(self.state_pool)).batch(self.batch)
-                try:
-                    self.nn.bc=0
-                except AttributeError:
-                    pass
                 for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
                     self.suspend_func()
                     try:
@@ -399,7 +401,10 @@ class kernel:
                     loss+=batch_loss
                     j+=1
                     try:
-                        self.nn.bc+=1
+                        try:
+                            self.nn.bc.assign_add(1)
+                        except AttributeError:
+                            self.nn.bc+=1
                     except AttributeError:
                         pass
             if self.update_step!=None:
@@ -658,7 +663,10 @@ class kernel:
                     if self.max_episode_count!=None and len(self.episode_set)>=self.max_episode_count:
                         self.save_episode=False
                 try:
-                    self.nn.ec+=1
+                    try:
+                        self.nn.ec.assign_add(1)
+                    except AttributeError:
+                        self.nn.ec+=1
                 except AttributeError:
                     pass
                 t2=time.time()
@@ -720,7 +728,10 @@ class kernel:
                     if self.max_episode_count!=None and len(self.episode_set)>=self.max_episode_count:
                         self.save_episode=False
                 try:
-                    self.nn.ec+=1
+                    try:
+                        self.nn.ec.assign_add(1)
+                    except AttributeError:
+                        self.nn.ec+=1
                 except AttributeError:
                     pass
                 t2=time.time()
