@@ -233,7 +233,7 @@ class kernel:
     
     
     @function(jit_compile=True)
-    def tf_opt_t(self,data,labels,p,lock):
+    def tf_opt_t(self,data,labels,p,lock,g_lock=None,ln=None):
         try:
             if self.nn.GradientTape!=None:
                 tape,output,loss=self.nn.GradientTape(data,labels,p)
@@ -301,11 +301,44 @@ class kernel:
             except TypeError:
                 param=self.nn.opt(gradient,p)
             lock[1].release()
+        elif self.PO==3:
+            g_lock[ln].acquire()
+            try:
+                gradient=self.nn.gradient(tape,loss)
+            except AttributeError:
+                gradient=tape.gradient(loss,self.nn.param)
+            g_lock[ln].release()
+            if self.priority_flag==True and self.priority_p.value!=-1:
+                while True:
+                    if p==self.priority_p.value:
+                        break
+                    else:
+                        continue
+            lock[0].acquire()
+            if self.stop_func_(lock[0]):
+                return None,0
+            try:
+                if self.nn.attenuate!=None:
+                    gradient=self.nn.attenuate(gradient,self.opt_counter,p)
+            except AttributeError:
+                pass
+            try:
+                param=self.nn.opt(gradient)
+            except TypeError:
+                param=self.nn.opt(gradient,p)
+            lock[0].release()
         return output,loss,param
     
     
-    def opt_t(self,data,labels,p,lock):
-        output,loss,param=self.tf_opt_t(data,labels,p,lock)
+    def opt_t(self,data,labels,p,lock,g_lock):
+        if self.PO==3:
+            if len(g_lock)==self.process:
+                ln=p
+            else:
+                ln=int(np.random.choice(len(g_lock)))
+            output,loss,param=self.tf_opt_t(data,labels,p,lock,g_lock,ln)
+        else:
+            output,loss,param=self.tf_opt_t(data,labels,p,lock)
         return output,loss,param
     
     
@@ -320,7 +353,7 @@ class kernel:
         return
     
     
-    def train7(self,train_ds,p,test_batch,lock):
+    def train7(self,train_ds,p,test_batch,lock,g_lock):
         while True:
             for data_batch,labels_batch in train_ds:
                 if self.priority_flag==True:
@@ -336,7 +369,7 @@ class kernel:
                         self.opt_counter[p]=0
                 except AttributeError:
                     pass
-                output,batch_loss,param=self.opt_t(data_batch,labels_batch,p,lock)
+                output,batch_loss,param=self.opt_t(data_batch,labels_batch,p,lock,g_lock)
                 try:
                     if self.priority_flag==True or self.nn.attenuate!=None:
                         opt_counter=np.frombuffer(self.opt_counter.get_obj(),dtype='f')
@@ -360,7 +393,7 @@ class kernel:
                 except AttributeError:
                     self.total_loss[p]+=batch_loss
                 self.batch_counter[p]+=1
-                if self.PO==1:
+                if self.PO==1 or self.PO==3:
                     lock[1].acquire()
                 else:
                     lock[2].acquire()
@@ -409,7 +442,7 @@ class kernel:
                             total_acc*=0
                     except AttributeError:
                         pass
-                if self.PO==1:
+                if self.PO==1 or self.PO==3:
                     lock[1].release()
                 else:
                     lock[2].release()
@@ -418,7 +451,7 @@ class kernel:
                     return
     
     
-    def train(self,p,lock,test_batch=None):
+    def train(self,p,lock,g_lock=None,test_batch=None):
         self.train_counter+=1
         if self.epoch!=None:
             if self.train_dataset!=None:
@@ -430,7 +463,7 @@ class kernel:
                     train_ds=tf.data.Dataset.from_tensor_slices((self.train_data,self.train_labels)).shuffle(self.buffer_size).batch(self.batch)
                 else:
                     train_ds=tf.data.Dataset.from_tensor_slices((self.train_data,self.train_labels)).batch(self.batch)
-        self.train7(train_ds,p,test_batch,lock)
+        self.train7(train_ds,p,test_batch,lock,g_lock)
         return
     
     
