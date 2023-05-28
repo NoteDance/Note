@@ -977,7 +977,7 @@ class kernel:
                     loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t)
             self.loss[t]+=loss
             try:
-                self.nn.bc.scatter_update(self.platform.IndexedSlices(1,t))
+                self.nn.bc.assign_add(1)
             except AttributeError:
                 pass
         else:
@@ -1002,7 +1002,7 @@ class kernel:
                     loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t)
             self.loss[t]+=loss
             try:
-                self.nn.bc.scatter_update(self.platform.IndexedSlices(1,t))
+                self.nn.bc.assign_add(1)
             except AttributeError:
                 pass
         return
@@ -1022,7 +1022,7 @@ class kernel:
                 return
             self.loss[t]+=loss
             try:
-                self.nn.bc.scatter_update(self.platform.IndexedSlices(1,t))
+                self.nn.bc.assign_add(1)
             except AttributeError:
                 pass
         return
@@ -1085,7 +1085,7 @@ class kernel:
             self.loss[t]=self.loss[t]/batches
         self.sc[t]+=1
         try:
-            self.nn.ec.scatter_update(self.platform.IndexedSlices(1,t))
+            self.nn.ec.assign_add(1)
         except AttributeError:
             pass
         return
