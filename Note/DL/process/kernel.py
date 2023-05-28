@@ -286,6 +286,8 @@ class kernel:
                     else:
                         continue
             lock[1].acquire()
+            if self.stop_func_(lock[1]):
+                return None,0
             try:
                 if self.nn.attenuate!=None:
                     gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
@@ -298,6 +300,8 @@ class kernel:
             lock[1].release()
         elif self.PO==3:
             g_lock[ln].acquire()
+            if self.stop_func_(g_lock[ln]):
+                return None,0
             try:
                 gradient=self.nn.gradient(tape,loss)
             except AttributeError:
