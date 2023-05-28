@@ -1595,46 +1595,8 @@ class kernel:
                 print('time:{0}s'.format(self.total_time))
                 self.stop_flag=True
                 return True
-            elif self.end_loss==None and self.end_acc==None and self.end_test_loss==None and self.end_test_acc==None:
-                self.save(self.total_epoch,True)
-                print('\nSystem have stopped training,Neural network have been saved.')
-                self._time=self.time-int(self.time)
-                if self._time<0.5:
-                    self.time=int(self.time)
-                else:
-                    self.time=int(self.time)+1
-                self.total_time+=self.time
-                print()
-                print('epoch:{0}'.format(self.total_epoch))
-                if self.test_flag==False:
-                    print('last loss:{0:.6f}'.format(self.train_loss))
-                else:
-                    print('last loss:{0:.6f},last test loss:{1:.6f}'.format(self.train_loss,self.test_loss))
-                try:
-                    if self.nn.accuracy!=None:
-                        if self.acc_flag=='%':
-                            if self.test_flag==False:
-                                print('last accuracy:{0:.1f}'.format(self.train_acc*100))
-                            else:
-                                print('last accuracy:{0:.1f},last test accuracy:{1:.1f}'.format(self.train_acc*100,self.test_acc*100))
-                        else:
-                            if self.test_flag==False:
-                                print('last accuracy:{0:.6f}'.format(self.train_acc))
-                            else:
-                                print('last accuracy:{0:.6f},last test accuracy:{1:.6f}'.format(self.train_acc,self.test_acc))   
-                except AttributeError:
-                    pass
-                print()
-                print('time:{0}s'.format(self.total_time))
-                self.stop_flag=True
-                return True
         else:
             if self.end():
-                self.save(self.total_epoch,True)
-                self.save_flag=True
-                self.stop_flag=True
-                return True
-            elif self.end_loss==None and self.end_acc==None and self.end_test_loss==None and self.end_test_acc==None:
                 self.save(self.total_epoch,True)
                 self.save_flag=True
                 self.stop_flag=True
@@ -1939,8 +1901,6 @@ class kernel:
         pickle.dump(self.total_epoch,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
-        if self.save_flag==True:
-            print('\nSystem have stopped,Neural network have saved.')
         return
     
 	
