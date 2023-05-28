@@ -31,9 +31,7 @@ class kernel:
         self.criterion=None
         self.reward_list=[]
         self.suspend=False
-        self.stop=False
         self.save_epi=None
-        self.end_loss=None
         self.max_episode_count=None
         self.save_episode=save_episode
         self.filename='save.dat'
@@ -58,7 +56,6 @@ class kernel:
         except AttributeError:
             pass
         self.suspend=False
-        self.stop=False
         self.save_epi=None
         self.episode_set=[]
         self.state_pool=None
@@ -76,7 +73,7 @@ class kernel:
         return
     
     
-    def set_up(self,epsilon=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None,end_loss=None):
+    def set_up(self,epsilon=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None):
         if epsilon!=None:
             self.epsilon=epsilon
         if episode_step!=None:
@@ -91,8 +88,6 @@ class kernel:
             self.trial_count=trial_count
         if criterion!=None:
             self.criterion=criterion
-        if end_loss!=None:
-            self.end_loss=end_loss
         self.action_vec()
         return
     
@@ -276,11 +271,6 @@ class kernel:
         return episode
     
     
-    def end(self):
-        if self.end_loss!=None and len(self.loss_list)!=0 and self.loss_list[-1]<self.end_loss:
-            return True
-    
-    
     @function(jit_compile=True)
     def tf_opt(self,state_batch,action_batch,next_state_batch,reward_batch,done_batch):
         with self.platform.GradientTape(persistent=True) as tape:
@@ -370,9 +360,6 @@ class kernel:
             try:
                 if self.nn.data_func!=None:
                     for j in range(batches):
-                        if self.stop==True:
-                            if self.stop_func():
-                                return
                         self.suspend_func()
                         state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.batch)
                         batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
@@ -382,9 +369,6 @@ class kernel:
                         except AttributeError:
                             pass
                     if len(self.state_pool)%self.batch!=0:
-                        if self.stop==True:
-                            if self.stop_func():
-                                return
                         self.suspend_func()
                         state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.batch)
                         batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
@@ -401,9 +385,6 @@ class kernel:
                 except AttributeError:
                     pass
                 for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
-                    if self.stop==True:
-                        if self.stop_func():
-                            return
                     self.suspend_func()
                     try:
                         if self.platform.DType!=None:
@@ -799,40 +780,6 @@ class kernel:
         return
     
     
-    def stop_func(self):
-        if self.end():
-            self.save(self.total_episode)
-            print('\nSystem have stopped training,Neural network have been saved.')
-            self._time=self.time-int(self.time)
-            if self._time<0.5:
-                self.time=int(self.time)
-            else:
-                self.time=int(self.time)+1
-            self.total_time+=self.time
-            print('episode:{0}'.format(self.total_episode))
-            print('last loss:{0:.6f}'.format(self.loss))
-            print('reward:{0}'.format(self.reward))
-            print()
-            print('time:{0}s'.format(self.total_time))
-            return True
-        elif self.end_loss==None:
-            self.save(self.total_episode)
-            print('\nSystem have stopped training,Neural network have been saved.')
-            self._time=self.time-int(self.time)
-            if self._time<0.5:
-                self.time=int(self.time)
-            else:
-                self.time=int(self.time)+1
-            self.total_time+=self.time
-            print('episode:{0}'.format(self.total_episode))
-            print('last loss:{0:.6f}'.format(self.loss))
-            print('reward:{0}'.format(self.reward))
-            print()
-            print('time:{0}s'.format(self.total_time))
-            return True
-        return False
-    
-        
     def _save(self):
         if self.save_epi==self.total_episode:
             self.save(self.total_episode,False)
@@ -921,7 +868,6 @@ class kernel:
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.update_step,output_file)
-        pickle.dump(self.end_loss,output_file)
         pickle.dump(self.max_episode_count,output_file)
         pickle.dump(self.save_episode,output_file)
         pickle.dump(self.reward_list,output_file)
@@ -958,7 +904,6 @@ class kernel:
         self.pool_size=pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.update_step=pickle.load(input_file)
-        self.end_loss=pickle.load(input_file)
         self.max_episode_count=pickle.load(input_file)
         self.save_episode=pickle.load(input_file)
         self.reward_list=pickle.load(input_file)
