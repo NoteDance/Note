@@ -64,7 +64,6 @@ class kernel:
         self.episode_memory_list=[]
         self.episode_memory_t_value=None
         self.memory_t_value=None
-        self.end_loss=None
         self.thread=thread
         self.thread_counter=0
         self.lock=None
@@ -271,7 +270,7 @@ class kernel:
         return
     
     
-    def set_up(self,epsilon=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None,end_loss=None):
+    def set_up(self,epsilon=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None):
         if epsilon!=None:
             self.epsilon=np.ones(self.thread)*epsilon
         if episode_step!=None:
@@ -286,8 +285,6 @@ class kernel:
             self.trial_count=trial_count
         if criterion!=None:
             self.criterion=criterion
-        if end_loss!=None:
-            self.end_loss=end_loss
         if epsilon!=None:
             self.action_vec()
         return
@@ -619,8 +616,6 @@ class kernel:
                 avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
                 if self.criterion!=None and avg_reward>=self.criterion:
                     return True
-        elif self.end_loss!=None and len(self.loss_list)!=0 and self.loss_list[-1]<self.end_loss:
-            return True
     
     
     @tf.function(jit_compile=True)
@@ -912,16 +907,6 @@ class kernel:
                 self.gradient_lock[ln].acquire()
             except:
                 self.gradient_lock[0].acquire()
-            if self.episode_memory_t_value!=None and sum(self.episode_memory_list)>self.episode_memory_t_value:
-                self.save_episode=False
-            if self.memory_flag==True:
-                self.calculate_memory_(t)
-                if self.stop_func_m(self.lock[0]):
-                    return 0
-                if self.stop_func_t_p(self.lock[0],t):
-                    return 0
-            if self.stop_func_(self.lock[0]):
-                return 0
             try:
                 gradient=self.nn.gradient(tape,loss)
             except AttributeError:
@@ -1526,11 +1511,6 @@ class kernel:
             self.save_flag=True
             self.stop_flag=True
             return True
-        elif self.end_loss==None:
-            self.save(self.total_episode)
-            self.save_flag=True
-            self.stop_flag=True
-            return True
         return False
     
     
@@ -1706,7 +1686,6 @@ class kernel:
         pickle.dump(self.batch,output_file)
         pickle.dump(self.sc,output_file)
         pickle.dump(self.update_step,output_file)
-        pickle.dump(self.end_loss,output_file)
         pickle.dump(self.PN,output_file)
         pickle.dump(self.episode_memory_t_value,output_file)
         pickle.dump(self.memory_t_value,output_file)
@@ -1717,8 +1696,6 @@ class kernel:
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
-        if self.save_flag==True:
-            print('\nSystem have stopped,Neural network have saved.')
         return
     
     
@@ -1747,7 +1724,6 @@ class kernel:
         self.batch=pickle.load(input_file)
         self.sc=pickle.load(input_file)
         self.update_step=pickle.load(input_file)
-        self.end_loss=pickle.load(input_file)
         self.PN=pickle.load(input_file)
         self.episode_memory_t_value=pickle.load(input_file)
         self.memory_t_value=pickle.load(input_file)
