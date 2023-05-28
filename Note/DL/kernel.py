@@ -121,21 +121,6 @@ class kernel:
                             self.total_acc=np.zeros(self.thread,dtype=np.float32)
                 except AttributeError:
                     pass
-            try:
-                if self.nn.attenuate!=None:
-                    try:
-                        self.opt_counter=self.platform.Variable(np.zeros(self.thread,dtype=np.float32))
-                    except AttributeError:
-                        self.opt_counter=np.zeros(self.thread,dtype=np.float32)
-            except AttributeError:
-                pass
-            try:
-                try:
-                    self.nn.bc=self.platform.Variable(np.zeros(self.thread,dtype=np.float32))
-                except AttributeError:
-                    self.nn.bc=np.zeros(self.thread,dtype=np.float32)
-            except AttributeError:
-                pass
         if self.train_counter==0 and self.memory_flag==True:
             self.data_memory=getsizeof(self.train_data)+getsizeof(self.train_labels)
             for i in range(self.nn.param):
@@ -188,13 +173,6 @@ class kernel:
                         self.total_acc=np.zeros(self.thread,dtype=np.float32)
                 except AttributeError:
                     pass
-            try:
-                try:
-                    self.nn.bc=self.platform.Variable(np.zeros(self.thread,dtype=np.float32))
-                except AttributeError:
-                    self.nn.bc=np.zeros(self.thread,dtype=np.float32)
-            except AttributeError:
-                pass
         self.suspend=False
         self.suspend_list=[]
         self.suspended_list=[]
@@ -252,21 +230,6 @@ class kernel:
                     self.total_acc=np.zeros(self.thread,dtype=np.float32)
             except AttributeError:
                 pass
-        try:
-            if self.nn.attenuate!=None:
-                try:
-                    self.opt_counter=self.platform.Variable(np.zeros(self.thread,dtype=np.float32))
-                except AttributeError:
-                    self.opt_counter=np.zeros(self.thread,dtype=np.float32)
-        except AttributeError:
-            pass
-        try:
-            try:
-                self.nn.bc=self.platform.Variable(np.zeros(self.thread,dtype=np.float32))
-            except AttributeError:
-                self.nn.bc=np.zeros(self.thread,dtype=np.float32)
-        except AttributeError:
-            pass
         return
     
     
