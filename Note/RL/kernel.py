@@ -63,17 +63,19 @@ class kernel:
         self.loss_list=manager.list(self.loss_list)
         self.total_episode=Value('i',self.total_episode)
         self.priority_p=Value('i',self.priority_p)
+        if self.priority_flag==True:
+            self.opt_counter=Array('i',np.zeros(self.process,dtype=np.int32))
         try:
-            if self.priority_flag==True or self.nn.attenuate!=None:
-                self.opt_counter=Array('f',np.zeros(self.process,dtype=np.float32))
+            if self.nn.attenuate!=None:
+              self.nn.opt_counter=manager.list([self.nn.opt_counter])  
+        except AttributeError:   
+            pass
+        try:
+            self.nn.ec=manager.list(self.nn.ec)
         except AttributeError:
             pass
         try:
-            self.nn.ec=manager.list()
-        except AttributeError:
-            pass
-        try:
-            self.nn.bc=manager.list()
+            self.nn.bc=manager.list(self.nn.bc)
         except AttributeError:
             pass
         self.stop_flag=Value('b',0)
@@ -243,7 +245,7 @@ class kernel:
                 gradient=self.nn.gradient(tape,loss)
                 try:
                     if self.nn.attenuate!=None:
-                        gradient=self.nn.attenuate(gradient,self.opt_counter,p)
+                        gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
                 except AttributeError:
                     pass
             except AttributeError:
@@ -252,7 +254,7 @@ class kernel:
                         gradient=tape.gradient(loss,self.nn.param)
                         try:
                             if self.nn.attenuate!=None:
-                                gradient=self.nn.attenuate(gradient,self.opt_counter,p)
+                                gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
                         except AttributeError:
                             pass
                 except AttributeError:
@@ -260,8 +262,8 @@ class kernel:
                         critic_gradient=tape.gradient(loss[1],self.nn.param[1])
                         try:
                             if self.nn.attenuate!=None:
-                                actor_gradient=self.nn.attenuate(actor_gradient,self.opt_counter,p)
-                                critic_gradient=self.nn.attenuate(critic_gradient,self.opt_counter,p)
+                                actor_gradient=self.nn.attenuate(actor_gradient,self.nn.opt_counter,p)
+                                critic_gradient=self.nn.attenuate(critic_gradient,self.nn.opt_counter,p)
                         except AttributeError:
                             pass
             try:
@@ -295,10 +297,10 @@ class kernel:
             try:
                 if self.nn.attenuate!=None:
                     try:
-                        gradient=self.nn.attenuate(gradient,self.opt_counter,p)
+                        gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
                     except NameError:
-                        actor_gradient=self.nn.attenuate(actor_gradient,self.opt_counter,p)
-                        critic_gradient=self.nn.attenuate(critic_gradient,self.opt_counter,p)
+                        actor_gradient=self.nn.attenuate(actor_gradient,self.nn.opt_counter,p)
+                        critic_gradient=self.nn.attenuate(critic_gradient,self.nn.opt_counter,p)
             except AttributeError:
                 pass
             try:
@@ -332,10 +334,10 @@ class kernel:
             try:
                 if self.nn.attenuate!=None:
                     try:
-                        gradient=self.nn.attenuate(gradient,self.opt_counter,p)
+                        gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
                     except NameError:
-                        actor_gradient=self.nn.attenuate(actor_gradient,self.opt_counter,p)
-                        critic_gradient=self.nn.attenuate(critic_gradient,self.opt_counter,p)
+                        actor_gradient=self.nn.attenuate(actor_gradient,self.nn.opt_counter,p)
+                        critic_gradient=self.nn.attenuate(critic_gradient,self.nn.opt_counter,p)
             except AttributeError:
                 pass
             try:
@@ -366,7 +368,9 @@ class kernel:
             self.param[7]=param
             self.loss[p]+=loss
             try:
-                self.nn.bc[p]+=1
+                bc=self.nn.bc[0]
+                bc.assign_add(1)
+                self.nn.bc[0]=bc
             except AttributeError:
                 pass
         else:
@@ -388,7 +392,9 @@ class kernel:
             self.param[7]=param
             self.loss[p]+=loss
             try:
-                self.nn.bc[p]=j
+                bc=self.nn.bc[0]
+                bc.assign_add(1)
+                self.nn.bc[0]=bc
             except AttributeError:
                 pass
         return
@@ -412,16 +418,24 @@ class kernel:
                         self.priority_p.value=int(self.priority_p.value)
                     else:
                         self.priority_p.value=-1
+                if self.priority_flag==True:
+                    self.opt_counter[p]=0
                 try:
-                    if self.priority_flag==True or self.nn.attenuate!=None:
-                        self.opt_counter[p]=0
+                    if self.nn.attenuate!=None:
+                        opt_counter=self.nn.opt_counter[0]
+                        opt_counter.scatter_update(tf.IndexedSlices(0,p))
+                        self.nn.opt_counter[0]=opt_counter
                 except AttributeError:
                     pass
                 self._train(p,j,batches,length,lock,g_lock)
+                if self.priority_flag==True:
+                    opt_counter=np.frombuffer(self.opt_counter.get_obj(),dtype='i')
+                    opt_counter+=1
                 try:
-                    if self.priority_flag==True or self.nn.attenuate!=None:
-                        opt_counter=np.frombuffer(self.opt_counter.get_obj(),dtype='f')
-                        opt_counter+=1
+                    if self.nn.attenuate!=None:
+                        opt_counter=self.nn.opt_counter[0]
+                        opt_counter.assign(opt_counter+1)
+                        self.nn.opt_counter[0]=opt_counter
                 except AttributeError:
                     pass
             if self.PO==1 or self.PO==3:
@@ -440,7 +454,9 @@ class kernel:
             self.loss[p]=self.loss[p]/batches
         self.sc[p]+=1
         try:
-            self.nn.ec[p]+=1
+            ec=self.nn.ec[0]
+            ec.assign_add(1)
+            self.nn.ec[0]=ec
         except AttributeError:
             pass
         return
@@ -463,14 +479,6 @@ class kernel:
             epsilon=self.epsilon[p]
         except:
             epsilon=None
-        try:
-            self.nn.ec.append(0)
-        except AttributeError:
-            pass
-        try:
-            self.nn.bc.append(0)
-        except AttributeError:
-            pass
         if self.PO==1 or self.PO==3:
             lock[2].release()
         else:
@@ -627,6 +635,14 @@ class kernel:
         pickle.dump(self.reward_list,output_file)
         pickle.dump(self.loss_list,output_file)
         pickle.dump(self.total_episode.value,output_file)
+        try:
+            pickle.dump(self.nn.ec,output_file)
+        except AttributeError:
+            pass
+        try:
+            pickle.dump(self.nn.bc,output_file)
+        except AttributeError:
+            pass
         output_file.close()
         return
     
@@ -649,5 +665,7 @@ class kernel:
         self.reward_list=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
         self.total_episode.value=pickle.load(input_file)
+        self.nn.ec=pickle.load(input_file)
+        self.nn.bc=pickle.load(input_file)
         input_file.close()
         return
