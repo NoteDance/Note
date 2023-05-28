@@ -291,6 +291,8 @@ class kernel:
                     else:
                         continue
             lock[1].acquire()
+            if self.stop_func_(lock[1]):
+                return None,0
             try:
                 if self.nn.attenuate!=None:
                     gradient=self.nn.attenuate(gradient,self.opt_counter,p)
@@ -303,6 +305,8 @@ class kernel:
             lock[1].release()
         elif self.PO==3:
             g_lock[ln].acquire()
+            if self.stop_func_(g_lock[ln]):
+                return None,0
             try:
                 gradient=self.nn.gradient(tape,loss)
             except AttributeError:
@@ -806,7 +810,7 @@ class kernel:
     
     
     def save(self,i=None,one=True):
-        if self.save_flag==True:
+        if self.save_flag.value==True:
             return
         if one==True:
             output_file=open(self.filename,'wb')
@@ -839,8 +843,6 @@ class kernel:
             pickle.dump(self.test_acc_list,output_file)
         pickle.dump(self.total_epoch.value,output_file)
         output_file.close()
-        if self.save_flag==True:
-            print('\nSystem have stopped,Neural network have saved.')
         return
     
 	
