@@ -22,6 +22,14 @@ class kernel:
             self.loss=np.zeros(thread,dtype=np.float32)
             self.sc=np.zeros(thread,dtype=np.float32)
             self.opt_counter=np.zeros(thread,dtype=np.float32)
+            try:
+                self.nn.ec=tf.Variable(np.zeros(thread,dtype=np.float32))
+            except AttributeError:
+                pass
+            try:
+                self.nn.bc=tf.Variable(np.zeros(thread,dtype=np.float32))
+            except AttributeError:
+                pass
         self.threading=None
         self.gradient_lock=[]
         self.max_lock=None
@@ -190,25 +198,9 @@ class kernel:
         except AttributeError:
             pass
         try:
-            self.nn.bc=np.zeros(self.thread,dtype=np.float32)
+            self.nn.bc=tf.Variable(np.zeros(self.thread,dtype=np.float32))
         except AttributeError:
             pass
-        return
-    
-    
-    def add_threads(self,thread,row=None,rank=None):
-        if row!=None:
-            self.thread=row*rank-self.nn.row*self.nn.rank
-            self.nn.row=row
-            self.nn.rank=rank
-            self.add_flag=True
-        thread_num=np.arange(thread)+self.thread
-        self.thread_num=self.thread_num.extend(thread_num)
-        self.thread+=thread
-        self.sc=np.concatenate((self.sc,np.zeros(thread,dtype=np.float32)))
-        self.reward=np.concatenate((self.reward,np.zeros(thread,dtype=np.float32)))
-        self.loss=np.concatenate((self.loss,np.zeros(thread,dtype=np.float32)))
-        self.opt_counter=np.concatenate((self.opt_counter,np.zeros(thread,dtype=np.float32)))
         return
     
     
@@ -978,7 +970,7 @@ class kernel:
                     loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t)
             self.loss[t]+=loss
             try:
-                self.nn.bc[t]+=1
+                self.nn.bc.scatter_update(self.platform.IndexedSlices(1,t))
             except AttributeError:
                 pass
         else:
@@ -1003,7 +995,7 @@ class kernel:
                     loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t)
             self.loss[t]+=loss
             try:
-                self.nn.bc[t]=j
+                self.nn.bc.scatter_update(self.platform.IndexedSlices(1,t))
             except AttributeError:
                 pass
         return
@@ -1023,7 +1015,7 @@ class kernel:
                 return
             self.loss[t]+=loss
             try:
-                self.nn.bc[t]+=1
+                self.nn.bc.scatter_update(self.platform.IndexedSlices(1,t))
             except AttributeError:
                 pass
         return
@@ -1054,10 +1046,6 @@ class kernel:
                     if self.stop_flag==True:
                         return
             else:
-                try:
-                    self.nn.bc[t]=0
-                except AttributeError:
-                    pass
                 if self.PO==3:
                     if len(self.gradient_lock)==self.thread:
                         ln=int(t)
@@ -1090,7 +1078,7 @@ class kernel:
             self.loss[t]=self.loss[t]/batches
         self.sc[t]+=1
         try:
-            self.nn.ec[t]+=1
+            self.nn.ec.scatter_update(self.platform.IndexedSlices(1,t))
         except AttributeError:
             pass
         return
@@ -1146,14 +1134,6 @@ class kernel:
             epsilon=self.epsilon[t]
         except:
             epsilon=None
-        try:
-            self.nn.ec.append(0)
-        except AttributeError:
-            pass
-        try:
-            self.nn.bc.append(0)
-        except AttributeError:
-            pass
         if self.PN==True:
             if self.PO==1 or self.PO==3:
                 self.lock[2].release()
