@@ -22,14 +22,6 @@ class kernel:
             self.loss=np.zeros(thread,dtype=np.float32)
             self.sc=np.zeros(thread,dtype=np.float32)
             self.opt_counter=np.zeros(thread,dtype=np.float32)
-            try:
-                self.nn.ec=tf.Variable(np.zeros(thread,dtype=np.float32))
-            except AttributeError:
-                pass
-            try:
-                self.nn.bc=tf.Variable(np.zeros(thread,dtype=np.float32))
-            except AttributeError:
-                pass
         self.threading=None
         self.gradient_lock=[]
         self.max_lock=None
@@ -190,15 +182,6 @@ class kernel:
             if self.nn.pr!=None:
                 self.nn.pr.TD=[]
                 self.nn.pr.index=[]
-        except AttributeError:
-            pass
-        try:
-            if self.nn.attenuate!=None:
-                self.opt_counter=np.zeros(self.thread,dtype=np.float32)
-        except AttributeError:
-            pass
-        try:
-            self.nn.bc=tf.Variable(np.zeros(self.thread,dtype=np.float32))
         except AttributeError:
             pass
         return
@@ -619,7 +602,10 @@ class kernel:
                 loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t)
         try:
             if self.nn.attenuate!=None:
-                self.opt_counter[t]=0
+                try:
+                    self.opt_counter.scatter_update(self.platform.IndexedSlices(0,t))
+                except AttributeError:
+                    self.opt_counter[t]=0
         except AttributeError:
             pass
         if self.PO==1:
@@ -677,7 +663,10 @@ class kernel:
                     self.nn.opt.apply_gradients(zip(critic_gradient,self.nn.param[1]))
             try:
                 if self.nn.attenuate!=None:
-                    self.opt_counter+=1
+                    try:
+                        self.opt_counter.assign(self.opt_counter+1)
+                    except AttributeError: 
+                        self.opt_counter+=1
             except AttributeError:
                 pass
             self.lock[0].release()
@@ -731,7 +720,10 @@ class kernel:
                     self.nn.opt.apply_gradients(zip(critic_gradient,self.nn.param[1]))
             try:
                 if self.nn.attenuate!=None:
-                    self.opt_counter+=1
+                    try:
+                        self.opt_counter.assign(self.opt_counter+1)
+                    except AttributeError: 
+                        self.opt_counter+=1
             except AttributeError:
                 pass
             self.lock[1].release()
@@ -791,7 +783,10 @@ class kernel:
                     self.nn.opt.apply_gradients(zip(critic_gradient,self.nn.param[1]))
             try:
                 if self.nn.attenuate!=None:
-                    self.opt_counter+=1
+                    try:
+                        self.opt_counter.assign(self.opt_counter+1)
+                    except AttributeError: 
+                        self.opt_counter+=1
             except AttributeError:
                 pass
             self.lock[0].release()
@@ -807,7 +802,10 @@ class kernel:
                 loss=self.nn.loss(data,t)
         try:
             if self.nn.attenuate!=None:
-                self.opt_counter[t]=0
+                try:
+                    self.opt_counter.scatter_update(self.platform.IndexedSlices(0,t))
+                except AttributeError:
+                    self.opt_counter[t]=0
         except AttributeError:
             pass
         if self.PO==1:
@@ -846,7 +844,10 @@ class kernel:
                         self.nn.opt.apply_gradients(zip(critic_gradient,self.nn.param[1]))
             try:
                 if self.nn.attenuate!=None:
-                    self.opt_counter+=1
+                    try:
+                        self.opt_counter.assign(self.opt_counter+1)
+                    except AttributeError: 
+                        self.opt_counter+=1
             except AttributeError:
                 pass
             self.lock[0].release()
@@ -890,7 +891,10 @@ class kernel:
                     self.nn.opt.apply_gradients(zip(critic_gradient,self.nn.param[1]))
             try:
                 if self.nn.attenuate!=None:
-                    self.opt_counter+=1
+                    try:
+                        self.opt_counter.assign(self.opt_counter+1)
+                    except AttributeError: 
+                        self.opt_counter+=1
             except AttributeError:
                 pass
             self.lock[1].release()
@@ -940,7 +944,10 @@ class kernel:
                     self.nn.opt.apply_gradients(zip(critic_gradient,self.nn.param[1]))
             try:
                 if self.nn.attenuate!=None:
-                    self.opt_counter+=1
+                    try:
+                        self.opt_counter.assign(self.opt_counter+1)
+                    except AttributeError: 
+                        self.opt_counter+=1
             except AttributeError:
                 pass
             self.lock[0].release()
