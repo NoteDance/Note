@@ -123,11 +123,17 @@ class kernel:
                     pass
             try:
                 if self.nn.attenuate!=None:
-                    self.opt_counter=np.zeros(self.thread,dtype=np.float32)
+                    try:
+                        self.opt_counter=self.platform.Variable(np.zeros(self.thread,dtype=np.float32))
+                    except AttributeError:
+                        self.opt_counter=np.zeros(self.thread,dtype=np.float32)
             except AttributeError:
                 pass
             try:
-                self.nn.bc=np.zeros(self.thread,dtype=np.float32)
+                try:
+                    self.nn.bc=self.platform.Variable(np.zeros(self.thread,dtype=np.float32))
+                except AttributeError:
+                    self.nn.bc=np.zeros(self.thread,dtype=np.float32)
             except AttributeError:
                 pass
         if self.train_counter==0 and self.memory_flag==True:
@@ -183,7 +189,10 @@ class kernel:
                 except AttributeError:
                     pass
             try:
-                self.nn.bc=np.zeros(self.thread,dtype=np.float32)
+                try:
+                    self.nn.bc=self.platform.Variable(np.zeros(self.thread,dtype=np.float32))
+                except AttributeError:
+                    self.nn.bc=np.zeros(self.thread,dtype=np.float32)
             except AttributeError:
                 pass
         self.suspend=False
@@ -245,37 +254,17 @@ class kernel:
                 pass
         try:
             if self.nn.attenuate!=None:
-                self.opt_counter=np.zeros(self.thread,dtype=np.float32)
+                try:
+                    self.opt_counter=self.platform.Variable(np.zeros(self.thread,dtype=np.float32))
+                except AttributeError:
+                    self.opt_counter=np.zeros(self.thread,dtype=np.float32)
         except AttributeError:
             pass
         try:
-            self.nn.bc=np.zeros(self.thread,dtype=np.float32)
-        except AttributeError:
-            pass
-        return
-    
-    
-    def add_thread(self,thread):
-        thread_num=np.arange(thread)+self.thread
-        self.thread_num=self.thread_num.extend(thread_num)
-        self.thread+=thread
-        if self.epoch_!=None:
-            self.batch_counter=np.concatenate((self.batch_counter,np.zeros(thread,dtype=np.int32)))
-            self.total_loss=np.concatenate((self.total_loss,np.zeros(thread,dtype=np.float32)))
             try:
-                if self.nn.accuracy!=None:
-                    self.total_acc=np.concatenate((self.total_acc,np.zeros(thread,dtype=np.float32)))
+                self.nn.bc=self.platform.Variable(np.zeros(self.thread,dtype=np.float32))
             except AttributeError:
-                pass
-        try:
-            if self.nn.attenuate!=None and self.opt_counter!=None:
-                self.opt_counter=np.concatenate((self.opt_counter,np.zeros(thread,dtype=np.float32)))
-            else:
-                self.opt_counter=np.zeros(self.thread,dtype=np.float32)
-        except AttributeError:
-            pass
-        try:
-            self.nn.bc=np.concatenate((self.nn.bc,np.zeros(thread,dtype=np.float32)))
+                self.nn.bc=np.zeros(self.thread,dtype=np.float32)
         except AttributeError:
             pass
         return
@@ -432,7 +421,10 @@ class kernel:
                         output,loss=self.nn.fp(data,labels,t)
         try:
             if self.nn.attenuate!=None:
-                self.opt_counter[t]=0
+                try:
+                    self.opt_counter.scatter_update(self.platform.IndexedSlices(0,t))
+                except AttributeError:
+                    self.opt_counter[t]=0
         except AttributeError:
             pass
         if self.PO==1:
@@ -457,7 +449,10 @@ class kernel:
                     self.nn.opt(gradient,t)
             try:
                 if self.nn.attenuate!=None:
-                    self.opt_counter+=1
+                    try:
+                        self.opt_counter.assign(self.opt_counter+1)
+                    except AttributeError: 
+                        self.opt_counter+=1
             except AttributeError:
                 pass
             self.lock[0].release()
@@ -490,7 +485,10 @@ class kernel:
                     self.nn.opt(gradient,t)
             try:
                 if self.nn.attenuate!=None:
-                    self.opt_counter+=1
+                    try:
+                        self.opt_counter.assign(self.opt_counter+1)
+                    except AttributeError: 
+                        self.opt_counter+=1
             except AttributeError:
                 pass
             if type(self.thread)==list:
@@ -545,7 +543,10 @@ class kernel:
                     self.nn.opt(gradient,t)
             try:
                 if self.nn.attenuate!=None:
-                    self.opt_counter+=1
+                    try:
+                        self.opt_counter.assign(self.opt_counter+1)
+                    except AttributeError: 
+                        self.opt_counter+=1
             except AttributeError:
                 pass
             if self.memory_flag==True:
@@ -643,7 +644,10 @@ class kernel:
                     output,batch_loss=self.opt(data_batch,labels_batch)
                     total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc)
                     try:
-                        self.nn.bc=j
+                        try:
+                            self.nn.bc.assign_add(1)
+                        except AttributeError:
+                            self.nn.bc+=1
                     except AttributeError:
                         pass
                 if self.shape0%batch!=0:
@@ -658,7 +662,10 @@ class kernel:
                     output,batch_loss=self.opt(data_batch,labels_batch)
                     total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc)
                     try:
-                        self.nn.bc+=1
+                        try:
+                            self.nn.bc.assign_add(1)
+                        except AttributeError:
+                            self.nn.bc+=1
                     except AttributeError:
                         pass
             try:
@@ -703,7 +710,10 @@ class kernel:
                 data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j,True)
                 output,batch_loss=self.opt_t(data_batch,labels_batch,t)
                 try:
-                    self.nn.bc[t]+=1
+                    try:
+                        self.nn.bc.scatter_update(self.platform.IndexedSlices(1,t))
+                    except AttributeError:
+                        self.nn.bc[t]+=1
                 except AttributeError:
                     pass
                 try:
@@ -715,7 +725,10 @@ class kernel:
             data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j)
             output,batch_loss=self.opt_t(data_batch,labels_batch,t)
             try:
-                self.nn.bc[t]=j
+                try:
+                    self.nn.bc.scatter_update(self.platform.IndexedSlices(1,t))
+                except AttributeError:
+                    self.nn.bc[t]+=1
             except AttributeError:
                 pass
             try:
@@ -853,7 +866,10 @@ class kernel:
             except AttributeError:
                 pass
             try:
-                self.nn.ec+=1
+                try:
+                    self.nn.ec.assign_add(1)
+                except AttributeError:
+                    self.nn.ec+=1
             except AttributeError:
                 pass
             self.print_save()
@@ -875,7 +891,10 @@ class kernel:
             for data_batch,labels_batch in train_ds:
                 output,batch_loss=self.opt_t(data_batch,labels_batch,t)
                 try:
-                    self.nn.bc[t]+=1
+                    try:
+                        self.nn.bc.scatter_update(self.platform.IndexedSlices(1,t))
+                    except AttributeError:
+                        self.nn.bc[t]+=1
                 except AttributeError:
                     pass
                 try:
@@ -926,11 +945,10 @@ class kernel:
                     self.print_save()
                     self.epoch_counter+=1
                     try:
-                        self.nn.bc[t]=0
-                    except AttributeError:
-                        pass
-                    try:
-                        self.nn.ec+=1
+                        try:
+                            self.nn.ec.assign_add(1)
+                        except AttributeError:
+                            self.nn.ec+=1
                     except AttributeError:
                         pass
                     self.total_loss=self.total_loss*0
@@ -1062,7 +1080,10 @@ class kernel:
                     return
                 if self.thread==None:
                     try:
-                        self.nn.ec+=1
+                        try:
+                            self.nn.ec.assign_add(1)
+                        except AttributeError:
+                            self.nn.ec+=1
                     except AttributeError:
                         pass
                 if self.thread==None:
@@ -1140,7 +1161,10 @@ class kernel:
                 i+=1
                 if self.thread==None:
                     try:
-                        self.nn.ec+=1
+                        try:
+                            self.nn.ec.assign_add(1)
+                        except AttributeError:
+                            self.nn.ec+=1
                     except AttributeError:
                         pass
                 if self.thread==None:
