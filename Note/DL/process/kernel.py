@@ -78,15 +78,8 @@ class kernel:
                 self.total_acc=np.zeros(self.process,dtype=np.float32)
         except AttributeError:
             pass
-        try:
-            if self.priority_flag==True or self.nn.attenuate!=None:
-                self.opt_counter=np.zeros(self.process,dtype=np.float32)
-        except AttributeError:
-            pass
-        try:
-            self.nn.bc=np.zeros(self.process,dtype=np.float32)
-        except AttributeError:
-            pass
+        if self.priority_flag==True:
+            self.opt_counter=np.zeros(self.process,dtype=np.int32)
         if self.train_dataset==None:
             if type(self.train_data)==list:
                 self.shape0=train_data[0].shape[0]
@@ -147,17 +140,19 @@ class kernel:
                     self.test_acc_list=manager.list(self.test_acc_list)
         except AttributeError:   
             pass
+        if self.priority_flag==True:
+            self.opt_counter=Array('i',self.opt_counter)  
         try:
-            if self.priority_flag==True or self.nn.attenuate!=None:
-              self.opt_counter=Array('f',self.opt_counter)  
+            if self.nn.attenuate!=None:
+              self.nn.opt_counter=manager.list([self.nn.opt_counter])  
         except AttributeError:   
             pass
         try:
-            self.nn.ec=Value('f',self.nn.ec)  
+            self.nn.ec=manager.list([self.nn.ec])  
         except AttributeError:
             pass
         try:
-            self.nn.bc=Array('f',self.nn.bc)  
+            self.nn.bc=manager.list([self.nn.bc])
         except AttributeError:
             pass
         self.stop_flag=Value('b',self.stop_flag)
@@ -267,7 +262,7 @@ class kernel:
                 gradient=tape.gradient(loss,self.nn.param)
             try:
                 if self.nn.attenuate!=None:
-                    gradient=self.nn.attenuate(gradient,self.opt_counter,p)
+                    gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
             except AttributeError:
                 pass
             try:
@@ -291,11 +286,9 @@ class kernel:
                     else:
                         continue
             lock[1].acquire()
-            if self.stop_func_(lock[1]):
-                return None,0
             try:
                 if self.nn.attenuate!=None:
-                    gradient=self.nn.attenuate(gradient,self.opt_counter,p)
+                    gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
             except AttributeError:
                 pass
             try:
@@ -305,8 +298,6 @@ class kernel:
             lock[1].release()
         elif self.PO==3:
             g_lock[ln].acquire()
-            if self.stop_func_(g_lock[ln]):
-                return None,0
             try:
                 gradient=self.nn.gradient(tape,loss)
             except AttributeError:
@@ -323,7 +314,7 @@ class kernel:
                 return None,0
             try:
                 if self.nn.attenuate!=None:
-                    gradient=self.nn.attenuate(gradient,self.opt_counter,p)
+                    gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
             except AttributeError:
                 pass
             try:
@@ -368,21 +359,31 @@ class kernel:
                         self.priority_p.value=int(self.priority_p.value)
                     else:
                         self.priority_p.value=-1
+                if self.priority_flag==True:
+                    self.opt_counter[p]=0
                 try:
-                    if self.priority_flag==True or self.nn.attenuate!=None:
-                        self.opt_counter[p]=0
+                    if self.nn.attenuate!=None:
+                        opt_counter=self.nn.opt_counter[0]
+                        opt_counter.scatter_update(tf.IndexedSlices(0,p))
+                        self.nn.opt_counter[0]=opt_counter
                 except AttributeError:
                     pass
                 output,batch_loss,param=self.opt_t(data_batch,labels_batch,p,lock,g_lock)
+                self.param[7]=param
+                if self.priority_flag==True:
+                    opt_counter=np.frombuffer(self.opt_counter.get_obj(),dtype='i')
+                    opt_counter+=1
                 try:
-                    if self.priority_flag==True or self.nn.attenuate!=None:
-                        opt_counter=np.frombuffer(self.opt_counter.get_obj(),dtype='f')
-                        opt_counter+=1
+                    if self.nn.attenuate!=None:
+                        opt_counter=self.nn.opt_counter[0]
+                        opt_counter.assign(opt_counter+1)
+                        self.nn.opt_counter[0]=opt_counter
                 except AttributeError:
                     pass
-                self.param[7]=param
                 try:
-                    self.nn.bc[p]+=1
+                    bc=self.nn.bc[0]
+                    bc.assign_add(1)
+                    self.nn.bc[0]=bc
                 except AttributeError:
                     pass
                 try:
@@ -431,11 +432,9 @@ class kernel:
                     self.print_save()
                     self.epoch_counter.value+=1
                     try:
-                        self.nn.bc[p]=0
-                    except AttributeError:
-                        pass
-                    try:
-                        self.nn.ec.value+=1
+                        ec=self.nn.ec[0]
+                        ec.assign_add(1)
+                        self.nn.ec[0]=ec
                     except AttributeError:
                         pass
                     total_loss=np.frombuffer(self.total_loss.get_obj(),dtype='f')
@@ -842,6 +841,14 @@ class kernel:
             pickle.dump(self.test_loss_list,output_file)
             pickle.dump(self.test_acc_list,output_file)
         pickle.dump(self.total_epoch.value,output_file)
+        try:
+            pickle.dump(self.nn.ec,output_file)
+        except AttributeError:
+            pass
+        try:
+            pickle.dump(self.nn.bc,output_file)
+        except AttributeError:
+            pass
         output_file.close()
         return
     
@@ -873,5 +880,7 @@ class kernel:
             self.test_loss_list=pickle.load(input_file)
             self.test_acc_list=pickle.load(input_file)
         self.total_epoch.value=pickle.load(input_file)
+        self.nn.ec=pickle.load(input_file)
+        self.nn.bc=pickle.load(input_file)
         input_file.close()
         return
