@@ -673,10 +673,7 @@ class kernel:
                 data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j,True)
                 output,batch_loss=self.opt_t(data_batch,labels_batch,t)
                 try:
-                    try:
-                        self.nn.bc.scatter_update(self.platform.IndexedSlices(1,t))
-                    except AttributeError:
-                        self.nn.bc[t]+=1
+                    self.nn.bc.assign_add(1)
                 except AttributeError:
                     pass
                 try:
@@ -688,10 +685,7 @@ class kernel:
             data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j)
             output,batch_loss=self.opt_t(data_batch,labels_batch,t)
             try:
-                try:
-                    self.nn.bc.scatter_update(self.platform.IndexedSlices(1,t))
-                except AttributeError:
-                    self.nn.bc[t]+=1
+                self.nn.bc.assign_add(1)
             except AttributeError:
                 pass
             try:
@@ -829,10 +823,7 @@ class kernel:
             except AttributeError:
                 pass
             try:
-                try:
-                    self.nn.ec.assign_add(1)
-                except AttributeError:
-                    self.nn.ec+=1
+                self.nn.ec.assign_add(1)
             except AttributeError:
                 pass
             self.print_save()
@@ -854,10 +845,7 @@ class kernel:
             for data_batch,labels_batch in train_ds:
                 output,batch_loss=self.opt_t(data_batch,labels_batch,t)
                 try:
-                    try:
-                        self.nn.bc.scatter_update(self.platform.IndexedSlices(1,t))
-                    except AttributeError:
-                        self.nn.bc[t]+=1
+                    self.nn.bc.assign_add(1)
                 except AttributeError:
                     pass
                 try:
@@ -908,10 +896,7 @@ class kernel:
                     self.print_save()
                     self.epoch_counter+=1
                     try:
-                        try:
-                            self.nn.ec.assign_add(1)
-                        except AttributeError:
-                            self.nn.ec+=1
+                        self.nn.ec.assign_add(1)
                     except AttributeError:
                         pass
                     self.total_loss=self.total_loss*0
