@@ -600,14 +600,6 @@ class kernel:
                 loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
             except TypeError:
                 loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t)
-        try:
-            if self.nn.attenuate!=None:
-                try:
-                    self.opt_counter.scatter_update(self.platform.IndexedSlices(0,t))
-                except AttributeError:
-                    self.opt_counter[t]=0
-        except AttributeError:
-            pass
         if self.PO==1:
             self.lock[0].acquire()
             if self.episode_memory_t_value!=None and sum(self.episode_memory_list)>self.episode_memory_t_value:
@@ -661,14 +653,6 @@ class kernel:
                 except AttributeError:
                     self.nn.opt.apply_gradients(zip(actor_gradient,self.nn.param[0]))
                     self.nn.opt.apply_gradients(zip(critic_gradient,self.nn.param[1]))
-            try:
-                if self.nn.attenuate!=None:
-                    try:
-                        self.opt_counter.assign(self.opt_counter+1)
-                    except AttributeError: 
-                        self.opt_counter+=1
-            except AttributeError:
-                pass
             self.lock[0].release()
         elif self.PO==2:
             self.lock[0].acquire()
@@ -718,14 +702,6 @@ class kernel:
                 except AttributeError:
                     self.nn.opt.apply_gradients(zip(actor_gradient,self.nn.param[0]))
                     self.nn.opt.apply_gradients(zip(critic_gradient,self.nn.param[1]))
-            try:
-                if self.nn.attenuate!=None:
-                    try:
-                        self.opt_counter.assign(self.opt_counter+1)
-                    except AttributeError: 
-                        self.opt_counter+=1
-            except AttributeError:
-                pass
             self.lock[1].release()
         elif self.PO==3:
             try:
@@ -781,14 +757,6 @@ class kernel:
                 except AttributeError:
                     self.nn.opt.apply_gradients(zip(actor_gradient,self.nn.param[0]))
                     self.nn.opt.apply_gradients(zip(critic_gradient,self.nn.param[1]))
-            try:
-                if self.nn.attenuate!=None:
-                    try:
-                        self.opt_counter.assign(self.opt_counter+1)
-                    except AttributeError: 
-                        self.opt_counter+=1
-            except AttributeError:
-                pass
             self.lock[0].release()
         return loss
     
@@ -800,14 +768,6 @@ class kernel:
                 loss=self.nn.loss(data)
             except:
                 loss=self.nn.loss(data,t)
-        try:
-            if self.nn.attenuate!=None:
-                try:
-                    self.opt_counter.scatter_update(self.platform.IndexedSlices(0,t))
-                except AttributeError:
-                    self.opt_counter[t]=0
-        except AttributeError:
-            pass
         if self.PO==1:
             self.lock[0].acquire()
             try:
@@ -842,14 +802,6 @@ class kernel:
                             pass
                         self.nn.opt.apply_gradients(zip(actor_gradient,self.nn.param[0]))
                         self.nn.opt.apply_gradients(zip(critic_gradient,self.nn.param[1]))
-            try:
-                if self.nn.attenuate!=None:
-                    try:
-                        self.opt_counter.assign(self.opt_counter+1)
-                    except AttributeError: 
-                        self.opt_counter+=1
-            except AttributeError:
-                pass
             self.lock[0].release()
         elif self.PO==2:
             self.lock[0].acquire()
@@ -889,14 +841,6 @@ class kernel:
                 except AttributeError:
                     self.nn.opt.apply_gradients(zip(actor_gradient,self.nn.param[0]))
                     self.nn.opt.apply_gradients(zip(critic_gradient,self.nn.param[1]))
-            try:
-                if self.nn.attenuate!=None:
-                    try:
-                        self.opt_counter.assign(self.opt_counter+1)
-                    except AttributeError: 
-                        self.opt_counter+=1
-            except AttributeError:
-                pass
             self.lock[1].release()
         elif self.PO==3:
             try:
@@ -942,14 +886,6 @@ class kernel:
                 except AttributeError:
                     self.nn.opt.apply_gradients(zip(actor_gradient,self.nn.param[0]))
                     self.nn.opt.apply_gradients(zip(critic_gradient,self.nn.param[1]))
-            try:
-                if self.nn.attenuate!=None:
-                    try:
-                        self.opt_counter.assign(self.opt_counter+1)
-                    except AttributeError: 
-                        self.opt_counter+=1
-            except AttributeError:
-                pass
             self.lock[0].release()
         return loss
     
@@ -957,12 +893,22 @@ class kernel:
     def _train(self,t,j=None,batches=None,length=None,ln=None):
         if j==batches-1:
             try:
+                if self.nn.attenuate!=None:
+                    self.opt_counter.scatter_update(self.platform.IndexedSlices(0,t))
+            except AttributeError:
+                pass
+            try:
                 if self.nn.data_func!=None:
                     state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool[t],self.action_pool[t],self.next_state_pool[t],self.reward_pool[t],self.done_pool[t],self.batch,t)
                     if self.PO==3:
                         loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t,ln)
                     else:
                         loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t)
+                    try:
+                        if self.nn.attenuate!=None:
+                            self.opt_counter.assign(self.opt_counter+1)
+                    except AttributeError:
+                        pass
             except AttributeError:
                 index1=batches*self.batch
                 index2=self.batch-(length-batches*self.batch)
@@ -975,6 +921,11 @@ class kernel:
                     loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t,ln)
                 else:
                     loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t)
+            try:
+                if self.nn.attenuate!=None:
+                    self.opt_counter.assign(self.opt_counter+1)
+            except AttributeError:
+                pass
             self.loss[t]+=loss
             try:
                 self.nn.bc.assign_add(1)
@@ -982,8 +933,18 @@ class kernel:
                 pass
         else:
             try:
+                if self.nn.attenuate!=None:
+                    self.opt_counter.scatter_update(self.platform.IndexedSlices(0,t))
+            except AttributeError:
+                pass
+            try:
                 if self.nn.data_func!=None:
                     state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool[t],self.action_pool[t],self.next_state_pool[t],self.reward_pool[t],self.done_pool[t],self.batch,t)
+                    try:
+                        if self.nn.attenuate!=None:
+                            self.opt_counter.scatter_update(self.platform.IndexedSlices(0,t))
+                    except AttributeError:
+                        pass
                     if self.PO==3:
                         loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t,ln)
                     else:
@@ -1000,6 +961,11 @@ class kernel:
                     loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t,ln)
                 else:
                     loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,t)
+            try:
+                if self.nn.attenuate!=None:
+                    self.opt_counter.assign(self.opt_counter+1)
+            except AttributeError:
+                pass
             self.loss[t]+=loss
             try:
                 self.nn.bc.assign_add(1)
@@ -1420,6 +1386,11 @@ class kernel:
                         break
                 continue
             try:
+                try:
+                    if self.nn.attenuate!=None:
+                        self.opt_counter.scatter_update(self.platform.IndexedSlices(0,t))
+                except AttributeError:
+                    pass
                 if self.PO==3:
                     if len(self.gradient_lock)==self.thread:
                         ln=int(t)
@@ -1428,6 +1399,11 @@ class kernel:
                     loss=self.opt_ol(data,t,ln)
                 else:
                     loss=self.opt_ol(data,t)
+                try:
+                    if self.nn.attenuate!=None:
+                        self.opt_counter.assign(self.opt_counter+1)
+                except AttributeError:
+                    pass
             except:
                 self.exception_list[t]=True
                 continue
