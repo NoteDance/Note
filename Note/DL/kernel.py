@@ -382,14 +382,6 @@ class kernel:
                         loss=self.nn.loss(output,labels)
                     except TypeError:
                         output,loss=self.nn.fp(data,labels,t)
-        try:
-            if self.nn.attenuate!=None:
-                try:
-                    self.opt_counter.scatter_update(self.platform.IndexedSlices(0,t))
-                except AttributeError:
-                    self.opt_counter[t]=0
-        except AttributeError:
-            pass
         if self.PO==1:
             self.lock[0].acquire()
             if self.stop_func_(self.lock[0]):
@@ -410,14 +402,6 @@ class kernel:
                     self.nn.opt(gradient)
                 except TypeError:
                     self.nn.opt(gradient,t)
-            try:
-                if self.nn.attenuate!=None:
-                    try:
-                        self.opt_counter.assign(self.opt_counter+1)
-                    except AttributeError: 
-                        self.opt_counter+=1
-            except AttributeError:
-                pass
             self.lock[0].release()
         elif self.PO==2:
             self.lock[0].acquire()
@@ -427,10 +411,7 @@ class kernel:
                 gradient=self.nn.gradient(tape,loss)
             except AttributeError:
                 gradient=tape.gradient(loss,self.nn.param)
-            if type(self.thread)==list:
-                self.lock[1][0].release()
-            else:
-                self.lock[0].release()
+            self.lock[0].release()
             self.lock[1].acquire()
             if self.stop_func_(self.lock[1]):
                 return None,0
@@ -446,18 +427,7 @@ class kernel:
                     self.nn.opt(gradient)
                 except TypeError:
                     self.nn.opt(gradient,t)
-            try:
-                if self.nn.attenuate!=None:
-                    try:
-                        self.opt_counter.assign(self.opt_counter+1)
-                    except AttributeError: 
-                        self.opt_counter+=1
-            except AttributeError:
-                pass
-            if type(self.thread)==list:
-                self.lock[1][1].release()
-            else:
-                self.lock[1].release()
+            self.lock[1].release()
         elif self.PO==3:
             if self.row!=None:
                 try:
@@ -504,14 +474,6 @@ class kernel:
                     self.nn.opt(gradient)
                 except TypeError:
                     self.nn.opt(gradient,t)
-            try:
-                if self.nn.attenuate!=None:
-                    try:
-                        self.opt_counter.assign(self.opt_counter+1)
-                    except AttributeError: 
-                        self.opt_counter+=1
-            except AttributeError:
-                pass
             if self.memory_flag==True:
                 self.grad_memory_list[ln]=0
             self.lock[0].release()
@@ -540,6 +502,11 @@ class kernel:
     
     
     def opt_t(self,data,labels,t=None):
+        try:
+            if self.nn.attenuate!=None:
+                self.opt_counter.scatter_update(self.platform.IndexedSlices(0,t))
+        except AttributeError:
+            pass
         if self.PO==3:
             if self.row==None and len(self.gradient_lock)==self.thread:
                 ln=int(t)
@@ -553,6 +520,11 @@ class kernel:
             output,loss=self.tf_opt_t(data,labels,int(t),ln)
         else:
             output,loss=self.tf_opt_t(data,labels,int(t))
+        try:
+            if self.nn.attenuate!=None:
+                self.opt_counter.assign(self.opt_counter+1)
+        except AttributeError:
+            pass
         return output,loss
     
     
