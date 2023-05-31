@@ -97,10 +97,9 @@ class kernel:
         self.test_data=test_data
         self.test_labels=test_labels
         self.test_dataset=test_dataset
-        try:
-            if test_data==None:
-                self.test_flag=False
-        except ValueError:
+        if test_data is None:
+            self.test_flag=False
+        else:
             self.test_flag=True
         if self.train_dataset==None:
             if type(self.train_data)==list:
