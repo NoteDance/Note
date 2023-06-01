@@ -360,15 +360,6 @@ https://github.com/NoteDancing/Note/tree/Note-7.0-pv/Note/nn/layer
 https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/nn_layer.py
 
 
-# Note Compiler:
-documentation:https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/Note%207.0%20pv%20documentation/compiler
-```python
-import Note.nc as nc
-c=nc.compiler('nn.n')
-c.Compile()
-```
-
-
 # Patreon:
 You can support this project on Patreon.
 
