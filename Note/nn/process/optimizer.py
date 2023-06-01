@@ -125,16 +125,17 @@ class Adam:
 
 
 class Nadam:
-    def __init__(self,learning_rate=0.001,beta_1=0.9,beta_2=0.999,epsilon=1e-07):
-        self.learning_rate=learning_rate
-        self.beta_1=beta_1
-        self.beta_2=beta_2
+    def __init__(self,lr=0.001,beta1=0.9,beta2=0.999,epsilon=1e-07):
+        self.lr=lr
+        self.beta1=beta1
+        self.beta2=beta2
         self.epsilon=epsilon
         self.v=[]
         self.s=[]
         self.v_=[]
         self.s_=[]
         self.g=[]
+        self.m=[]
         self.flag=0
     
     
@@ -145,13 +146,15 @@ class Nadam:
             self.v_=[x for x in range(len(gradient))]
             self.s_=[x for x in range(len(gradient))]
             self.g=[x for x in range(len(gradient))]
+            self.m=[x for x in range(len(gradient))]
             self.flag+=1
         for i in range(len(gradient)):
-            self.v[i]=self.beta_1*self.v[i]+(1-self.beta_1)*gradient[i]
-            self.s[i]=self.beta_2*self.s[i]+(1-self.beta_2)*gradient[i]**2
-            self.v_[i]=self.v[i]/(1-self.beta_1**(t+1))
-            self.s_[i]=self.s[i]/(1-self.beta_2**(t+1))
-            self.g[i]=self.learning_rate*self.v_[i]/(tf.sqrt(self.s_[i])+self.epsilon)
+            self.v[i]=self.beta1*self.v[i]+(1-self.beta1)*gradient[i]
+            self.s[i]=self.beta2*self.s[i]+(1-self.beta2)*gradient[i]**2
+            self.v_[i]=self.v[i]/(1-self.beta1**(t+1))
+            self.s_[i]=self.s[i]/(1-self.beta2**(t+1))
+            self.m[i]=(self.beta1*gradient[i])/(1-self.beta1**(t+1))
+            self.g[i]=self.lr*(self.m[i]+(1-self.beta1)*gradient[i])/(tf.sqrt(self.s_[i])+self.epsilon)
             state_ops.assign(parameter[i],parameter[i]-self.g[i])
         return parameter
 
