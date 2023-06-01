@@ -3,11 +3,13 @@ import Note.nn.initializer as i
 
 
 class GRUCell:
-    def __init__(self,weight_shape,weight_initializer='uniform',bias_initializer='zero',dtype='float64',use_bias=True):
+    def __init__(self,weight_shape,weight_initializer='uniform',bias_initializer='zero',dtype='float64',use_bias=True,activation1=tf.nn.sigmoid,activation2=tf.nn.tanh):
         self.weight=i.initializer([weight_shape[0]+weight_shape[1],3*weight_shape[1]],weight_initializer,dtype)
         if use_bias==True:
             self.bias=i.initializer([3*weight_shape[1]],bias_initializer,dtype)
         self.use_bias=use_bias
+        self.activation1=activation1
+        self.activation2=activation2
         if use_bias==True:
             self.weight_list=[self.weight,self.bias]
         else:
@@ -21,9 +23,9 @@ class GRUCell:
         else:
             z=tf.matmul(x,self.weight)
         r,z,h=tf.split(z,3,axis=-1)
-        r=tf.nn.sigmoid(r)
-        z=tf.nn.sigmoid(z)
-        h=tf.nn.tanh(h)
+        r=self.activation1(r)
+        z=self.activation1(z)
+        h=self.activation2(h)
         h_new=z*state+(1-z)*h
         output=h_new
         return output,h_new
