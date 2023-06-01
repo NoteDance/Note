@@ -11,6 +11,8 @@ def activation(data,weight,bias=None,activation_func=None,use_bias=True):
             return tf.nn.relu(tf.matmul(data,weight)+bias)
         elif activation_func=='elu':
             return tf.nn.elu(tf.matmul(data,weight)+bias)
+        elif activation_func=='softmax':
+            return tf.nn.softmax(tf.matmul(data,weight)+bias)
         else:
             return tf.matmul(data,weight)+bias
     else:
@@ -22,6 +24,8 @@ def activation(data,weight,bias=None,activation_func=None,use_bias=True):
             return tf.nn.relu(tf.matmul(data,weight))
         elif activation_func=='elu':
             return tf.nn.elu(tf.matmul(data,weight))
+        elif activation_func=='softmax':
+            return tf.nn.softmax(tf.matmul(data,weight))
         else:
             return tf.matmul(data,weight)
 
@@ -35,5 +39,7 @@ def activation_conv(data,weight,activation_func,strides,padding,data_format,dila
         return tf.nn.relu(conv_func(data,weight,strides=strides,padding=padding,data_format=data_format,dilations=dilations))
     elif activation=='elu':
         return tf.nn.elu(conv_func(data,weight,strides=strides,padding=padding,data_format=data_format,dilations=dilations))
+    elif activation=='softmax':
+        return tf.nn.softmax(conv_func(data,weight,strides=strides,padding=padding,data_format=data_format,dilations=dilations))
     else:
         return conv_func(data,weight,strides=strides,padding=padding,data_format=data_format,dilations=dilations)
