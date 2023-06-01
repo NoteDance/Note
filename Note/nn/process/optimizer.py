@@ -121,7 +121,7 @@ class Adam:
             self.s_[i]=self.s[i]/(1-self.beta2**(t+1))
             self.g[i]=self.lr*self.v_[i]/(tf.sqrt(self.s_[i])+self.epsilon)
             state_ops.assign(parameter[i],parameter[i]-self.g[i])
-        return  parameter
+        return parameter
 
 
 class Nadam:
@@ -153,7 +153,7 @@ class Nadam:
             self.s_[i]=self.s[i]/(1-self.beta_2**(t+1))
             self.g[i]=self.learning_rate*self.v_[i]/(tf.sqrt(self.s_[i])+self.epsilon)
             state_ops.assign(parameter[i],parameter[i]-self.g[i])
-        return  parameter
+        return parameter
 
 
 class AdaMax:
@@ -179,7 +179,7 @@ class AdaMax:
             self.u[i]=tf.maximum(self.beta_2*self.u[i],tf.abs(gradient[i]))
             self.g[i]=self.learning_rate/(1-self.beta_1**(t+1))*self.v[i]/(self.u[i]+self.epsilon)
             state_ops.assign(parameter[i],parameter[i]-self.g[i])
-        return  parameter
+        return parameter
 
 
 class Ftrl:
@@ -211,7 +211,7 @@ class Ftrl:
             self.sigma[i]=(self.n[i]**-self.learning_rate_power-prev_n**-self.learning_rate_power)/self.learning_rate
             self.z[i]=self.z[i]+gradient[i]-self.sigma[i]*parameter[i]
             if tf.abs(self.z[i])<self.l1_regularization_strength:
-                parameter[i]=tf.zeros_like(self.z[i])
+                state_ops.assign(parameter[i],tf.zeros_like(self.z[i]))
             else:
-                parameter[i]=(tf.sign(self.z[i])*self.l1_regularization_strength-self.z[i])/((self.beta+tf.sqrt(self.n[i]))/self.learning_rate+self.l2_regularization_strength)
-        return  parameter
+                state_ops.assign(parameter[i],(tf.sign(self.z[i])*self.l1_regularization_strength-self.z[i])/((self.beta+tf.sqrt(self.n[i]))/self.learning_rate+self.l2_regularization_strength))
+        return parameter
