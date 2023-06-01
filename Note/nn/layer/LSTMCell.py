@@ -3,11 +3,13 @@ import Note.nn.initializer as i
 
 
 class LSTMCell:
-    def __init__(self,weight_shape,weight_initializer='uniform',bias_initializer='zero',dtype='float64',use_bias=True):
+    def __init__(self,weight_shape,weight_initializer='uniform',bias_initializer='zero',dtype='float64',use_bias=True,activation1=tf.nn.sigmoid,activation2=tf.nn.tanh):
         self.weight=i.initializer([weight_shape[0]+weight_shape[1],4*weight_shape[1]],weight_initializer,dtype)
         if use_bias==True:
             self.bias=i.initializer([4*weight_shape[1]],bias_initializer,dtype)
         self.use_bias=use_bias
+        self.activation1=activation1
+        self.activation2=activation2
         if use_bias==True:
             self.weight_list=[self.weight,self.bias]
         else:
@@ -21,10 +23,10 @@ class LSTMCell:
         else:
             z=tf.matmul(x,self.weight)
         i,f,o,c=tf.split(z,4,axis=-1)
-        i=tf.nn.sigmoid(i)
-        f=tf.nn.sigmoid(f)
-        o=tf.nn.sigmoid(o)
-        c=tf.nn.tanh(c)
+        i=self.activation1(i)
+        f=self.activation1(f)
+        o=self.activation1(o)
+        c=self.activation2(c)
         c_new=i*c+f*state
         output=o*tf.nn.tanh(c_new)
         return output,c_new
