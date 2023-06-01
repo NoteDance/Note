@@ -3,7 +3,7 @@ import Note.nn.initializer as i
 
 
 class LSTM:
-    def __init__(self,weight_shape,timestep,weight_initializer='uniform',bias_initializer='zero',dtype='float64',return_sequence=False,use_bias=True):
+    def __init__(self,weight_shape,timestep,weight_initializer='uniform',bias_initializer='zero',dtype='float64',return_sequence=False,use_bias=True,activation1=tf.nn.sigmoid,activation2=tf.nn.tanh):
         self.weight_i1=i.initializer(weight_shape,weight_initializer,dtype)
         self.weight_i2=i.initializer(weight_shape,weight_initializer,dtype)
         self.weight_f1=i.initializer(weight_shape,weight_initializer,dtype)
@@ -23,6 +23,8 @@ class LSTM:
         self.timestep=timestep
         self.return_sequence=return_sequence
         self.use_bias=use_bias
+        self.activation1=activation1
+        self.activation2=activation2
         if use_bias==True:
             self.weight_list=[self.weight_i1,self.weight_f1,self.weight_o1,self.weight_c1,self.weight_i2,self.weight_f2,self.weight_o2,self.weight_c2,self.bias_i,self.bias_f,self.bias_o,self.bias_c]
         else:
@@ -32,10 +34,10 @@ class LSTM:
     def output(self,data):
         if self.use_bias==True:
             for j in range(self.timestep):
-                I=tf.nn.sigmoid(tf.matmul(data[:][:,j],self.weight_i1)+tf.matmul(self.state,self.weight_i2)+self.bias_i)
-                F=tf.nn.sigmoid(tf.matmul(data[:][:,j],self.weight_f1)+tf.matmul(self.state,self.weight_f2)+self.bias_f)
-                O=tf.nn.sigmoid(tf.matmul(data[:][:,j],self.weight_o1)+tf.matmul(self.state,self.weight_o2)+self.bias_o)
-                C_=tf.nn.tanh(tf.matmul(data[:][:,j],self.weight_c1)+tf.matmul(self.state,self.weight_c2)+self.bias_c)
+                I=self.activation1(tf.matmul(data[:][:,j],self.weight_i1)+tf.matmul(self.state,self.weight_i2)+self.bias_i)
+                F=self.activation1(tf.matmul(data[:][:,j],self.weight_f1)+tf.matmul(self.state,self.weight_f2)+self.bias_f)
+                O=self.activation1(tf.matmul(data[:][:,j],self.weight_o1)+tf.matmul(self.state,self.weight_o2)+self.bias_o)
+                C_=self.activation2(tf.matmul(data[:][:,j],self.weight_c1)+tf.matmul(self.state,self.weight_c2)+self.bias_c)
                 C=I*C_+self.C*F
                 output=O*tf.nn.tanh(C)
                 self.output_list.append(output)
@@ -50,11 +52,11 @@ class LSTM:
                 return output
         else:
             for j in range(self.timestep):
-                I=tf.nn.sigmoid(tf.matmul(data[:][:,j],self.weight_i1)+tf.matmul(self.state,self.weight_i2))
-                F=tf.nn.sigmoid(tf.matmul(data[:][:,j],self.weight_f1)+tf.matmul(self.state,self.weight_f2))
-                O=tf.nn.sigmoid(tf.matmul(data[:][:,j],self.weight_o1)+tf.matmul(self.state,self.weight_o2))
-                C_=tf.nn.tanh(tf.matmul(data[:][:,j],self.weight_c1)+tf.matmul(self.state,self.weight_c2))
-                C=I*C_+self.C_*F
+                I=self.activation1(tf.matmul(data[:][:,j],self.weight_i1)+tf.matmul(self.state,self.weight_i2))
+                F=self.activation1(tf.matmul(data[:][:,j],self.weight_f1)+tf.matmul(self.state,self.weight_f2))
+                O=self.activation1(tf.matmul(data[:][:,j],self.weight_o1)+tf.matmul(self.state,self.weight_o2))
+                C_=self.activation2(tf.matmul(data[:][:,j],self.weight_c1)+tf.matmul(self.state,self.weight_c2))
+                C=I*C_+self.C*F
                 output=O*tf.nn.tanh(C)
                 self.output_list.append(output)
                 self.C_=C
