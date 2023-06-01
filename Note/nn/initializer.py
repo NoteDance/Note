@@ -23,4 +23,15 @@ def initializer(shape,initializer,dtype):
                 param=tf.Variable(tf.zeros(shape=shape,dtype=dtype))
             else:
                 param=tf.Variable(tf.zeros(shape=shape))
+        elif initializer=='xavier':
+            if dtype!=None:
+                fan_in=shape[0]
+                fan_out=shape[1] if len(shape)>1 else 1
+                scale=tf.sqrt(2.0/(fan_in+fan_out))
+                param=tf.Variable(tf.random.normal(shape=shape,mean=0.0,stddev=scale,dtype=dtype))
+            else:
+                fan_in=shape[0]
+                fan_out=shape[1] if len(shape)>1 else 1
+                scale=tf.sqrt(2.0/(fan_in+fan_out))
+                param=tf.Variable(tf.random.normal(shape=shape,mean=0.0,stddev=scale))
     return param
