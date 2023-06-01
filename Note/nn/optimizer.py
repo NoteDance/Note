@@ -211,7 +211,7 @@ class Ftrl:
             self.sigma[i]=(self.n[i]**-self.learning_rate_power-prev_n**-self.learning_rate_power)/self.learning_rate
             self.z[i]=self.z[i]+gradient[i]-self.sigma[i]*parameter[i]
             if tf.abs(self.z[i])<self.l1_regularization_strength:
-                parameter[i]=tf.zeros_like(self.z[i])
+                state_ops.assign(parameter[i],tf.zeros_like(self.z[i]))
             else:
-                parameter[i]=(tf.sign(self.z[i])*self.l1_regularization_strength-self.z[i])/((self.beta+tf.sqrt(self.n[i]))/self.learning_rate+self.l2_regularization_strength)
+                state_ops.assign(parameter[i],(tf.sign(self.z[i])*self.l1_regularization_strength-self.z[i])/((self.beta+tf.sqrt(self.n[i]))/self.learning_rate+self.l2_regularization_strength))
         return
