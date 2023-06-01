@@ -13,13 +13,13 @@ class visual:
     
     
     def render_episode(self,seed=None):
+        if seed==None:
+            s=self.env.reset()
+        else:
+            s=self.env.reset(seed=seed)
         screen=self.env.render(mode=self.mode)
         im=Image.fromarray(screen)
         images=[im]
-        if seed==None:
-            s=self.nn.env.reset()
-        else:
-            s=self.nn.env.reset(seed=seed)
         for i in range(self.max_step):
             s=np.expand_dims(s,0)
             try:
