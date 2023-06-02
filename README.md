@@ -98,6 +98,8 @@ kernel.save()              #save neural network
 
 **Note uses multiprocessing parallel forward propagation and optimizes neural network.**
 
+**Note's multi-process kernel is not compatible with the neural network built by Keras. Examples have ways to build compatible neural network.**
+
 #### Multiprocessing:
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
