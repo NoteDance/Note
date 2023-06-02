@@ -4,7 +4,7 @@ import Note.nn.initializer as i
 
 
 class conv3d:
-    def __init__(self,data,weight_shape,weight_initializer='normal',activation=None,dtype='float64'):
+    def __init__(self,weight_shape,weight_initializer='normal',activation=None,dtype='float64'):
         self.weight=i.initializer(weight_shape,weight_initializer,dtype)
         self.activation=activation
         self.weight_list=[self.weight]
