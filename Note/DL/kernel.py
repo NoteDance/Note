@@ -561,6 +561,11 @@ class kernel:
                         if self.stop_func():
                             return
                     self.suspend_func()
+                    try:
+                        if self.nn.data_func!=None:
+                            data_batch,labels_batch=self.nn.data_func(data_batch,labels_batch)
+                    except AttributeError:
+                        pass
                     output,batch_loss=self.opt(data_batch,labels_batch)
                     total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc)
             else:
@@ -575,6 +580,11 @@ class kernel:
                     index1=j*batch
                     index2=(j+1)*batch
                     data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j)
+                    try:
+                        if self.nn.data_func!=None:
+                            data_batch,labels_batch=self.nn.data_func(data_batch,labels_batch)
+                    except AttributeError:
+                        pass
                     output,batch_loss=self.opt(data_batch,labels_batch)
                     total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc)
                     try:
@@ -593,6 +603,11 @@ class kernel:
                     index1=batches*batch
                     index2=batch-(self.shape0-batches*batch)
                     data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,flag=True)
+                    try:
+                        if self.nn.data_func!=None:
+                            data_batch,labels_batch=self.nn.data_func(data_batch,labels_batch)
+                    except AttributeError:
+                        pass
                     output,batch_loss=self.opt(data_batch,labels_batch)
                     total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc)
                     try:
@@ -642,6 +657,11 @@ class kernel:
         if batch!=None:
             if index1==batches*batch:
                 data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j,True)
+                try:
+                    if self.nn.data_func!=None:
+                        data_batch,labels_batch=self.nn.data_func(data_batch,labels_batch)
+                except AttributeError:
+                    pass
                 output,batch_loss=self.opt_t(data_batch,labels_batch,t)
                 try:
                     self.nn.bc.assign_add(1)
@@ -654,6 +674,11 @@ class kernel:
                 except AttributeError:
                     return batch_loss,None
             data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j)
+            try:
+                if self.nn.data_func!=None:
+                    data_batch,labels_batch=self.nn.data_func(data_batch,labels_batch)
+            except AttributeError:
+                pass
             output,batch_loss=self.opt_t(data_batch,labels_batch,t)
             try:
                 self.nn.bc.assign_add(1)
