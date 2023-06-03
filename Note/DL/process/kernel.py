@@ -176,56 +176,6 @@ class kernel:
             return True
     
     
-    def data_func(self,data_batch=None,labels_batch=None,batch=None,index1=None,index2=None,j=None,flag=None):
-        if flag==None:
-            if type(self.train_data)==list:
-                for i in range(len(self.train_data)):
-                    if batch!=1:
-                        data_batch[i]=self.train_data[i][index1:index2]
-                    else:
-                        data_batch[i]=self.train_data[i][j]
-            else:
-                if batch!=1:
-                    data_batch=self.train_data[index1:index2]
-                else:
-                    data_batch=self.train_data[j]
-            if type(self.train_labels)==list:
-                for i in range(len(self.train_data)):
-                    if batch!=1:
-                        labels_batch[i]=self.train_labels[i][index1:index2]
-                    else:
-                        labels_batch[i]=self.train_labels[i][j]
-            else:
-                if batch!=1:
-                    labels_batch=self.train_labels[index1:index2]
-                else:
-                    labels_batch=self.train_labels[j]
-        else:
-            try:
-                if type(self.train_data)==list:
-                    for i in range(len(self.train_data)):
-                        data_batch[i]=tf.concat([self.train_data[i][index1:],self.train_data[i][:index2]],0)
-                else:
-                    data_batch=tf.concat([self.train_data[index1:],self.train_data[:index2]],0)
-                if type(self.train_labels)==list:
-                    for i in range(len(self.train_data)):
-                        labels_batch[i]=tf.concat([self.train_labels[i][index1:],self.train_labels[i][:index2]],0)
-                else:
-                    labels_batch=tf.concat([self.train_labels[index1:],self.train_labels[:index2]],0)
-            except:
-                if type(self.train_data)==list:
-                    for i in range(len(self.train_data)):
-                        data_batch[i]=np.concatenate([self.train_data[i][index1:],self.train_data[i][:index2]],0)
-                else:
-                    data_batch=np.concatenate([self.train_data[index1:],self.train_data[:index2]],0)
-                if type(self.train_labels)==list:
-                    for i in range(len(self.train_data)):
-                        labels_batch[i]=np.concatenate([self.train_labels[i][index1:],self.train_labels[i][:index2]],0)
-                else:
-                    labels_batch=np.concatenate([self.train_labels[index1:],self.train_labels[:index2]],0)
-        return data_batch,labels_batch
-    
-    
     @function(jit_compile=True)
     def tf_opt_t(self,data,labels,p,lock,g_lock=None,ln=None):
         try:
@@ -354,6 +304,11 @@ class kernel:
     def train7(self,train_ds,p,test_batch,lock,g_lock):
         while True:
             for data_batch,labels_batch in train_ds:
+                try:
+                    if self.nn.data_func!=None:
+                        data_batch,labels_batch=self.nn.data_func(data_batch,labels_batch)
+                except AttributeError:
+                    pass
                 if self.priority_flag==True:
                     self.priority_p.value=np.argmax(self.opt_counter)
                     if self.max_opt!=None and self.opt_counter[self.priority_p.value]>=self.max_opt:
