@@ -6,7 +6,7 @@ Note is a system for deep learning and reinforcement learning.It makes it easy t
 
 
 # Installation:
-To use Note you need to download it and then unzip it to site-packages folder.
+To use Note, you need to download it from https://github.com/NoteDancing/Note and then unzip it to the site-packages folder of your Python environment.
 
 
 # Create neural network:
