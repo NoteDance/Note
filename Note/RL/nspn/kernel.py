@@ -323,9 +323,10 @@ class kernel:
         if type(self.state_pool)!=np.ndarray and self.state_pool==None:
             self.state_pool=s
             if type(a)==int:
-                a=np.array(a)
+                a=np.array(a,dtype=self.nn.param[0].dtype.name)
                 self.action_pool=np.expand_dims(a,axis=0)
             else:
+                a=a.astype(self.nn.param[0].dtype.name)
                 self.action_pool=a
             self.next_state_pool=np.expand_dims(next_s,axis=0)
             self.reward_pool=np.expand_dims(r,axis=0)
@@ -333,9 +334,10 @@ class kernel:
         else:
             self.state_pool=np.concatenate((self.state_pool,s),0)
             if type(a)==int:
-                a=np.array(a)
+                a=np.array(a,dtype=self.nn.param[0].dtype.name)
                 self.action_pool=np.concatenate((self.action_pool,np.expand_dims(a,axis=0)),0)
             else:
+                a=a.astype(self.nn.param[0].dtype.name)
                 self.action_pool=np.concatenate((self.action_pool,a),0)
             self.next_state_pool=np.concatenate((self.next_state_pool,np.expand_dims(next_s,axis=0)),0)
             self.reward_pool=np.concatenate((self.reward_pool,np.expand_dims(r,axis=0)),0)
@@ -443,8 +445,12 @@ class kernel:
                             action_prob=self.epsilon_greedy_policy(s)
                             a=np.random.choice(self.action_count,p=action_prob)
                         next_s,r,done=self.nn.env(a)
-                        r=np.array(r,dtype=np.float32)
-                        done=np.array(done,dtype=np.float32)
+                        try:
+                            if self.platform.DType!=None:
+                                r=np.array(r,dtype=self.nn.param[0].dtype.name)
+                                done=np.array(done,dtype=self.nn.param[0].dtype.name)
+                        except AttributeError:
+                            pass
                 except AttributeError:
                     try:
                         if self.nn.action!=None:
@@ -481,9 +487,13 @@ class kernel:
                             s=np.expand_dims(s,axis=0)
                             s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                             a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
-                        next_s,r,done=self.nn.env(a)
-                        r=np.array(r,dtype=np.float32)
-                        done=np.array(done,dtype=np.float32)
+                    next_s,r,done=self.nn.env(a)
+                    try:
+                        if self.platform.DType!=None:
+                            r=np.array(r,dtype=self.nn.param[0].dtype.name)
+                            done=np.array(done,dtype=self.nn.param[0].dtype.name)
+                    except AttributeError:
+                        pass
                 try:
                     if self.nn.pool!=None:
                         self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done])
@@ -527,8 +537,12 @@ class kernel:
                             action_prob=self.epsilon_greedy_policy(s)
                             a=np.random.choice(self.action_count,p=action_prob)
                         next_s,r,done=self.nn.env(a)
-                        r=np.array(r,dtype=np.float32)
-                        done=np.array(done,dtype=np.float32)
+                        try:
+                            if self.platform.DType!=None:
+                                r=np.array(r,dtype=self.nn.param[0].dtype.name)
+                                done=np.array(done,dtype=self.nn.param[0].dtype.name)
+                        except AttributeError:
+                            pass
                 except AttributeError:
                     try:
                         if self.nn.action!=None:
@@ -566,8 +580,12 @@ class kernel:
                             s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                             a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
                     next_s,r,done=self.nn.env(a)
-                    r=np.array(r,dtype=np.float32)
-                    done=np.array(done,dtype=np.float32)
+                    try:
+                        if self.platform.DType!=None:
+                            r=np.array(r,dtype=self.nn.param[0].dtype.name)
+                            done=np.array(done,dtype=self.nn.param[0].dtype.name)
+                    except AttributeError:
+                        pass
                 try:
                     if self.nn.pool!=None:
                         self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done])
