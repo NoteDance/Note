@@ -574,6 +574,7 @@ class kernel:
                 a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
                 next_s,r,done=self.nn.env(a,t)
         index=self.get_index(t)
+        next_s=np.array(next_s,dtype=self.nn.param[0].dtype.name)
         r=np.array(r,dtype=self.nn.param[0].dtype.name)
         done=np.array(done,dtype=self.nn.param[0].dtype.name)
         try:
@@ -1121,6 +1122,7 @@ class kernel:
         for k in range(episode_count):
             episode=[]
             s=self.nn.env(t=t,initial=True)
+            s=np.array(s,dtype=self.nn.param[0].dtype.name)
             if self.episode_step==None:
                 while True:
                     next_s,r,done,_episode,index=self.env(s,epsilon,t)
