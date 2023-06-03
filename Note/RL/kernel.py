@@ -212,6 +212,7 @@ class kernel:
                 a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
                 next_s,r,done=self.nn.env(a,p)
         index=self.get_index(p,lock)
+        next_s=np.array(next_s,dtype=self.nn.param[0].dtype.name)
         r=np.array(r,dtype=self.nn.param[0].dtype.name)
         done=np.array(done,dtype=self.nn.param[0].dtype.name)
         self.pool(s,a,next_s,r,done,pool_lock,index)
@@ -487,6 +488,7 @@ class kernel:
             lock[3].release()
         for k in range(episode_count):
             s=self.nn.env(p=p,initial=True)
+            s=np.array(s,dtype=self.nn.param[0].dtype.name)
             if self.episode_step==None:
                 while True:
                     next_s,r,done,index=self.env(s,epsilon,p,lock,pool_lock)
