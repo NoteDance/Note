@@ -426,6 +426,7 @@ class kernel:
         episode=[]
         self.reward=0
         s=self.nn.env(initial=True)
+        s=np.array(s,dtype=self.nn.param[0].dtype.name)
         if self.episode_step==None:
             while True:
                 try:
@@ -447,6 +448,7 @@ class kernel:
                         next_s,r,done=self.nn.env(a)
                         try:
                             if self.platform.DType!=None:
+                                next_s=np.array(next_s,dtype=self.nn.param[0].dtype.name)
                                 r=np.array(r,dtype=self.nn.param[0].dtype.name)
                                 done=np.array(done,dtype=self.nn.param[0].dtype.name)
                         except AttributeError:
@@ -490,6 +492,7 @@ class kernel:
                     next_s,r,done=self.nn.env(a)
                     try:
                         if self.platform.DType!=None:
+                            next_s=np.array(next_s,dtype=self.nn.param[0].dtype.name)
                             r=np.array(r,dtype=self.nn.param[0].dtype.name)
                             done=np.array(done,dtype=self.nn.param[0].dtype.name)
                     except AttributeError:
@@ -539,6 +542,7 @@ class kernel:
                         next_s,r,done=self.nn.env(a)
                         try:
                             if self.platform.DType!=None:
+                                next_s=np.array(next_s,dtype=self.nn.param[0].dtype.name)
                                 r=np.array(r,dtype=self.nn.param[0].dtype.name)
                                 done=np.array(done,dtype=self.nn.param[0].dtype.name)
                         except AttributeError:
@@ -582,6 +586,7 @@ class kernel:
                     next_s,r,done=self.nn.env(a)
                     try:
                         if self.platform.DType!=None:
+                            next_s=np.array(next_s,dtype=self.nn.param[0].dtype.name)
                             r=np.array(r,dtype=self.nn.param[0].dtype.name)
                             done=np.array(done,dtype=self.nn.param[0].dtype.name)
                     except AttributeError:
