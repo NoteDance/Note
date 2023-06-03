@@ -123,9 +123,10 @@ class kernel:
             if type(self.state_pool[index])!=np.ndarray and self.state_pool[index]==None:
                 self.state_pool[index]=s
                 if type(a)==int:
-                    a=np.array(a)
+                    a=np.array(a,dtype=self.nn.param[0].dtype.name)
                     self.action_pool[index]=np.expand_dims(a,axis=0)
                 else:
+                    a=a.astype(self.nn.param[0].dtype.name)
                     self.action_pool[index]=a
                 self.next_state_pool[index]=np.expand_dims(next_s,axis=0)
                 self.reward_pool[index]=np.expand_dims(r,axis=0)
@@ -134,9 +135,10 @@ class kernel:
                 try:
                     self.state_pool[index]=np.concatenate((self.state_pool[index],s),0)
                     if type(a)==int:
-                        a=np.array(a,np.int64)
+                        a=np.array(a,dtype=self.nn.param[0].dtype.name)
                         self.action_pool[index]=np.concatenate((self.action_pool[index],np.expand_dims(a,axis=0)),0)
                     else:
+                        a=a.astype(self.nn.param[0].dtype.name)
                         self.action_pool[index]=np.concatenate((self.action_pool[index],a),0)
                     self.next_state_pool[index]=np.concatenate((self.next_state_pool[index],np.expand_dims(next_s,axis=0)),0)
                     self.reward_pool[index]=np.concatenate((self.reward_pool[index],np.expand_dims(r,axis=0)),0)
@@ -210,8 +212,8 @@ class kernel:
                 a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
                 next_s,r,done=self.nn.env(a,p)
         index=self.get_index(p,lock)
-        r=np.array(r,dtype=np.float32)
-        done=np.array(done,dtype=np.float32)
+        r=np.array(r,dtype=self.nn.param[0].dtype.name)
+        done=np.array(done,dtype=self.nn.param[0].dtype.name)
         self.pool(s,a,next_s,r,done,pool_lock,index)
         return next_s,r,done,index
     
