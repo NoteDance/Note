@@ -89,3 +89,14 @@ def activation_conv(data,weight,activation_func,strides,padding,data_format,dila
             return tf.nn.gelu(conv_func(data,weight,strides=strides,padding=padding,data_format=data_format,dilations=dilations)+bias,activation_func[1])
         else:
             return conv_func(data,weight,strides=strides,padding=padding,data_format=data_format,dilations=dilations)+bias
+
+
+activation_dict = {
+  'tanh': tf.nn.tanh,
+  'relu': tf.nn.relu,
+  'sigmoid': tf.nn.sigmoid,
+  'elu': tf.nn.elu,
+  'leaky_relu': tf.nn.leaky_relu,
+  'gelu': tf.nn.gelu,
+  # add more activation functions as needed
+}
