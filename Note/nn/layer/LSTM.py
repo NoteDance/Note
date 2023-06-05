@@ -3,7 +3,7 @@ import Note.nn.initializer as i
 
 
 class LSTM:
-    def __init__(self,weight_shape,timestep,weight_initializer='uniform',bias_initializer='zero',dtype='float32',return_sequence=False,use_bias=True,activation1=tf.nn.sigmoid,activation2=tf.nn.tanh):
+    def __init__(self,weight_shape,weight_initializer='uniform',bias_initializer='zero',dtype='float32',return_sequence=False,use_bias=True,activation1=tf.nn.sigmoid,activation2=tf.nn.tanh):
         self.weight_i1=i.initializer(weight_shape,weight_initializer,dtype)
         self.weight_i2=i.initializer(weight_shape,weight_initializer,dtype)
         self.weight_f1=i.initializer(weight_shape,weight_initializer,dtype)
@@ -20,7 +20,6 @@ class LSTM:
         self.output_list=[]
         self.state=tf.zeros(shape=[1,weight_shape[1]],dtype=dtype)
         self.C=tf.zeros(shape=[1,weight_shape[1]],dtype=dtype)
-        self.timestep=timestep
         self.return_sequence=return_sequence
         self.use_bias=use_bias
         self.activation1=activation1
@@ -32,8 +31,9 @@ class LSTM:
     
     
     def output(self,data):
+        timestep=tf.shape(data)[1]
         if self.use_bias==True:
-            for j in range(self.timestep):
+            for j in range(timestep):
                 I=self.activation1(tf.matmul(data[:][:,j],self.weight_i1)+tf.matmul(self.state,self.weight_i2)+self.bias_i)
                 F=self.activation1(tf.matmul(data[:][:,j],self.weight_f1)+tf.matmul(self.state,self.weight_f2)+self.bias_f)
                 O=self.activation1(tf.matmul(data[:][:,j],self.weight_o1)+tf.matmul(self.state,self.weight_o2)+self.bias_o)
@@ -51,7 +51,7 @@ class LSTM:
                 self.output_list=[]
                 return output
         else:
-            for j in range(self.timestep):
+            for j in range(timestep):
                 I=self.activation1(tf.matmul(data[:][:,j],self.weight_i1)+tf.matmul(self.state,self.weight_i2))
                 F=self.activation1(tf.matmul(data[:][:,j],self.weight_f1)+tf.matmul(self.state,self.weight_f2))
                 O=self.activation1(tf.matmul(data[:][:,j],self.weight_o1)+tf.matmul(self.state,self.weight_o2))
