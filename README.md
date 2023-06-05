@@ -14,7 +14,7 @@ You need to create your neural network according to some rules, otherwise you ma
 
 neural network example:
 
-You can refer to nn.py, nn_acc.py, nn_Adam.py, nn_Momentum.py in the documentation.
+You can refer to nn.py, nn_acc.py in the documentation.
 
 **DL:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network
 
