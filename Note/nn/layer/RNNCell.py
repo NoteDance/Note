@@ -1,5 +1,6 @@
 import tensorflow as tf
 import Note.nn.initializer as i
+from Note.nn.activation import activation_dict
 
 
 class RNNCell:
@@ -8,7 +9,7 @@ class RNNCell:
         self.weight_s=i.initializer(weight_shape,weight_initializer,dtype)
         if use_bias==True:
             self.bias=i.initializer([weight_shape[1]],bias_initializer,dtype)
-        self.activation=activation
+        self.activation=activation_dict[activation]
         self.use_bias=use_bias
         if use_bias==True:
             self.weight_list=[self.weight_i,self.weight_s,self.bias]
@@ -21,12 +22,5 @@ class RNNCell:
         if self.use_bias==True:
             output=output+self.bias
         if self.activation is not None:
-            if self.activation=='sigmoid':
-                output=tf.nn.sigmoid(output)
-            elif self.activation=='tanh':
-                output=tf.nn.tanh(output)
-            elif self.activation=='relu':
-                output=tf.nn.relu(output)
-            elif self.activation=='elu':
-                output=tf.nn.elu(output)
+            output=self.activation(output)
         return output
