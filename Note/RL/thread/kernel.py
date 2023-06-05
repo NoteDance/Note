@@ -387,10 +387,16 @@ class kernel:
                 if type(self.state_pool[index])!=np.ndarray and self.state_pool[index]==None:
                     self.state_pool[index]=s
                     if type(a)==int:
-                        a=np.array(a,dtype=self.nn.param[0].dtype.name)
+                        if type(self.nn.param[0])!=list:
+                            a=np.array(a,self.nn.param[0].dtype.name)
+                        else:
+                            a=np.array(a,self.nn.param[0][0].dtype.name)
                         self.action_pool[index]=np.expand_dims(a,axis=0)
                     else:
-                        a=a.astype(self.nn.param[0].dtype.name)
+                        if type(self.nn.param[0])!=list:
+                            a=a.astype(self.nn.param[0].dtype.name)
+                        else:
+                            a=a.astype(self.nn.param[0][0].dtype.name)
                         self.action_pool[index]=a
                     self.next_state_pool[index]=np.expand_dims(next_s,axis=0)
                     self.reward_pool[index]=np.expand_dims(r,axis=0)
@@ -399,10 +405,16 @@ class kernel:
                     try:
                         self.state_pool[index]=np.concatenate((self.state_pool[index],s),0)
                         if type(a)==int:
-                            a=np.array(a,dtype=self.nn.param[0].dtype.name)
+                            if type(self.nn.param[0])!=list:
+                                a=np.array(a,self.nn.param[0].dtype.name)
+                            else:
+                                a=np.array(a,self.nn.param[0][0].dtype.name)
                             self.action_pool[index]=np.concatenate((self.action_pool[index],np.expand_dims(a,axis=0)),0)
                         else:
-                            a=a.astype(self.nn.param[0].dtype.name)
+                            if type(self.nn.param[0])!=list:
+                                a=a.astype(self.nn.param[0].dtype.name)
+                            else:
+                                a=a.astype(self.nn.param[0][0].dtype.name)
                             self.action_pool[index]=np.concatenate((self.action_pool[index],a),0)
                         self.next_state_pool[index]=np.concatenate((self.next_state_pool[index],np.expand_dims(next_s,axis=0)),0)
                         self.reward_pool[index]=np.concatenate((self.reward_pool[index],np.expand_dims(r,axis=0)),0)
@@ -423,10 +435,16 @@ class kernel:
             if type(self.state_pool[t])==np.ndarray and self.state_pool[t]==None:
                 self.state_pool[t]=s
                 if type(a)==int:
-                    a=np.array(a,dtype=self.nn.param[0].dtype.name)
+                    if type(self.nn.param[0])!=list:
+                        a=np.array(a,self.nn.param[0].dtype.name)
+                    else:
+                        a=np.array(a,self.nn.param[0][0].dtype.name)
                     self.action_pool[t]=np.expand_dims(a,axis=0)
                 else:
-                    a=a.astype(self.nn.param[0].dtype.name)
+                    if type(self.nn.param[0])!=list:
+                        a=a.astype(self.nn.param[0].dtype.name)
+                    else:
+                        a=a.astype(self.nn.param[0][0].dtype.name)
                     self.action_pool[t]=a
                 self.next_state_pool[t]=np.expand_dims(next_s,axis=0)
                 self.reward_pool[t]=np.expand_dims(r,axis=0)
@@ -434,10 +452,16 @@ class kernel:
             else:
                 self.state_pool[t]=np.concatenate((self.state_pool[t],s),0)
                 if type(a)==int:
-                    a=np.array(a,dtype=self.nn.param[0].dtype.name)
+                    if type(self.nn.param[0])!=list:
+                        a=np.array(a,self.nn.param[0].dtype.name)
+                    else:
+                        a=np.array(a,self.nn.param[0][0].dtype.name)
                     self.action_pool[t]=np.concatenate((self.action_pool[t],np.expand_dims(a,axis=0)),0)
                 else:
-                    a=a.astype(self.nn.param[0].dtype.name)
+                    if type(self.nn.param[0])!=list:
+                        a=a.astype(self.nn.param[0].dtype.name)
+                    else:
+                        a=a.astype(self.nn.param[0][0].dtype.name)
                     self.action_pool[t]=np.concatenate((self.action_pool[t],a),0)
                 self.next_state_pool[t]=np.concatenate((self.next_state_pool[t],np.expand_dims(next_s,axis=0)),0)
                 self.reward_pool[t]=np.concatenate((self.reward_pool[t],np.expand_dims(r,axis=0)),0)
@@ -574,9 +598,14 @@ class kernel:
                 a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
                 next_s,r,done=self.nn.env(a,t)
         index=self.get_index(t)
-        next_s=np.array(next_s,dtype=self.nn.param[0].dtype.name)
-        r=np.array(r,dtype=self.nn.param[0].dtype.name)
-        done=np.array(done,dtype=self.nn.param[0].dtype.name)
+        if type(self.nn.param[0])!=list:
+            next_s=np.array(next_s,self.nn.param[0].dtype.name)
+            r=np.array(r,self.nn.param[0].dtype.name)
+            done=np.array(done,self.nn.param[0].dtype.name)
+        else:
+            next_s=np.array(next_s,self.nn.param[0][0].dtype.name)
+            r=np.array(r,self.nn.param[0][0].dtype.name)
+            done=np.array(done,self.nn.param[0][0].dtype.name)
         try:
             if self.nn.pool!=None:
                 self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done],t,index,self.pool_lock)
@@ -1122,7 +1151,10 @@ class kernel:
         for k in range(episode_count):
             episode=[]
             s=self.nn.env(t=t,initial=True)
-            s=np.array(s,dtype=self.nn.param[0].dtype.name)
+            if type(self.nn.param[0])!=list:
+                s=np.array(s,self.nn.param[0].dtype.name)
+            else:
+                s=np.array(s,self.nn.param[0][0].dtype.name)
             if self.episode_step==None:
                 while True:
                     next_s,r,done,_episode,index=self.env(s,epsilon,t)
