@@ -56,20 +56,28 @@ class kernel:
     
     
     def data(self,train_data=None,train_labels=None,test_data=None,test_labels=None,train_dataset=None,test_dataset=None):
-        self.train_data=train_data
-        self.train_labels=train_labels
+        if type(self.nn.param[0])!=list:
+            self.train_data=train_data.astype(self.nn.param[0].dtype.name)
+            self.train_labels=train_labels.astype(self.nn.param[0].dtype.name)
+        else:
+            self.train_data=train_data.astype(self.nn.param[0][0].dtype.name)
+            self.train_labels=train_labels.astype(self.nn.param[0][0].dtype.name)
         self.train_dataset=train_dataset
         if type(train_data)==list:
             self.data_batch=[x for x in range(len(train_data))]
         if type(train_labels)==list:
             self.labels_batch=[x for x in range(len(train_labels))]
-        self.test_data=test_data
-        self.test_labels=test_labels
-        self.test_dataset=test_dataset
         if test_data is None:
             self.test_flag=False
         else:
+            if type(self.nn.param[0])!=list:
+                self.test_data=test_data.astype(self.nn.param[0].dtype.name)
+                self.test_labels=test_labels.astype(self.nn.param[0].dtype.name)
+            else:
+                self.test_data=test_data.astype(self.nn.param[0][0].dtype.name)
+                self.test_labels=test_labels.astype(self.nn.param[0][0].dtype.name)
             self.test_flag=True
+        self.test_dataset=test_dataset
         self.batch_counter=np.zeros(self.process,dtype=np.int32)
         self.total_loss=np.zeros(self.process,dtype=np.float32)
         try:
