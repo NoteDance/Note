@@ -3,7 +3,7 @@ import Note.nn.initializer as i
 from Note.nn.layer.layer_normalization import layer_normalization
 
 
-class Transformer:
+class transformer:
     def __init__(self,weight_shape,num_heads,weight_initializer='uniform',bias_initializer='zero',dtype='float32',use_bias=True):
         self.num_heads=num_heads # number of attention heads
         self.head_size = weight_shape[1] // num_heads # size of each attention head
