@@ -3,7 +3,7 @@ import Note.nn.initializer as i
 
 
 class GRU:
-    def __init__(self,weight_shape,timestep,weight_initializer='uniform',bias_initializer='zero',dtype='float64',return_sequence=False,use_bias=True,activation1=tf.nn.sigmoid,activation2=tf.nn.tanh):
+    def __init__(self,weight_shape,timestep,weight_initializer='uniform',bias_initializer='zero',dtype='float32',return_sequence=False,use_bias=True,activation1=tf.nn.sigmoid,activation2=tf.nn.tanh):
         self.weight_r1=i.initializer(weight_shape,weight_initializer,dtype)
         self.weight_r2=i.initializer(weight_shape,weight_initializer,dtype)
         self.weight_z1=i.initializer(weight_shape,weight_initializer,dtype)
