@@ -3,7 +3,7 @@ import Note.nn.initializer as i
 
 
 class RNNCell:
-    def __init__(self,weight_shape,weight_initializer='uniform',bias_initializer='zero',activation=None,dtype='float64',use_bias=True):
+    def __init__(self,weight_shape,weight_initializer='uniform',bias_initializer='zero',activation=None,dtype='float32',use_bias=True):
         self.weight_i=i.initializer(weight_shape,weight_initializer,dtype)
         self.weight_s=i.initializer(weight_shape,weight_initializer,dtype)
         if use_bias==True:
