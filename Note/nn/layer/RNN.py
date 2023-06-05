@@ -4,14 +4,13 @@ from Note.nn.activation import activation_dict
 
 
 class RNN:
-    def __init__(self,weight_shape,timestep,weight_initializer='uniform',bias_initializer='zero',activation=None,dtype='float32',return_sequence=False,use_bias=True):
+    def __init__(self,weight_shape,weight_initializer='uniform',bias_initializer='zero',activation=None,dtype='float32',return_sequence=False,use_bias=True):
         self.weight_i=i.initializer(weight_shape,weight_initializer,dtype)
         self.weight_s=i.initializer(weight_shape,weight_initializer,dtype)
         if use_bias==True:
             self.bias=i.initializer([weight_shape[1]],bias_initializer,dtype)
         self.output_list=[]
         self.state=tf.zeros(shape=[1,weight_shape[1]],dtype=dtype)
-        self.timestep=timestep
         self.activation=activation_dict[activation]
         self.return_sequence=return_sequence
         self.use_bias=use_bias
@@ -22,8 +21,9 @@ class RNN:
     
     
     def output(self,data):
+        timestep=tf.shape(data)[1]
         if self.use_bias==True:
-            for j in range(self.timestep):
+            for j in range(timestep):
                 output=self.activation(tf.matmul(data[:][:,j],self.weight_i)+tf.matmul(self.state,self.weight_s)+self.bias)
                 self.output_list.append(output)
                 self.state=output
@@ -35,7 +35,7 @@ class RNN:
                 self.output_list=[]
                 return output
         else:
-            for j in range(self.timestep):
+            for j in range(timestep):
                 output=self.activation(tf.matmul(data[:][:,j],self.weight_i)+tf.matmul(self.state,self.weight_s))
                 self.output_list.append(output)
                 self.state=output
