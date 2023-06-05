@@ -9,29 +9,14 @@ def initializer(shape,initializer,dtype):
             param=tf.Variable(tf.random.uniform(shape=shape,minval=initializer[1],maxval=initializer[2],dtype=dtype))
     else:
         if initializer=='normal':
-            if dtype!=None:
-                param=tf.Variable(tf.random.normal(shape=shape,dtype=dtype))
-            else:
-                param=tf.Variable(tf.random.normal(shape=shape))
+            param=tf.Variable(tf.random.normal(shape=shape,dtype=dtype))
         elif initializer=='uniform':
-            if dtype!=None:
-                param=tf.Variable(tf.random.uniform(shape=shape,maxval=0.01,dtype=dtype))
-            else:
-                param=tf.Variable(tf.random.uniform(shape=shape,maxval=0.01))
+            param=tf.Variable(tf.random.uniform(shape=shape,maxval=0.01,dtype=dtype))
         elif initializer=='zero':
-            if dtype!=None:
-                param=tf.Variable(tf.zeros(shape=shape,dtype=dtype))
-            else:
-                param=tf.Variable(tf.zeros(shape=shape))
+            param=tf.Variable(tf.zeros(shape=shape,dtype=dtype))
         elif initializer=='xavier':
-            if dtype!=None:
-                fan_in=shape[0]
-                fan_out=shape[1] if len(shape)>1 else 1
-                scale=tf.sqrt(2.0/(fan_in+fan_out))
-                param=tf.Variable(tf.random.normal(shape=shape,mean=0.0,stddev=scale,dtype=dtype))
-            else:
-                fan_in=shape[0]
-                fan_out=shape[1] if len(shape)>1 else 1
-                scale=tf.sqrt(2.0/(fan_in+fan_out))
-                param=tf.Variable(tf.random.normal(shape=shape,mean=0.0,stddev=scale))
+            fan_in=shape[0]
+            fan_out=shape[1] if len(shape)>1 else 1
+            scale=tf.sqrt(2.0/(fan_in+fan_out))
+            param=tf.Variable(tf.random.normal(shape=shape,mean=0.0,stddev=scale,dtype=dtype))
     return param
