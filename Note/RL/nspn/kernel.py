@@ -323,10 +323,16 @@ class kernel:
         if type(self.state_pool)!=np.ndarray and self.state_pool==None:
             self.state_pool=s
             if type(a)==int:
-                a=np.array(a,dtype=self.nn.param[0].dtype.name)
+                if type(self.nn.param[0])!=list:
+                    a=np.array(a,self.nn.param[0].dtype.name)
+                else:
+                    a=np.array(a,self.nn.param[0][0].dtype.name)
                 self.action_pool=np.expand_dims(a,axis=0)
             else:
-                a=a.astype(self.nn.param[0].dtype.name)
+                if type(self.nn.param[0])!=list:
+                    a=a.astype(self.nn.param[0].dtype.name)
+                else:
+                    a=a.astype(self.nn.param[0][0].dtype.name)
                 self.action_pool=a
             self.next_state_pool=np.expand_dims(next_s,axis=0)
             self.reward_pool=np.expand_dims(r,axis=0)
@@ -334,10 +340,16 @@ class kernel:
         else:
             self.state_pool=np.concatenate((self.state_pool,s),0)
             if type(a)==int:
-                a=np.array(a,dtype=self.nn.param[0].dtype.name)
+                if type(self.nn.param[0])!=list:
+                    a=np.array(a,self.nn.param[0].dtype.name)
+                else:
+                    a=np.array(a,self.nn.param[0][0].dtype.name)
                 self.action_pool=np.concatenate((self.action_pool,np.expand_dims(a,axis=0)),0)
             else:
-                a=a.astype(self.nn.param[0].dtype.name)
+                if type(self.nn.param[0])!=list:
+                    a=a.astype(self.nn.param[0].dtype.name)
+                else:
+                    a=a.astype(self.nn.param[0][0].dtype.name)
                 self.action_pool=np.concatenate((self.action_pool,a),0)
             self.next_state_pool=np.concatenate((self.next_state_pool,np.expand_dims(next_s,axis=0)),0)
             self.reward_pool=np.concatenate((self.reward_pool,np.expand_dims(r,axis=0)),0)
@@ -426,7 +438,14 @@ class kernel:
         episode=[]
         self.reward=0
         s=self.nn.env(initial=True)
-        s=np.array(s,dtype=self.nn.param[0].dtype.name)
+        try:
+            if self.platform.DType!=None:
+                if type(self.nn.param[0])!=list:
+                    s=np.array(s,self.nn.param[0].dtype.name)
+                else:
+                    s=np.array(s,self.nn.param[0][0].dtype.name)
+        except AttributeError:
+            pass
         if self.episode_step==None:
             while True:
                 try:
@@ -448,9 +467,14 @@ class kernel:
                         next_s,r,done=self.nn.env(a)
                         try:
                             if self.platform.DType!=None:
-                                next_s=np.array(next_s,dtype=self.nn.param[0].dtype.name)
-                                r=np.array(r,dtype=self.nn.param[0].dtype.name)
-                                done=np.array(done,dtype=self.nn.param[0].dtype.name)
+                                if type(self.nn.param[0])!=list:
+                                    next_s=np.array(next_s,self.nn.param[0].dtype.name)
+                                    r=np.array(r,self.nn.param[0].dtype.name)
+                                    done=np.array(done,self.nn.param[0].dtype.name)
+                                else:
+                                    next_s=np.array(next_s,self.nn.param[0][0].dtype.name)
+                                    r=np.array(r,self.nn.param[0][0].dtype.name)
+                                    done=np.array(done,self.nn.param[0][0].dtype.name)
                         except AttributeError:
                             pass
                 except AttributeError:
@@ -492,9 +516,14 @@ class kernel:
                     next_s,r,done=self.nn.env(a)
                     try:
                         if self.platform.DType!=None:
-                            next_s=np.array(next_s,dtype=self.nn.param[0].dtype.name)
-                            r=np.array(r,dtype=self.nn.param[0].dtype.name)
-                            done=np.array(done,dtype=self.nn.param[0].dtype.name)
+                            if type(self.nn.param[0])!=list:
+                                next_s=np.array(next_s,self.nn.param[0].dtype.name)
+                                r=np.array(r,self.nn.param[0].dtype.name)
+                                done=np.array(done,self.nn.param[0].dtype.name)
+                            else:
+                                next_s=np.array(next_s,self.nn.param[0][0].dtype.name)
+                                r=np.array(r,self.nn.param[0][0].dtype.name)
+                                done=np.array(done,self.nn.param[0][0].dtype.name)
                     except AttributeError:
                         pass
                 try:
@@ -542,9 +571,14 @@ class kernel:
                         next_s,r,done=self.nn.env(a)
                         try:
                             if self.platform.DType!=None:
-                                next_s=np.array(next_s,dtype=self.nn.param[0].dtype.name)
-                                r=np.array(r,dtype=self.nn.param[0].dtype.name)
-                                done=np.array(done,dtype=self.nn.param[0].dtype.name)
+                                if type(self.nn.param[0])!=list:
+                                    next_s=np.array(next_s,self.nn.param[0].dtype.name)
+                                    r=np.array(r,self.nn.param[0].dtype.name)
+                                    done=np.array(done,self.nn.param[0].dtype.name)
+                                else:
+                                    next_s=np.array(next_s,self.nn.param[0][0].dtype.name)
+                                    r=np.array(r,self.nn.param[0][0].dtype.name)
+                                    done=np.array(done,self.nn.param[0][0].dtype.name)
                         except AttributeError:
                             pass
                 except AttributeError:
@@ -586,9 +620,14 @@ class kernel:
                     next_s,r,done=self.nn.env(a)
                     try:
                         if self.platform.DType!=None:
-                            next_s=np.array(next_s,dtype=self.nn.param[0].dtype.name)
-                            r=np.array(r,dtype=self.nn.param[0].dtype.name)
-                            done=np.array(done,dtype=self.nn.param[0].dtype.name)
+                            if type(self.nn.param[0])!=list:
+                                next_s=np.array(next_s,self.nn.param[0].dtype.name)
+                                r=np.array(r,self.nn.param[0].dtype.name)
+                                done=np.array(done,self.nn.param[0].dtype.name)
+                            else:
+                                next_s=np.array(next_s,self.nn.param[0][0].dtype.name)
+                                r=np.array(r,self.nn.param[0][0].dtype.name)
+                                done=np.array(done,self.nn.param[0][0].dtype.name)
                     except AttributeError:
                         pass
                 try:
