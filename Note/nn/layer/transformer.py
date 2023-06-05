@@ -4,7 +4,7 @@ from Note.nn.layer.layer_normalization import layer_normalization
 
 
 class Transformer:
-    def __init__(self,weight_shape,num_heads,weight_initializer='uniform',bias_initializer='zero',dtype='float64',use_bias=True):
+    def __init__(self,weight_shape,num_heads,weight_initializer='uniform',bias_initializer='zero',dtype='float32',use_bias=True):
         self.num_heads=num_heads # number of attention heads
         self.head_size = weight_shape[1] // num_heads # size of each attention head
         self.weight_q = i.initializer(weight_shape, weight_initializer, dtype) # query weight matrix
