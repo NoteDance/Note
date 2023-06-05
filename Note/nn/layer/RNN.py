@@ -1,5 +1,6 @@
 import tensorflow as tf
 import Note.nn.initializer as i
+from Note.nn.activation import activation_dict
 
 
 class RNN:
@@ -11,7 +12,7 @@ class RNN:
         self.output_list=[]
         self.state=tf.zeros(shape=[1,weight_shape[1]],dtype=dtype)
         self.timestep=timestep
-        self.activation=activation
+        self.activation=activation_dict[activation]
         self.return_sequence=return_sequence
         self.use_bias=use_bias
         if use_bias==True:
@@ -22,100 +23,26 @@ class RNN:
     
     def output(self,data):
         if self.use_bias==True:
-            if self.activation=='sigmoid':
-                for j in range(self.timestep):
-                    output=tf.nn.sigmoid(tf.matmul(data[:][:,j],self.weight_i)+tf.matmul(self.state,self.weight_s)+self.bias)
-                    self.output_list.append(output)
-                    self.state=output
-                if self.return_sequence==True:
-                    output=tf.stack(self.output_list,axis=1)
-                    self.output_list=[]
-                    return output
-                else:
-                    self.output_list=[]
-                    return output
-            elif self.activation=='tanh':
-                for j in range(self.timestep):
-                    output=tf.nn.tanh(tf.matmul(data[:][:,j],self.weight_i)+tf.matmul(self.state,self.weight_s)+self.bias)
-                    self.output_list.append(output)
-                    self.state=output
-                if self.return_sequence==True:
-                    output=tf.stack(self.output_list,axis=1)
-                    self.output_list=[]
-                    return output
-                else:
-                    self.output_list=[]
-                    return output
-            elif self.activation=='relu':
-                for j in range(self.timestep):
-                    output=tf.nn.relu(tf.matmul(data[:][:,j],self.weight_i)+tf.matmul(self.state,self.weight_s)+self.bias)
-                    self.output_list.append(output)
-                    self.state=output
-                if self.return_sequence==True:
-                    output=tf.stack(self.output_list,axis=1)
-                    self.output_list=[]
-                    return output
-                else:
-                    self.output_list=[]
-                    return output
-            elif self.activation=='elu':
-                for j in range(self.timestep):
-                    output=tf.nn.elu(tf.matmul(data[:][:,j],self.weight_i)+tf.matmul(self.state,self.weight_s)+self.bias)
-                    self.output_list.append(output)
-                    self.state=output
-                if self.return_sequence==True:
-                    output=tf.stack(self.output_list,axis=1)
-                    self.output_list=[]
-                    return output
-                else:
-                    self.output_list=[]
-                    return output
+            for j in range(self.timestep):
+                output=self.activation(tf.matmul(data[:][:,j],self.weight_i)+tf.matmul(self.state,self.weight_s)+self.bias)
+                self.output_list.append(output)
+                self.state=output
+            if self.return_sequence==True:
+                output=tf.stack(self.output_list,axis=1)
+                self.output_list=[]
+                return output
+            else:
+                self.output_list=[]
+                return output
         else:
-            if self.activation=='sigmoid':
-                for j in range(self.timestep):
-                    output=tf.nn.sigmoid(tf.matmul(data[:][:,j],self.weight_i)+tf.matmul(self.state,self.weight_s))
-                    self.output_list.append(output)
-                    self.state=output
-                if self.return_sequence==True:
-                    output=tf.stack(self.output_list,axis=1)
-                    self.output_list=[]
-                    return output
-                else:
-                    self.output_list=[]
-                    return output
-            elif self.activation=='tanh':
-                for j in range(self.timestep):
-                    output=tf.nn.tanh(tf.matmul(data[:][:,j],self.weight_i)+tf.matmul(self.state,self.weight_s))
-                    self.output_list.append(output)
-                    self.state=output
-                if self.return_sequence==True:
-                    output=tf.stack(self.output_list,axis=1)
-                    self.output_list=[]
-                    return output
-                else:
-                    self.output_list=[]
-                    return output
-            elif self.activation=='relu':
-                for j in range(self.timestep):
-                    output=tf.nn.relu(tf.matmul(data[:][:,j],self.weight_i)+tf.matmul(self.state,self.weight_s))
-                    self.output_list.append(output)
-                    self.state=output
-                if self.return_sequence==True:
-                    output=tf.stack(self.output_list,axis=1)
-                    self.output_list=[]
-                    return output
-                else:
-                    self.output_list=[]
-                    return output
-            elif self.activation=='elu':
-                for j in range(self.timestep):
-                    output=tf.nn.elu(tf.matmul(data[:][:,j],self.weight_i)+tf.matmul(self.state,self.weight_s))
-                    self.output_list.append(output)
-                    self.state=output
-                if self.return_sequence==True:
-                    output=tf.stack(self.output_list,axis=1)
-                    self.output_list=[]
-                    return output
-                else:
-                    self.output_list=[]
-                    return output
+            for j in range(self.timestep):
+                output=self.activation(tf.matmul(data[:][:,j],self.weight_i)+tf.matmul(self.state,self.weight_s))
+                self.output_list.append(output)
+                self.state=output
+            if self.return_sequence==True:
+                output=tf.stack(self.output_list,axis=1)
+                self.output_list=[]
+                return output
+            else:
+                self.output_list=[]
+                return output
