@@ -4,7 +4,7 @@ from Note.nn.activation import activation_dict
 
 
 class RNN:
-    def __init__(self,weight_shape,weight_initializer='uniform',bias_initializer='zero',activation=None,dtype='float32',return_sequence=False,use_bias=True):
+    def __init__(self,weight_shape,weight_initializer='Xavier',bias_initializer='zero',activation=None,dtype='float32',return_sequence=False,use_bias=True):
         self.weight_i=i.initializer(weight_shape,weight_initializer,dtype)
         self.weight_s=i.initializer(weight_shape,weight_initializer,dtype)
         if use_bias==True:
