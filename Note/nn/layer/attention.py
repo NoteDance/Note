@@ -3,7 +3,7 @@ import Note.nn.initializer as i
 
 
 class attention:
-    def __init__(self,weight_shape,weight_initializer='uniform',dtype='float32'):
+    def __init__(self,weight_shape,weight_initializer='Xavier',dtype='float32'):
         self.qw=i.initializer(weight_shape,weight_initializer,dtype)
         self.kw=i.initializer(weight_shape,weight_initializer,dtype)
         self.sw=i.initializer([weight_shape[0],1],weight_initializer,dtype)
