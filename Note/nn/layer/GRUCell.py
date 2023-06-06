@@ -3,7 +3,7 @@ import Note.nn.initializer as i
 
 
 class GRUCell:
-    def __init__(self,weight_shape,weight_initializer='uniform',bias_initializer='zero',dtype='float32',use_bias=True,activation1=tf.nn.sigmoid,activation2=tf.nn.tanh):
+    def __init__(self,weight_shape,weight_initializer='Xavier',bias_initializer='zero',dtype='float32',use_bias=True,activation1=tf.nn.sigmoid,activation2=tf.nn.tanh):
         self.weight=i.initializer([weight_shape[0]+weight_shape[1],3*weight_shape[1]],weight_initializer,dtype)
         if use_bias==True:
             self.bias=i.initializer([3*weight_shape[1]],bias_initializer,dtype)
