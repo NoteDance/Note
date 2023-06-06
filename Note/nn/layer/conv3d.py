@@ -4,7 +4,7 @@ import Note.nn.initializer as i
 
 
 class conv3d:
-    def __init__(self,weight_shape,weight_initializer='normal',bias_initializer='zero',activation=None,dtype='float32',use_bias=True):
+    def __init__(self,weight_shape,weight_initializer='Xavier',bias_initializer='zero',activation=None,dtype='float32',use_bias=True):
         self.weight=i.initializer(weight_shape,weight_initializer,dtype)
         if use_bias==True:
             self.bias=i.initializer([weight_shape[-1]],bias_initializer,dtype)
