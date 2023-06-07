@@ -16,9 +16,15 @@ neural network example:
 
 You can refer to nn.py, nn_acc.py in the documentation.
 
-**DL:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network
+## DL: 
+https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network
 
-**RL:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/Note%207.0%20pv%20documentation/RL/neural%20network
+**Neural network examples using Note's layer module:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/layer
+
+**Neural network examples for Note multi-process kernel:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/process
+
+## RL: 
+https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/Note%207.0%20pv%20documentation/RL/neural%20network
 
 If you accomplish your neural network,you can use kernel to train,examples are shown below.
 
