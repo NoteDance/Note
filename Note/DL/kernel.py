@@ -98,15 +98,9 @@ class kernel:
             self.data_batch=[x for x in range(len(train_data))]
         if type(train_labels)==list:
             self.labels_batch=[x for x in range(len(train_labels))]
-        if test_data is None:
-            self.test_flag=False
-        else:
-            if type(self.nn.param[0])!=list:
-                self.test_data=test_data.astype(self.nn.param[0].dtype.name)
-                self.test_labels=test_labels.astype(self.nn.param[0].dtype.name)
-            else:
-                self.test_data=test_data.astype(self.nn.param[0][0].dtype.name)
-                self.test_labels=test_labels.astype(self.nn.param[0][0].dtype.name)
+        if test_data is not None:
+            self.test_data=test_data
+            self.test_labels=test_labels
             self.test_flag=True
         self.test_dataset=test_dataset
         if self.train_dataset==None:
@@ -1362,6 +1356,12 @@ class kernel:
     
     
     def test(self,test_data=None,test_labels=None,batch=None,t=None):
+        if type(self.nn.param[0])!=list:
+            test_data=test_data.astype(self.nn.param[0].dtype.name)
+            test_labels=test_labels.astype(self.nn.param[0].dtype.name)
+        else:
+            test_data=test_data.astype(self.nn.param[0][0].dtype.name)
+            test_labels=test_labels.astype(self.nn.param[0][0].dtype.name)
         if type(test_data)==list:
             data_batch=[x for x in range(len(test_data))]
         if type(test_labels)==list:
