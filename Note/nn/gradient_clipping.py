@@ -24,3 +24,32 @@ def gradient_clipping(grads, method, threshold):
     raise ValueError('Invalid clipping method: {}'.format(method))
   
   return clipped_grads
+
+
+def adaptive_gradient_clipping(grads, params, epsilon=1e-3, max_ratio=1.0):
+  """
+  A function that performs adaptive gradient clipping based on the ratio of parameter norms to gradient norms.
+
+  Args:
+    grads: a list of tensors, representing the gradients of the parameters
+    params: a list of tensors, representing the parameters
+
+  Returns:
+    clipped_grads: a list of tensors, representing the clipped gradients of the parameters
+  """
+  # compute the global norm of the parameters
+  param_norm = tf.linalg.global_norm(params)
+  
+  # compute the global norm of the gradients
+  grad_norm = tf.linalg.global_norm(grads)
+  
+  # compute the maximum allowed ratio
+  max_ratio = param_norm / tf.maximum(grad_norm, epsilon)
+  
+  # compute the clipping factor
+  clip_factor = tf.minimum(max_ratio, max_ratio)
+  
+  # clip the gradients by the factor
+  clipped_grads = [g * clip_factor for g in grads]
+  
+  return clipped_grads
