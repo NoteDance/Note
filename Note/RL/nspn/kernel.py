@@ -3,6 +3,7 @@ from tensorflow import data as tf_data
 import numpy as np
 import matplotlib.pyplot as plt
 import statistics
+import traceback
 import pickle
 import os
 import time
@@ -13,7 +14,8 @@ class kernel:
         self.nn=nn
         try:
             self.nn.km=1
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             pass
         self.platform=None
         self.state_pool=None
@@ -53,7 +55,8 @@ class kernel:
         try:
             if self.nn.pr!=None:
                 self.nn.pr.TD=np.array(0)
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             pass
         self.suspend=False
         self.save_epi=None
@@ -98,7 +101,8 @@ class kernel:
             if self.platform.DType!=None:
                 best_a=np.argmax(self.nn.nn.fp(s))
                 action_prob[best_a]+=1-self.epsilon
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             best_a=self.nn.nn(s).argmax()
             action_prob[best_a.numpy()]+=1-self.epsilon
         return action_prob
@@ -120,28 +124,33 @@ class kernel:
                            if self.platform.DType!=None: 
                                s=np.expand_dims(s,axis=0)
                                a=np.argmax(self.nn.nn.fp(s))
-                        except AttributeError:
+                        except Exception:
+                            print(traceback.format_exc())
                             s=np.expand_dims(s,axis=0)
                             s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                             a=self.nn.nn(s).detach().numpy().argmax()
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     try:
                         if self.nn.action!=None:
                             try:
                                if self.platform.DType!=None: 
                                    s=np.expand_dims(s,axis=0)
                                    a=self.nn.action(s).numpy()
-                            except AttributeError:
+                            except Exception:
+                                print(traceback.format_exc())
                                 s=np.expand_dims(s,axis=0)
                                 s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                                 a=self.nn.action(s).detach().numpy()
-                    except AttributeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         try:
                             if self.platform.DType!=None: 
                                 s=np.expand_dims(s,axis=0)
                                 a=self.nn.actor.fp(s).numpy()
                                 a=np.squeeze(a)
-                        except AttributeError:
+                        except Exception:
+                            print(traceback.format_exc())
                             s=np.expand_dims(s,axis=0)
                             s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                             a=self.nn.actor(s).detach().numpy()
@@ -153,7 +162,8 @@ class kernel:
                     if self.nn.stop!=None:
                         if self.nn.stop(next_s):
                             break
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     pass
                 if done:
                     break
@@ -168,28 +178,33 @@ class kernel:
                            if self.platform.DType!=None: 
                                s=np.expand_dims(s,axis=0)
                                a=np.argmax(self.nn.nn.fp(s))
-                        except AttributeError:
+                        except Exception:
+                            print(traceback.format_exc())
                             s=np.expand_dims(s,axis=0)
                             s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                             a=self.nn.nn(s).detach().numpy().argmax()
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     try:
                         if self.nn.action!=None:
                             try:
                                if self.platform.DType!=None: 
                                    s=np.expand_dims(s,axis=0)
                                    a=self.nn.action(s).numpy()
-                            except AttributeError:
+                            except Exception:
+                                print(traceback.format_exc())
                                 s=np.expand_dims(s,axis=0)
                                 s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                                 a=self.nn.action(s).detach().numpy()
-                    except AttributeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         try:
                             if self.platform.DType!=None: 
                                 s=np.expand_dims(s,axis=0)
                                 a=self.nn.actor.fp(s).numpy()
                                 a=np.squeeze(a)
-                        except AttributeError:
+                        except Exception:
+                            print(traceback.format_exc())
                             s=np.expand_dims(s,axis=0)
                             s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                             a=self.nn.actor(s).detach().numpy()
@@ -201,7 +216,8 @@ class kernel:
                     if self.nn.stop!=None:
                         if self.nn.stop(next_s):
                             break
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     pass
                 if done:
                     break
@@ -223,28 +239,33 @@ class kernel:
                        if self.platform.DType!=None: 
                            s=np.expand_dims(s,axis=0)
                            a=np.argmax(self.nn.nn.fp(s))
-                    except AttributeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         s=np.expand_dims(s,axis=0)
                         s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                         a=self.nn.nn(s).detach().numpy().argmax()
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 try:
                     if self.nn.action!=None:
                         try:
                            if self.platform.DType!=None: 
                                s=np.expand_dims(s,axis=0)
                                a=self.nn.action(s).numpy()
-                        except AttributeError:
+                        except Exception:
+                            print(traceback.format_exc())
                             s=np.expand_dims(s,axis=0)
                             s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                             a=self.nn.action(s).detach().numpy()
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     try:
                         if self.platform.DType!=None: 
                             s=np.expand_dims(s,axis=0)
                             a=self.nn.actor.fp(s).numpy()
                             a=np.squeeze(a)
-                    except AttributeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         s=np.expand_dims(s,axis=0)
                         s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                         a=self.nn.actor(s).detach().numpy()
@@ -254,7 +275,8 @@ class kernel:
                 if self.nn.stop!=None:
                     if self.nn.stop(next_s):
                         break
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 pass
             if self.end_flag==True:
                 break
@@ -279,18 +301,21 @@ class kernel:
             gradient=self.nn.gradient(tape,loss)
             try:
                 self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 self.nn.opt(gradient)
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             try:
                 if self.nn.nn!=None:
                     gradient=tape.gradient(loss,self.nn.param)
                     self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
-            except AttributeError:
-                    actor_gradient=tape.gradient(loss[0],self.nn.param[0])
-                    critic_gradient=tape.gradient(loss[1],self.nn.param[1])
-                    self.nn.opt.apply_gradients(zip(actor_gradient,self.nn.param[0]))
-                    self.nn.opt.apply_gradients(zip(critic_gradient,self.nn.param[1]))
+            except Exception:
+                print(traceback.format_exc())
+                actor_gradient=tape.gradient(loss[0],self.nn.param[0])
+                critic_gradient=tape.gradient(loss[1],self.nn.param[1])
+                self.nn.opt.apply_gradients(zip(actor_gradient,self.nn.param[0]))
+                self.nn.opt.apply_gradients(zip(critic_gradient,self.nn.param[1]))
         return loss
     
     
@@ -305,7 +330,8 @@ class kernel:
         try:
             if self.platform.DType!=None: 
                 loss=self.tf_opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             loss=self.pytorch_opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
         return loss
     
@@ -314,7 +340,8 @@ class kernel:
         try:
             if self.platform.DType!=None: 
                 loss=self.tf_opt(state,action,next_state,reward,done)
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             loss=self.pytorch_opt(state,action,next_state,reward,done)
         return loss
     
@@ -381,9 +408,11 @@ class kernel:
                         try:
                             try:
                                 self.nn.bc.assign_add(1)
-                            except AttributeError:
+                            except Exception:
+                                print(traceback.format_exc())
                                 self.nn.bc+=1
-                        except AttributeError:
+                        except Exception:
+                            print(traceback.format_exc())
                             pass
                     if len(self.state_pool)%self.batch!=0:
                         self.suspend_func()
@@ -393,11 +422,14 @@ class kernel:
                         try:
                             try:
                                 self.nn.bc.assign_add(1)
-                            except AttributeError:
+                            except Exception:
+                                print(traceback.format_exc())
                                 self.nn.bc+=1
-                        except AttributeError:
+                        except Exception:
+                            print(traceback.format_exc())
                             pass
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 j=0
                 train_ds=tf_data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).shuffle(len(self.state_pool)).batch(self.batch)
                 for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
@@ -405,7 +437,8 @@ class kernel:
                     try:
                         if self.platform.DType!=None:
                             pass
-                    except AttributeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         state_batch=state_batch.numpy()
                         action_batch=action_batch.numpy()
                         next_state_batch=next_state_batch.numpy()
@@ -417,9 +450,11 @@ class kernel:
                     try:
                         try:
                             self.nn.bc.assign_add(1)
-                        except AttributeError:
+                        except Exception:
+                            print(traceback.format_exc())
                             self.nn.bc+=1
-                    except AttributeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         pass
             if self.update_step!=None:
                 if self.sc%self.update_step==0:
@@ -429,7 +464,8 @@ class kernel:
         try:
             if self.platform.DType!=None:
                 loss=loss.numpy()/batches
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             loss=loss.detach().numpy()/batches
         return loss
     
@@ -444,7 +480,8 @@ class kernel:
                     s=np.array(s,self.nn.param[0].dtype.name)
                 else:
                     s=np.array(s,self.nn.param[0][0].dtype.name)
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             pass
         if self.episode_step==None:
             while True:
@@ -457,7 +494,8 @@ class kernel:
                                     self.epsilon=self.nn.epsilon(self.sc)
                                 action_prob=self.epsilon_greedy_policy(s)
                                 a=np.random.choice(self.action_count,p=action_prob)
-                        except AttributeError:
+                        except Exception:
+                            print(traceback.format_exc())
                             s=np.expand_dims(s,axis=0)
                             s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                             if self.epsilon==None:
@@ -475,9 +513,11 @@ class kernel:
                                     next_s=np.array(next_s,self.nn.param[0][0].dtype.name)
                                     r=np.array(r,self.nn.param[0][0].dtype.name)
                                     done=np.array(done,self.nn.param[0][0].dtype.name)
-                        except AttributeError:
+                        except Exception:
+                            print(traceback.format_exc())
                             pass
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     try:
                         if self.nn.action!=None:
                             try:
@@ -490,9 +530,11 @@ class kernel:
                                             a=self.nn.action(s)
                                             reward=self.nn.discriminator(s,a)
                                             s=np.squeeze(s)
-                                    except AttributeError:
-                                        a=self.nn.action(s).numpy()
-                            except AttributeError:
+                                   except Exception:
+                                       print(traceback.format_exc())
+                                       a=self.nn.action(s).numpy()
+                            except Exception:
+                                print(traceback.format_exc())
                                     s=np.expand_dims(s,axis=0)
                                     s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                                     if self.epsilon==None:
@@ -502,14 +544,17 @@ class kernel:
                                             a=self.nn.action(s)
                                             reward=self.nn.discriminator(s,a)
                                             s=np.squeeze(s)
-                                    except AttributeError:
+                                    except Exception:
+                                        print(traceback.format_exc())
                                         a=self.nn.action(s).detach().numpy()
-                    except AttributeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         try:
                             if self.platform.DType!=None:
                                 s=np.expand_dims(s,axis=0)
                                 a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
-                        except AttributeError:
+                        except Exception:
+                            print(traceback.format_exc())
                             s=np.expand_dims(s,axis=0)
                             s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                             a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
@@ -524,12 +569,14 @@ class kernel:
                                 next_s=np.array(next_s,self.nn.param[0][0].dtype.name)
                                 r=np.array(r,self.nn.param[0][0].dtype.name)
                                 done=np.array(done,self.nn.param[0][0].dtype.name)
-                    except AttributeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         pass
                 try:
                     if self.nn.pool!=None:
                         self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done])
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     self.pool(s,a,next_s,r,done)
                 try:
                     if self.nn.pr!=None:
@@ -537,7 +584,8 @@ class kernel:
                     if len(self.state_pool)>self.pool_size:
                         TD=np.array(0)
                         self.nn.pr.TD=np.append(TD,self.nn.pr.TD[2:])
-                except AttributeError: 
+                except Exception:
+                    print(traceback.format_exc())
                     pass
                 self.reward=r+self.reward
                 loss=self._train()
@@ -561,7 +609,8 @@ class kernel:
                                     self.epsilon=self.nn.epsilon(self.sc)
                                 action_prob=self.epsilon_greedy_policy(s)
                                 a=np.random.choice(self.action_count,p=action_prob)
-                        except AttributeError:
+                        except Exception:
+                            print(traceback.format_exc())
                             s=np.expand_dims(s,axis=0)
                             s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                             if self.epsilon==None:
@@ -579,9 +628,11 @@ class kernel:
                                     next_s=np.array(next_s,self.nn.param[0][0].dtype.name)
                                     r=np.array(r,self.nn.param[0][0].dtype.name)
                                     done=np.array(done,self.nn.param[0][0].dtype.name)
-                        except AttributeError:
+                        except Exception:
+                            print(traceback.format_exc())
                             pass
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     try:
                         if self.nn.action!=None:
                             try:
@@ -594,9 +645,11 @@ class kernel:
                                             a=self.nn.action(s)
                                             reward=self.nn.discriminator(s,a)
                                             s=np.squeeze(s)
-                                    except AttributeError:
+                                    except Exception:
+                                        print(traceback.format_exc())
                                         a=self.nn.action(s).numpy()
-                            except AttributeError:
+                            except Exception:
+                                print(traceback.format_exc())
                                 s=np.expand_dims(s,axis=0)
                                 s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                                 if self.epsilon==None:
@@ -606,14 +659,17 @@ class kernel:
                                         a=self.nn.action(s)
                                         reward=self.nn.discriminator(s,a)
                                         s=np.squeeze(s)
-                                except AttributeError:
+                                except Exception:
+                                    print(traceback.format_exc())
                                     a=self.nn.action(s).detach().numpy()
-                    except AttributeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         try:
                             if self.platform.DType!=None:
                                 s=np.expand_dims(s,axis=0)
                                 a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
-                        except AttributeError:
+                        except Exception:
+                            print(traceback.format_exc())
                             s=np.expand_dims(s,axis=0)
                             s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                             a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
@@ -628,12 +684,14 @@ class kernel:
                                 next_s=np.array(next_s,self.nn.param[0][0].dtype.name)
                                 r=np.array(r,self.nn.param[0][0].dtype.name)
                                 done=np.array(done,self.nn.param[0][0].dtype.name)
-                    except AttributeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         pass
                 try:
                     if self.nn.pool!=None:
                         self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done])
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     self.pool(s,a,next_s,r,done)
                 try:
                     if self.nn.pr!=None:
@@ -641,7 +699,8 @@ class kernel:
                     if len(self.state_pool)>self.pool_size:
                         TD=np.array(0)
                         self.nn.pr.TD=np.append(TD,self.nn.pr.TD[2:])
-                except AttributeError: 
+                except Exception:
+                    print(traceback.format_exc()) 
                     pass
                 self.reward=r+self.reward
                 loss=self._train()
@@ -727,9 +786,11 @@ class kernel:
                 try:
                     try:
                         self.nn.ec.assign_add(1)
-                    except AttributeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         self.nn.ec+=1
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     pass
                 t2=time.time()
                 self.time+=(t2-t1)
@@ -792,9 +853,11 @@ class kernel:
                 try:
                     try:
                         self.nn.ec.assign_add(1)
-                    except AttributeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         self.nn.ec+=1
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     pass
                 t2=time.time()
                 self.time+=(t2-t1)
@@ -835,7 +898,8 @@ class kernel:
                 del self.nn.train_acc_list[0]
             try:
                 self.nn.c+=1
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 pass
         return
         
@@ -922,19 +986,23 @@ class kernel:
             if self.platform.DType!=None:
                 try:
                     pickle.dump(self.nn,output_file)
-                except:
+                except Exception:
+                    print(traceback.format_exc())
                     opt=self.nn.opt
                     self.nn.opt=None
                     pickle.dump(self.nn,output_file)
                     self.nn.opt=opt
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             pass
         try:
             pickle.dump(self.platform.keras.optimizers.serialize(opt),output_file)
-        except:
+        except Exception:
+            print(traceback.format_exc())
             try:
                 pickle.dump(self.nn.serialize(),output_file)
-            except:
+            except Exception:
+                print(traceback.format_exc())
                 pickle.dump(None,output_file)
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.episode_step,output_file)
@@ -962,15 +1030,18 @@ class kernel:
         self.nn=pickle.load(input_file)
         try:
             self.nn.km=1
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             pass
         opt_serialized=pickle.load(input_file)
         try:
             self.nn.opt=self.platform.keras.optimizers.deserialize(opt_serialized)
-        except:
+        except Exception:
+            print(traceback.format_exc())
             try:
                 self.nn.deserialize(opt_serialized)
-            except:
+            except Exception:
+                print(traceback.format_exc())
                 pass
         self.epsilon=pickle.load(input_file)
         self.episode_step=pickle.load(input_file)
