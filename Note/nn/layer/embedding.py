@@ -9,6 +9,6 @@ class embedding:
         self.embeddings=i.initializer([vocab_size,embed_size],initializer,dtype)
     
     
-    def output(self,inputs):
-        outputs=tf.nn.embedding_lookup(self.embeddings,inputs)
-        return outputs
+    def output(self,data):
+        output=tf.nn.embedding_lookup(self.embeddings,data)
+        return output
