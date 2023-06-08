@@ -1,5 +1,4 @@
 import tensorflow as tf
-from tensorflow import function
 from tensorflow.python.ops import state_ops
 from multiprocessing import Value,Array
 import numpy as np
@@ -182,7 +181,7 @@ class kernel:
             return True
     
     
-    @function(jit_compile=True)
+    @tf.function(jit_compile=True)
     def tf_opt_t(self,data,labels,p,lock,g_lock=None,ln=None):
         try:
             if self.nn.GradientTape!=None:
