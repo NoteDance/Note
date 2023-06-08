@@ -3,6 +3,7 @@ from multiprocessing import Value,Array
 import numpy as np
 import matplotlib.pyplot as plt
 import statistics
+import traceback
 import pickle
 import os
 
@@ -68,15 +69,18 @@ class kernel:
         try:
             if self.nn.attenuate!=None:
               self.nn.opt_counter=manager.list([self.nn.opt_counter])  
-        except AttributeError:   
+        except Exception:
+            print(traceback.format_exc())  
             pass
         try:
             self.nn.ec=manager.list(self.nn.ec)
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             pass
         try:
             self.nn.bc=manager.list(self.nn.bc)
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             pass
         self.stop_flag=Value('b',0)
         self.save_flag=Value('b',0)
@@ -155,7 +159,8 @@ class kernel:
                     self.next_state_pool[index]=np.concatenate((self.next_state_pool[index],np.expand_dims(next_s,axis=0)),0)
                     self.reward_pool[index]=np.concatenate((self.reward_pool[index],np.expand_dims(r,axis=0)),0)
                     self.done_pool[index]=np.concatenate((self.done_pool[index],np.expand_dims(done,axis=0)),0)
-                except:
+                except Exception:
+                    print(traceback.format_exc())
                     pass
             if type(self.state_pool[index])==np.ndarray and len(self.state_pool[index])>self.pool_size:
                 self.state_pool[index]=self.state_pool[index][1:]
@@ -163,7 +168,8 @@ class kernel:
                 self.next_state_pool[index]=self.next_state_pool[index][1:]
                 self.reward_pool[index]=self.reward_pool[index][1:]
                 self.done_pool[index]=self.done_pool[index][1:]
-        except:
+        except Exception:
+            print(traceback.format_exc())
             pool_lock[index].release()
             return
         pool_lock[index].release()
@@ -214,12 +220,14 @@ class kernel:
                 action_prob=self.epsilon_greedy_policy(s,epsilon)
                 a=np.random.choice(self.action_count,p=action_prob)
                 next_s,r,done=self.nn.env(a,p)
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             try:
                 if self.nn.action!=None:
                     s=np.expand_dims(s,axis=0)
                     a=self.nn.action(s).numpy()
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 s=np.expand_dims(s,axis=0)
                 a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
                 next_s,r,done=self.nn.env(a,p)
@@ -249,7 +257,8 @@ class kernel:
         with tf.GradientTape(persistent=True) as tape:
             try:
                 loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
-            except TypeError:
+            except Exception:
+                print(traceback.format_exc())
                 loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch,p)
         if self.PO==1:
             if self.priority_flag==True and self.priority_p.value!=-1:
@@ -266,29 +275,35 @@ class kernel:
                 try:
                     if self.nn.attenuate!=None:
                         gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     pass
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 try:
                     if self.nn.nn!=None:
                         gradient=tape.gradient(loss,self.nn.param)
                         try:
                             if self.nn.attenuate!=None:
                                 gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
-                        except AttributeError:
+                        except Exception:
+                            print(traceback.format_exc())
                             pass
-                except AttributeError:
-                        actor_gradient=tape.gradient(loss[0],self.nn.param[0])
-                        critic_gradient=tape.gradient(loss[1],self.nn.param[1])
-                        try:
-                            if self.nn.attenuate!=None:
-                                actor_gradient=self.nn.attenuate(actor_gradient,self.nn.opt_counter,p)
-                                critic_gradient=self.nn.attenuate(critic_gradient,self.nn.opt_counter,p)
-                        except AttributeError:
-                            pass
+                except Exception:
+                    print(traceback.format_exc())
+                    actor_gradient=tape.gradient(loss[0],self.nn.param[0])
+                    critic_gradient=tape.gradient(loss[1],self.nn.param[1])
+                    try:
+                        if self.nn.attenuate!=None:
+                            actor_gradient=self.nn.attenuate(actor_gradient,self.nn.opt_counter,p)
+                            critic_gradient=self.nn.attenuate(critic_gradient,self.nn.opt_counter,p)
+                    except Exception:
+                        print(traceback.format_exc())
+                        pass
             try:
                 param=self.nn.opt(gradient)
-            except TypeError:
+            except Exception:
+                print(traceback.format_exc())
                 param=self.nn.opt(gradient,p)
             lock[0].release()
         elif self.PO==2:
@@ -297,11 +312,13 @@ class kernel:
                 return 0
             try:
                 gradient=self.nn.gradient(tape,loss)
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 try:
                     if self.nn.nn!=None:
                         gradient=tape.gradient(loss,self.nn.param)
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     actor_gradient=tape.gradient(loss[0],self.nn.param[0])
                     critic_gradient=tape.gradient(loss[1],self.nn.param[1])
             lock[0].release()
@@ -318,14 +335,17 @@ class kernel:
                 if self.nn.attenuate!=None:
                     try:
                         gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
-                    except NameError:
+                    except Exception:
+                        print(traceback.format_exc())
                         actor_gradient=self.nn.attenuate(actor_gradient,self.nn.opt_counter,p)
                         critic_gradient=self.nn.attenuate(critic_gradient,self.nn.opt_counter,p)
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 pass
             try:
                 param=self.nn.opt(gradient)
-            except TypeError:
+            except Exception:
+                print(traceback.format_exc())
                 param=self.nn.opt(gradient,p)
             lock[1].release()
         elif self.PO==3:
@@ -334,11 +354,13 @@ class kernel:
                 return 0
             try:
                 gradient=self.nn.gradient(tape,loss)
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 try:
                     if self.nn.nn!=None:
                         gradient=tape.gradient(loss,self.nn.param)
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     actor_gradient=tape.gradient(loss[0],self.nn.param[0])
                     critic_gradient=tape.gradient(loss[1],self.nn.param[1])
             g_lock[ln].release()
@@ -355,14 +377,17 @@ class kernel:
                 if self.nn.attenuate!=None:
                     try:
                         gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
-                    except NameError:
+                    except Exception:
+                        print(traceback.format_exc())
                         actor_gradient=self.nn.attenuate(actor_gradient,self.nn.opt_counter,p)
                         critic_gradient=self.nn.attenuate(critic_gradient,self.nn.opt_counter,p)
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 pass
             try:
                 param=self.nn.opt(gradient)
-            except TypeError:
+            except Exception:
+                print(traceback.format_exc())
                 param=self.nn.opt(gradient,p)
             lock[0].release()
         return loss,param
@@ -391,7 +416,8 @@ class kernel:
                 bc=self.nn.bc[0]
                 bc.assign_add(1)
                 self.nn.bc[0]=bc
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 pass
         else:
             index1=j*self.batch
@@ -415,7 +441,8 @@ class kernel:
                 bc=self.nn.bc[0]
                 bc.assign_add(1)
                 self.nn.bc[0]=bc
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 pass
         return
     
@@ -445,7 +472,8 @@ class kernel:
                         opt_counter=self.nn.opt_counter[0]
                         opt_counter.scatter_update(tf.IndexedSlices(0,p))
                         self.nn.opt_counter[0]=opt_counter
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     pass
                 self._train(p,j,batches,length,lock,g_lock)
                 if self.priority_flag==True:
@@ -456,7 +484,8 @@ class kernel:
                         opt_counter=self.nn.opt_counter[0]
                         opt_counter.assign(opt_counter+1)
                         self.nn.opt_counter[0]=opt_counter
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     pass
             if self.PO==1 or self.PO==3:
                 lock[1].acquire()
@@ -477,7 +506,8 @@ class kernel:
             ec=self.nn.ec[0]
             ec.assign_add(1)
             self.nn.ec[0]=ec
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             pass
         return
     
@@ -497,7 +527,8 @@ class kernel:
         self.finish_list.append(None)
         try:
             epsilon=self.epsilon[p]
-        except:
+        except Exception:
+            print(traceback.format_exc())
             epsilon=None
         if self.PO==1 or self.PO==3:
             lock[2].release()
@@ -661,11 +692,13 @@ class kernel:
         pickle.dump(self.total_episode.value,output_file)
         try:
             pickle.dump(self.nn.ec,output_file)
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             pass
         try:
             pickle.dump(self.nn.bc,output_file)
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             pass
         output_file.close()
         return
@@ -676,7 +709,8 @@ class kernel:
         self.nn=pickle.load(input_file)
         try:
             self.nn.km=1
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             pass
         self.param[7]=pickle.load(input_file)
         self.epsilon=pickle.load(input_file)
