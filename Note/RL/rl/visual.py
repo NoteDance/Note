@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow_docs.vis.embed as embed
 from PIL import Image
+import traceback
 
 
 class visual:
@@ -29,10 +30,12 @@ class visual:
                     if self.agent.action!=None:
                         pass
                     a=self.agent.action(s).numpy()
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     action_prob=self.agent.nn.fp(s).numpy()
                     a=np.argmax(action_prob)
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 a=self.agent.actor.fp(s).numpy()
                 a=np.squeeze(a)
             state,_,done,_=self.env.step(a)
