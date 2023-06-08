@@ -1,4 +1,5 @@
 import numpy as np
+import traceback
 
 
 class reward:
@@ -25,28 +26,33 @@ class reward:
                            if self.platform.DType!=None: 
                                s=np.expand_dims(s,axis=0)
                                a=np.argmax(self.agent.nn.fp(s))
-                        except AttributeError:
+                        except Exception:
+                            print(traceback.format_exc())
                             s=np.expand_dims(s,axis=0)
                             s=self.platform.tensor(s,dtype=self.platform.float).to(self.agent.device)
                             a=self.agent.nn(s).detach().numpy().argmax()
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     try:
                         if self.agent.action!=None:
                             try:
                                if self.platform.DType!=None: 
                                    s=np.expand_dims(s,axis=0)
                                    a=self.agent.action(s).numpy()
-                            except AttributeError:
+                            except Exception:
+                                print(traceback.format_exc())
                                 s=np.expand_dims(s,axis=0)
                                 s=self.platform.tensor(s,dtype=self.platform.float).to(self.agent.device)
                                 a=self.agent.action(s).detach().numpy()
-                    except AttributeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         try:
                             if self.platform.DType!=None: 
                                 s=np.expand_dims(s,axis=0)
                                 a=self.agent.actor.fp(s).numpy()
                                 a=np.squeeze(a)
-                        except AttributeError:
+                        except Exception:
+                            print(traceback.format_exc())
                             s=np.expand_dims(s,axis=0)
                             s=self.platform.tensor(s,dtype=self.platform.float).to(self.agent.device)
                             a=self.agent.actor(s).detach().numpy()
@@ -58,7 +64,8 @@ class reward:
                     if self.nn.stop!=None:
                         if self.nn.stop(next_s):
                             break
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     pass
                 if done:
                     break
@@ -73,28 +80,33 @@ class reward:
                            if self.platform.DType!=None: 
                                s=np.expand_dims(s,axis=0)
                                a=np.argmax(self.agent.nn.fp(s))
-                        except AttributeError:
+                        except Exception:
+                            print(traceback.format_exc())
                             s=np.expand_dims(s,axis=0)
                             s=self.platform.tensor(s,dtype=self.platform.float).to(self.agent.device)
                             a=self.agent.nn(s).detach().numpy().argmax()
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     try:
                         if self.agent.action!=None:
                             try:
                                if self.platform.DType!=None: 
                                    s=np.expand_dims(s,axis=0)
                                    a=self.agent.action(s).numpy()
-                            except AttributeError:
+                            except Exception:
+                                print(traceback.format_exc())
                                 s=np.expand_dims(s,axis=0)
                                 s=self.platform.tensor(s,dtype=self.platform.float).to(self.agent.device)
                                 a=self.agent.action(s).detach().numpy()
-                    except AttributeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         try:
                             if self.platform.DType!=None: 
                                 s=np.expand_dims(s,axis=0)
                                 a=self.agent.actor.fp(s).numpy()
                                 a=np.squeeze(a)
-                        except AttributeError:
+                        except Exception:
+                            print(traceback.format_exc())
                             s=np.expand_dims(s,axis=0)
                             s=self.platform.tensor(s,dtype=self.platform.float).to(self.agent.device)
                             a=self.agent.actor(s).detach().numpy()
@@ -106,7 +118,8 @@ class reward:
                     if self.nn.stop!=None:
                         if self.nn.stop(next_s):
                             break
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     pass
                 if done:
                     break
