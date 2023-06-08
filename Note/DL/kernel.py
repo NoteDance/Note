@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import Note.DL.dl.test as test_
 from sys import getsizeof
+import traceback
 import pickle
 import os
 import time
@@ -13,7 +14,8 @@ class kernel:
         self.nn=nn
         try:
             self.nn.km=1
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             pass
         self.platform=None
         self.PO=None
@@ -120,7 +122,8 @@ class kernel:
                             self.total_acc=np.zeros([self.thread[0]*self.thread[1]],dtype=np.float32)
                         else:
                             self.total_acc=np.zeros(self.thread,dtype=np.float32)
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     pass
         if self.train_counter==0 and self.memory_flag==True:
             self.data_memory=getsizeof(self.train_data)+getsizeof(self.train_labels)
@@ -172,7 +175,8 @@ class kernel:
                 try:
                     if self.nn.accuracy!=None:
                         self.total_acc=np.zeros(self.thread,dtype=np.float32)
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     pass
         self.suspend=False
         self.suspend_list=[]
@@ -229,7 +233,8 @@ class kernel:
             try:
                 if self.nn.accuracy!=None:
                     self.total_acc=np.zeros(self.thread,dtype=np.float32)
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 pass
         return
     
@@ -256,7 +261,8 @@ class kernel:
                 if self.nn.accuracy!=None:
                     batch_acc=self.nn.accuracy(output,labels_batch)
                     total_acc+=batch_acc
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 pass
             return total_loss,total_acc
         else:
@@ -269,7 +275,8 @@ class kernel:
                     acc=acc.numpy()
                     self.train_acc=acc
                     self.train_acc_list.append(acc)
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 pass
             if self.test_flag==True:
                 if self.thread_t==None:
@@ -280,7 +287,8 @@ class kernel:
                 try:
                     if self.nn.accuracy!=None:
                         self.test_acc_list.append(self.test_acc)
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     pass
             return
     
@@ -321,7 +329,8 @@ class kernel:
                         labels_batch[i]=self.platform.concat([self.train_labels[i][index1:],self.train_labels[i][:index2]],0)
                 else:
                     labels_batch=self.platform.concat([self.train_labels[index1:],self.train_labels[:index2]],0)
-            except:
+            except Exception:
+                print(traceback.format_exc())
                 if type(self.train_data)==list:
                     for i in range(len(self.train_data)):
                         data_batch[i]=np.concatenate([self.train_data[i][index1:],self.train_data[i][:index2]],0)
@@ -346,20 +355,24 @@ class kernel:
         try:
             if self.nn.GradientTape!=None:
                 tape,output,loss=self.nn.GradientTape(data,labels)
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             with self.platform.GradientTape(persistent=True) as tape:
                 try:
                     output=self.nn.fp(data)
                     loss=self.nn.loss(output,labels)
-                except TypeError:
+                except Exception:
+                    print(traceback.format_exc())
                     output,loss=self.nn.fp(data,labels)
         try:
             gradient=self.nn.gradient(tape,loss)
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             gradient=tape.gradient(loss,self.nn.param)
         try:
             self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             self.nn.opt(gradient)
         return output,loss
     
@@ -369,19 +382,23 @@ class kernel:
         try:
             if self.nn.GradientTape!=None:
                 tape,output,loss=self.nn.GradientTape(data,labels,t)
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             with self.platform.GradientTape(persistent=True) as tape:
                 try:
                     try:
                         output=self.nn.fp(data)
                         loss=self.nn.loss(output,labels)
-                    except TypeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         output,loss=self.nn.fp(data,labels)
-                except TypeError:
+                except Exception:
+                    print(traceback.format_exc())
                     try:
                         output=self.nn.fp(data,t)
                         loss=self.nn.loss(output,labels)
-                    except TypeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         output,loss=self.nn.fp(data,labels,t)
         if self.PO==1:
             self.lock[0].acquire()
@@ -389,19 +406,23 @@ class kernel:
                 return None,0
             try:
                 gradient=self.nn.gradient(tape,loss)
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 gradient=tape.gradient(loss,self.nn.param)
             try:
                 if self.nn.attenuate!=None:
                     gradient=self.nn.attenuate(gradient,self.opt_counter,t)
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 pass
             try:
                 self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 try:
                     self.nn.opt(gradient)
-                except TypeError:
+                except Exception:
+                    print(traceback.format_exc())
                     self.nn.opt(gradient,t)
             self.lock[0].release()
         elif self.PO==2:
@@ -410,7 +431,8 @@ class kernel:
                 return None,0
             try:
                 gradient=self.nn.gradient(tape,loss)
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 gradient=tape.gradient(loss,self.nn.param)
             self.lock[0].release()
             self.lock[1].acquire()
@@ -419,30 +441,36 @@ class kernel:
             try:
                 if self.nn.attenuate!=None:
                     gradient=self.nn.attenuate(gradient,self.opt_counter,t)
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 pass
             try:
                 self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 try:
                     self.nn.opt(gradient)
-                except TypeError:
+                except Exception:
+                    print(traceback.format_exc())
                     self.nn.opt(gradient,t)
             self.lock[1].release()
         elif self.PO==3:
             if self.row!=None:
                 try:
                     self.gradient_lock[ln[0]][ln[1]].acquire()
-                except:
+                except Exception:
+                    print(traceback.format_exc())
                     self.gradient_lock[0][0].acquire()
             else:
                 try:
                     self.gradient_lock[ln].acquire()
-                except:
+                except Exception:
+                    print(traceback.format_exc())
                     self.gradient_lock[0].acquire()
             try:
                 gradient=self.nn.gradient(tape,loss)
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 gradient=tape.gradient(loss,self.nn.param)
             if self.row!=None:
                 try:
@@ -466,14 +494,17 @@ class kernel:
             try:
                 if self.nn.attenuate!=None:
                     gradient=self.nn.attenuate(gradient,self.opt_counter,t)
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 pass
             try:
                 self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 try:
                     self.nn.opt(gradient)
-                except TypeError:
+                except Exception:
+                    print(traceback.format_exc())
                     self.nn.opt(gradient,t)
             if self.memory_flag==True:
                 self.grad_memory_list[ln]=0
@@ -488,7 +519,8 @@ class kernel:
             self.nn.opt.zero_grad()
             loss.backward()
             self.nn.opt.step()
-        except:
+        except Exception:
+            print(traceback.format_exc())
             self.nn.opt(loss)
         return output,loss
     
@@ -497,7 +529,8 @@ class kernel:
         try:
             if self.platform.DType!=None:
                 output,loss=self.tf_opt(data,labels)
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             output,loss=self.pytorch_opt(data,labels)
         return output,loss
     
@@ -506,7 +539,8 @@ class kernel:
         try:
             if self.nn.attenuate!=None:
                 self.opt_counter.scatter_update(self.platform.IndexedSlices(0,t))
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             pass
         if self.PO==3:
             if self.row==None and len(self.gradient_lock)==self.thread:
@@ -524,7 +558,8 @@ class kernel:
         try:
             if self.nn.attenuate!=None:
                 self.opt_counter.assign(self.opt_counter+1)
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             pass
         return output,loss
     
@@ -548,7 +583,8 @@ class kernel:
                         output,loss=self.tf_opt_t(data,labels,int(t))
                 else:
                     output,loss=self.tf_opt(data,labels)
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             output,loss=self.pytorch_opt(data,labels)
         return output,loss
     
@@ -566,7 +602,8 @@ class kernel:
                     try:
                         if self.nn.data_func!=None:
                             data_batch,labels_batch=self.nn.data_func(data_batch,labels_batch)
-                    except AttributeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         pass
                     output,batch_loss=self.opt(data_batch,labels_batch)
                     total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc)
@@ -585,16 +622,19 @@ class kernel:
                     try:
                         if self.nn.data_func!=None:
                             data_batch,labels_batch=self.nn.data_func(data_batch,labels_batch)
-                    except AttributeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         pass
                     output,batch_loss=self.opt(data_batch,labels_batch)
                     total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc)
                     try:
                         try:
                             self.nn.bc.assign_add(1)
-                        except AttributeError:
+                        except Exception:
+                            print(traceback.format_exc())
                             self.nn.bc+=1
-                    except AttributeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         pass
                 if self.shape0%batch!=0:
                     if self.stop==True:
@@ -608,26 +648,31 @@ class kernel:
                     try:
                         if self.nn.data_func!=None:
                             data_batch,labels_batch=self.nn.data_func(data_batch,labels_batch)
-                    except AttributeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         pass
                     output,batch_loss=self.opt(data_batch,labels_batch)
                     total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc)
                     try:
                         try:
                             self.nn.bc.assign_add(1)
-                        except AttributeError:
+                        except Exception:
+                            print(traceback.format_exc())
                             self.nn.bc+=1
-                    except AttributeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         pass
             try:
                 if self.platform.DType!=None:
                     loss=total_loss.numpy()/batches
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 loss=total_loss.detach().numpy()/batches
             try:
                 if self.nn.accuracy!=None:
                     train_acc=total_acc.numpy()/batches
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 pass
             self.train_loss=loss
             self.train_loss_list.append(loss)
@@ -635,7 +680,8 @@ class kernel:
                 if self.nn.accuracy!=None:
                     self.train_acc=train_acc
                     self.train_acc_list.append(train_acc)
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 pass
             if self.test_flag==True:
                 if self.thread_t==None:
@@ -646,7 +692,8 @@ class kernel:
                 try:
                     if self.nn.accuracy!=None:
                         self.test_acc_list.append(self.test_acc)
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     pass
         else:
             self.suspend_func()
@@ -662,35 +709,41 @@ class kernel:
                 try:
                     if self.nn.data_func!=None:
                         data_batch,labels_batch=self.nn.data_func(data_batch,labels_batch)
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     pass
                 output,batch_loss=self.opt_t(data_batch,labels_batch,t)
                 try:
                     self.nn.bc.assign_add(1)
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     pass
                 try:
                     if self.nn.accuracy!=None:
                         batch_acc=self.nn.accuracy(output,labels_batch)
                         return batch_loss,batch_acc
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     return batch_loss,None
             data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j)
             try:
                 if self.nn.data_func!=None:
                     data_batch,labels_batch=self.nn.data_func(data_batch,labels_batch)
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 pass
             output,batch_loss=self.opt_t(data_batch,labels_batch,t)
             try:
                 self.nn.bc.assign_add(1)
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 pass
             try:
                 if self.nn.accuracy!=None:
                     batch_acc=self.nn.accuracy(output,labels_batch)
                     return batch_loss,batch_acc
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 return batch_loss,None
         else:
             output,train_loss=self.opt_t(self.train_data,self.train_labels,t)
@@ -707,7 +760,8 @@ class kernel:
                         acc=acc.numpy()
                         self.train_acc=acc
                         self.train_acc_list.append(acc)
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     pass
                 if self.test_flag==True:
                     if self.thread_t==None:
@@ -718,7 +772,8 @@ class kernel:
                     try:
                         if self.nn.accuracy!=None:
                             self.test_acc_list.append(self.test_acc)
-                    except AttributeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         pass
                 self.print_save()
                 self.lock[1].release()
@@ -735,7 +790,8 @@ class kernel:
                         acc=acc.numpy()
                         self.train_acc=acc
                         self.train_acc_list.append(acc)
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     pass
                 if self.test_flag==True:
                     if self.thread_t==None:
@@ -746,7 +802,8 @@ class kernel:
                     try:
                         if self.nn.accuracy!=None:
                             self.test_acc_list.append(self.test_acc)
-                    except AttributeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         pass
                 self.print_save()
                 self.lock[2].release()
@@ -771,7 +828,8 @@ class kernel:
                     if self.nn.accuracy!=None:
                         total_loss+=batch_loss
                         total_acc+=batch_acc
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     total_loss+=batch_loss
             if self.shape0%batch!=0:
                 if t in self.stop_list:
@@ -787,13 +845,15 @@ class kernel:
                     if self.nn.accuracy!=None:
                         total_loss+=batch_loss
                         total_acc+=batch_acc
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     total_loss+=batch_loss
             loss=total_loss.numpy()/batches
             try:
                 if self.nn.accuracy!=None:
                     train_acc=total_acc.numpy()/batches
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 pass
             if self.PO==1 or self.PO==3:
                 self.lock[1].acquire()
@@ -807,7 +867,8 @@ class kernel:
                 if self.nn.accuracy!=None:
                     self.train_acc=train_acc
                     self.train_acc_list.append(train_acc)
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 pass
             if self.test_flag==True:
                 if self.thread_t==None:
@@ -818,11 +879,13 @@ class kernel:
             try:
                 if self.nn.accuracy!=None:
                     self.test_acc_list.append(self.test_acc)
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 pass
             try:
                 self.nn.ec.assign_add(1)
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 pass
             self.print_save()
             if self.PO==1 or self.PO==3:
@@ -844,18 +907,21 @@ class kernel:
                 output,batch_loss=self.opt_t(data_batch,labels_batch,t)
                 try:
                     self.nn.bc.assign_add(1)
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     pass
                 try:
                     if self.nn.accuracy!=None:
                         batch_acc=self.nn.accuracy(output,labels_batch)
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     pass
                 try:
                     if self.nn.accuracy!=None:
                         self.total_loss[t]+=batch_loss
                         self.total_acc[t]+=batch_acc
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     self.total_loss[t]+=batch_loss
                 self.batch_counter[t]+=1
                 if self.PO==1 or self.PO==3:
@@ -869,7 +935,8 @@ class kernel:
                     try:
                         if self.nn.accuracy!=None:
                             train_acc=np.sum(self.total_acc)/batches
-                    except AttributeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         pass
                     self.total_epoch+=1
                     self.train_loss=loss
@@ -878,7 +945,8 @@ class kernel:
                         if self.nn.accuracy!=None:
                             self.train_acc=train_acc
                             self.train_acc_list.append(train_acc)
-                    except AttributeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         pass
                     if self.test_flag==True:
                         if self.thread_t==None:
@@ -889,19 +957,22 @@ class kernel:
                     try:
                         if self.nn.accuracy!=None:
                             self.test_acc_list.append(self.test_acc)
-                    except AttributeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         pass
                     self.print_save()
                     self.epoch_counter+=1
                     try:
                         self.nn.ec.assign_add(1)
-                    except AttributeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         pass
                     self.total_loss=self.total_loss*0
                     try:
                         if self.nn.accuracy!=None:
                             self.total_acc=self.total_acc*0
-                    except AttributeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         pass
                 if self.PO==1 or self.PO==3:
                     self.lock[1].release()
@@ -1028,9 +1099,11 @@ class kernel:
                     try:
                         try:
                             self.nn.ec.assign_add(1)
-                        except AttributeError:
+                        except Exception:
+                            print(traceback.format_exc())
                             self.nn.ec+=1
-                    except AttributeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         pass
                 if self.thread==None:
                     self.total_epoch+=1
@@ -1059,7 +1132,8 @@ class kernel:
                                     else:
                                         print('epoch:{0}   accuracy:{1:.6f}'.format(i+1,self.train_acc))
                                     print()
-                            except AttributeError:
+                            except Exception:
+                                print(traceback.format_exc())
                                 print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
                                 print()
                         else:
@@ -1071,7 +1145,8 @@ class kernel:
                                     else:
                                         print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(i+1,self.train_acc,self.test_acc))
                                     print()
-                            except AttributeError:   
+                            except Exception:
+                                print(traceback.format_exc())  
                                 print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
                                 print()
                     if save!=None and i%s==0:
@@ -1109,9 +1184,11 @@ class kernel:
                     try:
                         try:
                             self.nn.ec.assign_add(1)
-                        except AttributeError:
+                        except Exception:
+                            print(traceback.format_exc())
                             self.nn.ec+=1
-                    except AttributeError:
+                    except Exception:
+                        print(traceback.format_exc())
                         pass
                 if self.thread==None:
                     self.total_epoch+=1
@@ -1140,7 +1217,8 @@ class kernel:
                                     else:
                                         print('epoch:{0}   accuracy:{1:.6f}'.format(i+1,self.train_acc))
                                     print()
-                            except AttributeError:
+                            except Exception:
+                                print(traceback.format_exc())
                                 print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
                                 print()
                         else:
@@ -1152,7 +1230,8 @@ class kernel:
                                     else:
                                         print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(i+1,self.train_acc,self.test_acc))
                                     print()
-                            except AttributeError:   
+                            except Exception:
+                                print(traceback.format_exc())   
                                 print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
                                 print()
                     if save!=None and i%s==0:
@@ -1186,7 +1265,8 @@ class kernel:
                             print('last accuracy:{0:.6f}'.format(self.train_acc))
                         else:
                             print('last accuracy:{0:.6f},last test accuracy:{1:.6f}'.format(self.train_acc,self.test_acc))   
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 pass
             print()
             print('time:{0}s'.format(self.time))
@@ -1248,7 +1328,9 @@ class kernel:
                 self.suspend_func(t)
                 try:
                     data=self.nn.ol(t)
-                except:
+                except Exception:
+                    print('thread:{}'.format(t))
+                    print(traceback.format_exc())
                     self.exception_list[t]=True
                     continue
                 if data=='stop':
@@ -1278,7 +1360,9 @@ class kernel:
                     continue
                 try:
                     output,loss=self.opt_ol(data[0],data[1],t)
-                except:
+                except Exception:
+                    print('thread:{}'.format(t))
+                    print(traceback.format_exc())
                     self.exception_list[t]=True
                     continue
                 loss=loss.numpy()
@@ -1299,11 +1383,13 @@ class kernel:
                         if len(self.nn.train_acc_list)==self.nn.max_length:
                             del self.nn.train_acc_list[0]
                         self.train_acc_list.append(train_acc)
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     pass
                 try:
                     self.nn.c+=1
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     pass
                 if self.PO==1 or self.PO==3:
                     self.lock[1].release()
@@ -1335,11 +1421,13 @@ class kernel:
                         if len(self.nn.train_acc_list)==self.nn.max_length:
                             del self.nn.train_acc_list[0]
                         self.train_acc_list.append(train_acc)
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     pass
                 try:
                     self.nn.c+=1
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     pass
         if self.thread!=None:
             if self.PO==1 or self.PO==3:
@@ -1381,7 +1469,8 @@ class kernel:
             try:
                 if self.nn.accuracy!=None:
                     test_loss,test_acc=parallel_test.loss_acc()
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 test_loss=parallel_test.loss_acc()
         else:
             if batch!=None:
@@ -1398,8 +1487,8 @@ class kernel:
                         try:
                             if self.nn.accuracy!=None:
                                 batch_acc=self.nn.accuracy(output,labels_batch)
-                                total_acc+=batch_acc
-                        except AttributeError:
+                        except Exception:
+                            print(traceback.format_exc())
                             pass
                 else:
                     total_loss=0
@@ -1433,7 +1522,8 @@ class kernel:
                             if self.nn.accuracy!=None:
                                 batch_acc=self.nn.accuracy(output,labels_batch)
                                 total_acc+=batch_acc
-                        except AttributeError:
+                        except Exception:
+                            print(traceback.format_exc())
                             pass
                     if shape0%batch!=0:
                         batches+=1
@@ -1450,7 +1540,8 @@ class kernel:
                                     labels_batch[i]=self.platform.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
                             else:
                                 labels_batch=self.platform.concat([test_labels[index1:],test_labels[:index2]],0)
-                        except:
+                        except Exception:
+                            print(traceback.format_exc())
                             if type(test_data)==list:
                                 for i in range(len(test_data)):
                                     data_batch[i]=self.platform.concat([test_data[i][index1:],test_data[i][:index2]],0)
@@ -1471,13 +1562,15 @@ class kernel:
                             if self.nn.accuracy!=None:
                                 batch_acc=self.nn.accuracy(output,labels_batch)
                                 total_acc+=batch_acc
-                        except AttributeError:
+                        except Exception:
+                            print(traceback.format_exc())
                             pass
                 test_loss=total_loss.numpy()/batches
                 try:
                     if self.nn.accuracy!=None:
                         test_acc=total_acc.numpy()/batches
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     pass
             else:
                 if self.thread==None or t==None:
@@ -1490,12 +1583,14 @@ class kernel:
                     if self.nn.accuracy!=None:
                         test_acc=self.nn.accuracy(output,test_labels)
                         test_acc=test_acc.numpy()
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     pass
         try:
             if self.nn.accuracy!=None:
                 return test_loss,test_acc
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             return test_loss,None
     
     
@@ -1565,7 +1660,8 @@ class kernel:
                                 print('last accuracy:{0:.6f}'.format(self.train_acc))
                             else:
                                 print('last accuracy:{0:.6f},last test accuracy:{1:.6f}'.format(self.train_acc,self.test_acc))   
-                except AttributeError:
+                except Exception:
+                    print(traceback.format_exc())
                     pass
                 print()
                 print('time:{0}s'.format(self.total_time))
@@ -1651,7 +1747,8 @@ class kernel:
                                 else:
                                     print('epoch:{0}   accuracy:{1:.6f}'.format(self.total_epoch,self.train_acc))
                                 print()
-                        except AttributeError:
+                        except Exception:
+                            print(traceback.format_exc())
                             print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
                             print()
                     else:
@@ -1663,7 +1760,8 @@ class kernel:
                                 else:
                                     print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(self.total_epoch,self.train_acc,self.test_acc))
                                 print()
-                        except AttributeError:   
+                        except Exception:
+                            print(traceback.format_exc())  
                             print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch,self.train_loss,self.test_loss))
                             print()
             if self.muti_s!=None:
@@ -1705,7 +1803,8 @@ class kernel:
         try:
             print('learning rate:{0}'.format(self.nn.lr))
             print()
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             pass
         print('time:{0:.3f}s'.format(self.total_time))
         print()
@@ -1757,7 +1856,8 @@ class kernel:
                     print('train acc:{0:.1f}'.format(self.train_acc*100))
                 else:
                     print('train acc:{0:.6f}'.format(self.train_acc)) 
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             pass
         return
     
@@ -1781,7 +1881,8 @@ class kernel:
                     print('test acc:{0:.1f}'.format(self.test_acc*100))
                 else:
                     print('test acc:{0:.6f}'.format(self.test_acc))  
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             pass
         return 
     
@@ -1809,7 +1910,8 @@ class kernel:
                     print('train acc:{0:.1f}'.format(self.train_acc*100))
                 else:
                     print('train acc:{0:.6f}'.format(self.train_acc))
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             pass
         if self.test_flag==True:        
             print()
@@ -1844,17 +1946,20 @@ class kernel:
                 del self.file_list[0]
         try:
             pickle.dump(self.nn,output_file)
-        except:
+        except Exception:
+            print(traceback.format_exc())
             opt=self.nn.opt
             self.nn.opt=None
             pickle.dump(self.nn,output_file)
             self.nn.opt=opt
         try:
             pickle.dump(self.platform.keras.optimizers.serialize(opt),output_file)
-        except:
+        except Exception:
+            print(traceback.format_exc())
             try:
                 pickle.dump(self.nn.serialize(),output_file)
-            except:
+            except Exception:
+                print(traceback.format_exc())
                 pickle.dump(None,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.end_loss,output_file)
@@ -1885,15 +1990,18 @@ class kernel:
         self.nn=pickle.load(input_file)
         try:
             self.nn.km=1
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             pass
         opt_serialized=pickle.load(input_file)
         try:
             self.nn.opt=self.platform.keras.optimizers.deserialize(opt_serialized)
-        except:
+        except Exception:
+            print(traceback.format_exc())
             try:
                 self.nn.deserialize(opt_serialized)
-            except:
+            except Exception:
+                print(traceback.format_exc())
                 pass
         self.batch=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
