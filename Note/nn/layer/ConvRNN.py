@@ -10,14 +10,14 @@ class ConvRNN:
         self.weight_list=conv_layer.weight_list+rnn_layer.weight_list
     
     
-    def output(self,inputs):
+    def output(self,data):
         # Get the number of timesteps in the input data
-        timestep=tf.shape(inputs)[1]
+        timestep=tf.shape(data)[1]
         # Create an empty list to store the convolution results for each timestep
         conv_outputs=[]
         # Perform convolution operations on the input data for each timestep and add the results to the list
         for i in range(timestep):
-            conv_output=self.conv_layer.output(inputs[:,i])
+            conv_output=self.conv_layer.output(data[:,i])
             conv_outputs.append(conv_output)
         # Convert the list to a tensor with shape [batch_size, timestep, ...]
         conv_outputs=tf.stack(conv_outputs,axis=1)
