@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+import traceback
 
 
 def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
@@ -31,7 +32,8 @@ def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
                 labels_batch=test_labels[index1:index2]
             try:
                 output=nn.fp(data_batch)
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 output=nn(data_batch)
             if loss==None:
                 batch_loss=nn.loss(output,labels_batch)
@@ -43,7 +45,8 @@ def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
                     pass
                 batch_acc=nn.accuracy(output,labels_batch)
                 total_acc+=batch_acc
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 pass
         if shape0%batch!=0:
             batches+=1
@@ -60,7 +63,8 @@ def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
                         labels_batch[i]=platform.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
                 else:
                     labels_batch=platform.concat([test_labels[index1:],test_labels[:index2]],0)
-            except:
+            except Exception:
+                print(traceback.format_exc())
                 if type(test_data)==list:
                     for i in range(len(test_data)):
                         data_batch[i]=platform.concat([test_data[i][index1:],test_data[i][:index2]],0)
@@ -73,7 +77,8 @@ def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
                     labels_batch=platform.concat([test_labels[index1:],test_labels[:index2]],0)
             try:
                 output=nn.fp(data_batch)
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 output=nn(data_batch)
             if loss==None:
                 batch_loss=nn.loss(output,labels_batch)
@@ -85,7 +90,8 @@ def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
                     pass
                 batch_acc=nn.accuracy(output,labels_batch)
                 total_acc+=batch_acc
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 pass
         test_loss=total_loss.numpy()/batches
         test_loss=test_loss.astype(np.float32)
@@ -93,12 +99,14 @@ def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
             if nn.accuracy!=None:
                 test_acc=total_acc.numpy()/batches
                 test_acc=test_acc.astype(np.float32)
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             pass
     else:
         try:
             output=nn.fp(test_data)
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             output=nn(test_data)
         if loss==None:
             test_loss=nn.loss(output,test_labels)
@@ -109,7 +117,8 @@ def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
             if nn.accuracy!=None:
                 test_acc=nn.accuracy(output,test_labels)
                 test_acc=test_acc.numpy().astype(np.float32)
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             pass
     print('test loss:{0:.6f}'.format(test_loss))
     try:
@@ -123,7 +132,8 @@ def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
             return test_loss,test_acc*100
         else:
             return test_loss,test_acc
-    except AttributeError:
+    except Exception:
+        print(traceback.format_exc())
         return test_loss
 
 
@@ -138,7 +148,8 @@ class parallel_test:
         try:
             if self.nn.accuracy!=None:
                 self.acc=np.zeros([thread],dtype=np.float32)
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
                 pass
         self.thread_num=np.arange(thread)
         self.thread_num=list(self.thread_num)
@@ -180,24 +191,29 @@ class parallel_test:
                 try:
                     output=self.nn.fp(data_batch)
                     batch_loss=self.nn.loss(output,labels_batch)
-                except TypeError:
+                except Exception:
+                    print(traceback.format_exc())
                     output,batch_loss=self.nn.fp(data_batch,labels_batch)
-            except TypeError:
+            except Exception:
+                print(traceback.format_exc())
                 try:
                     output=self.nn.fp(data_batch,t)
                     batch_loss=self.nn.loss(output,labels_batch)
-                except TypeError:
+                except Exception:
+                    print(traceback.format_exc())
                     output,batch_loss=self.nn.fp(data_batch,labels_batch,t) 
             try:
                 if self.nn.accuracy!=None:
                     batch_acc=self.nn.accuracy(output,labels_batch)
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 pass
             try:
                 if self.nn.accuracy!=None:
                     self.loss[t]+=batch_loss
                     self.acc[t]+=batch_acc
-            except AttributeError:
+            except Exception:
+                print(traceback.format_exc())
                 self.loss[t]+=batch_loss
         return
     
@@ -213,5 +229,6 @@ class parallel_test:
         try:
             if self.nn.accuracy!=None:
                 return np.mean(self.loss/batches),np.mean(self.acc/batches)
-        except AttributeError:
+        except Exception:
+            print(traceback.format_exc())
             return np.mean(self.loss/batches)
