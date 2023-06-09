@@ -87,7 +87,7 @@ class AutoGCN:
         # data: a tensor of shape [batch_size, num_nodes, num_nodes] representing the adjacency matrix of the input graph
         # return: a tensor of shape [batch_size, out_features] representing the output features of the input graph
         structure=self.structure_function(data) # compute the structure features of the input graph by applying structure function to adjacency matrix 
-        kernel=self.kernel_function(structure) # compute the kernel size and shape by applying kernel function to structure features 
+        kernel=self.kernel_function.output(structure) # compute the kernel size and shape by applying kernel function to structure features 
         weight,bias=self.init_function(data) # initialize kernel weight and bias by applying init function to adjacency matrix 
         output=self.gcn_function(data,kernel) # compute output features by applying gcn function to adjacency matrix and kernel vector 
         if self.activation is not None:
