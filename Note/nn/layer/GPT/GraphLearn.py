@@ -78,9 +78,9 @@ class GraphLearn:
         # data: a tensor of shape [batch_size, num_nodes, in_features]
         # return: a tensor of shape [batch_size, num_nodes, out_features]
         similarity=self.similarity_function(data,data) # compute the similarity matrix between each pair of nodes using the similarity function
-        adjacency=tf.cast(similarity > self.threshold,self.dtype) # compute the adjacency matrix by applying a threshold to the similarity matrix and casting it to the same data type as input features
+        adjacency=tf.cast(similarity>self.threshold,self.dtype) # compute the adjacency matrix by applying a threshold to the similarity matrix and casting it to the same data type as input features
         weight=self.weight_function(data, data) # compute a weight matrix between each pair of nodes using the weight function
-        if self.norm == 'right':
+        if self.norm=='right':
             adjacency=tf.divide(adjacency,tf.reduce_sum(adjacency,axis=-1,keepdims=True)+1e-10) # normalize the adjacency matrix by dividing each row by its sum (right normalization) and add a small constant to avoid division by zero
         elif self.norm=='left':
             adjacency=tf.divide(adjacency,tf.reduce_sum(adjacency,axis=-2,keepdims=True)+1e-10) # normalize the adjacency matrix by dividing each column by its sum (left normalization) and add a small constant to avoid division by zero
