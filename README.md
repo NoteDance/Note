@@ -332,7 +332,6 @@ https://github.com/NoteDancing/Note-documentation
 
 
 # Layer:
-
 https://github.com/NoteDancing/Note/tree/Note-7.0-pv/Note/nn/layer
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
@@ -352,6 +351,12 @@ kernel.platform=tf                       #use platform
 kernel.data(x_train,y_train)   #input you data
 kernel.train(32,5)         #train neural network
 ```
+
+
+# GPT:
+**Layers in the GPT directory created by GPT**
+
+https://github.com/NoteDancing/Note/tree/Note-7.0-pv/Note/nn/layer/GPT
 
 
 # Patreon:
