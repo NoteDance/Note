@@ -17,7 +17,12 @@ class ESN:
         self.kernel=i.initializer(weight_shape, weight_initializer, dtype) # shape: (input_dim, hidden_size)
         # Initialize the hidden-to-hidden weight matrix with sparse and random values
         recurrent_weights=tf.random.uniform((self.units, self.units),minval=-1.0,maxval=1.0) # shape: (hidden_size, hidden_size)
-        recurrent_weights[tf.random.uniform((self.units,self.units))>self.connectivity]=0
+        # Convert the recurrent weights to a numpy array
+        recurrent_weights = recurrent_weights.numpy()
+        # Set the values that are below the connectivity threshold to zero
+        recurrent_weights[np.random.uniform(size=(self.units,self.units))>self.connectivity]=0
+        # Convert the recurrent weights back to a tensor
+        recurrent_weights = tf.convert_to_tensor(recurrent_weights)
         # Scale the recurrent weights to satisfy the echo state property
         if self.use_norm2:
           # Use the p-norm as an upper bound of the spectral radius
