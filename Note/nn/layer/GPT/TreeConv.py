@@ -15,7 +15,7 @@ Computer vision, such as segmenting images or detecting objects
 Bioinformatics, such as analyzing protein structures or phylogenetic trees
 '''
 class TreeConv:
-    def __init__(self,in_features,out_features,activation=None,weight_initializer='Xavier',bias_initializer='zero',dtype='float32',use_bias=True):
+    def __init__(self,in_features,out_features,activation=None,weight_initializer='Xavier',bias_initializer='zeros',dtype='float32',use_bias=True):
         # initialize the tree convolution layer with some parameters 
         # in_features: the size of the input features
         # out_features: the size of the output features
