@@ -53,7 +53,7 @@ class ESN:
         # Create an empty list to store the outputs
         outputs=[]
         # Loop over the time steps of the input sequence
-        for t in range(tf.shape(data)[1]):
+        for t in range(data.shape[1]):
             # Get the input at time t
             input_t=data[:,t,:] # shape: (batch_size ,input_dim)
             # Compute the new hidden state using the ESN equation
