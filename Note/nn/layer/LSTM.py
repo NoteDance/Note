@@ -3,7 +3,7 @@ import Note.nn.initializer as i
 
 
 class LSTM:
-    def __init__(self,weight_shape,weight_initializer='Xavier',bias_initializer='zero',dtype='float32',return_sequence=False,use_bias=True,activation1=tf.nn.sigmoid,activation2=tf.nn.tanh):
+    def __init__(self,weight_shape,weight_initializer='Xavier',bias_initializer='zeros',dtype='float32',return_sequence=False,use_bias=True,activation1=tf.nn.sigmoid,activation2=tf.nn.tanh):
         self.weight_i1=i.initializer(weight_shape,weight_initializer,dtype)
         self.weight_i2=i.initializer(weight_shape,weight_initializer,dtype)
         self.weight_f1=i.initializer(weight_shape,weight_initializer,dtype)
