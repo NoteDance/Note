@@ -28,7 +28,7 @@ class GRU:
     
     
     def output(self,data):
-        timestep=tf.shape(data)[1]
+        timestep=data.shape[1]
         if self.use_bias==True:
             for j in range(timestep):
                 R=self.activation1(tf.matmul(data[:][:,j],self.weight_r1)+tf.matmul(self.state,self.weight_r2)+self.bias_r)
