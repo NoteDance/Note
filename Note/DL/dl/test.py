@@ -150,7 +150,7 @@ class parallel_test:
                 self.acc=np.zeros([thread],dtype=np.float32)
         except Exception:
             print(traceback.format_exc())
-                pass
+            pass
         self.thread_num=np.arange(thread)
         self.thread_num=list(self.thread_num)
     
