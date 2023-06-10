@@ -4,7 +4,7 @@ from Note.nn.activation import activation_dict
 
 
 class sparse_attention:
-    def __init__(self,input_dim,output_dim,num_heads,weight_initializer='Xavier',bias_initializer='zero',activation='relu',dtype='float32',use_bias=True):
+    def __init__(self,input_dim,output_dim,num_heads,weight_initializer='Xavier',bias_initializer='zeros',activation='relu',dtype='float32',use_bias=True):
         # input_dim: the dimension of the input features
         # output_dim: the dimension of the output features
         # num_heads: the number of attention heads to use
