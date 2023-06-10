@@ -21,7 +21,7 @@ class RNN:
     
     
     def output(self,data):
-        timestep=tf.shape(data)[1]
+        timestep=data.shape[1]
         if self.use_bias==True:
             for j in range(timestep):
                 output=self.activation(tf.matmul(data[:][:,j],self.weight_i)+tf.matmul(self.state,self.weight_s)+self.bias)
