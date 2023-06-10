@@ -13,7 +13,7 @@ implement the lstm recurrence. The layer can also apply
 an activation function to the output features if specified.
 '''
 class AutoLSTM:
-    def __init__(self,in_features,out_features,length_function=None,dimension_function=None,init_function=None,lstm_function=None,activation=None,weight_initializer='Xavier',bias_initializer='zero',dtype='float32',use_bias=True):
+    def __init__(self,in_features,out_features,length_function=None,dimension_function=None,init_function=None,lstm_function=None,activation=None,weight_initializer='Xavier',bias_initializer='zeros',dtype='float32',use_bias=True):
         # initialize the auto lstm layer with some parameters 
         # in_features: the size of the input features
         # out_features: the size of the output features
