@@ -4,7 +4,7 @@ from Note.nn.activation import activation_dict
 
 
 class GCN:
-    def __init__(self,input_dim,output_dim,weight_initializer='Xavier',bias_initializer='zero',activation=None,dtype='float32',use_bias=True):
+    def __init__(self,input_dim,output_dim,weight_initializer='Xavier',bias_initializer='zeros',activation=None,dtype='float32',use_bias=True):
         # input_dim: the dimension of the input node features
         # output_dim: the dimension of the output node features
         # activation: the activation function, default is None
