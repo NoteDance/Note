@@ -2,7 +2,7 @@ import numpy as np
 import traceback
 
 
-def test(nn,platform,action_num=None):
+def check(nn,platform,action_num=None):
     s=nn.env(initial=True)
     try:
         if nn.nn!=None:
