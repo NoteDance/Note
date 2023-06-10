@@ -12,7 +12,7 @@ class ConvRNN:
     
     def output(self,data):
         # Get the number of timesteps in the input data
-        timestep=tf.shape(data)[1]
+        timestep=data.shape[1]
         # Create an empty list to store the convolution results for each timestep
         conv_outputs=[]
         # Perform convolution operations on the input data for each timestep and add the results to the list
