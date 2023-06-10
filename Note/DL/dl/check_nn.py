@@ -1,7 +1,7 @@
 import traceback
 
 
-def test(nn,platform,data,labels):
+def check(nn,platform,data,labels):
     try:
         if platform.DType!=None:
             try:
