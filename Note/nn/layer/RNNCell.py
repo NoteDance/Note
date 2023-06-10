@@ -6,7 +6,7 @@ from Note.nn.activation import activation_dict
 class RNNCell:
     def __init__(self,weight_shape,weight_initializer='Xavier',bias_initializer='zeros',activation=None,dtype='float32',use_bias=True):
         self.weight_i=i.initializer(weight_shape,weight_initializer,dtype)
-        self.weight_s=i.initializer(weight_shape,weight_initializer,dtype)
+        self.weight_s=i.initializer([weight_shape[1],weight_shape[1]],weight_initializer,dtype)
         if use_bias==True:
             self.bias=i.initializer([weight_shape[1]],bias_initializer,dtype)
         self.activation=activation_dict[activation]
