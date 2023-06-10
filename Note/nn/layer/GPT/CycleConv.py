@@ -15,7 +15,7 @@ Music generation, such as creating melodies or rhythms
 Graph neural networks, such as learning cycle representations or cycle classification
 '''
 class CycleConv:
-    def __init__(self,in_features,out_features,kernel_size,activation=None,weight_initializer='Xavier',bias_initializer='zero',dtype='float32',use_bias=True):
+    def __init__(self,in_features,out_features,kernel_size,activation=None,weight_initializer='Xavier',bias_initializer='zeros',dtype='float32',use_bias=True):
         # initialize the cycle convolution layer with some parameters 
         # in_features: the size of the input features
         # out_features: the size of the output features
