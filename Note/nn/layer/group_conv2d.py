@@ -4,7 +4,7 @@ from Note.nn.initializer import initializer
 
 
 class group_conv2d:
-    def __init__(self,weight_shape,num_groups,weight_initializer='Xavier',bias_initializer='zero',activation=None,dtype='float32',use_bias=True):
+    def __init__(self,weight_shape,num_groups,weight_initializer='Xavier',bias_initializer='zeros',activation=None,dtype='float32',use_bias=True):
         self.num_groups=num_groups
         self.weight=[]
         self.bias=[]
