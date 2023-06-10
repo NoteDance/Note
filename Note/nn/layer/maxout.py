@@ -3,7 +3,7 @@ import Note.nn.initializer as i
 
 
 class maxout:
-    def __init__(self,input_dim,output_dim,num_units,weight_initializer='Xavier',bias_initializer='zero',dtype='float32',use_bias=True):
+    def __init__(self,input_dim,output_dim,num_units,weight_initializer='Xavier',bias_initializer='zeros',dtype='float32',use_bias=True):
         # input_dim: the dimension of the input features
         # output_dim: the dimension of the output features
         # num_units: the number of linear units per output unit
