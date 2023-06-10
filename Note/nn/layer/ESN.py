@@ -5,7 +5,7 @@ from Note.nn.activation import activation_dict
 
 
 class ESN:
-    def __init__(self,weight_shape,connectivity=0.1,leaky=1.0,spectral_radius=0.9,use_norm2=False,use_bias=True,activation='tanh',weight_initializer='Xavier',bias_initializer='zero',dtype='float32'):
+    def __init__(self,weight_shape,connectivity=0.1,leaky=1.0,spectral_radius=0.9,use_norm2=False,use_bias=True,activation='tanh',weight_initializer='Xavier',bias_initializer='zeros',dtype='float32'):
         self.units=weight_shape[1] # number of hidden units
         self.connectivity=connectivity # connection probability between two hidden units
         self.leaky=leaky # leaking rate of the reservoir
