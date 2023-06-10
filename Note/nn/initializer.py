@@ -12,9 +12,9 @@ def initializer(shape,initializer,dtype):
             param=tf.Variable(tf.random.normal(shape=shape,dtype=dtype))
         elif initializer=='uniform':
             param=tf.Variable(tf.random.uniform(shape=shape,maxval=0.01,dtype=dtype))
-        elif initializer=='zero':
+        elif initializer=='zeros':
             param=tf.Variable(tf.zeros(shape=shape,dtype=dtype))
-        elif initializer=='xavier':
+        elif initializer=='Xavier':
             fan_in=shape[0]
             fan_out=shape[1] if len(shape)>1 else 1
             scale=tf.sqrt(2.0/(fan_in+fan_out))
