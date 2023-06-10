@@ -11,7 +11,7 @@ The graph function can be customized by the user or use a default linear transfo
 The layer can also apply an activation function to the output features if specified.
 '''
 class GraphLearn:
-    def __init__(self,in_features,out_features,similarity_function=None,weight_function=None,aggregate_function=None,activation=None,threshold=0.5,norm='both',weight_initializer='Xavier',bias_initializer='zero',similarity_initializer='Xavier',dtype='float32',use_bias=True):
+    def __init__(self,in_features,out_features,similarity_function=None,weight_function=None,aggregate_function=None,activation=None,threshold=0.5,norm='both',weight_initializer='Xavier',bias_initializer='zeros',similarity_initializer='Xavier',dtype='float32',use_bias=True):
         # initialize the graph learn layer with some parameters 
         # in_features: the size of the input features
         # out_features: the size of the output features
@@ -65,7 +65,7 @@ class GraphLearn:
     
     
     def aggregate(self,x):
-        output = tf.matmul(x,self.aggregate_weight) # apply a linear transformation to x using the aggregate weight matrix 
+        output=tf.matmul(x,self.aggregate_weight) # apply a linear transformation to x using the aggregate weight matrix 
         if self.use_bias:
             output=output+self.aggregate_bias # add a bias vector to output 
         if self.activation is not None:
@@ -79,7 +79,7 @@ class GraphLearn:
         # return: a tensor of shape [batch_size, num_nodes, out_features]
         similarity=self.similarity_function(data,data) # compute the similarity matrix between each pair of nodes using the similarity function
         adjacency=tf.cast(similarity>self.threshold,self.dtype) # compute the adjacency matrix by applying a threshold to the similarity matrix and casting it to the same data type as input features
-        weight=self.weight_function(data, data) # compute a weight matrix between each pair of nodes using the weight function
+        weight=self.weight_function(data,data) # compute a weight matrix between each pair of nodes using the weight function
         if self.norm=='right':
             adjacency=tf.divide(adjacency,tf.reduce_sum(adjacency,axis=-1,keepdims=True)+1e-10) # normalize the adjacency matrix by dividing each row by its sum (right normalization) and add a small constant to avoid division by zero
         elif self.norm=='left':
