@@ -4,7 +4,7 @@ from Note.nn.activation import activation_dict
 
 
 class GAT:
-    def __init__(self,input_dim,output_dim,num_heads,weight_initializer='Xavier',bias_initializer='zero',activation=None,dtype='float32',use_bias=True):
+    def __init__(self,input_dim,output_dim,num_heads,weight_initializer='Xavier',bias_initializer='zeros',activation=None,dtype='float32',use_bias=True):
         # input_dim: the dimension of the input node features
         # output_dim: the dimension of the output node features
         # num_heads: the number of attention heads
