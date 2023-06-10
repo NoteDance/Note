@@ -4,7 +4,7 @@ import Note.nn.initializer as i
 
 
 class separable_conv2d:
-    def __init__(self,weight_shape,weight_initializer='Xavier',bias_initializer='zero',activation=None,dtype='float32',use_bias=True):
+    def __init__(self,weight_shape,weight_initializer='Xavier',bias_initializer='zeros',activation=None,dtype='float32',use_bias=True):
         self.weight_D=i.initializer(weight_shape+[1],weight_initializer,dtype)
         self.weight_P=i.initializer([1,1,weight_shape[-1],weight_shape[-1]],weight_initializer,dtype)
         if use_bias==True:
