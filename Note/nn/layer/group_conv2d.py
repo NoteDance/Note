@@ -8,6 +8,7 @@ class group_conv2d:
         self.num_groups=num_groups
         self.weight=[]
         self.bias=[]
+        self.num_groups=num_groups if weight_shape[-2]%num_groups==0 else 1
         for i in range(num_groups):
             self.weight.append(initializer(weight_shape[:-1]+[weight_shape[-1]//num_groups],weight_initializer,dtype))
             if use_bias==True:
