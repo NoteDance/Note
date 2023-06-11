@@ -25,21 +25,21 @@ class capsule:
     def output(self,data):
         # define the output function to compute the output capsules from the input data
         # check the dimension of the input data
-        if len(data.shape) == 4: # four-dimensional data
+        if len(data.shape)==4: # four-dimensional data
             # reshape the data to [batch_size, height * width * channels, input_dim_capsules]
-            data = tf.reshape(data, [self.batch_size, -1, self.input_dim_capsules])
+            data = tf.reshape(data,[self.batch_size,-1,self.input_dim_capsules])
             # update the input_num_capsules accordingly
-            self.input_num_capsules = data.shape[1]
+            self.input_num_capsules=data.shape[1]
         elif len(data.shape) == 3: # three-dimensional data
             # no need to reshape the data
             pass
         elif len(data.shape) == 2: # two-dimensional data
             # reshape the data to [batch_size, 1, input_dim_capsules]
-            data = tf.expand_dims(data, axis=1)
+            data = tf.expand_dims(data,axis=1)
             # update the input_num_capsules accordingly
-            self.input_num_capsules = 1
+            self.input_num_capsules=1
         else:
-            raise ValueError("Unsupported input shape: {}".format(data.shape))
+            raise ValueError("Unsupported input shape:{}".format(data.shape))
         data_reshape=tf.reshape(data,[self.batch_size*self.input_num_capsules,self.input_dim_capsules]) # reshape the data to [batch_size * input_num_capsules, input_dim_capsules]
         data_hat=tf.matmul(data_reshape,self.weight) # multiply the data by the weight matrix to get the predictions for output capsules
         data_hat=tf.reshape(data_hat,[self.batch_size,self.input_num_capsules,self.num_capsules,self.dim_capsules]) # reshape the predictions to [batch_size, input_num_capsules, num_capsules, dim_capsules]
