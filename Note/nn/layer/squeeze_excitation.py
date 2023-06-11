@@ -29,9 +29,11 @@ class squeeze_excitation:
     
     
     def output(self,data):
-        # data: a tensor that represents the input features, shape is [N, input_dim], where N is the number of samples
+        # data: a tensor that represents the input features, shape is [N, H, W, C], where N is the number of samples, H is the height, W is the width, and C is the channel number
+        # fix the axis parameter to [1,2] for 4D data
+        axis=[1,2]
         # compute the global average pooling of the input features
-        squeeze_output=tf.reduce_mean(data,axis=[1,2])
+        squeeze_output=tf.reduce_mean(data,axis=axis)
         # compute the squeeze operation and apply activation function
         squeeze_output=tf.matmul(squeeze_output,self.weight_S)
         squeeze_output=tf.nn.bias_add(squeeze_output,self.bias_S)
@@ -40,8 +42,9 @@ class squeeze_excitation:
         excitation_output=tf.matmul(squeeze_output,self.weight_E)
         excitation_output=tf.nn.bias_add(excitation_output,self.bias_E)
         excitation_output=tf.nn.sigmoid(excitation_output)
-        # reshape the excitation output to match the input shape
+        # reshape the excitation output to match the input shape of [N, 1, 1, C]
         excitation_output=tf.reshape(excitation_output,[-1,1,1,self.output_dim])
         # compute the output as a scaled version of the input features
         output=data*excitation_output
+        # return the output data
         return output
