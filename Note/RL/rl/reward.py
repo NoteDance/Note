@@ -29,10 +29,9 @@ class reward:
                         s=self.platform.tensor(s,dtype=self.platform.float).to(self.agent.device)
                         a=self.agent.nn(s).detach().numpy().argmax()
                 except Exception as e:
-                    first_exception=e
                     try:
                         if self.agent.nn!=None:
-                            raise first_exception
+                            raise e
                     except Exception:
                         try:
                             try:
@@ -84,10 +83,9 @@ class reward:
                         s=self.platform.tensor(s,dtype=self.platform.float).to(self.agent.device)
                         a=self.agent.nn(s).detach().numpy().argmax()
                 except Exception as e:
-                    first_exception=e
                     try:
                        if self.agent.nn!=None:
-                           raise first_exception
+                           raise e
                     except Exception:
                         try:
                             try:
