@@ -1,5 +1,5 @@
 import tensorflow as tf
-from Note.nn.initializer import i
+import Note.nn.initializer as i
 from Note.nn.activation import activation_dict
 
 
