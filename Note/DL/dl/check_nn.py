@@ -1,6 +1,3 @@
-import traceback
-
-
 def check(nn,platform,data,labels):
     try:
         if platform.DType!=None:
