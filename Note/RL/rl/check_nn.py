@@ -17,10 +17,9 @@ def check(nn,platform,action_num=None):
                 a=np.random.choice(action_num)
             next_s,r,done=nn.env(a)
     except Exception as e:
-        first_exception=e
         try:
             if nn.action!=None:
-                raise first_exception
+                raise e
         except Exception as e:
             try:
                 s=np.expand_dims(s,axis=0)
@@ -60,10 +59,9 @@ def check(nn,platform,action_num=None):
                     nn.opt.apply_gradients(zip(actor_gradient,nn.param[0]))
                     nn.opt.apply_gradients(zip(critic_gradient,nn.param[1]))
     except Exception as e:
-        first_exception=e
         try:
             if platform.DType!=None: 
-                raise first_exception
+                raise e
         except Exception as e:
             try:
                 loss=nn.loss(s,a,next_s,r,done)
