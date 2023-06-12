@@ -3,7 +3,6 @@ from tensorflow.python.ops import state_ops
 from multiprocessing import Value,Array
 import numpy as np
 import matplotlib.pyplot as plt
-import traceback
 import pickle
 import os
 
@@ -14,7 +13,6 @@ class kernel:
         try:
             self.nn.km=1
         except Exception:
-            print(traceback.format_exc())
             pass
         self.PO=None
         self.process=None
@@ -75,7 +73,6 @@ class kernel:
             if self.nn.accuracy!=None:
                 self.total_acc=np.zeros(self.process,dtype=np.float32)
         except Exception:
-            print(traceback.format_exc())
             pass
         if self.priority_flag==True:
             self.opt_counter=np.zeros(self.process,dtype=np.int32)
@@ -138,7 +135,6 @@ class kernel:
                     self.test_acc=Value('f',self.test_acc)
                     self.test_acc_list=manager.list(self.test_acc_list)
         except Exception:
-            print(traceback.format_exc())  
             pass
         if self.priority_flag==True:
             self.opt_counter=Array('i',self.opt_counter)  
@@ -146,17 +142,14 @@ class kernel:
             if self.nn.attenuate!=None:
               self.nn.opt_counter=manager.list([self.nn.opt_counter])  
         except Exception:
-            print(traceback.format_exc())   
             pass
         try:
             self.nn.ec=manager.list([self.nn.ec])  
         except Exception:
-            print(traceback.format_exc())
             pass
         try:
             self.nn.bc=manager.list([self.nn.bc])
         except Exception:
-            print(traceback.format_exc())
             pass
         self.stop_flag=Value('b',self.stop_flag)
         self.save_flag=Value('b',self.save_flag)
@@ -186,24 +179,21 @@ class kernel:
         try:
             if self.nn.GradientTape!=None:
                 tape,output,loss=self.nn.GradientTape(data,labels,p)
-        except Exception:
-            print(traceback.format_exc())
+        except Exception as e:
+            first_exception=e
             with tf.GradientTape(persistent=True) as tape:
                 try:
-                    try:
-                        output=self.nn.fp(data)
-                        loss=self.nn.loss(output,labels)
-                    except Exception:
-                        print(traceback.format_exc())
-                        output,loss=self.nn.fp(data,labels)
-                except Exception:
-                    print(traceback.format_exc())
+                    output=self.nn.fp(data)
+                    loss=self.nn.loss(output,labels)
+                except Exception as e:
+                    second_exception=e
                     try:
                         output=self.nn.fp(data,p)
                         loss=self.nn.loss(output,labels)
-                    except Exception:
-                        print(traceback.format_exc())
-                        output,loss=self.nn.fp(data,labels,p)
+                    except Exception as e:
+                        raise e
+                        raise second_exception
+                        raise first_exception
         if self.PO==1:
             if self.priority_flag==True and self.priority_p.value!=-1:
                 while True:
@@ -218,22 +208,31 @@ class kernel:
                 try:
                     gradient=self.nn.gradient(tape,loss)
                 except Exception:
-                    print(traceback.format_exc())
                     gradient=self.nn.gradient(tape,loss,self.param[7])
-            except Exception:
-                print(traceback.format_exc())
-                gradient=tape.gradient(loss,self.nn.param)
+            except Exception as e:
+                first_exception=e
+                try:
+                    gradient=tape.gradient(loss,self.nn.param)
+                except Exception as e:
+                    raise e
+                    raise first_exception
             try:
-                if self.nn.attenuate!=None:
-                    gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
-            except Exception:
-                print(traceback.format_exc())
-                pass
+                gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
+            except Exception as e:
+                try:
+                    if self.nn.attenuate!=None:
+                        raise e
+                except Exception:
+                    pass
             try:
                 param=self.nn.opt(gradient)
-            except Exception:
-                print(traceback.format_exc())
-                param=self.nn.opt(gradient,p)
+            except Exception as e:
+                first_exception=e
+                try:
+                    param=self.nn.opt(gradient,p)
+                except Exception as e:
+                    raise e
+                    raise first_exception
             lock[0].release()
         elif self.PO==2:
             lock[0].acquire()
@@ -243,11 +242,14 @@ class kernel:
                 try:
                     gradient=self.nn.gradient(tape,loss)
                 except Exception:
-                    print(traceback.format_exc())
                     gradient=self.nn.gradient(tape,loss,self.param[7])
-            except Exception:
-                print(traceback.format_exc())
-                gradient=tape.gradient(loss,self.nn.param)
+            except Exception as e:
+                first_exception=e
+                try:
+                    gradient=tape.gradient(loss,self.nn.param)
+                except Exception as e:
+                    raise e
+                    raise first_exception
             lock[0].release()
             if self.priority_flag==True and self.priority_p.value!=-1:
                 while True:
@@ -259,16 +261,22 @@ class kernel:
             if self.stop_func_(lock[1]):
                 return None,0
             try:
-                if self.nn.attenuate!=None:
-                    gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
-            except Exception:
-                print(traceback.format_exc())
-                pass
+                gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
+            except Exception as e:
+                try:
+                   if self.nn.attenuate!=None: 
+                       raise e
+                except Exception:
+                    pass
             try:
                 param=self.nn.opt(gradient)
-            except Exception:
-                print(traceback.format_exc())
-                param=self.nn.opt(gradient,p)
+            except Exception as e:
+                first_exception=e
+                try:
+                    param=self.nn.opt(gradient,p)
+                except Exception as e:
+                    raise e
+                    raise first_exception
             lock[1].release()
         elif self.PO==3:
             g_lock[ln].acquire()
@@ -278,11 +286,14 @@ class kernel:
                 try:
                     gradient=self.nn.gradient(tape,loss)
                 except Exception:
-                    print(traceback.format_exc())
                     gradient=self.nn.gradient(tape,loss,self.param[7])
-            except Exception:
-                print(traceback.format_exc())
-                gradient=tape.gradient(loss,self.nn.param)
+            except Exception as e:
+                first_exception=e
+                try:
+                    gradient=tape.gradient(loss,self.nn.param)
+                except Exception as e:
+                    raise e
+                    raise first_exception
             g_lock[ln].release()
             if self.priority_flag==True and self.priority_p.value!=-1:
                 while True:
@@ -294,16 +305,22 @@ class kernel:
             if self.stop_func_(lock[0]):
                 return None,0
             try:
-                if self.nn.attenuate!=None:
-                    gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
-            except Exception:
-                print(traceback.format_exc())
-                pass
+                gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
+            except Exception as e:
+                try:
+                    if self.nn.attenuate!=None:
+                        raise e
+                except Exception:
+                    pass
             try:
                 param=self.nn.opt(gradient)
-            except Exception:
-                print(traceback.format_exc())
-                param=self.nn.opt(gradient,p)
+            except Exception as e:
+                first_exception=e
+                try:
+                    param=self.nn.opt(gradient,p)
+                except Exception as e:
+                    raise e
+                    raise first_exception
             lock[0].release()
         return output,loss,param
     
@@ -335,11 +352,13 @@ class kernel:
         while True:
             for data_batch,labels_batch in train_ds:
                 try:
-                    if self.nn.data_func!=None:
-                        data_batch,labels_batch=self.nn.data_func(data_batch,labels_batch)
-                except Exception:
-                    print(traceback.format_exc())
-                    pass
+                    data_batch,labels_batch=self.nn.data_func(data_batch,labels_batch)
+                except Exception as e:
+                    try:
+                        if self.nn.data_func!=None:
+                            raise e
+                    except Exception:
+                        pass
                 if self.priority_flag==True:
                     self.priority_p.value=np.argmax(self.opt_counter)
                     if self.max_opt!=None and self.opt_counter[self.priority_p.value]>=self.max_opt:
@@ -351,45 +370,49 @@ class kernel:
                 if self.priority_flag==True:
                     self.opt_counter[p]=0
                 try:
-                    if self.nn.attenuate!=None:
-                        opt_counter=self.nn.opt_counter[0]
-                        opt_counter.scatter_update(tf.IndexedSlices(0,p))
-                        self.nn.opt_counter[0]=opt_counter
-                except Exception:
-                    print(traceback.format_exc())
-                    pass
+                    opt_counter=self.nn.opt_counter[0]
+                    opt_counter.scatter_update(tf.IndexedSlices(0,p))
+                    self.nn.opt_counter[0]=opt_counter
+                except Exception as e:
+                    try:
+                       if self.nn.attenuate!=None:
+                           raise e
+                    except Exception:
+                        pass
                 output,batch_loss,param=self.opt_t(data_batch,labels_batch,p,lock,g_lock)
                 self.param[7]=param
                 if self.priority_flag==True:
                     opt_counter=np.frombuffer(self.opt_counter.get_obj(),dtype='i')
                     opt_counter+=1
                 try:
-                    if self.nn.attenuate!=None:
-                        opt_counter=self.nn.opt_counter[0]
-                        opt_counter.assign(opt_counter+1)
-                        self.nn.opt_counter[0]=opt_counter
-                except Exception:
-                    print(traceback.format_exc())
-                    pass
+                    opt_counter=self.nn.opt_counter[0]
+                    opt_counter.assign(opt_counter+1)
+                    self.nn.opt_counter[0]=opt_counter
+                except Exception as e:
+                    try:
+                       if self.nn.attenuate!=None:
+                           raise e
+                    except Exception:
+                        pass
                 try:
                     bc=self.nn.bc[0]
                     bc.assign_add(1)
                     self.nn.bc[0]=bc
                 except Exception:
-                    print(traceback.format_exc())
                     pass
                 try:
-                    if self.nn.accuracy!=None:
-                        batch_acc=self.nn.accuracy(output,labels_batch)
-                except Exception:
-                    print(traceback.format_exc())
-                    pass
+                    batch_acc=self.nn.accuracy(output,labels_batch)
+                except Exception as e:
+                    try:
+                        if self.nn.accuracy!=None:
+                           raise e
+                    except Exception:
+                       pass
                 try:
                     if self.nn.accuracy!=None:
                         self.total_loss[p]+=batch_loss
                         self.total_acc[p]+=batch_acc
                 except Exception:
-                    print(traceback.format_exc())
                     self.total_loss[p]+=batch_loss
                 self.batch_counter[p]+=1
                 if self.PO==1 or self.PO==3:
@@ -405,7 +428,6 @@ class kernel:
                         if self.nn.accuracy!=None:
                             train_acc=np.sum(self.total_acc)/batches
                     except Exception:
-                        print(traceback.format_exc())
                         pass
                     self.total_epoch.value+=1
                     self.train_loss.value=loss
@@ -415,7 +437,6 @@ class kernel:
                             self.train_acc.value=train_acc
                             self.train_acc_list.append(train_acc)
                     except Exception:
-                        print(traceback.format_exc())
                         pass
                     if self.test_flag==True:
                         self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch,p)
@@ -424,7 +445,6 @@ class kernel:
                         if self.nn.accuracy!=None:
                             self.test_acc_list.append(self.test_acc)
                     except Exception:
-                        print(traceback.format_exc())
                         pass
                     self.print_save()
                     self.epoch_counter.value+=1
@@ -433,17 +453,18 @@ class kernel:
                         ec.assign_add(1)
                         self.nn.ec[0]=ec
                     except Exception:
-                        print(traceback.format_exc())
                         pass
                     total_loss=np.frombuffer(self.total_loss.get_obj(),dtype='f')
                     total_loss*=0
                     try:
-                        if self.nn.accuracy!=None:
-                            total_acc=np.frombuffer(self.total_acc.get_obj(),dtype='f')
-                            total_acc*=0
-                    except Exception:
-                        print(traceback.format_exc())
-                        pass
+                        total_acc=np.frombuffer(self.total_acc.get_obj(),dtype='f')
+                        total_acc*=0
+                    except Exception as e:
+                        try:
+                            if self.nn.accuracy!=None:
+                                raise e
+                        except Exception:
+                            pass
                 if self.PO==1 or self.PO==3:
                     lock[1].release()
                 else:
@@ -483,18 +504,24 @@ class kernel:
                 for data_batch,labels_batch in self.test_dataset:
                     try:
                         output=self.nn.fp(data_batch)
-                    except Exception:
-                        print(traceback.format_exc())
-                        output=self.nn.fp(data_batch,p)
+                    except Exception as e:
+                        first_exception=e
+                        try:
+                            output=self.nn.fp(data_batch,p)
+                        except Exception as e:
+                            raise e
+                            raise first_exception
                     batch_loss=self.nn.loss(output,labels_batch)
                     total_loss+=batch_loss
                     try:
-                        if self.nn.accuracy!=None:
-                            batch_acc=self.nn.accuracy(output,labels_batch)
-                            total_acc+=batch_acc
-                    except Exception:
-                        print(traceback.format_exc())
-                        pass
+                        batch_acc=self.nn.accuracy(output,labels_batch)
+                        total_acc+=batch_acc
+                    except Exception as e:
+                        try:
+                           if self.nn.accuracy!=None:
+                               raise e
+                        except Exception:
+                            pass
             else:
                 total_loss=0
                 total_acc=0
@@ -511,70 +538,81 @@ class kernel:
                         labels_batch=test_labels[index1:index2]
                     try:
                         output=self.nn.fp(data_batch)
-                    except Exception:
-                        print(traceback.format_exc())
-                        output=self.nn.fp(data_batch,p)
+                    except Exception as e:
+                        first_exception=e
+                        try:
+                            output=self.nn.fp(data_batch,p)
+                        except Exception:
+                            raise e
+                            raise first_exception
                     batch_loss=self.nn.loss(output,labels_batch)
                     total_loss+=batch_loss
                     try:
-                        if self.nn.accuracy!=None:
-                            batch_acc=self.nn.accuracy(output,labels_batch)
-                            total_acc+=batch_acc
-                    except Exception:
-                        print(traceback.format_exc())
-                        pass
+                        batch_acc=self.nn.accuracy(output,labels_batch)
+                        total_acc+=batch_acc
+                    except Exception as e:
+                        try:
+                            if self.nn.accuracy!=None:
+                                raise e
+                        except Exception:
+                            pass
                 if shape0%batch!=0:
                     batches+=1
                     index1=batches*batch
                     index2=batch-(shape0-batches*batch)
-                    try:
-                        data_batch=tf.concat([test_data[index1:],test_data[:index2]],0)
-                        labels_batch=tf.concat([test_labels[index1:],test_labels[:index2]],0)
-                    except Exception:
-                        print(traceback.format_exc())
-                        data_batch=tf.concat([test_data[index1:],test_data[:index2]],0)
-                        labels_batch=tf.concat([test_labels[index1:],test_labels[:index2]],0)
+                    data_batch=tf.concat([test_data[index1:],test_data[:index2]],0)
+                    labels_batch=tf.concat([test_labels[index1:],test_labels[:index2]],0)
                     try:
                         output=self.nn.fp(data_batch)
-                    except Exception:
-                        print(traceback.format_exc())
-                        output=self.nn.fp(data_batch,p)
+                    except Exception as e:
+                        first_exception=e
+                        try:
+                            output=self.nn.fp(data_batch,p)
+                        except Exception as e:
+                            raise e
+                            raise first_exception
                     batch_loss=self.nn.loss(output,labels_batch)
                     total_loss+=batch_loss
                     try:
-                        if self.nn.accuracy!=None:
-                            batch_acc=self.nn.accuracy(output,labels_batch)
-                            total_acc+=batch_acc
-                    except Exception:
-                        print(traceback.format_exc())
-                        pass
+                        batch_acc=self.nn.accuracy(output,labels_batch)
+                        total_acc+=batch_acc
+                    except Exception as e:
+                        try:
+                            if self.nn.accuracy!=None:
+                                raise e
+                        except Exception:
+                            pass
             test_loss=total_loss.numpy()/batches
             try:
                 if self.nn.accuracy!=None:
                     test_acc=total_acc.numpy()/batches
             except Exception:
-                print(traceback.format_exc())
                 pass
         else:
             try:
                 output=self.nn.fp(test_data)
-            except Exception:
-                print(traceback.format_exc())
-                output=self.nn.fp(test_data,p)
+            except Exception as e:
+                first_exception=e
+                try:
+                    output=self.nn.fp(test_data,p)
+                except Exception as e:
+                    raise e
+                    raise first_exception
             test_loss=self.nn.loss(output,test_labels)
             test_loss=test_loss.numpy()
             try:
-                if self.nn.accuracy!=None:
-                    test_acc=self.nn.accuracy(output,test_labels)
-                    test_acc=test_acc.numpy()
-            except Exception:
-                print(traceback.format_exc())
-                pass
+                test_acc=self.nn.accuracy(output,test_labels)
+                test_acc=test_acc.numpy()
+            except Exception as e:
+                try:
+                    if self.nn.accuracy!=None:
+                        raise e
+                except Exception:
+                    pass
         try:
             if self.nn.accuracy!=None:
                 return test_loss,test_acc
         except Exception:
-            print(traceback.format_exc())
             return test_loss,None
     
     
@@ -619,7 +657,6 @@ class kernel:
                                     print('epoch:{0}   accuracy:{1:.6f}'.format(self.total_epoch.value,self.train_acc.value))
                                 print()
                         except Exception:
-                            print(traceback.format_exc())
                             print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch.value,self.train_loss.value))
                             print()
                     else:
@@ -632,7 +669,6 @@ class kernel:
                                     print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(self.total_epoch.value,self.train_acc.value,self.test_acc.value))
                                 print()
                         except Exception:
-                            print(traceback.format_exc())   
                             print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch,self.train_loss.value,self.test_loss.value))
                             print()
             if self.muti_s!=None:
@@ -675,7 +711,6 @@ class kernel:
             print('learning rate:{0}'.format(self.nn.lr))
             print()
         except Exception:
-            print(traceback.format_exc())
             pass
         print()
         print('-------------------------------------')
@@ -727,7 +762,6 @@ class kernel:
                 else:
                     print('train acc:{0:.6f}'.format(self.train_acc.value)) 
         except Exception:
-            print(traceback.format_exc())
             pass
         return
     
@@ -752,7 +786,6 @@ class kernel:
                 else:
                     print('test acc:{0:.6f}'.format(self.test_acc.value))  
         except Exception:
-            print(traceback.format_exc())
             pass
         return 
     
@@ -781,7 +814,6 @@ class kernel:
                 else:
                     print('train acc:{0:.6f}'.format(self.train_acc.value))
         except Exception:
-            print(traceback.format_exc())
             pass
         if self.test_flag==True:        
             print()
@@ -838,12 +870,10 @@ class kernel:
         try:
             pickle.dump(self.nn.ec,output_file)
         except Exception:
-            print(traceback.format_exc())
             pass
         try:
             pickle.dump(self.nn.bc,output_file)
         except Exception:
-            print(traceback.format_exc())
             pass
         output_file.close()
         return
@@ -855,7 +885,6 @@ class kernel:
         try:
             self.nn.km=1
         except Exception:
-            print(traceback.format_exc())
             pass
         self.param[7]=pickle.load(input_file)
         self.batch=pickle.load(input_file)
