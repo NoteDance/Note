@@ -1,6 +1,5 @@
 import tensorflow as tf
 import numpy as np
-import traceback
 
 
 def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
