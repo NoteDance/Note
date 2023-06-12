@@ -27,15 +27,15 @@ class capsule:
         # check the dimension of the input data
         if len(data.shape)==4: # four-dimensional data
             # reshape the data to [batch_size, height * width * channels, input_dim_capsules]
-            data = tf.reshape(data,[self.batch_size,-1,self.input_dim_capsules])
+            data=tf.reshape(data,[self.batch_size,-1,self.input_dim_capsules])
             # update the input_num_capsules accordingly
             self.input_num_capsules=data.shape[1]
-        elif len(data.shape) == 3: # three-dimensional data
+        elif len(data.shape)==3: # three-dimensional data
             # no need to reshape the data
             pass
-        elif len(data.shape) == 2: # two-dimensional data
+        elif len(data.shape)==2: # two-dimensional data
             # reshape the data to [batch_size, 1, input_dim_capsules]
-            data = tf.expand_dims(data,axis=1)
+            data=tf.expand_dims(data,axis=1)
             # update the input_num_capsules accordingly
             self.input_num_capsules=1
         else:
@@ -45,7 +45,6 @@ class capsule:
         data_hat=tf.reshape(data_hat,[self.batch_size,self.input_num_capsules,self.num_capsules,self.dim_capsules]) # reshape the predictions to [batch_size, input_num_capsules, num_capsules, dim_capsules]
         b = tf.zeros([self.batch_size,self.input_num_capsules,
                       self.num_capsules]) # initialize a zero matrix for storing coupling coefficients
-        
         for i in range(self.routings): # iterate for a number of routings
             c=tf.nn.softmax(b,axis=2) # apply softmax on b to get c as a probability distribution over output capsules for each input capsule
             c = tf.expand_dims(c,-1) # expand c along the last dimension to match data_hat shape
