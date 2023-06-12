@@ -32,22 +32,27 @@ def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
                 labels_batch=test_labels[index1:index2]
             try:
                 output=nn.fp(data_batch)
-            except Exception:
-                print(traceback.format_exc())
-                output=nn(data_batch)
+            except Exception as e:
+                first_exception=e
+                try:
+                    output=nn(data_batch)
+                except Exception as e:
+                    raise e
+                    raise first_exception
             if loss==None:
                 batch_loss=nn.loss(output,labels_batch)
             else:
                 batch_loss=loss(labels_batch,output)
             total_loss+=batch_loss
             try:
-                if nn.accuracy!=None:
-                    pass
                 batch_acc=nn.accuracy(output,labels_batch)
                 total_acc+=batch_acc
-            except Exception:
-                print(traceback.format_exc())
-                pass
+            except Exception as e:
+                try:
+                    if nn.accuracy!=None:
+                        raise e
+                except Exception:     
+                    pass
         if shape0%batch!=0:
             batches+=1
             index1=batches*batch
@@ -63,36 +68,45 @@ def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
                         labels_batch[i]=platform.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
                 else:
                     labels_batch=platform.concat([test_labels[index1:],test_labels[:index2]],0)
-            except Exception:
-                print(traceback.format_exc())
-                if type(test_data)==list:
-                    for i in range(len(test_data)):
-                        data_batch[i]=platform.concat([test_data[i][index1:],test_data[i][:index2]],0)
-                else:
-                    data_batch=platform.concat([test_data[index1:],test_data[:index2]],0)
-                if type(test_labels)==list:
-                    for i in range(len(test_labels)):
-                        labels_batch[i]=platform.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
-                else:
-                    labels_batch=platform.concat([test_labels[index1:],test_labels[:index2]],0)
+            except Exception as e:
+                first_exception=e
+                try:
+                    if type(test_data)==list:
+                        for i in range(len(test_data)):
+                            data_batch[i]=platform.concat([test_data[i][index1:],test_data[i][:index2]],0)
+                    else:
+                        data_batch=platform.concat([test_data[index1:],test_data[:index2]],0)
+                    if type(test_labels)==list:
+                        for i in range(len(test_labels)):
+                            labels_batch[i]=platform.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
+                    else:
+                        labels_batch=platform.concat([test_labels[index1:],test_labels[:index2]],0)
+                except Exception as e:
+                    raise e
+                    raise first_exception
             try:
                 output=nn.fp(data_batch)
-            except Exception:
-                print(traceback.format_exc())
-                output=nn(data_batch)
+            except Exception as e:
+                first_exception=e
+                try:
+                    output=nn(data_batch)
+                except Exception as e:
+                    raise e
+                    raise first_exception
             if loss==None:
                 batch_loss=nn.loss(output,labels_batch)
             else:
                 batch_loss=loss(labels_batch,output)
             total_loss+=batch_loss
             try:
-                if nn.accuracy!=None:
-                    pass
                 batch_acc=nn.accuracy(output,labels_batch)
                 total_acc+=batch_acc
-            except Exception:
-                print(traceback.format_exc())
-                pass
+            except Exception as e:
+                try:
+                  if nn.accuracy!=None:
+                      raise e
+                except Exception: 
+                    pass
         test_loss=total_loss.numpy()/batches
         test_loss=test_loss.astype(np.float32)
         try:
@@ -100,40 +114,43 @@ def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
                 test_acc=total_acc.numpy()/batches
                 test_acc=test_acc.astype(np.float32)
         except Exception:
-            print(traceback.format_exc())
             pass
     else:
         try:
             output=nn.fp(test_data)
-        except Exception:
-            print(traceback.format_exc())
-            output=nn(test_data)
+        except Exception as e:
+            first_exception=e
+            try:
+                output=nn(test_data)
+            except Exception as e:
+                raise e
+                raise first_exception
         if loss==None:
             test_loss=nn.loss(output,test_labels)
         else:
             test_loss=loss(test_labels,output)
         test_loss=test_loss.numpy().astype(np.float32)
         try:
-            if nn.accuracy!=None:
-                test_acc=nn.accuracy(output,test_labels)
-                test_acc=test_acc.numpy().astype(np.float32)
-        except Exception:
-            print(traceback.format_exc())
-            pass
+            test_acc=nn.accuracy(output,test_labels)
+            test_acc=test_acc.numpy().astype(np.float32)
+        except Exception as e:
+            try:
+                if nn.accuracy!=None:
+                    raise e
+            except Exception: 
+                pass
     print('test loss:{0:.6f}'.format(test_loss))
     try:
         if nn.accuracy!=None:
-            pass
-        if acc_flag=='%':
-            print('accuracy:{0:.1f}'.format(test_acc*100))
-        else:
-            print('accuracy:{0:.6f}'.format(test_acc))
-        if acc_flag=='%':
-            return test_loss,test_acc*100
-        else:
-            return test_loss,test_acc
+            if acc_flag=='%':
+                print('accuracy:{0:.1f}'.format(test_acc*100))
+            else:
+                print('accuracy:{0:.6f}'.format(test_acc))
+            if acc_flag=='%':
+                return test_loss,test_acc*100
+            else:
+                return test_loss,test_acc
     except Exception:
-        print(traceback.format_exc())
         return test_loss
 
 
@@ -149,7 +166,6 @@ class parallel_test:
             if self.nn.accuracy!=None:
                 self.acc=np.zeros([thread],dtype=np.float32)
         except Exception:
-            print(traceback.format_exc())
             pass
         self.thread_num=np.arange(thread)
         self.thread_num=list(self.thread_num)
@@ -188,32 +204,29 @@ class parallel_test:
             train_ds=tf.data.Dataset.from_tensor_slices((self.test_data[t],self.test_labels[t])).batch(self.batch)
         for data_batch,labels_batch in train_ds:
             try:
-                try:
-                    output=self.nn.fp(data_batch)
-                    batch_loss=self.nn.loss(output,labels_batch)
-                except Exception:
-                    print(traceback.format_exc())
-                    output,batch_loss=self.nn.fp(data_batch,labels_batch)
-            except Exception:
-                print(traceback.format_exc())
+                output=self.nn.fp(data_batch)
+                batch_loss=self.nn.loss(output,labels_batch)
+            except Exception as e:
+                first_exception=e
                 try:
                     output=self.nn.fp(data_batch,t)
                     batch_loss=self.nn.loss(output,labels_batch)
-                except Exception:
-                    print(traceback.format_exc())
-                    output,batch_loss=self.nn.fp(data_batch,labels_batch,t) 
+                except Exception as e:
+                    raise e
+                    raise first_exception
             try:
-                if self.nn.accuracy!=None:
-                    batch_acc=self.nn.accuracy(output,labels_batch)
-            except Exception:
-                print(traceback.format_exc())
-                pass
+                batch_acc=self.nn.accuracy(output,labels_batch)
+            except Exception as e:
+                try:
+                    if self.nn.accuracy!=None:
+                        raise e
+                except Exception:
+                    pass
             try:
                 if self.nn.accuracy!=None:
                     self.loss[t]+=batch_loss
                     self.acc[t]+=batch_acc
             except Exception:
-                print(traceback.format_exc())
                 self.loss[t]+=batch_loss
         return
     
@@ -230,5 +243,4 @@ class parallel_test:
             if self.nn.accuracy!=None:
                 return np.mean(self.loss/batches),np.mean(self.acc/batches)
         except Exception:
-            print(traceback.format_exc())
             return np.mean(self.loss/batches)
