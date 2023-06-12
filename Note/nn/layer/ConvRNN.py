@@ -6,8 +6,8 @@ class ConvRNN:
         # Receive a convolution layer object and an RNN layer object as parameters
         self.conv_layer=conv_layer
         self.rnn_layer=rnn_layer
-        # Merge the weight lists of the two layer objects into one weight list
-        self.weight_list=conv_layer.weight_list+rnn_layer.weight_list
+        # Merge the weight lists of the two layer objects into one param list
+        self.param_list=conv_layer.weight_list+rnn_layer.weight_list
     
     
     def output(self,data):

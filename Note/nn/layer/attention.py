@@ -7,7 +7,7 @@ class attention:
         self.qw=i.initializer(weight_shape,weight_initializer,dtype)
         self.kw=i.initializer(weight_shape,weight_initializer,dtype)
         self.sw=i.initializer([weight_shape[1],1],weight_initializer,dtype)
-        self.weight_list=[self.qw,self.kw,self.sw]
+        self.param_list=[self.qw,self.kw,self.sw]
     
     
     def output(self,en_h,de_h,score_en_h=None):

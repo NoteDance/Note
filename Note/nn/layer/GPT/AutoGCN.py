@@ -29,7 +29,7 @@ class AutoGCN:
         # use_bias: whether to add a learnable bias to the output
         self.activation=activation_dict[activation]
         self.use_bias=use_bias
-        self.weight_list=[]
+        self.param_list=[]
         if structure_function is None:
             # use a default structure function that computes some basic statistics of the input graph
             self.structure_function = lambda x: tf.stack([
@@ -46,7 +46,7 @@ class AutoGCN:
         else:
             # use a user-defined kernel function
             self.kernel_function=kernel_function
-        self.weight_list.append(self.kernel_function.weight_list)
+        self.param_list.append(self.kernel_function.weight_list)
         if init_function is None:
             # use a default init function that initializes kernel weight and bias randomly
             self.init_function=lambda x:(i.initializer([x.shape[-1],out_features],weight_initializer,dtype),i.initializer([self.out_features],bias_initializer,dtype))
@@ -64,7 +64,7 @@ class AutoGCN:
         else:
             # use a user-defined gcn function
             self.gcn_function=gcn_function
-            self.weight_list.append(self.gcn_function.weight_list)
+            self.param_list.append(self.gcn_function.weight_list)
     
     
     def gcn(self,x,kernel):

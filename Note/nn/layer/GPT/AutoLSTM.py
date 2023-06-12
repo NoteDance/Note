@@ -28,7 +28,7 @@ class AutoLSTM:
         # use_bias: whether to add a learnable bias to the output
         self.activation=activation_dict[activation]
         self.use_bias=use_bias
-        self.weight_list=[]
+        self.param_list=[]
         if length_function is None:
             # use a default length function that counts non-zero elements along a given axis
             self.length_function=lambda x,axis=1:tf.math.count_nonzero(x,axis=axis)
@@ -42,7 +42,7 @@ class AutoLSTM:
         else:
             # use a user-defined dimension function
             self.dimension_function=dimension_function
-        self.weight_list.append(self.dimension_function.weight_list)
+        self.param_list.append(self.dimension_function.weight_list)
         if init_function is None:
             # use a default init function that initializes hidden state and cell state randomly
             self.init_function=lambda x:(tf.random.normal([x.shape[0],x.shape[2]],dtype=x.dtype),tf.random.normal([x.shape[0],x.shape[2]],dtype=x.dtype))
@@ -55,7 +55,7 @@ class AutoLSTM:
         else:
             # use a user-defined lstm function
             self.lstm_function=lstm_function
-        self.weight_list.append(self.lstm_function.weight_list)
+        self.param_list.append(self.lstm_function.weight_list)
     
     
     def output(self,data):

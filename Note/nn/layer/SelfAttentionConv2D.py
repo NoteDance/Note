@@ -3,7 +3,7 @@ import Note.nn.initializer as i
 from Note.nn.activation import activation_dict
 
 
-class AdaptiveConv2D:
+class SelfAttentionConv2D:
     def __init__(self,input_shape,filters,kernel_size,activation=None,kernel_initializer='Xavier',bias_initializer='zeros',dtype='float32',use_bias=True):
         # filters: the number of output filters
         # kernel_size: the size of the convolution kernel
@@ -16,11 +16,8 @@ class AdaptiveConv2D:
         else:
             self.activation=None
         self.use_bias=use_bias
-        self.kernel_initializer=kernel_initializer
-        self.bias_initializer=bias_initializer
         self.kernel=i.initializer([kernel_size[0],kernel_size[1],input_shape[-1],filters],kernel_initializer,dtype)
-        self.attention=i.initializer([1,1,input_shape[-1],filters],kernel_initializer,dtype)
-        self.param_list=[self.kerne,self.attention]
+        self.param_list=[self.kernel]
         if use_bias:
             self.bias=i.initializer([filters],bias_initializer,dtype)
             self.param_list.append(self.bias)
@@ -38,12 +35,20 @@ class AdaptiveConv2D:
         if self.activation is not None:
             # apply the activation function to the convolution output
             conv_output=self.activation(conv_output)
-        # compute the attention weights for each spatial location
-        att_input=tf.nn.conv2d(data,self.attention,strides=strides,padding=padding)
-        input_shape=tf.shape(att_input) # [batch_size, height, width, filters]
-        att_input=tf.reshape(att_input,[-1,tf.math.reduce_prod(input_shape[1:3]),input_shape[-1]])
-        att_weights=tf.nn.softmax(att_input,axis=-1)
-        att_weights=tf.reshape(att_weights,input_shape)
-        # multiply the convolution output with the attention weights element-wise
-        adaptive_output=conv_output*att_weights
-        return adaptive_output
+        # compute the query, key and value tensors for each spatial location
+        query=tf.nn.conv2d(data,self.kernel,strides=strides,padding=padding)
+        key=tf.nn.conv2d(data,self.kernel,strides=strides,padding=padding)
+        value=tf.nn.conv2d(data,self.kernel,strides=strides,padding=padding)
+        input_shape=tf.shape(query) # [batch_size, height, width, filters]
+        query=tf.reshape(query,[-1,input_shape[1]*input_shape[2],input_shape[-1]])
+        key=tf.reshape(key,[-1,input_shape[1]*input_shape[2],input_shape[-1]])
+        value=tf.reshape(value,[-1,input_shape[1]*input_shape[2],input_shape[-1]])
+        # compute the attention scores for each pair of spatial locations
+        att_scores=tf.matmul(query,key,transpose_b=True) # [batch_size, height*width, height*width]
+        att_scores=tf.nn.softmax(att_scores,axis=-1) # normalize along the last dimension
+        # compute the weighted sum of value tensors for each spatial location
+        att_output=tf.matmul(att_scores,value) # [batch_size, height*width, filters]
+        att_output=tf.reshape(att_output,input_shape) # [batch_size, height, width, filters]
+        # add the attention output to the convolution output element-wise
+        self_attention_output=conv_output+att_output
+        return self_attention_output

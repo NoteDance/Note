@@ -11,9 +11,9 @@ class GRUCell:
         self.activation1=activation1
         self.activation2=activation2
         if use_bias==True:
-            self.weight_list=[self.weight,self.bias]
+            self.param_list=[self.weight,self.bias]
         else:
-            self.weight_list=[self.weight]
+            self.param_list=[self.weight]
     
     
     def output(self,data,state):

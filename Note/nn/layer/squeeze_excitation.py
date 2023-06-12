@@ -23,9 +23,9 @@ class squeeze_excitation:
         self.weight_E=i.initializer([output_dim//ratio,output_dim],weight_initializer,dtype)
         self.bias_E=i.initializer([output_dim],bias_initializer,dtype)
         if use_bias==True:
-            self.weight_list=[self.weight_S,self.bias_S,self.weight_E,self.bias_E]
+            self.param_list=[self.weight_S,self.bias_S,self.weight_E,self.bias_E]
         else:
-            self.weight_list=[self.weight_S,self.weight_E]
+            self.param_list=[self.weight_S,self.weight_E]
     
     
     def output(self,data):

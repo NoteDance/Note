@@ -19,9 +19,9 @@ class GCN:
         self.bias=i.initializer([output_dim],bias_initializer,dtype)
         self.dtype=dtype
         if use_bias==True:
-            self.weight_list=[self.weight,self.bias]
+            self.param_list=[self.weight,self.bias]
         else:
-            self.weight_list=[self.weight]
+            self.param_list=[self.weight]
     
     
     def output(self,graph,data):

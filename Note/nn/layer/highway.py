@@ -24,9 +24,9 @@ class highway:
         self.weight_C=i.initializer([input_dim,output_dim],weight_initializer,dtype)
         self.bias_C=i.initializer([output_dim],bias_initializer,dtype)
         if use_bias==True:
-            self.weight_list=[self.weight_T,self.bias_T,self.weight_C,self.bias_C]
+            self.param_list=[self.weight_T,self.bias_T,self.weight_C,self.bias_C]
         else:
-            self.weight_list=[self.weight_T,self.weight_C]
+            self.param_list=[self.weight_T,self.weight_C]
     
     
     def output(self,data):

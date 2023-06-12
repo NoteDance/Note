@@ -23,12 +23,12 @@ class transformer:
         self.dtype=dtype
         self.use_bias=use_bias
         if use_bias:
-            self.weight_list=[self.weight_q,self.weight_k,self.weight_v,self.weight_o,
+            self.param_list=[self.weight_q,self.weight_k,self.weight_v,self.weight_o,
                               self.weight_ffn_1,self.weight_ffn_2,
                               self.bias_q,self.bias_k,self.bias_v,self.bias_o,
                               self.bias_ffn_1,self.bias_ffn_2]
         else:
-            self.weight_list=[self.weight_q,self.weight_k,self.weight_v,self.weight_o,
+            self.param_list=[self.weight_q,self.weight_k,self.weight_v,self.weight_o,
                               self.weight_ffn_1,self.weight_ffn_2]
     
     

@@ -31,29 +31,29 @@ class GraphLearn:
         self.activation=activation_dict[activation]
         self.dtype=dtype
         self.use_bias=use_bias
-        self.weight_list=[]
+        self.param_list=[]
         if similarity_function is None:
             # use a default similarity function based on dot product and linear transformation
             self.similarity=i.initializer([in_features,in_features],similarity_initializer,dtype) # initialize the weight matrix for the similarity function with the given initializer and data type
             self.similarity_function=lambda x1,x2:tf.matmul(tf.matmul(x1,self.similarity),tf.transpose(x2,perm=[0,2,1])) 
-            self.weight_list.append(self.similarity)
+            self.param_list.append(self.similarity)
         else:
             # use a user-defined similarity function
             self.similarity_function=similarity_function
-            self.weight_list.append(self.similarity_function.weight_list)
+            self.param_list.append(self.similarity_function.weight_list)
         if weight_function is None:
             # use a default weight function based on dot product and linear transformation
             self.weight=i.initializer([in_features,1],weight_initializer,dtype) # initialize a column of weight matrix for the weight function with the given initializer and data type
             self.weight_function=lambda x1,x2:tf.matmul(tf.matmul(x1,tf.expand_dims(self.weight[:,0],-1)),tf.transpose(tf.matmul(x2,tf.expand_dims(self.weight[:,0],-1)),perm=[0,2,1]))
-            self.weight_list.append(self.weight)
+            self.param_list.append(self.weight)
         else:
             # use a user-defined weight function
             self.weight_function=weight_function
-            self.weight_list.append(self.weight_function.weight_list)
+            self.param_list.append(self.weight_function.weight_list)
         if aggregate_function is None:
             # use a default aggregate function based on linear transformation and optional bias and activation
             self.aggregate_weight=i.initializer([in_features, out_features], weight_initializer, dtype) # initialize the weight matrix for the aggregation function with the given initializer and data type
-            self.weight_list.append(self.aggregate_weight) # store the weight matrix in a list for later use
+            self.param_list.append(self.aggregate_weight) # store the weight matrix in a list for later use
             if use_bias:
                 self.aggregate_bias=i.initializer([out_features],bias_initializer,dtype) # initialize the bias vector for the aggregation function with zeros and the given data type
                 self.weight_list.append(self.aggregate_bias) # add the bias vector to the weight list
@@ -61,7 +61,7 @@ class GraphLearn:
         else:
             # use a user-defined aggregate function 
             self.aggregate_function=aggregate_function
-            self.weight_list.append(self.aggregate_function.weight_list)
+            self.param_list.append(self.aggregate_function.weight_list)
     
     
     def aggregate(self,x):

@@ -22,9 +22,9 @@ class GRU:
         self.activation1=activation1
         self.activation2=activation2
         if use_bias==True:
-            self.weight_list=[self.weight_r1,self.weight_z1,self.weight_h1,self.weight_r2,self.weight_z2,self.weight_h2,self.bias_r,self.bias_z,self.bias_h]
+            self.param_list=[self.weight_r1,self.weight_z1,self.weight_h1,self.weight_r2,self.weight_z2,self.weight_h2,self.bias_r,self.bias_z,self.bias_h]
         else:
-            self.weight_list=[self.weight_r1,self.weight_z1,self.weight_h1,self.weight_r2,self.weight_z2,self.weight_h2]
+            self.param_list=[self.weight_r1,self.weight_z1,self.weight_h1,self.weight_r2,self.weight_z2,self.weight_h2]
     
     
     def output(self,data):
