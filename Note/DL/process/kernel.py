@@ -177,23 +177,19 @@ class kernel:
     @tf.function(jit_compile=True)
     def tf_opt_t(self,data,labels,p,lock,g_lock=None,ln=None):
         try:
-            if self.nn.GradientTape!=None:
-                tape,output,loss=self.nn.GradientTape(data,labels,p)
-        except Exception as e:
-            first_exception=e
-            with tf.GradientTape(persistent=True) as tape:
-                try:
-                    output=self.nn.fp(data)
-                    loss=self.nn.loss(output,labels)
-                except Exception as e:
-                    second_exception=e
+            try:
+                if self.nn.GradientTape!=None:
+                    tape,output,loss=self.nn.GradientTape(data,labels,p)
+            except Exception:
+                with tf.GradientTape(persistent=True) as tape:
                     try:
+                        output=self.nn.fp(data)
+                        loss=self.nn.loss(output,labels)
+                    except Exception:
                         output=self.nn.fp(data,p)
                         loss=self.nn.loss(output,labels)
-                    except Exception as e:
-                        raise e
-                        raise second_exception
-                        raise first_exception
+        except Exception as e:
+            raise e
         if self.PO==1:
             if self.priority_flag==True and self.priority_p.value!=-1:
                 while True:
@@ -206,16 +202,14 @@ class kernel:
                 return None,0
             try:
                 try:
-                    gradient=self.nn.gradient(tape,loss)
+                    try:
+                        gradient=self.nn.gradient(tape,loss)
+                    except Exception:
+                        gradient=self.nn.gradient(tape,loss,self.param[7])
                 except Exception:
-                    gradient=self.nn.gradient(tape,loss,self.param[7])
-            except Exception as e:
-                first_exception=e
-                try:
                     gradient=tape.gradient(loss,self.nn.param)
-                except Exception as e:
-                    raise e
-                    raise first_exception
+            except Exception as e:
+                raise e
             try:
                 gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
             except Exception as e:
@@ -225,14 +219,12 @@ class kernel:
                 except Exception:
                     pass
             try:
-                param=self.nn.opt(gradient)
-            except Exception as e:
-                first_exception=e
                 try:
+                    param=self.nn.opt(gradient)
+                except Exception:
                     param=self.nn.opt(gradient,p)
-                except Exception as e:
-                    raise e
-                    raise first_exception
+            except Exception as e:
+                raise e
             lock[0].release()
         elif self.PO==2:
             lock[0].acquire()
@@ -240,16 +232,14 @@ class kernel:
                 return None,0
             try:
                 try:
-                    gradient=self.nn.gradient(tape,loss)
+                    try:
+                        gradient=self.nn.gradient(tape,loss)
+                    except Exception:
+                        gradient=self.nn.gradient(tape,loss,self.param[7])
                 except Exception:
-                    gradient=self.nn.gradient(tape,loss,self.param[7])
-            except Exception as e:
-                first_exception=e
-                try:
                     gradient=tape.gradient(loss,self.nn.param)
-                except Exception as e:
-                    raise e
-                    raise first_exception
+            except Exception as e:
+                raise e
             lock[0].release()
             if self.priority_flag==True and self.priority_p.value!=-1:
                 while True:
@@ -269,14 +259,12 @@ class kernel:
                 except Exception:
                     pass
             try:
-                param=self.nn.opt(gradient)
-            except Exception as e:
-                first_exception=e
                 try:
+                    param=self.nn.opt(gradient)
+                except Exception:
                     param=self.nn.opt(gradient,p)
-                except Exception as e:
-                    raise e
-                    raise first_exception
+            except Exception as e:
+                raise e
             lock[1].release()
         elif self.PO==3:
             g_lock[ln].acquire()
@@ -284,16 +272,14 @@ class kernel:
                 return None,0
             try:
                 try:
-                    gradient=self.nn.gradient(tape,loss)
+                    try:
+                        gradient=self.nn.gradient(tape,loss)
+                    except Exception:
+                        gradient=self.nn.gradient(tape,loss,self.param[7])
                 except Exception:
-                    gradient=self.nn.gradient(tape,loss,self.param[7])
-            except Exception as e:
-                first_exception=e
-                try:
                     gradient=tape.gradient(loss,self.nn.param)
-                except Exception as e:
-                    raise e
-                    raise first_exception
+            except Exception as e:
+                raise e
             g_lock[ln].release()
             if self.priority_flag==True and self.priority_p.value!=-1:
                 while True:
@@ -313,14 +299,12 @@ class kernel:
                 except Exception:
                     pass
             try:
-                param=self.nn.opt(gradient)
-            except Exception as e:
-                first_exception=e
                 try:
+                    param=self.nn.opt(gradient)
+                except Exception:
                     param=self.nn.opt(gradient,p)
-                except Exception as e:
-                    raise e
-                    raise first_exception
+            except Exception as e:
+                raise e
             lock[0].release()
         return output,loss,param
     
@@ -503,14 +487,12 @@ class kernel:
             if self.test_dataset!=None:
                 for data_batch,labels_batch in self.test_dataset:
                     try:
-                        output=self.nn.fp(data_batch)
-                    except Exception as e:
-                        first_exception=e
                         try:
+                            output=self.nn.fp(data_batch)
+                        except Exception:
                             output=self.nn.fp(data_batch,p)
-                        except Exception as e:
-                            raise e
-                            raise first_exception
+                    except Exception as e:
+                        raise e
                     batch_loss=self.nn.loss(output,labels_batch)
                     total_loss+=batch_loss
                     try:
@@ -537,14 +519,12 @@ class kernel:
                     else:
                         labels_batch=test_labels[index1:index2]
                     try:
-                        output=self.nn.fp(data_batch)
-                    except Exception as e:
-                        first_exception=e
                         try:
-                            output=self.nn.fp(data_batch,p)
+                            output=self.nn.fp(data_batch)
                         except Exception:
-                            raise e
-                            raise first_exception
+                            output=self.nn.fp(data_batch,p)
+                    except Exception as e:
+                        raise e
                     batch_loss=self.nn.loss(output,labels_batch)
                     total_loss+=batch_loss
                     try:
@@ -563,14 +543,12 @@ class kernel:
                     data_batch=tf.concat([test_data[index1:],test_data[:index2]],0)
                     labels_batch=tf.concat([test_labels[index1:],test_labels[:index2]],0)
                     try:
-                        output=self.nn.fp(data_batch)
-                    except Exception as e:
-                        first_exception=e
                         try:
+                            output=self.nn.fp(data_batch)
+                        except Exception:
                             output=self.nn.fp(data_batch,p)
-                        except Exception as e:
-                            raise e
-                            raise first_exception
+                    except Exception as e:
+                        raise e
                     batch_loss=self.nn.loss(output,labels_batch)
                     total_loss+=batch_loss
                     try:
@@ -590,14 +568,12 @@ class kernel:
                 pass
         else:
             try:
-                output=self.nn.fp(test_data)
-            except Exception as e:
-                first_exception=e
                 try:
+                    output=self.nn.fp(test_data)
+                except Exception:
                     output=self.nn.fp(test_data,p)
-                except Exception as e:
-                    raise e
-                    raise first_exception
+            except Exception as e:
+                raise e
             test_loss=self.nn.loss(output,test_labels)
             test_loss=test_loss.numpy()
             try:
