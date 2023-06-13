@@ -11,9 +11,9 @@ class conv3d:
         self.activation=activation
         self.use_bias=use_bias
         if use_bias==True:
-            self.param_list=[self.weight,self.bias]
+            self.param=[self.weight,self.bias]
         else:
-            self.param_list=[self.weight]
+            self.param=[self.weight]
     
     
     def output(self,data,strides,padding='VALID',data_format='NHWC',dilations=None):

@@ -18,9 +18,9 @@ class maxout:
         self.weight=i.initializer([input_dim,output_dim*num_units],weight_initializer,dtype)
         self.bias=i.initializer([output_dim*num_units],bias_initializer,dtype)
         if use_bias==True:
-            self.param_list=[self.weight,self.bias]
+            self.param=[self.weight,self.bias]
         else:
-            self.param_list=[self.weight]
+            self.param=[self.weight]
     
     
     def output(self,data):

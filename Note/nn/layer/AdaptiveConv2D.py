@@ -23,7 +23,7 @@ class AdaptiveConv2D:
         self.param_list=[self.kerne,self.attention]
         if use_bias:
             self.bias=i.initializer([filters],bias_initializer,dtype)
-            self.param_list.append(self.bias)
+            self.param.append(self.bias)
     
     
     def output(self,data,strides=(1,1),padding='VALID'):

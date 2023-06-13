@@ -12,9 +12,9 @@ class RNNCell:
         self.activation=activation_dict[activation]
         self.use_bias=use_bias
         if use_bias==True:
-            self.param_list=[self.weight_i,self.weight_s,self.bias]
+            self.param=[self.weight_i,self.weight_s,self.bias]
         else:
-            self.param_list=[self.weight_i,self.weight_s]
+            self.param=[self.weight_i,self.weight_s]
     
     
     def output(self,data,state):

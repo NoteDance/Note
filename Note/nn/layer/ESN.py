@@ -42,9 +42,9 @@ class ESN:
         else:
           self.bias=None
         if use_bias:
-          self.param_list=[self.kernel,self.recurrent_kernel,self.bias]
+          self.param=[self.kernel,self.recurrent_kernel,self.bias]
         else:
-          self.param_list=[self.kernel,self.recurrent_kernel]
+          self.param=[self.kernel,self.recurrent_kernel]
     
     
     def output(self,data):

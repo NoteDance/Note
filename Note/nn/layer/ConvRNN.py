@@ -7,7 +7,7 @@ class ConvRNN:
         self.conv_layer=conv_layer
         self.rnn_layer=rnn_layer
         # Merge the weight lists of the two layer objects into one param list
-        self.param_list=conv_layer.weight_list+rnn_layer.weight_list
+        self.param=conv_layer.weight_list+rnn_layer.weight_list
     
     
     def output(self,data):

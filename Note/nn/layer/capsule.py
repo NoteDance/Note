@@ -12,7 +12,7 @@ class capsule:
         self.dim_capsules=dim_capsules # the dimension of each output capsule
         self.routings=routings # the number of routing iterations
         self.weight=initializer([self.input_dim_capsules,self.num_capsules*self.dim_capsules],weight_initializer,dtype) # the weight matrix for transforming input capsules to output capsules
-        self.param_list=[self.weight] # a list to store the weight matrix
+        self.param=[self.weight] # a list to store the weight matrix
     
     
     def squash(self,data):

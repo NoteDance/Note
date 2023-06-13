@@ -13,9 +13,9 @@ class separable_conv2d:
         self.activation=activation
         self.use_bias=use_bias
         if use_bias==True:
-            self.param_list=[self.weight_D,self.bias_D,self.weight_P,self.bias_P]
+            self.param=[self.weight_D,self.bias_D,self.weight_P,self.bias_P]
         else:
-            self.param_list=[self.weight_D,self.weight_P]
+            self.param=[self.weight_D,self.weight_P]
     
     
     def output(self,data,strides,padding='VALID',data_format='NHWC',dilations=None):

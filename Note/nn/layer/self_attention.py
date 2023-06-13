@@ -8,7 +8,7 @@ class self_attention:
         self.qw=i.initializer(weight_shape,weight_initializer,dtype)
         self.kw=i.initializer(weight_shape,weight_initializer,dtype)
         self.vw=i.initializer(weight_shape,weight_initializer,dtype)
-        self.param_list=[self.qw,self.kw,self.vw]
+        self.param=[self.qw,self.kw,self.vw]
 
 
     def output(self,data,a,mask=None):

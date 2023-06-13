@@ -23,7 +23,7 @@ class GAT:
         # initialize the weight matrix and the attention vector
         self.weight=i.initializer([input_dim,num_heads*output_dim],weight_initializer,dtype)
         self.attention=i.initializer([num_heads,2*output_dim],attention_initializer,dtype)
-        self.param_list=[self.weight,self.attention]
+        self.param=[self.weight,self.attention]
     
     
     def output(self,graph,data):

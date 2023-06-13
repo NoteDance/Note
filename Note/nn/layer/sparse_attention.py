@@ -35,9 +35,9 @@ class sparse_attention:
             self.weight_V.append(initializer([input_dim,output_dim//num_heads],weight_initializer,dtype))
             self.bias_V.append(initializer([output_dim//num_heads],bias_initializer,dtype))
         if use_bias==True:
-            self.param_list=self.weight_Q+self.bias_Q+self.weight_K+self.bias_K+self.weight_V+self.bias_V
+            self.param=self.weight_Q+self.bias_Q+self.weight_K+self.bias_K+self.weight_V+self.bias_V
         else:
-            self.param_list=self.weight_Q+self.weight_K+self.weight_V
+            self.param=self.weight_Q+self.weight_K+self.weight_V
     
     
     def output(self,data):

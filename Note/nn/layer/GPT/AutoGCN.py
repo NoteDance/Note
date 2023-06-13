@@ -29,7 +29,7 @@ class AutoGCN:
         # use_bias: whether to add a learnable bias to the output
         self.activation=activation_dict[activation]
         self.use_bias=use_bias
-        self.param_list=[]
+        self.param=[]
         if structure_function is None:
             # use a default structure function that computes some basic statistics of the input graph
             self.structure_function = lambda x: tf.stack([
@@ -46,7 +46,7 @@ class AutoGCN:
         else:
             # use a user-defined kernel function
             self.kernel_function=kernel_function
-        self.param_list.append(self.kernel_function.weight_list)
+        self.param.append(self.kernel_function.weight_list)
         if init_function is None:
             # use a default init function that initializes kernel weight and bias randomly
             self.init_function=lambda x:(i.initializer([x.shape[-1],out_features],weight_initializer,dtype),i.initializer([self.out_features],bias_initializer,dtype))
@@ -56,15 +56,15 @@ class AutoGCN:
         if gcn_function is None:
             # use a default gcn function that implements standard gcn formula with optional bias and activation
             self.gcn_weight=i.initializer([in_features,out_features],weight_initializer,dtype) # initialize the weight matrix for the gcn function with the given initializer and data type
-            self.weight_list=[self.gcn_weight] # store the weight matrix in a list for later use
+            self.param=[self.gcn_weight] # store the weight matrix in a list for later use
             if use_bias:
                 self.gcn_bias=i.initializer([out_features],bias_initializer,dtype) # initialize the bias vector for the gcn function with zeros and the given data type
-                self.weight_list.append(self.gcn_bias) # add the bias vector to the weight list
+                self.param.append(self.gcn_bias) # add the bias vector to the weight list
             self.gcn_function=self.gcn
         else:
             # use a user-defined gcn function
             self.gcn_function=gcn_function
-            self.param_list.append(self.gcn_function.weight_list)
+            self.param.append(self.gcn_function.weight_list)
     
     
     def gcn(self,x,kernel):

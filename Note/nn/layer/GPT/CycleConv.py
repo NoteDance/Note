@@ -28,10 +28,10 @@ class CycleConv:
         self.activation=activation_dict[activation]
         self.use_bias=use_bias
         self.weight=i.initializer([kernel_size,in_features,out_features],weight_initializer,dtype) # initialize the weight matrix with the given initializer and data type
-        self.param_list=[self.weight] # store the weight matrix in a list for later use
+        self.param=[self.weight] # store the weight matrix in a list for later use
         if use_bias:
             self.bias=i.initializer([out_features],bias_initializer,dtype) # initialize the bias vector with zeros and the given data type
-            self.param_list.append(self.bias) # add the bias vector to the weight list
+            self.param.append(self.bias) # add the bias vector to the weight list
     
     
     def output(self,data,stride=1,padding='same'):
