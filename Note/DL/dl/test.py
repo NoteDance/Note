@@ -30,14 +30,12 @@ def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
             else:
                 labels_batch=test_labels[index1:index2]
             try:
-                output=nn.fp(data_batch)
-            except Exception as e:
-                first_exception=e
                 try:
+                    output=nn.fp(data_batch)
+                except Exception:
                     output=nn(data_batch)
-                except Exception as e:
-                    raise e
-                    raise first_exception
+            except Exception as e:
+                raise e
             if loss==None:
                 batch_loss=nn.loss(output,labels_batch)
             else:
@@ -57,18 +55,6 @@ def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
             index1=batches*batch
             index2=batch-(shape0-batches*batch)
             try:
-                if type(test_data)==list:
-                    for i in range(len(test_data)):
-                        data_batch[i]=platform.concat([test_data[i][index1:],test_data[i][:index2]],0)
-                else:
-                    data_batch=platform.concat([test_data[index1:],test_data[:index2]],0)
-                if type(test_labels)==list:
-                    for i in range(len(test_labels)):
-                        labels_batch[i]=platform.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
-                else:
-                    labels_batch=platform.concat([test_labels[index1:],test_labels[:index2]],0)
-            except Exception as e:
-                first_exception=e
                 try:
                     if type(test_data)==list:
                         for i in range(len(test_data)):
@@ -80,18 +66,26 @@ def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
                             labels_batch[i]=platform.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
                     else:
                         labels_batch=platform.concat([test_labels[index1:],test_labels[:index2]],0)
-                except Exception as e:
-                    raise e
-                    raise first_exception
-            try:
-                output=nn.fp(data_batch)
+                except Exception:
+                    if type(test_data)==list:
+                        for i in range(len(test_data)):
+                            data_batch[i]=platform.concat([test_data[i][index1:],test_data[i][:index2]],0)
+                    else:
+                        data_batch=platform.concat([test_data[index1:],test_data[:index2]],0)
+                    if type(test_labels)==list:
+                        for i in range(len(test_labels)):
+                            labels_batch[i]=platform.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
+                    else:
+                        labels_batch=platform.concat([test_labels[index1:],test_labels[:index2]],0)
             except Exception as e:
-                first_exception=e
+                raise e
+            try:
                 try:
+                    output=nn.fp(data_batch)
+                except Exception:
                     output=nn(data_batch)
-                except Exception as e:
-                    raise e
-                    raise first_exception
+            except Exception as e:
+                raise e
             if loss==None:
                 batch_loss=nn.loss(output,labels_batch)
             else:
@@ -116,14 +110,12 @@ def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
             pass
     else:
         try:
-            output=nn.fp(test_data)
-        except Exception as e:
-            first_exception=e
             try:
+                output=nn.fp(test_data)
+            except Exception:
                 output=nn(test_data)
-            except Exception as e:
-                raise e
-                raise first_exception
+        except Exception as e:
+            raise e
         if loss==None:
             test_loss=nn.loss(output,test_labels)
         else:
@@ -203,16 +195,14 @@ class parallel_test:
             train_ds=tf.data.Dataset.from_tensor_slices((self.test_data[t],self.test_labels[t])).batch(self.batch)
         for data_batch,labels_batch in train_ds:
             try:
-                output=self.nn.fp(data_batch)
-                batch_loss=self.nn.loss(output,labels_batch)
-            except Exception as e:
-                first_exception=e
                 try:
+                    output=self.nn.fp(data_batch)
+                    batch_loss=self.nn.loss(output,labels_batch)
+                except Exception:
                     output=self.nn.fp(data_batch,t)
                     batch_loss=self.nn.loss(output,labels_batch)
-                except Exception as e:
-                    raise e
-                    raise first_exception
+            except Exception as e:
+                raise e
             try:
                 batch_acc=self.nn.accuracy(output,labels_batch)
             except Exception as e:
