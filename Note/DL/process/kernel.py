@@ -183,11 +183,17 @@ class kernel:
             except Exception:
                 with tf.GradientTape(persistent=True) as tape:
                     try:
-                        output=self.nn.fp(data)
-                        loss=self.nn.loss(output,labels)
+                        try:
+                            output=self.nn.fp(data)
+                            loss=self.nn.loss(output,labels)
+                        except Exception:
+                            output,loss=self.nn.fp(data,labels)
                     except Exception:
-                        output=self.nn.fp(data,p)
-                        loss=self.nn.loss(output,labels)
+                        try:
+                            output=self.nn.fp(data,p)
+                            loss=self.nn.loss(output,labels)
+                        except Exception:
+                            output,loss=self.nn.fp(data,labels,p)
         except Exception as e:
             raise e
         if self.PO==1:
