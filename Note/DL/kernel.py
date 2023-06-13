@@ -361,8 +361,11 @@ class kernel:
                     tape,output,loss=self.nn.GradientTape(data,labels)
             except Exception:
                 with self.platform.GradientTape(persistent=True) as tape:
-                    output=self.nn.fp(data)
-                    loss=self.nn.loss(output,labels)
+                    try:
+                        output=self.nn.fp(data)
+                        loss=self.nn.loss(output,labels)
+                    except Exception:
+                        output,loss=self.nn.fp(data,labels)
         except Exception as e:
             raise e
         try:
@@ -391,11 +394,17 @@ class kernel:
             except Exception:
                 with self.platform.GradientTape(persistent=True) as tape:
                     try:
-                        output=self.nn.fp(data)
-                        loss=self.nn.loss(output,labels)
+                        try:
+                            output=self.nn.fp(data)
+                            loss=self.nn.loss(output,labels)
+                        except Exception:
+                            output,loss=self.nn.fp(data,labels)
                     except Exception:
-                        output=self.nn.fp(data,t)
-                        loss=self.nn.loss(output,labels)
+                        try:
+                            output=self.nn.fp(data,t)
+                            loss=self.nn.loss(output,labels)
+                        except Exception:
+                            output,loss=self.nn.fp(data,labels,t)
         except Exception as e:
             raise e
         if self.PO==1:
