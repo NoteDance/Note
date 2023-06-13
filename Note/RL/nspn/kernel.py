@@ -309,14 +309,13 @@ class kernel:
         with self.platform.GradientTape(persistent=True) as tape:
             loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
         try:
-            gradient=self.nn.gradient(tape,loss)
             try:
-                self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+                gradient=self.nn.gradient(tape,loss)
+                try:
+                    self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+                except Exception:
+                    self.nn.opt(gradient)
             except Exception:
-                self.nn.opt(gradient)
-        except Exception as e:
-            first_exception=e
-            try:
                 try:
                     if self.nn.nn!=None:
                         gradient=tape.gradient(loss,self.nn.param)
@@ -326,9 +325,8 @@ class kernel:
                     critic_gradient=tape.gradient(loss[1],self.nn.param[1])
                     self.nn.opt.apply_gradients(zip(actor_gradient,self.nn.param[0]))
                     self.nn.opt.apply_gradients(zip(critic_gradient,self.nn.param[1]))
-            except Exception as e:
-                raise e
-                raise first_exception
+        except Exception as e:
+            raise e
         return loss
     
     
@@ -1001,17 +999,15 @@ class kernel:
             except Exception:
                 pass
         try:
-            pickle.dump(self.platform.keras.optimizers.serialize(opt),output_file)
-        except Exception as e:
-            first_exception=e
             try:
+                pickle.dump(self.platform.keras.optimizers.serialize(opt),output_file)
+            except Exception:
                 try:
                     pickle.dump(self.nn.serialize(),output_file)
                 except Exception:
                     pickle.dump(None,output_file)
-            except Exception as e:
-                raise e
-                raise first_exception
+        except Exception as e:
+            raise e
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.episode_step,output_file)
         pickle.dump(self.pool_size,output_file)
