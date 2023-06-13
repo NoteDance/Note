@@ -211,6 +211,87 @@ class AdaMax:
         return
 
 
+class AdamW:
+    def __init__(self,lr=0.001,beta1=0.9,beta2=0.999,epsilon=1e-07,weight_decay=0.01):
+        self.lr=lr
+        self.beta1=beta1
+        self.beta2=beta2
+        self.epsilon=epsilon
+        self.weight_decay=weight_decay
+        self.v=[]
+        self.s=[]
+        self.v_=[]
+        self.s_=[]
+        self.g=[]
+        self.flag=0
+    
+    
+    def opt(self,gradient,parameter,t):
+        gradient_flat=nest.flatten(gradient)
+        parameter_flat=nest.flatten(parameter)
+        if self.flag==0:
+            self.v=[0 for x in range(len(gradient_flat))]
+            self.s=[0 for x in range(len(gradient_flat))]
+            self.v_=[x for x in range(len(gradient_flat))]
+            self.s_=[x for x in range(len(gradient_flat))]
+            self.g=[x for x in range(len(gradient_flat))]
+            self.flag+=1
+        for i in range(len(gradient_flat)):
+            gradient_flat[i]=gradient_flat[i]+self.weight_decay*parameter_flat[i]
+            self.v[i]=self.beta1*self.v[i]+(1-self.beta1)*gradient_flat[i]
+            self.s[i]=self.beta2*self.s[i]+(1-self.beta2)*gradient_flat[i]**2
+            self.v_[i]=self.v[i]/(1-self.beta1**(t+1))
+            self.s_[i]=self.s[i]/(1-self.beta2**(t+1))
+            self.g[i]=self.lr*self.v_[i]/(tf.sqrt(self.s_[i])+self.epsilon)
+            state_ops.assign(parameter_flat[i],parameter_flat[i]-self.g[i])
+        parameter=nest.pack_sequence_as(parameter,parameter_flat)
+        return
+
+
+class RAdam:
+    def __init__(self,lr=0.001,beta1=0.9,beta2=0.999,epsilon=1e-07):
+        self.lr=lr
+        self.beta1=beta1
+        self.beta2=beta2
+        self.epsilon=epsilon
+        self.smoothing=2/(1-beta2)-1 
+        self.v=[]
+        self.s=[]
+        self.v_=[]
+        self.s_=[]
+        self.g=[]
+        self.step_size=[]
+        self.flag=0
+    
+    
+    def opt(self,gradient,parameter,t):
+        gradient_flat=nest.flatten(gradient)
+        parameter_flat=nest.flatten(parameter)
+        if self.flag==0:
+            self.v=[0 for x in range(len(gradient_flat))]
+            self.s=[0 for x in range(len(gradient_flat))]
+            self.v_=[x for x in range(len(gradient_flat))]
+            self.s_=[x for x in range(len(gradient_flat))]
+            self.g=[x for x in range(len(gradient_flat))]
+            self.step_size=[x for x in range(len(gradient_flat))]
+            self.flag+=1
+        for i in range(len(gradient_flat)):
+            self.v[i]=self.beta1*self.v[i]+(1-self.beta1)*gradient_flat[i]
+            self.s[i]=self.beta2*self.s[i]+(1-self.beta2)*gradient_flat[i]**2
+            self.v_[i]=self.v[i]/(1-self.beta1**t)
+            self.s_[i]=self.s[i]/(1-self.beta2**t)
+            sma=self.smoothing-2*t*(self.beta2**t)/(1-self.beta2**t)
+            if sma>=5:
+                r=tf.math.sqrt((sma-4)*(sma-2)*self.smoothing/((self.smoothing-4)*(self.smoothing-2)*sma))
+                self.g[i]=r*gradient_flat[i]/(tf.math.sqrt(self.s_[i])+self.epsilon)
+                self.step_size[i]=-self.lr*r/(tf.math.sqrt(self.s_[i])+self.epsilon)
+            else:
+                self.g[i]=gradient_flat[i]
+                self.step_size[i]=-self.lr/(tf.math.sqrt(self.s_[i])+self.epsilon)
+            parameter_flat[i]=parameter_flat[i]+self.step_size[i]*self.v_[i]
+        return nest.pack_sequence_as(parameter,parameter_flat)
+
+
 class Ftrl:
     def __init__(self,learning_rate=0.001,learning_rate_power=-0.5,initial_accumulator_value=0.1,l1_regularization_strength=0.0,l2_regularization_strength=0.0,l2_shrinkage_regularization_strength=0.0,beta=0.0):
         self.learning_rate=learning_rate
@@ -247,3 +328,46 @@ class Ftrl:
                 state_ops.assign(parameter_flat[i],(tf.sign(self.z[i])*self.l1_regularization_strength-self.z[i])/((self.beta+tf.sqrt(self.n[i]))/self.learning_rate+self.l2_regularization_strength))
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return
+
+
+class AutoLR:
+    def __init__(self,optimizer,initial_lr,min_lr,max_lr,factor):
+        # initialize the optimizer to use
+        self.optimizer=optimizer
+        # initialize the learning rate parameters
+        self.initial_lr=initial_lr
+        self.min_lr=min_lr
+        self.max_lr=max_lr
+        self.factor=factor # this is the attribute that is used to change the learning rate
+        # initialize the current learning rate and iteration counter
+        self.current_lr=initial_lr
+        self.iteration=0
+    
+    
+    def opt(self,loss,parameter):
+        # increment the iteration counter
+        self.iteration+=1
+        # compute the gradient of the loss with respect to the parameter
+        gradient=tf.gradients(loss,parameter)
+        if tf.math.is_nan(loss):
+            # if loss is NaN, reduce learning rate by self.factor and reset iteration counter
+            print("Loss is NaN. Reducing learning rate by factor.")
+            new_lr=max(self.current_lr/self.factor,self.min_lr) # use self.factor here
+            print("New learning rate:{}".format(new_lr))
+            # update the learning rate of the custom optimizer
+            self.optimizer.lr=new_lr
+            self.optimizer.flag=0 # reset the flag to reinitialize the lists
+        elif tf.math.is_inf(loss):
+            # if loss is Inf, increase learning rate by self.factor and reset iteration counter
+            print("Loss is Inf. Increasing learning rate by factor.")
+            new_lr=min(self.current_lr*self.factor,self.max_lr) # use self.factor here
+            print("New learning rate:{}".format(new_lr))
+            # update the learning rate of the custom optimizer
+            self.optimizer.lr=new_lr
+            self.optimizer.flag=0 # reset the flag to reinitialize the lists
+        else:
+            # if loss is finite, update the parameter using the optimizer
+            parameter=self.optimizer.opt(gradient,parameter,self.iteration)
+        # update the current learning rate
+        self.current_lr=self.optimizer.lr
+        return parameter
