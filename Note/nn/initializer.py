@@ -18,7 +18,7 @@ def initializer(shape,initializer,dtype):
             fan_in=shape[0]
             fan_out=shape[1] if len(shape)>1 else 1
             scale=tf.sqrt(2.0/(fan_in+fan_out))
-            param=tf.Variable(tf.random.uniform(shape=shape,mean=0.0,stddev=scale,dtype=dtype))
+            param=tf.Variable(tf.random.uniform(shape=shape,minval=-scale*tf.sqrt(3.0),maxval=scale*tf.sqrt(3.0),dtype=dtype))
         elif initializer=='Xavier_normal':
             fan_in=shape[0]
             fan_out=shape[1] if len(shape)>1 else 1
@@ -33,15 +33,15 @@ def initializer(shape,initializer,dtype):
             fan_in=shape[0]
             fan_out=shape[1] if len(shape)>1 else 1
             scale=tf.sqrt(2.0/fan_in)
-            param=tf.Variable(tf.random.uniform(shape=shape,mean=0.0,stddev=scale,dtype=dtype))
+            param=tf.Variable(tf.random.uniform(shape=shape,minval=-scale*tf.sqrt(3.0),maxval=scale*tf.sqrt(3.0),dtype=dtype))
         elif initializer=='Lecun':
             fan_in=shape[0]
             fan_out=shape[1] if len(shape)>1 else 1
-            scale=tf.sqrt(3.0/(fan_in+fan_out))
+            scale=tf.sqrt(3.0/fan_in)
             param=tf.Variable(tf.random.normal(shape=shape,mean=0.0,stddev=scale,dtype=dtype))
         elif initializer=='Lecun_uniform':
             fan_in=shape[0]
             fan_out=shape[1] if len(shape)>1 else 1
-            scale=tf.sqrt(3.0/(fan_in+fan_out))
-            param=tf.Variable(tf.random.uniform(shape=shape,mean=0.0,stddev=scale,dtype=dtype))
+            scale=tf.sqrt(3.0/fan_in)
+            param=tf.Variable(tf.random.uniform(shape=shape,minval=-scale*tf.sqrt(3.0),maxval=scale*tf.sqrt(3.0),dtype=dtype))
     return param
