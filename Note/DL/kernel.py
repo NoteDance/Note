@@ -320,19 +320,18 @@ class kernel:
                     labels_batch=self.train_labels[j]
         else:
             try:
-                if type(self.train_data)==list:
-                    for i in range(len(self.train_data)):
-                        data_batch[i]=self.platform.concat([self.train_data[i][index1:],self.train_data[i][:index2]],0)
-                else:
-                    data_batch=self.platform.concat([self.train_data[index1:],self.train_data[:index2]],0)
-                if type(self.train_labels)==list:
-                    for i in range(len(self.train_data)):
-                        labels_batch[i]=self.platform.concat([self.train_labels[i][index1:],self.train_labels[i][:index2]],0)
-                else:
-                    labels_batch=self.platform.concat([self.train_labels[index1:],self.train_labels[:index2]],0)
-            except Exception as e:
-                first_exception=e
                 try:
+                    if type(self.train_data)==list:
+                        for i in range(len(self.train_data)):
+                            data_batch[i]=self.platform.concat([self.train_data[i][index1:],self.train_data[i][:index2]],0)
+                    else:
+                        data_batch=self.platform.concat([self.train_data[index1:],self.train_data[:index2]],0)
+                    if type(self.train_labels)==list:
+                        for i in range(len(self.train_data)):
+                            labels_batch[i]=self.platform.concat([self.train_labels[i][index1:],self.train_labels[i][:index2]],0)
+                    else:
+                        labels_batch=self.platform.concat([self.train_labels[index1:],self.train_labels[:index2]],0)
+                except Exception:
                     if type(self.train_data)==list:
                         for i in range(len(self.train_data)):
                             data_batch[i]=np.concatenate([self.train_data[i][index1:],self.train_data[i][:index2]],0)
@@ -343,9 +342,8 @@ class kernel:
                             labels_batch[i]=np.concatenate([self.train_labels[i][index1:],self.train_labels[i][:index2]],0)
                     else:
                         labels_batch=np.concatenate([self.train_labels[index1:],self.train_labels[:index2]],0)
-                except Exception as e:
-                    raise e
-                    raise first_exception
+            except Exception as e:
+                raise e
         return data_batch,labels_batch
     
     
@@ -358,104 +356,86 @@ class kernel:
     @function(jit_compile=True)
     def tf_opt(self,data,labels):
         try:
-            if self.nn.GradientTape!=None:
-                tape,output,loss=self.nn.GradientTape(data,labels)
-        except Exception as e:
-            first_exception=e
             try:
+                if self.nn.GradientTape!=None:
+                    tape,output,loss=self.nn.GradientTape(data,labels)
+            except Exception:
                 with self.platform.GradientTape(persistent=True) as tape:
                     output=self.nn.fp(data)
                     loss=self.nn.loss(output,labels)
-            except Exception as e:
-                raise e
-                raise first_exception
-        try:
-            gradient=self.nn.gradient(tape,loss)
         except Exception as e:
-            first_exception=e
+            raise e
+        try:
             try:
+                gradient=self.nn.gradient(tape,loss)
+            except Exception:
                 gradient=tape.gradient(loss,self.nn.param)
-            except Exception as e:
-                raise e
-                raise first_exception
-        try:
-            self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
         except Exception as e:
-            first_exception=e
+            raise e
+        try:
             try:
+                self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+            except Exception:
                 self.nn.opt(gradient)
-            except Exception as e:
-                raise e
-                raise first_exception
+        except Exception as e:
+            raise e
         return output,loss
     
     
     @function(jit_compile=True)
     def tf_opt_t(self,data,labels,t=None,ln=None):
         try:
-            if self.nn.GradientTape!=None:
-                tape,output,loss=self.nn.GradientTape(data,labels,t)
-        except Exception as e:
-            first_exception=e
-            with self.platform.GradientTape(persistent=True) as tape:
-                try:
-                    output=self.nn.fp(data)
-                    loss=self.nn.loss(output,labels)
-                except Exception as e:
-                    second_exception=e
+            try:
+                if self.nn.GradientTape!=None:
+                    tape,output,loss=self.nn.GradientTape(data,labels,t)
+            except Exception:
+                with self.platform.GradientTape(persistent=True) as tape:
                     try:
+                        output=self.nn.fp(data)
+                        loss=self.nn.loss(output,labels)
+                    except Exception:
                         output=self.nn.fp(data,t)
                         loss=self.nn.loss(output,labels)
-                    except Exception as e:
-                        raise e
-                        raise second_exception
-                        raise first_exception
+        except Exception as e:
+            raise e
         if self.PO==1:
             self.lock[0].acquire()
             if self.stop_func_(self.lock[0]):
                 return None,0
             try:
-                gradient=self.nn.gradient(tape,loss)
-            except Exception as e:
-                first_exception=e
                 try:
+                    gradient=self.nn.gradient(tape,loss)
+                except Exception:
                     gradient=tape.gradient(loss,self.nn.param)
-                except Exception as e:
-                    raise e
-                    raise first_exception
+            except Exception as e:
+                raise e
             try:
                 if self.nn.attenuate!=None:
                     gradient=self.nn.attenuate(gradient,self.opt_counter,t)
             except Exception:
                 pass
             try:
-                self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
-            except Exception as e:
-                first_exception=e
                 try:
-                    self.nn.opt(gradient)
-                except Exception as e:
-                    second_exception=e
+                    self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+                except Exception:
                     try:
+                        self.nn.opt(gradient)
+                    except Exception:
                         self.nn.opt(gradient,t)
-                    except Exception as e:
-                        raise e
-                        raise second_exception
-                        raise first_exception
+            except Exception as e:
+                raise e
             self.lock[0].release()
         elif self.PO==2:
             self.lock[0].acquire()
             if self.stop_func_(self.lock[0]):
                 return None,0
             try:
-                gradient=self.nn.gradient(tape,loss)
-            except Exception as e:
-                first_exception=e
                 try:
+                    gradient=self.nn.gradient(tape,loss)
+                except Exception:
                     gradient=tape.gradient(loss,self.nn.param)
-                except Exception as e:
-                    raise e
-                    raise first_exception
+            except Exception as e:
+                raise e
             self.lock[0].release()
             self.lock[1].acquire()
             if self.stop_func_(self.lock[1]):
@@ -466,70 +446,44 @@ class kernel:
             except Exception:
                 pass
             try:
-                self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
-            except Exception as e:
-                first_exception=e
                 try:
-                    self.nn.opt(gradient)
-                except Exception as e:
-                    second_exception=e
+                    self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+                except Exception:
                     try:
+                        self.nn.opt(gradient)
+                    except Exception:
                         self.nn.opt(gradient,t)
-                    except Exception as e:
-                        raise e
-                        raise second_exception
-                        raise first_exception
+            except Exception as e:
+                raise e
             self.lock[1].release()
         elif self.PO==3:
             if self.row!=None:
                 try:
                     self.gradient_lock[ln[0]][ln[1]].acquire()
-                except Exception as e:
-                    first_exception=e
-                    try:
-                        self.gradient_lock[0][0].acquire()
-                    except Exception as e:
-                        raise e
-                        raise first_exception
+                except Exception:
+                    self.gradient_lock[0][0].acquire()
             else:
                 try:
                     self.gradient_lock[ln].acquire()
-                except Exception as e:
-                    first_exception=e
-                    try:
-                        self.gradient_lock[0].acquire()
-                    except Exception as e:
-                        raise e
-                        raise first_exception
+                except Exception:
+                    self.gradient_lock[0].acquire()
             try:
-                gradient=self.nn.gradient(tape,loss)
-            except Exception as e:
-                first_exception=e
                 try:
+                    gradient=self.nn.gradient(tape,loss)
+                except Exception:
                     gradient=tape.gradient(loss,self.nn.param)
-                except Exception as e:
-                    raise e
-                    raise first_exception
+            except Exception as e:
+                raise e
             if self.row!=None:
                 try:
                     self.gradient_lock[ln[0]][ln[1]].release()
-                except Exception as e:
-                    first_exception=e
-                    try:
-                        self.gradient_lock[0][0].release()
-                    except Exception as e:
-                        raise e
-                        raise first_exception
+                except Exception:
+                    self.gradient_lock[0][0].release()
             else:
                 try:
                     self.gradient_lock[ln].release()
-                except Exception as e:
-                    first_exception=e
-                    try:
-                        self.gradient_lock[0].release()
-                    except Exception as e:
-                        raise e
-                        raise first_exception
+                except Exception:
+                    self.gradient_lock[0].release()
             self.lock[0].acquire()
             if self.memory_flag==True:
                 self.calculate_memory()
@@ -545,19 +499,15 @@ class kernel:
             except Exception:
                 pass
             try:
-                self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
-            except Exception as e:
-                first_exception=e
                 try:
-                    self.nn.opt(gradient)
-                except Exception as e:
-                    second_exception=e
+                    self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+                except Exception:
                     try:
+                        self.nn.opt(gradient)
+                    except Exception:
                         self.nn.opt(gradient,t)
-                    except Exception as e:
-                        raise e
-                        raise second_exception
-                        raise first_exception
+            except Exception as e:
+                raise e
             if self.memory_flag==True:
                 self.grad_memory_list[ln]=0
             self.lock[0].release()
@@ -568,16 +518,14 @@ class kernel:
         output=self.nn.fp(data)
         loss=self.nn.loss(output,labels)
         try:
-            self.nn.opt.zero_grad()
-            loss.backward()
-            self.nn.opt.step()
-        except Exception as e:
-            first_exception=e
             try:
+                self.nn.opt.zero_grad()
+                loss.backward()
+                self.nn.opt.step()
+            except Exception:
                 self.nn.opt(loss)
-            except Exception as e:
-                raise e
-                raise first_exception
+        except Exception as e:
+            raise e
         return output,loss
     
     
@@ -1588,18 +1536,6 @@ class kernel:
                         index1=batches*batch
                         index2=batch-(shape0-batches*batch)
                         try:
-                            if type(test_data)==list:
-                                for i in range(len(test_data)):
-                                    data_batch[i]=self.platform.concat([test_data[i][index1:],test_data[i][:index2]],0)
-                            else:
-                                data_batch=self.platform.concat([test_data[index1:],test_data[:index2]],0)
-                            if type(self.test_labels)==list:
-                                for i in range(len(test_labels)):
-                                    labels_batch[i]=self.platform.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
-                            else:
-                                labels_batch=self.platform.concat([test_labels[index1:],test_labels[:index2]],0)
-                        except Exception as e:
-                            first_exception=e
                             try:
                                 if type(test_data)==list:
                                     for i in range(len(test_data)):
@@ -1611,9 +1547,19 @@ class kernel:
                                         labels_batch[i]=self.platform.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
                                 else:
                                     labels_batch=self.platform.concat([test_labels[index1:],test_labels[:index2]],0)
-                            except Exception as e:
-                                raise e
-                                raise first_exception
+                            except Exception:
+                                if type(test_data)==list:
+                                    for i in range(len(test_data)):
+                                        data_batch[i]=self.platform.concat([test_data[i][index1:],test_data[i][:index2]],0)
+                                else:
+                                    data_batch=self.platform.concat([test_data[index1:],test_data[:index2]],0)
+                                if type(self.test_labels)==list:
+                                    for i in range(len(test_labels)):
+                                        labels_batch[i]=self.platform.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
+                                else:
+                                    labels_batch=self.platform.concat([test_labels[index1:],test_labels[:index2]],0)
+                        except Exception as e:
+                            raise e
                         if self.thread==None or t==None:
                             output=self.nn.fp(data_batch)
                         else:
@@ -2014,19 +1960,15 @@ class kernel:
                 raise e
                 raise first_exception
         try:
-            pickle.dump(self.platform.keras.optimizers.serialize(opt),output_file)
-        except Exception as e:
-            first_exception=e
             try:
-                pickle.dump(self.nn.serialize(),output_file)
-            except Exception as e:
-                second_exception=e
+                pickle.dump(self.platform.keras.optimizers.serialize(opt),output_file)
+            except Exception:
                 try:
+                    pickle.dump(self.nn.serialize(),output_file)
+                except Exception:
                     pickle.dump(None,output_file)
-                except Exception as e:
-                    raise e
-                    raise second_exception
-                    raise first_exception
+        except Exception as e:
+            raise e
         pickle.dump(self.batch,output_file)
         pickle.dump(self.end_loss,output_file)
         pickle.dump(self.end_acc,output_file)
