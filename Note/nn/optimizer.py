@@ -1,6 +1,5 @@
 import tensorflow as tf
 import numpy as np
-import Note.nn.process.RAdam as RAdam_p
 from tensorflow.python.ops import state_ops
 from tensorflow.python.util import nest
 
@@ -412,29 +411,23 @@ class LookAhead:
 # Define a Ranger optimizer class
 class Ranger:
     # Initialization method, receive an internal optimizer (default is RAdam), sync period, slow step size and other parameters
-    def __init__(self,optimizer=RAdam_p(),sync_period=6,slow_step_size=0.5,**kwargs):
+    def __init__(self,optimizer=RAdam(),sync_period=6,slow_step_size=0.5,**kwargs):
         # Save attributes
-        self.optimizer=optimizer
-        self.sync_period=sync_period
-        self.slow_step_size=slow_step_size
         # Initialize slow weight dictionary
         self.slow_weights=dict()
         # Initialize other parameters, such as adaptive gradient clipping, positive negative momentum, norm loss, etc.
-        self.adaptive_grad_clip=kwargs.get("adaptive_grad_clip", True)
-        self.positive_negative_momentum=kwargs.get("positive_negative_momentum", True)
-        self.norm_loss=kwargs.get("norm_loss", True)
+        self.adaptive_grad_clip=kwargs.get("adaptive_grad_clip",True)
+        self.positive_negative_momentum=kwargs.get("positive_negative_momentum",True)
+        self.norm_loss=kwargs.get("norm_loss",True)
         # Initialize linear learning rate warmup parameters, such as warmup steps and initial learning rate
-        self.warmup_steps=kwargs.get("warmup_steps", 0)
-        self.init_lr=kwargs.get("init_lr", 0.0)
+        self.warmup_steps=kwargs.get("warmup_steps",0)
+        self.init_lr=kwargs.get("init_lr",0.0)
         # Initialize explore-exploit learning rate schedule parameters, such as maximum learning rate and minimum learning rate
-        self.max_lr=kwargs.get("max_lr", 0.1)
-        self.min_lr=kwargs.get("min_lr", 0.01)
+        self.max_lr=kwargs.get("max_lr",0.1)
+        self.min_lr=kwargs.get("min_lr",0.01)
         # Initialize LookAhead parameters, such as whether to enable and sync period
-        self.use_lookahead=kwargs.get("use_lookahead", True)
-        self.lookahead_sync_period=kwargs.get("lookahead_sync_period", 6)
         # If LookAhead is enabled, create an instance of the LookAhead class and pass the internal optimizer and sync period
-        if self.use_lookahead:
-            self.lookahead=LookAhead(self.optimizer, sync_period=self.lookahead_sync_period)
+        self.lookahead=LookAhead(optimizer,sync_period=sync_period,slow_step_size=slow_step_size)
     
     
     # Define a clip_grad method for adaptive gradient clipping
@@ -496,25 +489,6 @@ class Ranger:
         self.optimizer.lr=current_lr
     
     
-    # Define a lookahead method for LookAhead optimization
-    def lookahead(self,parameter,t):
-        # Get the current iteration number
-        local_step=t
-        # Determine whether to synchronize slow weights and fast weights
-        sync_cond=local_step%self.lookahead_sync_period==0
-        # If synchronization is required, update all slow weights and assign them to fast weights
-        if sync_cond:
-            for var in parameter:
-                # If the variable does not have a corresponding slow weight, create one and initialize it to the value of the variable
-                if var not in self.slow_weights:
-                    self.slow_weights[var]=var.copy()
-                # Calculate the new slow weight and assign it to the slow weight and fast weight
-                new_slow_var=self.slow_weights[var]+self.slow_step_size*(var-self.slow_weights[var])
-                self.slow_weights[var]=new_slow_var
-                var[:]=new_slow_var
-        return parameter
-    
-
     # Define a softplus method for Softplus transformation
     def softplus(self,x):
         # Calculate the value after Softplus transformation according to the formula in the paper
@@ -545,29 +519,11 @@ class Ranger:
         # If gradient normalization is enabled, normalize the gradient
         if self.normalize_grad:
             gradient=self.normalize_grad(gradient)
-        # Call the opt method of the internal optimizer to update fast weights
-        parameter=self.optimizer.opt(gradient,parameter,t)
-        # Get the current iteration number
-        local_step=t
-        # Determine whether to synchronize slow weights and fast weights
-        sync_cond=local_step%self.sync_period==0
-        # If synchronization is required, update all slow weights and assign them to fast weights
-        if sync_cond:
-            for var in parameter:
-                # If the variable does not have a corresponding slow weight, create one and initialize it to the value of the variable
-                if var not in self.slow_weights:
-                    self.slow_weights[var]=var.copy()
-                # Calculate the new slow weight and assign it to the slow weight and fast weight
-                new_slow_var=self.slow_weights[var]+self.slow_step_size*(var-self.slow_weights[var])
-                self.slow_weights[var]=new_slow_var
-                var[:]=new_slow_var
+        self.lookahead.opt(gradient,parameter,t)
         # If linear learning rate warmup is enabled, adjust the learning rate according to the current iteration number
         if self.warmup_steps>0:
-            self.adjust_lr(local_step)
+            self.adjust_lr(t)
         # If explore-exploit learning rate schedule is enabled, adjust the learning rate according to the current iteration number
         if self.max_lr>self.min_lr:
-            self.explore_exploit_lr(local_step)
-        # If LookAhead is enabled, call the opt method of LookAhead class to update slow weights
-        if self.use_lookahead:
-            self.lookahead.opt(gradient,parameter,t)
+            self.explore_exploit_lr(t)
         return
