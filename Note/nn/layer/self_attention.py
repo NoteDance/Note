@@ -1,5 +1,4 @@
 import tensorflow as tf
-import numpy as np
 import Note.nn.initializer as i
 
 
@@ -15,14 +14,13 @@ class self_attention:
         query=tf.matmul(data,self.qw)
         key=tf.matmul(data,self.kw)
         value=tf.matmul(data,self.vw)
-        query=tf.reshape(query,shape=[query.shape[0],query.shape[1],a,int(data.shape[2])//a]) 
-        key=tf.reshape(key,shape=[key.shape[0],key.shape[1],a,int(data.shape[2])//a]) 
-        value=tf.reshape(value,shape=[value.shape[0],value.shape[1],a,int(data.shape[2])//a]) 
-        query=tf.transpose(query,perm=[0,1,3,2])
-        key=tf.transpose(key,perm=[0,1,3,2])
-        key=tf.transpose(key,perm=[0,2,3,1])
+        query=tf.reshape(query,shape=[query.shape[0],query.shape[1],a,data.shape[2]//a]) 
+        key=tf.reshape(key,shape=[key.shape[0],key.shape[1],a,data.shape[2]//a]) 
+        value=tf.reshape(value,shape=[value.shape[0],value.shape[1],a,data.shape[2]//a]) 
+        query=tf.transpose(query,perm=[0,2,1,3])
+        key=tf.transpose(key,perm=[0,2,1,3])
         value=tf.transpose(value,perm=[0,2,1,3])
-        scores=tf.matmul(query,key)/np.sqrt(int(data.shape[2])/a)
+        scores=tf.matmul(query,key,transpose_b=True)/tf.sqrt(data.shape[2]/a)
         if mask is not None:
             scores+=mask*-1e9
         attention_weights=tf.nn.softmax(scores,axis=-1)
