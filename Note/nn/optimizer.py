@@ -289,7 +289,7 @@ class RAdam:
             else:
                 self.g[i]=gradient_flat[i]
                 self.step_size[i]=-self.lr/(tf.math.sqrt(self.s_[i])+self.epsilon)
-            state_ops.assign(parameter_flat[i]=parameter_flat[i]+self.step_size[i]*self.v_[i])
+            state_ops.assign(parameter_flat[i],parameter_flat[i]+self.step_size[i]*self.v_[i])
             parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return 
 
