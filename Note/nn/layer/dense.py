@@ -7,6 +7,8 @@ class dense:
         self.weight=i.initializer(weight_shape,weight_initializer,dtype)
         if use_bias==True:
             self.bias=i.initializer([weight_shape[1]],bias_initializer,dtype)
+        else:
+            self.bias=None
         self.activation=activation
         self.use_bias=use_bias
         if use_bias==True:
