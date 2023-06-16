@@ -51,5 +51,5 @@ class capsule:
             outputs=self.squash(tf.reduce_sum(tf.multiply(c,data_hat),axis=1,
                                                        keepdims=True)) # compute the weighted sum of predictions and apply squash function to get outputs as vectors with length between 0 and 1
             if i!=self.routings-1: # if not the last iteration
-                b+=tf.reduce_sum(tf.multiply(outputs,data_hat),axis=-1) # update b by adding the scalar product of outputs and predictions
+                b+=tf.reduce_sum(tf.multiply(data_hat,outputs),axis=-1) # update b by adding the scalar product of outputs and predictions
         return tf.squeeze(outputs) # return outputs after squeezing out redundant dimensions
