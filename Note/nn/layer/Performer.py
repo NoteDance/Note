@@ -4,7 +4,7 @@ from Note.nn.layer.layer_normalization import layer_normalization
 
 
 # Define a custom layer that implements a performer block
-class performer:
+class Performer:
   def __init__(self, dim, nb_heads, nb_random_features, weight_initializer='Xavier', bias_initializer='zeros', activation='relu', dtype='float32', use_bias=True):
     # Initialize the sublayers
     self.attention = FAVOR_attention(dim, nb_heads, nb_random_features)
