@@ -98,13 +98,7 @@ kernel.save()              #save neural network
 
 **3. parallel forward propagation and calculate multiple gradients and optimizing.(kernel.PO=3)**
 
-**parallel optimization may cause unstable training(the estimate of the gradient is biased) but it can speed up training and make the loss function jump out of the local minimum.**
-
-**Note can speed up training by multiprocessing and has stop mechanism and gradient attenuation to resolve unstable training.**
-
-**Note uses multiprocessing parallel forward propagation and optimizes neural network.**
-
-**Note's multi-process kernel is not compatible with the neural network built by Keras. You can use the layer package from Note and the low-level API from tensorflow to build neural networks.**
+**Parallel optimization may cause unstable training(the estimate of the gradient is biased) but it can speed up training and make the loss function jump out of the local minimum. Note can speed up training by multiprocessing and has stop mechanism and gradient attenuation to resolve unstable training. Note uses multiprocessing to perform parallel forward propagation and optimization on neural networks. Note's multi-process kernel is not compatible with the neural network built by Keras. You can use the layer directory from Note and the low-level API from tensorflow to build neural networks.**
 
 #### Multiprocessing:
 
