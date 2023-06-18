@@ -88,15 +88,15 @@ kernel.save()              #save neural network
 
 
 ### Parallel optimization:
-**You can use parallel optimization to speed up neural network training,parallel optimization speed up training by multiprocessing.**
+**You can use parallel optimization to speed up neural network training, and parallel optimization is implemented through multiprocessing.**
 
 **Note have three types of parallel optimization:**
 
-**1. parallel forward propagation and optimizing.(kernel.PO=1)**
+**1. Perform forward propagation and optimization in parallel. (PO1)**
 
-**2. parallel forward propagation and calculate a gradient and optimizing.(kernel.PO=2)**
+**2. Perform forward propagation, gradient calculation and optimization in parallel. (PO2)**
 
-**3. parallel forward propagation and calculate multiple gradients and optimizing.(kernel.PO=3)**
+**3. Perform forward propagation, multiple gradient calculations and optimization in parallel. (PO3)**
 
 **Parallel optimization may cause unstable training(the estimate of the gradient is biased) but it can speed up training and make the loss function jump out of the local minimum. Note can speed up training by multiprocessing and has stop mechanism and gradient attenuation to resolve unstable training. Note uses multiprocessing to perform parallel forward propagation and optimization on neural networks. Note's multi-process kernel is not compatible with the neural network built by Keras. You can use the layer directory from Note and the low-level API from tensorflow to build neural networks.**
 
