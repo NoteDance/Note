@@ -10,16 +10,16 @@ class Transformer:
         self.weight_q=i.initializer(weight_shape,weight_initializer,dtype) # query weight matrix
         self.weight_k=i.initializer(weight_shape,weight_initializer,dtype) # key weight matrix
         self.weight_v=i.initializer(weight_shape,weight_initializer,dtype) # value weight matrix
-        self.weight_o=i.initializer([weight_shape[1],weight_shape[0]],weight_initializer,dtype) # output weight matrix
-        self.weight_ffn_1=i.initializer([weight_shape[0],4*weight_shape[0]],weight_initializer,dtype) # first feed-forward weight matrix
-        self.weight_ffn_2=i.initializer([4*weight_shape[0],weight_shape[0]],weight_initializer,dtype) # second feed-forward weight matrix
+        self.weight_o=i.initializer([weight_shape[1],weight_shape[1]],weight_initializer,dtype) # output weight matrix
+        self.weight_ffn_1=i.initializer([weight_shape[1],4*weight_shape[1]],weight_initializer,dtype) # first feed-forward weight matrix
+        self.weight_ffn_2=i.initializer([4*weight_shape[1],weight_shape[1]],weight_initializer,dtype) # second feed-forward weight matrix
         if use_bias:
             self.bias_q=i.initializer([weight_shape[1]],bias_initializer,dtype) # query bias vector
             self.bias_k=i.initializer([weight_shape[1]],bias_initializer,dtype) # key bias vector
             self.bias_v=i.initializer([weight_shape[1]],bias_initializer,dtype) # value bias vector
-            self.bias_o=i.initializer([weight_shape[0]],bias_initializer,dtype) # output bias vector
-            self.bias_ffn_1=i.initializer([4*weight_shape[0]],bias_initializer,dtype) # first feed-forward bias vector
-            self.bias_ffn_2=i.initializer([weight_shape[0]],bias_initializer,dtype) # second feed-forward bias vector
+            self.bias_o=i.initializer([weight_shape[1]],bias_initializer,dtype) # output bias vector
+            self.bias_ffn_1=i.initializer([4*weight_shape[1]],bias_initializer,dtype) # first feed-forward bias vector
+            self.bias_ffn_2=i.initializer([weight_shape[1]],bias_initializer,dtype) # second feed-forward bias vector
         self.dtype=dtype
         self.use_bias=use_bias
         if use_bias:
