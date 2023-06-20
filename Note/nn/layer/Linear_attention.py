@@ -55,18 +55,25 @@ class Linear_attention:
       self.param.append(self.sigma)
 
   
-  def output(self, data):
+  def output(self, data1, data2=None):
     # x is a tensor of shape (batch_size, seq_len, dim)
     # return a tensor of shape (batch_size, seq_len, dim)
     # Split the input tensor into num_heads sub-tensors along the last dimension
-    data_split = tf.split(data, self.num_heads, axis=-1) # a list of tensors of shape (batch_size, seq_len, head_dim)
+    data1_split = tf.split(data1, self.num_heads, axis=-1) # a list of tensors of shape (batch_size, seq_len, head_dim)
     # Use a loop to compute the attention output for each head
     z_list = [] # a list to store the attention outputs
     for i in range(self.num_heads):
       # Use the output method of your dense class instead of calling the layer directly
-      q = self.q_dense_list[i].output(data_split[i]) # (batch_size, seq_len, head_dim)
-      k = self.k_dense_list[i].output(data_split[i]) # (batch_size, seq_len, head_dim)
-      v = self.v_dense_list[i].output(data_split[i]) # (batch_size, seq_len, head_dim)
+      q = self.q_dense_list[i].output(data1_split[i]) # (batch_size, seq_len, head_dim)
+      if data2 is not None:
+        # If data2 is given, split it and use it to compute key and value
+        data2_split = tf.split(data2, self.num_heads, axis=-1) # a list of tensors of shape (batch_size, seq_len, head_dim)
+        k = self.k_dense_list[i].output(data2_split[i]) # (batch_size, seq_len, head_dim)
+        v = self.v_dense_list[i].output(data2_split[i]) # (batch_size, seq_len, head_dim)
+      else:
+        # If data2 is not given, use data to compute key and value
+        k = self.k_dense_list[i].output(data1_split[i]) # (batch_size, seq_len, head_dim)
+        v = self.v_dense_list[i].output(data1_split[i]) # (batch_size, seq_len, head_dim)
       # Use the kernel approximation method to compute k_tilde
       if self.kernel_approximation == 'low_rank':
         # Use a low-rank approximation of Gaussian kernel
