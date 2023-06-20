@@ -328,6 +328,8 @@ https://github.com/NoteDancing/Note-documentation
 # Layer:
 https://github.com/NoteDancing/Note/tree/Note-7.0-pv/Note/nn/layer
 
+**documentation:** https://github.com/NoteDancing/Note-documentation/tree/layer
+
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
 https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/layer/nn.py
