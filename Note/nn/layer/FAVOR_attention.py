@@ -16,13 +16,20 @@ class FAVOR_attention:
     self.param=[self.qw, self.kw, self.vw, self.random_features]
     
 
-  def output(self, data):
+  def output(self, data1, data2=None):
     # Compute the softmax kernel approximation using FAVOR+
-    data = data / tf.math.sqrt(tf.cast(self.dim, data.dtype.name)) # Scale the data by the square root of the dimension
+    data1 = data1 / tf.math.sqrt(tf.cast(self.dim, data1.dtype.name)) # Scale the data by the square root of the dimension
     # Compute the query, key and value vectors
-    query = tf.matmul(data , self.qw) # Multiply the data by the query matrix
-    key = tf.matmul(data , self.kw) # Multiply the data by the key matrix
-    value = tf.matmul(data , self.vw) # Multiply the data by the value matrix
+    query = tf.matmul(data1 , self.qw) # Multiply the data by the query matrix
+    if data2 is not None:
+      # If data2 is given, compute the key and value vectors from data2
+      data2 = data2 / tf.math.sqrt(tf.cast(self.dim, data2.dtype.name)) # Scale the data by the square root of the dimension
+      key = tf.matmul(data2 , self.kw) # Multiply the data by the key matrix
+      value = tf.matmul(data2 , self.vw) # Multiply the data by the value matrix
+    else:
+      # If data2 is not given, compute the key and value vectors from data1
+      key = tf.matmul(data1 , self.kw) # Multiply the data by the key matrix
+      value = tf.matmul(data1 , self.vw) # Multiply the data by the value matrix
     # Split the input into multiple heads
     query = tf.reshape(query, shape=(-1, query.shape[1], self.nb_heads, self.dim // self.nb_heads)) # Reshape the query to have multiple heads
     query = tf.transpose(query, perm=(0, 2, 1, 3)) # Transpose the query to match the attention head order
@@ -40,5 +47,5 @@ class FAVOR_attention:
     # Compute the attention output
     output = tf.matmul(kernel, value) # Multiply the kernel by the value to get the attention output
     # Merge the output back to one head
-    output = tf.reshape(output, shape=(-1, data.shape[1], self.dim * self.nb_heads)) # Reshape the output to merge the attention heads
+    output = tf.reshape(output, shape=(-1, data1.shape[1], self.dim * self.nb_heads)) # Reshape the output to merge the attention heads
     return output
