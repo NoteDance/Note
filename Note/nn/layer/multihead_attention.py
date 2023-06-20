@@ -16,11 +16,18 @@ class multihead_attention:
         self.head_dim = weight_shape[1] // num_heads
     
 
-    def output(self, query, key, value, mask=None):
+    def output(self, data1, data2=None, mask=None):
         # Linearly transform query, key, and value to obtain new query, key, and value
-        query = tf.matmul(query, self.qw)  # shape: (batch_size, seq_length_q, dim)
-        key = tf.matmul(key, self.kw)  # shape: (batch_size, seq_length_k, dim)
-        value = tf.matmul(value, self.vw)  # shape: (batch_size, seq_length_v, dim)
+        if data2 is not None:
+          # If using cross attention, use data1 as query and data2 as key and value
+          query = tf.matmul(data1, self.qw)  # shape: (batch_size, seq_length_q, dim)
+          key = tf.matmul(data2, self.kw)  # shape: (batch_size, seq_length_k, dim)
+          value = tf.matmul(data2, self.vw)  # shape: (batch_size, seq_length_v, dim)
+        else:
+          # If not using cross attention, use data1 as query, key and value
+          query = tf.matmul(data1, self.qw)  # shape: (batch_size, seq_length_q, dim)
+          key = tf.matmul(data1, self.kw)  # shape: (batch_size, seq_length_k, dim)
+          value = tf.matmul(data1, self.vw)  # shape: (batch_size, seq_length_v, dim)
         # Split the new query, key, and value into multiple heads to obtain multihead query, key, and value
         query = tf.reshape(query, shape=[query.shape[0], query.shape[1], self.num_heads, self.head_dim])  # shape: (batch_size, seq_length_q, num_heads, head_dim)
         key = tf.reshape(key, shape=[key.shape[0], key.shape[1], self.num_heads, self.head_dim])  # shape: (batch_size, seq_length_k, num_heads, head_dim)
