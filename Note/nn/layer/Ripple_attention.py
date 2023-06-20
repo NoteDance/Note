@@ -30,17 +30,23 @@ class Ripple_attention:
     score = qk / tf.sqrt(qk_cumsum + 1e-6)
     return score
 
-  def output(self, data):
-    # compute the query, key and value projections
-    q = tf.matmul(data, self.wq)
-    k = tf.matmul(data, self.wk)
-    v = tf.matmul(data, self.wv)
+  def output(self, data1, data2=None):
+    # compute the query projection from data1
+    q = tf.matmul(data1, self.wq)
+    if data2 is not None:
+      # if data2 is given, compute the key and value projections from data2
+      k = tf.matmul(data2, self.wk)
+      v = tf.matmul(data2, self.wv)
+    else:
+      # if data2 is not given, compute the key and value projections from data1
+      k = tf.matmul(data1, self.wk)
+      v = tf.matmul(data1, self.wv)
     # split the heads
     q = self.split_heads(q)
     k = self.split_heads(k)
     v = self.split_heads(v)
     # compute the scaled dot product of query and key
-    qk = tf.matmul(q, k, transpose_b=True) / tf.math.sqrt(tf.cast(self.d_head,data.dtype.name))
+    qk = tf.matmul(q, k, transpose_b=True) / tf.math.sqrt(tf.cast(self.d_head,data1.dtype.name))
     # apply the ripple function to get the attention score
     score = self.ripple(qk)
     # apply softmax to get the attention weight
