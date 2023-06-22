@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+from multiprocessing import Manager
 from tensorflow.python.ops import state_ops
 from tensorflow.python.util import nest
 
@@ -22,7 +23,8 @@ class Momentum:
     def __init__(self,lr,gamma):
         self.lr=lr
         self.gamma=gamma
-        self.v=[]
+        manager=Manager()
+        self.v=manager.list()
         self.flag=0
     
     
@@ -30,10 +32,10 @@ class Momentum:
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         if self.flag==0:
-            self.v=[0 for x in range(len(gradient_flat))]
+            self.v=[tf.Variable(tf.zeros_like(x),dtype=x.dtype.name) for x in gradient_flat]
             self.flag=1
         for i in range(len(gradient_flat)):
-            self.v[i]=self.gamma*self.v[i]+self.lr*gradient_flat[i]
+            self.v[i].assign(self.gamma*self.v[i]+self.lr*gradient_flat[i])
             state_ops.assign(parameter_flat[i],parameter_flat[i]-self.v[i])
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
@@ -43,7 +45,8 @@ class AdaGrad:
     def __init__(self,lr,epsilon=1e-06):
         self.lr=lr
         self.epsilon=epsilon
-        self.s=[]
+        manager=Manager()
+        self.s=manager.list()
         self.flag=0
     
     
@@ -51,10 +54,10 @@ class AdaGrad:
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         if self.flag==0:
-            self.s=[0 for x in range(len(gradient_flat))]
+            self.s=[tf.Variable(tf.zeros_like(x),dtype=x.dtype.name) for x in gradient_flat]
             self.flag=1
         for i in range(len(gradient_flat)):
-            self.s[i]=self.s[i]+gradient_flat[i]**2
+            self.s[i].assign(self.s[i]+gradient_flat[i]**2)
             state_ops.assign(parameter_flat[i],parameter_flat[i]-self.lr*gradient_flat[i]/tf.sqrt(self.s[i]+self.epsilon))
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
@@ -65,7 +68,8 @@ class RMSProp:
         self.lr=lr
         self.gamma=gamma
         self.epsilon=epsilon
-        self.s=[]
+        manager=Manager()
+        self.s=manager.list()
         self.flag=0
     
     
@@ -73,10 +77,10 @@ class RMSProp:
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         if self.flag==0:
-            self.s=[0 for x in range(len(gradient_flat))]
+            self.s=[tf.Variable(tf.zeros_like(x),dtype=x.dtype.name) for x in gradient_flat]
             self.flag=1
         for i in range(len(gradient_flat)):
-            self.s[i]=self.gamma*self.s[i]+(1-self.gamma)*gradient_flat[i]**2
+            self.s[i].assign(self.gamma*self.s[i]+(1-self.gamma)*gradient_flat[i]**2)
             state_ops.assign(parameter_flat[i],parameter_flat[i]-self.lr*gradient_flat[i]/tf.sqrt(self.s[i]+self.epsilon))
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
@@ -87,9 +91,10 @@ class AdaDelta:
         self.lr=lr
         self.rho=rho
         self.epsilon=epsilon
-        self.s=[]
-        self.x=[]
-        self.g=[]
+        manager=Manager()
+        self.s=manager.list()
+        self.x=manager.list()
+        self.g=manager.list()
         self.flag=0
     
     
@@ -97,15 +102,15 @@ class AdaDelta:
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         if self.flag==0:
-            self.s=[0 for x in range(len(gradient_flat))]
-            self.x=[0 for x in range(len(gradient_flat))]
-            self.g=[x for x in range(len(gradient_flat))]
+            self.s=[tf.Variable(tf.zeros_like(x),dtype=x.dtype.name) for x in gradient_flat]
+            self.x=[tf.Variable(tf.zeros_like(x),dtype=x.dtype.name) for x in gradient_flat]
+            self.g=[tf.Variable(x) for x in gradient_flat]
             self.flag=1
         for i in range(len(gradient_flat)):
-            self.s[i]=self.rho*self.s[i]+(1-self.rho)*gradient_flat[i]**2
-            self.g[i]=tf.sqrt((self.x[i]+self.epsilon)/(self.s[i]+self.epsilon))*gradient_flat[i]
+            self.s[i].assign(self.rho*self.s[i]+(1-self.rho)*gradient_flat[i]**2)
+            self.g[i].assign(tf.sqrt((self.x[i]+self.epsilon)/(self.s[i]+self.epsilon))*gradient_flat[i])
             state_ops.assign(parameter_flat[i],parameter_flat[i]-self.g[i])
-            self.x[i]=self.rho*self.x[i]+(1-self.rho)*self.g[i]**2
+            self.x[i].assign(self.rho*self.x[i]+(1-self.rho)*self.g[i]**2)
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
 
@@ -116,11 +121,12 @@ class Adam:
         self.beta1=beta1
         self.beta2=beta2
         self.epsilon=epsilon
-        self.v=[]
-        self.s=[]
-        self.v_=[]
-        self.s_=[]
-        self.g=[]
+        manager=Manager()
+        self.v=manager.list()
+        self.s=manager.list()
+        self.v_=manager.list()
+        self.s_=manager.list()
+        self.g=manager.list()
         self.flag=0
     
     
@@ -128,18 +134,18 @@ class Adam:
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         if self.flag==0:
-            self.v=[0 for x in range(len(gradient_flat))]
-            self.s=[0 for x in range(len(gradient_flat))]
-            self.v_=[x for x in range(len(gradient_flat))]
-            self.s_=[x for x in range(len(gradient_flat))]
-            self.g=[x for x in range(len(gradient_flat))]
+            self.v=[tf.Variable(tf.zeros_like(x),dtype=x.dtype.name) for x in gradient_flat]
+            self.s=[tf.Variable(tf.zeros_like(x),dtype=x.dtype.name) for x in gradient_flat]
+            self.v_=[tf.Variable(x) for x in gradient_flat]
+            self.s_=[tf.Variable(x) for x in gradient_flat]
+            self.g=[tf.Variable(x) for x in gradient_flat]
             self.flag+=1
         for i in range(len(gradient_flat)):
-            self.v[i]=self.beta1*self.v[i]+(1-self.beta1)*gradient_flat[i]
-            self.s[i]=self.beta2*self.s[i]+(1-self.beta2)*gradient_flat[i]**2
-            self.v_[i]=self.v[i]/(1-self.beta1**(t+1))
-            self.s_[i]=self.s[i]/(1-self.beta2**(t+1))
-            self.g[i]=self.lr*self.v_[i]/(tf.sqrt(self.s_[i])+self.epsilon)
+            self.v[i].assign(self.beta1*self.v[i]+(1-self.beta1)*gradient_flat[i])
+            self.s[i].assign(self.beta2*self.s[i]+(1-self.beta2)*gradient_flat[i]**2)
+            self.v_[i].assign(self.v[i]/(1-self.beta1**(t+1)))
+            self.s_[i].assign(self.s[i]/(1-self.beta2**(t+1)))
+            self.g[i].assign(self.lr*self.v_[i]/(tf.sqrt(self.s_[i])+self.epsilon))
             state_ops.assign(parameter_flat[i],parameter_flat[i]-self.g[i])
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
@@ -151,12 +157,13 @@ class Nadam:
         self.beta1=beta1
         self.beta2=beta2
         self.epsilon=epsilon
-        self.v=[]
-        self.s=[]
-        self.v_=[]
-        self.s_=[]
-        self.g=[]
-        self.m=[]
+        manager=Manager()
+        self.v=manager.list()
+        self.s=manager.list()
+        self.v_=manager.list()
+        self.s_=manager.list()
+        self.g=manager.list()
+        self.m=manager.list()
         self.flag=0
     
     
@@ -164,20 +171,20 @@ class Nadam:
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         if self.flag==0:
-            self.v=[0 for x in range(len(gradient_flat))]
-            self.s=[0 for x in range(len(gradient_flat))]
-            self.v_=[x for x in range(len(gradient_flat))]
-            self.s_=[x for x in range(len(gradient_flat))]
-            self.g=[x for x in range(len(gradient_flat))]
-            self.m=[x for x in range(len(gradient_flat))]
+            self.v=[tf.Variable(tf.zeros_like(x),dtype=x.dtype.name) for x in gradient_flat]
+            self.s=[tf.Variable(tf.zeros_like(x),dtype=x.dtype.name) for x in gradient_flat]
+            self.v_=[tf.Variable(x) for x in gradient_flat]
+            self.s_=[tf.Variable(x) for x in gradient_flat]
+            self.g=[tf.Variable(x) for x in gradient_flat]
+            self.m=[tf.Variable(x) for x in gradient_flat]
             self.flag+=1
         for i in range(len(gradient_flat)):
-            self.v[i]=self.beta1*self.v[i]+(1-self.beta1)*gradient_flat[i]
-            self.s[i]=self.beta2*self.s[i]+(1-self.beta2)*gradient_flat[i]**2
-            self.v_[i]=self.v[i]/(1-self.beta1**(t+1))
-            self.s_[i]=self.s[i]/(1-self.beta2**(t+1))
-            self.m[i]=(self.beta1*gradient_flat[i])/(1-self.beta1**(t+1))
-            self.g[i]=self.lr*(self.m[i]+(1-self.beta1)*gradient_flat[i])/(tf.sqrt(self.s_[i])+self.epsilon)
+            self.v[i].assign(self.beta1*self.v[i]+(1-self.beta1)*gradient_flat[i])
+            self.s[i].assign(self.beta2*self.s[i]+(1-self.beta2)*gradient_flat[i]**2)
+            self.v_[i].assign(self.v[i]/(1-self.beta1**(t+1)))
+            self.s_[i].assign(self.s[i]/(1-self.beta2**(t+1)))
+            self.m[i].assign((self.beta1*gradient_flat[i])/(1-self.beta1**(t+1)))
+            self.g[i].assign(self.lr*(self.m[i]+(1-self.beta1)*gradient_flat[i])/(tf.sqrt(self.s_[i])+self.epsilon))
             state_ops.assign(parameter_flat[i],parameter_flat[i]-self.g[i])
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
@@ -189,9 +196,10 @@ class AdaMax:
         self.beta_1=beta_1
         self.beta_2=beta_2
         self.epsilon=epsilon
-        self.v=[]
-        self.u=[]
-        self.g=[]
+        manager=Manager()
+        self.v=manager.list()
+        self.u=manager.list()
+        self.g=manager.list()
         self.flag=0
     
     
@@ -199,14 +207,14 @@ class AdaMax:
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         if self.flag==0:
-            self.v=[0 for x in range(len(gradient_flat))]
-            self.u=[0 for x in range(len(gradient_flat))]
-            self.g=[x for x in range(len(gradient_flat))]
+            self.v=[tf.Variable(tf.zeros_like(x),dtype=x.dtype.name) for x in gradient_flat]
+            self.u=[tf.Variable(tf.zeros_like(x),dtype=x.dtype.name) for x in gradient_flat]
+            self.g=[tf.Variable(x) for x in gradient_flat]
             self.flag+=1
         for i in range(len(gradient_flat)):
-            self.v[i]=self.beta_1*self.v[i]+(1-self.beta_1)*gradient_flat[i]
-            self.u[i]=tf.maximum(self.beta_2*self.u[i],tf.abs(gradient_flat[i]))
-            self.g[i]=self.learning_rate/(1-self.beta_1**(t+1))*self.v[i]/(self.u[i]+self.epsilon)
+            self.v[i].assign(self.beta_1*self.v[i]+(1-self.beta_1)*gradient_flat[i])
+            self.u[i].assign(tf.maximum(self.beta_2*self.u[i],tf.abs(gradient_flat[i])))
+            self.g[i].assign(self.learning_rate/(1-self.beta_1**(t+1))*self.v[i]/(self.u[i]+self.epsilon))
             state_ops.assign(parameter_flat[i],parameter_flat[i]-self.g[i])
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
@@ -219,11 +227,12 @@ class AdamW:
         self.beta2=beta2
         self.epsilon=epsilon
         self.weight_decay=weight_decay
-        self.v=[]
-        self.s=[]
-        self.v_=[]
-        self.s_=[]
-        self.g=[]
+        manager=Manager()
+        self.v=manager.list()
+        self.s=manager.list()
+        self.v_=manager.list()
+        self.s_=manager.list()
+        self.g=manager.list()
         self.flag=0
     
     
@@ -231,19 +240,19 @@ class AdamW:
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         if self.flag==0:
-            self.v=[0 for x in range(len(gradient_flat))]
-            self.s=[0 for x in range(len(gradient_flat))]
-            self.v_=[x for x in range(len(gradient_flat))]
-            self.s_=[x for x in range(len(gradient_flat))]
-            self.g=[x for x in range(len(gradient_flat))]
+            self.v=[tf.Variable(tf.zeros_like(x),dtype=x.dtype.name) for x in gradient_flat]
+            self.s=[tf.Variable(tf.zeros_like(x),dtype=x.dtype.name) for x in gradient_flat]
+            self.v_=[tf.Variable(x) for x in gradient_flat]
+            self.s_=[tf.Variable(x) for x in gradient_flat]
+            self.g=[tf.Variable(x) for x in gradient_flat]
             self.flag+=1
         for i in range(len(gradient_flat)):
             gradient_flat[i]=gradient_flat[i]+self.weight_decay*parameter_flat[i]
-            self.v[i]=self.beta1*self.v[i]+(1-self.beta1)*gradient_flat[i]
-            self.s[i]=self.beta2*self.s[i]+(1-self.beta2)*gradient_flat[i]**2
-            self.v_[i]=self.v[i]/(1-self.beta1**(t+1))
-            self.s_[i]=self.s[i]/(1-self.beta2**(t+1))
-            self.g[i]=self.lr*self.v_[i]/(tf.sqrt(self.s_[i])+self.epsilon)
+            self.v[i].assign(self.beta1*self.v[i]+(1-self.beta1)*gradient_flat[i])
+            self.s[i].assign(self.beta2*self.s[i]+(1-self.beta2)*gradient_flat[i]**2)
+            self.v_[i].assign(self.v[i]/(1-self.beta1**(t+1)))
+            self.s_[i].assign(self.s[i]/(1-self.beta2**(t+1)))
+            self.g[i].assign(self.lr*self.v_[i]/(tf.sqrt(self.s_[i])+self.epsilon))
             state_ops.assign(parameter_flat[i],parameter_flat[i]-self.g[i])
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
@@ -256,12 +265,13 @@ class RAdam:
         self.beta2=beta2
         self.epsilon=epsilon
         self.smoothing=2/(1-beta2)-1 
-        self.v=[]
-        self.s=[]
-        self.v_=[]
-        self.s_=[]
-        self.g=[]
-        self.step_size=[]
+        manager=Manager()
+        self.v=manager.list()
+        self.s=manager.list()
+        self.v_=manager.list()
+        self.s_=manager.list()
+        self.g=manager.list()
+        self.step_size=manager.list()
         self.flag=0
     
     
@@ -269,26 +279,26 @@ class RAdam:
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         if self.flag==0:
-            self.v=[0 for x in range(len(gradient_flat))]
-            self.s=[0 for x in range(len(gradient_flat))]
-            self.v_=[x for x in range(len(gradient_flat))]
-            self.s_=[x for x in range(len(gradient_flat))]
-            self.g=[x for x in range(len(gradient_flat))]
-            self.step_size=[x for x in range(len(gradient_flat))]
+            self.v=[tf.Variable(tf.zeros_like(x),dtype=x.dtype.name) for x in gradient_flat]
+            self.s=[tf.Variable(tf.zeros_like(x),dtype=x.dtype.name) for x in gradient_flat]
+            self.v_=[tf.Variable(x) for x in gradient_flat]
+            self.s_=[tf.Variable(x) for x in gradient_flat]
+            self.g=[tf.Variable(x) for x in gradient_flat]
+            self.step_size=[tf.Variable(x) for x in gradient_flat]
             self.flag+=1
         for i in range(len(gradient_flat)):
-            self.v[i]=self.beta1*self.v[i]+(1-self.beta1)*gradient_flat[i]
-            self.s[i]=self.beta2*self.s[i]+(1-self.beta2)*gradient_flat[i]**2
-            self.v_[i]=self.v[i]/(1-self.beta1**t)
-            self.s_[i]=self.s[i]/(1-self.beta2**t)
+            self.v[i].assign(self.beta1*self.v[i]+(1-self.beta1)*gradient_flat[i])
+            self.s[i].assign(self.beta2*self.s[i]+(1-self.beta2)*gradient_flat[i]**2)
+            self.v_[i].assign(self.v[i]/(1-self.beta1**t))
+            self.s_[i].assign(self.s[i]/(1-self.beta2**t))
             sma=self.smoothing-2*t*(self.beta2**t)/(1-self.beta2**t)
             if sma>=5:
                 r=tf.math.sqrt((sma-4)*(sma-2)*self.smoothing/((self.smoothing-4)*(self.smoothing-2)*sma))
-                self.g[i]=r*gradient_flat[i]/(tf.math.sqrt(self.s_[i])+self.epsilon)
-                self.step_size[i]=-self.lr*r/(tf.math.sqrt(self.s_[i])+self.epsilon)
+                self.g[i].assign(r*gradient_flat[i]/(tf.math.sqrt(self.s_[i])+self.epsilon))
+                self.step_size[i].assign(-self.lr*r/(tf.math.sqrt(self.s_[i])+self.epsilon))
             else:
-                self.g[i]=gradient_flat[i]
-                self.step_size[i]=-self.lr/(tf.math.sqrt(self.s_[i])+self.epsilon)
+                self.g[i].assign(gradient_flat[i])
+                self.step_size[i].assign(-self.lr/(tf.math.sqrt(self.s_[i])+self.epsilon))
             state_ops.assign(parameter_flat[i],parameter_flat[i]+self.step_size[i]*self.v_[i])
             parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
@@ -303,10 +313,11 @@ class Ftrl:
         self.l2_regularization_strength=l2_regularization_strength
         self.l2_shrinkage_regularization_strength=l2_shrinkage_regularization_strength
         self.beta=beta
-        self.n=[]
-        self.sigma=[]
-        self.z=[]
-        self.g=[]
+        manager=Manager()
+        self.n=manager.list()
+        self.sigma=manager.list()
+        self.z=manager.list()
+        self.g=manager.list()
         self.flag=0
     
     
@@ -314,16 +325,16 @@ class Ftrl:
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         if self.flag==0:
-            self.n=[self.initial_accumulator_value for x in range(len(gradient_flat))]
-            self.sigma=[0 for x in range(len(gradient_flat))]
-            self.z=[0 for x in range(len(gradient_flat))]
-            self.g=[x for x in range(len(gradient_flat))]
+            self.n=[tf.Variable(self.initial_accumulator_value*tf.ones_like(x),dtype=x.dtype.name) for x in range(len(gradient_flat))]
+            self.sigma=[tf.Variable(tf.zeros_like(x),dtype=x.dtype.name) for x in gradient_flat]
+            self.z=[tf.Variable(tf.zeros_like(x),dtype=x.dtype.name) for x in gradient_flat]
+            self.g=[tf.Variable(x) for x in gradient_flat]
             self.flag+=1
         for i in range(len(gradient_flat)):
             prev_n=self.n[i]
-            self.n[i]=self.n[i]+gradient_flat[i]**2
-            self.sigma[i]=(self.n[i]**-self.learning_rate_power-prev_n**-self.learning_rate_power)/self.learning_rate
-            self.z[i]=self.z[i]+gradient_flat[i]-self.sigma[i]*parameter_flat[i]
+            self.n[i].assign(self.n[i]+gradient_flat[i]**2)
+            self.sigma[i].assign((self.n[i]**-self.learning_rate_power-prev_n**-self.learning_rate_power)/self.learning_rate)
+            self.z[i].assign(self.z[i]+gradient_flat[i]-self.sigma[i]*parameter_flat[i])
             if tf.abs(self.z[i])<self.l1_regularization_strength:
                 state_ops.assign(parameter_flat[i],tf.zeros_like(self.z[i]))
             else:
@@ -384,7 +395,8 @@ class LookAhead:
         self.sync_period=sync_period
         self.slow_step_size=slow_step_size
         # Initialize a dictionary for slow weights
-        self.slow_weights=dict()
+        manager=Manager()
+        self.slow_weights=manager.dict()
     
 
     # Define an opt method, used to apply gradients
@@ -413,8 +425,6 @@ class Ranger:
     # Initialization method, receive an internal optimizer (default is RAdam), sync period, slow step size and other parameters
     def __init__(self,optimizer=RAdam(),sync_period=6,slow_step_size=0.5,**kwargs):
         # Save attributes
-        # Initialize slow weight dictionary
-        self.slow_weights=dict()
         # Initialize other parameters, such as adaptive gradient clipping, positive negative momentum, norm loss, etc.
         self.adaptive_grad_clip=kwargs.get("adaptive_grad_clip",True)
         self.positive_negative_momentum=kwargs.get("positive_negative_momentum",True)
