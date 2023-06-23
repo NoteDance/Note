@@ -540,10 +540,13 @@ class kernel:
     
     def opt(self,data,labels):
         try:
-            if self.platform.DType!=None:
-                output,loss=self.tf_opt(data,labels)
-        except Exception:
-            output,loss=self.pytorch_opt(data,labels)
+            try:
+                if self.platform.DType!=None:
+                    output,loss=self.tf_opt(data,labels)
+            except Exception:
+                output,loss=self.pytorch_opt(data,labels)
+        except Exception as e:
+            raise e
         return output,loss
     
     
