@@ -174,8 +174,8 @@ class kernel:
             return True
     
     
-    @tf.function(jit_compile=True)
-    def tf_opt_t(self,data,labels,p,lock,g_lock=None,ln=None):
+    @tf.function
+    def opt_p(self,data,labels,p,lock,g_lock=None,ln=None):
         try:
             try:
                 if self.nn.GradientTape!=None:
@@ -315,15 +315,15 @@ class kernel:
         return output,loss,param
     
     
-    def opt_t(self,data,labels,p,lock,g_lock):
+    def opt(self,data,labels,p,lock,g_lock):
         if self.PO==3:
             if len(g_lock)==self.process:
                 ln=p
             else:
                 ln=int(np.random.choice(len(g_lock)))
-            output,loss,param=self.tf_opt_t(data,labels,p,lock,g_lock,ln)
+            output,loss,param=self.opt_p(data,labels,p,lock,g_lock,ln)
         else:
-            output,loss,param=self.tf_opt_t(data,labels,p,lock)
+            output,loss,param=self.opt_p(data,labels,p,lock)
         return output,loss,param
     
     
@@ -369,7 +369,7 @@ class kernel:
                            raise e
                     except Exception:
                         pass
-                output,batch_loss,param=self.opt_t(data_batch,labels_batch,p,lock,g_lock)
+                output,batch_loss,param=self.opt(data_batch,labels_batch,p,lock,g_lock)
                 self.param[7]=param
                 if self.priority_flag==True:
                     opt_counter=np.frombuffer(self.opt_counter.get_obj(),dtype='i')
