@@ -126,7 +126,7 @@ kernel.PO=1                    #use PO1
 kernel.data(x_train,y_train)   #input you data
 manager=Manager()              #create manager object
 kernel.init(manager)      #initialize shared data
-lock=[Lock(),Lock(),Lock()]
+lock=[Lock(),Lock()]
 for p in range(7):
 	Process(target=kernel.train,args=(p,lock)).start()
 kernel.update_nn_param()
@@ -153,7 +153,7 @@ kernel.PO=1                    #use PO1
 kernel.data(x_train,y_train)   #input you data
 manager=Manager()              #create manager object
 kernel.init(manager)      #initialize shared data
-lock=[Lock(),Lock(),Lock()]
+lock=[Lock(),Lock()]
 for p in range(7):
 	Process(target=kernel.train,args=(p,lock)).start()
 kernel.update_nn_param()
