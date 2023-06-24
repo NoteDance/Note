@@ -429,11 +429,11 @@ class kernel:
                     except Exception:
                         pass
                     if self.test_flag==True:
-                        self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch,p)
-                        self.test_loss_list.append(self.test_loss)
+                        self.test_loss.value,self.test_acc.value=self.test(self.test_data,self.test_labels,test_batch,p)
+                        self.test_loss_list.append(self.test_loss.value)
                     try:
                         if self.nn.accuracy!=None:
-                            self.test_acc_list.append(self.test_acc)
+                            self.test_acc_list.append(self.test_acc.value)
                     except Exception:
                         pass
                     self.print_save()
