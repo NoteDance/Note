@@ -312,6 +312,40 @@ class kernel:
             except Exception as e:
                 raise e
             lock[0].release()
+        elif self.PO==4:
+            if self.priority_flag==True and self.priority_p.value!=-1:
+                while True:
+                    if p==self.priority_p.value:
+                        break
+                    else:
+                        continue
+            if self.stop_func_():
+                return None,0
+            try:
+                try:
+                    try:
+                        gradient=self.nn.gradient(tape,loss)
+                    except Exception:
+                        gradient=self.nn.gradient(tape,loss,self.param[7])
+                except Exception:
+                    gradient=tape.gradient(loss,self.nn.param)
+            except Exception as e:
+                raise e
+            try:
+                gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
+            except Exception as e:
+                try:
+                    if self.nn.attenuate!=None:
+                        raise e
+                except Exception:
+                    pass
+            try:
+                try:
+                    param=self.nn.opt(gradient)
+                except Exception:
+                    param=self.nn.opt(gradient,p)
+            except Exception as e:
+                raise e
         return output,loss,param
     
     
@@ -407,8 +441,10 @@ class kernel:
                 self.batch_counter[p]+=1
                 if self.PO==1 or self.PO==3:
                     lock[1].acquire()
-                else:
+                elif self.PO==2:
                     lock[2].acquire()
+                elif lock!=None:
+                    lock.acquire()
                 batches=np.sum(self.batch_counter)
                 if batches>=self.batches:
                     batch_counter=np.frombuffer(self.batch_counter.get_obj(),dtype='i')
@@ -457,14 +493,16 @@ class kernel:
                             pass
                 if self.PO==1 or self.PO==3:
                     lock[1].release()
-                else:
+                elif self.PO==2:
                     lock[2].release()
-                if self.epoch_counter.value==self.epoch:
+                elif lock!=None:
+                    lock.release()
+                if self.epoch_counter.value>=self.epoch:
                     self.param[7]=param
                     return
     
     
-    def train(self,p,lock,g_lock=None,test_batch=None):
+    def train(self,p,lock=None,g_lock=None,test_batch=None):
         self.train_counter+=1
         if self.epoch!=None:
             if self.train_dataset!=None:
@@ -607,10 +645,11 @@ class kernel:
         return False
     
     
-    def stop_func_(self,lock):
+    def stop_func_(self,lock=None):
         if self.stop==True:
             if self.stop_flag.value==True or self.stop_func():
-                lock.release()
+                if self.PO!=4:
+                    lock.release()
                 return True
     
     
