@@ -36,7 +36,6 @@ class kernel:
         self.end_test_loss=None
         self.end_test_acc=None
         self.acc_flag='%'
-        self.train_counter=0
         self.opt_counter=None
         self.muti_p=None
         self.muti_s=None
@@ -503,7 +502,6 @@ class kernel:
     
     
     def train(self,p,lock=None,g_lock=None,test_batch=None):
-        self.train_counter+=1
         if self.epoch!=None:
             if self.train_dataset!=None:
                 train_ds=self.train_dataset
@@ -876,7 +874,6 @@ class kernel:
         pickle.dump(self.end_test_acc,output_file)
         pickle.dump(self.acc_flag,output_file)
         pickle.dump(self.file_list,output_file)
-        pickle.dump(self.train_counter,output_file)
         pickle.dump(self.train_loss.value,output_file)
         pickle.dump(self.train_acc.value,output_file)
         pickle.dump(self.train_loss_list,output_file)
@@ -915,7 +912,6 @@ class kernel:
         self.end_test_acc=pickle.load(input_file)
         self.acc_flag=pickle.load(input_file)
         self.file_list=pickle.load(input_file)
-        self.train_counter=pickle.load(input_file)
         self.train_loss.value=pickle.load(input_file)
         self.train_acc.value=pickle.load(input_file)
         self.train_loss_list=pickle.load(input_file)
