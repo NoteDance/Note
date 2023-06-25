@@ -48,7 +48,7 @@ x_train,x_test =x_train/255.0,x_test/255.0
 nn=n.nn()                                #create neural network object
 kernel=k.kernel(nn)                 #start kernel
 kernel.platform=tf                       #use platform
-kernel.data(x_train,y_train)   #input you data
+kernel.data(x_train,y_train)   #input train data
 kernel.train(32,5)         #train neural network
                            #batch size:32
                            #epoch:5
@@ -62,7 +62,7 @@ mnist=tf.keras.datasets.mnist
 x_train,x_test =x_train/255.0,x_test/255.0
 kernel=k.kernel()                 #start kernel
 kernel.platform=tf                    #use platform
-kernel.data(x_train,y_train)   #input you data
+kernel.data(x_train,y_train)   #input train data
 kernel.restore('save.dat')     #restore neural network
 kernel.train(32,1)             #train again
 ```
@@ -78,7 +78,7 @@ x_train,x_test =x_train/255.0,x_test/255.0
 nn=n.nn()                                #create neural network object
 kernel=k.kernel(nn)                 #start kernel
 kernel.platform=tf                       #use platform
-kernel.data(x_train,y_train,x_test,y_test)   #input you data
+kernel.data(x_train,y_train,x_test,y_test)   #input train data
 kernel.train(32,5,32)         #train neural network
                            #batch size:32
 			   #test batch size:32
@@ -125,7 +125,7 @@ kernel.data_segment_flag=True
 kernel.epoch=6                #epoch:6
 kernel.batch=32            #batch:32
 kernel.PO=1                    #use PO1
-kernel.data(x_train,y_train)   #input you data
+kernel.data(x_train,y_train)   #input train data
 manager=Manager()              #create manager object
 kernel.init(manager)      #initialize shared data
 lock=[Lock(),Lock()]
@@ -152,7 +152,7 @@ kernel.epoch=6                #epoch:6
 kernel.batch=32            #batch:32
 kernel.priority_flag=True
 kernel.PO=1                    #use PO1
-kernel.data(x_train,y_train)   #input you data
+kernel.data(x_train,y_train)   #input train data
 manager=Manager()              #create manager object
 kernel.init(manager)      #initialize shared data
 lock=[Lock(),Lock()]
@@ -194,7 +194,7 @@ for train_data,train_labels in train_dataloader:
 nn=n.neuralnetwork()                                #create neural network object
 kernel=k.kernel(nn)                 #start kernel
 kernel.platform=torch                   #use platform
-kernel.data(train_data,train_labels)   #input you data
+kernel.data(train_data,train_labels)   #input train data
 kernel.train(64,5)         #train neural network
                            #batch size:32
                            #epoch:5
@@ -346,7 +346,7 @@ nn=n.nn()                                #create neural network object
 nn.build()                          #build neural network
 kernel=k.kernel(nn)                 #start kernel
 kernel.platform=tf                       #use platform
-kernel.data(x_train,y_train)   #input you data
+kernel.data(x_train,y_train)   #input train data
 kernel.train(32,5)         #train neural network
 ```
 
