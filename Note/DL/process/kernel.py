@@ -1,5 +1,6 @@
 import tensorflow as tf
 from tensorflow.python.ops import state_ops
+from tensorflow.python.util import nest
 from multiprocessing import Value,Array
 import numpy as np
 import matplotlib.pyplot as plt
@@ -361,13 +362,19 @@ class kernel:
     
     
     def update_nn_param(self,param=None):
-        for i in range(len(self.nn.param)):
+        if param==None:
+            parameter_flat=nest.flatten(self.nn.param)
+            parameter7_flat=nest.flatten(self.param[7])
+        else:
+            parameter_flat=nest.flatten(self.nn.param)
+            parameter7_flat=nest.flatten(param)
+        for i in range(len(parameter_flat)):
             if param==None:
-                self.param[7][i]=self.param[7][i].numpy()
-                state_ops.assign(self.nn.param[i],self.param[7][i])
+                state_ops.assign(parameter_flat[i],parameter7_flat[i])
             else:
-                param[7][i]=param[7][i].numpy()
-                state_ops.assign(self.nn.param[i],param[7][i])
+                state_ops.assign(parameter_flat[i],parameter7_flat[i])
+        self.nn.param=nest.pack_sequence_as(self.nn.param,parameter_flat)
+        self.param[7]=nest.pack_sequence_as(self.param[7],parameter7_flat)
         return
     
     
