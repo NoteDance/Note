@@ -94,8 +94,6 @@ class kernel:
     
     def segment_data(self):
         if len(self.train_data)!=self.process:
-            data=None
-            labels=None
             segments=int((len(self.train_data)-len(self.train_data)%self.process)/self.process)
             for i in range(self.process):
                 index1=i*segments
