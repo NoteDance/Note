@@ -176,36 +176,28 @@ class kernel:
         while len(self.running_flag_list)<p:
             pass
         if len(self.running_flag_list)==p:
-            if self.PO==1 or self.PO==3:
+            if self.PO==1 or self.PO==2:
                 lock[2].acquire()
-            elif self.PO==2:
-                lock[3].acquire()
-            elif self.PO==4:
+            elif self.PO==3:
                 lock[0].acquire()
             self.running_flag_list.append(self.running_flag[1:].copy())
-            if self.PO==1 or self.PO==3:
+            if self.PO==1 or self.PO==2:
                 lock[2].release()
-            elif self.PO==2:
-                lock[3].release()
-            elif self.PO==4:
+            elif self.PO==3:
                 lock[0].release()
         if len(self.running_flag_list[p])<self.process_counter.value or np.sum(self.running_flag_list[p])>self.process_counter.value:
             self.running_flag_list[p]=self.running_flag[1:].copy()
         while len(self.probability_list)<p:
             pass
         if len(self.probability_list)==p:
-            if self.PO==1 or self.PO==3:
+            if self.PO==1 or self.PO==2:
                 lock[2].acquire()
-            elif self.PO==2:
-                lock[3].acquire()
-            elif self.PO==4:
+            elif self.PO==3:
                 lock[0].acquire()
             self.probability_list.append(np.array(self.running_flag_list[p],dtype=np.float16)/np.sum(self.running_flag_list[p]))
-            if self.PO==1 or self.PO==3:
+            if self.PO==1 or self.PO==2:
                 lock[2].release()
-            elif self.PO==2:
-                lock[3].release()
-            elif self.PO==4:
+            elif self.PO==3:
                 lock[0].release()
         self.probability_list[p]=np.array(self.running_flag_list[p],dtype=np.float16)/np.sum(self.running_flag_list[p])
         while True:
@@ -261,7 +253,7 @@ class kernel:
     
     
     @tf.function
-    def opt(self,state_batch,action_batch,next_state_batch,reward_batch,done_batch,p,lock,g_lock=None,ln=None):
+    def opt(self,state_batch,action_batch,next_state_batch,reward_batch,done_batch,p,lock,g_lock=None):
         with tf.GradientTape(persistent=True) as tape:
             try:
                 try:
@@ -313,8 +305,8 @@ class kernel:
                 raise e
             lock[0].release()
         elif self.PO==2:
-            lock[0].acquire()
-            if self.stop_func_(lock[0]):
+            g_lock.acquire()
+            if self.stop_func_(g_lock):
                 return 0
             try:
                 try:
@@ -328,15 +320,15 @@ class kernel:
                         critic_gradient=tape.gradient(loss[1],self.nn.param[1])
             except Exception as e:
                 raise e
-            lock[0].release()
+            g_lock.release()
             if self.priority_flag==True and self.priority_p.value!=-1:
                 while True:
                     if p==self.priority_p.value:
                         break
                     else:
                         continue
-            lock[1].acquire()
-            if self.stop_func_(lock[1]):
+            lock[0].acquire()
+            if self.stop_func_(lock[0]):
                 return 0
             try:
                 try:
@@ -357,54 +349,8 @@ class kernel:
                     param=self.nn.opt(gradient,p)
             except Exception as e:
                 raise e
-            lock[1].release()
+            lock[0].release()
         elif self.PO==3:
-            g_lock[ln].acquire()
-            if self.stop_func_(g_lock[ln]):
-                return 0
-            try:
-                try:
-                    gradient=self.nn.gradient(tape,loss)
-                except Exception:
-                    try:
-                        if self.nn.nn!=None:
-                            gradient=tape.gradient(loss,self.nn.param)
-                    except Exception:
-                        actor_gradient=tape.gradient(loss[0],self.nn.param[0])
-                        critic_gradient=tape.gradient(loss[1],self.nn.param[1])
-            except Exception as e:
-                raise e
-            g_lock[ln].release()
-            if self.priority_flag==True and self.priority_p.value!=-1:
-                while True:
-                    if p==self.priority_p.value:
-                        break
-                    else:
-                        continue
-            lock[0].acquire()
-            if self.stop_func_(lock[0]):
-                return 0
-            try:
-                try:
-                    gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
-                except Exception:
-                    actor_gradient=self.nn.attenuate(actor_gradient,self.nn.opt_counter,p)
-                    critic_gradient=self.nn.attenuate(critic_gradient,self.nn.opt_counter,p)
-            except Exception as e:
-                try:
-                    if self.nn.attenuate!=None:
-                        raise e
-                except Exception:
-                    pass
-            try:
-                try:
-                    param=self.nn.opt(gradient)
-                except Exception:
-                    param=self.nn.opt(gradient,p)
-            except Exception as e:
-                raise e
-            lock[0].release()
-        elif self.PO==4:
             if self.priority_flag==True and self.priority_p.value!=-1:
                 while True:
                     if p==self.priority_p.value:
@@ -473,12 +419,16 @@ class kernel:
             next_state_batch=np.concatenate((self.next_state_pool[p][index1:length],self.next_state_pool[p][:index2]),0)
             reward_batch=np.concatenate((self.reward_pool[p][index1:length],self.reward_pool[p][:index2]),0)
             done_batch=np.concatenate((self.done_pool[p][index1:length],self.done_pool[p][:index2]),0)
-            if self.PO==3:
-                if len(g_lock)==self.process:
+            if self.PO==2:
+                if type(g_lock)!=list:
+                    pass
+                elif len(g_lock)==self.process:
                     ln=p
+                    g_lock=g_lock[ln]
                 else:
                     ln=int(np.random.choice(len(g_lock)))
-                loss,param=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,p,lock,g_lock,ln)
+                    g_lock=g_lock[ln]
+                loss,param=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,p,lock,g_lock)
             else:
                 loss,param=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,p,lock)
             self.param[7]=param
@@ -497,12 +447,16 @@ class kernel:
             next_state_batch=self.next_state_pool[p][index1:index2]
             reward_batch=self.reward_pool[p][index1:index2]
             done_batch=self.done_pool[p][index1:index2]
-            if self.PO==3:
-                if len(g_lock)==self.process:
+            if self.PO==2:
+                if type(g_lock)!=list:
+                    pass
+                elif len(g_lock)==self.process:
                     ln=p
+                    g_lock=g_lock[ln]
                 else:
                     ln=int(np.random.choice(len(g_lock)))
-                loss,param=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,p,lock,g_lock,ln)
+                    g_lock=g_lock[ln]
+                loss,param=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,p,lock,g_lock)
             else:
                 loss,param=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,p,lock)
             self.param[7]=param
@@ -554,19 +508,15 @@ class kernel:
                         self.nn.opt_counter[0]=opt_counter
                 except Exception:
                     pass
-            if self.PO==1 or self.PO==3:
+            if self.PO==1 or self.PO==2:
                 lock[1].acquire()
-            elif self.PO==2:
-                lock[2].acquire()
             if self.update_step!=None:
                 if self.sc[p]%self.update_step==0:
                     self.nn.update_param()
             else:
                 self.nn.update_param()
-            if self.PO==1 or self.PO==3:
+            if self.PO==1 or self.PO==2:
                 lock[1].release()
-            elif self.PO==2:
-                lock[2].release()
             self.loss[p]=self.loss[p]/batches
         self.sc[p]+=1
         try:
@@ -579,11 +529,9 @@ class kernel:
     
     
     def train(self,p,episode_count,lock,pool_lock,g_lock=None):
-        if self.PO==1 or self.PO==3:
+        if self.PO==1 or self.PO==2:
             lock[1].acquire()
-        elif self.PO==2:
-            lock[2].acquire()
-        elif self.PO==4:
+        elif self.PO==3:
             lock[1].acquire()
         self.state_pool[p]=None
         self.action_pool[p]=None
@@ -597,11 +545,9 @@ class kernel:
             epsilon=self.epsilon[p]
         except Exception:
             epsilon=None
-        if self.PO==1 or self.PO==3:
+        if self.PO==1 or self.PO==2:
             lock[1].release()
-        elif self.PO==2:
-            lock[2].release()
-        elif self.PO==4:
+        elif self.PO==3:
             lock[1].release()
         for k in range(episode_count):
             s=self.nn.env(p=p,initial=True)
@@ -617,16 +563,12 @@ class kernel:
                     if type(self.done_pool[p])==np.ndarray:
                         self.train_(p,lock,g_lock)
                     if done:
-                        if self.PO==1 or self.PO==3:
+                        if self.PO==1 or self.PO==2:
                             lock[1].acquire()
-                        else:
-                            lock[2].acquire()
                         self.total_episode.value+=1
                         self.loss_list.append(self.loss[p])
-                        if self.PO==1 or self.PO==3:
+                        if self.PO==1 or self.PO==2:
                             lock[1].release()
-                        else:
-                            lock[2].release()
                         break
             else:
                 for l in range(self.episode_step):
@@ -636,57 +578,41 @@ class kernel:
                     if type(self.done_pool[p])==np.ndarray:
                         self.train_(p,lock,g_lock)
                     if done:
-                        if self.PO==1 or self.PO==3:
+                        if self.PO==1 or self.PO==2:
                             lock[1].acquire()
-                        else:
-                            lock[2].acquire()
                         self.total_episode.value+=1
                         self.loss_list.append(self.loss[p])
-                        if self.PO==1 or self.PO==3:
+                        if self.PO==1 or self.PO==2:
                             lock[1].release()
-                        else:
-                            lock[2].release()
                         break
                     if l==self.episode_step-1:
-                        if self.PO==1 or self.PO==3:
+                        if self.PO==1 or self.PO==2:
                             lock[1].acquire()
-                        else:
-                            lock[2].acquire()
                         self.total_episode.value+=1
                         self.loss_list.append(self.loss[p])
-                        if self.PO==1 or self.PO==3:
+                        if self.PO==1 or self.PO==2:
                             lock[1].release()
-                        else:
-                            lock[2].release()
-            if self.PO==1 or self.PO==3:
+            if self.PO==1 or self.PO==2:
                 lock[1].acquire()
-            elif self.PO==2:
-                lock[2].acquire()
             elif len(lock)==3:
                 lock[2].acquire()
             self.reward_list.append(self.reward[p])
             self.reward[p]=0
-            if self.PO==1 or self.PO==3:
+            if self.PO==1 or self.PO==2:
                 lock[1].release()
-            elif self.PO==2:
-                lock[2].release()
             elif len(lock)==3:
                 lock[2].release()
         self.running_flag[p+1]=0
         if p not in self.finish_list:
             self.finish_list[p]=p
-        if self.PO==1 or self.PO==3:
+        if self.PO==1 or self.PO==2:
             lock[1].acquire()
-        elif self.PO==2:
-            lock[2].acquire()
-        elif self.PO==4:
+        elif self.PO==3:
             lock[1].acquire()
         self.process_counter.value-=1
-        if self.PO==1 or self.PO==3:
+        if self.PO==1 or self.PO==2:
             lock[1].release()
-        elif self.PO==2:
-            lock[2].release()
-        elif self.PO==4:
+        elif self.PO==3:
             lock[1].release()
         del self.state_pool[p]
         del self.action_pool[p]
@@ -708,7 +634,7 @@ class kernel:
     def stop_func_(self,lock=None):
         if self.stop==True:
             if self.stop_flag.value==True or self.stop_func():
-                if self.PO!=4:
+                if self.PO!=3:
                     lock.release
                 return True
     
