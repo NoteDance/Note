@@ -252,6 +252,7 @@ class kernel:
                 avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
                 if self.criterion!=None and avg_reward>=self.criterion:
                     return True
+        return False
     
     
     @tf.function
@@ -639,6 +640,7 @@ class kernel:
                 if self.PO!=3:
                     lock.release
                 return True
+        return False
     
     
     def visualize_reward(self):
