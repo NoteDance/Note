@@ -655,6 +655,7 @@ class kernel:
                 avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
                 if self.criterion!=None and avg_reward>=self.criterion:
                     return True
+        return False
     
     
     @tf.function(jit_compile=True)
@@ -1632,6 +1633,7 @@ class kernel:
             if self.stop_flag==True or self.stop_func():
                 lock.release
                 return True
+        return False
     
     
     def stop_func_m(self,lock,ln=None):
