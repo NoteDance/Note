@@ -217,7 +217,6 @@ class kernel:
             s=np.expand_dims(s,axis=0)
             action_prob=self.epsilon_greedy_policy(s,epsilon)
             a=np.random.choice(self.action_count,p=action_prob)
-            next_s,r,done=self.nn.env(a,p)
         except Exception as e:
             try:
                if self.nn.nn!=None:
@@ -231,9 +230,9 @@ class kernel:
                     except Exception:
                         s=np.expand_dims(s,axis=0)
                         a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
-                        next_s,r,done=self.nn.env(a,p)
                 except Exception as e:
                     raise e
+        next_s,r,done=self.nn.env(a,p)
         index=self.get_index(p,lock)
         if type(self.nn.param[0])!=list:
             next_s=np.array(next_s,self.nn.param[0].dtype.name)
