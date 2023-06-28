@@ -14,10 +14,6 @@ class kernel:
         self.nn=nn
         if process!=None:
             self.reward=np.zeros(process,dtype=np.float32)
-            if type(self.nn.param[0])!=list:
-                self.loss=np.zeros(process,dtype=self.nn.param[0].dtype.name)
-            else:
-                self.loss=np.zeros(process,dtype=self.nn.param[0][0].dtype.name)
             self.sc=np.zeros(process,dtype=np.int32)
         self.state_pool={}
         self.action_pool={}
@@ -57,6 +53,10 @@ class kernel:
         self.reward_pool=manager.dict(self.reward_pool)
         self.done_pool=manager.dict(self.done_pool)
         self.reward=Array('f',self.reward)
+        if type(self.nn.param[0])!=list:
+            self.loss=np.zeros(self.process,dtype=self.nn.param[0].dtype.name)
+        else:
+            self.loss=np.zeros(self.process,dtype=self.nn.param[0][0].dtype.name)
         self.loss=Array('f',self.loss)
         self.sc=Array('i',self.sc)
         self.process_counter=Value('i',self.process_counter)
