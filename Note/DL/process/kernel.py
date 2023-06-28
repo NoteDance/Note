@@ -68,10 +68,16 @@ class kernel:
             self.test_flag=True
         self.test_dataset=test_dataset
         self.batch_counter=np.zeros(self.process,dtype=np.int32)
-        self.total_loss=np.zeros(self.process,dtype=np.float32)
+        if type(self.nn.param[0])!=list:
+            self.total_loss=np.zeros(self.process,dtype=self.nn.param[0].dtype.name)
+        else:
+            self.total_loss=np.zeros(self.process,dtype=self.nn.param[0][0].dtype.name)
         try:
             if self.nn.accuracy!=None:
-                self.total_acc=np.zeros(self.process,dtype=np.float32)
+                if type(self.nn.param[0])!=list:
+                    self.total_acc=np.zeros(self.process,dtype=self.nn.param[0].dtype.name)
+                else:
+                    self.total_acc=np.zeros(self.process,dtype=self.nn.param[0][0].dtype.name)
         except Exception:
             pass
         if self.priority_flag==True:
