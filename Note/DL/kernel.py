@@ -113,13 +113,22 @@ class kernel:
             self.thread_num=list(self.thread_num)
             if self.epoch_!=None:
                 self.batch_counter=np.zeros(self.thread,dtype=np.int32)
-                self.total_loss=np.zeros(self.thread,dtype=np.float32)
+                if type(self.nn.param[0])!=list:
+                    self.total_loss=np.zeros(self.thread,dtype=self.nn.param[0].dtype.name)
+                else:
+                    self.total_loss=np.zeros(self.thread,dtype=self.nn.param[0][0].dtype.name)
                 try:
                     if self.nn.accuracy!=None:
                         if type(self.thread)==list:
-                            self.total_acc=np.zeros([self.thread[0]*self.thread[1]],dtype=np.float32)
+                            if type(self.nn.param[0])!=list:
+                                self.total_acc=np.zeros([self.thread[0]*self.thread[1]],dtype=self.nn.param[0].dtype.name)
+                            else:
+                                self.total_acc=np.zeros([self.thread[0]*self.thread[1]],dtype=self.nn.param[0][0].dtype.name)
                         else:
-                            self.total_acc=np.zeros(self.thread,dtype=np.float32)
+                            if type(self.nn.param[0])!=list:
+                                self.total_acc=np.zeros(self.thread,dtype=self.nn.param[0].dtype.name)
+                            else:
+                                self.total_acc=np.zeros(self.thread,dtype=self.nn.param[0][0].dtype.name)
                 except Exception:
                     pass
         if self.train_counter==0 and self.memory_flag==True:
@@ -141,8 +150,6 @@ class kernel:
     
     def segment_data(self):
         if len(self.train_data)!=self.thread:
-            data=None
-            labels=None
             segments=int((len(self.train_data)-len(self.train_data)%self.thread)/self.thread)
             for i in range(self.thread):
                 index1=i*segments
