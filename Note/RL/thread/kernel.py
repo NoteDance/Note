@@ -19,8 +19,7 @@ class kernel:
             self.thread_num=np.arange(thread)
             self.thread_num=list(self.thread_num)
             self.reward=np.zeros(thread,dtype=np.float32)
-            self.loss=np.zeros(thread,dtype=np.float32)
-            self.sc=np.zeros(thread,dtype=np.float32)
+            self.sc=np.zeros(thread,dtype=np.int32)
             self.opt_counter=np.zeros(thread,dtype=np.float32)
         self.threading=None
         self.gradient_lock=[]
@@ -262,6 +261,10 @@ class kernel:
             self.criterion=criterion
         if epsilon!=None:
             self.action_vec()
+        if type(self.nn.param[0])!=list:
+            self.loss=np.zeros(self.thread,dtype=self.nn.param[0].dtype.name)
+        else:
+            self.loss=np.zeros(self.thread,dtype=self.nn.param[0][0].dtype.name)
         return
     
     
