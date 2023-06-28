@@ -14,8 +14,11 @@ class kernel:
         self.nn=nn
         if process!=None:
             self.reward=np.zeros(process,dtype=np.float32)
-            self.loss=np.zeros(process,dtype=np.float32)
-            self.sc=np.zeros(process,dtype=np.float32)
+            if type(self.nn.param[0])!=list:
+                self.loss=np.zeros(process,dtype=self.nn.param[0].dtype.name)
+            else:
+                self.loss=np.zeros(process,dtype=self.nn.param[0][0].dtype.name)
+            self.sc=np.zeros(process,dtype=np.int32)
         self.state_pool={}
         self.action_pool={}
         self.next_state_pool={}
@@ -55,7 +58,7 @@ class kernel:
         self.done_pool=manager.dict(self.done_pool)
         self.reward=Array('f',self.reward)
         self.loss=Array('f',self.loss)
-        self.sc=Array('f',self.sc)
+        self.sc=Array('i',self.sc)
         self.process_counter=Value('i',self.process_counter)
         self.probability_list=manager.list(self.probability_list)
         self.running_flag_list=manager.list(self.running_flag_list)
@@ -719,7 +722,7 @@ class kernel:
         self.pool_size=pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.sc=pickle.load(input_file)
-        self.sc=Array('f',self.sc)
+        self.sc=Array('i',self.sc)
         self.update_step=pickle.load(input_file)
         self.reward_list=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
