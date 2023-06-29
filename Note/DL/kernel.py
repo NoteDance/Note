@@ -119,16 +119,10 @@ class kernel:
                     self.total_loss=np.zeros(self.thread,dtype=self.nn.param[0][0].dtype.name)
                 try:
                     if self.nn.accuracy!=None:
-                        if type(self.thread)==list:
-                            if type(self.nn.param[0])!=list:
-                                self.total_acc=np.zeros([self.thread[0]*self.thread[1]],dtype=self.nn.param[0].dtype.name)
-                            else:
-                                self.total_acc=np.zeros([self.thread[0]*self.thread[1]],dtype=self.nn.param[0][0].dtype.name)
+                        if type(self.nn.param[0])!=list:
+                            self.total_acc=np.zeros(self.thread,dtype=self.nn.param[0].dtype.name)
                         else:
-                            if type(self.nn.param[0])!=list:
-                                self.total_acc=np.zeros(self.thread,dtype=self.nn.param[0].dtype.name)
-                            else:
-                                self.total_acc=np.zeros(self.thread,dtype=self.nn.param[0][0].dtype.name)
+                            self.total_acc=np.zeros(self.thread,dtype=self.nn.param[0][0].dtype.name)
                 except Exception:
                     pass
         if self.train_counter==0 and self.memory_flag==True:
