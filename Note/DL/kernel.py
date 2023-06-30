@@ -1,8 +1,6 @@
 from tensorflow import function
 import numpy as np
 import matplotlib.pyplot as plt
-import Note.DL.dl.test as test_
-from sys import getsizeof
 import pickle
 import os
 import time
@@ -16,44 +14,10 @@ class kernel:
         except Exception:
             pass
         self.platform=None
-        self.PO=None
-        self.lock=None
-        self.gradient_lock=[]
-        self.max_lock=None
-        self.row=None
-        self.rank=None
-        self.d_index=0
-        self.thread=None
-        self.thread_t=None
-        self.threading=None
-        self.thread_counter=0
-        self.train_ds=None
-        self.data_segment_flag=False
         self.batches=None
-        self.buffer_size=None
-        self.epoch_=None
         self.epoch_counter=0
-        self.running_list=[]
-        self.suspend=False
-        self.suspend_list=[]
-        self.suspended_list=[]
         self.stop=False
-        self.stop_list=[]
-        self.stopped_list=[]
-        self.stop_list_m=[]
-        self.save_flag=False
         self.stop_flag=False
-        self.memory_flag=False
-        self.memory_priority=False
-        self.epoch_list=[]
-        self.epoch_list_copy=None
-        self.data_memory=None
-        self.param_memory=0
-        self.grad_memory=0
-        self.c_memory=0
-        self.max_memory=0
-        self.grad_memory_list=[]
-        self.memory_t_value=None
         self.save_epoch=None
         self.batch=None
         self.epoch=0
@@ -63,12 +27,6 @@ class kernel:
         self.end_test_acc=None
         self.acc_flag='%'
         self.train_counter=0
-        self.opt_counter=None
-        self.gradient_list=[]
-        self.exception_list=[]
-        self.muti_p=7
-        self.muti_s=None
-        self.muti_save=1
         self.filename='save.dat'
         self.train_loss=None
         self.train_acc=None
@@ -92,8 +50,6 @@ class kernel:
             self.train_data=train_data.astype(self.nn.param[0][0].dtype.name)
             self.train_labels=train_labels.astype(self.nn.param[0][0].dtype.name)
         self.train_dataset=train_dataset
-        if self.data_segment_flag==True:
-            self.train_data,self.train_labels=self.segment_data()
         if type(train_data)==list:
             self.data_batch=[x for x in range(len(train_data))]
         if type(train_labels)==list:
@@ -108,87 +64,12 @@ class kernel:
                 self.shape0=train_data[0].shape[0]
             else:
                 self.shape0=train_data.shape[0]
-        if self.train_counter==0 and self.thread!=None:
-            self.thread_num=np.arange(self.thread)
-            self.thread_num=list(self.thread_num)
-            if self.epoch_!=None:
-                self.batch_counter=np.zeros(self.thread,dtype=np.int32)
-                if type(self.nn.param[0])!=list:
-                    self.total_loss=np.zeros(self.thread,dtype=self.nn.param[0].dtype.name)
-                else:
-                    self.total_loss=np.zeros(self.thread,dtype=self.nn.param[0][0].dtype.name)
-                try:
-                    if self.nn.accuracy!=None:
-                        if type(self.nn.param[0])!=list:
-                            self.total_acc=np.zeros(self.thread,dtype=self.nn.param[0].dtype.name)
-                        else:
-                            self.total_acc=np.zeros(self.thread,dtype=self.nn.param[0][0].dtype.name)
-                except Exception:
-                    pass
-        if self.train_counter==0 and self.memory_flag==True:
-            self.data_memory=getsizeof(self.train_data)+getsizeof(self.train_labels)
-            for i in range(self.nn.param):
-                self.param_memory+=getsizeof(self.nn.param[i])
-            self.grad_memory=self.param_memory
-            if self.PO==1 or self.PO==2:
-                self.max_memory=self.data_memory+self.param_memory+self.grad_memory
-            elif self.PO==3:
-                if self.row!=None:
-                    self.max_memory=self.data_memory+self.param_memory+self.grad_memory*self.row*self.rank
-                elif self.max_lock!=None:
-                    self.max_memory=self.data_memory+self.param_memory+self.grad_memory*self.max_lock
-                else:
-                    self.max_memory=self.data_memory+self.param_memory+self.grad_memory*len(self.gradient_lock)
         return
     
     
-    def segment_data(self):
-        if len(self.train_data)!=self.thread:
-            segments=int((len(self.train_data)-len(self.train_data)%self.thread)/self.thread)
-            for i in range(self.thread):
-                index1=i*segments
-                index2=(i+1)*segments
-                if i==0:
-                    data=np.expand_dims(self.train_data[index1:index2],axis=0)
-                    labels=np.expand_dims(self.train_labels[index1:index2],axis=0)
-                else:
-                    data=np.concatenate((data,np.expand_dims(self.train_data[index1:index2],axis=0)))
-                    labels=np.concatenate((labels,np.expand_dims(self.train_labels[index1:index2],axis=0)))
-            if len(data)%self.thread!=0:
-                segments+=1
-                index1=segments*self.thread
-                index2=self.thread-(len(self.train_data)-segments*self.thread)
-                data=np.concatenate((data,np.expand_dims(self.train_data[index1:index2],axis=0)))
-                labels=np.concatenate((labels,np.expand_dims(self.train_labels[index1:index2],axis=0)))
-            return data,labels
-                
-    
     def init(self):
-        if self.thread!=None:
-            self.thread_num=np.arange(self.thread)
-            self.thread_num=list(self.thread_num)
-            if self.epoch_!=None:
-                self.batch_counter=np.zeros(self.thread,dtype=np.int32)
-                self.total_loss=np.zeros(self.thread,dtype=np.float32)
-                try:
-                    if self.nn.accuracy!=None:
-                        self.total_acc=np.zeros(self.thread,dtype=np.float32)
-                except Exception:
-                    pass
-        self.suspend=False
-        self.suspend_list=[]
-        self.suspended_list=[]
         self.stop=False
-        self.stop_list=[]
-        self.stopped_list=[]
-        self.save_flag=False
         self.stop_flag=False
-        self.memory_flag=False
-        self.data_memory=None
-        self.param_memory=0
-        self.grad_memory=0
-        self.c_memory=0
-        self.max_memory=0
         self.save_epoch=None
         self.end_loss=None
         self.end_acc=None
@@ -208,30 +89,6 @@ class kernel:
         self.total_epoch=0
         self.time=0
         self.total_time=0
-        return
-    
-    
-    def create_t_num(self,thread=None):
-        if thread==None:
-            self.thread_num=np.arange(self.thread)
-            self.thread_num=list(self.thread_num)
-        else:
-            self.thread_num=np.arange(thread)
-            self.thread_num=list(self.thread_num)
-            self.thread=thread
-        self.running_list=[]
-        self.epoch_list=[]
-        self.gradient_lock=[]
-        self.gradient_list=[]
-        self.grad_memory_list=[]
-        if self.epoch_!=None:
-            self.batch_counter=np.zeros(self.thread,dtype=np.int32)
-            self.total_loss=np.zeros(self.thread,dtype=np.float32)
-            try:
-                if self.nn.accuracy!=None:
-                    self.total_acc=np.zeros(self.thread,dtype=np.float32)
-            except Exception:
-                pass
         return
     
     
@@ -279,10 +136,7 @@ class kernel:
                 except Exception:
                     pass
             if self.test_flag==True:
-                if self.thread_t==None:
-                    self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
-                else:
-                    self.test_loss,self.test_acc=self.test(test_batch)
+                self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
                 self.test_loss_list.append(self.test_loss)
                 try:
                     self.test_acc_list.append(self.test_acc)
@@ -348,12 +202,6 @@ class kernel:
         return data_batch,labels_batch
     
     
-    def calculate_memory(self,ln):
-        self.grad_memory_list[ln]=self.grad_memory
-        self.c_memory=self.data_memory+self.param_memory+sum(self.grad_memory_list)
-        return
-    
-    
     @function(jit_compile=True)
     def tf_opt(self,data,labels):
         try:
@@ -386,144 +234,6 @@ class kernel:
         return output,loss
     
     
-    @function(jit_compile=True)
-    def tf_opt_t(self,data,labels,t=None,ln=None):
-        try:
-            try:
-                if self.nn.GradientTape!=None:
-                    tape,output,loss=self.nn.GradientTape(data,labels,t)
-            except Exception:
-                with self.platform.GradientTape(persistent=True) as tape:
-                    try:
-                        try:
-                            output=self.nn.fp(data)
-                            loss=self.nn.loss(output,labels)
-                        except Exception:
-                            output,loss=self.nn.fp(data,labels)
-                    except Exception:
-                        try:
-                            output=self.nn.fp(data,t)
-                            loss=self.nn.loss(output,labels)
-                        except Exception:
-                            output,loss=self.nn.fp(data,labels,t)
-        except Exception as e:
-            raise e
-        if self.PO==1:
-            self.lock[0].acquire()
-            if self.stop_func_(self.lock[0]):
-                return None,0
-            try:
-                try:
-                    gradient=self.nn.gradient(tape,loss)
-                except Exception:
-                    gradient=tape.gradient(loss,self.nn.param)
-            except Exception as e:
-                raise e
-            try:
-                if self.nn.attenuate!=None:
-                    gradient=self.nn.attenuate(gradient,self.opt_counter,t)
-            except Exception:
-                pass
-            try:
-                try:
-                    self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
-                except Exception:
-                    try:
-                        self.nn.opt(gradient)
-                    except Exception:
-                        self.nn.opt(gradient,t)
-            except Exception as e:
-                raise e
-            self.lock[0].release()
-        elif self.PO==2:
-            self.lock[0].acquire()
-            if self.stop_func_(self.lock[0]):
-                return None,0
-            try:
-                try:
-                    gradient=self.nn.gradient(tape,loss)
-                except Exception:
-                    gradient=tape.gradient(loss,self.nn.param)
-            except Exception as e:
-                raise e
-            self.lock[0].release()
-            self.lock[1].acquire()
-            if self.stop_func_(self.lock[1]):
-                return None,0
-            try:
-                if self.nn.attenuate!=None:
-                    gradient=self.nn.attenuate(gradient,self.opt_counter,t)
-            except Exception:
-                pass
-            try:
-                try:
-                    self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
-                except Exception:
-                    try:
-                        self.nn.opt(gradient)
-                    except Exception:
-                        self.nn.opt(gradient,t)
-            except Exception as e:
-                raise e
-            self.lock[1].release()
-        elif self.PO==3:
-            if self.row!=None:
-                try:
-                    self.gradient_lock[ln[0]][ln[1]].acquire()
-                except Exception:
-                    self.gradient_lock[0][0].acquire()
-            else:
-                try:
-                    self.gradient_lock[ln].acquire()
-                except Exception:
-                    self.gradient_lock[0].acquire()
-            try:
-                try:
-                    gradient=self.nn.gradient(tape,loss)
-                except Exception:
-                    gradient=tape.gradient(loss,self.nn.param)
-            except Exception as e:
-                raise e
-            if self.row!=None:
-                try:
-                    self.gradient_lock[ln[0]][ln[1]].release()
-                except Exception:
-                    self.gradient_lock[0][0].release()
-            else:
-                try:
-                    self.gradient_lock[ln].release()
-                except Exception:
-                    self.gradient_lock[0].release()
-            self.lock[0].acquire()
-            if self.memory_flag==True:
-                self.calculate_memory()
-                if self.stop_func_m(self.lock[0],ln):
-                    return 0,0
-                if self.stop_func_t_p(self.lock[0],t,ln):
-                    return 0,0
-            if self.stop_func_(self.lock[0]):
-                return None,0
-            try:
-                if self.nn.attenuate!=None:
-                    gradient=self.nn.attenuate(gradient,self.opt_counter,t)
-            except Exception:
-                pass
-            try:
-                try:
-                    self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
-                except Exception:
-                    try:
-                        self.nn.opt(gradient)
-                    except Exception:
-                        self.nn.opt(gradient,t)
-            except Exception as e:
-                raise e
-            if self.memory_flag==True:
-                self.grad_memory_list[ln]=0
-            self.lock[0].release()
-        return output,loss
-    
-    
     def pytorch_opt(self,data,labels):
         output=self.nn.fp(data)
         loss=self.nn.loss(output,labels)
@@ -551,57 +261,6 @@ class kernel:
         return output,loss
     
     
-    def opt_t(self,data,labels,t=None):
-        try:
-            if self.nn.attenuate!=None:
-                self.opt_counter.scatter_update(self.platform.IndexedSlices(0,t))
-        except Exception:
-            pass
-        if self.PO==3:
-            if self.row==None and len(self.gradient_lock)==self.thread:
-                ln=int(t)
-            else:
-                if self.row!=None:
-                    rank_index=int(np.random.choice(len(self.gradient_lock)))
-                    row_index=int(np.random.choice(len(self.gradient_lock[rank_index])))
-                    ln=[rank_index,row_index]
-                else:
-                    ln=int(np.random.choice(len(self.gradient_lock)))
-            output,loss=self.tf_opt_t(data,labels,int(t),ln)
-        else:
-            output,loss=self.tf_opt_t(data,labels,int(t))
-        try:
-            if self.nn.attenuate!=None:
-                self.opt_counter.assign(self.opt_counter+1)
-        except Exception:
-            pass
-        return output,loss
-    
-    
-    def opt_ol(self,data,labels,t,ln=None):
-        try:
-            if self.platform.DType!=None:
-                if self.thread!=None:
-                    if self.PO==3:
-                        if self.row==None and len(self.gradient_lock)==self.thread:
-                            ln=int(t)
-                        else:
-                            if self.row!=None:
-                                rank_index=int(np.random.choice(len(self.gradient_lock)))
-                                row_index=int(np.random.choice(len(self.gradient_lock[rank_index])))
-                                ln=[rank_index,row_index]
-                            else:
-                                ln=int(np.random.choice(len(self.gradient_lock)))
-                        output,loss=self.tf_opt_t(data,labels,int(t),ln)
-                    else:
-                        output,loss=self.tf_opt_t(data,labels,int(t))
-                else:
-                    output,loss=self.tf_opt(data,labels)
-        except Exception:
-            output,loss=self.pytorch_opt(data,labels)
-        return output,loss
-    
-    
     def _train(self,batch=None,_data_batch=None,_labels_batch=None,test_batch=None):
         if batch!=None:
             total_loss=0
@@ -611,7 +270,6 @@ class kernel:
                     if self.stop==True:
                         if self.stop_func():
                             return
-                    self.suspend_func()
                     try:
                         data_batch,labels_batch=self.nn.data_func(data_batch,labels_batch)
                     except Exception as e:
@@ -630,7 +288,6 @@ class kernel:
                     if self.stop==True:
                         if self.stop_func():
                             return
-                    self.suspend_func()
                     index1=j*batch
                     index2=(j+1)*batch
                     data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j)
@@ -655,7 +312,6 @@ class kernel:
                     if self.stop==True:
                         if self.stop_func():
                             return
-                    self.suspend_func()
                     batches+=1
                     index1=batches*batch
                     index2=batch-(self.shape0-batches*batch)
@@ -702,10 +358,7 @@ class kernel:
                 except Exception:
                     pass
             if self.test_flag==True:
-                if self.thread_t==None:
-                    self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
-                else:
-                    self.test_loss,self.test_acc=self.test(batch=test_batch)
+                self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
                 self.test_loss_list.append(self.test_loss)
                 try:
                     self.test_acc_list.append(self.test_acc)
@@ -716,368 +369,15 @@ class kernel:
                     except Exception:
                         pass
         else:
-            self.suspend_func()
             output,train_loss=self.opt(self.train_data,self.train_labels)
             self.loss_acc(output=output,labels_batch=labels_batch,loss=train_loss,test_batch=test_batch,total_loss=total_loss,total_acc=total_acc)
         return
     
     
-    def train_(self,_data_batch=None,_labels_batch=None,batch=None,batches=None,test_batch=None,index1=None,index2=None,j=None,t=None):
-        if batch!=None:
-            if index1==batches*batch:
-                data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j,True)
-                try:
-                    data_batch,labels_batch=self.nn.data_func(data_batch,labels_batch)
-                except Exception as e:
-                    try:
-                        if self.nn.data_func!=None:
-                            raise e
-                    except Exception:
-                        pass
-                output,batch_loss=self.opt_t(data_batch,labels_batch,t)
-                try:
-                    self.nn.bc.assign_add(1)
-                except Exception:
-                    pass
-                try:
-                    batch_acc=self.nn.accuracy(output,labels_batch)
-                    return batch_loss,batch_acc
-                except Exception as e:
-                    try:
-                        if self.nn.accuracy!=None:
-                            raise e
-                    except Exception:
-                        return batch_loss,None
-            data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j)
-            try:
-                data_batch,labels_batch=self.nn.data_func(data_batch,labels_batch)
-            except Exception as e:
-                try:
-                    if self.nn.data_func!=None:
-                        raise e
-                except Exception:
-                    pass
-            output,batch_loss=self.opt_t(data_batch,labels_batch,t)
-            try:
-                self.nn.bc.assign_add(1)
-            except Exception:
-                pass
-            try:
-                batch_acc=self.nn.accuracy(output,labels_batch)
-                return batch_loss,batch_acc
-            except Exception as e:
-                try:
-                    if self.nn.accuracy!=None:
-                        raise e
-                except Exception:
-                    return batch_loss,None
-        else:
-            output,train_loss=self.opt_t(self.train_data,self.train_labels,t)
-            if self.PO==1 or self.PO==3:
-                self.lock[1].acquire()
-                self.total_epoch+=1
-                self.epoch_list[t]+=1
-                train_loss=train_loss.numpy()
-                self.train_loss=train_loss
-                self.train_loss_list.append(train_loss)
-                try:
-                    acc=self.nn.accuracy(output,self.train_labels)
-                    acc=acc.numpy()
-                    self.train_acc=acc
-                    self.train_acc_list.append(acc)
-                except Exception as e:
-                    try:
-                        if self.nn.accuracy!=None:
-                            raise e
-                    except Exception:
-                        pass
-                if self.test_flag==True:
-                    if self.thread_t==None:
-                        self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch,t)
-                    else:
-                        self.test_loss,self.test_acc=self.test(batch=test_batch)
-                    self.test_loss_list.append(self.test_loss)
-                    try:
-                        self.test_acc_list.append(self.test_acc)
-                    except Exception as e:
-                        try:
-                            if self.nn.accuracy!=None:
-                                raise e
-                        except Exception:
-                            pass
-                self.print_save()
-                self.lock[1].release()
-            else:
-                self.lock[2].acquire()
-                self.total_epoch+=1
-                self.epoch_list[t]+=1
-                train_loss=train_loss.numpy()
-                self.train_loss=train_loss
-                self.train_loss_list.append(train_loss)
-                try:
-                    acc=self.nn.accuracy(output,self.train_labels)
-                    acc=acc.numpy()
-                    self.train_acc=acc
-                    self.train_acc_list.append(acc)
-                except Exception as e:
-                    try:
-                        if self.nn.accuracy!=None:
-                            raise e
-                    except Exception:
-                        pass
-                if self.test_flag==True:
-                    if self.thread_t==None:
-                        self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch,t)
-                    else:
-                        self.test_loss,self.test_acc=self.test(batch=test_batch)
-                    self.test_loss_list.append(self.test_loss)
-                    try:
-                        self.test_acc_list.append(self.test_acc)
-                    except Exception as e:
-                        try:
-                            if self.nn.accuracy!=None:
-                                raise e
-                        except Exception:
-                            pass
-                self.print_save()
-                self.lock[2].release()
-            return
-    
-    
-    def _train_(self,batch=None,data_batch=None,labels_batch=None,test_batch=None,t=None):
-        total_loss=0
-        total_acc=0
-        batches=int((self.shape0-self.shape0%batch)/batch)
-        if batch!=None:
-            for j in range(batches):
-                if t in self.stop_list:
-                    return
-                self.suspend_func(t)
-                index1=j*batch
-                index2=(j+1)*batch
-                batch_loss,batch_acc=self.train_(data_batch,labels_batch,batch,batches,test_batch,index1,index2,j,t)
-                if self.stop_flag==True:
-                    return
-                try:
-                    if self.nn.accuracy!=None:
-                        total_loss+=batch_loss
-                        total_acc+=batch_acc
-                except Exception:
-                    total_loss+=batch_loss
-            if self.shape0%batch!=0:
-                if t in self.stop_list:
-                    return
-                self.suspend_func(t)
-                batches+=1
-                index1=batches*batch
-                index2=batch-(self.shape0-batches*batch)
-                batch_loss,batch_acc=self.train_(data_batch,labels_batch,batch,batches,test_batch,index1,index2,None,t)
-                if self.stop_flag==True:
-                    return
-                try:
-                    if self.nn.accuracy!=None:
-                        total_loss+=batch_loss
-                        total_acc+=batch_acc
-                except Exception:
-                    total_loss+=batch_loss
-            loss=total_loss.numpy()/batches
-            try:
-                train_acc=total_acc.numpy()/batches
-            except Exception as e:
-                try:
-                    if self.nn.accuracy!=None:
-                        raise e
-                except Exception:
-                    pass
-            if self.PO==1 or self.PO==3:
-                self.lock[1].acquire()
-            else:
-                self.lock[2].acquire()
-            self.total_epoch+=1
-            self.epoch_list[t]+=1
-            self.train_loss=loss
-            self.train_loss_list.append(loss)
-            try:
-                if self.nn.accuracy!=None:
-                    self.train_acc=train_acc
-                    self.train_acc_list.append(train_acc)
-            except Exception:
-                pass
-            if self.test_flag==True:
-                if self.thread_t==None:
-                    self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch,t)
-                else:
-                    self.test_loss,self.test_acc=self.test(batch=test_batch)
-                self.test_loss_list.append(self.test_loss)
-            try:
-                if self.nn.accuracy!=None:
-                    self.test_acc_list.append(self.test_acc)
-            except Exception:
-                pass
-            try:
-                self.nn.ec.assign_add(1)
-            except Exception:
-                pass
-            self.print_save()
-            if self.PO==1 or self.PO==3:
-                self.lock[1].release()
-            else:
-                self.lock[2].release()
-            return
-        else:
-            if t in self.stop_list:
-                return
-            self.suspend_func(t)
-            batch_loss,batch_acc=self.train_(data_batch,labels_batch,batch,batches,test_batch,index1,index2,j,t)
-            return
-    
-    
-    def train7(self,train_ds,t,test_batch):
-        while True:
-            for data_batch,labels_batch in train_ds:
-                output,batch_loss=self.opt_t(data_batch,labels_batch,t)
-                try:
-                    self.nn.bc.assign_add(1)
-                except Exception:
-                    pass
-                try:
-                    if self.nn.accuracy!=None:
-                        batch_acc=self.nn.accuracy(output,labels_batch)
-                except Exception as e:
-                    try:
-                        if self.nn.accuracy!=None:
-                            raise e
-                    except Exception:
-                        pass
-                try:
-                    if self.nn.accuracy!=None:
-                        self.total_loss[t]+=batch_loss
-                        self.total_acc[t]+=batch_acc
-                except Exception:
-                    self.total_loss[t]+=batch_loss
-                self.batch_counter[t]+=1
-                if self.PO==1 or self.PO==3:
-                    self.lock[1].acquire()
-                else:
-                    self.lock[2].acquire()
-                batches=np.sum(self.batch_counter)
-                if batches>=self.batches:
-                    self.batch_counter=self.batch_counter*0
-                    loss=np.sum(self.total_loss)/batches
-                    try:
-                        if self.nn.accuracy!=None:
-                            train_acc=np.sum(self.total_acc)/batches
-                    except Exception:
-                        pass
-                    self.total_epoch+=1
-                    self.train_loss=loss
-                    self.train_loss_list.append(loss)
-                    try:
-                        if self.nn.accuracy!=None:
-                            self.train_acc=train_acc
-                            self.train_acc_list.append(train_acc)
-                    except Exception:
-                        pass
-                    if self.test_flag==True:
-                        if self.thread_t==None:
-                            self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch,t)
-                        else:
-                            self.test_loss,self.test_acc=self.test(batch=test_batch)
-                        self.test_loss_list.append(self.test_loss)
-                    try:
-                        if self.nn.accuracy!=None:
-                            self.test_acc_list.append(self.test_acc)
-                    except Exception:
-                        pass
-                    self.print_save()
-                    self.epoch_counter+=1
-                    try:
-                        self.nn.ec.assign_add(1)
-                    except Exception:
-                        pass
-                    self.total_loss=self.total_loss*0
-                    try:
-                        if self.nn.accuracy!=None:
-                            self.total_acc=self.total_acc*0
-                    except Exception:
-                        pass
-                if self.PO==1 or self.PO==3:
-                    self.lock[1].release()
-                else:
-                    self.lock[2].release()
-                if self.thread!=None:
-                    if t in self.stop_list or t in self.stop_list_m:
-                        if self.PO==1 or self.PO==3:
-                            self.lock[1].acquire()
-                        else:
-                            self.lock[2].acquire()
-                        self.thread_counter-=1
-                        self.running_list.remove(t)
-                        self.stop_list.remove(t)
-                        self.stopped_list.append(t)
-                        if self.PO==1 or self.PO==3:
-                            self.lock[1].release()
-                        else:
-                            self.lock[2].release()
-                        return
-                if self.stop_flag==True:
-                    return
-                if self.epoch_counter==self.epoch_:
-                    return
-    
-    
     def train(self,batch=None,epoch=None,test_batch=None,save=None,one=True,p=None,s=None):
-        if self.thread!=None:
-            if self.PO==1 or self.PO==3:
-                self.lock[1].acquire()
-            else:
-                self.lock[2].acquire()
-            t=self.thread_num.pop(0)
-            self.thread_counter+=1
-            self.running_list.append(t)
-            self.epoch_list.append(0)
-            if self.epoch_!=None:
-                if self.train_dataset==None:
-                    if t==0:
-                        if self.batches==None:
-                            self.batches=int((self.shape0-self.shape0%batch)/batch)
-                            if self.shape0%batch!=0:
-                                self.batches+=1
-            if self.PO==1 or self.PO==3:
-                self.lock[1].release()
-            else:
-                self.lock[2].release()
-        if self.PO==3:
-            self.lock[1].acquire()
-            if self.row!=None:
-                if self.d_index==0 or len(self.gradient_lock)<self.rank and len(self.gradient_lock[self.d_index-1])==self.row:
-                    self.gradient_lock.append([])
-                    self.d_index+=1
-                self.gradient_lock[self.d_index-1].append(self.threading.Lock())
-            elif self.max_lock!=None and len(self.gradient_lock)<self.max_lock:
-                self.gradient_lock.append(self.threading.Lock())
-            else:
-                self.gradient_lock.append(self.threading.Lock())
-            self.lock[1].release()
-        if self.PO==3:
-            self.lock[1].acquire()
-            self.gradient_list.append(None)
-            if self.memory_flag==True:
-                self.grad_memory_list.append(0)
-            self.lock[1].release()
         self.batch=batch
         self.epoch=0
         self.train_counter+=1
-        if self.epoch_!=None:
-            if self.train_dataset!=None:
-                train_ds=self.train_dataset
-            else:
-                if self.data_segment_flag==True:
-                    train_ds=self.platform.data.Dataset.from_tensor_slices((self.train_data[t],self.train_labels[t])).batch(batch)
-                elif self.buffer_size!=None:
-                    train_ds=self.platform.data.Dataset.from_tensor_slices((self.train_data,self.train_labels)).shuffle(self.buffer_size).batch(batch)
-                else:
-                    train_ds=self.platform.data.Dataset.from_tensor_slices((self.train_data,self.train_labels)).batch(batch)
         if p==None:
             self.p=9
         else:
@@ -1088,186 +388,302 @@ class kernel:
         else:
             self.s=s-1
             self.file_list=[]
-        if self.epoch_==None and type(self.train_data)==list:
+        if type(self.train_data)==list:
             data_batch=[x for x in range(len(self.train_data))]
         else:
             data_batch=None
-        if self.epoch_==None and type(self.train_labels)==list:
+        if type(self.train_labels)==list:
             labels_batch=[x for x in range(len(self.train_labels))]
         else:
             labels_batch=None
-        if self.thread!=None and self.epoch_!=None:
-            self.train7(train_ds,t,test_batch)
-        elif epoch!=None:
+        if epoch!=None:
             for i in range(epoch):
                 t1=time.time()
-                if self.thread==None:
-                    self._train(batch,data_batch,labels_batch,test_batch)
-                else:
-                    self._train_(batch,data_batch,labels_batch,test_batch,t)
-                if self.thread!=None:
-                    if t in self.stop_list or t in self.stop_list_m:
-                        if self.PO==1 or self.PO==3:
-                            self.lock[1].acquire()
-                        else:
-                            self.lock[2].acquire()
-                        self.thread_counter-=1
-                        self.running_list.remove(t)
-                        self.stop_list.remove(t)
-                        self.stopped_list.append(t)
-                        if self.PO==1 or self.PO==3:
-                            self.lock[1].release()
-                        else:
-                            self.lock[2].release()
-                        return
+                self._train(batch,data_batch,labels_batch,test_batch)
                 if self.stop_flag==True:
                     return
-                if self.thread==None:
+                try:
                     try:
-                        try:
-                            self.nn.ec.assign_add(1)
-                        except Exception:
-                            self.nn.ec+=1
+                        self.nn.ec.assign_add(1)
                     except Exception:
-                        pass
-                if self.thread==None:
-                    self.total_epoch+=1
-                if self.thread==None:
-                    if epoch%10!=0:
-                        p=epoch-epoch%self.p
-                        p=int(p/self.p)
-                        s=epoch-epoch%self.s
-                        s=int(s/self.s)
-                    else:
-                        p=epoch/(self.p+1)
-                        p=int(p)
-                        s=epoch/(self.s+1)
-                        s=int(s)
-                    if p==0:
-                        p=1
-                    if s==0:
-                        s=1
-                    if i%p==0:
-                        if self.test_flag==False:
-                            try:
-                                if self.nn.accuracy!=None:
-                                    print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
-                                    if self.acc_flag=='%':
-                                        print('epoch:{0}   accuracy:{1:.1f}'.format(i+1,self.train_acc*100))
-                                    else:
-                                        print('epoch:{0}   accuracy:{1:.6f}'.format(i+1,self.train_acc))
-                                    print()
-                            except Exception:
+                        self.nn.ec+=1
+                except Exception:
+                    pass
+                self.total_epoch+=1
+                if epoch%10!=0:
+                    p=epoch-epoch%self.p
+                    p=int(p/self.p)
+                    s=epoch-epoch%self.s
+                    s=int(s/self.s)
+                else:
+                    p=epoch/(self.p+1)
+                    p=int(p)
+                    s=epoch/(self.s+1)
+                    s=int(s)
+                if p==0:
+                    p=1
+                if s==0:
+                    s=1
+                if i%p==0:
+                    if self.test_flag==False:
+                        try:
+                            if self.nn.accuracy!=None:
                                 print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
+                                if self.acc_flag=='%':
+                                    print('epoch:{0}   accuracy:{1:.1f}'.format(i+1,self.train_acc*100))
+                                else:
+                                    print('epoch:{0}   accuracy:{1:.6f}'.format(i+1,self.train_acc))
                                 print()
-                        else:
-                            try:
-                                if self.nn.accuracy!=None:
-                                    print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
-                                    if self.acc_flag=='%':
-                                        print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(i+1,self.train_acc*100,self.test_acc*100))
-                                    else:
-                                        print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(i+1,self.train_acc,self.test_acc))
-                                    print()
-                            except Exception:
+                        except Exception:
+                            print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
+                            print()
+                    else:
+                        try:
+                            if self.nn.accuracy!=None:
                                 print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
+                                if self.acc_flag=='%':
+                                    print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(i+1,self.train_acc*100,self.test_acc*100))
+                                else:
+                                    print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(i+1,self.train_acc,self.test_acc))
                                 print()
-                    if save!=None and i%s==0:
-                        self.save(self.total_epoch,one)
+                        except Exception:
+                            print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
+                            print()
+                if save!=None and i%s==0:
+                    self.save(self.total_epoch,one)
                 t2=time.time()
-                if self.thread==None:
-                    self.time+=(t2-t1)
+                self.time+=(t2-t1)
         else:
             i=0
             while True:
                 t1=time.time()
-                if self.thread==None:
-                    self._train(test_batch=test_batch)
-                else:
-                    self._train_(test_batch=test_batch,t=t)
-                if self.thread!=None:
-                    if t in self.stop_list or t in self.stop_list_m:
-                        if self.PO==1 or self.PO==3:
-                            self.lock[1].acquire()
-                        else:
-                            self.lock[2].acquire()
-                        self.thread_counter-=1
-                        self.running_list.remove(t)
-                        self.stop_list.remove(t)
-                        self.stopped_list.append(t)
-                        if self.PO==1 or self.PO==3:
-                            self.lock[1].release()
-                        else:
-                            self.lock[2].release()
-                        return
+                self._train(test_batch=test_batch)
                 if self.stop_flag==True:
                     return
                 i+=1
-                if self.thread==None:
+                try:
                     try:
-                        try:
-                            self.nn.ec.assign_add(1)
-                        except Exception:
-                            self.nn.ec+=1
+                        self.nn.ec.assign_add(1)
                     except Exception:
-                        pass
-                if self.thread==None:
-                    self.total_epoch+=1
-                if self.thread==None:
-                    if epoch%10!=0:
-                        p=epoch-epoch%self.p
-                        p=int(p/self.p)
-                        s=epoch-epoch%self.s
-                        s=int(s/self.s)
-                    else:
-                        p=epoch/(self.p+1)
-                        p=int(p)
-                        s=epoch/(self.s+1)
-                        s=int(s)
-                    if p==0:
-                        p=1
-                    if s==0:
-                        s=1
-                    if i%p==0:
-                        if self.test_flag==False:
-                            try:
-                                if self.nn.accuracy!=None:
-                                    print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
-                                    if self.acc_flag=='%':
-                                        print('epoch:{0}   accuracy:{1:.1f}'.format(i+1,self.train_acc*100))
-                                    else:
-                                        print('epoch:{0}   accuracy:{1:.6f}'.format(i+1,self.train_acc))
-                                    print()
-                            except Exception:
+                        self.nn.ec+=1
+                except Exception:
+                    pass
+                self.total_epoch+=1
+                if epoch%10!=0:
+                    p=epoch-epoch%self.p
+                    p=int(p/self.p)
+                    s=epoch-epoch%self.s
+                    s=int(s/self.s)
+                else:
+                    p=epoch/(self.p+1)
+                    p=int(p)
+                    s=epoch/(self.s+1)
+                    s=int(s)
+                if p==0:
+                    p=1
+                if s==0:
+                    s=1
+                if i%p==0:
+                    if self.test_flag==False:
+                        try:
+                            if self.nn.accuracy!=None:
                                 print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
+                                if self.acc_flag=='%':
+                                    print('epoch:{0}   accuracy:{1:.1f}'.format(i+1,self.train_acc*100))
+                                else:
+                                    print('epoch:{0}   accuracy:{1:.6f}'.format(i+1,self.train_acc))
                                 print()
-                        else:
-                            try:
-                                if self.nn.accuracy!=None:
-                                    print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
-                                    if self.acc_flag=='%':
-                                        print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(i+1,self.train_acc*100,self.test_acc*100))
-                                    else:
-                                        print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(i+1,self.train_acc,self.test_acc))
-                                    print()
-                            except Exception:
+                        except Exception:
+                            print('epoch:{0}   loss:{1:.6f}'.format(i+1,self.train_loss))
+                            print()
+                    else:
+                        try:
+                            if self.nn.accuracy!=None:
                                 print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
+                                if self.acc_flag=='%':
+                                    print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(i+1,self.train_acc*100,self.test_acc*100))
+                                else:
+                                    print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(i+1,self.train_acc,self.test_acc))
                                 print()
-                    if save!=None and i%s==0:
-                        self.save(self.total_epoch,one)
+                        except Exception:
+                            print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
+                            print()
+                if save!=None and i%s==0:
+                    self.save(self.total_epoch,one)
                 t2=time.time()
-                if self.thread==None:
-                    self.time+=(t2-t1)
+                self.time+=(t2-t1)
         if save!=None:
             self.save()
-        if self.thread==None:
+        self._time=self.time-int(self.time)
+        if self._time<0.5:
+            self.time=int(self.time)
+        else:
+            self.time=int(self.time)+1
+        self.total_time+=self.time
+        if self.test_flag==False:
+            print('last loss:{0:.6f}'.format(self.train_loss))
+        else:
+            print('last loss:{0:.6f},last test loss:{1:.6f}'.format(self.train_loss,self.test_loss))
+        try:
+            if self.nn.accuracy!=None:
+                if self.acc_flag=='%':
+                    if self.test_flag==False:
+                        print('last accuracy:{0:.1f}'.format(self.train_acc*100))
+                    else:
+                        print('last accuracy:{0:.1f},last test accuracy:{1:.1f}'.format(self.train_acc*100,self.test_acc*100))
+                else:
+                    if self.test_flag==False:
+                        print('last accuracy:{0:.6f}'.format(self.train_acc))
+                    else:
+                        print('last accuracy:{0:.6f},last test accuracy:{1:.6f}'.format(self.train_acc,self.test_acc))   
+        except Exception:
+            pass
+        print()
+        print('time:{0}s'.format(self.time))
+        self.training_flag=False
+        return
+    
+    
+    def test(self,test_data=None,test_labels=None,batch=None):
+        if type(self.nn.param[0])!=list:
+            test_data=test_data.astype(self.nn.param[0].dtype.name)
+            test_labels=test_labels.astype(self.nn.param[0].dtype.name)
+        else:
+            test_data=test_data.astype(self.nn.param[0][0].dtype.name)
+            test_labels=test_labels.astype(self.nn.param[0][0].dtype.name)
+        if type(test_data)==list:
+            data_batch=[x for x in range(len(test_data))]
+        if type(test_labels)==list:
+            labels_batch=[x for x in range(len(test_labels))]
+        if batch!=None:
+            total_loss=0
+            total_acc=0
+            if self.test_dataset!=None:
+                for data_batch,labels_batch in self.test_dataset:
+                    output=self.nn.fp(data_batch)
+                    batch_loss=self.nn.loss(output,labels_batch)
+                    total_loss+=batch_loss
+                    try:
+                        batch_acc=self.nn.accuracy(output,labels_batch)
+                    except Exception as e:
+                        try:
+                            if self.nn.accuracy!=None:
+                                raise e
+                        except Exception:
+                            pass
+            else:
+                total_loss=0
+                total_acc=0
+                if type(test_data)==list:
+                    batches=int((test_data[0].shape[0]-test_data[0].shape[0]%batch)/batch)
+                    shape0=test_data[0].shape[0]
+                else:
+                    batches=int((test_data.shape[0]-test_data.shape[0]%batch)/batch)
+                    shape0=test_data.shape[0]
+                for j in range(batches):
+                    index1=j*batch
+                    index2=(j+1)*batch
+                    if type(test_data)==list:
+                        for i in range(len(test_data)):
+                            data_batch[i]=test_data[i][index1:index2]
+                    else:
+                        data_batch=test_data[index1:index2]
+                    if type(test_labels)==list:
+                        for i in range(len(test_labels)):
+                            labels_batch[i]=test_labels[i][index1:index2]
+                    else:
+                        labels_batch=test_labels[index1:index2]
+                    output=self.nn.fp(data_batch)
+                    batch_loss=self.nn.loss(output,labels_batch)
+                    total_loss+=batch_loss
+                    try:
+                        batch_acc=self.nn.accuracy(output,labels_batch)
+                        total_acc+=batch_acc
+                    except Exception as e:
+                        try:
+                            if self.nn.accuracy!=None:
+                                raise e
+                        except Exception:
+                            pass
+                if shape0%batch!=0:
+                    batches+=1
+                    index1=batches*batch
+                    index2=batch-(shape0-batches*batch)
+                    try:
+                        try:
+                            if type(test_data)==list:
+                                for i in range(len(test_data)):
+                                    data_batch[i]=self.platform.concat([test_data[i][index1:],test_data[i][:index2]],0)
+                            else:
+                                data_batch=self.platform.concat([test_data[index1:],test_data[:index2]],0)
+                            if type(self.test_labels)==list:
+                                for i in range(len(test_labels)):
+                                    labels_batch[i]=self.platform.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
+                            else:
+                                labels_batch=self.platform.concat([test_labels[index1:],test_labels[:index2]],0)
+                        except Exception:
+                            if type(test_data)==list:
+                                for i in range(len(test_data)):
+                                    data_batch[i]=self.platform.concat([test_data[i][index1:],test_data[i][:index2]],0)
+                            else:
+                                data_batch=self.platform.concat([test_data[index1:],test_data[:index2]],0)
+                            if type(self.test_labels)==list:
+                                for i in range(len(test_labels)):
+                                    labels_batch[i]=self.platform.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
+                            else:
+                                labels_batch=self.platform.concat([test_labels[index1:],test_labels[:index2]],0)
+                    except Exception as e:
+                        raise e
+                    output=self.nn.fp(data_batch)
+                    batch_loss=self.nn.loss(output,labels_batch)
+                    total_loss+=batch_loss
+                    try:
+                        batch_acc=self.nn.accuracy(output,labels_batch)
+                        total_acc+=batch_acc
+                    except Exception as e:
+                        try:
+                            if self.nn.accuracy!=None:
+                                raise e
+                        except Exception:
+                            pass
+            test_loss=total_loss.numpy()/batches
+            try:
+                if self.nn.accuracy!=None:
+                    test_acc=total_acc.numpy()/batches
+            except Exception:
+                pass
+        else:
+            output=self.nn.fp(test_data)
+            test_loss=self.nn.loss(output,test_labels)
+            test_loss=test_loss.numpy()
+            try:
+                test_acc=self.nn.accuracy(output,test_labels)
+                test_acc=test_acc.numpy()
+            except Exception as e:
+                try:
+                    if self.nn.accuracy!=None:
+                        raise e
+                except Exception:
+                    pass
+        try:
+            if self.nn.accuracy!=None:
+                return test_loss,test_acc
+        except Exception:
+            return test_loss,None
+    
+    
+    def stop_func(self):
+        if self.end():
+            self.save(self.total_epoch,True)
+            print('\nSystem have stopped training,Neural network have been saved.')
             self._time=self.time-int(self.time)
             if self._time<0.5:
                 self.time=int(self.time)
             else:
                 self.time=int(self.time)+1
             self.total_time+=self.time
-        if self.thread==None:
+            print()
+            print('epoch:{0}'.format(self.total_epoch))
             if self.test_flag==False:
                 print('last loss:{0:.6f}'.format(self.train_loss))
             else:
@@ -1287,451 +703,17 @@ class kernel:
             except Exception:
                 pass
             print()
-            print('time:{0}s'.format(self.time))
-        if self.thread==None:
-            self.training_flag=False
-        if self.thread!=None:
-            if self.PO==1 or self.PO==3:
-                self.lock[1].acquire()
-            else:
-                self.lock[2].acquire()
-            self.thread_counter-=1
-            self.running_list.remove(t)
-            if self.PO==1 or self.PO==3:
-                self.lock[1].release()
-            else:
-                self.lock[2].release()
-        return
-    
-    
-    def train_ol(self):
-        if self.thread!=None:
-            if self.PO==1 or self.PO==3:
-                self.lock[1].acquire()
-            else:
-                self.lock[2].acquire()
-            t=self.thread_num.pop(0)
-            self.exception_list.append(False)
-            self.thread_counter+=1
-            self.running_list.append(t)
-            if self.PO==1 or self.PO==3:
-                self.lock[1].release()
-            else:
-                self.lock[2].release()
-        while True:
-            if self.stop_flag==True:
-                return
-            if self.thread!=None:
-                if self.save_flag==True:
-                    if self.PO==1 or self.PO==3:
-                        self.lock[1].acquire()
-                    else:
-                        self.lock[2].acquire()
-                    self.save()
-                    if self.PO==1 or self.PO==3:
-                        self.lock[1].release()
-                    else:
-                        self.lock[2].release()
-                if t in self.stop_list or t in self.stop_list_m:
-                    if self.PO==1 or self.PO==3:
-                        self.lock[1].acquire()
-                    else:
-                        self.lock[2].acquire()
-                    self.stopped_list.append(t)
-                    if self.PO==1 or self.PO==3:
-                        self.lock[1].release()
-                    else:
-                        self.lock[2].release()
-                    return
-                self.suspend_func(t)
-                try:
-                    data=self.nn.ol(t)
-                except Exception:
-                    self.exception_list[t]=True
-                    continue
-                if data=='stop':
-                    if self.PO==1 or self.PO==3:
-                        self.lock[1].acquire()
-                    else:
-                        self.lock[2].acquire()
-                    self.stopped_list.append(t)
-                    if self.PO==1 or self.PO==3:
-                        self.lock[1].release()
-                    else:
-                        self.lock[2].release()
-                    return
-                elif data=='suspend':
-                    if self.PO==1 or self.PO==3:
-                        self.lock[1].acquire()
-                    else:
-                        self.lock[2].acquire()
-                    self.suspended_list.append(t)
-                    if self.PO==1 or self.PO==3:
-                        self.lock[1].release()
-                    else:
-                        self.lock[2].release() 
-                    while True:
-                        if t not in self.suspended_list:
-                            break
-                    continue
-                try:
-                    output,loss=self.opt_ol(data[0],data[1],t)
-                except Exception:
-                    self.exception_list[t]=True
-                    continue
-                loss=loss.numpy()
-                if self.PO==1 or self.PO==3:
-                    self.lock[1].acquire()
-                else:
-                    self.lock[2].acquire()
-                if len(self.nn.train_loss_list)==self.nn.max_length:
-                    del self.nn.train_loss_list[0]
-                self.nn.train_loss_list.append(loss)
-                try:
-                    if self.nn.accuracy!=None:
-                        try:
-                            train_acc=self.nn.accuracy(output,data[1])
-                        except:
-                            self.exception_list[t]=True
-                            continue
-                        if len(self.nn.train_acc_list)==self.nn.max_length:
-                            del self.nn.train_acc_list[0]
-                        self.train_acc_list.append(train_acc)
-                except Exception:
-                    pass
-                try:
-                    self.nn.c+=1
-                except Exception:
-                    pass
-                if self.PO==1 or self.PO==3:
-                    self.lock[1].release()
-                else:
-                    self.lock[2].release()
-            else:
-                if self.stop_flag==True:
-                    return
-                if self.save_flag==True:
-                    self.save()
-                self.suspend_func()
-                data=self.nn.ol()
-                if data=='stop':
-                    return
-                elif data=='suspend':
-                    self.nn.suspend=True
-                    while True:
-                        if self.nn.suspend==False:
-                            break
-                    continue
-                output,loss=self.opt(data[0],data[1])
-                loss=loss.numpy()
-                if len(self.nn.train_loss_list)==self.nn.max_length:
-                    del self.nn.train_loss_list[0]
-                self.nn.train_loss_list.append(loss)
-                try:
-                    train_acc=self.nn.accuracy(output,data[1])
-                    if len(self.nn.train_acc_list)==self.nn.max_length:
-                        del self.nn.train_acc_list[0]
-                    self.train_acc_list.append(train_acc)
-                except Exception as e:
-                    try:
-                        if self.nn.accuracy!=None:
-                            raise e
-                    except Exception:
-                        pass
-                try:
-                    self.nn.c+=1
-                except Exception:
-                    pass
-        if self.thread!=None:
-            if self.PO==1 or self.PO==3:
-                self.lock[1].acquire()
-            else:
-                self.lock[2].acquire()
-            self.thread_counter-=1
-            self.running_list.remove(t)
-            if self.PO==1 or self.PO==3:
-                self.lock[1].release()
-            else:
-                self.lock[2].release()
-        return
-    
-    
-    def test(self,test_data=None,test_labels=None,batch=None,t=None):
-        if type(self.nn.param[0])!=list:
-            test_data=test_data.astype(self.nn.param[0].dtype.name)
-            test_labels=test_labels.astype(self.nn.param[0].dtype.name)
-        else:
-            test_data=test_data.astype(self.nn.param[0][0].dtype.name)
-            test_labels=test_labels.astype(self.nn.param[0][0].dtype.name)
-        if type(test_data)==list:
-            data_batch=[x for x in range(len(test_data))]
-        if type(test_labels)==list:
-            labels_batch=[x for x in range(len(test_labels))]
-        if self.thread_t!=None:
-            parallel_test=test_.parallel_test(self.nn,self.test_data,self.test_labels,self.thread_t,batch)
-            if type(self.test_data)!=list:
-                parallel_test.segment_data()
-            class thread(self.threading.Thread):  
-                def run(self):
-                    parallel_test.test()
-            for _ in range(self.thread_t):
-                _thread=thread()
-                _thread.start()
-            for _ in range(self.thread_t):
-                _thread.join()
-            try:
-                test_loss,test_acc=parallel_test.loss_acc()
-            except Exception as e:
-                try:
-                    if self.nn.accuracy!=None:
-                        raise e
-                except Exception:
-                    test_loss=parallel_test.loss_acc()
-        else:
-            if batch!=None:
-                total_loss=0
-                total_acc=0
-                if self.test_dataset!=None:
-                    for data_batch,labels_batch in self.test_dataset:
-                        if self.thread==None or t==None:
-                            output=self.nn.fp(data_batch)
-                        else:
-                            output=self.nn.fp(data_batch,t)
-                        batch_loss=self.nn.loss(output,labels_batch)
-                        total_loss+=batch_loss
-                        try:
-                            batch_acc=self.nn.accuracy(output,labels_batch)
-                        except Exception as e:
-                            try:
-                                if self.nn.accuracy!=None:
-                                    raise e
-                            except Exception:
-                                pass
-                else:
-                    total_loss=0
-                    total_acc=0
-                    if type(test_data)==list:
-                        batches=int((test_data[0].shape[0]-test_data[0].shape[0]%batch)/batch)
-                        shape0=test_data[0].shape[0]
-                    else:
-                        batches=int((test_data.shape[0]-test_data.shape[0]%batch)/batch)
-                        shape0=test_data.shape[0]
-                    for j in range(batches):
-                        index1=j*batch
-                        index2=(j+1)*batch
-                        if type(test_data)==list:
-                            for i in range(len(test_data)):
-                                data_batch[i]=test_data[i][index1:index2]
-                        else:
-                            data_batch=test_data[index1:index2]
-                        if type(test_labels)==list:
-                            for i in range(len(test_labels)):
-                                labels_batch[i]=test_labels[i][index1:index2]
-                        else:
-                            labels_batch=test_labels[index1:index2]
-                        if self.thread==None or t==None:
-                            output=self.nn.fp(data_batch)
-                        else:
-                            output=self.nn.fp(data_batch,t)
-                        batch_loss=self.nn.loss(output,labels_batch)
-                        total_loss+=batch_loss
-                        try:
-                            batch_acc=self.nn.accuracy(output,labels_batch)
-                            total_acc+=batch_acc
-                        except Exception as e:
-                            try:
-                                if self.nn.accuracy!=None:
-                                    raise e
-                            except Exception:
-                                pass
-                    if shape0%batch!=0:
-                        batches+=1
-                        index1=batches*batch
-                        index2=batch-(shape0-batches*batch)
-                        try:
-                            try:
-                                if type(test_data)==list:
-                                    for i in range(len(test_data)):
-                                        data_batch[i]=self.platform.concat([test_data[i][index1:],test_data[i][:index2]],0)
-                                else:
-                                    data_batch=self.platform.concat([test_data[index1:],test_data[:index2]],0)
-                                if type(self.test_labels)==list:
-                                    for i in range(len(test_labels)):
-                                        labels_batch[i]=self.platform.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
-                                else:
-                                    labels_batch=self.platform.concat([test_labels[index1:],test_labels[:index2]],0)
-                            except Exception:
-                                if type(test_data)==list:
-                                    for i in range(len(test_data)):
-                                        data_batch[i]=self.platform.concat([test_data[i][index1:],test_data[i][:index2]],0)
-                                else:
-                                    data_batch=self.platform.concat([test_data[index1:],test_data[:index2]],0)
-                                if type(self.test_labels)==list:
-                                    for i in range(len(test_labels)):
-                                        labels_batch[i]=self.platform.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
-                                else:
-                                    labels_batch=self.platform.concat([test_labels[index1:],test_labels[:index2]],0)
-                        except Exception as e:
-                            raise e
-                        if self.thread==None or t==None:
-                            output=self.nn.fp(data_batch)
-                        else:
-                            output=self.nn.fp(data_batch,t)
-                        batch_loss=self.nn.loss(output,labels_batch)
-                        total_loss+=batch_loss
-                        try:
-                            batch_acc=self.nn.accuracy(output,labels_batch)
-                            total_acc+=batch_acc
-                        except Exception as e:
-                            try:
-                                if self.nn.accuracy!=None:
-                                    raise e
-                            except Exception:
-                                pass
-                test_loss=total_loss.numpy()/batches
-                try:
-                    if self.nn.accuracy!=None:
-                        test_acc=total_acc.numpy()/batches
-                except Exception:
-                    pass
-            else:
-                if self.thread==None or t==None:
-                    output=self.nn.fp(test_data)
-                else:
-                    output=self.nn.fp(test_data,t)
-                test_loss=self.nn.loss(output,test_labels)
-                test_loss=test_loss.numpy()
-                try:
-                    test_acc=self.nn.accuracy(output,test_labels)
-                    test_acc=test_acc.numpy()
-                except Exception as e:
-                    try:
-                        if self.nn.accuracy!=None:
-                            raise e
-                    except Exception:
-                        pass
-        try:
-            if self.nn.accuracy!=None:
-                return test_loss,test_acc
-        except Exception:
-            return test_loss,None
-    
-    
-    def suspend_func(self,t=None):
-        if t in self.suspend_list:
-            if self.PO==1 or self.PO==3:
-                self.lock[1].acquire()
-            else:
-                self.lock[2].acquire()
-            self.suspended_list.append(t)
-            if self.PO==1 or self.PO==3:
-                self.lock[1].release()
-            else:
-                self.lock[2].release()
-            while True:
-                if t not in self.suspend_list:
-                    if self.PO==1 or self.PO==3:
-                        self.lock[1].acquire()
-                    else:
-                        self.lock[2].acquire()
-                    self.suspended_list.remove(t)
-                    if self.PO==1 or self.PO==3:
-                        self.lock[1].release()
-                    else:
-                        self.lock[2].release()
-                    break
-        if self.suspend==True:
-            if self.thread==None:
-                if self.save_epoch==None:
-                    print('Training have suspended.')
-                else:
-                    self._save()
-            while True:
-                if self.suspend==False:
-                    if self.thread==None:
-                        print('Training have continued.')
-                    break
-        return
-    
-    
-    def stop_func(self):
-        if self.thread==None:
-            if self.end():
-                self.save(self.total_epoch,True)
-                print('\nSystem have stopped training,Neural network have been saved.')
-                self._time=self.time-int(self.time)
-                if self._time<0.5:
-                    self.time=int(self.time)
-                else:
-                    self.time=int(self.time)+1
-                self.total_time+=self.time
-                print()
-                print('epoch:{0}'.format(self.total_epoch))
-                if self.test_flag==False:
-                    print('last loss:{0:.6f}'.format(self.train_loss))
-                else:
-                    print('last loss:{0:.6f},last test loss:{1:.6f}'.format(self.train_loss,self.test_loss))
-                try:
-                    if self.nn.accuracy!=None:
-                        if self.acc_flag=='%':
-                            if self.test_flag==False:
-                                print('last accuracy:{0:.1f}'.format(self.train_acc*100))
-                            else:
-                                print('last accuracy:{0:.1f},last test accuracy:{1:.1f}'.format(self.train_acc*100,self.test_acc*100))
-                        else:
-                            if self.test_flag==False:
-                                print('last accuracy:{0:.6f}'.format(self.train_acc))
-                            else:
-                                print('last accuracy:{0:.6f},last test accuracy:{1:.6f}'.format(self.train_acc,self.test_acc))   
-                except Exception:
-                    pass
-                print()
-                print('time:{0}s'.format(self.total_time))
-                self.stop_flag=True
-                return True
-        else:
-            if self.end():
-                self.save(self.total_epoch,True)
-                self.save_flag=True
-                self.stop_flag=True
-                return True
+            print('time:{0}s'.format(self.total_time))
+            self.stop_flag=True
+            return True
         return False
     
     
-    def stop_func_(self,lock):
+    def stop_func_(self):
         if self.stop==True:
             if self.stop_flag==True or self.stop_func():
-                lock.release()
                 return True
-    
-    
-    def stop_func_m(self,lock,ln):
-        if self.memory_t_value!=None and self.c_memory>self.memory_t_value:
-            if self.memory_priority==False:
-                if self.epoch_list_copy==None:
-                    self.epoch_list_copy=self.epoch_list.copy()
-                index=self.epoch_list_copy.index(max(self.epoch_list_copy))
-                self.stop_list_m.append(index)
-                self.epoch_list_copy[index]=0
-                return False
-            else:
-                if self.PO==3 and self.memory_flag==True:
-                    self.grad_memory_list[ln]=0
-                lock.release()
-                return True
-        else:
-            if self.memory_priority==False:
-                self.stop_list_m.clear()
-                self.epoch_list_copy=None
-            return False
-    
-    
-    def stop_func_t_p(self,lock,t,ln):
-        if t in self.stop_list_m:
-            self.grad_memory_list[ln]=0
-            self.epoch_list[t]=0
-            lock.release()
-            return True
+        return False
     
     
     def _save(self):
@@ -1742,66 +724,6 @@ class kernel:
             return
         elif self.save_epoch!=None and self.save_epoch>self.total_epoch:
             print('\nsave_epoch>total_epoch')
-        return
-    
-    
-    def print_save(self):
-        if self.epoch_!=None:
-            if self.muti_p!=None:
-                muti_p=self.muti_p-1
-                if self.epoch_%10!=0:
-                    p=self.epoch_-self.epoch_%muti_p
-                    p=int(p/muti_p)
-                    if p==0:
-                        p=1
-                else:
-                    p=self.epoch_/(muti_p+1)
-                    p=int(p)
-                    if p==0:
-                        p=1
-                if self.epoch%p==0:
-                    if self.test_flag==False:
-                        try:
-                            if self.nn.accuracy!=None:
-                                print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
-                                if self.acc_flag=='%':
-                                    print('epoch:{0}   accuracy:{1:.1f}'.format(self.total_epoch,self.train_acc*100))
-                                else:
-                                    print('epoch:{0}   accuracy:{1:.6f}'.format(self.total_epoch,self.train_acc))
-                                print()
-                        except Exception:
-                            print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch,self.train_loss))
-                            print()
-                    else:
-                        try:
-                            if self.nn.accuracy!=None:
-                                print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch,self.train_loss,self.test_loss))
-                                if self.acc_flag=='%':
-                                    print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(self.total_epoch,self.train_acc*100,self.test_acc*100))
-                                else:
-                                    print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(self.total_epoch,self.train_acc,self.test_acc))
-                                print()
-                        except Exception:
-                            print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch,self.train_loss,self.test_loss))
-                            print()
-            if self.muti_s!=None:
-                muti_s=self.muti_s-1
-                if self.epoch_%10!=0:
-                    s=self.epoch_-self.epoch_%muti_s
-                    s=int(s/muti_s)
-                    if s==0:
-                        s=1
-                else:
-                    s=self.epoch_/(muti_s+1)
-                    s=int(s)
-                    if s==0:
-                        s=1
-                if self.muti_save!=None and self.epoch%s==0:
-                    if self.muti_save==1:
-                        self.save(self.total_epoch)
-                    else:
-                        self.save(self.total_epoch,False)
-            self.epoch+=1
         return
     
     
@@ -1949,8 +871,6 @@ class kernel:
     
     
     def save(self,i=None,one=True):
-        if self.save_flag==True:
-            return
         if one==True:
             output_file=open(self.filename,'wb')
         else:
