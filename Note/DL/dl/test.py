@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from multiprocessing import Array
+import numpy.ctypeslib as npc
 
 
 def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
@@ -157,10 +158,16 @@ class parallel_test:
             self.test_labels=test_labels.astype(self.nn.param[0][0].dtype.name)
         self.process=process
         self.batch=batch
-        self.loss=Array('f',np.zeros([process],dtype=np.float32))
+        if type(self.nn.param[0])!=list:
+            self.loss=Array('f',np.zeros([process],dtype=self.nn.param[0].dtype.name))
+        else:
+            self.loss=Array('f',np.zeros([process],dtype=self.nn.param[0][0].dtype.name))
         try:
             if self.nn.accuracy!=None:
-                self.acc=Array('f',np.zeros([process],dtype=np.float32))
+                if type(self.nn.param[0])!=list:
+                    self.acc=Array('f',np.zeros([process],dtype=self.nn.param[0].dtype.name))
+                else:
+                    self.acc=Array('f',np.zeros([process],dtype=self.nn.param[0][0].dtype.name))
         except Exception:
             pass
         self.process_num=np.arange(process)
@@ -235,6 +242,6 @@ class parallel_test:
             batches+=1
         try:
             if self.nn.accuracy!=None:
-                return np.mean(np.array(self.loss)/batches),np.mean(np.array(self.acc)/batches)
+                return np.mean(npc.as_array(self.loss.get_obj())/batches),np.mean(npc.as_array(self.acc.get_obj())/batches)
         except Exception:
-            return np.mean(np.array(self.loss)/batches)
+            return np.mean(npc.as_array(self.loss.get_obj())/batches)
