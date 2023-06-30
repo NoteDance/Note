@@ -15,7 +15,6 @@ class kernel:
             pass
         self.platform=None
         self.batches=None
-        self.epoch_counter=0
         self.suspend=False
         self.stop=False
         self.stop_flag=False
