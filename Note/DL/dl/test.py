@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+from multiprocessing import Array
 
 
 def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
@@ -146,28 +147,32 @@ def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
 
 
 class parallel_test:
-    def __init__(self,nn,test_data=None,test_labels=None,thread=None,batch=None):
+    def __init__(self,nn,test_data=None,test_labels=None,process=None,batch=None):
         self.nn=nn
-        self.test_data=test_data
-        self.test_labels=test_labels
-        self.thread=thread
+        if type(self.nn.param[0])!=list:
+            self.test_data=test_data.astype(self.nn.param[0].dtype.name)
+            self.test_labels=test_labels.astype(self.nn.param[0].dtype.name)
+        else:
+            self.test_data=test_data.astype(self.nn.param[0][0].dtype.name)
+            self.test_labels=test_labels.astype(self.nn.param[0][0].dtype.name)
+        self.process=process
         self.batch=batch
-        self.loss=np.zeros([thread],dtype=np.float32)
+        self.loss=Array('f',np.zeros([process],dtype=np.float32))
         try:
             if self.nn.accuracy!=None:
-                self.acc=np.zeros([thread],dtype=np.float32)
+                self.acc=Array('f',np.zeros([process],dtype=np.float32))
         except Exception:
             pass
-        self.thread_num=np.arange(thread)
-        self.thread_num=list(self.thread_num)
+        self.process_num=np.arange(process)
+        self.process_num=list(self.process_num)
     
     
     def segment_data(self):
-        if len(self.test_data)!=self.thread:
+        if len(self.test_data)!=self.process:
             data=None
             labels=None
-            segments=int((len(self.test_data)-len(self.test_data)%self.thread)/self.thread)
-            for i in range(self.thread):
+            segments=int((len(self.test_data)-len(self.test_data)%self.process)/self.process)
+            for i in range(self.process):
                 index1=i*segments
                 index2=(i+1)*segments
                 if i==0:
@@ -176,10 +181,10 @@ class parallel_test:
                 else:
                     data=np.concatenate((data,np.expand_dims(self.test_data[index1:index2],axis=0)))
                     labels=np.concatenate((labels,np.expand_dims(self.test_labels[index1:index2],axis=0)))
-            if len(data)%self.process_thread!=0:
+            if len(data)%self.process!=0:
                 segments+=1
-                index1=segments*self.process_thread
-                index2=self.process_thread-(len(self.train_data)-segments*self.process_thread)
+                index1=segments*self.process
+                index2=self.process_thread-(len(self.train_data)-segments*self.process)
                 data=np.concatenate((data,np.expand_dims(self.test_data[index1:index2],axis=0)))
                 labels=np.concatenate((labels,np.expand_dims(self.test_labels[index1:index2],axis=0)))
             self.test_data=data
@@ -188,18 +193,18 @@ class parallel_test:
     
     
     def test(self):
-        t=self.thread_num.pop(0)
+        p=self.process_num.pop(0)
         if type(self.test_data)==list:
-            train_ds=self.test_data[t]
+            train_ds=self.test_data[p]
         else:
-            train_ds=tf.data.Dataset.from_tensor_slices((self.test_data[t],self.test_labels[t])).batch(self.batch)
+            train_ds=tf.data.Dataset.from_tensor_slices((self.test_data[p],self.test_labels[p])).batch(self.batch)
         for data_batch,labels_batch in train_ds:
             try:
                 try:
                     output=self.nn.fp(data_batch)
                     batch_loss=self.nn.loss(output,labels_batch)
                 except Exception:
-                    output=self.nn.fp(data_batch,t)
+                    output=self.nn.fp(data_batch,p)
                     batch_loss=self.nn.loss(output,labels_batch)
             except Exception as e:
                 raise e
@@ -213,10 +218,10 @@ class parallel_test:
                     pass
             try:
                 if self.nn.accuracy!=None:
-                    self.loss[t]+=batch_loss
-                    self.acc[t]+=batch_acc
+                    self.loss[p]+=batch_loss
+                    self.acc[p]+=batch_acc
             except Exception:
-                self.loss[t]+=batch_loss
+                self.loss[p]+=batch_loss
         return
     
     
@@ -230,6 +235,6 @@ class parallel_test:
             batches+=1
         try:
             if self.nn.accuracy!=None:
-                return np.mean(self.loss/batches),np.mean(self.acc/batches)
+                return np.mean(np.array(self.loss)/batches),np.mean(np.array(self.acc)/batches)
         except Exception:
-            return np.mean(self.loss/batches)
+            return np.mean(np.array(self.loss)/batches)
