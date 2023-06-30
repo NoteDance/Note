@@ -16,6 +16,7 @@ class kernel:
         self.platform=None
         self.batches=None
         self.epoch_counter=0
+        self.suspend=False
         self.stop=False
         self.stop_flag=False
         self.save_epoch=None
@@ -68,6 +69,7 @@ class kernel:
     
     
     def init(self):
+        self.suspend=False
         self.stop=False
         self.stop_flag=False
         self.save_epoch=None
@@ -544,6 +546,45 @@ class kernel:
         return
     
     
+        def train_ol(self):
+            while True:
+                if self.stop_flag==True:
+                    return
+                if self.save_flag==True:
+                    self.save()
+                self.suspend_func()
+                data=self.nn.ol()
+                if data=='stop':
+                    return
+                elif data=='suspend':
+                    self.nn.suspend=True
+                    while True:
+                        if self.nn.suspend==False:
+                            break
+                    continue
+                output,loss=self.opt(data[0],data[1])
+                loss=loss.numpy()
+                if len(self.nn.train_loss_list)==self.nn.max_length:
+                    del self.nn.train_loss_list[0]
+                self.nn.train_loss_list.append(loss)
+                try:
+                    train_acc=self.nn.accuracy(output,data[1])
+                    if len(self.nn.train_acc_list)==self.nn.max_length:
+                        del self.nn.train_acc_list[0]
+                    self.train_acc_list.append(train_acc)
+                except Exception as e:
+                    try:
+                        if self.nn.accuracy!=None:
+                            raise e
+                    except Exception:
+                        pass
+                try:
+                    self.nn.c+=1
+                except Exception:
+                    pass
+            return
+    
+    
     def test(self,test_data=None,test_labels=None,batch=None):
         if type(self.nn.param[0])!=list:
             test_data=test_data.astype(self.nn.param[0].dtype.name)
@@ -670,6 +711,19 @@ class kernel:
                 return test_loss,test_acc
         except Exception:
             return test_loss,None
+    
+    
+    def suspend_func(self):
+        if self.suspend==True:
+            if self.save_epoch==None:
+                print('Training have suspended.')
+            else:
+                self._save()
+            while True:
+                if self.suspend==False:
+                    print('Training have continued.')
+                    break
+        return
     
     
     def stop_func(self):
