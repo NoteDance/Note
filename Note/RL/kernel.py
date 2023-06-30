@@ -693,7 +693,7 @@ class kernel:
         pickle.dump(self.episode_step,output_file)
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
-        pickle.dump(np.array(self.sc),output_file)
+        pickle.dump(np.array(self.sc,dtype=np.int32),output_file)
         pickle.dump(self.update_step,output_file)
         pickle.dump(self.reward_list,output_file)
         pickle.dump(self.loss_list,output_file)
