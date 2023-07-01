@@ -43,20 +43,20 @@ class kernel:
     
     
     def data(self,train_data=None,train_labels=None,test_data=None,test_labels=None,train_dataset=None,test_dataset=None):
-        if type(self.nn.param[0])!=list:
+        if train_data is not None and type(self.nn.param[0])!=list:
             self.train_data=train_data.astype(self.nn.param[0].dtype.name)
             self.train_labels=train_labels.astype(self.nn.param[0].dtype.name)
         else:
             self.train_data=train_data.astype(self.nn.param[0][0].dtype.name)
             self.train_labels=train_labels.astype(self.nn.param[0][0].dtype.name)
         self.train_dataset=train_dataset
-        if type(train_data)==list:
-            self.data_batch=[x for x in range(len(train_data))]
-        if type(train_labels)==list:
-            self.labels_batch=[x for x in range(len(train_labels))]
         if test_data is not None:
-            self.test_data=test_data
-            self.test_labels=test_labels
+            if type(self.nn.param[0])!=list:
+                self.test_data=test_data.astype(self.nn.param[0].dtype.name)
+                self.test_labels=test_labels.astype(self.nn.param[0].dtype.name)
+            else:
+                self.test_data=test_data.astype(self.nn.param[0][0].dtype.name)
+                self.test_labels=test_labels.astype(self.nn.param[0][0].dtype.name)
             self.test_flag=True
         self.test_dataset=test_dataset
         if self.train_dataset==None:
@@ -150,54 +150,24 @@ class kernel:
             return
     
     
-    def data_func(self,data_batch=None,labels_batch=None,batch=None,index1=None,index2=None,j=None,flag=None):
+    def data_func(self,batch=None,index1=None,index2=None,j=None,flag=None):
         if flag==None:
-            if type(self.train_data)==list:
-                for i in range(len(self.train_data)):
-                    if batch!=1:
-                        data_batch[i]=self.train_data[i][index1:index2]
-                    else:
-                        data_batch[i]=self.train_data[i][j]
+            if batch!=1:
+                data_batch=self.train_data[index1:index2]
             else:
-                if batch!=1:
-                    data_batch=self.train_data[index1:index2]
-                else:
-                    data_batch=self.train_data[j]
-            if type(self.train_labels)==list:
-                for i in range(len(self.train_data)):
-                    if batch!=1:
-                        labels_batch[i]=self.train_labels[i][index1:index2]
-                    else:
-                        labels_batch[i]=self.train_labels[i][j]
+                data_batch=self.train_data[j]
+            if batch!=1:
+                labels_batch=self.train_labels[index1:index2]
             else:
-                if batch!=1:
-                    labels_batch=self.train_labels[index1:index2]
-                else:
-                    labels_batch=self.train_labels[j]
+                labels_batch=self.train_labels[j]
         else:
             try:
                 try:
-                    if type(self.train_data)==list:
-                        for i in range(len(self.train_data)):
-                            data_batch[i]=self.platform.concat([self.train_data[i][index1:],self.train_data[i][:index2]],0)
-                    else:
-                        data_batch=self.platform.concat([self.train_data[index1:],self.train_data[:index2]],0)
-                    if type(self.train_labels)==list:
-                        for i in range(len(self.train_data)):
-                            labels_batch[i]=self.platform.concat([self.train_labels[i][index1:],self.train_labels[i][:index2]],0)
-                    else:
-                        labels_batch=self.platform.concat([self.train_labels[index1:],self.train_labels[:index2]],0)
+                    data_batch=self.platform.concat([self.train_data[index1:],self.train_data[:index2]],0)
+                    labels_batch=self.platform.concat([self.train_labels[index1:],self.train_labels[:index2]],0)
                 except Exception:
-                    if type(self.train_data)==list:
-                        for i in range(len(self.train_data)):
-                            data_batch[i]=np.concatenate([self.train_data[i][index1:],self.train_data[i][:index2]],0)
-                    else:
-                        data_batch=np.concatenate([self.train_data[index1:],self.train_data[:index2]],0)
-                    if type(self.train_labels)==list:
-                        for i in range(len(self.train_data)):
-                            labels_batch[i]=np.concatenate([self.train_labels[i][index1:],self.train_labels[i][:index2]],0)
-                    else:
-                        labels_batch=np.concatenate([self.train_labels[index1:],self.train_labels[:index2]],0)
+                    data_batch=np.concatenate([self.train_data[index1:],self.train_data[:index2]],0)
+                    labels_batch=np.concatenate([self.train_labels[index1:],self.train_labels[:index2]],0)
             except Exception as e:
                 raise e
         return data_batch,labels_batch
@@ -262,7 +232,7 @@ class kernel:
         return output,loss
     
     
-    def _train(self,batch=None,_data_batch=None,_labels_batch=None,test_batch=None):
+    def _train(self,batch=None,test_batch=None):
         if batch!=None:
             total_loss=0
             total_acc=0
@@ -291,7 +261,7 @@ class kernel:
                             return
                     index1=j*batch
                     index2=(j+1)*batch
-                    data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,j)
+                    data_batch,labels_batch=self.data_func(batch,index1,index2,j)
                     try:
                         data_batch,labels_batch=self.nn.data_func(data_batch,labels_batch)
                     except Exception as e:
@@ -316,7 +286,7 @@ class kernel:
                     batches+=1
                     index1=batches*batch
                     index2=batch-(self.shape0-batches*batch)
-                    data_batch,labels_batch=self.data_func(_data_batch,_labels_batch,batch,index1,index2,flag=True)
+                    data_batch,labels_batch=self.data_func(batch,index1,index2,flag=True)
                     try:
                         data_batch,labels_batch=self.nn.data_func(data_batch,labels_batch)
                     except Exception as e:
@@ -389,18 +359,10 @@ class kernel:
         else:
             self.s=s-1
             self.file_list=[]
-        if type(self.train_data)==list:
-            data_batch=[x for x in range(len(self.train_data))]
-        else:
-            data_batch=None
-        if type(self.train_labels)==list:
-            labels_batch=[x for x in range(len(self.train_labels))]
-        else:
-            labels_batch=None
         if epoch!=None:
             for i in range(epoch):
                 t1=time.time()
-                self._train(batch,data_batch,labels_batch,test_batch)
+                self._train(batch,test_batch)
                 if self.stop_flag==True:
                     return
                 try:
@@ -585,12 +547,6 @@ class kernel:
     
     
     def test(self,test_data=None,test_labels=None,batch=None):
-        if type(self.nn.param[0])!=list:
-            test_data=test_data.astype(self.nn.param[0].dtype.name)
-            test_labels=test_labels.astype(self.nn.param[0].dtype.name)
-        else:
-            test_data=test_data.astype(self.nn.param[0][0].dtype.name)
-            test_labels=test_labels.astype(self.nn.param[0][0].dtype.name)
         if type(test_data)==list:
             data_batch=[x for x in range(len(test_data))]
         if type(test_labels)==list:
