@@ -60,10 +60,7 @@ class kernel:
             self.test_flag=True
         self.test_dataset=test_dataset
         if self.train_dataset==None:
-            if type(self.train_data)==list:
-                self.shape0=train_data[0].shape[0]
-            else:
-                self.shape0=train_data.shape[0]
+            self.shape0=train_data.shape[0]
         return
     
     
