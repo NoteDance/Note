@@ -314,9 +314,9 @@ for p in range(5):
 # Study kernel:
 **If you want to study kernel,you can start with reduced kernel,there is reduced kernel at link.**
 
-**DL:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/reduced%20kernel/DL
+**DL:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/reduced%20kernel
 
-**RL:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/reduced%20kernel/RL
+**RL:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/Note%207.0%20pv%20documentation/RL/reduced%20kernel
 
 
 # Documentation:
