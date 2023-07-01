@@ -558,6 +558,7 @@ class kernel:
                     total_loss+=batch_loss
                     try:
                         batch_acc=self.nn.accuracy(output,labels_batch)
+                        total_acc+=batch_acc
                     except Exception as e:
                         try:
                             if self.nn.accuracy!=None:
