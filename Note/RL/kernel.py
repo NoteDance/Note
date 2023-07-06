@@ -83,8 +83,8 @@ class kernel:
             self.nn.bc=manager.list(self.nn.bc)
         except Exception:
             pass
-        self.stop_flag=Value('b',0)
-        self.save_flag=Value('b',0)
+        self.stop_flag=Value('b',self.stop_flag)
+        self.save_flag=Value('b',self.save_flag)
         self.file_list=manager.list([])
         self.param=manager.dict()
         return
@@ -687,8 +687,8 @@ class kernel:
             if len(self.file_list)>self.s+1:
                 os.remove(self.file_list[0][0])
                 del self.file_list[0]
+        self.update_nn_param()
         pickle.dump(self.nn,output_file)
-        pickle.dump(self.param[7],output_file)
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.episode_step,output_file)
         pickle.dump(self.pool_size,output_file)
@@ -717,7 +717,7 @@ class kernel:
             self.nn.km=1
         except Exception:
             pass
-        self.param[7]=pickle.load(input_file)
+        self.param[7]=self.nn.param
         self.epsilon=pickle.load(input_file)
         self.episode_step=pickle.load(input_file)
         self.pool_size=pickle.load(input_file)
