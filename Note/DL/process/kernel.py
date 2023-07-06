@@ -836,8 +836,8 @@ class kernel:
             if len(self.file_list)>self.s+1:
                 os.remove(self.file_list[0][0])
                 del self.file_list[0]
+        self.update_nn_param()
         pickle.dump(self.nn,output_file)
-        pickle.dump(self.param[7],output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.end_loss,output_file)
         pickle.dump(self.end_acc,output_file)
@@ -875,7 +875,7 @@ class kernel:
             self.nn.km=1
         except Exception:
             pass
-        self.param[7]=pickle.load(input_file)
+        self.param[7]=self.nn.param
         self.batch=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
         self.end_acc=pickle.load(input_file)
