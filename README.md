@@ -17,14 +17,14 @@ neural network example:
 You can first refer to the simpler neural network examples nn.py and nn_acc.py in the documentation.
 
 ## DL: 
-https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network
+https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/DL/neural%20network
 
-**Neural network examples using Note's layer module:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/layer
+**Neural network examples using Note's layer module:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/layer
 
-**Neural network examples for Note multi-process kernel:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/process
+**Neural network examples for Note multi-process kernel:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/process
 
 ## RL: 
-https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/Note%207.0%20pv%20documentation/RL/neural%20network
+https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/RL/neural%20network
 
 If you accomplish your neural network,you can use kernel to train,examples are shown below.
 
@@ -33,7 +33,7 @@ If you accomplish your neural network,you can use kernel to train,examples are s
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/nn.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/nn.py
 
 ## Tensorflow platform:
 
@@ -104,7 +104,7 @@ kernel.save()              #save neural network
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/process/nn.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/process/nn.py
 
 **multiprocessing example:**
 ```python
@@ -164,11 +164,11 @@ kernel.test(x_train,y_train,32)
 
 **Calculate the attenuation coefficient based on the optimization counter using the attenuation function.**
 
-**example:https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/process/nn_attenuate.py**
+**example:https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/process/nn_attenuate.py**
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/pytorch/nn.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/pytorch/nn.py
 
 ## Pytorch platform:
 
@@ -205,7 +205,7 @@ kernel.train(64,5)         #train neural network
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/RL/neural%20network/pytorch/DQN.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/pytorch/DQN.py
 
 ## Pytorch platform:
 
@@ -226,7 +226,7 @@ kernel.visualize_reward()
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow/DQN.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/tensorflow/DQN.py
 
 ## Tensorflow platform:
 
@@ -247,7 +247,7 @@ kernel.visualize_reward()
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow/DDPG.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/tensorflow/DDPG.py
 
 **example:**
 ```python
@@ -272,7 +272,7 @@ then pools would be used parallel training agent.**
 ### Multiprocessing:
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/RL/neural%20network/tensorflow/pool%20net/DQN.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/tensorflow/pool%20net/DQN.py
 
 **multiprocessing example:**
 ```python
@@ -314,9 +314,9 @@ for p in range(5):
 # Study kernel:
 **If you want to study kernel,you can start with reduced kernel,there is reduced kernel at link.**
 
-**DL:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/reduced%20kernel
+**DL:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/DL/reduced%20kernel
 
-**RL:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0-pv/Note%207.0%20pv%20documentation/RL/reduced%20kernel
+**RL:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/RL/reduced%20kernel
 
 
 # Documentation:
@@ -326,13 +326,13 @@ https://github.com/NoteDancing/Note-documentation
 
 
 # Layer:
-https://github.com/NoteDancing/Note/tree/Note-7.0-pv/Note/nn/layer
+https://github.com/NoteDancing/Note/tree/Note-7.0/Note/nn/layer
 
 **documentation:** https://github.com/NoteDancing/Note-documentation/tree/layer
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0-pv/Note%207.0%20pv%20documentation/DL/neural%20network/tensorflow/layer/nn.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/layer/nn.py
 ```python
 import Note.DL.kernel as k   #import kernel
 import tensorflow as tf              #import platform
@@ -352,7 +352,7 @@ kernel.train(32,5)         #train neural network
 # GPT:
 **Layers in the GPT directory created by GPT**
 
-https://github.com/NoteDancing/Note/tree/Note-7.0-pv/Note/nn/layer/GPT
+https://github.com/NoteDancing/Note/tree/Note-7.0/Note/nn/layer/GPT
 
 
 # Patreon:
