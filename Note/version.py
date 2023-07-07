@@ -1,2 +1,2 @@
-version='7.0 pv'
-date='2022.10.9'
+version='7.0'
+date='2023.7.7'
