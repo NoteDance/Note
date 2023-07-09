@@ -4,104 +4,105 @@ from multiprocessing import Array
 import numpy.ctypeslib as npc
 
 
+@tf.function(jit_compile=True)
+def test_tf(nn,data,labels):
+    try:
+        try:
+            output=nn.fp(data)
+            loss=nn.loss(output,labels)
+        except Exception:
+            output,loss=nn.fp(data,labels)
+    except Exception as e:
+        raise e
+    try:
+        acc=nn.accuracy(output,labels)
+    except Exception as e:
+        try:
+            if nn.accuracy!=None:
+                raise e
+        except Exception:
+            acc=None
+            pass
+    return loss,acc
+
+
+def test_pytorch(nn,data,labels):
+    try:
+        try:
+            output=nn.fp(data)
+            loss=nn.loss(output,labels)
+        except Exception:
+            output,loss=nn.fp(data,labels)
+    except Exception as e:
+        raise e
+    try:
+        acc=nn.accuracy(output,labels)
+    except Exception as e:
+        try:
+            if nn.accuracy!=None:
+                raise e
+        except Exception:
+            acc=None
+            pass
+    return loss,acc
+
+
 def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
-    if type(test_data)==list:
-        data_batch=[x for x in range(len(test_data))]
-    if type(test_labels)==list:
-        labels_batch=[x for x in range(len(test_labels))]
+    if type(nn.param[0])!=list:
+        test_data=test_data.astype(nn.param[0].dtype.name)
+        test_labels=test_labels.astype(nn.param[0].dtype.name)
+    else:
+        test_data=test_data.astype(nn.param[0][0].dtype.name)
+        test_labels=test_labels.astype(nn.param[0][0].dtype.name)
     if batch!=None:
         total_loss=0
         total_acc=0
-        if type(test_data)==list:
-            batches=int((test_data[0].shape[0]-test_data[0].shape[0]%batch)/batch)
-            shape0=test_data[0].shape[0]
-        else:
-            batches=int((test_data.shape[0]-test_data.shape[0]%batch)/batch)
-            shape0=test_data.shape[0]
+        batches=int((test_data.shape[0]-test_data.shape[0]%batch)/batch)
+        shape0=test_data.shape[0]
         for j in range(batches):
             index1=j*batch
             index2=(j+1)*batch
-            if type(test_data)==list:
-                for i in range(len(test_data)):
-                    data_batch[i]=test_data[i][index1:index2]
-            else:
-                data_batch=test_data[index1:index2]
-            if type(test_labels)==list:
-                for i in range(len(test_labels)):
-                    labels_batch[i]=test_labels[i][index1:index2]
-            else:
-                labels_batch=test_labels[index1:index2]
+            data_batch=test_data[index1:index2]
+            labels_batch=test_labels[index1:index2]
             try:
                 try:
-                    output=nn.fp(data_batch)
+                    if platform.DType!=None:
+                        batch_loss,batch_acc=test_tf(data_batch,labels_batch)
                 except Exception:
-                    output=nn(data_batch)
+                    batch_loss,batch_acc=test_pytorch(data_batch,labels_batch)
             except Exception as e:
                 raise e
-            if loss==None:
-                batch_loss=nn.loss(output,labels_batch)
-            else:
-                batch_loss=loss(labels_batch,output)
             total_loss+=batch_loss
             try:
-                batch_acc=nn.accuracy(output,labels_batch)
                 total_acc+=batch_acc
-            except Exception as e:
-                try:
-                    if nn.accuracy!=None:
-                        raise e
-                except Exception:     
-                    pass
+            except Exception:
+                pass
         if shape0%batch!=0:
             batches+=1
             index1=batches*batch
             index2=batch-(shape0-batches*batch)
             try:
                 try:
-                    if type(test_data)==list:
-                        for i in range(len(test_data)):
-                            data_batch[i]=platform.concat([test_data[i][index1:],test_data[i][:index2]],0)
-                    else:
-                        data_batch=platform.concat([test_data[index1:],test_data[:index2]],0)
-                    if type(test_labels)==list:
-                        for i in range(len(test_labels)):
-                            labels_batch[i]=platform.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
-                    else:
-                        labels_batch=platform.concat([test_labels[index1:],test_labels[:index2]],0)
+                    data_batch=platform.concat([test_data[index1:],test_data[:index2]],0)
+                    labels_batch=platform.concat([test_labels[index1:],test_labels[:index2]],0)
                 except Exception:
-                    if type(test_data)==list:
-                        for i in range(len(test_data)):
-                            data_batch[i]=platform.concat([test_data[i][index1:],test_data[i][:index2]],0)
-                    else:
-                        data_batch=platform.concat([test_data[index1:],test_data[:index2]],0)
-                    if type(test_labels)==list:
-                        for i in range(len(test_labels)):
-                            labels_batch[i]=platform.concat([test_labels[i][index1:],test_labels[i][:index2]],0)
-                    else:
-                        labels_batch=platform.concat([test_labels[index1:],test_labels[:index2]],0)
+                    data_batch=platform.concat([test_data[index1:],test_data[:index2]],0)
+                    labels_batch=platform.concat([test_labels[index1:],test_labels[:index2]],0)
             except Exception as e:
                 raise e
             try:
                 try:
-                    output=nn.fp(data_batch)
+                    if platform.DType!=None:
+                        batch_loss,batch_acc=test_tf(data_batch,labels_batch)
                 except Exception:
-                    output=nn(data_batch)
+                    batch_loss,batch_acc=test_pytorch(data_batch,labels_batch)
             except Exception as e:
                 raise e
-            if loss==None:
-                batch_loss=nn.loss(output,labels_batch)
-            else:
-                batch_loss=loss(labels_batch,output)
             total_loss+=batch_loss
             try:
-                batch_acc=nn.accuracy(output,labels_batch)
                 total_acc+=batch_acc
-            except Exception as e:
-                try:
-                  if nn.accuracy!=None:
-                      raise e
-                except Exception: 
-                    pass
+            except Exception:
+                pass
         test_loss=total_loss.numpy()/batches
         test_loss=test_loss.astype(np.float32)
         try:
@@ -113,25 +114,17 @@ def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
     else:
         try:
             try:
-                output=nn.fp(test_data)
+                if platform.DType!=None:
+                    batch_loss,batch_acc=test_tf(test_data,test_labels)
             except Exception:
-                output=nn(test_data)
+                batch_loss,batch_acc=test_pytorch(test_data,test_labels)
         except Exception as e:
             raise e
-        if loss==None:
-            test_loss=nn.loss(output,test_labels)
-        else:
-            test_loss=loss(test_labels,output)
         test_loss=test_loss.numpy().astype(np.float32)
         try:
-            test_acc=nn.accuracy(output,test_labels)
             test_acc=test_acc.numpy().astype(np.float32)
-        except Exception as e:
-            try:
-                if nn.accuracy!=None:
-                    raise e
-            except Exception: 
-                pass
+        except Exception:
+            pass
     print('test loss:{0:.6f}'.format(test_loss))
     try:
         if nn.accuracy!=None:
@@ -199,6 +192,35 @@ class parallel_test:
         return
     
     
+    @tf.function(jit_compile=True)
+    def test_(self,data,labels,p):
+        try:
+            try:
+                try:
+                    output=self.nn.fp(data)
+                    loss=self.nn.loss(output,labels)
+                except Exception:
+                    output,loss=self.nn.fp(data,labels)
+            except Exception:
+                try:
+                    output=self.nn.fp(data,p)
+                    loss=self.nn.loss(output,labels)
+                except Exception:
+                    output,loss=self.nn.fp(data,labels,p)
+        except Exception as e:
+            raise e
+        try:
+            acc=self.nn.accuracy(output,labels)
+        except Exception as e:
+            try:
+                if self.nn.accuracy!=None:
+                    raise e
+            except Exception:
+                acc=None
+                pass
+        return loss,acc
+    
+    
     def test(self):
         p=self.process_num.pop(0)
         if type(self.test_data)==list:
@@ -207,22 +229,9 @@ class parallel_test:
             train_ds=tf.data.Dataset.from_tensor_slices((self.test_data[p],self.test_labels[p])).batch(self.batch)
         for data_batch,labels_batch in train_ds:
             try:
-                try:
-                    output=self.nn.fp(data_batch)
-                    batch_loss=self.nn.loss(output,labels_batch)
-                except Exception:
-                    output=self.nn.fp(data_batch,p)
-                    batch_loss=self.nn.loss(output,labels_batch)
+                batch_loss,batch_acc=self.test_(data_batch,labels_batch,p)
             except Exception as e:
                 raise e
-            try:
-                batch_acc=self.nn.accuracy(output,labels_batch)
-            except Exception as e:
-                try:
-                    if self.nn.accuracy!=None:
-                        raise e
-                except Exception:
-                    pass
             try:
                 if self.nn.accuracy!=None:
                     self.loss[p]+=batch_loss
