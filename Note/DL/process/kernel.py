@@ -1,8 +1,9 @@
 import tensorflow as tf
 from tensorflow.python.ops import state_ops
 from tensorflow.python.util import nest
-from multiprocessing import Value,Array
+from multiprocessing import Process,Value,Array
 import numpy as np
+from Note.DL.dl.test import parallel_test
 import matplotlib.pyplot as plt
 import pickle
 import os
@@ -17,6 +18,7 @@ class kernel:
             pass
         self.PO=None
         self.process=None
+        self.process_t=None
         self.train_ds=None
         self.data_segment_flag=False
         self.batches=None
@@ -437,13 +439,17 @@ class kernel:
                     except Exception:
                         pass
                     if self.test_flag==True:
-                        self.test_loss.value,self.test_acc.value=self.test(self.test_data,self.test_labels,test_batch,p)
-                        self.test_loss_list.append(self.test_loss.value)
-                    try:
-                        if self.nn.accuracy!=None:
-                            self.test_acc_list.append(self.test_acc.value)
-                    except Exception:
-                        pass
+                        try:
+                            try:
+                                if self.nn.accuracy!=None:
+                                    self.test_loss.value,self.test_acc.value=self.test(self.test_data,self.test_labels,test_batch,p)
+                                    self.test_loss_list.append(self.test_loss.value)
+                                    self.test_acc_list.append(self.test_acc.value)
+                            except Exception:
+                                self.test_loss.value,self.test_acc=self.test(self.test_data,self.test_labels,test_batch,p)
+                                self.test_loss_list.append(self.test_loss.value)
+                        except Exception as e:
+                            raise e
                     self.print_save()
                     self.epoch_counter.value+=1
                     try:
@@ -494,7 +500,21 @@ class kernel:
         else:
             test_data=test_data.astype(self.nn.param[0][0].dtype.name)
             test_labels=test_labels.astype(self.nn.param[0][0].dtype.name)
-        if batch!=None:
+        if self.process_t!=None:
+            parallel_test_=parallel_test(self.nn,self.test_data,self.test_labels,self.process_t,batch)
+            if type(self.test_data)!=list:
+                parallel_test_.segment_data()
+            for p in range(self.process_t):
+            	Process(target=parallel_test_.test).start()
+            try:
+                test_loss,test_acc=parallel_test_.loss_acc()
+            except Exception as e:
+                try:
+                    if self.nn.accuracy!=None:
+                        raise e
+                except Exception:
+                    test_loss=parallel_test_.loss_acc()
+        elif batch!=None:
             total_loss=0
             total_acc=0
             if self.test_dataset!=None:
