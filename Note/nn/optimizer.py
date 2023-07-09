@@ -1,5 +1,4 @@
 import tensorflow as tf
-import numpy as np
 from tensorflow.python.ops import state_ops
 from tensorflow.python.util import nest
 
@@ -408,122 +407,122 @@ class LookAhead:
         return
 
 
-# Define a Ranger optimizer class
-class Ranger:
-    # Initialization method, receive an internal optimizer (default is RAdam), sync period, slow step size and other parameters
-    def __init__(self,optimizer=RAdam(),sync_period=6,slow_step_size=0.5,**kwargs):
-        # Save attributes
-        # Initialize slow weight dictionary
-        self.slow_weights=dict()
-        # Initialize other parameters, such as adaptive gradient clipping, positive negative momentum, norm loss, etc.
-        self.adaptive_grad_clip=kwargs.get("adaptive_grad_clip",True)
-        self.positive_negative_momentum=kwargs.get("positive_negative_momentum",True)
-        self.norm_loss=kwargs.get("norm_loss",True)
-        # Initialize linear learning rate warmup parameters, such as warmup steps and initial learning rate
-        self.warmup_steps=kwargs.get("warmup_steps",0)
-        self.init_lr=kwargs.get("init_lr",0.0)
-        # Initialize explore-exploit learning rate schedule parameters, such as maximum learning rate and minimum learning rate
-        self.max_lr=kwargs.get("max_lr",0.1)
-        self.min_lr=kwargs.get("min_lr",0.01)
-        # Initialize LookAhead parameters, such as whether to enable and sync period
-        # If LookAhead is enabled, create an instance of the LookAhead class and pass the internal optimizer and sync period
-        self.lookahead=LookAhead(optimizer,sync_period=sync_period,slow_step_size=slow_step_size)
-    
-    
-    # Define a clip_grad method for adaptive gradient clipping
-    def clip_grad(self,gradient):
-        # Calculate the maximum and minimum values of the gradient according to the formula in the paper
-        grad_max=tf.reduce_max(gradient)
-        grad_min=tf.reduce_min(gradient)
-        grad_max_abs=tf.maximum(tf.abs(grad_max),1e-12)
-        grad_min_abs=tf.maximum(tf.abs(grad_min),1e-12)
-        clip_val_max=grad_max/grad_max_abs*tf.minimum(grad_max_abs,10*grad_min_abs+1e-3)
-        clip_val_min=grad_min/grad_min_abs*tf.minimum(grad_min_abs,10*grad_max_abs+1e-3)
-        # Limit the gradient between the maximum and minimum values
-        gradient=tf.clip_by_value(gradient,clip_val_min,clip_val_max)
-        return gradient
-    
-
-    # Define an adjust_grad method for positive negative momentum adjustment
-    def adjust_grad(self,gradient):
-        # Calculate the positive and negative parts of the gradient according to the formula in the paper
-        grad_pos=tf.maximum(gradient,0.0)
-        grad_neg=tf.minimum(gradient,0.0)
-        # Calculate the positive and negative momentum of the gradient according to the formula in the paper
-        mom_pos=self.optimizer.beta1*grad_pos+(1-self.optimizer.beta1)*grad_neg
-        mom_neg=self.optimizer.beta1*grad_neg + (1-self.optimizer.beta1)*grad_pos
-        # Calculate the adjustment coefficient of the gradient according to the formula in the paper
-        coef_pos=tf.where(grad_pos>0,1.0+mom_pos,1.0)
-        coef_neg=tf.where(grad_neg<0,1.0+mom_neg,1.0)
-        # Multiply the gradient by the adjustment coefficient
-        gradient=gradient*coef_pos*coef_neg
-        return gradient
-    
-
-    # Define a penalize_grad method for norm loss penalty
-    def penalize_grad(self,gradient):
-        # Calculate the norm of the gradient according to the formula in the paper
-        grad_norm=tf.norm(gradient)
-        # Calculate the penalty coefficient of the gradient according to the formula in the paper
-        penalty=tf.exp(grad_norm)-1
-        # Multiply the gradient by the penalty coefficient
-        gradient=gradient*penalty
-        return gradient
-    
-
-    # Define an adjust_lr method for linear learning rate warmup
-    def adjust_lr(self,local_step):
-        # Calculate the current learning rate according to the formula in the paper
-        lr_ratio=(self.optimizer.lr-self.init_lr)/(self.warmup_steps-1)
-        current_lr=self.init_lr+lr_ratio*local_step
-        # Assign the current learning rate to the lr attribute of the internal optimizer
-        self.optimizer.lr=current_lr
-    
-
-    # Define an explore_exploit_lr method for explore-exploit learning rate schedule
-    def explore_exploit_lr(self,local_step):
-        # Calculate the current learning rate according to the formula in the paper
-        lr_ratio=(self.max_lr-self.min_lr)/(self.max_lr+self.min_lr)
-        current_lr=(self.max_lr+self.min_lr)/2+(self.max_lr-self.min_lr)/2*tf.math.cos(np.pi*local_step/lr_ratio)
-        # Assign the current learning rate to the lr attribute of the internal optimizer
-        self.optimizer.lr=current_lr
-    
-    
-    # Define a softplus method for Softplus transformation
-    def softplus(self,x):
-        # Calculate the value after Softplus transformation according to the formula in the paper
-        return tf.math.log(1+tf.math.exp(x))
-    
-
-    # Define a normalize_grad method for gradient normalization
-    def normalize_grad(self,gradient):
-        # Calculate the mean and variance of the gradient according to the formula in the paper
-        grad_mean=tf.reduce_mean(gradient)
-        grad_var=tf.reduce_mean(tf.square(gradient-grad_mean))
-        # Calculate the value after gradient normalization according to the formula in the paper
-        gradient=(gradient-grad_mean)/(self.softplus(grad_var)+self.optimizer.epsilon)
-        return gradient
-    
-
-    # Define an opt method for applying gradients
-    def opt(self,gradient,parameter,t):
-        # If adaptive gradient clipping is enabled, clip the gradient
-        if self.adaptive_grad_clip:
-            gradient=self.clip_grad(gradient)
-        # If positive negative momentum is enabled, adjust the gradient
-        if self.positive_negative_momentum:
-            gradient=self.adjust_grad(gradient)
-        # If norm loss is enabled, penalize the gradient
-        if self.norm_loss:
-            gradient=self.penalize_grad(gradient)
-        # If gradient normalization is enabled, normalize the gradient
-        if self.normalize_grad:
-            gradient=self.normalize_grad(gradient)
-        self.lookahead.opt(gradient,parameter,t)
-        # If linear learning rate warmup is enabled, adjust the learning rate according to the current iteration number
-        if self.warmup_steps>0:
-            self.adjust_lr(t)
-        # If explore-exploit learning rate schedule is enabled, adjust the learning rate according to the current iteration number
-        if self.max_lr>self.min_lr:
-            self.explore_exploit_lr(t)
-        return
+## Define a Ranger optimizer class
+#class Ranger:
+#    # Initialization method, receive an internal optimizer (default is RAdam), sync period, slow step size and other parameters
+#    def __init__(self,optimizer=RAdam(),sync_period=6,slow_step_size=0.5,**kwargs):
+#        # Save attributes
+#        # Initialize slow weight dictionary
+#        self.slow_weights=dict()
+#        # Initialize other parameters, such as adaptive gradient clipping, positive negative momentum, norm loss, etc.
+#        self.adaptive_grad_clip=kwargs.get("adaptive_grad_clip",True)
+#        self.positive_negative_momentum=kwargs.get("positive_negative_momentum",True)
+#        self.norm_loss=kwargs.get("norm_loss",True)
+#        # Initialize linear learning rate warmup parameters, such as warmup steps and initial learning rate
+#        self.warmup_steps=kwargs.get("warmup_steps",0)
+#        self.init_lr=kwargs.get("init_lr",0.0)
+#        # Initialize explore-exploit learning rate schedule parameters, such as maximum learning rate and minimum learning rate
+#        self.max_lr=kwargs.get("max_lr",0.1)
+#        self.min_lr=kwargs.get("min_lr",0.01)
+#        # Initialize LookAhead parameters, such as whether to enable and sync period
+#        # If LookAhead is enabled, create an instance of the LookAhead class and pass the internal optimizer and sync period
+#        self.lookahead=LookAhead(optimizer,sync_period=sync_period,slow_step_size=slow_step_size)
+#    
+#    
+#    # Define a clip_grad method for adaptive gradient clipping
+#    def clip_grad(self,gradient):
+#        # Calculate the maximum and minimum values of the gradient according to the formula in the paper
+#        grad_max=tf.reduce_max(gradient)
+#        grad_min=tf.reduce_min(gradient)
+#        grad_max_abs=tf.maximum(tf.abs(grad_max),1e-12)
+#        grad_min_abs=tf.maximum(tf.abs(grad_min),1e-12)
+#        clip_val_max=grad_max/grad_max_abs*tf.minimum(grad_max_abs,10*grad_min_abs+1e-3)
+#        clip_val_min=grad_min/grad_min_abs*tf.minimum(grad_min_abs,10*grad_max_abs+1e-3)
+#        # Limit the gradient between the maximum and minimum values
+#        gradient=tf.clip_by_value(gradient,clip_val_min,clip_val_max)
+#        return gradient
+#    
+#
+#    # Define an adjust_grad method for positive negative momentum adjustment
+#    def adjust_grad(self,gradient):
+#        # Calculate the positive and negative parts of the gradient according to the formula in the paper
+#        grad_pos=tf.maximum(gradient,0.0)
+#        grad_neg=tf.minimum(gradient,0.0)
+#        # Calculate the positive and negative momentum of the gradient according to the formula in the paper
+#        mom_pos=self.optimizer.beta1*grad_pos+(1-self.optimizer.beta1)*grad_neg
+#        mom_neg=self.optimizer.beta1*grad_neg + (1-self.optimizer.beta1)*grad_pos
+#        # Calculate the adjustment coefficient of the gradient according to the formula in the paper
+#        coef_pos=tf.where(grad_pos>0,1.0+mom_pos,1.0)
+#        coef_neg=tf.where(grad_neg<0,1.0+mom_neg,1.0)
+#        # Multiply the gradient by the adjustment coefficient
+#        gradient=gradient*coef_pos*coef_neg
+#        return gradient
+#    
+#
+#    # Define a penalize_grad method for norm loss penalty
+#    def penalize_grad(self,gradient):
+#        # Calculate the norm of the gradient according to the formula in the paper
+#        grad_norm=tf.norm(gradient)
+#        # Calculate the penalty coefficient of the gradient according to the formula in the paper
+#        penalty=tf.exp(grad_norm)-1
+#        # Multiply the gradient by the penalty coefficient
+#        gradient=gradient*penalty
+#        return gradient
+#    
+#
+#    # Define an adjust_lr method for linear learning rate warmup
+#    def adjust_lr(self,local_step):
+#        # Calculate the current learning rate according to the formula in the paper
+#        lr_ratio=(self.optimizer.lr-self.init_lr)/(self.warmup_steps-1)
+#        current_lr=self.init_lr+lr_ratio*local_step
+#        # Assign the current learning rate to the lr attribute of the internal optimizer
+#        self.optimizer.lr=current_lr
+#    
+#
+#    # Define an explore_exploit_lr method for explore-exploit learning rate schedule
+#    def explore_exploit_lr(self,local_step):
+#        # Calculate the current learning rate according to the formula in the paper
+#        lr_ratio=(self.max_lr-self.min_lr)/(self.max_lr+self.min_lr)
+#        current_lr=(self.max_lr+self.min_lr)/2+(self.max_lr-self.min_lr)/2*tf.math.cos(np.pi*local_step/lr_ratio)
+#        # Assign the current learning rate to the lr attribute of the internal optimizer
+#        self.optimizer.lr=current_lr
+#    
+#    
+#    # Define a softplus method for Softplus transformation
+#    def softplus(self,x):
+#        # Calculate the value after Softplus transformation according to the formula in the paper
+#        return tf.math.log(1+tf.math.exp(x))
+#    
+#
+#    # Define a normalize_grad method for gradient normalization
+#    def normalize_grad(self,gradient):
+#        # Calculate the mean and variance of the gradient according to the formula in the paper
+#        grad_mean=tf.reduce_mean(gradient)
+#        grad_var=tf.reduce_mean(tf.square(gradient-grad_mean))
+#        # Calculate the value after gradient normalization according to the formula in the paper
+#        gradient=(gradient-grad_mean)/(self.softplus(grad_var)+self.optimizer.epsilon)
+#        return gradient
+#    
+#
+#    # Define an opt method for applying gradients
+#    def opt(self,gradient,parameter,t):
+#        # If adaptive gradient clipping is enabled, clip the gradient
+#        if self.adaptive_grad_clip:
+#            gradient=self.clip_grad(gradient)
+#        # If positive negative momentum is enabled, adjust the gradient
+#        if self.positive_negative_momentum:
+#            gradient=self.adjust_grad(gradient)
+#        # If norm loss is enabled, penalize the gradient
+#        if self.norm_loss:
+#            gradient=self.penalize_grad(gradient)
+#        # If gradient normalization is enabled, normalize the gradient
+#        if self.normalize_grad:
+#            gradient=self.normalize_grad(gradient)
+#        self.lookahead.opt(gradient,parameter,t)
+#        # If linear learning rate warmup is enabled, adjust the learning rate according to the current iteration number
+#        if self.warmup_steps>0:
+#            self.adjust_lr(t)
+#        # If explore-exploit learning rate schedule is enabled, adjust the learning rate according to the current iteration number
+#        if self.max_lr>self.min_lr:
+#            self.explore_exploit_lr(t)
+#        return
