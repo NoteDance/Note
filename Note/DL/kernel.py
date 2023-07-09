@@ -1,5 +1,7 @@
 from tensorflow import function
+from multiprocessing import Process
 import numpy as np
+from Note.DL.dl.test import parallel_test
 import matplotlib.pyplot as plt
 import pickle
 import os
@@ -15,6 +17,7 @@ class kernel:
             pass
         self.platform=None
         self.batches=None
+        self.process_t=None
         self.suspend=False
         self.stop=False
         self.stop_flag=False
@@ -548,7 +551,21 @@ class kernel:
             data_batch=[x for x in range(len(test_data))]
         if type(test_labels)==list:
             labels_batch=[x for x in range(len(test_labels))]
-        if batch!=None:
+        if self.process_t!=None:
+            parallel_test_=parallel_test(self.nn,self.test_data,self.test_labels,self.process_t,batch)
+            if type(self.test_data)!=list:
+                parallel_test_.segment_data()
+            for p in range(self.process_t):
+            	Process(target=parallel_test_.test).start()
+            try:
+                test_loss,test_acc=parallel_test_.loss_acc()
+            except Exception as e:
+                try:
+                    if self.nn.accuracy!=None:
+                        raise e
+                except Exception:
+                    test_loss=parallel_test_.loss_acc()
+        elif batch!=None:
             total_loss=0
             total_acc=0
             if self.test_dataset!=None:
