@@ -180,7 +180,7 @@ class kernel:
             return True
     
     
-    @tf.function
+    @tf.function(jit_compile=True)
     def opt_p(self,data,labels,p,lock,g_lock=None):
         try:
             try:
@@ -493,6 +493,28 @@ class kernel:
         return
     
     
+    @tf.function(jit_compile=True)
+    def test_(self,data,labels):
+        try:
+            try:
+                output=self.nn.fp(data)
+                loss=self.nn.loss(output,labels)
+            except Exception:
+                output,loss=self.nn.fp(data,labels)
+        except Exception as e:
+            raise e
+        try:
+            acc=self.nn.accuracy(output,labels)
+        except Exception as e:
+            try:
+                if self.nn.accuracy!=None:
+                    raise e
+            except Exception:
+                acc=None
+                pass
+        return loss,acc
+    
+    
     def test(self,test_data=None,test_labels=None,batch=None,p=None):
         if type(self.nn.param[0])!=list:
             test_data=test_data.astype(self.nn.param[0].dtype.name)
@@ -519,24 +541,12 @@ class kernel:
             total_acc=0
             if self.test_dataset!=None:
                 for data_batch,labels_batch in self.test_dataset:
-                    try:
-                        try:
-                            output=self.nn.fp(data_batch)
-                        except Exception:
-                            output=self.nn.fp(data_batch,p)
-                    except Exception as e:
-                        raise e
-                    batch_loss=self.nn.loss(output,labels_batch)
+                    batch_loss,batch_acc=self.test_(data_batch,labels_batch)
                     total_loss+=batch_loss
                     try:
-                        batch_acc=self.nn.accuracy(output,labels_batch)
                         total_acc+=batch_acc
-                    except Exception as e:
-                        try:
-                           if self.nn.accuracy!=None:
-                               raise e
-                        except Exception:
-                            pass
+                    except Exception:
+                        pass
             else:
                 total_loss=0
                 total_acc=0
@@ -546,11 +556,7 @@ class kernel:
                     index1=j*batch
                     index2=(j+1)*batch
                     data_batch=test_data[index1:index2]
-                    if type(test_labels)==list:
-                        for i in range(len(test_labels)):
-                            labels_batch[i]=test_labels[i][index1:index2]
-                    else:
-                        labels_batch=test_labels[index1:index2]
+                    labels_batch=test_labels[index1:index2]
                     try:
                         try:
                             output=self.nn.fp(data_batch)
@@ -575,24 +581,12 @@ class kernel:
                     index2=batch-(shape0-batches*batch)
                     data_batch=tf.concat([test_data[index1:],test_data[:index2]],0)
                     labels_batch=tf.concat([test_labels[index1:],test_labels[:index2]],0)
-                    try:
-                        try:
-                            output=self.nn.fp(data_batch)
-                        except Exception:
-                            output=self.nn.fp(data_batch,p)
-                    except Exception as e:
-                        raise e
-                    batch_loss=self.nn.loss(output,labels_batch)
+                    batch_loss,batch_acc=self.test_(data_batch,labels_batch)
                     total_loss+=batch_loss
                     try:
-                        batch_acc=self.nn.accuracy(output,labels_batch)
                         total_acc+=batch_acc
-                    except Exception as e:
-                        try:
-                            if self.nn.accuracy!=None:
-                                raise e
-                        except Exception:
-                            pass
+                    except Exception:
+                        pass
             test_loss=total_loss.numpy()/batches
             try:
                 if self.nn.accuracy!=None:
@@ -600,24 +594,12 @@ class kernel:
             except Exception:
                 pass
         else:
-            try:
-                try:
-                    output=self.nn.fp(test_data)
-                except Exception:
-                    output=self.nn.fp(test_data,p)
-            except Exception as e:
-                raise e
-            test_loss=self.nn.loss(output,test_labels)
+            batch_loss,batch_acc=self.test_(test_data,test_labels)
             test_loss=test_loss.numpy()
             try:
-                test_acc=self.nn.accuracy(output,test_labels)
                 test_acc=test_acc.numpy()
-            except Exception as e:
-                try:
-                    if self.nn.accuracy!=None:
-                        raise e
-                except Exception:
-                    pass
+            except Exception:
+                pass
         try:
             if self.nn.accuracy!=None:
                 return test_loss,test_acc
