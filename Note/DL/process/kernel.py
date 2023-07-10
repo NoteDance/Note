@@ -493,6 +493,65 @@ class kernel:
         return
     
     
+    def train_online(self,p,lock=None,g_lock=None):
+        while True:
+            if self.nn.stop_flag==True:
+                return
+            if self.nn.stop_func(p):
+                return
+            self.nn.suspend_func(p)
+            try:
+                data=self.nn.online(p)
+            except Exception as e:
+                self.nn.exception_list[p]=e
+            if data=='stop':
+                return
+            elif data=='suspend':
+                self.nn.suspend_func(p)
+            try:
+                if self.PO==2:
+                    if type(g_lock)!=list:
+                        pass
+                    elif len(g_lock)==self.process:
+                        ln=p
+                        g_lock=g_lock[ln]
+                    else:
+                        ln=int(np.random.choice(len(g_lock)))
+                        g_lock=g_lock[ln]
+                output,loss=self.opt(data[0],data[1],p,lock,g_lock)
+            except Exception as e:
+                if self.PO==1:
+                    if lock[0].acquire(False):
+                        lock[0].release()
+                elif self.PO==2:
+                    if g_lock.acquire(False):
+                        g_lock.release()
+                    if lock[0].acquire(False):
+                        lock[0].release()
+                self.nn.exception_list[p]=e
+            loss=loss.numpy()
+            if len(self.nn.train_loss_list)==self.nn.max_length:
+                del self.nn.train_loss_list[0]
+            self.nn.train_loss_list.append(loss)
+            try:
+                if self.nn.accuracy!=None:
+                    try:
+                        acc=self.nn.accuracy(output,data[1])
+                    except Exception:
+                        self.exception_list[p]=True
+                    if len(self.nn.train_acc_list)==self.nn.max_length:
+                        del self.nn.train_acc_list[0]
+                    self.nn.train_acc_list.append(acc)
+            except Exception as e:
+                self.nn.exception_list[p]=e
+            try:
+                counter=np.frombuffer(self.nn.counter.get_obj(),dtype='i')
+                counter[p]+=1
+            except Exception as e:
+                self.nn.exception_list[p]=e
+        return
+    
+    
     @tf.function(jit_compile=True)
     def test_(self,data,labels):
         try:
