@@ -165,6 +165,16 @@ class kernel:
         return
     
     
+    def init_online(self,manager):
+        self.nn.train_loss_list=manager.list([])
+        self.nn.train_acc_list=manager.list([])
+        self.nn.counter=manager.list([])
+        self.nn.exception_list=manager.list([])
+        self.param=manager.dict()
+        self.param[7]=self.nn.param
+        return
+    
+    
     def end(self):
         if self.end_loss!=None and len(self.train_loss_list)!=0 and self.train_loss_list[-1]<self.end_loss:
             return True
@@ -494,6 +504,7 @@ class kernel:
     
     
     def train_online(self,p,lock=None,g_lock=None):
+        self.nn.counter.append(0)
         while True:
             if self.nn.stop_flag==True:
                 return
@@ -543,12 +554,20 @@ class kernel:
                         del self.nn.train_acc_list[0]
                     self.nn.train_acc_list.append(acc)
             except Exception as e:
-                self.nn.exception_list[p]=e
+                try:
+                    if self.nn.accuracy!=None:
+                        self.nn.exception_list[p]=e
+                except Exception:
+                    pass
             try:
-                counter=np.frombuffer(self.nn.counter.get_obj(),dtype='i')
-                counter[p]+=1
-            except Exception as e:
-                self.nn.exception_list[p]=e
+                count=self.nn.counter[p]
+                count+=1
+                self.nn.counter[p]=count
+            except IndexError:
+                self.nn.counter.append(0)
+                count=self.nn.counter[p]
+                count+=1
+                self.nn.counter[p]=count
         return
     
     
