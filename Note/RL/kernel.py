@@ -90,6 +90,15 @@ class kernel:
         return
     
     
+    def init_online(self,manager):
+        self.nn.train_loss_list=manager.list([])
+        self.nn.counter=manager.list([])
+        self.nn.exception_list=manager.list([])
+        self.param=manager.dict()
+        self.param[7]=self.nn.param
+        return
+    
+    
     def action_vec(self):
         self.action_one=np.ones(self.action_count,dtype=np.int8)
         return
@@ -255,7 +264,7 @@ class kernel:
         return False
     
     
-    @tf.function
+    @tf.function(jit_compile=True)
     def opt(self,state_batch,action_batch,next_state_batch,reward_batch,done_batch,p,lock,g_lock=None):
         with tf.GradientTape(persistent=True) as tape:
             try:
@@ -622,6 +631,60 @@ class kernel:
         del self.next_state_pool[p]
         del self.reward_pool[p]
         del self.done_pool[p]
+        return
+    
+    
+    def train_online(self,p,lock=None,g_lock=None):
+        self.nn.counter.append(0)
+        while True:
+            if self.nn.stop_flag==True:
+                return
+            if self.nn.stop_func(p):
+                return
+            self.nn.suspend_func(p)
+            try:
+                data=self.nn.online(p)
+            except Exception as e:
+                self.nn.exception_list[p]=e
+            if data=='stop':
+                return
+            elif data=='suspend':
+                self.nn.suspend_func(p)
+            try:
+                if self.PO==2:
+                    if type(g_lock)!=list:
+                        pass
+                    elif len(g_lock)==self.process:
+                        ln=p
+                        g_lock=g_lock[ln]
+                    else:
+                        ln=int(np.random.choice(len(g_lock)))
+                        g_lock=g_lock[ln]
+                loss,param=self.opt(data[0],data[1],data[2],data[3],data[4],p,lock,g_lock)
+                self.param[7]=param
+            except Exception as e:
+                if self.PO==1:
+                    if lock[0].acquire(False):
+                        lock[0].release()
+                elif self.PO==2:
+                    if g_lock.acquire(False):
+                        g_lock.release()
+                    if lock[0].acquire(False):
+                        lock[0].release()
+                self.nn.exception_list[p]=e
+            loss=loss.numpy()
+            if len(self.nn.train_loss_list)==self.nn.max_length:
+                del self.nn.train_loss_list[0]
+            self.nn.train_loss_list.append(loss)
+            try:
+                count=self.nn.counter[p]
+                count+=1
+                self.nn.counter[p]=count
+            except IndexError:
+                self.nn.counter.append(0)
+                count=self.nn.counter[p]
+                count+=1
+                self.nn.counter[p]=count
         return
     
     
