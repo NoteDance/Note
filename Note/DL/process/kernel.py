@@ -529,7 +529,8 @@ class kernel:
                     else:
                         ln=int(np.random.choice(len(g_lock)))
                         g_lock=g_lock[ln]
-                output,loss=self.opt(data[0],data[1],p,lock,g_lock)
+                output,loss,param=self.opt(data[0],data[1],p,lock,g_lock)
+                self.param[7]=param
             except Exception as e:
                 if self.PO==1:
                     if lock[0].acquire(False):
