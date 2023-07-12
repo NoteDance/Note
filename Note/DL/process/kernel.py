@@ -157,6 +157,7 @@ class kernel:
             self.nn.bc=manager.list([self.nn.bc])
         except Exception:
             pass
+        self.epoch_=Value('i',self.epoch_)
         self.stop_flag=Value('b',self.stop_flag)
         self.save_flag=Value('b',self.save_flag)
         self.file_list=manager.list([])
@@ -729,7 +730,7 @@ class kernel:
                     p=int(p)
                     if p==0:
                         p=1
-                if self.epoch_%p==0:
+                if self.epoch_.value%p==0:
                     if self.test_flag==False:
                         try:
                             if self.nn.accuracy!=None:
@@ -769,12 +770,12 @@ class kernel:
                     s=int(s)
                     if s==0:
                         s=1
-                if self.epoch_%s==0:
+                if self.epoch_.value%s==0:
                     if self.saving_one==True:
                         self.save(self.total_epoch.value)
                     else:
                         self.save(self.total_epoch.value,False)
-            self.epoch_+=1
+            self.epoch_.value+=1
         return
     
     
