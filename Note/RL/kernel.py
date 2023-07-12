@@ -40,6 +40,8 @@ class kernel:
         self.stop=False
         self.save_flag=False
         self.stop_flag=False
+        self.opt_counter=None
+        self.s=None
         self.filename='save.dat'
         self.reward_list=[]
         self.loss_list=[]
@@ -637,11 +639,24 @@ class kernel:
     def train_online(self,p,lock=None,g_lock=None):
         self.nn.counter.append(0)
         while True:
-            if self.nn.stop_flag==True:
-                return
-            if self.nn.stop_func(p):
-                return
-            self.nn.suspend_func(p)
+            try:
+                self.nn.save(self.save,p)
+            except AttributeError:
+                pass
+            try:
+                if self.nn.stop_flag==True:
+                    return
+            except AttributeError:
+                pass
+            try:
+                if self.nn.stop_func(p):
+                    return
+            except AttributeError:
+                pass
+            try:
+                self.nn.suspend_func(p)
+            except AttributeError:
+                pass
             try:
                 data=self.nn.online(p)
             except Exception as e:
@@ -747,7 +762,7 @@ class kernel:
             output_file=open(filename,'wb')
             self.file_list.append([filename])
             self.file_list.append([filename])
-            if len(self.file_list)>self.s+1:
+            if len(self.file_list)>self.s:
                 os.remove(self.file_list[0][0])
                 del self.file_list[0]
         self.update_nn_param()
