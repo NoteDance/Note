@@ -507,22 +507,31 @@ class kernel:
         return
     
     
-        def train_ol(self):
+        def train_online(self):
             while True:
-                if self.stop_flag==True:
-                    return
-                if self.save_flag==True:
-                    self.save()
-                self.suspend_func()
-                data=self.nn.ol()
+                try:
+                    self.nn.save(self.save)
+                except AttributeError:
+                    pass
+                try:
+                    if self.nn.stop_flag==True:
+                        return
+                except AttributeError:
+                    pass
+                try:
+                    if self.nn.stop_func():
+                        return
+                except AttributeError:
+                    pass
+                try:
+                    self.nn.suspend_func()
+                except AttributeError:
+                    pass
+                data=self.nn.online()
                 if data=='stop':
                     return
                 elif data=='suspend':
-                    self.nn.suspend=True
-                    while True:
-                        if self.nn.suspend==False:
-                            break
-                    continue
+                    self.nn.suspend_func()
                 output,loss=self.opt(data[0],data[1])
                 loss=loss.numpy()
                 if len(self.nn.train_loss_list)==self.nn.max_length:
@@ -540,7 +549,7 @@ class kernel:
                     except Exception:
                         pass
                 try:
-                    self.nn.c+=1
+                    self.nn.counter+=1
                 except Exception:
                     pass
             return
@@ -922,7 +931,7 @@ class kernel:
             filename=self.filename.replace(self.filename[self.filename.find('.'):],'-{0}.dat'.format(i))
             output_file=open(filename,'wb')
             self.file_list.append([filename])
-            if len(self.file_list)>self.s+1:
+            if len(self.file_list)>self.s:
                 os.remove(self.file_list[0][0])
                 del self.file_list[0]
         try:
