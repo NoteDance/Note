@@ -40,9 +40,9 @@ class kernel:
         self.end_test_acc=None
         self.acc_flag='%'
         self.opt_counter=None
-        self.muti_p=None
-        self.muti_s=None
-        self.muti_save=1
+        self.p=None
+        self.s=None
+        self.saving_one=True
         self.filename='save.dat'
         self.train_loss=0
         self.train_acc=0
@@ -506,11 +506,24 @@ class kernel:
     def train_online(self,p,lock=None,g_lock=None):
         self.nn.counter.append(0)
         while True:
-            if self.nn.stop_flag==True:
-                return
-            if self.nn.stop_func(p):
-                return
-            self.nn.suspend_func(p)
+            try:
+                self.nn.save(self.save,p)
+            except AttributeError:
+                pass
+            try:
+                if self.nn.stop_flag==True:
+                    return
+            except AttributeError:
+                pass
+            try:
+                if self.nn.stop_func(p):
+                    return
+            except AttributeError:
+                pass
+            try:
+                self.nn.suspend_func(p)
+            except AttributeError:
+                pass
             try:
                 data=self.nn.online(p)
             except Exception as e:
@@ -546,14 +559,13 @@ class kernel:
                 del self.nn.train_loss_list[0]
             self.nn.train_loss_list.append(loss)
             try:
-                if self.nn.accuracy!=None:
-                    try:
-                        acc=self.nn.accuracy(output,data[1])
-                    except Exception:
-                        self.exception_list[p]=True
-                    if len(self.nn.train_acc_list)==self.nn.max_length:
-                        del self.nn.train_acc_list[0]
-                    self.nn.train_acc_list.append(acc)
+                try:
+                    acc=self.nn.accuracy(output,data[1])
+                except Exception:
+                    self.exception_list[p]=True
+                if len(self.nn.train_acc_list)==self.nn.max_length:
+                    del self.nn.train_acc_list[0]
+                self.nn.train_acc_list.append(acc)
             except Exception as e:
                 try:
                     if self.nn.accuracy!=None:
@@ -705,15 +717,15 @@ class kernel:
     
     def print_save(self):
         if self.epoch!=None:
-            if self.muti_p!=None:
-                muti_p=self.muti_p-1
+            if self.p!=None:
+                p_=self.p-1
                 if self.epoch%10!=0:
-                    p=self.epoch-self.epoch%muti_p
-                    p=int(p/muti_p)
+                    p=self.epoch-self.epoch%p_
+                    p=int(p/p_)
                     if p==0:
                         p=1
                 else:
-                    p=self.epoch/(muti_p+1)
+                    p=self.epoch/(p_+1)
                     p=int(p)
                     if p==0:
                         p=1
@@ -742,20 +754,23 @@ class kernel:
                         except Exception:
                             print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch,self.train_loss.value,self.test_loss.value))
                             print()
-            if self.muti_s!=None:
-                muti_s=self.muti_s-1
+            if self.s!=None:
+                if self.s==1:
+                    s_=1
+                else:
+                    s_=self.s-1
                 if self.epoch%10!=0:
-                    s=self.epoch-self.epoch%muti_s
-                    s=int(s/muti_s)
+                    s=self.epoch-self.epoch%s_
+                    s=int(s/s_)
                     if s==0:
                         s=1
                 else:
-                    s=self.epoch/(muti_s+1)
+                    s=self.epoch/(s_+1)
                     s=int(s)
                     if s==0:
                         s=1
-                if self.muti_save!=None and self.epoch_%s==0:
-                    if self.muti_save==1:
+                if self.epoch_%s==0:
+                    if self.saving_one==True:
                         self.save(self.total_epoch.value)
                     else:
                         self.save(self.total_epoch.value,False)
@@ -914,7 +929,7 @@ class kernel:
             filename=self.filename.replace(self.filename[self.filename.find('.'):],'-{0}.dat'.format(i))
             output_file=open(filename,'wb')
             self.file_list.append([filename])
-            if len(self.file_list)>self.s+1:
+            if len(self.file_list)>self.s:
                 os.remove(self.file_list[0][0])
                 del self.file_list[0]
         self.update_nn_param()
