@@ -24,7 +24,7 @@ class kernel:
         self.episode_step=None
         self.pool_size=None
         self.batch=None
-        self.episode=0
+        self.episode_=0
         self.update_step=None
         self.trial_count=None
         self.process=process
@@ -85,6 +85,7 @@ class kernel:
             self.nn.bc=manager.list(self.nn.bc)
         except Exception:
             pass
+        self.episode_=Value('i',self.total_episode)
         self.stop_flag=Value('b',self.stop_flag)
         self.save_flag=Value('b',self.save_flag)
         self.file_list=manager.list([])
@@ -610,6 +611,7 @@ class kernel:
                 lock[1].acquire()
             elif len(lock)==3:
                 lock[2].acquire()
+            self.save_()
             self.reward_list.append(self.reward[p])
             self.reward[p]=0
             if self.PO==1 or self.PO==2:
@@ -721,6 +723,31 @@ class kernel:
         return False
     
     
+    def save_(self):
+        if self.s!=None:
+            if self.s==1:
+                s_=1
+            else:
+                s_=self.s-1
+            if self.total_episode.value%10!=0:
+                s=self.total_episode.value-self.total_episode.value%s_
+                s=int(s/s_)
+                if s==0:
+                    s=1
+            else:
+                s=self.total_episode.value/(s_+1)
+                s=int(s)
+                if s==0:
+                    s=1
+            if self.episode_.value%s==0:
+                if self.saving_one==True:
+                    self.save(self.total_episode.value)
+                else:
+                    self.save(self.total_episode.value,False)
+        self.episode_.value+=1
+        return
+    
+    
     def visualize_reward(self):
         print()
         plt.figure(1)
@@ -806,6 +833,7 @@ class kernel:
         self.reward_list=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
         self.total_episode.value=pickle.load(input_file)
+        self.episode_.value=self.total_episode.value
         self.nn.ec=pickle.load(input_file)
         self.nn.bc=pickle.load(input_file)
         input_file.close()
