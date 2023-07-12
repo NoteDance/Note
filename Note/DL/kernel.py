@@ -507,52 +507,52 @@ class kernel:
         return
     
     
-        def train_online(self):
-            while True:
-                try:
-                    self.nn.save(self.save)
-                except AttributeError:
-                    pass
-                try:
-                    if self.nn.stop_flag==True:
-                        return
-                except AttributeError:
-                    pass
-                try:
-                    if self.nn.stop_func():
-                        return
-                except AttributeError:
-                    pass
-                try:
-                    self.nn.suspend_func()
-                except AttributeError:
-                    pass
-                data=self.nn.online()
-                if data=='stop':
+    def train_online(self):
+        while True:
+            try:
+                self.nn.save(self.save)
+            except AttributeError:
+                pass
+            try:
+                if self.nn.stop_flag==True:
                     return
-                elif data=='suspend':
-                    self.nn.suspend_func()
-                output,loss=self.opt(data[0],data[1])
-                loss=loss.numpy()
-                if len(self.nn.train_loss_list)==self.nn.max_length:
-                    del self.nn.train_loss_list[0]
-                self.nn.train_loss_list.append(loss)
+            except AttributeError:
+                pass
+            try:
+                if self.nn.stop_func():
+                    return
+            except AttributeError:
+                pass
+            try:
+                self.nn.suspend_func()
+            except AttributeError:
+                pass
+            data=self.nn.online()
+            if data=='stop':
+                return
+            elif data=='suspend':
+                self.nn.suspend_func()
+            output,loss=self.opt(data[0],data[1])
+            loss=loss.numpy()
+            if len(self.nn.train_loss_list)==self.nn.max_length:
+                del self.nn.train_loss_list[0]
+            self.nn.train_loss_list.append(loss)
+            try:
+                train_acc=self.nn.accuracy(output,data[1])
+                if len(self.nn.train_acc_list)==self.nn.max_length:
+                    del self.nn.train_acc_list[0]
+                self.train_acc_list.append(train_acc)
+            except Exception as e:
                 try:
-                    train_acc=self.nn.accuracy(output,data[1])
-                    if len(self.nn.train_acc_list)==self.nn.max_length:
-                        del self.nn.train_acc_list[0]
-                    self.train_acc_list.append(train_acc)
-                except Exception as e:
-                    try:
-                        if self.nn.accuracy!=None:
-                            raise e
-                    except Exception:
-                        pass
-                try:
-                    self.nn.counter+=1
+                    if self.nn.accuracy!=None:
+                        raise e
                 except Exception:
                     pass
-            return
+            try:
+                self.nn.counter+=1
+            except Exception:
+                pass
+        return
     
     
     @function(jit_compile=True)
