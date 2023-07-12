@@ -877,30 +877,38 @@ class kernel:
         return
     
     
-    def train_ol(self):
+    def train_online(self):
         while True:
-            if self.stop_flag==True:
-                return
-            if self.save_flag==True:
-                self.save()
-            self.suspend_func()
-            data=self.nn.ol()
+            try:
+                self.nn.save(self.save)
+            except AttributeError:
+                pass
+            try:
+                if self.nn.stop_flag==True:
+                    return
+            except AttributeError:
+                pass
+            try:
+                if self.nn.stop_func():
+                    return
+            except AttributeError:
+                pass
+            try:
+                self.nn.suspend_func()
+            except AttributeError:
+                pass
+            data=self.nn.online()
             if data=='stop':
                 return
             elif data=='suspend':
-                while True:
-                    self.nn.suspend=True
-                    while True:
-                        if self.nn.suspend==False:
-                            break
-                    continue
+                self.nn.suspend_func()
             loss=self.opt_ol(data[0],data[1],data[2],data[3],data[4])
             loss=loss.numpy()
             self.nn.train_loss_list.append(loss)
             if len(self.nn.train_acc_list)==self.nn.max_length:
                 del self.nn.train_acc_list[0]
             try:
-                self.nn.c+=1
+                self.nn.counter+=1
             except Exception:
                 pass
         return
@@ -975,7 +983,7 @@ class kernel:
                 episode_file.close()
             if self.save_episode==True:
                 self.file_list.append([filename,'episode-{0}.dat'])
-                if len(self.file_list)>self.s+1:
+                if len(self.file_list)>self.s:
                     os.remove(self.file_list[0][0])
                     os.remove(self.file_list[0][1])
                     del self.file_list[0]
