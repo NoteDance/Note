@@ -312,11 +312,11 @@ for p in range(5):
 
 
 # Study kernel:
-**If you want to study kernel,you can start with reduced kernel,there is reduced kernel at link.**
+**If you want to study kernel, you can see the kernel with comments at the link below.**
 
-**DL:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/DL/reduced%20kernel
+**DL:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/DL/kernel
 
-**RL:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/RL/reduced%20kernel
+**RL:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/RL/kernel
 
 
 # Documentation:
