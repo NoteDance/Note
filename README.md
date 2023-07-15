@@ -67,26 +67,6 @@ kernel.restore('save.dat')     #restore neural network
 kernel.train(32,1)             #train again
 ```
 
-**example(test):**
-```python
-import Note.DL.kernel as k   #import kernel
-import tensorflow as tf              #import platform
-import nn_acc as n                          #import neural network
-mnist=tf.keras.datasets.mnist
-(x_train,y_train),(x_test,y_test)=mnist.load_data()
-x_train,x_test =x_train/255.0,x_test/255.0
-nn=n.nn()                                #create neural network object
-kernel=k.kernel(nn)                 #start kernel
-kernel.platform=tf                       #use platform
-kernel.data(x_train,y_train,x_test,y_test)   #input train data
-kernel.train(32,5,32)         #train neural network
-                           #batch size:32
-			   #test batch size:32
-                           #epoch:5
-kernel.save()              #save neural network
-```
-
-
 ### Parallel optimization:
 **You can use parallel optimization to speed up neural network training, and parallel optimization is implemented through multiprocessing.**
 
