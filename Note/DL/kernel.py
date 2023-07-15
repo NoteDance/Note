@@ -137,16 +137,17 @@ class kernel:
                 except Exception:
                     pass
             if self.test_flag==True:
-                self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
-                self.test_loss_list.append(self.test_loss)
                 try:
-                    self.test_acc_list.append(self.test_acc)
-                except Exception as e:
                     try:
                         if self.nn.accuracy!=None:
-                            raise e
+                            self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
+                            self.test_loss_list.append(self.test_loss)
+                            self.test_acc_list.append(self.test_acc)
                     except Exception:
-                        pass
+                        self.test_loss=self.test(self.test_data,self.test_labels,test_batch)
+                        self.test_loss_list.append(self.test_loss)
+                except Exception as e:
+                    raise e
             return
     
     
@@ -329,16 +330,17 @@ class kernel:
                 except Exception:
                     pass
             if self.test_flag==True:
-                self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
-                self.test_loss_list.append(self.test_loss)
                 try:
-                    self.test_acc_list.append(self.test_acc)
-                except Exception as e:
                     try:
                         if self.nn.accuracy!=None:
-                            raise e
+                            self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
+                            self.test_loss_list.append(self.test_loss)
+                            self.test_acc_list.append(self.test_acc)
                     except Exception:
-                        pass
+                        self.test_loss=self.test(self.test_data,self.test_labels,test_batch)
+                        self.test_loss_list.append(self.test_loss)
+                except Exception as e:
+                    raise e
         else:
             output,train_loss=self.opt(self.train_data,self.train_labels)
             self.loss_acc(output=output,labels_batch=labels_batch,loss=train_loss,test_batch=test_batch,total_loss=total_loss,total_acc=total_acc)
@@ -710,7 +712,7 @@ class kernel:
             if self.nn.accuracy!=None:
                 return test_loss,test_acc
         except Exception:
-            return test_loss,None
+            return test_loss
     
     
     def suspend_func(self):
