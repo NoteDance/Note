@@ -31,11 +31,13 @@ If you accomplish your neural network,you can use kernel to train,examples are s
 
 # Deep Learning:
 
+## Non-parallel training:
+
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
 https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/nn.py
 
-## Tensorflow platform:
+### Tensorflow platform:
 
 **example:**
 ```python
@@ -52,22 +54,42 @@ kernel.data(x_train,y_train)   #input train data
 kernel.train(32,5)         #train neural network
                            #batch size:32
                            #epoch:5
-kernel.save()              #save neural network
-```
-```python
-import Note.DL.kernel as k   #import kernel
-import tensorflow as tf              #import platform
-mnist=tf.keras.datasets.mnist
-(x_train,y_train),(x_test,y_test)=mnist.load_data()
-x_train,x_test =x_train/255.0,x_test/255.0
-kernel=k.kernel()                 #start kernel
-kernel.platform=tf                    #use platform
-kernel.data(x_train,y_train)   #input train data
-kernel.restore('save.dat')     #restore neural network
-kernel.train(32,1)             #train again
+kernel.test(x_test,y_test,32)
 ```
 
-### Parallel optimization:
+### Pytorch platform:
+
+**example:**
+```python
+import Note.DL.kernel as k   #import kernel
+import torch                         #import platform
+import nn as n                          #import neural network
+from torch.utils.data import DataLoader
+from torchvision import datasets
+from torchvision.transforms import ToTensor
+training_data=datasets.FashionMNIST(
+    root="data",
+    train=True,
+    download=True,
+    transform=ToTensor(),
+)
+train_dataloader=DataLoader(training_data,batch_size=60000)
+for train_data,train_labels in train_dataloader:
+    break
+nn=n.neuralnetwork()                                #create neural network object
+kernel=k.kernel(nn)                 #start kernel
+kernel.platform=torch                   #use platform
+kernel.data(train_data,train_labels)   #input train data
+kernel.train(64,5)         #train neural network
+                           #batch size:32
+                           #epoch:5
+```
+
+
+## Parallel training:
+
+**Parallel optimization:**
+
 **You can use parallel optimization to speed up neural network training, and parallel optimization is implemented through multiprocessing.**
 
 **Note have three types of parallel optimization:**
@@ -80,13 +102,11 @@ kernel.train(32,1)             #train again
 
 **Parallel optimization may cause unstable training(the estimate of the gradient is biased) but it can speed up training and make the loss function jump out of the local minimum. Note can speed up training by multiprocessing and has stop mechanism and gradient attenuation to resolve unstable training. Note uses multiprocessing to perform parallel forward propagation and optimization on neural networks. Note's multi-process kernel is not compatible with the neural network built by Keras. You can use the layer directory from Note and the low-level API from tensorflow to build neural networks.**
 
-#### Multiprocessing:
-
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
 https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/process/nn.py
 
-**multiprocessing example:**
+**example:**
 ```python
 import Note.DL.process.kernel as k   #import kernel
 import tensorflow as tf
@@ -112,7 +132,7 @@ for p in range(7):
 kernel.update_nn_param()
 kernel.test(x_train,y_train,32)
 ```
-**multiprocessing example(process priority):**
+**example(process priority):**
 ```python
 import Note.DL.process.kernel as k   #import kernel
 import tensorflow as tf
@@ -150,65 +170,18 @@ kernel.test(x_train,y_train,32)
 
 https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/pytorch/nn.py
 
-## Pytorch platform:
-
-**example:**
-```python
-import Note.DL.kernel as k   #import kernel
-import torch                         #import platform
-import nn as n                          #import neural network
-from torch.utils.data import DataLoader
-from torchvision import datasets
-from torchvision.transforms import ToTensor
-training_data=datasets.FashionMNIST(
-    root="data",
-    train=True,
-    download=True,
-    transform=ToTensor(),
-)
-train_dataloader=DataLoader(training_data,batch_size=60000)
-for train_data,train_labels in train_dataloader:
-    break
-nn=n.neuralnetwork()                                #create neural network object
-kernel=k.kernel(nn)                 #start kernel
-kernel.platform=torch                   #use platform
-kernel.data(train_data,train_labels)   #input train data
-kernel.train(64,5)         #train neural network
-                           #batch size:32
-                           #epoch:5
-```
-
 
 # Reinforcement Learning:
 
 **The version of gym used in the example is less than 0.26.0.**
 
-**You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
-
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/pytorch/DQN.py
-
-## Pytorch platform:
-
-**example:**
-```python
-import Note.RL.nspn.kernel as k   #import kernel
-import torch
-import DQN as d
-dqn=d.DQN(4,128,2)                               #create neural network object
-kernel=k.kernel(dqn)   #start kernel
-kernel.platform=torch
-kernel.action_count=2
-kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
-kernel.train(500)
-kernel.visualize_train()
-kernel.visualize_reward()
-```
+## Non-parallel training:
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
 https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/tensorflow/DQN.py
 
-## Tensorflow platform:
+### Tensorflow platform:
 
 **example:**
 ```python
@@ -243,18 +216,42 @@ kernel.visualize_train()
 kernel.visualize_reward()
 ```
 
-## Pool Network:
+**You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
+
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/pytorch/DQN.py
+
+### Pytorch platform:
+
+**example:**
+```python
+import Note.RL.nspn.kernel as k   #import kernel
+import torch
+import DQN as d
+dqn=d.DQN(4,128,2)                               #create neural network object
+kernel=k.kernel(dqn)   #start kernel
+kernel.platform=torch
+kernel.action_count=2
+kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10)
+kernel.train(500)
+kernel.visualize_train()
+kernel.visualize_reward()
+```
+
+
+## Parallel training:
+
+**Pool Network:**
+
 ![3](https://github.com/NoteDancing/Note-documentation/blob/main/picture/Pool%20Net.png)
 
 **Pool net use multiprocessing or multithreading parallel and random add episode in pool,which would make data being uncorrelated in pool,
 then pools would be used parallel training agent.**
 
-### Multiprocessing:
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
 https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/tensorflow/pool%20net/DQN.py
 
-**multiprocessing example:**
+**example:**
 ```python
 import Note.RL.kernel as k   #import kernel
 import DQN as d
@@ -271,7 +268,7 @@ lock=[Lock(),Lock(),Lock()]
 for p in range(5):
     Process(target=kernel.train,args=(p,100,lock,pool_lock)).start()
 ```
-**multiprocessing example(process priority):**
+**example(process priority):**
 ```python
 import Note.RL.kernel as k   #import kernel
 import DQN as d
