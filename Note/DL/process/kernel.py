@@ -457,7 +457,7 @@ class kernel:
                                     self.test_loss_list.append(self.test_loss.value)
                                     self.test_acc_list.append(self.test_acc.value)
                             except Exception:
-                                self.test_loss.value,self.test_acc=self.test(self.test_data,self.test_labels,test_batch,p)
+                                self.test_loss.value=self.test(self.test_data,self.test_labels,test_batch,p)
                                 self.test_loss_list.append(self.test_loss.value)
                         except Exception as e:
                             raise e
@@ -696,7 +696,7 @@ class kernel:
             if self.nn.accuracy!=None:
                 return test_loss,test_acc
         except Exception:
-            return test_loss,None
+            return test_loss
     
     
     def stop_func(self):
