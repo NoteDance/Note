@@ -21,6 +21,7 @@ class kernel:
         self.process_t=None
         self.train_ds=None
         self.prefetch_batch_size=tf.data.AUTOTUNE
+        self.prefetch_batch_size_t=tf.data.AUTOTUNE
         self.data_segment_flag=False
         self.batches=None
         self.buffer_size=None
@@ -616,7 +617,7 @@ class kernel:
             test_data=test_data.astype(self.nn.param[0][0].dtype.name)
             test_labels=test_labels.astype(self.nn.param[0][0].dtype.name)
         if self.process_t!=None:
-            parallel_test_=parallel_test(self.nn,self.test_data,self.test_labels,self.process_t,batch)
+            parallel_test_=parallel_test(self.nn,self.test_data,self.test_labels,self.process_t,batch,self.prefetch_batch_size_t)
             if type(self.test_data)!=list:
                 parallel_test_.segment_data()
             for p in range(self.process_t):
