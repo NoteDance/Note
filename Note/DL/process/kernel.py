@@ -20,6 +20,7 @@ class kernel:
         self.process=None
         self.process_t=None
         self.train_ds=None
+        self.prefetch_batch_size=tf.data.AUTOTUNE
         self.data_segment_flag=False
         self.batches=None
         self.buffer_size=None
@@ -495,11 +496,11 @@ class kernel:
                 train_ds=self.train_dataset
             else:
                 if self.data_segment_flag==True:
-                    train_ds=tf.data.Dataset.from_tensor_slices((self.train_data[p],self.train_labels[p])).batch(self.batch)
+                    train_ds=tf.data.Dataset.from_tensor_slices((self.train_data[p],self.train_labels[p])).batch(self.batch).prefetch(self.prefetch_batch_size)
                 elif self.buffer_size!=None:
-                    train_ds=tf.data.Dataset.from_tensor_slices((self.train_data,self.train_labels)).shuffle(self.buffer_size).batch(self.batch)
+                    train_ds=tf.data.Dataset.from_tensor_slices((self.train_data,self.train_labels)).shuffle(self.buffer_size).batch(self.batch).prefetch(self.prefetch_batch_size)
                 else:
-                    train_ds=tf.data.Dataset.from_tensor_slices((self.train_data,self.train_labels)).batch(self.batch)
+                    train_ds=tf.data.Dataset.from_tensor_slices((self.train_data,self.train_labels)).batch(self.batch).prefetch(self.prefetch_batch_size)
         self.train7(train_ds,p,test_batch,lock,g_lock)
         return
     
