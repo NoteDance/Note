@@ -141,7 +141,7 @@ def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
 
 
 class parallel_test:
-    def __init__(self,nn,test_data=None,test_labels=None,process=None,batch=None):
+    def __init__(self,nn,test_data=None,test_labels=None,process=None,batch=None,prefetch_batch_size=tf.data.AUTOTUNE):
         self.nn=nn
         if type(self.nn.param[0])!=list:
             self.test_data=test_data.astype(self.nn.param[0].dtype.name)
@@ -165,6 +165,7 @@ class parallel_test:
             pass
         self.process_num=np.arange(process)
         self.process_num=list(self.process_num)
+        self.prefetch_batch_size=prefetch_batch_size
     
     
     def segment_data(self):
@@ -226,7 +227,7 @@ class parallel_test:
         if type(self.test_data)==list:
             train_ds=self.test_data[p]
         else:
-            train_ds=tf.data.Dataset.from_tensor_slices((self.test_data[p],self.test_labels[p])).batch(self.batch)
+            train_ds=tf.data.Dataset.from_tensor_slices((self.test_data[p],self.test_labels[p])).batch(self.batch).prefetch(self.prefetch_batch_size)
         for data_batch,labels_batch in train_ds:
             try:
                 batch_loss,batch_acc=self.test_(data_batch,labels_batch,p)
