@@ -198,20 +198,23 @@ class parallel_test:
         try:
             try:
                 try:
-                    output=self.nn.fp(data)
-                    loss=self.nn.loss(output,labels)
-                except Exception:
-                    output,loss=self.nn.fp(data,labels)
-            except Exception:
-                try:
                     output=self.nn.fp(data,p)
                     loss=self.nn.loss(output,labels,p)
                 except Exception:
                     output,loss=self.nn.fp(data,labels,p)
+            except Exception:
+                try:
+                    output=self.nn.fp(data)
+                    loss=self.nn.loss(output,labels)
+                except Exception:
+                    output,loss=self.nn.fp(data,labels)
         except Exception as e:
             raise e
         try:
-            acc=self.nn.accuracy(output,labels)
+            try:
+                acc=self.nn.accuracy(output,labels,p)
+            except Exception:
+                acc=self.nn.accuracy(output,labels)
         except Exception as e:
             try:
                 if self.nn.accuracy!=None:
