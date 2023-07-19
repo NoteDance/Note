@@ -197,22 +197,22 @@ class kernel:
     def opt_p(self,data,labels,p,lock,g_lock=None):
         try:
             try:
-                if self.nn.GradientTape!=None:
-                    tape,output,loss=self.nn.GradientTape(data,labels,p)
-            except Exception:
                 with tf.GradientTape(persistent=True) as tape:
                     try:
-                        try:
-                            output=self.nn.fp(data)
-                            loss=self.nn.loss(output,labels)
-                        except Exception:
-                            output,loss=self.nn.fp(data,labels)
-                    except Exception:
                         try:
                             output=self.nn.fp(data,p)
                             loss=self.nn.loss(output,labels,p)
                         except Exception:
                             output,loss=self.nn.fp(data,labels,p)
+                    except Exception:
+                        try:
+                            output=self.nn.fp(data)
+                            loss=self.nn.loss(output,labels)
+                        except Exception:
+                            output,loss=self.nn.fp(data,labels)
+            except Exception:
+                if self.nn.GradientTape!=None:
+                    tape,output,loss=self.nn.GradientTape(data,labels,p)
         except Exception as e:
             raise e
         if self.PO==1:
@@ -414,7 +414,10 @@ class kernel:
                 except Exception:
                     pass
                 try:
-                    batch_acc=self.nn.accuracy(output,labels_batch)
+                    try:
+                        batch_acc=self.nn.accuracy(output,labels_batch,p)
+                    except Exception:
+                        batch_acc=self.nn.accuracy(output,labels_batch)
                 except Exception as e:
                     try:
                         if self.nn.accuracy!=None:
