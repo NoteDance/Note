@@ -211,8 +211,7 @@ class kernel:
                         except Exception:
                             output,loss=self.nn.fp(data,labels)
             except Exception:
-                if self.nn.GradientTape!=None:
-                    tape,output,loss=self.nn.GradientTape(data,labels,p)
+                tape,output,loss=self.nn.GradientTape(data,labels,p)
         except Exception as e:
             raise e
         if self.PO==1:
