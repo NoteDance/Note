@@ -210,7 +210,7 @@ class kernel:
                     except Exception:
                         try:
                             output=self.nn.fp(data,p)
-                            loss=self.nn.loss(output,labels)
+                            loss=self.nn.loss(output,labels,p)
                         except Exception:
                             output,loss=self.nn.fp(data,labels,p)
         except Exception as e:
