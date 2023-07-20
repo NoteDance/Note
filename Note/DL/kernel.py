@@ -625,7 +625,9 @@ class kernel:
             total_loss=0
             total_acc=0
             if self.test_dataset!=None:
+                batches=0
                 for data_batch,labels_batch in self.test_dataset:
+                    batches+=1
                     try:
                         try:
                             if self.platform.DType!=None:
@@ -639,11 +641,15 @@ class kernel:
                         total_acc+=batch_acc
                     except Exception:
                         pass
+                test_loss=total_loss.numpy()/batches
+                try:
+                    if self.nn.accuracy!=None:
+                        test_acc=total_acc.numpy()/batches
+                except Exception:
+                    pass
             else:
-                total_loss=0
-                total_acc=0
-                batches=int((test_data.shape[0]-test_data.shape[0]%batch)/batch)
                 shape0=test_data.shape[0]
+                batches=int((shape0-shape0%batch)/batch)
                 for j in range(batches):
                     index1=j*batch
                     index2=(j+1)*batch
