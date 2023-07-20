@@ -488,16 +488,15 @@ class kernel:
     
     
     def train(self,p,lock=None,g_lock=None,test_batch=None):
-        if self.epoch!=None:
-            if self.train_dataset!=None:
-                train_ds=self.train_dataset
+        if self.train_dataset!=None:
+            train_ds=self.train_dataset
+        else:
+            if self.data_segment_flag==True:
+                train_ds=tf.data.Dataset.from_tensor_slices((self.train_data[p],self.train_labels[p])).batch(self.batch).prefetch(self.prefetch_batch_size)
+            elif self.buffer_size!=None:
+                train_ds=tf.data.Dataset.from_tensor_slices((self.train_data,self.train_labels)).shuffle(self.buffer_size).batch(self.batch).prefetch(self.prefetch_batch_size)
             else:
-                if self.data_segment_flag==True:
-                    train_ds=tf.data.Dataset.from_tensor_slices((self.train_data[p],self.train_labels[p])).batch(self.batch).prefetch(self.prefetch_batch_size)
-                elif self.buffer_size!=None:
-                    train_ds=tf.data.Dataset.from_tensor_slices((self.train_data,self.train_labels)).shuffle(self.buffer_size).batch(self.batch).prefetch(self.prefetch_batch_size)
-                else:
-                    train_ds=tf.data.Dataset.from_tensor_slices((self.train_data,self.train_labels)).batch(self.batch).prefetch(self.prefetch_batch_size)
+                train_ds=tf.data.Dataset.from_tensor_slices((self.train_data,self.train_labels)).batch(self.batch).prefetch(self.prefetch_batch_size)
         self.train7(train_ds,p,test_batch,lock,g_lock)
         return
     
@@ -630,18 +629,24 @@ class kernel:
             total_loss=0
             total_acc=0
             if self.test_dataset!=None:
+                batches=0
                 for data_batch,labels_batch in self.test_dataset:
+                    batches+=1
                     batch_loss,batch_acc=self.test_(data_batch,labels_batch)
                     total_loss+=batch_loss
                     try:
                         total_acc+=batch_acc
                     except Exception:
                         pass
+                test_loss=total_loss.numpy()/batches
+                try:
+                    if self.nn.accuracy!=None:
+                        test_acc=total_acc.numpy()/batches
+                except Exception:
+                    pass
             else:
-                total_loss=0
-                total_acc=0
-                batches=int((test_data.shape[0]-test_data.shape[0]%batch)/batch)
                 shape0=test_data.shape[0]
+                batches=int((shape0-shape0%batch)/batch)
                 for j in range(batches):
                     index1=j*batch
                     index2=(j+1)*batch
