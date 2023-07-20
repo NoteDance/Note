@@ -50,7 +50,7 @@ class kernel:
         if train_data is not None and type(self.nn.param[0])!=list:
             self.train_data=train_data.astype(self.nn.param[0].dtype.name)
             self.train_labels=train_labels.astype(self.nn.param[0].dtype.name)
-        else:
+        elif train_data is not None:
             self.train_data=train_data.astype(self.nn.param[0][0].dtype.name)
             self.train_labels=train_labels.astype(self.nn.param[0][0].dtype.name)
         self.train_dataset=train_dataset
@@ -601,7 +601,7 @@ class kernel:
         if test_data is not None and type(self.nn.param[0])!=list:
             test_data=test_data.astype(self.nn.param[0].dtype.name)
             test_labels=test_labels.astype(self.nn.param[0].dtype.name)
-        else:
+        elif test_data is not None:
             test_data=test_data.astype(self.nn.param[0][0].dtype.name)
             test_labels=test_labels.astype(self.nn.param[0][0].dtype.name)
         if self.process_t!=None:
