@@ -73,18 +73,17 @@ class kernel:
         if self.priority_flag==True:
             self.opt_counter=Array('i',np.zeros(self.process,dtype=np.int32))
         try:
-            if self.nn.attenuate!=None:
-              self.nn.opt_counter=manager.list([self.nn.opt_counter])  
+            self.nn.opt_counter=manager.list([self.nn.opt_counter])  
         except Exception:
-            pass
+            self.opt_counter_=manager.list()
         try:
-            self.nn.ec=manager.list(self.nn.ec)
+            self.nn.ec=manager.list([self.nn.ec])  
         except Exception:
-            pass
+            self.ec_=manager.list()
         try:
-            self.nn.bc=manager.list(self.nn.bc)
+            self.nn.bc=manager.list([self.nn.bc])
         except Exception:
-            pass
+            self.bc_=manager.list()
         self.episode_=Value('i',self.total_episode)
         self.stop_flag=Value('b',self.stop_flag)
         self.save_flag=Value('b',self.save_flag)
@@ -793,6 +792,18 @@ class kernel:
                 os.remove(self.file_list[0][0])
                 del self.file_list[0]
         self.update_nn_param()
+        try:
+            self.nn.opt_counter=self.nn.opt_counter[0] 
+        except Exception:
+            pass
+        try:
+            self.nn.ec=self.nn.ec[0]
+        except Exception:
+            pass
+        try:
+            self.nn.bc=self.nn.bc[0]
+        except Exception:
+            pass
         pickle.dump(self.nn,output_file)
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.episode_step,output_file)
@@ -800,17 +811,9 @@ class kernel:
         pickle.dump(self.batch,output_file)
         pickle.dump(np.array(self.sc,dtype=np.int32),output_file)
         pickle.dump(self.update_step,output_file)
-        pickle.dump(self.reward_list,output_file)
-        pickle.dump(self.loss_list,output_file)
+        pickle.dump(list(self.reward_list),output_file)
+        pickle.dump(list(self.loss_list),output_file)
         pickle.dump(self.total_episode.value,output_file)
-        try:
-            pickle.dump(self.nn.ec,output_file)
-        except Exception:
-            pass
-        try:
-            pickle.dump(self.nn.bc,output_file)
-        except Exception:
-            pass
         output_file.close()
         return
     
@@ -822,6 +825,21 @@ class kernel:
             self.nn.km=1
         except Exception:
             pass
+        try:
+            self.nn.opt_counter=self.opt_counter_
+            self.nn.opt_counter.append(self.nn.opt_counter)
+        except Exception:
+            pass
+        try:
+            self.nn.ec=self.ec_
+            self.nn.ec.append(self.nn.ec)
+        except Exception:
+            pass
+        try:
+            self.nn.bc=self.bc_
+            self.nn.bc.append(self.nn.bc)
+        except Exception:
+            pass
         self.param[7]=self.nn.param
         self.epsilon=pickle.load(input_file)
         self.episode_step=pickle.load(input_file)
@@ -830,11 +848,9 @@ class kernel:
         self.sc=pickle.load(input_file)
         self.sc=Array('i',self.sc)
         self.update_step=pickle.load(input_file)
-        self.reward_list=pickle.load(input_file)
-        self.loss_list=pickle.load(input_file)
+        self.reward_list[:]=pickle.load(input_file)
+        self.loss_list[:]=pickle.load(input_file)
         self.total_episode.value=pickle.load(input_file)
         self.episode_.value=self.total_episode.value
-        self.nn.ec=pickle.load(input_file)
-        self.nn.bc=pickle.load(input_file)
         input_file.close()
         return
