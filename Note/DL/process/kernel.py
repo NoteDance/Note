@@ -86,17 +86,11 @@ class kernel:
             pass
         if self.priority_flag==True:
             self.opt_counter=np.zeros(self.process,dtype=np.int32)
-        if self.train_dataset==None:
-            if type(self.train_data)==list:
-                self.shape0=train_data[0].shape[0]
-                self.batches=int((self.shape0-self.shape0%self.batch)/self.batch)
-                if self.shape0%self.batch!=0:
-                    self.batches+=1
-            else:
-                self.shape0=train_data.shape[0]
-                self.batches=int((self.shape0-self.shape0%self.batch)/self.batch)
-                if self.shape0%self.batch!=0:
-                    self.batches+=1
+        if train_data is not None:
+            self.shape0=train_data.shape[0]
+            self.batches=int((self.shape0-self.shape0%self.batch)/self.batch)
+            if self.shape0%self.batch!=0:
+                self.batches+=1
         if self.data_segment_flag==True:
             self.train_data,self.train_labels=self.segment_data()
         return
