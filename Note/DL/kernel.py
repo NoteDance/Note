@@ -54,16 +54,12 @@ class kernel:
             self.train_data=train_data.astype(self.nn.param[0][0].dtype.name)
             self.train_labels=train_labels.astype(self.nn.param[0][0].dtype.name)
         self.train_dataset=train_dataset
-        if test_data is not None:
-            if type(self.nn.param[0])!=list:
-                self.test_data=test_data.astype(self.nn.param[0].dtype.name)
-                self.test_labels=test_labels.astype(self.nn.param[0].dtype.name)
-            else:
-                self.test_data=test_data.astype(self.nn.param[0][0].dtype.name)
-                self.test_labels=test_labels.astype(self.nn.param[0][0].dtype.name)
-            self.test_flag=True
+        self.test_data=test_data
+        self.test_labels=test_labels
         self.test_dataset=test_dataset
-        if self.train_dataset==None:
+        if test_data is not None or test_dataset is not None:
+            self.test_flag=True
+        if train_data is not None:
             self.shape0=train_data.shape[0]
         return
     
@@ -602,7 +598,7 @@ class kernel:
     
     
     def test(self,test_data=None,test_labels=None,batch=None):
-        if type(self.nn.param[0])!=list:
+        if test_data is not None and type(self.nn.param[0])!=list:
             test_data=test_data.astype(self.nn.param[0].dtype.name)
             test_labels=test_labels.astype(self.nn.param[0].dtype.name)
         else:
