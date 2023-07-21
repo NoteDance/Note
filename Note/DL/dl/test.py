@@ -141,14 +141,15 @@ def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
 
 
 class parallel_test:
-    def __init__(self,nn,test_data,test_labels,process,batch,prefetch_batch_size=tf.data.AUTOTUNE):
+    def __init__(self,nn,test_data,test_labels,process,batch,test_dataset=None,prefetch_batch_size=tf.data.AUTOTUNE):
         self.nn=nn
-        if type(self.nn.param[0])!=list:
+        if test_data is not None and type(self.nn.param[0])!=list:
             self.test_data=test_data.astype(self.nn.param[0].dtype.name)
             self.test_labels=test_labels.astype(self.nn.param[0].dtype.name)
-        else:
+        elif test_data is not None:
             self.test_data=test_data.astype(self.nn.param[0][0].dtype.name)
             self.test_labels=test_labels.astype(self.nn.param[0][0].dtype.name)
+        self.test_dataset=test_dataset
         self.process=process
         self.batch=batch
         if type(self.nn.param[0])!=list:
@@ -227,8 +228,8 @@ class parallel_test:
     
     def test(self):
         p=self.process_num.pop(0)
-        if type(self.test_data)==list:
-            train_ds=self.test_data[p]
+        if self.test_dataset is not None:
+            train_ds=self.test_dataset[p]
         else:
             train_ds=tf.data.Dataset.from_tensor_slices((self.test_data[p],self.test_labels[p])).batch(self.batch).prefetch(self.prefetch_batch_size)
         for data_batch,labels_batch in train_ds:
