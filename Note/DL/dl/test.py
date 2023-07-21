@@ -164,8 +164,6 @@ class parallel_test:
                     self.acc=Array('f',np.zeros([process],dtype=self.nn.param[0][0].dtype.name))
         except Exception:
             pass
-        self.process_num=np.arange(process)
-        self.process_num=list(self.process_num)
         self.prefetch_batch_size=prefetch_batch_size
     
     
@@ -226,8 +224,7 @@ class parallel_test:
         return loss,acc
     
     
-    def test(self):
-        p=self.process_num.pop(0)
+    def test(self,p):
         if self.test_dataset is not None and type(self.test_dataset)==list:
             test_ds=self.test_dataset[p]
         elif self.test_dataset is not None:
