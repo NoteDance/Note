@@ -619,7 +619,8 @@ class kernel:
             for p in range(self.process_t):
             	Process(target=parallel_test_.test).start()
             try:
-                test_loss,test_acc=parallel_test_.loss_acc()
+                if self.nn.accuracy!=None:
+                    test_loss,test_acc=parallel_test_.loss_acc()
             except Exception as e:
                 try:
                     if self.nn.accuracy!=None:
