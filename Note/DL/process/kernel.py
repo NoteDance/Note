@@ -487,8 +487,10 @@ class kernel:
     
     
     def train(self,p,lock=None,g_lock=None,test_batch=None):
-        if self.train_dataset is not None:
+        if self.train_dataset is not None and type(self.train_dataset)==list:
             train_ds=self.train_dataset[p]
+        elif self.train_dataset is not None:
+            train_ds=self.train_dataset
         else:
             if self.data_segment_flag==True:
                 train_ds=tf.data.Dataset.from_tensor_slices((self.train_data[p],self.train_labels[p])).batch(self.batch).prefetch(self.prefetch_batch_size)
