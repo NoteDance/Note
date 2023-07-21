@@ -141,7 +141,7 @@ def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
 
 
 class parallel_test:
-    def __init__(self,nn,test_data,test_labels,process,batch,test_dataset=None,prefetch_batch_size=tf.data.AUTOTUNE):
+    def __init__(self,nn,test_data,test_labels,process,batch,prefetch_batch_size=tf.data.AUTOTUNE,test_dataset=None,):
         self.nn=nn
         if test_data is not None and type(self.nn.param[0])!=list:
             self.test_data=test_data.astype(self.nn.param[0].dtype.name)
