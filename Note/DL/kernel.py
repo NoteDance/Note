@@ -572,7 +572,6 @@ class kernel:
                     raise e
             except Exception:
                 acc=None
-                pass
         return loss,acc
     
     
@@ -593,7 +592,6 @@ class kernel:
                     raise e
             except Exception:
                 acc=None
-                pass
         return loss,acc
     
     
@@ -695,12 +693,12 @@ class kernel:
                         total_acc+=batch_acc
                     except Exception:
                         pass
-            test_loss=total_loss.numpy()/batches
-            try:
-                if self.nn.accuracy!=None:
-                    test_acc=total_acc.numpy()/batches
-            except Exception:
-                pass
+                test_loss=total_loss.numpy()/batches
+                try:
+                    if self.nn.accuracy!=None:
+                        test_acc=total_acc.numpy()/batches
+                except Exception:
+                    pass
         else:
             try:
                 try:
