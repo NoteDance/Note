@@ -98,6 +98,8 @@ kernel.train(64,5)                            #train the network with batch size
 
 **Parallel optimization may cause unstable training(the estimate of the gradient is biased) but it can speed up training and make the loss function jump out of the local minimum. Note can speed up training by multiprocessing and has stop mechanism and gradient attenuation to resolve unstable training. Note uses multiprocessing to perform parallel forward propagation and optimization on neural networks. Note's multi-process kernel is not compatible with the neural network built by Keras. You can use the layer directory from Note and the low-level API from tensorflow to build neural networks.**
 
+### Tensorflow platform:
+
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
 https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/process/nn.py
@@ -154,7 +156,6 @@ for p in range(7):                   #loop over the processes
 	Process(target=kernel.train,args=(p,lock)).start() #start each process with the train function and pass the process id and locks as arguments
 kernel.update_nn_param()             #update the network parameters after training
 kernel.test(x_train,y_train,32)      #test the network performance on the train set with batch size 32
-
 ```
 
 **Gradient Attenuation：**
@@ -163,9 +164,36 @@ kernel.test(x_train,y_train,32)      #test the network performance on the train 
 
 **example:https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/process/nn_attenuate.py**
 
+### Pytorch platform:
+
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/pytorch/nn.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/pytorch/process/nn.py
+
+**example:**
+```python
+import Note.DL.process.kernel_pytorch as k   #import kernel module
+from torchvision import datasets
+from torchvision.transforms import ToTensor
+import nn as n                       #import neural network module
+from multiprocessing import Process,Manager #import multiprocessing tools
+training_data = datasets.FashionMNIST(
+    root="data",
+    train=True,
+    download=True,
+    transform=ToTensor(),
+)
+nn=n.neuralnetwork()                            #create neural network object
+kernel=k.kernel(nn)                  #create kernel object with the network
+kernel.process=7                     #set the number of processes to train
+kernel.epoch=5                       #set the number of epochs to train
+kernel.batch=64                      #set the batch size
+kernel.data(training_data)         #input train data to the kernel
+manager=Manager()                    #create manager object to share data among processes
+kernel.init(manager)                 #initialize shared data with the manager
+for p in range(7):                   #loop over the processes
+    Process(target=kernel.train,args=(p,)).start()
+```
 
 
 # Reinforcement Learning:
