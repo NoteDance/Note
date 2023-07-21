@@ -450,11 +450,11 @@ class kernel:
                         try:
                             try:
                                 if self.nn.accuracy!=None:
-                                    self.test_loss.value,self.test_acc.value=self.test(self.test_data,self.test_labels,test_batch,p)
+                                    self.test_loss.value,self.test_acc.value=self.test(self.test_data,self.test_labels,test_batch)
                                     self.test_loss_list.append(self.test_loss.value)
                                     self.test_acc_list.append(self.test_acc.value)
                             except Exception:
-                                self.test_loss.value=self.test(self.test_data,self.test_labels,test_batch,p)
+                                self.test_loss.value=self.test(self.test_data,self.test_labels,test_batch)
                                 self.test_loss_list.append(self.test_loss.value)
                         except Exception as e:
                             raise e
@@ -601,11 +601,10 @@ class kernel:
                     raise e
             except Exception:
                 acc=None
-                pass
         return loss,acc
     
     
-    def test(self,test_data=None,test_labels=None,batch=None,p=None):
+    def test(self,test_data=None,test_labels=None,batch=None):
         if test_data is not None and type(self.nn.param[0])!=list:
             test_data=test_data.astype(self.nn.param[0].dtype.name)
             test_labels=test_labels.astype(self.nn.param[0].dtype.name)
@@ -617,7 +616,7 @@ class kernel:
             if type(self.test_data)!=list:
                 parallel_test_.segment_data()
             for p in range(self.process_t):
-            	Process(target=parallel_test_.test).start()
+            	Process(target=parallel_test_.test,args=(p,)).start()
             try:
                 if self.nn.accuracy!=None:
                     test_loss,test_acc=parallel_test_.loss_acc()
@@ -654,24 +653,12 @@ class kernel:
                     index2=(j+1)*batch
                     data_batch=test_data[index1:index2]
                     labels_batch=test_labels[index1:index2]
-                    try:
-                        try:
-                            output=self.nn.fp(data_batch)
-                        except Exception:
-                            output=self.nn.fp(data_batch,p)
-                    except Exception as e:
-                        raise e
-                    batch_loss=self.nn.loss(output,labels_batch)
+                    batch_loss,batch_acc=self.test_(data_batch,labels_batch)
                     total_loss+=batch_loss
                     try:
-                        batch_acc=self.nn.accuracy(output,labels_batch)
                         total_acc+=batch_acc
-                    except Exception as e:
-                        try:
-                            if self.nn.accuracy!=None:
-                                raise e
-                        except Exception:
-                            pass
+                    except Exception:
+                        pass
                 if shape0%batch!=0:
                     batches+=1
                     index1=batches*batch
@@ -684,12 +671,12 @@ class kernel:
                         total_acc+=batch_acc
                     except Exception:
                         pass
-            test_loss=total_loss.numpy()/batches
-            try:
-                if self.nn.accuracy!=None:
-                    test_acc=total_acc.numpy()/batches
-            except Exception:
-                pass
+                test_loss=total_loss.numpy()/batches
+                try:
+                    if self.nn.accuracy!=None:
+                        test_acc=total_acc.numpy()/batches
+                except Exception:
+                    pass
         else:
             batch_loss,batch_acc=self.test_(test_data,test_labels)
             test_loss=test_loss.numpy()
