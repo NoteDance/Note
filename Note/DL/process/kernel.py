@@ -450,11 +450,11 @@ class kernel:
                         try:
                             try:
                                 if self.nn.accuracy!=None:
-                                    self.test_loss.value,self.test_acc.value=self.test(self.test_data,self.test_labels,test_batch,self.test_dataset,p)
+                                    self.test_loss.value,self.test_acc.value=self.test(self.test_data,self.test_labels,test_batch,p)
                                     self.test_loss_list.append(self.test_loss.value)
                                     self.test_acc_list.append(self.test_acc.value)
                             except Exception:
-                                self.test_loss.value=self.test(self.test_data,self.test_labels,test_batch,self.test_dataset,p)
+                                self.test_loss.value=self.test(self.test_data,self.test_labels,test_batch,p)
                                 self.test_loss_list.append(self.test_loss.value)
                         except Exception as e:
                             raise e
@@ -603,7 +603,7 @@ class kernel:
         return loss,acc
     
     
-    def test(self,test_data=None,test_labels=None,batch=None,test_dataset=None,p=None):
+    def test(self,test_data=None,test_labels=None,batch=None,p=None):
         if test_data is not None and type(self.nn.param[0])!=list:
             test_data=test_data.astype(self.nn.param[0].dtype.name)
             test_labels=test_labels.astype(self.nn.param[0].dtype.name)
@@ -611,7 +611,7 @@ class kernel:
             test_data=test_data.astype(self.nn.param[0][0].dtype.name)
             test_labels=test_labels.astype(self.nn.param[0][0].dtype.name)
         if self.process_t!=None:
-            parallel_test_=parallel_test(self.nn,self.test_data,self.test_labels,self.process_t,batch,self.test_dataset,self.prefetch_batch_size_t)
+            parallel_test_=parallel_test(self.nn,self.test_data,self.test_labels,self.process_t,batch,self.prefetch_batch_size_t,self.test_dataset)
             if type(self.test_data)!=list:
                 parallel_test_.segment_data()
             for p in range(self.process_t):
