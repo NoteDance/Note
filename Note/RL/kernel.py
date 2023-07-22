@@ -229,16 +229,14 @@ class kernel:
             action_prob=self.epsilon_greedy_policy(s,epsilon)
             a=np.random.choice(self.action_count,p=action_prob)
         except Exception as e:
-            try:
-               if self.nn.nn!=None:
-                   raise e
-            except Exception:
+            if hasattr(self.nn,'nn'):
+                raise e
+            else:
                 try:
-                    try:
-                        if self.nn.action!=None:
-                            s=np.expand_dims(s,axis=0)
-                            a=self.nn.action(s).numpy()
-                    except Exception:
+                    if hasattr(self.nn,'action'):
+                        s=np.expand_dims(s,axis=0)
+                        a=self.nn.action(s).numpy()
+                    else:
                         s=np.expand_dims(s,axis=0)
                         a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
                 except Exception as e:
@@ -287,29 +285,25 @@ class kernel:
             if self.stop_func_(lock[0]):
                 return 0
             try:
-                try:
+                if hasattr(self.nn,'gradient'):
                     gradient=self.nn.gradient(tape,loss)
-                except Exception:
-                    try:
-                        if self.nn.nn!=None:
-                            gradient=tape.gradient(loss,self.nn.param)
-                    except Exception:
+                else:
+                    if hasattr(self.nn,'nn'):
+                        gradient=tape.gradient(loss,self.nn.param)
+                    else:
                         actor_gradient=tape.gradient(loss[0],self.nn.param[0])
                         critic_gradient=tape.gradient(loss[1],self.nn.param[1])
             except Exception as e:
                 raise e
             try:
-                try:
-                    gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
-                except Exception:
-                    actor_gradient=self.nn.attenuate(actor_gradient,self.nn.opt_counter,p)
-                    critic_gradient=self.nn.attenuate(critic_gradient,self.nn.opt_counter,p)
+                if hasattr(self.nn,'attenuate'):
+                    try:
+                        gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
+                    except Exception:
+                        actor_gradient=self.nn.attenuate(actor_gradient,self.nn.opt_counter,p)
+                        critic_gradient=self.nn.attenuate(critic_gradient,self.nn.opt_counter,p)
             except Exception as e:
-                try:
-                    if self.nn.attenuate!=None:
-                        raise e
-                except Exception:
-                    pass
+                raise e
             try:
                 try:
                     param=self.nn.opt(gradient)
@@ -323,13 +317,12 @@ class kernel:
             if self.stop_func_(g_lock):
                 return 0
             try:
-                try:
+                if hasattr(self.nn,'gradient'):
                     gradient=self.nn.gradient(tape,loss)
-                except Exception:
-                    try:
-                        if self.nn.nn!=None:
-                            gradient=tape.gradient(loss,self.nn.param)
-                    except Exception:
+                else:
+                    if hasattr(self.nn,'nn'):
+                        gradient=tape.gradient(loss,self.nn.param)
+                    else:
                         actor_gradient=tape.gradient(loss[0],self.nn.param[0])
                         critic_gradient=tape.gradient(loss[1],self.nn.param[1])
             except Exception as e:
@@ -345,17 +338,14 @@ class kernel:
             if self.stop_func_(lock[0]):
                 return 0
             try:
-                try:
-                    gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
-                except Exception:
-                    actor_gradient=self.nn.attenuate(actor_gradient,self.nn.opt_counter,p)
-                    critic_gradient=self.nn.attenuate(critic_gradient,self.nn.opt_counter,p)
+                if hasattr(self.nn,'attenuate'):
+                    try:
+                        gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
+                    except Exception:
+                        actor_gradient=self.nn.attenuate(actor_gradient,self.nn.opt_counter,p)
+                        critic_gradient=self.nn.attenuate(critic_gradient,self.nn.opt_counter,p)
             except Exception as e:
-                try:
-                    if self.nn.attenuate!=None:
-                        raise e
-                except Exception:
-                    pass
+                raise e
             try:
                 try:
                     param=self.nn.opt(gradient)
@@ -374,29 +364,25 @@ class kernel:
             if self.stop_func_():
                 return 0
             try:
-                try:
+                if hasattr(self.nn,'gradient'):
                     gradient=self.nn.gradient(tape,loss)
-                except Exception:
-                    try:
-                        if self.nn.nn!=None:
-                            gradient=tape.gradient(loss,self.nn.param)
-                    except Exception:
+                else:
+                    if hasattr(self.nn,'nn'):
+                        gradient=tape.gradient(loss,self.nn.param)
+                    else:
                         actor_gradient=tape.gradient(loss[0],self.nn.param[0])
                         critic_gradient=tape.gradient(loss[1],self.nn.param[1])
             except Exception as e:
                 raise e
             try:
-                try:
-                    gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
-                except Exception:
-                    actor_gradient=self.nn.attenuate(actor_gradient,self.nn.opt_counter,p)
-                    critic_gradient=self.nn.attenuate(critic_gradient,self.nn.opt_counter,p)
+                if hasattr(self.nn,'attenuate'):
+                    try:
+                        gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
+                    except Exception:
+                        actor_gradient=self.nn.attenuate(actor_gradient,self.nn.opt_counter,p)
+                        critic_gradient=self.nn.attenuate(critic_gradient,self.nn.opt_counter,p)
             except Exception as e:
-                try:
-                    if self.nn.attenuate!=None:
-                        raise e
-                except Exception:
-                    pass
+                raise e
             try:
                 try:
                     param=self.nn.opt(gradient)
@@ -447,12 +433,10 @@ class kernel:
                 loss,param=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,p,lock)
             self.param[7]=param
             self.loss[p]+=loss
-            try:
+            if hasattr(self.nn,'bc'):
                 bc=self.nn.bc[0]
                 bc.assign_add(1)
                 self.nn.bc[0]=bc
-            except Exception:
-                pass
         else:
             index1=j*self.batch
             index2=(j+1)*self.batch
@@ -475,12 +459,10 @@ class kernel:
                 loss,param=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,p,lock)
             self.param[7]=param
             self.loss[p]+=loss
-            try:
+            if hasattr(self.nn,'bc'):
                 bc=self.nn.bc[0]
                 bc.assign_add(1)
                 self.nn.bc[0]=bc
-            except Exception:
-                pass
         return
     
     
@@ -504,24 +486,18 @@ class kernel:
                         self.priority_p.value=-1
                 if self.priority_flag==True:
                     self.opt_counter[p]=0
-                try:
-                    if self.nn.attenuate!=None:
-                        opt_counter=self.nn.opt_counter[0]
-                        opt_counter.scatter_update(tf.IndexedSlices(0,p))
-                        self.nn.opt_counter[0]=opt_counter
-                except Exception:
-                    pass
+                if hasattr(self.nn,'attenuate'):
+                    opt_counter=self.nn.opt_counter[0]
+                    opt_counter.scatter_update(tf.IndexedSlices(0,p))
+                    self.nn.opt_counter[0]=opt_counter
                 self._train(p,j,batches,length,lock,g_lock)
                 if self.priority_flag==True:
                     opt_counter=np.frombuffer(self.opt_counter.get_obj(),dtype='i')
                     opt_counter+=1
-                try:
-                    if self.nn.attenuate!=None:
-                        opt_counter=self.nn.opt_counter[0]
-                        opt_counter.assign(opt_counter+1)
-                        self.nn.opt_counter[0]=opt_counter
-                except Exception:
-                    pass
+                if hasattr(self.nn,'attenuate'):
+                    opt_counter=self.nn.opt_counter[0]
+                    opt_counter.assign(opt_counter+1)
+                    self.nn.opt_counter[0]=opt_counter
             if self.PO==1 or self.PO==2:
                 lock[1].acquire()
             if self.update_step!=None:
@@ -533,12 +509,10 @@ class kernel:
                 lock[1].release()
             self.loss[p]=self.loss[p]/batches
         self.sc[p]+=1
-        try:
+        if hasattr(self.nn,'ec'):
             ec=self.nn.ec[0]
             ec.assign_add(1)
             self.nn.ec[0]=ec
-        except Exception:
-            pass
         return
     
     
@@ -638,26 +612,19 @@ class kernel:
     
     
     def train_online(self,p,lock=None,g_lock=None):
-        self.nn.counter.append(0)
+        if hasattr(self.nn,'counter'):
+            self.nn.counter.append(0)
         while True:
-            try:
+            if hasattr(self.nn,'save'):
                 self.nn.save(self.save,p)
-            except AttributeError:
-                pass
-            try:
+            if hasattr(self.nn,'stop_flag'):
                 if self.nn.stop_flag==True:
                     return
-            except AttributeError:
-                pass
-            try:
+            if hasattr(self.nn,'stop_func'):
                 if self.nn.stop_func(p):
                     return
-            except AttributeError:
-                pass
-            try:
+            if hasattr(self.nn,'suspend_func'):
                 self.nn.suspend_func(p)
-            except AttributeError:
-                pass
             try:
                 data=self.nn.online(p)
             except Exception as e:
@@ -693,9 +660,10 @@ class kernel:
                 del self.nn.train_loss_list[0]
             self.nn.train_loss_list.append(loss)
             try:
-                count=self.nn.counter[p]
-                count+=1
-                self.nn.counter[p]=count
+                if hasattr(self.nn,'counter'):
+                    count=self.nn.counter[p]
+                    count+=1
+                    self.nn.counter[p]=count
             except IndexError:
                 self.nn.counter.append(0)
                 count=self.nn.counter[p]
@@ -792,18 +760,12 @@ class kernel:
                 os.remove(self.file_list[0][0])
                 del self.file_list[0]
         self.update_nn_param()
-        try:
+        if hasattr(self.nn,'opt_counter'):
             self.nn.opt_counter=self.nn.opt_counter[0] 
-        except Exception:
-            pass
-        try:
+        if hasattr(self.nn,'ec'):
             self.nn.ec=self.nn.ec[0]
-        except Exception:
-            pass
-        try:
+        if hasattr(self.nn,'bc'):
             self.nn.bc=self.nn.bc[0]
-        except Exception:
-            pass
         pickle.dump(self.nn,output_file)
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.episode_step,output_file)
@@ -821,25 +783,17 @@ class kernel:
     def restore(self,s_path):
         input_file=open(s_path,'rb')
         self.nn=pickle.load(input_file)
-        try:
+        if hasattr(self.nn,'km'):
             self.nn.km=1
-        except Exception:
-            pass
-        try:
+        if hasattr(self.nn,'opt_counter'):
             self.nn.opt_counter=self.opt_counter_
             self.nn.opt_counter.append(self.nn.opt_counter)
-        except Exception:
-            pass
-        try:
+        if hasattr(self.nn,'ec'):
             self.nn.ec=self.ec_
             self.nn.ec.append(self.nn.ec)
-        except Exception:
-            pass
-        try:
+        if hasattr(self.nn,'bc'):
             self.nn.bc=self.bc_
             self.nn.bc.append(self.nn.bc)
-        except Exception:
-            pass
         self.param[7]=self.nn.param
         self.epsilon=pickle.load(input_file)
         self.episode_step=pickle.load(input_file)
