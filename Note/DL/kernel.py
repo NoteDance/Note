@@ -106,36 +106,27 @@ class kernel:
     def loss_acc(self,output=None,labels_batch=None,loss=None,test_batch=None,total_loss=None,total_acc=None):
         if self.batch!=None:
             total_loss+=loss
-            try:
+            if hasattr(self.nn,'accuracy'):
                 batch_acc=self.nn.accuracy(output,labels_batch)
                 total_acc+=batch_acc
-            except Exception as e:
-                if hasattr(self.nn,'accuracy'):
-                    raise e
             return total_loss,total_acc
         else:
             loss=loss.numpy()
             self.train_loss=loss
             self.train_loss_list.append(loss)
-            try:
+            if hasattr(self.nn,'accuracy'):
                 acc=self.nn.accuracy(output,self.train_labels)
                 acc=acc.numpy()
                 self.train_acc=acc
                 self.train_acc_list.append(acc)
-            except Exception as e:
-                if hasattr(self.nn,'accuracy'):
-                    raise e
             if self.test_flag==True:
-                try:
-                    if hasattr(self.nn,'accuracy'):
-                        self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
-                        self.test_loss_list.append(self.test_loss)
-                        self.test_acc_list.append(self.test_acc)
-                    else:
-                        self.test_loss=self.test(self.test_data,self.test_labels,test_batch)
-                        self.test_loss_list.append(self.test_loss)
-                except Exception as e:
-                    raise e
+                if hasattr(self.nn,'accuracy'):
+                    self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
+                    self.test_loss_list.append(self.test_loss)
+                    self.test_acc_list.append(self.test_acc)
+                else:
+                    self.test_loss=self.test(self.test_data,self.test_labels,test_batch)
+                    self.test_loss_list.append(self.test_loss)
             return
     
     
@@ -177,46 +168,34 @@ class kernel:
                     tape,output,loss=self.nn.GradientTape(data,labels)
         except Exception as e:
             raise e
-        try:
-            if hasattr(self.nn,'gradient'):
-                gradient=self.nn.gradient(tape,loss)
-            else:
-                gradient=tape.gradient(loss,self.nn.param)
-        except Exception as e:
-            raise e
-        try:
-            if hasattr(self.nn.opt,'apply_gradients'):
-                self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
-            else:
-                self.nn.opt(gradient)
-        except Exception as e:
-            raise e
+        if hasattr(self.nn,'gradient'):
+            gradient=self.nn.gradient(tape,loss)
+        else:
+            gradient=tape.gradient(loss,self.nn.param)
+        if hasattr(self.nn.opt,'apply_gradients'):
+            self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+        else:
+            self.nn.opt(gradient)
         return output,loss
     
     
     def pytorch_opt(self,data,labels):
         output=self.nn.fp(data)
         loss=self.nn.loss(output,labels)
-        try:
-            if hasattr(self.nn.opt,'zero_grad'):
-                self.nn.opt.zero_grad()
-                loss.backward()
-                self.nn.opt.step()
-            else:
-                self.nn.opt(loss)
-        except Exception as e:
-            raise e
+        if hasattr(self.nn.opt,'zero_grad'):
+            self.nn.opt.zero_grad()
+            loss.backward()
+            self.nn.opt.step()
+        else:
+            self.nn.opt(loss)
         return output,loss
     
     
     def opt(self,data,labels):
-        try:
-            if hasattr(self.platform,'DType'):
-                output,loss=self.tf_opt(data,labels)
-            else:
-                output,loss=self.pytorch_opt(data,labels)
-        except Exception as e:
-            raise e
+        if hasattr(self.platform,'DType'):
+            output,loss=self.tf_opt(data,labels)
+        else:
+            output,loss=self.pytorch_opt(data,labels)
         return output,loss
     
     
@@ -229,11 +208,8 @@ class kernel:
                     if self.stop==True:
                         if self.stop_func():
                             return
-                    try:
+                    if hasattr(self.nn,'data_func'):
                         data_batch,labels_batch=self.nn.data_func(data_batch,labels_batch)
-                    except Exception as e:
-                        if hasattr(self.nn,'data_func'):
-                            raise e
                     output,batch_loss=self.opt(data_batch,labels_batch)
                     total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc)
             else:
@@ -247,11 +223,8 @@ class kernel:
                     index1=j*batch
                     index2=(j+1)*batch
                     data_batch,labels_batch=self.data_func(batch,index1,index2,j)
-                    try:
+                    if hasattr(self.nn,'data_func'):
                         data_batch,labels_batch=self.nn.data_func(data_batch,labels_batch)
-                    except Exception as e:
-                        if hasattr(self.nn,'data_func'):
-                            raise e
                     output,batch_loss=self.opt(data_batch,labels_batch)
                     total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc)
                     if hasattr(self.nn,'bc'):
@@ -267,11 +240,8 @@ class kernel:
                     index1=batches*batch
                     index2=batch-(self.shape0-batches*batch)
                     data_batch,labels_batch=self.data_func(batch,index1,index2,flag=True)
-                    try:
+                    if hasattr(self.nn,'data_func'):
                         data_batch,labels_batch=self.nn.data_func(data_batch,labels_batch)
-                    except Exception as e:
-                        if hasattr(self.nn,'data_func'):
-                            raise e
                     output,batch_loss=self.opt(data_batch,labels_batch)
                     total_loss,total_acc=self.loss_acc(output=output,labels_batch=labels_batch,loss=batch_loss,total_loss=total_loss,total_acc=total_acc)
                     if hasattr(self.nn,'bc'):
@@ -287,20 +257,17 @@ class kernel:
                 train_acc=total_acc.numpy()/batches
             self.train_loss=loss
             self.train_loss_list.append(loss)
-            if hasattr(self.platform,'accuracy'):
+            if hasattr(self.nn,'accuracy'):
                 self.train_acc=train_acc
                 self.train_acc_list.append(train_acc)
             if self.test_flag==True:
-                try:
-                    if hasattr(self.nn,'accuracy'):
-                        self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
-                        self.test_loss_list.append(self.test_loss)
-                        self.test_acc_list.append(self.test_acc)
-                    else:
-                        self.test_loss=self.test(self.test_data,self.test_labels,test_batch)
-                        self.test_loss_list.append(self.test_loss)
-                except Exception as e:
-                    raise e
+                if hasattr(self.nn,'accuracy'):
+                    self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
+                    self.test_loss_list.append(self.test_loss)
+                    self.test_acc_list.append(self.test_acc)
+                else:
+                    self.test_loss=self.test(self.test_data,self.test_labels,test_batch)
+                    self.test_loss_list.append(self.test_loss)
         else:
             output,train_loss=self.opt(self.train_data,self.train_labels)
             self.loss_acc(output=output,labels_batch=labels_batch,loss=train_loss,test_batch=test_batch,total_loss=total_loss,total_acc=total_acc)
@@ -563,13 +530,10 @@ class kernel:
                 batches=0
                 for data_batch,labels_batch in self.test_dataset:
                     batches+=1
-                    try:
-                        if hasattr(self.platform,'DType'):
-                            batch_loss,batch_acc=self.test_tf(data_batch,labels_batch)
-                        else:
-                            batch_loss,batch_acc=self.test_pytorch(data_batch,labels_batch)
-                    except Exception as e:
-                        raise e
+                    if hasattr(self.platform,'DType'):
+                        batch_loss,batch_acc=self.test_tf(data_batch,labels_batch)
+                    else:
+                        batch_loss,batch_acc=self.test_pytorch(data_batch,labels_batch)
                     total_loss+=batch_loss
                     try:
                         total_acc+=batch_acc
@@ -586,13 +550,10 @@ class kernel:
                     index2=(j+1)*batch
                     data_batch=test_data[index1:index2]
                     labels_batch=test_labels[index1:index2]
-                    try:
-                        if hasattr(self.platform,'DType'):
-                            batch_loss,batch_acc=self.test_tf(data_batch,labels_batch)
-                        else:
-                            batch_loss,batch_acc=self.test_pytorch(data_batch,labels_batch)
-                    except Exception as e:
-                        raise e
+                    if hasattr(self.platform,'DType'):
+                        batch_loss,batch_acc=self.test_tf(data_batch,labels_batch)
+                    else:
+                        batch_loss,batch_acc=self.test_pytorch(data_batch,labels_batch)
                     total_loss+=batch_loss
                     if hasattr(self.nn,'accuracy'):
                         total_acc+=batch_acc
@@ -609,13 +570,10 @@ class kernel:
                             labels_batch=np.concatenate([test_labels[index1:],test_labels[:index2]],0)
                     except Exception as e:
                         raise e
-                    try:
-                        if hasattr(self.platform,'DType'):
-                            batch_loss,batch_acc=self.test_tf(data_batch,labels_batch)
-                        else:
-                            batch_loss,batch_acc=self.test_pytorch(data_batch,labels_batch)
-                    except Exception as e:
-                        raise e
+                    if hasattr(self.platform,'DType'):
+                        batch_loss,batch_acc=self.test_tf(data_batch,labels_batch)
+                    else:
+                        batch_loss,batch_acc=self.test_pytorch(data_batch,labels_batch)
                     total_loss+=batch_loss
                     if hasattr(self.nn,'accuracy'):
                         total_acc+=batch_acc
@@ -623,18 +581,13 @@ class kernel:
                 if hasattr(self.nn,'accuracy'):
                     test_acc=total_acc.numpy()/batches
         else:
-            try:
-               if hasattr(self.platform,'DType'):
-                    batch_loss,batch_acc=self.test_tf(test_data,test_labels)
-               else:
-                    batch_loss,batch_acc=self.test_pytorch(test_data,test_labels)
-            except Exception as e:
-                raise e
+            if hasattr(self.platform,'DType'):
+                batch_loss,batch_acc=self.test_tf(test_data,test_labels)
+            else:
+                batch_loss,batch_acc=self.test_pytorch(test_data,test_labels)
             test_loss=test_loss.numpy()
-            try:
+            if hasattr(self.nn,'accuracy'):
                 test_acc=test_acc.numpy()
-            except Exception:
-                pass
         if hasattr(self.nn,'accuracy'):
             return test_loss,test_acc
         else:
