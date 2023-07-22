@@ -224,23 +224,17 @@ class kernel:
     
     
     def env(self,s,epsilon,p,lock,pool_lock):
-        try:
+        if hasattr(self.nn,'nn'):
             s=np.expand_dims(s,axis=0)
             action_prob=self.epsilon_greedy_policy(s,epsilon)
             a=np.random.choice(self.action_count,p=action_prob)
-        except Exception as e:
-            if hasattr(self.nn,'nn'):
-                raise e
+        else:
+            if hasattr(self.nn,'action'):
+                s=np.expand_dims(s,axis=0)
+                a=self.nn.action(s).numpy()
             else:
-                try:
-                    if hasattr(self.nn,'action'):
-                        s=np.expand_dims(s,axis=0)
-                        a=self.nn.action(s).numpy()
-                    else:
-                        s=np.expand_dims(s,axis=0)
-                        a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
-                except Exception as e:
-                    raise e
+                s=np.expand_dims(s,axis=0)
+                a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
         next_s,r,done=self.nn.env(a,p)
         index=self.get_index(p,lock)
         if type(self.nn.param[0])!=list:
@@ -284,17 +278,14 @@ class kernel:
             lock[0].acquire()
             if self.stop_func_(lock[0]):
                 return 0
-            try:
-                if hasattr(self.nn,'gradient'):
-                    gradient=self.nn.gradient(tape,loss)
+            if hasattr(self.nn,'gradient'):
+                gradient=self.nn.gradient(tape,loss)
+            else:
+                if hasattr(self.nn,'nn'):
+                    gradient=tape.gradient(loss,self.nn.param)
                 else:
-                    if hasattr(self.nn,'nn'):
-                        gradient=tape.gradient(loss,self.nn.param)
-                    else:
-                        actor_gradient=tape.gradient(loss[0],self.nn.param[0])
-                        critic_gradient=tape.gradient(loss[1],self.nn.param[1])
-            except Exception as e:
-                raise e
+                    actor_gradient=tape.gradient(loss[0],self.nn.param[0])
+                    critic_gradient=tape.gradient(loss[1],self.nn.param[1])
             try:
                 if hasattr(self.nn,'attenuate'):
                     try:
@@ -316,17 +307,14 @@ class kernel:
             g_lock.acquire()
             if self.stop_func_(g_lock):
                 return 0
-            try:
-                if hasattr(self.nn,'gradient'):
-                    gradient=self.nn.gradient(tape,loss)
+            if hasattr(self.nn,'gradient'):
+                gradient=self.nn.gradient(tape,loss)
+            else:
+                if hasattr(self.nn,'nn'):
+                    gradient=tape.gradient(loss,self.nn.param)
                 else:
-                    if hasattr(self.nn,'nn'):
-                        gradient=tape.gradient(loss,self.nn.param)
-                    else:
-                        actor_gradient=tape.gradient(loss[0],self.nn.param[0])
-                        critic_gradient=tape.gradient(loss[1],self.nn.param[1])
-            except Exception as e:
-                raise e
+                    actor_gradient=tape.gradient(loss[0],self.nn.param[0])
+                    critic_gradient=tape.gradient(loss[1],self.nn.param[1])
             g_lock.release()
             if self.priority_flag==True and self.priority_p.value!=-1:
                 while True:
@@ -363,17 +351,14 @@ class kernel:
                         continue
             if self.stop_func_():
                 return 0
-            try:
-                if hasattr(self.nn,'gradient'):
-                    gradient=self.nn.gradient(tape,loss)
+            if hasattr(self.nn,'gradient'):
+                gradient=self.nn.gradient(tape,loss)
+            else:
+                if hasattr(self.nn,'nn'):
+                    gradient=tape.gradient(loss,self.nn.param)
                 else:
-                    if hasattr(self.nn,'nn'):
-                        gradient=tape.gradient(loss,self.nn.param)
-                    else:
-                        actor_gradient=tape.gradient(loss[0],self.nn.param[0])
-                        critic_gradient=tape.gradient(loss[1],self.nn.param[1])
-            except Exception as e:
-                raise e
+                    actor_gradient=tape.gradient(loss[0],self.nn.param[0])
+                    critic_gradient=tape.gradient(loss[1],self.nn.param[1])
             try:
                 if hasattr(self.nn,'attenuate'):
                     try:
