@@ -462,20 +462,14 @@ class kernel:
         while True:
             if hasattr(self.nn,'save'):
                 self.nn.save(self.save)
-            try:
+            if hasattr(self.nn,'stop_flag'):
                 if self.nn.stop_flag==True:
                     return
-            except AttributeError:
-                pass
-            try:
+            if hasattr(self.nn,'stop_func'):
                 if self.nn.stop_func():
                     return
-            except AttributeError:
-                pass
-            try:
+            if hasattr(self.nn,'suspend_func'):
                 self.nn.suspend_func()
-            except AttributeError:
-                pass
             data=self.nn.online()
             if data=='stop':
                 return
@@ -487,13 +481,13 @@ class kernel:
                 del self.nn.train_loss_list[0]
             self.nn.train_loss_list.append(loss)
             try:
-                train_acc=self.nn.accuracy(output,data[1])
-                if len(self.nn.train_acc_list)==self.nn.max_length:
-                    del self.nn.train_acc_list[0]
-                self.train_acc_list.append(train_acc)
-            except Exception as e:
                 if hasattr(self.nn,'accuracy'):
-                    raise e
+                    train_acc=self.nn.accuracy(output,data[1])
+                    if len(self.nn.train_acc_list)==self.nn.max_length:
+                        del self.nn.train_acc_list[0]
+                    self.train_acc_list.append(train_acc)
+            except Exception as e:
+                raise e
             if hasattr(self.nn,'counter'):
                 self.nn.counter+=1
         return
