@@ -165,11 +165,8 @@ class kernel:
     def train7(self,train_loader,p,test_batch,lock):
         while True:
             for data_batch,labels_batch in train_loader:
-                try:
-                    if hasattr(self.nn,'data_func'):
-                        data_batch,labels_batch=self.nn.data_func(data_batch,labels_batch)
-                except Exception as e:
-                    raise e
+                if hasattr(self.nn,'data_func'):
+                    data_batch,labels_batch=self.nn.data_func(data_batch,labels_batch)
                 if self.priority_flag==True:
                     self.priority_p.value=np.argmax(self.opt_counter)
                     if self.max_opt!=None and self.opt_counter[self.priority_p.value]>=self.max_opt:
@@ -180,24 +177,18 @@ class kernel:
                         self.priority_p.value=-1
                 if self.priority_flag==True:
                     self.opt_counter[p]=0
-                try:
-                    if hasattr(self.nn,'attenuate'):
-                        opt_counter=self.nn.opt_counter[0]
-                        opt_counter[p]=0
-                        self.nn.opt_counter[0]=opt_counter
-                except Exception as e:
-                    raise e
+                if hasattr(self.nn,'attenuate'):
+                    opt_counter=self.nn.opt_counter[0]
+                    opt_counter[p]=0
+                    self.nn.opt_counter[0]=opt_counter
                 output,batch_loss=self.opt(data_batch,labels_batch,p)
                 if self.priority_flag==True:
                     opt_counter=np.frombuffer(self.opt_counter.get_obj(),dtype='i')
                     opt_counter+=1
-                try:
-                    if hasattr(self.nn,'attenuate'):
-                        opt_counter=self.nn.opt_counter[0]
-                        opt_counter+=1
-                        self.nn.opt_counter[0]=opt_counter
-                except Exception as e:
-                    raise e
+                if hasattr(self.nn,'attenuate'):
+                    opt_counter=self.nn.opt_counter[0]
+                    opt_counter+=1
+                    self.nn.opt_counter[0]=opt_counter
                 if hasattr(self.nn,'bc'):
                     bc=self.nn.bc[0]
                     bc+=1
@@ -232,16 +223,13 @@ class kernel:
                         self.train_acc.value=train_acc
                         self.train_acc_list.append(train_acc)
                     if self.test_flag==True:
-                        try:
-                            if hasattr(self.nn,'accuracy'):
-                                self.test_loss.value,self.test_acc.value=self.test(test_batch)
-                                self.test_loss_list.append(self.test_loss.value)
-                                self.test_acc_list.append(self.test_acc.value)
-                            else:
-                                self.test_loss.value=self.test(test_batch)
-                                self.test_loss_list.append(self.test_loss.value)
-                        except Exception as e:
-                            raise e
+                        if hasattr(self.nn,'accuracy'):
+                            self.test_loss.value,self.test_acc.value=self.test(test_batch)
+                            self.test_loss_list.append(self.test_loss.value)
+                            self.test_acc_list.append(self.test_acc.value)
+                        else:
+                            self.test_loss.value=self.test(test_batch)
+                            self.test_loss_list.append(self.test_loss.value)
                     self.print_save()
                     self.epoch_counter.value+=1
                     if hasattr(self.nn,'ec'):
@@ -250,12 +238,9 @@ class kernel:
                         self.nn.ec[0]=ec
                     total_loss=np.frombuffer(self.total_loss.get_obj(),dtype='f')
                     total_loss*=0
-                    try:
-                        if hasattr(self.nn,'accuracy'):
-                            total_acc=np.frombuffer(self.total_acc.get_obj(),dtype='f')
-                            total_acc*=0
-                    except Exception as e:
-                        raise e
+                    if hasattr(self.nn,'accuracy'):
+                        total_acc=np.frombuffer(self.total_acc.get_obj(),dtype='f')
+                        total_acc*=0
                 if lock is not None:
                     lock.release()
                 if self.epoch_counter.value>=self.epoch:
