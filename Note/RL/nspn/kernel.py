@@ -114,7 +114,7 @@ class kernel:
             for i in range(max_step):
                 if self.end_flag==True:
                     break
-                try:
+                if hasattr(self.nn,'nn'):
                     if hasattr(self.platform,'DType'):
                         s=np.expand_dims(s,axis=0)
                         a=np.argmax(self.nn.nn.fp(s))
@@ -122,34 +122,25 @@ class kernel:
                         s=np.expand_dims(s,axis=0)
                         s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                         a=self.nn.nn(s).detach().numpy().argmax()
-                except Exception as e:
-                    if hasattr(self.nn,'nn'):
-                        raise e
+                else:
+                    if hasattr(self.nn,'action'):
+                        if hasattr(self.platform,'DType'):
+                            s=np.expand_dims(s,axis=0)
+                            a=self.nn.action(s).numpy()
+                        else:
+                            s=np.expand_dims(s,axis=0)
+                            s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                            a=self.nn.action(s).detach().numpy()
                     else:
-                        try:
-                            if hasattr(self.platform,'DType'):
-                                s=np.expand_dims(s,axis=0)
-                                a=self.nn.action(s).numpy()
-                            else:
-                                s=np.expand_dims(s,axis=0)
-                                s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                                a=self.nn.action(s).detach().numpy()
-                        except Exception as e:
-                            if hasattr(self.nn,'action'):
-                                raise e
-                            else:
-                                try:
-                                    if hasattr(self.platform,'DType'):
-                                        s=np.expand_dims(s,axis=0)
-                                        a=self.nn.actor.fp(s).numpy()
-                                        a=np.squeeze(a)
-                                    else:
-                                        s=np.expand_dims(s,axis=0)
-                                        s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                                        a=self.nn.actor(s).detach().numpy()
-                                        a=np.squeeze(a)
-                                except Exception as e:
-                                    raise e
+                        if hasattr(self.platform,'DType'):
+                            s=np.expand_dims(s,axis=0)
+                            a=self.nn.actor.fp(s).numpy()
+                            a=np.squeeze(a)
+                        else:
+                            s=np.expand_dims(s,axis=0)
+                            s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                            a=self.nn.actor(s).detach().numpy()
+                            a=np.squeeze(a)
                 next_s,r,done,_=self.genv.step(a)
                 s=next_s
                 reward+=r
@@ -163,42 +154,33 @@ class kernel:
             while True:
                 if self.end_flag==True:
                     break
-                try:
+                if hasattr(self.nn,'nn'):
                     if hasattr(self.platform,'DType'):
-                       s=np.expand_dims(s,axis=0)
-                       a=np.argmax(self.nn.nn.fp(s))
+                        s=np.expand_dims(s,axis=0)
+                        a=np.argmax(self.nn.nn.fp(s))
                     else:
                         s=np.expand_dims(s,axis=0)
                         s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                         a=self.nn.nn(s).detach().numpy().argmax()
-                except Exception as e:
-                    if hasattr(self.nn,'nn'):
-                        raise e
+                else:
+                    if hasattr(self.nn,'action'):
+                        if hasattr(self.platform,'DType'):
+                            s=np.expand_dims(s,axis=0)
+                            a=self.nn.action(s).numpy()
+                        else:
+                            s=np.expand_dims(s,axis=0)
+                            s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                            a=self.nn.action(s).detach().numpy()
                     else:
-                        try:
-                            if hasattr(self.platform,'DType'):
-                                s=np.expand_dims(s,axis=0)
-                                a=self.nn.action(s).numpy()
-                            else:
-                                s=np.expand_dims(s,axis=0)
-                                s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                                a=self.nn.action(s).detach().numpy()
-                        except Exception as e:
-                            if hasattr(self.nn,'action'):
-                                raise e
-                            else:
-                                try:
-                                    if hasattr(self.platform,'DType'):
-                                        s=np.expand_dims(s,axis=0)
-                                        a=self.nn.actor.fp(s).numpy()
-                                        a=np.squeeze(a)
-                                    else:
-                                        s=np.expand_dims(s,axis=0)
-                                        s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                                        a=self.nn.actor(s).detach().numpy()
-                                        a=np.squeeze(a)
-                                except Exception as e:
-                                    raise e
+                        if hasattr(self.platform,'DType'):
+                            s=np.expand_dims(s,axis=0)
+                            a=self.nn.actor.fp(s).numpy()
+                            a=np.squeeze(a)
+                        else:
+                            s=np.expand_dims(s,axis=0)
+                            s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                            a=self.nn.actor(s).detach().numpy()
+                            a=np.squeeze(a)
                 next_s,r,done,_=self.genv.step(a)
                 s=next_s
                 reward+=r
@@ -219,7 +201,7 @@ class kernel:
             s=self.nn.genv.reset(seed=seed)
         self.end_flag=False
         while True:
-            try:
+            if hasattr(self.nn,'nn'):
                 if hasattr(self.platform,'DType'):
                     s=np.expand_dims(s,axis=0)
                     a=np.argmax(self.nn.nn.fp(s))
@@ -227,34 +209,25 @@ class kernel:
                     s=np.expand_dims(s,axis=0)
                     s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                     a=self.nn.nn(s).detach().numpy().argmax()
-            except Exception as e:
-                if hasattr(self.nn,'nn'):
-                    raise e
+            else:
+                if hasattr(self.nn,'action'):
+                    if hasattr(self.platform,'DType'):
+                        s=np.expand_dims(s,axis=0)
+                        a=self.nn.action(s).numpy()
+                    else:
+                        s=np.expand_dims(s,axis=0)
+                        s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                        a=self.nn.action(s).detach().numpy()
                 else:
-                    try:
-                        if hasattr(self.platform,'DType'):
-                            s=np.expand_dims(s,axis=0)
-                            a=self.nn.action(s).numpy()
-                        else:
-                            s=np.expand_dims(s,axis=0)
-                            s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                            a=self.nn.action(s).detach().numpy()
-                    except Exception as e:
-                        if hasattr(self.nn,'action'):
-                            raise e
-                        else:
-                            try:
-                                if hasattr(self.platform,'DType'):
-                                    s=np.expand_dims(s,axis=0)
-                                    a=self.nn.actor.fp(s).numpy()
-                                    a=np.squeeze(a)
-                                else:
-                                    s=np.expand_dims(s,axis=0)
-                                    s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                                    a=self.nn.actor(s).detach().numpy()
-                                    a=np.squeeze(a)
-                            except Exception as e:
-                                raise e
+                    if hasattr(self.platform,'DType'):
+                        s=np.expand_dims(s,axis=0)
+                        a=self.nn.actor.fp(s).numpy()
+                        a=np.squeeze(a)
+                    else:
+                        s=np.expand_dims(s,axis=0)
+                        s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                        a=self.nn.actor(s).detach().numpy()
+                        a=np.squeeze(a)
             next_s,r,done=self.nn.env(a)
             if hasattr(self.nn,'stop'):
                 if self.nn.stop(next_s):
@@ -278,24 +251,21 @@ class kernel:
     def tf_opt(self,state_batch,action_batch,next_state_batch,reward_batch,done_batch):
         with self.platform.GradientTape(persistent=True) as tape:
             loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
-        try:
-            if hasattr(self.nn,'gradient'):
-                gradient=self.nn.gradient(tape,loss)
-                if hasattr(self.nn.opt,'apply_gradients'):
-                    self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
-                else:
-                    self.nn.opt(gradient)
+        if hasattr(self.nn,'gradient'):
+            gradient=self.nn.gradient(tape,loss)
+            if hasattr(self.nn.opt,'apply_gradients'):
+                self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
             else:
-                if hasattr(self.nn,'nn'):
-                    gradient=tape.gradient(loss,self.nn.param)
-                    self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
-                else:
-                    actor_gradient=tape.gradient(loss[0],self.nn.param[0])
-                    critic_gradient=tape.gradient(loss[1],self.nn.param[1])
-                    self.nn.opt.apply_gradients(zip(actor_gradient,self.nn.param[0]))
-                    self.nn.opt.apply_gradients(zip(critic_gradient,self.nn.param[1]))
-        except Exception as e:
-            raise e
+                self.nn.opt(gradient)
+        else:
+            if hasattr(self.nn,'nn'):
+                gradient=tape.gradient(loss,self.nn.param)
+                self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
+            else:
+                actor_gradient=tape.gradient(loss[0],self.nn.param[0])
+                critic_gradient=tape.gradient(loss[1],self.nn.param[1])
+                self.nn.opt.apply_gradients(zip(actor_gradient,self.nn.param[0]))
+                self.nn.opt.apply_gradients(zip(critic_gradient,self.nn.param[1]))
         return loss
     
     
@@ -374,58 +344,48 @@ class kernel:
             batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
             if len(self.state_pool)%self.batch!=0:
                 batches+=1
-            try:
+            if hasattr(self.nn,'data_func'):
                 for j in range(batches):
                     self.suspend_func()
                     state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.batch)
                     batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
                     loss+=batch_loss
-                    try:
+                    if hasattr(self.nn,'bc'):
                         try:
                             self.nn.bc.assign_add(1)
                         except Exception:
                             self.nn.bc+=1
-                    except Exception:
-                        pass
                 if len(self.state_pool)%self.batch!=0:
                     self.suspend_func()
                     state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.batch)
                     batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
                     loss+=batch_loss
-                    try:
+                    if hasattr(self.nn,'bc'):
                         try:
                             self.nn.bc.assign_add(1)
                         except Exception:
                             self.nn.bc+=1
-                    except Exception:
+            else:
+                j=0
+                train_ds=tf_data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).shuffle(len(self.state_pool)).batch(self.batch)
+                for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
+                    self.suspend_func()
+                    if hasattr(self.platform,'DType'):
                         pass
-            except Exception as e:
-                if hasattr(self.nn,'data_func'):
-                    raise e
-                else:
-                    try:
-                        j=0
-                        train_ds=tf_data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).shuffle(len(self.state_pool)).batch(self.batch)
-                        for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
-                            self.suspend_func()
-                            if hasattr(self.platform,'DType'):
-                                pass
-                            else:
-                                state_batch=state_batch.numpy()
-                                action_batch=action_batch.numpy()
-                                next_state_batch=next_state_batch.numpy()
-                                reward_batch=reward_batch.numpy()
-                                done_batch=done_batch.numpy()
-                            batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
-                            loss+=batch_loss
-                            j+=1
-                            if hasattr(self.nn,'bc'):
-                                try:
-                                    self.nn.bc.assign_add(1)
-                                except Exception:
-                                    self.nn.bc+=1
-                    except Exception as e:
-                        raise e
+                    else:
+                        state_batch=state_batch.numpy()
+                        action_batch=action_batch.numpy()
+                        next_state_batch=next_state_batch.numpy()
+                        reward_batch=reward_batch.numpy()
+                        done_batch=done_batch.numpy()
+                    batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
+                    loss+=batch_loss
+                    j+=1
+                    if hasattr(self.nn,'bc'):
+                        try:
+                            self.nn.bc.assign_add(1)
+                        except Exception:
+                            self.nn.bc+=1
             if self.update_step!=None:
                 if self.sc%self.update_step==0:
                     self.nn.update_param()
@@ -449,7 +409,7 @@ class kernel:
                 s=np.array(s,self.nn.param[0][0].dtype.name)
         if self.episode_step==None:
             while True:
-                try:
+                if hasattr(self.nn,'nn'):
                     if hasattr(self.platform,'DType'):
                         s=np.expand_dims(s,axis=0)
                         if self.epsilon==None:
@@ -473,43 +433,37 @@ class kernel:
                             next_s=np.array(next_s,self.nn.param[0][0].dtype.name)
                             r=np.array(r,self.nn.param[0][0].dtype.name)
                             done=np.array(done,self.nn.param[0][0].dtype.name)
-                except Exception as e:
-                    if hasattr(self.nn,'nn'):
-                        raise e
-                    else:
-                        try:
-                            if hasattr(self.nn,'action'):
-                                if hasattr(self.platform,'DType'):
-                                    s=np.expand_dims(s,axis=0)
-                                    if self.epsilon==None:
-                                        self.epsilon=self.nn.epsilon(self.sc)
-                                    if hasattr(self.nn,'discriminator'):
-                                        a=self.nn.action(s)
-                                        reward=self.nn.discriminator(s,a)
-                                        s=np.squeeze(s)
-                                    else:
-                                        a=self.nn.action(s).numpy()
-                                else:
-                                        s=np.expand_dims(s,axis=0)
-                                        s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                                        if self.epsilon==None:
-                                            self.epsilon=self.nn.epsilon(self.sc)
-                                        if hasattr(self.nn,'discriminator'):
-                                            a=self.nn.action(s)
-                                            reward=self.nn.discriminator(s,a)
-                                            s=np.squeeze(s)
-                                        else:
-                                            a=self.nn.action(s).detach().numpy()
+                else:
+                    if hasattr(self.nn,'action'):
+                        if hasattr(self.platform,'DType'):
+                            s=np.expand_dims(s,axis=0)
+                            if self.epsilon==None:
+                                self.epsilon=self.nn.epsilon(self.sc)
+                            if hasattr(self.nn,'discriminator'):
+                                a=self.nn.action(s)
+                                reward=self.nn.discriminator(s,a)
+                                s=np.squeeze(s)
                             else:
-                                if hasattr(self.platform,'DType'):
-                                    s=np.expand_dims(s,axis=0)
-                                    a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
+                                a=self.nn.action(s).numpy()
+                        else:
+                                s=np.expand_dims(s,axis=0)
+                                s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                                if self.epsilon==None:
+                                    self.epsilon=self.nn.epsilon(self.sc)
+                                if hasattr(self.nn,'discriminator'):
+                                    a=self.nn.action(s)
+                                    reward=self.nn.discriminator(s,a)
+                                    s=np.squeeze(s)
                                 else:
-                                    s=np.expand_dims(s,axis=0)
-                                    s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                                    a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
-                        except Exception as e:
-                            raise e
+                                    a=self.nn.action(s).detach().numpy()
+                    else:
+                        if hasattr(self.platform,'DType'):
+                            s=np.expand_dims(s,axis=0)
+                            a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
+                        else:
+                            s=np.expand_dims(s,axis=0)
+                            s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                            a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
                     next_s,r,done=self.nn.env(a)
                     if hasattr(self.platform,'DType'):
                         if type(self.nn.param[0])!=list:
@@ -520,21 +474,15 @@ class kernel:
                             next_s=np.array(next_s,self.nn.param[0][0].dtype.name)
                             r=np.array(r,self.nn.param[0][0].dtype.name)
                             done=np.array(done,self.nn.param[0][0].dtype.name)
-                try:
+                if hasattr(self.nn,'pool'):
                     self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done])
-                except Exception as e:
-                    if hasattr(self.nn,'pool'):
-                        raise e
-                    else:
-                        self.pool(s,a,next_s,r,done)
-                try:
-                    if hasattr(self.nn,'pr'):
-                        self.nn.pr.TD=np.append(self.nn.pr.TD,self.nn.initial_TD)
-                        if len(self.state_pool)>self.pool_size:
-                            TD=np.array(0)
-                            self.nn.pr.TD=np.append(TD,self.nn.pr.TD[2:])
-                except Exception as e:
-                    raise e
+                else:
+                    self.pool(s,a,next_s,r,done)
+                if hasattr(self.nn,'pr'):
+                    self.nn.pr.TD=np.append(self.nn.pr.TD,self.nn.initial_TD)
+                    if len(self.state_pool)>self.pool_size:
+                        TD=np.array(0)
+                        self.nn.pr.TD=np.append(TD,self.nn.pr.TD[2:])
                 self.reward=r+self.reward
                 loss=self._train()
                 self.sc+=1
@@ -548,7 +496,7 @@ class kernel:
                 s=next_s
         else:
             for _ in range(self.episode_step):
-                try:
+                if hasattr(self.nn,'nn'):
                     if hasattr(self.platform,'DType'):
                         s=np.expand_dims(s,axis=0)
                         if self.epsilon==None:
@@ -572,43 +520,37 @@ class kernel:
                             next_s=np.array(next_s,self.nn.param[0][0].dtype.name)
                             r=np.array(r,self.nn.param[0][0].dtype.name)
                             done=np.array(done,self.nn.param[0][0].dtype.name)
-                except Exception as e:
-                    if hasattr(self.nn,'nn'):
-                        raise e
-                    else:
-                        try:
-                            if hasattr(self.nn,'action'):
-                                if hasattr(self.platform,'DType'):
-                                    s=np.expand_dims(s,axis=0)
-                                    if self.epsilon==None:
-                                        self.epsilon=self.nn.epsilon(self.sc)
-                                    if hasattr(self.nn,'discriminator'):
-                                        a=self.nn.action(s)
-                                        reward=self.nn.discriminator(s,a)
-                                        s=np.squeeze(s)
-                                    else:
-                                        a=self.nn.action(s).numpy()
-                                else:
-                                        s=np.expand_dims(s,axis=0)
-                                        s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                                        if self.epsilon==None:
-                                            self.epsilon=self.nn.epsilon(self.sc)
-                                        if hasattr(self.nn,'discriminator'):
-                                            a=self.nn.action(s)
-                                            reward=self.nn.discriminator(s,a)
-                                            s=np.squeeze(s)
-                                        else:
-                                            a=self.nn.action(s).detach().numpy()
+                else:
+                    if hasattr(self.nn,'action'):
+                        if hasattr(self.platform,'DType'):
+                            s=np.expand_dims(s,axis=0)
+                            if self.epsilon==None:
+                                self.epsilon=self.nn.epsilon(self.sc)
+                            if hasattr(self.nn,'discriminator'):
+                                a=self.nn.action(s)
+                                reward=self.nn.discriminator(s,a)
+                                s=np.squeeze(s)
                             else:
-                                if hasattr(self.platform,'DType'):
-                                    s=np.expand_dims(s,axis=0)
-                                    a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
+                                a=self.nn.action(s).numpy()
+                        else:
+                                s=np.expand_dims(s,axis=0)
+                                s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                                if self.epsilon==None:
+                                    self.epsilon=self.nn.epsilon(self.sc)
+                                if hasattr(self.nn,'discriminator'):
+                                    a=self.nn.action(s)
+                                    reward=self.nn.discriminator(s,a)
+                                    s=np.squeeze(s)
                                 else:
-                                    s=np.expand_dims(s,axis=0)
-                                    s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                                    a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
-                        except Exception as e:
-                            raise e
+                                    a=self.nn.action(s).detach().numpy()
+                    else:
+                        if hasattr(self.platform,'DType'):
+                            s=np.expand_dims(s,axis=0)
+                            a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
+                        else:
+                            s=np.expand_dims(s,axis=0)
+                            s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                            a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
                     next_s,r,done=self.nn.env(a)
                     if hasattr(self.platform,'DType'):
                         if type(self.nn.param[0])!=list:
@@ -619,21 +561,15 @@ class kernel:
                             next_s=np.array(next_s,self.nn.param[0][0].dtype.name)
                             r=np.array(r,self.nn.param[0][0].dtype.name)
                             done=np.array(done,self.nn.param[0][0].dtype.name)
-                try:
+                if hasattr(self.nn,'pool'):
                     self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done])
-                except Exception as e:
-                    if hasattr(self.nn,'pool'):
-                        raise e
-                    else:
-                        self.pool(s,a,next_s,r,done)
-                try:
-                    if hasattr(self.nn,'pr'):
-                        self.nn.pr.TD=np.append(self.nn.pr.TD,self.nn.initial_TD)
-                        if len(self.state_pool)>self.pool_size:
-                            TD=np.array(0)
-                            self.nn.pr.TD=np.append(TD,self.nn.pr.TD[2:])
-                except Exception as e:
-                    raise e
+                else:
+                    self.pool(s,a,next_s,r,done)
+                if hasattr(self.nn,'pr'):
+                    self.nn.pr.TD=np.append(self.nn.pr.TD,self.nn.initial_TD)
+                    if len(self.state_pool)>self.pool_size:
+                        TD=np.array(0)
+                        self.nn.pr.TD=np.append(TD,self.nn.pr.TD[2:])
                 self.reward=r+self.reward
                 loss=self._train()
                 self.sc+=1
