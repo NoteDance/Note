@@ -74,14 +74,11 @@ class kernel:
             self.total_loss=np.zeros(self.process,dtype=self.nn.param[0].dtype.name)
         else:
             self.total_loss=np.zeros(self.process,dtype=self.nn.param[0][0].dtype.name)
-        try:
-            if self.nn.accuracy!=None:
-                if type(self.nn.param[0])!=list:
-                    self.total_acc=np.zeros(self.process,dtype=self.nn.param[0].dtype.name)
-                else:
-                    self.total_acc=np.zeros(self.process,dtype=self.nn.param[0][0].dtype.name)
-        except Exception:
-            pass
+        if hasattr(self.nn,'accuracy'):
+            if type(self.nn.param[0])!=list:
+                self.total_acc=np.zeros(self.process,dtype=self.nn.param[0].dtype.name)
+            else:
+                self.total_acc=np.zeros(self.process,dtype=self.nn.param[0][0].dtype.name)
         if self.priority_flag==True:
             self.opt_counter=np.zeros(self.process,dtype=np.int32)
         if train_data is not None:
@@ -389,11 +386,10 @@ class kernel:
                 except Exception as e:
                     if hasattr(self.nn,'accuracy'):
                         raise e
-                try:
-                    if self.nn.accuracy!=None:
-                        self.total_loss[p]+=batch_loss
-                        self.total_acc[p]+=batch_acc
-                except Exception:
+                if hasattr(self.nn,'accuracy'):
+                    self.total_loss[p]+=batch_loss
+                    self.total_acc[p]+=batch_acc
+                else:
                     self.total_loss[p]+=batch_loss
                 self.batch_counter[p]+=1
                 if self.PO==1 or self.PO==2:
@@ -415,12 +411,11 @@ class kernel:
                         self.train_acc_list.append(train_acc)
                     if self.test_flag==True:
                         try:
-                            try:
-                                if self.nn.accuracy!=None:
-                                    self.test_loss.value,self.test_acc.value=self.test(self.test_data,self.test_labels,test_batch)
-                                    self.test_loss_list.append(self.test_loss.value)
-                                    self.test_acc_list.append(self.test_acc.value)
-                            except Exception:
+                            if hasattr(self.nn,'accuracy'):
+                                self.test_loss.value,self.test_acc.value=self.test(self.test_data,self.test_labels,test_batch)
+                                self.test_loss_list.append(self.test_loss.value)
+                                self.test_acc_list.append(self.test_acc.value)
+                            else:
                                 self.test_loss.value=self.test(self.test_data,self.test_labels,test_batch)
                                 self.test_loss_list.append(self.test_loss.value)
                         except Exception as e:
