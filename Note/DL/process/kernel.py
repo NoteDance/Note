@@ -197,7 +197,8 @@ class kernel:
                         except Exception:
                             output,loss=self.nn.fp(data,labels)
             except Exception:
-                tape,output,loss=self.nn.GradientTape(data,labels,p)
+                if hasattr(self.nn,'GradientTape'):
+                    tape,output,loss=self.nn.GradientTape(data,labels,p)
         except Exception as e:
             raise e
         if self.PO==1:
@@ -211,12 +212,12 @@ class kernel:
             if self.stop_func_(lock[0]):
                 return None,0
             try:
-                try:
+                if hasattr(self.nn,'gradient'):
                     try:
                         gradient=self.nn.gradient(tape,loss)
                     except Exception:
                         gradient=self.nn.gradient(tape,loss,self.param[7])
-                except Exception:
+                else:
                     gradient=tape.gradient(loss,self.nn.param)
             except Exception as e:
                 raise e
@@ -238,12 +239,12 @@ class kernel:
             if self.stop_func_(g_lock):
                 return None,0
             try:
-                try:
+                if hasattr(self.nn,'gradient'):
                     try:
                         gradient=self.nn.gradient(tape,loss)
                     except Exception:
                         gradient=self.nn.gradient(tape,loss,self.param[7])
-                except Exception:
+                else:
                     gradient=tape.gradient(loss,self.nn.param)
             except Exception as e:
                 raise e
@@ -280,12 +281,12 @@ class kernel:
             if self.stop_func_():
                 return None,0
             try:
-                try:
+                if hasattr(self.nn,'gradient'):
                     try:
                         gradient=self.nn.gradient(tape,loss)
                     except Exception:
                         gradient=self.nn.gradient(tape,loss,self.param[7])
-                except Exception:
+                else:
                     gradient=tape.gradient(loss,self.nn.param)
             except Exception as e:
                 raise e
