@@ -17,12 +17,10 @@ def test_tf(nn,data,labels):
     try:
         acc=nn.accuracy(output,labels)
     except Exception as e:
-        try:
-            if nn.accuracy!=None:
-                raise e
-        except Exception:
+        if hasattr(nn,'accuracy'):
+            raise e
+        else:
             acc=None
-            pass
     return loss,acc
 
 
@@ -38,12 +36,10 @@ def test_pytorch(nn,data,labels):
     try:
         acc=nn.accuracy(output,labels)
     except Exception as e:
-        try:
-            if nn.accuracy!=None:
-                raise e
-        except Exception:
+        if hasattr(nn,'accuracy'):
+            raise e
+        else:
             acc=None
-            pass
     return loss,acc
 
 
@@ -64,19 +60,13 @@ def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
             index2=(j+1)*batch
             data_batch=test_data[index1:index2]
             labels_batch=test_labels[index1:index2]
-            try:
-                try:
-                    if platform.DType!=None:
-                        batch_loss,batch_acc=test_tf(data_batch,labels_batch)
-                except Exception:
-                    batch_loss,batch_acc=test_pytorch(data_batch,labels_batch)
-            except Exception as e:
-                raise e
+            if hasattr(platform,'DType'):
+                batch_loss,batch_acc=test_tf(data_batch,labels_batch)
+            else:
+                batch_loss,batch_acc=test_pytorch(data_batch,labels_batch)
             total_loss+=batch_loss
-            try:
+            if hasattr(nn,'accuracy'):
                 total_acc+=batch_acc
-            except Exception:
-                pass
         if shape0%batch!=0:
             batches+=1
             index1=batches*batch
@@ -86,57 +76,41 @@ def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
                     data_batch=platform.concat([test_data[index1:],test_data[:index2]],0)
                     labels_batch=platform.concat([test_labels[index1:],test_labels[:index2]],0)
                 except Exception:
-                    data_batch=platform.concat([test_data[index1:],test_data[:index2]],0)
-                    labels_batch=platform.concat([test_labels[index1:],test_labels[:index2]],0)
+                    data_batch=np.concatenate([test_data[index1:],test_data[:index2]],0)
+                    labels_batch=np.concatenate([test_labels[index1:],test_labels[:index2]],0)
             except Exception as e:
                 raise e
-            try:
-                try:
-                    if platform.DType!=None:
-                        batch_loss,batch_acc=test_tf(data_batch,labels_batch)
-                except Exception:
-                    batch_loss,batch_acc=test_pytorch(data_batch,labels_batch)
-            except Exception as e:
-                raise e
+            if hasattr(platform,'DType'):
+                batch_loss,batch_acc=test_tf(data_batch,labels_batch)
+            else:
+                batch_loss,batch_acc=test_pytorch(data_batch,labels_batch)
             total_loss+=batch_loss
-            try:
+            if hasattr(nn,'accuracy'):
                 total_acc+=batch_acc
-            except Exception:
-                pass
         test_loss=total_loss.numpy()/batches
         test_loss=test_loss.astype(np.float32)
-        try:
-            if nn.accuracy!=None:
-                test_acc=total_acc.numpy()/batches
-                test_acc=test_acc.astype(np.float32)
-        except Exception:
-            pass
+        if hasattr(nn,'accuracy'):
+            test_acc=total_acc.numpy()/batches
+            test_acc=test_acc.astype(np.float32)
     else:
-        try:
-            try:
-                if platform.DType!=None:
-                    batch_loss,batch_acc=test_tf(test_data,test_labels)
-            except Exception:
-                batch_loss,batch_acc=test_pytorch(test_data,test_labels)
-        except Exception as e:
-            raise e
+        if hasattr(platform,'DType'):
+            batch_loss,batch_acc=test_tf(test_data,test_labels)
+        else:
+            batch_loss,batch_acc=test_pytorch(test_data,test_labels)
         test_loss=test_loss.numpy().astype(np.float32)
-        try:
+        if hasattr(nn,'accuracy'):
             test_acc=test_acc.numpy().astype(np.float32)
-        except Exception:
-            pass
     print('test loss:{0:.6f}'.format(test_loss))
-    try:
-        if nn.accuracy!=None:
-            if acc_flag=='%':
-                print('accuracy:{0:.1f}'.format(test_acc*100))
-            else:
-                print('accuracy:{0:.6f}'.format(test_acc))
-            if acc_flag=='%':
-                return test_loss,test_acc*100
-            else:
-                return test_loss,test_acc
-    except Exception:
+    if hasattr(nn,'accuracy'):
+        if acc_flag=='%':
+            print('test acc:{0:.1f}'.format(test_acc*100))
+        else:
+            print('test acc:{0:.6f}'.format(test_acc))
+        if acc_flag=='%':
+            return test_loss,test_acc*100
+        else:
+            return test_loss,test_acc
+    else:
         return test_loss
 
 
@@ -156,14 +130,11 @@ class parallel_test:
             self.loss=Array('f',np.zeros([process],dtype=self.nn.param[0].dtype.name))
         else:
             self.loss=Array('f',np.zeros([process],dtype=self.nn.param[0][0].dtype.name))
-        try:
-            if self.nn.accuracy!=None:
-                if type(self.nn.param[0])!=list:
-                    self.acc=Array('f',np.zeros([process],dtype=self.nn.param[0].dtype.name))
-                else:
-                    self.acc=Array('f',np.zeros([process],dtype=self.nn.param[0][0].dtype.name))
-        except Exception:
-            pass
+        if hasattr(nn,'accuracy'):
+            if type(self.nn.param[0])!=list:
+                self.acc=Array('f',np.zeros([process],dtype=self.nn.param[0].dtype.name))
+            else:
+                self.acc=Array('f',np.zeros([process],dtype=self.nn.param[0][0].dtype.name))
         self.prefetch_batch_size=prefetch_batch_size
     
     
@@ -215,12 +186,10 @@ class parallel_test:
             except Exception:
                 acc=self.nn.accuracy(output,labels)
         except Exception as e:
-            try:
-                if self.nn.accuracy!=None:
-                    raise e
-            except Exception:
+            if hasattr(self.nn,'accuracy'):
+                raise e
+            else:
                 acc=None
-                pass
         return loss,acc
     
     
@@ -236,11 +205,10 @@ class parallel_test:
                 batch_loss,batch_acc=self.test_(data_batch,labels_batch,p)
             except Exception as e:
                 raise e
-            try:
-                if self.nn.accuracy!=None:
-                    self.loss[p]+=batch_loss
-                    self.acc[p]+=batch_acc
-            except Exception:
+            if hasattr(self.nn,'accuracy'):
+                self.loss[p]+=batch_loss
+                self.acc[p]+=batch_acc
+            else:
                 self.loss[p]+=batch_loss
         return
     
@@ -253,8 +221,7 @@ class parallel_test:
         batches=int((shape-shape%self.batch)/self.batch)
         if shape%self.batch!=0:
             batches+=1
-        try:
-            if self.nn.accuracy!=None:
-                return np.mean(npc.as_array(self.loss.get_obj())/batches),np.mean(npc.as_array(self.acc.get_obj())/batches)
-        except Exception:
+        if hasattr(self.nn,'accuracy'):
+            return np.mean(npc.as_array(self.loss.get_obj())/batches),np.mean(npc.as_array(self.acc.get_obj())/batches)
+        else:
             return np.mean(npc.as_array(self.loss.get_obj())/batches)
