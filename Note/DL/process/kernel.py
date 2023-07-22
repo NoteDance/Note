@@ -12,10 +12,8 @@ import os
 class kernel:
     def __init__(self,nn=None):
         self.nn=nn
-        try:
+        if hasattr(self.nn,'km'):
             self.nn.km=1
-        except Exception:
-            pass
         self.PO=None
         self.process=None
         self.process_t=None
@@ -128,7 +126,7 @@ class kernel:
         if self.test_flag==True:
             self.test_loss=Value('f',self.test_loss)
             self.test_loss_list=manager.list(self.test_loss_list)
-        try:
+        if hasattr(self.nn,'accuracy'):
             if self.nn.accuracy!=None:
                 self.total_acc=Array('f',self.total_acc)
                 self.train_acc=Value('f',self.train_acc)
@@ -136,8 +134,6 @@ class kernel:
                 if self.test_flag==True:
                     self.test_acc=Value('f',self.test_acc)
                     self.test_acc_list=manager.list(self.test_acc_list)
-        except Exception:
-            pass
         if self.priority_flag==True:
             self.opt_counter=Array('i',self.opt_counter)  
         try:
@@ -230,11 +226,8 @@ class kernel:
             try:
                 gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
             except Exception as e:
-                try:
-                    if self.nn.attenuate!=None:
-                        raise e
-                except Exception:
-                    pass
+                if hasattr(self.nn,'attenuate'):
+                    raise e
             try:
                 try:
                     param=self.nn.opt(gradient)
@@ -270,11 +263,8 @@ class kernel:
             try:
                 gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
             except Exception as e:
-                try:
-                    if self.nn.attenuate!=None:
-                        raise e
-                except Exception:
-                    pass
+                if hasattr(self.nn,'attenuate'):
+                    raise e
             try:
                 try:
                     param=self.nn.opt(gradient)
@@ -305,11 +295,8 @@ class kernel:
             try:
                 gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
             except Exception as e:
-                try:
-                    if self.nn.attenuate!=None:
-                        raise e
-                except Exception:
-                    pass
+                if hasattr(self.nn,'attenuate'):
+                    raise e
             try:
                 try:
                     param=self.nn.opt(gradient)
@@ -359,11 +346,8 @@ class kernel:
                 try:
                     data_batch,labels_batch=self.nn.data_func(data_batch,labels_batch)
                 except Exception as e:
-                    try:
-                        if self.nn.data_func!=None:
-                            raise e
-                    except Exception:
-                        pass
+                    if hasattr(self.nn,'data_func'):
+                        raise e
                 if self.priority_flag==True:
                     self.priority_p.value=np.argmax(self.opt_counter)
                     if self.max_opt!=None and self.opt_counter[self.priority_p.value]>=self.max_opt:
@@ -379,11 +363,8 @@ class kernel:
                     opt_counter.scatter_update(tf.IndexedSlices(0,p))
                     self.nn.opt_counter[0]=opt_counter
                 except Exception as e:
-                    try:
-                       if self.nn.attenuate!=None:
-                           raise e
-                    except Exception:
-                        pass
+                    if hasattr(self.nn,'attenuate'):
+                        raise e
                 output,batch_loss,param=self.opt(data_batch,labels_batch,p,lock,g_lock)
                 self.param[7]=param
                 if self.priority_flag==True:
@@ -394,28 +375,20 @@ class kernel:
                     opt_counter.assign(opt_counter+1)
                     self.nn.opt_counter[0]=opt_counter
                 except Exception as e:
-                    try:
-                       if self.nn.attenuate!=None:
-                           raise e
-                    except Exception:
-                        pass
-                try:
+                    if hasattr(self.nn,'attenuate'):
+                        raise e
+                if hasattr(self.nn,'bc'):
                     bc=self.nn.bc[0]
                     bc.assign_add(1)
                     self.nn.bc[0]=bc
-                except Exception:
-                    pass
                 try:
                     try:
                         batch_acc=self.nn.accuracy(output,labels_batch,p)
                     except Exception:
                         batch_acc=self.nn.accuracy(output,labels_batch)
                 except Exception as e:
-                    try:
-                        if self.nn.accuracy!=None:
-                           raise e
-                    except Exception:
-                       pass
+                    if hasattr(self.nn,'accuracy'):
+                        raise e
                 try:
                     if self.nn.accuracy!=None:
                         self.total_loss[p]+=batch_loss
@@ -432,20 +405,14 @@ class kernel:
                     batch_counter=np.frombuffer(self.batch_counter.get_obj(),dtype='i')
                     batch_counter*=0
                     loss=np.sum(self.total_loss)/batches
-                    try:
-                        if self.nn.accuracy!=None:
-                            train_acc=np.sum(self.total_acc)/batches
-                    except Exception:
-                        pass
+                    if hasattr(self.nn,'accuracy'):
+                        train_acc=np.sum(self.total_acc)/batches
                     self.total_epoch.value+=1
                     self.train_loss.value=loss
                     self.train_loss_list.append(loss)
-                    try:
-                        if self.nn.accuracy!=None:
-                            self.train_acc.value=train_acc
-                            self.train_acc_list.append(train_acc)
-                    except Exception:
-                        pass
+                    if hasattr(self.nn,'accuracy'):
+                        self.train_acc.value=train_acc
+                        self.train_acc_list.append(train_acc)
                     if self.test_flag==True:
                         try:
                             try:
@@ -460,23 +427,18 @@ class kernel:
                             raise e
                     self.print_save()
                     self.epoch_counter.value+=1
-                    try:
+                    if hasattr(self.nn,'ec'):
                         ec=self.nn.ec[0]
                         ec.assign_add(1)
                         self.nn.ec[0]=ec
-                    except Exception:
-                        pass
                     total_loss=np.frombuffer(self.total_loss.get_obj(),dtype='f')
                     total_loss*=0
                     try:
                         total_acc=np.frombuffer(self.total_acc.get_obj(),dtype='f')
                         total_acc*=0
                     except Exception as e:
-                        try:
-                            if self.nn.accuracy!=None:
-                                raise e
-                        except Exception:
-                            pass
+                        if hasattr(self.nn,'accuracy'):
+                            raise e
                 if self.PO==1 or self.PO==2:
                     lock[1].release()
                 elif lock!=None:
@@ -505,10 +467,8 @@ class kernel:
     def train_online(self,p,lock=None,g_lock=None):
         self.nn.counter.append(0)
         while True:
-            try:
+            if hasattr(self.nn,'save'):
                 self.nn.save(self.save,p)
-            except AttributeError:
-                pass
             try:
                 if self.nn.stop_flag==True:
                     return
@@ -566,11 +526,8 @@ class kernel:
                     del self.nn.train_acc_list[0]
                 self.nn.train_acc_list.append(acc)
             except Exception as e:
-                try:
-                    if self.nn.accuracy!=None:
-                        self.nn.exception_list[p]=e
-                except Exception:
-                    pass
+                if hasattr(self.nn,'accuracy'):
+                    self.nn.exception_list[p]=e
             try:
                 count=self.nn.counter[p]
                 count+=1
@@ -596,10 +553,9 @@ class kernel:
         try:
             acc=self.nn.accuracy(output,labels)
         except Exception as e:
-            try:
-                if self.nn.accuracy!=None:
-                    raise e
-            except Exception:
+            if hasattr(self.nn,'accuracy'):
+                raise e
+            else:
                 acc=None
         return loss,acc
     
@@ -621,10 +577,9 @@ class kernel:
                 if self.nn.accuracy!=None:
                     test_loss,test_acc=parallel_test_.loss_acc()
             except Exception as e:
-                try:
-                    if self.nn.accuracy!=None:
-                        raise e
-                except Exception:
+                if hasattr(self.nn,'accuracy'):
+                    raise e
+                else:
                     test_loss=parallel_test_.loss_acc()
         elif batch!=None:
             total_loss=0
@@ -635,16 +590,11 @@ class kernel:
                     batches+=1
                     batch_loss,batch_acc=self.test_(data_batch,labels_batch)
                     total_loss+=batch_loss
-                    try:
+                    if hasattr(self.nn,'accuracy'):
                         total_acc+=batch_acc
-                    except Exception:
-                        pass
                 test_loss=total_loss.numpy()/batches
-                try:
-                    if self.nn.accuracy!=None:
-                        test_acc=total_acc.numpy()/batches
-                except Exception:
-                    pass
+                if hasattr(self.nn,'accuracy'):
+                    test_acc=total_acc.numpy()/batches
             else:
                 shape0=test_data.shape[0]
                 batches=int((shape0-shape0%batch)/batch)
@@ -655,10 +605,8 @@ class kernel:
                     labels_batch=test_labels[index1:index2]
                     batch_loss,batch_acc=self.test_(data_batch,labels_batch)
                     total_loss+=batch_loss
-                    try:
+                    if hasattr(self.nn,'accuracy'):
                         total_acc+=batch_acc
-                    except Exception:
-                        pass
                 if shape0%batch!=0:
                     batches+=1
                     index1=batches*batch
@@ -667,27 +615,19 @@ class kernel:
                     labels_batch=tf.concat([test_labels[index1:],test_labels[:index2]],0)
                     batch_loss,batch_acc=self.test_(data_batch,labels_batch)
                     total_loss+=batch_loss
-                    try:
+                    if hasattr(self.nn,'accuracy'):
                         total_acc+=batch_acc
-                    except Exception:
-                        pass
                 test_loss=total_loss.numpy()/batches
-                try:
-                    if self.nn.accuracy!=None:
-                        test_acc=total_acc.numpy()/batches
-                except Exception:
-                    pass
+                if hasattr(self.nn,'accuracy'):
+                    test_acc=total_acc.numpy()/batches
         else:
             batch_loss,batch_acc=self.test_(test_data,test_labels)
             test_loss=test_loss.numpy()
-            try:
+            if hasattr(self.nn,'accuracy'):
                 test_acc=test_acc.numpy()
-            except Exception:
-                pass
-        try:
-            if self.nn.accuracy!=None:
-                return test_loss,test_acc
-        except Exception:
+        if hasattr(self.nn,'accuracy'):
+            return test_loss,test_acc
+        else:
             return test_loss
     
     
@@ -724,27 +664,25 @@ class kernel:
                         p=1
                 if self.epoch_.value%p==0:
                     if self.test_flag==False:
-                        try:
-                            if self.nn.accuracy!=None:
-                                print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch.value,self.train_loss.value))
-                                if self.acc_flag=='%':
-                                    print('epoch:{0}   accuracy:{1:.1f}'.format(self.total_epoch.value,self.train_acc.value*100))
-                                else:
-                                    print('epoch:{0}   accuracy:{1:.6f}'.format(self.total_epoch.value,self.train_acc.value))
-                                print()
-                        except Exception:
+                        if hasattr(self.nn,'accuracy'):
+                            print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch.value,self.train_loss.value))
+                            if self.acc_flag=='%':
+                                print('epoch:{0}   accuracy:{1:.1f}'.format(self.total_epoch.value,self.train_acc.value*100))
+                            else:
+                                print('epoch:{0}   accuracy:{1:.6f}'.format(self.total_epoch.value,self.train_acc.value))
+                            print()
+                        else:
                             print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch.value,self.train_loss.value))
                             print()
                     else:
-                        try:
-                            if self.nn.accuracy!=None:
-                                print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch.value,self.train_loss.value,self.test_loss.value))
-                                if self.acc_flag=='%':
-                                    print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(self.total_epoch.value,self.train_acc.value*100,self.test_acc.value*100))
-                                else:
-                                    print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(self.total_epoch.value,self.train_acc.value,self.test_acc.value))
-                                print()
-                        except Exception:
+                        if hasattr(self.nn,'accuracy'):
+                            print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch.value,self.train_loss.value,self.test_loss.value))
+                            if self.acc_flag=='%':
+                                print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(self.total_epoch.value,self.train_acc.value*100,self.test_acc.value*100))
+                            else:
+                                print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(self.total_epoch.value,self.train_acc.value,self.test_acc.value))
+                            print()
+                        else:
                             print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch,self.train_loss.value,self.test_loss.value))
                             print()
             if self.s!=None:
@@ -786,11 +724,9 @@ class kernel:
         print()
         print('epoch:{0}'.format(self.total_epoch.value))
         print()
-        try:
+        if hasattr(self.nn,'lr'):
             print('learning rate:{0}'.format(self.nn.lr))
             print()
-        except Exception:
-            pass
         print()
         print('-------------------------------------')
         print()
@@ -829,19 +765,16 @@ class kernel:
         plt.xlabel('epoch')
         plt.ylabel('loss')
         print('train loss:{0:.6f}'.format(self.train_loss.value))
-        try:
-            if self.nn.accuracy!=None:
-                plt.figure(2)
-                plt.plot(np.arange(self.total_epoch.value),self.train_acc_list)
-                plt.title('train acc')
-                plt.xlabel('epoch')
-                plt.ylabel('acc')
-                if self.acc_flag=='%':
-                    print('train acc:{0:.1f}'.format(self.train_acc.value*100))
-                else:
-                    print('train acc:{0:.6f}'.format(self.train_acc.value)) 
-        except Exception:
-            pass
+        if hasattr(self.nn,'accuracy'):
+            plt.figure(2)
+            plt.plot(np.arange(self.total_epoch.value),self.train_acc_list)
+            plt.title('train acc')
+            plt.xlabel('epoch')
+            plt.ylabel('acc')
+            if self.acc_flag=='%':
+                print('train acc:{0:.1f}'.format(self.train_acc.value*100))
+            else:
+                print('train acc:{0:.6f}'.format(self.train_acc.value)) 
         return
     
     
@@ -853,19 +786,16 @@ class kernel:
         plt.xlabel('epoch')
         plt.ylabel('loss')
         print('test loss:{0:.6f}'.format(self.test_loss.value))
-        try:
-            if self.nn.accuracy!=None:
-                plt.figure(2)
-                plt.plot(np.arange(self.total_epoch.value),self.test_acc_list)
-                plt.title('test acc')
-                plt.xlabel('epoch')
-                plt.ylabel('acc')
-                if self.acc_flag=='%':
-                    print('test acc:{0:.1f}'.format(self.test_acc.value*100))
-                else:
-                    print('test acc:{0:.6f}'.format(self.test_acc.value))  
-        except Exception:
-            pass
+        if hasattr(self.nn,'accuracy'):
+            plt.figure(2)
+            plt.plot(np.arange(self.total_epoch.value),self.test_acc_list)
+            plt.title('test acc')
+            plt.xlabel('epoch')
+            plt.ylabel('acc')
+            if self.acc_flag=='%':
+                print('test acc:{0:.1f}'.format(self.test_acc.value*100))
+            else:
+                print('test acc:{0:.6f}'.format(self.test_acc.value))  
         return 
     
     
@@ -879,21 +809,18 @@ class kernel:
         plt.ylabel('loss')
         print('train loss:{0}'.format(self.train_loss.value))
         plt.legend()
-        try:
-            if self.nn.accuracy!=None:
-                plt.figure(2)
-                plt.plot(np.arange(self.total_epoch.value),self.train_acc_list,'b-',label='train acc')
-                if self.test_flag==True:
-                    plt.plot(np.arange(self.total_epoch.value),self.test_acc_list,'r-',label='test acc')
-                plt.xlabel('epoch')
-                plt.ylabel('acc')
-                plt.legend()
-                if self.acc_flag=='%':
-                    print('train acc:{0:.1f}'.format(self.train_acc.value*100))
-                else:
-                    print('train acc:{0:.6f}'.format(self.train_acc.value))
-        except Exception:
-            pass
+        if hasattr(self.nn,'accuracy'):
+            plt.figure(2)
+            plt.plot(np.arange(self.total_epoch.value),self.train_acc_list,'b-',label='train acc')
+            if self.test_flag==True:
+                plt.plot(np.arange(self.total_epoch.value),self.test_acc_list,'r-',label='test acc')
+            plt.xlabel('epoch')
+            plt.ylabel('acc')
+            plt.legend()
+            if self.acc_flag=='%':
+                print('train acc:{0:.1f}'.format(self.train_acc.value*100))
+            else:
+                print('train acc:{0:.6f}'.format(self.train_acc.value))
         if self.test_flag==True:        
             print()
             print('-------------------------------------')
@@ -926,18 +853,12 @@ class kernel:
                 os.remove(self.file_list[0][0])
                 del self.file_list[0]
         self.update_nn_param()
-        try:
+        if hasattr(self.nn,'opt_counter'):
             self.nn.opt_counter=self.nn.opt_counter[0] 
-        except Exception:
-            pass
-        try:
+        if hasattr(self.nn,'ec'):
             self.nn.ec=self.nn.ec[0]
-        except Exception:
-            pass
-        try:
+        if hasattr(self.nn,'bc'):
             self.nn.bc=self.nn.bc[0]
-        except Exception:
-            pass
         pickle.dump(self.nn,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.end_loss,output_file)
@@ -964,25 +885,17 @@ class kernel:
     def restore(self,s_path):
         input_file=open(s_path,'rb')
         self.nn=pickle.load(input_file)
-        try:
+        if hasattr(self.nn,'km'):
             self.nn.km=1
-        except Exception:
-            pass
-        try:
+        if hasattr(self.nn,'opt_counter'):
             self.nn.opt_counter=self.opt_counter_
             self.nn.opt_counter.append(self.nn.opt_counter)
-        except Exception:
-            pass
-        try:
+        if hasattr(self.nn,'ec'):
             self.nn.ec=self.ec_
             self.nn.ec.append(self.nn.ec)
-        except Exception:
-            pass
-        try:
+        if hasattr(self.nn,'bc'):
             self.nn.bc=self.bc_
             self.nn.bc.append(self.nn.bc)
-        except Exception:
-            pass
         self.param[7]=self.nn.param
         self.batch=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
