@@ -222,10 +222,10 @@ class kernel:
             except Exception as e:
                 raise e
             try:
-                gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
-            except Exception as e:
                 if hasattr(self.nn,'attenuate'):
-                    raise e
+                    gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
+            except Exception as e:
+                raise e
             try:
                 try:
                     param=self.nn.opt(gradient)
@@ -259,10 +259,10 @@ class kernel:
             if self.stop_func_(lock[0]):
                 return None,0
             try:
-                gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
-            except Exception as e:
                 if hasattr(self.nn,'attenuate'):
-                    raise e
+                    gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
+            except Exception as e:
+                raise e
             try:
                 try:
                     param=self.nn.opt(gradient)
@@ -291,10 +291,10 @@ class kernel:
             except Exception as e:
                 raise e
             try:
-                gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
-            except Exception as e:
                 if hasattr(self.nn,'attenuate'):
-                    raise e
+                    gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
+            except Exception as e:
+                raise e
             try:
                 try:
                     param=self.nn.opt(gradient)
@@ -342,10 +342,10 @@ class kernel:
         while True:
             for data_batch,labels_batch in train_ds:
                 try:
-                    data_batch,labels_batch=self.nn.data_func(data_batch,labels_batch)
-                except Exception as e:
                     if hasattr(self.nn,'data_func'):
-                        raise e
+                        data_batch,labels_batch=self.nn.data_func(data_batch,labels_batch)
+                except Exception as e:
+                    raise e
                 if self.priority_flag==True:
                     self.priority_p.value=np.argmax(self.opt_counter)
                     if self.max_opt!=None and self.opt_counter[self.priority_p.value]>=self.max_opt:
@@ -357,36 +357,36 @@ class kernel:
                 if self.priority_flag==True:
                     self.opt_counter[p]=0
                 try:
-                    opt_counter=self.nn.opt_counter[0]
-                    opt_counter.scatter_update(tf.IndexedSlices(0,p))
-                    self.nn.opt_counter[0]=opt_counter
-                except Exception as e:
                     if hasattr(self.nn,'attenuate'):
-                        raise e
+                        opt_counter=self.nn.opt_counter[0]
+                        opt_counter.scatter_update(tf.IndexedSlices(0,p))
+                        self.nn.opt_counter[0]=opt_counter
+                except Exception as e:
+                    raise e
                 output,batch_loss,param=self.opt(data_batch,labels_batch,p,lock,g_lock)
                 self.param[7]=param
                 if self.priority_flag==True:
                     opt_counter=np.frombuffer(self.opt_counter.get_obj(),dtype='i')
                     opt_counter+=1
                 try:
-                    opt_counter=self.nn.opt_counter[0]
-                    opt_counter.assign(opt_counter+1)
-                    self.nn.opt_counter[0]=opt_counter
-                except Exception as e:
                     if hasattr(self.nn,'attenuate'):
-                        raise e
+                        opt_counter=self.nn.opt_counter[0]
+                        opt_counter.assign(opt_counter+1)
+                        self.nn.opt_counter[0]=opt_counter
+                except Exception as e:
+                    raise e
                 if hasattr(self.nn,'bc'):
                     bc=self.nn.bc[0]
                     bc.assign_add(1)
                     self.nn.bc[0]=bc
                 try:
-                    try:
-                        batch_acc=self.nn.accuracy(output,labels_batch,p)
-                    except Exception:
-                        batch_acc=self.nn.accuracy(output,labels_batch)
-                except Exception as e:
                     if hasattr(self.nn,'accuracy'):
-                        raise e
+                        try:
+                            batch_acc=self.nn.accuracy(output,labels_batch,p)
+                        except Exception:
+                            batch_acc=self.nn.accuracy(output,labels_batch)
+                except Exception as e:
+                    raise e
                 if hasattr(self.nn,'accuracy'):
                     self.total_loss[p]+=batch_loss
                     self.total_acc[p]+=batch_acc
@@ -430,11 +430,11 @@ class kernel:
                     total_loss=np.frombuffer(self.total_loss.get_obj(),dtype='f')
                     total_loss*=0
                     try:
-                        total_acc=np.frombuffer(self.total_acc.get_obj(),dtype='f')
-                        total_acc*=0
-                    except Exception as e:
                         if hasattr(self.nn,'accuracy'):
-                            raise e
+                            total_acc=np.frombuffer(self.total_acc.get_obj(),dtype='f')
+                            total_acc*=0
+                    except Exception as e:
+                        raise e
                 if self.PO==1 or self.PO==2:
                     lock[1].release()
                 elif lock!=None:
@@ -461,24 +461,19 @@ class kernel:
     
     
     def train_online(self,p,lock=None,g_lock=None):
-        self.nn.counter.append(0)
+        if hasattr(self.nn,'counter'):
+            self.nn.counter.append(0)
         while True:
             if hasattr(self.nn,'save'):
                 self.nn.save(self.save,p)
-            try:
+            if hasattr(self.nn,'stop_flag'):
                 if self.nn.stop_flag==True:
                     return
-            except AttributeError:
-                pass
-            try:
+            if hasattr(self.nn,'stop_func'):
                 if self.nn.stop_func(p):
                     return
-            except AttributeError:
-                pass
-            try:
+            if hasattr(self.nn,'suspend_func'):
                 self.nn.suspend_func(p)
-            except AttributeError:
-                pass
             try:
                 data=self.nn.online(p)
             except Exception as e:
@@ -514,20 +509,21 @@ class kernel:
                 del self.nn.train_loss_list[0]
             self.nn.train_loss_list.append(loss)
             try:
-                try:
-                    acc=self.nn.accuracy(output,data[1])
-                except Exception:
-                    self.exception_list[p]=True
-                if len(self.nn.train_acc_list)==self.nn.max_length:
-                    del self.nn.train_acc_list[0]
-                self.nn.train_acc_list.append(acc)
-            except Exception as e:
                 if hasattr(self.nn,'accuracy'):
-                    self.nn.exception_list[p]=e
+                    try:
+                        acc=self.nn.accuracy(output,data[1])
+                    except Exception:
+                        self.exception_list[p]=True
+                    if len(self.nn.train_acc_list)==self.nn.max_length:
+                        del self.nn.train_acc_list[0]
+                    self.nn.train_acc_list.append(acc)
+            except Exception as e:
+                self.nn.exception_list[p]=e
             try:
-                count=self.nn.counter[p]
-                count+=1
-                self.nn.counter[p]=count
+                if hasattr(self.nn,'counter'):
+                    count=self.nn.counter[p]
+                    count+=1
+                    self.nn.counter[p]=count
             except IndexError:
                 self.nn.counter.append(0)
                 count=self.nn.counter[p]
