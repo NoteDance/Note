@@ -1,7 +1,6 @@
 import numpy as np
 import tensorflow_docs.vis.embed as embed
 from PIL import Image
-import traceback
 
 
 class visual:
@@ -23,21 +22,17 @@ class visual:
         images=[im]
         for i in range(self.max_step):
             s=np.expand_dims(s,0)
-            try:
-                if self.agent.nn!=None:
-                    pass
-                try:
-                    if self.agent.action!=None:
-                        pass
+            if hasattr(self.agent,'nn'):
+                s=np.expand_dims(s,axis=0)
+                a=np.argmax(self.agent.nn.fp(s))
+            else:
+                if hasattr(self.agent,'action'):
+                    s=np.expand_dims(s,axis=0)
                     a=self.agent.action(s).numpy()
-                except Exception:
-                    print(traceback.format_exc())
-                    action_prob=self.agent.nn.fp(s).numpy()
-                    a=np.argmax(action_prob)
-            except Exception:
-                print(traceback.format_exc())
-                a=self.agent.actor.fp(s).numpy()
-                a=np.squeeze(a)
+                else:
+                    s=np.expand_dims(s,axis=0)
+                    a=self.agent.actor.fp(s).numpy()
+                    a=np.squeeze(a)
             state,_,done,_=self.env.step(a)
             state=state
             if i%self.rendering_step==0:
