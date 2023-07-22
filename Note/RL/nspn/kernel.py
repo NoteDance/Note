@@ -336,6 +336,68 @@ class kernel:
         return
     
     
+    def choose_action(self,s):
+        if hasattr(self.nn,'nn'):
+            if hasattr(self.platform,'DType'):
+                s=np.expand_dims(s,axis=0)
+                if self.epsilon==None:
+                    self.epsilon=self.nn.epsilon(self.sc)
+                action_prob=self.epsilon_greedy_policy(s)
+                a=np.random.choice(self.action_count,p=action_prob)
+            else:
+                s=np.expand_dims(s,axis=0)
+                s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                if self.epsilon==None:
+                    self.epsilon=self.nn.epsilon(self.sc)
+                action_prob=self.epsilon_greedy_policy(s)
+                a=np.random.choice(self.action_count,p=action_prob)
+            next_s,r,done=self.nn.env(a)
+            if hasattr(self.platform,'DType'):
+                if type(self.nn.param[0])!=list:
+                    next_s=np.array(next_s,self.nn.param[0].dtype.name)
+                    r=np.array(r,self.nn.param[0].dtype.name)
+                    done=np.array(done,self.nn.param[0].dtype.name)
+                else:
+                    next_s=np.array(next_s,self.nn.param[0][0].dtype.name)
+                    r=np.array(r,self.nn.param[0][0].dtype.name)
+                    done=np.array(done,self.nn.param[0][0].dtype.name)
+        else:
+            if hasattr(self.nn,'action'):
+                if hasattr(self.platform,'DType'):
+                    s=np.expand_dims(s,axis=0)
+                    if self.epsilon==None:
+                        self.epsilon=self.nn.epsilon(self.sc)
+                    if hasattr(self.nn,'discriminator'):
+                        a=self.nn.action(s)
+                        reward=self.nn.discriminator(s,a)
+                        s=np.squeeze(s)
+                    else:
+                        a=self.nn.action(s).numpy()
+                else:
+                        s=np.expand_dims(s,axis=0)
+                        s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                        if self.epsilon==None:
+                            self.epsilon=self.nn.epsilon(self.sc)
+                        if hasattr(self.nn,'discriminator'):
+                            a=self.nn.action(s)
+                            reward=self.nn.discriminator(s,a)
+                            s=np.squeeze(s)
+                        else:
+                            a=self.nn.action(s).detach().numpy()
+            else:
+                if hasattr(self.platform,'DType'):
+                    s=np.expand_dims(s,axis=0)
+                    a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
+                else:
+                    s=np.expand_dims(s,axis=0)
+                    s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                    a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
+        if hasattr(self.nn,'discriminator'):
+            return a,reward
+        else:
+            return a,None
+    
+    
     def _train(self):
         if len(self.state_pool)<self.batch:
             return np.array(0.)
@@ -409,71 +471,17 @@ class kernel:
                 s=np.array(s,self.nn.param[0][0].dtype.name)
         if self.episode_step==None:
             while True:
-                if hasattr(self.nn,'nn'):
-                    if hasattr(self.platform,'DType'):
-                        s=np.expand_dims(s,axis=0)
-                        if self.epsilon==None:
-                            self.epsilon=self.nn.epsilon(self.sc)
-                        action_prob=self.epsilon_greedy_policy(s)
-                        a=np.random.choice(self.action_count,p=action_prob)
+                a,reward=self.choose_action(s)
+                next_s,r,done=self.nn.env(a)
+                if hasattr(self.platform,'DType'):
+                    if type(self.nn.param[0])!=list:
+                        next_s=np.array(next_s,self.nn.param[0].dtype.name)
+                        r=np.array(r,self.nn.param[0].dtype.name)
+                        done=np.array(done,self.nn.param[0].dtype.name)
                     else:
-                        s=np.expand_dims(s,axis=0)
-                        s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                        if self.epsilon==None:
-                            self.epsilon=self.nn.epsilon(self.sc)
-                        action_prob=self.epsilon_greedy_policy(s)
-                        a=np.random.choice(self.action_count,p=action_prob)
-                    next_s,r,done=self.nn.env(a)
-                    if hasattr(self.platform,'DType'):
-                        if type(self.nn.param[0])!=list:
-                            next_s=np.array(next_s,self.nn.param[0].dtype.name)
-                            r=np.array(r,self.nn.param[0].dtype.name)
-                            done=np.array(done,self.nn.param[0].dtype.name)
-                        else:
-                            next_s=np.array(next_s,self.nn.param[0][0].dtype.name)
-                            r=np.array(r,self.nn.param[0][0].dtype.name)
-                            done=np.array(done,self.nn.param[0][0].dtype.name)
-                else:
-                    if hasattr(self.nn,'action'):
-                        if hasattr(self.platform,'DType'):
-                            s=np.expand_dims(s,axis=0)
-                            if self.epsilon==None:
-                                self.epsilon=self.nn.epsilon(self.sc)
-                            if hasattr(self.nn,'discriminator'):
-                                a=self.nn.action(s)
-                                reward=self.nn.discriminator(s,a)
-                                s=np.squeeze(s)
-                            else:
-                                a=self.nn.action(s).numpy()
-                        else:
-                                s=np.expand_dims(s,axis=0)
-                                s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                                if self.epsilon==None:
-                                    self.epsilon=self.nn.epsilon(self.sc)
-                                if hasattr(self.nn,'discriminator'):
-                                    a=self.nn.action(s)
-                                    reward=self.nn.discriminator(s,a)
-                                    s=np.squeeze(s)
-                                else:
-                                    a=self.nn.action(s).detach().numpy()
-                    else:
-                        if hasattr(self.platform,'DType'):
-                            s=np.expand_dims(s,axis=0)
-                            a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
-                        else:
-                            s=np.expand_dims(s,axis=0)
-                            s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                            a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
-                    next_s,r,done=self.nn.env(a)
-                    if hasattr(self.platform,'DType'):
-                        if type(self.nn.param[0])!=list:
-                            next_s=np.array(next_s,self.nn.param[0].dtype.name)
-                            r=np.array(r,self.nn.param[0].dtype.name)
-                            done=np.array(done,self.nn.param[0].dtype.name)
-                        else:
-                            next_s=np.array(next_s,self.nn.param[0][0].dtype.name)
-                            r=np.array(r,self.nn.param[0][0].dtype.name)
-                            done=np.array(done,self.nn.param[0][0].dtype.name)
+                        next_s=np.array(next_s,self.nn.param[0][0].dtype.name)
+                        r=np.array(r,self.nn.param[0][0].dtype.name)
+                        done=np.array(done,self.nn.param[0][0].dtype.name)
                 if hasattr(self.nn,'pool'):
                     self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done])
                 else:
@@ -496,71 +504,17 @@ class kernel:
                 s=next_s
         else:
             for _ in range(self.episode_step):
-                if hasattr(self.nn,'nn'):
-                    if hasattr(self.platform,'DType'):
-                        s=np.expand_dims(s,axis=0)
-                        if self.epsilon==None:
-                            self.epsilon=self.nn.epsilon(self.sc)
-                        action_prob=self.epsilon_greedy_policy(s)
-                        a=np.random.choice(self.action_count,p=action_prob)
+                a,reward=self.choose_action(s)
+                next_s,r,done=self.nn.env(a)
+                if hasattr(self.platform,'DType'):
+                    if type(self.nn.param[0])!=list:
+                        next_s=np.array(next_s,self.nn.param[0].dtype.name)
+                        r=np.array(r,self.nn.param[0].dtype.name)
+                        done=np.array(done,self.nn.param[0].dtype.name)
                     else:
-                        s=np.expand_dims(s,axis=0)
-                        s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                        if self.epsilon==None:
-                            self.epsilon=self.nn.epsilon(self.sc)
-                        action_prob=self.epsilon_greedy_policy(s)
-                        a=np.random.choice(self.action_count,p=action_prob)
-                    next_s,r,done=self.nn.env(a)
-                    if hasattr(self.platform,'DType'):
-                        if type(self.nn.param[0])!=list:
-                            next_s=np.array(next_s,self.nn.param[0].dtype.name)
-                            r=np.array(r,self.nn.param[0].dtype.name)
-                            done=np.array(done,self.nn.param[0].dtype.name)
-                        else:
-                            next_s=np.array(next_s,self.nn.param[0][0].dtype.name)
-                            r=np.array(r,self.nn.param[0][0].dtype.name)
-                            done=np.array(done,self.nn.param[0][0].dtype.name)
-                else:
-                    if hasattr(self.nn,'action'):
-                        if hasattr(self.platform,'DType'):
-                            s=np.expand_dims(s,axis=0)
-                            if self.epsilon==None:
-                                self.epsilon=self.nn.epsilon(self.sc)
-                            if hasattr(self.nn,'discriminator'):
-                                a=self.nn.action(s)
-                                reward=self.nn.discriminator(s,a)
-                                s=np.squeeze(s)
-                            else:
-                                a=self.nn.action(s).numpy()
-                        else:
-                                s=np.expand_dims(s,axis=0)
-                                s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                                if self.epsilon==None:
-                                    self.epsilon=self.nn.epsilon(self.sc)
-                                if hasattr(self.nn,'discriminator'):
-                                    a=self.nn.action(s)
-                                    reward=self.nn.discriminator(s,a)
-                                    s=np.squeeze(s)
-                                else:
-                                    a=self.nn.action(s).detach().numpy()
-                    else:
-                        if hasattr(self.platform,'DType'):
-                            s=np.expand_dims(s,axis=0)
-                            a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
-                        else:
-                            s=np.expand_dims(s,axis=0)
-                            s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                            a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
-                    next_s,r,done=self.nn.env(a)
-                    if hasattr(self.platform,'DType'):
-                        if type(self.nn.param[0])!=list:
-                            next_s=np.array(next_s,self.nn.param[0].dtype.name)
-                            r=np.array(r,self.nn.param[0].dtype.name)
-                            done=np.array(done,self.nn.param[0].dtype.name)
-                        else:
-                            next_s=np.array(next_s,self.nn.param[0][0].dtype.name)
-                            r=np.array(r,self.nn.param[0][0].dtype.name)
-                            done=np.array(done,self.nn.param[0][0].dtype.name)
+                        next_s=np.array(next_s,self.nn.param[0][0].dtype.name)
+                        r=np.array(r,self.nn.param[0][0].dtype.name)
+                        done=np.array(done,self.nn.param[0][0].dtype.name)
                 if hasattr(self.nn,'pool'):
                     self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done])
                 else:
@@ -607,8 +561,8 @@ class kernel:
                         if self.criterion!=None and avg_reward>=self.criterion:
                             t2=time.time()
                             self.total_time+=(t2-t1)
-                            self._time=self.total_time-int(self.total_time)
-                            if self._time<0.5:
+                            time_=self.total_time-int(self.total_time)
+                            if time_<0.5:
                                 self.total_time=int(self.total_time)
                             else:
                                 self.total_time=int(self.total_time)+1
@@ -671,8 +625,8 @@ class kernel:
                         if avg_reward>=self.criterion:
                             t2=time.time()
                             self.total_time+=(t2-t1)
-                            self._time=self.total_time-int(self.total_time)
-                            if self._time<0.5:
+                            time_=self.total_time-int(self.total_time)
+                            if time_<0.5:
                                 self.total_time=int(self.total_time)
                             else:
                                 self.total_time=int(self.total_time)+1
@@ -723,8 +677,8 @@ class kernel:
                         self.nn.ec+=1
                 t2=time.time()
                 self.time+=(t2-t1)
-        self._time=self.time-int(self.time)
-        if self._time<0.5:
+        time_=self.time-int(self.time)
+        if time_<0.5:
             self.total_time=int(self.time)
         else:
             self.total_time=int(self.time)+1
