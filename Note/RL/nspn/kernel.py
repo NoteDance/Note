@@ -450,7 +450,10 @@ class kernel:
                         r=np.array(r,self.nn.param[0][0].dtype.name)
                         done=np.array(done,self.nn.param[0][0].dtype.name)
                 if hasattr(self.nn,'pool'):
-                    self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done])
+                    if hasattr(self.nn,'discriminator'):
+                        self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done])
+                    else:
+                        self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,r,done])
                 else:
                     self.pool(s,a,next_s,r,done)
                 if hasattr(self.nn,'pr'):
@@ -527,7 +530,10 @@ class kernel:
                         r=np.array(r,self.nn.param[0][0].dtype.name)
                         done=np.array(done,self.nn.param[0][0].dtype.name)
                 if hasattr(self.nn,'pool'):
-                    self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done])
+                    if hasattr(self.nn,'discriminator'):
+                        self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done])
+                    else:
+                        self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,r,done])
                 else:
                     self.pool(s,a,next_s,r,done)
                 if hasattr(self.nn,'pr'):
