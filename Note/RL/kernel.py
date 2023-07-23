@@ -84,7 +84,7 @@ class kernel:
             self.nn.bc=manager.list([self.nn.bc])
         except Exception:
             self.bc_=manager.list()
-        self.episode_=Value('i',self.total_episode)
+        self.episode_=Value('i',self.total_episode.value)
         self.stop_flag=Value('b',self.stop_flag)
         self.save_flag=Value('b',self.save_flag)
         self.file_list=manager.list([])
@@ -139,16 +139,9 @@ class kernel:
             if type(self.state_pool[index])!=np.ndarray and self.state_pool[index]==None:
                 self.state_pool[index]=s
                 if type(a)==int:
-                    if type(self.nn.param[0])!=list:
-                        a=np.array(a,self.nn.param[0].dtype.name)
-                    else:
-                        a=np.array(a,self.nn.param[0][0].dtype.name)
+                    a=np.array(a)
                     self.action_pool[index]=np.expand_dims(a,axis=0)
                 else:
-                    if type(self.nn.param[0])!=list:
-                        a=a.astype(self.nn.param[0].dtype.name)
-                    else:
-                        a=a.astype(self.nn.param[0][0].dtype.name)
                     self.action_pool[index]=a
                 self.next_state_pool[index]=np.expand_dims(next_s,axis=0)
                 self.reward_pool[index]=np.expand_dims(r,axis=0)
@@ -157,16 +150,9 @@ class kernel:
                 try:
                     self.state_pool[index]=np.concatenate((self.state_pool[index],s),0)
                     if type(a)==int:
-                        if type(self.nn.param[0])!=list:
-                            a=np.array(a,self.nn.param[0].dtype.name)
-                        else:
-                            a=np.array(a,self.nn.param[0][0].dtype.name)
+                        a=np.array(a)
                         self.action_pool[index]=np.concatenate((self.action_pool[index],np.expand_dims(a,axis=0)),0)
                     else:
-                        if type(self.nn.param[0])!=list:
-                            a=a.astype(self.nn.param[0].dtype.name)
-                        else:
-                            a=a.astype(self.nn.param[0][0].dtype.name)
                         self.action_pool[index]=np.concatenate((self.action_pool[index],a),0)
                     self.next_state_pool[index]=np.concatenate((self.next_state_pool[index],np.expand_dims(next_s,axis=0)),0)
                     self.reward_pool[index]=np.concatenate((self.reward_pool[index],np.expand_dims(r,axis=0)),0)
