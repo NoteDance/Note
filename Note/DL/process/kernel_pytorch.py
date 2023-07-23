@@ -14,6 +14,8 @@ class kernel:
         self.process=None
         self.process_t=None
         self.train_ds=None
+        self.prefetch_factor=None
+        self.num_workers=None
         self.batches_t=None
         self.shuffle=False
         self.priority_flag=False
@@ -248,10 +250,16 @@ class kernel:
     
     
     def train(self,p,lock=None,test_batch=None):
-        if type(self.train_dataset)==list:
-            train_loader=torch.utils.data.DataLoader(self.train_dataset[p],batch_size=self.batch)
+        if self.prefetch_factor!=None:
+            if type(self.train_dataset)==list:
+                train_loader=torch.utils.data.DataLoader(self.train_dataset[p],batch_size=self.batch,prefetch_factor=self.prefetch_factor,num_workers=self.num_workers)
+            else:
+                train_loader=torch.utils.data.DataLoader(self.train_dataset,batch_size=self.batch,shuffle=self.shuffle,prefetch_factor=self.prefetch_factor,num_workers=self.num_workers)
         else:
-            train_loader=torch.utils.data.DataLoader(self.train_dataset,batch_size=self.batch,shuffle=self.shuffle)
+            if type(self.train_dataset)==list:
+                train_loader=torch.utils.data.DataLoader(self.train_dataset[p],batch_size=self.batch)
+            else:
+                train_loader=torch.utils.data.DataLoader(self.train_dataset,batch_size=self.batch,shuffle=self.shuffle)
         self.train7(train_loader,p,test_batch,lock)
         return
     
