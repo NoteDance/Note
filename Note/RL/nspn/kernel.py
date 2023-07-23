@@ -1,5 +1,4 @@
-from tensorflow import function
-from tensorflow import data as tf_data
+import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 import statistics
@@ -247,7 +246,7 @@ class kernel:
         return episode
     
     
-    @function(jit_compile=True)
+    @tf.function(jit_compile=True)
     def tf_opt(self,state_batch,action_batch,next_state_batch,reward_batch,done_batch):
         with self.platform.GradientTape(persistent=True) as tape:
             loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
@@ -296,16 +295,9 @@ class kernel:
         if type(self.state_pool)!=np.ndarray and self.state_pool==None:
             self.state_pool=s
             if type(a)==int:
-                if type(self.nn.param[0])!=list:
-                    a=np.array(a,self.nn.param[0].dtype.name)
-                else:
-                    a=np.array(a,self.nn.param[0][0].dtype.name)
+                a=np.array(a)
                 self.action_pool=np.expand_dims(a,axis=0)
             else:
-                if type(self.nn.param[0])!=list:
-                    a=a.astype(self.nn.param[0].dtype.name)
-                else:
-                    a=a.astype(self.nn.param[0][0].dtype.name)
                 self.action_pool=a
             self.next_state_pool=np.expand_dims(next_s,axis=0)
             self.reward_pool=np.expand_dims(r,axis=0)
@@ -313,16 +305,9 @@ class kernel:
         else:
             self.state_pool=np.concatenate((self.state_pool,s),0)
             if type(a)==int:
-                if type(self.nn.param[0])!=list:
-                    a=np.array(a,self.nn.param[0].dtype.name)
-                else:
-                    a=np.array(a,self.nn.param[0][0].dtype.name)
+                a=np.array(a)
                 self.action_pool=np.concatenate((self.action_pool,np.expand_dims(a,axis=0)),0)
             else:
-                if type(self.nn.param[0])!=list:
-                    a=a.astype(self.nn.param[0].dtype.name)
-                else:
-                    a=a.astype(self.nn.param[0][0].dtype.name)
                 self.action_pool=np.concatenate((self.action_pool,a),0)
             self.next_state_pool=np.concatenate((self.next_state_pool,np.expand_dims(next_s,axis=0)),0)
             self.reward_pool=np.concatenate((self.reward_pool,np.expand_dims(r,axis=0)),0)
@@ -334,69 +319,7 @@ class kernel:
             self.reward_pool=self.reward_pool[1:]
             self.done_pool=self.done_pool[1:]
         return
-    
-    
-    def choose_action(self,s):
-        if hasattr(self.nn,'nn'):
-            if hasattr(self.platform,'DType'):
-                s=np.expand_dims(s,axis=0)
-                if self.epsilon==None:
-                    self.epsilon=self.nn.epsilon(self.sc)
-                action_prob=self.epsilon_greedy_policy(s)
-                a=np.random.choice(self.action_count,p=action_prob)
-            else:
-                s=np.expand_dims(s,axis=0)
-                s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                if self.epsilon==None:
-                    self.epsilon=self.nn.epsilon(self.sc)
-                action_prob=self.epsilon_greedy_policy(s)
-                a=np.random.choice(self.action_count,p=action_prob)
-            next_s,r,done=self.nn.env(a)
-            if hasattr(self.platform,'DType'):
-                if type(self.nn.param[0])!=list:
-                    next_s=np.array(next_s,self.nn.param[0].dtype.name)
-                    r=np.array(r,self.nn.param[0].dtype.name)
-                    done=np.array(done,self.nn.param[0].dtype.name)
-                else:
-                    next_s=np.array(next_s,self.nn.param[0][0].dtype.name)
-                    r=np.array(r,self.nn.param[0][0].dtype.name)
-                    done=np.array(done,self.nn.param[0][0].dtype.name)
-        else:
-            if hasattr(self.nn,'action'):
-                if hasattr(self.platform,'DType'):
-                    s=np.expand_dims(s,axis=0)
-                    if self.epsilon==None:
-                        self.epsilon=self.nn.epsilon(self.sc)
-                    if hasattr(self.nn,'discriminator'):
-                        a=self.nn.action(s)
-                        reward=self.nn.discriminator(s,a)
-                        s=np.squeeze(s)
-                    else:
-                        a=self.nn.action(s).numpy()
-                else:
-                        s=np.expand_dims(s,axis=0)
-                        s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                        if self.epsilon==None:
-                            self.epsilon=self.nn.epsilon(self.sc)
-                        if hasattr(self.nn,'discriminator'):
-                            a=self.nn.action(s)
-                            reward=self.nn.discriminator(s,a)
-                            s=np.squeeze(s)
-                        else:
-                            a=self.nn.action(s).detach().numpy()
-            else:
-                if hasattr(self.platform,'DType'):
-                    s=np.expand_dims(s,axis=0)
-                    a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
-                else:
-                    s=np.expand_dims(s,axis=0)
-                    s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                    a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
-        if hasattr(self.nn,'discriminator'):
-            return a,reward
-        else:
-            return a,None
-    
+        
     
     def _train(self):
         if len(self.state_pool)<self.batch:
@@ -429,7 +352,7 @@ class kernel:
                             self.nn.bc+=1
             else:
                 j=0
-                train_ds=tf_data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).shuffle(len(self.state_pool)).batch(self.batch)
+                train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).shuffle(len(self.state_pool)).batch(self.batch)
                 for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
                     self.suspend_func()
                     if hasattr(self.platform,'DType'):
@@ -471,7 +394,51 @@ class kernel:
                 s=np.array(s,self.nn.param[0][0].dtype.name)
         if self.episode_step==None:
             while True:
-                a,reward=self.choose_action(s)
+                if hasattr(self.nn,'nn'):
+                    if hasattr(self.platform,'DType'):
+                        s=np.expand_dims(s,axis=0)
+                        if self.epsilon==None:
+                            self.epsilon=self.nn.epsilon(self.sc)
+                        action_prob=self.epsilon_greedy_policy(s)
+                        a=np.random.choice(self.action_count,p=action_prob)
+                    else:
+                        s=np.expand_dims(s,axis=0)
+                        s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                        if self.epsilon==None:
+                            self.epsilon=self.nn.epsilon(self.sc)
+                        action_prob=self.epsilon_greedy_policy(s)
+                        a=np.random.choice(self.action_count,p=action_prob)
+                else:
+                    if hasattr(self.nn,'action'):
+                        if hasattr(self.platform,'DType'):
+                            s=np.expand_dims(s,axis=0)
+                            if self.epsilon==None:
+                                self.epsilon=self.nn.epsilon(self.sc)
+                            if hasattr(self.nn,'discriminator'):
+                                a=self.nn.action(s)
+                                reward=self.nn.discriminator(s,a)
+                                s=np.squeeze(s)
+                            else:
+                                a=self.nn.action(s).numpy()
+                        else:
+                                s=np.expand_dims(s,axis=0)
+                                s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                                if self.epsilon==None:
+                                    self.epsilon=self.nn.epsilon(self.sc)
+                                if hasattr(self.nn,'discriminator'):
+                                    a=self.nn.action(s)
+                                    reward=self.nn.discriminator(s,a)
+                                    s=np.squeeze(s)
+                                else:
+                                    a=self.nn.action(s).detach().numpy()
+                    else:
+                        if hasattr(self.platform,'DType'):
+                            s=np.expand_dims(s,axis=0)
+                            a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
+                        else:
+                            s=np.expand_dims(s,axis=0)
+                            s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                            a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
                 next_s,r,done=self.nn.env(a)
                 if hasattr(self.platform,'DType'):
                     if type(self.nn.param[0])!=list:
@@ -504,7 +471,51 @@ class kernel:
                 s=next_s
         else:
             for _ in range(self.episode_step):
-                a,reward=self.choose_action(s)
+                if hasattr(self.nn,'nn'):
+                    if hasattr(self.platform,'DType'):
+                        s=np.expand_dims(s,axis=0)
+                        if self.epsilon==None:
+                            self.epsilon=self.nn.epsilon(self.sc)
+                        action_prob=self.epsilon_greedy_policy(s)
+                        a=np.random.choice(self.action_count,p=action_prob)
+                    else:
+                        s=np.expand_dims(s,axis=0)
+                        s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                        if self.epsilon==None:
+                            self.epsilon=self.nn.epsilon(self.sc)
+                        action_prob=self.epsilon_greedy_policy(s)
+                        a=np.random.choice(self.action_count,p=action_prob)
+                else:
+                    if hasattr(self.nn,'action'):
+                        if hasattr(self.platform,'DType'):
+                            s=np.expand_dims(s,axis=0)
+                            if self.epsilon==None:
+                                self.epsilon=self.nn.epsilon(self.sc)
+                            if hasattr(self.nn,'discriminator'):
+                                a=self.nn.action(s)
+                                reward=self.nn.discriminator(s,a)
+                                s=np.squeeze(s)
+                            else:
+                                a=self.nn.action(s).numpy()
+                        else:
+                                s=np.expand_dims(s,axis=0)
+                                s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                                if self.epsilon==None:
+                                    self.epsilon=self.nn.epsilon(self.sc)
+                                if hasattr(self.nn,'discriminator'):
+                                    a=self.nn.action(s)
+                                    reward=self.nn.discriminator(s,a)
+                                    s=np.squeeze(s)
+                                else:
+                                    a=self.nn.action(s).detach().numpy()
+                    else:
+                        if hasattr(self.platform,'DType'):
+                            s=np.expand_dims(s,axis=0)
+                            a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
+                        else:
+                            s=np.expand_dims(s,axis=0)
+                            s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                            a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
                 next_s,r,done=self.nn.env(a)
                 if hasattr(self.platform,'DType'):
                     if type(self.nn.param[0])!=list:
