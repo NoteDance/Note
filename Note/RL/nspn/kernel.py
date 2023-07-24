@@ -98,6 +98,7 @@ class kernel:
             if hasattr(self.platform,'DType'):
                 raise e
             else:
+                s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                 best_a=self.nn.nn(s).argmax()
                 action_prob[best_a.numpy()]+=1-self.epsilon
         return action_prob
@@ -128,7 +129,6 @@ class kernel:
                             a=self.nn.action(s).numpy()
                         else:
                             s=np.expand_dims(s,axis=0)
-                            s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                             a=self.nn.action(s).detach().numpy()
                     else:
                         if hasattr(self.platform,'DType'):
@@ -168,7 +168,6 @@ class kernel:
                             a=self.nn.action(s).numpy()
                         else:
                             s=np.expand_dims(s,axis=0)
-                            s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                             a=self.nn.action(s).detach().numpy()
                     else:
                         if hasattr(self.platform,'DType'):
@@ -215,7 +214,6 @@ class kernel:
                         a=self.nn.action(s).numpy()
                     else:
                         s=np.expand_dims(s,axis=0)
-                        s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                         a=self.nn.action(s).detach().numpy()
                 else:
                     if hasattr(self.platform,'DType'):
@@ -403,7 +401,6 @@ class kernel:
                         a=np.random.choice(self.action_count,p=action_prob)
                     else:
                         s=np.expand_dims(s,axis=0)
-                        s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                         if self.epsilon==None:
                             self.epsilon=self.nn.epsilon(self.sc)
                         action_prob=self.epsilon_greedy_policy(s)
@@ -422,7 +419,6 @@ class kernel:
                                 a=self.nn.action(s).numpy()
                         else:
                                 s=np.expand_dims(s,axis=0)
-                                s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                                 if self.epsilon==None:
                                     self.epsilon=self.nn.epsilon(self.sc)
                                 if hasattr(self.nn,'discriminator'):
@@ -483,7 +479,6 @@ class kernel:
                         a=np.random.choice(self.action_count,p=action_prob)
                     else:
                         s=np.expand_dims(s,axis=0)
-                        s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                         if self.epsilon==None:
                             self.epsilon=self.nn.epsilon(self.sc)
                         action_prob=self.epsilon_greedy_policy(s)
@@ -502,7 +497,6 @@ class kernel:
                                 a=self.nn.action(s).numpy()
                         else:
                                 s=np.expand_dims(s,axis=0)
-                                s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                                 if self.epsilon==None:
                                     self.epsilon=self.nn.epsilon(self.sc)
                                 if hasattr(self.nn,'discriminator'):
