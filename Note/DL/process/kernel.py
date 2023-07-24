@@ -182,7 +182,9 @@ class kernel:
     @tf.function(jit_compile=True)
     def opt_p(self,data,labels,p,lock,g_lock=None):
         try:
-            try:
+            if hasattr(self.nn,'GradientTape'):
+                tape,output,loss=self.nn.GradientTape(data,labels,p)
+            else:
                 with tf.GradientTape(persistent=True) as tape:
                     try:
                         try:
@@ -196,21 +198,20 @@ class kernel:
                             loss=self.nn.loss(output,labels)
                         except Exception:
                             output,loss=self.nn.fp(data,labels)
-            except Exception:
-                if hasattr(self.nn,'GradientTape'):
-                    tape,output,loss=self.nn.GradientTape(data,labels,p)
         except Exception as e:
             raise e
         if self.PO==1:
             if self.priority_flag==True and self.priority_p.value!=-1:
                 while True:
+                    if self.stop_func_():
+                        return None,None,None
                     if p==self.priority_p.value:
                         break
                     else:
                         continue
             lock[0].acquire()
             if self.stop_func_(lock[0]):
-                return None,0
+                return None,None,None
             try:
                 if hasattr(self.nn,'gradient'):
                     try:
@@ -234,7 +235,7 @@ class kernel:
         elif self.PO==2:
             g_lock.acquire()
             if self.stop_func_(g_lock):
-                return None,0
+                return None,None,None
             try:
                 if hasattr(self.nn,'gradient'):
                     try:
@@ -248,13 +249,15 @@ class kernel:
             g_lock.release()
             if self.priority_flag==True and self.priority_p.value!=-1:
                 while True:
+                    if self.stop_func_():
+                        return None,None,None
                     if p==self.priority_p.value:
                         break
                     else:
                         continue
             lock[0].acquire()
             if self.stop_func_(lock[0]):
-                return None,0
+                return None,None,None
             if hasattr(self.nn,'attenuate'):
                 gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
             try:
@@ -268,12 +271,14 @@ class kernel:
         elif self.PO==3:
             if self.priority_flag==True and self.priority_p.value!=-1:
                 while True:
+                    if self.stop_func_():
+                        return None,None,None
                     if p==self.priority_p.value:
                         break
                     else:
                         continue
             if self.stop_func_():
-                return None,0
+                return None,None,None
             try:
                 if hasattr(self.nn,'gradient'):
                     try:
@@ -349,6 +354,8 @@ class kernel:
                     opt_counter.scatter_update(tf.IndexedSlices(0,p))
                     self.nn.opt_counter[0]=opt_counter
                 output,batch_loss,param=self.opt(data_batch,labels_batch,p,lock,g_lock)
+                if self.stop_flag.value==True:
+                    return
                 self.param[7]=param
                 if self.priority_flag==True:
                     opt_counter=np.frombuffer(self.opt_counter.get_obj(),dtype='i')
@@ -519,12 +526,12 @@ class kernel:
         except Exception as e:
             raise e
         try:
-            acc=self.nn.accuracy(output,labels)
-        except Exception as e:
             if hasattr(self.nn,'accuracy'):
-                raise e
+                acc=self.nn.accuracy(output,labels)
             else:
-                acc=None
+               acc=None 
+        except Exception as e:
+            raise e
         return loss,acc
     
     
@@ -544,11 +551,10 @@ class kernel:
             try:
                 if hasattr(self.nn,'accuracy'):
                     test_loss,test_acc=parallel_test_.loss_acc()
-            except Exception as e:
-                if hasattr(self.nn,'accuracy'):
-                    raise e
                 else:
                     test_loss=parallel_test_.loss_acc()
+            except Exception as e:
+                raise e
         elif batch!=None:
             total_loss=0
             total_acc=0
