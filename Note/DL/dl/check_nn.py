@@ -2,13 +2,12 @@ def check(nn,platform,data,labels):
     try:
         if platform.DType!=None:
             try:
-                try:
+                if hasattr(nn,'GradientTape'):
+                    tape,output,loss=nn.GradientTape(data,labels)
+                else:
                     with platform.GradientTape(persistent=True) as tape:
                         output=nn.fp(data)
                         loss=nn.loss(output,labels)
-                except Exception:
-                    if hasattr(nn,'GradientTape'):
-                        tape,output,loss=nn.GradientTape(data,labels)
             except Exception as e:
                 raise e
             if hasattr(nn,'accuracy'):
