@@ -34,7 +34,6 @@ class reward:
                             a=self.agent.action(s).numpy()
                         else:
                             s=np.expand_dims(s,axis=0)
-                            s=self.platform.tensor(s,dtype=self.platform.float).to(self.agent.device)
                             a=self.agent.action(s).detach().numpy()
                     else:
                         if hasattr(self.platform,'DType'):
@@ -74,7 +73,6 @@ class reward:
                             a=self.agent.action(s).numpy()
                         else:
                             s=np.expand_dims(s,axis=0)
-                            s=self.platform.tensor(s,dtype=self.platform.float).to(self.agent.device)
                             a=self.agent.action(s).detach().numpy()
                     else:
                         if hasattr(self.platform,'DType'):
