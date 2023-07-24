@@ -15,12 +15,12 @@ def test_tf(nn,data,labels):
     except Exception as e:
         raise e
     try:
-        acc=nn.accuracy(output,labels)
-    except Exception as e:
         if hasattr(nn,'accuracy'):
-            raise e
+            acc=nn.accuracy(output,labels)
         else:
             acc=None
+    except Exception as e:
+        raise e
     return loss,acc
 
 
@@ -34,12 +34,12 @@ def test_pytorch(nn,data,labels):
     except Exception as e:
         raise e
     try:
-        acc=nn.accuracy(output,labels)
-    except Exception as e:
         if hasattr(nn,'accuracy'):
-            raise e
+            acc=nn.accuracy(output,labels)
         else:
-            acc=None
+          acc=None  
+    except Exception as e:
+        raise e
     return loss,acc
 
 
@@ -181,15 +181,15 @@ class parallel_test:
         except Exception as e:
             raise e
         try:
-            try:
-                acc=self.nn.accuracy(output,labels,p)
-            except Exception:
-                acc=self.nn.accuracy(output,labels)
-        except Exception as e:
             if hasattr(self.nn,'accuracy'):
-                raise e
+                try:
+                    acc=self.nn.accuracy(output,labels,p)
+                except Exception:
+                    acc=self.nn.accuracy(output,labels)
             else:
                 acc=None
+        except Exception as e:
+            raise e
         return loss,acc
     
     
