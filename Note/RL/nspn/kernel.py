@@ -92,15 +92,15 @@ class kernel:
     def epsilon_greedy_policy(self,s):
         action_prob=self.action_one*self.epsilon/len(self.action_one)
         try:
-            best_a=np.argmax(self.nn.nn.fp(s))
-            action_prob[best_a]+=1-self.epsilon
-        except Exception as e:
             if hasattr(self.platform,'DType'):
-                raise e
+                best_a=np.argmax(self.nn.nn.fp(s))
+                action_prob[best_a]+=1-self.epsilon
             else:
                 s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                 best_a=self.nn.nn(s).argmax()
-                action_prob[best_a.numpy()]+=1-self.epsilon
+                action_prob[best_a.numpy()]+=1-self.epsilon 
+        except Exception as e:
+            raise e
         return action_prob
     
     
