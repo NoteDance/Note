@@ -148,10 +148,14 @@ class kernel:
             raise e
         if self.priority_flag==True and self.priority_p.value!=-1:
             while True:
+                if self.stop_func_():
+                    return None,None
                 if p==self.priority_p.value:
                     break
                 else:
                     continue
+        if self.stop_func_():
+            return None,None
         self.nn.opt[p].zero_grad(set_to_none=True)
         loss=loss.clone()
         loss.backward()
@@ -184,6 +188,8 @@ class kernel:
                     opt_counter[p]=0
                     self.nn.opt_counter[0]=opt_counter
                 output,batch_loss=self.opt(data_batch,labels_batch,p)
+                if self.stop_flag.value==True:
+                    return
                 if self.priority_flag==True:
                     opt_counter=np.frombuffer(self.opt_counter.get_obj(),dtype='i')
                     opt_counter+=1
@@ -332,12 +338,12 @@ class kernel:
         except Exception as e:
             raise e
         try:
-            acc=self.nn.accuracy(output,labels)
-        except Exception as e:
             if hasattr(self.nn,'accuracy'):
-                raise e
+                acc=self.nn.accuracy(output,labels)
             else:
                 acc=None
+        except Exception as e:
+            raise e
         return loss,acc
     
     
