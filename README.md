@@ -270,8 +270,10 @@ kernel.visualize_reward()
 
 ![3](https://github.com/NoteDancing/Note-documentation/blob/main/picture/Pool%20Net.png)
 
-**Pool net use multiprocessing or multithreading parallel and random add episode in pool,which would make data being uncorrelated in pool,
+**Pool net use multiprocessing parallel and random add episode in pool,which would make data being uncorrelated in pool,
 then pools would be used parallel training agent.**
+
+### Tensorflow platform:
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
@@ -311,6 +313,29 @@ pool_lock=[Lock(),Lock(),Lock(),Lock(),Lock()] #create a list of locks for each 
 lock=[Lock(),Lock(),Lock()]  #create a list of locks for synchronization
 for p in range(5):           #loop over the processes
     Process(target=kernel.train,args=(p,100,lock,pool_lock)).start() #start each process with the train function and pass the process id, the number of episodes, the locks and the pool locks as arguments
+```
+
+### Pytorch platform:
+
+**You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
+
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/pytorch/process/DQN.py
+
+**example:**
+```python
+import Note.RL.kernel_pytorch as k   #import kernel module
+import DQN as d              #import deep Q-network module
+from multiprocessing import Process,Lock,Manager #import multiprocessing tools
+dqn=d.DQN(4,128,2)           #create neural network object with 4 inputs, 128 hidden units and 2 outputs
+kernel=k.kernel(dqn,5)       #create kernel object with the network and 5 processes to train
+manager=Manager()            #create manager object to share data among processes
+kernel.init(manager)         #initialize shared data with the manager
+kernel.action_count=2        #set the number of actions to 2
+kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10) #set up the hyperparameters for training
+pool_lock=[Lock(),Lock(),Lock(),Lock(),Lock()] #create a list of locks for each process's replay pool
+lock=[Lock(),Lock()]         #create two locks for synchronization
+for p in range(5):           #loop over the processes
+    Process(target=kernel.train,args=(p,100,lock,pool_lock)).start()
 ```
 
 
