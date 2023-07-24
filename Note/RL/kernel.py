@@ -257,13 +257,15 @@ class kernel:
         if self.PO==1:
             if self.priority_flag==True and self.priority_p.value!=-1:
                 while True:
+                    if self.stop_flag.value==True:
+                        return None,None
                     if p==self.priority_p.value:
                         break
                     else:
                         continue
             lock[0].acquire()
             if self.stop_func_(lock[0]):
-                return 0
+                return None,None
             if hasattr(self.nn,'gradient'):
                 gradient=self.nn.gradient(tape,loss)
             else:
@@ -292,7 +294,7 @@ class kernel:
         elif self.PO==2:
             g_lock.acquire()
             if self.stop_func_(g_lock):
-                return 0
+                return None,None
             if hasattr(self.nn,'gradient'):
                 gradient=self.nn.gradient(tape,loss)
             else:
@@ -304,13 +306,15 @@ class kernel:
             g_lock.release()
             if self.priority_flag==True and self.priority_p.value!=-1:
                 while True:
+                    if self.stop_flag.value==True:
+                        return None,None
                     if p==self.priority_p.value:
                         break
                     else:
                         continue
             lock[0].acquire()
             if self.stop_func_(lock[0]):
-                return 0
+                return None,None
             try:
                 if hasattr(self.nn,'attenuate'):
                     try:
@@ -331,12 +335,14 @@ class kernel:
         elif self.PO==3:
             if self.priority_flag==True and self.priority_p.value!=-1:
                 while True:
+                    if self.stop_flag.value==True:
+                        return None,None
                     if p==self.priority_p.value:
                         break
                     else:
                         continue
             if self.stop_func_():
-                return 0
+                return None,None
             if hasattr(self.nn,'gradient'):
                 gradient=self.nn.gradient(tape,loss)
             else:
@@ -402,6 +408,8 @@ class kernel:
                 loss,param=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,p,lock,g_lock)
             else:
                 loss,param=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,p,lock)
+            if self.stop_flag.value==True:
+                return
             self.param[7]=param
             self.loss[p]+=loss
             if hasattr(self.nn,'bc'):
@@ -428,6 +436,8 @@ class kernel:
                 loss,param=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,p,lock,g_lock)
             else:
                 loss,param=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,p,lock)
+            if self.stop_flag.value==True:
+                return
             self.param[7]=param
             self.loss[p]+=loss
             if hasattr(self.nn,'bc'):
@@ -462,6 +472,8 @@ class kernel:
                     opt_counter.scatter_update(tf.IndexedSlices(0,p))
                     self.nn.opt_counter[0]=opt_counter
                 self._train(p,j,batches,length,lock,g_lock)
+                if self.stop_flag.value==True:
+                    return
                 if self.priority_flag==True:
                     opt_counter=np.frombuffer(self.opt_counter.get_obj(),dtype='i')
                     opt_counter+=1
@@ -509,6 +521,8 @@ class kernel:
         elif self.PO==3:
             lock[1].release()
         for k in range(episode_count):
+            if self.stop_flag.value==True:
+                break
             s=self.nn.env(p=p,initial=True)
             if type(self.nn.param[0])!=list:
                 s=np.array(s,self.nn.param[0].dtype.name)
@@ -521,6 +535,8 @@ class kernel:
                     s=next_s
                     if type(self.done_pool[p])==np.ndarray:
                         self.train_(p,lock,g_lock)
+                        if self.stop_flag.value==True:
+                            break
                     if done:
                         if self.PO==1 or self.PO==2:
                             lock[1].acquire()
@@ -536,6 +552,8 @@ class kernel:
                     s=next_s
                     if type(self.done_pool[p])==np.ndarray:
                         self.train_(p,lock,g_lock)
+                        if self.stop_flag.value==True:
+                            break
                     if done:
                         if self.PO==1 or self.PO==2:
                             lock[1].acquire()
