@@ -277,7 +277,7 @@ then pools would be used parallel training agent.**
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/tensorflow/pool%20net/DQN.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/tensorflow/pool%20network/DQN.py
 
 **example:**
 ```python
@@ -319,7 +319,7 @@ for p in range(5):           #loop over the processes
 
 **You can download neural network example in this link,and then you can import neural network and train with kernel,link and example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/pytorch/process/DQN.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/pytorch/pool%20network/DQN.py
 
 **example:**
 ```python
