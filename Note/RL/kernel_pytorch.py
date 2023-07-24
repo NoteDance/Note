@@ -1,5 +1,6 @@
 import torch
 from multiprocessing import Value,Array
+from Note.nn.process.assign_device_pytorch import assign_device
 import numpy as np
 import matplotlib.pyplot as plt
 import statistics
@@ -8,11 +9,12 @@ import os
 
 
 class kernel:
-    def __init__(self,nn=None,process=None):
+    def __init__(self,nn=None,process=None,device='GPU'):
         self.nn=nn
         if process!=None:
             self.reward=np.zeros(process,dtype=np.float32)
             self.sc=np.zeros(process,dtype=np.int32)
+        self.device=device
         self.state_pool={}
         self.action_pool={}
         self.next_state_pool={}
@@ -117,9 +119,9 @@ class kernel:
         return
     
     
-    def epsilon_greedy_policy(self,s,epsilon):
+    def epsilon_greedy_policy(self,s,epsilon,p):
         action_prob=self.action_one*epsilon/len(self.action_one)
-        s=torch.tensor(s,dtype=torch.float).to(self.nn.device)
+        s=torch.tensor(s,dtype=torch.float).to(assign_device(p,self.device))
         best_a=self.nn.nn(s).argmax()
         action_prob[best_a.numpy()]+=1-epsilon 
         return action_prob
@@ -192,15 +194,16 @@ class kernel:
     def env(self,s,epsilon,p,lock,pool_lock):
         if hasattr(self.nn,'nn'):
             s=np.expand_dims(s,axis=0)
-            action_prob=self.epsilon_greedy_policy(s,epsilon)
+            action_prob=self.epsilon_greedy_policy(s,epsilon,p)
             a=np.random.choice(self.action_count,p=action_prob)
         else:
             if hasattr(self.nn,'action'):
                 s=np.expand_dims(s,axis=0)
+                s=torch.tensor(s,dtype=torch.float).to(assign_device(p,self.device))
                 a=self.nn.action(s).numpy()
             else:
                 s=np.expand_dims(s,axis=0)
-                s=torch.tensor(s,dtype=torch.float).to(self.nn.device)
+                s=torch.tensor(s,dtype=torch.float).to(assign_device(p,self.device))
                 a=(self.nn.actor(s)+self.nn.noise()).numpy()
         next_s,r,done=self.nn.env(a,p)
         index=self.get_index(p,lock)
@@ -221,13 +224,7 @@ class kernel:
     
     
     def opt(self,state_batch,action_batch,next_state_batch,reward_batch,done_batch,p):
-        try:
-            try:
-                loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
-            except Exception:
-                loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch,p)
-        except Exception as e:
-            raise e
+        loss=self.nn.loss(state_batch,action_batch,next_state_batch,reward_batch,done_batch,p)
         if self.priority_flag==True and self.priority_p.value!=-1:
             while True:
                 if self.stop_flag.value==True:
