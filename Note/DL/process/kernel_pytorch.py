@@ -148,7 +148,7 @@ class kernel:
             raise e
         if self.priority_flag==True and self.priority_p.value!=-1:
             while True:
-                if self.stop_func_():
+                if self.stop_flag.value==True:
                     return None,None
                 if p==self.priority_p.value:
                     break
