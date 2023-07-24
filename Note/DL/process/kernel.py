@@ -203,7 +203,7 @@ class kernel:
         if self.PO==1:
             if self.priority_flag==True and self.priority_p.value!=-1:
                 while True:
-                    if self.stop_func_():
+                    if self.stop_flag.value==True:
                         return None,None,None
                     if p==self.priority_p.value:
                         break
@@ -249,7 +249,7 @@ class kernel:
             g_lock.release()
             if self.priority_flag==True and self.priority_p.value!=-1:
                 while True:
-                    if self.stop_func_():
+                    if self.stop_flag.value==True:
                         return None,None,None
                     if p==self.priority_p.value:
                         break
@@ -271,7 +271,7 @@ class kernel:
         elif self.PO==3:
             if self.priority_flag==True and self.priority_p.value!=-1:
                 while True:
-                    if self.stop_func_():
+                    if self.stop_flag.value==True:
                         return None,None,None
                     if p==self.priority_p.value:
                         break
