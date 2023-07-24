@@ -89,6 +89,7 @@ class kernel:
         self.save_flag=Value('b',self.save_flag)
         self.file_list=manager.list([])
         self.param=manager.dict()
+        self.param[7]=self.nn.param
         return
     
     
