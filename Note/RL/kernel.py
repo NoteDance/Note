@@ -541,10 +541,14 @@ class kernel:
                     if done:
                         if self.PO==1 or self.PO==2:
                             lock[1].acquire()
+                        elif len(lock)==4:
+                            lock[3].acquire()
                         self.total_episode.value+=1
                         self.loss_list.append(self.loss[p])
                         if self.PO==1 or self.PO==2:
                             lock[1].release()
+                        elif len(lock)==4:
+                            lock[3].release()
                         break
             else:
                 for l in range(self.episode_step):
@@ -558,28 +562,36 @@ class kernel:
                     if done:
                         if self.PO==1 or self.PO==2:
                             lock[1].acquire()
+                        elif len(lock)==4:
+                            lock[3].acquire()
                         self.total_episode.value+=1
                         self.loss_list.append(self.loss[p])
                         if self.PO==1 or self.PO==2:
                             lock[1].release()
+                        elif len(lock)==4:
+                            lock[3].release()
                         break
                     if l==self.episode_step-1:
                         if self.PO==1 or self.PO==2:
                             lock[1].acquire()
+                        elif len(lock)==4:
+                            lock[3].acquire()
                         self.total_episode.value+=1
                         self.loss_list.append(self.loss[p])
                         if self.PO==1 or self.PO==2:
                             lock[1].release()
+                        elif len(lock)==4:
+                            lock[3].release()
             if self.PO==1 or self.PO==2:
                 lock[1].acquire()
-            elif len(lock)==3:
+            elif len(lock)==3 or len(lock)==4:
                 lock[2].acquire()
             self.save_()
             self.reward_list.append(self.reward[p])
             self.reward[p]=0
             if self.PO==1 or self.PO==2:
                 lock[1].release()
-            elif len(lock)==3:
+            elif len(lock)==3 or len(lock)==4:
                 lock[2].release()
         self.running_flag[p+1]=0
         if p not in self.finish_list:
