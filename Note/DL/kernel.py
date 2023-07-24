@@ -156,16 +156,15 @@ class kernel:
     @function(jit_compile=True)
     def tf_opt(self,data,labels):
         try:
-            try:
+            if hasattr(self.nn,'GradientTape'):
+                tape,output,loss=self.nn.GradientTape(data,labels)
+            else:
                 with self.platform.GradientTape(persistent=True) as tape:
                     try:
                         output=self.nn.fp(data)
                         loss=self.nn.loss(output,labels)
                     except Exception:
                         output,loss=self.nn.fp(data,labels)
-            except Exception:
-                if hasattr(self.nn,'GradientTape'):
-                    tape,output,loss=self.nn.GradientTape(data,labels)
         except Exception as e:
             raise e
         if hasattr(self.nn,'gradient'):
@@ -471,12 +470,12 @@ class kernel:
         except Exception as e:
             raise e
         try:
-            acc=self.nn.accuracy(output,labels)
-        except Exception as e:
             if hasattr(self.nn,'accuracy'):
-                raise e
+                acc=self.nn.accuracy(output,labels)
             else:
                 acc=None
+        except Exception as e:
+            raise e
         return loss,acc
     
     
@@ -490,12 +489,12 @@ class kernel:
         except Exception as e:
             raise e
         try:
-            acc=self.nn.accuracy(output,labels)
-        except Exception as e:
             if hasattr(self.nn,'accuracy'):
-                raise e
+                acc=self.nn.accuracy(output,labels)
             else:
                 acc=None
+        except Exception as e:
+            raise e
         return loss,acc
     
     
@@ -518,11 +517,10 @@ class kernel:
             try:
                 if hasattr(self.nn,'accuracy'):
                     test_loss,test_acc=parallel_test_.loss_acc()
-            except Exception as e:
-                if hasattr(self.nn,'accuracy'):
-                    raise e
                 else:
                     test_loss=parallel_test_.loss_acc()
+            except Exception as e:
+                raise e
         elif batch!=None:
             total_loss=0
             total_acc=0
