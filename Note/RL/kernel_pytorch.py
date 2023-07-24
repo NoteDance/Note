@@ -199,8 +199,7 @@ class kernel:
         else:
             if hasattr(self.nn,'action'):
                 s=np.expand_dims(s,axis=0)
-                s=torch.tensor(s,dtype=torch.float).to(assign_device(p,self.device))
-                a=self.nn.action(s).numpy()
+                a=self.nn.action(s,p).numpy()
             else:
                 s=np.expand_dims(s,axis=0)
                 s=torch.tensor(s,dtype=torch.float).to(assign_device(p,self.device))
