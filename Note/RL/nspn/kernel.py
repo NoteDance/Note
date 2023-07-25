@@ -633,7 +633,7 @@ class kernel:
                 if self.trial_count!=None:
                     if len(self.reward_list)==self.trial_count:
                         avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
-                        if avg_reward>=self.criterion:
+                        if self.criterion!=None and avg_reward>=self.criterion:
                             t2=time.time()
                             self.total_time+=(t2-t1)
                             time_=self.total_time-int(self.total_time)
