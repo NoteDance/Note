@@ -226,9 +226,9 @@ class kernel:
                 gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
             try:
                 try:
-                    param=self.nn.opt(gradient)
-                except Exception:
                     param=self.nn.opt(gradient,p)
+                except Exception:
+                    param=self.nn.opt(gradient)
             except Exception as e:
                 raise e
             lock[0].release()
@@ -262,9 +262,9 @@ class kernel:
                 gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
             try:
                 try:
-                    param=self.nn.opt(gradient)
-                except Exception:
                     param=self.nn.opt(gradient,p)
+                except Exception:
+                    param=self.nn.opt(gradient)
             except Exception as e:
                 raise e
             lock[0].release()
@@ -293,9 +293,9 @@ class kernel:
                 gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
             try:
                 try:
-                    param=self.nn.opt(gradient)
-                except Exception:
                     param=self.nn.opt(gradient,p)
+                except Exception:
+                    param=self.nn.opt(gradient)
             except Exception as e:
                 raise e
         return output,loss,param
