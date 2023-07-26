@@ -513,14 +513,14 @@ class kernel:
         self.running_flag.append(1)
         self.process_counter.value+=1
         self.finish_list.append(None)
-        try:
-            epsilon=self.epsilon[p]
-        except Exception:
-            epsilon=None
         if self.PO==1 or self.PO==2:
             lock[1].release()
         elif self.PO==3:
             lock[1].release()
+        try:
+            epsilon=self.epsilon[p]
+        except Exception:
+            epsilon=None
         for k in range(episode_count):
             if self.stop_flag.value==True:
                 break
