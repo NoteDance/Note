@@ -272,7 +272,7 @@ class kernel:
         return
     
     
-    def train_(self,p,lock):
+    def train_(self,p):
         if len(self.done_pool[p])<self.batch:
             return
         else:
@@ -328,11 +328,11 @@ class kernel:
         self.running_flag.append(1)
         self.process_counter.value+=1
         self.finish_list.append(None)
+        lock[1].release()
         try:
             epsilon=self.epsilon[p]
         except Exception:
             epsilon=None
-        lock[1].release()
         for k in range(episode_count):
             s=self.nn.env(p=p,initial=True)
             s=np.array(s)
@@ -342,7 +342,7 @@ class kernel:
                     self.reward[p]+=r
                     s=next_s
                     if type(self.done_pool[p])==np.ndarray:
-                        self.train_(p,lock)
+                        self.train_(p)
                     if done:
                         if len(lock)==4:
                             lock[3].acquire()
@@ -357,7 +357,7 @@ class kernel:
                     self.reward[p]+=r
                     s=next_s
                     if type(self.done_pool[p])==np.ndarray:
-                        self.train_(p,lock)
+                        self.train_(p)
                     if done:
                         if len(lock)==4:
                             lock[3].acquire()
