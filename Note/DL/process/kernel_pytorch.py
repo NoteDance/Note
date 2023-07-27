@@ -19,36 +19,21 @@ class kernel:
         self.batches_t=None
         self.shuffle=False
         self.priority_flag=False
-        self.priority_p=0
         self.max_opt=None
         self.epoch=None
-        self.epoch_counter=0
         self.stop=False
-        self.stop_flag=False
-        self.save_flag=False
         self.save_epoch=None
         self.batch=None
-        self.epoch_=0
         self.end_loss=None
         self.end_acc=None
         self.end_test_loss=None
         self.end_test_acc=None
         self.acc_flag='%'
-        self.opt_counter=None
         self.p=None
         self.s=None
         self.saving_one=True
         self.filename='save.dat'
-        self.train_loss=0
-        self.train_acc=0
-        self.train_loss_list=[]
-        self.train_acc_list=[]
-        self.test_loss=0
-        self.test_acc=0
-        self.test_loss_list=[]
-        self.test_acc_list=[]
         self.test_flag=False
-        self.total_epoch=0
     
     
     def data(self,train_dataset=None,test_dataset=None):
@@ -69,23 +54,23 @@ class kernel:
                     
     
     def init(self,manager):
-        self.epoch_counter=Value('i',self.epoch_counter)
+        self.epoch_counter=Value('i',0)
         self.batch_counter=Array('i',self.batch_counter)
         self.total_loss=Array('f',self.total_loss)
-        self.total_epoch=Value('i',self.total_epoch)
-        self.train_loss=Value('f',self.train_loss)
-        self.train_loss_list=manager.list(self.train_loss_list)
-        self.priority_p=Value('i',self.priority_p)
+        self.total_epoch=Value('i',0)
+        self.train_loss=Value('f',0)
+        self.train_loss_list=manager.list([])
+        self.priority_p=Value('i',0)
         if self.test_flag==True:
-            self.test_loss=Value('f',self.test_loss)
-            self.test_loss_list=manager.list(self.test_loss_list)
+            self.test_loss=Value('f',0)
+            self.test_loss_list=manager.list([])
         if hasattr(self.nn,'accuracy'):
             self.total_acc=Array('f',self.total_acc)
-            self.train_acc=Value('f',self.train_acc)
-            self.train_acc_list=manager.list(self.train_acc_list)
+            self.train_acc=Value('f',0)
+            self.train_acc_list=manager.list([])
             if self.test_flag==True:
-                self.test_acc=Value('f',self.test_acc)
-                self.test_acc_list=manager.list(self.test_acc_list)
+                self.test_acc=Value('f',0)
+                self.test_acc_list=manager.list([])
         if self.priority_flag==True:
             self.opt_counter=Array('i',self.opt_counter)  
         try:
@@ -100,9 +85,9 @@ class kernel:
             self.nn.bc=manager.list([self.nn.bc])
         except Exception:
             self.bc_=manager.list()
-        self.epoch_=Value('i',self.epoch_)
-        self.stop_flag=Value('b',self.stop_flag)
-        self.save_flag=Value('b',self.save_flag)
+        self.epoch_=Value('i',0)
+        self.stop_flag=Value('b',False)
+        self.save_flag=Value('b',False)
         self.file_list=manager.list([])
         return
     
