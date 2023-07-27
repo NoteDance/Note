@@ -500,7 +500,6 @@ class kernel:
             filename=self.filename.replace(self.filename[self.filename.find('.'):],'-{0}.dat'.format(i))
             output_file=open(filename,'wb')
             self.file_list.append([filename])
-            self.file_list.append([filename])
             if len(self.file_list)>self.s:
                 os.remove(self.file_list[0][0])
                 del self.file_list[0]
