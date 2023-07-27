@@ -120,13 +120,12 @@ kernel.process=7                     #set the number of processes to train
 kernel.data_segment_flag=True        #set the flag to segment data for each process
 kernel.epoch=6                       #set the number of epochs to train
 kernel.batch=32                      #set the batch size
-kernel.PO=1                          #use PO1 algorithm for parallel optimization
+kernel.PO=3                          #use PO3 algorithm for parallel optimization
 kernel.data(x_train,y_train)         #input train data to the kernel
 manager=Manager()                    #create manager object to share data among processes
 kernel.init(manager)                 #initialize shared data with the manager
-lock=[Lock(),Lock()]                 #create two locks for synchronization
 for p in range(7):                   #loop over the processes
-	Process(target=kernel.train,args=(p,lock)).start() #start each process with the train function and pass the process id and locks as arguments
+	Process(target=kernel.train,args=(p,)).start() #start each process with the train function and pass the process id as argument
 kernel.update_nn_param()             #update the network parameters after training
 kernel.test(x_train,y_train,32)      #test the network performance on the train set with batch size 32
 ```
@@ -147,13 +146,12 @@ kernel.data_segment_flag=True        #set the flag to segment data for each proc
 kernel.epoch=6                       #set the number of epochs to train
 kernel.batch=32                      #set the batch size
 kernel.priority_flag=True            #set the flag to use priority scheduling for processes
-kernel.PO=1                          #use PO1 algorithm for parallel optimization
+kernel.PO=3                          #use PO3 algorithm for parallel optimization
 kernel.data(x_train,y_train)         #input train data to the kernel
 manager=Manager()                    #create manager object to share data among processes
 kernel.init(manager)                 #initialize shared data with the manager
-lock=[Lock(),Lock()]                 #create two locks for synchronization
 for p in range(7):                   #loop over the processes
-	Process(target=kernel.train,args=(p,lock)).start() #start each process with the train function and pass the process id and locks as arguments
+	Process(target=kernel.train,args=(p,)).start() #start each process with the train function and pass the process id and locks as arguments
 kernel.update_nn_param()             #update the network parameters after training
 kernel.test(x_train,y_train,32)      #test the network performance on the train set with batch size 32
 ```
@@ -290,9 +288,9 @@ manager=Manager()            #create manager object to share data among processe
 kernel.init(manager)         #initialize shared data with the manager
 kernel.action_count=2        #set the number of actions to 2
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10) #set up the hyperparameters for training
-kernel.PO=1                  #use PO1 algorithm for parallel optimization
+kernel.PO=3                  #use PO3 algorithm for parallel optimization
 pool_lock=[Lock(),Lock(),Lock(),Lock(),Lock()] #create a list of locks for each process's replay pool
-lock=[Lock(),Lock(),Lock()]  #create a list of locks for synchronization
+lock=[Lock(),Lock()]         #create two locks for synchronization
 for p in range(5):           #loop over the processes
     Process(target=kernel.train,args=(p,100,lock,pool_lock)).start() #start each process with the train function and pass the process id, the number of episodes, the locks and the pool locks as arguments
 ```
@@ -308,9 +306,9 @@ kernel.priority_flag=True    #set the flag to use priority scheduling for proces
 kernel.init(manager)         #initialize shared data with the manager
 kernel.action_count=2        #set the number of actions to 2
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10) #set up the hyperparameters for training
-kernel.PO=1                  #use PO1 algorithm for parallel optimization
+kernel.PO=3                  #use PO3 algorithm for parallel optimization
 pool_lock=[Lock(),Lock(),Lock(),Lock(),Lock()] #create a list of locks for each process's replay pool
-lock=[Lock(),Lock(),Lock()]  #create a list of locks for synchronization
+lock=[Lock(),Lock()]  	     #create two locks for synchronization
 for p in range(5):           #loop over the processes
     Process(target=kernel.train,args=(p,100,lock,pool_lock)).start() #start each process with the train function and pass the process id, the number of episodes, the locks and the pool locks as arguments
 ```
