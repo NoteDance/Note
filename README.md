@@ -96,7 +96,7 @@ kernel.train(64,5)                            #train the network with batch size
 
 **3. Perform forward propagation, gradient computation and optimization in parallel without locks. (PO3)**
 
-**Parallel optimization may cause unstable training(the estimate of the gradient is biased) but it can speed up training and make the loss function jump out of the local minimum. Note can speed up training by multiprocessing and has stop mechanism and gradient attenuation to resolve unstable training. Note uses multiprocessing to perform parallel forward propagation and optimization on neural networks. Note's multi-process kernel is not compatible with the neural network built by Keras. You can use the layer directory from Note and the low-level API from tensorflow to build neural networks.**
+**Parallel optimization may cause unstable training(the estimate of the gradient is biased) but it can speed up training and make the loss function jump out of the local minimum. Note can speed up training by multiprocessing and has stop mechanism and gradient attenuation to resolve unstable training. Note uses multiprocessing to perform parallel forward propagation and optimization on neural networks. Note's parallel kernel is not compatible with the neural network built by Keras. You can use the layer directory from Note and the low-level API from tensorflow to build neural networks.**
 
 ### Tensorflow platform:
 
