@@ -21,7 +21,7 @@ https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20doc
 
 **Neural network examples using Note's layer module:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/layer
 
-**Neural network examples for Note multi-process kernel:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/process
+**Neural network examples for Note parallel kernel:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/parallel
 
 ## RL: 
 https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/RL/neural%20network
@@ -35,7 +35,7 @@ If you accomplish your neural network,you can use kernel to train,examples are s
 
 **You can get neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/nn.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/non-parallel/nn.py
 
 ### Tensorflow platform:
 
@@ -102,7 +102,7 @@ kernel.train(64,5)                            #train the network with batch size
 
 **You can get neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/process/nn.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/parallel/nn.py
 
 **example:**
 ```python
@@ -162,13 +162,13 @@ kernel.test(x_train,y_train,32)      #test the network performance on the train 
 
 **Calculate the attenuation coefficient based on the optimization counter using the attenuation function.**
 
-**example:https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/process/nn_attenuate.py**
+**example:https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/parallel/nn_attenuate.py**
 
 ### Pytorch platform:
 
 **You can get neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/pytorch/process/nn.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/pytorch/parallel/nn.py
 
 **example:**
 ```python
@@ -204,7 +204,7 @@ for p in range(7):                   #loop over the processes
 
 **You can get neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/tensorflow/DQN.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/tensorflow/non-parallel/DQN.py
 
 ### Tensorflow platform:
 
@@ -226,7 +226,7 @@ kernel.visualize_reward()
 
 **You can get neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/tensorflow/DDPG.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/tensorflow/non-parallel/DDPG.py
 
 **example:**
 ```python
@@ -244,7 +244,7 @@ kernel.visualize_reward()
 
 **You can get neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/pytorch/DQN.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/pytorch/non-parallel/DQN.py
 
 ### Pytorch platform:
 
@@ -277,7 +277,7 @@ then pools would be used parallel training agent.**
 
 **You can get neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/tensorflow/pool%20network/DQN.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/tensorflow/parallel/DQN.py
 
 **example:**
 ```python
@@ -319,7 +319,7 @@ for p in range(5):           #loop over the processes
 
 **You can get neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/pytorch/pool%20network/DQN.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/pytorch/parallel/DQN.py
 
 **example:**
 ```python
