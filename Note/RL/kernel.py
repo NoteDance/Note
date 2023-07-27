@@ -15,45 +15,28 @@ class kernel:
         if process!=None:
             self.reward=np.zeros(process,dtype=np.float32)
             self.sc=np.zeros(process,dtype=np.int32)
-        self.state_pool={}
-        self.action_pool={}
-        self.next_state_pool={}
-        self.reward_pool={}
-        self.done_pool={}
         self.epsilon=None
         self.episode_step=None
         self.pool_size=None
         self.batch=None
-        self.episode_=0
         self.update_step=None
         self.trial_count=None
         self.process=process
-        self.process_counter=0
-        self.probability_list=[]
-        self.running_flag_list=[]
-        self.finish_list=[]
-        self.running_flag=[]
         self.PO=None
         self.priority_flag=False
-        self.priority_p=0
         self.max_opt=None
         self.stop=False
-        self.save_flag=False
-        self.stop_flag=False
         self.opt_counter=None
         self.s=None
         self.filename='save.dat'
-        self.reward_list=[]
-        self.loss_list=[]
-        self.total_episode=0
     
     
     def init(self,manager):
-        self.state_pool=manager.dict(self.state_pool)
-        self.action_pool=manager.dict(self.action_pool)
-        self.next_state_pool=manager.dict(self.next_state_pool)
-        self.reward_pool=manager.dict(self.reward_pool)
-        self.done_pool=manager.dict(self.done_pool)
+        self.state_pool=manager.dict({})
+        self.action_pool=manager.dict({})
+        self.next_state_pool=manager.dict({})
+        self.reward_pool=manager.dict({})
+        self.done_pool=manager.dict({})
         self.reward=Array('f',self.reward)
         if type(self.nn.param[0])!=list:
             self.loss=np.zeros(self.process,dtype=self.nn.param[0].dtype.name)
@@ -61,15 +44,15 @@ class kernel:
             self.loss=np.zeros(self.process,dtype=self.nn.param[0][0].dtype.name)
         self.loss=Array('f',self.loss)
         self.sc=Array('i',self.sc)
-        self.process_counter=Value('i',self.process_counter)
-        self.probability_list=manager.list(self.probability_list)
-        self.running_flag_list=manager.list(self.running_flag_list)
-        self.finish_list=manager.list(self.finish_list)
+        self.process_counter=Value('i',0)
+        self.probability_list=manager.list([])
+        self.running_flag_list=manager.list([])
+        self.finish_list=manager.list([])
         self.running_flag=manager.list([0])
-        self.reward_list=manager.list(self.reward_list)
-        self.loss_list=manager.list(self.loss_list)
-        self.total_episode=Value('i',self.total_episode)
-        self.priority_p=Value('i',self.priority_p)
+        self.reward_list=manager.list([])
+        self.loss_list=manager.list([])
+        self.total_episode=Value('i',0)
+        self.priority_p=Value('i',0)
         if self.priority_flag==True:
             self.opt_counter=Array('i',np.zeros(self.process,dtype=np.int32))
         try:
@@ -85,8 +68,8 @@ class kernel:
         except Exception:
             self.bc_=manager.list()
         self.episode_=Value('i',self.total_episode.value)
-        self.stop_flag=Value('b',self.stop_flag)
-        self.save_flag=Value('b',self.save_flag)
+        self.stop_flag=Value('b',False)
+        self.save_flag=Value('b',False)
         self.file_list=manager.list([])
         self.param=manager.dict()
         self.param[7]=self.nn.param
