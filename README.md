@@ -106,7 +106,7 @@ https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20doc
 
 **example:**
 ```python
-import Note.DL.process.kernel as k   #import kernel module
+import Note.DL.parallel.kernel as k   #import kernel module
 import tensorflow as tf              #import tensorflow library
 import nn as n                       #import neural network module
 from multiprocessing import Process,Lock,Manager #import multiprocessing tools
@@ -132,7 +132,7 @@ kernel.test(x_train,y_train,32)      #test the network performance on the train 
 ```
 **example(process priority):**
 ```python
-import Note.DL.process.kernel as k   #import kernel module
+import Note.DL.parallel.kernel as k   #import kernel module
 import tensorflow as tf              #import tensorflow library
 import nn as n                       #import neural network module
 from multiprocessing import Process,Lock,Manager #import multiprocessing tools
@@ -172,7 +172,7 @@ https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20doc
 
 **example:**
 ```python
-import Note.DL.process.kernel_pytorch as k   #import kernel module
+import Note.DL.parallel.kernel_pytorch as k   #import kernel module
 from torchvision import datasets
 from torchvision.transforms import ToTensor
 import nn as n                       #import neural network module
@@ -281,7 +281,7 @@ https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20doc
 
 **example:**
 ```python
-import Note.RL.kernel as k   #import kernel module
+import Note.RL.parallel.kernel as k   #import kernel module
 import DQN as d              #import deep Q-network module
 from multiprocessing import Process,Lock,Manager #import multiprocessing tools
 dqn=d.DQN(4,128,2)           #create neural network object with 4 inputs, 128 hidden units and 2 outputs
@@ -298,7 +298,7 @@ for p in range(5):           #loop over the processes
 ```
 **example(process priority):**
 ```python
-import Note.RL.kernel as k   #import kernel module
+import Note.RL.parallel.kernel as k   #import kernel module
 import DQN as d              #import deep Q-network module
 from multiprocessing import Process,Lock,Manager #import multiprocessing tools
 dqn=d.DQN(4,128,2)           #create neural network object with 4 inputs, 128 hidden units and 2 outputs
@@ -323,7 +323,7 @@ https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20doc
 
 **example:**
 ```python
-import Note.RL.kernel_pytorch as k   #import kernel module
+import Note.RL.parallel.kernel_pytorch as k   #import kernel module
 import DQN as d              #import deep Q-network module
 from multiprocessing import Process,Lock,Manager #import multiprocessing tools
 dqn=d.DQN(4,128,2)           #create neural network object with 4 inputs, 128 hidden units and 2 outputs
