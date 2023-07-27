@@ -19,7 +19,6 @@ class kernel:
         self.episode_step=None
         self.pool_size=None
         self.batch=None
-        self.episode_=0
         self.update_step=None
         self.trial_count=None
         self.process=process
