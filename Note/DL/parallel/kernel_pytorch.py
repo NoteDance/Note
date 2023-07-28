@@ -216,11 +216,11 @@ class kernel:
                         self.train_acc_list.append(train_acc)
                     if self.test_flag==True:
                         if hasattr(self.nn,'accuracy'):
-                            self.test_loss.value,self.test_acc.value=self.test(test_batch)
+                            self.test_loss.value,self.test_acc.value=self.test(self.test_dataset,test_batch)
                             self.test_loss_list.append(self.test_loss.value)
                             self.test_acc_list.append(self.test_acc.value)
                         else:
-                            self.test_loss.value=self.test(test_batch)
+                            self.test_loss.value=self.test(self.test_dataset,test_batch)
                             self.test_loss_list.append(self.test_loss.value)
                     self.save_()
                     self.epoch_counter.value+=1
@@ -331,11 +331,11 @@ class kernel:
         return loss,acc
     
     
-    def test(self,batch=None):
+    def test(self,test_dataset,batch):
         total_loss=0
         total_acc=0
         batches=0
-        test_loader=torch.utils.data.DataLoader(self.test_dataset,batch_size=self.batch)
+        test_loader=torch.utils.data.DataLoader(test_dataset,batch_size=batch)
         for data_batch,labels_batch in test_loader:
             batches+=1
             batch_loss,batch_acc=self.test_(data_batch,labels_batch)
