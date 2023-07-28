@@ -208,7 +208,7 @@ https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20doc
 
 **example:**
 ```python
-import Note.RL.nspn.kernel as k   #import kernel module
+import Note.RL.kernel as k   #import kernel module
 import tensorflow as tf           #import tensorflow library
 import DQN as d                   #import deep Q-network module
 dqn=d.DQN(4,128,2)                #create neural network object with 4 inputs, 128 hidden units and 2 outputs
@@ -228,7 +228,7 @@ https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20doc
 
 **example:**
 ```python
-import Note.RL.nspn.kernel as k   #import kernel module
+import Note.RL.kernel as k   #import kernel module
 import tensorflow as tf           #import tensorflow library
 import DDPG as d                  #import deep deterministic policy gradient module
 ddpg=d.DDPG(64,0.01,0.98,0.005,5e-4,5e-3) #create neural network object with 64 inputs, 0.01 learning rate, 0.98 discount factor, 0.005 noise scale, 5e-4 actor learning rate and 5e-3 critic learning rate
@@ -248,7 +248,7 @@ https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20doc
 
 **example:**
 ```python
-import Note.RL.nspn.kernel as k   #import kernel module
+import Note.RL.kernel as k   #import kernel module
 import torch                      #import torch library
 import DQN as d                   #import deep Q-network module
 dqn=d.DQN(4,128,2)                #create neural network object with 4 inputs, 128 hidden units and 2 outputs
