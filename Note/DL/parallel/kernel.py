@@ -34,7 +34,6 @@ class kernel:
         self.end_test_loss=None
         self.end_test_acc=None
         self.acc_flag='%'
-        self.p=None
         self.s=None
         self.saving_one=True
         self.filename='save.dat'
@@ -392,7 +391,7 @@ class kernel:
                         else:
                             self.test_loss.value=self.test(self.test_data,self.test_labels,test_batch)
                             self.test_loss_list.append(self.test_loss.value)
-                    self.print_save()
+                    self.save_()
                     self.epoch_counter.value+=1
                     if hasattr(self.nn,'ec'):
                         ec=self.nn.ec[0]
@@ -607,64 +606,28 @@ class kernel:
                 return True
     
     
-    def print_save(self):
-        if self.epoch!=None:
-            if self.p!=None:
-                p_=self.p-1
-                if self.epoch%10!=0:
-                    p=self.epoch-self.epoch%p_
-                    p=int(p/p_)
-                    if p==0:
-                        p=1
+    def save_(self):
+        if self.s!=None:
+            if self.s==1:
+                s_=1
+            else:
+                s_=self.s-1
+            if self.epoch%10!=0:
+                s=self.epoch-self.epoch%s_
+                s=int(s/s_)
+                if s==0:
+                    s=1
+            else:
+                s=self.epoch/(s_+1)
+                s=int(s)
+                if s==0:
+                    s=1
+            if self.epoch_.value%s==0:
+                if self.saving_one==True:
+                    self.save(self.total_epoch.value)
                 else:
-                    p=self.epoch/(p_+1)
-                    p=int(p)
-                    if p==0:
-                        p=1
-                if self.epoch_.value%p==0:
-                    if self.test_flag==False:
-                        if hasattr(self.nn,'accuracy'):
-                            print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch.value,self.train_loss.value))
-                            if self.acc_flag=='%':
-                                print('epoch:{0}   accuracy:{1:.1f}'.format(self.total_epoch.value,self.train_acc.value*100))
-                            else:
-                                print('epoch:{0}   accuracy:{1:.6f}'.format(self.total_epoch.value,self.train_acc.value))
-                            print()
-                        else:
-                            print('epoch:{0}   loss:{1:.6f}'.format(self.total_epoch.value,self.train_loss.value))
-                            print()
-                    else:
-                        if hasattr(self.nn,'accuracy'):
-                            print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch.value,self.train_loss.value,self.test_loss.value))
-                            if self.acc_flag=='%':
-                                print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(self.total_epoch.value,self.train_acc.value*100,self.test_acc.value*100))
-                            else:
-                                print('epoch:{0}   accuracy:{1:.1f},test accuracy:{2:.1f}'.format(self.total_epoch.value,self.train_acc.value,self.test_acc.value))
-                            print()
-                        else:
-                            print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(self.total_epoch,self.train_loss.value,self.test_loss.value))
-                            print()
-            if self.s!=None:
-                if self.s==1:
-                    s_=1
-                else:
-                    s_=self.s-1
-                if self.epoch%10!=0:
-                    s=self.epoch-self.epoch%s_
-                    s=int(s/s_)
-                    if s==0:
-                        s=1
-                else:
-                    s=self.epoch/(s_+1)
-                    s=int(s)
-                    if s==0:
-                        s=1
-                if self.epoch_.value%s==0:
-                    if self.saving_one==True:
-                        self.save(self.total_epoch.value)
-                    else:
-                        self.save(self.total_epoch.value,False)
-            self.epoch_.value+=1
+                    self.save(self.total_epoch.value,False)
+        self.epoch_.value+=1
         return
     
     
