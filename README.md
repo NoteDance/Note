@@ -116,15 +116,15 @@ x_train,x_test =x_train/255.0,x_test/255.0 #normalize data
 nn=n.nn()                            #create neural network object
 nn.build()                           #build the network structure
 kernel=k.kernel(nn)                  #create kernel object with the network
-kernel.process=7                     #set the number of processes to train
+kernel.process=3                     #set the number of processes to train
 kernel.data_segment_flag=True        #set the flag to segment data for each process
-kernel.epoch=6                       #set the number of epochs to train
+kernel.epoch=5                       #set the number of epochs to train
 kernel.batch=32                      #set the batch size
 kernel.PO=3                          #use PO3 algorithm for parallel optimization
 kernel.data(x_train,y_train)         #input train data to the kernel
 manager=Manager()                    #create manager object to share data among processes
 kernel.init(manager)                 #initialize shared data with the manager
-for p in range(7):                   #loop over the processes
+for p in range(3):                   #loop over the processes
 	Process(target=kernel.train,args=(p,)).start() #start each process with the train function and pass the process id as argument
 kernel.update_nn_param()             #update the network parameters after training
 kernel.test(x_train,y_train,32)      #test the network performance on the train set with batch size 32
@@ -141,16 +141,16 @@ x_train,x_test =x_train/255.0,x_test/255.0 #normalize data
 nn=n.nn()                            #create neural network object
 nn.build()                           #build the network structure
 kernel=k.kernel(nn)                  #create kernel object with the network
-kernel.process=7                     #set the number of processes to train
+kernel.process=3                     #set the number of processes to train
 kernel.data_segment_flag=True        #set the flag to segment data for each process
-kernel.epoch=6                       #set the number of epochs to train
+kernel.epoch=5                       #set the number of epochs to train
 kernel.batch=32                      #set the batch size
 kernel.priority_flag=True            #set the flag to use priority scheduling for processes
 kernel.PO=3                          #use PO3 algorithm for parallel optimization
 kernel.data(x_train,y_train)         #input train data to the kernel
 manager=Manager()                    #create manager object to share data among processes
 kernel.init(manager)                 #initialize shared data with the manager
-for p in range(7):                   #loop over the processes
+for p in range(3):                   #loop over the processes
 	Process(target=kernel.train,args=(p,)).start() #start each process with the train function and pass the process id and locks as arguments
 kernel.update_nn_param()             #update the network parameters after training
 kernel.test(x_train,y_train,32)      #test the network performance on the train set with batch size 32
@@ -176,16 +176,16 @@ x_train,x_test =x_train/255.0,x_test/255.0 #normalize data
 nn=n.nn()                            #create neural network object
 nn.build()                           #build the network structure
 kernel=k.kernel(nn)                  #create kernel object with the network
-kernel.process=7                     #set the number of processes to train
+kernel.process=3                     #set the number of processes to train
 kernel.data_segment_flag=True        #set the flag to segment data for each process
-kernel.epoch=6                       #set the number of epochs to train
+kernel.epoch=5                       #set the number of epochs to train
 kernel.batch=32                      #set the batch size
 kernel.priority_flag=True            #set the flag to use priority scheduling for processes
 kernel.PO=3                          #use PO3 algorithm for parallel optimization
 kernel.data(x_train,y_train)         #input train data to the kernel
 manager=Manager()                    #create manager object to share data among processes
 kernel.init(manager)                 #initialize shared data with the manager
-for p in range(7):                   #loop over the processes
+for p in range(3):                   #loop over the processes
 	Process(target=kernel.train,args=(p,)).start() #start each process with the train function and pass the process id and locks as arguments
 kernel.update_nn_param()             #update the network parameters after training
 kernel.test(x_train,y_train,32)      #test the network performance on the train set with batch size 32
@@ -212,13 +212,13 @@ training_data = datasets.FashionMNIST(
 )
 nn=n.neuralnetwork()                            #create neural network object
 kernel=k.kernel(nn)                  #create kernel object with the network
-kernel.process=7                     #set the number of processes to train
+kernel.process=3                     #set the number of processes to train
 kernel.epoch=5                       #set the number of epochs to train
 kernel.batch=64                      #set the batch size
 kernel.data(training_data)         #input train data to the kernel
 manager=Manager()                    #create manager object to share data among processes
 kernel.init(manager)                 #initialize shared data with the manager
-for p in range(7):                   #loop over the processes
+for p in range(3):                   #loop over the processes
     Process(target=kernel.train,args=(p,)).start()
 ```
 
