@@ -160,7 +160,34 @@ kernel.test(x_train,y_train,32)      #test the network performance on the train 
 
 **Calculate the attenuation coefficient based on the optimization counter using the attenuation function.**
 
-**example:https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/parallel/nn_attenuate.py**
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/parallel/nn_attenuate.py
+
+**example(gradient attenuation):**
+```python
+import Note.DL.parallel.kernel as k   #import kernel module
+import tensorflow as tf              #import tensorflow library
+import nn_attenuate as n                       #import neural network module
+from multiprocessing import Process,Lock,Manager #import multiprocessing tools
+mnist=tf.keras.datasets.mnist        #load mnist dataset
+(x_train,y_train),(x_test,y_test)=mnist.load_data() #split data into train and test sets
+x_train,x_test =x_train/255.0,x_test/255.0 #normalize data
+nn=n.nn()                            #create neural network object
+nn.build()                           #build the network structure
+kernel=k.kernel(nn)                  #create kernel object with the network
+kernel.process=7                     #set the number of processes to train
+kernel.data_segment_flag=True        #set the flag to segment data for each process
+kernel.epoch=6                       #set the number of epochs to train
+kernel.batch=32                      #set the batch size
+kernel.priority_flag=True            #set the flag to use priority scheduling for processes
+kernel.PO=3                          #use PO3 algorithm for parallel optimization
+kernel.data(x_train,y_train)         #input train data to the kernel
+manager=Manager()                    #create manager object to share data among processes
+kernel.init(manager)                 #initialize shared data with the manager
+for p in range(7):                   #loop over the processes
+	Process(target=kernel.train,args=(p,)).start() #start each process with the train function and pass the process id and locks as arguments
+kernel.update_nn_param()             #update the network parameters after training
+kernel.test(x_train,y_train,32)      #test the network performance on the train set with batch size 32
+```
 
 ### Pytorch platform:
 
