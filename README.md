@@ -160,6 +160,8 @@ kernel.test(x_train,y_train,32)      #test the network performance on the train 
 
 **Calculate the attenuation coefficient based on the optimization counter using the attenuation function.**
 
+**You can get neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
+
 https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/parallel/nn_attenuate.py
 
 **example(gradient attenuation):**
