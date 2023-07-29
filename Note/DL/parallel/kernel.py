@@ -530,8 +530,13 @@ class kernel:
             parallel_test_=parallel_test(self.nn,test_data,test_labels,self.process_t,batch,self.prefetch_batch_size_t,test_dataset)
             if type(self.test_data)!=list:
                 parallel_test_.segment_data()
+            processes=[]
             for p in range(self.process_t):
-            	Process(target=parallel_test_.test,args=(p,)).start()
+                process=Process(target=parallel_test_.test,args=(p,))
+                process.start()
+                processes.append(process)
+            for process in processes:
+                process.join()
             try:
                 if hasattr(self.nn,'accuracy'):
                     test_loss,test_acc=parallel_test_.loss_acc()
