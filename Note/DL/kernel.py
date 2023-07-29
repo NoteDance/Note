@@ -261,11 +261,11 @@ class kernel:
                 self.train_acc_list.append(train_acc)
             if self.test_flag==True:
                 if hasattr(self.nn,'accuracy'):
-                    self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch)
+                    self.test_loss,self.test_acc=self.test(self.test_data,self.test_labels,test_batch,self.test_dataset)
                     self.test_loss_list.append(self.test_loss)
                     self.test_acc_list.append(self.test_acc)
                 else:
-                    self.test_loss=self.test(self.test_data,self.test_labels,test_batch)
+                    self.test_loss=self.test(self.test_data,self.test_labels,test_batch,self.test_dataset)
                     self.test_loss_list.append(self.test_loss)
         else:
             output,train_loss=self.opt(self.train_data,self.train_labels)
@@ -498,7 +498,7 @@ class kernel:
         return loss,acc
     
     
-    def test(self,test_data=None,test_labels=None,batch=None):
+    def test(self,test_data=None,test_labels=None,batch=None,test_dataset=None):
         if test_data is not None and type(self.nn.param[0])!=list:
             test_data=test_data.astype(self.nn.param[0].dtype.name)
             test_labels=test_labels.astype(self.nn.param[0].dtype.name)
@@ -507,13 +507,18 @@ class kernel:
             test_labels=test_labels.astype(self.nn.param[0][0].dtype.name)
         if self.process_t!=None:
             if self.prefetch_batch_size_t==None:
-                parallel_test_=parallel_test(self.nn,self.test_data,self.test_labels,self.process_t,batch,test_dataset=self.test_dataset)
+                parallel_test_=parallel_test(self.nn,test_data,test_labels,self.process_t,batch,test_dataset=test_dataset)
             else:
-                parallel_test_=parallel_test(self.nn,self.test_data,self.test_labels,self.process_t,batch,self.prefetch_batch_size_t,self.test_dataset)
+                parallel_test_=parallel_test(self.nn,test_data,test_labels,self.process_t,batch,self.prefetch_batch_size_t,test_dataset)
             if type(self.test_data)!=list:
                 parallel_test_.segment_data()
+            processes=[]
             for p in range(self.process_t):
-            	Process(target=parallel_test_.test).start()
+                process=Process(target=parallel_test_.test,args=(p,))
+                process.start()
+                processes.append(process)
+            for process in processes:
+                process.join()
             try:
                 if hasattr(self.nn,'accuracy'):
                     test_loss,test_acc=parallel_test_.loss_acc()
