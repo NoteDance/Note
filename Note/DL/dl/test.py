@@ -222,6 +222,6 @@ class parallel_test:
         if shape%self.batch!=0:
             batches+=1
         if hasattr(self.nn,'accuracy'):
-            return np.mean(npc.as_array(self.loss.get_obj())/batches),np.mean(npc.as_array(self.acc.get_obj())/batches)
+            return np.sum(npc.as_array(self.loss.get_obj()))/batches,np.sum(npc.as_array(self.acc.get_obj()))/batches
         else:
-            return np.mean(npc.as_array(self.loss.get_obj())/batches)
+            return np.sum(npc.as_array(self.loss.get_obj()))/batches
