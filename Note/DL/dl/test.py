@@ -194,12 +194,12 @@ class parallel_test:
     
     
     def test(self,p):
-        if self.test_dataset is not None and type(self.test_dataset)==list:
-            test_ds=self.test_dataset[p]
-        elif self.test_dataset is not None:
-            test_ds=self.test_dataset
-        else:
+        if self.test_dataset is None:
             test_ds=tf.data.Dataset.from_tensor_slices((self.test_data[p],self.test_labels[p])).batch(self.batch).prefetch(self.prefetch_batch_size)
+        elif self.test_dataset is not None and type(self.test_dataset)==list:
+            test_ds=self.test_dataset[p]
+        else:
+            test_ds=self.test_dataset
         for data_batch,labels_batch in test_ds:
             try:
                 batch_loss,batch_acc=self.test_(data_batch,labels_batch,p)
@@ -214,10 +214,12 @@ class parallel_test:
     
     
     def loss_acc(self):
-        if type(self.test_data)==list:
-            shape=len(self.test_data[0])*self.batch
+        if self.test_dataset is None:
+            shape=len(self.test_data[0])*self.process
+        elif self.test_dataset is not None and type(self.test_dataset)==list:
+            shape=len(self.test_dataset[0])*len(self.test_dataset)
         else:
-            shape=len(self.test_data[0])
+            shape=len(self.test_dataset)*self.process
         batches=int((shape-shape%self.batch)/self.batch)
         if shape%self.batch!=0:
             batches+=1
