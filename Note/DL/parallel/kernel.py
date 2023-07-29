@@ -368,12 +368,12 @@ class kernel:
                 self.batch_counter[p]+=1
                 if self.PO==1 or self.PO==2:
                     lock[1].acquire()
-                elif lock!=None:
-                    lock.acquire()
                 batches=np.sum(self.batch_counter)
                 if batches>=self.batches:
                     batch_counter=np.frombuffer(self.batch_counter.get_obj(),dtype='i')
                     batch_counter*=0
+                    if lock!=None and type(lock)!=list:
+                        lock.acquire()
                     loss=np.sum(self.total_loss)/batches
                     if hasattr(self.nn,'accuracy'):
                         train_acc=np.sum(self.total_acc)/batches
@@ -383,6 +383,8 @@ class kernel:
                     if hasattr(self.nn,'accuracy'):
                         self.train_acc.value=train_acc
                         self.train_acc_list.append(train_acc)
+                    if lock!=None and type(lock)!=list:
+                        lock.release()
                     if self.test_flag==True:
                         if hasattr(self.nn,'accuracy'):
                             self.test_loss.value,self.test_acc.value=self.test(self.test_data,self.test_labels,test_batch)
@@ -404,8 +406,6 @@ class kernel:
                         total_acc*=0
                 if self.PO==1 or self.PO==2:
                     lock[1].release()
-                elif lock!=None:
-                    lock.release()
                 if self.epoch_counter.value>=self.epoch:
                     self.param[7]=param
                     return
