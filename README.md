@@ -102,13 +102,13 @@ kernel.train(64,5)                            #train the network with batch size
 
 **You can get neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
 
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/parallel/nn_acc.py
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/parallel/nn.py
 
 **example:**
 ```python
 import Note.DL.parallel.kernel as k   #import kernel module
 import tensorflow as tf              #import tensorflow library
-import nn_acc as n                       #import neural network module
+import nn as n                       #import neural network module
 from multiprocessing import Process,Lock,Manager #import multiprocessing tools
 mnist=tf.keras.datasets.mnist        #load mnist dataset
 (x_train,y_train),(x_test,y_test)=mnist.load_data() #split data into train and test sets
@@ -133,7 +133,7 @@ kernel.test(x_train,y_train,32)      #test the network performance on the train 
 ```python
 import Note.DL.parallel.kernel as k   #import kernel module
 import tensorflow as tf              #import tensorflow library
-import nn_acc as n                       #import neural network module
+import nn as n                       #import neural network module
 from multiprocessing import Process,Lock,Manager #import multiprocessing tools
 mnist=tf.keras.datasets.mnist        #load mnist dataset
 (x_train,y_train),(x_test,y_test)=mnist.load_data() #split data into train and test sets
