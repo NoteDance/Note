@@ -199,12 +199,12 @@ class kernel:
                 else:
                     self.total_loss[p]+=batch_loss
                 self.batch_counter[p]+=1
-                if lock is not None:
-                    lock.acquire()
                 batches=np.sum(self.batch_counter)
                 if batches>=len(train_loader):
                     batch_counter=np.frombuffer(self.batch_counter.get_obj(),dtype='i')
                     batch_counter*=0
+                    if lock is not None:
+                        lock.acquire()
                     loss=np.sum(self.total_loss)/batches
                     if hasattr(self.nn,'accuracy'):
                         train_acc=np.sum(self.total_acc)/batches
@@ -214,6 +214,8 @@ class kernel:
                     if hasattr(self.nn,'accuracy'):
                         self.train_acc.value=train_acc
                         self.train_acc_list.append(train_acc)
+                    if lock is not None:
+                        lock.release()
                     if self.test_flag==True:
                         if hasattr(self.nn,'accuracy'):
                             self.test_loss.value,self.test_acc.value=self.test(self.test_dataset,test_batch)
@@ -233,8 +235,6 @@ class kernel:
                     if hasattr(self.nn,'accuracy'):
                         total_acc=np.frombuffer(self.total_acc.get_obj(),dtype='f')
                         total_acc*=0
-                if lock is not None:
-                    lock.release()
                 if self.epoch_counter.value>=self.epoch:
                     return
     
