@@ -508,7 +508,7 @@ class kernel:
         while True:
             if self.stop_flag.value==True:
                 break
-            if self.episode_counter.value>=self.episode:
+            if self.episode!=None and self.episode_counter.value>=self.episode:
                 break
             s=self.nn.env(p=p,initial=True)
             if type(self.nn.param[0])!=list:
@@ -517,6 +517,8 @@ class kernel:
                 s=np.array(s,self.nn.param[0][0].dtype.name)
             if self.episode_step==None:
                 while True:
+                    if self.episode!=None and self.episode_counter.value>=self.episode:
+                        break
                     next_s,r,done,index=self.env(s,epsilon,p,lock,pool_lock)
                     self.reward[p]+=r
                     s=next_s
@@ -539,7 +541,7 @@ class kernel:
                         break
             else:
                 for l in range(self.episode_step):
-                    if self.episode_counter.value>=self.episode:
+                    if self.episode!=None and self.episode_counter.value>=self.episode:
                         break
                     next_s,r,done,index=self.env(s,epsilon,p,lock,pool_lock)
                     self.reward[p]+=r
