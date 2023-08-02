@@ -1,6 +1,6 @@
 import torch
 from multiprocessing import Value,Array
-from Note.nn.process.assign_device_pytorch import assign_device
+from Note.nn.parallel.assign_device_pytorch import assign_device
 import numpy as np
 import matplotlib.pyplot as plt
 import statistics
