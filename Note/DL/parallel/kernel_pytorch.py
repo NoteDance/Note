@@ -235,7 +235,7 @@ class kernel:
                     if hasattr(self.nn,'accuracy'):
                         total_acc=np.frombuffer(self.total_acc.get_obj(),dtype='f')
                         total_acc*=0
-                if self.epoch_counter.value>=self.epoch:
+                if self.epoch!=None and self.epoch_counter.value>=self.epoch:
                     return
     
     
