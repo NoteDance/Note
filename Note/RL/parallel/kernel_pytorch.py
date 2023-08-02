@@ -18,6 +18,7 @@ class kernel:
         self.epsilon=None
         self.episode_step=None
         self.pool_size=None
+        self.episode=None
         self.batch=None
         self.update_step=None
         self.trial_count=None
@@ -46,6 +47,7 @@ class kernel:
         self.running_flag=manager.list([0])
         self.reward_list=manager.list([])
         self.loss_list=manager.list([])
+        self.episode_counter=Value('i',0)
         self.total_episode=Value('i',0)
         self.priority_p=Value('i',0)
         if self.priority_flag==True:
@@ -300,7 +302,7 @@ class kernel:
         return
     
     
-    def train(self,p,episode_count,lock,pool_lock):
+    def train(self,p,lock,pool_lock):
         lock[1].acquire()
         self.state_pool[p]=None
         self.action_pool[p]=None
@@ -315,17 +317,22 @@ class kernel:
             epsilon=self.epsilon[p]
         except Exception:
             epsilon=None
-        for k in range(episode_count):
+        while True:
+            if self.episode_counter.value>=self.episode:
+                break
             s=self.nn.env(p=p,initial=True)
             s=np.array(s)
             if self.episode_step==None:
                 while True:
+                    if self.episode_counter.value>=self.episode:
+                        break
                     next_s,r,done,index=self.env(s,epsilon,p,lock,pool_lock)
                     self.reward[p]+=r
                     s=next_s
                     if type(self.done_pool[p])==np.ndarray:
                         self.train_(p)
                     if done:
+                        self.episode_counter.value+=1
                         if len(lock)==4:
                             lock[3].acquire()
                         self.total_episode.value+=1
@@ -335,12 +342,15 @@ class kernel:
                         break
             else:
                 for l in range(self.episode_step):
+                    if self.episode_counter.value>=self.episode:
+                        break
                     next_s,r,done,index=self.env(s,epsilon,p,lock,pool_lock)
                     self.reward[p]+=r
                     s=next_s
                     if type(self.done_pool[p])==np.ndarray:
                         self.train_(p)
                     if done:
+                        self.episode_counter.value+=1
                         if len(lock)==4:
                             lock[3].acquire()
                         self.total_episode.value+=1
@@ -349,6 +359,7 @@ class kernel:
                             lock[3].release()
                         break
                     if l==self.episode_step-1:
+                        self.episode_counter.value+=1
                         if len(lock)==4:
                             lock[3].acquire()
                         self.total_episode.value+=1
