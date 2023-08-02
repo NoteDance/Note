@@ -18,6 +18,7 @@ class kernel:
         self.epsilon=None
         self.episode_step=None
         self.pool_size=None
+        self.episode=None
         self.batch=None
         self.update_step=None
         self.trial_count=None
