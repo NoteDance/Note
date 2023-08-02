@@ -318,6 +318,8 @@ class kernel:
         except Exception:
             epsilon=None
         while True:
+            if self.stop_flag.value==True:
+                break
             if self.episode_counter.value>=self.episode:
                 break
             s=self.nn.env(p=p,initial=True)
@@ -331,6 +333,8 @@ class kernel:
                     s=next_s
                     if type(self.done_pool[p])==np.ndarray:
                         self.train_(p)
+                        if self.stop_flag.value==True:
+                            break
                     if done:
                         self.episode_counter.value+=1
                         if len(lock)==4:
@@ -349,6 +353,8 @@ class kernel:
                     s=next_s
                     if type(self.done_pool[p])==np.ndarray:
                         self.train_(p)
+                        if self.stop_flag.value==True:
+                            break
                     if done:
                         self.episode_counter.value+=1
                         if len(lock)==4:
