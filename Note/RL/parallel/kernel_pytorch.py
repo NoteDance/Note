@@ -86,6 +86,7 @@ class kernel:
     def set_up(self,epsilon=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None):
         if epsilon!=None:
             self.epsilon=np.ones(self.process)*epsilon
+            self.action_vec()
         if episode_step!=None:
             self.episode_step=episode_step
         if pool_size!=None:
@@ -98,8 +99,6 @@ class kernel:
             self.trial_count=trial_count
         if criterion!=None:
             self.criterion=criterion
-        if epsilon!=None:
-            self.action_vec()
         return
     
     
