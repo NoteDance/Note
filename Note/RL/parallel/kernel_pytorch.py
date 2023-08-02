@@ -336,9 +336,9 @@ class kernel:
                         if self.stop_flag.value==True:
                             break
                     if done:
-                        self.episode_counter.value+=1
                         if len(lock)==4:
                             lock[3].acquire()
+                        self.episode_counter.value+=1
                         self.total_episode.value+=1
                         self.loss_list.append(self.loss[p])
                         if len(lock)==4:
@@ -356,18 +356,18 @@ class kernel:
                         if self.stop_flag.value==True:
                             break
                     if done:
-                        self.episode_counter.value+=1
                         if len(lock)==4:
                             lock[3].acquire()
+                        self.episode_counter.value+=1
                         self.total_episode.value+=1
                         self.loss_list.append(self.loss[p])
                         if len(lock)==4:
                             lock[3].release()
                         break
                     if l==self.episode_step-1:
-                        self.episode_counter.value+=1
                         if len(lock)==4:
                             lock[3].acquire()
+                        self.episode_counter.value+=1
                         self.total_episode.value+=1
                         self.loss_list.append(self.loss[p])
                         if len(lock)==4:
