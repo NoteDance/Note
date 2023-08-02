@@ -406,7 +406,7 @@ class kernel:
                         total_acc*=0
                 if self.PO==1 or self.PO==2:
                     lock[1].release()
-                if self.epoch_counter.value>=self.epoch:
+                if self.epoch!=None and self.epoch_counter.value>=self.epoch:
                     self.param[7]=param
                     return
     
