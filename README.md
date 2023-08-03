@@ -12,8 +12,6 @@ To use Note, you need to download it from https://github.com/NoteDancing/Note an
 # Create neural network:
 You need to create your neural network according to some rules, otherwise you may get exceptions when you train with kernel.You can refer to the neural network examples in the documentation to create your neural network. You can write your neural network class as a python module and import it, or you can write a neural network class directly in the python interpreter. When you import your neural network or you write a neural network class, you can pass the neural network object to the kernel and use the kernel to train the neural network.
 
-neural network example:
-
 You can first refer to the simple neural network examples nn.py, nn_acc.py, nn_device.py in the documentation.
 
 ## DL: 
