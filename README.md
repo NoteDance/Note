@@ -378,12 +378,6 @@ kernel.train(32,5)           #train the network with batch size 32 and epoch 5
 ```
 
 
-# GPT:
-**Layers in the GPT directory created by GPT**
-
-https://github.com/NoteDancing/Note/tree/Note-7.0/Note/nn/layer/GPT
-
-
 # Patreon:
 You can support this project on Patreon.
 
