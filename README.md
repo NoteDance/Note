@@ -219,7 +219,6 @@ kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10) #set up the 
 kernel.train(100)                 #train the network for 100 episodes
 kernel.visualize_train()
 kernel.visualize_reward()
-
 ```
 
 **You can get neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
