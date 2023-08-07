@@ -760,7 +760,7 @@ class kernel:
                 episode_file.close()
             if self.save_episode==True:
                 self.file_list.append([filename,'episode-{0}.dat'])
-                if len(self.file_list)>self.s:
+                if len(self.file_list)>self.s+1:
                     os.remove(self.file_list[0][0])
                     os.remove(self.file_list[0][1])
                     del self.file_list[0]
