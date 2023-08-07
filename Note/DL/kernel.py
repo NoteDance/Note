@@ -273,7 +273,7 @@ class kernel:
         return
     
     
-    def train(self,batch=None,epoch=None,test_batch=None,save=None,one=True,p=None,s=None):
+    def train(self,batch=None,epoch=None,test_batch=None,save=False,one=True,p=None,s=None):
         self.batch=batch
         self.epoch=0
         self.train_counter+=1
@@ -336,7 +336,7 @@ class kernel:
                         else:
                             print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
                             print()
-                if save!=None and i%s==0:
+                if save!=False and i%s==0:
                     self.save(self.total_epoch,one)
                 t2=time.time()
                 self.time+=(t2-t1)
@@ -391,12 +391,10 @@ class kernel:
                         else:
                             print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
                             print()
-                if save!=None and i%s==0:
+                if save!=False and i%s==0:
                     self.save(self.total_epoch,one)
                 t2=time.time()
                 self.time+=(t2-t1)
-        if save!=None:
-            self.save()
         self._time=self.time-int(self.time)
         if self._time<0.5:
             self.time=int(self.time)
