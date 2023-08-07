@@ -513,7 +513,7 @@ class kernel:
         return loss,episode,done
     
     
-    def train(self,episode_count,save=None,one=True,p=None,s=None):
+    def train(self,episode_count,save=False,one=True,p=None,s=None):
         avg_reward=None
         if p==None:
             self.p=9
@@ -571,7 +571,7 @@ class kernel:
                     else:
                         print('episode:{0}   reward:{1}'.format(i+1,self.reward))
                     print()
-                if save!=None and i%s==0:
+                if save!=False and i%s==0:
                     self.save(self.total_episode,one)
                 if self.save_episode==True:
                     if done:
@@ -636,7 +636,7 @@ class kernel:
                     else:
                         print('episode:{0}   reward:{1}'.format(i+1,self.reward))
                     print()
-                if save!=None and i%s==0:
+                if save!=False and i%s==0:
                     self.save(self.total_episode,one)
                 if self.save_episode==True:
                     if done:
