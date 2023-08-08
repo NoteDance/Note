@@ -140,24 +140,13 @@ class parallel_test:
     
     def segment_data(self):
         if len(self.test_data)!=self.process:
-            data=None
-            labels=None
-            segments=int((len(self.test_data)-len(self.test_data)%self.process)/self.process)
-            for i in range(self.process):
-                index1=i*segments
-                index2=(i+1)*segments
-                if i==0:
-                    data=np.expand_dims(self.test_data[index1:index2],axis=0)
-                    labels=np.expand_dims(self.test_labels[index1:index2],axis=0)
-                else:
-                    data=np.concatenate((data,np.expand_dims(self.test_data[index1:index2],axis=0)))
-                    labels=np.concatenate((labels,np.expand_dims(self.test_labels[index1:index2],axis=0)))
-            if len(data)%self.process!=0:
-                segments+=1
-                index1=segments*self.process
-                index2=self.process_thread-(len(self.train_data)-segments*self.process)
-                data=np.concatenate((data,np.expand_dims(self.test_data[index1:index2],axis=0)))
-                labels=np.concatenate((labels,np.expand_dims(self.test_labels[index1:index2],axis=0)))
+            length=len(self.test_data)-len(self.test_data)%self.process
+            data=self.test_data[:length]
+            labels=self.test_labels[:length]
+            data=np.split(data,self.process)
+            labels=np.split(labels,self.process)
+            data=np.stack(data,axis=0)
+            labels=np.stack(labels,axis=0)
             self.test_data=data
             self.test_labels=labels
         return
