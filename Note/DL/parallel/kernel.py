@@ -76,25 +76,15 @@ class kernel:
     
     
     def segment_data(self):
-        if len(self.train_data)!=self.process:
-            segments=int((len(self.train_data)-len(self.train_data)%self.process)/self.process)
-            for i in range(self.process):
-                index1=i*segments
-                index2=(i+1)*segments
-                if i==0:
-                    data=np.expand_dims(self.train_data[index1:index2],axis=0)
-                    labels=np.expand_dims(self.train_labels[index1:index2],axis=0)
-                else:
-                    data=np.concatenate((data,np.expand_dims(self.train_data[index1:index2],axis=0)))
-                    labels=np.concatenate((labels,np.expand_dims(self.train_labels[index1:index2],axis=0)))
-            if len(data)%self.process!=0:
-                segments+=1
-                index1=segments*self.process
-                index2=self.process-(len(self.train_data)-segments*self.process)
-                data=np.concatenate((data,np.expand_dims(self.train_data[index1:index2],axis=0)))
-                labels=np.concatenate((labels,np.expand_dims(self.train_labels[index1:index2],axis=0)))
-            return data,labels
-                
+        length=len(self.train_data)-len(self.train_data)%self.process
+        data=self.train_data[:length]
+        labels=self.train_labels[:length]
+        data=np.split(data,self.process)
+        labels=np.split(labels,self.process)
+        data=np.stack(data,axis=0)
+        labels=np.stack(labels,axis=0)
+        return data,labels
+    
     
     def init(self,manager):
         self.epoch_counter=Value('i',0)
