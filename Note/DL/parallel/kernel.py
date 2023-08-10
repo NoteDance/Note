@@ -81,8 +81,6 @@ class kernel:
         labels=self.train_labels[:length]
         data=np.split(data,self.process)
         labels=np.split(labels,self.process)
-        data=np.stack(data,axis=0)
-        labels=np.stack(labels,axis=0)
         return data,labels
     
     
