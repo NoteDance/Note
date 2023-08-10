@@ -31,11 +31,11 @@ If you build your neural network, you can use kernel to train it, examples are s
 
 ## Non-parallel training:
 
+### Tensorflow platform:
+
 **You can get neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
 
 https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/non-parallel/nn.py
-
-### Tensorflow platform:
 
 **example:**
 ```python
@@ -54,6 +54,10 @@ kernel.test(x_test,y_test,32)#test the network performance on the test set with 
 ```
 
 ### Pytorch platform:
+
+**You can get neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
+
+https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/pytorch/non-parallel/nn.py
 
 **example:**
 ```python
@@ -200,11 +204,11 @@ for p in range(3):                   #loop over the processes
 
 ## Non-parallel training:
 
+### Tensorflow platform:
+
 **You can get neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
 
 https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/tensorflow/non-parallel/DQN.py
-
-### Tensorflow platform:
 
 **example:**
 ```python
