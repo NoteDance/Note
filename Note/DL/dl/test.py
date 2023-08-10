@@ -145,8 +145,6 @@ class parallel_test:
             labels=self.test_labels[:length]
             data=np.split(data,self.process)
             labels=np.split(labels,self.process)
-            data=np.stack(data,axis=0)
-            labels=np.stack(labels,axis=0)
             self.test_data=data
             self.test_labels=labels
         return
