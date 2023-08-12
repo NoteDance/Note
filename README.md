@@ -33,7 +33,7 @@ If you build your neural network, you can use kernel to train it, examples are s
 
 ### Tensorflow platform:
 
-**You can get neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
+**You can get a neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
 
 https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/non-parallel/nn.py
 
@@ -55,7 +55,7 @@ kernel.test(x_test,y_test,32)#test the network performance on the test set with 
 
 ### Pytorch platform:
 
-**You can get neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
+**You can get a neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
 
 https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/pytorch/non-parallel/nn.py
 
@@ -102,7 +102,7 @@ kernel.train(64,5)                            #train the network with batch size
 
 ### Tensorflow platform:
 
-**You can get neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
+**You can get a neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
 
 https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/parallel/nn.py
 
@@ -136,7 +136,7 @@ kernel.test(x_train,y_train,32)      #test the network performance on the train 
 
 **If you have multiple devices that you want to allocate, you can use the process index to freely assign devices to your operations.**
 
-**You can get neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
+**You can get a neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
 
 https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/parallel/nn_device.py
 
@@ -168,7 +168,7 @@ kernel.test(x_train,y_train,32)      #test the network performance on the train 
 
 ### Pytorch platform:
 
-**You can get neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
+**You can get a neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
 
 https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/pytorch/parallel/nn.py
 
@@ -206,7 +206,7 @@ for p in range(3):                   #loop over the processes
 
 ### Tensorflow platform:
 
-**You can get neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
+**You can get a neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
 
 https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/tensorflow/non-parallel/DQN.py
 
@@ -225,7 +225,7 @@ kernel.visualize_train()
 kernel.visualize_reward()
 ```
 
-**You can get neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
+**You can get a neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
 
 https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/tensorflow/non-parallel/DDPG.py
 
@@ -245,7 +245,7 @@ kernel.visualize_reward()
 
 ### Pytorch platform:
 
-**You can get neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
+**You can get a neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
 
 https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/pytorch/non-parallel/DQN.py
 
@@ -276,7 +276,7 @@ then pools would be used parallel training agent.**
 
 ### Tensorflow platform:
 
-**You can get neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
+**You can get a neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
 
 https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/tensorflow/parallel/DQN.py
 
@@ -301,7 +301,7 @@ for p in range(5):           #loop over the processes
 
 ### Pytorch platform:
 
-**You can get neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
+**You can get a neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
 
 https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/pytorch/parallel/DQN.py
 
@@ -333,7 +333,9 @@ for p in range(5):           #loop over the processes
 
 
 # Documentation:
-**Documentation's readme has other examples.**
+**The document has kernel code and other code with comments that can help you understand.**
+
+**Documentation readme has other examples.**
 
 https://github.com/NoteDancing/Note-documentation
 
@@ -343,9 +345,11 @@ https://github.com/NoteDancing/Note/tree/Note-7.0/Note/nn/layer
 
 **documentation:** https://github.com/NoteDancing/Note-documentation/tree/layer
 
-**You can get neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
+**You can get a neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
 
 https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/layer/nn.py
+
+**Here is an example of using a layer module.**
 ```python
 import Note.DL.kernel as k   #import kernel module
 import tensorflow as tf      #import tensorflow library
