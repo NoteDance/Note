@@ -349,7 +349,7 @@ https://github.com/NoteDancing/Note/tree/Note-7.0/Note/nn/layer
 
 https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/layer/nn.py
 
-**Here is an example of using a layer module.**
+**Here is an example of using the layer module.**
 ```python
 import Note.DL.kernel as k   #import kernel module
 import tensorflow as tf      #import tensorflow library
