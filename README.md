@@ -2,17 +2,17 @@
 
 
 # Introduction:
-Note is a system for deep learning and reinforcement learning, supporting TensorFlow and PyTorch platforms. Note makes the building and training of neural networks easy. Note allows you to easily implement parallel training with the multiprocessing module and speed up the training of neural networks.
+**Note is a system for deep learning and reinforcement learning, supporting TensorFlow and PyTorch platforms. Note makes the building and training of neural networks easy. Note allows you to easily implement parallel training with the multiprocessing module and speed up the training of neural networks.**
 
 
 # Installation:
-To use Note, you need to download it from https://github.com/NoteDancing/Note and then unzip it to the site-packages folder of your Python environment.
+**To use Note, you need to download it from https://github.com/NoteDancing/Note and then unzip it to the site-packages folder of your Python environment.**
 
 
 # Create neural network:
-To build your neural network, follow some rules or you may get errors during training. See the documentation for examples. You can write a Python module for your neural network class and import it, or write it in the interpreter. Then, pass the neural network object to the kernel and train it.
+**To build your neural network, follow some rules or you may get errors during training. See the documentation for examples. You can write a Python module for your neural network class and import it, or write it in the interpreter. Then, pass the neural network object to the kernel and train it.**
 
-You can first refer to the simple neural network examples nn.py, nn_acc.py, nn_device.py in the documentation.
+**You can first refer to the simple neural network examples nn.py, nn_acc.py, nn_device.py in the documentation.**
 
 ## DL: 
 https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/DL/neural%20network
@@ -24,7 +24,7 @@ https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20doc
 ## RL: 
 https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/RL/neural%20network
 
-If you build your neural network, you can use kernel to train it, examples are shown below.
+**If you build your neural network, you can use kernel to train it, examples are shown below.**
 
 
 # Deep Learning:
@@ -366,7 +366,21 @@ kernel.train(32,5)           #train the network with batch size 32 and epoch 5
 ```
 
 
+# Create a layer module in Note:
+**To create a layer module in Note, you need to follow these steps:**
+
+**1. Import the necessary modules from Note and TensorFlow.**
+
+**2. Define a layer class.**
+
+**3. In the init method, initialize the variables and submodules that you need for your layer. You can use the Note.nn.initializer module to create different types of initializers for your variables. You can also use the Note.nn.activation module to get different types of activation functions for your layer.**
+
+**4. In the init method, create a list called self.param and append the variables and submodules of your layer to it. This will allow you to access and update the parameters later, such as during training or saving. It will also help you keep track of the trainable and non-trainable variables of your layer.**
+
+**5. In the output method, define the logic of your layer. You can use any TensorFlow operations on the input tensors and the variables or submodules of your layer. You can also use any custom functions that you define outside the class. You should return the output tensor of your layer from this method.**
+
+
 # Patreon:
-You can support this project on Patreon.
+**You can support this project on Patreon.**
 
 https://www.patreon.com/NoteDancing
