@@ -380,6 +380,28 @@ kernel.train(32,5)           #train the network with batch size 32 and epoch 5
 **5. In the output method, define the logic of your layer. You can use any TensorFlow operations on the input tensors and the variables or submodules of your layer. You can also use any custom functions that you define outside the class. You should return the output tensor of your layer from this method.**
 
 
+# Create an optimizer in Note:
+**To create an optimizer in Note, you need to follow these steps:**
+
+**1. Import the necessary modules from Note and TensorFlow.**
+
+**2. Define an optimizer class.**
+
+**3. In the init method, initialize the hyperparameters and internal states that you need for your optimizer.**
+
+**4. In the opt method, define the logic of your optimizer. You can use any TensorFlow operations on the gradients and parameters of your model. You can also use any custom functions that you define outside the class. You should update the parameters of your model in place and return them from this method.**
+
+**To create a parallel optimizer in Note, you need to follow these additional steps:**
+
+**1. Import the multiprocessing. Manager module from Python. This module provides a way to create and manage shared objects across different processes.**
+
+**2. In the init method, create a manager object by calling Manager(). This object will allow you to create shared lists for your internal states.**
+
+**3. In the init method, create shared lists for your internal states by calling manager.list(). These lists will be accessible and modifiable by multiple processes.**
+
+**4. In the opt method, use the shared lists instead of regular lists for your internal states. You can use the same operations on the shared lists as on regular lists.**
+
+
 # Patreon:
 **You can support this project on Patreon.**
 
