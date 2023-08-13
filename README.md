@@ -379,6 +379,8 @@ kernel.train(32,5)           #train the network with batch size 32 and epoch 5
 
 **5. In the output method, define the logic of your layer. You can use any TensorFlow operations on the input tensors and the variables or submodules of your layer. You can also use any custom functions that you define outside the class. You should return the output tensor of your layer from this method.**
 
+**You can refer to the layer module implementation in this link.** https://github.com/NoteDancing/Note/tree/Note-7.0/Note/nn/layer
+
 
 # Create an optimizer in Note:
 **To create an optimizer in Note, you need to follow these steps:**
@@ -400,6 +402,12 @@ kernel.train(32,5)           #train the network with batch size 32 and epoch 5
 **3. In the init method, create shared lists for your internal states by calling manager.list(). These lists will be accessible and modifiable by multiple processes.**
 
 **4. In the opt method, use the shared lists instead of regular lists for your internal states. You can use the same operations on the shared lists as on regular lists.**
+
+**You can refer to the optimizer implementations in the following two links.** 
+
+**non-parallel:** https://github.com/NoteDancing/Note/blob/Note-7.0/Note/nn/optimizer.py
+
+**parallel:** https://github.com/NoteDancing/Note/blob/Note-7.0/Note/nn/parallel/optimizer.py
 
 
 # Patreon:
