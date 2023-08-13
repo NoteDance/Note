@@ -1,31 +1,31 @@
-import tensorflow as tf
-import Note.nn.initializer as i
+import tensorflow as tf # import the TensorFlow library
+import Note.nn.initializer as i # import the initializer module from Note.nn package
 
 
-class GRUCell:
-    def __init__(self,weight_shape,weight_initializer='Xavier',bias_initializer='zeros',dtype='float32',use_bias=True,activation1=tf.nn.sigmoid,activation2=tf.nn.tanh):
-        self.weight=i.initializer([weight_shape[0]+weight_shape[1],3*weight_shape[1]],weight_initializer,dtype)
-        if use_bias==True:
-            self.bias=i.initializer([3*weight_shape[1]],bias_initializer,dtype)
-        self.use_bias=use_bias
-        self.activation1=activation1
-        self.activation2=activation2
-        if use_bias==True:
-            self.param=[self.weight,self.bias]
-        else:
-            self.param=[self.weight]
+class GRUCell: # define a class for gated recurrent unit (GRU) cell
+    def __init__(self,weight_shape,weight_initializer='Xavier',bias_initializer='zeros',dtype='float32',use_bias=True,activation1=tf.nn.sigmoid,activation2=tf.nn.tanh): # define the constructor method
+        self.weight=i.initializer([weight_shape[0]+weight_shape[1],3*weight_shape[1]],weight_initializer,dtype) # initialize the weight matrix for all gates and candidate hidden state
+        if use_bias==True: # if use bias is True
+            self.bias=i.initializer([3*weight_shape[1]],bias_initializer,dtype) # initialize the bias vector for all gates and candidate hidden state
+        self.use_bias=use_bias # set the use bias flag
+        self.activation1=activation1 # set the activation function for gates (usually sigmoid)
+        self.activation2=activation2 # set the activation function for candidate hidden state (usually tanh)
+        if use_bias==True: # if use bias is True
+            self.param=[self.weight,self.bias] # store the parameters in a list
+        else: # if use bias is False
+            self.param=[self.weight] # store only the weight matrix in a list
     
     
-    def output(self,data,state):
-        x=tf.concat([data,state],axis=-1)
-        if self.use_bias==True:
-            z=tf.matmul(x,self.weight)+self.bias
-        else:
-            z=tf.matmul(x,self.weight)
-        r,z,h=tf.split(z,3,axis=-1)
-        r=self.activation1(r)
-        z=self.activation1(z)
-        h=self.activation2(h)
-        h_new=z*state+(1-z)*h
-        output=h_new
-        return output,h_new
+    def output(self,data,state): # define the output method
+        x=tf.concat([data,state],axis=-1) # concatenate the input data and state along the last dimension
+        if self.use_bias==True: # if use bias is True
+            z=tf.matmul(x,self.weight)+self.bias # calculate the linear transformation of concatenated data and weight matrix, plus bias vector
+        else: # if use bias is False
+            z=tf.matmul(x,self.weight) # calculate the linear transformation of concatenated data and weight matrix
+        r,z,h=tf.split(z,3,axis=-1) # split the linear transformation into three parts: reset gate, update gate and candidate hidden state
+        r=self.activation1(r) # apply activation function to the reset gate
+        z=self.activation1(z) # apply activation function to the update gate
+        h=self.activation2(h) # apply activation function to the candidate hidden state
+        h_new=z*state+(1-z)*h # calculate the new hidden state value by combining the update gate, previous state and candidate hidden state values
+        output=h_new # set the output value as the new hidden state value
+        return output,h_new # return the output value and the new hidden state value
