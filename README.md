@@ -17,7 +17,7 @@ You can first refer to the simple neural network examples nn.py, nn_acc.py, nn_d
 ## DL: 
 https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/DL/neural%20network
 
-**Neural network examples using Note's layer module:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/layer
+**Neural network examples using the Note layer module:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/layer
 
 **Neural network examples for Note parallel kernel:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/parallel
 
@@ -98,7 +98,7 @@ kernel.train(64,5)                            #train the network with batch size
 
 **3. Perform forward propagation, gradient computation and optimization in parallel without locks. (PO3)**
 
-**Parallel optimization may cause unstable training(the estimate of the gradient is biased) but it can speed up training and make the loss function jump out of the local minimum. Note can speed up training by multiprocessing and has stop mechanism, gradient attenuation, and process priority to resolve unstable training. Note uses multiprocessing to perform parallel forward propagation and optimization on neural networks. Note's parallel kernel is not compatible with the neural network built by Keras. You can use the layer directory from Note and the low-level API from tensorflow to build neural networks. Do not use Keras optimizer, because it cannot be serialized by multiprocessing module, you can use the optimizer under nn.parallel directory, or implement the optimizer yourself with tensorflow low-level api.**
+**Parallel optimization may cause unstable training(the estimate of the gradient is biased) but it can speed up training and make the loss function jump out of the local minimum. Note can speed up training by multiprocessing and has stop mechanism, gradient attenuation, and process priority to resolve unstable training. Note uses multiprocessing to perform parallel forward propagation and optimization on neural networks. Note's parallel kernel is not compatible with the neural network built by Keras. You can use the Note.nn.layer package from Note and the low-level API from tensorflow to build neural networks. Do not use Keras optimizer, because it cannot be serialized by multiprocessing module, you can use the optimizer under Note.nn.parallel package, or implement the optimizer yourself with tensorflow low-level api.**
 
 ### Tensorflow platform:
 
