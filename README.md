@@ -366,8 +366,8 @@ kernel.train(32,5)           #train the network with batch size 32 and epoch 5
 ```
 
 
-# Create a layer module in Note:
-**To create a layer module in Note, you need to follow these steps:**
+# Create a layer module for use on Note:
+**To create a layer module for use on Note, you need to follow these steps:**
 
 **1. Import the necessary modules from Note and TensorFlow.**
 
@@ -382,8 +382,8 @@ kernel.train(32,5)           #train the network with batch size 32 and epoch 5
 **You can refer to the layer module implementation in this link.** https://github.com/NoteDancing/Note/tree/Note-7.0/Note/nn/layer
 
 
-# Create an optimizer in Note:
-**To create an optimizer in Note, you need to follow these steps:**
+# Create an optimizer for use on Note:
+**To create an optimizer for use on Note, you need to follow these steps:**
 
 **1. Import the necessary modules from Note and TensorFlow.**
 
