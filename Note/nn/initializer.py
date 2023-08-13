@@ -4,7 +4,7 @@ import tensorflow as tf
 def initializer(shape,initializer,dtype):
     if type(initializer)==list:
         if initializer[0]=='normal':
-           param=tf.Variable(tf.random.normal(shape=shape,mean=initializer[1],stddev=initializer[2],dtype=dtype))
+            param=tf.Variable(tf.random.normal(shape=shape,mean=initializer[1],stddev=initializer[2],dtype=dtype))
         elif initializer[0]=='uniform':
             param=tf.Variable(tf.random.uniform(shape=shape,minval=initializer[1],maxval=initializer[2],dtype=dtype))
     else:
