@@ -76,11 +76,8 @@ class kernel:
     
     
     def segment_data(self):
-        length=len(self.train_data)-len(self.train_data)%self.process
-        data=self.train_data[:length]
-        labels=self.train_labels[:length]
-        data=np.split(data,self.process)
-        labels=np.split(labels,self.process)
+        data=np.array_split(self.train_data,self.process)
+        labels=np.array_split(self.train_labels,self.process)
         return data,labels
     
     
