@@ -379,6 +379,8 @@ kernel.train(32,5)           #train the network with batch size 32 and epoch 5
 
 **You can refer to the layer module implementation in this link.** https://github.com/NoteDancing/Note/tree/Note-7.0/Note/nn/layer
 
+**You can commit the layer module you write to Note.**
+
 
 # Create an optimizer for use on Note:
 **To create an optimizer for use on Note, you need to follow these steps:**
@@ -406,6 +408,8 @@ kernel.train(32,5)           #train the network with batch size 32 and epoch 5
 **non-parallel:** https://github.com/NoteDancing/Note/blob/Note-7.0/Note/nn/optimizer.py
 
 **parallel:** https://github.com/NoteDancing/Note/blob/Note-7.0/Note/nn/parallel/optimizer.py
+
+**You can commit the optimizer you write to Note.**
 
 
 # Patreon:
