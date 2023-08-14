@@ -140,11 +140,8 @@ class parallel_test:
     
     def segment_data(self):
         if len(self.test_data)!=self.process:
-            length=len(self.test_data)-len(self.test_data)%self.process
-            data=self.test_data[:length]
-            labels=self.test_labels[:length]
-            data=np.split(data,self.process)
-            labels=np.split(labels,self.process)
+            data=np.array_split(self.test_data,self.process)
+            labels=np.array_split(self.test_labels,self.process)
             self.test_data=data
             self.test_labels=labels
         return
