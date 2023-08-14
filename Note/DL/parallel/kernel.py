@@ -20,7 +20,7 @@ class kernel:
         self.train_ds=None
         self.prefetch_batch_size=tf.data.AUTOTUNE
         self.prefetch_batch_size_t=tf.data.AUTOTUNE
-        self.data_segment_flag=False
+        self.data_segment_flag=True
         self.batches=None
         self.buffer_size=None
         self.priority_flag=False
