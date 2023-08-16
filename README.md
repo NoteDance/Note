@@ -15,10 +15,10 @@
 **To build a neural network that can be trained on Note, you need to follow some rules, otherwise you will get errors during training. You can refer to the examples in the documentation. You can first refer to the three simple neural network examples in the documentation: nn.py, nn_acc.py, nn_device.py. Then, you can write a Python module for your neural network class and import it, or write it directly in the interpreter. Next, pass the neural network object to the kernel and train it**
 
 ## Neural network examples(DL):
-https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/DL/neural%20network
+https://github.com/NoteDancing/Note-documentation/tree/neural-network-example/7.0/neuralnetwork/DL
 
 ## Neural network examples(RL):
-https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/RL/neural%20network
+https://github.com/NoteDancing/Note-documentation/tree/neural-network-example/7.0/neuralnetwork/RL
 
 **Examples of training neural networks with kernel are shown below.**
 
