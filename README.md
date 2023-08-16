@@ -12,7 +12,7 @@
 
 
 # Create neural network:
-**To build your neural network, follow some rules or you may get errors during training. See the documentation for examples. You can write a Python module for your neural network class and import it, or write it in the interpreter. Then, pass the neural network object to the kernel and train it.**
+**To build a neural network that can be trained on Note, you need to follow some rules, otherwise you will get errors during training. See the documentation for examples. You can write a Python module for your neural network class and import it, or write it in the interpreter. Then, pass the neural network object to the kernel and train it.**
 
 **You can first refer to the simple neural network examples nn.py, nn_acc.py, nn_device.py in the documentation.**
 
