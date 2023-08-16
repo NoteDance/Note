@@ -8,7 +8,7 @@
 # Installation:
 **To use Note, you need to download it from https://github.com/NoteDancing/Note and then unzip it to the site-packages folder of your Python environment.**
 
-**To use the neural network example conveniently, you can download it from https://github.com/NoteDancing/Note-documentation/tree/neural-network-example and unzip the neuralnetwork package to the site-packages folder of your Python environment.**
+**To import the neural network example conveniently, you can download it from https://github.com/NoteDancing/Note-documentation/tree/neural-network-example and unzip the neuralnetwork package to the site-packages folder of your Python environment.**
 
 
 # Create neural network:
