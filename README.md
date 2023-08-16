@@ -33,7 +33,7 @@ https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20doc
 ```python
 import Note.DL.kernel as k   #import kernel module
 import tensorflow as tf      #import tensorflow library
-import neuralnetwork.DL.tensorflow.non_parallel.nn as n               #import neural network module
+import neuralnetwork.DL.tensorflow.non_parallel.nn as n   #import neural network module
 mnist=tf.keras.datasets.mnist #load mnist dataset
 (x_train,y_train),(x_test,y_test)=mnist.load_data() #split data into train and test sets
 x_train,x_test =x_train/255.0,x_test/255.0 #normalize data
@@ -49,7 +49,7 @@ kernel.test(x_test,y_test,32)#test the network performance on the test set with 
 ```python
 import Note.DL.kernel as k   #import kernel module
 import torch                 #import torch library
-import neuralnetwork.DL.pytorch.non_parallel.nn as n               #import neural network module
+import neuralnetwork.DL.pytorch.non_parallel.nn as n   #import neural network module
 from torch.utils.data import DataLoader #import data loader tool
 from torchvision import datasets        #import datasets tool
 from torchvision.transforms import ToTensor #import tensor transformation tool
@@ -90,7 +90,7 @@ kernel.train(64,5)                            #train the network with batch size
 ```python
 import Note.DL.parallel.kernel as k   #import kernel module
 import tensorflow as tf              #import tensorflow library
-import neuralnetwork.DL.tensorflow.parallel.nn as n                       #import neural network module
+import neuralnetwork.DL.tensorflow.parallel.nn as n   #import neural network module
 from multiprocessing import Process,Manager #import multiprocessing tools
 mnist=tf.keras.datasets.mnist        #load mnist dataset
 (x_train,y_train),(x_test,y_test)=mnist.load_data() #split data into train and test sets
@@ -117,7 +117,7 @@ kernel.test(x_train,y_train,32)      #test the network performance on the train 
 ```python
 import Note.DL.parallel.kernel as k   #import kernel module
 import tensorflow as tf              #import tensorflow library
-import neuralnetwork.DL.tensorflow.parallel.nn_device as n                       #import neural network module
+import neuralnetwork.DL.tensorflow.parallel.nn_device as n   #import neural network module
 from multiprocessing import Process,Manager #import multiprocessing tools
 mnist=tf.keras.datasets.mnist        #load mnist dataset
 (x_train,y_train),(x_test,y_test)=mnist.load_data() #split data into train and test sets
@@ -143,7 +143,7 @@ kernel.test(x_train,y_train,32)      #test the network performance on the train 
 import Note.DL.parallel.kernel_pytorch as k   #import kernel module
 from torchvision import datasets
 from torchvision.transforms import ToTensor
-import neuralnetwork.DL.pytorch.parallel.nn as n                       #import neural network module
+import neuralnetwork.DL.pytorch.parallel.nn as n   #import neural network module
 from multiprocessing import Process,Manager #import multiprocessing tools
 training_data = datasets.FashionMNIST(
     root="data",
@@ -174,7 +174,7 @@ for p in range(3):                   #loop over the processes
 ```python
 import Note.RL.kernel as k   #import kernel module
 import tensorflow as tf           #import tensorflow library
-import neuralnetwork.RL.tensorflow.non_parallrl.DQN as d                   #import deep Q-network module
+import neuralnetwork.RL.tensorflow.non_parallrl.DQN as d   #import deep Q-network module
 dqn=d.DQN(4,128,2)                #create neural network object with 4 inputs, 128 hidden units and 2 outputs
 kernel=k.kernel(dqn)              #create kernel object with the network
 kernel.platform=tf                #set the platform to tensorflow
@@ -187,7 +187,7 @@ kernel.visualize_reward()
 ```python
 import Note.RL.kernel as k   #import kernel module
 import tensorflow as tf           #import tensorflow library
-import neuralnetwork.RL.tensorflow.non_parallrl.DDPG as d                  #import deep deterministic policy gradient module
+import neuralnetwork.RL.tensorflow.non_parallrl.DDPG as d   #import deep deterministic policy gradient module
 ddpg=d.DDPG(64,0.01,0.98,0.005,5e-4,5e-3) #create neural network object with 64 inputs, 0.01 learning rate, 0.98 discount factor, 0.005 noise scale, 5e-4 actor learning rate and 5e-3 critic learning rate
 kernel=k.kernel(ddpg)             #create kernel object with the network
 kernel.platform=tf                #set the platform to tensorflow
@@ -201,7 +201,7 @@ kernel.visualize_reward()
 ```python
 import Note.RL.kernel as k   #import kernel module
 import torch                      #import torch library
-import neuralnetwork.RL.pytorch.non_parallrl.DQN as d                   #import deep Q-network module
+import neuralnetwork.RL.pytorch.non_parallrl.DQN as d   #import deep Q-network module
 dqn=d.DQN(4,128,2)                #create neural network object with 4 inputs, 128 hidden units and 2 outputs
 kernel=k.kernel(dqn)              #create kernel object with the network
 kernel.platform=torch             #set the platform to torch
@@ -225,7 +225,7 @@ then pools would be used parallel training agent.**
 ### Tensorflow platform:
 ```python
 import Note.RL.parallel.kernel as k   #import kernel module
-import neuralnetwork.RL.tensorflow.parallrl.DQN as d              #import deep Q-network module
+import neuralnetwork.RL.tensorflow.parallrl.DQN as d   #import deep Q-network module
 from multiprocessing import Process,Lock,Manager #import multiprocessing tools
 dqn=d.DQN(4,128,2)           #create neural network object with 4 inputs, 128 hidden units and 2 outputs
 kernel=k.kernel(dqn,5)       #create kernel object with the network and 5 processes to train
@@ -244,7 +244,7 @@ for p in range(5):           #loop over the processes
 ### Pytorch platform:
 ```python
 import Note.RL.parallel.kernel_pytorch as k   #import kernel module
-import neuralnetwork.RL.pytorch.parallrl.DQN as d              #import deep Q-network module
+import neuralnetwork.RL.pytorch.parallrl.DQN as d   #import deep Q-network module
 from multiprocessing import Process,Lock,Manager #import multiprocessing tools
 dqn=d.DQN(4,128,2)           #create neural network object with 4 inputs, 128 hidden units and 2 outputs
 kernel=k.kernel(dqn,5)       #create kernel object with the network and 5 processes to train
@@ -285,7 +285,7 @@ https://github.com/NoteDancing/Note/tree/Note-7.0/Note/nn/layer
 ```python
 import Note.DL.kernel as k   #import kernel module
 import tensorflow as tf      #import tensorflow library
-import neuralnetwork.DL.tensorflow.layer.nn as n               #import neural network module
+import neuralnetwork.DL.tensorflow.layer.nn as n   #import neural network module
 mnist=tf.keras.datasets.mnist #load mnist dataset
 (x_train,y_train),(x_test,y_test)=mnist.load_data() #split data into train and test sets
 x_train,x_test =x_train/255.0,x_test/255.0 #normalize data
