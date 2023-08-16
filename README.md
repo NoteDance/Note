@@ -8,6 +8,8 @@
 # Installation:
 **To use Note, you need to download it from https://github.com/NoteDancing/Note and then unzip it to the site-packages folder of your Python environment.**
 
+**To use the neural network example conveniently, you can download it from https://github.com/NoteDancing/Note-documentation/tree/neural-network-example and unzip the neuralnetwork package to the site-packages folder of your Python environment.**
+
 
 # Create neural network:
 **To build your neural network, follow some rules or you may get errors during training. See the documentation for examples. You can write a Python module for your neural network class and import it, or write it in the interpreter. Then, pass the neural network object to the kernel and train it.**
@@ -17,14 +19,10 @@
 ## DL: 
 https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/DL/neural%20network
 
-**Neural network examples using the Note layer module:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/layer
-
-**Neural network examples for Note parallel kernel:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/parallel
-
 ## RL: 
 https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/RL/neural%20network
 
-**If you build your neural network, you can use kernel to train it, examples are shown below.**
+**Examples of training neural networks with kernel are shown below.**
 
 
 # Deep Learning:
@@ -32,16 +30,10 @@ https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20doc
 ## Non-parallel training:
 
 ### Tensorflow platform:
-
-**You can get a neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
-
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/non-parallel/nn.py
-
-**example:**
 ```python
 import Note.DL.kernel as k   #import kernel module
 import tensorflow as tf      #import tensorflow library
-import nn as n               #import neural network module
+import neuralnetwork.DL.tensorflow.non_parallel.nn as n               #import neural network module
 mnist=tf.keras.datasets.mnist #load mnist dataset
 (x_train,y_train),(x_test,y_test)=mnist.load_data() #split data into train and test sets
 x_train,x_test =x_train/255.0,x_test/255.0 #normalize data
@@ -54,16 +46,10 @@ kernel.test(x_test,y_test,32)#test the network performance on the test set with 
 ```
 
 ### Pytorch platform:
-
-**You can get a neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
-
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/pytorch/non-parallel/nn.py
-
-**example:**
 ```python
 import Note.DL.kernel as k   #import kernel module
 import torch                 #import torch library
-import nn as n               #import neural network module
+import neuralnetwork.DL.pytorch.non_parallel.nn as n               #import neural network module
 from torch.utils.data import DataLoader #import data loader tool
 from torchvision import datasets        #import datasets tool
 from torchvision.transforms import ToTensor #import tensor transformation tool
@@ -101,16 +87,10 @@ kernel.train(64,5)                            #train the network with batch size
 **Parallel optimization may cause unstable training(the estimate of the gradient is biased) but it can speed up training and make the loss function jump out of the local minimum. Note can speed up training by multiprocessing and has stop mechanism, gradient attenuation, and process priority to resolve unstable training. Note uses multiprocessing to perform parallel forward propagation and optimization on neural networks. Note's parallel kernel is not compatible with the neural network built by Keras. You can use the Note.nn.layer package from Note and the low-level API from tensorflow to build neural networks. Do not use Keras optimizer, because it cannot be serialized by multiprocessing module, you can use the optimizer under Note.nn.parallel package, or implement the optimizer yourself with tensorflow low-level api.**
 
 ### Tensorflow platform:
-
-**You can get a neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
-
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/parallel/nn.py
-
-**example:**
 ```python
 import Note.DL.parallel.kernel as k   #import kernel module
 import tensorflow as tf              #import tensorflow library
-import nn as n                       #import neural network module
+import neuralnetwork.DL.tensorflow.parallel.nn as n                       #import neural network module
 from multiprocessing import Process,Manager #import multiprocessing tools
 mnist=tf.keras.datasets.mnist        #load mnist dataset
 (x_train,y_train),(x_test,y_test)=mnist.load_data() #split data into train and test sets
@@ -134,16 +114,10 @@ kernel.test(x_train,y_train,32)      #test the network performance on the train 
 **Multidevice:**
 
 **If you have multiple devices that you want to allocate, you can use the process index to freely assign devices to your operations.**
-
-**You can get a neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
-
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/parallel/nn_device.py
-
-**example:**
 ```python
 import Note.DL.parallel.kernel as k   #import kernel module
 import tensorflow as tf              #import tensorflow library
-import nn_device as n                       #import neural network module
+import neuralnetwork.DL.tensorflow.parallel.nn_device as n                       #import neural network module
 from multiprocessing import Process,Manager #import multiprocessing tools
 mnist=tf.keras.datasets.mnist        #load mnist dataset
 (x_train,y_train),(x_test,y_test)=mnist.load_data() #split data into train and test sets
@@ -165,17 +139,11 @@ kernel.test(x_train,y_train,32)      #test the network performance on the train 
 ```
 
 ### Pytorch platform:
-
-**You can get a neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
-
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/pytorch/parallel/nn.py
-
-**example:**
 ```python
 import Note.DL.parallel.kernel_pytorch as k   #import kernel module
 from torchvision import datasets
 from torchvision.transforms import ToTensor
-import nn as n                       #import neural network module
+import neuralnetwork.DL.pytorch.parallel.nn as n                       #import neural network module
 from multiprocessing import Process,Manager #import multiprocessing tools
 training_data = datasets.FashionMNIST(
     root="data",
@@ -203,16 +171,10 @@ for p in range(3):                   #loop over the processes
 ## Non-parallel training:
 
 ### Tensorflow platform:
-
-**You can get a neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
-
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/tensorflow/non-parallel/DQN.py
-
-**example:**
 ```python
 import Note.RL.kernel as k   #import kernel module
 import tensorflow as tf           #import tensorflow library
-import DQN as d                   #import deep Q-network module
+import neuralnetwork.RL.tensorflow.non_parallrl.DQN as d                   #import deep Q-network module
 dqn=d.DQN(4,128,2)                #create neural network object with 4 inputs, 128 hidden units and 2 outputs
 kernel=k.kernel(dqn)              #create kernel object with the network
 kernel.platform=tf                #set the platform to tensorflow
@@ -222,16 +184,10 @@ kernel.train(100)                 #train the network for 100 episodes
 kernel.visualize_train()
 kernel.visualize_reward()
 ```
-
-**You can get a neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
-
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/tensorflow/non-parallel/DDPG.py
-
-**example:**
 ```python
 import Note.RL.kernel as k   #import kernel module
 import tensorflow as tf           #import tensorflow library
-import DDPG as d                  #import deep deterministic policy gradient module
+import neuralnetwork.RL.tensorflow.non_parallrl.DDPG as d                  #import deep deterministic policy gradient module
 ddpg=d.DDPG(64,0.01,0.98,0.005,5e-4,5e-3) #create neural network object with 64 inputs, 0.01 learning rate, 0.98 discount factor, 0.005 noise scale, 5e-4 actor learning rate and 5e-3 critic learning rate
 kernel=k.kernel(ddpg)             #create kernel object with the network
 kernel.platform=tf                #set the platform to tensorflow
@@ -242,16 +198,10 @@ kernel.visualize_reward()
 ```
 
 ### Pytorch platform:
-
-**You can get a neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
-
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/pytorch/non-parallel/DQN.py
-
-**example:**
 ```python
 import Note.RL.kernel as k   #import kernel module
 import torch                      #import torch library
-import DQN as d                   #import deep Q-network module
+import neuralnetwork.RL.pytorch.non_parallrl.DQN as d                   #import deep Q-network module
 dqn=d.DQN(4,128,2)                #create neural network object with 4 inputs, 128 hidden units and 2 outputs
 kernel=k.kernel(dqn)              #create kernel object with the network
 kernel.platform=torch             #set the platform to torch
@@ -273,15 +223,9 @@ kernel.visualize_reward()
 then pools would be used parallel training agent.**
 
 ### Tensorflow platform:
-
-**You can get a neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
-
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/tensorflow/parallel/DQN.py
-
-**example:**
 ```python
 import Note.RL.parallel.kernel as k   #import kernel module
-import DQN as d              #import deep Q-network module
+import neuralnetwork.RL.tensorflow.parallrl.DQN as d              #import deep Q-network module
 from multiprocessing import Process,Lock,Manager #import multiprocessing tools
 dqn=d.DQN(4,128,2)           #create neural network object with 4 inputs, 128 hidden units and 2 outputs
 kernel=k.kernel(dqn,5)       #create kernel object with the network and 5 processes to train
@@ -298,15 +242,9 @@ for p in range(5):           #loop over the processes
 ```
 
 ### Pytorch platform:
-
-**You can get a neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
-
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/RL/neural%20network/pytorch/parallel/DQN.py
-
-**example:**
 ```python
 import Note.RL.parallel.kernel_pytorch as k   #import kernel module
-import DQN as d              #import deep Q-network module
+import neuralnetwork.RL.pytorch.parallrl.DQN as d              #import deep Q-network module
 from multiprocessing import Process,Lock,Manager #import multiprocessing tools
 dqn=d.DQN(4,128,2)           #create neural network object with 4 inputs, 128 hidden units and 2 outputs
 kernel=k.kernel(dqn,5)       #create kernel object with the network and 5 processes to train
@@ -343,15 +281,11 @@ https://github.com/NoteDancing/Note/tree/Note-7.0/Note/nn/layer
 
 **documentation:** https://github.com/NoteDancing/Note-documentation/tree/layer
 
-**You can get a neural network example from the link below, and then you can import neural network and train with kernel, example code are below.**
-
-https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/Note%207.0%20documentation/DL/neural%20network/tensorflow/layer/nn.py
-
 **Here is an example of using the layer module.**
 ```python
 import Note.DL.kernel as k   #import kernel module
 import tensorflow as tf      #import tensorflow library
-import nn as n               #import neural network module
+import neuralnetwork.DL.tensorflow.layer.nn as n               #import neural network module
 mnist=tf.keras.datasets.mnist #load mnist dataset
 (x_train,y_train),(x_test,y_test)=mnist.load_data() #split data into train and test sets
 x_train,x_test =x_train/255.0,x_test/255.0 #normalize data
