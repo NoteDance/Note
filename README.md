@@ -1,8 +1,5 @@
-# Note
-
-
 # Introduction:
-**Note is a system for deep learning and reinforcement learning, supporting TensorFlow and PyTorch platforms. Note makes the building and training of neural networks easy. Note allows you to easily implement parallel training with the multiprocessing module and speed up the training of neural networks.**
+**Note is a system for deep learning and reinforcement learning, supporting TensorFlow and PyTorch platforms, supporting non-parallel training and parallel training. Note makes the building and training of neural networks easy. Note allows you to easily implement parallel training with the multiprocessing module and speed up the training of neural networks.**
 
 
 # Installation:
