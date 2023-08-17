@@ -12,7 +12,7 @@
 
 
 # Create neural network:
-**To build a neural network that can be trained on Note, you need to follow some rules, otherwise you will get errors during training. Every neural network is regarded as an object, and the neural network object is passed into the kernel and trained by the kernel. You can see the examples of neural networks in the documentation. You can first learn the rules from the simple neural network examples named nn.py, nn_acc.py, and nn_device.py. Then, you can write a Python module for your neural network class and import it, or write it directly in the interpreter. Next, pass the neural network object to the kernel and train it**
+**Every neural network is regarded as an object, and the neural network object is passed into the kernel and trained by the kernel. To build a neural network that can be trained on Note, you need to follow some rules, otherwise you will get errors during training. You can see the examples of neural networks in the documentation. You can first learn the rules from the simple neural network examples named nn.py, nn_acc.py, and nn_device.py. Then, you can write a Python module for your neural network class and import it, or write it directly in the interpreter. Next, pass the neural network object to the kernel and train it**
 
 ## Neural network examples(DL):
 https://github.com/NoteDancing/Note-documentation/tree/neural-network-example/7.0/neuralnetwork/DL
