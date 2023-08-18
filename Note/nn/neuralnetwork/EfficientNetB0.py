@@ -19,6 +19,7 @@ class EfficientNetB0:
         self.bc=tf.Variable(0,dtype=tf.float32) # create a variable to store the batch count
         self.loss_object=tf.keras.losses.CategoricalCrossentropy() # create a categorical crossentropy loss object
         self.optimizer=Adam() # create an Adam optimizer object
+        self.km=0
     
     
     def build(self,dtype='float32'):
@@ -45,7 +46,7 @@ class EfficientNetB0:
         return
     
     
-    def fp(self,data,p):
+    def fp(self,data,p=None):
         """A method that performs forward propagation on the input data and returns the output tensor.
 
         Args:
@@ -55,19 +56,32 @@ class EfficientNetB0:
         Returns:
             output: tensor, the output data after applying the model.
         """
-        with tf.device(assign_device(p,'GPU')): # assign the device to use
+        if self.km==1: # if kernel mode assign 1
+            with tf.device(assign_device(p,'GPU')): # assign the device to use
+                data=self.conv2d.output(data,strides=[1,2,2,1],padding="SAME") # apply the conv2d layer with strides 2 and same padding
+                data=tf.nn.batch_normalization(data,tf.Variable(tf.zeros([32])),tf.Variable(tf.ones([32])),None,None,1e-5) # apply batch normalization to normalize the output
+                data=self.swish(data) # apply swish activation function to increase nonlinearity
+                data=self.MBConv1.output(data) # apply the MBConv1 layer
+                data=self.MBConv2.output(data) # apply the MBConv2 layer
+                data=self.MBConv3.output(data) # apply the MBConv3 layer
+                data=self.MBConv4.output(data) # apply the MBConv4 layer
+                data=self.MBConv5.output(data) # apply the MBConv5 layer
+                data=self.MBConv6.output(data) # apply the MBConv6 layer
+                data=self.MBConv7.output(data) # apply the MBConv7 layer
+                data=tf.reduce_mean(data,[1,2]) # apply global average pooling to get the mean value of each channel
+                output=tf.nn.softmax(self.dense.output(data)) # apply the dense layer and softmax activation function to get the probability distribution of each class
+        else:
             data=self.conv2d.output(data,strides=[1,2,2,1],padding="SAME") # apply the conv2d layer with strides 2 and same padding
-            data=tf.nn.batch_normalization(data,tf.Variable(tf.zeros([32])),tf.Variable(tf.ones([32])),None,None,1e-5) # apply batch normalization to normalize the output
             data=self.swish(data) # apply swish activation function to increase nonlinearity
-            data=self.MBConv1.output(data) # apply the MBConv1 layer
-            data=self.MBConv2.output(data) # apply the MBConv2 layer
-            data=self.MBConv3.output(data) # apply the MBConv3 layer
-            data=self.MBConv4.output(data) # apply the MBConv4 layer
-            data=self.MBConv5.output(data) # apply the MBConv5 layer
-            data=self.MBConv6.output(data) # apply the MBConv6 layer
-            data=self.MBConv7.output(data) # apply the MBConv7 layer
+            data=self.MBConv1.output(data,self.km) # apply the MBConv1 layer
+            data=self.MBConv2.output(data,self.km) # apply the MBConv2 layer
+            data=self.MBConv3.output(data,self.km) # apply the MBConv3 layer
+            data=self.MBConv4.output(data,self.km) # apply the MBConv4 layer
+            data=self.MBConv5.output(data,self.km) # apply the MBConv5 layer
+            data=self.MBConv6.output(data,self.km) # apply the MBConv6 layer
+            data=self.MBConv7.output(data,self.km) # apply the MBConv7 layer
             data=tf.reduce_mean(data,[1,2]) # apply global average pooling to get the mean value of each channel
-            output=tf.nn.softmax(self.dense.output(data)) # apply the dense layer and softmax activation function to get the probability distribution of each class
+            output=tf.nn.softmax(self.dense.output(data)) # apply the dense layer and softmax activation function to get the probability distribution of each class 
         return output # return the output tensor
     
     
