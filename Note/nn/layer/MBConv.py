@@ -30,7 +30,7 @@ class MBConv:
         self.param = [self.weight_depthwise, self.weight_project, self.weight_se_1, self.weight_se_2] # store all the parameters in a list
 
 
-    def output(self, data):
+    def output(self, data, train_flag=True):
         """A method that performs forward propagation on the input data and returns the output tensor.
 
         Args:
@@ -49,12 +49,14 @@ class MBConv:
             if self.expand_ratio > 1: # if the expand ratio is larger than 1
                 weight_expand = initializer([1, 1, inputs_i.shape[-1], self.expanded_size], 'Xavier', self.dtype) # dynamically create a temporary weight_expand variable according to the input shape
                 x = tf.nn.conv2d(inputs_i ,weight_expand ,strides=[1 ,1 ,1 ,1] ,padding="SAME") # apply a 1x1 convolution to expand the input channels
-                x = tf.nn.batch_normalization(x ,tf.Variable(tf.zeros([self.expanded_size])) ,tf.Variable(tf.ones([self.expanded_size])) ,None ,None ,1e-5) # apply batch normalization to normalize the output
+                if train_flag == True:
+                    x = tf.nn.batch_normalization(x ,tf.Variable(tf.zeros([self.expanded_size])) ,tf.Variable(tf.ones([self.expanded_size])) ,None ,None ,1e-5) # apply batch normalization to normalize the output
                 x = self.swish(x) # apply swish activation function to increase nonlinearity
             else: # if the expand ratio is not larger than 1
                 x = inputs_i # skip the expansion phase and use the input data directly
             x = tf.nn.depthwise_conv2d(x ,self.weight_depthwise ,strides=[1 ,strides_i ,strides_i ,1] ,padding="SAME") # apply a depthwise convolution to process each channel separately
-            x = tf.nn.batch_normalization(x ,tf.Variable(tf.zeros([self.expanded_size])) ,tf.Variable(tf.ones([self.expanded_size])) ,None ,None ,1e-5) # apply batch normalization to normalize the output
+            if train_flag == True:
+                x = tf.nn.batch_normalization(x ,tf.Variable(tf.zeros([self.expanded_size])) ,tf.Variable(tf.ones([self.expanded_size])) ,None ,None ,1e-5) # apply batch normalization to normalize the output
             x = self.swish(x) # apply swish activation function to increase nonlinearity
             se_tensor = tf.reduce_mean(x ,[1 ,2]) # global average pooling to get the mean value of each channel
             se_tensor = tf.reshape(se_tensor ,[1 ,1 ,-1]) # reshape it to facilitate subsequent operations
@@ -64,7 +66,8 @@ class MBConv:
             se_tensor = tf.nn.sigmoid(se_tensor) # use sigmoid activation function to get the weight coefficient of each channel, ranging from 0 to 1
             x = tf.multiply(x, se_tensor) # multiply the output tensor by the squeeze-and-excitation tensor element-wise
             x = tf.nn.conv2d(x, self.weight_project, strides=[1, 1, 1, 1], padding="SAME") # apply a 1x1 convolution to project the output channels to the desired size
-            x = tf.nn.batch_normalization(x, tf.Variable(tf.zeros([self.output_size])), tf.Variable(tf.ones([self.output_size])), None, None, 1e-5) # apply batch normalization to normalize the output
+            if train_flag == True:
+                x = tf.nn.batch_normalization(x, tf.Variable(tf.zeros([self.output_size])), tf.Variable(tf.ones([self.output_size])), None, None, 1e-5) # apply batch normalization to normalize the output
             if inputs_i.shape == x.shape: # if the input shape and the output shape are the same
                 x = tf.add(x, inputs_i) # add the input tensor and the output tensor element-wise to form a residual connection
             x = tf.nn.dropout(x, rate=0.2) # apply dropout to prevent overfitting
