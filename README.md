@@ -341,6 +341,12 @@ kernel.train(32,5)           #train the network with batch size 32 and epoch 5
 **You can commit the optimizer you write to Note.**
 
 
+# Neural network:
+**The following links have neural network models that can be trained on Note.**
+
+https://github.com/NoteDancing/Note/tree/Note-7.0/Note/nn/neuralnetwork
+
+
 # Patreon:
 **You can support this project on Patreon.**
 
