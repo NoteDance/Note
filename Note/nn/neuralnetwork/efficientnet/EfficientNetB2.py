@@ -8,7 +8,7 @@ from Note.nn.parallel.assign_device import assign_device
 
 
 class EfficientNetB2:
-    """A class that implements the EfficientNetB0 model for image classification.
+    """A class that implements the EfficientNetB2 model for image classification.
 
     Args:
         classes: integer, the number of classes to predict. Default is 1000.
