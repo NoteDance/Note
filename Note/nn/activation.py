@@ -91,6 +91,12 @@ def activation_conv(data,weight,activation_func,strides,padding,data_format,dila
             return conv_func(data,weight,strides=strides,padding=padding,data_format=data_format,dilations=dilations)+bias
 
 
+def swish(x,beta=1.0):
+    sigmoid=tf.math.sigmoid(beta * x)
+    swish=x*sigmoid
+    return swish
+
+
 activation_dict={
   'tanh':tf.nn.tanh,
   'relu':tf.nn.relu,
@@ -102,5 +108,6 @@ activation_dict={
   'relu6':tf.nn.relu6,
   'selu':tf.nn.selu,
   'silu':tf.nn.silu,
+  'swish':swish,
   # add more activation functions as needed
 }
