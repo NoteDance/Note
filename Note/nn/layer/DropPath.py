@@ -7,8 +7,8 @@ class DropPath:
         self.seed=seed
     
 
-    def output(self,data,training=None):
-        if training:
+    def output(self,data,train_flag=True):
+        if train_flag:
             # get the batch size and the number of samples
             batch_size=tf.shape(data)[0]
             num_samples=tf.reduce_prod(tf.shape(data)[1:])
