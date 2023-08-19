@@ -2,18 +2,15 @@ import tensorflow as tf
 
 
 class StochasticDepth:
-    def __init__(self,rate=0.5):
-        self.rate=rate
+    def __init__(self, pL, layer_depth, total_depth):
+        self.pL = pL
+        self.layer_depth = layer_depth
+        self.survival_prob = 1 - pL * (layer_depth / total_depth) # total_depth is a global variable
     
-
-    def output(self,data):
-        # get the batch size and the number of samples
-        batch_size=tf.shape(data)[0]
-        num_samples=tf.reduce_prod(tf.shape(data)[1:])
-        # create a random mask of shape (batch_size, num_samples)
-        mask=tf.random.uniform([batch_size,num_samples])>self.rate
-        # reshape the mask to match the input shape
-        mask=tf.reshape(mask,tf.shape(data))
-        # apply the mask to the inputs
-        output=data*tf.cast(mask,data.dtype)
-        return output
+    
+    def output(self, x):
+        r = tf.random.uniform([], 0, 1) < self.survival_prob # generate a Bernoulli random number
+        if r: # keep the layer
+            return x / self.survival_prob
+        else: # drop the layer and bypass it with identity function
+            return tf.identity(x) * 0
