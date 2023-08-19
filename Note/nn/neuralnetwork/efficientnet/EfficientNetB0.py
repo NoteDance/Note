@@ -25,14 +25,15 @@ class EfficientNetB0:
         """A method that builds the model by creating different layers."""
         self.bc=tf.Variable(0,dtype=dtype) # create a variable to store the batch count
         self.conv2d=conv2d([3,3,3,32],dtype=dtype) # create a conv2d layer with 32 filters and no bias
-        self.MBConv1=MBConv(32,16,3,1,1,1,dtype) # create a MBConv layer with 16 output channels and 1 repeat
-        self.MBConv2=MBConv(16,24,3,2,6,2,dtype) # create a MBConv layer with 24 output channels and 2 repeats
-        self.MBConv3=MBConv(24,40,5,2,6,2,dtype) # create a MBConv layer with 40 output channels and 2 repeats
-        self.MBConv4=MBConv(40,80,3,2,6,3,dtype) # create a MBConv layer with 80 output channels and 3 repeats
-        self.MBConv5=MBConv(80,112,5,1,6,3,dtype) # create a MBConv layer with 112 output channels and 3 repeats
-        self.MBConv6=MBConv(112,192,5,2,6,4,dtype) # create a MBConv layer with 192 output channels and 4 repeats
-        self.MBConv7=MBConv(192,320,3,1,6,1,dtype) # create a MBConv layer with 320 output channels and 1 repeat
-        self.dense=dense([320,self.classes],dtype=dtype) # create a dense layer with self.classes units
+        self.MBConv1=MBConv(32,16,3,1,1,1,model_number=0,dtype=dtype) # create a MBConv layer with 16 output channels and 1 repeat
+        self.MBConv2=MBConv(16,24,3,2,6,2,model_number=0,dtype=dtype) # create a MBConv layer with 24 output channels and 2 repeats
+        self.MBConv3=MBConv(24,40,5,2,6,2,model_number=0,dtype=dtype) # create a MBConv layer with 40 output channels and 2 repeats
+        self.MBConv4=MBConv(40,80,3,2,6,3,model_number=0,dtype=dtype) # create a MBConv layer with 80 output channels and 3 repeats
+        self.MBConv5=MBConv(80,112,5,1,6,3,model_number=0,dtype=dtype) # create a MBConv layer with 112 output channels and 3 repeats
+        self.MBConv6=MBConv(112,192,5,2,6,4,model_number=0,dtype=dtype) # create a MBConv layer with 192 output channels and 4 repeats
+        self.MBConv7=MBConv(192,320,3,1,6,1,model_number=0,dtype=dtype) # create a MBConv layer with 320 output channels and 1 repeat
+        self.conv1x1=conv2d([1,1,320,1280],dtype=dtype) # create a conv2d layer with 1280 filters and no bias
+        self.dense=dense([1280,self.classes],dtype=dtype) # create a dense layer with self.classes units
         self.param=[self.conv2d.param,
                     self.MBConv1.param,
                     self.MBConv2.param,
@@ -41,6 +42,7 @@ class EfficientNetB0:
                     self.MBConv5.param,
                     self.MBConv6.param,
                     self.MBConv7.param,
+                    self.conv1x1.param,
                     self.dense.param
                     ] # store all the parameters in a list
         return
@@ -68,6 +70,7 @@ class EfficientNetB0:
                 data=self.MBConv5.output(data) # apply the MBConv5 layer
                 data=self.MBConv6.output(data) # apply the MBConv6 layer
                 data=self.MBConv7.output(data) # apply the MBConv7 layer
+                data=self.conv1x1.output(data,strides=[1,1,1,1],padding="SAME") # apply the 1x1 convolution layer with strides 1 and same padding
                 data=tf.reduce_mean(data,[1,2]) # apply global average pooling to get the mean value of each channel
                 output=tf.nn.softmax(self.dense.output(data)) # apply the dense layer and softmax activation function to get the probability distribution of each class
         else:
@@ -80,6 +83,7 @@ class EfficientNetB0:
             data=self.MBConv5.output(data,self.km) # apply the MBConv5 layer
             data=self.MBConv6.output(data,self.km) # apply the MBConv6 layer
             data=self.MBConv7.output(data,self.km) # apply the MBConv7 layer
+            data=self.conv1x1.output(data,strides=[1,1,1,1],padding="SAME") # apply the 1x1 convolution layer with strides 1 and same padding
             data=tf.reduce_mean(data,[1,2]) # apply global average pooling to get the mean value of each channel
             output=tf.nn.softmax(self.dense.output(data)) # apply the dense layer and softmax activation function to get the probability distribution of each class 
         return output # return the output tensor
