@@ -59,7 +59,7 @@ class EfficientNetB7:
         if self.km==1: # if kernel mode assign 1
             with tf.device(assign_device(p,'GPU')): # assign the device to use
                 data=self.conv2d.output(data,strides=[1,2,2,1],padding="SAME") # apply the conv2d layer with strides 2 and same padding
-                data=tf.nn.batch_normalization(data,tf.Variable(tf.zeros([32])),tf.Variable(tf.ones([32])),None,None,1e-5) # apply batch normalization to normalize the output
+                data=tf.nn.batch_normalization(data,tf.Variable(tf.zeros([256])),tf.Variable(tf.ones([256])),None,None,1e-5) # apply batch normalization to normalize the output
                 data=self.swish(data) # apply swish activation function to increase nonlinearity
                 data=self.MBConv1.output(data) # apply the MBConv1 layer
                 data=self.MBConv2.output(data) # apply the MBConv2 layer
