@@ -26,14 +26,15 @@ class GAT:
         self.param=[self.weight,self.attention]
     
     
-    def output(self,graph,data):
+    def output(self,graph,data,train_flag=True):
         # graph: a dictionary that represents the input graph structure data, containing adjacency matrix, node features, etc.
         # data: a tensor that represents the input node features, shape is [N, input_dim], where N is the number of nodes
         # compute the linear transformation and add bias, and split into multiple heads
         linear_output=tf.matmul(data,self.weight)
         linear_output=tf.reshape(linear_output,[-1,self.num_heads,self.output_dim])
         # apply dropout to features
-        linear_output=tf.nn.dropout(linear_output,self.ffd_drop)
+        if train_flag==True:
+            linear_output=tf.nn.dropout(linear_output,self.ffd_drop)
         N=graph['adj_matrix'].shape[0]
         linear_output_1=tf.broadcast_to(linear_output[:,None,:,:],[N,N,self.num_heads,self.output_dim])
         linear_output_2=tf.broadcast_to(linear_output[None,:,:,:],[N,N,self.num_heads,self.output_dim])
@@ -47,7 +48,8 @@ class GAT:
         attention_score=tf.nn.leaky_relu(attention_score,alpha=0.2)
         attention_score=tf.nn.softmax(attention_score,axis=-1)
         # apply dropout to attention score
-        attention_score=tf.nn.dropout(attention_score,self.attn_drop)
+        if train_flag==True:
+            attention_score=tf.nn.dropout(attention_score,self.attn_drop)
         # compute the weighted aggregation of neighbor information, and concatenate multiple heads
         neighbor_output=tf.matmul(attention_score,linear_output)
         neighbor_output=tf.reshape(neighbor_output,[-1,self.num_heads*self.output_dim])
