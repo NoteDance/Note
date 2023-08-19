@@ -19,12 +19,10 @@ class Performer:
     attn = self.attention.output(data)
     ffn_attn = self.ffn_attn.output(attn)
     # Apply the residual connection and layer normalization
-    if train_flag==True:
-        output = layer_normalization(ffn_attn + data)
+    output = layer_normalization(ffn_attn + data, train_flag=train_flag)
     # Apply the feed-forward sublayer
     ffn1 = self.ffn1.output(output)
     ffn2 = self.ffn2.output(ffn1)
     # Apply the residual connection and layer normalization
-    if train_flag==True:
-        output = layer_normalization(ffn2+output)
+    output = layer_normalization(ffn2+output, train_flag=train_flag)
     return output
