@@ -9,8 +9,9 @@ class MBConv:
         self.output_size = output_size # store the output size of the output channels
         self.weight_depthwise = initializer([kernel_size, kernel_size, self.expanded_size, 1], 'Xavier', dtype) # create a weight tensor for the depthwise convolution
         self.weight_project = initializer([1, 1, self.expanded_size, output_size], 'Xavier', dtype) # create a weight tensor for the projection convolution
-        self.weight_se_1 = initializer([1, 1, self.expanded_size, int(self.expanded_size * se_ratio)], 'Xavier', dtype) # create a weight tensor for the first squeeze and excitation convolution
-        self.weight_se_2 = initializer([1, 1, int(self.expanded_size * se_ratio), self.expanded_size], 'Xavier', dtype) # create a weight tensor for the second squeeze and excitation convolution
+        se_channels = max(1, int(self.expanded_size * se_ratio))
+        self.weight_se_1 = initializer([1, 1, self.expanded_size, se_channels], 'Xavier', dtype) # create a weight tensor for the first squeeze and excitation convolution
+        self.weight_se_2 = initializer([1, 1, se_channels, self.expanded_size], 'Xavier', dtype) # create a weight tensor for the second squeeze and excitation convolution
         self.strides = strides # store the strides for the depthwise convolution
         self.expand_ratio = expand_ratio # store the expand ratio for the expansion step
         self.repeats = repeats # store the number of repeats for the MBConv module
