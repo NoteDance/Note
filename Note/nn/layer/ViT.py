@@ -17,14 +17,12 @@ class ViT:
     
     def output(self,data,train_flag=True):
         # data: (B, N, dim)
-        if train_flag==True:
-            attn_input=layer_normalization(data) # (B,N,dim)
+        attn_input=layer_normalization(data,train_flag=train_flag) # (B,N,dim)
         attn_output,_=self.attn.output(attn_input,self.num_heads) # (B,N,dim)
         if train_flag==True:
             attn_output=tf.nn.dropout(attn_output,self.dropout) # (B,N,dim)
         residual_input=data+attn_output # (B,N,dim)
-        if train_flag==True:
-            mlp_input=layer_normalization(residual_input) # (B,N,dim)
+        mlp_input=layer_normalization(residual_input,train_flag=train_flag) # (B,N,dim)
         mlp_output=self.activation(self.mlp1.output(mlp_input)) # (B,N,dim)
         if train_flag==True:
             mlp_output=tf.nn.dropout(mlp_output,self.dropout) # (B,N,dim)
