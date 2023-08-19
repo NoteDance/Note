@@ -15,9 +15,7 @@ class Linformer:
     # x is a tensor of shape (batch_size, seq_len, dim)
     # return a tensor of shape (batch_size, seq_len, dim)
     z_out = self.attention_layer.output(data) # (batch_size, seq_len, dim)
-    if train_flag==True:
-        z_norm = layer_normalization(data + z_out) # (batch_size, seq_len, dim)
+    z_norm = layer_normalization(data + z_out, train_flag=train_flag) # (batch_size, seq_len, dim)
     ffn_out = self.ffn_layer.output(z_norm) # (batch_size, seq_len, dim)
-    if train_flag==True:
-        ffn_norm = layer_normalization(z_norm + ffn_out) # (batch_size, seq_len, dim)
+    ffn_norm = layer_normalization(z_norm + ffn_out, train_flag=train_flag) # (batch_size, seq_len, dim)
     return ffn_norm
