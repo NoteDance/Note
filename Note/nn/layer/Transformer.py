@@ -64,22 +64,19 @@ class Transformer:
         else:
           output=tf.matmul(o,self.weight_o)# shape: (batch_size ,seq_len_q ,hidden_size)
         # Add residual connection and layer normalization
-        if train_flag==True:
-            output=layer_normalization(output+data) # shape: (batch_size ,seq_len_q ,hidden_size)
+        output=layer_normalization(output+data,train_flag=train_flag) # shape: (batch_size ,seq_len_q ,hidden_size)
         # Apply the first feed-forward sublayer with ReLU activation
         if self.use_bias:
           ffn_1=tf.nn.relu(tf.matmul(output,self.weight_ffn_1)+self.bias_ffn_1)# shape: (batch_size ,seq_len_q ,4 * hidden_size)
         else:
           ffn_1=tf.nn.relu(tf.matmul(output,self.weight_ffn_1))# shape: (batch_size ,seq_len_q ,4 * hidden_size)
         # Apply layer normalization
-        if train_flag==True:
-            ffn_1=layer_normalization(ffn_1) # shape: (batch_size ,seq_len_q ,4 * hidden_size)
+        ffn_1=layer_normalization(ffn_1,train_flag=train_flag) # shape: (batch_size ,seq_len_q ,4 * hidden_size)
         # Apply the second feed-forward sublayer with linear activation
         if self.use_bias:
           ffn_2=tf.matmul(ffn_1,self.weight_ffn_2)+self.bias_ffn_2# shape: (batch_size ,seq_len_q ,hidden_size)
         else:
           ffn_2=tf.matmul(ffn_1,self.weight_ffn_2)# shape: (batch_size ,seq_len_q ,hidden_size)
         # Add residual connection and layer normalization
-        if train_flag==True:
-            output=layer_normalization(ffn_2+output)# shape: (batch_size ,seq_len_q ,hidden_size)
+        output=layer_normalization(ffn_2+output,train_flag=train_flag)# shape: (batch_size ,seq_len_q ,hidden_size)
         return output
