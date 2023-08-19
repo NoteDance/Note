@@ -15,7 +15,23 @@ class multihead_attention:
         self.num_heads = num_heads
         self.head_dim = weight_shape[1] // num_heads
     
-
+    
+    def scaled_dot_product_attention(self, query, key, value, mask):
+        # Compute the dot product of query and key to obtain the dot product output
+        dot_product_output = tf.matmul(query, key, transpose_b=True)  # shape: (batch_size, num_heads, seq_length_q, seq_length_k)
+        # Scale the dot product output to obtain the scaled dot product output
+        scaled_dot_product_output = dot_product_output / tf.sqrt(tf.cast(self.head_dim, query.dtype.name))  # shape: (batch_size, num_heads, seq_length_q, seq_length_k)
+        # If there is a mask, add the mask to the scaled dot product output to obtain the masked scaled dot product output
+        if mask is not None:
+            scaled_dot_product_output += mask * -1e9  # shape: (batch_size, num_heads, seq_length_q, seq_length_k)
+        # Apply softmax to the masked scaled dot product output to obtain the attention weights
+        attention_weights = tf.nn.softmax(scaled_dot_product_output, axis=-1)  # shape: (batch_size, num_heads, seq_length_q, seq_length_k)
+        # Compute the dot product of attention weights and value to obtain the attention output
+        attention_output = tf.matmul(attention_weights, value)  # shape: (batch_size, num_heads, seq_length_q, head_dim)
+        # Return the attention output and attention weights
+        return attention_output, attention_weights
+    
+    
     def output(self, data1, data2=None, mask=None):
         # Linearly transform query, key, and value to obtain new query, key, and value
         if data2 is not None:
@@ -49,19 +65,3 @@ class multihead_attention:
         output = tf.matmul(concat_scaled_dot_product_attention_output, self.ow)  # shape: (batch_size, seq_length_q, weight_shape[1])
         # Return the final output and attention weights
         return output, scaled_dot_product_attention_weights
-
-
-    def scaled_dot_product_attention(self, query, key, value, mask):
-        # Compute the dot product of query and key to obtain the dot product output
-        dot_product_output = tf.matmul(query, key, transpose_b=True)  # shape: (batch_size, num_heads, seq_length_q, seq_length_k)
-        # Scale the dot product output to obtain the scaled dot product output
-        scaled_dot_product_output = dot_product_output / tf.sqrt(tf.cast(self.head_dim, query.dtype.name))  # shape: (batch_size, num_heads, seq_length_q, seq_length_k)
-        # If there is a mask, add the mask to the scaled dot product output to obtain the masked scaled dot product output
-        if mask is not None:
-            scaled_dot_product_output += mask * -1e9  # shape: (batch_size, num_heads, seq_length_q, seq_length_k)
-        # Apply softmax to the masked scaled dot product output to obtain the attention weights
-        attention_weights = tf.nn.softmax(scaled_dot_product_output, axis=-1)  # shape: (batch_size, num_heads, seq_length_q, seq_length_k)
-        # Compute the dot product of attention weights and value to obtain the attention output
-        attention_output = tf.matmul(attention_weights, value)  # shape: (batch_size, num_heads, seq_length_q, head_dim)
-        # Return the attention output and attention weights
-        return attention_output, attention_weights
