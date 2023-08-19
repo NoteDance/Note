@@ -13,6 +13,43 @@ class sparse_attention:
         # A dictionary that stores the parameters for the sparse mode or mask, such as window_size, block_size, top_k, etc.
         self.mask_params = mask_params
     
+    # A function that generates a local window mask where each position only attends to the previous and next window_size positions
+    def local_window_mask(self,seq_len,dtype,window_size):
+        # Create a local window mask with shape (seq_len,
+        # seq_len) that only keeps the window_size positions around the diagonal
+        window_mask = tf.linalg.band_part(tf.ones((seq_len,seq_len)),window_size,window_size)
+        return window_mask
+    
+    # A function that generates a block mask where the sequence is divided into several blocks and each position only attends to the positions within the same block
+    def block_mask(self,seq_len,dtype,block_size):
+        # Create a block mask with shape (seq_len,
+        # seq_len) that only keeps the positions within the same block
+        block_mask = tf.linalg.band_part(tf.ones((seq_len // block_size,seq_len // block_size)),0,0)
+        block_mask = tf.repeat(tf.repeat(block_mask,block_size,axis=0),block_size,axis=1)
+        return block_mask
+    
+    # A function that generates a routing mask where each position only attends to the top_k most relevant positions
+    def routing_mask(self, query, key, dtype, top_k):
+        # Compute the dot product of query and key with shape (batch_size, num_heads, seq_len_q, seq_len_k)
+        qk = tf.matmul(query, key, transpose_b=True)
+        # For each position, find the top_k largest values and their indices with shape (batch_size, num_heads, seq_len_q, top_k)
+        values, indices = tf.math.top_k(qk, k=top_k)
+        # Create a sparse mask tensor with shape (batch_size * num_heads * seq_len_q, seq_len_k) that only keeps the top_k positions
+        batch_size = query.shape[0]
+        num_heads = query.shape[1]
+        seq_len_q = query.shape[2]
+        seq_len_k = key.shape[2]
+        # Compute the row indices for each position in the sparse tensor
+        row_indices = tf.range(batch_size * num_heads * seq_len_q)
+        row_indices = tf.repeat(row_indices, top_k)
+        # Compute the column indices for each position in the sparse tensor
+        col_indices = tf.reshape(indices, shape=[-1])
+        # Create a sparse tensor with values of 1 and shape (batch_size * num_heads * seq_len_q, seq_len_k)
+        sparse_mask = tf.sparse.SparseTensor(indices=tf.cast(tf.stack([row_indices, col_indices], axis=1), dtype=tf.int64), values=tf.ones_like(col_indices, dtype=dtype), dense_shape=[batch_size * num_heads * seq_len_q, seq_len_k])
+        # Reshape the sparse tensor to (batch_size, num_heads, seq_len_q, seq_len_k)
+        sparse_mask = tf.sparse.reshape(sparse_mask, shape=[batch_size, num_heads, seq_len_q, seq_len_k])
+        sparse_mask = tf.sparse.reorder(sparse_mask)
+        return tf.sparse.to_dense(sparse_mask)
     
     def output(self, data1, a, data2=None):
         if data2 is None:
@@ -61,41 +98,3 @@ class sparse_attention:
         output = tf.reshape(output,shape=[output.shape[0],output.shape[1],-1])
 
         return output,attention_weights
-
-    # A function that generates a local window mask where each position only attends to the previous and next window_size positions
-    def local_window_mask(self,seq_len,dtype,window_size):
-        # Create a local window mask with shape (seq_len,
-        # seq_len) that only keeps the window_size positions around the diagonal
-        window_mask = tf.linalg.band_part(tf.ones((seq_len,seq_len)),window_size,window_size)
-        return window_mask
-
-    # A function that generates a block mask where the sequence is divided into several blocks and each position only attends to the positions within the same block
-    def block_mask(self,seq_len,dtype,block_size):
-        # Create a block mask with shape (seq_len,
-        # seq_len) that only keeps the positions within the same block
-        block_mask = tf.linalg.band_part(tf.ones((seq_len // block_size,seq_len // block_size)),0,0)
-        block_mask = tf.repeat(tf.repeat(block_mask,block_size,axis=0),block_size,axis=1)
-        return block_mask
-    
-    # A function that generates a routing mask where each position only attends to the top_k most relevant positions
-    def routing_mask(self, query, key, dtype, top_k):
-        # Compute the dot product of query and key with shape (batch_size, num_heads, seq_len_q, seq_len_k)
-        qk = tf.matmul(query, key, transpose_b=True)
-        # For each position, find the top_k largest values and their indices with shape (batch_size, num_heads, seq_len_q, top_k)
-        values, indices = tf.math.top_k(qk, k=top_k)
-        # Create a sparse mask tensor with shape (batch_size * num_heads * seq_len_q, seq_len_k) that only keeps the top_k positions
-        batch_size = query.shape[0]
-        num_heads = query.shape[1]
-        seq_len_q = query.shape[2]
-        seq_len_k = key.shape[2]
-        # Compute the row indices for each position in the sparse tensor
-        row_indices = tf.range(batch_size * num_heads * seq_len_q)
-        row_indices = tf.repeat(row_indices, top_k)
-        # Compute the column indices for each position in the sparse tensor
-        col_indices = tf.reshape(indices, shape=[-1])
-        # Create a sparse tensor with values of 1 and shape (batch_size * num_heads * seq_len_q, seq_len_k)
-        sparse_mask = tf.sparse.SparseTensor(indices=tf.cast(tf.stack([row_indices, col_indices], axis=1), dtype=tf.int64), values=tf.ones_like(col_indices, dtype=dtype), dense_shape=[batch_size * num_heads * seq_len_q, seq_len_k])
-        # Reshape the sparse tensor to (batch_size, num_heads, seq_len_q, seq_len_k)
-        sparse_mask = tf.sparse.reshape(sparse_mask, shape=[batch_size, num_heads, seq_len_q, seq_len_k])
-        sparse_mask = tf.sparse.reorder(sparse_mask)
-        return tf.sparse.to_dense(sparse_mask)
