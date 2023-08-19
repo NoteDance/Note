@@ -70,5 +70,6 @@ class MBConv:
                 x = tf.nn.batch_normalization(x, tf.Variable(tf.zeros([self.output_size])), tf.Variable(tf.ones([self.output_size])), None, None, 1e-5) # apply batch normalization to normalize the output
             if inputs_i.shape == x.shape: # if the input shape and the output shape are the same
                 x = tf.add(x, inputs_i) # add the input tensor and the output tensor element-wise to form a residual connection
-            x = tf.nn.dropout(x, rate=0.2) # apply dropout to prevent overfitting
+            if train_flag == True:
+                x = tf.nn.dropout(x, rate=0.2) # apply dropout to prevent overfitting
         return x # return the final output tensor after applying MBConv block(s)
