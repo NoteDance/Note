@@ -51,7 +51,8 @@ class MBConv:
                 se_tensor = tf.nn.sigmoid(se_tensor) # use sigmoid activation function to get the weight coefficient of each channel, ranging from 0 to 1
                 x = tf.multiply(x, se_tensor) # multiply the output tensor by the squeeze and excitation tensor element-wise
             x = tf.nn.conv2d(x, self.weight_project, strides=[1, 1, 1, 1], padding="SAME") # apply a 1x1 convolution to project the output channels to the desired size
-            x = tf.nn.batch_normalization(x, tf.Variable(tf.zeros([self.output_size])), tf.Variable(tf.ones([self.output_size])), None, None, 1e-5) # apply batch normalization to normalize the output
+            if train_flag: # if it is in training mode
+                x = tf.nn.batch_normalization(x, tf.Variable(tf.zeros([self.output_size])), tf.Variable(tf.ones([self.output_size])), None, None, 1e-5) # apply batch normalization to normalize the output
             if inputs_i.shape == x.shape: # if the input shape and the output shape are the same
                 if train_flag: # if it is in training mode
                     rate = 0.2 * (1 - 0.5 * (self.model_number + 1) / 7) # compute the drop connect probability according to the paper formula, where i is the model number (from 0 to 6)
