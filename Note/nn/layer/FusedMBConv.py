@@ -6,7 +6,7 @@ from Note.nn.activation import activation_dict
 # Define a class for the FusedMBConv block
 class FusedMBConv:
     # Initialize the class with the input and output parameters
-    def __init__(self, input_size, output_size, kernel_size=3, strides=1, expand_ratio=1, repeats=1, se_ratio=0, dtype='float32'):
+    def __init__(self, input_size, output_size, kernel_size=3, strides=1, expand_ratio=1, repeats=1, se_ratio=0, rate=0.2, dtype='float32'):
         # Calculate the expanded size by multiplying the input size by the expand ratio
         self.expanded_size = input_size * expand_ratio
         # Assign the output size to a class attribute
@@ -43,6 +43,8 @@ class FusedMBConv:
         self.repeats = repeats
         # Assign the se ratio to a class attribute
         self.se_ratio = se_ratio
+        # Assign the rate to a class attribute
+        self.rate = rate
         # Get the swish activation function from the activation_dict in Note.nn module
         self.swish = activation_dict['swish']
         # Store all the weights in a list as a class attribute
@@ -97,7 +99,7 @@ class FusedMBConv:
             if inputs_i.shape == x.shape:
                 # If it is training mode, apply dropout to the output tensor with a variable rate that depends on b and the repeats parameter and a noise shape
                 if train_flag:
-                    rate = 0.2 * b / self.repeats
+                    rate = self.rate * b / self.repeats
                     x = tf.nn.dropout(x, rate=rate, noise_shape=(None, 1, 1, 1))
                     x = tf.add(x, inputs_i)
             # Increment b by 1 for the next iteration
