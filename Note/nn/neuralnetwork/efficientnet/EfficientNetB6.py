@@ -13,8 +13,10 @@ class EfficientNetB6:
     Args:
         classes: integer, the number of classes to predict. Default is 1000.
     """
-    def __init__(self,classes=1000):
+    def __init__(self,classes=1000,include_top=True,pooling=None):
         self.classes=classes # store the number of classes
+        self.include_top=include_top
+        self.pooling=pooling
         self.swish=activation_dict['swish'] # get the swish activation function from the activation dictionary
         self.loss_object=tf.keras.losses.CategoricalCrossentropy() # create a categorical crossentropy loss object
         self.optimizer=Adam() # create an Adam optimizer object
@@ -71,8 +73,15 @@ class EfficientNetB6:
                 data=self.MBConv6.output(data) # apply the MBConv6 layer
                 data=self.MBConv7.output(data) # apply the MBConv7 layer
                 data=self.conv1x1.output(data,strides=[1,1,1,1],padding="SAME") # apply the 1x1 convolution layer with strides 1 and same padding
-                data=tf.reduce_mean(data,[1,2]) # apply global average pooling to get the mean value of each channel
-                output=tf.nn.softmax(self.dense.output(data)) # apply the dense layer and softmax activation function to get the probability distribution of each class
+                if self.include_top:
+                    data=tf.reduce_mean(data,[1,2]) # apply global average pooling to get the mean value of each channel
+                    data=tf.nn.dropout(data,rate=0.2)
+                    output=tf.nn.softmax(self.dense.output(data)) # apply the dense layer and softmax activation function to get the probability distribution of each class
+                else:
+                    if self.pooling=="avg":
+                        data=tf.reduce_mean(data,[1,2])
+                    elif self.pooling=="max":
+                        data=tf.reduce_max(data,[1,2])
         else:
             data=self.conv2d.output(data,strides=[1,2,2,1],padding="SAME") # apply the conv2d layer with strides 2 and same padding
             data=self.swish(data) # apply swish activation function to increase nonlinearity
@@ -84,8 +93,14 @@ class EfficientNetB6:
             data=self.MBConv6.output(data,self.km) # apply the MBConv6 layer
             data=self.MBConv7.output(data,self.km) # apply the MBConv7 layer
             data=self.conv1x1.output(data,strides=[1,1,1,1],padding="SAME") # apply the 1x1 convolution layer with strides 1 and same padding
-            data=tf.reduce_mean(data,[1,2]) # apply global average pooling to get the mean value of each channel
-            output=tf.nn.softmax(self.dense.output(data)) # apply the dense layer and softmax activation function to get the probability distribution of each class 
+            if self.include_top:
+                data=tf.reduce_mean(data,[1,2]) # apply global average pooling to get the mean value of each channel
+                output=tf.nn.softmax(self.dense.output(data)) # apply the dense layer and softmax activation function to get the probability distribution of each class 
+            else:
+                if self.pooling=="avg":
+                    data=tf.reduce_mean(data,[1,2])
+                elif self.pooling=="max":
+                    data=tf.reduce_max(data,[1,2])
         return output # return the output tensor
     
     
