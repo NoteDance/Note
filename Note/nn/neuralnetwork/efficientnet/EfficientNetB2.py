@@ -25,13 +25,13 @@ class EfficientNetB2:
         """A method that builds the model by creating different layers."""
         self.bc=tf.Variable(0,dtype=dtype) # create a variable to store the batch count
         self.conv2d=conv2d([3,3,3,64],dtype=dtype) # create a conv2d layer with 64 filters and no bias
-        self.MBConv1=MBConv(64,24,3,1,1,1,model_number=2,dtype=dtype) # create a MBConv layer with 24 output channels and 1 repeat
-        self.MBConv2=MBConv(24,48,3,2,6,4,model_number=2,dtype=dtype) # create a MBConv layer with 48 output channels and 4 repeats
-        self.MBConv3=MBConv(48,64,5,2,6,2,model_number=2,dtype=dtype) # create a MBConv layer with 64 output channels and 2 repeats
-        self.MBConv4=MBConv(64,120,3,2,6,4,model_number=2,dtype=dtype) # create a MBConv layer with 120 output channels and 4 repeats
-        self.MBConv5=MBConv(120,160,5,1,6,4,model_number=2,dtype=dtype) # create a MBConv layer with 160 output channels and 4 repeats
-        self.MBConv6=MBConv(160,256,5,2,6,5,model_number=2,dtype=dtype) # create a MBConv layer with 256 output channels and 5 repeats
-        self.MBConv7=MBConv(256,448,3,1,6,1,model_number=2,dtype=dtype) # create a MBConv layer with 448 output channels and 1 repeat
+        self.MBConv1=MBConv(64,24,3,1,1,1,dtype=dtype) # create a MBConv layer with 24 output channels and 1 repeat
+        self.MBConv2=MBConv(24,48,3,2,6,4,dtype=dtype) # create a MBConv layer with 48 output channels and 4 repeats
+        self.MBConv3=MBConv(48,64,5,2,6,2,dtype=dtype) # create a MBConv layer with 64 output channels and 2 repeats
+        self.MBConv4=MBConv(64,120,3,2,6,4,dtype=dtype) # create a MBConv layer with 120 output channels and 4 repeats
+        self.MBConv5=MBConv(120,160,5,1,6,4,dtype=dtype) # create a MBConv layer with 160 output channels and 4 repeats
+        self.MBConv6=MBConv(160,256,5,2,6,5,dtype=dtype) # create a MBConv layer with 256 output channels and 5 repeats
+        self.MBConv7=MBConv(256,448,3,1,6,1,dtype=dtype) # create a MBConv layer with 448 output channels and 1 repeat
         self.conv1x1=conv2d([1,1,448,1280],dtype=dtype) # create a conv2d layer with 1280 filters and no bias
         self.dense=dense([1280,self.classes],dtype=dtype) # create a dense layer with self.classes units
         self.param=[self.conv2d.param,
