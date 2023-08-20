@@ -59,7 +59,7 @@ class MBConv:
                 strides_i = 1
                 inputs_i = x
             # If the expand ratio is greater than 1, apply an expansion layer to increase the number of channels
-            if self.expand_ratio > 1:
+            if self.expand_ratio != 1:
                 x = tf.nn.conv2d(inputs_i ,self.weight_expand[i] ,strides=[1 ,1 ,1 ,1] ,padding="SAME")
                 if train_flag:
                     x = tf.nn.batch_normalization(x ,tf.Variable(tf.zeros([self.expanded_size])) ,tf.Variable(tf.ones([self.expanded_size])) ,None ,None ,1e-5)
