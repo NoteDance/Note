@@ -47,6 +47,7 @@ class FusedMBConv:
         self.rate = rate
         # Get the swish activation function from the activation_dict in Note.nn module
         self.swish = activation_dict['swish']
+        self.b=tf.Variable(0,dtype=dtype)
         # Store all the weights in a list as a class attribute
         self.param = [self.weight_expand, self.weight_project, self.weight_se_1, self.weight_se_2]
     
@@ -54,7 +55,7 @@ class FusedMBConv:
     # Define a method for computing the output of the block given an input tensor and a training flag
     def output(self, data, train_flag=True):
         # Initialize a variable b to 0 for calculating the dropout rate later
-        b = 0 
+        self.b.assign(0) 
         # Loop over the number of repeats for the block
         for i in range(self.repeats):
             # If it is the first repeat, use the original strides and input tensor for the depthwise convolution layer
@@ -99,10 +100,10 @@ class FusedMBConv:
             if inputs_i.shape == x.shape:
                 # If it is training mode, apply dropout to the output tensor with a variable rate that depends on b and the repeats parameter and a noise shape
                 if train_flag:
-                    rate = self.rate * b / self.repeats
+                    rate = self.rate * self.b / self.repeats
                     x = tf.nn.dropout(x, rate=rate, noise_shape=(None, 1, 1, 1))
                     x = tf.add(x, inputs_i)
             # Increment b by 1 for the next iteration
-            b += 1
+            self.b.assign_add(1)
         # Return the output tensor
         return x
