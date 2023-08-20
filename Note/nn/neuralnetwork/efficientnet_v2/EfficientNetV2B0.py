@@ -9,8 +9,10 @@ from Note.nn.parallel.assign_device import assign_device
 
 
 class EfficientNetV2B0:
-    def __init__(self,classes=1000):
+    def __init__(self,classes=1000,include_top=True,pooling=None):
         self.classes=classes
+        self.include_top=include_top
+        self.pooling=pooling
         self.swish=activation_dict['swish']
         self.loss_object=tf.keras.losses.CategoricalCrossentropy()
         self.optimizer=Adam()
@@ -54,8 +56,15 @@ class EfficientNetV2B0:
                 data=self.MBConv2.output(data)
                 data=self.MBConv3.output(data)
                 data=self.conv1x1.output(data,strides=[1,1,1,1],padding="SAME")
-                data=tf.reduce_mean(data,[1,2])
-                output=tf.nn.softmax(self.dense.output(data))
+                if self.include_top:
+                    data=tf.reduce_mean(data,[1,2])
+                    data=tf.nn.dropout(data,rate=0.2)
+                    output=tf.nn.softmax(self.dense.output(data))
+                else:
+                    if self.pooling=="avg":
+                        data=tf.reduce_mean(data,[1,2])
+                    elif self.pooling=="max":
+                        data=tf.reduce_max(data,[1,2])
         else:
             data=self.conv2d.output(data,strides=[1,2,2,1],padding="SAME")
             data=self.swish(data)
@@ -66,8 +75,14 @@ class EfficientNetV2B0:
             data=self.MBConv2.output(data,self.km)
             data=self.MBConv3.output(data,self.km)
             data=self.conv1x1.output(data,strides=[1,1,1,1],padding="SAME")
-            data=tf.reduce_mean(data,[1,2])
-            output=tf.nn.softmax(self.dense.output(data))
+            if self.include_top:
+                data=tf.reduce_mean(data,[1,2])
+                output=tf.nn.softmax(self.dense.output(data))
+            else:
+                if self.pooling=="avg":
+                    data=tf.reduce_mean(data,[1,2])
+                elif self.pooling=="max":
+                    data=tf.reduce_max(data,[1,2])
         return output
 
 
