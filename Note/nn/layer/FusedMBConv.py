@@ -16,6 +16,10 @@ class FusedMBConv:
         self.weight_project = []
         self.weight_se_1 = []
         self.weight_se_2 = []
+        self.expand_beta = []
+        self.expand_gamma = []
+        self.project_beta = []
+        self.project_gamma = []
         # Calculate the number of channels for the squeeze and excite layer
         se_channels = max(1, int(self.expanded_size * se_ratio))
         # Loop over the number of repeats for the block
@@ -35,6 +39,10 @@ class FusedMBConv:
             # Initialize the weights for the squeeze and excite layers using a custom initializer from Note.nn module
             self.weight_se_1.append(initializer([1, 1, self.expanded_size, se_channels], 'Xavier', dtype))
             self.weight_se_2.append(initializer([1, 1, se_channels, self.expanded_size], 'Xavier', dtype))
+            self.expand_beta.append(tf.Variable(tf.zeros([self.expanded_size])))
+            self.expand_gamma.append(tf.Variable(tf.ones([self.expanded_size])))
+            self.project_beta.append(tf.Variable(tf.zeros([output_size])))
+            self.project_gamma.append(tf.Variable(tf.ones([output_size])))
         # Assign the strides to a class attribute
         self.strides = strides
         # Assign the expand ratio to a class attribute
@@ -49,7 +57,10 @@ class FusedMBConv:
         self.swish = activation_dict['swish']
         self.b=tf.Variable(0,dtype=dtype)
         # Store all the weights in a list as a class attribute
-        self.param = [self.weight_expand, self.weight_project, self.weight_se_1, self.weight_se_2]
+        self.param = [self.weight_expand, self.weight_project, self.weight_se_1, self.weight_se_2,
+                      self.expand_beta, self.expand_gamma,
+                      self.project_beta, self.project_gamma
+                      ]
     
     
     # Define a method for computing the output of the block given an input tensor and a training flag
@@ -71,7 +82,7 @@ class FusedMBConv:
                 x = tf.nn.conv2d(inputs_i ,self.weight_expand[i] ,strides=strides_i ,padding="SAME")
                 # If it is training mode, apply batch normalization to normalize the output tensor along its channel dimension 
                 if train_flag:
-                    x = tf.nn.batch_normalization(x ,tf.Variable(tf.zeros([self.expanded_size])) ,tf.Variable(tf.ones([self.expanded_size])) ,None ,None ,1e-5)
+                    x = tf.nn.batch_normalization(x ,self.expand_beta[i] ,self.expand_gamma[i] ,None ,None ,1e-5)
                 # Apply swish activation function to the output tensor
                 x = self.swish(x)
             # Otherwise, skip the expansion step and use the input tensor as the output tensor
@@ -95,7 +106,7 @@ class FusedMBConv:
             x = tf.nn.conv2d(x, self.weight_project[i], strides=1 if self.expand_ratio != 1 else strides_i, padding="SAME")
             # If it is training mode, apply batch normalization to normalize the output tensor along its channel dimension 
             if train_flag:
-                x = tf.nn.batch_normalization(x, tf.Variable(tf.zeros([self.output_size])), tf.Variable(tf.ones([self.output_size])), None, None, 1e-5)
+                x = tf.nn.batch_normalization(x, self.project_beta[i], self.project_gamma[i], None, None, 1e-5)
             # If the input tensor and the output tensor have the same shape, apply a residual connection by adding them element-wise
             if inputs_i.shape == x.shape:
                 # If it is training mode, apply dropout to the output tensor with a variable rate that depends on b and the repeats parameter and a noise shape
