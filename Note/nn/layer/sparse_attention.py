@@ -7,6 +7,7 @@ class sparse_attention:
         self.qw = i.initializer(weight_shape, weight_initializer, dtype)
         self.kw = i.initializer(weight_shape, weight_initializer, dtype)
         self.vw = i.initializer(weight_shape, weight_initializer, dtype)
+        self.output_size=weight_shape[-1]
         self.param = [self.qw, self.kw, self.vw]
         # A string that specifies which sparse mode or mask to use, such as "local_window", "block", "routing", etc.
         self.mask_mode = mask_mode
