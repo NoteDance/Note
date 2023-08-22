@@ -13,42 +13,48 @@ class DenseLayer:
         self.weight1 = initializer([1, 1, input_size, 4*self.growth_rate], 'Xavier', dtype)
         # initialize the second convolutional weight with Xavier initialization
         self.weight2 = initializer([3, 3, 4*self.growth_rate, self.growth_rate], 'Xavier', dtype)
+        self.moving_mean1 = tf.Variable(tf.zeros([input_size])) 
+        self.moving_var1 = tf.Variable(tf.ones([input_size]))
+        self.moving_mean2 = tf.Variable(tf.zeros([4*self.growth_rate])) 
+        self.moving_var2 = tf.Variable(tf.ones([4*self.growth_rate]))
+        self.beta1 = tf.Variable(tf.zeros([input_size]))
+        self.gamma1 = tf.Variable(tf.ones([input_size]))
+        self.beta2 = tf.Variable(tf.zeros([4*self.growth_rate]))
+        self.gamma2 = tf.Variable(tf.ones([4*self.growth_rate]))
         # store the parameters in a list
-        self.param = [self.weight1, self.weight2]
+        self.param = [self.weight1, self.weight2, self.beta1, self.gamma1, self.beta2, self.gamma2]
     
     
     # define a method for outputting the layer result
     def output(self, inputs, train_flag=True):
-        # calculate the mean and variance of the inputs along the channel axis
-        mean=tf.math.reduce_mean(inputs, axis=3)
-        variance=tf.math.reduce_variance(inputs, axis=3)
-        # expand the mean and variance dimensions to match the inputs shape
-        mean=tf.expand_dims(mean,axis=-1)
-        variance=tf.expand_dims(variance,axis=-1)
-        # perform batch normalization on the inputs with no offset and scale
-        x = tf.nn.batch_normalization(inputs,
-                                      mean=mean,
-                                      variance=variance,
-                                      offset=None,
-                                      scale=None,
-                                      variance_epsilon=1e-3)
+        if train_flag:
+            # calculate the mean and variance of the inputs along the channel axis
+            mean, var = tf.nn.moments(inputs, axes=[0, 1, 2])
+            self.moving_mean1.assign(self.moving_mean1 * 0.99 + mean * (1 - 0.99)) 
+            self.moving_var1.assign(self.moving_var1 * 0.99 + var * (1 - 0.99))
+            # perform batch normalization on the inputs with no offset and scale
+            x = tf.nn.batch_normalization(inputs,
+                                          mean=self.moving_mean1,
+                                          variance=self.moving_var1,
+                                          offset=self.beta1,
+                                          scale=self.gamma1,
+                                          variance_epsilon=1e-3)
         # apply relu activation function on the normalized inputs
         x = tf.nn.relu(x)
         # perform the first convolution operation with same padding and stride 1
         x = tf.nn.conv2d(x, self.weight1, strides=1, padding="SAME")
-        # calculate the mean and variance of the first convolution result along the channel axis
-        mean=tf.math.reduce_mean(x, axis=3)
-        variance=tf.math.reduce_variance(x, axis=3)
-        # expand the mean and variance dimensions to match the first convolution result shape
-        mean=tf.expand_dims(mean,axis=-1)
-        variance=tf.expand_dims(variance,axis=-1)
-        # perform batch normalization on the first convolution result with no offset and scale
-        x = tf.nn.batch_normalization(x,
-                              mean=mean,
-                              variance=variance,
-                              offset=None,
-                              scale=None,
-                              variance_epsilon=1e-3)
+        if train_flag:
+            # calculate the mean and variance of the first convolution result along the channel axis
+            mean, var = tf.nn.moments(x, axes=[0, 1, 2])
+            self.moving_mean2.assign(self.moving_mean2 * 0.99 + mean * (1 - 0.99)) 
+            self.moving_var2.assign(self.moving_var2 * 0.99 + var * (1 - 0.99))
+            # perform batch normalization on the first convolution result with no offset and scale
+            x = tf.nn.batch_normalization(x,
+                                  mean=self.moving_mean2,
+                                  variance=self.moving_var2,
+                                  offset=self.beta2,
+                                  scale=self.gamma2,
+                                  variance_epsilon=1e-3)
         # apply relu activation function on the normalized first convolution result
         x = tf.nn.relu(x)
         # perform the second convolution operation with same padding and stride 1
@@ -93,8 +99,12 @@ class TransitionLayer:
         self.compression_factor = compression_factor
         # initialize the convolutional weight with Xavier initialization
         self.weight = initializer([1, 1, input_size, int(self.compression_factor * input_size)], 'Xavier', dtype)
+        self.moving_mean = tf.Variable(tf.zeros([input_size])) 
+        self.moving_var = tf.Variable(tf.ones([input_size]))
+        self.beta = tf.Variable(tf.zeros([input_size]))
+        self.gamma = tf.Variable(tf.ones([input_size]))
         # store the parameter in a list
-        self.param = [self.weight]
+        self.param = [self.weight, self.beta, self.gamma]
         # store the output size of the transition layer as an attribute
         self.output_size = int(self.compression_factor * input_size)
     
@@ -102,17 +112,15 @@ class TransitionLayer:
     # define a method for outputting the layer result
     def output(self, inputs, train_flag=True):
         # calculate the mean and variance of the inputs along the channel axis
-        mean=tf.math.reduce_mean(inputs, axis=3)
-        variance=tf.math.reduce_variance(inputs, axis=3)
-        # expand the mean and variance dimensions to match the inputs shape
-        mean=tf.expand_dims(mean,axis=-1)
-        variance=tf.expand_dims(variance,axis=-1)
+        mean, var = tf.nn.moments(inputs, axes=[0, 1, 2])
+        self.moving_mean.assign(self.moving_mean * 0.99 + mean * (1 - 0.99)) 
+        self.moving_var.assign(self.moving_var * 0.99 + var * (1 - 0.99))
         # perform batch normalization on the inputs with no offset and scale
         x = tf.nn.batch_normalization(inputs,
-                                      mean=mean,
-                                      variance=variance,
-                                      offset=None,
-                                      scale=None,
+                                      mean=self.moving_mean,
+                                      variance=self.moving_var,
+                                      offset=self.beta,
+                                      scale=self.gamma,
                                       variance_epsilon=1e-3)
         # apply relu activation function on the normalized inputs
         x = tf.nn.relu(x)
@@ -131,6 +139,10 @@ class DenseNet121:
     def __init__(self, input_size, num_classes=1000, growth_rate=32, compression_factor=0.5, include_top=True, pooling=None, dtype='float32'):
         # initialize the first convolutional weight with Xavier initialization
         self.conv1_weight = initializer([7, 7, 3, 64], 'Xavier', dtype)
+        self.moving_mean1 = tf.Variable(tf.zeros([64])) 
+        self.moving_var1 = tf.Variable(tf.ones([64]))
+        self.beta1 = tf.Variable(tf.zeros([64]))
+        self.gamma1 = tf.Variable(tf.ones([64]))
         self.input_size=input_size
         self.num_classes=num_classes
         self.growth_rate=growth_rate
@@ -190,9 +202,14 @@ class DenseNet121:
                                  dtype=self.dtype)
         # initialize the fully connected weight with Xavier initialization
         self.fc_weight = initializer([self.block4.output_size, self.num_classes], 'Xavier', self.dtype)
+        self.moving_mean2 = tf.Variable(tf.zeros([self.block4.output_size])) 
+        self.moving_var2 = tf.Variable(tf.ones([self.block4.output_size]))
+        self.beta2 = tf.Variable(tf.zeros([self.block4.output_size]))
+        self.gamma2 = tf.Variable(tf.ones([self.block4.output_size]))
         # store the parameters of all the blocks and layers in a list
         self.param=[self.block1.param,self.trans1.param,self.block2.param,self.trans2.param,
                     self.block3.param,self.trans3.param,self.block4.param,self.conv1_weight,
+                    self.fc_weight,self.beta1,self.gamma1,self.beta2,self.gamma2
                     ]
         return
     
@@ -208,17 +225,15 @@ class DenseNet121:
                 # perform the first convolution operation with valid padding and stride 2
                 x = tf.nn.conv2d(x, self.conv1_weight, strides=2, padding="VALID")
                 # calculate the mean and variance of the first convolution result along the channel axis
-                mean = tf.math.reduce_mean(x, axis=3)
-                variance = tf.math.reduce_variance(x, axis=3)
-                # expand the mean and variance dimensions to match the first convolution result shape
-                mean=tf.expand_dims(mean,axis=-1)
-                variance=tf.expand_dims(variance,axis=-1)
+                mean, var = tf.nn.moments(x, axes=[0, 1, 2])
+                self.moving_mean1.assign(self.moving_mean1 * 0.99 + mean * (1 - 0.99)) 
+                self.moving_var1.assign(self.moving_var1 * 0.99 + var * (1 - 0.99))
                 # perform batch normalization on the first convolution result with no offset and scale
                 x = tf.nn.batch_normalization(x,
-                                              mean=mean,
-                                              variance=variance,
-                                              offset=None,
-                                              scale=None,
+                                              mean=self.moving_mean1,
+                                              variance=self.moving_var1,
+                                              offset=self.beta1,
+                                              scale=self.gamma1,
                                               variance_epsilon=1e-5)
                 # apply relu activation function on the normalized first convolution result
                 x = tf.nn.relu(x)
@@ -241,17 +256,15 @@ class DenseNet121:
                 # get the output of the fourth dense block
                 x = self.block4.output(x)
                 # calculate the mean and variance of the fourth dense block result along the channel axis
-                mean=tf.math.reduce_mean(x, axis=3)
-                variance=tf.math.reduce_variance(x, axis=3)
-                # expand the mean and variance dimensions to match the fourth dense block result shape
-                mean=tf.expand_dims(mean,axis=-1)
-                variance=tf.expand_dims(variance,axis=-1)
+                mean, var = tf.nn.moments(x, axes=[0, 1, 2])
+                self.moving_mean2.assign(self.moving_mean2 * 0.99 + mean * (1 - 0.99)) 
+                self.moving_var2.assign(self.moving_var2 * 0.99 + var * (1 - 0.99))
                 # perform batch normalization on the fourth dense block result with no offset and scale
                 x = tf.nn.batch_normalization(x,
-                                              mean=tf.math.reduce_mean(x),
-                                              variance=tf.math.reduce_variance(x),
-                                              offset=None,
-                                              scale=None,
+                                              mean=self.moving_mean2,
+                                              variance=self.moving_var2,
+                                              offset=self.beta2,
+                                              scale=self.gamma2,
                                               variance_epsilon=1e-3)
                 # apply relu activation function on the normalized fourth dense block result
                 x = tf.nn.relu(x)
