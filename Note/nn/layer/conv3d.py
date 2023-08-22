@@ -10,6 +10,7 @@ class conv3d: # define a class for 3D convolutional layer
             self.bias=i.initializer([weight_shape[-1]],bias_initializer,dtype) # initialize the bias vector
         self.activation=activation # set the activation function
         self.use_bias=use_bias # set the use bias flag
+        self.output_size=weight_shape[-1]
         if use_bias==True: # if use bias is True
             self.param=[self.weight,self.bias] # store the parameters in a list
         else: # if use bias is False
