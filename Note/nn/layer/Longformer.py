@@ -14,6 +14,7 @@ class Longformer:
     self.q_dense_list=[]
     self.k_dense_list=[]
     self.v_dense_list=[]
+    self.output_size=dim
     # Use a list to store the projection layers for each head
     for i in range(num_heads):
         self.q_dense_list.append(dense((self.head_dim, self.head_dim), activation=None)) # the query projection layers
