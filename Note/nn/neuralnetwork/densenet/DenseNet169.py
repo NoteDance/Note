@@ -154,7 +154,7 @@ class DenseNet169:
         # initialize the optimizer as Adam optimizer
         self.optimizer=Adam()
         # initialize a variable for batch count as zero
-        self.bc=tf.Variable(0,dtype=self.dtype)
+        self.bc=tf.Variable(0,dtype=dtype)
         self.dtype=dtype
         self.km=0
     
