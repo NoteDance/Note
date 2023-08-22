@@ -22,6 +22,7 @@ class Transformer:
             self.bias_ffn_2=i.initializer([weight_shape[1]],bias_initializer,dtype) # second feed-forward bias vector
         self.dtype=dtype
         self.use_bias=use_bias
+        self.output_size=weight_shape[-1]
         if use_bias:
             self.param=[self.weight_q,self.weight_k,self.weight_v,self.weight_o,
                               self.weight_ffn_1,self.weight_ffn_2,
