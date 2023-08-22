@@ -13,6 +13,7 @@ class FAVOR_attention:
     self.qw = initializer([dim , dim] , weight_initializer , dtype)
     self.kw = initializer([dim , dim] , weight_initializer , dtype)
     self.vw = initializer([dim , dim] , weight_initializer , dtype)
+    self.output_size = dim * nb_heads
     self.param=[self.qw, self.kw, self.vw, self.random_features]
     
 
