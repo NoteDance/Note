@@ -6,9 +6,9 @@ from Note.nn.activation import activation_dict
 # Define a class for the MBConv block
 class MBConv:
     # Initialize the class with the input and output parameters
-    def __init__(self, input_size, output_size, kernel_size=3, strides=1, expand_ratio=1, repeats=1, se_ratio=0.25, rate=0.2, dtype='float32'):
+    def __init__(self, input_channels, output_size, kernel_size=3, strides=1, expand_ratio=1, repeats=1, se_ratio=0.25, rate=0.2, dtype='float32'):
         # Calculate the expanded size by multiplying the input size by the expand ratio
-        self.expanded_size = input_size * expand_ratio
+        self.expanded_size = input_channels * expand_ratio
         # Assign the output size to a class attribute
         self.output_size = output_size
         # Initialize empty lists for storing the weights of the convolution layers
@@ -36,7 +36,7 @@ class MBConv:
             # If it is the first repeat, use the input size as the input channels for the expand layer
             if i==0:
                 # Initialize the weight for the expand layer using a custom initializer from Note.nn module
-                self.weight_expand.append(initializer([1, 1, input_size, self.expanded_size], 'Xavier', dtype))
+                self.weight_expand.append(initializer([1, 1, input_channels, self.expanded_size], 'Xavier', dtype))
                 # Initialize the weight for the depthwise layer using a custom initializer from Note.nn module
                 self.weight_depthwise.append(initializer([kernel_size, kernel_size, self.expanded_size, 1], 'Xavier', dtype))
                 # Initialize the weight for the project layer using a custom initializer from Note.nn module
