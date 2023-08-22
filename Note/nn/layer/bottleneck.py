@@ -22,6 +22,7 @@ class bottleneck:
         self.bias_1=i.initializer([bottleneck_dim],bias_initializer,dtype)
         self.weight_2=i.initializer([bottleneck_dim,output_dim],weight_initializer,dtype)
         self.bias_2=i.initializer([output_dim],bias_initializer,dtype)
+        self.output_size=output_dim
         if use_bias==True:
             self.param=[self.weight_1,self.bias_1,self.weight_2,self.bias_2]
         else:
