@@ -38,7 +38,7 @@ class DenseLayer:
                                           variance=self.moving_var1,
                                           offset=self.beta1,
                                           scale=self.gamma1,
-                                          variance_epsilon=1e-3)
+                                          variance_epsilon=1.001e-5)
         # apply relu activation function on the normalized inputs
         x = tf.nn.relu(x)
         # perform the first convolution operation with same padding and stride 1
@@ -54,7 +54,7 @@ class DenseLayer:
                                   variance=self.moving_var2,
                                   offset=self.beta2,
                                   scale=self.gamma2,
-                                  variance_epsilon=1e-3)
+                                  variance_epsilon=1.001e-5)
         # apply relu activation function on the normalized first convolution result
         x = tf.nn.relu(x)
         # perform the second convolution operation with same padding and stride 1
@@ -121,7 +121,7 @@ class TransitionLayer:
                                       variance=self.moving_var,
                                       offset=self.beta,
                                       scale=self.gamma,
-                                      variance_epsilon=1e-3)
+                                      variance_epsilon=1.001e-5)
         # apply relu activation function on the normalized inputs
         x = tf.nn.relu(x)
         # perform the convolution operation with same padding and stride 1
@@ -234,7 +234,7 @@ class DenseNet121:
                                               variance=self.moving_var1,
                                               offset=self.beta1,
                                               scale=self.gamma1,
-                                              variance_epsilon=1e-5)
+                                              variance_epsilon=1.001e-5)
                 # apply relu activation function on the normalized first convolution result
                 x = tf.nn.relu(x)
                 # pad the result with 1 pixel on each side
@@ -265,7 +265,7 @@ class DenseNet121:
                                               variance=self.moving_var2,
                                               offset=self.beta2,
                                               scale=self.gamma2,
-                                              variance_epsilon=1e-3)
+                                              variance_epsilon=1.001e-5)
                 # apply relu activation function on the normalized fourth dense block result
                 x = tf.nn.relu(x)
                 # check if the model includes a fully connected layer
