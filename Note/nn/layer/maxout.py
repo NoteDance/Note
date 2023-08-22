@@ -17,6 +17,7 @@ class maxout:
         # initialize the weight matrix and the bias vector
         self.weight=i.initializer([input_dim,output_dim*num_units],weight_initializer,dtype)
         self.bias=i.initializer([output_dim*num_units],bias_initializer,dtype)
+        self.output_size=output_dim
         if use_bias==True:
             self.param=[self.weight,self.bias]
         else:
