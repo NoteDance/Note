@@ -23,6 +23,7 @@ class highway:
         self.bias_T=i.initializer([output_dim],bias_initializer,dtype)
         self.weight_C=i.initializer([input_dim,output_dim],weight_initializer,dtype)
         self.bias_C=i.initializer([output_dim],bias_initializer,dtype)
+        self.output_size=output_dim
         if use_bias==True:
             self.param=[self.weight_T,self.bias_T,self.weight_C,self.bias_C]
         else:
