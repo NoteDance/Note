@@ -8,6 +8,7 @@ class Linformer:
   def __init__(self, dim, num_heads, kernel_function='gaussian', kernel_approximation='low_rank'):
     self.attention_layer = Linear_attention(dim, num_heads, kernel_function, kernel_approximation) # the linear attention layer with multi-head support and kernel approximation
     self.ffn_layer = dense((dim, dim), activation=None) # the feed-forward layer
+    self.output_size=dim
     self.param=[self.attention_layer.param, self.ffn_layer.param]
     
   
