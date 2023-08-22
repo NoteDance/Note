@@ -11,6 +11,7 @@ class Performer:
     self.ffn_attn = dense([dim * nb_heads, dim], weight_initializer, bias_initializer, None, dtype, use_bias)
     self.ffn1 = dense([dim, dim * 4], weight_initializer, bias_initializer, activation, dtype, use_bias)
     self.ffn2 = dense([dim * 4, dim], weight_initializer, bias_initializer,None, dtype, use_bias)
+    self.output_size=dim
     self.param=[self.attention.param, self.ffn_attn.param, self.ffn1.param, self.ffn2.param]
     
 
