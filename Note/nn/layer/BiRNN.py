@@ -6,6 +6,7 @@ class BiRNN:
         # Receive a list of forward and backward RNNCell objects as parameters
         self.fw_cells=fw_cells
         self.bw_cells=bw_cells
+        self.output_size=self.fw_cells.output_size+self.bw_cells.output_size
     
     
     def output(self,data):
