@@ -12,6 +12,7 @@ class separable_conv2d: # define a class for separable convolutional layer
             self.bias_P=i.initializer([weight_shape[-1]],bias_initializer,dtype) # initialize the bias vector for pointwise convolution
         self.activation=activation # set the activation function
         self.use_bias=use_bias # set the use bias flag
+        self.output_size=weight_shape[-1]
         if use_bias==True: # if use bias is True
             self.param=[self.weight_D,self.bias_D,self.weight_P,self.bias_P] # store the parameters in a list
         else: # if use bias is False
