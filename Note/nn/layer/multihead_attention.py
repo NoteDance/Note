@@ -9,6 +9,7 @@ class multihead_attention:
         self.kw = i.initializer(weight_shape, weight_initializer, dtype)
         self.vw = i.initializer(weight_shape, weight_initializer, dtype)
         self.ow = i.initializer([weight_shape[1], weight_shape[1]], weight_initializer, dtype)
+        self.output_size = weight_shape[-1]
         # Add all weight matrices to model parameters
         self.param = [self.qw, self.kw, self.vw, self.ow]
         # Define the number of heads and the dimension of each head
