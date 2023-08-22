@@ -61,10 +61,8 @@ class DenseBlock:
 
 
 class TransitionLayer:
-    def __init__(self, input_size, compression_factor, include_top=True, pooling=None, dtype='float32'):
+    def __init__(self, input_size, compression_factor, dtype='float32'):
         self.compression_factor = compression_factor
-        self.include_top=include_top
-        self.pooling=pooling
         self.weight = initializer([1, 1, input_size, int(self.compression_factor * input_size)], 'Xavier', dtype)
         self.param = [self.weight]
         self.output_size = int(self.compression_factor * input_size)
@@ -88,13 +86,14 @@ class TransitionLayer:
 
 
 class DenseNet169:
-    def __init__(self, input_size, num_classes, growth_rate=32, compression_factor=0.5, dropout_rate=0.2, dtype='float32'):
+    def __init__(self, input_size, num_classes, growth_rate=32, compression_factor=0.5, include_top=True, pooling=None, dtype='float32'):
         self.conv1_weight = initializer([7, 7, 3, 64], 'Xavier', dtype)
         self.input_size=input_size
         self.num_classes=num_classes
         self.growth_rate=growth_rate
         self.compression_factor=compression_factor
-        self.dropout_rate=dropout_rate
+        self.include_top=include_top
+        self.pooling=pooling
         self.loss_object=tf.keras.losses.CategoricalCrossentropy() # create a categorical crossentropy loss object
         self.optimizer=Adam() # create an Adam optimizer object
         self.dtype=dtype
@@ -181,7 +180,6 @@ class DenseNet169:
                         x = tf.math.reduce_max(x, axis=[1, 2])
         else:
             x = tf.nn.conv2d(data, self.conv1_weight, strides=[1, 2, 2, 1], padding="SAME")
-            x = x + self.conv1_bias
             x = tf.nn.max_pool2d(x, ksize=[3, 3], strides=[2, 2], padding="SAME")
             x = self.block1.output(x)
             x = self.trans1.output(x)
