@@ -14,6 +14,7 @@ class RNN: # define a class for recurrent neural network (RNN) layer
         self.activation=activation_dict[activation] # get the activation function from the activation dictionary
         self.return_sequence=return_sequence # set the return sequence flag
         self.use_bias=use_bias # set the use bias flag
+        self.output_size=weight_shape[-1]
         if use_bias==True: # if use bias is True
             self.param=[self.weight_i,self.weight_s,self.bias] # store the parameters in a list
         else: # if use bias is False
