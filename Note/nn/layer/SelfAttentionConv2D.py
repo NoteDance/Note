@@ -17,6 +17,7 @@ class SelfAttentionConv2D:
             self.activation=None
         self.use_bias=use_bias
         self.kernel=i.initializer([kernel_size[0],kernel_size[1],input_shape[-1],filters],kernel_initializer,dtype)
+        self.output_size=filters
         self.param=[self.kernel]
         if use_bias:
             self.bias=i.initializer([filters],bias_initializer,dtype)
