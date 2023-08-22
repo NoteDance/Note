@@ -202,6 +202,7 @@ class DenseNet169:
                                  dtype=self.dtype)
         # initialize the fully connected weight with Xavier initialization
         self.fc_weight = initializer([self.block4.output_size, self.num_classes], 'Xavier', self.dtype)
+        self.fc_bias = initializer([self.num_classes], 'Xavier', self.dtype)
         self.moving_mean2 = tf.Variable(tf.zeros([self.block4.output_size])) 
         self.moving_var2 = tf.Variable(tf.ones([self.block4.output_size]))
         self.beta2 = tf.Variable(tf.zeros([self.block4.output_size]))
@@ -209,7 +210,7 @@ class DenseNet169:
         # store the parameters of all the blocks and layers in a list
         self.param=[self.block1.param,self.trans1.param,self.block2.param,self.trans2.param,
                     self.block3.param,self.trans3.param,self.block4.param,self.conv1_weight,
-                    self.fc_weight,self.beta1,self.gamma1,self.beta2,self.gamma2
+                    self.fc_weight,self.fc_bias,self.beta1,self.gamma1,self.beta2,self.gamma2
                     ]
         return
     
