@@ -11,6 +11,7 @@ class DeepGNN:
             layer=layers[i]
             layer_param=layer_params[i]
             self.layers.append(layer(**layer_param))
+        self.output_size=self.layers[-1].output_size
     
     
     def output(self,graph,data):
