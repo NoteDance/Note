@@ -41,6 +41,7 @@ class ESN:
           self.bias=i.initializer([self.units],bias_initializer,dtype) # shape: (hidden_size,)
         else:
           self.bias=None
+        self.output_size=weight_shape[-1]
         if use_bias:
           self.param=[self.kernel,self.recurrent_kernel,self.bias]
         else:
