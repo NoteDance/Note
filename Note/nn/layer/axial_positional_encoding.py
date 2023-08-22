@@ -19,8 +19,10 @@ class axial_positional_encoding:
     # Create the learnable parameters for each axial dimension
     self.weights = []
     
+    self.output_size = d_model
+    
     # Create a list to store the parameters
-    self.param=[]
+    self.param = []
     
     for i, dim in enumerate(axial_shape):
       weight = i_.initializer((dim, self.d_axial_pos_embs), initializer, dtype)
