@@ -15,6 +15,7 @@ class group_conv2d: # define a class for group convolutional layer
                 self.bias.append(initializer([weight_shape[-1]//num_groups],bias_initializer,dtype)) # initialize a bias vector for each group with the given shape, initializer and data type, and append it to the bias list
         self.activation=activation # set the activation function
         self.use_bias=use_bias # set the use bias flag
+        self.output_size=weight_shape[-1]
         if use_bias==True: # if use bias is True
             self.param=self.weight+self.bias # store the parameters in a list by concatenating the weight and bias lists
         else: # if use bias is False
