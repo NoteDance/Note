@@ -13,6 +13,8 @@ class ViT:
         self.num_heads=num_heads
         self.activation=activation_dict[activation]
         self.dropout=dropout
+        self.output_size=dim
+        self.param=[self.attn.param,self.mlp1.param,self.mlp2.param]
     
     
     def output(self,data,train_flag=True):
