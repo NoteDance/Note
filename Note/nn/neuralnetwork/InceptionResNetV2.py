@@ -122,6 +122,7 @@ class InceptionResNetV2:
     
     def build(self,dtype='float32'):
         self.param=[]
+        self.bc=tf.Variable(0,dtype=dtype)
         # Stem block: 35 x 35 x 192
         self.Stem_layer1 = conv2d_bn(self.input_channels, 32, 3, dtype=dtype)
         self.Stem_layer2 = conv2d_bn(self.Stem_layer1.output_size, 32, 3, dtype=dtype)
