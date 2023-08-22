@@ -7,18 +7,18 @@ from Note.nn.parallel.assign_device import assign_device
 # define a class for dense layer
 class DenseLayer:
     # initialize the class with input size, growth rate and data type
-    def __init__(self, input_size, growth_rate, dtype='float32'):
+    def __init__(self, input_channels, growth_rate, dtype='float32'):
         self.growth_rate = growth_rate
         # initialize the first convolutional weight with Xavier initialization
-        self.weight1 = initializer([1, 1, input_size, 4*self.growth_rate], 'Xavier', dtype)
+        self.weight1 = initializer([1, 1, input_channels, 4*self.growth_rate], 'Xavier', dtype)
         # initialize the second convolutional weight with Xavier initialization
         self.weight2 = initializer([3, 3, 4*self.growth_rate, self.growth_rate], 'Xavier', dtype)
-        self.moving_mean1 = tf.Variable(tf.zeros([input_size])) 
-        self.moving_var1 = tf.Variable(tf.ones([input_size]))
+        self.moving_mean1 = tf.Variable(tf.zeros([input_channels])) 
+        self.moving_var1 = tf.Variable(tf.ones([input_channels]))
         self.moving_mean2 = tf.Variable(tf.zeros([4*self.growth_rate])) 
         self.moving_var2 = tf.Variable(tf.ones([4*self.growth_rate]))
-        self.beta1 = tf.Variable(tf.zeros([input_size]))
-        self.gamma1 = tf.Variable(tf.ones([input_size]))
+        self.beta1 = tf.Variable(tf.zeros([input_channels]))
+        self.gamma1 = tf.Variable(tf.ones([input_channels]))
         self.beta2 = tf.Variable(tf.zeros([4*self.growth_rate]))
         self.gamma2 = tf.Variable(tf.ones([4*self.growth_rate]))
         # store the parameters in a list
@@ -68,18 +68,18 @@ class DenseLayer:
 # define a class for dense block
 class DenseBlock:
     # initialize the class with input size, number of layers, growth rate and data type
-    def __init__(self, input_size, num_layers, growth_rate, dtype='float32'):
+    def __init__(self, input_channels, num_layers, growth_rate, dtype='float32'):
         self.num_layers = num_layers
         self.growth_rate = growth_rate
         self.layers = []
         self.param = []
         # create a list of dense layers with different input sizes according to the growth rate
         for i in range(self.num_layers):
-            self.layers.append(DenseLayer(input_size, growth_rate, dtype))
+            self.layers.append(DenseLayer(input_channels, growth_rate, dtype))
             self.param.append(self.layers[i].param)
-            input_size += growth_rate
+            input_channels += growth_rate
         # store the output size of the dense block as an attribute
-        self.output_size = input_size
+        self.output_size = input_channels
     
     
     # define a method for outputting the block result
@@ -95,18 +95,18 @@ class DenseBlock:
 # define a class for transition layer
 class TransitionLayer:
     # initialize the class with input size, compression factor and data type
-    def __init__(self, input_size, compression_factor, dtype='float32'):
+    def __init__(self, input_channels, compression_factor, dtype='float32'):
         self.compression_factor = compression_factor
         # initialize the convolutional weight with Xavier initialization
-        self.weight = initializer([1, 1, input_size, int(self.compression_factor * input_size)], 'Xavier', dtype)
-        self.moving_mean = tf.Variable(tf.zeros([input_size])) 
-        self.moving_var = tf.Variable(tf.ones([input_size]))
-        self.beta = tf.Variable(tf.zeros([input_size]))
-        self.gamma = tf.Variable(tf.ones([input_size]))
+        self.weight = initializer([1, 1, input_channels, int(self.compression_factor * input_channels)], 'Xavier', dtype)
+        self.moving_mean = tf.Variable(tf.zeros([input_channels])) 
+        self.moving_var = tf.Variable(tf.ones([input_channels]))
+        self.beta = tf.Variable(tf.zeros([input_channels]))
+        self.gamma = tf.Variable(tf.ones([input_channels]))
         # store the parameter in a list
         self.param = [self.weight, self.beta, self.gamma]
         # store the output size of the transition layer as an attribute
-        self.output_size = int(self.compression_factor * input_size)
+        self.output_size = int(self.compression_factor * input_channels)
     
     
     # define a method for outputting the layer result
@@ -136,14 +136,14 @@ class TransitionLayer:
 class DenseNet121:
     # initialize the class with input size, number of classes, growth rate, compression factor,
     # include top flag, pooling option and data type
-    def __init__(self, input_size, num_classes=1000, growth_rate=32, compression_factor=0.5, include_top=True, pooling=None, dtype='float32'):
+    def __init__(self, input_channels, num_classes=1000, growth_rate=32, compression_factor=0.5, include_top=True, pooling=None, dtype='float32'):
         # initialize the first convolutional weight with Xavier initialization
         self.conv1_weight = initializer([7, 7, 3, 64], 'Xavier', dtype)
         self.moving_mean1 = tf.Variable(tf.zeros([64])) 
         self.moving_var1 = tf.Variable(tf.ones([64]))
         self.beta1 = tf.Variable(tf.zeros([64]))
         self.gamma1 = tf.Variable(tf.ones([64]))
-        self.input_size=input_size
+        self.input_channels=input_channels
         self.num_classes=num_classes
         self.growth_rate=growth_rate
         self.compression_factor=compression_factor
@@ -164,40 +164,40 @@ class DenseNet121:
         
         # create a dense block with input size equal to input size attribute,
         # number of layers equal to 6 and growth rate equal to growth rate attribute
-        self.block1 = DenseBlock(input_size=self.input_size,num_layers=6,
+        self.block1 = DenseBlock(input_channels=self.input_channels,num_layers=6,
                                  growth_rate=self.growth_rate,
                                  dtype=self.dtype)
         
         # create a transition layer with input size equal to output size of block1,
         # and compression factor equal to compression factor attribute
-        self.trans1 = TransitionLayer(input_size=self.block1.output_size,compression_factor=self.compression_factor,
+        self.trans1 = TransitionLayer(input_channels=self.block1.output_size,compression_factor=self.compression_factor,
                                       dtype=self.dtype)
         
          # create a dense block with input size equal to output size of trans1,
          # number of layers equal to 12 and growth rate equal to growth rate attribute       
-        self.block2 = DenseBlock(input_size=self.trans1.output_size,num_layers=12,
+        self.block2 = DenseBlock(input_channels=self.trans1.output_size,num_layers=12,
                                  growth_rate=self.growth_rate,
                                  dtype=self.dtype)
         
          # create a transition layer with input size equal to output size of block2,
          # and compression factor equal to compression factor attribute       
-        self.trans2 = TransitionLayer(input_size=self.block2.output_size,compression_factor=self.compression_factor,
+        self.trans2 = TransitionLayer(input_channels=self.block2.output_size,compression_factor=self.compression_factor,
                                       dtype=self.dtype)
         
          # create a dense block with input size equal to output size of trans2,
          # number of layers equal to 24 and growth rate equal to growth rate attribute       
-        self.block3 = DenseBlock(input_size=self.trans2.output_size,num_layers=24,
+        self.block3 = DenseBlock(input_channels=self.trans2.output_size,num_layers=24,
                                  growth_rate=self.growth_rate,
                                  dtype=self.dtype)
         
         # create a transition layer with input size equal to output size of block3,
         # and compression factor equal to compression factor attribute
-        self.trans3 = TransitionLayer(input_size=self.block3.output_size,compression_factor=self.compression_factor,
+        self.trans3 = TransitionLayer(input_channels=self.block3.output_size,compression_factor=self.compression_factor,
                                       dtype=self.dtype)
         
          # create a dense block with input size equal to output size of trans3,
          # number of layers equal to 16 and growth rate equal to growth rate attribute
-        self.block4 = DenseBlock(input_size=self.trans3.output_size,num_layers=16,
+        self.block4 = DenseBlock(input_channels=self.trans3.output_size,num_layers=16,
                                  growth_rate=self.growth_rate,
                                  dtype=self.dtype)
         # initialize the fully connected weight with Xavier initialization
