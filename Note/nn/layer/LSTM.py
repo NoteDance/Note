@@ -24,6 +24,7 @@ class LSTM: # define a class for long short-term memory (LSTM) layer
         self.use_bias=use_bias # set the use bias flag
         self.activation1=activation1 # set the activation function for gates (usually sigmoid)
         self.activation2=activation2 # set the activation function for candidate cell state (usually tanh)
+        self.output_size=weight_shape[-1]
         if use_bias==True: # if use bias is True
             self.param=[self.weight_i1,self.weight_f1,self.weight_o1,self.weight_c1,self.weight_i2,self.weight_f2,self.weight_o2,self.weight_c2,self.bias_i,self.bias_f,self.bias_o,self.bias_c] # store the parameters in a list
         else: # if use bias is False
