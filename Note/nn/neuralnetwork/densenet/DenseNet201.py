@@ -153,15 +153,14 @@ class DenseNet201:
         self.loss_object=tf.keras.losses.CategoricalCrossentropy()
         # initialize the optimizer as Adam optimizer
         self.optimizer=Adam()
+        # initialize a variable for batch count as zero
+        self.bc=tf.Variable(0,dtype=self.dtype)
         self.dtype=dtype
         self.km=0
     
     
     # define a method for building the model parameters
     def build(self):
-        # initialize a variable for batch count as zero
-        self.bc=tf.Variable(0,dtype=self.dtype)
-        
         # create a dense block with input size equal to input size attribute,
         # number of layers equal to 6 and growth rate equal to growth rate attribute
         self.block1 = DenseBlock(input_channels=self.input_channels,num_layers=6,
