@@ -18,6 +18,7 @@ class GCN:
         self.weight=i.initializer([input_dim, output_dim],weight_initializer,dtype)
         self.bias=i.initializer([output_dim],bias_initializer,dtype)
         self.dtype=dtype
+        self.output_size=output_dim
         if use_bias==True:
             self.param=[self.weight,self.bias]
         else:
