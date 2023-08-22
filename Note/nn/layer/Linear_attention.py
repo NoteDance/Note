@@ -39,6 +39,7 @@ class Linear_attention:
         self.param.append(self.k_dense_list[i].param)
         self.param.append(self.v_dense_list[i].param)
     self.o_dense = dense((dim, dim), activation=None) # the output projection layer
+    self.output_size = dim
     # Initialize some extra parameters or layers according to the kernel approximation method
     self.param.append(self.o_dense.param)
     if kernel_approximation == 'low_rank':
