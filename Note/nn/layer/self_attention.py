@@ -7,6 +7,7 @@ class self_attention: # define a class for self-attention layer
         self.qw=i.initializer(weight_shape,weight_initializer,dtype) # initialize the weight matrix for query projection
         self.kw=i.initializer(weight_shape,weight_initializer,dtype) # initialize the weight matrix for key projection
         self.vw=i.initializer(weight_shape,weight_initializer,dtype) # initialize the weight matrix for value projection
+        self.output_size=weight_shape[-1]
         self.param=[self.qw,self.kw,self.vw] # store the parameters in a list
 
 
