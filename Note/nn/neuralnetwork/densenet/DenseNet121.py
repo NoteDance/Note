@@ -276,23 +276,14 @@ class DenseNet121:
                     x = tf.matmul(x, self.fc_weight)
                     # apply softmax activation function on the result to get the class probabilities
                     x = tf.nn.softmax(x)
-                    # return the output of the model
-                    return x
                 else:
                     # check the pooling option of the model
                     if self.pooling == 'avg':
                         # perform global average pooling on the result
                         x = tf.reduce_mean(x, axis=[1, 2])
-                        # return the output of the model
-                        return x
                     elif self.pooling == 'max':
                         # perform global max pooling on the result
                         x = tf.reduce_max(x, axis=[1, 2])
-                        # return the output of the model
-                        return x
-                    else:
-                        # return the output of the model without pooling
-                        return x
         else:
             # perform the first convolution operation with same padding and stride 2
             x = tf.nn.conv2d(data, self.conv1_weight, strides=[1, 2, 2, 1], padding="SAME")
