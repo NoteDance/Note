@@ -14,6 +14,7 @@ class Ripple_attention:
     self.wv = initializer([d_model, d_model], weight_initializer, dtype=dtype)
     # create trainable variables for output projection
     self.wo = initializer([d_model, d_model], weight_initializer, dtype=dtype)
+    self.output_size=d_model
     self.param=[self.wq, self.wk, self.wv, self.wo]
 
   def split_heads(self, x):
