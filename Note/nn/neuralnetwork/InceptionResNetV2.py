@@ -213,7 +213,7 @@ class InceptionResNetV2:
         # Final convolution block: 8 x 8 x 1536
         self.conv_7b = conv2d_bn(self.Inception_ResNet_C[-1].output_size, 1536, 1, dtype=dtype)
         self.fc_weight = initializer([self.conv_7b.output_size, self.classes], 'Xavier', dtype)
-        self.fc_bias = initializer([self.conv_7b.output_size, self.classes], 'Xavier', dtype)
+        self.fc_bias = initializer([self.classes], 'Xavier', dtype)
         self.param.extend([self.conv_7b.param,self.fc_weight,self.fc_bias])
         return
     
