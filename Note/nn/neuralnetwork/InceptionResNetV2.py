@@ -18,8 +18,8 @@ class conv2d_bn:
         self.use_bias=use_bias
         self.param=[self.weight]
         if not use_bias:
-            self.moving_mean=tf.Variable(tf.zeros([filters])) 
-            self.moving_var=tf.Variable(tf.ones([filters]))
+            self.moving_mean=tf.zeros([filters])
+            self.moving_var=tf.ones([filters])
             self.beta=tf.Variable(tf.zeros([filters]))
         self.output_size=filters
     
@@ -27,9 +27,9 @@ class conv2d_bn:
     def output(self,data,strides=1,padding="SAME"):
         data=tf.nn.conv2d(data,self.weight,strides=strides,padding=padding)
         if not self.use_bias:
-            mean,var=tf.nn.moments(data,axes=[0,1,2])
-            self.moving_mean.assign(self.moving_mean*0.99+mean*(1-0.99)) 
-            self.moving_var.assign(self.moving_var*0.99+var*(1-0.99))
+            mean,var=tf.nn.moments(data,axes=3,keepdims=True)
+            self.moving_mean=self.moving_mean*0.99+mean*(1-0.99)
+            self.moving_var=self.moving_var*0.99+var*(1-0.99)
             data=tf.nn.batch_normalization(data,self.moving_mean,self.moving_var,self.beta,None,1e-3)
         if self.activation is not None:
             output=self.activation(data)
