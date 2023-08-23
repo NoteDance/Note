@@ -112,7 +112,6 @@ class InceptionV3:
     
     
     def build(self,dtype='float32'):
-        self.param=[]
         self.bc=tf.Variable(0,dtype=dtype)
         self.conv2d_bn1 = conv2d_bn(self.input_channels, 32, 3, 3, dtype)
         self.conv2d_bn2 = conv2d_bn(self.conv2d_bn1.output_size, 32, 3, 3, dtype)
