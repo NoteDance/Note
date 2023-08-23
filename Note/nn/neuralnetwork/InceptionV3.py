@@ -14,6 +14,7 @@ class conv2d_bn:
         self.moving_var=tf.ones([filters])
         self.beta=tf.Variable(tf.zeros([filters]))
         self.output_size=filters
+        self.param.append(self.beta)
     
     
     def output(self,data,strides=(1,1),padding="SAME",train_flag=True):
@@ -43,6 +44,9 @@ class inception_block:
             self.avgpool2d = tf.nn.avg_pool2d
             self.branch_pool = conv2d_bn(input_channels, 192, 1, 1, dtype)
             self.output_size=self.branch1x1.output_size+self.branch7x7_3.output_size+self.branch7x7dbl_5.output_size+self.branch_pool.output_size
+            self.param=[self.branch1x1.param,self.branch7x7_1.param,self.branch7x7_2.param,self.branch7x7_3.param,
+                        self.branch7x7dbl_1.param,self.branch7x7dbl_2.param,self.branch7x7dbl_3.param,self.branch7x7dbl_4.param,
+                        self.branch7x7dbl_5.param,self.branch_pool.param]
         elif block_type=='8':
             self.branch1x1 = conv2d_bn(input_channels, 320, 1, 1, dtype)
 
@@ -57,6 +61,9 @@ class inception_block:
     
             self.avgpool2d = tf.nn.avg_pool2d
             self.branch_pool = conv2d_bn(input_channels, 192, 1, 1, dtype)
+            self.param=[self.branch1x1.param,self.branch3x3.param,self.branch3x3_1.param,self.branch3x3_2.param,
+                        self.branch3x3dbl_1_.param,self.branch3x3dbl_2_.param,self.branch3x3dbl_1.param,
+                        self.branch3x3dbl_2.param,self.branch_pool.param]
             self.output_size=self.branch1x1.output_size+self.branch3x3_1.output_size+self.branch3x3_2.output_size+self.branch3x3dbl_1.output_size+self.branch3x3dbl_2.output_size+self.branch_pool.output_size
         self.block_type=block_type
     
@@ -115,6 +122,8 @@ class InceptionV3:
         self.conv2d_bn4 = conv2d_bn(self.conv2d_bn3.output_size, 80, 1, 1, dtype)
         self.conv2d_bn5 = conv2d_bn(self.conv2d_bn4.output_size, 192, 3, 3, dtype)
         self.maxpool2d2 = tf.nn.max_pool2d
+        self.param=[self.conv2d_bn1.param,self.conv2d_bn2.param,self.conv2d_bn3.param,self.conv2d_bn4.param,
+                    self.conv2d_bn5.param]
         
         # mixed 0: 35 x 35 x 256
         self.branch1x1_1 = conv2d_bn(self.conv2d_bn5.output_size, 64, 1, 1, dtype)
@@ -129,6 +138,8 @@ class InceptionV3:
         self.avgpool2d1 = tf.nn.avg_pool2d
         self.branch_pool1 = conv2d_bn(self.conv2d_bn5.output_size, 32, 1, 1, dtype)
         output_size=self.branch1x1_1.output_size+self.branch5x5_2.output_size+self.branch3x3dbl_3.output_size+self.branch_pool1.output_size
+        self.param.extend([self.branch1x1_1.param,self.branch5x5_1.param,self.branch5x5_2.param,self.branch3x3dbl_1.param,
+                           self.branch3x3dbl_2.param,self.branch3x3dbl_3.param,self.branch_pool1.param])
         
         # mixed 1: 35 x 35 x 288
         self.branch1x1_2 = conv2d_bn(output_size, 64, 1, 1, dtype)
@@ -143,6 +154,8 @@ class InceptionV3:
         self.avgpool2d2 = tf.nn.avg_pool2d
         self.branch_pool2 = conv2d_bn(output_size, 64, 1, 1, dtype)
         output_size=self.branch1x1_2.output_size+self.branch5x5_4.output_size+self.branch3x3dbl_6.output_size+self.branch_pool2.output_size
+        self.param.extend([self.branch1x1_2.param,self.branch5x5_3.param,self.branch5x5_4.param,self.branch3x3dbl_4.param,
+                           self.branch3x3dbl_5.param,self.branch3x3dbl_6.param,self.branch_pool2.param])
         
         # mixed 2: 35 x 35 x 288
         self.branch1x1_3 = conv2d_bn(output_size, 64, 1, 1, dtype)
@@ -157,6 +170,8 @@ class InceptionV3:
         self.avgpool2d3 = tf.nn.avg_pool2d
         self.branch_pool3 = conv2d_bn(output_size, 64, 1, 1, dtype)
         output_size=self.branch1x1_3.output_size+self.branch5x5_6.output_size+self.branch3x3dbl_9.output_size+self.branch_pool3.output_size
+        self.param.extend([self.branch1x1_3.param,self.branch5x5_5.param,self.branch5x5_6.param,self.branch3x3dbl_7.param,
+                           self.branch3x3dbl_8.param,self.branch3x3dbl_9.param,self.branch_pool3.param])
         
         # mixed 3: 17 x 17 x 768
         self.branch3x3_1 = conv2d_bn(output_size, 384, 3, 3, dtype)
@@ -167,6 +182,8 @@ class InceptionV3:
     
         self.maxpool2d3 = tf.nn.max_pool2d
         output_size=self.branch3x3_1.output_size+self.branch3x3dbl_12.output_size+output_size
+        self.param.extend([self.branch3x3_1.param,self.branch3x3dbl_10.param,self.branch3x3dbl_11.param,
+                           self.branch3x3dbl_12.param])
 
         # mixed 4: 17 x 17 x 768
         self.branch1x1_4 = conv2d_bn(output_size, 192, 1, 1, dtype)
@@ -184,6 +201,9 @@ class InceptionV3:
         self.avgpool2d4 = tf.nn.avg_pool2d
         self.branch_pool5 = conv2d_bn(output_size, 192, 1, 1, dtype)
         output_size=self.branch1x1_4.output_size+self.branch7x7_3.output_size+self.branch7x7dbl_5.output_size+self.branch_pool5.output_size
+        self.param.extend([self.branch1x1_4.param,self.branch7x7_1.param,self.branch7x7_2.param,self.branch7x7_3.param,
+                           self.branch7x7dbl_1.param,self.branch7x7dbl_2.param,self.branch7x7dbl_3.param,
+                           self.branch7x7dbl_4.param,self.branch7x7dbl_5.param,self.branch_pool5.param])
 
         # mixed 5, 6: 17 x 17 x 768
         self.blocks1=[]
@@ -191,6 +211,7 @@ class InceptionV3:
             block = inception_block(output_size, "17", dtype)
             self.blocks1.append(block)
             output_size=block.output_size
+            self.param.extend([block.param])
         
         # mixed 7: 17 x 17 x 768
         self.branch1x1_5 = conv2d_bn(output_size, 192, 1, 1, dtype)
@@ -208,6 +229,9 @@ class InceptionV3:
         self.avgpool2d5 = tf.nn.avg_pool2d
         self.branch_pool6 = conv2d_bn(output_size, 192, 1, 1, dtype=dtype)
         output_size=self.branch1x1_5.output_size+self.branch7x7_6.output_size+self.branch7x7dbl_10.output_size+self.branch_pool6.output_size
+        self.param.extend([self.branch1x1_5.param,self.branch7x7_4.param,self.branch7x7_5.param,self.branch7x7_6.param,
+                          self.branch7x7dbl_6.param,self.branch7x7dbl_7.param,self.branch7x7dbl_8.param,self.branch7x7dbl_9.param,
+                          self.branch7x7dbl_10.param,self.branch_pool6.param])
         
         # mixed 8: 8 x 8 x 1280
         self.branch3x3_2 = conv2d_bn(output_size, 192, 1, 1, dtype)
@@ -220,6 +244,8 @@ class InceptionV3:
     
         self.maxpool2d4 = tf.nn.max_pool2d
         output_size=self.branch3x3_3.output_size+self.branch7x7x3_4.output_size+output_size
+        self.param.extend([self.branch3x3_2.param,self.branch3x3_3.param,self.branch7x7x3_1.param,self.branch7x7x3_2.param,
+                           self.branch7x7x3_3.param,self.branch7x7x3_4.param])
         
         # mixed 9: 8 x 8 x 2048
         self.blocks2=[]
@@ -227,8 +253,10 @@ class InceptionV3:
             block = inception_block(output_size, "8", dtype)
             self.blocks2.append(block)
             output_size=block.output_size
+            self.param.extend([block.param])
         self.fc_weight = initializer([output_size, self.classes], 'Xavier', dtype)
         self.fc_bias = initializer([self.classes], 'Xavier', dtype)
+        self.param.extend([self.fc_weight,self.fc_bias])
         return
     
     
