@@ -14,6 +14,8 @@ def initializer(shape,initializer,dtype):
             param=tf.Variable(tf.random.uniform(shape=shape,maxval=0.01,dtype=dtype))
         elif initializer=='zeros':
             param=tf.Variable(tf.zeros(shape=shape,dtype=dtype))
+        elif initializer=='ones':
+            param=tf.Variable(tf.ones(shape=shape,dtype=dtype))
         elif initializer=='Xavier':
             fan_in=shape[0]
             fan_out=shape[1] if len(shape)>1 else 1
