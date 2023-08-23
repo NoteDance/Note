@@ -285,7 +285,7 @@ class InceptionResNetV2:
                     # perform global average pooling on the result
                     data = tf.reduce_mean(data, axis=[1, 2])
                     # perform matrix multiplication with the fully connected weight
-                    data = tf.matmul(data, self.fc_weight)
+                    data = tf.matmul(data, self.fc_weight)+self.fc_bias
                     # apply softmax activation function on the result to get the class probabilities
                     data = tf.nn.softmax(data)
                 else:
@@ -358,7 +358,7 @@ class InceptionResNetV2:
                 # perform global average pooling on the result
                 data = tf.reduce_mean(data, axis=[1, 2])
                 # perform matrix multiplication with the fully connected weight
-                data = tf.matmul(data, self.fc_weight)
+                data = tf.matmul(data, self.fc_weight)+self.fc_bias
                 # apply softmax activation function on the result to get the class probabilities
                 data = tf.nn.softmax(data)
             else:
