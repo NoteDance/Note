@@ -342,7 +342,7 @@ kernel.train(32,5)           #train the network with batch size 32 and epoch 5
 
 
 # Neural network:
-**The following links have neural network models that can be trained on Note.**
+**The neuralnetwork package has models that can be trained in parallel on Note.**
 
 https://github.com/NoteDancing/Note/tree/Note-7.0/Note/nn/neuralnetwork
 
