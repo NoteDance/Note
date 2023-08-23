@@ -21,6 +21,7 @@ class conv2d_bn:
             self.moving_mean=tf.zeros([filters])
             self.moving_var=tf.ones([filters])
             self.beta=tf.Variable(tf.zeros([filters]))
+            self.param.append(self.beta)
         self.output_size=filters
     
     
