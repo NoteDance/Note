@@ -13,10 +13,10 @@ class DenseLayer:
         self.weight1 = initializer([1, 1, input_channels, 4*self.growth_rate], 'Xavier', dtype)
         # initialize the second convolutional weight with Xavier initialization
         self.weight2 = initializer([3, 3, 4*self.growth_rate, self.growth_rate], 'Xavier', dtype)
-        self.moving_mean1 = tf.Variable(tf.zeros([input_channels])) 
-        self.moving_var1 = tf.Variable(tf.ones([input_channels]))
-        self.moving_mean2 = tf.Variable(tf.zeros([4*self.growth_rate])) 
-        self.moving_var2 = tf.Variable(tf.ones([4*self.growth_rate]))
+        self.moving_mean1 = tf.zeros([input_channels])
+        self.moving_var1 = tf.ones([input_channels])
+        self.moving_mean2 = tf.zeros([4*self.growth_rate])
+        self.moving_var2 = tf.ones([4*self.growth_rate])
         self.beta1 = tf.Variable(tf.zeros([input_channels]))
         self.gamma1 = tf.Variable(tf.ones([input_channels]))
         self.beta2 = tf.Variable(tf.zeros([4*self.growth_rate]))
@@ -29,9 +29,9 @@ class DenseLayer:
     def output(self, inputs, train_flag=True):
         if train_flag:
             # calculate the mean and variance of the inputs along the channel axis
-            mean, var = tf.nn.moments(inputs, axes=[0, 1, 2])
-            self.moving_mean1.assign(self.moving_mean1 * 0.99 + mean * (1 - 0.99)) 
-            self.moving_var1.assign(self.moving_var1 * 0.99 + var * (1 - 0.99))
+            mean, var = tf.nn.moments(inputs, axes=3, keepdims=True)
+            self.moving_mean1 = self.moving_mean1 * 0.99 + mean * (1 - 0.99)
+            self.moving_var1 = self.moving_var1 * 0.99 + var * (1 - 0.99)
             # perform batch normalization on the inputs with no offset and scale
             x = tf.nn.batch_normalization(inputs,
                                           mean=self.moving_mean1,
@@ -45,9 +45,9 @@ class DenseLayer:
         x = tf.nn.conv2d(x, self.weight1, strides=1, padding="SAME")
         if train_flag:
             # calculate the mean and variance of the first convolution result along the channel axis
-            mean, var = tf.nn.moments(x, axes=[0, 1, 2])
-            self.moving_mean2.assign(self.moving_mean2 * 0.99 + mean * (1 - 0.99)) 
-            self.moving_var2.assign(self.moving_var2 * 0.99 + var * (1 - 0.99))
+            mean, var = tf.nn.moments(x, axes=3, keepdims=True)
+            self.moving_mean2 = self.moving_mean2 * 0.99 + mean * (1 - 0.99) 
+            self.moving_var2 = self.moving_var2 * 0.99 + var * (1 - 0.99)
             # perform batch normalization on the first convolution result with no offset and scale
             x = tf.nn.batch_normalization(x,
                                   mean=self.moving_mean2,
@@ -99,8 +99,8 @@ class TransitionLayer:
         self.compression_factor = compression_factor
         # initialize the convolutional weight with Xavier initialization
         self.weight = initializer([1, 1, input_channels, int(self.compression_factor * input_channels)], 'Xavier', dtype)
-        self.moving_mean = tf.Variable(tf.zeros([input_channels])) 
-        self.moving_var = tf.Variable(tf.ones([input_channels]))
+        self.moving_mean = tf.zeros([input_channels])
+        self.moving_var = tf.ones([input_channels])
         self.beta = tf.Variable(tf.zeros([input_channels]))
         self.gamma = tf.Variable(tf.ones([input_channels]))
         # store the parameter in a list
@@ -112,9 +112,9 @@ class TransitionLayer:
     # define a method for outputting the layer result
     def output(self, inputs, train_flag=True):
         # calculate the mean and variance of the inputs along the channel axis
-        mean, var = tf.nn.moments(inputs, axes=[0, 1, 2])
-        self.moving_mean.assign(self.moving_mean * 0.99 + mean * (1 - 0.99)) 
-        self.moving_var.assign(self.moving_var * 0.99 + var * (1 - 0.99))
+        mean, var = tf.nn.moments(inputs, axes=3, keepdims=True)
+        self.moving_mean = self.moving_mean * 0.99 + mean * (1 - 0.99) 
+        self.moving_var = self.moving_var * 0.99 + var * (1 - 0.99)
         # perform batch normalization on the inputs with no offset and scale
         x = tf.nn.batch_normalization(inputs,
                                       mean=self.moving_mean,
@@ -139,8 +139,8 @@ class DenseNet121:
     def __init__(self, input_channels, num_classes=1000, growth_rate=32, compression_factor=0.5, include_top=True, pooling=None, dtype='float32'):
         # initialize the first convolutional weight with Xavier initialization
         self.conv1_weight = initializer([7, 7, 3, 64], 'Xavier', dtype)
-        self.moving_mean1 = tf.Variable(tf.zeros([64])) 
-        self.moving_var1 = tf.Variable(tf.ones([64]))
+        self.moving_mean1 = tf.zeros([64])
+        self.moving_var1 = tf.ones([64])
         self.beta1 = tf.Variable(tf.zeros([64]))
         self.gamma1 = tf.Variable(tf.ones([64]))
         self.input_channels=input_channels
@@ -202,8 +202,8 @@ class DenseNet121:
         # initialize the fully connected weight with Xavier initialization
         self.fc_weight = initializer([self.block4.output_size, self.num_classes], 'Xavier', self.dtype)
         self.fc_bias = initializer([self.num_classes], 'Xavier', self.dtype)
-        self.moving_mean2 = tf.Variable(tf.zeros([self.block4.output_size])) 
-        self.moving_var2 = tf.Variable(tf.ones([self.block4.output_size]))
+        self.moving_mean2 = tf.zeros([self.block4.output_size]) 
+        self.moving_var2 = tf.ones([self.block4.output_size])
         self.beta2 = tf.Variable(tf.zeros([self.block4.output_size]))
         self.gamma2 = tf.Variable(tf.ones([self.block4.output_size]))
         # store the parameters of all the blocks and layers in a list
@@ -225,9 +225,9 @@ class DenseNet121:
                 # perform the first convolution operation with valid padding and stride 2
                 x = tf.nn.conv2d(x, self.conv1_weight, strides=2, padding="VALID")
                 # calculate the mean and variance of the first convolution result along the channel axis
-                mean, var = tf.nn.moments(x, axes=[0, 1, 2])
-                self.moving_mean1.assign(self.moving_mean1 * 0.99 + mean * (1 - 0.99)) 
-                self.moving_var1.assign(self.moving_var1 * 0.99 + var * (1 - 0.99))
+                mean, var = tf.nn.moments(x, axes=3, keepdims=True)
+                self.moving_mean1 = self.moving_mean1 * 0.99 + mean * (1 - 0.99) 
+                self.moving_var1 = self.moving_var1 * 0.99 + var * (1 - 0.99)
                 # perform batch normalization on the first convolution result with no offset and scale
                 x = tf.nn.batch_normalization(x,
                                               mean=self.moving_mean1,
@@ -256,9 +256,9 @@ class DenseNet121:
                 # get the output of the fourth dense block
                 x = self.block4.output(x)
                 # calculate the mean and variance of the fourth dense block result along the channel axis
-                mean, var = tf.nn.moments(x, axes=[0, 1, 2])
-                self.moving_mean2.assign(self.moving_mean2 * 0.99 + mean * (1 - 0.99)) 
-                self.moving_var2.assign(self.moving_var2 * 0.99 + var * (1 - 0.99))
+                mean, var = tf.nn.moments(x, axes=3, keepdims=True)
+                self.moving_mean2 = self.moving_mean2 * 0.99 + mean * (1 - 0.99)
+                self.moving_var2 = self.moving_var2 * 0.99 + var * (1 - 0.99)
                 # perform batch normalization on the fourth dense block result with no offset and scale
                 x = tf.nn.batch_normalization(x,
                                               mean=self.moving_mean2,
