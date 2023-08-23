@@ -25,13 +25,14 @@ class conv2d_bn:
         self.output_size=filters
     
     
-    def output(self,data,strides=1,padding="SAME"):
+    def output(self,data,strides=1,padding="SAME",train_flag=True):
         data=tf.nn.conv2d(data,self.weight,strides=strides,padding=padding)
-        if not self.use_bias:
-            mean,var=tf.nn.moments(data,axes=3,keepdims=True)
-            self.moving_mean=self.moving_mean*0.99+mean*(1-0.99)
-            self.moving_var=self.moving_var*0.99+var*(1-0.99)
-            data=tf.nn.batch_normalization(data,self.moving_mean,self.moving_var,self.beta,None,1e-3)
+        if train_flag:
+            if not self.use_bias:
+                mean,var=tf.nn.moments(data,axes=3,keepdims=True)
+                self.moving_mean=self.moving_mean*0.99+mean*(1-0.99)
+                self.moving_var=self.moving_var*0.99+var*(1-0.99)
+                data=tf.nn.batch_normalization(data,self.moving_mean,self.moving_var,self.beta,None,1e-3)
         if self.activation is not None:
             output=self.activation(data)
         else:
@@ -79,29 +80,29 @@ class inception_resnet_block:
         return inputs[0] + inputs[1] * self.scale
     
     
-    def output(self,data):
+    def output(self,data,train_flag=True):
         if self.block_type == "block35":
-            data1 = self.branch_0.output(data)
-            data2 = self.branch_1.output(data)
-            data2 = self.branch_1_1.output(data2)
-            data3 = self.branch_2.output(data)
-            data3 = self.branch_2_1.output(data3)
-            data3 = self.branch_2_2.output(data3)
+            data1 = self.branch_0.output(data,train_flag=train_flag)
+            data2 = self.branch_1.output(data,train_flag=train_flag)
+            data2 = self.branch_1_1.output(data2,train_flag=train_flag)
+            data3 = self.branch_2.output(data,train_flag=train_flag)
+            data3 = self.branch_2_1.output(data3,train_flag=train_flag)
+            data3 = self.branch_2_2.output(data3,train_flag=train_flag)
             branches = [data1, data2, data3]
         elif self.block_type == "block17":
-            data1 = self.branch_0.output(data)
-            data2 = self.branch_1.output(data)
-            data2 = self.branch_1_1.output(data2)
-            data2 = self.branch_1_2.output(data2)
+            data1 = self.branch_0.output(data,train_flag=train_flag)
+            data2 = self.branch_1.output(data,train_flag=train_flag)
+            data2 = self.branch_1_1.output(data2,train_flag=train_flag)
+            data2 = self.branch_1_2.output(data2,train_flag=train_flag)
             branches = [data1, data2]
         elif self.block_type == "block8":
-            data1 = self.branch_0.output(data)
-            data2 = self.branch_1.output(data)
-            data2 = self.branch_1_1.output(data2)
-            data2 = self.branch_1_2.output(data2)
+            data1 = self.branch_0.output(data,train_flag=train_flag)
+            data2 = self.branch_1.output(data,train_flag=train_flag)
+            data2 = self.branch_1_1.output(data2,train_flag=train_flag)
+            data2 = self.branch_1_2.output(data2,train_flag=train_flag)
             branches = [data1, data2]
         mixed = tf.concat(branches,axis=3)
-        up=self.up.output(mixed)
+        up=self.up.output(mixed,train_flag=train_flag)
         x = self.CustomScaleLayer([data, up],self.scale)
         if self.activation is not None:
             output = self.activation(x)
@@ -221,78 +222,153 @@ class InceptionResNetV2:
     
     
     def fp(self,data,p):
-        # Stem block: 35 x 35 x 192
-        data=self.Stem_layer1.output(data, 2, padding='VALID')
-        data=self.Stem_layer2.output(data, padding='VALID')
-        data=self.Stem_layer3.output(data)
-        data=self.Stem_layer4(data, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='VALID')
-        data=self.Stem_layer5.output(data, padding='VALID')
-        data=self.Stem_layer6.output(data, padding='VALID')
-        data=self.Stem_layer7(data, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='VALID')
-        
-        # Mixed 5b (Inception-A block): 35 x 35 x 320
-        data1=self.branch_0_5b.output(data)
-        data2=self.branch_1_5b.output(data)
-        data2=self.branch_1_1_5b.output(data2)
-        data3=self.branch_2_5b.output(data)
-        data3=self.branch_2_1_5b.output(data3)
-        data3=self.branch_2_2_5b.output(data3)
-        data4=self.branch_avg_5b(data, ksize=[1, 3, 3, 1], strides=[1, 1, 1, 1], padding='SAME')
-        data4=self.branch_pool_5b.output(data4)
-        branches = [data1, data2, data3, data4]
-        data=tf.concat(branches,axis=3)
-        
-        # 10x block35 (Inception-ResNet-A block): 35 x 35 x 320
-        for block in self.Inception_ResNet_A:
-            data=block.output(data)
-        
-        # Mixed 6a (Reduction-A block): 17 x 17 x 1088
-        data1=self.branch_0_6a.output(data, 2, padding='VALID')
-        data2=self.branch_1_6a.output(data)
-        data2=self.branch_1_1_6a.output(data2)
-        data2=self.branch_1_2_6a.output(data2, 2, padding='VALID')
-        data3=self.branch_pool_6a(data, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='VALID')
-        branches = [data1, data2, data3]
-        data=tf.concat(branches,axis=3)
-        
-        # 20x block17 (Inception-ResNet-B block): 17 x 17 x 1088
-        for block in self.Inception_ResNet_B:
-            data=block.output(data)
-        
-        # Mixed 7a (Reduction-B block): 8 x 8 x 2080
-        data1=self.branch_0_7a.output(data)
-        data1=self.branch_0_1_7a.output(data1, 2, padding='VALID')
-        data2=self.branch_1_7a.output(data)
-        data2=self.branch_1_1_7a.output(data2, 2, padding='VALID')
-        data3=self.branch_2_7a.output(data)
-        data3=self.branch_2_1_7a.output(data3)
-        data3=self.branch_2_2_7a.output(data3, 2, padding='VALID')
-        data4=self.branch_pool_7a(data, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='VALID')
-        branches=[data1,data2,data3,data4]
-        data=tf.concat(branches,axis=3)
-        
-        # 10x block8 (Inception-ResNet-C block): 8 x 8 x 2080
-        for block in self.Inception_ResNet_C:
-            data=block.output(data)
-        
-        # Final convolution block: 8 x 8 x 1536
-        data=self.conv_7b.output(data)
-        
-        if self.include_top:
-            # perform global average pooling on the result
-            data = tf.reduce_mean(data, axis=[1, 2])
-            # perform matrix multiplication with the fully connected weight
-            data = tf.matmul(data, self.fc_weight)
-            # apply softmax activation function on the result to get the class probabilities
-            data = tf.nn.softmax(data)
+        if self.km==1:
+            with tf.device(assign_device(p,'GPU')):
+                # Stem block: 35 x 35 x 192
+                data=self.Stem_layer1.output(data, 2, padding='VALID')
+                data=self.Stem_layer2.output(data, padding='VALID')
+                data=self.Stem_layer3.output(data)
+                data=self.Stem_layer4(data, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='VALID')
+                data=self.Stem_layer5.output(data, padding='VALID')
+                data=self.Stem_layer6.output(data, padding='VALID')
+                data=self.Stem_layer7(data, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='VALID')
+                
+                # Mixed 5b (Inception-A block): 35 x 35 x 320
+                data1=self.branch_0_5b.output(data)
+                data2=self.branch_1_5b.output(data)
+                data2=self.branch_1_1_5b.output(data2)
+                data3=self.branch_2_5b.output(data)
+                data3=self.branch_2_1_5b.output(data3)
+                data3=self.branch_2_2_5b.output(data3)
+                data4=self.branch_avg_5b(data, ksize=[1, 3, 3, 1], strides=[1, 1, 1, 1], padding='SAME')
+                data4=self.branch_pool_5b.output(data4)
+                branches = [data1, data2, data3, data4]
+                data=tf.concat(branches,axis=3)
+                
+                # 10x block35 (Inception-ResNet-A block): 35 x 35 x 320
+                for block in self.Inception_ResNet_A:
+                    data=block.output(data)
+                
+                # Mixed 6a (Reduction-A block): 17 x 17 x 1088
+                data1=self.branch_0_6a.output(data, 2, padding='VALID')
+                data2=self.branch_1_6a.output(data)
+                data2=self.branch_1_1_6a.output(data2)
+                data2=self.branch_1_2_6a.output(data2, 2, padding='VALID')
+                data3=self.branch_pool_6a(data, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='VALID')
+                branches = [data1, data2, data3]
+                data=tf.concat(branches,axis=3)
+                
+                # 20x block17 (Inception-ResNet-B block): 17 x 17 x 1088
+                for block in self.Inception_ResNet_B:
+                    data=block.output(data)
+                
+                # Mixed 7a (Reduction-B block): 8 x 8 x 2080
+                data1=self.branch_0_7a.output(data)
+                data1=self.branch_0_1_7a.output(data1, 2, padding='VALID')
+                data2=self.branch_1_7a.output(data)
+                data2=self.branch_1_1_7a.output(data2, 2, padding='VALID')
+                data3=self.branch_2_7a.output(data)
+                data3=self.branch_2_1_7a.output(data3)
+                data3=self.branch_2_2_7a.output(data3, 2, padding='VALID')
+                data4=self.branch_pool_7a(data, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='VALID')
+                branches=[data1,data2,data3,data4]
+                data=tf.concat(branches,axis=3)
+                
+                # 10x block8 (Inception-ResNet-C block): 8 x 8 x 2080
+                for block in self.Inception_ResNet_C:
+                    data=block.output(data)
+                
+                # Final convolution block: 8 x 8 x 1536
+                data=self.conv_7b.output(data)
+                
+                if self.include_top:
+                    # perform global average pooling on the result
+                    data = tf.reduce_mean(data, axis=[1, 2])
+                    # perform matrix multiplication with the fully connected weight
+                    data = tf.matmul(data, self.fc_weight)
+                    # apply softmax activation function on the result to get the class probabilities
+                    data = tf.nn.softmax(data)
+                else:
+                    # check the pooling option of the model
+                    if self.pooling == 'avg':
+                        # perform global average pooling on the result
+                        data = tf.reduce_mean(data, axis=[1, 2])
+                    elif self.pooling == 'max':
+                        # perform global max pooling on the result
+                        data = tf.reduce_max(data, axis=[1, 2])
         else:
-            # check the pooling option of the model
-            if self.pooling == 'avg':
+            # Stem block: 35 x 35 x 192
+            data=self.Stem_layer1.output(data, 2, padding='VALID' ,train_flag=self.km)
+            data=self.Stem_layer2.output(data, padding='VALID' ,train_flag=self.km)
+            data=self.Stem_layer3.output(data ,train_flag=self.km)
+            data=self.Stem_layer4(data, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='VALID')
+            data=self.Stem_layer5.output(data, padding='VALID' ,train_flag=self.km)
+            data=self.Stem_layer6.output(data, padding='VALID' ,train_flag=self.km)
+            data=self.Stem_layer7(data, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='VALID')
+            
+            # Mixed 5b (Inception-A block): 35 x 35 x 320
+            data1=self.branch_0_5b.output(data ,train_flag=self.km)
+            data2=self.branch_1_5b.output(data ,train_flag=self.km)
+            data2=self.branch_1_1_5b.output(data2 ,train_flag=self.km)
+            data3=self.branch_2_5b.output(data ,train_flag=self.km)
+            data3=self.branch_2_1_5b.output(data3 ,train_flag=self.km)
+            data3=self.branch_2_2_5b.output(data3 ,train_flag=self.km)
+            data4=self.branch_avg_5b(data, ksize=[1, 3, 3, 1], strides=[1, 1, 1, 1], padding='SAME')
+            data4=self.branch_pool_5b.output(data4 ,train_flag=self.km)
+            branches = [data1, data2, data3, data4]
+            data=tf.concat(branches,axis=3)
+            
+            # 10x block35 (Inception-ResNet-A block): 35 x 35 x 320
+            for block in self.Inception_ResNet_A:
+                data=block.output(data ,train_flag=self.km)
+            
+            # Mixed 6a (Reduction-A block): 17 x 17 x 1088
+            data1=self.branch_0_6a.output(data, 2, padding='VALID' ,train_flag=self.km)
+            data2=self.branch_1_6a.output(data ,train_flag=self.km)
+            data2=self.branch_1_1_6a.output(data2 ,train_flag=self.km)
+            data2=self.branch_1_2_6a.output(data2, 2, padding='VALID' ,train_flag=self.km)
+            data3=self.branch_pool_6a(data, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='VALID')
+            branches = [data1, data2, data3]
+            data=tf.concat(branches,axis=3)
+            
+            # 20x block17 (Inception-ResNet-B block): 17 x 17 x 1088
+            for block in self.Inception_ResNet_B:
+                data=block.output(data ,train_flag=self.km)
+            
+            # Mixed 7a (Reduction-B block): 8 x 8 x 2080
+            data1=self.branch_0_7a.output(data ,train_flag=self.km)
+            data1=self.branch_0_1_7a.output(data1, 2, padding='VALID' ,train_flag=self.km)
+            data2=self.branch_1_7a.output(data ,train_flag=self.km)
+            data2=self.branch_1_1_7a.output(data2, 2, padding='VALID' ,train_flag=self.km)
+            data3=self.branch_2_7a.output(data ,train_flag=self.km)
+            data3=self.branch_2_1_7a.output(data3 ,train_flag=self.km)
+            data3=self.branch_2_2_7a.output(data3, 2, padding='VALID' ,train_flag=self.km)
+            data4=self.branch_pool_7a(data, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='VALID')
+            branches=[data1,data2,data3,data4]
+            data=tf.concat(branches,axis=3)
+            
+            # 10x block8 (Inception-ResNet-C block): 8 x 8 x 2080
+            for block in self.Inception_ResNet_C:
+                data=block.output(data ,train_flag=self.km)
+            
+            # Final convolution block: 8 x 8 x 1536
+            data=self.conv_7b.output(data ,train_flag=self.km)
+            
+            if self.include_top:
                 # perform global average pooling on the result
                 data = tf.reduce_mean(data, axis=[1, 2])
-            elif self.pooling == 'max':
-                # perform global max pooling on the result
-                data = tf.reduce_max(data, axis=[1, 2])
+                # perform matrix multiplication with the fully connected weight
+                data = tf.matmul(data, self.fc_weight)
+                # apply softmax activation function on the result to get the class probabilities
+                data = tf.nn.softmax(data)
+            else:
+                # check the pooling option of the model
+                if self.pooling == 'avg':
+                    # perform global average pooling on the result
+                    data = tf.reduce_mean(data, axis=[1, 2])
+                elif self.pooling == 'max':
+                    # perform global max pooling on the result
+                    data = tf.reduce_max(data, axis=[1, 2])
         return data
     
     
