@@ -273,7 +273,7 @@ class DenseNet201:
                     # perform global average pooling on the result
                     x = tf.reduce_mean(x, axis=[1, 2])
                     # perform matrix multiplication with the fully connected weight
-                    x = tf.matmul(x, self.fc_weight)
+                    x = tf.matmul(x, self.fc_weight)+self.fc_bias
                     # apply softmax activation function on the result to get the class probabilities
                     x = tf.nn.softmax(x)
                 else:
@@ -310,7 +310,7 @@ class DenseNet201:
                 # perform global average pooling on the result
                 x = tf.math.reduce_mean(x, axis=[1, 2])
                 # perform matrix multiplication with the fully connected weight
-                x = tf.matmul(x, self.fc_weight)
+                x = tf.matmul(x, self.fc_weight)+self.fc_bias
                 # apply softmax activation function on the result to get the class probabilities
                 x = tf.nn.softmax(x)
             else:
