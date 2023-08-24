@@ -4,19 +4,19 @@ import Note.nn.initializer as i # import the initializer module from Note.nn pac
 
 
 class separable_conv2d: # define a class for separable convolutional layer
-    def __init__(self,weight_shape,strides=[1,1,1,1],padding='VALID',data_format='NHWC',dilations=None,weight_initializer='Xavier',bias_initializer='zeros',activation=None,dtype='float32',use_bias=True): # define the constructor method
-        self.weight_D=i.initializer(weight_shape,weight_initializer,dtype) # initialize the weight matrix for depthwise convolution
-        self.weight_P=i.initializer([1,1,weight_shape[-1]*weight_shape[-2],weight_shape[-1]],weight_initializer,dtype) # initialize the weight matrix for pointwise convolution
+    def __init__(self,depthwise_filter,out_channels,strides=[1,1,1,1],padding='VALID',data_format='NHWC',dilations=None,weight_initializer='Xavier',bias_initializer='zeros',activation=None,dtype='float32',use_bias=True): # define the constructor method
+        self.weight_D=i.initializer(depthwise_filter,weight_initializer,dtype) # initialize the weight matrix for depthwise convolution
+        self.weight_P=i.initializer([1,1,depthwise_filter[-1]*depthwise_filter[-2],out_channels],weight_initializer,dtype) # initialize the weight matrix for pointwise convolution
         if use_bias==True: # if use bias is True
-            self.bias_D=i.initializer([weight_shape[-1]*weight_shape[-2]],bias_initializer,dtype) # initialize the bias vector for depthwise convolution
-            self.bias_P=i.initializer([weight_shape[-1]],bias_initializer,dtype) # initialize the bias vector for pointwise convolution
+            self.bias_D=i.initializer([depthwise_filter[-1]*depthwise_filter[-2]],bias_initializer,dtype) # initialize the bias vector for depthwise convolution
+            self.bias_P=i.initializer([out_channels],bias_initializer,dtype) # initialize the bias vector for pointwise convolution
         self.strides=strides
         self.padding=padding
         self.data_format=data_format
         self.dilations=dilations
         self.activation=activation # set the activation function
         self.use_bias=use_bias # set the use bias flag
-        self.output_size=weight_shape[-1]
+        self.output_size=out_channels
         if use_bias==True: # if use bias is True
             self.param=[self.weight_D,self.bias_D,self.weight_P,self.bias_P] # store the parameters in a list
         else: # if use bias is False
