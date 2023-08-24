@@ -3,15 +3,16 @@ import tensorflow as tf
 class chunked_processing:
   """A class for implementing chunked processing layer for Reformer models."""
 
-  def __init__(self, chunk_size):
+  def __init__(self, chunk_size, layer):
     """Initializes the chunked processing layer.
 
     Args:
       chunk_size: int, the size of each chunk along the sequence dimension.
     """
     self.chunk_size = chunk_size
+    self.layer = layer
 
-  def output(self, data, layer):
+  def output(self, data):
     """Applies the chunked processing layer on the input tensor.
 
     Args:
@@ -24,7 +25,7 @@ class chunked_processing:
     data = tf.reshape(data, (data.shape[0], -1, self.chunk_size, data.shape[-1]))
 
     # Apply the layer on each chunk independently
-    output = layer(data)
+    output = self.layer(data)
 
     # Merge the chunks back into the original shape
     output = tf.reshape(output, (output.shape[0], -1, output.shape[-1]))
