@@ -11,19 +11,21 @@ class Performer:
     self.ffn_attn = dense([dim * nb_heads, dim], weight_initializer, bias_initializer, None, dtype, use_bias)
     self.ffn1 = dense([dim, dim * 4], weight_initializer, bias_initializer, activation, dtype, use_bias)
     self.ffn2 = dense([dim * 4, dim], weight_initializer, bias_initializer,None, dtype, use_bias)
+    self.train_flag=True
     self.output_size=dim
     self.param=[self.attention.param, self.ffn_attn.param, self.ffn1.param, self.ffn2.param]
     
 
   def output(self, data, train_flag=True):
+    self.train_flag=train_flag
     # Apply the attention sublayer
     attn = self.attention.output(data)
     ffn_attn = self.ffn_attn.output(attn)
     # Apply the residual connection and layer normalization
-    output = layer_normalization(ffn_attn + data, train_flag=train_flag)
+    output = layer_normalization(ffn_attn + data, train_flag=self.train_flag)
     # Apply the feed-forward sublayer
     ffn1 = self.ffn1.output(output)
     ffn2 = self.ffn2.output(ffn1)
     # Apply the residual connection and layer normalization
-    output = layer_normalization(ffn2+output, train_flag=train_flag)
+    output = layer_normalization(ffn2+output, train_flag=self.train_flag)
     return output
