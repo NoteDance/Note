@@ -3,16 +3,17 @@ import Note.nn.initializer as i
 
 
 class sparse_attention:
-    def __init__(self, weight_shape, weight_initializer='Xavier', dtype='float32', mask_mode=None, mask_params=None):
+    def __init__(self, weight_shape, a, weight_initializer='Xavier', dtype='float32', mask_mode=None, mask_params=None):
         self.qw = i.initializer(weight_shape, weight_initializer, dtype)
         self.kw = i.initializer(weight_shape, weight_initializer, dtype)
         self.vw = i.initializer(weight_shape, weight_initializer, dtype)
-        self.output_size=weight_shape[-1]
-        self.param = [self.qw, self.kw, self.vw]
+        self.a=a
         # A string that specifies which sparse mode or mask to use, such as "local_window", "block", "routing", etc.
         self.mask_mode = mask_mode
         # A dictionary that stores the parameters for the sparse mode or mask, such as window_size, block_size, top_k, etc.
         self.mask_params = mask_params
+        self.output_size=weight_shape[-1]
+        self.param = [self.qw, self.kw, self.vw]
     
     # A function that generates a local window mask where each position only attends to the previous and next window_size positions
     def local_window_mask(self,seq_len,dtype,window_size):
@@ -52,7 +53,7 @@ class sparse_attention:
         sparse_mask = tf.sparse.reorder(sparse_mask)
         return tf.sparse.to_dense(sparse_mask)
     
-    def output(self, data1, a, data2=None):
+    def output(self, data1, data2=None):
         if data2 is None:
             # Use the same data to compute query, key and value
             query = tf.matmul(data1, self.qw)
@@ -64,14 +65,14 @@ class sparse_attention:
             key = tf.matmul(data2, self.kw)
             value = tf.matmul(data2, self.vw)
         # Reshape and transpose the query, key and value tensors to match the attention head dimension
-        query = tf.reshape(query, shape=[query.shape[0], query.shape[1], a, query.shape[2] // a])
-        key = tf.reshape(key, shape=[key.shape[0], key.shape[1], a, key.shape[2] // a])
-        value = tf.reshape(value, shape=[value.shape[0], value.shape[1], a, value.shape[2] // a])
+        query = tf.reshape(query, shape=[query.shape[0], query.shape[1], self.a, query.shape[2] // self.a])
+        key = tf.reshape(key, shape=[key.shape[0], key.shape[1], self.a, key.shape[2] // self.a])
+        value = tf.reshape(value, shape=[value.shape[0], value.shape[1], self.a, value.shape[2] // self.a])
         query = tf.transpose(query, perm=[0, 2, 1, 3])
         key = tf.transpose(key, perm=[0, 2, 1, 3])
         value = tf.transpose(value, perm=[0, 2, 1, 3])
         # Compute the scores by dot product of query and key and normalize by the square root of the input dimension
-        scores = tf.matmul(query, key, transpose_b=True) / tf.sqrt(data1.shape[2] / a)
+        scores = tf.matmul(query, key, transpose_b=True) / tf.sqrt(data1.shape[2] / self.a)
         
         # If there is a sparse mode or mask specified, call the corresponding function to get a sparse mask tensor
         if self.mask_mode is not None:
