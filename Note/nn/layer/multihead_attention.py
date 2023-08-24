@@ -3,18 +3,19 @@ import Note.nn.initializer as i
 
 
 class multihead_attention:
-    def __init__(self, weight_shape, num_heads, weight_initializer='Xavier', dtype='float32'):
+    def __init__(self, weight_shape, num_heads, weight_initializer='Xavier', mask=None, dtype='float32'):
         # Create weight matrices for query, key, value, and output using i.initializer function
         self.qw = i.initializer(weight_shape, weight_initializer, dtype)
         self.kw = i.initializer(weight_shape, weight_initializer, dtype)
         self.vw = i.initializer(weight_shape, weight_initializer, dtype)
         self.ow = i.initializer([weight_shape[1], weight_shape[1]], weight_initializer, dtype)
-        self.output_size = weight_shape[-1]
-        # Add all weight matrices to model parameters
-        self.param = [self.qw, self.kw, self.vw, self.ow]
         # Define the number of heads and the dimension of each head
         self.num_heads = num_heads
         self.head_dim = weight_shape[1] // num_heads
+        self.mask = mask
+        self.output_size = weight_shape[-1]
+        # Add all weight matrices to model parameters
+        self.param = [self.qw, self.kw, self.vw, self.ow]
     
     
     def scaled_dot_product_attention(self, query, key, value, mask):
@@ -33,7 +34,7 @@ class multihead_attention:
         return attention_output, attention_weights
     
     
-    def output(self, data1, data2=None, mask=None):
+    def output(self, data1, data2=None):
         # Linearly transform query, key, and value to obtain new query, key, and value
         if data2 is not None:
           # If using cross attention, use data1 as query and data2 as key and value
@@ -57,7 +58,7 @@ class multihead_attention:
         scaled_dot_product_attention_output, scaled_dot_product_attention_weights = self.scaled_dot_product_attention(query=query,
                                                                                                                       key=key,
                                                                                                                       value=value,
-                                                                                                                      mask=None)  # shape: (batch_size, num_heads, seq_length_q, head_dim)
+                                                                                                                      mask=self.mask)  # shape: (batch_size, num_heads, seq_length_q, head_dim)
         # Transpose the scaled dot-product attention output to obtain transposed scaled dot-product attention output
         scaled_dot_product_attention_output = tf.transpose(scaled_dot_product_attention_output, perm=[0, 2, 1, 3])  # shape: (batch_size, seq_length_q, num_heads, head_dim)
         # Concatenate the transposed scaled dot-product attention output to obtain concatenated scaled dot-product attention output
