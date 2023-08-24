@@ -3,10 +3,12 @@ from Note.nn.initializer import initializer
 
 
 class batch_normalization:
-    def __init__(self, input_size, axes=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, beta_initializer='zeros', gamma_initializer='ones', moving_mean_initializer='zeros', moving_variance_initializer='ones', dtype='float32'):
+    def __init__(self, input_size, axes=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, beta_initializer='zeros', gamma_initializer='ones', moving_mean_initializer='zeros', moving_variance_initializer='ones', keepdims=False, dtype='float32'):
         self.axes=axes
         self.momentum=momentum
         self.epsilon=epsilon
+        self.keepdims=keepdims
+        self.train_flag=True
         self.param=[]
         self.moving_mean=initializer([input_size], moving_mean_initializer, dtype)
         self.moving_var=initializer([input_size], moving_variance_initializer, dtype)
@@ -22,14 +24,18 @@ class batch_normalization:
             self.gamma=None
     
     
-    def output(self, data, keepdims=False):
-        mean, var = tf.nn.moments(data, self.axes, keepdims)
-        self.moving_mean.assign(self.moving_mean * self.momentum + mean * (1 - self.momentum)) 
-        self.moving_var.assign(self.moving_var * self.momentum + var * (1 - self.momentum))
-        output = tf.nn.batch_normalization(data,
-                                           mean=self.moving_mean,
-                                           variance=self.moving_var,
-                                           offset=self.beta,
-                                           scale=self.gamma,
-                                           variance_epsilon=self.epsilon)
+    def output(self, data, train_flag=True):
+        self.train_flag=train_flag
+        if self.train_flag:
+            mean, var = tf.nn.moments(data, self.axes, self.keepdims)
+            self.moving_mean.assign(self.moving_mean * self.momentum + mean * (1 - self.momentum)) 
+            self.moving_var.assign(self.moving_var * self.momentum + var * (1 - self.momentum))
+            output = tf.nn.batch_normalization(data,
+                                               mean=self.moving_mean,
+                                               variance=self.moving_var,
+                                               offset=self.beta,
+                                               scale=self.gamma,
+                                               variance_epsilon=self.epsilon)
+        else:
+            output=data
         return output
