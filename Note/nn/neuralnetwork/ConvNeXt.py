@@ -2,7 +2,6 @@ import tensorflow as tf
 import numpy as np
 from Note.nn.initializer import initializer
 from Note.nn.layer.conv2d import conv2d
-from Note.nn.layer.separable_conv2d import separable_conv2d
 from Note.nn.layer.dense import dense
 from Note.nn.layer.layer_normalization import layer_normalization
 from Note.nn.Layers import Layers
@@ -12,15 +11,15 @@ from Note.nn.parallel.assign_device import assign_device
 
 class ConvNeXtBlock:
     def __init__(self, input_channels, projection_dim, drop_path_rate=0.0, layer_scale_init_value=1e-6, dtype='float32'):
-        self.separable_conv2d=separable_conv2d([7,7,input_channels,1],projection_dim,padding='SAME',dtype=dtype)
+        self.conv2d=conv2d([7,7,input_channels//projection_dim,projection_dim],padding='SAME',dtype=dtype)
         self.layer_normalization=layer_normalization()
         self.dense1=dense([projection_dim,4*projection_dim],activation='gelu',dtype=dtype)
         self.dense2=dense([4*projection_dim,projection_dim],dtype=dtype)
-        self.gamma=tf.Variable(tf.ones([projection_dim])*layer_scale_init_value)
+        self.gamma=tf.Variable(tf.ones([projection_dim],dtype=dtype)*layer_scale_init_value)
         self.drop_path_rate=drop_path_rate
         self.layer_scale_init_value=layer_scale_init_value
         self.output_size=projection_dim
-        self.param=[self.separable_conv2d.param,self.dense1.param,self.dense2.param,self.gamma]
+        self.param=[self.conv2d.param,self.dense1.param,self.dense2.param,self.gamma]
         
     
     def LayerScale(self,x):
@@ -38,7 +37,7 @@ class ConvNeXtBlock:
     
     
     def output(self,data,train_flag=True):
-        x=self.separable_conv2d.output(data)
+        x=self.conv2d.output(data)
         x=self.layer_normalization.output(x,train_flag=train_flag)
         x=self.dense1.output(x)
         x=self.dense2.output(x)
@@ -80,9 +79,9 @@ class ConvNeXt:
         self.downsample_layers = []
         self.downsample_layers.append(layers)
         
-        layers=Layers()
         num_downsample_layers = 3
         for i in range(num_downsample_layers):
+            layers=Layers()
             layers.add(layer_normalization())
             layers.add(conv2d([2,2,self.projection_dims[i],self.projection_dims[i+1]],dtype=dtype))
             self.downsample_layers.append(layers)
@@ -101,6 +100,7 @@ class ConvNeXt:
         self.blocks=[]
         self.num_convnext_blocks = 4
         for i in range(self.num_convnext_blocks):
+            self.blocks.append([])
             input_channels=self.downsample_layers[i].output_size
             for j in range(self.depths[i]):
                 block = ConvNeXtBlock(
@@ -110,12 +110,12 @@ class ConvNeXt:
                     layer_scale_init_value=self.layer_scale_init_value,
                     dtype=dtype
                     )
-                self.blocks.append(block)
+                self.blocks[i].append(block)
                 input_channels=block.output_size
                 self.param.append(block.param)
             cur += self.depths[i]
         self.layer_normalization=layer_normalization()
-        self.fc_weight = initializer([self.blocks[-1].output_size, self.classes], 'Xavier', dtype)
+        self.fc_weight = initializer([self.blocks[-1][-1].output_size, self.classes], 'Xavier', dtype)
         self.fc_bias = initializer([self.classes], 'Xavier', dtype)
         self.param.extend([self.fc_weight,self.fc_bias])
         return
@@ -125,35 +125,34 @@ class ConvNeXt:
         if self.km==1:
             with tf.device(assign_device(p,'GPU')):
                 for i in range(self.num_convnext_blocks):
-                    x = self.downsample_layers[i].output(data)
+                    data = self.downsample_layers[i].output(data)
                     for j in range(self.depths[i]):
-                        x=self.blocks[j].output(x)
+                        data=self.blocks[i][j].output(data)
                 if self.include_top:
-                    x = tf.math.reduce_mean(x, axis=[1, 2])
-                    x = self.layer_normalization(x)
-                    x = tf.matmul(x, self.fc_weight) + self.fc_bias
-                    x = tf.nn.softmax(x)
+                    data = tf.math.reduce_mean(data, axis=[1, 2])
+                    data = self.layer_normalization.output(data)
+                    data = tf.matmul(data, self.fc_weight) + self.fc_bias
+                    data = tf.nn.softmax(data)
                 else:
                     if self.pooling=="avg":
-                        x = tf.math.reduce_mean(x, axis=[1, 2])
+                        data = tf.math.reduce_mean(data, axis=[1, 2])
                     elif self.pooling=="max":
-                        x = tf.math.reduce_max(x, axis=[1, 2])
+                        data = tf.math.reduce_max(data, axis=[1, 2])
         else:
             for i in range(self.num_convnext_blocks):
-                x = self.downsample_layers[i].output(data,self.km)
+                data = self.downsample_layers[i].output(data,self.km)
                 for j in range(self.depths[i]):
-                    x=self.blocks[j].output(x,self.km)
+                    data=self.blocks[i][j].output(data,self.km)
             if self.include_top:
-                x = tf.math.reduce_mean(x, axis=[1, 2])
-                x = self.layer_normalization(x)
-                x = tf.matmul(x, self.fc_weight) + self.fc_bias
-                x = tf.nn.softmax(x)
+                data = tf.math.reduce_mean(data, axis=[1, 2])
+                data = tf.matmul(data, self.fc_weight) + self.fc_bias
+                data = tf.nn.softmax(data)
             else:
                 if self.pooling=="avg":
-                    x = tf.math.reduce_mean(x, axis=[1, 2])
+                    data = tf.math.reduce_mean(data, axis=[1, 2])
                 elif self.pooling=="max":
-                    x = tf.math.reduce_max(x, axis=[1, 2])
-        return x
+                    data = tf.math.reduce_max(data, axis=[1, 2])
+        return data
     
     
     def loss(self,output,labels,p):
