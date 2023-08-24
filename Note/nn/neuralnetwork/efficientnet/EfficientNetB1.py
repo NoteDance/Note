@@ -26,7 +26,7 @@ class EfficientNetB1:
     def build(self,dtype='float32'):
         """A method that builds the model by creating different layers."""
         self.bc=tf.Variable(0,dtype=dtype) # create a variable to store the batch count
-        self.conv2d=conv2d([3,3,3,48],dtype=dtype) # create a conv2d layer with 48 filters and no bias
+        self.conv2d=conv2d([3,3,3,48],strides=[1,2,2,1],padding="SAME",dtype=dtype) # create a conv2d layer with 48 filters and no bias
         self.MBConv1=MBConv(48,24,3,1,1,1,dtype=dtype) # create a MBConv layer with 24 output channels and 1 repeat
         self.MBConv2=MBConv(24,32,3,2,6,4,dtype=dtype) # create a MBConv layer with 32 output channels and 4 repeats
         self.MBConv3=MBConv(32,48,5,2,6,2,dtype=dtype) # create a MBConv layer with 48 output channels and 2 repeats
@@ -34,7 +34,7 @@ class EfficientNetB1:
         self.MBConv5=MBConv(88,120,5,1,6,4,dtype=dtype) # create a MBConv layer with 120 output channels and 4 repeats
         self.MBConv6=MBConv(120,208,5,2,6,4,dtype=dtype) # create a MBConv layer with 208 output channels and 4 repeats
         self.MBConv7=MBConv(208,352,3,1,6,1,dtype=dtype) # create a MBConv layer with 352 output channels and 1 repeat
-        self.conv1x1=conv2d([1,1,352,1280],dtype=dtype) # create a conv2d layer with 1280 filters and no bias
+        self.conv1x1=conv2d([1,1,352,1280],strides=[1,1,1,1],padding="SAME",dtype=dtype) # create a conv2d layer with 1280 filters and no bias
         self.dense=dense([1280,self.classes],model_number=1,dtype=dtype) # create a dense layer with self.classes units
         self.param=[self.conv2d.param,
                     self.MBConv1.param,
@@ -62,7 +62,7 @@ class EfficientNetB1:
         """
         if self.km==1: # if kernel mode is 1
             with tf.device(assign_device(p,'GPU')): # assign the device to use
-                data=self.conv2d.output(data,strides=[1,2,2,1],padding="SAME") # apply the conv2d layer with strides 2 and same padding
+                data=self.conv2d.output(data) # apply the conv2d layer with strides 2 and same padding
                 data=tf.nn.batch_normalization(data,tf.Variable(tf.zeros([48])),tf.Variable(tf.ones([48])),None,None,1e-5) # apply batch normalization to normalize the output
                 data=self.swish(data) # apply swish activation function to increase nonlinearity
                 data=self.MBConv1.output(data) # apply the MBConv1 layer
@@ -72,7 +72,7 @@ class EfficientNetB1:
                 data=self.MBConv5.output(data) # apply the MBConv5 layer
                 data=self.MBConv6.output(data) # apply the MBConv6 layer
                 data=self.MBConv7.output(data) # apply the MBConv7 layer
-                data=self.conv1x1.output(data,strides=[1,1,1,1],padding="SAME") # apply the 1x1 convolution layer with strides 1 and same padding
+                data=self.conv1x1.output(data) # apply the 1x1 convolution layer with strides 1 and same padding
                 if self.include_top:
                     data=tf.reduce_mean(data,[1,2]) # apply global average pooling to get the mean value of each channel
                     data=tf.nn.dropout(data,rate=0.2)
@@ -83,7 +83,7 @@ class EfficientNetB1:
                     elif self.pooling=="max":
                         data=tf.reduce_max(data,[1,2])
         else:
-            data=self.conv2d.output(data,strides=[1,2,2,1],padding="SAME") # apply the conv2d layer with strides 2 and same padding
+            data=self.conv2d.output(data) # apply the conv2d layer with strides 2 and same padding
             data=self.swish(data) # apply swish activation function to increase nonlinearity
             data=self.MBConv1.output(data,self.km) # apply the MBConv1 layer
             data=self.MBConv2.output(data,self.km) # apply the MBConv2 layer
@@ -92,7 +92,7 @@ class EfficientNetB1:
             data=self.MBConv5.output(data,self.km) # apply the MBConv5 layer
             data=self.MBConv6.output(data,self.km) # apply the MBConv6 layer
             data=self.MBConv7.output(data,self.km) # apply the MBConv7 layer
-            data=self.conv1x1.output(data,strides=[1,1,1,1],padding="SAME") # apply the 1x1 convolution layer with strides 1 and same padding
+            data=self.conv1x1.output(data) # apply the 1x1 convolution layer with strides 1 and same padding
             if self.include_top:
                 data=tf.reduce_mean(data,[1,2]) # apply global average pooling to get the mean value of each channel
                 output=tf.nn.softmax(self.dense.output(data)) # apply the dense layer and softmax activation function to get the probability distribution of each class 
