@@ -22,6 +22,7 @@ class Transformer:
             self.bias_ffn_2=i.initializer([weight_shape[1]],bias_initializer,dtype) # second feed-forward bias vector
         self.dtype=dtype
         self.use_bias=use_bias
+        self.train_flag=True
         self.output_size=weight_shape[-1]
         if use_bias:
             self.param=[self.weight_q,self.weight_k,self.weight_v,self.weight_o,
@@ -34,6 +35,7 @@ class Transformer:
     
     
     def output(self,data,train_flag=True):
+        self.train_flag=train_flag
         # Compute the query, key and value vectors by applying linear transformation and optional bias
         if self.use_bias:
             q=tf.matmul(data,self.weight_q)+self.bias_q # shape: (batch_size ,seq_len ,hidden_size)
@@ -65,19 +67,19 @@ class Transformer:
         else:
           output=tf.matmul(o,self.weight_o)# shape: (batch_size ,seq_len_q ,hidden_size)
         # Add residual connection and layer normalization
-        output=layer_normalization(output+data,train_flag=train_flag) # shape: (batch_size ,seq_len_q ,hidden_size)
+        output=layer_normalization(output+data,train_flag=self.train_flag) # shape: (batch_size ,seq_len_q ,hidden_size)
         # Apply the first feed-forward sublayer with ReLU activation
         if self.use_bias:
           ffn_1=tf.nn.relu(tf.matmul(output,self.weight_ffn_1)+self.bias_ffn_1)# shape: (batch_size ,seq_len_q ,4 * hidden_size)
         else:
           ffn_1=tf.nn.relu(tf.matmul(output,self.weight_ffn_1))# shape: (batch_size ,seq_len_q ,4 * hidden_size)
         # Apply layer normalization
-        ffn_1=layer_normalization(ffn_1,train_flag=train_flag) # shape: (batch_size ,seq_len_q ,4 * hidden_size)
+        ffn_1=layer_normalization(ffn_1,train_flag=self.train_flag) # shape: (batch_size ,seq_len_q ,4 * hidden_size)
         # Apply the second feed-forward sublayer with linear activation
         if self.use_bias:
           ffn_2=tf.matmul(ffn_1,self.weight_ffn_2)+self.bias_ffn_2# shape: (batch_size ,seq_len_q ,hidden_size)
         else:
           ffn_2=tf.matmul(ffn_1,self.weight_ffn_2)# shape: (batch_size ,seq_len_q ,hidden_size)
         # Add residual connection and layer normalization
-        output=layer_normalization(ffn_2+output,train_flag=train_flag)# shape: (batch_size ,seq_len_q ,hidden_size)
+        output=layer_normalization(ffn_2+output,train_flag=self.train_flag)# shape: (batch_size ,seq_len_q ,hidden_size)
         return output
