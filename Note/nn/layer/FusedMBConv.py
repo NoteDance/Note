@@ -9,8 +9,6 @@ class FusedMBConv:
     def __init__(self, input_channels, output_size, kernel_size=3, strides=1, expand_ratio=1, repeats=1, se_ratio=0, rate=0.2, dtype='float32'):
         # Calculate the expanded size by multiplying the input size by the expand ratio
         self.expanded_size = input_channels * expand_ratio
-        # Assign the output size to a class attribute
-        self.output_size = output_size
         # Initialize empty lists for storing the weights of the convolution layers
         self.weight_expand = []
         self.weight_project = []
@@ -64,6 +62,9 @@ class FusedMBConv:
         # Get the swish activation function from the activation_dict in Note.nn module
         self.swish = activation_dict['swish']
         self.b=tf.Variable(0,dtype=dtype)
+        self.train_flag=True
+        # Assign the output size to a class attribute
+        self.output_size = output_size
         # Store all the weights in a list as a class attribute
         self.param = [self.weight_expand, self.weight_project, self.weight_se_1, self.weight_se_2,
                       self.expand_beta, self.expand_gamma,
@@ -73,6 +74,7 @@ class FusedMBConv:
     
     # Define a method for computing the output of the block given an input tensor and a training flag
     def output(self, data, train_flag=True):
+        self.train_flag=train_flag
         # Initialize a variable b to 0 for calculating the dropout rate later
         self.b.assign(0) 
         # Loop over the number of repeats for the block
@@ -89,7 +91,7 @@ class FusedMBConv:
             if self.expand_ratio != 1:
                 x = tf.nn.conv2d(inputs_i ,self.weight_expand[i] ,strides=strides_i ,padding="SAME")
                 # If it is training mode, apply batch normalization to normalize the output tensor along its channel dimension 
-                if train_flag:
+                if self.train_flag:
                     mean, var = tf.nn.moments(x, axes=3, keepdims=True)
                     self.expand_moving_mean[i] = self.expand_moving_mean[i] * 0.9 + mean * (1 - 0.9)
                     self.expand_moving_var[i] = self.expand_moving_var[i] * 0.9 + var * (1 - 0.9)
@@ -116,7 +118,7 @@ class FusedMBConv:
             # Apply a projection step using a convolution layer with 1x1 filter (or kernel size x kernel size filter if expand ratio is 1) and no bias term to reduce the number of channels to output_size
             x = tf.nn.conv2d(x, self.weight_project[i], strides=1 if self.expand_ratio != 1 else strides_i, padding="SAME")
             # If it is training mode, apply batch normalization to normalize the output tensor along its channel dimension 
-            if train_flag:
+            if self.train_flag:
                 mean, var = tf.nn.moments(x, axes=3, keepdims=True)
                 self.project_moving_mean[i] = self.project_moving_mean[i] * 0.9 + mean * (1 - 0.9) 
                 self.project_moving_var[i] = self.project_moving_var[i] * 0.9 + var * (1 - 0.9)
@@ -124,7 +126,7 @@ class FusedMBConv:
             # If the input tensor and the output tensor have the same shape, apply a residual connection by adding them element-wise
             if inputs_i.shape == x.shape:
                 # If it is training mode, apply dropout to the output tensor with a variable rate that depends on b and the repeats parameter and a noise shape
-                if train_flag:
+                if self.train_flag:
                     rate = self.rate * self.b / self.repeats
                     x = tf.nn.dropout(x, rate=rate, noise_shape=(None, 1, 1, 1))
                     x = tf.add(x, inputs_i)
