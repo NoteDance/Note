@@ -21,7 +21,7 @@ class EfficientNetV2M:
     
     def build(self,dtype='float32'):
         self.bc=tf.Variable(0,dtype=dtype)
-        self.conv2d=conv2d([3,3,3,24],dtype=dtype)
+        self.conv2d=conv2d([3,3,3,24],strides=[1,2,2,1],padding="SAME",dtype=dtype)
         self.FusedMBConv1=FusedMBConv(24,24,3,1,1,3,dtype=dtype)
         self.FusedMBConv2=FusedMBConv(24,48,3,2,4,5,dtype=dtype)
         self.FusedMBConv3=FusedMBConv(48,80,3,2,4,5,dtype=dtype)
@@ -29,7 +29,7 @@ class EfficientNetV2M:
         self.MBConv2=MBConv(160,176,3,1,6,14,dtype=dtype)
         self.MBConv3=MBConv(176,304,3,2,6,18,dtype=dtype)
         self.MBConv4=MBConv(304,512,3,1,6,5,dtype=dtype)
-        self.conv1x1=conv2d([1,1,304,1280],dtype=dtype)
+        self.conv1x1=conv2d([1,1,304,1280],strides=[1,1,1,1],padding="SAME",dtype=dtype)
         self.dense=dense([1280,self.classes],dtype=dtype)
         self.param=[self.conv2d.param,
                     self.FusedMBConv1.param,
@@ -47,7 +47,7 @@ class EfficientNetV2M:
     def fp(self,data,p=None):
         if self.km==1:
             with tf.device(assign_device(p,'GPU')):
-                data=self.conv2d.output(data,strides=[1,2,2,1],padding="SAME")
+                data=self.conv2d.output(data)
                 data=tf.nn.batch_normalization(data,tf.Variable(tf.zeros([32])),tf.Variable(tf.ones([32])),None,None,1e-5)
                 data=self.swish(data)
                 data=self.FusedMBConv1.output(data)
@@ -57,7 +57,7 @@ class EfficientNetV2M:
                 data=self.MBConv2.output(data)
                 data=self.MBConv3.output(data)
                 data=self.MBConv4.output(data)
-                data=self.conv1x1.output(data,strides=[1,1,1,1],padding="SAME")
+                data=self.conv1x1.output(data)
                 if self.include_top:
                     data=tf.reduce_mean(data,[1,2])
                     data=tf.nn.dropout(data,rate=0.2)
@@ -68,7 +68,7 @@ class EfficientNetV2M:
                     elif self.pooling=="max":
                         data=tf.reduce_max(data,[1,2])
         else:
-            data=self.conv2d.output(data,strides=[1,2,2,1],padding="SAME")
+            data=self.conv2d.output(data)
             data=self.swish(data)
             data=self.FusedMBConv1.output(data,self.km)
             data=self.FusedMBConv2.output(data,self.km)
@@ -77,7 +77,7 @@ class EfficientNetV2M:
             data=self.MBConv2.output(data,self.km)
             data=self.MBConv3.output(data,self.km)
             data=self.MBConv4.output(data)
-            data=self.conv1x1.output(data,strides=[1,1,1,1],padding="SAME")
+            data=self.conv1x1.output(data)
             if self.include_top:
                 data=tf.reduce_mean(data,[1,2])
                 output=tf.nn.softmax(self.dense.output(data))
