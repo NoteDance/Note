@@ -1,4 +1,6 @@
 from tensorflow import function
+from tensorflow.python.ops import state_ops
+from tensorflow.python.util import nest
 from multiprocessing import Process
 import numpy as np
 from Note.DL.dl.test import parallel_test
@@ -790,9 +792,21 @@ class kernel:
         return
     
     
-    def save_p(self):
-        parameter_file=open('param.dat','wb')
+    def save_param(self,path):
+        parameter_file=open(path,'wb')
         pickle.dump(self.nn.param,parameter_file)
+        parameter_file.close()
+        return
+    
+    
+    def restore_param(self,path):
+        parameter_file=open(path,'rb')
+        param=pickle.load(parameter_file)
+        param_flat=nest.flatten(param)
+        param_flat_=nest.flatten(self.nn.param)
+        for i in range(len(param_flat)):
+            state_ops.assign(param_flat_,param_flat[i])
+        self.nn.param=nest.pack_sequence_as(self.nn.param,param_flat_)
         parameter_file.close()
         return
     
