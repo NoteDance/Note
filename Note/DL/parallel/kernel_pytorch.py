@@ -519,8 +519,8 @@ class kernel:
         return
     
     
-    def save_p(self):
-        parameter_file=open('param.dat','wb')
+    def save_param(self,path):
+        parameter_file=open(path,'wb')
         pickle.dump(self.param[7],parameter_file)
         parameter_file.close()
         return
