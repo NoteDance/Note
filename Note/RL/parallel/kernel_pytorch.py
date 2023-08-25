@@ -507,6 +507,13 @@ class kernel:
         return
     
     
+    def save_param(self,path):
+        parameter_file=open(path,'wb')
+        pickle.dump(self.param[7],parameter_file)
+        parameter_file.close()
+        return
+    
+    
     def save(self,i=None,one=True):
         if self.save_flag.value==True:
             return
