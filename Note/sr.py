@@ -11,4 +11,5 @@ def save(data,path):
 def restore(path):
     input_file=open(path,'rb')
     data=pickle.load(input_file)
+    input_file.close()
     return data
