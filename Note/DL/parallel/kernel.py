@@ -760,7 +760,7 @@ class kernel:
         param_flat=nest.flatten(param)
         param_flat_=nest.flatten(self.nn.param)
         for i in range(len(param_flat)):
-            state_ops.assign(param_flat_,param_flat[i])
+            state_ops.assign(param_flat_[i],param_flat[i])
         self.nn.param=nest.pack_sequence_as(self.nn.param,param_flat_)
         parameter_file.close()
         return
