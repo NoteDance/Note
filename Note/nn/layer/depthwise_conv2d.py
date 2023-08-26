@@ -14,7 +14,7 @@ class depthwise_conv2d: # define a class for depthwise convolutional layer
         self.dilations=dilations
         self.activation=activation # set the activation function
         self.use_bias=use_bias # set the use bias flag
-        self.output_size=weight_shape[-1]
+        self.output_size=weight_shape[-1]*weight_shape[-2]
         if use_bias==True: # if use bias is True
             self.param=[self.weight,self.bias] # store the parameters in a list
         else: # if use bias is False
