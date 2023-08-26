@@ -10,8 +10,8 @@ class batch_normalization:
         self.keepdims=keepdims
         self.train_flag=True
         self.param=[]
-        self.moving_mean=initializer([input_size], moving_mean_initializer, dtype)
-        self.moving_var=initializer([input_size], moving_variance_initializer, dtype)
+        self.moving_mean=tf.zeros([input_size],dtype)
+        self.moving_var=tf.ones([input_size],dtype)
         if center==True:
             self.beta=initializer([input_size], beta_initializer, dtype)
             self.param.append(self.beta)
@@ -27,9 +27,9 @@ class batch_normalization:
     def output(self, data, train_flag=True):
         self.train_flag=train_flag
         if self.train_flag:
-            mean, var = tf.nn.moments(data, self.axes, self.keepdims)
-            self.moving_mean.assign(self.moving_mean * self.momentum + mean * (1 - self.momentum)) 
-            self.moving_var.assign(self.moving_var * self.momentum + var * (1 - self.momentum))
+            mean, var = tf.nn.moments(data, self.axes, keepdims=self.keepdims)
+            self.moving_mean=self.moving_mean * self.momentum + mean * (1 - self.momentum)
+            self.moving_var=self.moving_var * self.momentum + var * (1 - self.momentum)
             output = tf.nn.batch_normalization(data,
                                                mean=self.moving_mean,
                                                variance=self.moving_var,
