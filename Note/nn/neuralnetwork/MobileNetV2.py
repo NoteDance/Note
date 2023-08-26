@@ -70,19 +70,16 @@ class _inverted_res_block:
         x=data
         if self.block_id:
             x=self.conv2d1.output(x)
-            if self.train_flag:
-                x=self.batch_normalization1.output(x)
+            x=self.batch_normalization1.output(x,self.train_flag)
             x=activation_dict['relu6'](x)
         if self.stride==2:
             padding = correct_pad(x, 3)
             x=self.zeropadding2d(x, [[0, 0], padding[0], padding[1], [0, 0]])
         x=self.depthwiseconv2d.output(x)
-        if self.train_flag:
-            x=self.batch_normalization2.output(x)
+        x=self.batch_normalization2.output(x,self.train_flag)
         x=activation_dict['relu6'](x)
         x=self.conv2d2.output(x)
-        if self.train_flag:
-            x=self.batch_normalization3.output(x)
+        x=self.batch_normalization3.output(x,self.train_flag)
         if self.in_channels == self.pointwise_filters and self.stride == 1:
             return data+x
         return x
@@ -155,7 +152,6 @@ class MobileNetV2:
 
         else:
             x=self.conv2d1.output(data)
-            x=self.batch_normalization1.output(x)
             
             x=self.layers.output(x,self.km)
             
