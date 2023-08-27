@@ -136,7 +136,7 @@ class TransitionLayer:
 class DenseNet121:
     # initialize the class with input size, number of classes, growth rate, compression factor,
     # include top flag, pooling option and data type
-    def __init__(self, input_channels, num_classes=1000, growth_rate=32, compression_factor=0.5, include_top=True, pooling=None, dtype='float32'):
+    def __init__(self, input_channels, growth_rate=32, compression_factor=0.5, num_classes=1000, include_top=True, pooling=None, dtype='float32'):
         # initialize the first convolutional weight with Xavier initialization
         self.conv1_weight = initializer([7, 7, 3, 64], 'Xavier', dtype)
         self.moving_mean1 = tf.zeros([64])
