@@ -1,5 +1,10 @@
 import tensorflow as tf
 
 
-def global_avg_pool2d(data):
-    return tf.reduce_mean(data,[1,2])
+class global_avg_pool2d:
+    def __init__(self,keepdims=False):
+        self.keepdims=keepdims
+    
+    
+    def output(self,data):
+        return tf.reduce_mean(data,[1,2],keepdims=self.keepdims)
