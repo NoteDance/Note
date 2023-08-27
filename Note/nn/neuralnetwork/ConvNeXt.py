@@ -51,7 +51,7 @@ class ConvNeXtBlock:
 
 
 class ConvNeXt:
-    def __init__(self,input_channels,model_type='base',classes=1000,drop_path_rate=0.0,layer_scale_init_value=1e-6,include_top=True,pooling=None):
+    def __init__(self,input_channels,model_type='base',drop_path_rate=0.0,layer_scale_init_value=1e-6,classes=1000,include_top=True,pooling=None):
         self.input_channels=input_channels
         self.model_type=model_type
         self.classes=classes
