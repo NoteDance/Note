@@ -86,7 +86,7 @@ class _inverted_res_block:
 
 
 class MobileNetV2:
-    def __init__(self,in_channels,classes=1000,alpha=1.0,include_top=True,pooling=None):
+    def __init__(self,in_channels,alpha=1.0,classes=1000,include_top=True,pooling=None):
         self.in_channels=in_channels
         self.classes=classes
         self.alpha=alpha
