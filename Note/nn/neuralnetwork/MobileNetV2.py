@@ -137,6 +137,7 @@ class MobileNetV2:
         self.bc=tf.Variable(0,dtype=dtype)
         self.param=[self.conv2d1.param,self.batch_normalization1.param,self.layers.param,self.conv2d2.param,
                     self.batch_normalization2.param,self.dense.param]
+        return
     
     
     def fp(self,data,p):
@@ -149,7 +150,15 @@ class MobileNetV2:
                 
                 x=self.conv2d2.output(x)
                 x=self.batch_normalization2.output(x)
-
+                
+                if self.include_top:
+                    x=tf.math.reduce_mean(x,axis=[1,2])
+                    x=self.dense.output(x)
+                else:
+                    if self.pooling=="avg":
+                        x=tf.math.reduce_mean(x,axis=[1,2])
+                    elif self.pooling=="max":
+                        x=tf.math.reduce_max(x,axis=[1,2])
         else:
             x=self.conv2d1.output(data)
             
@@ -157,14 +166,14 @@ class MobileNetV2:
             
             x=self.conv2d2.output(x)
 
-        if self.include_top:
-            x=tf.math.reduce_mean(x,axis=[1,2])
-            x=self.dense.output(x)
-        else:
-            if self.pooling=="avg":
+            if self.include_top:
                 x=tf.math.reduce_mean(x,axis=[1,2])
-            elif self.pooling=="max":
-                x=tf.math.reduce_max(x,axis=[1,2])
+                x=self.dense.output(x)
+            else:
+                if self.pooling=="avg":
+                    x=tf.math.reduce_mean(x,axis=[1,2])
+                elif self.pooling=="max":
+                    x=tf.math.reduce_max(x,axis=[1,2])
         return x
             
     
