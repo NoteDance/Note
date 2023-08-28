@@ -51,8 +51,7 @@ class ConvNeXtBlock:
 
 
 class ConvNeXt:
-    def __init__(self,input_channels,model_type='base',drop_path_rate=0.0,layer_scale_init_value=1e-6,classes=1000,include_top=True,pooling=None):
-        self.input_channels=input_channels
+    def __init__(self,model_type='base',drop_path_rate=0.0,layer_scale_init_value=1e-6,classes=1000,include_top=True,pooling=None):
         self.model_type=model_type
         self.classes=classes
         self.depths=MODEL_CONFIGS[model_type]['depths']
@@ -71,7 +70,7 @@ class ConvNeXt:
         self.bc=tf.Variable(0,dtype=dtype)
         # Stem block.
         layers=Layers()
-        layers.add(conv2d([4,4,self.input_channels,self.projection_dims[0]],dtype=dtype))
+        layers.add(conv2d([4,4,3,self.projection_dims[0]],dtype=dtype))
         layers.add(layer_normalization())
         self.param.append(layers.param)
         
