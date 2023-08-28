@@ -65,8 +65,7 @@ def stack1(in_channels, filters, blocks, stride1=2, dtype='float32'):
 
 
 class ResNet50:
-    def __init__(self,in_channels,preact=False,classes=1000,include_top=True,pooling=None,use_bias=True):
-        self.in_channels=in_channels
+    def __init__(self,preact=False,classes=1000,include_top=True,pooling=None,use_bias=True):
         self.preact=preact
         self.classes=classes
         self.include_top=include_top
@@ -80,7 +79,7 @@ class ResNet50:
     
     def build(self,dtype='float32'):
         self.zeropadding2d1=tf.pad
-        self.conv2d1=conv2d([7,7,self.in_channels,64],strides=[2],use_bias=self.use_bias,dtype=dtype)
+        self.conv2d1=conv2d([7,7,3,64],strides=[2],use_bias=self.use_bias,dtype=dtype)
         if not self.preact:
             self.batch_norm1=batch_normalization(self.conv2d1.output_size,epsilon=1.001e-5,keepdims=True,dtype=dtype)
             self.param.append(self.batch_norm1.param)
