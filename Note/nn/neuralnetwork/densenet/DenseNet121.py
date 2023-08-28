@@ -136,14 +136,13 @@ class TransitionLayer:
 class DenseNet121:
     # initialize the class with input size, number of classes, growth rate, compression factor,
     # include top flag, pooling option and data type
-    def __init__(self, input_channels, growth_rate=32, compression_factor=0.5, num_classes=1000, include_top=True, pooling=None, dtype='float32'):
+    def __init__(self, growth_rate=32, compression_factor=0.5, num_classes=1000, include_top=True, pooling=None, dtype='float32'):
         # initialize the first convolutional weight with Xavier initialization
         self.conv1_weight = initializer([7, 7, 3, 64], 'Xavier', dtype)
         self.moving_mean1 = tf.zeros([64])
         self.moving_var1 = tf.ones([64])
         self.beta1 = tf.Variable(tf.zeros([64]))
         self.gamma1 = tf.Variable(tf.ones([64]))
-        self.input_channels=input_channels
         self.num_classes=num_classes
         self.growth_rate=growth_rate
         self.compression_factor=compression_factor
@@ -163,7 +162,7 @@ class DenseNet121:
     def build(self):
         # create a dense block with input size equal to input size attribute,
         # number of layers equal to 6 and growth rate equal to growth rate attribute
-        self.block1 = DenseBlock(input_channels=self.input_channels,num_layers=6,
+        self.block1 = DenseBlock(input_channels=3,num_layers=6,
                                  growth_rate=self.growth_rate,
                                  dtype=self.dtype)
         
