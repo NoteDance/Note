@@ -101,8 +101,7 @@ class inception_block:
             
 
 class InceptionV3:
-    def __init__(self,input_channels,classes=1000,include_top=True,pooling=None):
-        self.input_channels=input_channels
+    def __init__(self,classes=1000,include_top=True,pooling=None):
         self.classes=classes
         self.include_top=include_top
         self.pooling=pooling
@@ -113,7 +112,7 @@ class InceptionV3:
     
     def build(self,dtype='float32'):
         self.bc=tf.Variable(0,dtype=dtype)
-        self.conv2d_bn1 = conv2d_bn(self.input_channels, 32, 3, 3, dtype)
+        self.conv2d_bn1 = conv2d_bn(3, 32, 3, 3, dtype)
         self.conv2d_bn2 = conv2d_bn(self.conv2d_bn1.output_size, 32, 3, 3, dtype)
         self.conv2d_bn3 = conv2d_bn(self.conv2d_bn2.output_size, 64, 3, 3, dtype)
         self.maxpool2d1 = tf.nn.max_pool2d
