@@ -4,7 +4,7 @@ from Note.nn.activation import activation_dict
 
 
 class SelfAttentionConv2D:
-    def __init__(self,input_shape,filters,kernel_size,strides=(1,1),padding='VALID',activation=None,kernel_initializer='Xavier',bias_initializer='zeros',dtype='float32',use_bias=True):
+    def __init__(self,input_channels,filters,kernel_size,strides=(1,1),padding='VALID',activation=None,kernel_initializer='Xavier',bias_initializer='zeros',dtype='float32',use_bias=True):
         # filters: the number of output filters
         # kernel_size: the size of the convolution kernel
         # activation: the activation function, default is None
@@ -18,7 +18,7 @@ class SelfAttentionConv2D:
         else:
             self.activation=None
         self.use_bias=use_bias
-        self.kernel=i.initializer([kernel_size[0],kernel_size[1],input_shape[-1],filters],kernel_initializer,dtype)
+        self.kernel=i.initializer([kernel_size[0],kernel_size[1],input_channels,filters],kernel_initializer,dtype)
         self.output_size=filters
         self.param=[self.kernel]
         if use_bias:
