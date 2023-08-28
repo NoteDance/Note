@@ -29,21 +29,17 @@ class block1:
         self.train_flag=True
         if self.conv_shortcut:
             shortcut=self.conv2d1.output(data)
-            if self.train_flag:
-                shortcut==self.batch_norm1.output(shortcut)
+            shortcut==self.batch_norm1.output(shortcut,self.train_flag)
         else:
             shortcut = data
         x=self.conv2d2.output(data)
-        if self.train_flag:
-            x=self.batch_norm2.output(x)
+        x=self.batch_norm2.output(x,self.train_flag)
         x=activation_dict['relu'](x)
         x=self.conv2d3.output(x)
-        if self.train_flag:
-            x=self.batch_norm3.output(x)
+        x=self.batch_norm3.output(x,self.train_flag)
         x=activation_dict['relu'](x)
         x=self.conv2d4.output(x)
-        if self.train_flag:
-            x=self.batch_norm4.output(x)
+        x=self.batch_norm4.output(x,self.train_flag)
         x=shortcut+x
         x=activation_dict['relu'](x)
         return x
