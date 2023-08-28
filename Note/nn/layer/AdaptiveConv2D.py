@@ -4,7 +4,7 @@ from Note.nn.activation import activation_dict
 
 
 class AdaptiveConv2D:
-    def __init__(self,input_shape,filters,kernel_size,strides=(1,1),padding='VALID',activation=None,kernel_initializer='Xavier',bias_initializer='zeros',dtype='float32',use_bias=True):
+    def __init__(self,input_channels,filters,kernel_size,strides=(1,1),padding='VALID',activation=None,kernel_initializer='Xavier',bias_initializer='zeros',dtype='float32',use_bias=True):
         # filters: the number of output filters
         # kernel_size: the size of the convolution kernel
         # activation: the activation function, default is None
@@ -20,8 +20,8 @@ class AdaptiveConv2D:
         self.use_bias=use_bias
         self.kernel_initializer=kernel_initializer
         self.bias_initializer=bias_initializer
-        self.kernel=i.initializer([kernel_size[0],kernel_size[1],input_shape[-1],filters],kernel_initializer,dtype)
-        self.attention=i.initializer([1,1,input_shape[-1],filters],kernel_initializer,dtype)
+        self.kernel=i.initializer([kernel_size[0],kernel_size[1],input_channels,filters],kernel_initializer,dtype)
+        self.attention=i.initializer([1,1,input_channels,filters],kernel_initializer,dtype)
         self.output_size=filters
         self.param_list=[self.kerne,self.attention]
         if use_bias:
