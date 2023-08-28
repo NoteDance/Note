@@ -86,8 +86,7 @@ class _inverted_res_block:
 
 
 class MobileNetV2:
-    def __init__(self,in_channels,alpha=1.0,classes=1000,include_top=True,pooling=None):
-        self.in_channels=in_channels
+    def __init__(self,alpha=1.0,classes=1000,include_top=True,pooling=None):
         self.classes=classes
         self.alpha=alpha
         self.include_top=include_top
@@ -100,7 +99,7 @@ class MobileNetV2:
         
         
     def build(self,dtype='float32'):
-        self.conv2d1=conv2d([3,3,self.in_channels,self.first_block_filters],strides=[2,2],padding='SAME',use_bias=False,dtype=dtype)
+        self.conv2d1=conv2d([3,3,3,self.first_block_filters],strides=[2,2],padding='SAME',use_bias=False,dtype=dtype)
         self.batch_normalization1=batch_normalization(self.conv2d1.output_size,momentum=0.999,keepdims=True)
         
         self.layers=Layers()

@@ -56,8 +56,7 @@ class _depthwise_conv_block:
 
 
 class MobileNet:
-    def __init__(self, in_channels=None, alpha=1.0, depth_multiplier=1, dropout=1e-3, include_top=True, pooling=None, classes=1000):
-        self.in_channels=in_channels
+    def __init__(self, alpha=1.0, depth_multiplier=1, dropout=1e-3, include_top=True, pooling=None, classes=1000):
         self.alpha=alpha
         self.depth_multiplier=depth_multiplier
         self.dropout=dropout
@@ -72,7 +71,7 @@ class MobileNet:
         
     def build(self,dtype='float32'):
         self.layers=Layers()
-        self.layers.add(_conv_block(self.in_channels, 32, self.alpha, strides=[2, 2],dtype=dtype))
+        self.layers.add(_conv_block(3, 32, self.alpha, strides=[2, 2],dtype=dtype))
         self.layers.add(_depthwise_conv_block(self.layers.output_size, 64, self.alpha, self.depth_multiplier, block_id=1,dtype=dtype))
         self.layers.add(_depthwise_conv_block(
         self.layers.output_size, 128, self.alpha, self.depth_multiplier, strides=[2, 2], block_id=2, dtype=dtype
