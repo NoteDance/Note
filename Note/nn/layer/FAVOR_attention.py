@@ -4,17 +4,31 @@ from Note.nn.initializer import initializer
 
 # Define a custom layer that implements FAVOR+ attention
 class FAVOR_attention:
-  def __init__(self, dim, nb_heads, nb_random_features, weight_initializer='Xavier', dtype='float32'):
-    self.dim = dim # Dimension of the input and output vectors
+  def __init__(self, output_size, nb_heads, nb_random_features, input_size=None, weight_initializer='Xavier', dtype='float32'):
     self.nb_heads = nb_heads # Number of attention heads
+    self.nb_random_features = nb_random_features
     # Initialize the random features matrix
-    self.random_features = initializer([nb_heads, nb_random_features // nb_heads, dim // nb_heads], weight_initializer, dtype)
+    self.random_features = initializer([nb_heads, nb_random_features // nb_heads, output_size // nb_heads], weight_initializer, dtype)
+    self.input_size = input_size
+    self.weight_initializer=weight_initializer
+    self.dtype=dtype
+    self.output_size = output_size * nb_heads
+    if input_size!=None:
+        # Initialize the query, key and value matrices
+        self.qw = initializer([input_size , output_size] , weight_initializer , dtype)
+        self.kw = initializer([input_size , output_size] , weight_initializer , dtype)
+        self.vw = initializer([input_size , output_size] , weight_initializer , dtype)
+        self.param=[self.qw, self.kw, self.vw, self.random_features]
+
+
+  def build(self):
+    self.random_features = initializer([self.nb_heads, self.nb_random_features // self.nb_heads, self.input_size // self.nb_heads], self.weight_initializer, self.dtype)
     # Initialize the query, key and value matrices
-    self.qw = initializer([dim , dim] , weight_initializer , dtype)
-    self.kw = initializer([dim , dim] , weight_initializer , dtype)
-    self.vw = initializer([dim , dim] , weight_initializer , dtype)
-    self.output_size = dim * nb_heads
+    self.qw = initializer([self.input_size , self.output_size] , self.weight_initializer , self.dtype)
+    self.kw = initializer([self.input_size , self.output_size] , self.weight_initializer , self.dtype)
+    self.vw = initializer([self.input_size , self.output_size] , self.weight_initializer , self.dtype)
     self.param=[self.qw, self.kw, self.vw, self.random_features]
+    return
     
 
   def output(self, data1, data2=None):
