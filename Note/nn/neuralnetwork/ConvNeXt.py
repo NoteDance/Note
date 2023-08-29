@@ -11,10 +11,10 @@ from Note.nn.parallel.assign_device import assign_device
 
 class ConvNeXtBlock:
     def __init__(self, input_channels, projection_dim, drop_path_rate=0.0, layer_scale_init_value=1e-6, dtype='float32'):
-        self.conv2d=conv2d([7,7,input_channels//projection_dim,projection_dim],padding='SAME',dtype=dtype)
+        self.conv2d=conv2d(projection_dim,[7,7],input_channels//projection_dim,padding='SAME',dtype=dtype)
         self.layer_normalization=layer_normalization()
-        self.dense1=dense([projection_dim,4*projection_dim],activation='gelu',dtype=dtype)
-        self.dense2=dense([4*projection_dim,projection_dim],dtype=dtype)
+        self.dense1=dense(4*projection_dim,projection_dim,activation='gelu',dtype=dtype)
+        self.dense2=dense(projection_dim,4*projection_dim,dtype=dtype)
         self.gamma=tf.Variable(tf.ones([projection_dim],dtype=dtype)*layer_scale_init_value)
         self.drop_path_rate=drop_path_rate
         self.layer_scale_init_value=layer_scale_init_value
@@ -70,7 +70,7 @@ class ConvNeXt:
         self.bc=tf.Variable(0,dtype=dtype)
         # Stem block.
         layers=Layers()
-        layers.add(conv2d([4,4,3,self.projection_dims[0]],dtype=dtype))
+        layers.add(conv2d(self.projection_dims[0],[4,4],3,dtype=dtype))
         layers.add(layer_normalization())
         self.param.append(layers.param)
         
@@ -82,7 +82,7 @@ class ConvNeXt:
         for i in range(num_downsample_layers):
             layers=Layers()
             layers.add(layer_normalization())
-            layers.add(conv2d([2,2,self.projection_dims[i],self.projection_dims[i+1]],dtype=dtype))
+            layers.add(conv2d(self.projection_dims[i+1],[2,2],self.projection_dims[i],dtype=dtype))
             self.downsample_layers.append(layers)
             self.param.append(layers.param)
         
