@@ -4,21 +4,38 @@ import Note.nn.initializer as i # import the initializer module from Note.nn pac
 
 
 class conv3d: # define a class for 3D convolutional layer
-    def __init__(self,weight_shape,strides=[1,1,1,1,1],padding='VALID',data_format='NHWC',dilations=None,weight_initializer='Xavier',bias_initializer='zeros',activation=None,dtype='float32',use_bias=True): # define the constructor method
-        self.weight=i.initializer(weight_shape,weight_initializer,dtype) # initialize the weight tensor
-        if use_bias==True: # if use bias is True
-            self.bias=i.initializer([weight_shape[-1]],bias_initializer,dtype) # initialize the bias vector
+    def __init__(self,filters,kernel_size,input_size=None,strides=[1,1,1,1,1],padding='VALID',weight_initializer='Xavier',bias_initializer='zeros',activation=None,data_format='NWC',dilations=None,use_bias=True,dtype='float32'): # define the constructor method
+        self.kernel_size=kernel_size
+        self.input_size=input_size
         self.strides=strides
         self.padding=padding
+        self.weight_initializer=weight_initializer
+        self.bias_initializer=bias_initializer
+        self.activation=activation # set the activation function
         self.data_format=data_format
         self.dilations=dilations
-        self.activation=activation # set the activation function
         self.use_bias=use_bias # set the use bias flag
-        self.output_size=weight_shape[-1]
-        if use_bias==True: # if use bias is True
+        self.dtype=dtype
+        self.output_size=filters
+        if input_size!=None:
+            self.weight=i.initializer([kernel_size[0],kernel_size[1],kernel_size[2],input_size,filters],weight_initializer,dtype) # initialize the weight tensor
+            if use_bias==True: # if use bias is True
+                self.bias=i.initializer([filters],bias_initializer,dtype) # initialize the bias vector
+            if use_bias==True: # if use bias is True
+                self.param=[self.weight,self.bias] # store the parameters in a list
+            else: # if use bias is False
+                self.param=[self.weight] # store only the weight in a list
+    
+    
+    def build(self):
+        self.weight=i.initializer([self.kernel_size[0],self.kernel_size[1],self.kernel_size[2],self.input_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight tensor
+        if self.use_bias==True: # if use bias is True
+            self.bias=i.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector
+        if self.use_bias==True: # if use bias is True
             self.param=[self.weight,self.bias] # store the parameters in a list
         else: # if use bias is False
             self.param=[self.weight] # store only the weight in a list
+        return
     
     
     def output(self,data): # define the output method
