@@ -8,7 +8,15 @@ class Layers:
     
     
     def add(self,layer,save_data=False,use_data=False):
-        self.layer.append(layer)
+        if hasattr(layer,'build'):
+            if layer.input_size==None:
+                layer.input_size=self.output_size
+                layer.build()
+                self.layer.append(layer)
+            else:
+                self.layer.append(layer)
+        else:
+            self.layer.append(layer)
         if hasattr(layer,'param'):
             self.param.append(layer.param)
         if hasattr(layer,'output_size'):
