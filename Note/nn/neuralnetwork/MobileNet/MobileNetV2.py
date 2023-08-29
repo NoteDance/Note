@@ -45,16 +45,16 @@ def correct_pad(inputs, kernel_size):
 
 class _inverted_res_block:
     def __init__(self, in_channels=None, expansion=None, stride=None, alpha=None, filters=None, block_id=None, dtype='float32'):
-        self.conv2d1=conv2d([1,1,in_channels,expansion * in_channels],padding="SAME",use_bias=False,dtype=dtype)
+        self.conv2d1=conv2d(expansion * in_channels,[1,1],in_channels,padding="SAME",use_bias=False,dtype=dtype)
         self.batch_normalization1=batch_normalization(self.conv2d1.output_size,momentum=0.999,dtype=dtype,keepdims=True)
         self.zeropadding2d=tf.pad
-        self.depthwiseconv2d=depthwise_conv2d([3,3,self.conv2d1.output_size,1],strides=[1,stride,stride,1],use_bias=False,padding="SAME" if stride == 1 else "VALID",dtype=dtype)
+        self.depthwiseconv2d=depthwise_conv2d(1,[3,3],self.conv2d1.output_size,strides=[1,stride,stride,1],use_bias=False,padding="SAME" if stride == 1 else "VALID",dtype=dtype)
         self.batch_normalization2=batch_normalization(self.depthwiseconv2d.output_size,momentum=0.999,dtype=dtype,keepdims=True)
         pointwise_conv_filters = int(filters * alpha)
         # Ensure the number of filters on the last 1x1 convolution is divisible by
         # 8.
         self.pointwise_filters = _make_divisible(pointwise_conv_filters, 8)
-        self.conv2d2=conv2d([1,1,self.depthwiseconv2d.output_size,self.pointwise_filters],padding="SAME",use_bias=False,dtype=dtype)
+        self.conv2d2=conv2d(self.pointwise_filters,[1,1],self.depthwiseconv2d.output_size,padding="SAME",use_bias=False,dtype=dtype)
         self.batch_normalization3=batch_normalization(self.conv2d2.output_size,momentum=0.999,dtype=dtype,keepdims=True)
         self.in_channels=in_channels
         self.stride=stride
@@ -99,7 +99,7 @@ class MobileNetV2:
         
         
     def build(self,dtype='float32'):
-        self.conv2d1=conv2d([3,3,3,self.first_block_filters],strides=[2,2],padding='SAME',use_bias=False,dtype=dtype)
+        self.conv2d1=conv2d(self.first_block_filters,[3,3],3,strides=[2,2],padding='SAME',use_bias=False,dtype=dtype)
         self.batch_normalization1=batch_normalization(self.conv2d1.output_size,momentum=0.999,keepdims=True)
         
         self.layers=Layers()
@@ -129,10 +129,10 @@ class MobileNetV2:
         else:
             last_block_filters = 1280
             
-        self.conv2d2=conv2d([1,1,self.layers.output_size,last_block_filters],use_bias=False,dtype=dtype)
+        self.conv2d2=conv2d(last_block_filters,[1,1],self.layers.output_size,use_bias=False,dtype=dtype)
         self.batch_normalization2=batch_normalization(self.conv2d2.output_size,momentum=0.999,keepdims=True)
         
-        self.dense=dense([self.conv2d2.output_size,self.classes],activation='softmax',dtype=dtype)
+        self.dense=dense(self.classes,self.conv2d2.output_size,activation='softmax',dtype=dtype)
         self.bc=tf.Variable(0,dtype=dtype)
         self.param=[self.conv2d1.param,self.batch_normalization1.param,self.layers.param,self.conv2d2.param,
                     self.batch_normalization2.param,self.dense.param]

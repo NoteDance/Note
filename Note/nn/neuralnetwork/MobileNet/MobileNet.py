@@ -12,7 +12,7 @@ from Note.nn.parallel.assign_device import assign_device
 class _conv_block:
     def __init__(self, in_channels, filters, alpha, kernel=(3, 3), strides=[1, 1], dtype='float32'):
         filters = int(filters * alpha)
-        self.conv2d=conv2d([kernel[0],kernel[1],in_channels,filters],strides=strides,padding='SAME',use_bias=False,dtype=dtype)
+        self.conv2d=conv2d(filters,kernel,in_channels,strides=strides,padding='SAME',use_bias=False,dtype=dtype)
         self.batch_norm=batch_normalization(self.conv2d.output_size,keepdims=True,dtype=dtype)
         self.train_flag=True
         self.output_size=self.conv2d.output_size
@@ -31,9 +31,9 @@ class _depthwise_conv_block:
         pointwise_conv_filters = int(pointwise_conv_filters * alpha)
         self.strides=strides
         self.zeropadding2d=tf.pad
-        self.depthwiseconv2d=depthwise_conv2d([3,3,in_channels,depth_multiplier],strides=[1,strides[0],strides[1],1],padding="SAME" if strides == [1, 1] else "VALID",use_bias=False,dtype=dtype)
+        self.depthwiseconv2d=depthwise_conv2d(depth_multiplier,[3,3],in_channels,strides=[1,strides[0],strides[1],1],padding="SAME" if strides == [1, 1] else "VALID",use_bias=False,dtype=dtype)
         self.batch_norm1=batch_normalization(self.depthwiseconv2d.output_size,keepdims=True,dtype=dtype)
-        self.conv2d=conv2d([1,1,self.depthwiseconv2d.output_size,pointwise_conv_filters],strides=[1, 1],padding='SAME',use_bias=False,dtype=dtype)
+        self.conv2d=conv2d(pointwise_conv_filters,[1,1],self.depthwiseconv2d.output_size,strides=[1, 1],padding='SAME',use_bias=False,dtype=dtype)
         self.batch_norm2=batch_normalization(self.conv2d.output_size,keepdims=True,dtype=dtype)
         self.train_flag=True
         self.output_size=self.conv2d.output_size
@@ -93,8 +93,8 @@ class MobileNet:
         self.layers.output_size, 1024, self.alpha, self.depth_multiplier, strides=[2, 2], block_id=12, dtype=dtype
         ))
         self.layers.add(_depthwise_conv_block(self.layers.output_size, 1024, self.alpha, self.depth_multiplier, block_id=13, dtype=dtype))
-        self.conv2d=conv2d([1,1,self.layers.output_size,self.classes],padding='SAME',dtype=dtype)
-        self.dense=dense([self.conv2d.output_size,self.classes],activation='softmax',dtype=dtype)
+        self.conv2d=conv2d(self.classes,[1,1],self.layers.output_size,padding='SAME',dtype=dtype)
+        self.dense=dense(self.classes,self.conv2d.output_size,activation='softmax',dtype=dtype)
         self.bc=tf.Variable(0,dtype=dtype)
         self.param=[self.layers.param,self.dense.param]
         return
