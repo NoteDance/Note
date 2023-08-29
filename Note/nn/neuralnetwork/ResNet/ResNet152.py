@@ -10,13 +10,13 @@ from Note.nn.parallel.assign_device import assign_device
 
 class block1:
     def __init__(self, in_channels, filters, kernel_size=3, stride=1, conv_shortcut=True, dtype='float32'):
-        self.conv2d1=conv2d([1,1,in_channels,4 * filters],strides=[stride],dtype=dtype)
+        self.conv2d1=conv2d(4 * filters,[1,1],in_channels,strides=[stride],dtype=dtype)
         self.batch_norm1=batch_normalization(self.conv2d1.output_size,epsilon=1.001e-5,keepdims=True,dtype=dtype)
-        self.conv2d2=conv2d([1,1,in_channels,filters],strides=[stride],dtype=dtype)
+        self.conv2d2=conv2d(filters,[1,1],in_channels,strides=[stride],dtype=dtype)
         self.batch_norm2=batch_normalization(self.conv2d2.output_size,epsilon=1.001e-5,keepdims=True,dtype=dtype)
-        self.conv2d3=conv2d([kernel_size,kernel_size,self.conv2d2.output_size,filters],padding='SAME',dtype=dtype)
+        self.conv2d3=conv2d(filters,[kernel_size,kernel_size],self.conv2d2.output_size,padding='SAME',dtype=dtype)
         self.batch_norm3=batch_normalization(self.conv2d3.output_size,epsilon=1.001e-5,keepdims=True,dtype=dtype)
-        self.conv2d4=conv2d([1,1,self.conv2d3.output_size,4 * filters],dtype=dtype)
+        self.conv2d4=conv2d(4 * filters,[1,1],self.conv2d3.output_size,dtype=dtype)
         self.batch_norm4=batch_normalization(self.conv2d4.output_size,epsilon=1.001e-5,keepdims=True,dtype=dtype)
         self.conv_shortcut=conv_shortcut
         self.train_flag=True
@@ -64,7 +64,7 @@ def stack1(in_channels, filters, blocks, stride1=2, dtype='float32'):
     return layers
 
 
-class ResNet152:
+class ResNet50:
     def __init__(self,preact=False,classes=1000,include_top=True,pooling=None,use_bias=True):
         self.preact=preact
         self.classes=classes
@@ -79,7 +79,7 @@ class ResNet152:
     
     def build(self,dtype='float32'):
         self.zeropadding2d1=tf.pad
-        self.conv2d1=conv2d([7,7,3,64],strides=[2],use_bias=self.use_bias,dtype=dtype)
+        self.conv2d1=conv2d(64,[7,7],3,strides=[2],use_bias=self.use_bias,dtype=dtype)
         if not self.preact:
             self.batch_norm1=batch_normalization(self.conv2d1.output_size,epsilon=1.001e-5,keepdims=True,dtype=dtype)
             self.param.append(self.batch_norm1.param)
@@ -89,7 +89,7 @@ class ResNet152:
         if self.preact:
             self.batch_norm2=batch_normalization(self.stack.output_size,epsilon=1.001e-5,keepdims=True,dtype=dtype)
             self.param.append(self.batch_norm2.param)
-        self.dense=dense([self.stack.output_size,self.classes],activation='softmax',dtype=dtype)
+        self.dense=dense(self.classes,self.stack.output_size,activation='softmax',dtype=dtype)
         self.param.extend([self.conv2d1.param,self.stack.param,self.dense.param])
         return
     
