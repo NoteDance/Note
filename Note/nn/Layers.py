@@ -2,12 +2,13 @@ class Layers:
     def __init__(self):
         self.layer=[]
         self.param=[]
-        self.saved_data=None
+        self.saved_data=[]
         self.save_data_flag=[]
         self.use_data_flag=[]
+        self.output_size_list=[]
     
     
-    def add(self,layer,save_data=False,use_data=False):
+    def add(self,layer,save_data=False,use_data=False,axis=None):
         if hasattr(layer,'build'):
             if layer.input_size==None:
                 layer.input_size=self.output_size
@@ -21,8 +22,15 @@ class Layers:
             self.param.append(layer.param)
         if hasattr(layer,'output_size'):
             self.output_size=layer.output_size
+        if hasattr(layer,'concat'):
+            self.output_size=sum(self.output_size_list)
+            self.output_size_list=[]
         self.save_data_flag.append(save_data)
         self.use_data_flag.append(use_data)
+        if save_data==True:
+            self.output_size_list.append(self.output_size)
+        if axis!=None:
+            self.axis=axis
         return
     
     
@@ -37,15 +45,17 @@ class Layers:
                     else:
                         data=layer.output(data)
                 if self.save_data_flag[i]==True:
-                    self.saved_data=data
-            else:
+                    self.saved_data.append(data)
+            elif not hasattr(layer,'concat'):
                 if self.use_data_flag[i]==False:
                     data=layer(data)
                 else:
                     try:
-                        data=layer(data+self.saved_data)
+                        data=layer(data+self.saved_data.pop(0))
                     except TypeError:
-                        data=layer(data,self.saved_data)
+                        data=layer(data,self.saved_data.pop(0))
                 if self.save_data_flag[i]==True:
-                    self.saved_data=data
+                    self.saved_data.append(data)
+            else:
+                data=layer.concat([self.saved_data.pop(0),self.saved_data.pop(0)],axis=self.axis)
         return data
