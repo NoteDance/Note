@@ -58,4 +58,6 @@ class Layers:
                     self.saved_data.append(data)
             else:
                 data=layer.concat([self.saved_data.pop(0),self.saved_data.pop(0)],axis=self.axis)
+                if self.save_data_flag[i]==True:
+                    self.saved_data.append(data)
         return data
