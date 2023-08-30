@@ -23,14 +23,11 @@ class Layers:
         if hasattr(layer,'output_size'):
             self.output_size=layer.output_size
         if hasattr(layer,'concat'):
-            self.output_size=sum(self.output_size_list)
-            self.output_size_list=[]
+            self.output_size+=self.output_size_list.pop(0)
         self.save_data_flag.append(save_data)
         self.use_data_flag.append(use_data)
         if save_data==True:
             self.output_size_list.append(self.output_size)
-        if axis!=None:
-            self.axis=axis
         return
     
     
@@ -57,7 +54,7 @@ class Layers:
                 if self.save_data_flag[i]==True:
                     self.saved_data.append(data)
             else:
-                data=layer.concat([self.saved_data.pop(0),self.saved_data.pop(0)],axis=self.axis)
+                data=layer.concat(self.saved_data.pop(0),self.saved_data.pop(0))
                 if self.save_data_flag[i]==True:
                     self.saved_data.append(data)
         return data
