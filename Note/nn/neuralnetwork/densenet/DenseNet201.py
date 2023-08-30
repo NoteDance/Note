@@ -29,10 +29,8 @@ def DenseLayer(input_channels, growth_rate, dtype='float32'):
 def DenseBlock(input_channels, num_layers, growth_rate, dtype='float32'):
         layers=Layers()
         for i in range(num_layers):
-            if i==0:
-                layers.add(DenseLayer(input_channels, growth_rate, dtype))
-            else:
-                layers.add(DenseLayer(layers.output_size, growth_rate, dtype))
+            layers.add(DenseLayer(input_channels, growth_rate, dtype))
+            input_channels=layers.output_size
         return layers
 
 
