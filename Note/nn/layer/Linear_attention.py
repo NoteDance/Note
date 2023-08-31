@@ -17,19 +17,19 @@ def gaussian_kernel(x, y, sigma=1.0):
 
 # Define a linear attention layer with multi-head support and kernel approximation
 class Linear_attention:
-  def __init__(self, dim, num_heads, kernel_function='gaussian', kernel_approximation='low_rank'):
-    self.dim = dim # the dimension of the input and output vectors
+  def __init__(self, output_size, num_heads, kernel_function='gaussian', kernel_approximation='low_rank'):
     if kernel_function=='gaussian': # the kernel function to use
         self.kernel_function=gaussian_kernel
     else:
         self.kernel_function = kernel_function
     self.num_heads = num_heads # the number of attention heads to use
-    self.head_dim = dim // num_heads # the dimension of each head
+    self.head_dim = output_size // num_heads # the dimension of each head
     self.kernel_approximation = kernel_approximation # the kernel approximation method to use
     self.param=[]
     self.q_dense_list=[]
     self.k_dense_list=[]
     self.v_dense_list=[]
+    self.output_size = output_size
     # Use a list to store the projection layers for each head
     for i in range(num_heads):
         self.q_dense_list.append(dense((self.head_dim, self.head_dim), activation=None)) # the query projection layers
@@ -38,8 +38,7 @@ class Linear_attention:
         self.param.append(self.q_dense_list[i].param)
         self.param.append(self.k_dense_list[i].param)
         self.param.append(self.v_dense_list[i].param)
-    self.o_dense = dense((dim, dim), activation=None) # the output projection layer
-    self.output_size = dim
+    self.o_dense = dense((output_size, output_size), activation=None) # the output projection layer
     # Initialize some extra parameters or layers according to the kernel approximation method
     self.param.append(self.o_dense.param)
     if kernel_approximation == 'low_rank':
