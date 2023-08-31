@@ -4,17 +4,16 @@ from Note.nn.layer.dense import dense
 
 # Define a custom layer that implements local and global attention
 class Longformer:
-  def __init__(self, dim, num_heads, window_size, global_tokens):
-    self.dim = dim # the dimension of the input and output vectors
+  def __init__(self, output_size, num_heads, window_size, global_tokens):
     self.num_heads = num_heads # the number of attention heads to use
-    self.head_dim = dim // num_heads # the dimension of each head
+    self.head_dim = output_size // num_heads # the dimension of each head
     self.window_size = window_size # the size of the local attention window
     self.global_tokens = global_tokens # the indices of the tokens that use global attention
     self.param=[]
     self.q_dense_list=[]
     self.k_dense_list=[]
     self.v_dense_list=[]
-    self.output_size=dim
+    self.output_size=output_size
     # Use a list to store the projection layers for each head
     for i in range(num_heads):
         self.q_dense_list.append(dense((self.head_dim, self.head_dim), activation=None)) # the query projection layers
@@ -23,7 +22,7 @@ class Longformer:
         self.param.append(self.q_dense_list[i].param)
         self.param.append(self.k_dense_list[i].param)
         self.param.append(self.v_dense_list[i].param)
-    self.o_dense = dense((dim, dim), activation=None) # the output projection layer
+    self.o_dense = dense((output_size, output_size), activation=None) # the output projection layer
     self.param.append(self.o_dense.param)
     
 
