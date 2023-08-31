@@ -3,29 +3,52 @@ import Note.nn.initializer as i # import the initializer module from Note.nn pac
 
 
 class GRU: # define a class for gated recurrent unit (GRU) layer
-    def __init__(self,weight_shape,weight_initializer='Xavier',bias_initializer='zeros',dtype='float32',return_sequence=False,use_bias=True,activation1=tf.nn.sigmoid,activation2=tf.nn.tanh): # define the constructor method
-        self.weight_r1=i.initializer(weight_shape,weight_initializer,dtype) # initialize the weight matrix for reset gate input
-        self.weight_r2=i.initializer([weight_shape[1],weight_shape[1]],weight_initializer,dtype) # initialize the weight matrix for reset gate hidden state
-        self.weight_z1=i.initializer(weight_shape,weight_initializer,dtype) # initialize the weight matrix for update gate input
-        self.weight_z2=i.initializer([weight_shape[1],weight_shape[1]],weight_initializer,dtype) # initialize the weight matrix for update gate hidden state
-        self.weight_h1=i.initializer(weight_shape,weight_initializer,dtype) # initialize the weight matrix for candidate hidden state input
-        self.weight_h2=i.initializer([weight_shape[1],weight_shape[1]],weight_initializer,dtype) # initialize the weight matrix for candidate hidden state hidden state
-        if use_bias==True: # if use bias is True
-            self.bias_r=i.initializer([weight_shape[1]],bias_initializer,dtype) # initialize the bias vector for reset gate
-            self.bias_z=i.initializer([weight_shape[1]],bias_initializer,dtype) # initialize the bias vector for update gate
-            self.bias_h=i.initializer([weight_shape[1]],bias_initializer,dtype) # initialize the bias vector for candidate hidden state
+    def __init__(self,output_size,input_size=None,weight_initializer='Xavier',bias_initializer='zeros',dtype='float32',return_sequence=False,use_bias=True,activation1=tf.nn.sigmoid,activation2=tf.nn.tanh): # define the constructor method
+        self.input_size=input_size
+        self.weight_initializer=weight_initializer
+        self.bias_initializer=bias_initializer
         self.output_list=[] # initialize an empty list for output sequence
-        self.state=tf.zeros(shape=[1,weight_shape[1]],dtype=dtype) # initialize a zero vector for initial state
-        self.H=tf.zeros(shape=[1,weight_shape[1]],dtype=dtype) # initialize a zero vector for initial hidden state
+        self.state=tf.zeros(shape=[1,output_size],dtype=dtype) # initialize a zero vector for initial state
+        self.H=tf.zeros(shape=[1,output_size],dtype=dtype) # initialize a zero vector for initial hidden state
         self.return_sequence=return_sequence # set the return sequence flag
         self.use_bias=use_bias # set the use bias flag
+        self.dtype=dtype
         self.activation1=activation1 # set the activation function for gates (usually sigmoid)
         self.activation2=activation2 # set the activation function for candidate hidden state (usually tanh)
-        self.output_size=weight_shape[-1]
-        if use_bias==True: # if use bias is True
+        self.output_size=output_size
+        if input_size!=None:
+            self.weight_r1=i.initializer([input_size,output_size],weight_initializer,dtype) # initialize the weight matrix for reset gate input
+            self.weight_r2=i.initializer([output_size,output_size],weight_initializer,dtype) # initialize the weight matrix for reset gate hidden state
+            self.weight_z1=i.initializer([input_size,output_size],weight_initializer,dtype) # initialize the weight matrix for update gate input
+            self.weight_z2=i.initializer([output_size,output_size],weight_initializer,dtype) # initialize the weight matrix for update gate hidden state
+            self.weight_h1=i.initializer([input_size,output_size],weight_initializer,dtype) # initialize the weight matrix for candidate hidden state input
+            self.weight_h2=i.initializer([output_size,output_size],weight_initializer,dtype) # initialize the weight matrix for candidate hidden state hidden state
+            if use_bias==True: # if use bias is True
+                self.bias_r=i.initializer([output_size],bias_initializer,dtype) # initialize the bias vector for reset gate
+                self.bias_z=i.initializer([output_size],bias_initializer,dtype) # initialize the bias vector for update gate
+                self.bias_h=i.initializer([output_size],bias_initializer,dtype) # initialize the bias vector for candidate hidden state
+            if use_bias==True: # if use bias is True
+                self.param=[self.weight_r1,self.weight_z1,self.weight_h1,self.weight_r2,self.weight_z2,self.weight_h2,self.bias_r,self.bias_z,self.bias_h] # store the parameters in a list
+            else: # if use bias is False
+                self.param=[self.weight_r1,self.weight_z1,self.weight_h1,self.weight_r2,self.weight_z2,self.weight_h2] # store only the weight matrices in a list
+    
+    
+    def build(self):
+        self.weight_r1=i.initializer([self.input_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for reset gate input
+        self.weight_r2=i.initializer([self.output_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for reset gate hidden state
+        self.weight_z1=i.initializer([self.input_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for update gate input
+        self.weight_z2=i.initializer([self.output_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for update gate hidden state
+        self.weight_h1=i.initializer([self.input_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for candidate hidden state input
+        self.weight_h2=i.initializer([self.output_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for candidate hidden state hidden state
+        if self.use_bias==True: # if use bias is True
+            self.bias_r=i.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector for reset gate
+            self.bias_z=i.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector for update gate
+            self.bias_h=i.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector for candidate hidden state
+        if self.use_bias==True: # if use bias is True
             self.param=[self.weight_r1,self.weight_z1,self.weight_h1,self.weight_r2,self.weight_z2,self.weight_h2,self.bias_r,self.bias_z,self.bias_h] # store the parameters in a list
         else: # if use bias is False
             self.param=[self.weight_r1,self.weight_z1,self.weight_h1,self.weight_r2,self.weight_z2,self.weight_h2] # store only the weight matrices in a list
+        return
     
     
     def output(self,data): # define the output method
