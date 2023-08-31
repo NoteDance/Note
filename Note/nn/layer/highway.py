@@ -44,6 +44,7 @@ class highway:
             self.param=[self.weight_T,self.bias_T,self.weight_C,self.bias_C]
         else:
             self.param=[self.weight_T,self.weight_C]
+        return
     
     
     def output(self,data):
