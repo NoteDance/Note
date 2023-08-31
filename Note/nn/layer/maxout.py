@@ -3,25 +3,40 @@ import Note.nn.initializer as i
 
 
 class maxout:
-    def __init__(self,input_dim,output_dim,num_units,weight_initializer='Xavier',bias_initializer='zeros',dtype='float32',use_bias=True):
-        # input_dim: the dimension of the input features
-        # output_dim: the dimension of the output features
+    def __init__(self,output_size,num_units,input_size=None,weight_initializer='Xavier',bias_initializer='zeros',use_bias=True,dtype='float32'):
+        # input_size: the dimension size of the input features
+        # output_size: the dimension size of the output features
         # num_units: the number of linear units per output unit
         # weight_initializer: the initializer for the weight matrix
         # bias_initializer: the initializer for the bias vector
         # dtype: the data type of the parameters
         # use_bias: whether to use bias or not
-        self.input_dim=input_dim
-        self.output_dim=output_dim
         self.num_units=num_units
+        self.input_size=input_size
+        self.weight_initializer=weight_initializer
+        self.bias_initializer=bias_initializer
+        self.use_bias=use_bias
+        self.dtype=dtype
+        self.output_size=output_size
+        if input_size!=None:
+            # initialize the weight matrix and the bias vector
+            self.weight=i.initializer([input_size,output_size*num_units],weight_initializer,dtype)
+            self.bias=i.initializer([output_size*num_units],bias_initializer,dtype)
+            if use_bias==True:
+                self.param=[self.weight,self.bias]
+            else:
+                self.param=[self.weight]
+    
+    
+    def build(self):
         # initialize the weight matrix and the bias vector
-        self.weight=i.initializer([input_dim,output_dim*num_units],weight_initializer,dtype)
-        self.bias=i.initializer([output_dim*num_units],bias_initializer,dtype)
-        self.output_size=output_dim
-        if use_bias==True:
+        self.weight=i.initializer([self.input_size,self.output_size*self.num_units],self.weight_initializer,self.dtype)
+        self.bias=i.initializer([self.output_size*self.num_units],self.bias_initializer,self.dtype)
+        if self.use_bias==True:
             self.param=[self.weight,self.bias]
         else:
             self.param=[self.weight]
+        return
     
     
     def output(self,data):
