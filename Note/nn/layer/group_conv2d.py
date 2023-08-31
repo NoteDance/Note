@@ -4,26 +4,45 @@ from Note.nn.initializer import initializer # import the initializer function fr
 
 
 class group_conv2d: # define a class for group convolutional layer
-    def __init__(self,weight_shape,num_groups,strides=[1,1],padding='VALID',data_format='NHWC',dilations=None,weight_initializer='Xavier',bias_initializer='zeros',activation=None,dtype='float32',use_bias=True): # define the constructor method
+    def __init__(self,filters,kernel_size,num_groups,input_size=None,strides=[1,1],padding='VALID',weight_initializer='Xavier',bias_initializer='zeros',activation=None,data_format='NHWC',dilations=None,dtype='float32',use_bias=True): # define the constructor method
+        self.kernel_size=kernel_size
         self.num_groups=num_groups # set the number of groups
-        self.weight=[] # initialize an empty list for weight tensors
-        self.bias=[] # initialize an empty list for bias vectors
-        self.num_groups=num_groups if weight_shape[-2]%num_groups==0 else 1 # check if the number of input channels is divisible by the number of groups, otherwise set it to 1
-        for i in range(num_groups): # loop over the number of groups
-            self.weight.append(initializer(weight_shape[:-1]+[weight_shape[-1]//num_groups],weight_initializer,dtype)) # initialize a weight tensor for each group with the given shape, initializer and data type, and append it to the weight list
-            if use_bias==True: # if use bias is True
-                self.bias.append(initializer([weight_shape[-1]//num_groups],bias_initializer,dtype)) # initialize a bias vector for each group with the given shape, initializer and data type, and append it to the bias list
+        self.input_size=input_size
         self.strides=strides
         self.padding=padding
+        self.weight_initializer=weight_initializer
+        self.bias_initializer=bias_initializer
+        self.activation=activation # set the activation function
         self.data_format=data_format
         self.dilations=dilations
-        self.activation=activation # set the activation function
         self.use_bias=use_bias # set the use bias flag
-        self.output_size=weight_shape[-1]
-        if use_bias==True: # if use bias is True
+        self.dtype=dtype
+        self.output_size=filters
+        self.weight=[] # initialize an empty list for weight tensors
+        self.bias=[] # initialize an empty list for bias vectors
+        if input_size!=None:
+            self.num_groups=num_groups if input_size%num_groups==0 else 1 # check if the number of input channels is divisible by the number of groups, otherwise set it to 1
+            for i in range(num_groups): # loop over the number of groups
+                self.weight.append(initializer([kernel_size[0],kernel_size[1],input_size//num_groups,filters//num_groups],weight_initializer,dtype)) # initialize a weight tensor for each group with the given shape, initializer and data type, and append it to the weight list
+                if use_bias==True: # if use bias is True
+                    self.bias.append(initializer([filters//num_groups],bias_initializer,dtype)) # initialize a bias vector for each group with the given shape, initializer and data type, and append it to the bias list
+            if use_bias==True: # if use bias is True
+                self.param=self.weight+self.bias # store the parameters in a list by concatenating the weight and bias lists
+            else: # if use bias is False
+                self.param=self.weight # store only the weight list as the parameters
+    
+    
+    def build(self):
+        self.num_groups=self.num_groups if self.input_size%self.num_groups==0 else 1 # check if the number of input channels is divisible by the number of groups, otherwise set it to 1
+        for i in range(self.num_groups): # loop over the number of groups
+            self.weight.append(initializer([self.kernel_size[0],self.kernel_size[1],self.input_size//self.num_groups,self.output_size//self.num_groups],self.weight_initializer,self.dtype)) # initialize a weight tensor for each group with the given shape, initializer and data type, and append it to the weight list
+            if self.use_bias==True: # if use bias is True
+                self.bias.append(initializer([self.output_size//self.num_groups],self.bias_initializer,self.dtype)) # initialize a bias vector for each group with the given shape, initializer and data type, and append it to the bias list
+        if self.use_bias==True: # if use bias is True
             self.param=self.weight+self.bias # store the parameters in a list by concatenating the weight and bias lists
         else: # if use bias is False
             self.param=self.weight # store only the weight list as the parameters
+        return
     
     
     def output(self,data): # define the output method
