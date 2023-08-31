@@ -3,7 +3,7 @@ import Note.nn.initializer as i # import the initializer module from Note.nn pac
 
 
 class GRU: # define a class for gated recurrent unit (GRU) layer
-    def __init__(self,output_size,input_size=None,weight_initializer='Xavier',bias_initializer='zeros',dtype='float32',return_sequence=False,use_bias=True,activation1=tf.nn.sigmoid,activation2=tf.nn.tanh): # define the constructor method
+    def __init__(self,output_size,input_size=None,weight_initializer='Xavier',bias_initializer='zeros',return_sequence=False,use_bias=True,activation1=tf.nn.sigmoid,activation2=tf.nn.tanh,dtype='float32'): # define the constructor method
         self.input_size=input_size
         self.weight_initializer=weight_initializer
         self.bias_initializer=bias_initializer
