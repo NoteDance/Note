@@ -4,7 +4,7 @@ from Note.nn.activation import activation_dict
 
 
 class adaptive_conv2d:
-    def __init__(self,filters,kernel_size,input_size=None,strides=(1,1),padding='VALID',activation=None,weight_initializer='Xavier',bias_initializer='zeros',use_bias=True,dtype='float32'):
+    def __init__(self,filters,kernel_size,input_size=None,strides=(1,1),padding='VALID',activation=None,weight_initializer='Xavier',bias_initializer='zeros',use_bias=True,trainable=True,dtype='float32'):
         # filters: the number of output filters
         # kernel_size: the size of the convolution kernel
         # activation: the activation function, default is None
@@ -23,24 +23,29 @@ class adaptive_conv2d:
         self.kernel_initializer=weight_initializer
         self.bias_initializer=bias_initializer
         self.use_bias=use_bias
+        self.trainable=trainable
         self.dtype=dtype
         self.output_size=filters
         if input_size!=None:
             self.kernel=i.initializer([kernel_size[0],kernel_size[1],input_size,filters],weight_initializer,dtype)
             self.attention=i.initializer([1,1,input_size,filters],weight_initializer,dtype)
-            self.param_list=[self.kerne,self.attention]
+            self.param=[self.kerne,self.attention]
             if use_bias:
                 self.bias=i.initializer([filters],bias_initializer,dtype)
                 self.param.append(self.bias)
+            if trainable==False:
+                self.param=[]
     
     
     def build(self):
         self.kernel=i.initializer([self.kernel_size[0],self.kernel_size[1],self.input_size,self.filters],self.weight_initializer,self.dtype)
         self.attention=i.initializer([1,1,self.input_size,self.filters],self.weight_initializer,self.dtype)
-        self.param_list=[self.kerne,self.attention]
+        self.param=[self.kerne,self.attention]
         if self.use_bias:
             self.bias=i.initializer([self.filters],self.bias_initializer,self.dtype)
             self.param.append(self.bias)
+        if self.trainable==False:
+            self.param=[]
         return
     
     
