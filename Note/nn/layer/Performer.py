@@ -5,15 +5,34 @@ from Note.nn.layer.layer_normalization import layer_normalization
 
 # Define a custom layer that implements a performer block
 class Performer:
-  def __init__(self, dim, nb_heads, nb_random_features, weight_initializer='Xavier', bias_initializer='zeros', activation='relu', dtype='float32', use_bias=True):
-    # Initialize the sublayers
-    self.attention = FAVOR_attention(dim, nb_heads, nb_random_features)
-    self.ffn_attn = dense([dim * nb_heads, dim], weight_initializer, bias_initializer, None, dtype, use_bias)
-    self.ffn1 = dense([dim, dim * 4], weight_initializer, bias_initializer, activation, dtype, use_bias)
-    self.ffn2 = dense([dim * 4, dim], weight_initializer, bias_initializer,None, dtype, use_bias)
+  def __init__(self, output_size, nb_heads, nb_random_features, input_size=None, weight_initializer='Xavier', bias_initializer='zeros', activation='relu', use_bias=True, dtype='float32'):
+    self.nb_heads=nb_heads
+    self.nb_random_features=nb_random_features
+    self.input_size=input_size
+    self.weight_initializer=weight_initializer
+    self.bias_initializer=bias_initializer
+    self.activation=activation
+    self.use_bias=use_bias
+    self.dtype=dtype
     self.train_flag=True
-    self.output_size=dim
-    self.param=[self.attention.param, self.ffn_attn.param, self.ffn1.param, self.ffn2.param]
+    self.output_size=output_size
+    if input_size!=None:
+        # Initialize the sublayers
+        self.attention = FAVOR_attention(output_size, nb_heads, nb_random_features, input_size, weight_initializer)
+        self.ffn_attn = dense([output_size * nb_heads, output_size], weight_initializer, bias_initializer, None, dtype, use_bias)
+        self.ffn1 = dense([output_size, output_size * 4], weight_initializer, bias_initializer, activation, dtype, use_bias)
+        self.ffn2 = dense([output_size * 4, output_size], weight_initializer, bias_initializer,None, dtype, use_bias)
+        self.param=[self.attention.param, self.ffn_attn.param, self.ffn1.param, self.ffn2.param]
+ 
+    
+  def build(self):
+      # Initialize the sublayers
+      self.attention = FAVOR_attention(self.output_size, self.nb_heads, self.nb_random_features, self.input_size, self.weight_initializer)
+      self.ffn_attn = dense([self.output_size * self.nb_heads, self.output_size], self.weight_initializer, self.bias_initializer, None, self.use_bias, self.dtype)
+      self.ffn1 = dense([self.output_size, self.output_size * 4], self.weight_initializer, self.bias_initializer, self.activation, self.use_bias, self.dtype)
+      self.ffn2 = dense([self.output_size * 4, self.output_size], self.weight_initializer, self.bias_initializer, None, self.use_bias, self.dtype)
+      self.param=[self.attention.param, self.ffn_attn.param, self.ffn1.param, self.ffn2.param]
+      return
     
 
   def output(self, data, train_flag=True):
