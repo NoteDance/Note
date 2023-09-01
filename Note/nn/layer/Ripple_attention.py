@@ -2,20 +2,33 @@ import tensorflow as tf
 from Note.nn.initializer import initializer
 
 class Ripple_attention:
-  def __init__(self, d_model, num_heads, weight_initializer='Xavier', dtype='float32'):
-    # check if the hidden size is divisible by the number of heads
-    # store the parameters
-    self.d_model = d_model
+  def __init__(self, output_size, num_heads, input_size=None, weight_initializer='Xavier', dtype='float32'):
     self.num_heads = num_heads
-    self.d_head = d_model // num_heads
+    self.input_size = input_size
+    self.weight_initializer = weight_initializer
+    self.dtype=dtype
+    self.d_head = output_size // num_heads
+    self.output_size=output_size
+    if input_size!=None:
+        # create trainable variables for query, key and value projections
+        self.wq = initializer([input_size, output_size], weight_initializer, dtype=dtype)
+        self.wk = initializer([input_size, output_size], weight_initializer, dtype=dtype)
+        self.wv = initializer([input_size, output_size], weight_initializer, dtype=dtype)
+        # create trainable variables for output projection
+        self.wo = initializer([output_size, output_size], weight_initializer, dtype=dtype)
+        # store the parameters
+        self.param=[self.wq, self.wk, self.wv, self.wo]
+  
+  def build(self):
     # create trainable variables for query, key and value projections
-    self.wq = initializer([d_model, d_model], weight_initializer, dtype=dtype)
-    self.wk = initializer([d_model, d_model], weight_initializer, dtype=dtype)
-    self.wv = initializer([d_model, d_model], weight_initializer, dtype=dtype)
+    self.wq = initializer([self.input_size, self.output_size], self.weight_initializer, dtype=self.dtype)
+    self.wk = initializer([self.input_size, self.output_size], self.weight_initializer, dtype=self.dtype)
+    self.wv = initializer([self.input_size, self.output_size], self.weight_initializer, dtype=self.dtype)
     # create trainable variables for output projection
-    self.wo = initializer([d_model, d_model], weight_initializer, dtype=dtype)
-    self.output_size=d_model
+    self.wo = initializer([self.output_size, self.output_size], self.weight_initializer, dtype=self.dtype)
+    # store the parameters
     self.param=[self.wq, self.wk, self.wv, self.wo]
+    return
 
   def split_heads(self, x):
     # split the last dimension into (num_heads, d_head)
@@ -56,7 +69,7 @@ class Ripple_attention:
     out = tf.matmul(weight, v)
     # concatenate the heads
     out = tf.transpose(out, [0, 2, 1, 3])
-    out = tf.reshape(out, [out.shape[0], out.shape[1], self.d_model])
+    out = tf.reshape(out, [out.shape[0], out.shape[1], self.output_size])
     # apply the output projection
     out = tf.matmul(out, self.wo)
     return out
