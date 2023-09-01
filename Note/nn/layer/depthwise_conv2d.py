@@ -4,7 +4,7 @@ import Note.nn.initializer as i # import the initializer module from Note.nn pac
 
 
 class depthwise_conv2d: # define a class for depthwise convolutional layer
-    def __init__(self,depth_multiplier,kernel_size,input_size=None,strides=[1,1,1,1],padding='VALID',weight_initializer='Xavier',bias_initializer='zeros',activation=None,data_format='NHWC',dilations=None,use_bias=True,dtype='float32',): # define the constructor method
+    def __init__(self,depth_multiplier,kernel_size,input_size=None,strides=[1,1,1,1],padding='VALID',weight_initializer='Xavier',bias_initializer='zeros',activation=None,data_format='NHWC',dilations=None,use_bias=True,trainable=True,dtype='float32',): # define the constructor method
         self.depth_multiplier=depth_multiplier
         self.kernel_size=kernel_size
         self.input_size=input_size
@@ -16,6 +16,7 @@ class depthwise_conv2d: # define a class for depthwise convolutional layer
         self.data_format=data_format
         self.dilations=dilations
         self.use_bias=use_bias # set the use bias flag
+        self.trainable=trainable
         self.dtype=dtype
         if input_size!=None:
             self.output_size=depth_multiplier*input_size
@@ -26,6 +27,8 @@ class depthwise_conv2d: # define a class for depthwise convolutional layer
                 self.param=[self.weight,self.bias] # store the parameters in a list
             else: # if use bias is False
                 self.param=[self.weight] # store only the weight in a list
+            if trainable==False:
+                self.param=[]
     
     
     def build(self):
@@ -36,6 +39,8 @@ class depthwise_conv2d: # define a class for depthwise convolutional layer
             self.param=[self.weight,self.bias] # store the parameters in a list
         else: # if use bias is False
             self.param=[self.weight] # store only the weight in a list
+        if self.trainable==False:
+            self.param=[]
         return
     
     
