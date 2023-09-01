@@ -4,21 +4,38 @@ from Note.nn.activation import activation_dict # import the activation function 
 
 
 class RNN: # define a class for recurrent neural network (RNN) layer
-    def __init__(self,weight_shape,weight_initializer='Xavier',bias_initializer='zeros',activation=None,dtype='float32',return_sequence=False,use_bias=True): # define the constructor method
-        self.weight_i=i.initializer(weight_shape,weight_initializer,dtype) # initialize the weight matrix for input data
-        self.weight_s=i.initializer([weight_shape[1],weight_shape[1]],weight_initializer,dtype) # initialize the weight matrix for previous state
-        if use_bias==True: # if use bias is True
-            self.bias=i.initializer([weight_shape[1]],bias_initializer,dtype) # initialize the bias vector
+    def __init__(self,output_size,input_size=None,weight_initializer='Xavier',bias_initializer='zeros',activation=None,return_sequence=False,use_bias=True,dtype='float32'): # define the constructor method
+        self.input_size=input_size
+        self.weight_initializer=weight_initializer
+        self.bias_initializer=bias_initializer
         self.output_list=[] # initialize an empty list for output sequence
-        self.state=tf.zeros(shape=[1,weight_shape[1]],dtype=dtype) # initialize a zero vector for initial state
+        self.state=tf.zeros(shape=[1,output_size],dtype=dtype) # initialize a zero vector for initial state
         self.activation=activation_dict[activation] # get the activation function from the activation dictionary
         self.return_sequence=return_sequence # set the return sequence flag
         self.use_bias=use_bias # set the use bias flag
-        self.output_size=weight_shape[-1]
-        if use_bias==True: # if use bias is True
+        self.dtype=dtype
+        self.output_size=output_size
+        if input_size!=None:
+            self.weight_i=i.initializer([input_size,output_size],weight_initializer,dtype) # initialize the weight matrix for input data
+            self.weight_s=i.initializer([output_size,output_size],weight_initializer,dtype) # initialize the weight matrix for previous state
+            if use_bias==True: # if use bias is True
+                self.bias=i.initializer([output_size],bias_initializer,dtype) # initialize the bias vector
+            if use_bias==True: # if use bias is True
+                self.param=[self.weight_i,self.weight_s,self.bias] # store the parameters in a list
+            else: # if use bias is False
+                self.param=[self.weight_i,self.weight_s] # store only the weight matrices in a list
+    
+    
+    def build(self):
+        self.weight_i=i.initializer([self.input_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for input data
+        self.weight_s=i.initializer([self.output_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for previous state
+        if self.use_bias==True: # if use bias is True
+            self.bias=i.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector
+        if self.use_bias==True: # if use bias is True
             self.param=[self.weight_i,self.weight_s,self.bias] # store the parameters in a list
         else: # if use bias is False
             self.param=[self.weight_i,self.weight_s] # store only the weight matrices in a list
+        return
     
     
     def output(self,data): # define the output method
