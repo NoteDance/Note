@@ -3,27 +3,41 @@ import Note.nn.initializer as i
 from Note.nn.activation import activation_dict
 
 
-class SelfAttentionConv2D:
-    def __init__(self,input_channels,filters,kernel_size,strides=(1,1),padding='VALID',activation=None,kernel_initializer='Xavier',bias_initializer='zeros',dtype='float32',use_bias=True):
+class self_attention_conv2d:
+    def __init__(self,filters,kernel_size,input_size=None,strides=(1,1),padding='VALID',activation=None,weight_initializer='Xavier',bias_initializer='zeros',use_bias=True,dtype='float32'):
         # filters: the number of output filters
         # kernel_size: the size of the convolution kernel
         # activation: the activation function, default is None
         # use_bias: whether to use bias term, default is True
         # kernel_initializer: the initializer for the kernel weights, default is 'glorot_uniform'
         # bias_initializer: the initializer for the bias term, default is 'zeros'
+        self.input_size=input_size
         self.strides=strides
         self.padding=padding
         if activation is not None:
             self.activation=activation_dict[activation]
         else:
             self.activation=None
+        self.weight_initializer=weight_initializer
+        self.bias_initializer=bias_initializer
         self.use_bias=use_bias
-        self.kernel=i.initializer([kernel_size[0],kernel_size[1],input_channels,filters],kernel_initializer,dtype)
+        self.dtype=dtype
         self.output_size=filters
+        if input_size!=None:
+            self.kernel=i.initializer([kernel_size[0],kernel_size[1],input_size,filters],weight_initializer,dtype)
+            self.param=[self.kernel]
+            if use_bias:
+                self.bias=i.initializer([filters],bias_initializer,dtype)
+                self.param.append(self.bias)
+    
+    
+    def build(self):
+        self.kernel=i.initializer([self.kernel_size[0],self.kernel_size[1],self.input_size,self.filters],self.weight_initializer,self.dtype)
         self.param=[self.kernel]
-        if use_bias:
-            self.bias=i.initializer([filters],bias_initializer,dtype)
-            self.param.append(self.bias)
+        if self.use_bias:
+            self.bias=i.initializer([self.output_size],self.bias_initializer,self.dtype)
+            self.param.append(self.bias) 
+        return
     
     
     def output(self,data):
