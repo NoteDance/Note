@@ -4,7 +4,7 @@ import Note.nn.initializer as i # import the initializer module from Note.nn pac
 
 
 class conv3d: # define a class for 3D convolutional layer
-    def __init__(self,filters,kernel_size,input_size=None,strides=[1,1,1,1,1],padding='VALID',weight_initializer='Xavier',bias_initializer='zeros',activation=None,data_format='NWC',dilations=None,use_bias=True,dtype='float32'): # define the constructor method
+    def __init__(self,filters,kernel_size,input_size=None,strides=[1,1,1,1,1],padding='VALID',weight_initializer='Xavier',bias_initializer='zeros',activation=None,data_format='NWC',dilations=None,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
         self.kernel_size=kernel_size
         self.input_size=input_size
         self.strides=strides
@@ -15,6 +15,7 @@ class conv3d: # define a class for 3D convolutional layer
         self.data_format=data_format
         self.dilations=dilations
         self.use_bias=use_bias # set the use bias flag
+        self.trainable=trainable
         self.dtype=dtype
         self.output_size=filters
         if input_size!=None:
@@ -25,6 +26,9 @@ class conv3d: # define a class for 3D convolutional layer
                 self.param=[self.weight,self.bias] # store the parameters in a list
             else: # if use bias is False
                 self.param=[self.weight] # store only the weight in a list
+            if trainable==False:
+                self.param=[]
+            
     
     
     def build(self):
@@ -35,6 +39,8 @@ class conv3d: # define a class for 3D convolutional layer
             self.param=[self.weight,self.bias] # store the parameters in a list
         else: # if use bias is False
             self.param=[self.weight] # store only the weight in a list
+        if self.trainable==False:
+            self.param=[]
         return
     
     
