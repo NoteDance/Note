@@ -4,7 +4,7 @@ import Note.nn.initializer as i_
 class axial_positional_encoding:
   """A class for generating axial positional encoding for Reformer models."""
 
-  def __init__(self, d_model, axial_shape, initializer='Xavier', dtype='float32'):
+  def __init__(self, d_model, axial_shape, initializer='Xavier', trainable=True, dtype='float32'):
     """Initializes the axial positional encoding.
 
     Args:
@@ -24,10 +24,11 @@ class axial_positional_encoding:
     # Create a list to store the parameters
     self.param = []
     
-    for i, dim in enumerate(axial_shape):
-      weight = i_.initializer((dim, self.d_axial_pos_embs), initializer, dtype)
-      self.weights.append(weight)
-      self.param.append(weight)
+    if trainable==True:
+        for i, dim in enumerate(axial_shape):
+          weight = i_.initializer((dim, self.d_axial_pos_embs), initializer, dtype)
+          self.weights.append(weight)
+          self.param.append(weight)
 
   def output(self, data):
     """Generates the axial positional encoding for the input tensor.
