@@ -3,11 +3,14 @@ import Note.nn.initializer as i # import the initializer module from Note.nn pac
 
 
 class attention: # define a class for attention mechanism
-    def __init__(self,weight_shape,weight_initializer='Xavier',dtype='float32'): # define the constructor method
+    def __init__(self,weight_shape,weight_initializer='Xavier',trainable=True,dtype='float32'): # define the constructor method
         self.qw=i.initializer(weight_shape,weight_initializer,dtype) # initialize the query weight matrix
         self.kw=i.initializer(weight_shape,weight_initializer,dtype) # initialize the key weight matrix
         self.sw=i.initializer([weight_shape[1],1],weight_initializer,dtype) # initialize the score weight vector
-        self.param=[self.qw,self.kw,self.sw] # store the parameters in a list
+        if trainable==True:
+            self.param=[self.qw,self.kw,self.sw] # store the parameters in a list
+        else:
+            self.param=[]
     
     
     def output(self,en_h,de_h,score_en_h=None): # define the output method
