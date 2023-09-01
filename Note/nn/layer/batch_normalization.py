@@ -3,7 +3,7 @@ from Note.nn.initializer import initializer
 
 
 class batch_normalization:
-    def __init__(self, input_size=None, axes=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, beta_initializer='zeros', gamma_initializer='ones', moving_mean_initializer='zeros', moving_variance_initializer='ones', keepdims=False, dtype='float32'):
+    def __init__(self, input_size=None, axes=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, beta_initializer='zeros', gamma_initializer='ones', moving_mean_initializer='zeros', moving_variance_initializer='ones', keepdims=False, trainable=True, dtype='float32'):
         self.input_size=input_size
         self.axes=axes
         self.momentum=momentum
@@ -13,6 +13,7 @@ class batch_normalization:
         self.beta_initializer=beta_initializer
         self.gamma_initializer=gamma_initializer
         self.keepdims=keepdims
+        self.trainable=trainable
         self.dtype=dtype
         self.train_flag=True
         if input_size!=None:
@@ -22,12 +23,14 @@ class batch_normalization:
             self.param=[]
             if center==True:
                 self.beta=initializer([input_size], beta_initializer, dtype)
-                self.param.append(self.beta)
+                if trainable==True:
+                    self.param.append(self.beta)
             else:
                 self.beta=None
             if scale==True:
                 self.gamma=initializer([input_size], gamma_initializer, dtype)
-                self.param.append(self.gamma)
+                if trainable==True:
+                    self.param.append(self.gamma)
             else:
                 self.gamma=None
     
@@ -39,12 +42,14 @@ class batch_normalization:
         self.param=[]
         if self.center==True:
             self.beta=initializer([self.input_size], self.beta_initializer, self.dtype)
-            self.param.append(self.beta)
+            if self.trainable==True:
+                self.param.append(self.beta)
         else:
             self.beta=None
         if self.scale==True:
             self.gamma=initializer([self.input_size], self.gamma_initializer, self.dtype)
-            self.param.append(self.gamma)
+            if self.trainable==True:
+                self.param.append(self.gamma)
         else:
             self.gamma=None
         return
