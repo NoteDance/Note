@@ -3,7 +3,7 @@ from Note.nn.initializer import initializer
 
 
 class capsule:
-    def __init__(self,input_shape,num_capsules,dim_capsules,routings=3,weight_initializer='Xavier',dtype='float32'):
+    def __init__(self,input_shape,num_capsules,dim_capsules,routings=3,weight_initializer='Xavier',trainable=True,dtype='float32'):
         # initialize the capsule layer with some parameters
         self.batch_size=input_shape[0] # the number of samples in a batch
         self.input_num_capsules=input_shape[1] # the number of input capsules
@@ -13,7 +13,8 @@ class capsule:
         self.routings=routings # the number of routing iterations
         self.weight=initializer([self.input_dim_capsules,self.num_capsules*self.dim_capsules],weight_initializer,dtype) # the weight matrix for transforming input capsules to output capsules
         self.output_size=dim_capsules
-        self.param=[self.weight] # a list to store the weight matrix
+        if trainable==True:
+            self.param=[self.weight] # a list to store the weight matrix
     
     
     def squash(self,data):
