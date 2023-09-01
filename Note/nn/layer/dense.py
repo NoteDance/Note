@@ -3,12 +3,13 @@ import Note.nn.initializer as i # import the initializer module from Note.nn pac
 
 
 class dense: # define a class for dense (fully connected) layer
-    def __init__(self,output_size,input_size=None,weight_initializer='Xavier',bias_initializer='zeros',activation=None,use_bias=True,dtype='float32'): # define the constructor method
+    def __init__(self,output_size,input_size=None,weight_initializer='Xavier',bias_initializer='zeros',activation=None,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
         self.input_size=input_size
         self.weight_initializer=weight_initializer
         self.bias_initializer=bias_initializer
         self.activation=activation # set the activation function
         self.use_bias=use_bias # set the use bias flag
+        self.trainable=trainable
         self.dtype=dtype
         self.output_size=output_size
         if input_size!=None:
@@ -21,6 +22,8 @@ class dense: # define a class for dense (fully connected) layer
                 self.param=[self.weight,self.bias] # store the parameters in a list
             else: # if use bias is False
                 self.param=[self.weight] # store only the weight in a list
+            if trainable==False:
+                self.param=[]
     
     
     def build(self):
@@ -33,6 +36,8 @@ class dense: # define a class for dense (fully connected) layer
             self.param=[self.weight,self.bias] # store the parameters in a list
         else: # if use bias is False
             self.param=[self.weight] # store only the weight in a list
+        if self.trainable==False:
+            self.param=[]
         return
     
     
