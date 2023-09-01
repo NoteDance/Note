@@ -3,13 +3,14 @@ import Note.nn.initializer as i
 
 
 class multihead_attention:
-    def __init__(self, output_size, num_heads, input_size=None, weight_initializer='Xavier', mask=None, dtype='float32'):
+    def __init__(self, output_size, num_heads, input_size=None, weight_initializer='Xavier', mask=None, trainable=True, dtype='float32'):
         self.input_size=input_size
         self.weight_initializer=weight_initializer
         # Define the number of heads and the dimension of each head
         self.num_heads = num_heads
         self.head_dim = output_size // num_heads
         self.mask = mask
+        self.trainable = trainable
         self.dtype=dtype
         self.output_size = output_size
         if input_size!=None:
@@ -18,8 +19,11 @@ class multihead_attention:
             self.kw = i.initializer([input_size,output_size], weight_initializer, dtype)
             self.vw = i.initializer([input_size,output_size], weight_initializer, dtype)
             self.ow = i.initializer([output_size, output_size], weight_initializer, dtype)
-            # Add all weight matrices to model parameters
-            self.param = [self.qw, self.kw, self.vw, self.ow]
+            if trainable==True:
+                # Add all weight matrices to model parameters
+                self.param = [self.qw, self.kw, self.vw, self.ow]
+            else:
+                self.param = []
     
     
     def build(self):
@@ -28,8 +32,11 @@ class multihead_attention:
         self.kw = i.initializer([self.input_size,self.output_size], self.weight_initializer, self.dtype)
         self.vw = i.initializer([self.input_size,self.output_size], self.weight_initializer, self.dtype)
         self.ow = i.initializer([self.output_size, self.output_size], self.weight_initializer, self.dtype)
-        # Add all weight matrices to model parameters
-        self.param = [self.qw, self.kw, self.vw, self.ow]
+        if self.trainable==True:
+            # Add all weight matrices to model parameters
+            self.param = [self.qw, self.kw, self.vw, self.ow]
+        else:
+            self.param = []
         return
     
     
