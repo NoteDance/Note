@@ -4,7 +4,7 @@ from Note.nn.activation import activation_dict
 
 
 class bottleneck:
-    def __init__(self,input_dim,output_dim,bottleneck_dim,weight_initializer='Xavier',bias_initializer='zeros',activation='relu',dtype='float32',use_bias=True):
+    def __init__(self,input_dim,output_dim,bottleneck_dim,weight_initializer='Xavier',bias_initializer='zeros',activation='relu',use_bias=True,trainable=True,dtype='float32'):
         # input_dim: the dimension of the input features
         # output_dim: the dimension of the output features
         # bottleneck_dim: the dimension of the bottleneck features
@@ -23,10 +23,13 @@ class bottleneck:
         self.weight_2=i.initializer([bottleneck_dim,output_dim],weight_initializer,dtype)
         self.bias_2=i.initializer([output_dim],bias_initializer,dtype)
         self.output_size=output_dim
-        if use_bias==True:
-            self.param=[self.weight_1,self.bias_1,self.weight_2,self.bias_2]
+        if trainable==True:
+            if use_bias==True:
+                self.param=[self.weight_1,self.bias_1,self.weight_2,self.bias_2]
+            else:
+                self.param=[self.weight_1,self.weight_2]
         else:
-            self.param=[self.weight_1,self.weight_2]
+            self.param=[]
     
     
     def output(self,data):
