@@ -3,19 +3,34 @@ import Note.nn.initializer as i
 
 
 class multihead_attention:
-    def __init__(self, weight_shape, num_heads, weight_initializer='Xavier', mask=None, dtype='float32'):
-        # Create weight matrices for query, key, value, and output using i.initializer function
-        self.qw = i.initializer(weight_shape, weight_initializer, dtype)
-        self.kw = i.initializer(weight_shape, weight_initializer, dtype)
-        self.vw = i.initializer(weight_shape, weight_initializer, dtype)
-        self.ow = i.initializer([weight_shape[1], weight_shape[1]], weight_initializer, dtype)
+    def __init__(self, output_size, num_heads, input_size=None, weight_initializer='Xavier', mask=None, dtype='float32'):
+        self.input_size=input_size
+        self.weight_initializer=weight_initializer
         # Define the number of heads and the dimension of each head
         self.num_heads = num_heads
-        self.head_dim = weight_shape[1] // num_heads
+        self.head_dim = output_size // num_heads
         self.mask = mask
-        self.output_size = weight_shape[-1]
+        self.dtype=dtype
+        self.output_size = output_size
+        if input_size!=None:
+            # Create weight matrices for query, key, value, and output using i.initializer function
+            self.qw = i.initializer([input_size,output_size], weight_initializer, dtype)
+            self.kw = i.initializer([input_size,output_size], weight_initializer, dtype)
+            self.vw = i.initializer([input_size,output_size], weight_initializer, dtype)
+            self.ow = i.initializer([output_size, output_size], weight_initializer, dtype)
+            # Add all weight matrices to model parameters
+            self.param = [self.qw, self.kw, self.vw, self.ow]
+    
+    
+    def build(self):
+        # Create weight matrices for query, key, value, and output using i.initializer function
+        self.qw = i.initializer([self.input_size,self.output_size], self.weight_initializer, self.dtype)
+        self.kw = i.initializer([self.input_size,self.output_size], self.weight_initializer, self.dtype)
+        self.vw = i.initializer([self.input_size,self.output_size], self.weight_initializer, self.dtype)
+        self.ow = i.initializer([self.output_size, self.output_size], self.weight_initializer, self.dtype)
         # Add all weight matrices to model parameters
         self.param = [self.qw, self.kw, self.vw, self.ow]
+        return
     
     
     def scaled_dot_product_attention(self, query, key, value, mask):
