@@ -2,6 +2,9 @@ import tensorflow as tf
 from Note.nn.layer.conv2d import conv2d
 from Note.nn.layer.dense import dense
 from Note.nn.layer.batch_normalization import batch_normalization
+from Note.nn.layer.max_pool2d import max_pool2d
+from Note.nn.layer.zeropadding2d import zeropadding2d
+from Note.nn.layer.identity import identity
 from Note.nn.Layers import Layers
 from Note.nn.activation import activation_dict
 from Note.nn.parallel.optimizer import Adam
@@ -10,36 +13,30 @@ from Note.nn.parallel.assign_device import assign_device
 
 class block1:
     def __init__(self, in_channels, filters, kernel_size=3, stride=1, conv_shortcut=True, dtype='float32'):
-        self.conv2d1=conv2d(4 * filters,[1,1],in_channels,strides=[stride],dtype=dtype)
-        self.batch_norm1=batch_normalization(self.conv2d1.output_size,epsilon=1.001e-5,keepdims=True,dtype=dtype)
-        self.conv2d2=conv2d(filters,[1,1],in_channels,strides=[stride],dtype=dtype)
-        self.batch_norm2=batch_normalization(self.conv2d2.output_size,epsilon=1.001e-5,keepdims=True,dtype=dtype)
-        self.conv2d3=conv2d(filters,[kernel_size,kernel_size],self.conv2d2.output_size,padding='SAME',dtype=dtype)
-        self.batch_norm3=batch_normalization(self.conv2d3.output_size,epsilon=1.001e-5,keepdims=True,dtype=dtype)
-        self.conv2d4=conv2d(4 * filters,[1,1],self.conv2d3.output_size,dtype=dtype)
-        self.batch_norm4=batch_normalization(self.conv2d4.output_size,epsilon=1.001e-5,keepdims=True,dtype=dtype)
-        self.conv_shortcut=conv_shortcut
+        self.layers1=Layers()
+        if conv_shortcut:
+            self.layers1.add(conv2d(4 * filters,[1,1],in_channels,strides=[stride],dtype=dtype))
+            self.layers1.add(batch_normalization(epsilon=1.001e-5,keepdims=True,dtype=dtype))
+        else:
+            self.layers1.add(identity(in_channels))
+        self.layers2=Layers()
+        self.layers2.add(conv2d(filters,[1,1],in_channels,strides=[stride],dtype=dtype))
+        self.layers2.add(batch_normalization(epsilon=1.001e-5,keepdims=True,dtype=dtype))
+        self.layers2.add(activation_dict['relu'])
+        self.layers2.add(conv2d(filters,[kernel_size,kernel_size],padding='SAME',dtype=dtype))
+        self.layers2.add(batch_normalization(epsilon=1.001e-5,keepdims=True,dtype=dtype))
+        self.layers2.add(activation_dict['relu'])
+        self.layers2.add(conv2d(4 * filters,[1,1],dtype=dtype))
+        self.layers2.add(batch_normalization(epsilon=1.001e-5,keepdims=True,dtype=dtype))
         self.train_flag=True
-        self.output_size=self.conv2d4.output_size
-        self.param=[self.conv2d1.param,self.batch_norm1.param,self.conv2d2.param,self.batch_norm2.param,
-                    self.conv2d3.param,self.batch_norm3.param,self.conv2d4.param,self.batch_norm4.param]
+        self.output_size=self.layers2.output_size
+        self.param=[self.layers1.param,self.layers2.param]
     
     
     def output(self,data,train_flag=True):
         self.train_flag=train_flag
-        if self.conv_shortcut:
-            shortcut=self.conv2d1.output(data)
-            shortcut==self.batch_norm1.output(shortcut,train_flag)
-        else:
-            shortcut = data
-        x=self.conv2d2.output(data)
-        x=self.batch_norm2.output(x,train_flag)
-        x=activation_dict['relu'](x)
-        x=self.conv2d3.output(x)
-        x=self.batch_norm3.output(x,train_flag)
-        x=activation_dict['relu'](x)
-        x=self.conv2d4.output(x)
-        x=self.batch_norm4.output(x,train_flag)
+        shortcut=self.layers1.output(data,self.train_flag)
+        x=self.layers2.output(data,self.train_flag)
         x=shortcut+x
         x=activation_dict['relu'](x)
         return x
@@ -47,16 +44,16 @@ class block1:
 
 def stack_fn(in_channels,dtype='float32'):
     layers=Layers()
-    layers.add(stack1(in_channels, 64, 3, stride1=1, dtype=dtype))
+    layers.add(stack1(in_channels, 64, 3, stride=1, dtype=dtype))
     layers.add(stack1(layers.output_size, 128, 4, dtype=dtype))
     layers.add(stack1(layers.output_size, 256, 6, dtype=dtype))
     layers.add(stack1(layers.output_size, 512, 3, dtype=dtype))
     return layers
 
 
-def stack1(in_channels, filters, blocks, stride1=2, dtype='float32'):
+def stack1(in_channels, filters, blocks, stride=2, dtype='float32'):
     layers=Layers()
-    layers.add(block1(in_channels, filters, stride=stride1, dtype=dtype))
+    layers.add(block1(in_channels, filters, stride=stride, dtype=dtype))
     for i in range(2, blocks + 1):
         layers.add(block1(
             layers.output_size, filters, conv_shortcut=False, dtype=dtype
@@ -78,36 +75,27 @@ class ResNet50:
     
     
     def build(self,dtype='float32'):
-        self.zeropadding2d1=tf.pad
-        self.conv2d1=conv2d(64,[7,7],3,strides=[2],use_bias=self.use_bias,dtype=dtype)
+        self.layers=Layers()
+        self.layers.add(zeropadding2d(3,[3,3]))
+        self.layers.add(conv2d(64,[7,7],strides=[2],use_bias=self.use_bias,dtype=dtype))
         if not self.preact:
-            self.batch_norm1=batch_normalization(self.conv2d1.output_size,epsilon=1.001e-5,keepdims=True,dtype=dtype)
-            self.param.append(self.batch_norm1.param)
-        self.zeropadding2d2=tf.pad
-        self.maxpooling2d=tf.nn.max_pool2d
-        self.stack=stack_fn(self.conv2d1.output_size,dtype=dtype)
+            self.layers.add(batch_normalization(epsilon=1.001e-5,keepdims=True,dtype=dtype))
+            self.layers.add(activation_dict['relu'])
+        self.layers.add(zeropadding2d(padding=[1,1]))
+        self.layers.add(max_pool2d(ksize=[3, 3],strides=[2, 2],padding='SAME'))
+        self.layers.add(stack_fn(self.layers.output_size,dtype=dtype))
         if self.preact:
-            self.batch_norm2=batch_normalization(self.stack.output_size,epsilon=1.001e-5,keepdims=True,dtype=dtype)
-            self.param.append(self.batch_norm2.param)
-        self.dense=dense(self.classes,self.stack.output_size,activation='softmax',dtype=dtype)
-        self.param.extend([self.conv2d1.param,self.stack.param,self.dense.param])
+            self.layers.add(batch_normalization(self.layers.output_size,epsilon=1.001e-5,keepdims=True,dtype=dtype))
+            self.layers.add(activation_dict['relu'])
+        self.dense=dense(self.classes,self.layers.output_size,activation='softmax',dtype=dtype)
+        self.param=[self.layers.param,self.dense.param]
         return
     
     
     def fp(self,data,p):
         if self.km==1:
             with tf.device(assign_device(p,'GPU')):
-                x=self.zeropadding2d1(data, paddings=[[0, 0], [3, 3], [3, 3], [0, 0]])
-                x=self.conv2d1.output(x)
-                if not self.preact:
-                    x=self.batch_norm1.output(x)
-                    x=activation_dict['relu'](x)
-                x=self.zeropadding2d2(x, paddings=[[0, 0], [1, 1], [1, 1], [0, 0]])
-                x=self.maxpooling2d(x, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='SAME')
-                x=self.stack.output(x)
-                if self.preact:
-                    x=self.batch_norm1.output(x)
-                    x=activation_dict['relu'](x)
+                x=self.layers.output(data)
                 if self.include_top:
                     x=tf.math.reduce_mean(x,axis=[1,2])
                     x=self.dense.output(x)
@@ -117,15 +105,7 @@ class ResNet50:
                     elif self.pooling=="max":
                         x=tf.math.reduce_max(x,axis=[1,2])
         else:
-            x=self.zeropadding2d1(data, paddings=[[0, 0], [3, 3], [3, 3], [0, 0]])
-            x=self.conv2d1.output(x)
-            if not self.preact:
-                x=activation_dict['relu'](x)
-            x=self.zeropadding2d2(x, paddings=[[0, 0], [1, 1], [1, 1], [0, 0]])
-            x=self.maxpooling2d(x, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='SAME')
-            x=self.stack.output(x,self.km)
-            if self.preact:
-                x=activation_dict['relu'](x)
+            x=self.layers.output(data,self.km)
             if self.include_top:
                 x=tf.math.reduce_mean(x,axis=[1,2])
                 x=self.dense.output(x)
