@@ -54,7 +54,7 @@ class DenseNet121:
         self.optimizer=Adam()
         self.bc=tf.Variable(0,dtype=dtype)
         self.dtype=dtype
-        self.km=1
+        self.km=0
     
     
     def build(self):
