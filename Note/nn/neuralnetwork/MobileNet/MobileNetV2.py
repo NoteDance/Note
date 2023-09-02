@@ -99,11 +99,12 @@ class MobileNetV2:
         
         
     def build(self,dtype='float32'):
-        self.conv2d1=conv2d(self.first_block_filters,[3,3],3,strides=[2,2],padding='SAME',use_bias=False,dtype=dtype)
-        self.batch_normalization1=batch_normalization(self.conv2d1.output_size,momentum=0.999,keepdims=True)
-        
         self.layers=Layers()
-        self.layers.add(_inverted_res_block(self.conv2d1.output_size, filters=16, alpha=self.alpha, stride=1, expansion=1, block_id=0, dtype=dtype))
+        
+        self.layers.add(conv2d(self.first_block_filters,[3,3],3,strides=[2,2],padding='SAME',use_bias=False,dtype=dtype))
+        self.layers.add(batch_normalization(momentum=0.999,keepdims=True))
+        
+        self.layers.add(_inverted_res_block(self.layers.output_size, filters=16, alpha=self.alpha, stride=1, expansion=1, block_id=0, dtype=dtype))
         self.layers.add(_inverted_res_block(self.layers.output_size, filters=24, alpha=self.alpha, stride=2, expansion=6, block_id=1, dtype=dtype))
         self.layers.add(_inverted_res_block(self.layers.output_size, filters=24, alpha=self.alpha, stride=1, expansion=6, block_id=2, dtype=dtype))
         self.layers.add(_inverted_res_block(self.layers.output_size, filters=32, alpha=self.alpha, stride=2, expansion=6, block_id=3, dtype=dtype))
@@ -129,27 +130,19 @@ class MobileNetV2:
         else:
             last_block_filters = 1280
             
-        self.conv2d2=conv2d(last_block_filters,[1,1],self.layers.output_size,use_bias=False,dtype=dtype)
-        self.batch_normalization2=batch_normalization(self.conv2d2.output_size,momentum=0.999,keepdims=True)
+        self.layers.add(conv2d(last_block_filters,[1,1],use_bias=False,dtype=dtype))
+        self.layers.add(batch_normalization(momentum=0.999,keepdims=True))
         
-        self.dense=dense(self.classes,self.conv2d2.output_size,activation='softmax',dtype=dtype)
+        self.dense=dense(self.classes,self.layers.output_size,activation='softmax',dtype=dtype)
         self.bc=tf.Variable(0,dtype=dtype)
-        self.param=[self.conv2d1.param,self.batch_normalization1.param,self.layers.param,self.conv2d2.param,
-                    self.batch_normalization2.param,self.dense.param]
+        self.param=[self.layers.param,self.dense.param]
         return
     
     
     def fp(self,data,p):
         if self.km==1:
             with tf.device(assign_device(p,'GPU')):
-                x=self.conv2d1.output(data)
-                x=self.batch_normalization1.output(x)
-                
-                x=self.layers.output(x)
-                
-                x=self.conv2d2.output(x)
-                x=self.batch_normalization2.output(x)
-                
+                x=self.layers.output(data)
                 if self.include_top:
                     x=tf.math.reduce_mean(x,axis=[1,2])
                     x=self.dense.output(x)
@@ -159,12 +152,7 @@ class MobileNetV2:
                     elif self.pooling=="max":
                         x=tf.math.reduce_max(x,axis=[1,2])
         else:
-            x=self.conv2d1.output(data)
-            
-            x=self.layers.output(x,self.km)
-            
-            x=self.conv2d2.output(x)
-
+            x=self.layers.output(data,self.km)
             if self.include_top:
                 x=tf.math.reduce_mean(x,axis=[1,2])
                 x=self.dense.output(x)
