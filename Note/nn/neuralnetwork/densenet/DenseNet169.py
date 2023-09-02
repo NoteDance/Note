@@ -43,7 +43,7 @@ def TransitionLayer(input_channels, compression_factor, dtype='float32'):
         return layers
 
 
-class DenseNet121:
+class DenseNet169:
     def __init__(self, growth_rate=32, compression_factor=0.5, num_classes=1000, include_top=True, pooling=None, dtype='float32'):
         self.num_classes=num_classes
         self.growth_rate=growth_rate
@@ -54,7 +54,7 @@ class DenseNet121:
         self.optimizer=Adam()
         self.bc=tf.Variable(0,dtype=dtype)
         self.dtype=dtype
-        self.km=1
+        self.km=0
     
     
     def build(self):
