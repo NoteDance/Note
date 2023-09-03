@@ -7,6 +7,4 @@ class concat:
         
         
     def concat(self,data1,data2):
-        data=[data1]
-        data.extend(data2)
-        return tf.concat(data,axis=self.axis)
+        return tf.concat([data1,data2],axis=self.axis)
