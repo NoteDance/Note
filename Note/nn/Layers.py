@@ -54,9 +54,7 @@ class Layers:
                 if self.save_data_flag[i]==True:
                     self.saved_data.append(data)
             else:
-                data=layer.concat(data,self.saved_data)
-                for _ in range(len(self.saved_data)):
-                    self.saved_data.pop(0)
+                data=layer.concat(data,self.saved_data.pop(0))
                 if self.save_data_flag[i]==True:
                     self.saved_data.append(data)
         return data
