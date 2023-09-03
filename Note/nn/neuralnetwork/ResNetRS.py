@@ -322,6 +322,7 @@ class ResNetRS:
         self.drop_connect_rate=drop_connect_rate
         self.include_top=include_top
         self.classes=classes
+        self.include_preprocessing=include_preprocessing
         self.loss_object=tf.keras.losses.CategoricalCrossentropy()
         self.optimizer=Adam()
         self.km=0
@@ -363,12 +364,13 @@ class ResNetRS:
     def fp(self,data,p):
         if self.km==1:
             with tf.device(assign_device(p,'GPU')):
-                scale = tf.constant(1.0 / 255, dtype=self.dtype)
-                rescaling_layer = tf.multiply(data, scale)
-                mean = tf.constant([0.485, 0.456, 0.406], dtype=self.dtype)
-                variance = tf.constant([0.229**2, 0.224**2, 0.225**2], dtype=self.dtype)
-                normalization_layer = tf.nn.batch_normalization(rescaling_layer, mean, variance, None, None, 1e-12)
-                data=normalization_layer
+                if self.include_preprocessing:
+                    scale = tf.constant(1.0 / 255, dtype=self.dtype)
+                    rescaling_data = tf.multiply(data, scale)
+                    mean = tf.constant([0.485, 0.456, 0.406], dtype=self.dtype)
+                    variance = tf.constant([0.229**2, 0.224**2, 0.225**2], dtype=self.dtype)
+                    normalization_data = tf.nn.batch_normalization(rescaling_data, mean, variance, None, None, 1e-12)
+                    data=normalization_data
                 x=self.layers.output(data)
                 # Build head:
                 if self.include_top:
@@ -382,12 +384,13 @@ class ResNetRS:
                     elif self.pooling == "max":
                         x = tf.reduce_max(x, axis=[1, 2])
         else:
-            scale = tf.constant(1.0 / 255, dtype=self.dtype)
-            rescaling_layer = tf.multiply(data, scale)
-            mean = tf.constant([0.485, 0.456, 0.406], dtype=self.dtype)
-            variance = tf.constant([0.229**2, 0.224**2, 0.225**2], dtype=self.dtype)
-            normalization_layer = tf.nn.batch_normalization(rescaling_layer, mean, variance, None, None, 1e-12)
-            data=normalization_layer
+            if self.include_preprocessing:
+                scale = tf.constant(1.0 / 255, dtype=self.dtype)
+                rescaling_data = tf.multiply(data, scale)
+                mean = tf.constant([0.485, 0.456, 0.406], dtype=self.dtype)
+                variance = tf.constant([0.229**2, 0.224**2, 0.225**2], dtype=self.dtype)
+                normalization_data = tf.nn.batch_normalization(rescaling_data, mean, variance, None, None, 1e-12)
+                data=normalization_data
             x=self.layers.output(data,self.km)
             # Build head:
             if self.include_top:
