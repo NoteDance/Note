@@ -150,7 +150,7 @@ class BottleneckBlock:
         """Bottleneck block variant for residual networks with BN."""
     
         self.layers1=Layers()
-        self.layers1.add(identity(in_channels),save_data=True)
+        self.layers1.add(identity(in_channels))
     
         if use_projection:
             filters_out = filters * 4
@@ -159,7 +159,7 @@ class BottleneckBlock:
                     ksize=(2, 2),
                     strides=(2, 2),
                     padding="SAME",
-                ),use_data=True)
+                ))
                 self.layers1.add(Conv2DFixedPadding(
                     filters=filters_out,
                     kernel_size=[1,1],
@@ -174,7 +174,7 @@ class BottleneckBlock:
                     strides=strides,
                     in_channels=self.layers1.output_size,
                     dtype=dtype
-                ),use_data=True)
+                ))
     
             self.layers1.add(batch_normalization(
                 momentum=bn_momentum,
