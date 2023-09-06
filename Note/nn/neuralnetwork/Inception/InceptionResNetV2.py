@@ -380,6 +380,14 @@ class InceptionResNetV2:
         return loss_value
     
     
+    def GradientTape(self,data,labels,p):
+        with tf.device(assign_device(p,'GPU')):
+            with tf.GradientTape(persistent=True) as tape:
+                output=self.fp(data,p)
+                loss=self.loss(output,labels,p)
+        return tape,output,loss
+    
+    
     # define a method for applying the optimizer
     def opt(self,gradient,p):
         # assign the device for parallel computation
