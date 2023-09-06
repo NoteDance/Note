@@ -170,6 +170,14 @@ class MobileNetV2:
         return loss_value
     
     
+    def GradientTape(self,data,labels,p):
+        with tf.device(assign_device(p,'GPU')):
+            with tf.GradientTape(persistent=True) as tape:
+                output=self.fp(data,p)
+                loss=self.loss(output,labels,p)
+        return tape,output,loss
+    
+    
     def opt(self,gradient,p):
         with tf.device(assign_device(p,'GPU')):
             param=self.optimizer.opt(gradient,self.param,self.bc[0])
