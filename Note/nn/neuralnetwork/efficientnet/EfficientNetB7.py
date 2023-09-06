@@ -278,6 +278,14 @@ class EfficientNetB7:
         return loss_value # return the loss value
     
     
+    def GradientTape(self,data,labels,p):
+        with tf.device(assign_device(p,'GPU')):
+            with tf.GradientTape(persistent=True) as tape:
+                output=self.fp(data,p)
+                loss=self.loss(output,labels,p)
+        return tape,output,loss
+    
+    
     def opt(self,gradient,p):
         """A method that updates the model parameters using the optimizer and the gradient.
 
