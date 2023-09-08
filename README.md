@@ -303,7 +303,7 @@ https://github.com/NoteDancing/Note/tree/Note-7.0/Note/nn/neuralnetwork
 import Note.DL.parallel.kernel as k   #import kernel module
 from Note.nn.neuralnetwork.efficientnet_v2.EfficientNetV2B0 import EfficientNetV2B0 #import neural network module
 from multiprocessing import Process,Manager #import multiprocessing tools
-efficientnetv2b0=EfficientNetV2B0.EfficientNetV2B0(classes=1000)  #create neural network object
+efficientnetv2b0=EfficientNetV2B0(classes=1000)  #create neural network object
 efficientnetv2b0.build()                           #build the network structure
 kernel=k.kernel(efficientnetv2b0)                  #create kernel object with the network
 kernel.process=3                     #set the number of processes to train
