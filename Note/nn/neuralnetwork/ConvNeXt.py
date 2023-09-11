@@ -120,7 +120,7 @@ class ConvNeXt:
         return
     
     
-    def fp(self,data,p):
+    def fp(self,data,p=None):
         if self.km==1:
             with tf.device(assign_device(p,'GPU')):
                 for i in range(self.num_convnext_blocks):
