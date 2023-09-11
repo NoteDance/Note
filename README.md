@@ -317,6 +317,11 @@ for p in range(3):                   #loop over the processes
 	Process(target=kernel.train,args=(p,)).start() #start each process with the train function and pass the process id as argument
 kernel.update_nn_param()             #update the network parameters after training
 ```
+**Use the trained model.**
+```python
+efficientnetv2b0.km=0
+output=efficientnetv2b0.fp(data)
+```
 
 
 # Create a layer module for use on Note:
