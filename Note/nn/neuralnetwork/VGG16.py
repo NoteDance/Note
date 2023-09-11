@@ -54,7 +54,7 @@ class VGG16:
         return
     
     
-    def fp(self,data,p):
+    def fp(self,data,p=None):
         if self.km==1:
             with tf.device(assign_device(p,'GPU')):
                 x=self.layers.output(data)
