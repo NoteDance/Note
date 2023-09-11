@@ -219,7 +219,7 @@ class InceptionResNetV2:
         return
     
     
-    def fp(self,data,p):
+    def fp(self,data,p=None):
         if self.km==1:
             with tf.device(assign_device(p,'GPU')):
                 # Stem block: 35 x 35 x 192
