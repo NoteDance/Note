@@ -361,7 +361,7 @@ class ResNetRS:
         self.param=[self.layers.param,self.dense.param]
 
 
-    def fp(self,data,p):
+    def fp(self,data,p=None):
         if self.km==1:
             with tf.device(assign_device(p,'GPU')):
                 if self.include_preprocessing:
