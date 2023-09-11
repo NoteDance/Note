@@ -258,7 +258,7 @@ class InceptionV3:
         return
     
     
-    def fp(self,data,p):
+    def fp(self,data,p=None):
         if self.km==1:
             with tf.device(assign_device(p,'GPU')):
                 x=self.conv2d_bn1.output(data,(2,2),'VALID')
