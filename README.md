@@ -276,22 +276,6 @@ https://github.com/NoteDancing/Note/tree/Note-7.0/Note/nn/layer
 
 **Documentation:** https://github.com/NoteDancing/Note-documentation/tree/layer
 
-**Here is an example of using the layer module.**
-```python
-import Note.DL.kernel as k   #import kernel module
-import tensorflow as tf      #import tensorflow library
-import neuralnetwork.DL.tensorflow.layer.nn as n   #import neural network module
-mnist=tf.keras.datasets.mnist #load mnist dataset
-(x_train,y_train),(x_test,y_test)=mnist.load_data() #split data into train and test sets
-x_train,x_test =x_train/255.0,x_test/255.0 #normalize data
-nn=n.nn()                    #create neural network object
-nn.build()                   #build the network structure
-kernel=k.kernel(nn)          #create kernel object with the network
-kernel.platform=tf           #set the platform to tensorflow
-kernel.data(x_train,y_train) #input train data and labels to the kernel
-kernel.train(32,5)           #train the network with batch size 32 and epoch 5
-```
-
 
 # Neural network:
 **The neuralnetwork package has models that can be trained in parallel on Note, such as ConvNeXt, EfficientNetV2, EfficientNet, etc.**
