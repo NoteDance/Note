@@ -299,18 +299,23 @@ kernel.train(32,5)           #train the network with batch size 32 and epoch 5
 https://github.com/NoteDancing/Note/tree/Note-7.0/Note/nn/neuralnetwork
 
 **Documentation:** https://github.com/NoteDancing/Note-documentation/tree/neural-network
+
+**The following is an example of the CIFAR10 dataset.**
 ```python
 import Note.DL.parallel.kernel as k   #import kernel module
 from Note.nn.neuralnetwork.efficientnet_v2.EfficientNetV2B0 import EfficientNetV2B0 #import neural network module
+from tensorflow.keras import datasets
 from multiprocessing import Process,Manager #import multiprocessing tools
-efficientnetv2b0=EfficientNetV2B0(classes=1000)  #create neural network object
+(train_images,train_labels),(test_images,test_labels)=datasets.cifar10.load_data()
+train_images,test_images=train_images/255.0,test_images/255.0
+efficientnetv2b0=EfficientNetV2B0(classes=10)  #create neural network object
 efficientnetv2b0.build()                           #build the network structure
 kernel=k.kernel(efficientnetv2b0)                  #create kernel object with the network
 kernel.process=3                     #set the number of processes to train
 kernel.epoch=5                       #set the number of epochs to train
 kernel.batch=32                      #set the batch size
 kernel.PO=3                          #use PO3 algorithm for parallel optimization
-kernel.data(x_train,y_train)         #input train data to the kernel
+kernel.data(train_images,train_labels)         #input train data to the kernel
 manager=Manager()                    #create manager object to share data among processes
 kernel.init(manager)                 #initialize shared data with the manager
 for p in range(3):                   #loop over the processes
