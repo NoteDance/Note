@@ -300,7 +300,7 @@ https://github.com/NoteDancing/Note/tree/Note-7.0/Note/nn/neuralnetwork
 
 **Documentation:** https://github.com/NoteDancing/Note-documentation/tree/neural-network
 
-**The following is an example of the CIFAR10 dataset.**
+**The following is an example of training on the CIFAR10 dataset.**
 ```python
 import Note.DL.parallel.kernel as k   #import kernel module
 from Note.nn.neuralnetwork.efficientnet_v2.EfficientNetV2B0 import EfficientNetV2B0 #import neural network module
