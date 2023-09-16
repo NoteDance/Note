@@ -1,91 +1,56 @@
 import tensorflow as tf
-import Note.nn.initializer as i
+from Note.nn.layer.dense import dense
+from typing import Optional
 
 
 class multihead_attention:
-    def __init__(self, output_size, num_heads, input_size=None, weight_initializer='Xavier', mask=None, trainable=True, dtype='float32'):
-        self.input_size=input_size
-        self.weight_initializer=weight_initializer
-        # Define the number of heads and the dimension of each head
-        self.num_heads = num_heads
-        self.head_dim = output_size // num_heads
-        self.mask = mask
-        self.trainable = trainable
-        self.dtype=dtype
-        self.output_size = output_size
-        if input_size!=None:
-            # Create weight matrices for query, key, value, and output using i.initializer function
-            self.qw = i.initializer([input_size,output_size], weight_initializer, dtype)
-            self.kw = i.initializer([input_size,output_size], weight_initializer, dtype)
-            self.vw = i.initializer([input_size,output_size], weight_initializer, dtype)
-            self.ow = i.initializer([output_size, output_size], weight_initializer, dtype)
-            if trainable==True:
-                # Add all weight matrices to model parameters
-                self.param = [self.qw, self.kw, self.vw, self.ow]
-            else:
-                self.param = []
+    def __init__(self, n_state: int, n_head: int, weight_initializer='Xavier', bias_initializer='zeros', dtype='float32'):
+        self.n_head = n_head
+        self.query = dense(n_state,n_state,weight_initializer=weight_initializer,bias_initializer=bias_initializer,dtype=dtype)
+        self.key = dense(n_state,n_state,weight_initializer=weight_initializer,use_bias=False,dtype=dtype)
+        self.value = dense(n_state,n_state,weight_initializer=weight_initializer,bias_initializer=bias_initializer,dtype=dtype)
+        self.out = dense(n_state,n_state,weight_initializer=weight_initializer,bias_initializer=bias_initializer,dtype=dtype)
+        self.param = [self.query.param,self.key.param,self.value.param,self.out.param]
     
     
-    def build(self):
-        # Create weight matrices for query, key, value, and output using i.initializer function
-        self.qw = i.initializer([self.input_size,self.output_size], self.weight_initializer, self.dtype)
-        self.kw = i.initializer([self.input_size,self.output_size], self.weight_initializer, self.dtype)
-        self.vw = i.initializer([self.input_size,self.output_size], self.weight_initializer, self.dtype)
-        self.ow = i.initializer([self.output_size, self.output_size], self.weight_initializer, self.dtype)
-        if self.trainable==True:
-            # Add all weight matrices to model parameters
-            self.param = [self.qw, self.kw, self.vw, self.ow]
-        else:
-            self.param = []
-        return
-    
-    
-    def scaled_dot_product_attention(self, query, key, value, mask):
-        # Compute the dot product of query and key to obtain the dot product output
-        dot_product_output = tf.matmul(query, key, transpose_b=True)  # shape: (batch_size, num_heads, seq_length_q, seq_length_k)
-        # Scale the dot product output to obtain the scaled dot product output
-        scaled_dot_product_output = dot_product_output / tf.sqrt(tf.cast(self.head_dim, query.dtype.name))  # shape: (batch_size, num_heads, seq_length_q, seq_length_k)
-        # If there is a mask, add the mask to the scaled dot product output to obtain the masked scaled dot product output
+    def qkv_attention(
+        self, q: tf.Tensor, k: tf.Tensor, v: tf.Tensor, mask: Optional[tf.Tensor] = None
+    ):
+        n_batch, n_ctx, n_state = q.shape
+        scale = (n_state // self.n_head) ** -0.25
+        q = tf.reshape(q, [n_batch, n_ctx, self.n_head, -1])
+        q = tf.transpose(q, [0, 2, 1, 3]) * scale
+        k = tf.reshape(k, [n_batch, n_ctx, self.n_head, -1])
+        k = tf.transpose(k, [0, 2, 3, 1]) * scale
+        v = tf.reshape(v, [n_batch, n_ctx, self.n_head, -1])
+        v = tf.transpose(v, [0, 2, 1, 3])
+
+        qk = tf.matmul(q, k)
         if mask is not None:
-            scaled_dot_product_output += mask * -1e9  # shape: (batch_size, num_heads, seq_length_q, seq_length_k)
-        # Apply softmax to the masked scaled dot product output to obtain the attention weights
-        attention_weights = tf.nn.softmax(scaled_dot_product_output, axis=-1)  # shape: (batch_size, num_heads, seq_length_q, seq_length_k)
-        # Compute the dot product of attention weights and value to obtain the attention output
-        attention_output = tf.matmul(attention_weights, value)  # shape: (batch_size, num_heads, seq_length_q, head_dim)
-        # Return the attention output and attention weights
-        return attention_output, attention_weights
+            qk = qk + mask[:n_ctx, :n_ctx]
+
+        w = tf.nn.softmax(qk)
+        return tf.reshape(tf.transpose(tf.matmul(w, v), [0, 2, 1, 3]), [n_batch, n_ctx, n_state]), qk
     
     
-    def output(self, data1, data2=None):
-        # Linearly transform query, key, and value to obtain new query, key, and value
-        if data2 is not None:
-          # If using cross attention, use data1 as query and data2 as key and value
-          query = tf.matmul(data1, self.qw)  # shape: (batch_size, seq_length_q, dim)
-          key = tf.matmul(data2, self.kw)  # shape: (batch_size, seq_length_k, dim)
-          value = tf.matmul(data2, self.vw)  # shape: (batch_size, seq_length_v, dim)
+    def output(
+        self,
+        x: tf.Tensor,
+        xa: Optional[tf.Tensor] = None,
+        mask: Optional[tf.Tensor] = None,
+        kv_cache: Optional[dict] = None,
+    ):
+        q = self.query.output(x)
+
+        if kv_cache is None or xa is None or self.key not in kv_cache:
+            # hooks, if installed (i.e. kv_cache is not None), will prepend the cached kv tensors;
+            # otherwise, perform key/value projections for self- or cross-attention as usual.
+            k = self.key.output(x if xa is None else xa)
+            v = self.value.output(x if xa is None else xa)
         else:
-          # If not using cross attention, use data1 as query, key and value
-          query = tf.matmul(data1, self.qw)  # shape: (batch_size, seq_length_q, dim)
-          key = tf.matmul(data1, self.kw)  # shape: (batch_size, seq_length_k, dim)
-          value = tf.matmul(data1, self.vw)  # shape: (batch_size, seq_length_v, dim)
-        # Split the new query, key, and value into multiple heads to obtain multihead query, key, and value
-        query = tf.reshape(query, shape=[query.shape[0], query.shape[1], self.num_heads, self.head_dim])  # shape: (batch_size, seq_length_q, num_heads, head_dim)
-        key = tf.reshape(key, shape=[key.shape[0], key.shape[1], self.num_heads, self.head_dim])  # shape: (batch_size, seq_length_k, num_heads, head_dim)
-        value = tf.reshape(value, shape=[value.shape[0], value.shape[1], self.num_heads, self.head_dim])  # shape: (batch_size, seq_length_v, num_heads, head_dim)
-        # Transpose the multihead query, key, and value to obtain transposed multihead query, key, and value
-        query = tf.transpose(query, perm=[0, 2, 1, 3])  # shape: (batch_size, num_heads, seq_length_q, head_dim)
-        key = tf.transpose(key, perm=[0, 2, 1, 3])  # shape: (batch_size, num_heads, seq_length_k, head_dim)
-        value = tf.transpose(value, perm=[0, 2, 1, 3])  # shape: (batch_size, num_heads, seq_length_v, head_dim)
-        # Apply scaled dot-product attention to the transposed multihead query and key to obtain scaled dot-product attention output and attention weights
-        scaled_dot_product_attention_output, scaled_dot_product_attention_weights = self.scaled_dot_product_attention(query=query,
-                                                                                                                      key=key,
-                                                                                                                      value=value,
-                                                                                                                      mask=self.mask)  # shape: (batch_size, num_heads, seq_length_q, head_dim)
-        # Transpose the scaled dot-product attention output to obtain transposed scaled dot-product attention output
-        scaled_dot_product_attention_output = tf.transpose(scaled_dot_product_attention_output, perm=[0, 2, 1, 3])  # shape: (batch_size, seq_length_q, num_heads, head_dim)
-        # Concatenate the transposed scaled dot-product attention output to obtain concatenated scaled dot-product attention output
-        concat_scaled_dot_product_attention_output = tf.reshape(scaled_dot_product_attention_output, shape=[scaled_dot_product_attention_output.shape[0], scaled_dot_product_attention_output.shape[1], -1])  # shape: (batch_size, seq_length_q, dim)
-        # Linearly transform the concatenated scaled dot-product attention output to obtain the final output
-        output = tf.matmul(concat_scaled_dot_product_attention_output, self.ow)  # shape: (batch_size, seq_length_q, weight_shape[1])
-        # Return the final output and attention weights
-        return output, scaled_dot_product_attention_weights
+            # for cross-attention, calculate keys and values once and reuse in subsequent calls.
+            k = kv_cache[self.key]
+            v = kv_cache[self.value]
+
+        wv, qk = self.qkv_attention(q, k, v, mask)
+        return self.out.output(wv), qk
