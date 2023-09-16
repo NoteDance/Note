@@ -4,8 +4,9 @@ from typing import Optional
 
 
 class multihead_attention:
-    def __init__(self, n_state: int, n_head: int, weight_initializer='Xavier', bias_initializer='zeros', dtype='float32'):
+    def __init__(self, n_state: int, n_head: int, kv_cache=None, weight_initializer='Xavier', bias_initializer='zeros', dtype='float32'):
         self.n_head = n_head
+        self.kv_cache=kv_cache
         self.query = dense(n_state,n_state,weight_initializer=weight_initializer,bias_initializer=bias_initializer,dtype=dtype)
         self.key = dense(n_state,n_state,weight_initializer=weight_initializer,use_bias=False,dtype=dtype)
         self.value = dense(n_state,n_state,weight_initializer=weight_initializer,bias_initializer=bias_initializer,dtype=dtype)
@@ -38,19 +39,21 @@ class multihead_attention:
         x: tf.Tensor,
         xa: Optional[tf.Tensor] = None,
         mask: Optional[tf.Tensor] = None,
-        kv_cache: Optional[dict] = None,
     ):
         q = self.query.output(x)
 
-        if kv_cache is None or xa is None or self.key not in kv_cache:
+        if self.kv_cache is None or xa is None or self.key not in self.kv_cache:
             # hooks, if installed (i.e. kv_cache is not None), will prepend the cached kv tensors;
             # otherwise, perform key/value projections for self- or cross-attention as usual.
             k = self.key.output(x if xa is None else xa)
             v = self.value.output(x if xa is None else xa)
+            if self.kv_cache is not None:
+                self.kv_cache[self.key] = k
+                self.kv_cache[self.value] = v
         else:
             # for cross-attention, calculate keys and values once and reuse in subsequent calls.
-            k = kv_cache[self.key]
-            v = kv_cache[self.value]
+            k = self.kv_cache[self.key]
+            v = self.kv_cache[self.value]
 
         wv, qk = self.qkv_attention(q, k, v, mask)
         return self.out.output(wv), qk
