@@ -1,66 +1,131 @@
 import tensorflow as tf
-from Note.nn.initializer import initializer
 
 
-# Define a custom layer that implements FAVOR+ attention
 class FAVOR_attention:
-  def __init__(self, output_size, nb_heads, nb_random_features, input_size=None, weight_initializer='Xavier', dtype='float32'):
-    self.nb_heads = nb_heads # Number of attention heads
-    self.nb_random_features = nb_random_features
-    # Initialize the random features matrix
-    self.random_features = initializer([nb_heads, nb_random_features // nb_heads, output_size // nb_heads], weight_initializer, dtype)
-    self.input_size = input_size
-    self.weight_initializer=weight_initializer
-    self.dtype=dtype
-    self.output_size = output_size * nb_heads
-    if input_size!=None:
-        # Initialize the query, key and value matrices
-        self.qw = initializer([input_size , output_size] , weight_initializer , dtype)
-        self.kw = initializer([input_size , output_size] , weight_initializer , dtype)
-        self.vw = initializer([input_size , output_size] , weight_initializer , dtype)
-        self.param=[self.qw, self.kw, self.vw, self.random_features]
-
-
-  def build(self):
-    self.random_features = initializer([self.nb_heads, self.nb_random_features // self.nb_heads, self.input_size // self.nb_heads], self.weight_initializer, self.dtype)
-    # Initialize the query, key and value matrices
-    self.qw = initializer([self.input_size , self.output_size] , self.weight_initializer , self.dtype)
-    self.kw = initializer([self.input_size , self.output_size] , self.weight_initializer , self.dtype)
-    self.vw = initializer([self.input_size , self.output_size] , self.weight_initializer , self.dtype)
-    self.param=[self.qw, self.kw, self.vw, self.random_features]
-    return
+    """Fast Attention Via positive Orthogonal Random features"""
     
+    def __init__(
+        self,
+        key_dim,
+        orthonormal=True,
+        causal=False,
+        m=128,
+        redraw=True,
+        h=None,
+        f=[tf.nn.relu],
+        randomizer=tf.random.normal,
+        eps=0.0,
+        kernel_eps=0.001,
+        dtype='float32'
+    ):
+        self.key_dim = key_dim
+        
+        self.orthonormal = orthonormal
+        self.causal = causal
+        self.redraw = redraw
+        self.m = m
+        sqrt_m = tf.math.sqrt(m)
+        self.h = h if h is not None else lambda x: sqrt_m
+        self.f = f
+        self.randomizer = randomizer
+        self.eps = eps
+        self.kernel_eps = kernel_eps
+        
+        if orthonormal and m > key_dim:
+            raise ValueError('m <= key_dim is required if orthonormal == True')
+            
+        self._features = None
+        self.phi_scale = tf.cast(1. / sqrt_m, dtype=dtype)
+        self.dtype=dtype
 
-  def output(self, data1, data2=None):
-    # Compute the softmax kernel approximation using FAVOR+
-    data1 = data1 / tf.math.sqrt(tf.cast(self.dim, data1.dtype.name)) # Scale the data by the square root of the dimension
-    # Compute the query, key and value vectors
-    query = tf.matmul(data1 , self.qw) # Multiply the data by the query matrix
-    if data2 is not None:
-      # If data2 is given, compute the key and value vectors from data2
-      data2 = data2 / tf.math.sqrt(tf.cast(self.dim, data2.dtype.name)) # Scale the data by the square root of the dimension
-      key = tf.matmul(data2 , self.kw) # Multiply the data by the key matrix
-      value = tf.matmul(data2 , self.vw) # Multiply the data by the value matrix
-    else:
-      # If data2 is not given, compute the key and value vectors from data1
-      key = tf.matmul(data1 , self.kw) # Multiply the data by the key matrix
-      value = tf.matmul(data1 , self.vw) # Multiply the data by the value matrix
-    # Split the input into multiple heads
-    query = tf.reshape(query, shape=(-1, query.shape[1], self.nb_heads, self.dim // self.nb_heads)) # Reshape the query to have multiple heads
-    query = tf.transpose(query, perm=(0, 2, 1, 3)) # Transpose the query to match the attention head order
-    key = tf.reshape(key, shape=(-1, key.shape[1], self.nb_heads, self.dim // self.nb_heads)) # Reshape the key to have multiple heads
-    key = tf.transpose(key, perm=(0, 2, 1, 3)) # Transpose the key to match the attention head order
-    value = tf.reshape(value, shape=(-1, value.shape[1], self.nb_heads, self.dim // self.nb_heads)) # Reshape the value to have multiple heads
-    value = tf.transpose(value, perm=(0, 2, 1, 3)) # Transpose the value to match the attention head order
-    # Compute omega and kernel using matrix multiplication
-    omega = tf.nn.relu(tf.matmul(key, self.random_features, transpose_b=True)) # Multiply the key by the random features matrix and apply a ReLU activation
-    omega = omega / tf.reduce_sum(omega, axis=-1, keepdims=True) # Normalize omega by its sum along the last axis
-    query=tf.transpose(query, [0, 1, 3, 2]) # Transpose the query to match the omega order
-    kernel = tf.matmul(query , omega) # Multiply the query by omega to get the kernel approximation
-    kernel=tf.transpose(kernel, perm=[0,1,3,2]) # Transpose the kernel back to its original order
-    value = tf.transpose(value, perm=[0,1,3,2]) # Transpose the value to match the kernel order
-    # Compute the attention output
-    output = tf.matmul(kernel, value) # Multiply the kernel by the value to get the attention output
-    # Merge the output back to one head
-    output = tf.reshape(output, shape=(-1, data1.shape[1], self.dim * self.nb_heads)) # Reshape the output to merge the attention heads
-    return output
+    def features(self):
+        if self._features is None or self.redraw:
+            self._features = self.randomizer(
+                (self.key_dim, self.m),
+                dtype=self.phi_scale.dtype
+            )
+            if self.orthonormal:
+                self._features = tf.linalg.qr(
+                    tf.cast(self._features, tf.float64))[0]
+                self._features = tf.cast(self._features, self.phi_scale.dtype)
+            self._features = tf.transpose(self._features)
+        return self._features
+
+    def output(self, keys, values, queries):
+        """
+        keys: (batch, keys_dimension, *keys_locations)
+        values: (batch, values_dimension, *keys_locations)
+        queries: (batch, keys_dimension, *queries_locations)
+        """
+        # flattening everything
+        keys_locations = keys.shape[2:]
+        queries_locations = queries.shape[2:]
+        keys, values, queries = (tf.reshape(x, (*x.shape[:2], -1))
+                                 for x in (keys, values, queries))
+        
+        if self.causal and keys_locations != queries_locations:
+            raise ValueError(
+                'Expected equal key and query locations with causal attention,'
+                ' got: {}, {}'.format(keys_locations, queries_locations))
+        
+        # getting to (batch, n, dim)
+        keys, values, queries = (tf.transpose(x, perm=[0, 2, 1])
+                                 for x in (keys, values, queries))
+        
+        # features are (m, key_dim). randomized here if necessary
+        features = self.features()
+        
+        # getting the randomized features for keys and queries
+        def phi(x):
+            # x is (batch, n, key_dim)
+
+            # projections are (batch, n, m)
+            projections = tf.matmul(x, tf.transpose(features))
+            
+            # (batch, n, r)
+            return tf.concat(
+                [f(projections) for f in self.f],
+                axis=-1
+            ) * self.h(x) * self.phi_scale + self.kernel_eps
+                    
+        # (batch, n_context, r)
+        phi_k = phi(keys)
+        # (batch, n, r)
+        phi_q = phi(queries)
+        
+        if self.causal:
+            # outer products of keys and values: (batch, n, r, dim)
+            k_v_prod = tf.matmul(
+                phi_k[:, :, :, tf.newaxis], values[:, :, tf.newaxis, :])
+
+            out = tf.matmul(         # (batch, n, dim)
+                phi_q[:, :, tf.newaxis, :],   # (batch, n, 1, r)
+                tf.math.cumsum(k_v_prod, axis=1)  # (batch, n, r, dim)
+            )[:, :, 0]
+            
+            # normalization factors: (batch, n, 1)
+            norm = tf.matmul(
+                phi_q[:, :, tf.newaxis, :],           # (batch, n, 1, r)
+                tf.math.cumsum(phi_k, axis=1)[..., tf.newaxis]  # (batch, n, r, 1)
+            )[:, :, 0]
+        else:
+            out = tf.matmul(  # (batch, n, dim)
+                phi_q,
+                tf.matmul(  # (batch, r, dim)
+                    tf.transpose(phi_k, perm=[0, 2, 1]), values
+                )
+            )
+            
+            # normalization factors: (batch, n, 1)
+            norm = tf.matmul(
+                phi_q,
+                tf.reduce_sum(phi_k, axis=1)[..., tf.newaxis]  # (batch, r, 1)
+            )
+        
+        # normalizing
+        out = out / (norm + 2 * self.eps * tf.cast(tf.abs(norm) <= self.eps, self.dtype))
+        
+        # restoring the desired shape
+        out = tf.transpose(out, perm=[0, 2, 1])
+        out = tf.reshape(out, (*out.shape[:2], *queries_locations))
+        return out
