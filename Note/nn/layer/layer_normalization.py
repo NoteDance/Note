@@ -1,18 +1,57 @@
 import tensorflow as tf
+from Note.nn.initializer import initializer
 
 
 class layer_normalization:
-    def __init__(self,epsilon=1e-6):
+    def __init__(self, input_size=None, axes=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, beta_initializer='zeros', gamma_initializer='ones', dtype='float32'):
+        self.input_size=input_size
+        self.axes=axes
+        self.momentum=momentum
         self.epsilon=epsilon
-        self.train_flag=True
+        self.center=center
+        self.scale=scale
+        self.beta_initializer=beta_initializer
+        self.gamma_initializer=gamma_initializer
+        self.dtype=dtype
+        if input_size!=None:
+            self.output_size=input_size
+            self.param=[]
+            if center==True:
+                self.beta=initializer([input_size], beta_initializer, dtype)
+                self.param.append(self.beta)
+            else:
+                self.beta=None
+            if scale==True:
+                self.gamma=initializer([input_size], gamma_initializer, dtype)
+                self.param.append(self.gamma)
+            else:
+                self.gamma=None
     
     
-    def output(self,data,train_flag=True):
-        self.train_flag=train_flag
-        if self.train_flag:
-            mean,variance=tf.nn.moments(data,axes=[-1],keepdims=True)
-            std=tf.math.sqrt(variance)
-            normalized=(data-mean)/(std+self.epsilon)
-            return normalized
+    def build(self):
+        self.output_size=self.input_size
+        self.param=[]
+        if self.center==True:
+            self.beta=initializer([self.input_size], self.beta_initializer, self.dtype)
+            self.param.append(self.beta)
         else:
-            return data
+            self.beta=None
+        if self.scale==True:
+            self.gamma=initializer([self.input_size], self.gamma_initializer, self.dtype)
+            self.param.append(self.gamma)
+        else:
+            self.gamma=None
+        return
+    
+    
+    def output(self, data):
+        mean, variance = tf.nn.moments(data, self.axes, keepdims=True)
+        output = tf.nn.batch_normalization(
+            data,
+            mean,
+            variance,
+            offset=self.beta,
+            scale=self.gamma,
+            variance_epsilon=self.epsilon,
+        )
+        return output
