@@ -62,11 +62,16 @@ class batch_normalization:
             self.moving_mean=self.moving_mean * self.momentum + mean * (1 - self.momentum)
             self.moving_var=self.moving_var * self.momentum + var * (1 - self.momentum)
             output = tf.nn.batch_normalization(data,
+                                               mean=mean,
+                                               variance=var,
+                                               offset=self.beta,
+                                               scale=self.gamma,
+                                               variance_epsilon=self.epsilon)
+        else:
+            output = tf.nn.batch_normalization(data,
                                                mean=self.moving_mean,
                                                variance=self.moving_var,
                                                offset=self.beta,
                                                scale=self.gamma,
                                                variance_epsilon=self.epsilon)
-        else:
-            output=data
         return output
