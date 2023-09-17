@@ -35,10 +35,12 @@ class Transformer:
                 self.param=[self.weight_q,self.weight_k,self.weight_v,self.weight_o,
                                   self.weight_ffn_1,self.weight_ffn_2,
                                   self.bias_q,self.bias_k,self.bias_v,self.bias_o,
-                                  self.bias_ffn_1,self.bias_ffn_2]
+                                  self.bias_ffn_1,self.bias_ffn_2,self.layer_normalization1.param,
+                                  self.layer_normalization2.param,self.layer_normalization3.param]
             else:
                 self.param=[self.weight_q,self.weight_k,self.weight_v,self.weight_o,
-                                  self.weight_ffn_1,self.weight_ffn_2]
+                            self.weight_ffn_1,self.weight_ffn_2,self.layer_normalization1.param,
+                            self.layer_normalization2.param,self.layer_normalization3.param]
     
     
     def build(self):
@@ -62,10 +64,12 @@ class Transformer:
             self.param=[self.weight_q,self.weight_k,self.weight_v,self.weight_o,
                               self.weight_ffn_1,self.weight_ffn_2,
                               self.bias_q,self.bias_k,self.bias_v,self.bias_o,
-                              self.bias_ffn_1,self.bias_ffn_2]
+                              self.bias_ffn_1,self.bias_ffn_2,self.layer_normalization1.param,
+                              self.layer_normalization2.param,self.layer_normalization3.param,]
         else:
             self.param=[self.weight_q,self.weight_k,self.weight_v,self.weight_o,
-                              self.weight_ffn_1,self.weight_ffn_2]
+                        self.weight_ffn_1,self.weight_ffn_2,self.layer_normalization1.param,
+                        self.layer_normalization2.param,self.layer_normalization3.param]
         return
     
     
