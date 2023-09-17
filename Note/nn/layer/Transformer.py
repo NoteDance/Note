@@ -19,8 +19,11 @@ class Transformer:
             self.weight_k=i.initializer([input_size,output_size],weight_initializer,dtype) # key weight matrix
             self.weight_v=i.initializer([input_size,output_size],weight_initializer,dtype) # value weight matrix
             self.weight_o=i.initializer([output_size,output_size],weight_initializer,dtype) # output weight matrix
+            self.layer_normalization1=layer_normalization(output_size,dtype=dtype)
             self.weight_ffn_1=i.initializer([output_size,4*output_size],weight_initializer,dtype) # first feed-forward weight matrix
+            self.layer_normalization2=layer_normalization(4*output_size,dtype=dtype)
             self.weight_ffn_2=i.initializer([4*output_size,output_size],weight_initializer,dtype) # second feed-forward weight matrix
+            self.layer_normalization3=layer_normalization(output_size,dtype=dtype)
             if use_bias:
                 self.bias_q=i.initializer([output_size],bias_initializer,dtype) # query bias vector
                 self.bias_k=i.initializer([output_size],bias_initializer,dtype) # key bias vector
@@ -43,8 +46,11 @@ class Transformer:
         self.weight_k=i.initializer([self.input_size,self.output_size],self.weight_initializer,self.dtype) # key weight matrix
         self.weight_v=i.initializer([self.input_size,self.output_size],self.weight_initializer,self.dtype) # value weight matrix
         self.weight_o=i.initializer([self.output_size,self.output_size],self.weight_initializer,self.dtype) # output weight matrix
+        self.layer_normalization1=layer_normalization(self.output_size,dtype=self.dtype)
         self.weight_ffn_1=i.initializer([self.output_size,4*self.output_size],self.weight_initializer,self.dtype) # first feed-forward weight matrix
+        self.layer_normalization2=layer_normalization(4*self.output_size,dtype=self.dtype)
         self.weight_ffn_2=i.initializer([4*self.output_size,self.output_size],self.weight_initializer,self.dtype) # second feed-forward weight matrix
+        self.layer_normalization3=layer_normalization(self.output_size,dtype=self.dtype)
         if self.use_bias:
             self.bias_q=i.initializer([self.output_size],self.bias_initializer,self.dtype) # query bias vector
             self.bias_k=i.initializer([self.output_size],self.bias_initializer,self.dtype) # key bias vector
@@ -96,19 +102,19 @@ class Transformer:
         else:
           output=tf.matmul(o,self.weight_o)# shape: (batch_size ,seq_len_q ,hidden_size)
         # Add residual connection and layer normalization
-        output=layer_normalization(output+data,train_flag=self.train_flag) # shape: (batch_size ,seq_len_q ,hidden_size)
+        output=self.layer_normalization1.output(output+data) # shape: (batch_size ,seq_len_q ,hidden_size)
         # Apply the first feed-forward sublayer with ReLU activation
         if self.use_bias:
           ffn_1=tf.nn.relu(tf.matmul(output,self.weight_ffn_1)+self.bias_ffn_1)# shape: (batch_size ,seq_len_q ,4 * hidden_size)
         else:
           ffn_1=tf.nn.relu(tf.matmul(output,self.weight_ffn_1))# shape: (batch_size ,seq_len_q ,4 * hidden_size)
         # Apply layer normalization
-        ffn_1=layer_normalization(ffn_1,train_flag=self.train_flag) # shape: (batch_size ,seq_len_q ,4 * hidden_size)
+        ffn_1=self.layer_normalization2.output(ffn_1) # shape: (batch_size ,seq_len_q ,4 * hidden_size)
         # Apply the second feed-forward sublayer with linear activation
         if self.use_bias:
           ffn_2=tf.matmul(ffn_1,self.weight_ffn_2)+self.bias_ffn_2# shape: (batch_size ,seq_len_q ,hidden_size)
         else:
           ffn_2=tf.matmul(ffn_1,self.weight_ffn_2)# shape: (batch_size ,seq_len_q ,hidden_size)
         # Add residual connection and layer normalization
-        output=layer_normalization(ffn_2+output,train_flag=self.train_flag)# shape: (batch_size ,seq_len_q ,hidden_size)
+        output=self.layer_normalization3.output(ffn_2+output)# shape: (batch_size ,seq_len_q ,hidden_size)
         return output
