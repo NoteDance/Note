@@ -1,4 +1,5 @@
 import tensorflow as tf
+import math
 
 
 class FAVOR_attention:
@@ -24,7 +25,7 @@ class FAVOR_attention:
         self.causal = causal
         self.redraw = redraw
         self.m = m
-        sqrt_m = tf.math.sqrt(m)
+        sqrt_m = math.sqrt(m)
         self.h = h if h is not None else lambda x: sqrt_m
         self.f = f
         self.randomizer = randomizer
