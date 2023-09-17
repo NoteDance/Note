@@ -116,7 +116,7 @@ class DenseNet201:
                     elif self.pooling == 'max':
                         x = tf.reduce_max(x, axis=[1, 2])
         else:
-            x=self.layers.output(data)
+            x=self.layers.output(data,self.km)
             if self.include_top:
                 x = tf.math.reduce_mean(x, axis=[1, 2])
                 x = tf.matmul(x, self.fc_weight)+self.fc_bias
