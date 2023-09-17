@@ -49,7 +49,7 @@ class Linformer_self_attention:
         self.param.append(self.to_out.param)
         self.dropout_rate=dropout
 
-    def output(self, x, context = None, **kwargs):
+    def output(self, x, context = None, train_flag=True, **kwargs):
         b, n, d, d_h, h, k = *x.shape, self.dim_head, self.heads, self.k
         
         kv_len = n if context is None else context.shape[1]
@@ -82,7 +82,8 @@ class Linformer_self_attention:
         
         dots = tf.einsum('bhnd,bhkd->bhnk', queries, keys) * (d_h ** -0.5)
         attn = tf.nn.softmax(dots,axis=-1)
-        attn = self.dropout(attn,self.dropout_rate)
+        if train_flag:
+            attn = self.dropout(attn,self.dropout_rate)
         out = tf.einsum('bhnk,bhkd->bhnd', attn, values)
 
         # split heads
