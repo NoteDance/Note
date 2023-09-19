@@ -249,28 +249,6 @@ for p in range(5):           #loop over the processes
 ```
 
 
-# Study kernel:
-**If you want to study kernel, you can see the kernel with comments at the link below.**
-
-**DL:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/DL/kernel
-
-**RL:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/RL/kernel
-
-
-# Documentation:
-**The document has kernel code and other code with comments that can help you understand.**
-
-**Documentation readme has other examples.**
-
-https://github.com/NoteDancing/Note-documentation
-
-
-# Layer:
-https://github.com/NoteDancing/Note/tree/Note-7.0/Note/nn/layer
-
-**Documentation:** https://github.com/NoteDancing/Note-documentation/tree/layer
-
-
 # Neural network:
 **The neuralnetwork package in Note has models that can be trained in parallel on Note, such as ConvNeXt, EfficientNetV2, EfficientNet, etc. Currently, the performance of Note’s parallel training has not been sufficiently tested, if you want you can use the models in the neuralnetwork package to test Note’s parallel training performance.**
 
@@ -305,6 +283,28 @@ kernel.update_nn_param()             #update the network parameters after traini
 efficientnetv2b0.km=0
 output=efficientnetv2b0.fp(data)
 ```
+
+
+# Study kernel:
+**If you want to study kernel, you can see the kernel with comments at the link below.**
+
+**DL:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/DL/kernel
+
+**RL:** https://github.com/NoteDancing/Note-documentation/tree/Note-7.0/Note%207.0%20documentation/RL/kernel
+
+
+# Documentation:
+**The document has kernel code and other code with comments that can help you understand.**
+
+**Documentation readme has other examples.**
+
+https://github.com/NoteDancing/Note-documentation
+
+
+# Layer:
+https://github.com/NoteDancing/Note/tree/Note-7.0/Note/nn/layer
+
+**Documentation:** https://github.com/NoteDancing/Note-documentation/tree/layer
 
 
 # Create a layer module for use on Note:
