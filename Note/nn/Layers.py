@@ -29,9 +29,10 @@ class Layers:
         if hasattr(layer,'output_size'):
             self.output_size=layer.output_size
         if hasattr(layer,'concat'):
-            self.output_size=self.output_size_list.pop(0)
-            for i in range(1,layer.save_data_count):
-                self.output_size+=self.output_size_list.pop(0)
+            if layer.axis==-1 or layer.axis==2:
+                self.output_size=self.output_size_list.pop(0)
+                for i in range(1,layer.save_data_count):
+                    self.output_size+=self.output_size_list.pop(0)
         self.save_data_flag.append(save_data)
         self.use_data_flag.append(use_data)
         if save_data==True:
