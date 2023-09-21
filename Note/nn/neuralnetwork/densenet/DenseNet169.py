@@ -21,8 +21,8 @@ def DenseLayer(input_channels, growth_rate, dtype='float32'):
         layers.add(conv2d(4*growth_rate,[1,1],strides=1,padding="SAME",use_bias=False,dtype=dtype))
         layers.add(batch_normalization(keepdims=True,epsilon=1.001e-5,dtype=dtype))
         layers.add(activation_dict['relu'])
-        layers.add(conv2d(growth_rate,[3,3],strides=1,padding="SAME",use_bias=False,dtype=dtype))
-        layers.add(concat())
+        layers.add(conv2d(growth_rate,[3,3],strides=1,padding="SAME",use_bias=False,dtype=dtype),save_data=True)
+        layers.add(concat(),use_data=True)
         return layers
 
 
