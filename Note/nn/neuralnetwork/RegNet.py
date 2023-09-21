@@ -4,6 +4,7 @@ from Note.nn.layer.dense import dense
 from Note.nn.layer.global_avg_pool2d import global_avg_pool2d
 from Note.nn.layer.batch_normalization import batch_normalization
 from Note.nn.layer.identity import identity
+from Note.nn.layer.add import add
 from Note.nn.Layers import Layers
 from Note.nn.activation import activation_dict
 from Note.nn.parallel.optimizer import Adam
@@ -62,9 +63,11 @@ def XBlock(in_channels, filters_in, filters_out, group_width, stride=1, dtype='f
 
     # conv_1x1_2
     layers.add(conv2d(filters_out,[1,1],use_bias=False,weight_initializer='He',dtype=dtype))
-    layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,keepdims=True,dtype=dtype))
+    layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,keepdims=True,dtype=dtype),save_data=True)
     
-    layers.add(activation_dict['relu'],use_data=True)
+    layers.add(add(),use_data=True)
+    
+    layers.add(activation_dict['relu'])
 
     return layers
 
@@ -108,9 +111,11 @@ def YBlock(
 
     # conv_1x1_2
     layers.add(conv2d(filters_out,[1,1],use_bias=False,weight_initializer='He',dtype=dtype))
-    layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,keepdims=True,dtype=dtype))
+    layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,keepdims=True,dtype=dtype),save_data=True)
+    
+    layers.add(add(),use_data=True)
 
-    layers.add(activation_dict['relu'],use_data=True)
+    layers.add(activation_dict['relu'])
 
     return layers
 
