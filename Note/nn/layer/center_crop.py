@@ -6,7 +6,7 @@ W_AXIS = -2
 
 
 class center_crop:
-    def __init__(self, height, width, dtype='float32', **kwargs):
+    def __init__(self, height, width, dtype='float32'):
         self.height = height
         self.width = width
         self.compute_dtype=dtype
