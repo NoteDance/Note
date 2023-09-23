@@ -17,7 +17,7 @@ class conv1d_transpose: # define a class for 1D transposed convolutional layer
         self.use_bias=use_bias # set the use bias flag
         self.trainable=trainable
         self.dtype=dtype
-        self.new_steps=new_steps # set the new steps of the layer
+        self.new_steps=new_steps # set the new steps of the output tensor after transposed convolution
         self.output_size=filters
         if input_size!=None:
             self.weight=i.initializer([kernel_size,filters,input_size],weight_initializer,dtype) # initialize the weight tensor
