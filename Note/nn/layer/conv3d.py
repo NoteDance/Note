@@ -4,7 +4,7 @@ import Note.nn.initializer as i # import the initializer module from Note.nn pac
 
 
 class conv3d: # define a class for 3D convolutional layer
-    def __init__(self,filters,kernel_size,input_size=None,strides=[1,1,1,1,1],padding='VALID',weight_initializer='Xavier',bias_initializer='zeros',activation=None,data_format='NDHWC',dilations=None,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
+    def __init__(self,filters,kernel_size,input_size=None,strides=[1,1,1],padding='VALID',weight_initializer='Xavier',bias_initializer='zeros',activation=None,data_format='NDHWC',dilations=None,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
         self.kernel_size=kernel_size
         self.input_size=input_size
         self.strides=strides
@@ -45,7 +45,8 @@ class conv3d: # define a class for 3D convolutional layer
     
     
     def output(self,data): # define the output method
+        strides = (1,) + tuple(self.strides) + (1,)
         if self.use_bias==True: # if use bias is True
-            return a.activation_conv(data,self.weight,self.activation,self.strides,self.padding,self.data_format,self.dilations,tf.nn.conv3d,self.bias) # return the output of applying activation function to the convolution of data and weight, plus bias
+            return a.activation_conv(data,self.weight,self.activation,strides,self.padding,self.data_format,self.dilations,tf.nn.conv3d,self.bias) # return the output of applying activation function to the convolution of data and weight, plus bias
         else: # if use bias is False
-            return a.activation_conv(data,self.weight,self.activation,self.strides,self.padding,self.data_format,self.dilations,tf.nn.conv3d) # return the output of applying activation function to the convolution of data and weight
+            return a.activation_conv(data,self.weight,self.activation,strides,self.padding,self.data_format,self.dilations,tf.nn.conv3d) # return the output of applying activation function to the convolution of data and weight
