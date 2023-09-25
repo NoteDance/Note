@@ -5,7 +5,7 @@ import Note.nn.initializer as i # import the initializer module from Note.nn pac
 
 
 class separable_conv2d: # define a class for separable convolutional layer
-    def __init__(self,filters,kernel_size,depth_multiplier,input_size=None,strides=[1,1],padding='VALID',data_format='NHWC',dilations=None,weight_initializer='Xavier',bias_initializer='zeros',activation=None,use_bias=True,dtype='float32'): # define the constructor method
+    def __init__(self,filters,kernel_size,depth_multiplier,input_size=None,strides=[1,1],padding='VALID',data_format='NHWC',dilations=None,weight_initializer='Xavier',bias_initializer='zeros',activation=None,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
         self.kernel_size=kernel_size
         self.depth_multiplier=depth_multiplier
         self.input_size=input_size
@@ -17,6 +17,7 @@ class separable_conv2d: # define a class for separable convolutional layer
         self.dilations=dilations
         self.activation=activation # set the activation function
         self.use_bias=use_bias # set the use bias flag
+        self.trainable=trainable
         self.dtype=dtype
         self.output_size=filters
         if input_size!=None:
@@ -28,6 +29,8 @@ class separable_conv2d: # define a class for separable convolutional layer
                 self.param=[self.depthwise_kernel,self.pointwise_kernel,self.bias] # store the parameters in a list
             else: # if use bias is False
                 self.param=[self.depthwise_kernel,self.pointwise_kernel] # store only the weight matrices in a list
+            if trainable==False:
+                self.param=[]
     
     
     def build(self):
@@ -39,6 +42,8 @@ class separable_conv2d: # define a class for separable convolutional layer
             self.param=[self.depthwise_kernel,self.pointwise_kernel,self.bias] # store the parameters in a list
         else: # if use bias is False
             self.param=[self.depthwise_kernel,self.pointwise_kernel] # store only the weight matrices in a list
+        if self.trainable==False:
+            self.param=[]
         return
     
     
