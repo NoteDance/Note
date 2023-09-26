@@ -26,6 +26,8 @@ def initializer(shape,initializer,dtype):
                 param=tf.Variable(tf.random.uniform(shape=shape, minval=-limit, maxval=limit, dtype=dtype))
             else:
                 raise ValueError('Invalid distribution: ' + initializer[3])
+        elif initializer[0]=='truncated_normal':
+            param=tf.Variable(tf.random.truncated_normal(shape=shape,mean=0.0,stddev=initializer[1],dtype=dtype))
     else:
         if initializer=='normal':
             param=tf.Variable(tf.random.normal(shape=shape,dtype=dtype))
