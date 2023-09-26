@@ -4,7 +4,7 @@ class multiply:
         
         
     def output(self,data):
-        output=data[0]
+        output=data.pop(0)
         for i in range(1,self.save_data_count):
-            output=output*data[i]
+            output=output*data.pop(0)
         return output
