@@ -9,8 +9,8 @@ class spectral_normalization:
     constraining their spectral norm, which can stabilize the training of GANs.
 
     Args:
-      layer: A `keras.layers.Layer` instance that
-        has either a `kernel` (e.g. `Conv2D`, `Dense`...)
+      layer: A `Note.nn.layer.Layer` instance that
+        has either a `weight` (e.g. `Conv2D`, `Dense`...)
         or an `embeddings` attribute (`Embedding` layer).
       power_iterations: int, the number of iterations during normalization.
 
@@ -45,9 +45,11 @@ class spectral_normalization:
             dtype=self.kernel.dtype,
         )
         
-        self.train_flag=False
+        self.train_flag=True
+        self.output_size=layer.output_size
 
-    def output(self, data, train_flag=False):
+    def output(self, data, train_flag=True):
+        self.train_flag=train_flag
         if train_flag:
             self.normalize_weights()
 
