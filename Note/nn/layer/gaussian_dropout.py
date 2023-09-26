@@ -30,8 +30,10 @@ class gaussian_dropout:
         self.rate = rate
         self.seed = seed
         self.random_generator = tf.random.Generator.from_seed(self.seed)
+        self.train_flag = True
 
     def output(self, data, train_flag=True):
+        self.train_flag = train_flag
         if 0 < self.rate < 1:
             def noised():
                 stddev = tf.math.sqrt(self.rate / (1.0 - self.rate))
