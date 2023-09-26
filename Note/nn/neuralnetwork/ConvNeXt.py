@@ -30,7 +30,7 @@ class ConvNeXtBlock:
         if train_flag:
             keep_prob = 1 - self.drop_path_rate
             shape = (tf.shape(x)[0],) + (1,) * (len(tf.shape(x)) - 1)
-            random_tensor = keep_prob + tf.random.uniform(shape, 0, 1)
+            random_tensor = keep_prob + tf.random.uniform(shape, 0, 1, dtype=x.dtype)
             random_tensor = tf.floor(random_tensor)
             return (x / keep_prob) * random_tensor
         return x
