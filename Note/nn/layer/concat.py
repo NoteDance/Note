@@ -8,7 +8,7 @@ class concat:
         
         
     def concat(self,data):
-        output=data[0]
+        output=data.pop(0)
         for i in range(1,self.save_data_count):
-            output=tf.concat([output,data[i]],axis=self.axis)
+            output=tf.concat([output,data.pop(0)],axis=self.axis)
         return output
