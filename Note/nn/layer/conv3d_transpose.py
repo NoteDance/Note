@@ -4,7 +4,7 @@ import Note.nn.initializer as i # import the initializer module from Note.nn pac
 
 
 class conv3d_transpose: # define a class for 3D transposed convolutional layer
-    def __init__(self,filters,kernel_size,input_size=None,new_drc=None,strides=[1,1,1,1,1],padding='VALID',weight_initializer='Xavier',bias_initializer='zeros',activation=None,data_format='NDHWC',dilations=None,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
+    def __init__(self,filters,kernel_size,input_size=None,new_drc=None,strides=[1,1,1],padding='VALID',weight_initializer='Xavier',bias_initializer='zeros',activation=None,data_format='NDHWC',dilations=None,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
         self.kernel_size=kernel_size
         self.input_size=input_size
         self.strides=strides
@@ -45,6 +45,7 @@ class conv3d_transpose: # define a class for 3D transposed convolutional layer
     
     
     def output(self,data): # define the output method
+        strides = (1,) + tuple(self.strides) + (1,)
         if self.use_bias==True: # if use bias is True
             return a.activation_conv_transpose(data,self.weight,[data.shape[0],self.new_drc[0],self.new_drc[1],self.new_drc[2],self.output_size],self.activation,self.strides,self.padding,self.data_format,self.dilations,tf.nn.conv3d_transpose,bias=self.bias) # return the output of applying activation function to the transposed convolution of data and weight, plus bias, using output_shape as output shape
         else: # if use bias is False
