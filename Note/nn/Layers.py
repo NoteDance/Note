@@ -14,6 +14,7 @@ class Layers:
             self.save_data_count+=1
         if use_data==True and hasattr(layer,'save_data_count'):
             layer.save_data_count=self.save_data_count
+        if use_data==True:
             self.save_data_count=0
         if hasattr(layer,'build'):
             if layer.input_size==None:
