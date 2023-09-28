@@ -1,5 +1,7 @@
 import tensorflow as tf
 import Note.nn.initializer as i_
+from Note.nn.Module import Module
+
 
 class axial_positional_encoding:
   """A class for generating axial positional encoding for Reformer models."""
@@ -29,6 +31,8 @@ class axial_positional_encoding:
           weight = i_.initializer((dim, self.d_axial_pos_embs), initializer, dtype)
           self.weights.append(weight)
           self.param.append(weight)
+    Module.param.extend(self.param)
+    
 
   def output(self, data):
     """Generates the axial positional encoding for the input tensor.
