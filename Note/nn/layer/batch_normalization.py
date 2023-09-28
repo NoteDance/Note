@@ -1,8 +1,9 @@
 import tensorflow as tf
 from Note.nn.initializer import initializer
+from Note.nn.Module import Module
 
 
-class batch_normalization:
+class batch_normalization(Module):
     def __init__(self, input_size=None, axes=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, beta_initializer='zeros', gamma_initializer='ones', moving_mean_initializer='zeros', moving_variance_initializer='ones', keepdims=False, trainable=True, dtype='float32'):
         self.input_size=input_size
         self.axes=axes
@@ -33,6 +34,7 @@ class batch_normalization:
                     self.param.append(self.gamma)
             else:
                 self.gamma=None
+            Module.param.extend(self.param)
     
     
     def build(self):
@@ -52,6 +54,7 @@ class batch_normalization:
                 self.param.append(self.gamma)
         else:
             self.gamma=None
+        Module.param.extend(self.param)
         return
     
     
