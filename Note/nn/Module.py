@@ -1,0 +1,2 @@
+class Module(object):
+    param=[]
