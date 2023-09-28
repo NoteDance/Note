@@ -7,6 +7,7 @@ from Note.nn.Layers import Layers
 from Note.nn.activation import activation_dict
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
+from Note.nn.Module import Module
 
 
 class _conv_block:
@@ -16,7 +17,6 @@ class _conv_block:
         self.batch_norm=batch_normalization(self.conv2d.output_size,keepdims=True,dtype=dtype)
         self.train_flag=True
         self.output_size=self.conv2d.output_size
-        self.param=[self.conv2d.param,self.batch_norm.param]
     
     
     def output(self,data,train_flag=True):
@@ -31,13 +31,12 @@ class _depthwise_conv_block:
         pointwise_conv_filters = int(pointwise_conv_filters * alpha)
         self.strides=strides
         self.zeropadding2d=tf.pad
-        self.depthwiseconv2d=depthwise_conv2d(depth_multiplier,[3,3],in_channels,strides=[1,strides[0],strides[1],1],padding="SAME" if strides == [1, 1] else "VALID",use_bias=False,dtype=dtype)
+        self.depthwiseconv2d=depthwise_conv2d([3,3],depth_multiplier,in_channels,strides=[1,strides[0],strides[1],1],padding="SAME" if strides == [1, 1] else "VALID",use_bias=False,dtype=dtype)
         self.batch_norm1=batch_normalization(self.depthwiseconv2d.output_size,keepdims=True,dtype=dtype)
         self.conv2d=conv2d(pointwise_conv_filters,[1,1],self.depthwiseconv2d.output_size,strides=[1, 1],padding='SAME',use_bias=False,dtype=dtype)
         self.batch_norm2=batch_normalization(self.conv2d.output_size,keepdims=True,dtype=dtype)
         self.train_flag=True
         self.output_size=self.conv2d.output_size
-        self.param=[self.depthwiseconv2d.param,self.batch_norm1.param,self.conv2d.param,self.batch_norm2.param]
     
     
     def output(self,data,train_flag=True):
@@ -65,7 +64,6 @@ class MobileNet:
         self.pooling=pooling
         self.loss_object=tf.keras.losses.CategoricalCrossentropy()
         self.optimizer=Adam()
-        self.param=[]
         self.km=0
         
         
@@ -96,7 +94,7 @@ class MobileNet:
         self.conv2d=conv2d(self.classes,[1,1],self.layers.output_size,padding='SAME',dtype=dtype)
         self.dense=dense(self.classes,self.conv2d.output_size,activation='softmax',dtype=dtype)
         self.bc=tf.Variable(0,dtype=dtype)
-        self.param=[self.layers.param,self.dense.param]
+        self.param=Module.param
         return
     
     
