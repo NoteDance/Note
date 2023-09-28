@@ -1,5 +1,6 @@
 import tensorflow as tf
 from Note.nn.initializer import initializer
+from Note.nn.Module import Module
 
 
 class layer_normalization:
@@ -26,6 +27,7 @@ class layer_normalization:
                 self.param.append(self.gamma)
             else:
                 self.gamma=None
+            Module.param.extend(self.param)
     
     
     def build(self):
@@ -41,6 +43,7 @@ class layer_normalization:
             self.param.append(self.gamma)
         else:
             self.gamma=None
+        Module.param.extend(self.param)
         return
     
     
