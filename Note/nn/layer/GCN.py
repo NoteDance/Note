@@ -1,9 +1,10 @@
 import tensorflow as tf
 import Note.nn.initializer as i
 from Note.nn.activation import activation_dict
+from Note.nn.Module import Module
 
 
-class GCN:
+class GCN(Module):
     def __init__(self,input_dim,output_dim,weight_initializer='Xavier',bias_initializer='zeros',activation=None,dtype='float32',use_bias=True):
         # input_dim: the dimension of the input node features
         # output_dim: the dimension of the output node features
@@ -23,6 +24,7 @@ class GCN:
             self.param=[self.weight,self.bias]
         else:
             self.param=[self.weight]
+        Module.param.extend(self.param)
     
     
     def output(self,graph,data):

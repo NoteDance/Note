@@ -1,8 +1,9 @@
 import tensorflow as tf # import the TensorFlow library
 import Note.nn.initializer as i # import the initializer module from Note.nn package
+from Note.nn.Module import Module
 
 
-class LSTM: # define a class for long short-term memory (LSTM) layer
+class LSTM(Module): # define a class for long short-term memory (LSTM) layer
     def __init__(self,output_size,input_size=None,weight_initializer='Xavier',bias_initializer='zeros',return_sequence=False,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
         self.input_size=input_size
         self.weight_initializer=weight_initializer
@@ -36,6 +37,7 @@ class LSTM: # define a class for long short-term memory (LSTM) layer
                     self.param=[self.weight_i1,self.weight_f1,self.weight_o1,self.weight_c1,self.weight_i2,self.weight_f2,self.weight_o2,self.weight_c2] # store only the weight matrices in a list
             else:
                 self.param=[]
+            Module.param.extend(self.param)
     
     
     def build(self):
@@ -59,6 +61,7 @@ class LSTM: # define a class for long short-term memory (LSTM) layer
                 self.param=[self.weight_i1,self.weight_f1,self.weight_o1,self.weight_c1,self.weight_i2,self.weight_f2,self.weight_o2,self.weight_c2] # store only the weight matrices in a list
         else:
             self.param=[]
+        Module.param.extend(self.param)
         return
     
     

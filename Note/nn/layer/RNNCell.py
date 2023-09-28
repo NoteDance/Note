@@ -1,9 +1,10 @@
 import tensorflow as tf # import the TensorFlow library
 import Note.nn.initializer as i # import the initializer module from Note.nn package
 from Note.nn.activation import activation_dict # import the activation function dictionary from Note.nn package
+from Note.nn.Module import Module
 
 
-class RNNCell: # define a class for recurrent neural network (RNN) cell
+class RNNCell(Module): # define a class for recurrent neural network (RNN) cell
     def __init__(self,weight_shape,weight_initializer='Xavier',bias_initializer='zeros',activation=None,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
         self.weight_i=i.initializer(weight_shape,weight_initializer,dtype) # initialize the weight matrix for input data
         self.weight_s=i.initializer([weight_shape[1],weight_shape[1]],weight_initializer,dtype) # initialize the weight matrix for previous state
@@ -19,6 +20,7 @@ class RNNCell: # define a class for recurrent neural network (RNN) cell
                 self.param=[self.weight_i,self.weight_s] # store only the weight matrices in a list
         else:
             self.param=[]
+        Module.param.extend(self.param)
     
     
     def output(self,data,state): # define the output method

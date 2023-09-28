@@ -1,9 +1,10 @@
 import tensorflow as tf
 import Note.nn.initializer as i
 from Note.nn.activation import activation_dict
+from Note.nn.Module import Module
 
 
-class GAT:
+class GAT(Module):
     def __init__(self,input_dim,output_dim,num_heads,weight_initializer='Xavier',attention_initializer='zeros',activation=None,dtype='float32',attn_drop=0.0,ffd_drop=0.0):
         # input_dim: the dimension of the input node features
         # output_dim: the dimension of the output node features
@@ -25,6 +26,7 @@ class GAT:
         self.attention=i.initializer([num_heads,2*output_dim],attention_initializer,dtype)
         self.output_size=num_heads*output_dim
         self.param=[self.weight,self.attention]
+        Module.param.extend(self.param)
     
     
     def output(self,graph,data,train_flag=True):

@@ -1,8 +1,9 @@
 import tensorflow as tf
 from Note.nn.initializer import initializer
+from Note.nn.Module import Module
 
 
-class group_normalization:
+class group_normalization(Module):
     """Group normalization layer.
 
     Group Normalization divides the channels into groups and computes
@@ -60,6 +61,7 @@ class group_normalization:
         scale=True,
         beta_initializer="zeros",
         gamma_initializer="ones",
+        mask=None,
         dtype='float32'
     ):
         self.input_size=input_size
@@ -70,27 +72,47 @@ class group_normalization:
         self.scale = scale
         self.beta_initializer = beta_initializer
         self.gamma_initializer = gamma_initializer
+        self.mask=mask
         self.dtype = dtype
+        self.param=[]
         if input_size!=None:
             if self.scale:
-                self.gamma = initializer(input_size,self.gamma_initializer,dtype)
+                self.gamma = initializer(input_size,gamma_initializer,dtype)
+                self.param.append(self.gamma)
             else:
                 self.gamma = None
     
             if self.center:
-                self.beta = initializer(input_size,self.beta_initializer,dtype)
+                self.beta = initializer(input_size,beta_initializer,dtype)
+                self.param.append(self.beta)
             else:
                 self.beta = None
+            Module.param.extend(self.param)
+    
+    def build(self):
+        if self.scale:
+            self.gamma = initializer(self.input_size,self.gamma_initializer,self.dtype)
+            self.param.append(self.gamma)
+        else:
+            self.gamma = None
 
-    def output(self, data, mask=None):
+        if self.center:
+            self.beta = initializer(self.input_size,self.beta_initializer,self.dtype)
+            self.param.append(self.beta)
+        else:
+            self.beta = None
+        Module.param.extend(self.param)
+        return
+
+    def output(self, data):
         input_shape = tf.shape(data)
 
-        if mask is None:
+        if self.mask is None:
             mask = tf.ones_like(data)
         else:
             # We broadcast before we group in case the mask does not have the
             # same shape as the input.
-            mask = tf.broadcast_to(mask, input_shape)
+            mask = tf.broadcast_to(self.mask, input_shape)
 
         reshaped_inputs = self._reshape_into_groups(data)
         reshaped_mask = self._reshape_into_groups(mask)

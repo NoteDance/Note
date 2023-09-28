@@ -1,9 +1,10 @@
 import tensorflow as tf
 import Note.nn.initializer as i
 from Note.nn.activation import activation_dict
+from Note.nn.Module import Module
 
 
-class self_attention_conv2d:
+class self_attention_conv2d(Module):
     def __init__(self,filters,kernel_size,input_size=None,strides=(1,1),padding='VALID',activation=None,weight_initializer='Xavier',bias_initializer='zeros',use_bias=True,dtype='float32'):
         # filters: the number of output filters
         # kernel_size: the size of the convolution kernel
@@ -29,6 +30,7 @@ class self_attention_conv2d:
             if use_bias:
                 self.bias=i.initializer([filters],bias_initializer,dtype)
                 self.param.append(self.bias)
+            Module.param.extend(self.param)
     
     
     def build(self):
@@ -37,6 +39,7 @@ class self_attention_conv2d:
         if self.use_bias:
             self.bias=i.initializer([self.output_size],self.bias_initializer,self.dtype)
             self.param.append(self.bias) 
+        Module.param.extend(self.param)
         return
     
     

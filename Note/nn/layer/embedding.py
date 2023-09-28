@@ -1,8 +1,9 @@
 import tensorflow as tf
 import Note.nn.initializer as i
+from Note.nn.Module import Module
 
 
-class embedding:
+class embedding(Module):
     def __init__(self,embed_size,input_size=None,initializer='Xavier',trainable=True,dtype='float32'):
         self.embed_size=embed_size
         self.input_size=input_size
@@ -16,6 +17,7 @@ class embedding:
                 self.param=[self.embeddings]
             else:
                 self.param=[]
+            Module.param.extend(self.param)
     
     
     def build(self):
@@ -24,6 +26,7 @@ class embedding:
             self.param=[self.embeddings]
         else:
             self.param=[]
+        Module.param.extend(self.param)
         return
     
     

@@ -1,8 +1,9 @@
 import tensorflow as tf # import the TensorFlow library
 import Note.nn.initializer as i # import the initializer module from Note.nn package
+from Note.nn.Module import Module
 
 
-class GRU: # define a class for gated recurrent unit (GRU) layer
+class GRU(Module): # define a class for gated recurrent unit (GRU) layer
     def __init__(self,output_size,input_size=None,weight_initializer='Xavier',bias_initializer='zeros',return_sequence=False,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
         self.input_size=input_size
         self.weight_initializer=weight_initializer
@@ -33,6 +34,7 @@ class GRU: # define a class for gated recurrent unit (GRU) layer
                     self.param=[self.weight_r1,self.weight_z1,self.weight_h1,self.weight_r2,self.weight_z2,self.weight_h2] # store only the weight matrices in a list
             else:
                 self.param=[]
+            Module.param.extend(self.param)
     
     
     def build(self):
@@ -53,6 +55,7 @@ class GRU: # define a class for gated recurrent unit (GRU) layer
                 self.param=[self.weight_r1,self.weight_z1,self.weight_h1,self.weight_r2,self.weight_z2,self.weight_h2] # store only the weight matrices in a list
         else:
             self.param=[]
+        Module.param.extend(self.param)
         return
     
     

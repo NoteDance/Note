@@ -1,9 +1,10 @@
 import tensorflow as tf # import the TensorFlow library
 import Note.nn.activation as a # import the activation module from Note.nn package
 from Note.nn.initializer import initializer # import the initializer function from Note.nn package
+from Note.nn.Module import Module
 
 
-class group_conv2d: # define a class for group convolutional layer
+class group_conv2d(Module): # define a class for group convolutional layer
     def __init__(self,filters,kernel_size,num_groups,input_size=None,strides=[1,1],padding='VALID',weight_initializer='Xavier',bias_initializer='zeros',activation=None,data_format='NHWC',dilations=None,use_bias=True,dtype='float32'): # define the constructor method
         self.kernel_size=kernel_size
         self.num_groups=num_groups # set the number of groups
@@ -30,6 +31,7 @@ class group_conv2d: # define a class for group convolutional layer
                 self.param=self.weight+self.bias # store the parameters in a list by concatenating the weight and bias lists
             else: # if use bias is False
                 self.param=self.weight # store only the weight list as the parameters
+            Module.param.extend(self.param)
     
     
     def build(self):
@@ -42,6 +44,7 @@ class group_conv2d: # define a class for group convolutional layer
             self.param=self.weight+self.bias # store the parameters in a list by concatenating the weight and bias lists
         else: # if use bias is False
             self.param=self.weight # store only the weight list as the parameters
+        Module.param.extend(self.param)
         return
     
     

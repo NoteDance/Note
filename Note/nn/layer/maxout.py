@@ -1,8 +1,9 @@
 import tensorflow as tf
 import Note.nn.initializer as i
+from Note.nn.Module import Module
 
 
-class maxout:
+class maxout(Module):
     def __init__(self,output_size,num_units,input_size=None,weight_initializer='Xavier',bias_initializer='zeros',use_bias=True,dtype='float32'):
         # input_size: the dimension size of the input features
         # output_size: the dimension size of the output features
@@ -26,6 +27,7 @@ class maxout:
                 self.param=[self.weight,self.bias]
             else:
                 self.param=[self.weight]
+            Module.param.extend(self.param)
     
     
     def build(self):
@@ -36,6 +38,7 @@ class maxout:
             self.param=[self.weight,self.bias]
         else:
             self.param=[self.weight]
+        Module.param.extend(self.param)
         return
     
     

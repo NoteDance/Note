@@ -1,9 +1,10 @@
 import tensorflow as tf
 from Note.nn.layer.dense import dense
 from typing import Optional
+from Note.nn.Module import Module
 
 
-class multihead_attention:
+class multihead_attention(Module):
     def __init__(self, n_state: int, n_head: int, kv_cache=None, weight_initializer='Xavier', bias_initializer='zeros', dtype='float32'):
         self.n_head = n_head
         self.kv_cache=kv_cache
@@ -12,6 +13,7 @@ class multihead_attention:
         self.value = dense(n_state,n_state,weight_initializer=weight_initializer,bias_initializer=bias_initializer,dtype=dtype)
         self.out = dense(n_state,n_state,weight_initializer=weight_initializer,bias_initializer=bias_initializer,dtype=dtype)
         self.param = [self.query.param,self.key.param,self.value.param,self.out.param]
+        Module.param.extend(self.param)
     
     
     def qkv_attention(

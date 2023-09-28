@@ -1,6 +1,7 @@
 import tensorflow as tf
 from Note.nn.layer.dense import dense
 import math
+from Note.nn.Module import Module
 
 
 def default(val, default_val):
@@ -14,7 +15,7 @@ def init_(tensor):
     return tensor
 
 
-class Linformer_self_attention:
+class Linformer_self_attention(Module):
     def __init__(self, dim, seq_len, k = 256, heads = 8, dim_head = None, one_kv_head = False, share_kv = False, dropout = 0., dtype='float32'):
         assert (dim % heads) == 0, 'dimension must be divisible by the number of heads'
 
@@ -48,6 +49,7 @@ class Linformer_self_attention:
         self.to_out = dense(dim, dim_head * heads, dtype=dtype)
         self.param.append(self.to_out.param)
         self.dropout_rate=dropout
+        Module.param.extend(self.param)
 
     def output(self, x, context = None, train_flag=True, **kwargs):
         b, n, d, d_h, h, k = *x.shape, self.dim_head, self.heads, self.k

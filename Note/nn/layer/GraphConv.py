@@ -1,9 +1,10 @@
 import tensorflow as tf
 import Note.nn.initializer as i
 from Note.nn.activation import activation_dict
+from Note.nn.Module import Module
 
 
-class GraphConv:
+class GraphConv(Module):
     def __init__(self,in_features,out_features,norm='both',activation=None,weight_initializer='Xavier',bias_initializer='zeros',dtype='float32',use_bias=True):
         # initialize the graph convolution layer with some parameters 
         # in_features: the size of the input features
@@ -22,6 +23,7 @@ class GraphConv:
         if use_bias:
             self.bias=i.initializer([out_features],bias_initializer,dtype) # initialize the bias vector with zeros and the given data type
             self.param.append(self.bias) # add the bias vector to the param list
+        Module.param.extend(self.param)
     
     
     def output(self,data,adj):
