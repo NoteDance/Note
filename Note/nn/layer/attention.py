@@ -3,7 +3,7 @@ from Note.nn.initializer import initializer
 from Note.nn.Module import Module
 
 
-class attention: # define a class for attention mechanism
+class attention(Module): # define a class for attention mechanism
     def __init__(self, use_scale=False, score_mode="dot", dtype='float32'):
         self.use_scale = use_scale
         self.score_mode = score_mode
