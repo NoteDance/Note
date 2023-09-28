@@ -1,5 +1,6 @@
 import tensorflow as tf
 from Note.nn.initializer import initializer
+from Note.nn.Module import Module
 
 
 class capsule:
@@ -15,6 +16,7 @@ class capsule:
         self.output_size=dim_capsules
         if trainable==True:
             self.param=[self.weight] # a list to store the weight matrix
+            Module.param.extend(self.param)
     
     
     def squash(self,data):
