@@ -11,6 +11,7 @@ from typing import List
 from typing import Dict
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
+from Note.nn.Module import Module
 
 
 def fixed_padding(inputs, kernel_size):
@@ -34,7 +35,6 @@ class Conv2DFixedPadding:
         self.kernel_size=kernel_size
         self.strides=strides
         self.output_size=filters
-        self.param=[self.conv2d.param]
     
     
     def output(self,data):
@@ -121,7 +121,6 @@ class SE:
                             weight_initializer=['VarianceScaling',2.0,'fan_out','truncated_normal'],padding="SAME",
                             use_bias=True,activation="sigmoid",dtype=dtype)
         self.output_size=self.conv2d2.output_size
-        self.param=[self.conv2d1.param,self.conv2d2.param]
     
     
     def output(self,data):
@@ -358,7 +357,7 @@ class ResNetRS:
         self.dense=dense(self.classes,self.layers.output_size,activation='softmax',dtype=dtype)
         self.bc=tf.Variable(0,dtype=dtype)
         self.dtype=dtype
-        self.param=[self.layers.param,self.dense.param]
+        self.param=Module.param
 
 
     def fp(self,data,p=None):
