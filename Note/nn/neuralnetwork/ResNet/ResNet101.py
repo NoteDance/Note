@@ -9,6 +9,7 @@ from Note.nn.Layers import Layers
 from Note.nn.activation import activation_dict
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
+from Note.nn.Module import Module
 
 
 class block1:
@@ -30,7 +31,6 @@ class block1:
         self.layers2.add(batch_normalization(epsilon=1.001e-5,keepdims=True,dtype=dtype))
         self.train_flag=True
         self.output_size=self.layers2.output_size
-        self.param=[self.layers1.param,self.layers2.param]
     
     
     def output(self,data,train_flag=True):
@@ -70,7 +70,6 @@ class ResNet101:
         self.use_bias=use_bias
         self.loss_object=tf.keras.losses.CategoricalCrossentropy()
         self.optimizer=Adam()
-        self.param=[]
         self.km=0
     
     
@@ -88,7 +87,7 @@ class ResNet101:
             self.layers.add(batch_normalization(self.layers.output_size,epsilon=1.001e-5,keepdims=True,dtype=dtype))
             self.layers.add(activation_dict['relu'])
         self.dense=dense(self.classes,self.layers.output_size,activation='softmax',dtype=dtype)
-        self.param=[self.layers.param,self.dense.param]
+        self.param=Module.param
         return
     
     
