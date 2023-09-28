@@ -3,7 +3,7 @@ import Note.nn.initializer as i_
 from Note.nn.Module import Module
 
 
-class axial_positional_encoding:
+class axial_positional_encoding(Module):
   """A class for generating axial positional encoding for Reformer models."""
 
   def __init__(self, d_model, axial_shape, initializer='Xavier', trainable=True, dtype='float32'):
