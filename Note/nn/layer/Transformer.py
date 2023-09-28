@@ -1,9 +1,10 @@
 import tensorflow as tf
 import Note.nn.initializer as i
 from Note.nn.layer.layer_normalization import layer_normalization
+from Note.nn.Module import Module
 
 
-class Transformer:
+class Transformer(Module):
     def __init__(self,output_size,num_heads,input_size=None,weight_initializer='Xavier',bias_initializer='zeros',use_bias=True,dtype='float32'):
         self.num_heads=num_heads # number of attention heads
         self.input_size=input_size
@@ -35,12 +36,11 @@ class Transformer:
                 self.param=[self.weight_q,self.weight_k,self.weight_v,self.weight_o,
                                   self.weight_ffn_1,self.weight_ffn_2,
                                   self.bias_q,self.bias_k,self.bias_v,self.bias_o,
-                                  self.bias_ffn_1,self.bias_ffn_2,self.layer_normalization1.param,
-                                  self.layer_normalization2.param,self.layer_normalization3.param]
+                                  self.bias_ffn_1,self.bias_ffn_2]
             else:
                 self.param=[self.weight_q,self.weight_k,self.weight_v,self.weight_o,
-                            self.weight_ffn_1,self.weight_ffn_2,self.layer_normalization1.param,
-                            self.layer_normalization2.param,self.layer_normalization3.param]
+                            self.weight_ffn_1,self.weight_ffn_2]
+            Module.param.extend(self.param)
     
     
     def build(self):
@@ -64,12 +64,11 @@ class Transformer:
             self.param=[self.weight_q,self.weight_k,self.weight_v,self.weight_o,
                               self.weight_ffn_1,self.weight_ffn_2,
                               self.bias_q,self.bias_k,self.bias_v,self.bias_o,
-                              self.bias_ffn_1,self.bias_ffn_2,self.layer_normalization1.param,
-                              self.layer_normalization2.param,self.layer_normalization3.param,]
+                              self.bias_ffn_1,self.bias_ffn_2]
         else:
             self.param=[self.weight_q,self.weight_k,self.weight_v,self.weight_o,
-                        self.weight_ffn_1,self.weight_ffn_2,self.layer_normalization1.param,
-                        self.layer_normalization2.param,self.layer_normalization3.param]
+                        self.weight_ffn_1,self.weight_ffn_2]
+        Module.param.extend(self.param)
         return
     
     
