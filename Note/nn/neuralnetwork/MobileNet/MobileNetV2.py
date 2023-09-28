@@ -7,6 +7,7 @@ from Note.nn.Layers import Layers
 from Note.nn.activation import activation_dict
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
+from Note.nn.Module import Module
 
 
 def _make_divisible(v, divisor, min_value=None):
@@ -48,7 +49,7 @@ class _inverted_res_block:
         self.conv2d1=conv2d(expansion * in_channels,[1,1],in_channels,padding="SAME",use_bias=False,dtype=dtype)
         self.batch_normalization1=batch_normalization(self.conv2d1.output_size,momentum=0.999,dtype=dtype,keepdims=True)
         self.zeropadding2d=tf.pad
-        self.depthwiseconv2d=depthwise_conv2d(1,[3,3],self.conv2d1.output_size,strides=[1,stride,stride,1],use_bias=False,padding="SAME" if stride == 1 else "VALID",dtype=dtype)
+        self.depthwiseconv2d=depthwise_conv2d([3,3],1,self.conv2d1.output_size,strides=[1,stride,stride,1],use_bias=False,padding="SAME" if stride == 1 else "VALID",dtype=dtype)
         self.batch_normalization2=batch_normalization(self.depthwiseconv2d.output_size,momentum=0.999,dtype=dtype,keepdims=True)
         pointwise_conv_filters = int(filters * alpha)
         # Ensure the number of filters on the last 1x1 convolution is divisible by
@@ -61,8 +62,6 @@ class _inverted_res_block:
         self.block_id=block_id
         self.train_flag=True
         self.output_size=self.conv2d2.output_size
-        self.param=[self.conv2d1.param,self.batch_normalization1.param,self.depthwiseconv2d.param,self.batch_normalization2.param,
-                    self.conv2d2.param,self.batch_normalization3.param]
     
     
     def output(self,data,train_flag=True):
@@ -94,7 +93,6 @@ class MobileNetV2:
         self.first_block_filters = _make_divisible(32 * alpha, 8)
         self.loss_object=tf.keras.losses.CategoricalCrossentropy()
         self.optimizer=Adam()
-        self.param=[]
         self.km=0
         
         
@@ -135,7 +133,7 @@ class MobileNetV2:
         
         self.dense=dense(self.classes,self.layers.output_size,activation='softmax',dtype=dtype)
         self.bc=tf.Variable(0,dtype=dtype)
-        self.param=[self.layers.param,self.dense.param]
+        self.param=Module.param
         return
     
     
