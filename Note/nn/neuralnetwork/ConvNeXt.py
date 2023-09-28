@@ -7,6 +7,7 @@ from Note.nn.layer.layer_normalization import layer_normalization
 from Note.nn.Layers import Layers
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
+from Note.nn.Module import Module
 
 
 class ConvNeXtBlock:
@@ -19,7 +20,6 @@ class ConvNeXtBlock:
         self.drop_path_rate=drop_path_rate
         self.layer_scale_init_value=layer_scale_init_value
         self.output_size=projection_dim
-        self.param=[self.conv2d.param,self.layer_normalization.param,self.dense1.param,self.dense2.param,self.gamma]
         
     
     def LayerScale(self,x):
@@ -62,7 +62,6 @@ class ConvNeXt:
         self.pooling=pooling
         self.loss_object=tf.keras.losses.CategoricalCrossentropy()
         self.optimizer=Adam()
-        self.param=[]
         self.km=0
     
     
@@ -72,7 +71,6 @@ class ConvNeXt:
         layers=Layers()
         layers.add(conv2d(self.projection_dims[0],[4,4],3,dtype=dtype))
         layers.add(layer_normalization(dtype=dtype))
-        self.param.append(layers.param)
         
         # Downsampling blocks.
         self.downsample_layers = []
@@ -84,7 +82,6 @@ class ConvNeXt:
             layers.add(layer_normalization(self.projection_dims[i],dtype=dtype))
             layers.add(conv2d(self.projection_dims[i+1],[2,2],self.projection_dims[i],dtype=dtype))
             self.downsample_layers.append(layers)
-            self.param.append(layers.param)
         
         # Stochastic depth schedule.
         # This is referred from the original ConvNeXt codebase:
@@ -111,12 +108,12 @@ class ConvNeXt:
                     )
                 self.blocks[i].append(block)
                 input_channels=block.output_size
-                self.param.append(block.param)
             cur += self.depths[i]
         self.layer_normalization=layer_normalization(self.blocks[-1][-1].output_size,dtype=dtype)
         self.fc_weight = initializer([self.blocks[-1][-1].output_size, self.classes], 'Xavier', dtype)
         self.fc_bias = initializer([self.classes], 'Xavier', dtype)
-        self.param.extend([self.layer_normalization.param,self.fc_weight,self.fc_bias])
+        self.param=Module.param
+        self.param.extend([self.fc_weight,self.fc_bias])
         return
     
     
