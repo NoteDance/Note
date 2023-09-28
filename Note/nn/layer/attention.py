@@ -1,5 +1,6 @@
 import tensorflow as tf
 from Note.nn.initializer import initializer
+from Note.nn.Module import Module
 
 
 class attention: # define a class for attention mechanism
@@ -13,6 +14,7 @@ class attention: # define a class for attention mechanism
         if score_mode == "concat":
             self.concat_score_weight = initializer((),'ones',dtype)
             self.param.append(self.concat_score_weight)
+        Module.param.extend(self.param)
     
     
     def output(self, query, value, key=None): # define the output method
