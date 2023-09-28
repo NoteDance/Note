@@ -11,6 +11,7 @@ from Note.nn.activation import activation_dict
 from Note.nn.initializer import initializer
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
+from Note.nn.Module import Module
 
 
 def DenseLayer(input_channels, growth_rate, dtype='float32'):
@@ -99,6 +100,8 @@ class DenseNet121:
         self.fc_weight = initializer([self.layers.output_size, self.num_classes], 'Xavier', self.dtype)
         self.fc_bias = initializer([self.num_classes], 'Xavier', self.dtype)
         
+        Module.param.extend([self.fc_weight,self.fc_bias])
+        self.param=Module.param
         return
     
     
