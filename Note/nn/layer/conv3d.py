@@ -4,7 +4,7 @@ import Note.nn.initializer as i # import the initializer module from Note.nn pac
 from Note.nn.Module import Module
 
 
-class conv3d: # define a class for 3D convolutional layer
+class conv3d(Module): # define a class for 3D convolutional layer
     def __init__(self,filters,kernel_size,input_size=None,strides=[1,1,1],padding='VALID',weight_initializer='Xavier',bias_initializer='zeros',activation=None,data_format='NDHWC',dilations=None,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
         self.kernel_size=kernel_size
         self.input_size=input_size
