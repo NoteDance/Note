@@ -9,6 +9,7 @@ from Note.nn.Layers import Layers
 from Note.nn.activation import activation_dict
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
+from Note.nn.Module import Module
 
 
 def PreStem(x,dtype='float32'):
@@ -247,7 +248,6 @@ class RegNet:
         self.classes=classes
         self.loss_object=tf.keras.losses.CategoricalCrossentropy()
         self.optimizer=Adam()
-        self.param=[]
         self.km=0
         
     
@@ -270,7 +270,7 @@ class RegNet:
             ))
             in_channels = out_channels
         self.dense=dense(self.classes,self.layers.output_size,activation='softmax',dtype=dtype)
-        self.param=[self.layers.param,self.dense.param]
+        self.param=Module.param
     
     
     def fp(self,data,p=None):
