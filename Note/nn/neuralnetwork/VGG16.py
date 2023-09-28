@@ -6,6 +6,7 @@ from Note.nn.layer.flatten import flatten
 from Note.nn.Layers import Layers
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
+from Note.nn.Module import Module
 
 
 class VGG16:
@@ -50,7 +51,7 @@ class VGG16:
         self.dense2=dense(4096,self.dense1.output_size,activation='relu',dtype=dtype)
         self.dense3=dense(self.classes,self.dense2.output_size,activation='softmax',dtype=dtype)
         
-        self.param=[self.layers.param,self.dense1.param,self.dense2.param,self.dense3.param]
+        self.param=Module.param
         return
     
     
