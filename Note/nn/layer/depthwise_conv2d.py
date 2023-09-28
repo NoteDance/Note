@@ -1,9 +1,10 @@
 import tensorflow as tf # import the TensorFlow library
 import Note.nn.activation as a # import the activation module from Note.nn package
 import Note.nn.initializer as i # import the initializer module from Note.nn package
+from Note.nn.Module import Module
 
 
-class depthwise_conv2d: # define a class for depthwise convolutional layer
+class depthwise_conv2d(Module): # define a class for depthwise convolutional layer
     def __init__(self,kernel_size,depth_multiplier,input_size=None,strides=[1,1,1,1],padding='VALID',weight_initializer='Xavier',bias_initializer='zeros',activation=None,data_format='NHWC',dilations=None,use_bias=True,trainable=True,dtype='float32',): # define the constructor method
         self.depth_multiplier=depth_multiplier
         self.kernel_size=kernel_size
@@ -29,6 +30,7 @@ class depthwise_conv2d: # define a class for depthwise convolutional layer
                 self.param=[self.weight] # store only the weight in a list
             if trainable==False:
                 self.param=[]
+            Module.param.extend(self.param)
     
     
     def build(self):
@@ -41,6 +43,7 @@ class depthwise_conv2d: # define a class for depthwise convolutional layer
             self.param=[self.weight] # store only the weight in a list
         if self.trainable==False:
             self.param=[]
+        Module.param.extend(self.param)
         return
     
     
