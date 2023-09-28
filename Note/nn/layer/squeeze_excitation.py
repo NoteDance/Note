@@ -1,9 +1,10 @@
 import tensorflow as tf
 import Note.nn.initializer as i
 from Note.nn.activation import activation_dict
+from Note.nn.Module import Module
 
 
-class squeeze_excitation:
+class squeeze_excitation(Module):
     def __init__(self,output_size,ratio,input_size=None,weight_initializer='Xavier',bias_initializer='zeros',activation='relu',use_bias=True,dtype='float32'):
         # input_size: the dimension size of the input features
         # output_size: the dimension size of the output features
@@ -31,6 +32,7 @@ class squeeze_excitation:
                 self.param=[self.weight_S,self.bias_S,self.weight_E,self.bias_E]
             else:
                 self.param=[self.weight_S,self.weight_E]
+            Module.param.extend(self.param)
     
     
     def build(self):
@@ -43,6 +45,7 @@ class squeeze_excitation:
             self.param=[self.weight_S,self.bias_S,self.weight_E,self.bias_E]
         else:
             self.param=[self.weight_S,self.weight_E]
+        Module.param.extend(self.param)
         return
         
     
