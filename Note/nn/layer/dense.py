@@ -1,8 +1,9 @@
 import Note.nn.activation as a # import the activation module from Note.nn package
 import Note.nn.initializer as i # import the initializer module from Note.nn package
+from Note.nn.Module import Module
 
 
-class dense: # define a class for dense (fully connected) layer
+class dense(Module): # define a class for dense (fully connected) layer
     def __init__(self,output_size,input_size=None,weight_initializer='Xavier',bias_initializer='zeros',activation=None,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
         self.input_size=input_size
         self.weight_initializer=weight_initializer
@@ -24,6 +25,7 @@ class dense: # define a class for dense (fully connected) layer
                 self.param=[self.weight] # store only the weight in a list
             if trainable==False:
                 self.param=[]
+            Module.param.extend(self.param)
     
     
     def build(self):
@@ -38,6 +40,7 @@ class dense: # define a class for dense (fully connected) layer
             self.param=[self.weight] # store only the weight in a list
         if self.trainable==False:
             self.param=[]
+        Module.param.extend(self.param)
         return
     
     
