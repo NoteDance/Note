@@ -47,16 +47,16 @@ def correct_pad(inputs, kernel_size):
 class _inverted_res_block:
     def __init__(self, in_channels=None, expansion=None, stride=None, alpha=None, filters=None, block_id=None, dtype='float32'):
         self.conv2d1=conv2d(expansion * in_channels,[1,1],in_channels,padding="SAME",use_bias=False,dtype=dtype)
-        self.batch_normalization1=batch_normalization(self.conv2d1.output_size,momentum=0.999,dtype=dtype,keepdims=True)
+        self.batch_normalization1=batch_normalization(self.conv2d1.output_size,momentum=0.999,dtype=dtype)
         self.zeropadding2d=tf.pad
         self.depthwiseconv2d=depthwise_conv2d([3,3],1,self.conv2d1.output_size,strides=[1,stride,stride,1],use_bias=False,padding="SAME" if stride == 1 else "VALID",dtype=dtype)
-        self.batch_normalization2=batch_normalization(self.depthwiseconv2d.output_size,momentum=0.999,dtype=dtype,keepdims=True)
+        self.batch_normalization2=batch_normalization(self.depthwiseconv2d.output_size,momentum=0.999,dtype=dtype)
         pointwise_conv_filters = int(filters * alpha)
         # Ensure the number of filters on the last 1x1 convolution is divisible by
         # 8.
         self.pointwise_filters = _make_divisible(pointwise_conv_filters, 8)
         self.conv2d2=conv2d(self.pointwise_filters,[1,1],self.depthwiseconv2d.output_size,padding="SAME",use_bias=False,dtype=dtype)
-        self.batch_normalization3=batch_normalization(self.conv2d2.output_size,momentum=0.999,dtype=dtype,keepdims=True)
+        self.batch_normalization3=batch_normalization(self.conv2d2.output_size,momentum=0.999,dtype=dtype)
         self.in_channels=in_channels
         self.stride=stride
         self.block_id=block_id
@@ -100,7 +100,7 @@ class MobileNetV2:
         self.layers=Layers()
         
         self.layers.add(conv2d(self.first_block_filters,[3,3],3,strides=[2,2],padding='SAME',use_bias=False,dtype=dtype))
-        self.layers.add(batch_normalization(momentum=0.999,keepdims=True))
+        self.layers.add(batch_normalization(momentum=0.999))
         
         self.layers.add(_inverted_res_block(self.layers.output_size, filters=16, alpha=self.alpha, stride=1, expansion=1, block_id=0, dtype=dtype))
         self.layers.add(_inverted_res_block(self.layers.output_size, filters=24, alpha=self.alpha, stride=2, expansion=6, block_id=1, dtype=dtype))
@@ -129,7 +129,7 @@ class MobileNetV2:
             last_block_filters = 1280
             
         self.layers.add(conv2d(last_block_filters,[1,1],use_bias=False,dtype=dtype))
-        self.layers.add(batch_normalization(momentum=0.999,keepdims=True))
+        self.layers.add(batch_normalization(momentum=0.999))
         
         self.dense=dense(self.classes,self.layers.output_size,activation='softmax',dtype=dtype)
         self.bc=tf.Variable(0,dtype=dtype)
