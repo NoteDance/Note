@@ -60,7 +60,6 @@ def STEM(
     layers.add(batch_normalization(
         momentum=bn_momentum,
         epsilon=bn_epsilon,
-        keepdims=True,
         dtype=dtype
     ))
     layers.add(activation_dict[activation])
@@ -72,7 +71,6 @@ def STEM(
     layers.add(batch_normalization(
         momentum=bn_momentum,
         epsilon=bn_epsilon,
-        keepdims=True,
         dtype=dtype
     ))
     layers.add(activation_dict[activation])
@@ -84,7 +82,6 @@ def STEM(
     layers.add(batch_normalization(
         momentum=bn_momentum,
         epsilon=bn_epsilon,
-        keepdims=True,
         dtype=dtype
     ))
     layers.add(activation_dict[activation])
@@ -96,7 +93,6 @@ def STEM(
     layers.add(batch_normalization(
         momentum=bn_momentum,
         epsilon=bn_epsilon,
-        keepdims=True,
         dtype=dtype
     ))
     layers.add(activation_dict[activation])
@@ -178,7 +174,6 @@ class BottleneckBlock:
             self.layers1.add(batch_normalization(
                 momentum=bn_momentum,
                 epsilon=bn_epsilon,
-                keepdims=True,
                 dtype=dtype
             ))
         
@@ -192,7 +187,6 @@ class BottleneckBlock:
         self.layers2.add(batch_normalization(
             momentum=bn_momentum,
             epsilon=bn_epsilon,
-            keepdims=True,
             dtype=dtype
         ))
         self.layers2.add(activation_dict[activation])
@@ -208,7 +202,6 @@ class BottleneckBlock:
         self.layers2.add(batch_normalization(
             momentum=bn_momentum,
             epsilon=bn_epsilon,
-            keepdims=True,
             dtype=dtype
         ))
         self.layers2.add(activation_dict[activation])
@@ -220,7 +213,6 @@ class BottleneckBlock:
         self.layers2.add(batch_normalization(
             momentum=bn_momentum,
             epsilon=bn_epsilon,
-            keepdims=True,
             dtype=dtype
         ))
     
