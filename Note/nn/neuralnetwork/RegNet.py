@@ -21,7 +21,7 @@ def PreStem(x,dtype='float32'):
 def Stem(in_channels,dtype='float32'):
     layers=Layers()
     layers.add(conv2d(32,[3,3],in_channels,strides=[2],use_bias=False,padding='SAME',weight_initializer='He',dtype=dtype))
-    layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,keepdims=True,dtype=dtype))
+    layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,dtype=dtype))
     layers.add(activation_dict['relu'])
     return layers
 
@@ -54,17 +54,17 @@ def XBlock(in_channels, filters_in, filters_out, group_width, stride=1, dtype='f
     # Build block
     # conv_1x1_1
     layers.add(conv2d(filters_out,[1,1],use_bias=False,weight_initializer='He',dtype=dtype))
-    layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,keepdims=True,dtype=dtype))
+    layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,dtype=dtype))
     layers.add(activation_dict['relu'])
 
     # conv_3x3
     layers.add(conv2d(filters_out,[3,3],layers.output_size//groups,use_bias=False,strides=[stride],padding='SAME',weight_initializer='He',dtype=dtype))
-    layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,keepdims=True,dtype=dtype))
+    layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,dtype=dtype))
     layers.add(activation_dict['relu'])
 
     # conv_1x1_2
     layers.add(conv2d(filters_out,[1,1],use_bias=False,weight_initializer='He',dtype=dtype))
-    layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,keepdims=True,dtype=dtype),save_data=True)
+    layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,dtype=dtype),save_data=True)
     
     layers.add(add(),use_data=True)
     
@@ -99,12 +99,12 @@ def YBlock(
     # Build block
     # conv_1x1_1
     layers.add(conv2d(filters_out,[1,1],use_bias=False,weight_initializer='He',dtype=dtype))
-    layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,keepdims=True,dtype=dtype))
+    layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,dtype=dtype))
     layers.add(activation_dict['relu'])
 
     # conv_3x3
     layers.add(conv2d(filters_out,[3,3],layers.output_size//groups,use_bias=False,strides=[stride],padding='SAME',weight_initializer='He',dtype=dtype))
-    layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,keepdims=True,dtype=dtype))
+    layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,dtype=dtype))
     layers.add(activation_dict['relu'])
 
     # Squeeze-Excitation block
@@ -112,7 +112,7 @@ def YBlock(
 
     # conv_1x1_2
     layers.add(conv2d(filters_out,[1,1],use_bias=False,weight_initializer='He',dtype=dtype))
-    layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,keepdims=True,dtype=dtype),save_data=True)
+    layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,dtype=dtype),save_data=True)
     
     layers.add(add(),use_data=True)
 
@@ -149,12 +149,12 @@ def ZBlock(
     # Build block
     # conv_1x1_1
     layers.add(conv2d(inv_btlneck_filters,[1,1],use_bias=False,weight_initializer='He',dtype=dtype))
-    layers.add(batch_normalization(layers.output_size,momentum=0.9,epsilon=1e-5,keepdims=True,dtype=dtype))
+    layers.add(batch_normalization(layers.output_size,momentum=0.9,epsilon=1e-5,dtype=dtype))
     layers.add(activation_dict['silu'])
 
     # conv_3x3
     layers.add(conv2d(inv_btlneck_filters,[3,3],layers.output_size//groups,use_bias=False,strides=[stride],padding='SAME',weight_initializer='He',dtype=dtype))
-    layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,keepdims=True,dtype=dtype))
+    layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,dtype=dtype))
     layers.add(activation_dict['silu'])
 
     # Squeeze-Excitation block
@@ -162,7 +162,7 @@ def ZBlock(
 
     # conv_1x1_2
     layers.add(conv2d(filters_out,[1,1],layers.output_size,use_bias=False,weight_initializer='He',dtype=dtype))
-    layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,keepdims=True,dtype=dtype),save_data=True)
+    layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,dtype=dtype),save_data=True)
     
     if stride == 1:
         layers.add(tf.math.add,use_data=True)
@@ -173,7 +173,7 @@ def Stage(in_channels, block_type, depth, group_width, filters_in, filters_out, 
     layers=Layers()
     if block_type == "X":
         layers.add(conv2d(filters_out,[1,1],in_channels,strides=[2],use_bias=False,weight_initializer='He',dtype=dtype))
-        layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,keepdims=True,dtype=dtype))
+        layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,dtype=dtype))
         layers.add(XBlock(
             layers.output_size,
             filters_in,
@@ -191,7 +191,7 @@ def Stage(in_channels, block_type, depth, group_width, filters_in, filters_out, 
             ))
     elif block_type == "Y":
         layers.add(conv2d(filters_out,[1,1],in_channels,strides=[2],use_bias=False,weight_initializer='He',dtype=dtype))
-        layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,keepdims=True,dtype=dtype))
+        layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,dtype=dtype))
         layers.add(YBlock(
             layers.output_size,
             filters_in,
