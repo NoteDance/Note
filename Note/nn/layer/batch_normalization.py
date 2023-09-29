@@ -4,9 +4,9 @@ from Note.nn.Module import Module
 
 
 class batch_normalization(Module):
-    def __init__(self, input_size=None, axes=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, beta_initializer='zeros', gamma_initializer='ones', moving_mean_initializer='zeros', moving_variance_initializer='ones', keepdims=False, trainable=True, dtype='float32'):
+    def __init__(self, input_size=None, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, beta_initializer='zeros', gamma_initializer='ones', moving_mean_initializer='zeros', moving_variance_initializer='ones', keepdims=False, trainable=True, dtype='float32'):
         self.input_size=input_size
-        self.axes=axes
+        self.axis=axis
         self.momentum=momentum
         self.epsilon=epsilon
         self.center=center
@@ -61,7 +61,7 @@ class batch_normalization(Module):
     def output(self, data, train_flag=True):
         self.train_flag=train_flag
         if self.train_flag:
-            mean, var = tf.nn.moments(data, self.axes, keepdims=self.keepdims)
+            mean, var = tf.nn.moments(data, self.axis, keepdims=self.keepdims)
             self.moving_mean=self.moving_mean * self.momentum + mean * (1 - self.momentum)
             self.moving_var=self.moving_var * self.momentum + var * (1 - self.momentum)
             output = tf.nn.batch_normalization(data,
