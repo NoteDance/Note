@@ -4,9 +4,9 @@ from Note.nn.Module import Module
 
 
 class layer_normalization(Module):
-    def __init__(self, input_size=None, axes=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, beta_initializer='zeros', gamma_initializer='ones', dtype='float32'):
+    def __init__(self, input_size=None, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, beta_initializer='zeros', gamma_initializer='ones', dtype='float32'):
         self.input_size=input_size
-        self.axes=axes
+        self.axis=axis
         self.momentum=momentum
         self.epsilon=epsilon
         self.center=center
@@ -48,7 +48,7 @@ class layer_normalization(Module):
     
     
     def output(self, data):
-        mean, variance = tf.nn.moments(data, self.axes, keepdims=True)
+        mean, variance = tf.nn.moments(data, self.axis, keepdims=True)
         output = tf.nn.batch_normalization(
             data,
             mean,
