@@ -39,10 +39,7 @@ class kernel:
         self.reward_pool=manager.dict({})
         self.done_pool=manager.dict({})
         self.reward=Array('f',self.reward)
-        if type(self.nn.param[0])!=list:
-            self.loss=np.zeros(self.process,dtype=self.nn.param[0].dtype.name)
-        else:
-            self.loss=np.zeros(self.process,dtype=self.nn.param[0][0].dtype.name)
+        self.loss=np.zeros(self.process,dtype=np.float32)
         self.loss=Array('f',self.loss)
         self.sc=Array('i',self.sc)
         self.process_counter=Value('i',0)
