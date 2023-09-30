@@ -27,6 +27,8 @@ class Linformer_self_attention(Module):
         dim_head = default(dim_head, dim // heads)
         self.dim_head = dim_head
         
+        self.dtype=dtype
+        
         self.param=[]
 
         self.to_q = dense(dim_head * heads, dim, use_bias = False, dtype=dtype)
@@ -52,6 +54,9 @@ class Linformer_self_attention(Module):
         Module.param.extend(self.param)
 
     def output(self, x, context = None, train_flag=True, **kwargs):
+        if x.dtype!=self.dtype:
+            x=tf.cast(x,self.dtype)
+            
         b, n, d, d_h, h, k = *x.shape, self.dim_head, self.heads, self.k
         
         kv_len = n if context is None else context.shape[1]
