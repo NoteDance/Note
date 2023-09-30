@@ -48,6 +48,8 @@ class layer_normalization(Module):
     
     
     def output(self, data):
+        if data.dtype!=self.dtype:
+            data=tf.cast(data,self.dtype)
         mean, variance = tf.nn.moments(data, self.axis, keepdims=True)
         output = tf.nn.batch_normalization(
             data,
