@@ -23,6 +23,8 @@ class axial_positional_encoding(Module):
     
     self.output_size = d_model
     
+    self.dtype=dtype
+    
     # Create a list to store the parameters
     self.param = []
     
@@ -43,6 +45,9 @@ class axial_positional_encoding(Module):
     Returns:
       tf.Tensor of shape [batch_size, seq_length, d_model], the output tensor with axial positional encoding added.
     """
+    if data.dtype!=self.dtype:
+        data=tf.cast(data,self.dtype)
+        
     # Reshape the input tensor to match the axial shape
     data = tf.reshape(data, (-1,) + self.axial_shape + (self.d_model,))
     
