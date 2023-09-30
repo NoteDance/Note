@@ -45,8 +45,8 @@ class self_attention_conv2d(Module):
     
     def output(self,data):
         # data: the input tensor, shape [batch_size, height, width, channels]
-        # strides: the strides of the convolution
-        # padding: the padding mode, either 'VALID' or 'SAME'
+        if data.dtype!=self.dtype:
+            data=tf.cast(data,self.dtype)
         # compute the base convolution output
         conv_output=tf.nn.conv2d(data,self.kernel,strides=self.strides,padding=self.padding)
         if self.use_bias:
