@@ -37,7 +37,7 @@ class kernel:
         self.reward_pool=manager.dict({})
         self.done_pool=manager.dict({})
         self.reward=Array('f',self.reward)
-        self.loss=np.zeros(self.process)
+        self.loss=np.zeros(self.process,dtype=np.float32)
         self.loss=Array('f',self.loss)
         self.sc=Array('i',self.sc)
         self.process_counter=Value('i',0)
