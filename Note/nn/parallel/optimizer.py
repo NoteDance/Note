@@ -410,6 +410,8 @@ class LookAhead:
 
     # Define an opt method, used to apply gradients
     def opt(self,gradient,parameter,t):
+        if t.dtype!=gradient.dtype:
+            t=tf.cast(t,gradient.dtype)
         # Call the opt method of the inner optimizer, update the fast weights
         self.optimizer.opt(gradient,parameter,t)
         # Get the current iteration number
