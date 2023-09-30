@@ -47,12 +47,8 @@ class kernel:
     
     
     def data(self,train_data=None,train_labels=None,test_data=None,test_labels=None,train_dataset=None,test_dataset=None):
-        if train_data is not None and type(self.nn.param[0])!=list:
-            self.train_data=train_data.astype(self.nn.param[0].dtype.name)
-            self.train_labels=train_labels.astype(self.nn.param[0].dtype.name)
-        elif train_data is not None:
-            self.train_data=train_data.astype(self.nn.param[0][0].dtype.name)
-            self.train_labels=train_labels.astype(self.nn.param[0][0].dtype.name)
+        self.train_data=train_data
+        self.train_labels=train_labels
         self.train_dataset=train_dataset
         self.test_data=test_data
         self.test_labels=test_labels
@@ -501,12 +497,6 @@ class kernel:
     
     
     def test(self,test_data=None,test_labels=None,batch=None,test_dataset=None):
-        if test_data is not None and type(self.nn.param[0])!=list:
-            test_data=test_data.astype(self.nn.param[0].dtype.name)
-            test_labels=test_labels.astype(self.nn.param[0].dtype.name)
-        elif test_data is not None:
-            test_data=test_data.astype(self.nn.param[0][0].dtype.name)
-            test_labels=test_labels.astype(self.nn.param[0][0].dtype.name)
         if self.process_t!=None:
             if self.prefetch_batch_size_t==None:
                 parallel_test_=parallel_test(self.nn,test_data,test_labels,self.process_t,batch,test_dataset=test_dataset)
