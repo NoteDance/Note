@@ -51,6 +51,8 @@ class separable_conv1d(Module): # define a class for separable convolutional lay
     
     
     def output(self,data): # define the output method
+        if data.dtype!=self.dtype:
+            data=tf.cast(data,self.dtype)
         strides = (1,) + tuple(self.strides) * 2 + (1,)
         data = tf.expand_dims(data, 1) # add an extra dimension to input data to make it four-dimensional
         depthwise_kernel = tf.expand_dims(self.depthwise_kernel, 0)
