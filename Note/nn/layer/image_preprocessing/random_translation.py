@@ -1,11 +1,8 @@
 import tensorflow as tf
 from Note.nn.layer.image_preprocessing.transform import transform
-from Note.nn.layer.image_preprocessing.get_translation_matrix import get_translation_matrix
-
 
 H_AXIS = -3
 W_AXIS = -2
-
 
 class random_translation:
     def __init__(
@@ -107,3 +104,34 @@ class random_translation:
             return random_translated_inputs(data)
         else:
             return data
+
+def get_translation_matrix(translations):
+    """Returns projective transform(s) for the given translation(s).
+
+    Args:
+        translations: A matrix of 2-element lists representing `[dx, dy]`
+            to translate for each image (for a batch of images).
+
+    Returns:
+        A tensor of shape `(num_images, 8)` projective transforms
+            which can be given to `transform`.
+    """
+    num_translations = tf.shape(translations)[0]
+    # The translation matrix looks like:
+    #     [[1 0 -dx]
+    #      [0 1 -dy]
+    #      [0 0 1]]
+    # where the last entry is implicit.
+    # Translation matrices are always float32.
+    return tf.concat(
+        values=[
+            tf.ones((num_translations, 1), tf.float32),
+            tf.zeros((num_translations, 1), tf.float32),
+            -translations[:, 0, None],
+            tf.zeros((num_translations, 1), tf.float32),
+            tf.ones((num_translations, 1), tf.float32),
+            -translations[:, 1, None],
+            tf.zeros((num_translations, 2), tf.float32),
+        ],
+        axis=1,
+    )
