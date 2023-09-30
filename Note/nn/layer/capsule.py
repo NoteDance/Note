@@ -13,6 +13,7 @@ class capsule(Module):
         self.dim_capsules=dim_capsules # the dimension of each output capsule
         self.routings=routings # the number of routing iterations
         self.weight=initializer([self.input_dim_capsules,self.num_capsules*self.dim_capsules],weight_initializer,dtype) # the weight matrix for transforming input capsules to output capsules
+        self.dtype=dtype
         self.output_size=dim_capsules
         if trainable==True:
             self.param=[self.weight] # a list to store the weight matrix
@@ -28,6 +29,8 @@ class capsule(Module):
     
     def output(self,data):
         # define the output function to compute the output capsules from the input data
+        if data.dtype!=self.dtype:
+            data=tf.cast(data,self.dtype)
         # check the dimension of the input data
         if len(data.shape)==4: # four-dimensional data
             # reshape the data to [batch_size, height * width * channels, input_dim_capsules]
