@@ -49,6 +49,8 @@ class group_conv2d(Module): # define a class for group convolutional layer
     
     
     def output(self,data): # define the output method
+        if data.dtype!=self.dtype:
+            data=tf.cast(data,self.dtype)
         input_groups=tf.split(data,self.num_groups,axis=-1) # split the input data into groups along the last dimension (channel dimension)
         output_groups=[] # initialize an empty list for output groups
         for i in range(self.num_groups): # loop over the number of groups
