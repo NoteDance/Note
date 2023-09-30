@@ -44,6 +44,8 @@ class maxout(Module):
     
     def output(self,data):
         # data: a tensor that represents the input features, shape is [N, input_dim], where N is the number of samples
+        if data.dtype!=self.dtype:
+            data=tf.cast(data,self.dtype)
         # compute the linear transformation and add bias
         linear_output=tf.matmul(data,self.weight)
         linear_output=tf.nn.bias_add(linear_output,self.bias)
