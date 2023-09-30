@@ -24,6 +24,8 @@ class RNNCell(Module): # define a class for recurrent neural network (RNN) cell
     
     
     def output(self,data,state): # define the output method
+        if data.dtype!=self.dtype:
+            data=tf.cast(data,self.dtype)
         output=tf.matmul(data,self.weight_i)+tf.matmul(state,self.weight_s) # calculate the linear transformation of input data and previous state
         if self.use_bias==True: # if use bias is True
             output=output+self.bias # add the bias vector to the linear transformation
