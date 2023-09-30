@@ -59,6 +59,8 @@ class batch_normalization(Module):
     
     
     def output(self, data, train_flag=True):
+        if data.dtype!=self.dtype:
+            data=tf.cast(data,self.dtype)
         self.train_flag=train_flag
         if self.train_flag:
             mean, var = tf.nn.moments(data, self.axis, keepdims=self.keepdims)
