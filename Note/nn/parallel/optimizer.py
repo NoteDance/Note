@@ -140,6 +140,8 @@ class Adam:
             self.g=[tf.Variable(x) for x in gradient_flat]
             self.flag+=1
         for i in range(len(gradient_flat)):
+            if t.dtype!=gradient_flat[i].dtype:
+                t=tf.cast(t,gradient_flat[i].dtype)
             self.v[i].assign(self.beta1*self.v[i]+(1-self.beta1)*gradient_flat[i])
             self.s[i].assign(self.beta2*self.s[i]+(1-self.beta2)*gradient_flat[i]**2)
             self.v_[i].assign(self.v[i]/(1-self.beta1**(t+1)))
@@ -178,6 +180,8 @@ class Nadam:
             self.m=[tf.Variable(x) for x in gradient_flat]
             self.flag+=1
         for i in range(len(gradient_flat)):
+            if t.dtype!=gradient_flat[i].dtype:
+                t=tf.cast(t,gradient_flat[i].dtype)
             self.v[i].assign(self.beta1*self.v[i]+(1-self.beta1)*gradient_flat[i])
             self.s[i].assign(self.beta2*self.s[i]+(1-self.beta2)*gradient_flat[i]**2)
             self.v_[i].assign(self.v[i]/(1-self.beta1**(t+1)))
@@ -211,6 +215,8 @@ class AdaMax:
             self.g=[tf.Variable(x) for x in gradient_flat]
             self.flag+=1
         for i in range(len(gradient_flat)):
+            if t.dtype!=gradient_flat[i].dtype:
+                t=tf.cast(t,gradient_flat[i].dtype)
             self.v[i].assign(self.beta_1*self.v[i]+(1-self.beta_1)*gradient_flat[i])
             self.u[i].assign(tf.maximum(self.beta_2*self.u[i],tf.abs(gradient_flat[i])))
             self.g[i].assign(self.learning_rate/(1-self.beta_1**(t+1))*self.v[i]/(self.u[i]+self.epsilon))
@@ -246,6 +252,8 @@ class AdamW:
             self.g=[tf.Variable(x) for x in gradient_flat]
             self.flag+=1
         for i in range(len(gradient_flat)):
+            if t.dtype!=gradient_flat[i].dtype:
+                t=tf.cast(t,gradient_flat[i].dtype)
             gradient_flat[i]=gradient_flat[i]+self.weight_decay*parameter_flat[i]
             self.v[i].assign(self.beta1*self.v[i]+(1-self.beta1)*gradient_flat[i])
             self.s[i].assign(self.beta2*self.s[i]+(1-self.beta2)*gradient_flat[i]**2)
@@ -286,6 +294,8 @@ class RAdam:
             self.step_size=[tf.Variable(x) for x in gradient_flat]
             self.flag+=1
         for i in range(len(gradient_flat)):
+            if t.dtype!=gradient_flat[i].dtype:
+                t=tf.cast(t,gradient_flat[i].dtype)
             self.v[i].assign(self.beta1*self.v[i]+(1-self.beta1)*gradient_flat[i])
             self.s[i].assign(self.beta2*self.s[i]+(1-self.beta2)*gradient_flat[i]**2)
             self.v_[i].assign(self.v[i]/(1-self.beta1**t))
