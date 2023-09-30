@@ -24,6 +24,7 @@ class GAT(Module):
         # initialize the weight matrix and the attention vector
         self.weight=i.initializer([input_dim,num_heads*output_dim],weight_initializer,dtype)
         self.attention=i.initializer([num_heads,2*output_dim],attention_initializer,dtype)
+        self.dtype=dtype
         self.output_size=num_heads*output_dim
         self.param=[self.weight,self.attention]
         Module.param.extend(self.param)
@@ -32,6 +33,8 @@ class GAT(Module):
     def output(self,graph,data,train_flag=True):
         # graph: a dictionary that represents the input graph structure data, containing adjacency matrix, node features, etc.
         # data: a tensor that represents the input node features, shape is [N, input_dim], where N is the number of nodes
+        if data.dtype!=self.dtype:
+            data=tf.cast(data,self.dtype)
         # compute the linear transformation and add bias, and split into multiple heads
         linear_output=tf.matmul(data,self.weight)
         linear_output=tf.reshape(linear_output,[-1,self.num_heads,self.output_dim])
