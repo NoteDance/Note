@@ -31,5 +31,7 @@ class embedding(Module):
     
     
     def output(self,data):
+        if data.dtype!=self.dtype:
+            data=tf.cast(data,self.dtype)
         output=tf.nn.embedding_lookup(self.embeddings,data)
         return output
