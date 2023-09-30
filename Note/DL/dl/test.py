@@ -44,12 +44,6 @@ def test_pytorch(nn,data,labels):
 
 
 def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
-    if type(nn.param[0])!=list:
-        test_data=test_data.astype(nn.param[0].dtype.name)
-        test_labels=test_labels.astype(nn.param[0].dtype.name)
-    else:
-        test_data=test_data.astype(nn.param[0][0].dtype.name)
-        test_labels=test_labels.astype(nn.param[0][0].dtype.name)
     if batch!=None:
         total_loss=0
         total_acc=0
@@ -117,24 +111,14 @@ def test(nn,test_data,test_labels,platform,batch=None,loss=None,acc_flag='%'):
 class parallel_test:
     def __init__(self,nn,test_data,test_labels,process,batch,prefetch_batch_size=tf.data.AUTOTUNE,test_dataset=None,):
         self.nn=nn
-        if test_data is not None and type(self.nn.param[0])!=list:
-            self.test_data=test_data.astype(self.nn.param[0].dtype.name)
-            self.test_labels=test_labels.astype(self.nn.param[0].dtype.name)
-        elif test_data is not None:
-            self.test_data=test_data.astype(self.nn.param[0][0].dtype.name)
-            self.test_labels=test_labels.astype(self.nn.param[0][0].dtype.name)
+        self.test_data=test_data
+        self.test_labels=test_labels
         self.test_dataset=test_dataset
         self.process=process
         self.batch=batch
-        if type(self.nn.param[0])!=list:
-            self.loss=Array('f',np.zeros([process],dtype=self.nn.param[0].dtype.name))
-        else:
-            self.loss=Array('f',np.zeros([process],dtype=self.nn.param[0][0].dtype.name))
+        self.loss=Array('f',np.zeros([process],dtype='float32'))
         if hasattr(nn,'accuracy'):
-            if type(self.nn.param[0])!=list:
-                self.acc=Array('f',np.zeros([process],dtype=self.nn.param[0].dtype.name))
-            else:
-                self.acc=Array('f',np.zeros([process],dtype=self.nn.param[0][0].dtype.name))
+            self.acc=Array('f',np.zeros([process],dtype='float32'))
         self.prefetch_batch_size=prefetch_batch_size
     
     
