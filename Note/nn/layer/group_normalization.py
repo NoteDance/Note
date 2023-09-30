@@ -105,6 +105,9 @@ class group_normalization(Module):
         return
 
     def output(self, data):
+        if data.dtype!=self.dtype:
+            data=tf.cast(data,self.dtype)
+            
         input_shape = tf.shape(data)
 
         if self.mask is None:
