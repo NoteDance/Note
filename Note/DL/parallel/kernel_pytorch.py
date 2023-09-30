@@ -40,13 +40,10 @@ class kernel:
         self.test_dataset=test_dataset
         if test_dataset is not None:
             self.test_flag=True
-        self.batch_counter=np.zeros(self.process,dtype=np.int32)
-        self.total_loss=np.zeros(self.process)
+        self.batch_counter=np.zeros(self.process,dtype='int32')
+        self.total_loss=np.zeros(self.process,dtype='float32')
         if hasattr(self.nn,'accuracy'):
-            if type(self.nn.param[0])!=list:
-                self.total_acc=np.zeros(self.process,dtype=self.nn.param[0].dtype.name)
-            else:
-                self.total_acc=np.zeros(self.process,dtype=self.nn.param[0][0].dtype.name)
+            self.total_acc=np.zeros(self.process,dtype='float32')
         if self.priority_flag==True:
             self.opt_counter=np.zeros(self.process,dtype=np.int32)
         return
