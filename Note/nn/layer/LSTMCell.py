@@ -21,6 +21,8 @@ class LSTMCell(Module): # define a class for long short-term memory (LSTM) cell
     
     
     def output(self,data,state): # define the output method
+        if data.dtype!=self.dtype:
+            data=tf.cast(data,self.dtype)
         x=tf.concat([data,state],axis=-1) # concatenate the input data and state along the last dimension
         if self.use_bias==True: # if use bias is True
             z=tf.matmul(x,self.weight)+self.bias # calculate the linear transformation of concatenated data and weight matrix, plus bias vector
