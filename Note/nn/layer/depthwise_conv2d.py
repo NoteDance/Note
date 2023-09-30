@@ -48,6 +48,8 @@ class depthwise_conv2d(Module): # define a class for depthwise convolutional lay
     
     
     def output(self,data): # define the output method
+        if data.dtype!=self.dtype:
+            data=tf.cast(data,self.dtype)
         if self.use_bias==True: # if use bias is True
             return a.activation_conv(data,self.weight,self.activation,self.strides,self.padding,self.data_format,self.dilations,tf.nn.depthwise_conv2d,self.bias) # return the output of applying activation function to the depthwise convolution of data and weight, plus bias
         else: # if use bias is False
