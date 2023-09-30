@@ -42,6 +42,11 @@ class multihead_attention(Module):
         xa: Optional[tf.Tensor] = None,
         mask: Optional[tf.Tensor] = None,
     ):
+        if x.dtype!=self.dtype:
+            x=tf.cast(x,self.dtype)
+        if xa is not None and xa.dtype!=self.dtype:
+            xa=tf.cast(xa,self.dtype)
+            
         q = self.query.output(x)
 
         if self.kv_cache is None or xa is None or self.key not in self.kv_cache:
