@@ -30,6 +30,8 @@ class GCN(Module):
     def output(self,graph,data):
         # graph: a dictionary that represents the input graph structure data, containing adjacency matrix, node features, etc.
         # data: a tensor that represents the input node features, shape is [N, input_dim], where N is the number of nodes
+        if data.dtype!=self.dtype:
+            data=tf.cast(data,self.dtype)
         # get the adjacency matrix, and normalize it
         adj_matrix=graph["adj_matrix"]
         degree_matrix=tf.reduce_sum(adj_matrix,axis=1)
