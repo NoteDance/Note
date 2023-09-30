@@ -18,6 +18,7 @@ class GraphConv(Module):
         self.activation=activation_dict[activation]
         self.use_bias=use_bias
         self.weight=i.initializer([in_features,out_features],weight_initializer,dtype) # initialize the weight matrix with the given initializer and data type
+        self.dtype=dtype
         self.output_size=out_features
         self.param=[self.weight] # store the weight matrix in a list for later use
         if use_bias:
@@ -31,6 +32,8 @@ class GraphConv(Module):
         # data: a tensor of shape [batch_size, num_nodes, in_features]
         # adj: a tensor of shape [batch_size, num_nodes, num_nodes]
         # return: a tensor of shape [batch_size, num_nodes, out_features]
+        if data.dtype!=self.dtype:
+            data=tf.cast(data,self.dtype)
         output=tf.matmul(data,self.weight) # apply the linear transformation to the input features using the weight matrix
         if self.norm=='right':
             adj=tf.divide(adj,tf.reduce_sum(adj,axis=-1,keepdims=True)) # normalize the adjacency matrix by dividing each row by its sum (right normalization)
