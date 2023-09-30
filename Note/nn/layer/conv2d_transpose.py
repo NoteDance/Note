@@ -48,6 +48,9 @@ class conv2d_transpose(Module): # define a class for 2D transposed convolutional
     
     
     def output(self,data): # define the output method
+        if data.dtype!=self.dtype:
+            data=tf.cast(data,self.dtype)
+            
         rows = data.shape[1] # get the number of rows in the input data
         cols = data.shape[2] # get the number of columns in the input data
         
