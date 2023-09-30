@@ -49,6 +49,8 @@ class depthwise_conv1d(Module): # define a class for depthwise convolutional lay
     
     
     def output(self,data): # define the output method
+        if data.dtype!=self.dtype:
+            data=tf.cast(data,self.dtype)
         strides = (1,) + tuple(self.strides) * 2 + (1,)
         data = tf.expand_dims(data, 1)
         depthwise_kernel = tf.expand_dims(self.depthwise_kernel, axis=0)
