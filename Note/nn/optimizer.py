@@ -135,6 +135,8 @@ class Adam:
             self.g=[x for x in range(len(gradient_flat))]
             self.flag+=1
         for i in range(len(gradient_flat)):
+            if t.dtype!=gradient_flat[i].dtype:
+                t=tf.cast(t,gradient_flat[i].dtype)
             self.v[i]=self.beta1*self.v[i]+(1-self.beta1)*gradient_flat[i]
             self.s[i]=self.beta2*self.s[i]+(1-self.beta2)*gradient_flat[i]**2
             self.v_[i]=self.v[i]/(1-self.beta1**(t+1))
@@ -172,6 +174,8 @@ class Nadam:
             self.m=[x for x in range(len(gradient_flat))]
             self.flag+=1
         for i in range(len(gradient_flat)):
+            if t.dtype!=gradient_flat[i].dtype:
+                t=tf.cast(t,gradient_flat[i].dtype)
             self.v[i]=self.beta1*self.v[i]+(1-self.beta1)*gradient_flat[i]
             self.s[i]=self.beta2*self.s[i]+(1-self.beta2)*gradient_flat[i]**2
             self.v_[i]=self.v[i]/(1-self.beta1**(t+1))
@@ -204,6 +208,8 @@ class AdaMax:
             self.g=[x for x in range(len(gradient_flat))]
             self.flag+=1
         for i in range(len(gradient_flat)):
+            if t.dtype!=gradient_flat[i].dtype:
+                t=tf.cast(t,gradient_flat[i].dtype)
             self.v[i]=self.beta_1*self.v[i]+(1-self.beta_1)*gradient_flat[i]
             self.u[i]=tf.maximum(self.beta_2*self.u[i],tf.abs(gradient_flat[i]))
             self.g[i]=self.learning_rate/(1-self.beta_1**(t+1))*self.v[i]/(self.u[i]+self.epsilon)
@@ -238,6 +244,8 @@ class AdamW:
             self.g=[x for x in range(len(gradient_flat))]
             self.flag+=1
         for i in range(len(gradient_flat)):
+            if t.dtype!=gradient_flat[i].dtype:
+                t=tf.cast(t,gradient_flat[i].dtype)
             gradient_flat[i]=gradient_flat[i]+self.weight_decay*parameter_flat[i]
             self.v[i]=self.beta1*self.v[i]+(1-self.beta1)*gradient_flat[i]
             self.s[i]=self.beta2*self.s[i]+(1-self.beta2)*gradient_flat[i]**2
@@ -277,6 +285,8 @@ class RAdam:
             self.step_size=[x for x in range(len(gradient_flat))]
             self.flag+=1
         for i in range(len(gradient_flat)):
+            if t.dtype!=gradient_flat[i].dtype:
+                t=tf.cast(t,gradient_flat[i].dtype)
             self.v[i]=self.beta1*self.v[i]+(1-self.beta1)*gradient_flat[i]
             self.s[i]=self.beta2*self.s[i]+(1-self.beta2)*gradient_flat[i]**2
             self.v_[i]=self.v[i]/(1-self.beta1**t)
@@ -389,6 +399,8 @@ class LookAhead:
 
     # Define an opt method, used to apply gradients
     def opt(self,gradient,parameter,t):
+        if t.dtype!=gradient.dtype:
+            t=tf.cast(t,gradient.dtype)
         # Call the opt method of the inner optimizer, update the fast weights
         self.optimizer.opt(gradient,parameter,t)
         # Get the current iteration number
@@ -507,6 +519,8 @@ class Ranger:
 
     # Define an opt method for applying gradients
     def opt(self,gradient,parameter,t):
+        if t.dtype!=gradient.dtype:
+            t=tf.cast(t,gradient.dtype)
         # If adaptive gradient clipping is enabled, clip the gradient
         if self.adaptive_grad_clip:
             gradient=self.clip_grad(gradient)
