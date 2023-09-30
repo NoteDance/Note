@@ -7,6 +7,7 @@ class attention(Module): # define a class for attention mechanism
     def __init__(self, use_scale=False, score_mode="dot", dtype='float32'):
         self.use_scale = use_scale
         self.score_mode = score_mode
+        self.dtype=dtype
         self.param=[]
         if use_scale:
             self.scale = initializer((),'ones',dtype)
@@ -18,6 +19,12 @@ class attention(Module): # define a class for attention mechanism
     
     
     def output(self, query, value, key=None): # define the output method
+        if query.dtype!=self.dtype:
+            query=tf.cast(query,self.dtype)
+        if value.dtype!=self.dtype:
+            value=tf.cast(value,self.dtype)
+        if key is not None and key.dtype!=self.dtype:
+            key=tf.cast(key,self.dtype)
         if self.score_mode == "dot":
             if key==None:
                 scores = tf.matmul(query, value, transpose_b=True)
