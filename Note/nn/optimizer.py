@@ -103,7 +103,7 @@ class Adafactor:
         return tf.sqrt(tf.reduce_mean(tf.square(x)))
 
 
-    def opt(self, gradient, parameter):
+    def opt(self, gradient, parameter, iterations):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         if self.flag==0:
@@ -132,7 +132,7 @@ class Adafactor:
             lr = tf.cast(self.lr, parameter_flat[i].dtype)
             epsilon_2 = tf.cast(self.epsilon_2, parameter_flat[i].dtype)
             one = tf.cast(1.0, parameter_flat[i].dtype)
-            local_step = tf.cast(self.iterations + 1, parameter_flat[i].dtype)
+            local_step = tf.cast(iterations + 1, parameter_flat[i].dtype)
             if self.relative_step:
                 # If `relative_step=True` and learning rate is a constant, we
                 # apply the relative step algorithm.
@@ -394,7 +394,7 @@ class Adam:
         self.flag = 0
 
 
-    def opt(self, gradient, parameter):
+    def opt(self, gradient, parameter, iterations):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         if self.flag==0:
@@ -421,7 +421,7 @@ class Adam:
         for i in range(len(gradient_flat)):
             lr = tf.cast(self.lr, dtype=parameter_flat[i].dtype)
             
-            local_step = tf.cast(self.iterations + 1, parameter_flat[i].dtype)
+            local_step = tf.cast(iterations + 1, parameter_flat[i].dtype)
             beta_1_power = tf.pow(tf.cast(self.beta_1, parameter_flat[i].dtype), local_step)
             beta_2_power = tf.pow(tf.cast(self.beta_2, parameter_flat[i].dtype), local_step)
     
@@ -473,7 +473,7 @@ class Nadam:
         self.flag = 0
                 
 
-    def opt(self, gradient, parameter):
+    def opt(self, gradient, parameter, iterations):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         if self.flag==0:
@@ -494,15 +494,15 @@ class Nadam:
         for i in range(len(gradient_flat)):
             var_dtype = parameter_flat[i].dtype
             lr = tf.cast(self.lr, var_dtype)
-            local_step = tf.cast(self.iterations + 1, var_dtype)
-            next_step = tf.cast(self.iterations + 2, var_dtype)
+            local_step = tf.cast(iterations + 1, var_dtype)
+            next_step = tf.cast(iterations + 2, var_dtype)
             decay = tf.cast(0.96, var_dtype)
             beta_1 = tf.cast(self.beta_1, var_dtype)
             beta_2 = tf.cast(self.beta_2, var_dtype)
             u_t = beta_1 * (1.0 - 0.5 * (tf.pow(decay, local_step)))
             u_t_1 = beta_1 * (1.0 - 0.5 * (tf.pow(decay, next_step)))
     
-            if self._u_product_counter == (self.iterations + 2):
+            if self._u_product_counter == (iterations + 2):
                  u_product_t = self._u_product[i]
             else:
                 u_product_t = self._u_product[i] * u_t
@@ -576,7 +576,7 @@ class Adamax:
         self.flag = 0
 
 
-    def opt(self, gradient, parameter):
+    def opt(self, gradient, parameter, iterations):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         if self.flag==0:
@@ -596,7 +596,7 @@ class Adamax:
         for i in range(len(gradient_flat)):
             lr = tf.cast(self.lr, dtype=parameter_flat[i].dtype)
             
-            local_step = tf.cast(self.iterations + 1, parameter_flat[i].dtype)
+            local_step = tf.cast(iterations + 1, parameter_flat[i].dtype)
             beta_1_power = tf.pow(tf.cast(self.beta_1, parameter_flat[i].dtype), local_step)
     
             m = self._m[i]
@@ -666,7 +666,7 @@ class AdamW:
         self.flag = 0
 
 
-    def opt(self, gradient, parameter):
+    def opt(self, gradient, parameter, iterations):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         if self.flag==0:
@@ -687,7 +687,7 @@ class AdamW:
         for i in range(len(gradient_flat)): 
             lr = tf.cast(self.lr, dtype=parameter_flat[i].dtype)
             
-            local_step = tf.cast(self.iterations + 1, parameter_flat[i].dtype)
+            local_step = tf.cast(iterations + 1, parameter_flat[i].dtype)
             beta_1_power = tf.pow(tf.cast(self.beta_1, parameter_flat[i].dtype), local_step)
             beta_2_power = tf.pow(tf.cast(self.beta_2, parameter_flat[i].dtype), local_step)
     
