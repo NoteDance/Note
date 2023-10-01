@@ -1,47 +1,39 @@
 import tensorflow as tf
 from Note.nn.layer.conv2d import conv2d
+from Note.nn.layer.dense import dense
 from Note.nn.layer.batch_normalization import batch_normalization
 from Note.nn.layer.avg_pool2d import avg_pool2d
 from Note.nn.layer.max_pool2d import max_pool2d
 from Note.nn.layer.zeropadding2d import zeropadding2d
-from Note.nn.layer.identity import identity
-from Note.nn.layer.concat import concat
-from Note.nn.Layers import Layers
 from Note.nn.activation import activation_dict
-from Note.nn.initializer import initializer
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
 from Note.nn.Module import Module
 
 
-def DenseLayer(input_channels, growth_rate, dtype='float32'):
-        layers=Layers()
-        layers.add(identity(input_channels),save_data=True)
-        layers.add(batch_normalization(epsilon=1.001e-5,dtype=dtype))
-        layers.add(activation_dict['relu'])
-        layers.add(conv2d(4*growth_rate,[1,1],strides=1,padding="SAME",use_bias=False,dtype=dtype))
-        layers.add(batch_normalization(epsilon=1.001e-5,dtype=dtype))
-        layers.add(activation_dict['relu'])
-        layers.add(conv2d(growth_rate,[3,3],strides=1,padding="SAME",use_bias=False,dtype=dtype),save_data=True)
-        layers.add(concat(),use_data=True)
-        return layers
+def DenseLayer(data, growth_rate, train_flag, dtype='float32'):
+        x=batch_normalization(epsilon=1.001e-5,dtype=dtype).output(data,train_flag)
+        x=activation_dict['relu'](x)
+        x=conv2d(4*growth_rate,[1,1],strides=1,padding="SAME",use_bias=False,dtype=dtype).output(x)
+        x=batch_normalization(epsilon=1.001e-5,dtype=dtype).output(x,train_flag)
+        x=activation_dict['relu'](data)
+        x=conv2d(growth_rate,[3,3],strides=1,padding="SAME",use_bias=False,dtype=dtype).output(x)
+        x=tf.concat([data,x],-1)
+        return x
 
 
-def DenseBlock(input_channels, num_layers, growth_rate, dtype='float32'):
-        layers=Layers()
+def DenseBlock(data, num_layers, growth_rate, train_flag=True, dtype='float32'):
         for i in range(num_layers):
-            layers.add(DenseLayer(input_channels, growth_rate, dtype))
-            input_channels=layers.output_size
-        return layers
+            data=DenseLayer(data, growth_rate, train_flag, dtype)
+        return data
 
 
-def TransitionLayer(input_channels, compression_factor, dtype='float32'):
-        layers=Layers()
-        layers.add(batch_normalization(input_channels,dtype=dtype))
-        layers.add(activation_dict['relu'])
-        layers.add(conv2d(int(compression_factor * input_channels),[1,1],strides=[1, 1, 1, 1],padding="SAME",use_bias=False,dtype=dtype))
-        layers.add(avg_pool2d(ksize=[2, 2],strides=[2, 2],padding="SAME"))
-        return layers
+def TransitionLayer(data, compression_factor, train_flag=True, dtype='float32'):
+        x=batch_normalization(dtype=dtype).output(data,train_flag)
+        x=activation_dict['relu'](x)
+        x=conv2d(int(compression_factor * data.shape[-1]),[1,1],strides=[1, 1, 1, 1],padding="SAME",use_bias=False,dtype=dtype).output(x)
+        x=avg_pool2d(ksize=[2, 2],strides=[2, 2],padding="SAME").output(x)
+        return x
 
 
 class DenseNet201:
@@ -55,75 +47,82 @@ class DenseNet201:
         self.optimizer=Adam()
         self.bc=tf.Variable(0,dtype=dtype)
         self.dtype=dtype
-        self.km=0
-    
-    
-    def build(self):
-        self.layers=Layers()
-        self.layers.add(zeropadding2d(3,padding=[3, 3]))
-        self.layers.add(conv2d(64,[7,7],strides=2,use_bias=False,dtype=self.dtype))
-        self.layers.add(batch_normalization(epsilon=1.001e-5,dtype=self.dtype))
-        self.layers.add(activation_dict['relu'])
-        self.layers.add(zeropadding2d(padding=[1, 1]))
-        self.layers.add(max_pool2d(ksize=[3, 3],strides=[2, 2],padding="VALID"))
-        
-        
-        self.layers.add(DenseBlock(input_channels=self.layers.output_size,num_layers=6,
-                                 growth_rate=self.growth_rate,
-                                 dtype=self.dtype))
-        
-        self.layers.add(TransitionLayer(input_channels=self.layers.output_size,compression_factor=self.compression_factor,
-                                      dtype=self.dtype))
-        
-        self.layers.add(DenseBlock(input_channels=self.layers.output_size,num_layers=12,
-                                 growth_rate=self.growth_rate,
-                                 dtype=self.dtype))
-        
-        self.layers.add(TransitionLayer(input_channels=self.layers.output_size,compression_factor=self.compression_factor,
-                                      dtype=self.dtype))
-        
-        self.layers.add(DenseBlock(input_channels=self.layers.output_size,num_layers=48,
-                                 growth_rate=self.growth_rate,
-                                 dtype=self.dtype))
-        
-        self.layers.add(TransitionLayer(input_channels=self.layers.output_size,compression_factor=self.compression_factor,
-                                      dtype=self.dtype))
-        
-        self.layers.add(DenseBlock(input_channels=self.layers.output_size,num_layers=32,
-                                 growth_rate=self.growth_rate,
-                                 dtype=self.dtype))
-        
-        self.layers.add(batch_normalization(epsilon=1.001e-5,dtype=self.dtype))
-        
-        self.layers.add(activation_dict['relu'])
-        
-        self.fc_weight = initializer([self.layers.output_size, self.num_classes], 'Xavier', self.dtype)
-        self.fc_bias = initializer([self.num_classes], 'Xavier', self.dtype)
-        
-        Module.param.extend([self.fc_weight,self.fc_bias])
+        self.km=1
         self.param=Module.param
-        return
     
     
     def fp(self, data, p=None):
         if self.km==1:
             with tf.device(assign_device(p,'GPU')):
-                x=self.layers.output(data)
+                x=zeropadding2d(padding=[3, 3]).output(data)
+                x=conv2d(64,[7,7],strides=2,use_bias=False,dtype=self.dtype).output(x)
+                x=batch_normalization(epsilon=1.001e-5,dtype=self.dtype).output(x)
+                x=activation_dict['relu'](x)
+                x=zeropadding2d(padding=[1, 1]).output(x)
+                x=max_pool2d(ksize=[3, 3],strides=[2, 2],padding="VALID").output(x)
+                x=DenseBlock(x,num_layers=6,
+                                 growth_rate=self.growth_rate,
+                                 dtype=self.dtype)
+                x=TransitionLayer(x,compression_factor=self.compression_factor,
+                                      dtype=self.dtype)
+                x=DenseBlock(x,num_layers=12,
+                                 growth_rate=self.growth_rate,
+                                 dtype=self.dtype)
+                x=TransitionLayer(x,compression_factor=self.compression_factor,
+                                      dtype=self.dtype)
+                x=DenseBlock(x,num_layers=48,
+                                 growth_rate=self.growth_rate,
+                                 dtype=self.dtype)
+                x=TransitionLayer(x,compression_factor=self.compression_factor,
+                                      dtype=self.dtype)
+                x=DenseBlock(x,num_layers=32,
+                                 growth_rate=self.growth_rate,
+                                 dtype=self.dtype)
+                x=batch_normalization(epsilon=1.001e-5,dtype=self.dtype).output(x)
+                x=activation_dict['relu'](x)
                 if self.include_top:
                     x = tf.reduce_mean(x, axis=[1, 2])
-                    x = tf.matmul(x, self.fc_weight)+self.fc_bias
-                    x = tf.nn.softmax(x)
+                    x=dense(self.num_classes,activation='softmax',dtype=self.dtype).output(x)
                 else:
                     if self.pooling == 'avg':
                         x = tf.reduce_mean(x, axis=[1, 2])
                     elif self.pooling == 'max':
                         x = tf.reduce_max(x, axis=[1, 2])
         else:
-            x=self.layers.output(data,self.km)
+            x=zeropadding2d(padding=[3, 3]).output(data)
+            x=conv2d(64,[7,7],strides=2,use_bias=False,dtype=self.dtype).output(x)
+            x=batch_normalization(epsilon=1.001e-5,dtype=self.dtype).output(x,self.km)
+            x=activation_dict['relu'](x)
+            x=zeropadding2d(padding=[1, 1]).output(x)
+            x=max_pool2d(ksize=[3, 3],strides=[2, 2],padding="VALID").output(x)
+            x=DenseBlock(x,num_layers=6,
+                             growth_rate=self.growth_rate,
+                             train_flag=self.km,
+                             dtype=self.dtype)
+            x=TransitionLayer(x,compression_factor=self.compression_factor,train_flag=self.km,
+                                  dtype=self.dtype)
+            x=DenseBlock(x,num_layers=12,
+                             growth_rate=self.growth_rate,
+                             train_flag=self.km,
+                             dtype=self.dtype)
+            x=TransitionLayer(x,compression_factor=self.compression_factor,train_flag=self.km,
+                                  dtype=self.dtype)
+            x=DenseBlock(x,num_layers=48,
+                             growth_rate=self.growth_rate,
+                             train_flag=self.km,
+                             dtype=self.dtype)
+            x=TransitionLayer(x,compression_factor=self.compression_factor,train_flag=self.km,
+                                  dtype=self.dtype)
+            x=DenseBlock(x,num_layers=32,
+                             growth_rate=self.growth_rate,
+                             train_flag=self.km,
+                             dtype=self.dtype)
+            x=batch_normalization(epsilon=1.001e-5,dtype=self.dtype).output(x,self.km)
+            x=activation_dict['relu'](x)
+            x=dense(self.num_classes,dtype=self.dtype).output(x)
             if self.include_top:
                 x = tf.math.reduce_mean(x, axis=[1, 2])
-                x = tf.matmul(x, self.fc_weight)+self.fc_bias
-                x = tf.nn.softmax(x)
+                x=dense(self.num_classes,activation='softmax',dtype=self.dtype).output(x)
             else:
                 if self.pooling=="avg":
                     x = tf.math.reduce_mean(x, axis=[1, 2])
