@@ -16,7 +16,7 @@ class VGG16:
         self.classes=classes
         self.loss_object=tf.keras.losses.CategoricalCrossentropy()
         self.optimizer=Adam()
-        self.km=1
+        self.km=0
     
     
     def build(self,dtype='float32'):
