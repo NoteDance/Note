@@ -48,4 +48,8 @@ class dense(Module): # define a class for dense (fully connected) layer
     def output(self,data): # define the output method
         if data.dtype!=self.dtype:
             data=tf.cast(data,self.dtype)
+        if self.input_size==None:
+            self.input_size=data.shape[-1]
+            self.build()
+            Module.param.extend(self.param)
         return a.activation(data,self.weight,self.bias,self.activation,self.use_bias) # return the output of applying activation function to the linear transformation of data and weight, plus bias if use bias is True
