@@ -130,6 +130,7 @@ class Adafactor:
                 self._v.append(
                         tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                 )
+            self.flag=1
 
         for i in range(len(gradient_flat)):
             lr = tf.cast(self.lr, parameter_flat[i].dtype)
@@ -239,6 +240,7 @@ class RMSprop:
                     self._average_gradients.append(
                         tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                     )
+            self.flag=1
 
         for i in range(len(gradient_flat)):
             lr = tf.cast(self.lr, dtype=parameter_flat[i].dtype)
@@ -316,6 +318,7 @@ class Adadelta:
                 self.accumulated_delta_vars.append(
                     tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                 )
+            self.flag=1
         rho = self.rho
 
         def rms(x):
@@ -419,6 +422,7 @@ class Adam:
                                 tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                             )
                         )
+            self.flag=1
                             
         for i in range(len(gradient_flat)):
             lr = tf.cast(self.lr, dtype=parameter_flat[i].dtype)
@@ -492,6 +496,7 @@ class Nadam:
                         tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                     )
                 )
+            self.flag=1
         
         for i in range(len(gradient_flat)):
             var_dtype = parameter_flat[i].dtype
@@ -594,6 +599,7 @@ class Adamax:
                         tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                     )
                 )
+            self.flag=1
         
         for i in range(len(gradient_flat)):
             lr = tf.cast(self.lr, dtype=parameter_flat[i].dtype)
@@ -685,6 +691,7 @@ class AdamW:
                     self._velocity_hats.append(
                         tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                     )
+            self.flag=1
                     
         for i in range(len(gradient_flat)):  
             lr = tf.cast(self.lr, dtype=parameter_flat[i].dtype)
@@ -816,6 +823,7 @@ class Ftrl:
                                                     value=self.initial_accumulator_value),
                                                      dtype=param.dtype))
                 self._linears.append(tf.Variable(tf.zeros_like(param,dtype=param.dtype)))
+            self.flag=1
         
         for i in range(len(gradient_flat)):
             lr = tf.cast(self.lr, parameter_flat[i].dtype)
@@ -898,6 +906,7 @@ class Lion:
                 self.momentums.append(
                         tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                         )
+            self.flag=1
                 
         for i in range(len(gradient_flat)):
             lr = tf.cast(self.learning_rate, parameter_flat[i].dtype)
