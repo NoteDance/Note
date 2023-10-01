@@ -17,7 +17,7 @@ class Layers:
         if use_data==True:
             self.save_data_count=0
         if hasattr(layer,'build'):
-            if layer.input_size==None:
+            if layer.input_size==None and self.output_size!=None:
                 layer.input_size=self.output_size
                 layer.build()
                 self.layer.append(layer)
