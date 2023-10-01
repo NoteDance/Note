@@ -50,10 +50,10 @@ class VGG19:
         self.layers.add(conv2d(512,(3,3),activation="relu", padding="SAME",dtype=dtype))
         self.layers.add(max_pool2d((2, 2), strides=(2, 2), padding='VALID'))
         
-        self.flatten=flatten
-        self.dense1=dense(4096,25088,activation='relu',dtype=dtype)
-        self.dense2=dense(4096,self.dense1.output_size,activation='relu',dtype=dtype)
-        self.dense3=dense(self.classes,self.dense2.output_size,activation='softmax',dtype=dtype)
+        self.layers.add(flatten())
+        self.layers.add(dense(4096,activation='relu',dtype=dtype))
+        self.layers.add(dense(4096,activation='relu',dtype=dtype))
+        self.layers.add(dense(self.classes,activation='softmax',dtype=dtype))
         
         self.param=Module.param
         return
@@ -62,24 +62,16 @@ class VGG19:
     def fp(self,data,p=None):
         if self.km==1:
             with tf.device(assign_device(p,'GPU')):
-                x=self.layers.output(data)
                 if self.include_top:
-                    x=self.flatten(x)
-                    x=self.dense1.output(x)
-                    x=self.dense2.output(x)
-                    x=self.dense3.output(x)
+                    x=self.layers.output(data)
                 else:
                     if self.pooling=="avg":
                         data = tf.math.reduce_mean(data, axis=[1, 2])
                     elif self.pooling=="max":
                         data = tf.math.reduce_max(data, axis=[1, 2])
         else:
-            x=self.layers.output(data)
             if self.include_top:
-                x=self.flatten(x)
-                x=self.dense1.output(x)
-                x=self.dense2.output(x)
-                x=self.dense3.output(x)
+                x=self.layers.output(data)
             else:
                 if self.pooling=="avg":
                     data = tf.math.reduce_mean(data, axis=[1, 2])
