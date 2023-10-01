@@ -50,6 +50,9 @@ class conv3d(Module): # define a class for 3D convolutional layer
     def output(self,data): # define the output method
         if data.dtype!=self.dtype:
             data=tf.cast(data,self.dtype)
+        if self.input_size==None:
+            self.input_size=data.shape[-1]
+            self.build()
         strides = (1,) + tuple(self.strides) + (1,)
         if self.use_bias==True: # if use bias is True
             return a.activation_conv(data,self.weight,self.activation,strides,self.padding,self.data_format,self.dilations,tf.nn.conv3d,self.bias) # return the output of applying activation function to the convolution of data and weight, plus bias
