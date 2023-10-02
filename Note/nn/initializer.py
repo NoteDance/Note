@@ -32,7 +32,7 @@ def initializer(shape,initializer,dtype):
         if initializer=='normal':
             param=tf.Variable(tf.random.normal(shape=shape,dtype=dtype))
         elif initializer=='uniform':
-            param=tf.Variable(tf.random.uniform(shape=shape,maxval=0.01,dtype=dtype))
+            param=tf.Variable(tf.random.uniform(shape=shape,minval=-0.05,maxval=0.05,dtype=dtype))
         elif initializer=='zeros':
             param=tf.Variable(tf.zeros(shape=shape,dtype=dtype))
         elif initializer=='ones':
