@@ -4,14 +4,21 @@ from Note.nn.Module import Module
 
 
 class additive_attention(Module):
-    def __init__(self,input_size, use_scale=True, dtype='float32'):
+    def __init__(self,input_size=None, use_scale=True, dtype='float32'):
         self.use_scale = use_scale
-        self.param=[]
-        if use_scale:
+        self.dtype=dtype
+        if input_size!=None and use_scale:
             self.scale = initializer([input_size], 'Xavier', dtype)
-            self.param.append(self.scale)
-        Module.param.extend(self.param)
-
+            self.param=[self.scale]
+            Module.param.extend(self.param)
+    
+    def build(self):
+        self.output_size=self.input_size
+        if self.input_size!=None and self.use_scale:
+            self.scale = initializer([self.input_size], 'Xavier', self.dtype)
+            self.param=[self.scale]
+            Module.param.extend(self.param)
+        return
 
     def output(self, query, key):
         """Calculates attention scores as a nonlinear sum of query and key.
@@ -22,6 +29,13 @@ class additive_attention(Module):
         Returns:
             Tensor of shape `[batch_size, Tq, Tv]`.
         """
+        if query.dtype!=self.dtype:
+            query=tf.cast(query,self.dtype)
+        if key.dtype!=self.dtype:
+            key=tf.cast(key,self.dtype)
+        if self.input_size==None:
+            self.input_size=query.shape[-1]
+            self.build()
         # Reshape tensors to enable broadcasting.
         # Reshape into [batch_size, Tq, 1, dim].
         q_reshaped = tf.expand_dims(query, axis=-2)
