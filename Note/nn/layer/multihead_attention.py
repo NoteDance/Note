@@ -5,15 +5,30 @@ from Note.nn.Module import Module
 
 
 class multihead_attention(Module):
-    def __init__(self, n_state: int, n_head: int, kv_cache=None, weight_initializer='Xavier', bias_initializer='zeros', dtype='float32'):
+    def __init__(self, n_head: int, input_size=None, kv_cache=None, weight_initializer='Xavier', bias_initializer='zeros', dtype='float32'):
         self.n_head = n_head
+        self.input_size=input_size
         self.kv_cache=kv_cache
-        self.query = dense(n_state,n_state,weight_initializer=weight_initializer,bias_initializer=bias_initializer,dtype=dtype)
-        self.key = dense(n_state,n_state,weight_initializer=weight_initializer,use_bias=False,dtype=dtype)
-        self.value = dense(n_state,n_state,weight_initializer=weight_initializer,bias_initializer=bias_initializer,dtype=dtype)
-        self.out = dense(n_state,n_state,weight_initializer=weight_initializer,bias_initializer=bias_initializer,dtype=dtype)
+        self.weight_initializer=weight_initializer
+        self.bias_initializer=bias_initializer
+        self.dtype=dtype
+        if input_size!=None:
+            self.query = dense(input_size,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,dtype=dtype)
+            self.key = dense(input_size,input_size,weight_initializer=weight_initializer,use_bias=False,dtype=dtype)
+            self.value = dense(input_size,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,dtype=dtype)
+            self.out = dense(input_size,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,dtype=dtype)
+            self.param = [self.query.param,self.key.param,self.value.param,self.out.param]
+            Module.param.extend(self.param)
+    
+    
+    def build(self):
+        self.query = dense(self.input_size,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,dtype=self.dtype)
+        self.key = dense(self.input_size,self.input_size,weight_initializer=self.weight_initializer,use_bias=False,dtype=self.dtype)
+        self.value = dense(self.input_size,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,dtype=self.dtype)
+        self.out = dense(self.input_size,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,dtype=self.dtype)
         self.param = [self.query.param,self.key.param,self.value.param,self.out.param]
         Module.param.extend(self.param)
+        return
     
     
     def qkv_attention(
@@ -46,6 +61,10 @@ class multihead_attention(Module):
             x=tf.cast(x,self.dtype)
         if xa is not None and xa.dtype!=self.dtype:
             xa=tf.cast(xa,self.dtype)
+        
+        if self.input_size==None:
+            self.input_size=x.shape[-1]
+            self.build()
             
         q = self.query.output(x)
 
