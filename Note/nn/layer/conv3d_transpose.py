@@ -50,6 +50,11 @@ class conv3d_transpose(Module): # define a class for 3D transposed convolutional
     def output(self,data): # define the output method
         if data.dtype!=self.dtype:
             data=tf.cast(data,self.dtype)
+            
+        if self.input_size==None:
+            self.input_size=data.shape[-1]
+            self.build()
+            
         strides = (1,) + tuple(self.strides) + (1,) # add 1 to both ends of strides to match the data format 
         depth = data.shape[1] # get the number of depth in the input data
         rows = data.shape[2] # get the number of rows in the input data
