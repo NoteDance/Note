@@ -30,7 +30,7 @@ class alpha_dropout:
       Same shape as input.
     """
 
-    def __init__(self, rate, noise_shape=None, seed=None, **kwargs):
+    def __init__(self, rate, noise_shape=None, seed=7):
         self.rate = rate
         self.noise_shape = noise_shape
         self.seed = seed
