@@ -38,28 +38,173 @@ class Momentum:
             state_ops.assign(parameter_flat[i],parameter_flat[i]-self.v[i])
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return
+
+
+class SGD:
+    r"""Gradient descent (with momentum) optimizer.
+
+    Update rule for parameter `w` with gradient `g` when `momentum` is 0:
+
+    ```python
+    w = w - learning_rate * g
+    ```
+
+    Update rule when `momentum` is larger than 0:
+
+    ```python
+    velocity = momentum * velocity - learning_rate * g
+    w = w + velocity
+    ```
+
+    When `nesterov=True`, this rule becomes:
+
+    ```python
+    velocity = momentum * velocity - learning_rate * g
+    w = w + momentum * velocity - learning_rate * g
+    ```
     
-    
-class AdaGrad:
-    def __init__(self,lr,epsilon=1e-06):
-        self.lr=tf.Variable(lr)
-        self.epsilon=epsilon
-        self.s=[]
-        self.flag=0
-    
-    
-    def opt(self,gradient,parameter):
+    Reference:
+        - For `nesterov=True`, See [Sutskever et al., 2013](
+          http://proceedings.mlr.press/v28/sutskever13.pdf).
+    """
+
+    def __init__(
+        self,
+        lr=0.01,
+        momentum=0.0,
+        nesterov=False,
+    ):
+        self.lr = tf.Variable(lr)
+        self.momentum = momentum
+        self.nesterov = nesterov
+        if isinstance(momentum, (int, float)) and (
+            momentum < 0 or momentum > 1
+        ):
+            raise ValueError("`momentum` must be between [0, 1].")
+        self.momentums = []
+        self.flag = 0
+
+
+    def opt(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         if self.flag==0:
-            self.s=[0 for x in range(len(gradient_flat))]
-            self.flag=1
+            for param in parameter_flat:
+                self.momentums.append(
+                    tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                )
+        
         for i in range(len(gradient_flat)):
-            lr=tf.cast(self.lr, dtype=parameter_flat[i].dtype)
-            self.s[i]=self.s[i]+gradient_flat[i]**2
-            state_ops.assign(parameter_flat[i],parameter_flat[i]-lr*gradient_flat[i]/tf.sqrt(self.s[i]+self.epsilon))
+            lr = tf.cast(self.learning_rate, parameter_flat[i].dtype)
+            m = None
+            momentum = tf.cast(self.momentum, parameter_flat[i].dtype)
+            m = self.momentums[i]
+    
+            # TODO(b/204321487): Add nesterov acceleration.
+            if isinstance(gradient_flat[i], tf.IndexedSlices):
+                # Sparse gradients.
+                add_value = tf.IndexedSlices(
+                    -gradient_flat[i].values * lr, gradient_flat[i].indices
+                )
+                if m is not None:
+                    m.assign(m * momentum)
+                    m.scatter_add(add_value)
+                    if self.nesterov:
+                        parameter_flat[i].scatter_add(add_value)
+                        parameter_flat[i].assign_add(m * momentum)
+                    else:
+                        parameter_flat[i].assign_add(m)
+                else:
+                    parameter_flat[i].scatter_add(add_value)
+            else:
+                # Dense gradients
+                if m is not None:
+                    m.assign(-gradient_flat[i] * lr + m * momentum)
+                    if self.nesterov:
+                        parameter_flat[i].assign_add(-gradient_flat[i] * lr + m * momentum)
+                    else:
+                        parameter_flat[i].assign_add(m)
+                else:
+                    parameter_flat[i].assign_add(-gradient_flat[i] * lr)
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
-        return
+        return parameter
+    
+    
+class Adagrad:
+    r"""Optimizer that implements the Adagrad algorithm.
+
+    Adagrad is an optimizer with parameter-specific learning rates,
+    which are adapted relative to how frequently a parameter gets
+    updated during training. The more updates a parameter receives,
+    the smaller the updates.
+
+    Args:
+        learning_rate: Initial value for the learning rate:
+            either a floating point value,
+            or a `tf.keras.optimizers.schedules.LearningRateSchedule` instance.
+            Defaults to 0.001. Note that `Adagrad` tends to benefit from higher
+            initial learning rate values compared to other optimizers. To match
+            the exact form in the original paper, use 1.0.
+        initial_accumulator_value: Floating point value.
+            Starting value for the accumulators (per-parameter momentum values).
+            Must be non-negative.
+        epsilon: Small floating point value used to maintain numerical
+            stability.
+        {{base_optimizer_keyword_args}}
+
+    Reference:
+        - [Duchi et al., 2011](
+            http://www.jmlr.org/papers/volume12/duchi11a/duchi11a.pdf).
+    """
+
+    def __init__(
+        self,
+        lr=0.001,
+        initial_accumulator_value=0.1,
+        epsilon=1e-7,
+    ):
+        self.lr = tf.Variable(lr)
+        self.initial_accumulator_value = initial_accumulator_value
+        self.epsilon = epsilon
+        self._accumulators = []
+        self.flag = 0
+
+
+    def opt(self, gradient, parameter):
+        gradient_flat=nest.flatten(gradient)
+        parameter_flat=nest.flatten(parameter)
+        if self.flag==0:
+            for param in parameter_flat:
+                self._accumulators.append(
+                    tf.Variable(
+                        tf.fill(param.shape,self.initial_accumulator_value),
+                        dtype=param.dtype
+                    )
+                )
+         
+        for i in range(len(gradient_flat)):
+            lr = tf.cast(self.learning_rate, parameter_flat[i].dtype)
+
+            accumulator = self._accumulators[i]
+
+            if isinstance(gradient_flat[i], tf.IndexedSlices):
+                # Sparse gradients.
+                accumulator.scatter_add(
+                    tf.IndexedSlices(gradient_flat[i].values * gradient_flat[i].values, gradient_flat[i].indices)
+                )
+                sparse_accumulator = tf.gather(accumulator, indices=gradient_flat[i].indices)
+                sparse_denominator = tf.sqrt(sparse_accumulator + self.epsilon)
+                parameter_flat[i].scatter_add(
+                    tf.IndexedSlices(
+                        -lr * gradient_flat[i].values / sparse_denominator, gradient_flat[i].indices
+                    )
+                )
+            else:
+                # Dense gradients.
+                accumulator.assign_add(gradient_flat[i] * gradient_flat[i])
+                parameter_flat[i].assign_sub(lr * gradient_flat[i] / tf.sqrt(accumulator + self.epsilon))
+        parameter=nest.pack_sequence_as(parameter,parameter_flat)
+        return parameter
 
 
 class Adafactor:
@@ -250,20 +395,51 @@ class RMSprop:
                 average_grad = self._average_gradients[i]
     
             rho = self.rho
+            
+            if isinstance(gradient_flat[i], tf.IndexedSlices):
+                # Sparse gradients.
+                velocity.assign(rho * velocity)
+                velocity.scatter_add(
+                    tf.IndexedSlices(
+                        tf.square(gradient_flat[i].values) * (1 - rho), gradient_flat[i].indices
+                    )
+                )
+                if self.centered:
+                    average_grad.assign(rho * average_grad)
+                    average_grad.scatter_add(
+                        tf.IndexedSlices(
+                            gradient_flat[i].values * (1 - rho), gradient_flat[i].indices
+                        )
+                    )
+                    denominator = velocity - tf.square(average_grad) + self.epsilon
+                else:
+                    denominator = velocity + self.epsilon
+                denominator_slices = tf.gather(denominator, gradient_flat[i].indices)
+                increment = tf.IndexedSlices(
+                    lr * gradient_flat[i].values * tf.math.rsqrt(denominator_slices),
+                    gradient_flat[i].indices,
+                )
     
-            # Dense gradients.
-            velocity.assign(rho * velocity + (1 - rho) * tf.square(gradient_flat[i]))
-            if self.centered:
-                average_grad.assign(rho * average_grad + (1 - rho) * gradient_flat[i])
-                denominator = velocity - tf.square(average_grad) + self.epsilon
+                if self.momentum > 0:
+                    momentum.assign(self.momentum * momentum)
+                    momentum.scatter_add(increment)
+                    parameter_flat[i].assign_add(-momentum)
+                else:
+                    parameter_flat[i].scatter_add(-increment)
             else:
-                denominator = velocity + self.epsilon
-            increment = lr * gradient * tf.math.rsqrt(denominator)
-            if self.momentum > 0:
-                momentum.assign(self.momentum * momentum + increment)
-                parameter_flat[i].assign_add(-momentum)
-            else:
-                parameter_flat[i].assign_add(-increment)
+                # Dense gradients.
+                velocity.assign(rho * velocity + (1 - rho) * tf.square(gradient_flat[i]))
+                if self.centered:
+                    average_grad.assign(rho * average_grad + (1 - rho) * gradient_flat[i])
+                    denominator = velocity - tf.square(average_grad) + self.epsilon
+                else:
+                    denominator = velocity + self.epsilon
+                increment = lr * gradient_flat[i] * tf.math.rsqrt(denominator)
+                if self.momentum > 0:
+                    momentum.assign(self.momentum * momentum + increment)
+                    parameter_flat[i].assign_add(-momentum)
+                else:
+                    parameter_flat[i].assign_add(-increment)
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
 
@@ -322,16 +498,31 @@ class Adadelta:
         for i in range(len(gradient_flat)):
             lr = tf.cast(self.lr, dtype=parameter_flat[i].dtype)
             
-            # Dense gradients.
-            self.accumulated_grad[i].assign(
-                rho * self.accumulated_grad[i] + (1 - rho) * gradient_flat[i] * gradient_flat[i]
-            )
-            delta_var = (
-                -rms(self.accumulated_delta_var[i]) * gradient_flat[i] / rms(self.accumulated_grad[i])
-            )
-            self.accumulated_delta_var[i].assign(
-                rho * self.accumulated_delta_var[i] + (1 - rho) * delta_var * delta_var
-            )
+            if isinstance(gradient_flat[i], tf.IndexedSlices):
+                # Sparse gradients.
+                self.accumulated_grad[i].assign_add((rho - 1) * self.accumulated_grad[i])
+                self.accumulated_grad[i].scatter_add(
+                    tf.IndexedSlices(
+                        (1 - rho) * tf.square(gradient_flat[i].values), gradient_flat[i].indices
+                    )
+                )
+                delta_var = (
+                    -rms(self.accumulated_delta_var[i]) * gradient_flat[i] / rms(self.accumulated_grad[i])
+                )
+                self.accumulated_delta_var[i].assign(
+                    rho * self.accumulated_delta_var[i] + (1 - rho) * delta_var * delta_var
+                )
+            else:
+                # Dense gradients.
+                self.accumulated_grad[i].assign(
+                    rho * self.accumulated_grad[i] + (1 - rho) * gradient_flat[i] * gradient_flat[i]
+                )
+                delta_var = (
+                    -rms(self.accumulated_delta_var[i]) * gradient_flat[i] / rms(self.accumulated_grad[i])
+                )
+                self.accumulated_delta_var[i].assign(
+                    rho * self.accumulated_delta_var[i] + (1 - rho) * delta_var * delta_var
+                )
             parameter_flat[i].assign_add(lr * delta_var)
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
@@ -430,14 +621,35 @@ class Adam:
     
             alpha = lr * tf.sqrt(1 - beta_2_power) / (1 - beta_1_power)
     
-            # Dense gradients.
-            m.assign_add((gradient_flat[i] - m) * (1 - self.beta_1))
-            v.assign_add((tf.square(gradient_flat[i]) - v) * (1 - self.beta_2))
-            if self.amsgrad:
-                v_hat = self._velocity_hats[i]
-                v_hat.assign(tf.maximum(v_hat, v))
-                v = v_hat
-            parameter_flat[i].assign_sub((m * alpha) / (tf.sqrt(v) + self.epsilon))
+            if isinstance(gradient_flat[i], tf.IndexedSlices):
+                # Sparse gradients.
+                m.assign_add(-m * (1 - self.beta_1))
+                m.scatter_add(
+                    tf.IndexedSlices(
+                        gradient_flat[i].values * (1 - self.beta_1), gradient_flat[i].indices
+                    )
+                )
+                v.assign_add(-v * (1 - self.beta_2))
+                v.scatter_add(
+                    tf.IndexedSlices(
+                        tf.square(gradient_flat[i].values) * (1 - self.beta_2),
+                        gradient_flat[i].indices,
+                    )
+                )
+                if self.amsgrad:
+                    v_hat = self._velocity_hats[i]
+                    v_hat.assign(tf.maximum(v_hat, v))
+                    v = v_hat
+                parameter_flat[i].assign_sub((m * alpha) / (tf.sqrt(v) + self.epsilon))
+            else:
+                # Dense gradients.
+                m.assign_add((gradient_flat[i] - m) * (1 - self.beta_1))
+                v.assign_add((tf.square(gradient_flat[i]) - v) * (1 - self.beta_2))
+                if self.amsgrad:
+                    v_hat = self._velocity_hats[i]
+                    v_hat.assign(tf.maximum(v_hat, v))
+                    v = v_hat
+                parameter_flat[i].assign_sub((m * alpha) / (tf.sqrt(v) + self.epsilon))
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
 
@@ -514,15 +726,37 @@ class Nadam:
     
             m = self._momentums[i]
             v = self._velocities[i]
-            # Dense gradients.
-            m.assign_add((gradient - m) * (1 - beta_1))
-            v.assign_add((tf.square(gradient) - v) * (1 - beta_2))
-            m_hat = u_t_1 * m / (1 - u_product_t_1) + (1 - u_t) * gradient / (
-                1 - u_product_t
-            )
-            v_hat = v / (1 - beta_2_power)
-
-            parameter_flat[i].assign_sub((m_hat * lr) / (tf.sqrt(v_hat) + self.epsilon))
+            
+            if isinstance(gradient_flat[i], tf.IndexedSlices):
+                # Sparse gradients.
+                m.assign_add(-m * (1 - beta_1))
+                m.scatter_add(
+                    tf.IndexedSlices(
+                        gradient_flat[i].values * (1 - beta_1), gradient_flat[i].indices
+                    )
+                )
+                v.assign_add(-v * (1 - beta_2))
+                v.scatter_add(
+                    tf.IndexedSlices(
+                        tf.square(gradient_flat[i].values) * (1 - beta_2), gradient_flat[i].indices
+                    )
+                )
+                m_hat = u_t_1 * m / (1 - u_product_t_1) + (1 - u_t) * gradient_flat[i] / (
+                    1 - u_product_t
+                )
+                v_hat = v / (1 - beta_2_power)
+    
+                parameter_flat[i].assign_sub((m_hat * lr) / (tf.sqrt(v_hat) + self.epsilon))
+            else:
+                # Dense gradients.
+                m.assign_add((gradient_flat[i] - m) * (1 - beta_1))
+                v.assign_add((tf.square(gradient_flat[i]) - v) * (1 - beta_2))
+                m_hat = u_t_1 * m / (1 - u_product_t_1) + (1 - u_t) * gradient_flat[i] / (
+                    1 - u_product_t
+                )
+                v_hat = v / (1 - beta_2_power)
+    
+                parameter_flat[i].assign_sub((m_hat * lr) / (tf.sqrt(v_hat) + self.epsilon))
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
 
@@ -601,13 +835,30 @@ class Adamax:
     
             m = self._m[i]
             u = self._u[i]
-    
-            # Dense gradients.
-            m.assign_add((gradient_flat[i] - m) * (1 - self.beta_1))
-            u.assign(tf.maximum(self.beta_2 * u, tf.abs(gradient_flat[i])))
-            parameter_flat[i].assign_sub(
-                (lr * m) / ((1 - beta_1_power) * (u + self.epsilon))
-            )
+            
+            if isinstance(gradient_flat[i], tf.IndexedSlices):
+                # Sparse gradients.
+                indices = gradient_flat[i].indices
+                m.assign_add(-m * (1 - self.beta_1))
+                m.scatter_add(
+                    tf.IndexedSlices(gradient_flat[i].values * (1 - self.beta_1), indices)
+                )
+                u.assign(u * self.beta_2)
+                u_slice = tf.gather(u, indices)
+                u_slice_incremental = (
+                    tf.maximum(u_slice, tf.abs(gradient_flat[i].values)) - u_slice
+                )
+                u.scatter_add(tf.IndexedSlices(u_slice_incremental, indices))
+                parameter_flat[i].assign_sub(
+                    (lr * m) / ((1 - beta_1_power) * (u + self.epsilon))
+                )
+            else:
+                # Dense gradients.
+                m.assign_add((gradient_flat[i] - m) * (1 - self.beta_1))
+                u.assign(tf.maximum(self.beta_2 * u, tf.abs(gradient_flat[i])))
+                parameter_flat[i].assign_sub(
+                    (lr * m) / ((1 - beta_1_power) * (u + self.epsilon))
+                )
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
 
@@ -684,7 +935,7 @@ class AdamW:
                     )
             self.flag=1
                     
-        for i in range(len(gradient_flat)): 
+        for i in range(len(gradient_flat)):  
             lr = tf.cast(self.lr, dtype=parameter_flat[i].dtype)
             
             local_step = tf.cast(iterations + 1, parameter_flat[i].dtype)
@@ -696,14 +947,35 @@ class AdamW:
     
             alpha = lr * tf.sqrt(1 - beta_2_power) / (1 - beta_1_power)
     
-            # Dense gradients.
-            m.assign_add((gradient - m) * (1 - self.beta_1))
-            v.assign_add((tf.square(gradient) - v) * (1 - self.beta_2))
-            if self.amsgrad:
-                v_hat = self._velocity_hats[i]
-                v_hat.assign(tf.maximum(v_hat, v))
-                v = v_hat
-            parameter_flat[i].assign_sub((m * alpha) / (tf.sqrt(v) + self.epsilon))
+            if isinstance(gradient_flat[i], tf.IndexedSlices):
+                # Sparse gradients.
+                m.assign_add(-m * (1 - self.beta_1))
+                m.scatter_add(
+                    tf.IndexedSlices(
+                        gradient_flat[i].values * (1 - self.beta_1), gradient_flat[i].indices
+                    )
+                )
+                v.assign_add(-v * (1 - self.beta_2))
+                v.scatter_add(
+                    tf.IndexedSlices(
+                        tf.square(gradient_flat[i].values) * (1 - self.beta_2),
+                        gradient_flat[i].indices,
+                    )
+                )
+                if self.amsgrad:
+                    v_hat = self._velocity_hats[i]
+                    v_hat.assign(tf.maximum(v_hat, v))
+                    v = v_hat
+                parameter_flat[i].assign_sub((m * alpha) / (tf.sqrt(v) + self.epsilon))
+            else:
+                # Dense gradients.
+                m.assign_add((gradient_flat[i] - m) * (1 - self.beta_1))
+                v.assign_add((tf.square(gradient_flat[i]) - v) * (1 - self.beta_2))
+                if self.amsgrad:
+                    v_hat = self._velocity_hats[i]
+                    v_hat.assign(tf.maximum(v_hat, v))
+                    v = v_hat
+                parameter_flat[i].assign_sub((m * alpha) / (tf.sqrt(v) + self.epsilon))
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
 
@@ -903,10 +1175,27 @@ class Lion:
             beta_2 = tf.cast(self.beta_2, parameter_flat[i].dtype)
             m = self.momentums[i]
     
-            # Dense gradients
-            parameter_flat[i].assign_sub(
-                lr * tf.math.sign(m * beta_1 + gradient_flat[i] * (1.0 - beta_1))
-            )
-            m.assign(m * beta_2 + gradient_flat[i] * (1.0 - beta_2))
+            if isinstance(gradient_flat[i], tf.IndexedSlices):
+                # Sparse gradients (use m as a buffer)
+                m.assign(m * beta_1)
+                m.scatter_add(
+                    tf.IndexedSlices(
+                        gradient_flat[i].values * (1.0 - beta_1), gradient_flat[i].indices
+                    )
+                )
+                parameter_flat[i].assign_sub(lr * tf.math.sign(m))
+    
+                m.assign(m * beta_2 / beta_1)
+                m.scatter_add(
+                    tf.IndexedSlices(
+                        gradient_flat[i].values * (1.0 - beta_2 / beta_1), gradient_flat[i].indices
+                    )
+                )
+            else:
+                # Dense gradients
+                parameter_flat[i].assign_sub(
+                    lr * tf.math.sign(m * beta_1 + gradient_flat[i] * (1.0 - beta_1))
+                )
+                m.assign(m * beta_2 + gradient_flat[i] * (1.0 - beta_2))
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
