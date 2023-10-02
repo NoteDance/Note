@@ -12,6 +12,9 @@ from Note.nn.Module import Module
 class ConvNeXtBlock:
     def __init__(self,in_channels, projection_dim, drop_path_rate=0.0, layer_scale_init_value=1e-6, dtype='float32'):
         self.conv2d=conv2d(projection_dim,[7,7],in_channels//projection_dim,padding='SAME',dtype=dtype)
+        self.ln=layer_normalization(dtype=dtype)
+        self.dense1=dense(4*projection_dim,activation='gelu',dtype=dtype)
+        self.dense2=dense(projection_dim,dtype=dtype)
         self.projection_dim=projection_dim
         self.gamma=tf.Variable(tf.ones([projection_dim],dtype=dtype)*layer_scale_init_value)
         self.drop_path_rate=drop_path_rate
@@ -35,9 +38,9 @@ class ConvNeXtBlock:
     
     def output(self,data,train_flag=True):
         x=self.conv2d.output(data)
-        x=layer_normalization(dtype=self.dtype).output(x)
-        x=dense(4*self.projection_dim,activation='gelu',dtype=self.dtype).output(x)
-        x=dense(self.projection_dim,dtype=self.dtype).output(x)
+        x=self.ln.output(x)
+        x=self.dense1.output(x)
+        x=self.dense2.output(x)
         if self.layer_scale_init_value is not None:
             x=self.LayerScale(x)
         if self.drop_path_rate:
@@ -81,6 +84,8 @@ class ConvNeXt:
             layers.add(layer_normalization(self.projection_dims[i],dtype=self.dtype))
             layers.add(conv2d(self.projection_dims[i+1],[2,2],self.projection_dims[i],dtype=self.dtype))
             self.downsample_layers.append(layers)
+        self.ln=layer_normalization(dtype=self.dtype)
+        self.dense=dense(self.classes,activation='softmax',dtype=self.dtype)
         return
     
     
@@ -111,8 +116,8 @@ class ConvNeXt:
                     cur += self.depths[i]
                 if self.include_top:
                     data = tf.math.reduce_mean(data, axis=[1, 2])
-                    data=layer_normalization(dtype=self.dtype).output(data)
-                    data=dense(self.classes,activation='softmax',dtype=self.dtype).output(data)
+                    data=self.ln.output(data)
+                    data=self.dense.output(data)
                 else:
                     if self.pooling=="avg":
                         data = tf.math.reduce_mean(data, axis=[1, 2])
@@ -142,8 +147,8 @@ class ConvNeXt:
                         ).output(data,self.km)
             if self.include_top:
                 data = tf.math.reduce_mean(data, axis=[1, 2])
-                data=layer_normalization(dtype=self.dtype).output(data)
-                data=dense(self.classes,activation='softmax',dtype=self.dtype).output(data)
+                data=self.ln.output(data)
+                data=self.dense.output(data)
             else:
                 if self.pooling=="avg":
                     data = tf.math.reduce_mean(data, axis=[1, 2])
