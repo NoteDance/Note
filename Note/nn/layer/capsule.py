@@ -4,20 +4,31 @@ from Note.nn.Module import Module
 
 
 class capsule(Module):
-    def __init__(self,input_shape,num_capsules,dim_capsules,routings=3,weight_initializer='Xavier',trainable=True,dtype='float32'):
+    def __init__(self,num_capsules,dim_capsules,input_size=None,routings=3,weight_initializer='Xavier',trainable=True,dtype='float32'):
         # initialize the capsule layer with some parameters
-        self.batch_size=input_shape[0] # the number of samples in a batch
-        self.input_num_capsules=input_shape[1] # the number of input capsules
-        self.input_dim_capsules=input_shape[2] # the dimension of each input capsule
         self.num_capsules=num_capsules # the number of output capsules
         self.dim_capsules=dim_capsules # the dimension of each output capsule
+        self.input_size=input_size
         self.routings=routings # the number of routing iterations
-        self.weight=initializer([self.input_dim_capsules,self.num_capsules*self.dim_capsules],weight_initializer,dtype) # the weight matrix for transforming input capsules to output capsules
+        self.weight_initializer=weight_initializer
+        self.trainable=trainable
         self.dtype=dtype
         self.output_size=dim_capsules
-        if trainable==True:
+        if input_size!=None:
+            self.weight=initializer([input_size,num_capsules*dim_capsules],weight_initializer,dtype) # the weight matrix for transforming input capsules to output capsules
             self.param=[self.weight] # a list to store the weight matrix
+            if trainable==False:
+                self.param=[]
             Module.param.extend(self.param)
+    
+    
+    def build(self):
+        self.weight=initializer([self.input_size,self.num_capsules*self.dim_capsules],self.weight_initializer,self.dtype) # the weight matrix for transforming input capsules to output capsules
+        self.param=[self.weight] # a list to store the weight matrix
+        if self.trainable==False:
+            self.param=[]
+        Module.param.extend(self.param)
+        return
     
     
     def squash(self,data):
@@ -31,10 +42,13 @@ class capsule(Module):
         # define the output function to compute the output capsules from the input data
         if data.dtype!=self.dtype:
             data=tf.cast(data,self.dtype)
+        if self.input_size==None:
+            self.input_size=data.shape[-1]
+            self.build()
         # check the dimension of the input data
         if len(data.shape)==4: # four-dimensional data
             # reshape the data to [batch_size, height * width * channels, input_dim_capsules]
-            data=tf.reshape(data,[self.batch_size,-1,self.input_dim_capsules])
+            data=tf.reshape(data,[data.shape[0],-1,data.shape[-1]])
             # update the input_num_capsules accordingly
             self.input_num_capsules=data.shape[1]
         elif len(data.shape)==3: # three-dimensional data
