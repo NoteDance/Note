@@ -51,6 +51,9 @@ class RNN(Module): # define a class for recurrent neural network (RNN) layer
     def output(self,data): # define the output method
         if data.dtype!=self.dtype:
             data=tf.cast(data,self.dtype)
+        if self.input_size==None:
+            self.input_size=data.shape[-1]
+            self.build()
         timestep=data.shape[1] # get the number of timesteps from the input data shape
         if self.use_bias==True: # if use bias is True
             for j in range(timestep): # loop over the timesteps
