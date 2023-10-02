@@ -50,7 +50,9 @@ class VGG19:
         self.layers.add(conv2d(512,(3,3),activation="relu", padding="SAME",dtype=dtype))
         self.layers.add(max_pool2d((2, 2), strides=(2, 2), padding='VALID'))
         
-        self.dtype=dtype
+        self.dense1=dense(4096,activation='relu',dtype=dtype)
+        self.dense2=dense(4096,activation='relu',dtype=dtype)
+        self.dense3=dense(self.classes,activation='softmax',dtype=dtype)
         self.param=Module.param
         return
     
@@ -61,9 +63,9 @@ class VGG19:
                 x=self.layers.output(data)
                 if self.include_top:
                     x=flatten().output(x)
-                    x=dense(4096,activation='relu',dtype=self.dtype).output(x)
-                    x=dense(4096,activation='relu',dtype=self.dtype).output(x)
-                    x=dense(self.classes,activation='softmax',dtype=self.dtype).output(x)
+                    x=self.dense1.output(x)
+                    x=self.dense2.output(x)
+                    x=self.dense3.output(x)
                 else:
                     if self.pooling=="avg":
                         data = tf.math.reduce_mean(data, axis=[1, 2])
@@ -73,9 +75,9 @@ class VGG19:
             x=self.layers.output(data)
             if self.include_top:
                 x=flatten().output(x)
-                x=dense(4096,activation='relu',dtype=self.dtype).output(x)
-                x=dense(4096,activation='relu',dtype=self.dtype).output(x)
-                x=dense(self.classes,activation='softmax',dtype=self.dtype).output(x)
+                x=self.dense1.output(x)
+                x=self.dense2.output(x)
+                x=self.dense3.output(x)
             else:
                 if self.pooling=="avg":
                     x = tf.math.reduce_mean(x, axis=[1, 2])
