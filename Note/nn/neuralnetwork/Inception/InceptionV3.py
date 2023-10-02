@@ -23,6 +23,8 @@ class conv2d_bn:
             mean,var=tf.nn.moments(data,axes=3,keepdims=True)
             self.moving_mean=self.moving_mean*0.99+mean*(1-0.99)
             self.moving_var=self.moving_var*0.99+var*(1-0.99)
+            data=tf.nn.batch_normalization(data,mean,var,self.beta,None,1e-3)
+        else:
             data=tf.nn.batch_normalization(data,self.moving_mean,self.moving_var,self.beta,None,1e-3)
         output=self.activation(data)
         return output
