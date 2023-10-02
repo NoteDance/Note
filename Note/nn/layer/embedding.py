@@ -33,5 +33,8 @@ class embedding(Module):
     def output(self,data):
         if data.dtype!=self.dtype:
             data=tf.cast(data,self.dtype)
+        if self.input_size==None:
+            self.input_size=data.shape[-1]
+            self.build()
         output=tf.nn.embedding_lookup(self.embeddings,data)
         return output
