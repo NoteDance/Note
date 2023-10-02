@@ -53,7 +53,7 @@ class Linformer_self_attention(Module):
         self.dropout_rate=dropout
         Module.param.extend(self.param)
 
-    def output(self, x, context = None, train_flag=True, **kwargs):
+    def output(self, x, context = None, train_flag=True):
         if x.dtype!=self.dtype:
             x=tf.cast(x,self.dtype)
             
