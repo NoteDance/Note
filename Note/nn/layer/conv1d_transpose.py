@@ -50,6 +50,9 @@ class conv1d_transpose(Module): # define a class for 1D transposed convolutional
     def output(self,data): # define the output method
         if data.dtype!=self.dtype:
             data=tf.cast(data,self.dtype)
+        if self.input_size==None:
+            self.input_size=data.shape[-1]
+            self.build()
         timesteps = data.shape[1] # get the number of timesteps in the input data
         if self.padding == 'SAME': # if padding is 'SAME'
             padding = tf.math.ceil((self.kernel_size - 1) / 2) # calculate the padding value as (kernel_size - 1) / 2, rounded up
