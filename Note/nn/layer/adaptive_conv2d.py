@@ -56,9 +56,12 @@ class adaptive_conv2d(Module):
         # data: the input tensor, shape [batch_size, height, width, channels]
         # strides: the strides of the convolution
         # padding: the padding mode, either 'VALID' or 'SAME'
-        # compute the base convolution output
         if data.dtype!=self.dtype:
             data=tf.cast(data,self.dtype)
+        if self.input_size==None:
+            self.input_size=data.shape[-1]
+            self.build()
+        # compute the base convolution output
         conv_output=tf.nn.conv2d(data,self.kernel,strides=self.strides,padding=self.padding)
         if self.use_bias:
             # add the bias term to the convolution output
