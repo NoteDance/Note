@@ -75,6 +75,9 @@ class Transformer(Module):
     def output(self,data,train_flag=True):
         if data.dtype!=self.dtype:
             data=tf.cast(data,self.dtype)
+        if self.input_size==None:
+            self.input_size=data.shape[-1]
+            self.build()
         self.train_flag=train_flag
         # Compute the query, key and value vectors by applying linear transformation and optional bias
         if self.use_bias:
