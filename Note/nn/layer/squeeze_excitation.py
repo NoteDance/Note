@@ -53,6 +53,9 @@ class squeeze_excitation(Module):
         # data: a tensor that represents the input features, shape is [N, H, W, C], where N is the number of samples, H is the height, W is the width, and C is the channel number
         if data.dtype!=self.dtype:
             data=tf.cast(data,self.dtype)
+        if self.input_size==None:
+            self.input_size=data.shape[-1]
+            self.build()
         # fix the axis parameter to [1,2] for 4D data
         axis=[1,2]
         # compute the global average pooling of the input features
