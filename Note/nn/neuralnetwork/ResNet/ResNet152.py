@@ -69,7 +69,6 @@ class ResNet152:
         self.pooling=pooling
         self.use_bias=use_bias
         self.loss_object=tf.keras.losses.CategoricalCrossentropy()
-        self.optimizer=Adam()
         self.km=0
     
     
@@ -87,6 +86,7 @@ class ResNet152:
             self.layers.add(batch_normalization(self.layers.output_size,epsilon=1.001e-5,dtype=dtype))
             self.layers.add(activation_dict['relu'])
         self.dense=dense(self.classes,self.layers.output_size,activation='softmax',dtype=dtype)
+        self.optimizer=Adam()
         self.param=Module.param
         return
     
