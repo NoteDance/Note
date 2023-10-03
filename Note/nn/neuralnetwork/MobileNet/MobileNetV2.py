@@ -3,6 +3,7 @@ from Note.nn.layer.conv2d import conv2d
 from Note.nn.layer.depthwise_conv2d import depthwise_conv2d
 from Note.nn.layer.dense import dense
 from Note.nn.layer.batch_normalization import batch_normalization
+from Note.nn.layer.zeropadding2d import zeropadding2d
 from Note.nn.Layers import Layers
 from Note.nn.activation import activation_dict
 from Note.nn.parallel.optimizer import Adam
@@ -48,7 +49,7 @@ class _inverted_res_block:
     def __init__(self, in_channels=None, expansion=None, stride=None, alpha=None, filters=None, block_id=None, dtype='float32'):
         self.conv2d1=conv2d(expansion * in_channels,[1,1],in_channels,padding="SAME",use_bias=False,dtype=dtype)
         self.batch_normalization1=batch_normalization(self.conv2d1.output_size,momentum=0.999,dtype=dtype)
-        self.zeropadding2d=tf.pad
+        self.zeropadding2d=zeropadding2d()
         self.depthwiseconv2d=depthwise_conv2d([3,3],1,self.conv2d1.output_size,strides=[1,stride,stride,1],use_bias=False,padding="SAME" if stride == 1 else "VALID",dtype=dtype)
         self.batch_normalization2=batch_normalization(self.depthwiseconv2d.output_size,momentum=0.999,dtype=dtype)
         pointwise_conv_filters = int(filters * alpha)
@@ -73,7 +74,7 @@ class _inverted_res_block:
             x=activation_dict['relu6'](x)
         if self.stride==2:
             padding = correct_pad(x, 3)
-            x=self.zeropadding2d(x, [[0, 0], padding[0], padding[1], [0, 0]])
+            x=self.zeropadding2d.output(x, padding)
         x=self.depthwiseconv2d.output(x)
         x=self.batch_normalization2.output(x,self.train_flag)
         x=activation_dict['relu6'](x)
