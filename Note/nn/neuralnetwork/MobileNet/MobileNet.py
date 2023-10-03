@@ -3,6 +3,7 @@ from Note.nn.layer.conv2d import conv2d
 from Note.nn.layer.depthwise_conv2d import depthwise_conv2d
 from Note.nn.layer.dense import dense
 from Note.nn.layer.batch_normalization import batch_normalization
+from Note.nn.layer.zeropadding2d import zeropadding2d
 from Note.nn.Layers import Layers
 from Note.nn.activation import activation_dict
 from Note.nn.parallel.optimizer import Adam
@@ -30,7 +31,7 @@ class _depthwise_conv_block:
     def __init__(self,in_channels,pointwise_conv_filters,alpha,depth_multiplier=1,strides=[1, 1],block_id=1,dtype='float32'):
         pointwise_conv_filters = int(pointwise_conv_filters * alpha)
         self.strides=strides
-        self.zeropadding2d=tf.pad
+        self.zeropadding2d=zeropadding2d()
         self.depthwiseconv2d=depthwise_conv2d([3,3],depth_multiplier,in_channels,strides=[1,strides[0],strides[1],1],padding="SAME" if strides == [1, 1] else "VALID",use_bias=False,dtype=dtype)
         self.batch_norm1=batch_normalization(self.depthwiseconv2d.output_size,dtype=dtype)
         self.conv2d=conv2d(pointwise_conv_filters,[1,1],self.depthwiseconv2d.output_size,strides=[1, 1],padding='SAME',use_bias=False,dtype=dtype)
@@ -44,9 +45,8 @@ class _depthwise_conv_block:
         if self.strides == [1, 1]:
             x = data
         else:
-            x = tf.pad(data, [[0, 0], [0, 1], [0, 1], [0, 0]])
+            x = self.zeropadding2d.output(data, ((0, 1), (0, 1)))
         x=self.depthwiseconv2d.output(x)
-        
         x=self.batch_norm1.output(x,self.train_flag)
         x=activation_dict['relu6'](x)
         x=self.conv2d.output(x)
