@@ -5,6 +5,7 @@ from Note.nn.initializer import initializer
 from Note.nn.activation import activation_dict
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
+from Note.nn.Module import Module
 
 
 # Define a class for the MBConv block
@@ -331,6 +332,8 @@ class EfficientNetV2M:
                     self.conv1x1.param,
                     self.dense.param
                     ]
+        Module.param=self.param
+        self.optimizer=Adam()
         return
     
     

@@ -5,6 +5,7 @@ from Note.nn.initializer import initializer
 from Note.nn.activation import activation_dict
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
+from Note.nn.Module import Module
 
 
 # Define a class for the MBConv block
@@ -305,7 +306,6 @@ class EfficientNetV2B0:
         self.pooling=pooling
         self.swish=activation_dict['swish']
         self.loss_object=tf.keras.losses.CategoricalCrossentropy()
-        self.optimizer=Adam()
         self.km=0
     
     
@@ -330,6 +330,8 @@ class EfficientNetV2B0:
                     self.conv1x1.param,
                     self.dense.param
                     ]
+        Module.param=self.param
+        self.optimizer=Adam()
         return
     
     
