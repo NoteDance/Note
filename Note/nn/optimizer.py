@@ -16,28 +16,6 @@ class Gradient:
             state_ops.assign(parameter_flat[i],parameter_flat[i]-lr*gradient_flat[i])
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return
-    
-
-class Momentum:
-    def __init__(self,lr,gamma):
-        self.lr=tf.Variable(lr)
-        self.gamma=gamma
-        self.v=[]
-        self.flag=0
-    
-    
-    def opt(self,gradient,parameter):
-        gradient_flat=nest.flatten(gradient)
-        parameter_flat=nest.flatten(parameter)
-        if self.flag==0:
-            self.v=[0 for x in range(len(gradient_flat))]
-            self.flag=1
-        for i in range(len(gradient_flat)):
-            lr=tf.cast(self.lr, dtype=parameter_flat[i].dtype)
-            self.v[i]=self.gamma*self.v[i]+lr*gradient_flat[i]
-            state_ops.assign(parameter_flat[i],parameter_flat[i]-self.v[i])
-        parameter=nest.pack_sequence_as(parameter,parameter_flat)
-        return
 
 
 class SGD:
@@ -88,14 +66,15 @@ class SGD:
     def opt(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
-        if self.flag==0:
+        if self.flag.value==0:
+            self.flag.value=1
             for param in parameter_flat:
                 self.momentums.append(
                     tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                 )
         
         for i in range(len(gradient_flat)):
-            lr = tf.cast(self.learning_rate, parameter_flat[i].dtype)
+            lr = tf.cast(self.lr, parameter_flat[i].dtype)
             m = None
             momentum = tf.cast(self.momentum, parameter_flat[i].dtype)
             m = self.momentums[i]
@@ -591,21 +570,15 @@ class Adam:
         if self.flag==0:
             for param in parameter_flat:
                 self._momentums.append(
-                    self.add_variable_from_reference(
-                        tf.Variable(tf.zeros_like(param,dtype=param.dtype))
-                    )
+                    tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                 )
                 self._velocities.append(
-                    self.add_variable_from_reference(
-                        tf.Variable(tf.zeros_like(param,dtype=param.dtype))
-                    )
+                    tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                 )
                 if self.amsgrad:
                     for param in parameter_flat:
                         self._velocity_hats.append(
-                            self.add_variable_from_reference(
-                                tf.Variable(tf.zeros_like(param,dtype=param.dtype))
-                            )
+                            tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                         )
             self.flag=1
                             
@@ -692,14 +665,10 @@ class Nadam:
             for param in parameter_flat:
                 self._u_product.append(tf.Variable(1.0, param.dtype))
                 self._momentums.append(
-                    self.add_variable_from_reference(
-                        tf.Variable(tf.zeros_like(param,dtype=param.dtype))
-                    )
+                    tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                 )
                 self._velocities.append(
-                    self.add_variable_from_reference(
-                        tf.Variable(tf.zeros_like(param,dtype=param.dtype))
-                    )
+                    tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                 )
             self.flag=1
         
@@ -816,14 +785,10 @@ class Adamax:
         if self.flag==0:
             for param in parameter_flat:
                 self._m.append(
-                    self.add_variable_from_reference(
-                        tf.Variable(tf.zeros_like(param,dtype=param.dtype))
-                    )
+                    tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                 )
                 self._u.append(
-                    self.add_variable_from_reference(
-                        tf.Variable(tf.zeros_like(param,dtype=param.dtype))
-                    )
+                    tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                 )
             self.flag=1
         
