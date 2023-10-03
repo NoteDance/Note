@@ -49,10 +49,6 @@ class zeropadding1d:
             self.output_size=input_size
     
     
-    def build(self):
-        self.output_size=self.input_size
-    
-    
     def output(self, data, padding=1):
         padding = normalize_tuple(
             padding, 2, allow_zero=True
