@@ -48,10 +48,6 @@ class zeropadding2d:
         if input_size!=None:
             self.output_size=input_size
             
-            
-    def build(self):
-        self.output_size=self.input_size
-        
         
     def output(self, data, padding=(1, 1)):
         if isinstance(padding, int):
