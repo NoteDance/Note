@@ -1,6 +1,5 @@
 import tensorflow as tf
 import numpy as np
-from Note.nn.initializer import initializer
 from Note.nn.layer.conv2d import conv2d
 from Note.nn.layer.dense import dense
 from Note.nn.layer.layer_normalization import layer_normalization
