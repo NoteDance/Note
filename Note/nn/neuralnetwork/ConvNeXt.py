@@ -108,7 +108,7 @@ class ConvNeXt:
                 input_channels=block.output_size
             cur += self.depths[i]
         self.layer_normalization=layer_normalization(self.blocks[-1][-1].output_size,dtype=dtype)
-        self.dense=dense(self.blocks[-1][-1].output_size,self.classes,activation='softmax',dtype=dtype)
+        self.dense=dense(self.classes,self.blocks[-1][-1].output_size,activation='softmax',dtype=dtype)
         
         self.optimizer=Adam()
         self.param=Module.param
@@ -125,7 +125,7 @@ class ConvNeXt:
                 if self.include_top:
                     data = tf.math.reduce_mean(data, axis=[1, 2])
                     data = self.layer_normalization.output(data)
-                    data = self.dense(data)
+                    data = self.dense.output(data)
                 else:
                     if self.pooling=="avg":
                         data = tf.math.reduce_mean(data, axis=[1, 2])
@@ -139,7 +139,7 @@ class ConvNeXt:
             if self.include_top:
                 data = tf.math.reduce_mean(data, axis=[1, 2])
                 data = self.layer_normalization.output(data)
-                data = self.dense(data)
+                data = self.dense.output(data)
             else:
                 if self.pooling=="avg":
                     data = tf.math.reduce_mean(data, axis=[1, 2])
