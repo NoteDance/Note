@@ -53,6 +53,9 @@ class separable_conv2d(Module): # define a class for separable convolutional lay
     def output(self,data): # define the output method
         if data.dtype!=self.dtype:
             data=tf.cast(data,self.dtype)
+        if self.input_size==None:
+            self.input_size=data.shape[-1]
+            self.build()
         strides = (1,) + tuple(self.strides) + (1,)
         output=a.activation_conv(data,self.depthwise_kernel,None,strides,self.padding,self.data_format,self.dilations,tf.nn.depthwise_conv2d) # calculate the output of applying activation function to the depthwise convolution of input data and weight matrix, plus bias vector
         output=a.activation_conv(output,self.pointwise_kernel,None,[1,1,1,1],'VALID',self.data_format,None,tf.nn.conv2d) # calculate the output of applying activation function to the pointwise convolution of previous output and weight matrix, plus bias vector
