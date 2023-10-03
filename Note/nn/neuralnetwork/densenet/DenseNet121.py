@@ -8,7 +8,6 @@ from Note.nn.layer.identity import identity
 from Note.nn.layer.concat import concat
 from Note.nn.Layers import Layers
 from Note.nn.activation import activation_dict
-from Note.nn.initializer import initializer
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
 from Note.nn.Module import Module
@@ -96,8 +95,7 @@ class DenseNet121:
         
         self.layers.add(activation_dict['relu'])
         
-        self.fc_weight = initializer([self.layers.output_size, self.num_classes], 'Xavier', self.dtype)
-        self.fc_bias = initializer([self.num_classes], 'Xavier', self.dtype)
+        self.dense(self.num_classes,self.layers.output_size,activation='softmax',dtype=self.dtype)
         
         Module.param.extend([self.fc_weight,self.fc_bias])
         self.param=Module.param
@@ -111,8 +109,7 @@ class DenseNet121:
                 x=self.layers.output(data)
                 if self.include_top:
                     x = tf.reduce_mean(x, axis=[1, 2])
-                    x = tf.matmul(x, self.fc_weight)+self.fc_bias
-                    x = tf.nn.softmax(x)
+                    x = self.dense.output(x)
                 else:
                     if self.pooling == 'avg':
                         x = tf.reduce_mean(x, axis=[1, 2])
@@ -122,8 +119,7 @@ class DenseNet121:
             x=self.layers.output(data,self.km)
             if self.include_top:
                 x = tf.math.reduce_mean(x, axis=[1, 2])
-                x = tf.matmul(x, self.fc_weight)+self.fc_bias
-                x = tf.nn.softmax(x)
+                x = self.dense.output(x)
             else:
                 if self.pooling=="avg":
                     x = tf.math.reduce_mean(x, axis=[1, 2])
