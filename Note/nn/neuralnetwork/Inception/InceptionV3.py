@@ -3,6 +3,7 @@ from Note.nn.initializer import initializer
 from Note.nn.activation import activation_dict
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
+from Note.nn.Module import Module
 
 
 class conv2d_bn:
@@ -257,6 +258,8 @@ class InceptionV3:
         self.fc_weight = initializer([output_size, self.classes], 'Xavier', dtype)
         self.fc_bias = initializer([self.classes], 'Xavier', dtype)
         self.param.extend([self.fc_weight,self.fc_bias])
+        Module.param=self.pram
+        self.optimizer=Adam()
         return
     
     

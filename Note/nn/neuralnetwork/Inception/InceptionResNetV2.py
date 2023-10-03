@@ -3,6 +3,7 @@ from Note.nn.initializer import initializer
 from Note.nn.activation import activation_dict
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
+from Note.nn.Module import Module
 
 
 class conv2d_bn:
@@ -120,7 +121,6 @@ class InceptionResNetV2:
         self.include_top=include_top
         self.pooling=pooling
         self.loss_object=tf.keras.losses.CategoricalCrossentropy()
-        self.optimizer=Adam()
         self.km=0
     
     
@@ -219,6 +219,8 @@ class InceptionResNetV2:
         self.fc_weight = initializer([self.conv_7b.output_size, self.classes], 'Xavier', dtype)
         self.fc_bias = initializer([self.classes], 'Xavier', dtype)
         self.param.extend([self.conv_7b.param,self.fc_weight,self.fc_bias])
+        Module.param=self.pram
+        self.optimizer=Adam()
         return
     
     
