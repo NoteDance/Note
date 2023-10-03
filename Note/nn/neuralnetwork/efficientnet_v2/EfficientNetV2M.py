@@ -332,8 +332,7 @@ class EfficientNetV2M:
                     self.conv1x1.param,
                     self.dense.param
                     ]
-        Module.param=self.param
-        self.optimizer=Adam()
+        self.optimizer=Adam(param=self.param)
         return
     
     
