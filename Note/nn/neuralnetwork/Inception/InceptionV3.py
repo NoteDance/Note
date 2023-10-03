@@ -258,8 +258,7 @@ class InceptionV3:
         self.fc_weight = initializer([output_size, self.classes], 'Xavier', dtype)
         self.fc_bias = initializer([self.classes], 'Xavier', dtype)
         self.param.extend([self.fc_weight,self.fc_bias])
-        Module.param=self.pram
-        self.optimizer=Adam()
+        self.optimizer=Adam(param=self.param)
         return
     
     
