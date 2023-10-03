@@ -52,7 +52,6 @@ class DenseNet201:
         self.include_top=include_top
         self.pooling=pooling
         self.loss_object=tf.keras.losses.CategoricalCrossentropy()
-        self.optimizer=Adam()
         self.bc=tf.Variable(0,dtype=dtype)
         self.dtype=dtype
         self.km=0
@@ -102,6 +101,7 @@ class DenseNet201:
         
         Module.param.extend([self.fc_weight,self.fc_bias])
         self.param=Module.param
+        self.optimizer=Adam()
         return
     
     
