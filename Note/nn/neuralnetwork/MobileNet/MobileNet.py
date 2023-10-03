@@ -63,7 +63,6 @@ class MobileNet:
         self.include_top=include_top
         self.pooling=pooling
         self.loss_object=tf.keras.losses.CategoricalCrossentropy()
-        self.optimizer=Adam()
         self.km=0
         
         
@@ -94,6 +93,7 @@ class MobileNet:
         self.conv2d=conv2d(self.classes,[1,1],self.layers.output_size,padding='SAME',dtype=dtype)
         self.dense=dense(self.classes,self.conv2d.output_size,activation='softmax',dtype=dtype)
         self.bc=tf.Variable(0,dtype=dtype)
+        self.optimizer=Adam()
         self.param=Module.param
         return
     

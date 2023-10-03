@@ -92,7 +92,6 @@ class MobileNetV2:
         self.pooling=pooling
         self.first_block_filters = _make_divisible(32 * alpha, 8)
         self.loss_object=tf.keras.losses.CategoricalCrossentropy()
-        self.optimizer=Adam()
         self.km=0
         
         
@@ -133,6 +132,7 @@ class MobileNetV2:
         
         self.dense=dense(self.classes,self.layers.output_size,activation='softmax',dtype=dtype)
         self.bc=tf.Variable(0,dtype=dtype)
+        self.optimizer=Adam()
         self.param=Module.param
         return
     
