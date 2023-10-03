@@ -177,7 +177,6 @@ class EfficientNetB6:
         self.pooling=pooling
         self.swish=activation_dict['swish'] # get the swish activation function from the activation dictionary
         self.loss_object=tf.keras.losses.CategoricalCrossentropy() # create a categorical crossentropy loss object
-        self.optimizer=Adam() # create an Adam optimizer object
         self.km=0
     
     
@@ -205,6 +204,7 @@ class EfficientNetB6:
                     self.conv1x1.param,
                     self.dense.param
                     ] # store all the parameters in a list
+        self.optimizer=Adam(param=self.param) # create an Adam optimizer object
         return
     
     
