@@ -247,7 +247,6 @@ class RegNet:
         self.pooling=pooling
         self.classes=classes
         self.loss_object=tf.keras.losses.CategoricalCrossentropy()
-        self.optimizer=Adam()
         self.km=0
         
     
@@ -270,6 +269,7 @@ class RegNet:
             ))
             in_channels = out_channels
         self.dense=dense(self.classes,self.layers.output_size,activation='softmax',dtype=dtype)
+        self.optimizer=Adam()
         self.param=Module.param
     
     

@@ -315,7 +315,6 @@ class ResNetRS:
         self.classes=classes
         self.include_preprocessing=include_preprocessing
         self.loss_object=tf.keras.losses.CategoricalCrossentropy()
-        self.optimizer=Adam()
         self.km=0
     
         
@@ -349,6 +348,7 @@ class ResNetRS:
         self.dense=dense(self.classes,self.layers.output_size,activation='softmax',dtype=dtype)
         self.bc=tf.Variable(0,dtype=dtype)
         self.dtype=dtype
+        self.optimizer=Adam()
         self.param=Module.param
 
 
