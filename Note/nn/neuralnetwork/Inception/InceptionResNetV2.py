@@ -219,8 +219,7 @@ class InceptionResNetV2:
         self.fc_weight = initializer([self.conv_7b.output_size, self.classes], 'Xavier', dtype)
         self.fc_bias = initializer([self.classes], 'Xavier', dtype)
         self.param.extend([self.conv_7b.param,self.fc_weight,self.fc_bias])
-        Module.param=self.pram
-        self.optimizer=Adam()
+        self.optimizer=Adam(param=self.param)
         return
     
     
