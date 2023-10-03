@@ -1,7 +1,8 @@
 import tensorflow as tf
-from multiprocessing import Manager,Value
+from multiprocessing import Manager
 from tensorflow.python.ops import state_ops
 from tensorflow.python.util import nest
+from Note.nn.Module import Module
 
 
 class Gradient:
@@ -15,29 +16,6 @@ class Gradient:
         for i in range(len(gradient_flat)):
             lr=tf.cast(self.lr, dtype=parameter_flat[i].dtype)
             state_ops.assign(parameter_flat[i],parameter_flat[i]-lr*gradient_flat[i])
-        parameter=nest.pack_sequence_as(parameter,parameter_flat)
-        return parameter
-    
-
-class Momentum:
-    def __init__(self,lr,gamma):
-        self.lr=tf.Variable(lr)
-        self.gamma=gamma
-        manager=Manager()
-        self.v=manager.list()
-        self.flag=Value('i',0)
-    
-    
-    def opt(self,gradient,parameter):
-        gradient_flat=nest.flatten(gradient)
-        parameter_flat=nest.flatten(parameter)
-        if self.flag.value==0:
-            self.flag.value=1
-            self.v=[tf.Variable(tf.zeros_like(x),dtype=x.dtype.name) for x in gradient_flat]
-        for i in range(len(gradient_flat)):
-            lr=tf.cast(self.lr, dtype=parameter_flat[i].dtype)
-            self.v[i].assign(self.gamma*self.v[i]+lr*gradient_flat[i])
-            state_ops.assign(parameter_flat[i],parameter_flat[i]-self.v[i])
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
 
@@ -75,6 +53,7 @@ class SGD:
         lr=0.01,
         momentum=0.0,
         nesterov=False,
+        param=None
     ):
         self.lr = tf.Variable(lr)
         self.momentum = momentum
@@ -85,21 +64,26 @@ class SGD:
             raise ValueError("`momentum` must be between [0, 1].")
         manager=Manager()
         self.momentums = manager.list()
-        self.flag = Value('i',0)
+        if param is None:
+            parameter_flat=nest.flatten(Module.param)
+            for param in parameter_flat:
+                self.momentums.append(
+                    tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                )
+        else:
+            parameter_flat=nest.flatten(param)
+            for param in parameter_flat:
+                self.momentums.append(
+                    tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                )
 
 
     def opt(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
-        if self.flag.value==0:
-            self.flag.value=1
-            for param in parameter_flat:
-                self.momentums.append(
-                    tf.Variable(tf.zeros_like(param,dtype=param.dtype))
-                )
         
         for i in range(len(gradient_flat)):
-            lr = tf.cast(self.learning_rate, parameter_flat[i].dtype)
+            lr = tf.cast(self.lr, parameter_flat[i].dtype)
             m = None
             momentum = tf.cast(self.momentum, parameter_flat[i].dtype)
             m = self.momentums[i]
@@ -166,20 +150,15 @@ class Adagrad:
         lr=0.001,
         initial_accumulator_value=0.1,
         epsilon=1e-7,
+        param=None
     ):
         self.lr = tf.Variable(lr)
         self.initial_accumulator_value = initial_accumulator_value
         self.epsilon = epsilon
         manager=Manager()
         self._accumulators = manager.list()
-        self.flag = Value('i',0)
-
-
-    def opt(self, gradient, parameter):
-        gradient_flat=nest.flatten(gradient)
-        parameter_flat=nest.flatten(parameter)
-        if self.flag.value==0:
-            self.flag.value=1
+        if param is None:
+            parameter_flat=nest.flatten(Module.param)
             for param in parameter_flat:
                 self._accumulators.append(
                     tf.Variable(
@@ -187,6 +166,20 @@ class Adagrad:
                         dtype=param.dtype
                     )
                 )
+        else:
+            parameter_flat=nest.flatten(param)
+            for param in parameter_flat:
+                self._accumulators.append(
+                    tf.Variable(
+                        tf.fill(param.shape,self.initial_accumulator_value),
+                        dtype=param.dtype
+                    )
+                )
+    
+
+    def opt(self, gradient, parameter):
+        gradient_flat=nest.flatten(gradient)
+        parameter_flat=nest.flatten(parameter)
          
         for i in range(len(gradient_flat)):
             lr = tf.cast(self.learning_rate, parameter_flat[i].dtype)
@@ -237,6 +230,7 @@ class Adafactor:
         epsilon_2=1e-3,
         clip_threshold=1.0,
         relative_step=True,
+        param=None
     ):
         self.lr = tf.Variable(lr)
         self.beta_2_decay = beta_2_decay
@@ -248,18 +242,8 @@ class Adafactor:
         self._r = manager.list()
         self._c = manager.list()
         self._v = manager.list()
-        self.flag = Value('i',0)
-        
-
-    def _rms(self, x):
-        return tf.sqrt(tf.reduce_mean(tf.square(x)))
-
-
-    def opt(self, gradient, parameter, iterations):
-        gradient_flat=nest.flatten(gradient)
-        parameter_flat=nest.flatten(parameter)
-        if self.flag.value==0:
-            self.flag.value=1
+        if param is None:
+            parameter_flat=nest.flatten(Module.param)
             for param in parameter_flat:
                 if len(param.shape) < 2:
                     # Don't factor if variable is of dimension < 2, but we still
@@ -279,6 +263,36 @@ class Adafactor:
                 self._v.append(
                         tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                 )
+        else:
+            parameter_flat=nest.flatten(param)
+            for param in parameter_flat:
+                if len(param.shape) < 2:
+                    # Don't factor if variable is of dimension < 2, but we still
+                    # need to create dummy variables as placeholder.
+                    self._r.append(tf.Variable(0, dtype=param.dtype))
+                    self._c.append(tf.Variable(0, dtype=param.dtype))
+                else:
+                    # Always factor the last 2 dimenstions.
+                    r_shape = param.shape[:-1]
+                    c_shape = param.shape[:-2] + param.shape[-1]
+                    self._r.append(
+                        tf.Variable(tf.zeros(shape=r_shape,dtype=param.dtype))
+                    )
+                    self._c.append(
+                        tf.Variable(tf.zeros(shape=c_shape,dtype=param.dtype))
+                        )
+                self._v.append(
+                        tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                )
+        
+
+    def _rms(self, x):
+        return tf.sqrt(tf.reduce_mean(tf.square(x)))
+
+
+    def opt(self, gradient, parameter, iterations):
+        gradient_flat=nest.flatten(gradient)
+        parameter_flat=nest.flatten(parameter)
 
         for i in range(len(gradient_flat)):
             lr = tf.cast(self.lr, parameter_flat[i].dtype)
@@ -355,6 +369,7 @@ class RMSprop:
         momentum=0.0,
         epsilon=1e-7,
         centered=False,
+        param=None
     ):
         self.lr = tf.Variable(lr)
         self.rho = rho
@@ -365,30 +380,47 @@ class RMSprop:
         self._velocities = manager.list()
         self._momentums = manager.list()
         self._average_gradients = manager.list()
-        self.flag = Value('i',0)
-
-
-    def opt(self, gradient, parameter):
-        gradient_flat=nest.flatten(gradient)
-        parameter_flat=nest.flatten(parameter)
-        if self.flag.value==0:
-            self.flag.value=1
+        if param is None:
+            parameter_flat=nest.flatten(Module.param)
             for param in parameter_flat:
                 self._velocities.append(
                     tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                 )
     
-            if self.momentum > 0:
+            if momentum > 0:
                 for param in parameter_flat:
                     self._momentums.append(
                         tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                     )
     
-            if self.centered:
+            if centered:
                 for param in parameter_flat:
                     self._average_gradients.append(
                         tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                     )
+        else:
+            parameter_flat=nest.flatten(param)
+            for param in parameter_flat:
+                self._velocities.append(
+                    tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                )
+    
+            if momentum > 0:
+                for param in parameter_flat:
+                    self._momentums.append(
+                        tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                    )
+    
+            if centered:
+                for param in parameter_flat:
+                    self._average_gradients.append(
+                        tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                    )
+
+
+    def opt(self, gradient, parameter):
+        gradient_flat=nest.flatten(gradient)
+        parameter_flat=nest.flatten(parameter)
 
         for i in range(len(gradient_flat)):
             lr = tf.cast(self.lr, dtype=parameter_flat[i].dtype)
@@ -476,6 +508,7 @@ class Adadelta:
         lr=0.001,
         rho=0.95,
         epsilon=1e-7,
+        param=None
     ):
         self.lr = tf.Variable(lr)
         self.rho = rho
@@ -483,14 +516,8 @@ class Adadelta:
         manager=Manager()
         self._accumulated_grads = manager.list()
         self._accumulated_delta_vars = manager.list()
-        self.flag = Value('i',0)
-
-
-    def opt(self, gradient, parameter):
-        gradient_flat=nest.flatten(gradient)
-        parameter_flat=nest.flatten(parameter)
-        if self.flag.value==0:
-            self.flag.value=1
+        if param is None:
+            parameter_flat=nest.flatten(Module.param)
             for param in parameter_flat:
                 self.accumulated_grads.append(
                     tf.Variable(tf.zeros_like(param,dtype=param.dtype))
@@ -498,6 +525,21 @@ class Adadelta:
                 self.accumulated_delta_vars.append(
                     tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                 )
+        else:
+            parameter_flat=nest.flatten(param)
+            for param in parameter_flat:
+                self.accumulated_grads.append(
+                    tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                )
+                self.accumulated_delta_vars.append(
+                    tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                )
+
+
+    def opt(self, gradient, parameter):
+        gradient_flat=nest.flatten(gradient)
+        parameter_flat=nest.flatten(parameter)
+
         rho = self.rho
 
         def rms(x):
@@ -580,6 +622,7 @@ class Adam:
         beta_2=0.999,
         epsilon=1e-7,
         amsgrad=False,
+        param=None
     ):
         self.lr = tf.Variable(lr)
         self.beta_1 = beta_1
@@ -591,32 +634,39 @@ class Adam:
         self._velocities = manager.list()
         if self.amsgrad:
             self._velocity_hats = manager.list()
-        self.flag = Value('i',0)
+        if param is None:
+            parameter_flat=nest.flatten(Module.param)
+            for param in parameter_flat:
+                self._momentums.append(
+                    tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                )
+                self._velocities.append(
+                    tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                )
+                if amsgrad:
+                    for param in parameter_flat:
+                        self._velocity_hats.append(
+                                tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                        )
+        else:
+            parameter_flat=nest.flatten(param)
+            for param in parameter_flat:
+                self._momentums.append(
+                    tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                )
+                self._velocities.append(
+                    tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                )
+                if amsgrad:
+                    for param in parameter_flat:
+                        self._velocity_hats.append(
+                                tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                        )
 
 
     def opt(self, gradient, parameter, iterations):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
-        if self.flag.value==0:
-            self.flag.value=1
-            for param in parameter_flat:
-                self._momentums.append(
-                    self.add_variable_from_reference(
-                        tf.Variable(tf.zeros_like(param,dtype=param.dtype))
-                    )
-                )
-                self._velocities.append(
-                    self.add_variable_from_reference(
-                        tf.Variable(tf.zeros_like(param,dtype=param.dtype))
-                    )
-                )
-                if self.amsgrad:
-                    for param in parameter_flat:
-                        self._velocity_hats.append(
-                            self.add_variable_from_reference(
-                                tf.Variable(tf.zeros_like(param,dtype=param.dtype))
-                            )
-                        )
                             
         for i in range(len(gradient_flat)):
             lr = tf.cast(self.lr, dtype=parameter_flat[i].dtype)
@@ -680,6 +730,7 @@ class Nadam:
         beta_1=0.9,
         beta_2=0.999,
         epsilon=1e-7,
+        param=None
     ):
         self.lr = tf.Variable(lr)
         self.beta_1 = beta_1
@@ -692,26 +743,31 @@ class Nadam:
         # Keep a counter on how many times of _u_product has been computed to
         # avoid duplicated computations.
         self._u_product_counter = 1
-        self.flag = Value('i',0)
+        if param is None:
+            parameter_flat=nest.flatten(Module.param)
+            for param in parameter_flat:
+                self._u_product.append(tf.Variable(1.0, param.dtype))
+                self._momentums.append(
+                    tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                )
+                self._velocities.append(
+                    tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                )
+        else:
+            parameter_flat=nest.flatten(param)
+            for param in parameter_flat:
+                self._u_product.append(tf.Variable(1.0, param.dtype))
+                self._momentums.append(
+                    tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                )
+                self._velocities.append(
+                    tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                )
                 
 
     def opt(self, gradient, parameter, iterations):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
-        if self.flag.value==0:
-            self.flag.value=1
-            for param in parameter_flat:
-                self._u_product.append(tf.Variable(1.0, param.dtype))
-                self._momentums.append(
-                    self.add_variable_from_reference(
-                        tf.Variable(tf.zeros_like(param,dtype=param.dtype))
-                    )
-                )
-                self._velocities.append(
-                    self.add_variable_from_reference(
-                        tf.Variable(tf.zeros_like(param,dtype=param.dtype))
-                    )
-                )
         
         for i in range(len(gradient_flat)):
             var_dtype = parameter_flat[i].dtype
@@ -810,6 +866,7 @@ class Adamax:
         beta_1=0.9,
         beta_2=0.999,
         epsilon=1e-7,
+        param=None
     ):
         self.lr = tf.Variable(lr)
         self.beta_1 = beta_1
@@ -818,25 +875,29 @@ class Adamax:
         manager=Manager()
         self._m = manager.list()
         self._u = manager.list()
-        self.flag = Value('i',0)
+        if param is None:
+            parameter_flat=nest.flatten(Module.param)
+            for param in parameter_flat:
+                self._m.append(
+                    tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                )
+                self._u.append(
+                    tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                )
+        else:
+            parameter_flat=nest.flatten(param)
+            for param in parameter_flat:
+                self._m.append(
+                    tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                )
+                self._u.append(
+                    tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                )
 
 
     def opt(self, gradient, parameter, iterations):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
-        if self.flag.value==0:
-            self.flag.value=1
-            for param in parameter_flat:
-                self._m.append(
-                    self.add_variable_from_reference(
-                        tf.Variable(tf.zeros_like(param,dtype=param.dtype))
-                    )
-                )
-                self._u.append(
-                    self.add_variable_from_reference(
-                        tf.Variable(tf.zeros_like(param,dtype=param.dtype))
-                    )
-                )
         
         for i in range(len(gradient_flat)):
             lr = tf.cast(self.lr, dtype=parameter_flat[i].dtype)
@@ -915,6 +976,7 @@ class AdamW:
         beta_2=0.999,
         epsilon=1e-7,
         amsgrad=False,
+        param=None
     ):
         self.lr = tf.Variable(lr)
         self.beta_1 = beta_1
@@ -926,26 +988,39 @@ class AdamW:
         self._velocities = manager.list()
         if self.amsgrad:
             self._velocity_hats = manager.list()
-        self.flag = Value('i',0)
+        if param is None:
+            parameter_flat=nest.flatten(Module.param)
+            for param in parameter_flat:
+                self._momentums.append(
+                    tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                )
+                self._velocities.append(
+                    tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                )
+                if amsgrad:
+                    for param in parameter_flat:
+                        self._velocity_hats.append(
+                            tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                        )
+        else:
+            parameter_flat=nest.flatten(param)
+            for param in parameter_flat:
+                self._momentums.append(
+                    tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                )
+                self._velocities.append(
+                    tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                )
+                if amsgrad:
+                    for param in parameter_flat:
+                        self._velocity_hats.append(
+                            tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                        )
 
 
     def opt(self, gradient, parameter, iterations):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
-        if self.flag.value==0:
-            self.flag.value=1
-            for param in parameter_flat:
-                self._momentums.append(
-                        tf.Variable(tf.zeros_like(param,dtype=param.dtype))
-                )
-                self._velocities.append(
-                        tf.Variable(tf.zeros_like(param,dtype=param.dtype))
-                )
-            if self.amsgrad:
-                for param in parameter_flat:
-                    self._velocity_hats.append(
-                        tf.Variable(tf.zeros_like(param,dtype=param.dtype))
-                    )
                     
         for i in range(len(gradient_flat)):  
             lr = tf.cast(self.lr, dtype=parameter_flat[i].dtype)
@@ -1044,6 +1119,7 @@ class Ftrl:
         l2_regularization_strength=0.0,
         l2_shrinkage_regularization_strength=0.0,
         beta=0.0,
+        param=None
     ):
         if initial_accumulator_value < 0.0:
             raise ValueError(
@@ -1086,19 +1162,25 @@ class Ftrl:
         manager=Manager()
         self._accumulators = manager.list()
         self._linears = manager.list()
-        self.flag = Value('i',0)
-
-
-    def opt(self, gradient, parameter):
-        gradient_flat=nest.flatten(gradient)
-        parameter_flat=nest.flatten(parameter)
-        if self.flag.value==0:
-            self.flag.value=1
+        if param is None:
+            parameter_flat=nest.flatten(Module.param)
             for param in parameter_flat:
                 self._accumulators.append(tf.Vriable(tf.fill(dims=param.shape, 
                                                     value=self.initial_accumulator_value),
                                                      dtype=param.dtype))
                 self._linears.append(tf.Variable(tf.zeros_like(param,dtype=param.dtype)))
+        else:
+            parameter_flat=nest.flatten(param)
+            for param in parameter_flat:
+                self._accumulators.append(tf.Vriable(tf.fill(dims=param.shape, 
+                                                    value=self.initial_accumulator_value),
+                                                     dtype=param.dtype))
+                self._linears.append(tf.Variable(tf.zeros_like(param,dtype=param.dtype)))
+
+
+    def opt(self, gradient, parameter):
+        gradient_flat=nest.flatten(gradient)
+        parameter_flat=nest.flatten(parameter)
         
         for i in range(len(gradient_flat)):
             lr = tf.cast(self.lr, parameter_flat[i].dtype)
@@ -1159,6 +1241,7 @@ class Lion:
         lr=0.0001,
         beta_1=0.9,
         beta_2=0.99,
+        param=None
     ):
         self.lr = tf.Variable(lr)
         self.beta_1 = beta_1
@@ -1170,18 +1253,23 @@ class Lion:
             )
         manager=Manager()
         self.momentums = manager.list()
-        self.flag = Value('i',0)
+        if param is None:
+            parameter_flat=nest.flatten(Module.param)
+            for param in parameter_flat:
+                self.momentums.append(
+                        tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                        )
+        else:
+            parameter_flat=nest.flatten(param)
+            for param in parameter_flat:
+                self.momentums.append(
+                        tf.Variable(tf.zeros_like(param,dtype=param.dtype))
+                        )
 
 
     def opt(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
-        if self.flag.value==0:
-            self.flag.value=1
-            for param in parameter_flat:
-                self.momentums.append(
-                        tf.Variable(tf.zeros_like(param,dtype=param.dtype))
-                        )
                 
         for i in range(len(gradient_flat)):
             lr = tf.cast(self.learning_rate, parameter_flat[i].dtype)
