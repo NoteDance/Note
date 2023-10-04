@@ -43,26 +43,46 @@ def normalize_tuple(value, n, allow_zero=False):
 
 
 class zeropadding2d:
-    def __init__(self,input_size=None):
+    def __init__(self,input_size=None, padding=None):
+        self.pattern = None
+        if padding is not None:
+            if isinstance(padding, int):
+                padding = ((padding, padding), (padding, padding))
+            else:
+                if len(padding) != 2:
+                    raise ValueError(
+                        f"`padding` should have two elements. Received: {padding}."
+                    )
+                height_padding = normalize_tuple(
+                    padding[0], 2, allow_zero=True
+                )
+                width_padding = normalize_tuple(
+                    padding[1], 2, allow_zero=True
+                )
+                padding = (height_padding, width_padding)
+            self.pattern = [[0, 0], list(padding[0]), list(padding[1]), [0, 0]]
         self.input_size=input_size
         if input_size!=None:
             self.output_size=input_size
             
         
     def output(self, data, padding=(1, 1)):
-        if isinstance(padding, int):
-            padding = ((padding, padding), (padding, padding))
-        else:
-            if len(padding) != 2:
-                raise ValueError(
-                    f"`padding` should have two elements. Received: {padding}."
+        if self.pattern is None:
+            if isinstance(padding, int):
+                padding = ((padding, padding), (padding, padding))
+            else:
+                if len(padding) != 2:
+                    raise ValueError(
+                        f"`padding` should have two elements. Received: {padding}."
+                    )
+                height_padding = normalize_tuple(
+                    padding[0], 2, allow_zero=True
                 )
-            height_padding = normalize_tuple(
-                padding[0], 2, allow_zero=True
-            )
-            width_padding = normalize_tuple(
-                padding[1], 2, allow_zero=True
-            )
-            padding = (height_padding, width_padding)
-        pattern = [[0, 0], list(padding[0]), list(padding[1]), [0, 0]]
+                width_padding = normalize_tuple(
+                    padding[1], 2, allow_zero=True
+                )
+                padding = (height_padding, width_padding)
+            pattern = [[0, 0], list(padding[0]), list(padding[1]), [0, 0]]
+        else:
+            pattern = self.pattern
         return tf.pad(data, pattern)
