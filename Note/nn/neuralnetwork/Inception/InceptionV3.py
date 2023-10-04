@@ -3,7 +3,6 @@ from Note.nn.initializer import initializer
 from Note.nn.activation import activation_dict
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
-from Note.nn.Module import Module
 
 
 class conv2d_bn:
@@ -114,7 +113,6 @@ class InceptionV3:
     
     
     def build(self,dtype='float32'):
-        self.bc=tf.Variable(0,dtype=dtype)
         self.conv2d_bn1 = conv2d_bn(3, 32, 3, 3, dtype)
         self.conv2d_bn2 = conv2d_bn(self.conv2d_bn1.output_size, 32, 3, 3, dtype)
         self.conv2d_bn3 = conv2d_bn(self.conv2d_bn2.output_size, 64, 3, 3, dtype)
