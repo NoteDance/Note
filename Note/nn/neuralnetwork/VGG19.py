@@ -19,8 +19,6 @@ class VGG19:
     
     
     def build(self,dtype='float32'):
-        self.bc=tf.Variable(0,dtype=dtype)
-        
         self.layers=Layers()
         # Block 1
         self.layers.add(conv2d(64,(3,3),3,activation="relu", padding="SAME",dtype=dtype))
