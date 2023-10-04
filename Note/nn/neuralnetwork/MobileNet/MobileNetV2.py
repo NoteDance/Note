@@ -132,7 +132,6 @@ class MobileNetV2:
         self.layers.add(batch_normalization(momentum=0.999))
         
         self.dense=dense(self.classes,self.layers.output_size,activation='softmax',dtype=dtype)
-        self.bc=tf.Variable(0,dtype=dtype)
         self.optimizer=Adam()
         self.param=Module.param
         return
