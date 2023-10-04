@@ -58,14 +58,12 @@ class kernel:
             self.nn.opt_counter=manager.list([self.nn.opt_counter])  
         except Exception:
             self.opt_counter_=manager.list()
-        try:
-            self.nn.ec=manager.list([self.nn.ec])  
-        except Exception:
-            self.ec_=manager.list()
-        try:
-            self.nn.bc=manager.list([self.nn.bc])
-        except Exception:
-            self.bc_=manager.list()
+        self._epoch_counter=manager.list([tf.Variable(0) for _ in range(self.process)])
+        self.nn.ec=manager.list([0])
+        self.ec=self.nn.ec[0]
+        self._batch_counter=manager.list([tf.Variable(0) for _ in range(self.process)])
+        self.nn.bc=manager.list([0])
+        self.bc=self.nn.bc[0]
         self.episode_=Value('i',self.total_episode.value)
         self.stop_flag=Value('b',False)
         self.save_flag=Value('b',False)
@@ -394,10 +392,10 @@ class kernel:
                 return
             self.param[7]=param
             self.loss[p]+=loss
-            if hasattr(self.nn,'bc'):
-                bc=self.nn.bc[0]
-                bc.assign_add(1)
-                self.nn.bc[0]=bc
+            self.nn.bc[0]=sum(self._batch_counter)+self.bc
+            _batch_counter=self._batch_counter[p]
+            _batch_counter.assign_add(1)
+            self._batch_counter[p]=_batch_counter
         else:
             index1=j*self.batch
             index2=(j+1)*self.batch
@@ -422,10 +420,10 @@ class kernel:
                 return
             self.param[7]=param
             self.loss[p]+=loss
-            if hasattr(self.nn,'bc'):
-                bc=self.nn.bc[0]
-                bc.assign_add(1)
-                self.nn.bc[0]=bc
+            self.nn.bc[0]=sum(self._batch_counter)+self.bc
+            _batch_counter=self._batch_counter[p]
+            _batch_counter.assign_add(1)
+            self._batch_counter[p]=_batch_counter
         return
     
     
@@ -474,10 +472,10 @@ class kernel:
                 lock[1].release()
             self.loss[p]=self.loss[p]/batches
         self.sc[p]+=1
-        if hasattr(self.nn,'ec'):
-            ec=self.nn.ec[0]
-            ec.assign_add(1)
-            self.nn.ec[0]=ec
+        self.nn.ec[0]=sum(self._epoch_counter)+self.ec
+        _epoch_counter=self._epoch_counter[p]
+        _epoch_counter.assign_add(1)
+        self._epoch_counter[p]=_epoch_counter
         return
     
     
@@ -772,10 +770,12 @@ class kernel:
         self.update_nn_param()
         if hasattr(self.nn,'opt_counter'):
             self.nn.opt_counter=self.nn.opt_counter[0] 
-        if hasattr(self.nn,'ec'):
-            self.nn.ec=self.nn.ec[0]
-        if hasattr(self.nn,'bc'):
-            self.nn.bc=self.nn.bc[0]
+        self.nn.ec=self.nn.ec[0]
+        self.nn.bc=self.nn.bc[0]
+        self._epoch_counter=list(self._epoch_counter)
+        self._batch_counter=list(self._batch_counter)
+        self.ec=self.nn.ec
+        self.bc=self.nn.bc
         pickle.dump(self.nn,output_file)
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.episode_step,output_file)
@@ -798,12 +798,6 @@ class kernel:
         if hasattr(self.nn,'opt_counter'):
             self.nn.opt_counter=self.opt_counter_
             self.nn.opt_counter.append(self.nn.opt_counter)
-        if hasattr(self.nn,'ec'):
-            self.nn.ec=self.ec_
-            self.nn.ec.append(self.nn.ec)
-        if hasattr(self.nn,'bc'):
-            self.nn.bc=self.bc_
-            self.nn.bc.append(self.nn.bc)
         self.param[7]=self.nn.param
         self.epsilon=pickle.load(input_file)
         self.episode_step=pickle.load(input_file)
