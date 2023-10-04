@@ -9,8 +9,7 @@ import os
 class kernel:
     def __init__(self,nn=None):
         self.nn=nn
-        if hasattr(self.nn,'km'):
-            self.nn.km=1
+        self.nn.km=1
         self.process=None
         self.process_t=None
         self.train_ds=None
@@ -567,8 +566,7 @@ class kernel:
     def restore(self,s_path):
         input_file=open(s_path,'rb')
         self.nn=pickle.load(input_file)
-        if hasattr(self.nn,'km'):
-            self.nn.km=1
+        self.nn.km=1
         if hasattr(self.nn,'opt_counter'):
             self.nn.opt_counter=self.opt_counter_
             self.nn.opt_counter.append(self.nn.opt_counter)
