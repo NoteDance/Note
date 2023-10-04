@@ -3,7 +3,6 @@ from Note.nn.initializer import initializer
 from Note.nn.activation import activation_dict
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
-from Note.nn.Module import Module
 
 
 class conv2d_bn:
@@ -125,7 +124,6 @@ class InceptionResNetV2:
     
     
     def build(self,dtype='float32'):
-        self.bc=tf.Variable(0,dtype=dtype)
         # Stem block: 35 x 35 x 192
         self.Stem_layer1 = conv2d_bn(3, 32, 3, dtype=dtype)
         self.Stem_layer2 = conv2d_bn(self.Stem_layer1.output_size, 32, 3, dtype=dtype)
