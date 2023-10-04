@@ -346,7 +346,6 @@ class ResNetRS:
                 dtype=dtype
             ))
         self.dense=dense(self.classes,self.layers.output_size,activation='softmax',dtype=dtype)
-        self.bc=tf.Variable(0,dtype=dtype)
         self.dtype=dtype
         self.optimizer=Adam()
         self.param=Module.param
