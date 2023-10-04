@@ -220,6 +220,7 @@ class Adafactor:
         self._r = []
         self._c = []
         self._v = []
+        self.iterations = tf.Variable(0)
         self.flag = 0
 
 
@@ -227,7 +228,7 @@ class Adafactor:
         return tf.sqrt(tf.reduce_mean(tf.square(x)))
 
 
-    def opt(self, gradient, parameter, iterations):
+    def opt(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         if self.flag==0:
@@ -256,7 +257,7 @@ class Adafactor:
             lr = tf.cast(self.lr, parameter_flat[i].dtype)
             epsilon_2 = tf.cast(self.epsilon_2, parameter_flat[i].dtype)
             one = tf.cast(1.0, parameter_flat[i].dtype)
-            local_step = tf.cast(iterations + 1, parameter_flat[i].dtype)
+            local_step = tf.cast(self.iterations + 1, parameter_flat[i].dtype)
             if self.relative_step:
                 # If `relative_step=True` and learning rate is a constant, we
                 # apply the relative step algorithm.
@@ -299,6 +300,7 @@ class Adafactor:
             u_t = tf.convert_to_tensor(gradient_flat[i]) * tf.math.rsqrt(v)
             u_t_hat = u_t / tf.maximum(one, (self._rms(u_t) / self.clip_threshold))
             parameter_flat[i].assign_add(-alpha_t * u_t_hat)
+        self.iterations.assign_add(1)
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
 
@@ -561,10 +563,11 @@ class Adam:
         self._velocities = []
         if self.amsgrad:
             self._velocity_hats = []
+        self.iterations = tf.Variable(0)
         self.flag = 0
 
 
-    def opt(self, gradient, parameter, iterations):
+    def opt(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         if self.flag==0:
@@ -585,7 +588,7 @@ class Adam:
         for i in range(len(gradient_flat)):
             lr = tf.cast(self.lr, dtype=parameter_flat[i].dtype)
             
-            local_step = tf.cast(iterations + 1, parameter_flat[i].dtype)
+            local_step = tf.cast(self.iterations + 1, parameter_flat[i].dtype)
             beta_1_power = tf.pow(tf.cast(self.beta_1, parameter_flat[i].dtype), local_step)
             beta_2_power = tf.pow(tf.cast(self.beta_2, parameter_flat[i].dtype), local_step)
     
@@ -623,6 +626,7 @@ class Adam:
                     v_hat.assign(tf.maximum(v_hat, v))
                     v = v_hat
                 parameter_flat[i].assign_sub((m * alpha) / (tf.sqrt(v) + self.epsilon))
+        self.iterations.assign_add(1)
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
 
@@ -655,10 +659,11 @@ class Nadam:
         # Keep a counter on how many times of _u_product has been computed to
         # avoid duplicated computations.
         self._u_product_counter = 1
+        self.iterations = tf.Variable(0)
         self.flag = 0
                 
 
-    def opt(self, gradient, parameter, iterations):
+    def opt(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         if self.flag==0:
@@ -675,15 +680,15 @@ class Nadam:
         for i in range(len(gradient_flat)):
             var_dtype = parameter_flat[i].dtype
             lr = tf.cast(self.lr, var_dtype)
-            local_step = tf.cast(iterations + 1, var_dtype)
-            next_step = tf.cast(iterations + 2, var_dtype)
+            local_step = tf.cast(self.iterations + 1, var_dtype)
+            next_step = tf.cast(self.iterations + 2, var_dtype)
             decay = tf.cast(0.96, var_dtype)
             beta_1 = tf.cast(self.beta_1, var_dtype)
             beta_2 = tf.cast(self.beta_2, var_dtype)
             u_t = beta_1 * (1.0 - 0.5 * (tf.pow(decay, local_step)))
             u_t_1 = beta_1 * (1.0 - 0.5 * (tf.pow(decay, next_step)))
     
-            if self._u_product_counter == (iterations + 2):
+            if self._u_product_counter == (self.iterations + 2):
                  u_product_t = self._u_product[i]
             else:
                 u_product_t = self._u_product[i] * u_t
@@ -726,6 +731,7 @@ class Nadam:
                 v_hat = v / (1 - beta_2_power)
     
                 parameter_flat[i].assign_sub((m_hat * lr) / (tf.sqrt(v_hat) + self.epsilon))
+        self.iterations.assign_add(1)
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
 
@@ -776,10 +782,11 @@ class Adamax:
         self.epsilon = epsilon
         self._m = []
         self._u = []
+        self.iterations = tf.Variable(0)
         self.flag = 0
 
 
-    def opt(self, gradient, parameter, iterations):
+    def opt(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         if self.flag==0:
@@ -795,7 +802,7 @@ class Adamax:
         for i in range(len(gradient_flat)):
             lr = tf.cast(self.lr, dtype=parameter_flat[i].dtype)
             
-            local_step = tf.cast(iterations + 1, parameter_flat[i].dtype)
+            local_step = tf.cast(self.iterations + 1, parameter_flat[i].dtype)
             beta_1_power = tf.pow(tf.cast(self.beta_1, parameter_flat[i].dtype), local_step)
     
             m = self._m[i]
@@ -824,6 +831,7 @@ class Adamax:
                 parameter_flat[i].assign_sub(
                     (lr * m) / ((1 - beta_1_power) * (u + self.epsilon))
                 )
+        self.iterations.assign_add(1)
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
 
@@ -879,10 +887,11 @@ class AdamW:
         self._velocities = []
         if self.amsgrad:
             self._velocity_hats = []
+        self.iterations = tf.Variable(0)
         self.flag = 0
 
 
-    def opt(self, gradient, parameter, iterations):
+    def opt(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         if self.flag==0:
@@ -903,7 +912,7 @@ class AdamW:
         for i in range(len(gradient_flat)):  
             lr = tf.cast(self.lr, dtype=parameter_flat[i].dtype)
             
-            local_step = tf.cast(iterations + 1, parameter_flat[i].dtype)
+            local_step = tf.cast(self.iterations + 1, parameter_flat[i].dtype)
             beta_1_power = tf.pow(tf.cast(self.beta_1, parameter_flat[i].dtype), local_step)
             beta_2_power = tf.pow(tf.cast(self.beta_2, parameter_flat[i].dtype), local_step)
     
@@ -941,6 +950,7 @@ class AdamW:
                     v_hat.assign(tf.maximum(v_hat, v))
                     v = v_hat
                 parameter_flat[i].assign_sub((m * alpha) / (tf.sqrt(v) + self.epsilon))
+        self.iterations.assign_add(1)
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
 
