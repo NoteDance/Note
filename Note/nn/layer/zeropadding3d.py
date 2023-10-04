@@ -43,39 +43,73 @@ def normalize_tuple(value, n, allow_zero=False):
 
 
 class zeropadding3d:
-    def __init__(self,input_size=None):
+    def __init__(self,input_size=None, padding=(1, 1, 1)):
+        self.pattern = None
+        if padding is not None:
+            if isinstance(padding, int):
+                padding = (
+                    (padding, padding),
+                    (padding, padding),
+                    (padding, padding),
+                )
+            else:
+                if len(padding) != 3:
+                    raise ValueError(
+                        f"`padding` should have 3 elements. Received: {padding}."
+                    )
+                dim1_padding = normalize_tuple(
+                    padding[0], 2, "1st entry of padding", allow_zero=True
+                )
+                dim2_padding = normalize_tuple(
+                    padding[1], 2, "2nd entry of padding", allow_zero=True
+                )
+                dim3_padding = normalize_tuple(
+                    padding[2], 2, "3rd entry of padding", allow_zero=True
+                )
+                padding = (dim1_padding, dim2_padding, dim3_padding)
+            self.pattern = [
+                [0, 0],
+                [padding[0][0], padding[0][1]],
+                [padding[1][0], padding[1][1]],
+                [padding[2][0], padding[2][1]],
+                [0, 0],
+            ]
+            
         self.input_size=input_size
         if input_size!=None:
             self.output_size=input_size
             
             
     def output(self, data, padding=(1, 1, 1)):
-        if isinstance(padding, int):
-            padding = (
-                (padding, padding),
-                (padding, padding),
-                (padding, padding),
-            )
-        else:
-            if len(padding) != 3:
-                raise ValueError(
-                    f"`padding` should have 3 elements. Received: {padding}."
+        if self.pattern is None:
+            if isinstance(padding, int):
+                padding = (
+                    (padding, padding),
+                    (padding, padding),
+                    (padding, padding),
                 )
-            dim1_padding = normalize_tuple(
-                padding[0], 2, "1st entry of padding", allow_zero=True
-            )
-            dim2_padding = normalize_tuple(
-                padding[1], 2, "2nd entry of padding", allow_zero=True
-            )
-            dim3_padding = normalize_tuple(
-                padding[2], 2, "3rd entry of padding", allow_zero=True
-            )
-            padding = (dim1_padding, dim2_padding, dim3_padding)
-        pattern = [
-            [0, 0],
-            [padding[0][0], padding[0][1]],
-            [padding[1][0], padding[1][1]],
-            [padding[2][0], padding[2][1]],
-            [0, 0],
-        ]
+            else:
+                if len(padding) != 3:
+                    raise ValueError(
+                        f"`padding` should have 3 elements. Received: {padding}."
+                    )
+                dim1_padding = normalize_tuple(
+                    padding[0], 2, "1st entry of padding", allow_zero=True
+                )
+                dim2_padding = normalize_tuple(
+                    padding[1], 2, "2nd entry of padding", allow_zero=True
+                )
+                dim3_padding = normalize_tuple(
+                    padding[2], 2, "3rd entry of padding", allow_zero=True
+                )
+                padding = (dim1_padding, dim2_padding, dim3_padding)
+            pattern = [
+                [0, 0],
+                [padding[0][0], padding[0][1]],
+                [padding[1][0], padding[1][1]],
+                [padding[2][0], padding[2][1]],
+                [0, 0],
+            ]
+        else:
+            pattern = self.pattern
         return tf.pad(data, pattern)
