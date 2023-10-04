@@ -1,5 +1,6 @@
 import tensorflow as tf
 from Note.nn.layer.conv2d import conv2d
+from Note.nn.layer.dense import dense
 from Note.nn.layer.batch_normalization import batch_normalization
 from Note.nn.layer.avg_pool2d import avg_pool2d
 from Note.nn.layer.max_pool2d import max_pool2d
@@ -95,11 +96,10 @@ class DenseNet121:
         
         self.layers.add(activation_dict['relu'])
         
-        self.dense(self.num_classes,self.layers.output_size,activation='softmax',dtype=self.dtype)
+        self.dense=dense(self.num_classes,self.layers.output_size,activation='softmax',dtype=self.dtype)
         
-        Module.param.extend([self.fc_weight,self.fc_bias])
-        self.param=Module.param
         self.optimizer=Adam()
+        self.param=Module.param
         return
     
     
