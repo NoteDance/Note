@@ -52,7 +52,6 @@ class DenseNet121:
         self.include_top=include_top
         self.pooling=pooling
         self.loss_object=tf.keras.losses.CategoricalCrossentropy()
-        self.bc=tf.Variable(0,dtype=dtype)
         self.dtype=dtype
         self.km=0
     
