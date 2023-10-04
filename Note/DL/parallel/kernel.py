@@ -96,14 +96,12 @@ class kernel:
             self.nn.opt_counter=manager.list([self.nn.opt_counter])  
         except Exception:
             self.opt_counter_=manager.list()
-        try:
-            self.nn.ec=manager.list([self.nn.ec])  
-        except Exception:
-            self.ec_=manager.list()
-        try:
-            self.nn.bc=manager.list([self.nn.bc])
-        except Exception:
-            self.bc_=manager.list()
+        self._epoch_counter=manager.list([tf.Variable(0) for _ in range(self.process)])
+        self.nn.ec=manager.list([0])
+        self.ec=self.nn.ec[0]
+        self._batch_counter=manager.list([tf.Variable(0) for _ in range(self.process)])
+        self.nn.bc=manager.list([0])
+        self.bc=self.nn.bc[0]
         self.epoch_=Value('i',0)
         self.stop_flag=Value('b',False)
         self.save_flag=Value('b',False)
@@ -325,10 +323,10 @@ class kernel:
                     opt_counter=self.nn.opt_counter[0]
                     opt_counter.assign(opt_counter+1)
                     self.nn.opt_counter[0]=opt_counter
-                if hasattr(self.nn,'bc'):
-                    bc=self.nn.bc[0]
-                    bc.assign_add(1)
-                    self.nn.bc[0]=bc
+                self.nn.bc[0]=sum(self._batch_counter)+self.bc
+                _batch_counter=self._batch_counter[p]
+                _batch_counter.assign_add(1)
+                self._batch_counter[p]=_batch_counter
                 try:
                     if hasattr(self.nn,'accuracy'):
                         try:
@@ -372,10 +370,10 @@ class kernel:
                             self.test_loss_list.append(self.test_loss.value)
                     self.save_()
                     self.epoch_counter.value+=1
-                    if hasattr(self.nn,'ec'):
-                        ec=self.nn.ec[0]
-                        ec.assign_add(1)
-                        self.nn.ec[0]=ec
+                    self.nn.ec[0]=sum(self._epoch_counter)+self.ec
+                    _epoch_counter=self._epoch_counter[p]
+                    _epoch_counter.assign_add(1)
+                    self._epoch_counter[p]=_epoch_counter
                     total_loss=np.frombuffer(self.total_loss.get_obj(),dtype='f')
                     total_loss*=0
                     if hasattr(self.nn,'accuracy'):
@@ -765,10 +763,12 @@ class kernel:
         self.update_nn_param()
         if hasattr(self.nn,'opt_counter'):
             self.nn.opt_counter=self.nn.opt_counter[0] 
-        if hasattr(self.nn,'ec'):
-            self.nn.ec=self.nn.ec[0]
-        if hasattr(self.nn,'bc'):
-            self.nn.bc=self.nn.bc[0]
+        self.nn.ec=self.nn.ec[0]
+        self.nn.bc=self.nn.bc[0]
+        self._epoch_counter=list(self._epoch_counter)
+        self._batch_counter=list(self._batch_counter)
+        self.ec=self.nn.ec
+        self.bc=self.nn.bc
         pickle.dump(self.nn,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.end_loss,output_file)
@@ -800,12 +800,6 @@ class kernel:
         if hasattr(self.nn,'opt_counter'):
             self.nn.opt_counter=self.opt_counter_
             self.nn.opt_counter.append(self.nn.opt_counter)
-        if hasattr(self.nn,'ec'):
-            self.nn.ec=self.ec_
-            self.nn.ec.append(self.nn.ec)
-        if hasattr(self.nn,'bc'):
-            self.nn.bc=self.bc_
-            self.nn.bc.append(self.nn.bc)
         self.param[7]=self.nn.param
         self.batch=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
