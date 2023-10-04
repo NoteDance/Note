@@ -12,8 +12,7 @@ import os
 class kernel:
     def __init__(self,nn=None):
         self.nn=nn
-        if hasattr(self.nn,'km'):
-            self.nn.km=1
+        self.nn.km=1
         self.PO=None
         self.process=None
         self.process_t=None
@@ -769,6 +768,7 @@ class kernel:
         self._batch_counter=list(self._batch_counter)
         self.ec=self.nn.ec
         self.bc=self.nn.bc
+        self.nn.optimizer.convert_to_list()
         pickle.dump(self.nn,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.end_loss,output_file)
@@ -792,11 +792,11 @@ class kernel:
         return
     
 	
-    def restore(self,s_path):
+    def restore(self,s_path,manager):
         input_file=open(s_path,'rb')
         self.nn=pickle.load(input_file)
-        if hasattr(self.nn,'km'):
-            self.nn.km=1
+        self.convert_to_shared_list(manager)
+        self.nn.km=1
         if hasattr(self.nn,'opt_counter'):
             self.nn.opt_counter=self.opt_counter_
             self.nn.opt_counter.append(self.nn.opt_counter)
