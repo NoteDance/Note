@@ -224,7 +224,6 @@ class FusedMBConv:
         self.rate = rate
         # Get the swish activation function from the activation_dict in Note.nn module
         self.swish = activation_dict['swish']
-        self.b=tf.Variable(0,dtype=dtype)
         self.train_flag=True
         # Assign the output size to a class attribute
         self.output_size = output_size

@@ -182,7 +182,6 @@ class EfficientNetB3:
     
     def build(self,dtype='float32'):
         """A method that builds the model by creating different layers."""
-        self.bc=tf.Variable(0,dtype=dtype) # create a variable to store the batch count
         self.conv2d=conv2d(80,[3,3],3,strides=[1,2,2,1],padding="SAME",dtype=dtype) # create a conv2d layer with 80 filters and no bias
         self.MBConv1=MBConv(80,32,3,1,1,1,dtype=dtype) # create a MBConv layer with 32 output channels and 1 repeat
         self.MBConv2=MBConv(32,56,3,2,6,5,dtype=dtype) # create a MBConv layer with 56 output channels and 5 repeats
