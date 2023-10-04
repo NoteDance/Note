@@ -64,7 +64,6 @@ class ConvNeXt:
     
     
     def build(self,dtype='float32'):
-        self.bc=tf.Variable(0,dtype=dtype)
         # Stem block.
         layers=Layers()
         layers.add(conv2d(self.projection_dims[0],[4,4],3,dtype=dtype))
