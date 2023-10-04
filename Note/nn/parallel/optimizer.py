@@ -118,6 +118,19 @@ class SGD:
         return parameter
     
     
+    def convert_to_list(self):
+        self.momentums=list(self.momentums)
+        return
+
+    
+    def convert_to_shared_list(self,manager):
+        momentums=manager.list()
+        for i in range(len(self.momentums)):
+            momentums.append(self.momentums[i])
+        self.momentums=momentums
+        return
+    
+    
 class Adagrad:
     r"""Optimizer that implements the Adagrad algorithm.
 
@@ -204,6 +217,19 @@ class Adagrad:
                 parameter_flat[i].assign_sub(lr * gradient_flat[i] / tf.sqrt(accumulator + self.epsilon))
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
+    
+    
+    def convert_to_list(self):
+        self.momentums=list(self._accumulators)
+        return
+
+    
+    def convert_to_shared_list(self,manager):
+        _accumulators=manager.list()
+        for i in range(len(self._accumulators)):
+            _accumulators.append(self._accumulators[i])
+        self._accumulators=_accumulators
+        return
 
 
 class Adafactor:
@@ -343,6 +369,29 @@ class Adafactor:
             parameter_flat[i].assign_add(-alpha_t * u_t_hat)
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
+        
+    
+    def convert_to_list(self):
+        self._r=list(self._r)
+        self._c=list(self._c)
+        self._v=list(self._v)
+        return
+
+    
+    def convert_to_shared_list(self,manager):
+        _r=manager.list()
+        _c=manager.list()
+        _v=manager.list()
+        for i in range(len(self._r)):
+            _r.append(self._r[i])
+        for i in range(len(self._c)):
+            _c.append(self._c[i])
+        for i in range(len(self._v)):
+            _v.append(self._v[i])
+        self._r=_r
+        self._c=_c
+        self._v=_v
+        return
     
 
 class RMSprop:
@@ -481,6 +530,33 @@ class RMSprop:
                     parameter_flat[i].assign_add(-increment)
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
+            
+    
+    def convert_to_list(self):
+        self._velocities=list(self._velocities)
+        if self.momentum > 0:
+            self._momentums=list(self._momentums)
+        if self.centered:
+            self._average_gradients=list(self._average_gradients)
+        return
+
+    
+    def convert_to_shared_list(self,manager):
+        _velocities=manager.list()
+        for i in range(len(self._velocities)):
+            _velocities.append(self._velocities[i])
+        self._velocities=_velocities
+        if self.momentum > 0:
+            _momentums=manager.list()
+            for i in range(len(self._momentums)):
+                _momentums.append(self._momentums[i])
+            self._momentums=_momentums
+        if self.centered:
+            _average_gradients=manager.list()
+            for i in range(len(self._average_gradients)):
+                _average_gradients.append(self._average_gradients[i])
+            self._average_gradients=_average_gradients
+        return
 
 
 class Adadelta:
@@ -576,6 +652,24 @@ class Adadelta:
             parameter_flat[i].assign_add(lr * delta_var)
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
+            
+    
+    def convert_to_list(self):
+        self.accumulated_grads=list(self.accumulated_grads)
+        self.accumulated_delta_vars=list(self.accumulated_delta_vars)
+        return
+
+    
+    def convert_to_shared_list(self,manager):
+        accumulated_grads=manager.list()
+        accumulated_delta_vars=manager.list()
+        for i in range(len(self.accumulated_grads)):
+            accumulated_grads.append(self.accumulated_grads[i])
+        for i in range(len(self.accumulated_delta_vars)):
+            accumulated_delta_vars.append(self.accumulated_delta_vars[i])
+        self.accumulated_grads=accumulated_grads
+        self.accumulated_delta_vars=accumulated_delta_vars
+        return
 
 
 class Adam:
@@ -711,6 +805,31 @@ class Adam:
                 parameter_flat[i].assign_sub((m * alpha) / (tf.sqrt(v) + self.epsilon))
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
+            
+    
+    def convert_to_list(self):
+        self._momentums=list(self._momentums)
+        self._velocities=list(self._velocities)
+        if self.amsgrad:
+            self._velocity_hats=list(self._velocity_hats)
+        return
+
+    
+    def convert_to_shared_list(self,manager):
+        _momentums=manager.list()
+        _velocities=manager.list()
+        for i in range(len(self._momentums)):
+            _momentums.append(self._momentums[i])
+        for i in range(len(self._velocities)):
+            _velocities.append(self._velocities[i])
+        self._momentums=_momentums
+        self._velocities=_velocities
+        if self.amsgrad:
+            _velocity_hats=manager.list()
+            for i in range(len(self._velocity_hats)):
+                _velocity_hats.append(self._velocity_hats[i])
+            self._velocity_hats=_velocity_hats
+        return
 
 
 class Nadam:
@@ -825,6 +944,29 @@ class Nadam:
                 parameter_flat[i].assign_sub((m_hat * lr) / (tf.sqrt(v_hat) + self.epsilon))
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
+                
+    
+    def convert_to_list(self):
+        self._u_product=list(self._u_product)
+        self._momentums=list(self._momentums)
+        self._velocities=list(self._velocities)
+        return
+
+    
+    def convert_to_shared_list(self,manager):
+        _u_product=manager.list()
+        _momentums=manager.list()
+        _velocities=manager.list()
+        for i in range(len(self._u_product)):
+            _u_product.append(self._u_product[i])
+        for i in range(len(self._momentums)):
+            _momentums.append(self._momentums[i])
+        for i in range(len(self.accumulated_delta_vars)):
+            _velocities.append(self._velocities[i])
+        self._u_product=_u_product
+        self._momentums=_momentums
+        self._velocities=_velocities
+        return
 
 
 class Adamax:
@@ -933,6 +1075,24 @@ class Adamax:
                 )
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
+                    
+    
+    def convert_to_list(self):
+        self._m=list(self._m)
+        self._u=list(self._u)
+        return
+
+    
+    def convert_to_shared_list(self,manager):
+        _m=manager.list()
+        _u=manager.list()
+        for i in range(len(self._m)):
+            _m.append(self._m[i])
+        for i in range(len(self._u)):
+            _u.append(self._u[i])
+        self._m=_m
+        self._u=_u
+        return
 
 
 class AdamW:
@@ -1065,6 +1225,31 @@ class AdamW:
                 parameter_flat[i].assign_sub((m * alpha) / (tf.sqrt(v) + self.epsilon))
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
+                        
+    
+    def convert_to_list(self):
+        self._momentums=list(self._momentums)
+        self._velocities=list(self._velocities)
+        if self.amsgrad:
+            self._velocity_hats=list(self._velocity_hats)
+        return
+
+    
+    def convert_to_shared_list(self,manager):
+        _momentums=manager.list()
+        _velocities=manager.list()
+        for i in range(len(self._momentums)):
+            _momentums.append(self._momentums[i])
+        for i in range(len(self._velocities)):
+            _velocities.append(self._velocities[i])
+        self._momentums=_momentums
+        self._velocities=_velocities
+        if self.amsgrad:
+            _velocity_hats=manager.list()
+            for i in range(len(self._velocity_hats)):
+                _velocity_hats.append(self._velocity_hats[i])
+            self._velocity_hats=_velocity_hats
+        return
 
 
 class Ftrl:
@@ -1213,6 +1398,24 @@ class Ftrl:
             accum.assign(new_accum)
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
+                            
+    
+    def convert_to_list(self):
+        self._accumulators=list(self._accumulators)
+        self._linears=list(self._linears)
+        return
+
+    
+    def convert_to_shared_list(self,manager):
+        _accumulators=manager.list()
+        _linears=manager.list()
+        for i in range(len(self._accumulators)):
+            _accumulators.append(self._accumulators[i])
+        for i in range(len(self._linears)):
+            _linears.append(self._linears[i])
+        self._accumulators=_accumulators
+        self._linears=_linears
+        return
 
 
 class Lion:
@@ -1301,3 +1504,16 @@ class Lion:
                 m.assign(m * beta_2 + gradient_flat[i] * (1.0 - beta_2))
         parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return parameter
+                                
+    
+    def convert_to_list(self):
+        self.momentums=list(self.momentums)
+        return
+
+    
+    def convert_to_shared_list(self,manager):
+        momentums=manager.list()
+        for i in range(len(self.momentums)):
+            momentums.append(self.momentums[i])
+        self.momentums=momentums
+        return
