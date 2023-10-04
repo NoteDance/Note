@@ -92,7 +92,6 @@ class MobileNet:
         self.layers.add(_depthwise_conv_block(self.layers.output_size, 1024, self.alpha, self.depth_multiplier, block_id=13, dtype=dtype))
         self.conv2d=conv2d(self.classes,[1,1],self.layers.output_size,padding='SAME',dtype=dtype)
         self.dense=dense(self.classes,self.conv2d.output_size,activation='softmax',dtype=dtype)
-        self.bc=tf.Variable(0,dtype=dtype)
         self.optimizer=Adam()
         self.param=Module.param
         return
