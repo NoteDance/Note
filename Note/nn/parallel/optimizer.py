@@ -124,10 +124,7 @@ class SGD:
 
     
     def convert_to_shared_list(self,manager):
-        momentums=manager.list()
-        for i in range(len(self.momentums)):
-            momentums.append(self.momentums[i])
-        self.momentums=momentums
+        self.momentums=manager.list(self.momentums)
         return
     
     
@@ -225,10 +222,7 @@ class Adagrad:
 
     
     def convert_to_shared_list(self,manager):
-        _accumulators=manager.list()
-        for i in range(len(self._accumulators)):
-            _accumulators.append(self._accumulators[i])
-        self._accumulators=_accumulators
+        self._accumulators=manager.list(self._accumulators)
         return
 
 
@@ -379,18 +373,9 @@ class Adafactor:
 
     
     def convert_to_shared_list(self,manager):
-        _r=manager.list()
-        _c=manager.list()
-        _v=manager.list()
-        for i in range(len(self._r)):
-            _r.append(self._r[i])
-        for i in range(len(self._c)):
-            _c.append(self._c[i])
-        for i in range(len(self._v)):
-            _v.append(self._v[i])
-        self._r=_r
-        self._c=_c
-        self._v=_v
+        self._r=manager.list(self._r)
+        self._c=manager.list(self._c)
+        self._v=manager.list(self._v)
         return
     
 
@@ -542,20 +527,11 @@ class RMSprop:
 
     
     def convert_to_shared_list(self,manager):
-        _velocities=manager.list()
-        for i in range(len(self._velocities)):
-            _velocities.append(self._velocities[i])
-        self._velocities=_velocities
+        self._velocities=manager.list(self._velocities)
         if self.momentum > 0:
-            _momentums=manager.list()
-            for i in range(len(self._momentums)):
-                _momentums.append(self._momentums[i])
-            self._momentums=_momentums
+            self._momentums=manager.list(self._momentums)
         if self.centered:
-            _average_gradients=manager.list()
-            for i in range(len(self._average_gradients)):
-                _average_gradients.append(self._average_gradients[i])
-            self._average_gradients=_average_gradients
+            self._average_gradients=manager.list(self._average_gradients)
         return
 
 
@@ -661,14 +637,8 @@ class Adadelta:
 
     
     def convert_to_shared_list(self,manager):
-        accumulated_grads=manager.list()
-        accumulated_delta_vars=manager.list()
-        for i in range(len(self.accumulated_grads)):
-            accumulated_grads.append(self.accumulated_grads[i])
-        for i in range(len(self.accumulated_delta_vars)):
-            accumulated_delta_vars.append(self.accumulated_delta_vars[i])
-        self.accumulated_grads=accumulated_grads
-        self.accumulated_delta_vars=accumulated_delta_vars
+        self.accumulated_grads=manager.list(self.accumulated_grads)
+        self.accumulated_delta_vars=manager.list(self.accumulated_delta_vars)
         return
 
 
@@ -816,19 +786,10 @@ class Adam:
 
     
     def convert_to_shared_list(self,manager):
-        _momentums=manager.list()
-        _velocities=manager.list()
-        for i in range(len(self._momentums)):
-            _momentums.append(self._momentums[i])
-        for i in range(len(self._velocities)):
-            _velocities.append(self._velocities[i])
-        self._momentums=_momentums
-        self._velocities=_velocities
+        self._momentums=manager.list(self._momentums)
+        self._velocities=manager.list(self._velocities)
         if self.amsgrad:
-            _velocity_hats=manager.list()
-            for i in range(len(self._velocity_hats)):
-                _velocity_hats.append(self._velocity_hats[i])
-            self._velocity_hats=_velocity_hats
+            self._velocity_hats=manager.list(self._velocity_hats)
         return
 
 
@@ -954,18 +915,9 @@ class Nadam:
 
     
     def convert_to_shared_list(self,manager):
-        _u_product=manager.list()
-        _momentums=manager.list()
-        _velocities=manager.list()
-        for i in range(len(self._u_product)):
-            _u_product.append(self._u_product[i])
-        for i in range(len(self._momentums)):
-            _momentums.append(self._momentums[i])
-        for i in range(len(self.accumulated_delta_vars)):
-            _velocities.append(self._velocities[i])
-        self._u_product=_u_product
-        self._momentums=_momentums
-        self._velocities=_velocities
+        self._u_product=manager.list(self._u_product)
+        self._momentums=manager.list(self._momentums)
+        self._velocities=manager.list(self._velocities)
         return
 
 
@@ -1084,14 +1036,8 @@ class Adamax:
 
     
     def convert_to_shared_list(self,manager):
-        _m=manager.list()
-        _u=manager.list()
-        for i in range(len(self._m)):
-            _m.append(self._m[i])
-        for i in range(len(self._u)):
-            _u.append(self._u[i])
-        self._m=_m
-        self._u=_u
+        self._m=manager.list(self._m)
+        self._u=manager.list(self._u)
         return
 
 
@@ -1236,19 +1182,10 @@ class AdamW:
 
     
     def convert_to_shared_list(self,manager):
-        _momentums=manager.list()
-        _velocities=manager.list()
-        for i in range(len(self._momentums)):
-            _momentums.append(self._momentums[i])
-        for i in range(len(self._velocities)):
-            _velocities.append(self._velocities[i])
-        self._momentums=_momentums
-        self._velocities=_velocities
+        self._momentums=manager.list(self._momentums)
+        self._velocities=manager.list(self._velocities)
         if self.amsgrad:
-            _velocity_hats=manager.list()
-            for i in range(len(self._velocity_hats)):
-                _velocity_hats.append(self._velocity_hats[i])
-            self._velocity_hats=_velocity_hats
+            self._velocity_hats=manager.list(self._velocity_hats)
         return
 
 
@@ -1407,14 +1344,8 @@ class Ftrl:
 
     
     def convert_to_shared_list(self,manager):
-        _accumulators=manager.list()
-        _linears=manager.list()
-        for i in range(len(self._accumulators)):
-            _accumulators.append(self._accumulators[i])
-        for i in range(len(self._linears)):
-            _linears.append(self._linears[i])
-        self._accumulators=_accumulators
-        self._linears=_linears
+        self._accumulators=manager.list(self._accumulators)
+        self._linears=manager.list(self._linears)
         return
 
 
@@ -1512,8 +1443,5 @@ class Lion:
 
     
     def convert_to_shared_list(self,manager):
-        momentums=manager.list()
-        for i in range(len(self.momentums)):
-            momentums.append(self.momentums[i])
-        self.momentums=momentums
+        self.momentums=manager.list(self.momentums)
         return
