@@ -68,10 +68,8 @@ class kernel:
                 self.test_acc_list=manager.list([])
         if self.priority_flag==True:
             self.opt_counter=Array('i',self.opt_counter)  
-        try:
-            self.nn.opt_counter=manager.list([self.nn.opt_counter])  
-        except Exception:
-            self.opt_counter_=manager.list()
+        self.nn.opt_counter=manager.list([np.zeros([self.process])])  
+        self.opt_counter_=manager.list()
         self._epoch_counter=manager.list([0 for _ in range(self.process)])
         self.nn.ec=manager.list([0])
         self.ec=self.nn.ec[0]
@@ -532,8 +530,7 @@ class kernel:
             if len(self.file_list)>self.s:
                 os.remove(self.file_list[0][0])
                 del self.file_list[0]
-        if hasattr(self.nn,'opt_counter'):
-            self.nn.opt_counter=self.nn.opt_counter[0] 
+        self.nn.opt_counter=self.nn.opt_counter[0] 
         self.nn.ec=self.nn.ec[0]
         self.nn.bc=self.nn.bc[0]
         self._epoch_counter=list(self._epoch_counter)
@@ -567,9 +564,8 @@ class kernel:
         self.nn.km=1
         self.ec=self.nn.ec
         self.bc=self.nn.bc
-        if hasattr(self.nn,'opt_counter'):
-            self.nn.opt_counter=self.opt_counter_
-            self.nn.opt_counter.append(self.nn.opt_counter)
+        self.nn.opt_counter=self.opt_counter_
+        self.nn.opt_counter.append(self.nn.opt_counter)
         self.batch=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
         self.end_acc=pickle.load(input_file)
