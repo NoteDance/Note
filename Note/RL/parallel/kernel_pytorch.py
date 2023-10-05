@@ -53,10 +53,8 @@ class kernel:
         self.priority_p=Value('i',0)
         if self.priority_flag==True:
             self.opt_counter=Array('i',np.zeros(self.process,dtype=np.int32))
-        try:
-            self.nn.opt_counter=manager.list([self.nn.opt_counter])  
-        except Exception:
-            self.opt_counter_=manager.list()
+        self.nn.opt_counter=manager.list([np.zeros([self.process])])  
+        self.opt_counter_=manager.list()
         self._epoch_counter=manager.list([0 for _ in range(self.process)])
         self.nn.ec=manager.list([0])
         self.ec=self.nn.ec[0]
@@ -526,8 +524,7 @@ class kernel:
                 os.remove(self.file_list[0][0])
                 del self.file_list[0]
         self.update_nn_param()
-        if hasattr(self.nn,'opt_counter'):
-            self.nn.opt_counter=self.nn.opt_counter[0] 
+        self.nn.opt_counter=self.nn.opt_counter[0] 
         self.nn.ec=self.nn.ec[0]
         self.nn.bc=self.nn.bc[0]
         self._epoch_counter=list(self._epoch_counter)
@@ -552,9 +549,8 @@ class kernel:
         self.nn.km=1
         self.ec=self.nn.ec
         self.bc=self.nn.bc
-        if hasattr(self.nn,'opt_counter'):
-            self.nn.opt_counter=self.opt_counter_
-            self.nn.opt_counter.append(self.nn.opt_counter)
+        self.nn.opt_counter=self.opt_counter_
+        self.nn.opt_counter.append(self.nn.opt_counter)
         self.epsilon=pickle.load(input_file)
         self.episode_step=pickle.load(input_file)
         self.pool_size=pickle.load(input_file)
