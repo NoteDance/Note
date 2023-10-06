@@ -5,10 +5,5 @@ class identity:
             self.output_size=input_size
     
     
-    def build(self):
-        self.output_size=self.input_size
-        return
-    
-    
     def output(self,data):
         return data
