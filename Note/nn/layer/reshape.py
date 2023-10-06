@@ -17,6 +17,7 @@ class reshape:
 
     def __init__(self, target_shape):
         self.target_shape = tuple(target_shape)
+        self.output_size=self.target_shape[-1]
 
     def _fix_unknown_dimension(self, input_shape, output_shape):
         """Find and replace a missing dimension in an output shape.
