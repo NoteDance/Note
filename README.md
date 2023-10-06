@@ -260,14 +260,14 @@ https://github.com/NoteDancing/Note/tree/Note-7.0/Note/nn/neuralnetwork
 **The following is an example of training on the CIFAR10 dataset.**
 ```python
 import Note.DL.parallel.kernel as k   #import kernel module
-from Note.nn.neuralnetwork.efficientnet_v2.EfficientNetV2B0 import EfficientNetV2B0 #import neural network module
+from Note.nn.neuralnetwork.densenet.DenseNet121 import DenseNet121 #import neural network class
 from tensorflow.keras import datasets
 from multiprocessing import Process,Manager #import multiprocessing tools
 (train_images,train_labels),(test_images,test_labels)=datasets.cifar10.load_data()
 train_images,test_images=train_images/255.0,test_images/255.0
-efficientnetv2b0=EfficientNetV2B0(classes=10)  #create neural network object
-efficientnetv2b0.build()                           #build the network structure
-kernel=k.kernel(efficientnetv2b0)                  #create kernel object with the network
+densenet121=DenseNet121(classes=10)  #create neural network object
+densenet121.build()                           #build the network structure
+kernel=k.kernel(densenet121)                  #create kernel object with the network
 kernel.process=3                     #set the number of processes to train
 kernel.epoch=5                       #set the number of epochs to train
 kernel.batch=32                      #set the batch size
