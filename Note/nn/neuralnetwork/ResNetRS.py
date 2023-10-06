@@ -225,8 +225,8 @@ class BottleneckBlock:
     
     
     def output(self,data,train_flag=True):
-        shortcut=self.layers1.output(data)
-        x=self.layers2.output(data)
+        shortcut=self.layers1.output(data,train_flag)
+        x=self.layers2.output(data,train_flag)
         # Drop connect
         if train_flag==True and self.survival_probability:
             x = tf.nn.dropout(
