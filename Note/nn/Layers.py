@@ -7,6 +7,7 @@ class Layers:
         self.use_data_flag=[]
         self.save_data_count=0
         self.output_size_list=[]
+        self.train_flag=True
     
     
     def add(self,layer,save_data=False,use_data=False,axis=None):
