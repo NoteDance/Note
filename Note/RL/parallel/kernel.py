@@ -24,7 +24,7 @@ class kernel:
         self.update_step=None
         self.trial_count=None
         self.process=process
-        self.PO=None
+        self.PO=3
         self.priority_flag=False
         self.max_opt=None
         self.stop=False
