@@ -220,14 +220,15 @@ class BottleneckBlock:
             self.layers2.add(SE(filters, se_ratio=se_ratio, in_channels=self.layers2.output_size))
         self.survival_probability=survival_probability
         self.activation=activation
+        self.train_flag=True
         self.output_size=self.layers2.output_size
     
     
-    def output(self,data):
+    def output(self,data,train_flag=True):
         shortcut=self.layers1.output(data)
         x=self.layers2.output(data)
         # Drop connect
-        if self.survival_probability:
+        if train_flag==True and self.survival_probability:
             x = tf.nn.dropout(
                 x,
                 self.survival_probability,
