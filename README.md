@@ -260,7 +260,7 @@ https://github.com/NoteDancing/Note/tree/Note-7.0/Note/nn/neuralnetwork
 **The following is an example of training on the CIFAR10 dataset.**
 ```python
 import Note.DL.parallel.kernel as k   #import kernel module
-from Note.nn.neuralnetwork.densenet.DenseNet121 import DenseNet121 #import neural network class
+from Note.nn.neuralnetwork.DenseNet.DenseNet121 import DenseNet121 #import neural network class
 from tensorflow.keras import datasets
 from multiprocessing import Process,Manager #import multiprocessing tools
 (train_images,train_labels),(test_images,test_labels)=datasets.cifar10.load_data()
