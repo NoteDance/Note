@@ -8,7 +8,7 @@ class conv3d(Module): # define a class for 3D convolutional layer
     def __init__(self,filters,kernel_size,input_size=None,strides=[1,1,1],padding='VALID',weight_initializer='Xavier',bias_initializer='zeros',activation=None,data_format='NDHWC',dilations=None,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
         self.kernel_size=kernel_size
         self.input_size=input_size
-        self.strides=strides
+        self.strides = (1,) + tuple(strides) + (1,)
         self.padding=padding
         self.weight_initializer=weight_initializer
         self.bias_initializer=bias_initializer
@@ -53,8 +53,7 @@ class conv3d(Module): # define a class for 3D convolutional layer
         if self.input_size==None:
             self.input_size=data.shape[-1]
             self.build()
-        strides = (1,) + tuple(self.strides) + (1,)
         if self.use_bias==True: # if use bias is True
-            return a.activation_conv(data,self.weight,self.activation,strides,self.padding,self.data_format,self.dilations,tf.nn.conv3d,self.bias) # return the output of applying activation function to the convolution of data and weight, plus bias
+            return a.activation_conv(data,self.weight,self.activation,self.strides,self.padding,self.data_format,self.dilations,tf.nn.conv3d,self.bias) # return the output of applying activation function to the convolution of data and weight, plus bias
         else: # if use bias is False
-            return a.activation_conv(data,self.weight,self.activation,strides,self.padding,self.data_format,self.dilations,tf.nn.conv3d) # return the output of applying activation function to the convolution of data and weight
+            return a.activation_conv(data,self.weight,self.activation,self.strides,self.padding,self.data_format,self.dilations,tf.nn.conv3d) # return the output of applying activation function to the convolution of data and weight
