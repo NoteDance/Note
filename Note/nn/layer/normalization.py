@@ -143,7 +143,7 @@ class normalization:
                 self.mean_[0]=self.mean
                 self.variance_[0]=self.variance
                 self.mean=self.mean_
-                self.variance=self.variance
+                self.variance=self.variance_
             else:
                 # In the no adapt case, make constant tensors for mean and variance
                 # with proper broadcast shape for use during call.
@@ -156,7 +156,7 @@ class normalization:
                 self.mean_[0]=self.mean
                 self.variance_[0]=self.variance
                 self.mean=self.mean_
-                self.variance=self.variance
+                self.variance=self.variance_
         else:
             if self.input_mean is None:
                 self.adapt_mean = initializer(mean_and_var_shape, "zeros", self.dtype)
