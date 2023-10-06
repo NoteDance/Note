@@ -373,6 +373,7 @@ class block:
             if drop_rate > 0:
                 self.dropout=dropout(drop_rate,noise_shape=(None, 1, 1, 1))
         self.output_size=self.layers3.output_size
+        self.train_flag=True
     
     
     def output(self,data,train_flag=True):
