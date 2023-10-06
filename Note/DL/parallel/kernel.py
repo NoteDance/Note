@@ -13,7 +13,7 @@ class kernel:
     def __init__(self,nn=None):
         self.nn=nn
         self.nn.km=1
-        self.PO=None
+        self.PO=3
         self.process=None
         self.process_t=None
         self.train_ds=None
