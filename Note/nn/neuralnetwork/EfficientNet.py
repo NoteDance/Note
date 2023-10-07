@@ -127,12 +127,6 @@ class EfficientNet:
         self.km=0
     
     
-    def data_func(self,data_batch,labels_batch):
-        data_batch=self.rescaling.output(data_batch)
-        data_batch=self.normalization.output(data_batch)
-        return data_batch,labels_batch
-    
-    
     def build(self):
         def round_filters(filters, divisor=self.depth_divisor):
             """Round number of filters based on depth multiplier."""
@@ -216,6 +210,8 @@ class EfficientNet:
     def fp(self,data,p):
         if self.km==1:
             with tf.device(assign_device(p,'GPU')):
+                data=self.rescaling.output(data)
+                data=self.normalization.output(data)
                 x=self.zeropadding2d.output(data,correct_pad(data,3))
                 x=self.layers1.output(x)
                 x=self.layers2.output(x)
@@ -231,6 +227,8 @@ class EfficientNet:
                     else:
                         x=self.global_max_pool2d.output(x)
         else:
+            data=self.rescaling.output(data)
+            data=self.normalization.output(data)
             x=self.zeropadding2d.output(data,correct_pad(data,3))
             x=self.layers1.output(x,self.km)
             x=self.layers2.output(x,self.km)
