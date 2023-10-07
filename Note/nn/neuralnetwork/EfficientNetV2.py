@@ -79,7 +79,6 @@ class EfficientNetV2:
                 blocks_args="default",
                 include_top=True,
                 weights="imagenet",
-                input_tensor=None,
                 pooling=None,
                 classes=1000,
                 classifier_activation="softmax",
