@@ -24,26 +24,22 @@ class EfficientNet:
     """Instantiates the EfficientNet architecture.
     
     Args:
-      width_coefficient: float, scaling coefficient for network width.
-      depth_coefficient: float, scaling coefficient for network depth.
+      input_shape: optional shape tuple, only to be specified
+          if `include_top` is False.
+          It should have exactly 3 inputs channels.
+      model_name: string, model name.
       default_size: integer, default input image size.
       dropout_rate: float, dropout rate before final classifier layer.
       drop_connect_rate: float, dropout rate at skip connections.
       depth_divisor: integer, a unit of network width.
       activation: activation function.
       blocks_args: list of dicts, parameters to construct block modules.
-      model_name: string, model name.
       include_top: whether to include the fully-connected
           layer at the top of the network.
       weights: one of `None` (random initialization),
             'imagenet' (pre-training on ImageNet),
             or the path to the weights file to be loaded.
-      input_tensor: optional Keras tensor
-          (i.e. output of `layers.Input()`)
-          to use as image input for the model.
-      input_shape: optional shape tuple, only to be specified
-          if `include_top` is False.
-          It should have exactly 3 inputs channels.
+
       pooling: optional pooling mode for feature extraction
           when `include_top` is `False`.
           - `None` means that the output of the model will be
