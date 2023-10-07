@@ -1,7 +1,6 @@
 import tensorflow as tf
 import numpy as np
 from Note.nn.initializer import initializer
-from multiprocessing import Manager,Value
 
 
 class normalization:
@@ -46,8 +45,8 @@ class normalization:
 
     """
 
-    def __init__(
-        self, axis=-1, mean=None, variance=None, invert=False, parallel=True):
+    def __init__(self, input_shape=None, axis=-1, mean=None, variance=None, invert=False, dtype='float32'):
+        self.input_shape = input_shape
         # Standardize `axis` to a tuple.
         if axis is None:
             axis = ()
@@ -78,19 +77,18 @@ class normalization:
         self.input_mean = mean
         self.input_variance = variance
         self.invert = invert
-        self.parallel = parallel
-        if parallel==True:
-            manager=Manager()
-            self.flag=Value('i',0)
-            self.mean_=manager.list([0])
-            self.variance_=manager.list([0])
+        self.dtype = dtype
+        if input_shape is not None:
+            self.build()
+        self.flag=0
+    
+    
+    def build(self, data=None):
+        if self.input_shape is None:
+            input_shape=data.shape
+            self.dtype=data.dtype
         else:
-            self.flag=0
-    
-    
-    def build(self, data):
-        input_shape=data.shape
-        self.dtype=data.dtype
+            input_shape=self.input_shape
         
         if isinstance(input_shape, (list, tuple)) and all(
             isinstance(shape, tf.TensorShape) for shape in input_shape
@@ -135,42 +133,19 @@ class normalization:
         ]
         mean_and_var_shape = tuple(input_shape[d] for d in self._keep_axis)
 
-        if self.parallel==True:
-            if self.input_mean is None:
-                self.adapt_mean = initializer(mean_and_var_shape, "zeros", self.dtype)
-                self.adapt_variance = initializer(mean_and_var_shape, "ones", self.dtype)
-                self.finalize_state()
-                self.mean_[0]=self.mean
-                self.variance_[0]=self.variance
-                self.mean=self.mean_
-                self.variance=self.variance_
-            else:
-                # In the no adapt case, make constant tensors for mean and variance
-                # with proper broadcast shape for use during call.
-                mean = self.input_mean * np.ones(mean_and_var_shape)
-                variance = self.input_variance * np.ones(mean_and_var_shape)
-                mean = tf.reshape(mean, self._broadcast_shape)
-                variance = tf.reshape(variance, self._broadcast_shape)
-                self.mean = tf.cast(mean, self.dtype)
-                self.variance = tf.cast(variance, self.dtype)
-                self.mean_[0]=self.mean
-                self.variance_[0]=self.variance
-                self.mean=self.mean_
-                self.variance=self.variance_
+        if self.input_mean is None:
+            self.adapt_mean = initializer(mean_and_var_shape, "zeros", self.dtype)
+            self.adapt_variance = initializer(mean_and_var_shape, "ones", self.dtype)
+            self.finalize_state()
         else:
-            if self.input_mean is None:
-                self.adapt_mean = initializer(mean_and_var_shape, "zeros", self.dtype)
-                self.adapt_variance = initializer(mean_and_var_shape, "ones", self.dtype)
-                self.finalize_state()
-            else:
-                # In the no adapt case, make constant tensors for mean and variance
-                # with proper broadcast shape for use during call.
-                mean = self.input_mean * np.ones(mean_and_var_shape)
-                variance = self.input_variance * np.ones(mean_and_var_shape)
-                mean = tf.reshape(mean, self._broadcast_shape)
-                variance = tf.reshape(variance, self._broadcast_shape)
-                self.mean = tf.cast(mean, self.dtype)
-                self.variance = tf.cast(variance, self.dtype)
+            # In the no adapt case, make constant tensors for mean and variance
+            # with proper broadcast shape for use during call.
+            mean = self.input_mean * np.ones(mean_and_var_shape)
+            variance = self.input_variance * np.ones(mean_and_var_shape)
+            mean = tf.reshape(mean, self._broadcast_shape)
+            variance = tf.reshape(variance, self._broadcast_shape)
+            self.mean = tf.cast(mean, self.dtype)
+            self.variance = tf.cast(variance, self.dtype)
         return
     
     
@@ -188,29 +163,16 @@ class normalization:
     
     
     def output(self, data):
-        if self.parallel and self.flag.value==0:
-            self.flag.value=1
-            self.build(data)
-        elif self.flag==0:
-            self.flag==1
+        if self.input_shape is None and self.flag==0:
+            self.flag=1
             self.build(data)
         # The base layer automatically casts floating-point inputs, but we
         # explicitly cast here to also allow integer inputs to be passed
-        if self.parallel==True:
-            if self.invert:
-                return self.mean[0] + (
-                    data * tf.maximum(tf.sqrt(self.variance[0]), 1e-07)
-                )
-            else:
-                return (data - self.mean[0]) / tf.maximum(
-                    tf.sqrt(self.variance[0]), 1e-07
-                )
+        if self.invert:
+            return self.mean + (
+                data * tf.maximum(tf.sqrt(self.variance), 1e-07)
+            )
         else:
-            if self.invert:
-                return self.mean + (
-                    data * tf.maximum(tf.sqrt(self.variance), 1e-07)
-                )
-            else:
-                return (data - self.mean) / tf.maximum(
-                    tf.sqrt(self.variance), 1e-07
-                ) 
+            return (data - self.mean) / tf.maximum(
+                tf.sqrt(self.variance), 1e-07
+            ) 
