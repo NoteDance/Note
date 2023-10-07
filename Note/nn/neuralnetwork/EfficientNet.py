@@ -70,6 +70,7 @@ class EfficientNet:
     """
     def __init__(
                 self,
+                input_shape,
                 model_name='B0',
                 drop_connect_rate=0.2,
                 depth_divisor=8,
@@ -78,10 +79,10 @@ class EfficientNet:
                 include_top=True,
                 weights="imagenet",
                 input_tensor=None,
-                input_shape=None,
                 pooling=None,
                 classes=1000,
                 classifier_activation="softmax",
+                dtype='float32'
             ):
         if weights == "imagenet":
             # Note that the normaliztion layer uses square value of STDDEV as the
@@ -119,7 +120,9 @@ class EfficientNet:
         self.classes=classes # store the number of classes
         self.include_top=include_top
         self.pooling=pooling
-        self.normalization=normalization()
+        self.classifier_activation=classifier_activation
+        self.dtype=dtype
+        self.normalization=normalization(input_shape,dtype=dtype)
         self.loss_object=tf.keras.losses.CategoricalCrossentropy() # create a categorical crossentropy loss object
         self.km=0
     
@@ -130,7 +133,7 @@ class EfficientNet:
         return data_batch,labels_batch
     
     
-    def build(self,dtype='float32'):
+    def build(self):
         def round_filters(filters, divisor=self.depth_divisor):
             """Round number of filters based on depth multiplier."""
             filters *= self.width_coefficient
@@ -150,8 +153,8 @@ class EfficientNet:
         self.zeropadding2d=zeropadding2d()
         self.layers1=Layers()
         self.layers1.add(conv2d(round_filters(32),[3,3],3,strides=2,padding="VALID",use_bias=False,
-                           weight_initializer=CONV_KERNEL_INITIALIZER,dtype=dtype))
-        self.layers1.add(batch_normalization(axis=-1,dtype=dtype))
+                           weight_initializer=CONV_KERNEL_INITIALIZER,dtype=self.dtype))
+        self.layers1.add(batch_normalization(axis=-1,dtype=self.dtype))
         self.layers1.add(activation_dict[self.activation])    
     
         # Build blocks
@@ -178,7 +181,7 @@ class EfficientNet:
                     self.activation,
                     self.drop_connect_rate * b / blocks,
                     **args,
-                    dtype=dtype
+                    dtype=self.dtype
                 ))
                 b += 1
                 in_channels=self.layers2.output_size
@@ -192,15 +195,15 @@ class EfficientNet:
             padding="SAME",
             use_bias=False,
             weight_initializer=CONV_KERNEL_INITIALIZER,
-            dtype=dtype
+            dtype=self.dtype
         ))
-        self.layers3.add(batch_normalization(axis=-1,dtype=dtype))
+        self.layers3.add(batch_normalization(axis=-1,dtype=self.dtype))
         self.layers3.add(activation_dict[self.activation])
         if self.include_top:
             self.global_avg_pool2d=global_avg_pool2d()
             if self.dropout_rate > 0:
                 self.dropout=dropout(self.dropout_rate)
-            self.dense=dense(self.classes,self.layers3.output_size,activation='softmax',weight_initializer=DENSE_KERNEL_INITIALIZER,dtype=dtype)
+            self.dense=dense(self.classes,self.layers3.output_size,activation=self.classifier_activation,weight_initializer=DENSE_KERNEL_INITIALIZER,dtype=self.dtype)
         else:
             if self.pooling == "avg":
                 self.global_avg_pool2d=global_avg_pool2d()
