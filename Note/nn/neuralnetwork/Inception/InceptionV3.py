@@ -103,10 +103,11 @@ class inception_block:
             
 
 class InceptionV3:
-    def __init__(self,classes=1000,include_top=True,pooling=None):
+    def __init__(self,classes=1000,include_top=True,pooling=None,device='GPU'):
         self.classes=classes
         self.include_top=include_top
         self.pooling=pooling
+        self.device=device
         self.loss_object=tf.keras.losses.CategoricalCrossentropy()
         self.optimizer=Adam()
         self.km=0
@@ -262,7 +263,7 @@ class InceptionV3:
     
     def fp(self,data,p=None):
         if self.km==1:
-            with tf.device(assign_device(p,'GPU')):
+            with tf.device(assign_device(p,self.device)):
                 x=self.conv2d_bn1.output(data,(2,2),'VALID')
                 x=self.conv2d_bn2.output(x,padding='VALID')
                 x=self.conv2d_bn3.output(x)
@@ -516,13 +517,13 @@ class InceptionV3:
     
     
     def loss(self,output,labels,p):
-        with tf.device(assign_device(p,'GPU')):
+        with tf.device(assign_device(p,self.device)):
             loss_value=self.loss_object(labels,output)
         return loss_value
     
     
     def GradientTape(self,data,labels,p):
-        with tf.device(assign_device(p,'GPU')):
+        with tf.device(assign_device(p,self.device)):
             with tf.GradientTape(persistent=True) as tape:
                 output=self.fp(data,p)
                 loss=self.loss(output,labels,p)
@@ -530,6 +531,6 @@ class InceptionV3:
     
     
     def opt(self,gradient,p):
-        with tf.device(assign_device(p,'GPU')):
+        with tf.device(assign_device(p,self.device)):
             param=self.optimizer.opt(gradient,self.param,self.bc[0])
             return param
