@@ -78,6 +78,7 @@ class EfficientNet:
                 pooling=None,
                 classes=1000,
                 classifier_activation="softmax",
+                device='GPU',
                 dtype='float32'
             ):
         if weights == "imagenet":
@@ -117,6 +118,7 @@ class EfficientNet:
         self.include_top=include_top
         self.pooling=pooling
         self.classifier_activation=classifier_activation
+        self.device=device
         self.dtype=dtype
         self.normalization=normalization(input_shape,dtype=dtype)
         self.loss_object=tf.keras.losses.CategoricalCrossentropy() # create a categorical crossentropy loss object
@@ -205,7 +207,7 @@ class EfficientNet:
     
     def fp(self,data,p):
         if self.km==1:
-            with tf.device(assign_device(p,'GPU')):
+            with tf.device(assign_device(p,self.device)):
                 data=self.rescaling.output(data)
                 data=self.normalization.output(data)
                 x=self.zeropadding2d.output(data,correct_pad(data,3))
@@ -253,13 +255,13 @@ class EfficientNet:
         Returns:
             loss_value: tensor, the loss value.
         """
-        with tf.device(assign_device(p,'GPU')): # assign the device to use
+        with tf.device(assign_device(p,self.device)): # assign the device to use
             loss_value=self.loss_object(labels,output) # calculate the loss value using categorical crossentropy loss function
         return loss_value # return the loss value
     
     
     def GradientTape(self,data,labels,p):
-        with tf.device(assign_device(p,'GPU')):
+        with tf.device(assign_device(p,self.device)):
             with tf.GradientTape(persistent=True) as tape:
                 output=self.fp(data,p)
                 loss=self.loss(output,labels,p)
@@ -276,7 +278,7 @@ class EfficientNet:
         Returns:
             param: list, the updated model parameters.
         """
-        with tf.device(assign_device(p,'GPU')): # assign the device to use
+        with tf.device(assign_device(p,self.device)): # assign the device to use
             param=self.optimizer.opt(gradient,self.param,self.bc[0]) # update the model parameters using Adam optimizer and batch count
             return param # return the updated model parameters
 
