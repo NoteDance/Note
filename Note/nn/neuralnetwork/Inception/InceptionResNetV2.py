@@ -115,10 +115,11 @@ class inception_resnet_block:
 
 
 class InceptionResNetV2:
-    def __init__(self,classes=1000,include_top=True,pooling=None):
+    def __init__(self,classes=1000,include_top=True,pooling=None,device='GPU'):
         self.classes=classes
         self.include_top=include_top
         self.pooling=pooling
+        self.device=device
         self.loss_object=tf.keras.losses.CategoricalCrossentropy()
         self.km=0
     
@@ -223,7 +224,7 @@ class InceptionResNetV2:
     
     def fp(self,data,p=None):
         if self.km==1:
-            with tf.device(assign_device(p,'GPU')):
+            with tf.device(assign_device(p,self.device)):
                 # Stem block: 35 x 35 x 192
                 data=self.Stem_layer1.output(data, 2, padding='VALID')
                 data=self.Stem_layer2.output(data, padding='VALID')
@@ -375,7 +376,7 @@ class InceptionResNetV2:
     # define a method for calculating the loss value
     def loss(self,output,labels,p):
         # assign the device for parallel computation
-        with tf.device(assign_device(p,'GPU')):
+        with tf.device(assign_device(p,self.device)):
             # calculate the categorical crossentropy loss between output and labels 
             loss_value=self.loss_object(labels,output)
         # return the loss value    
@@ -383,7 +384,7 @@ class InceptionResNetV2:
     
     
     def GradientTape(self,data,labels,p):
-        with tf.device(assign_device(p,'GPU')):
+        with tf.device(assign_device(p,self.device)):
             with tf.GradientTape(persistent=True) as tape:
                 output=self.fp(data,p)
                 loss=self.loss(output,labels,p)
@@ -393,7 +394,7 @@ class InceptionResNetV2:
     # define a method for applying the optimizer
     def opt(self,gradient,p):
         # assign the device for parallel computation
-        with tf.device(assign_device(p,'GPU')):
+        with tf.device(assign_device(p,self.device)):
             # update the parameters with the gradient and the batch count using the Adam optimizer
             param=self.optimizer.opt(gradient,self.param,self.bc[0])
             # return the updated parameters
