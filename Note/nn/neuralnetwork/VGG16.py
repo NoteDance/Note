@@ -10,10 +10,11 @@ from Note.nn.Module import Module
 
 
 class VGG16:
-    def __init__(self,include_top=True,pooling=None,classes=1000):
+    def __init__(self,include_top=True,pooling=None,classes=1000,device='GPU'):
         self.include_top=include_top
         self.pooling=pooling
         self.classes=classes
+        self.device=device
         self.loss_object=tf.keras.losses.CategoricalCrossentropy()
         self.km=0
     
@@ -55,7 +56,7 @@ class VGG16:
     
     def fp(self,data,p=None):
         if self.km==1:
-            with tf.device(assign_device(p,'GPU')):
+            with tf.device(assign_device(p,self.device)):
                 x=self.layers.output(data)
                 if self.include_top:
                     x=self.flatten.output(x)
@@ -83,13 +84,13 @@ class VGG16:
 
 
     def loss(self,output,labels,p):
-        with tf.device(assign_device(p,'GPU')):
+        with tf.device(assign_device(p,self.device)):
             loss_value=self.loss_object(labels,output)
         return loss_value
     
     
     def GradientTape(self,data,labels,p):
-        with tf.device(assign_device(p,'GPU')):
+        with tf.device(assign_device(p,self.device)):
             with tf.GradientTape(persistent=True) as tape:
                 output=self.fp(data,p)
                 loss=self.loss(output,labels,p)
@@ -97,6 +98,6 @@ class VGG16:
     
     
     def opt(self,gradient,p):
-        with tf.device(assign_device(p,'GPU')):
+        with tf.device(assign_device(p,self.device)):
             param=self.optimizer.opt(gradient,self.param,self.bc[0])
             return param
