@@ -62,12 +62,13 @@ def stack1(in_channels, filters, blocks, stride=2, dtype='float32'):
 
 
 class ResNet152:
-    def __init__(self,preact=False,classes=1000,include_top=True,pooling=None,use_bias=True):
+    def __init__(self,preact=False,classes=1000,include_top=True,pooling=None,use_bias=True,device='GPU'):
         self.preact=preact
         self.classes=classes
         self.include_top=include_top
         self.pooling=pooling
         self.use_bias=use_bias
+        self.device=device
         self.loss_object=tf.keras.losses.CategoricalCrossentropy()
         self.km=0
     
@@ -93,7 +94,7 @@ class ResNet152:
     
     def fp(self,data,p=None):
         if self.km==1:
-            with tf.device(assign_device(p,'GPU')):
+            with tf.device(assign_device(p,self.device)):
                 x=self.layers.output(data)
                 if self.include_top:
                     x=tf.math.reduce_mean(x,axis=[1,2])
@@ -117,13 +118,13 @@ class ResNet152:
     
     
     def loss(self,output,labels,p):
-        with tf.device(assign_device(p,'GPU')):
+        with tf.device(assign_device(p,self.device)):
             loss_value=self.loss_object(labels,output)
         return loss_value
     
     
     def GradientTape(self,data,labels,p):
-        with tf.device(assign_device(p,'GPU')):
+        with tf.device(assign_device(p,self.device)):
             with tf.GradientTape(persistent=True) as tape:
                 output=self.fp(data,p)
                 loss=self.loss(output,labels,p)
@@ -131,6 +132,6 @@ class ResNet152:
     
     
     def opt(self,gradient,p):
-        with tf.device(assign_device(p,'GPU')):
+        with tf.device(assign_device(p,self.device)):
             param=self.optimizer.opt(gradient,self.param,self.bc[0])
             return param
