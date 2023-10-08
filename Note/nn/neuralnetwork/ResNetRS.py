@@ -303,6 +303,7 @@ class ResNetRS:
             pooling=None,
             classes=1000,
             include_preprocessing=True,
+            device='GPU'
     ):
         self.depth=MODEL_DEPTH[model_name]
         self.bn_momentum=bn_momentum
@@ -315,6 +316,7 @@ class ResNetRS:
         self.include_top=include_top
         self.classes=classes
         self.include_preprocessing=include_preprocessing
+        self.device=device
         self.loss_object=tf.keras.losses.CategoricalCrossentropy()
         self.km=0
     
@@ -354,7 +356,7 @@ class ResNetRS:
 
     def fp(self,data,p=None):
         if self.km==1:
-            with tf.device(assign_device(p,'GPU')):
+            with tf.device(assign_device(p,self.device)):
                 if self.include_preprocessing:
                     scale = tf.constant(1.0 / 255, dtype=self.dtype)
                     rescaling_data = tf.multiply(data, scale)
@@ -398,13 +400,13 @@ class ResNetRS:
     
     
     def loss(self,output,labels,p):
-        with tf.device(assign_device(p,'GPU')):
+        with tf.device(assign_device(p,self.device)):
             loss_value=self.loss_object(labels,output)
         return loss_value
     
     
     def GradientTape(self,data,labels,p):
-        with tf.device(assign_device(p,'GPU')):
+        with tf.device(assign_device(p,self.device)):
             with tf.GradientTape(persistent=True) as tape:
                 output=self.fp(data,p)
                 loss=self.loss(output,labels,p)
@@ -412,7 +414,7 @@ class ResNetRS:
     
     
     def opt(self,gradient,p):
-        with tf.device(assign_device(p,'GPU')):
+        with tf.device(assign_device(p,self.device)):
             param=self.optimizer.opt(gradient,self.param,self.bc[0])
             return param
 
