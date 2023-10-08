@@ -45,13 +45,14 @@ def TransitionLayer(input_channels, compression_factor, dtype='float32'):
 
 
 class DenseNet121:
-    def __init__(self, growth_rate=32, compression_factor=0.5, num_classes=1000, include_top=True, pooling=None, dtype='float32'):
+    def __init__(self, growth_rate=32, compression_factor=0.5, num_classes=1000, include_top=True, pooling=None, device='GPU', dtype='float32'):
         self.num_classes=num_classes
         self.growth_rate=growth_rate
         self.compression_factor=compression_factor
         self.include_top=include_top
         self.pooling=pooling
         self.loss_object=tf.keras.losses.CategoricalCrossentropy()
+        self.device=device
         self.dtype=dtype
         self.km=0
     
@@ -104,7 +105,7 @@ class DenseNet121:
     
     def fp(self, data, p=None):
         if self.km==1:
-            with tf.device(assign_device(p,'GPU')):
+            with tf.device(assign_device(p,self.device)):
                 x=self.layers.output(data)
                 if self.include_top:
                     x = tf.reduce_mean(x, axis=[1, 2])
@@ -128,13 +129,13 @@ class DenseNet121:
     
     
     def loss(self,output,labels,p):
-        with tf.device(assign_device(p,'GPU')):
+        with tf.device(assign_device(p,self.device)):
             loss_value=self.loss_object(labels,output)
         return loss_value
     
     
     def GradientTape(self,data,labels,p):
-        with tf.device(assign_device(p,'GPU')):
+        with tf.device(assign_device(p,self.device)):
             with tf.GradientTape(persistent=True) as tape:
                 output=self.fp(data,p)
                 loss=self.loss(output,labels,p)
@@ -142,6 +143,6 @@ class DenseNet121:
     
     
     def opt(self,gradient,p):
-        with tf.device(assign_device(p,'GPU')):
+        with tf.device(assign_device(p,self.device)):
             param=self.optimizer.opt(gradient,self.param,self.bc[0])
             return param
