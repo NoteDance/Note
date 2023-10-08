@@ -55,13 +55,14 @@ class _depthwise_conv_block:
 
 
 class MobileNet:
-    def __init__(self, alpha=1.0, depth_multiplier=1, dropout=1e-3, include_top=True, pooling=None, classes=1000):
+    def __init__(self, alpha=1.0, depth_multiplier=1, dropout=1e-3, include_top=True, pooling=None, classes=1000, device='GPU'):
         self.alpha=alpha
         self.depth_multiplier=depth_multiplier
         self.dropout=dropout
         self.classes=classes
         self.include_top=include_top
         self.pooling=pooling
+        self.device=device
         self.loss_object=tf.keras.losses.CategoricalCrossentropy()
         self.km=0
         
@@ -99,7 +100,7 @@ class MobileNet:
     
     def fp(self,data,p=None):
         if self.km==1:
-            with tf.device(assign_device(p,'GPU')):
+            with tf.device(assign_device(p,self.device)):
                 x=self.layers.output(data)
                 if self.include_top:
                     x=tf.math.reduce_mean(x,axis=[1,2],keepdims=True)
@@ -128,13 +129,13 @@ class MobileNet:
     
     
     def loss(self,output,labels,p):
-        with tf.device(assign_device(p,'GPU')):
+        with tf.device(assign_device(p,self.device)):
             loss_value=self.loss_object(labels,output)
         return loss_value
     
     
     def GradientTape(self,data,labels,p):
-        with tf.device(assign_device(p,'GPU')):
+        with tf.device(assign_device(p,self.device)):
             with tf.GradientTape(persistent=True) as tape:
                 output=self.fp(data,p)
                 loss=self.loss(output,labels,p)
@@ -142,6 +143,6 @@ class MobileNet:
     
     
     def opt(self,gradient,p):
-        with tf.device(assign_device(p,'GPU')):
+        with tf.device(assign_device(p,self.device)):
             param=self.optimizer.opt(gradient,self.param,self.bc[0])
             return param
