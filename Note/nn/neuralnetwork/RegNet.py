@@ -2,6 +2,7 @@ import tensorflow as tf
 from Note.nn.layer.conv2d import conv2d
 from Note.nn.layer.dense import dense
 from Note.nn.layer.global_avg_pool2d import global_avg_pool2d
+from Note.nn.layer.global_max_pool2d import global_max_pool2d
 from Note.nn.layer.batch_normalization import batch_normalization
 from Note.nn.layer.identity import identity
 from Note.nn.layer.add import add
@@ -49,7 +50,11 @@ def XBlock(in_channels, filters_in, filters_out, group_width, stride=1, dtype='f
     groups = filters_out // group_width
     
     layers=Layers()
-    layers.add(identity(in_channels),save_data=True)
+    if stride!=1:
+        layers.add(conv2d(filters_out,[1,1],in_channels,strides=[2],use_bias=False,weight_initializer='He',dtype=dtype))
+        layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,dtype=dtype))
+    else:
+        layers.add(identity(in_channels),save_data=True)
 
     # Build block
     # conv_1x1_1
@@ -94,7 +99,11 @@ def YBlock(
     se_filters = int(filters_in * squeeze_excite_ratio)
 
     layers=Layers()
-    layers.add(identity(in_channels),save_data=True)
+    if stride!=1:
+        layers.add(conv2d(filters_out,[1,1],in_channels,strides=[2],use_bias=False,weight_initializer='He',dtype=dtype))
+        layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,dtype=dtype))
+    else:
+        layers.add(identity(in_channels),save_data=True)
 
     # Build block
     # conv_1x1_1
@@ -172,17 +181,14 @@ def ZBlock(
 def Stage(in_channels, block_type, depth, group_width, filters_in, filters_out, dtype='float32'):
     layers=Layers()
     if block_type == "X":
-        layers.add(conv2d(filters_out,[1,1],in_channels,strides=[2],use_bias=False,weight_initializer='He',dtype=dtype))
-        layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,dtype=dtype))
         layers.add(XBlock(
-            layers.output_size,
+            in_channels,
             filters_in,
             filters_out,
             group_width,
             stride=2,
         ))
         for i in range(1, depth):
-            layers.add(identity(),save_data=True)
             layers.add(XBlock(
                 layers.output_size,
                 filters_out,
@@ -190,17 +196,14 @@ def Stage(in_channels, block_type, depth, group_width, filters_in, filters_out, 
                 group_width,
             ))
     elif block_type == "Y":
-        layers.add(conv2d(filters_out,[1,1],in_channels,strides=[2],use_bias=False,weight_initializer='He',dtype=dtype))
-        layers.add(batch_normalization(momentum=0.9,epsilon=1e-5,dtype=dtype))
         layers.add(YBlock(
-            layers.output_size,
+            in_channels,
             filters_in,
             filters_out,
             group_width,
             stride=2,
             ))
         for i in range(1, depth):
-            layers.add(identity(),save_data=True)
             layers.add(YBlock(
                 layers.output_size,
                 filters_out,
@@ -237,6 +240,7 @@ class RegNet:
     include_top=True,
     pooling=None,
     classes=1000,
+    classifier_activation="softmax",
     device='GPU'
     ):
         self.depths=MODEL_CONFIGS[model_name]['depths']
@@ -247,6 +251,7 @@ class RegNet:
         self.include_top=include_top
         self.pooling=pooling
         self.classes=classes
+        self.classifier_activation=classifier_activation
         self.device=device
         self.loss_object=tf.keras.losses.CategoricalCrossentropy()
         self.km=0
@@ -270,7 +275,14 @@ class RegNet:
                 out_channels,
             ))
             in_channels = out_channels
-        self.dense=dense(self.classes,self.layers.output_size,activation='softmax',dtype=dtype)
+        if self.include_top:
+            self.global_avg_pool2d=global_avg_pool2d()
+            self.dense=dense(self.classes,self.layers.output_size,activation=self.classifier_activation,dtype=dtype)
+        else:
+            if self.pooling == "avg":
+                self.global_avg_pool2d=global_avg_pool2d()
+            elif self.pooling == "max":
+                self.global_max_pool2d=global_max_pool2d()
         self.optimizer=Adam()
         self.param=Module.param
     
@@ -283,6 +295,7 @@ class RegNet:
                     x = PreStem(x,self.dtype)
                 x = self.layers.output(x)
                 if self.include_top:
+                    x = self.global_avg_pool2d.output(x)
                     x = self.dense.output(x)
                 else:
                     if self.pooling=="avg":
@@ -295,6 +308,7 @@ class RegNet:
                 x = PreStem(x,self.dtype)
             x = self.layers.output(x,self.km)
             if self.include_top:
+                x = self.global_avg_pool2d.output(x)
                 x = self.dense.output(x)
             else:
                 if self.pooling=="avg":
