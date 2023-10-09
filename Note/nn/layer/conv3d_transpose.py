@@ -5,10 +5,16 @@ from Note.nn.Module import Module
 
 
 class conv3d_transpose(Module): # define a class for 3D transposed convolutional layer
-    def __init__(self,filters,kernel_size,input_size=None,new_drc=None,strides=[1,1,1],padding='VALID',output_padding=None,weight_initializer='Xavier',bias_initializer='zeros',activation=None,data_format='NDHWC',dilations=None,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
+    def __init__(self,filters,kernel_size,input_size=None,strides=[1,1,1],padding='VALID',output_padding=None,weight_initializer='Xavier',bias_initializer='zeros',activation=None,data_format='NDHWC',dilations=None,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
+        if isinstance(kernel_size,int):
+            kernel_size=[kernel_size,kernel_size,kernel_size]
+        if isinstance(strides,int):
+            strides=(1,) + tuple((strides,))*3 + (1,)
+        else:
+            strides=(1,) + tuple(strides) + (1,)
         self.kernel_size=kernel_size
         self.input_size=input_size
-        self.strides = (1,) + tuple(strides) + (1,) # add 1 to both ends of strides to match the data format 
+        self.strides=strides
         self.padding=padding
         self.output_padding=output_padding
         self.weight_initializer=weight_initializer
