@@ -17,7 +17,7 @@ class GPT2:
         self.param=Module.param
         self.flag=0
         
-    def fp(self, hparams, X, past=None):
+    def fp(self, X, hparams=hparams, past=None):
         results = {}
         batch, sequence = shape_list(X)
         
@@ -73,7 +73,7 @@ def split_states(x, n):
     *start, m = shape_list(x)
     return tf.reshape(x, start + [n, m//n])
 
-def attention_mask(nd, ns, *, dtype):
+def attention_mask(nd, ns, dtype):
     """1's in the lower triangle, counting from the lower right corner.
 
     Same as tf.matrix_band_part(tf.ones([nd, ns]), -1, ns-nd), but doesn't produce garbage on TPUs.
