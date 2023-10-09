@@ -6,9 +6,15 @@ from Note.nn.Module import Module
 
 class conv3d(Module): # define a class for 3D convolutional layer
     def __init__(self,filters,kernel_size,input_size=None,strides=[1,1,1],padding='VALID',weight_initializer='Xavier',bias_initializer='zeros',activation=None,data_format='NDHWC',dilations=None,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
+        if isinstance(kernel_size,int):
+            kernel_size=[kernel_size,kernel_size,kernel_size]
+        if isinstance(strides,int):
+            strides=(1,) + tuple((strides,))*3 + (1,)
+        else:
+            strides=(1,) + tuple(strides) + (1,)
         self.kernel_size=kernel_size
         self.input_size=input_size
-        self.strides = (1,) + tuple(strides) + (1,)
+        self.strides=strides
         self.padding=padding
         self.weight_initializer=weight_initializer
         self.bias_initializer=bias_initializer
