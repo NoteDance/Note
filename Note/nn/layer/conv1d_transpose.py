@@ -6,6 +6,12 @@ from Note.nn.Module import Module
 
 class conv1d_transpose(Module): # define a class for 1D transposed convolutional layer
     def __init__(self,filters,kernel_size,input_size=None,strides=[1],padding='VALID',output_padding=None,weight_initializer='Xavier',bias_initializer='zeros',activation=None,data_format='NWC',dilations=None,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
+        if isinstance(kernel_size,int):
+            kernel_size=kernel_size
+        elif len(kernel_size)==1:
+            kernel_size=kernel_size[0]
+        if isinstance(strides,int):
+            strides=[strides]
         self.kernel_size=kernel_size
         self.input_size=input_size
         self.strides=strides
