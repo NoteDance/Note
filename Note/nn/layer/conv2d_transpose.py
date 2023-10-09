@@ -5,7 +5,11 @@ from Note.nn.Module import Module
 
 
 class conv2d_transpose(Module): # define a class for 2D transposed convolutional layer
-    def __init__(self,filters,kernel_size,input_size=None,new_rc=None,strides=[1,1],padding='VALID',output_padding=None,weight_initializer='Xavier',bias_initializer='zeros',activation=None,data_format='NHWC',dilations=None,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
+    def __init__(self,filters,kernel_size,input_size=None,strides=[1,1],padding='VALID',output_padding=None,weight_initializer='Xavier',bias_initializer='zeros',activation=None,data_format='NHWC',dilations=None,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
+        if isinstance(kernel_size,int):
+            kernel_size=[kernel_size,kernel_size]
+        if isinstance(strides,int):
+            strides=[strides,strides]
         self.kernel_size=kernel_size
         self.input_size=input_size
         self.strides=strides
