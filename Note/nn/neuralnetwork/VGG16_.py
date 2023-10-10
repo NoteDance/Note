@@ -2,8 +2,7 @@ import tensorflow as tf
 from Note.nn.layer.conv2d import conv2d
 from Note.nn.layer.dense import dense
 from Note.nn.layer.max_pool2d import max_pool2d
-from Note.nn.layer.flatten import flatten 
-from Note.nn.Layers import Layers
+from Note.nn.layer.flatten import flatten
 from Note.nn.parallel.optimizer_ import Adam
 from Note.nn.parallel.assign_device import assign_device
 from Note.nn.Module import Module
