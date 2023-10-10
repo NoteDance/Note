@@ -11,7 +11,8 @@ class hparams:
     n_layer=12
 
 class GPT2:
-    def __init__(self):
+    def __init__(self,one_hot=True):
+        self.one_hot=one_hot
         self.norm=norm()
         self.block={}
         self.opt=tf.keras.optimizers.Adam()
@@ -56,8 +57,9 @@ class GPT2:
         # Convert the logits to probabilities
         probs = softmax(logits, axis=-1)
         
-        # Convert the labels to one-hot vectors
-        labels = tf.one_hot(labels, depth=hparams.n_vocab)
+        if self.one_hot:
+            # Convert the labels to one-hot vectors
+            labels = tf.one_hot(labels, depth=hparams.n_vocab)
         
         # Compute the cross entropy loss
         loss = -tf.reduce_sum(labels * tf.math.log(probs), axis=-1)
