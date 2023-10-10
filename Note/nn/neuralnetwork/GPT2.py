@@ -14,6 +14,7 @@ class GPT2:
     def __init__(self):
         self.norm=norm()
         self.block={}
+        self.opt=tf.keras.optimizers.Adam()
         self.param=Module.param
         self.flag=0
         
@@ -47,6 +48,22 @@ class GPT2:
         results['logits'] = logits
         self.flag=1
         return results
+    
+    def loss(self, output, labels):
+        # Get the logits from the model output
+        logits = output['logits']
+        
+        # Convert the logits to probabilities
+        probs = softmax(logits, axis=-1)
+        
+        # Convert the labels to one-hot vectors
+        labels = tf.one_hot(labels, depth=hparams.n_vocab)
+        
+        # Compute the cross entropy loss
+        loss = -tf.reduce_sum(labels * tf.math.log(probs), axis=-1)
+        loss = tf.reduce_mean(loss)
+        
+        return loss
 
     def past_shape(self, hparams, batch_size=None, sequence=None):
         return [batch_size, hparams.n_layer, 2, hparams.n_head, sequence, hparams.n_embd // hparams.n_head]
