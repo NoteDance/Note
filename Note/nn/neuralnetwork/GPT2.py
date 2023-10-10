@@ -17,7 +17,7 @@ class GPT2:
         self.param=Module.param
         self.flag=0
         
-    def fp(self, X, hparams=hparams, past=None):
+    def fp(self, X, past=None):
         results = {}
         batch, sequence = shape_list(X)
         
