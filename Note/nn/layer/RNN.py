@@ -4,7 +4,7 @@ from Note.nn.activation import activation_dict # import the activation function 
 from Note.nn.Module import Module
 
 
-class RNN(Module): # define a class for recurrent neural network (RNN) layer
+class RNN: # define a class for recurrent neural network (RNN) layer
     def __init__(self,output_size,input_size=None,weight_initializer='Xavier',bias_initializer='zeros',activation=None,return_sequence=False,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
         self.input_size=input_size
         self.weight_initializer=weight_initializer
