@@ -4,7 +4,7 @@ from Note.nn.activation import activation_dict # import the activation function 
 from Note.nn.Module import Module
 
 
-class RNNCell(Module): # define a class for recurrent neural network (RNN) cell
+class RNNCell: # define a class for recurrent neural network (RNN) cell
     def __init__(self,weight_shape,weight_initializer='Xavier',bias_initializer='zeros',activation=None,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
         self.weight_i=i.initializer(weight_shape,weight_initializer,dtype) # initialize the weight matrix for input data
         self.weight_s=i.initializer([weight_shape[1],weight_shape[1]],weight_initializer,dtype) # initialize the weight matrix for previous state
