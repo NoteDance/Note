@@ -3,7 +3,7 @@ from Note.nn.initializer import initializer
 from Note.nn.Module import Module
 
 
-class capsule(Module):
+class capsule:
     def __init__(self,num_capsules,dim_capsules,input_size=None,routings=3,weight_initializer='Xavier',trainable=True,dtype='float32'):
         # initialize the capsule layer with some parameters
         self.num_capsules=num_capsules # the number of output capsules
