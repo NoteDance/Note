@@ -3,7 +3,7 @@ from Note.nn.initializer import initializer
 from Note.nn.Module import Module
 
 
-class additive_attention(Module):
+class additive_attention:
     def __init__(self,input_size=None, use_scale=True, dtype='float32'):
         self.use_scale = use_scale
         self.dtype=dtype
