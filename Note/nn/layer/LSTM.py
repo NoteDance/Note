@@ -3,7 +3,7 @@ import Note.nn.initializer as i # import the initializer module from Note.nn pac
 from Note.nn.Module import Module
 
 
-class LSTM(Module): # define a class for long short-term memory (LSTM) layer
+class LSTM: # define a class for long short-term memory (LSTM) layer
     def __init__(self,output_size,input_size=None,weight_initializer='Xavier',bias_initializer='zeros',return_sequence=False,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
         self.input_size=input_size
         self.weight_initializer=weight_initializer
