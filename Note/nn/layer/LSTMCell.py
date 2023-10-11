@@ -3,7 +3,7 @@ import Note.nn.initializer as i # import the initializer module from Note.nn pac
 from Note.nn.Module import Module
 
 
-class LSTMCell(Module): # define a class for long short-term memory (LSTM) cell
+class LSTMCell: # define a class for long short-term memory (LSTM) cell
     def __init__(self,weight_shape,weight_initializer='Xavier',bias_initializer='zeros',use_bias=True,trainable=True,dtype='float32'): # define the constructor method
         self.weight=i.initializer([weight_shape[0]+weight_shape[1],4*weight_shape[1]],weight_initializer,dtype) # initialize the weight matrix for all gates and candidate cell state
         if use_bias==True: # if use bias is True
