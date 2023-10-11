@@ -21,19 +21,20 @@ class GPT2:
         self.block={}
         self.optimizer=Adam()
         self.param=Module.param
-        self.flag1=Value('i',0)
-        self.flag2=Value('i',0)
-        
+    
+    def build(self):
+        self.wpe = initializer_([hparams.n_ctx, hparams.n_embd], ['normal',0.0,0.01], 'float32')
+        self.wte = initializer_([hparams.n_vocab, hparams.n_embd], ['normal',0.0,0.02], 'float32')
+        pasts = [None] * hparams.n_layer
+        for layer, past in enumerate(pasts):
+            self.block[layer]=block()
+    
     def fp(self, X, p=None, past=None):
         if self.km==1:
             with tf.device(assign_device(p,self.device)):
                 results = {}
                 batch, sequence = shape_list(X)
                 
-                if self.flag1.value==0:
-                    self.flag1.value=1
-                    self.wpe = initializer_([hparams.n_ctx, hparams.n_embd], ['normal',0.0,0.01], 'float32')
-                    self.wte = initializer_([hparams.n_vocab, hparams.n_embd], ['normal',0.0,0.02], 'float32')
                 past_length = 0 if past is None else tf.shape(past)[-2]
                 h = tf.gather(self.wte, X) + tf.gather(self.wpe, self.positions_for(X, past_length))
             
@@ -41,10 +42,6 @@ class GPT2:
                 presents = []
                 pasts = tf.unstack(past, axis=1) if past is not None else [None] * hparams.n_layer
                 assert len(pasts) == hparams.n_layer
-                if self.flag2.value==0:
-                    self.flag2.value=1
-                    for layer, past in enumerate(pasts):
-                        self.block[layer]=block()
                 for layer, past in enumerate(pasts):
                     h, present = self.block[layer].output(h, past=past, hparams=hparams)
                     presents.append(present)
@@ -60,10 +57,6 @@ class GPT2:
             results = {}
             batch, sequence = shape_list(X)
             
-            if self.flag1.value==0:
-                self.flag1.value=1
-                self.wpe = initializer_([hparams.n_ctx, hparams.n_embd], ['normal',0.0,0.01], 'float32')
-                self.wte = initializer_([hparams.n_vocab, hparams.n_embd], ['normal',0.0,0.02], 'float32')
             past_length = 0 if past is None else tf.shape(past)[-2]
             h = tf.gather(self.wte, X) + tf.gather(self.wpe, self.positions_for(X, past_length))
         
@@ -71,10 +64,6 @@ class GPT2:
             presents = []
             pasts = tf.unstack(past, axis=1) if past is not None else [None] * hparams.n_layer
             assert len(pasts) == hparams.n_layer
-            if self.flag2.value==0:
-                self.flag2.value=1
-                for layer, past in enumerate(pasts):
-                    self.block[layer]=block()
             for layer, past in enumerate(pasts):
                 h, present = self.block[layer].output(h, past=past, hparams=hparams)
                 presents.append(present)
