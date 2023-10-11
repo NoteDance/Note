@@ -238,7 +238,7 @@ class EfficientNetV2:
         self.optimizer=Adam()
     
     
-    def fp(self,data,p):
+    def fp(self,data,p=None):
         if self.km==1:
             with tf.device(assign_device(p,self.device)):
                 data=self.rescaling.output(data)
