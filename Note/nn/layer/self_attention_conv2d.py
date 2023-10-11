@@ -4,7 +4,7 @@ from Note.nn.activation import activation_dict
 from Note.nn.Module import Module
 
 
-class self_attention_conv2d(Module):
+class self_attention_conv2d:
     def __init__(self,filters,kernel_size,input_size=None,strides=(1,1),padding='VALID',activation=None,weight_initializer='Xavier',bias_initializer='zeros',use_bias=True,dtype='float32'):
         # filters: the number of output filters
         # kernel_size: the size of the convolution kernel
