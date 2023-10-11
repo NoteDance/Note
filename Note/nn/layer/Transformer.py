@@ -4,7 +4,7 @@ from Note.nn.layer.layer_normalization import layer_normalization
 from Note.nn.Module import Module
 
 
-class Transformer(Module):
+class Transformer:
     def __init__(self,output_size,num_heads,input_size=None,weight_initializer='Xavier',bias_initializer='zeros',use_bias=True,dtype='float32'):
         self.num_heads=num_heads # number of attention heads
         self.input_size=input_size
