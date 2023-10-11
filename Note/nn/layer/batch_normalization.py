@@ -3,7 +3,7 @@ from Note.nn.initializer import initializer
 from Note.nn.Module import Module
 
 
-class batch_normalization(Module):
+class batch_normalization:
     def __init__(self, input_size=None, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, beta_initializer='zeros', gamma_initializer='ones', moving_mean_initializer='zeros', moving_variance_initializer='ones', keepdims=True, trainable=True, dtype='float32'):
         self.input_size=input_size
         self.axis=axis
