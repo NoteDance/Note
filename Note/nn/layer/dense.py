@@ -4,7 +4,7 @@ import Note.nn.initializer as i # import the initializer module from Note.nn pac
 from Note.nn.Module import Module
 
 
-class dense(Module): # define a class for dense (fully connected) layer
+class dense: # define a class for dense (fully connected) layer
     def __init__(self,output_size,input_size=None,weight_initializer='Xavier',bias_initializer='zeros',activation=None,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
         self.input_size=input_size
         self.weight_initializer=weight_initializer
