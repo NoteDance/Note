@@ -1,2 +1,2 @@
-class Module(object):
+class Module:
     param=[]
