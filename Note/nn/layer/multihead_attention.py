@@ -4,7 +4,7 @@ from typing import Optional
 from Note.nn.Module import Module
 
 
-class multihead_attention(Module):
+class multihead_attention:
     def __init__(self, n_head: int, input_size=None, kv_cache=None, weight_initializer='Xavier', bias_initializer='zeros', dtype='float32'):
         self.n_head = n_head
         self.input_size=input_size
