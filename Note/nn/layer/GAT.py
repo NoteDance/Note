@@ -4,7 +4,7 @@ from Note.nn.activation import activation_dict
 from Note.nn.Module import Module
 
 
-class GAT(Module):
+class GAT:
     def __init__(self,input_dim,output_dim,num_heads,weight_initializer='Xavier',attention_initializer='zeros',activation=None,dtype='float32',attn_drop=0.0,ffd_drop=0.0):
         # input_dim: the dimension of the input node features
         # output_dim: the dimension of the output node features
