@@ -4,7 +4,7 @@ import Note.nn.initializer as i # import the initializer module from Note.nn pac
 from Note.nn.Module import Module
 
 
-class conv3d_transpose(Module): # define a class for 3D transposed convolutional layer
+class conv3d_transpose: # define a class for 3D transposed convolutional layer
     def __init__(self,filters,kernel_size,input_size=None,strides=[1,1,1],padding='VALID',output_padding=None,weight_initializer='Xavier',bias_initializer='zeros',activation=None,data_format='NDHWC',dilations=None,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
         if isinstance(kernel_size,int):
             kernel_size=[kernel_size,kernel_size,kernel_size]
