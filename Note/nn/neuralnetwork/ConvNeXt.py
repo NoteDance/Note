@@ -50,9 +50,10 @@ class ConvNeXtBlock:
 
 
 class ConvNeXt:
-    def __init__(self,model_type='base',drop_path_rate=0.0,layer_scale_init_value=1e-6,classes=1000,include_top=True,pooling=None,device='GPU'):
+    def __init__(self,model_type='base',drop_path_rate=0.0,layer_scale_init_value=1e-6,classes=1000,classifier_activation="softmax",include_top=True,pooling=None,device='GPU'):
         self.model_type=model_type
         self.classes=classes
+        self.classifier_activation=classifier_activation
         self.depths=MODEL_CONFIGS[model_type]['depths']
         self.projection_dims=MODEL_CONFIGS[model_type]['projection_dims']
         self.drop_path_rate=drop_path_rate
@@ -94,22 +95,23 @@ class ConvNeXt:
         self.blocks=[]
         self.num_convnext_blocks = 4
         for i in range(self.num_convnext_blocks):
-            self.blocks.append([])
             input_channels=self.downsample_layers[i].output_size
             for j in range(self.depths[i]):
-                block = ConvNeXtBlock(
+                block = Layers()
+                block.add(ConvNeXtBlock(
                     input_channels=input_channels,
                     projection_dim=self.projection_dims[i],
                     drop_path_rate=depth_drop_rates[cur + j],
                     layer_scale_init_value=self.layer_scale_init_value,
                     dtype=dtype
-                    )
-                self.blocks[i].append(block)
+                    ))
                 input_channels=block.output_size
+            self.blocks.append(block)
             cur += self.depths[i]
-        self.layer_normalization=layer_normalization(self.blocks[-1][-1].output_size,dtype=dtype)
-        self.dense=dense(self.classes,self.blocks[-1][-1].output_size,activation='softmax',dtype=dtype)
+        self.layer_normalization=layer_normalization(self.blocks[-1].output_size,dtype=dtype)
+        self.dense=dense(self.classes,self.blocks[-1].output_size,activation=self.classifier_activation,dtype=dtype)
         
+        self.dtype=dtype
         self.optimizer=Adam()
         self.param=Module.param
         return
@@ -121,7 +123,7 @@ class ConvNeXt:
                 for i in range(self.num_convnext_blocks):
                     data = self.downsample_layers[i].output(data)
                     for j in range(self.depths[i]):
-                        data=self.blocks[i][j].output(data)
+                        data=self.blocks[i].output(data)
                 if self.include_top:
                     data = tf.math.reduce_mean(data, axis=[1, 2])
                     data = self.layer_normalization.output(data)
@@ -135,7 +137,7 @@ class ConvNeXt:
             for i in range(self.num_convnext_blocks):
                 data = self.downsample_layers[i].output(data,self.km)
                 for j in range(self.depths[i]):
-                    data=self.blocks[i][j].output(data,self.km)
+                    data=self.blocks[i].output(data,self.km)
             if self.include_top:
                 data = tf.math.reduce_mean(data, axis=[1, 2])
                 data = self.layer_normalization.output(data)
