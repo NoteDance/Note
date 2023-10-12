@@ -1,5 +1,7 @@
 # Introduction:
-**Note is a system for deep learning and reinforcement learning, supporting TensorFlow and PyTorch platforms, supporting non-parallel training and parallel training. Note makes the building and training of neural networks easy. To train a neural network on Note, you first need to write a neural network class, pass the neural network object to the kernel, and then use the methods provided by the kernel to train a neural network. Note implements parallel training based on the Python multiprocessing module. Note allows you to easily implement parallel training.**
+- **Note is a system for deep learning and reinforcement learning, supporting TensorFlow and PyTorch platforms, supporting non-parallel training and parallel training. Note makes the building and training of neural networks easy. To train a neural network on Note, you first need to write a neural network class, pass the neural network object to the kernel, and then use the methods provided by the kernel to train a neural network. Note implements parallel training based on the Python multiprocessing module. Note allows you to easily implement parallel training.**
+
+- **The Note.nn.neuralnetwork package contains neural networks, and you can train them on Note.**
 
 
 # Installation:
@@ -312,7 +314,16 @@ kernel.update_nn_param()             #update the network parameters after traini
 efficientnetv2b0.km=0
 output=efficientnetv2b0.fp(data)
 ```
-
+**GPT2:**
+```python
+import Note.DL.kernel as k   #import kernel module
+from Note.nn.neuralnetwork.GPT2 import GPT2 #import neural network class
+gpt2=GPT2()  #create neural network object
+kernel=k.kernel(gpt2)                  #create kernel object with the network
+kernel.platform=tf           #set the platform to tensorflow
+kernel.data(train_data,train_labels)         #input train data to the kernel
+kernel.train(32,5)           #train the network with batch size 32 and epoch 5
+```
 
 # Study kernel:
 **If you want to study kernel, you can see the kernel with comments at the link below.**
