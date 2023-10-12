@@ -20,6 +20,7 @@ class GRN:
     def __init__(self, dim, dtype):
         self.gamma = initializer_([1, 1, 1, dim], 'zeros', dtype)
         self.beta = initializer_([1, 1, 1, dim], 'zeros', dtype)
+        Module.param.extend([self.gamma,self.beta])
     
     
     def output(self, x):
@@ -39,10 +40,10 @@ class Block:
         self.layers=Layers()
         self.layers.add(depthwise_conv2d(7,input_size=dim,padding='SAME',dtype=dtype))
         self.layers.add(layer_normalization(epsilon=1e-6,dtype=dtype))
-        self.layers.add(dense(4 * dim,dtype=dtype))
+        self.layers.add(dense(4*dim,weight_initializer=['truncated_normal',.02],dtype=dtype))
         self.layers.add(activation_dict['gelu'])
         self.layers.add(GRN(4*dim,dtype))
-        self.layers.add(dense(dim,dtype=dtype))
+        self.layers.add(dense(dim,weight_initializer=['truncated_normal',.02],dtype=dtype))
         self.layers.add(stochastic_depth(drop_path)) if drop_path > 0. else self.layers.add(identity())
 
 
@@ -113,7 +114,7 @@ class ConvNeXtV2:
             cur += self.depths[i]
         
         self.layer_normalization=layer_normalization(self.dims[-1],epsilon=1e-6,dtype=dtype)
-        self.dense=dense(self.classes,self.dims[-1],activation=self.classifier_activation,dtype=dtype)
+        self.dense=dense(self.classes,self.dims[-1],weight_initializer=['truncated_normal',.02],activation=self.classifier_activation,dtype=dtype)
         self.dense.weight.assign(self.dense.weight*self.head_init_scale)
         
         self.dtype=dtype
