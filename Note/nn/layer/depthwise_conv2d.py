@@ -6,8 +6,10 @@ from Note.nn.Module import Module
 
 class depthwise_conv2d: # define a class for depthwise convolutional layer
     def __init__(self,kernel_size,depth_multiplier=1,input_size=None,strides=[1,1],padding='VALID',weight_initializer='Xavier',bias_initializer='zeros',activation=None,data_format='NHWC',dilations=None,use_bias=True,trainable=True,dtype='float32',): # define the constructor method
-        self.depth_multiplier=depth_multiplier
+        if isinstance(kernel_size,int):
+            kernel_size=[kernel_size,kernel_size]
         self.kernel_size=kernel_size
+        self.depth_multiplier=depth_multiplier
         self.input_size=input_size
         if isinstance(strides,int):
             self.strides=(1,)+(strides,)*2+(1,)
