@@ -154,5 +154,6 @@ activation_dict={
   'selu':tf.nn.selu,
   'silu':tf.nn.silu,
   'swish':swish,
+  'softmax':tf.nn.softmax,
   # add more activation functions as needed
 }
