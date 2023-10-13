@@ -38,7 +38,7 @@ class Block:
     """
     def __init__(self, dim, drop_path=0., dtype='float32'):
         self.layers=Layers()
-        self.layers.add(depthwise_conv2d(7,input_size=dim,padding='SAME',dtype=dtype))
+        self.layers.add(depthwise_conv2d(7,input_size=dim,padding='SAME',weight_initializer=['truncated_normal',.02],dtype=dtype))
         self.layers.add(layer_normalization(epsilon=1e-6,dtype=dtype))
         self.layers.add(dense(4*dim,weight_initializer=['truncated_normal',.02],dtype=dtype))
         self.layers.add(activation_dict['gelu'])
@@ -77,7 +77,7 @@ class ConvNeXtV2:
         self.depths = MODEL_CONFIGS[model_type]['depths']
         self.dims = MODEL_CONFIGS[model_type]['dims']
         self.drop_path_rate = drop_path_rate
-        self.head_init_scale = head_init_scale
+        self.head_init_scale = tf.constant(head_init_scale)
         self.downsample_layers = [] # stem and 3 intermediate downsampling conv layers
         self.stages = [] # 4 feature resolution stages, each consisting of multiple residual blocks
         self.include_top=include_top
@@ -115,7 +115,8 @@ class ConvNeXtV2:
         
         self.layer_normalization=layer_normalization(self.dims[-1],epsilon=1e-6,dtype=dtype)
         self.dense=dense(self.classes,self.dims[-1],weight_initializer=['truncated_normal',.02],activation=self.classifier_activation,dtype=dtype)
-        self.dense.weight.assign(self.dense.weight*self.head_init_scale)
+        self.dense.weight.assign(tf.cast(self.head_init_scale,self.dense.weight.dtype)*self.dense.weight)
+        self.dense.bias.assign(tf.cast(self.head_init_scale,self.dense.bias.dtype)*self.dense.bias)
         
         self.dtype=dtype
         self.optimizer=Adam()
