@@ -1,7 +1,7 @@
 # Introduction:
 - **Note is a system for deep learning and reinforcement learning, supporting TensorFlow and PyTorch platforms, supporting non-parallel training and parallel training. Note makes the building and training of neural networks easy. To train a neural network on Note, you first need to write a neural network class, pass the neural network object to the kernel, and then use the methods provided by the kernel to train a neural network. Note implements parallel training based on the Python multiprocessing module. Note allows you to easily implement parallel training.**
 
-- **The Note.nn.neuralnetwork package contains neural networks that can be trained on Note.**
+- **The Note.nn.neuralnetwork package contains neural networks that can be trained on Note. You only need to provide the training data and operate simply, then you can train these neural networks in parallel on Note.**
 
 
 # Installation:
