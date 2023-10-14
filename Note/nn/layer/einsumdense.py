@@ -36,7 +36,7 @@ class einsumdense:
         output_shape,
         activation=None,
         bias_axes=None,
-        kernel_initializer="Xavier",
+        weight_initializer="Xavier",
         bias_initializer="zeros",
         trainable=True,
         dtype='float32'
@@ -51,7 +51,7 @@ class einsumdense:
             self.activation = activation_dict[activation]
         else:
             self.activation = None
-        self.kernel_initializer = kernel_initializer
+        self.weight_initializer = weight_initializer
         self.bias_initializer = bias_initializer
         shape_data = _analyze_einsum_string(
             self.equation,
@@ -61,12 +61,12 @@ class einsumdense:
         )
         kernel_shape, bias_shape, self.full_output_shape = shape_data
         self.param=[]
-        self.kernel = initializer(
+        self.weight = initializer(
             shape=kernel_shape,
-            initializer=self.kernel_initializer,
+            initializer=self.weight_initializer,
             dtype=dtype,
         )
-        self.param.append(self.kernel)
+        self.param.append(self.weight)
         
         if bias_shape is not None:
             self.bias = initializer(
@@ -84,7 +84,7 @@ class einsumdense:
 
 
     def output(self, data):
-        ret = tf.einsum(self.equation, data, self.kernel)
+        ret = tf.einsum(self.equation, data, self.weight)
         if self.bias is not None:
             ret += self.bias
         if self.activation is not None:
