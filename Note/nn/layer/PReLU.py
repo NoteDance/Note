@@ -36,7 +36,7 @@ class PReLU:
 
     def __init__(
         self,
-        input_shape,
+        input_shape=None,
         alpha_initializer="zeros",
         shared_axes=None,
         dtype='float32'
@@ -48,18 +48,33 @@ class PReLU:
             self.shared_axes = [shared_axes]
         else:
             self.shared_axes = list(shared_axes)
-        param_shape = list(input_shape[1:])
-        if self.shared_axes is not None:
-            for i in self.shared_axes:
-                param_shape[i - 1] = 1
-        self.alpha = initializer_(
-            shape=param_shape,
-            initializer=alpha_initializer,
-            dtype=dtype
-        )
+        self.dtype=dtype
+        self.input_shape=input_shape
+        if input_shape is not None:
+            param_shape = list(input_shape[1:])
+            if self.shared_axes is not None:
+                for i in self.shared_axes:
+                    param_shape[i - 1] = 1
+            self.alpha = initializer_(
+                shape=param_shape,
+                initializer=alpha_initializer,
+                dtype=dtype
+            )
+            self.param=[self.alpha]
 
 
     def output(self, data):
+        if self.input_shape is None:
+            param_shape = list(self.input_shape[1:])
+            if self.shared_axes is not None:
+                for i in self.shared_axes:
+                    param_shape[i - 1] = 1
+            self.alpha = initializer_(
+                shape=param_shape,
+                initializer=self.alpha_initializer,
+                dtype=self.dtype
+            )
+            self.param=[self.alpha]
         pos = tf.nn.relu(data)
         neg = -self.alpha * tf.nn.relu(-data)
         return pos + neg
