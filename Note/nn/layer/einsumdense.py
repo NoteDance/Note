@@ -31,9 +31,9 @@ class einsumdense:
 
     def __init__(
         self,
-        input_shape,
         equation,
         output_shape,
+        input_shape=None,
         activation=None,
         bias_axes=None,
         weight_initializer="Xavier",
@@ -53,37 +53,71 @@ class einsumdense:
             self.activation = None
         self.weight_initializer = weight_initializer
         self.bias_initializer = bias_initializer
-        shape_data = _analyze_einsum_string(
-            self.equation,
-            self.bias_axes,
-            input_shape,
-            self.partial_output_shape,
-        )
-        kernel_shape, bias_shape, self.full_output_shape = shape_data
-        self.param=[]
-        self.weight = initializer(
-            shape=kernel_shape,
-            initializer=self.weight_initializer,
-            dtype=dtype,
-        )
-        self.param.append(self.weight)
-        
-        if bias_shape is not None:
-            self.bias = initializer(
-                shape=bias_shape,
-                initializer=self.bias_initializer,
+        self.trainable=trainable
+        self.dtype=dtype
+        self.input_shape=input_shape
+        if input_shape is not None:
+            shape_data = _analyze_einsum_string(
+                self.equation,
+                self.bias_axes,
+                input_shape,
+                self.partial_output_shape,
+            )
+            kernel_shape, bias_shape, self.full_output_shape = shape_data
+            self.param=[]
+            self.weight = initializer(
+                shape=kernel_shape,
+                initializer=self.weight_initializer,
                 dtype=dtype,
             )
-            self.param.append(self.bias)
-        else:
-            self.bias = None
-        
-        if trainable==False:
-            self.param=[]
-        Module.param.extend(self.param)
+            self.param.append(self.weight)
+            
+            if bias_shape is not None:
+                self.bias = initializer(
+                    shape=bias_shape,
+                    initializer=self.bias_initializer,
+                    dtype=dtype,
+                )
+                self.param.append(self.bias)
+            else:
+                self.bias = None
+            
+            if trainable==False:
+                self.param=[]
+            Module.param.extend(self.param)
 
 
     def output(self, data):
+        if self.input_shape is None:
+            input_shape=data.shape
+            shape_data = _analyze_einsum_string(
+                self.equation,
+                self.bias_axes,
+                input_shape,
+                self.partial_output_shape,
+            )
+            kernel_shape, bias_shape, self.full_output_shape = shape_data
+            self.param=[]
+            self.weight = initializer(
+                shape=kernel_shape,
+                initializer=self.weight_initializer,
+                dtype=self.dtype,
+            )
+            self.param.append(self.weight)
+            
+            if bias_shape is not None:
+                self.bias = initializer(
+                    shape=bias_shape,
+                    initializer=self.bias_initializer,
+                    dtype=self.dtype,
+                )
+                self.param.append(self.bias)
+            else:
+                self.bias = None
+            
+            if self.trainable==False:
+                self.param=[]
+            Module.param.extend(self.param)
         ret = tf.einsum(self.equation, data, self.weight)
         if self.bias is not None:
             ret += self.bias
