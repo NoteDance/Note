@@ -65,8 +65,8 @@ class PReLU:
 
     def output(self, data):
         if self.input_shape is None:
-            input_shape=data.shape
-            param_shape = list(input_shape[1:])
+            self.input_shape=data.shape
+            param_shape = list(self.input_shape[1:])
             if self.shared_axes is not None:
                 for i in self.shared_axes:
                     param_shape[i - 1] = 1
