@@ -10,7 +10,7 @@ from Note.nn.layer.identity import identity
 from Note.nn.initializer import initializer_
 from Note.nn.activation import activation_dict
 from Note.nn.Layers import Layers
-from Note.nn.parallel.optimizer import Adam
+from Note.nn.parallel.optimizer import AdamW
 from Note.nn.parallel.assign_device import assign_device
 from Note.nn.Module import Module
 
@@ -45,7 +45,9 @@ class SwiftFormer:
         self.include_top=include_top
         self.pooling=pooling
         self.device=device
-        self.loss_object=tf.keras.losses.CategoricalCrossentropy()
+        self.alpha = 0.5
+        self.temperature = 10
+        self.ce_loss = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
         self.km=0
 
         self.patch_embed = stem(3, embed_dims[0], dtype)
@@ -95,7 +97,7 @@ class SwiftFormer:
                     else identity()
         
         self.dtype=dtype
-        self.optimizer=Adam()
+        self.optimizer=AdamW(epsilon=1e-8)
         self.param=Module.param
 
 
@@ -125,8 +127,8 @@ class SwiftFormer:
                     return x
         
                 x = self.norm.output(x)
-                x = tf.transpose(x,perm=[0,3,1,2])
                 if self.include_top:
+                    x = tf.transpose(x,perm=[0,3,1,2])
                     if self.dist:
                         x = tf.reshape(x, [tf.shape(x)[0], tf.shape(x)[1], -1])
                         x = tf.reduce_mean(x, axis=-1)
@@ -151,8 +153,8 @@ class SwiftFormer:
                 return x
     
             x = self.norm.output(x,self.km)
-            x = tf.transpose(x,perm=[0,3,1,2])
             if self.include_top:
+                x = tf.transpose(x,perm=[0,3,1,2])
                 if self.dist:
                     x = tf.reshape(x, [tf.shape(x)[0], tf.shape(x)[1], -1])
                     x = tf.reduce_mean(x, axis=-1)
@@ -169,11 +171,24 @@ class SwiftFormer:
                     x = tf.math.reduce_max(x, axis=[1, 2])
             # For image classification
             return cls_out
-        
-        
+    
+    
+    def distill_loss(self, student, teacher, temperature):
+        student = tf.nn.softmax(student / temperature, axis=-1)
+        teacher = tf.nn.softmax(teacher / temperature, axis=-1)
+        return -tf.reduce_mean(tf.reduce_sum(teacher * tf.math.log(student + 1e-12), axis=-1))
+    
+    
+    def total_loss(self, output, labels, alpha, temperature):
+        cls_out, dist_out = output
+        ce = self.ce_loss(labels, cls_out)
+        distill = self.distill_loss(dist_out, labels, temperature)
+        return alpha * ce + (1 - alpha) * distill
+    
+    
     def loss(self,output,labels,p):
         with tf.device(assign_device(p,self.device)):
-            loss_value=self.loss_object(labels,output)
+            loss_value = self.total_loss(output, labels, self.alpha, self.temperature)
         return loss_value
     
     
