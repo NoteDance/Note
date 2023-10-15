@@ -125,14 +125,16 @@ class SwiftFormer:
                     return x
         
                 x = self.norm.output(x)
+                x = tf.transpose(x,perm=[0,3,1,2])
                 if self.include_top:
                     if self.dist:
-                        x = tf.math.reduce_mean(x, axis=[1, 2])
+                        x = tf.reshape(x, [tf.shape(x)[0], tf.shape(x)[1], -1])
+                        x = tf.reduce_mean(x, axis=-1)
                         cls_out = self.head.output(x), self.dist_head.output(x)
                         if not self.km:
                             cls_out = (cls_out[0] + cls_out[1]) / 2
                     else:
-                        x = tf.math.reduce_mean(x, axis=[1, 2])
+                        x = tf.math.reduce_mean(x, axis=-2)
                         cls_out = self.head.output(x)
                     # For image classification
                     return cls_out
@@ -149,14 +151,16 @@ class SwiftFormer:
                 return x
     
             x = self.norm.output(x,self.km)
+            x = tf.transpose(x,perm=[0,3,1,2])
             if self.include_top:
                 if self.dist:
-                    x = tf.math.reduce_mean(x, axis=[1, 2])
+                    x = tf.reshape(x, [tf.shape(x)[0], tf.shape(x)[1], -1])
+                    x = tf.reduce_mean(x, axis=-1)
                     cls_out = self.head.output(x), self.dist_head.output(x)
                     if not self.km:
                         cls_out = (cls_out[0] + cls_out[1]) / 2
                 else:
-                    x = tf.math.reduce_mean(x, axis=[1, 2])
+                    x = tf.math.reduce_mean(x, axis=-2)
                     cls_out = self.head.output(x)
             else:
                 if self.pooling=="avg":
