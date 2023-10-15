@@ -89,11 +89,11 @@ class einsumdense:
 
     def output(self, data):
         if self.input_shape is None:
-            input_shape=data.shape
+            self.input_shape=data.shape
             shape_data = _analyze_einsum_string(
                 self.equation,
                 self.bias_axes,
-                input_shape,
+                self.input_shape,
                 self.partial_output_shape,
             )
             kernel_shape, bias_shape, self.full_output_shape = shape_data
