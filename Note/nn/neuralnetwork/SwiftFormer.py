@@ -45,9 +45,9 @@ class SwiftFormer:
         self.include_top=include_top
         self.pooling=pooling
         self.device=device
-        self.alpha = 0.5
-        self.temperature = 10
-        self.ce_loss = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
+        self.alpha = tf.constant(0.5, dtype)
+        self.temperature = tf.constant(10, dtype)
+        self.ce_loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
         self.km=0
 
         self.patch_embed = stem(3, embed_dims[0], dtype)
@@ -136,7 +136,8 @@ class SwiftFormer:
                         if not self.km:
                             cls_out = (cls_out[0] + cls_out[1]) / 2
                     else:
-                        x = tf.math.reduce_mean(x, axis=-2)
+                        x = tf.reshape(x, [tf.shape(x)[0], tf.shape(x)[1], -1])
+                        x = tf.reduce_mean(x, axis=-1)
                         cls_out = self.head.output(x)
                     # For image classification
                     return cls_out
@@ -162,7 +163,8 @@ class SwiftFormer:
                     if not self.km:
                         cls_out = (cls_out[0] + cls_out[1]) / 2
                 else:
-                    x = tf.math.reduce_mean(x, axis=-2)
+                    x = tf.reshape(x, [tf.shape(x)[0], tf.shape(x)[1], -1])
+                    x = tf.reduce_mean(x, axis=-1)
                     cls_out = self.head.output(x)
             else:
                 if self.pooling=="avg":
@@ -180,10 +182,14 @@ class SwiftFormer:
     
     
     def total_loss(self, output, labels, alpha, temperature):
-        cls_out, dist_out = output
-        ce = self.ce_loss(labels, cls_out)
-        distill = self.distill_loss(dist_out, labels, temperature)
-        return alpha * ce + (1 - alpha) * distill
+        if self.dist:
+            cls_out, dist_out = output
+            ce = self.ce_loss(labels, cls_out)
+            distill = self.distill_loss(dist_out, labels, temperature)
+            return alpha * ce + (1 - alpha) * distill
+        else:
+            ce = self.ce_loss(labels, output)
+            return ce
     
     
     def loss(self,output,labels,p):
