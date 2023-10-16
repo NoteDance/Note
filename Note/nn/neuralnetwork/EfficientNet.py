@@ -121,7 +121,7 @@ class EfficientNet:
         self.device=device
         self.dtype=dtype
         self.normalization=normalization(input_shape,dtype=dtype)
-        self.loss_object=tf.keras.losses.CategoricalCrossentropy() # create a categorical crossentropy loss object
+        self.loss_object=tf.keras.losses.SparseCategoricalCrossentropy() # create a sparse categorical crossentropy loss object
         self.km=0
     
     
@@ -253,11 +253,11 @@ class EfficientNet:
             p: integer, the index of the device to use.
 
         Returns:
-            loss_value: tensor, the loss value.
+            loss: tensor, the loss value.
         """
         with tf.device(assign_device(p,self.device)): # assign the device to use
-            loss_value=self.loss_object(labels,output) # calculate the loss value using categorical crossentropy loss function
-        return loss_value # return the loss value
+            loss=self.loss_object(labels,output) # calculate the loss value using categorical crossentropy loss function
+        return loss # return the loss value
     
     
     def GradientTape(self,data,labels,p):

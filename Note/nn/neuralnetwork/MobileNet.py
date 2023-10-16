@@ -63,7 +63,7 @@ class MobileNet:
         self.include_top=include_top
         self.pooling=pooling
         self.device=device
-        self.loss_object=tf.keras.losses.CategoricalCrossentropy()
+        self.loss_object=tf.keras.losses.SparseCategoricalCrossentropy()
         self.km=0
         
         
@@ -130,8 +130,8 @@ class MobileNet:
     
     def loss(self,output,labels,p):
         with tf.device(assign_device(p,self.device)):
-            loss_value=self.loss_object(labels,output)
-        return loss_value
+            loss=self.loss_object(labels,output)
+        return loss
     
     
     def GradientTape(self,data,labels,p):

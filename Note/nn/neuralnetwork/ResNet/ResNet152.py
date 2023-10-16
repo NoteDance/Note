@@ -69,7 +69,7 @@ class ResNet152:
         self.pooling=pooling
         self.use_bias=use_bias
         self.device=device
-        self.loss_object=tf.keras.losses.CategoricalCrossentropy()
+        self.loss_object=tf.keras.losses.SparseCategoricalCrossentropy()
         self.km=0
     
     
@@ -119,8 +119,8 @@ class ResNet152:
     
     def loss(self,output,labels,p):
         with tf.device(assign_device(p,self.device)):
-            loss_value=self.loss_object(labels,output)
-        return loss_value
+            loss=self.loss_object(labels,output)
+        return loss
     
     
     def GradientTape(self,data,labels,p):
