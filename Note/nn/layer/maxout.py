@@ -1,59 +1,74 @@
 import tensorflow as tf
-import Note.nn.initializer as i
-from Note.nn.Module import Module
 
 
 class maxout:
-    def __init__(self,output_size,num_units,input_size=None,weight_initializer='Xavier',bias_initializer='zeros',use_bias=True,dtype='float32'):
-        # input_size: the dimension size of the input features
-        # output_size: the dimension size of the output features
-        # num_units: the number of linear units per output unit
-        # weight_initializer: the initializer for the weight matrix
-        # bias_initializer: the initializer for the bias vector
-        # dtype: the data type of the parameters
-        # use_bias: whether to use bias or not
-        self.num_units=num_units
-        self.input_size=input_size
-        self.weight_initializer=weight_initializer
-        self.bias_initializer=bias_initializer
-        self.use_bias=use_bias
-        self.dtype=dtype
-        self.output_size=output_size
-        if input_size!=None:
-            # initialize the weight matrix and the bias vector
-            self.weight=i.initializer([input_size,output_size*num_units],weight_initializer,dtype)
-            self.bias=i.initializer([output_size*num_units],bias_initializer,dtype)
-            if use_bias==True:
-                self.param=[self.weight,self.bias]
+    """Applies Maxout to the input.
+
+    "Maxout Networks" Ian J. Goodfellow, David Warde-Farley, Mehdi Mirza, Aaron
+    Courville, Yoshua Bengio. https://arxiv.org/abs/1302.4389
+
+    Usually the operation is performed in the filter/channel dimension. This
+    can also be used after Dense layers to reduce number of features.
+
+    Args:
+      input_shape: Shape of the input tensor.
+      num_units: Specifies how many features will remain after maxout
+        in the `axis` dimension (usually channel).
+        This must be a factor of number of features.
+      axis: The dimension where max pooling will be performed. Default is the
+        last dimension.
+
+    Input shape:
+      nD tensor with shape: `(batch_size, ..., axis_dim, ...)`.
+
+    Output shape:
+      nD tensor with shape: `(batch_size, ..., num_units, ...)`.
+    """
+
+    def __init__(self, num_units: int, axis: int = -1, input_shape=None):
+        self.num_units = num_units
+        self.axis = axis
+        self.input_shape=input_shape
+        if input_shape is not None:
+            self.num_channels = self.input_shape[axis]
+            if not isinstance(self.num_channels, tf.Tensor) and self.num_channels % self.num_units:
+                raise ValueError(
+                    "number of features({}) is not "
+                    "a multiple of num_units({})".format(self.num_channels, self.num_units)
+                )
+    
+            if axis < 0:
+                self.axis_ = axis + len(self.input_shape)
             else:
-                self.param=[self.weight]
-            Module.param.extend(self.param)
-    
-    
-    def build(self):
-        # initialize the weight matrix and the bias vector
-        self.weight=i.initializer([self.input_size,self.output_size*self.num_units],self.weight_initializer,self.dtype)
-        self.bias=i.initializer([self.output_size*self.num_units],self.bias_initializer,self.dtype)
-        if self.use_bias==True:
-            self.param=[self.weight,self.bias]
-        else:
-            self.param=[self.weight]
-        Module.param.extend(self.param)
-        return
-    
-    
+                self.axis_ = axis
+            assert self.axis_ >= 0, "Find invalid axis: {}".format(self.axis)
+
+
     def output(self,data):
-        # data: a tensor that represents the input features, shape is [N, input_dim], where N is the number of samples
-        if data.dtype!=self.dtype:
-            data=tf.cast(data,self.dtype)
-        if self.input_size==None:
-            self.input_size=data.shape[-1]
-            self.build()
-        # compute the linear transformation and add bias
-        linear_output=tf.matmul(data,self.weight)
-        linear_output=tf.nn.bias_add(linear_output,self.bias)
-        # reshape the linear output to [N, output_dim, num_units]
-        linear_output=tf.reshape(linear_output,[-1,self.output_dim,self.num_units])
-        # compute the maxout operation along the last dimension
-        maxout_output=tf.reduce_max(linear_output,axis=-1)
-        return maxout_output
+        if self.input_shape is None:
+            self.input_shape=list(data.shape)
+            num_channels = self.input_shape[self.axis]
+            if not isinstance(num_channels, tf.Tensor) and num_channels % self.num_units:
+                raise ValueError(
+                    "number of features({}) is not "
+                    "a multiple of num_units({})".format(num_channels, self.num_units)
+                )
+    
+            if self.axis < 0:
+                axis = self.axis + len(self.input_shape)
+            else:
+                axis = self.axis
+            assert axis >= 0, "Find invalid axis: {}".format(self.axis)
+        else:
+            axis=self.axis_
+            num_channels=self.num_channels
+            
+        expand_shape = self.input_shape[:]
+        expand_shape[axis] = self.num_units
+        k = num_channels // self.num_units
+        expand_shape.insert(axis, k)
+
+        output = tf.math.reduce_max(
+            tf.reshape(data, expand_shape), axis, keepdims=False
+        )
+        return output
