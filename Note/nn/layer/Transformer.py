@@ -16,26 +16,26 @@ class Transformer:
         if custom_encoder is not None:
             self.encoder = custom_encoder
         else:
-            encoder_layer = TransformerEncoderLayer(d_model, nhead, dim_feedforward, dropout,
+            encoder_layers = [TransformerEncoderLayer(d_model, nhead, dim_feedforward, dropout,
                                                     activation, layer_norm_eps, norm_first,
-                                                    bias)
+                                                    bias) for _ in range(num_encoder_layers)]
             encoder_norm = layer_normalization(d_model, epsilon=layer_norm_eps, dtype=dtype)
-            self.encoder = TransformerEncoder(encoder_layer, num_encoder_layers, encoder_norm)
+            self.encoder = TransformerEncoder(encoder_layers, num_encoder_layers, encoder_norm)
 
         if custom_decoder is not None:
             self.decoder = custom_decoder
         else:
-            decoder_layer = TransformerDecoderLayer(d_model, nhead, dim_feedforward, dropout,
+            decoder_layers = [TransformerDecoderLayer(d_model, nhead, dim_feedforward, dropout,
                                                     activation, layer_norm_eps, norm_first,
-                                                    bias)
+                                                    bias) for _ in range(num_decoder_layers)]
             decoder_norm = layer_normalization(d_model, epsilon=layer_norm_eps, dtype=dtype)
-            self.decoder = TransformerDecoder(decoder_layer, num_decoder_layers, decoder_norm)
+            self.decoder = TransformerDecoder(decoder_layers, num_decoder_layers, decoder_norm)
 
         self.d_model = d_model
         self.nhead = nhead
 
 
-    def output(self, src, tgt, src_mask = None, tgt_mask = None, memory_mask = None):
-        memory = self.encoder(src, mask=src_mask)
-        output = self.decoder(tgt, memory, tgt_mask=tgt_mask, memory_mask=memory_mask)
+    def output(self, src, tgt, src_mask = None, tgt_mask = None, memory_mask = None, train_flag=True):
+        memory = self.encoder(src, mask=src_mask, train_flag=train_flag)
+        output = self.decoder(tgt, memory, tgt_mask=tgt_mask, memory_mask=memory_mask, train_flag=train_flag)
         return output
