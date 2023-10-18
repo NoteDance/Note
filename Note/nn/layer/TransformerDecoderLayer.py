@@ -56,7 +56,7 @@ class TransformerDecoderLayer:
 
     # self-attention block
     def _sa_block(self, x,
-                  attn_mask=None, train_flag):
+                  attn_mask=None, train_flag=True):
         x = self.self_attn.output(x,
                            mask=attn_mask,
                            )[0]
@@ -68,7 +68,7 @@ class TransformerDecoderLayer:
 
     # multihead attention block
     def _mha_block(self, x, mem,
-                   attn_mask=None, train_flag):
+                   attn_mask=None, train_flag=True):
         x = self.multihead_attn.output(x, mem,
                                 )[0]
         if train_flag:
