@@ -33,29 +33,36 @@ class TransformerEncoderLayer:
             self,
             src,
             src_mask=None,
+            train_flag=True
             ):
 
         x = src
         if self.norm_first:
-            x = x + self._sa_block(self.norm1.output(x), src_mask)
-            x = x + self._ff_block(self.norm2.output(x))
+            x = x + self._sa_block(self.norm1.output(x), src_mask, train_flag)
+            x = x + self._ff_block(self.norm2.output(x), train_flag)
         else:
-            x = self.norm1.output(x + self._sa_block(x, src_mask))
-            x = self.norm2.output(x + self._ff_block(x))
+            x = self.norm1.output(x + self._sa_block(x, src_mask, train_flag))
+            x = self.norm2.output(x + self._ff_block(x, train_flag))
 
         return x
 
 
     # self-attention block
     def _sa_block(self, x,
-                  attn_mask=None):
+                  attn_mask=None, train_flag=True):
         x = self.self_attn.output(x,
                            mask=attn_mask,
                            )[0]
-        return self.dropout1.output(x)
+        if train_flag:
+            return self.dropout1.output(x)
+        else:
+            return x
 
 
     # feed forward block
-    def _ff_block(self, x):
-        x = self.linear2.output(self.dropout.output(self.activation(self.linear1.output(x))))
-        return self.dropout2.output(x)
+    def _ff_block(self, x, train_flag):
+        if train_flag:
+            x = self.linear2.output(self.dropout.output(self.activation(self.linear1.output(x))))
+            return self.dropout2.output(x)
+        else:
+            return self.linear2.output(self.activation(self.linear1.output(x)))
