@@ -37,7 +37,8 @@ class TransformerDecoderLayer:
         tgt,
         memory,
         tgt_mask = None,
-        memory_mask = None
+        memory_mask = None,
+        train_flag=True
     ):
 
         x = tgt
@@ -55,22 +56,31 @@ class TransformerDecoderLayer:
 
     # self-attention block
     def _sa_block(self, x,
-                  attn_mask=None):
+                  attn_mask=None, train_flag):
         x = self.self_attn.output(x,
                            mask=attn_mask,
                            )[0]
-        return self.dropout1.output(x)
+        if train_flag:
+            return self.dropout1.output(x)
+        else:
+            return x
 
 
     # multihead attention block
     def _mha_block(self, x, mem,
-                   attn_mask=None):
+                   attn_mask=None, train_flag):
         x = self.multihead_attn.output(x, mem,
                                 )[0]
-        return self.dropout2.output(x)
+        if train_flag:
+            return self.dropout2.output(x)
+        else:
+            return x
 
 
     # feed forward block
-    def _ff_block(self, x):
-        x = self.linear2.output(self.dropout.output(self.activation(self.linear1.output(x))))
-        return self.dropout3.output(x)
+    def _ff_block(self, x, train_flag):
+        if train_flag:
+            x = self.linear2.output(self.dropout.output(self.activation(self.linear1.output(x))))
+            return self.dropout3.output(x)
+        else:
+            return self.linear2.output(self.activation(self.linear1.output(x)))
