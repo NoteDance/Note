@@ -311,7 +311,7 @@ kernel.visualize_reward()
 
 **Pool Network:**
 
-![3](https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/picture/Pool%20Net.png)
+![3](https://github.com/NoteDancing/Note-documentation/blob/Note-7.0/picture/Pool%20Network.png)
 
 **Pool net use multiprocessing parallel and random add episode in pool,which would make data being uncorrelated in pool,
 then pools would be used parallel training agent.**
