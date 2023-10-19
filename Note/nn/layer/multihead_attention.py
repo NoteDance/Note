@@ -15,7 +15,7 @@ class multihead_attention:
         self.dtype=dtype
         if input_size!=None:
             self.query = dense(input_size,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
-            self.key = dense(input_size,input_size,weight_initializer=weight_initializer,use_bias=use_bias,dtype=dtype)
+            self.key = dense(input_size,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
             self.value = dense(input_size,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
             self.out = dense(input_size,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
             self.param = [self.query.param,self.key.param,self.value.param,self.out.param]
@@ -24,7 +24,7 @@ class multihead_attention:
     
     def build(self):
         self.query = dense(self.input_size,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
-        self.key = dense(self.input_size,self.input_size,weight_initializer=self.weight_initializer,use_bias=self.use_bias,dtype=self.dtype)
+        self.key = dense(self.input_size,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
         self.value = dense(self.input_size,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
         self.out = dense(self.input_size,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
         self.param = [self.query.param,self.key.param,self.value.param,self.out.param]
