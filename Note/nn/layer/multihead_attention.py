@@ -1,7 +1,6 @@
 import tensorflow as tf
 from Note.nn.layer.dense import dense
 from typing import Optional
-from Note.nn.Module import Module
 
 
 class multihead_attention:
@@ -19,7 +18,6 @@ class multihead_attention:
             self.value = dense(input_size,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
             self.out = dense(input_size,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
             self.param = [self.query.param,self.key.param,self.value.param,self.out.param]
-            Module.param.extend(self.param)
     
     
     def build(self):
@@ -28,7 +26,6 @@ class multihead_attention:
         self.value = dense(self.input_size,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
         self.out = dense(self.input_size,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
         self.param = [self.query.param,self.key.param,self.value.param,self.out.param]
-        Module.param.extend(self.param)
         return
     
     
