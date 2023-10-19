@@ -88,6 +88,8 @@ class einsumdense:
 
 
     def output(self, data):
+        if data.dtype!=self.dtype:
+            data=tf.cast(data,self.dtype)
         if self.input_shape is None:
             self.input_shape=data.shape
             shape_data = _analyze_einsum_string(
