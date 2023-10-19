@@ -33,9 +33,20 @@ class Transformer:
 
         self.d_model = d_model
         self.nhead = nhead
+        self.dtype=dtype
 
 
     def output(self, src, tgt, src_mask = None, tgt_mask = None, memory_mask = None, train_flag=True):
+        if src.dtype!=self.dtype:
+            src=tf.cast(src,self.dtype)
+        if tgt.dtype!=self.dtype:
+            tgt=tf.cast(tgt,self.dtype)
+        if src_mask is not None and src_mask.dtype!=self.dtype:
+            src_mask=tf.cast(src_mask,self.dtype)
+        if tgt_mask is not None and tgt_mask.dtype!=self.dtype:
+            tgt_mask=tf.cast(tgt_mask,self.dtype) 
+        if memory_mask is not None and memory_mask.dtype!=self.dtype:
+            memory_mask=tf.cast(memory_mask,self.dtype)
         memory = self.encoder(src, mask=src_mask, train_flag=train_flag)
         output = self.decoder(tgt, memory, tgt_mask=tgt_mask, memory_mask=memory_mask, train_flag=train_flag)
         return output
