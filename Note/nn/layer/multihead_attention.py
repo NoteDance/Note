@@ -5,27 +5,28 @@ from Note.nn.Module import Module
 
 
 class multihead_attention:
-    def __init__(self, n_head: int, input_size=None, kv_cache=None, weight_initializer='Xavier', bias_initializer='zeros', dtype='float32'):
+    def __init__(self, n_head: int, input_size=None, kv_cache=None, weight_initializer='Xavier', bias_initializer='zeros', use_bias=True, dtype='float32'):
         self.n_head = n_head
         self.input_size=input_size
         self.kv_cache=kv_cache
         self.weight_initializer=weight_initializer
         self.bias_initializer=bias_initializer
+        self.use_bias=use_bias
         self.dtype=dtype
         if input_size!=None:
-            self.query = dense(input_size,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,dtype=dtype)
-            self.key = dense(input_size,input_size,weight_initializer=weight_initializer,use_bias=False,dtype=dtype)
-            self.value = dense(input_size,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,dtype=dtype)
-            self.out = dense(input_size,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,dtype=dtype)
+            self.query = dense(input_size,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
+            self.key = dense(input_size,input_size,weight_initializer=weight_initializer,use_bias=use_bias,dtype=dtype)
+            self.value = dense(input_size,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
+            self.out = dense(input_size,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
             self.param = [self.query.param,self.key.param,self.value.param,self.out.param]
             Module.param.extend(self.param)
     
     
     def build(self):
-        self.query = dense(self.input_size,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,dtype=self.dtype)
-        self.key = dense(self.input_size,self.input_size,weight_initializer=self.weight_initializer,use_bias=False,dtype=self.dtype)
-        self.value = dense(self.input_size,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,dtype=self.dtype)
-        self.out = dense(self.input_size,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,dtype=self.dtype)
+        self.query = dense(self.input_size,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
+        self.key = dense(self.input_size,self.input_size,weight_initializer=self.weight_initializer,use_bias=self.use_bias,dtype=self.dtype)
+        self.value = dense(self.input_size,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
+        self.out = dense(self.input_size,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
         self.param = [self.query.param,self.key.param,self.value.param,self.out.param]
         Module.param.extend(self.param)
         return
