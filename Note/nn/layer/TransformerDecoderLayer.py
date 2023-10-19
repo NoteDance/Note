@@ -11,8 +11,8 @@ class TransformerDecoderLayer:
                  activation = tf.nn.relu,
                  layer_norm_eps: float = 1e-5, norm_first: bool = False,
                  bias: bool = True, dtype='float32'):
-        self.self_attn = multihead_attention(nhead, input_size=d_model, dtype=dtype)
-        self.multihead_attn = multihead_attention(nhead, input_size=d_model, dtype=dtype)
+        self.self_attn = multihead_attention(nhead, input_size=d_model, use_bias=bias, dtype=dtype)
+        self.multihead_attn = multihead_attention(nhead, input_size=d_model, use_bias=bias, dtype=dtype)
         # Implementation of Feedforward model
         self.linear1 = dense(dim_feedforward, d_model, use_bias=bias, dtype=dtype)
         self.dropout = dropout(dropout_rate)
