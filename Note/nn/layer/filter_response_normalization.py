@@ -55,7 +55,7 @@ class filter_response_normalization:
         self.dtype=dtype
 
         if self.use_eps_learned:
-            self.eps_learned = tf.constant(1e-4)
+            self.eps_learned = tf.constant(1e-4,dtype)
         self.input_shape=input_shape
         if input_shape is not None:
             if len(input_shape) != 4:
@@ -71,6 +71,8 @@ class filter_response_normalization:
             
 
     def output(self, data):
+        if data.dtype!=self.dtype:
+            data=tf.cast(data,self.dtype)
         if self.input_shape is None:
             self.input_shape=data.shape
             self._check_if_input_shape_is_none(self.input_shape)
