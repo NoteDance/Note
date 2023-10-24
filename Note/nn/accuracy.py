@@ -1,5 +1,6 @@
 import tensorflow as tf
 
+
 # Define a function that takes y_true, y_pred, threshold as parameters
 def binary_accuracy(y_true, y_pred, threshold=0.5):
   # Convert y_pred to a boolean tensor by comparing it with the threshold
@@ -17,13 +18,13 @@ def binary_accuracy(y_true, y_pred, threshold=0.5):
 
 
 # Define a function that takes predictions and labels as parameters
-def categorical_accuracy(predictions, labels):
+def categorical_accuracy(y_true, y_pred):
   # Get the index of the maximum element in each row of predictions, which is the predicted class
-  predictions = tf.math.argmax(predictions, axis=-1)
+  y_pred = tf.math.argmax(y_pred, axis=-1)
   # Get the index of the maximum element in each row of labels, which is the true class
-  labels = tf.math.argmax(labels, axis=-1)
+  y_true = tf.math.argmax(y_true, axis=-1)
   # Compare the predicted class and the true class for each sample
-  accuracy = tf.math.equal(predictions, labels)
+  accuracy = tf.math.equal(y_pred, y_true)
   # Convert the comparison result to a float tensor
   accuracy = tf.cast(accuracy, tf.float32)
   # Return the accuracy as a one-dimensional tensor
@@ -35,7 +36,7 @@ def sparse_categorical_accuracy(y_true, y_pred):
   # Get the index of the maximum element in each row of y_pred, which is the predicted class
   y_pred = tf.argmax(y_pred, axis=-1)
   # Compare the predicted class and the true class for each sample
-  equal = tf.equal(y_true, y_pred)
+  equal = tf.equal(tf.cast(y_true, y_pred.dtype.name), y_pred)
   # Calculate the mean of the comparison result, which is the accuracy
   accuracy = tf.reduce_mean(tf.cast(equal, tf.float32))
   # Return the accuracy as a scalar tensor
