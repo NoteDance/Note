@@ -134,12 +134,57 @@ def activation_conv_transpose(data,weight,output_shape,activation,strides,paddin
             return tf.nn.gelu(conv_func(data,weight,output_shape,strides,padding=padding,data_format=data_format,dilations=dilations)+bias,activation[1])
         else:
             return conv_func(data,weight,output_shape,strides,padding=padding,data_format=data_format,dilations=dilations)+bias
-        
 
-def swish(x,beta=1.0):
-    sigmoid=tf.math.sigmoid(beta * x)
-    swish=x*sigmoid
-    return swish
+
+def hard_sigmoid(x):
+    """Segment-wise linear approximation of sigmoid.
+
+    Faster than sigmoid.
+    Returns `0.` if `x < -2.5`, `1.` if `x > 2.5`.
+    In `-2.5 <= x <= 2.5`, returns `0.2 * x + 0.5`.
+
+    Args:
+        x: A tensor or variable.
+
+    Returns:
+        A tensor.
+    """
+    point_two = tf.constant(0.2, x.dtype)
+    point_five = tf.constant(0.5, x.dtype)
+    x = tf.multiply(x, point_two)
+    x = tf.add(x, point_five)
+    x = tf.clip_by_value(x, 0.0, 1.0)
+    return x
+
+
+def mish(x):
+    """Mish activation function.
+
+    It is defined as:
+
+    ```python
+    def mish(x):
+        return x * tanh(softplus(x))
+    ```
+
+    where `softplus` is defined as:
+
+    ```python
+    def softplus(x):
+        return log(exp(x) + 1)
+    ```
+
+    Args:
+        x: Input tensor.
+
+    Returns:
+        The mish activation.
+
+    Reference:
+        - [Mish: A Self Regularized Non-Monotonic
+        Activation Function](https://arxiv.org/abs/1908.08681)
+    """
+    return x * tf.math.tanh(tf.math.softplus(x))
 
 
 activation_dict={
@@ -153,7 +198,11 @@ activation_dict={
   'relu6':tf.nn.relu6,
   'selu':tf.nn.selu,
   'silu':tf.nn.silu,
-  'swish':swish,
+  'swish':tf.nn.silu,
   'softmax':tf.nn.softmax,
+  'softsign':tf.nn.softsign,
+  'hard_sigmoid':hard_sigmoid,
+  'softplus':tf.math.softplus,
+  'mish':mish,
   # add more activation functions as needed
 }
