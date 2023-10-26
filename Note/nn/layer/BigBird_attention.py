@@ -105,6 +105,17 @@ class BigBird_attention:
   def output(self, query, value, key=None, attention_mask=None):  # pytype: disable=signature-mismatch  # overriding-parameter-count-checks
     if key is None:
       key = value
+      
+    if query.dtype!=self.dtype:
+        query=tf.cast(query,self.dtype)
+    if value.dtype!=self.dtype:
+        value=tf.cast(value,self.dtype)
+    if key.dtype!=self.dtype:
+        key=tf.cast(key,self.dtype)
+    
+    if self.input_size==None:
+        self.input_size=query.shape[-1]
+        self.build()
 
     #   N = `num_attention_heads`
     #   H = `size_per_head`
