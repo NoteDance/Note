@@ -1,83 +1,74 @@
 import tensorflow as tf
 from Note.nn.layer.dense import dense
-from typing import Optional
 
 
 class multihead_attention:
-    def __init__(self, n_head: int, input_size=None, kv_cache=None, weight_initializer='Xavier', bias_initializer='zeros', use_bias=True, dtype='float32'):
+    def __init__(self, n_head: int, input_size=None, kdim=None, vdim=None, weight_initializer='Xavier', bias_initializer='zeros', use_bias=True, dtype='float32'):
         self.n_head = n_head
-        self.input_size=input_size
-        self.kv_cache=kv_cache
+        self.input_size = input_size
+        self.kdim = kdim if kdim is not None else input_size
+        self.vdim = vdim if vdim is not None else input_size
         self.weight_initializer=weight_initializer
         self.bias_initializer=bias_initializer
         self.use_bias=use_bias
         self.dtype=dtype
-        if input_size!=None:
+        if input_size is not None:
             self.query = dense(input_size,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
-            self.key = dense(input_size,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
-            self.value = dense(input_size,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
+            self.key = dense(input_size,self.kdim,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
+            self.value = dense(input_size,self.vdim,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
             self.out = dense(input_size,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
             self.param = [self.query.param,self.key.param,self.value.param,self.out.param]
     
     
     def build(self):
         self.query = dense(self.input_size,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
-        self.key = dense(self.input_size,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
-        self.value = dense(self.input_size,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
+        self.key = dense(self.input_size,self.kdim,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
+        self.value = dense(self.input_size,self.vdim,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
         self.out = dense(self.input_size,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
         self.param = [self.query.param,self.key.param,self.value.param,self.out.param]
         return
     
     
     def qkv_attention(
-        self, q: tf.Tensor, k: tf.Tensor, v: tf.Tensor, mask: Optional[tf.Tensor] = None
+        self, q: tf.Tensor, k: tf.Tensor, v: tf.Tensor, mask = None
     ):
-        n_batch, n_ctx, n_state = q.shape
-        scale = (n_state // self.n_head) ** -0.25
-        q = tf.reshape(q, [n_batch, n_ctx, self.n_head, -1])
-        q = tf.transpose(q, [0, 2, 1, 3]) * scale
-        k = tf.reshape(k, [n_batch, n_ctx, self.n_head, -1])
-        k = tf.transpose(k, [0, 2, 3, 1]) * scale
-        v = tf.reshape(v, [n_batch, n_ctx, self.n_head, -1])
+        n_batch_q, n_ctx_q, n_state = q.shape
+        n_batch_k, n_ctx_k, _ = k.shape
+        n_batch_v, n_ctx_v, _ = v.shape
+        q = tf.reshape(q, [n_batch_q, n_ctx_q, self.n_head, -1])
+        q = tf.transpose(q, [0, 2, 1, 3])
+        q=tf.multiply(q, 1.0 / tf.math.sqrt(float(self.kdim)))
+        k = tf.reshape(k, [n_batch_k, n_ctx_k, self.n_head, -1])
+        k = tf.transpose(k, [0, 2, 3, 1])
+        v = tf.reshape(v, [n_batch_v, n_ctx_v, self.n_head, -1])
         v = tf.transpose(v, [0, 2, 1, 3])
 
         qk = tf.matmul(q, k)
         if mask is not None:
-            qk = qk + mask[:n_ctx, :n_ctx]
+            qk = qk + mask[:n_ctx_q, :n_ctx_q]
 
         w = tf.nn.softmax(qk)
-        return tf.reshape(tf.transpose(tf.matmul(w, v), [0, 2, 1, 3]), [n_batch, n_ctx, n_state]), qk
+        return tf.reshape(tf.transpose(tf.matmul(w, v), [0, 2, 1, 3]), [n_batch_q, n_ctx_q, n_state]), qk
     
     
     def output(
         self,
-        x: tf.Tensor,
-        xa: Optional[tf.Tensor] = None,
-        mask: Optional[tf.Tensor] = None,
+        target,
+        source = None,
+        mask = None,
     ):
-        if x.dtype!=self.dtype:
-            x=tf.cast(x,self.dtype)
-        if xa is not None and xa.dtype!=self.dtype:
-            xa=tf.cast(xa,self.dtype)
+        if target.dtype!=self.dtype:
+            target=tf.cast(target,self.dtype)
+        if source is not None and source.dtype!=self.dtype:
+            source=tf.cast(source,self.dtype)
         
         if self.input_size==None:
-            self.input_size=x.shape[-1]
+            self.input_size=target.shape[-1]
             self.build()
             
-        q = self.query.output(x)
-
-        if self.kv_cache is None or xa is None or self.key not in self.kv_cache:
-            # hooks, if installed (i.e. kv_cache is not None), will prepend the cached kv tensors;
-            # otherwise, perform key/value projections for self- or cross-attention as usual.
-            k = self.key.output(x if xa is None else xa)
-            v = self.value.output(x if xa is None else xa)
-            if self.kv_cache is not None:
-                self.kv_cache[self.key] = k
-                self.kv_cache[self.value] = v
-        else:
-            # for cross-attention, calculate keys and values once and reuse in subsequent calls.
-            k = self.kv_cache[self.key]
-            v = self.kv_cache[self.value]
+        q = self.query.output(target)
+        k = self.key.output(target if source is None else source)
+        v = self.value.output(target if source is None else source)
 
         wv, qk = self.qkv_attention(q, k, v, mask)
         return self.out.output(wv), qk
