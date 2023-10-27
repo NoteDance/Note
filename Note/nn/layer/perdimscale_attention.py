@@ -128,7 +128,11 @@ class perdimscale_attention:
     if value.dtype!=self.dtype:
         value=tf.cast(value,self.dtype)
     if key.dtype!=self.dtype:
-        key=tf.cast(key,self.dtype) 
+        key=tf.cast(key,self.dtype)
+    
+    if self.input_size==None:
+        self.input_size=query.shape[-1]
+        self.build()
 
     #   N = `num_attention_heads`
     #   H = `size_per_head`
