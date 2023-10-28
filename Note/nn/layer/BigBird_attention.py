@@ -20,7 +20,6 @@ class BigBird_attention:
   def __init__(self,
                n_head, 
                key_dim, 
-               value_dim=None,
                input_size=None,
                num_rand_blocks=3,
                from_block_size=64,
@@ -34,7 +33,6 @@ class BigBird_attention:
                ):
     self.n_head=n_head
     self.key_dim=key_dim
-    self.value_dim=value_dim if value_dim else key_dim
     self.input_size=input_size
     self.weight_initializer=weight_initializer
     self.bias_initializer=bias_initializer
@@ -63,15 +61,15 @@ class BigBird_attention:
     if input_size is not None:
       self.query_dense=dense(n_head*key_dim,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
       self.key_dense=dense(n_head*key_dim,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
-      self.value_dense=dense(n_head*value_dim,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
-      self.output_dense=dense(input_size,value_dim,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
+      self.value_dense=dense(n_head*key_dim,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
+      self.output_dense=dense(input_size,n_head*key_dim,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
       self.param=[self.query_dense.param,self.key_dense.param,self.value_dense.param,self.output_dense.param]
 
   def build(self):
       self.query_dense=dense(self.n_head*self.key_dim,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
       self.key_dense=dense(self.n_head*self.key_dim,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
-      self.value_dense=dense(self.n_head*self.value_dim,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
-      self.output_dense=dense(self.input_size,self.value_dim,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
+      self.value_dense=dense(self.n_head*self.key_dim,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
+      self.output_dense=dense(self.input_size,self.n_head*self.key_dim,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
       self.param=[self.query_dense.param,self.key_dense.param,self.value_dense.param,self.output_dense.param]
       return
   
@@ -136,6 +134,8 @@ class BigBird_attention:
 
     attention_output = self._compute_attention(query, key, value,
                                                attention_mask)
+    B, S, _, _ = attention_output.shape
+    attention_output = tf.reshape(attention_output, [B, S, -1])
     attention_output = self.output_dense.output(attention_output)
     return attention_output
 

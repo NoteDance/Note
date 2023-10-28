@@ -49,7 +49,7 @@ class multiheadrelative_attention:
         to certain positions.
     """
     
-    def __init__(self, n_head, rank, key_dim, input_size=None, attention_axes=None, dropout_rate=0.0, 
+    def __init__(self, n_head, key_dim, input_size=None, attention_axes=None, dropout_rate=0.0, 
                  weight_initializer=['VarianceScaling',1.0,'fan_in','truncated_normal'], 
                  bias_initializer='zeros', 
                  use_bias=True, 
@@ -64,14 +64,14 @@ class multiheadrelative_attention:
         else:
             self._attention_axes = attention_axes
         if self._attention_axes is None:
-            self._attention_axes = tuple(range(1, rank - 2))
+            self._attention_axes = tuple(range(1, 3 - 2))
         else:
             self._attention_axes = tuple(self._attention_axes)
         (
             self._dot_product_equation,
             self._combine_equation,
             attn_scores_rank,
-        ) = _build_attention_equation(rank, attn_axes=self._attention_axes)
+        ) = _build_attention_equation(3, attn_axes=self._attention_axes)
         norm_axes = tuple(
             range(
                 attn_scores_rank - len(self._attention_axes), attn_scores_rank
@@ -89,7 +89,7 @@ class multiheadrelative_attention:
             self.query_dense=dense(n_head*key_dim,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
             self.key_dense=dense(n_head*key_dim,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
             self.value_dense=dense(n_head*key_dim,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
-            self.output_dense=dense(input_size,key_dim,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
+            self.output_dense=dense(input_size,n_head*key_dim,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
             self.encoding_dense=dense(n_head*key_dim,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
             self.param=[self.query_dense.param,self.key_dense.param,self.value_dense.param,self.output_dense.param,self.encoding_dense.param]
     
@@ -98,7 +98,7 @@ class multiheadrelative_attention:
         self.query_dense=dense(self.n_head*self.key_dim,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
         self.key_dense=dense(self.n_head*self.key_dim,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
         self.value_dense=dense(self.n_head*self.key_dim,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
-        self.output_dense=dense(self.input_size,self.key_dim,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
+        self.output_dense=dense(self.input_size,self.n_head*self.key_dim,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
         self.encoding_dense=dense(self.n_head*self.key_dim,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
         self.param=[self.query_dense.param,self.key_dense.param,self.value_dense.param,self.output_dense.param,self.encoding_dense.param]
         return
@@ -288,6 +288,8 @@ class multiheadrelative_attention:
           attention_mask=attention_mask)
     
       # `attention_output` = [B, S, N, H]
+      B, S, _, _ = attention_output.shape
+      attention_output = tf.reshape(attention_output, [B, S, -1])
       attention_output = self.output_dense.output(attention_output)
     
       return attention_output

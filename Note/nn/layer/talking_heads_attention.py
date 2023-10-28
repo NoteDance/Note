@@ -9,7 +9,7 @@ _CHR_IDX = string.ascii_lowercase
 
 
 class talking_heads_attention:
-    def __init__(self,qkv_rank,attention_axes=None,dropout_rate=0.0,initializer='Xavier',dtype='float32'):
+    def __init__(self,attention_axes=None,dropout_rate=0.0,initializer='Xavier',dtype='float32'):
         if attention_axes is not None and not isinstance(
             attention_axes, collections.abc.Sized
         ):
@@ -17,11 +17,11 @@ class talking_heads_attention:
         else:
             self._attention_axes = attention_axes
         if self._attention_axes is None:
-            self._attention_axes = tuple(range(1, qkv_rank - 2))
+            self._attention_axes = tuple(range(1, 3 - 2))
         else:
             self._attention_axes = tuple(self._attention_axes)
         self.dropout_rate=dropout_rate
-        num_batch_dims = qkv_rank - len(self._attention_axes) - 2
+        num_batch_dims = 3 - len(self._attention_axes) - 2
     
         # The shape of attn_scores is:
         # (<batch_dims>, num_heads, <query_attn_dims>, <key_attn_dims>)
