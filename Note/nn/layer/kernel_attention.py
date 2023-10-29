@@ -303,8 +303,6 @@ class kernel_attention:
           raise ValueError("Cache is not supported for feature_transform %s" %
                            (self._feature_transform))
     
-      if not self._built_from_signature:
-        self._build_from_signature(query=query, value=value, key=key)
       if key is None:
         key = value
       
@@ -352,7 +350,7 @@ class kernel_attention:
             self._is_short_seq, attention_mask, train_flag)
         if train_flag:
             attention_output_kernel = tf.nn.dropout(attention_output_kernel, self.dropout_rate)
-        B, T, _, _ = attention_output_softmax.shape
+        B, T, _, _ = attention_output_kernel.shape
         attention_output_kernel = tf.reshape(attention_output_kernel, [B, T, -1])
         attention_output_kernel = self.output_dense.output(attention_output_kernel)
         attention_output = tf.concat(
@@ -368,7 +366,7 @@ class kernel_attention:
         # seem a bit unusual, but is taken from the original Transformer paper.
         if train_flag:
             attention_output = tf.nn.dropout(attention_output, self.dropout_rate)
-        B, T, _, _ = attention_output_softmax.shape
+        B, T, _, _ = attention_output.shape
         attention_output = tf.reshape(attention_output, [B, T, -1])
         attention_output = self.output_dense.output(attention_output)
       return attention_output
