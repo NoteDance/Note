@@ -1,6 +1,5 @@
 import tensorflow as tf
 from Note.nn.initializer import initializer_
-import math
 import string
 import collections
 
@@ -68,7 +67,7 @@ class talking_heads_attention:
           attention_scores = tf.einsum(self._dot_product_equation, key_tensor,
                                        query_tensor)
           attention_scores = tf.multiply(attention_scores,
-                                         1.0 / math.sqrt(float(self._key_dim)))
+                                         1.0 / tf.math.sqrt(float(key_tensor.shape[-1])))
       
           # Apply linear projection before softmax
           attention_scores = tf.einsum(self._talking_heads_equation, attention_scores,
