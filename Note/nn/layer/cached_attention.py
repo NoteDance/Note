@@ -150,7 +150,7 @@ class cached_attention:
     if cache:
       key, value = self._update_cache(key, value, cache, decode_loop_step)
 
-    query = tf.multiply(query, 1.0 / tf.math.sqrt(float(self._key_dim)))
+    query = tf.multiply(query, 1.0 / tf.math.sqrt(float(self.key_dim)))
 
     # Take the dot product between "query" and "key" to get the raw
     # attention scores.
