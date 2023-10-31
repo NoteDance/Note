@@ -14,3 +14,10 @@ class Module:
         for ctsl in Module.ctsl_list:
             ctsl(manager)
         return
+    
+    
+    def init():
+        Module.param=[]
+        Module.ctl_list=[]
+        Module.ctsl_list=[]
+        return
