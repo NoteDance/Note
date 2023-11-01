@@ -229,5 +229,5 @@ class Whisper:
         return self.decoder.output(tokens, audio_features)
 
 
-    def fp(self, mel, tokens, cache):
+    def output(self, mel, tokens, cache):
         return self.decoder.output(tokens, self.encoder.output(mel), cache)
