@@ -10,9 +10,8 @@ _CHR_IDX = string.ascii_lowercase
 
 
 class cached_attention:
-  """Attention layer with cache used for autoregressive decoding.
-
-  Arguments are the same as `tf.keras.layers.MultiHeadAttention` layer.
+  """
+  Attention layer with cache used for autoregressive decoding.
   """
   def __init__(self,n_head,key_dim,value_dim=None,input_size=None,attention_axes=None,dropout_rate=0.0,weight_initializer="Xavier",bias_initializer="zeros",use_bias=True,dtype='float32'):
       self.n_head=n_head
