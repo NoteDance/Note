@@ -180,7 +180,7 @@ class kernel:
             except Exception as e:
                 raise e
             if hasattr(self.nn,'attenuate'):
-                gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
+                gradient=self.nn.attenuate(gradient,p)
             try:
                 try:
                     param=self.nn.opt(gradient,p)
@@ -216,7 +216,7 @@ class kernel:
             if self.stop_func_(lock[0]):
                 return None,None,None
             if hasattr(self.nn,'attenuate'):
-                gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
+                gradient=self.nn.attenuate(gradient,p)
             try:
                 try:
                     param=self.nn.opt(gradient,p)
@@ -247,7 +247,7 @@ class kernel:
             except Exception as e:
                 raise e
             if hasattr(self.nn,'attenuate'):
-                gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
+                gradient=self.nn.attenuate(gradient,p)
             try:
                 try:
                     param=self.nn.opt(gradient,p)
