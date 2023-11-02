@@ -256,10 +256,10 @@ class kernel:
             try:
                 if hasattr(self.nn,'attenuate'):
                     try:
-                        gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
+                        gradient=self.nn.attenuate(gradient,p)
                     except Exception:
-                        actor_gradient=self.nn.attenuate(actor_gradient,self.nn.opt_counter,p)
-                        critic_gradient=self.nn.attenuate(critic_gradient,self.nn.opt_counter,p)
+                        actor_gradient=self.nn.attenuate(actor_gradient,p)
+                        critic_gradient=self.nn.attenuate(critic_gradient,p)
             except Exception as e:
                 raise e
             try:
@@ -297,10 +297,10 @@ class kernel:
             try:
                 if hasattr(self.nn,'attenuate'):
                     try:
-                        gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
+                        gradient=self.nn.attenuate(gradient,p)
                     except Exception:
-                        actor_gradient=self.nn.attenuate(actor_gradient,self.nn.opt_counter,p)
-                        critic_gradient=self.nn.attenuate(critic_gradient,self.nn.opt_counter,p)
+                        actor_gradient=self.nn.attenuate(actor_gradient,p)
+                        critic_gradient=self.nn.attenuate(critic_gradient,p)
             except Exception as e:
                 raise e
             try:
@@ -333,10 +333,10 @@ class kernel:
             try:
                 if hasattr(self.nn,'attenuate'):
                     try:
-                        gradient=self.nn.attenuate(gradient,self.nn.opt_counter,p)
+                        gradient=self.nn.attenuate(gradient,p)
                     except Exception:
-                        actor_gradient=self.nn.attenuate(actor_gradient,self.nn.opt_counter,p)
-                        critic_gradient=self.nn.attenuate(critic_gradient,self.nn.opt_counter,p)
+                        actor_gradient=self.nn.attenuate(actor_gradient,p)
+                        critic_gradient=self.nn.attenuate(critic_gradient,p)
             except Exception as e:
                 raise e
             try:
