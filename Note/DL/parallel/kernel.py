@@ -93,7 +93,6 @@ class kernel:
         if self.priority_flag==True:
             self.opt_counter=Array('i',self.opt_counter)  
         self.nn.opt_counter=manager.list([tf.Variable(tf.zeros([self.process]))])  
-        self.opt_counter_=manager.list()
         self._epoch_counter=manager.list([tf.Variable(0) for _ in range(self.process)])
         self.nn.ec=manager.list([0])
         self.ec=self.nn.ec[0]
@@ -759,7 +758,7 @@ class kernel:
                 os.remove(self.file_list[0][0])
                 del self.file_list[0]
         self.update_nn_param()
-        self.nn.opt_counter=self.nn.opt_counter[0] 
+        self.nn.opt_counter=None
         self.nn.ec=self.nn.ec[0]
         self.nn.bc=self.nn.bc[0]
         self._epoch_counter=list(self._epoch_counter)
@@ -797,8 +796,6 @@ class kernel:
         self.nn.km=1
         self.ec=self.nn.ec
         self.bc=self.nn.bc
-        self.nn.opt_counter=self.opt_counter_
-        self.nn.opt_counter.append(self.nn.opt_counter)
         self.param[7]=self.nn.param
         self.batch=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
