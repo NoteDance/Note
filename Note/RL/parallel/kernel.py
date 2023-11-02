@@ -14,8 +14,8 @@ class kernel:
         self.nn=nn
         self.nn.km=1
         if process!=None:
-            self.reward=np.zeros(process,dtype=np.float32)
-            self.sc=np.zeros(process,dtype=np.int32)
+            self.reward=np.zeros(process,dtype='float32')
+            self.sc=np.zeros(process,dtype='int32')
         self.epsilon=None
         self.episode_step=None
         self.pool_size=None
@@ -40,7 +40,7 @@ class kernel:
         self.reward_pool=manager.dict({})
         self.done_pool=manager.dict({})
         self.reward=Array('f',self.reward)
-        self.loss=np.zeros(self.process,dtype=np.float32)
+        self.loss=np.zeros(self.process,dtype='float32')
         self.loss=Array('f',self.loss)
         self.sc=Array('i',self.sc)
         self.process_counter=Value('i',0)
@@ -54,9 +54,8 @@ class kernel:
         self.total_episode=Value('i',0)
         self.priority_p=Value('i',0)
         if self.priority_flag==True:
-            self.opt_counter=Array('i',np.zeros(self.process,dtype=np.int32))
+            self.opt_counter=Array('i',np.zeros(self.process,dtype='int32'))
         self.nn.opt_counter=manager.list([tf.Variable(tf.zeros([self.process]))])  
-        self.opt_counter_=manager.list()
         self._epoch_counter=manager.list([tf.Variable(0) for _ in range(self.process)])
         self.nn.ec=manager.list([0])
         self.ec=self.nn.ec[0]
@@ -767,7 +766,7 @@ class kernel:
                 os.remove(self.file_list[0][0])
                 del self.file_list[0]
         self.update_nn_param()
-        self.nn.opt_counter=self.nn.opt_counter[0] 
+        self.nn.opt_counter=None
         self.nn.ec=self.nn.ec[0]
         self.nn.bc=self.nn.bc[0]
         self._epoch_counter=list(self._epoch_counter)
@@ -778,7 +777,7 @@ class kernel:
         pickle.dump(self.episode_step,output_file)
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
-        pickle.dump(np.array(self.sc,dtype=np.int32),output_file)
+        pickle.dump(np.array(self.sc,dtype='int32'),output_file)
         pickle.dump(self.update_step,output_file)
         pickle.dump(list(self.reward_list),output_file)
         pickle.dump(list(self.loss_list),output_file)
@@ -794,8 +793,6 @@ class kernel:
         self.nn.km=1
         self.ec=self.nn.ec
         self.bc=self.nn.bc
-        self.nn.opt_counter=self.opt_counter_
-        self.nn.opt_counter.append(self.nn.opt_counter)
         self.param[7]=self.nn.param
         self.epsilon=pickle.load(input_file)
         self.episode_step=pickle.load(input_file)
