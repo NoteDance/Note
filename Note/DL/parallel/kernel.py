@@ -91,8 +91,9 @@ class kernel:
                     self.test_acc=Value('f',0)
                     self.test_acc_list=manager.list([])
         if self.priority_flag==True:
-            self.opt_counter=Array('i',self.opt_counter)  
-        self.nn.opt_counter=manager.list([tf.Variable(tf.zeros([self.process]))])  
+            self.opt_counter=Array('i',self.opt_counter)
+        if self.nn is not None:
+            self.nn.opt_counter=manager.list([tf.Variable(tf.zeros([self.process]))])  
         self._epoch_counter=manager.list([tf.Variable(0) for _ in range(self.process)])
         self.nn.ec=manager.list([0])
         self.ec=self.nn.ec[0]
@@ -794,6 +795,7 @@ class kernel:
         self.convert_to_shared_list(manager)
         Module.convert_to_shared_list(manager)
         self.nn.km=1
+        self.nn.opt_counter=manager.list([tf.Variable(tf.zeros([self.process]))])
         self.ec=self.nn.ec
         self.bc=self.nn.bc
         self.param[7]=self.nn.param
