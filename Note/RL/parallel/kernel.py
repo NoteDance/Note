@@ -55,7 +55,8 @@ class kernel:
         self.priority_p=Value('i',0)
         if self.priority_flag==True:
             self.opt_counter=Array('i',np.zeros(self.process,dtype='int32'))
-        self.nn.opt_counter=manager.list([tf.Variable(tf.zeros([self.process]))])  
+        if self.nn is not None:
+            self.nn.opt_counter=manager.list([tf.Variable(tf.zeros([self.process]))])  
         self._epoch_counter=manager.list([tf.Variable(0) for _ in range(self.process)])
         self.nn.ec=manager.list([0])
         self.ec=self.nn.ec[0]
@@ -791,6 +792,7 @@ class kernel:
         self.nn=pickle.load(input_file)
         self.convert_to_shared_list(manager)
         self.nn.km=1
+        self.nn.opt_counter=manager.list([tf.Variable(tf.zeros([self.process]))])
         self.ec=self.nn.ec
         self.bc=self.nn.bc
         self.param[7]=self.nn.param
