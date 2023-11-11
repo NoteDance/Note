@@ -332,7 +332,7 @@ for p in range(5):           #loop over the processes
 https://github.com/NoteDancing/Note-documentation
 
 
-# Layer:
+# Layer modules:
 https://github.com/NoteDancing/Note/tree/Note-7.0/Note/nn/layer
 
 **Documentation:** https://github.com/NoteDancing/Note-documentation/tree/layer
