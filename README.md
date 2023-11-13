@@ -318,6 +318,14 @@ for p in range(5):           #loop over the processes
 ```
 
 
+# Layer modules:
+**To use the layer module, you first need to import the layer class from the layer module, then create a layer object, and finally call the output method to pass in the data and get the output.**
+
+https://github.com/NoteDancing/Note/tree/Note-7.0/Note/nn/layer
+
+**Documentation:** https://github.com/NoteDancing/Note-documentation/tree/layer
+
+
 # Study kernel:
 **If you want to study kernel, you can see the kernel with comments at the link below.**
 
@@ -332,14 +340,6 @@ for p in range(5):           #loop over the processes
 **Documentation readme has other examples.**
 
 https://github.com/NoteDancing/Note-documentation
-
-
-# Layer modules:
-**To use the layer module, you first need to import the layer class from the layer module, then create a layer object, and finally call the output method to pass in the data and get the output.**
-
-https://github.com/NoteDancing/Note/tree/Note-7.0/Note/nn/layer
-
-**Documentation:** https://github.com/NoteDancing/Note-documentation/tree/layer
 
 
 # Create a layer module for use on Note:
