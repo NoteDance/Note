@@ -342,54 +342,6 @@ https://github.com/NoteDancing/Note/tree/Note-7.0/Note/nn/layer
 https://github.com/NoteDancing/Note-documentation
 
 
-# Create a layer module for use on Note:
-**To create a layer module for use on Note, you need to follow these steps:**
-
-**1. Import the necessary modules from Note and TensorFlow.**
-
-**2. Define a layer class.**
-
-**3. In the init method, initialize the variables and submodules that you need for your layer. You can use the Note.nn.initializer module to create different types of initializers for your variables. You can also use the Note.nn.activation module to get different types of activation functions for your layer.**
-
-**4. In the init method, create a list called self.param and append the variables and submodules of your layer to it. This will allow you to access and update the parameters later, such as during training or saving. It will also help you keep track of the trainable and non-trainable variables of your layer.**
-
-**5. In the output method, define the logic of your layer. You can use any TensorFlow operations on the input tensors and the variables or submodules of your layer. You can also use any custom functions that you define outside the class. You should return the output tensor of your layer from this method.**
-
-**You can refer to the layer module implementation in this link.** https://github.com/NoteDancing/Note/tree/Note-7.0/Note/nn/layer
-
-**You can commit the layer module you write to Note.**
-
-
-# Create an optimizer for use on Note:
-**To create an optimizer for use on Note, you need to follow these steps:**
-
-**1. Import the necessary modules from Note and TensorFlow.**
-
-**2. Define an optimizer class.**
-
-**3. In the init method, initialize the hyperparameters and internal states that you need for your optimizer.**
-
-**4. In the opt method, define the logic of your optimizer. You can use any TensorFlow operations on the gradients and parameters of your model. You can also use any custom functions that you define outside the class. You should update the parameters of your model in place and return them from this method.**
-
-**To create a parallel optimizer in Note, you need to follow these additional steps:**
-
-**1. Import the multiprocessing. Manager module from Python. This module provides a way to create and manage shared objects across different processes.**
-
-**2. In the init method, create a manager object by calling Manager(). This object will allow you to create shared lists for your internal states.**
-
-**3. In the init method, create shared lists for your internal states by calling manager.list(). These lists will be accessible and modifiable by multiple processes.**
-
-**4. In the opt method, use the shared lists instead of regular lists for your internal states. You can use the same operations on the shared lists as on regular lists.**
-
-**You can refer to the optimizer implementations in the following two links.** 
-
-**non-parallel:** https://github.com/NoteDancing/Note/blob/Note-7.0/Note/nn/optimizer.py
-
-**parallel:** https://github.com/NoteDancing/Note/blob/Note-7.0/Note/nn/parallel/optimizer.py
-
-**You can commit the optimizer you write to Note.**
-
-
 # Patreon:
 **You can support this project on Patreon.**
 
