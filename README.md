@@ -10,70 +10,6 @@
 **To import the neural network example conveniently, you can download it from https://github.com/NoteDancing/Note-documentation/tree/neural-network-example and unzip the neuralnetwork package to the site-packages folder of your Python environment.**
 
 
-# Neural network:
-**The neuralnetwork package in Note has models that can be trained in parallel on Note, such as ConvNeXt, EfficientNetV2, EfficientNet, etc. Currently, the performance of Note’s parallel training has not been sufficiently tested, if you want you can use the models in the neuralnetwork package to test Note’s parallel training performance.**
-
-https://github.com/NoteDancing/Note/tree/Note-7.0/Note/nn/neuralnetwork
-
-**Documentation:** https://github.com/NoteDancing/Note-documentation/tree/neural-network
-
-**The following is an example of training on the CIFAR10 dataset.**
-
-**ConvNeXtV2:**
-```python
-import Note.DL.parallel.kernel as k   #import kernel module
-from Note.nn.neuralnetwork.ConvNeXtV2 import ConvNeXtV2 #import neural network class
-from tensorflow.keras import datasets
-from multiprocessing import Process,Manager #import multiprocessing tools
-(train_images,train_labels),(test_images,test_labels)=datasets.cifar10.load_data()
-train_images,test_images=train_images/255.0,test_images/255.0
-convnext_atto=ConvNeXtV2(model_type='atto',classes=10)  #create neural network object
-convnext_atto.build()                           #build the network structure
-kernel=k.kernel(convnext_atto)                  #create kernel object with the network
-kernel.process=3                     #set the number of processes to train
-kernel.epoch=5                       #set the number of epochs to train
-kernel.batch=32                      #set the batch size
-kernel.PO=3                          #use PO3 algorithm for parallel optimization
-kernel.data(train_images,train_labels)         #input train data to the kernel
-manager=Manager()                    #create manager object to share data among processes
-kernel.init(manager)                 #initialize shared data with the manager
-for p in range(3):                   #loop over the processes
-	Process(target=kernel.train,args=(p,)).start() #start each process with the train function and pass the process id as argument
-kernel.update_nn_param()             #update the network parameters after training
-```
-**Use the trained model.**
-```python
-convnext_atto.km=0
-output=convnext_atto.fp(data)
-```
-**EfficientNetV2B0:**
-```python
-import Note.DL.parallel.kernel as k   #import kernel module
-from Note.nn.neuralnetwork.EfficientNetV2 import EfficientNetV2 #import neural network class
-from tensorflow.keras import datasets
-from multiprocessing import Process,Manager #import multiprocessing tools
-(train_images,train_labels),(test_images,test_labels)=datasets.cifar10.load_data()
-efficientnetv2b0=EfficientNetV2(input_shape=[32,32,32,3],model_name='efficientnetv2-b0',classes=10)  #create neural network object
-efficientnetv2b0.build()                           #build the network structure
-kernel=k.kernel(efficientnetv2b0)                  #create kernel object with the network
-kernel.process=3                     #set the number of processes to train
-kernel.epoch=5                       #set the number of epochs to train
-kernel.batch=32                      #set the batch size
-kernel.PO=3                          #use PO3 algorithm for parallel optimization
-kernel.data(train_images,train_labels)         #input train data to the kernel
-manager=Manager()                    #create manager object to share data among processes
-kernel.init(manager)                 #initialize shared data with the manager
-for p in range(3):                   #loop over the processes
-	Process(target=kernel.train,args=(p,)).start() #start each process with the train function and pass the process id as argument
-kernel.update_nn_param()             #update the network parameters after training
-```
-**Use the trained model.**
-```python
-efficientnetv2b0.km=0
-output=efficientnetv2b0.fp(data)
-```
-
-
 # Create neural network:
 - **Every neural network is regarded as an object, and the neural network object is passed into the kernel and trained by the kernel. To build a neural network that can be trained on Note, you need to follow some rules, otherwise you will get errors during training. You can see the examples of neural networks in the documentation. You can first learn the rules from the simple neural network examples named nn.py, nn_acc.py, and nn_device.py. Then, you can write a Python module for your neural network class and import it. Next, pass the neural network object to the kernel and train it.**
 
@@ -315,6 +251,70 @@ pool_lock=[Lock(),Lock(),Lock(),Lock(),Lock()] #create a list of locks for each 
 lock=[Lock(),Lock()]         #create two locks for synchronization
 for p in range(5):           #loop over the processes
     Process(target=kernel.train,args=(p,lock,pool_lock)).start()
+```
+
+
+# Neural network:
+**The neuralnetwork package in Note has models that can be trained in parallel on Note, such as ConvNeXt, EfficientNetV2, EfficientNet, etc. Currently, the performance of Note’s parallel training has not been sufficiently tested, if you want you can use the models in the neuralnetwork package to test Note’s parallel training performance.**
+
+https://github.com/NoteDancing/Note/tree/Note-7.0/Note/nn/neuralnetwork
+
+**Documentation:** https://github.com/NoteDancing/Note-documentation/tree/neural-network
+
+**The following is an example of training on the CIFAR10 dataset.**
+
+**ConvNeXtV2:**
+```python
+import Note.DL.parallel.kernel as k   #import kernel module
+from Note.nn.neuralnetwork.ConvNeXtV2 import ConvNeXtV2 #import neural network class
+from tensorflow.keras import datasets
+from multiprocessing import Process,Manager #import multiprocessing tools
+(train_images,train_labels),(test_images,test_labels)=datasets.cifar10.load_data()
+train_images,test_images=train_images/255.0,test_images/255.0
+convnext_atto=ConvNeXtV2(model_type='atto',classes=10)  #create neural network object
+convnext_atto.build()                           #build the network structure
+kernel=k.kernel(convnext_atto)                  #create kernel object with the network
+kernel.process=3                     #set the number of processes to train
+kernel.epoch=5                       #set the number of epochs to train
+kernel.batch=32                      #set the batch size
+kernel.PO=3                          #use PO3 algorithm for parallel optimization
+kernel.data(train_images,train_labels)         #input train data to the kernel
+manager=Manager()                    #create manager object to share data among processes
+kernel.init(manager)                 #initialize shared data with the manager
+for p in range(3):                   #loop over the processes
+	Process(target=kernel.train,args=(p,)).start() #start each process with the train function and pass the process id as argument
+kernel.update_nn_param()             #update the network parameters after training
+```
+**Use the trained model.**
+```python
+convnext_atto.km=0
+output=convnext_atto.fp(data)
+```
+**EfficientNetV2B0:**
+```python
+import Note.DL.parallel.kernel as k   #import kernel module
+from Note.nn.neuralnetwork.EfficientNetV2 import EfficientNetV2 #import neural network class
+from tensorflow.keras import datasets
+from multiprocessing import Process,Manager #import multiprocessing tools
+(train_images,train_labels),(test_images,test_labels)=datasets.cifar10.load_data()
+efficientnetv2b0=EfficientNetV2(input_shape=[32,32,32,3],model_name='efficientnetv2-b0',classes=10)  #create neural network object
+efficientnetv2b0.build()                           #build the network structure
+kernel=k.kernel(efficientnetv2b0)                  #create kernel object with the network
+kernel.process=3                     #set the number of processes to train
+kernel.epoch=5                       #set the number of epochs to train
+kernel.batch=32                      #set the batch size
+kernel.PO=3                          #use PO3 algorithm for parallel optimization
+kernel.data(train_images,train_labels)         #input train data to the kernel
+manager=Manager()                    #create manager object to share data among processes
+kernel.init(manager)                 #initialize shared data with the manager
+for p in range(3):                   #loop over the processes
+	Process(target=kernel.train,args=(p,)).start() #start each process with the train function and pass the process id as argument
+kernel.update_nn_param()             #update the network parameters after training
+```
+**Use the trained model.**
+```python
+efficientnetv2b0.km=0
+output=efficientnetv2b0.fp(data)
 ```
 
 
