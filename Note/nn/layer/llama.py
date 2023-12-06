@@ -12,6 +12,7 @@ class LlamaAttention:
         self.key_proj = dense(dims, dims, use_bias=False, dtype=dtype)
         self.value_proj = dense(dims, dims, use_bias=False, dtype=dtype)
         self.out_proj = dense(dims, dims, use_bias=False, dtype=dtype)
+        self.param = [self.query_proj.param, self.key_proj.param, self.value_proj.param, self.out_proj.param]
 
     def output(self, queries, keys, values, mask=None, cache=None):
         queries = self.query_proj.output(queries)
@@ -51,8 +52,6 @@ class LlamaAttention:
 
 class LlamaEncoderLayer:
     def __init__(self, dims: int, mlp_dims: int, num_heads: int, dtype='float32'):
-        super().__init__()
-
         self.attention = LlamaAttention(dims, num_heads, dtype)
 
         self.norm1 = RMSNorm(dims, dtype=dtype)
@@ -61,6 +60,8 @@ class LlamaEncoderLayer:
         self.linear1 = dense(dims, mlp_dims, use_bias=False, dtype=dtype)
         self.linear2 = dense(dims, mlp_dims, use_bias=False, dtype=dtype)
         self.linear3 = dense(mlp_dims, dims, use_bias=False, dtype=dtype)
+        self.param = [self.attention.param, self.norm1.param, self.norm2.param, self.linear1.param,
+                      self.linear2.param, self.linear3.param]
 
     def output(self, x, mask=None, cache=None):
         y = self.norm1.output(x)
@@ -149,6 +150,7 @@ class RMSNorm:
     def __init__(self, dims: int, epsilon: float = 1e-6, dtype='float32'):
         self.gamma = initializer_((dims,), 'ones', dtype)
         self.epsilon = epsilon
+        self.param = [self.gamma]
 
     def output(self, x):
         n = tf.math.rsqrt(tf.math.reduce_mean(tf.math.square(x), axis=-1, keepdims=True) + self.epsilon)
