@@ -57,9 +57,9 @@ class LlamaEncoderLayer:
         self.norm1 = RMSNorm(dims, dtype=dtype)
         self.norm2 = RMSNorm(dims, dtype=dtype)
 
-        self.linear1 = dense(dims, mlp_dims, use_bias=False, dtype=dtype)
-        self.linear2 = dense(dims, mlp_dims, use_bias=False, dtype=dtype)
-        self.linear3 = dense(mlp_dims, dims, use_bias=False, dtype=dtype)
+        self.linear1 = dense(mlp_dims, dims, use_bias=False, dtype=dtype)
+        self.linear2 = dense(mlp_dims, dims, use_bias=False, dtype=dtype)
+        self.linear3 = dense(dims, mlp_dims, use_bias=False, dtype=dtype)
         self.param = [self.attention.param, self.norm1.param, self.norm2.param, self.linear1.param,
                       self.linear2.param, self.linear3.param]
 
