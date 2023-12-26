@@ -6,9 +6,9 @@ class BigBird_masks:
   def __init__(self, block_size):
     self._block_size = block_size
 
-  def output(self, inputs, mask):
+  def output(self, data, mask):
     encoder_shape = tf.shape(mask)
-    mask = tf.cast(mask, inputs.dtype)
+    mask = tf.cast(mask, data.dtype)
     batch_size, seq_length = encoder_shape[0], encoder_shape[1]
     # reshape for blocking
     blocked_encoder_mask = tf.reshape(
