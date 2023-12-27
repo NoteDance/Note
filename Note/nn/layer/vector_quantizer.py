@@ -15,12 +15,9 @@ class vector_quantizer:
 
     self._embedding_shape = [embedding_dim, num_embeddings]
     self._embedding_dtype = dtype
-
-  @property
-  def embeddings(self):
-    return initializer_(self._embedding_shape, 
+    self.embeddings = initializer_(self._embedding_shape, 
                         ['VarianceScaling',1.0,'fan_in','uniform'], 
-                        self._embedding_dtype)
+                        dtype)
 
   def output(self, data, is_training):
     flat_inputs = tf.reshape(data, [-1, self.embedding_dim])
