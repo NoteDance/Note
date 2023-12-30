@@ -12,6 +12,7 @@ class LlamaAttention:
         self.key_proj = dense(dims, dims, use_bias=False, dtype=dtype)
         self.value_proj = dense(dims, dims, use_bias=False, dtype=dtype)
         self.out_proj = dense(dims, dims, use_bias=False, dtype=dtype)
+        self.output_size = self.out_proj.output_size
         self.param = [self.query_proj.param, self.key_proj.param, self.value_proj.param, self.out_proj.param]
 
     def output(self, queries, keys, values, mask=None, cache=None):
@@ -60,6 +61,8 @@ class LlamaEncoderLayer:
         self.linear1 = dense(mlp_dims, dims, use_bias=False, dtype=dtype)
         self.linear2 = dense(mlp_dims, dims, use_bias=False, dtype=dtype)
         self.linear3 = dense(dims, mlp_dims, use_bias=False, dtype=dtype)
+        
+        self.output_size = self.linear3.output_size
         self.param = [self.attention.param, self.norm1.param, self.norm2.param, self.linear1.param,
                       self.linear2.param, self.linear3.param]
 
