@@ -5,7 +5,7 @@ from tensorflow.python.util import nest
 
 class Gradient:
     def __init__(self,lr):
-        self.lr=tf.Variable(lr)
+        self.lr=lr
     
     
     def opt(self,gradient,parameter):
@@ -51,10 +51,12 @@ class SGD:
         lr=0.01,
         momentum=0.0,
         nesterov=False,
+        weight_decay=None
     ):
         self.lr = tf.Variable(lr)
         self.momentum = momentum
         self.nesterov = nesterov
+        self.weight_decay = weight_decay
         if isinstance(momentum, (int, float)) and (
             momentum < 0 or momentum > 1
         ):
@@ -66,8 +68,8 @@ class SGD:
     def opt(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
-        if self.flag.value==0:
-            self.flag.value=1
+        if self.flag==0:
+            self.flag=1
             for param in parameter_flat:
                 self.momentums.append(
                     tf.Variable(tf.zeros_like(param,dtype=param.dtype))
@@ -78,6 +80,9 @@ class SGD:
             m = None
             momentum = tf.cast(self.momentum, parameter_flat[i].dtype)
             m = self.momentums[i]
+            if self.weight_decay!=None:
+                wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
     
             # TODO(b/204321487): Add nesterov acceleration.
             if isinstance(gradient_flat[i], tf.IndexedSlices):
@@ -141,10 +146,12 @@ class Adagrad:
         lr=0.001,
         initial_accumulator_value=0.1,
         epsilon=1e-7,
+        weight_decay=None
     ):
-        self.lr = tf.Variable(lr)
+        self.lr = lr
         self.initial_accumulator_value = initial_accumulator_value
         self.epsilon = epsilon
+        self.weight_decay = weight_decay
         self._accumulators = []
         self.flag = 0
 
@@ -165,6 +172,9 @@ class Adagrad:
             lr = tf.cast(self.learning_rate, parameter_flat[i].dtype)
 
             accumulator = self._accumulators[i]
+            if self.weight_decay!=None:
+                wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
 
             if isinstance(gradient_flat[i], tf.IndexedSlices):
                 # Sparse gradients.
@@ -210,8 +220,9 @@ class Adafactor:
         epsilon_2=1e-3,
         clip_threshold=1.0,
         relative_step=True,
+        weight_decay=None
     ):
-        self.lr = tf.Variable(lr)
+        self.lr = lr
         self.beta_2_decay = beta_2_decay
         self.epsilon_1 = epsilon_1
         self.epsilon_2 = epsilon_2
@@ -266,11 +277,15 @@ class Adafactor:
             r = self._r[i]
             c = self._c[i]
             v = self._v[i]
+            if self.weight_decay!=None:
+                wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
     
             rho_t = tf.minimum(lr, tf.math.rsqrt(local_step))
             alpha_t = tf.maximum(epsilon_2, self._rms(parameter_flat[i])) * rho_t
             regulated_grad_square = tf.square(gradient_flat[i]) + self.epsilon_1
             beta_2_t = 1 - tf.pow(local_step, self.beta_2_decay)
+            
     
             if len(parameter_flat[i].shape) >= 2:
                 # `r` deletes the last dimension of gradient, so it is of shape
@@ -330,12 +345,14 @@ class RMSprop:
         momentum=0.0,
         epsilon=1e-7,
         centered=False,
+        weight_decay=None
     ):
-        self.lr = tf.Variable(lr)
+        self.lr = lr
         self.rho = rho
         self.momentum = momentum
         self.epsilon = epsilon
         self.centered = centered
+        self.weight_decay = weight_decay
         self._velocities = []
         self._momentums = []
         self._average_gradients = []
@@ -376,6 +393,9 @@ class RMSprop:
                 average_grad = self._average_gradients[i]
     
             rho = self.rho
+            if self.weight_decay!=None:
+                wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
             
             if isinstance(gradient_flat[i], tf.IndexedSlices):
                 # Sparse gradients.
@@ -450,10 +470,12 @@ class Adadelta:
         lr=0.001,
         rho=0.95,
         epsilon=1e-7,
+        weight_decay=None
     ):
-        self.lr = tf.Variable(lr)
+        self.lr = lr
         self.rho = rho
         self.epsilon = epsilon
+        self.weight_decay = weight_decay
         self._accumulated_grads = []
         self._accumulated_delta_vars = []
         self.flag = 0
@@ -478,6 +500,9 @@ class Adadelta:
 
         for i in range(len(gradient_flat)):
             lr = tf.cast(self.lr, dtype=parameter_flat[i].dtype)
+            if self.weight_decay!=None:
+                wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
             
             if isinstance(gradient_flat[i], tf.IndexedSlices):
                 # Sparse gradients.
@@ -553,12 +578,14 @@ class Adam:
         beta_2=0.999,
         epsilon=1e-7,
         amsgrad=False,
+        weight_decay=None
     ):
-        self.lr = tf.Variable(lr)
+        self.lr = lr
         self.beta_1 = beta_1
         self.beta_2 = beta_2
         self.epsilon = epsilon
         self.amsgrad = amsgrad
+        self.weight_decay = weight_decay
         self._momentums = []
         self._velocities = []
         if self.amsgrad:
@@ -596,6 +623,9 @@ class Adam:
             v = self._velocities[i]
     
             alpha = lr * tf.sqrt(1 - beta_2_power) / (1 - beta_1_power)
+            if self.weight_decay!=None:
+                wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
     
             if isinstance(gradient_flat[i], tf.IndexedSlices):
                 # Sparse gradients.
@@ -648,11 +678,13 @@ class Nadam:
         beta_1=0.9,
         beta_2=0.999,
         epsilon=1e-7,
+        weight_decay=None
     ):
-        self.lr = tf.Variable(lr)
+        self.lr = lr
         self.beta_1 = beta_1
         self.beta_2 = beta_2
         self.epsilon = epsilon
+        self.weight_decay = weight_decay
         self._momentums = []
         self._velocities = []
         self._u_product = []
@@ -700,6 +732,9 @@ class Nadam:
     
             m = self._momentums[i]
             v = self._velocities[i]
+            if self.weight_decay!=None:
+                wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
             
             if isinstance(gradient_flat[i], tf.IndexedSlices):
                 # Sparse gradients.
@@ -775,8 +810,10 @@ class Adamax:
         beta_1=0.9,
         beta_2=0.999,
         epsilon=1e-7,
+        weight_decay=None,
     ):
-        self.lr = tf.Variable(lr)
+        self.lr = lr
+        self.weight_decay = weight_decay
         self.beta_1 = beta_1
         self.beta_2 = beta_2
         self.epsilon = epsilon
@@ -807,6 +844,9 @@ class Adamax:
     
             m = self._m[i]
             u = self._u[i]
+            if self.weight_decay!=None:
+                wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
             
             if isinstance(gradient_flat[i], tf.IndexedSlices):
                 # Sparse gradients.
@@ -873,12 +913,14 @@ class AdamW:
     def __init__(
         self,
         lr=0.001,
+        weight_decay=0.004,
         beta_1=0.9,
         beta_2=0.999,
         epsilon=1e-7,
         amsgrad=False,
     ):
-        self.lr = tf.Variable(lr)
+        self.lr = lr
+        self.weight_decay = weight_decay
         self.beta_1 = beta_1
         self.beta_2 = beta_2
         self.epsilon = epsilon
@@ -920,6 +962,9 @@ class AdamW:
             v = self._velocities[i]
     
             alpha = lr * tf.sqrt(1 - beta_2_power) / (1 - beta_1_power)
+            if self.weight_decay!=None:
+                wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
     
             if isinstance(gradient_flat[i], tf.IndexedSlices):
                 # Sparse gradients.
@@ -1007,6 +1052,7 @@ class Ftrl:
         l2_regularization_strength=0.0,
         l2_shrinkage_regularization_strength=0.0,
         beta=0.0,
+        weight_decay=None
     ):
         if initial_accumulator_value < 0.0:
             raise ValueError(
@@ -1037,7 +1083,7 @@ class Ftrl:
                 "or zero. Received: l2_shrinkage_regularization_strength"
                 f"={l2_shrinkage_regularization_strength}."
             )
-        self.lr = tf.Variable(lr)
+        self.lr = lr
         self.learning_rate_power = learning_rate_power
         self.initial_accumulator_value = initial_accumulator_value
         self.l1_regularization_strength = l1_regularization_strength
@@ -1070,6 +1116,9 @@ class Ftrl:
             lr_power = self.learning_rate_power
             l2_reg = self.l2_regularization_strength
             l2_reg = l2_reg + self.beta / (2.0 * lr)
+            if self.weight_decay!=None:
+                wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
     
             # Ftrl optimizer has the same implementation for sparse and dense
             # gradients update.
@@ -1121,10 +1170,12 @@ class Lion:
         lr=0.0001,
         beta_1=0.9,
         beta_2=0.99,
+        weight_decay=None
     ):
-        self.lr = tf.Variable(lr)
+        self.lr = lr
         self.beta_1 = beta_1
         self.beta_2 = beta_2
+        self.weight_decay = weight_decay
         if beta_1 <= 0 or beta_1 > 1:
             raise ValueError(
                 f"`beta_1`={beta_1} must be between ]0, 1]. Otherwise, "
@@ -1149,6 +1200,9 @@ class Lion:
             beta_1 = tf.cast(self.beta_1, parameter_flat[i].dtype)
             beta_2 = tf.cast(self.beta_2, parameter_flat[i].dtype)
             m = self.momentums[i]
+            if self.weight_decay!=None:
+                wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
     
             if isinstance(gradient_flat[i], tf.IndexedSlices):
                 # Sparse gradients (use m as a buffer)
