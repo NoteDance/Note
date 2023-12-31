@@ -97,7 +97,7 @@ class SwiftFormer:
                     else identity()
         
         self.dtype=dtype
-        self.optimizer=AdamW(epsilon=1e-8)
+        self.optimizer=AdamW(epsilon=1e-8,weight_decay=0.025)
         self.param=Module.param
 
 
