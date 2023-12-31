@@ -31,6 +31,8 @@ class SwiftFormer:
                  distillation=True,
                  include_top=True,
                  pooling=None,
+                 epsilon=1e-8,
+                 weight_decay=0.025,
                  device='GPU',
                  dtype='float32'
                  ):
@@ -44,6 +46,8 @@ class SwiftFormer:
         self.fork_feat = fork_feat
         self.include_top=include_top
         self.pooling=pooling
+        self.epsilon=epsilon
+        self.weight_decay=weight_decay
         self.device=device
         self.alpha = tf.constant(0.5, dtype)
         self.temperature = tf.constant(10, dtype)
@@ -97,7 +101,7 @@ class SwiftFormer:
                     else identity()
         
         self.dtype=dtype
-        self.optimizer=AdamW(epsilon=1e-8,weight_decay=0.025)
+        self.optimizer=AdamW(epsilon=epsilon,weight_decay=weight_decay)
         self.param=Module.param
 
 
