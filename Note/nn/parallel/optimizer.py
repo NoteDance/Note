@@ -54,12 +54,18 @@ class SGD:
         momentum=0.0,
         nesterov=False,
         weight_decay=None,
+        clipnorm=None,
+        clipvalue=None,
+        global_clipnorm=None,
         param=None
     ):
         self.lr = lr
         self.momentum = momentum
         self.nesterov = nesterov
         self.weight_decay = weight_decay
+        self.clipnorm = clipnorm
+        self.clipvalue = clipvalue
+        self.global_clipnorm = global_clipnorm
         if isinstance(momentum, (int, float)) and (
             momentum < 0 or momentum > 1
         ):
@@ -84,14 +90,24 @@ class SGD:
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         
+        if self.weight_decay!=None and self.global_clipnorm!=None:
+            wd_p = [tf.cast(self.weight_decay, p.dtype) * p for p in parameter_flat]
+            gradient_flat = [g + wd_p[i] for i,g in enumerate(gradient_flat)]
+            gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
+            
         for i in range(len(gradient_flat)):
             lr = tf.cast(self.lr, parameter_flat[i].dtype)
             m = None
             momentum = tf.cast(self.momentum, parameter_flat[i].dtype)
             m = self.momentums[i]
-            if self.weight_decay!=None:
+            
+            if self.weight_decay!=None and self.global_clipnorm==None:
                 wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
                 gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+            if self.clipnorm!=None:
+                gradient_flat[i] = tf.clip_by_norm(gradient_flat[i], self.clipnorm)
+            if self.clipvalue!=None:
+                gradient_flat[i] = tf.clip_by_value(gradient_flat[i], -self.clipvalue, self.clipvalue)
     
             # TODO(b/204321487): Add nesterov acceleration.
             if isinstance(gradient_flat[i], tf.IndexedSlices):
@@ -166,12 +182,18 @@ class Adagrad:
         initial_accumulator_value=0.1,
         epsilon=1e-7,
         weight_decay=None,
+        clipnorm=None,
+        clipvalue=None,
+        global_clipnorm=None,
         param=None
     ):
         self.lr = lr
         self.initial_accumulator_value = initial_accumulator_value
         self.epsilon = epsilon
         self.weight_decay = weight_decay
+        self.clipnorm = clipnorm
+        self.clipvalue = clipvalue
+        self.global_clipnorm = global_clipnorm
         manager=Manager()
         self._accumulators = manager.list()
         if param is None:
@@ -197,14 +219,24 @@ class Adagrad:
     def opt(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
-         
+        
+        if self.weight_decay!=None and self.global_clipnorm!=None:
+            wd_p = [tf.cast(self.weight_decay, p.dtype) * p for p in parameter_flat]
+            gradient_flat = [g + wd_p[i] for i,g in enumerate(gradient_flat)]
+            gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm) 
+            
         for i in range(len(gradient_flat)):
             lr = tf.cast(self.learning_rate, parameter_flat[i].dtype)
 
             accumulator = self._accumulators[i]
-            if self.weight_decay!=None:
+            
+            if self.weight_decay!=None and self.global_clipnorm==None:
                 wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
                 gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+            if self.clipnorm!=None:
+                gradient_flat[i] = tf.clip_by_norm(gradient_flat[i], self.clipnorm)
+            if self.clipvalue!=None:
+                gradient_flat[i] = tf.clip_by_value(gradient_flat[i], -self.clipvalue, self.clipvalue)
 
             if isinstance(gradient_flat[i], tf.IndexedSlices):
                 # Sparse gradients.
@@ -261,6 +293,9 @@ class Adafactor:
         clip_threshold=1.0,
         relative_step=True,
         weight_decay=None,
+        clipnorm=None,
+        clipvalue=None,
+        global_clipnorm=None,
         param=None
     ):
         self.lr = lr
@@ -270,6 +305,9 @@ class Adafactor:
         self.clip_threshold = clip_threshold
         self.relative_step = relative_step
         self.weight_decay = weight_decay
+        self.clipnorm = clipnorm
+        self.clipvalue = clipvalue
+        self.global_clipnorm = global_clipnorm
         manager=Manager()
         self._r = manager.list()
         self._c = manager.list()
@@ -325,7 +363,12 @@ class Adafactor:
     def opt(self, gradient, parameter, iterations):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
-
+        
+        if self.weight_decay!=None and self.global_clipnorm!=None:
+            wd_p = [tf.cast(self.weight_decay, p.dtype) * p for p in parameter_flat]
+            gradient_flat = [g + wd_p[i] for i,g in enumerate(gradient_flat)]
+            gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
+            
         for i in range(len(gradient_flat)):
             lr = tf.cast(self.lr, parameter_flat[i].dtype)
             epsilon_2 = tf.cast(self.epsilon_2, parameter_flat[i].dtype)
@@ -339,9 +382,14 @@ class Adafactor:
             r = self._r[i]
             c = self._c[i]
             v = self._v[i]
-            if self.weight_decay!=None:
+            
+            if self.weight_decay!=None and self.global_clipnorm==None:
                 wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
                 gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+            if self.clipnorm!=None:
+                gradient_flat[i] = tf.clip_by_norm(gradient_flat[i], self.clipnorm)
+            if self.clipvalue!=None:
+                gradient_flat[i] = tf.clip_by_value(gradient_flat[i], -self.clipvalue, self.clipvalue)
     
             rho_t = tf.minimum(lr, tf.math.rsqrt(local_step))
             alpha_t = tf.maximum(epsilon_2, self._rms(parameter_flat[i])) * rho_t
@@ -419,6 +467,9 @@ class RMSprop:
         epsilon=1e-7,
         centered=False,
         weight_decay=None,
+        clipnorm=None,
+        clipvalue=None,
+        global_clipnorm=None,
         param=None
     ):
         self.lr = lr
@@ -427,6 +478,9 @@ class RMSprop:
         self.epsilon = epsilon
         self.centered = centered
         self.weight_decay = weight_decay
+        self.clipnorm = clipnorm
+        self.clipvalue = clipvalue
+        self.global_clipnorm = global_clipnorm
         manager=Manager()
         self._velocities = manager.list()
         self._momentums = manager.list()
@@ -472,6 +526,11 @@ class RMSprop:
     def opt(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
+        
+        if self.weight_decay!=None and self.global_clipnorm!=None:
+            wd_p = [tf.cast(self.weight_decay, p.dtype) * p for p in parameter_flat]
+            gradient_flat = [g + wd_p[i] for i,g in enumerate(gradient_flat)]
+            gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
 
         for i in range(len(gradient_flat)):
             lr = tf.cast(self.lr, dtype=parameter_flat[i].dtype)
@@ -485,9 +544,14 @@ class RMSprop:
                 average_grad = self._average_gradients[i]
     
             rho = self.rho
-            if self.weight_decay!=None:
+            
+            if self.weight_decay!=None and self.global_clipnorm==None:
                 wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
                 gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+            if self.clipnorm!=None:
+                gradient_flat[i] = tf.clip_by_norm(gradient_flat[i], self.clipnorm)
+            if self.clipvalue!=None:
+                gradient_flat[i] = tf.clip_by_value(gradient_flat[i], -self.clipvalue, self.clipvalue)
             
             if isinstance(gradient_flat[i], tf.IndexedSlices):
                 # Sparse gradients.
@@ -581,12 +645,18 @@ class Adadelta:
         rho=0.95,
         epsilon=1e-7,
         weight_decay=None,
+        clipnorm=None,
+        clipvalue=None,
+        global_clipnorm=None,
         param=None
     ):
         self.lr = lr
         self.rho = rho
         self.epsilon = epsilon
         self.weight_decay = weight_decay
+        self.clipnorm = clipnorm
+        self.clipvalue = clipvalue
+        self.global_clipnorm = global_clipnorm
         manager=Manager()
         self._accumulated_grads = manager.list()
         self._accumulated_delta_vars = manager.list()
@@ -618,12 +688,22 @@ class Adadelta:
 
         def rms(x):
             return tf.sqrt(x + self.epsilon)
+        
+        if self.weight_decay!=None and self.global_clipnorm!=None:
+            wd_p = [tf.cast(self.weight_decay, p.dtype) * p for p in parameter_flat]
+            gradient_flat = [g + wd_p[i] for i,g in enumerate(gradient_flat)]
+            gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
 
         for i in range(len(gradient_flat)):
             lr = tf.cast(self.lr, dtype=parameter_flat[i].dtype)
-            if self.weight_decay!=None:
+            
+            if self.weight_decay!=None and self.global_clipnorm==None:
                 wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
                 gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+            if self.clipnorm!=None:
+                gradient_flat[i] = tf.clip_by_norm(gradient_flat[i], self.clipnorm)
+            if self.clipvalue!=None:
+                gradient_flat[i] = tf.clip_by_value(gradient_flat[i], -self.clipvalue, self.clipvalue)
             
             if isinstance(gradient_flat[i], tf.IndexedSlices):
                 # Sparse gradients.
@@ -712,6 +792,9 @@ class Adam:
         epsilon=1e-7,
         amsgrad=False,
         weight_decay=None,
+        clipnorm=None,
+        clipvalue=None,
+        global_clipnorm=None,
         param=None
     ):
         self.lr = lr
@@ -720,6 +803,9 @@ class Adam:
         self.epsilon = epsilon
         self.amsgrad = amsgrad
         self.weight_decay = weight_decay
+        self.clipnorm = clipnorm
+        self.clipvalue = clipvalue
+        self.global_clipnorm = global_clipnorm
         manager=Manager()
         self._momentums = manager.list()
         self._velocities = manager.list()
@@ -758,6 +844,11 @@ class Adam:
     def opt(self, gradient, parameter, iterations):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
+        
+        if self.weight_decay!=None and self.global_clipnorm!=None:
+            wd_p = [tf.cast(self.weight_decay, p.dtype) * p for p in parameter_flat]
+            gradient_flat = [g + wd_p[i] for i,g in enumerate(gradient_flat)]
+            gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
                             
         for i in range(len(gradient_flat)):
             lr = tf.cast(self.lr, dtype=parameter_flat[i].dtype)
@@ -770,9 +861,14 @@ class Adam:
             v = self._velocities[i]
     
             alpha = lr * tf.sqrt(1 - beta_2_power) / (1 - beta_1_power)
-            if self.weight_decay!=None:
+            
+            if self.weight_decay!=None and self.global_clipnorm==None:
                 wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
                 gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+            if self.clipnorm!=None:
+                gradient_flat[i] = tf.clip_by_norm(gradient_flat[i], self.clipnorm)
+            if self.clipvalue!=None:
+                gradient_flat[i] = tf.clip_by_value(gradient_flat[i], -self.clipvalue, self.clipvalue)
     
             if isinstance(gradient_flat[i], tf.IndexedSlices):
                 # Sparse gradients.
@@ -841,6 +937,9 @@ class Nadam:
         beta_2=0.999,
         epsilon=1e-7,
         weight_decay=None,
+        clipnorm=None,
+        clipvalue=None,
+        global_clipnorm=None,
         param=None
     ):
         self.lr = lr
@@ -848,6 +947,9 @@ class Nadam:
         self.beta_2 = beta_2
         self.epsilon = epsilon
         self.weight_decay = weight_decay
+        self.clipnorm = clipnorm
+        self.clipvalue = clipvalue
+        self.global_clipnorm = global_clipnorm
         manager=Manager()
         self._momentums = manager.list()
         self._velocities = manager.list()
@@ -881,6 +983,11 @@ class Nadam:
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         
+        if self.weight_decay!=None and self.global_clipnorm!=None:
+            wd_p = [tf.cast(self.weight_decay, p.dtype) * p for p in parameter_flat]
+            gradient_flat = [g + wd_p[i] for i,g in enumerate(gradient_flat)]
+            gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
+        
         for i in range(len(gradient_flat)):
             var_dtype = parameter_flat[i].dtype
             lr = tf.cast(self.lr, var_dtype)
@@ -904,9 +1011,14 @@ class Nadam:
     
             m = self._momentums[i]
             v = self._velocities[i]
-            if self.weight_decay!=None:
+            
+            if self.weight_decay!=None and self.global_clipnorm==None:
                 wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
                 gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+            if self.clipnorm!=None:
+                gradient_flat[i] = tf.clip_by_norm(gradient_flat[i], self.clipnorm)
+            if self.clipvalue!=None:
+                gradient_flat[i] = tf.clip_by_value(gradient_flat[i], -self.clipvalue, self.clipvalue)
             
             if isinstance(gradient_flat[i], tf.IndexedSlices):
                 # Sparse gradients.
@@ -996,6 +1108,9 @@ class Adamax:
         beta_2=0.999,
         epsilon=1e-7,
         weight_decay=None,
+        clipnorm=None,
+        clipvalue=None,
+        global_clipnorm=None,
         param=None
     ):
         self.lr = lr
@@ -1003,6 +1118,9 @@ class Adamax:
         self.beta_2 = beta_2
         self.epsilon = epsilon
         self.weight_decay = weight_decay
+        self.clipnorm = clipnorm
+        self.clipvalue = clipvalue
+        self.global_clipnorm = global_clipnorm
         manager=Manager()
         self._m = manager.list()
         self._u = manager.list()
@@ -1030,6 +1148,11 @@ class Adamax:
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         
+        if self.weight_decay!=None and self.global_clipnorm!=None:
+            wd_p = [tf.cast(self.weight_decay, p.dtype) * p for p in parameter_flat]
+            gradient_flat = [g + wd_p[i] for i,g in enumerate(gradient_flat)]
+            gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
+        
         for i in range(len(gradient_flat)):
             lr = tf.cast(self.lr, dtype=parameter_flat[i].dtype)
             
@@ -1038,9 +1161,14 @@ class Adamax:
     
             m = self._m[i]
             u = self._u[i]
-            if self.weight_decay!=None:
+            
+            if self.weight_decay!=None and self.global_clipnorm==None:
                 wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
                 gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+            if self.clipnorm!=None:
+                gradient_flat[i] = tf.clip_by_norm(gradient_flat[i], self.clipnorm)
+            if self.clipvalue!=None:
+                gradient_flat[i] = tf.clip_by_value(gradient_flat[i], -self.clipvalue, self.clipvalue)
             
             if isinstance(gradient_flat[i], tf.IndexedSlices):
                 # Sparse gradients.
@@ -1123,6 +1251,9 @@ class AdamW:
         beta_2=0.999,
         epsilon=1e-7,
         amsgrad=False,
+        clipnorm=None,
+        clipvalue=None,
+        global_clipnorm=None,
         param=None
     ):
         self.lr = lr
@@ -1131,6 +1262,9 @@ class AdamW:
         self.beta_2 = beta_2
         self.epsilon = epsilon
         self.amsgrad = amsgrad
+        self.clipnorm = clipnorm
+        self.clipvalue = clipvalue
+        self.global_clipnorm = global_clipnorm
         manager=Manager()
         self._momentums = manager.list()
         self._velocities = manager.list()
@@ -1169,6 +1303,11 @@ class AdamW:
     def opt(self, gradient, parameter, iterations):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
+        
+        if self.weight_decay!=None and self.global_clipnorm!=None:
+            wd_p = [tf.cast(self.weight_decay, p.dtype) * p for p in parameter_flat]
+            gradient_flat = [g + wd_p[i] for i,g in enumerate(gradient_flat)]
+            gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
                     
         for i in range(len(gradient_flat)):  
             lr = tf.cast(self.lr, dtype=parameter_flat[i].dtype)
@@ -1181,9 +1320,14 @@ class AdamW:
             v = self._velocities[i]
     
             alpha = lr * tf.sqrt(1 - beta_2_power) / (1 - beta_1_power)
-            if self.weight_decay!=None:
+            
+            if self.weight_decay!=None and self.global_clipnorm==None:
                 wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
                 gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+            if self.clipnorm!=None:
+                gradient_flat[i] = tf.clip_by_norm(gradient_flat[i], self.clipnorm)
+            if self.clipvalue!=None:
+                gradient_flat[i] = tf.clip_by_value(gradient_flat[i], -self.clipvalue, self.clipvalue)
     
             if isinstance(gradient_flat[i], tf.IndexedSlices):
                 # Sparse gradients.
@@ -1287,6 +1431,9 @@ class Ftrl:
         l2_shrinkage_regularization_strength=0.0,
         beta=0.0,
         weight_decay=None,
+        clipnorm=None,
+        clipvalue=None,
+        global_clipnorm=None,
         param=None
     ):
         if initial_accumulator_value < 0.0:
@@ -1328,6 +1475,9 @@ class Ftrl:
         )
         self.beta = beta
         self.weight_decay = weight_decay
+        self.clipnorm = clipnorm
+        self.clipvalue = clipvalue
+        self.global_clipnorm = global_clipnorm
         manager=Manager()
         self._accumulators = manager.list()
         self._linears = manager.list()
@@ -1351,6 +1501,11 @@ class Ftrl:
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         
+        if self.weight_decay!=None and self.global_clipnorm!=None:
+            wd_p = [tf.cast(self.weight_decay, p.dtype) * p for p in parameter_flat]
+            gradient_flat = [g + wd_p[i] for i,g in enumerate(gradient_flat)]
+            gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
+        
         for i in range(len(gradient_flat)):
             lr = tf.cast(self.lr, parameter_flat[i].dtype)
             accum = self._accumulators[i]
@@ -1359,9 +1514,14 @@ class Ftrl:
             lr_power = self.learning_rate_power
             l2_reg = self.l2_regularization_strength
             l2_reg = l2_reg + self.beta / (2.0 * lr)
-            if self.weight_decay!=None:
+            
+            if self.weight_decay!=None and self.global_clipnorm==None:
                 wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
                 gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+            if self.clipnorm!=None:
+                gradient_flat[i] = tf.clip_by_norm(gradient_flat[i], self.clipnorm)
+            if self.clipvalue!=None:
+                gradient_flat[i] = tf.clip_by_value(gradient_flat[i], -self.clipvalue, self.clipvalue)
     
             # Ftrl optimizer has the same implementation for sparse and dense
             # gradients update.
@@ -1426,12 +1586,18 @@ class Lion:
         beta_1=0.9,
         beta_2=0.99,
         weight_decay=None,
+        clipnorm=None,
+        clipvalue=None,
+        global_clipnorm=None,
         param=None
     ):
         self.lr = lr
         self.beta_1 = beta_1
         self.beta_2 = beta_2
         self.weight_decay = weight_decay
+        self.clipnorm = clipnorm
+        self.clipvalue = clipvalue
+        self.global_clipnorm = global_clipnorm
         if beta_1 <= 0 or beta_1 > 1:
             raise ValueError(
                 f"`beta_1`={beta_1} must be between ]0, 1]. Otherwise, "
@@ -1456,15 +1622,25 @@ class Lion:
     def opt(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
+        
+        if self.weight_decay!=None and self.global_clipnorm!=None:
+            wd_p = [tf.cast(self.weight_decay, p.dtype) * p for p in parameter_flat]
+            gradient_flat = [g + wd_p[i] for i,g in enumerate(gradient_flat)]
+            gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
                 
         for i in range(len(gradient_flat)):
             lr = tf.cast(self.learning_rate, parameter_flat[i].dtype)
             beta_1 = tf.cast(self.beta_1, parameter_flat[i].dtype)
             beta_2 = tf.cast(self.beta_2, parameter_flat[i].dtype)
             m = self.momentums[i]
-            if self.weight_decay!=None:
+            
+            if self.weight_decay!=None and self.global_clipnorm==None:
                 wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
                 gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+            if self.clipnorm!=None:
+                gradient_flat[i] = tf.clip_by_norm(gradient_flat[i], self.clipnorm)
+            if self.clipvalue!=None:
+                gradient_flat[i] = tf.clip_by_value(gradient_flat[i], -self.clipvalue, self.clipvalue)
     
             if isinstance(gradient_flat[i], tf.IndexedSlices):
                 # Sparse gradients (use m as a buffer)
