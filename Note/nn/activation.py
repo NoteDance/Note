@@ -187,6 +187,26 @@ def mish(x):
     return x * tf.math.tanh(tf.math.softplus(x))
 
 
+def glu(x, axis=-1):
+    a, b = tf.split(x, 2, axis=axis)
+    gate = tf.nn.sigmoid(b)
+    out = tf.math.multiply(a, gate)
+    return out
+
+
+def celu(x, alpha=1.0):
+    out = tf.math.maximum(0.0, x) + tf.math.minimum(0.0, alpha * (tf.math.exp(x / alpha) - 1.0))
+    return out
+
+
+def logsigmoid(x):
+  return tf.math.log(1 + tf.math.exp(-x))
+
+
+def tanhshrink(x):
+  return x - tf.math.tanh(x)
+
+
 activation_dict={
   'tanh':tf.nn.tanh,
   'relu':tf.nn.relu,
@@ -204,5 +224,8 @@ activation_dict={
   'hard_sigmoid':hard_sigmoid,
   'softplus':tf.math.softplus,
   'mish':mish,
-  # add more activation functions as needed
+  'glu':glu,
+  'celu':celu,
+  'logsigmoid':logsigmoid,
+  'tanhshrink':tanhshrink
 }
