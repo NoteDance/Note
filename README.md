@@ -1,5 +1,5 @@
 # Introduction:
-- **Note is a system for deep learning and reinforcement learning, supporting TensorFlow and PyTorch platforms, supporting non-parallel training and parallel training. Note makes the building and training of neural networks easy. To train a neural network on Note, you first need to write a neural network class, pass the neural network object to the kernel, and then use the methods provided by the kernel to train a neural network. Note is based on the multiprocessing module of Python to implement parallel training. Because Note is based on the multiprocessing module of Python to implement parallel training, the number of parallel processes is related to the CPU. Note allows you to easily implement parallel training.**
+- **Note is a system for deep learning and reinforcement learning, supporting TensorFlow and PyTorch platforms, supporting non-parallel training and parallel training. Note makes the building and training of neural networks easy. To train a neural network on Note, you first need to write a neural network class, pass the neural network object to the kernel, and then use the methods provided by the kernel to train a neural network. Note is based on the multiprocessing module of Python to implement parallel training. Because Note is based on the multiprocessing module of Python to implement parallel training, the number of parallel processes is related to the CPU. Note allows you to easily implement parallel training. Currently, the performance of Note’s parallel training has not been sufficiently tested, so don’t know how the performance of parallel training using the multiprocessing module with tf.device is. If you have done the test, you can share your test with me.**
 
 - **The Note.nn.neuralnetwork package contains neural networks that can be trained on Note. You only need to provide the training data and operate simply, then you can train these neural networks in parallel on Note.**
 
@@ -255,7 +255,7 @@ for p in range(5):           #loop over the processes
 
 
 # Neural network:
-**The neuralnetwork package in Note has models that can be trained in parallel on Note, such as ConvNeXt, EfficientNetV2, EfficientNet, etc. Currently, the performance of Note’s parallel training has not been sufficiently tested, if you want you can use the models in the neuralnetwork package to test Note’s parallel training performance.**
+**The neuralnetwork package in Note has models that can be trained in parallel on Note, such as ConvNeXt, EfficientNetV2, EfficientNet, etc.**
 
 https://github.com/NoteDance/Note/tree/Note-7.0/Note/nn/neuralnetwork
 
