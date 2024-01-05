@@ -5,7 +5,7 @@ from Note.nn.Module import Module
 import re
 
 
-class einsumdense:
+class einsum_dense:
     """A layer that uses `tf.einsum` as the backing computation.
 
     This layer can perform einsum calculations of arbitrary dimensionality.
