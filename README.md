@@ -319,7 +319,7 @@ output=efficientnetv2b0.fp(data)
 
 
 # Layer modules:
-**To use the layer module, you first need to import the layer class from the layer module, then create a layer object, and finally call the output method to pass in the data and get the output.**
+**The usage of the layer module is similar to pytorch, which is to create an object first and then get the output, but the output of the layer module in Note needs to call the output method. To use the layer module, you first need to import the layer class from the layer module, then create a layer object, and finally call the output method to pass in the data and get the output.**
 
 https://github.com/NoteDance/Note/tree/Note-7.0/Note/nn/layer
 
