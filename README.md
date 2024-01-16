@@ -107,7 +107,7 @@ kernel.test(x_train,y_train,32)      #test the network performance on the train 
 
 **Multidevice:**
 
-**If you have multiple devices that you want to allocate, you can use the process index to freely assign devices to your operations. For example, if you are using TensorFlow as the backend, you can use tf.device and assign_device to assign devices to the computation. Here is a simple example of a neural network: https://github.com/NoteDance/Note-documentation/blob/neural-network-example/7.0/neuralnetwork/DL/tensorflow/parallel/nn_device.py. The neuralnetwork package contains more complex examples of neural networks. Basically, the multiprocessing module is responsible for launching parallel processes and sharing some data, and the TensorFlow backend is responsible for computing and allocating computation to different devices.**
+**If you have multiple devices that you want to allocate, you can use the process index to freely assign devices to your operations. For example, if you are using TensorFlow as the platform(backend), you can use tf.device and assign_device to assign devices to the computation. Here is a simple example of a neural network: https://github.com/NoteDance/Note-documentation/blob/neural-network-example/7.0/neuralnetwork/DL/tensorflow/parallel/nn_device.py. The neuralnetwork package contains more complex examples of neural networks. Basically, the multiprocessing module is responsible for launching parallel processes and sharing some data, and the TensorFlow platform(backend) is responsible for computing and allocating computation to different devices.**
 ```python
 import Note.DL.parallel.kernel as k   #import kernel module
 import tensorflow as tf              #import tensorflow library
