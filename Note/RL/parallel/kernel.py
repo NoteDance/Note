@@ -191,7 +191,10 @@ class kernel:
     def env(self,s,epsilon,p,lock,pool_lock):
         if hasattr(self.nn,'nn'):
             s=np.expand_dims(s,axis=0)
-            action_prob=self.epsilon_greedy_policy(s,epsilon)
+            if epsilon==None:
+                action_prob=self.nn.nn.fp(s)
+            else:
+                action_prob=self.epsilon_greedy_policy(s,epsilon)
             a=np.random.choice(self.action_count,p=action_prob)
         else:
             if hasattr(self.nn,'action'):
