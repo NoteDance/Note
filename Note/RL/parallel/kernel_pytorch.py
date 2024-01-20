@@ -174,7 +174,11 @@ class kernel:
     def env(self,s,epsilon,p,lock,pool_lock):
         if hasattr(self.nn,'nn'):
             s=np.expand_dims(s,axis=0)
-            action_prob=self.epsilon_greedy_policy(s,epsilon,p)
+            if epsilon==None:
+                s=torch.tensor(s,dtype=torch.float).to(assign_device(p,self.device))
+                action_prob=self.nn.nn(s)
+            else:
+                action_prob=self.epsilon_greedy_policy(s,epsilon,p)
             a=np.random.choice(self.action_count,p=action_prob)
         else:
             if hasattr(self.nn,'action'):
