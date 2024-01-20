@@ -327,12 +327,19 @@ class kernel:
             if hasattr(self.platform,'DType'):
                 if self.epsilon==None:
                     self.epsilon=self.nn.epsilon(self.sc)
-                action_prob=self.epsilon_greedy_policy(s)
+                if self.epsilon==None and hasattr(self.nn,'epsilon')!=True:
+                    action_prob=self.nn.nn.fp(s)
+                else:
+                    action_prob=self.epsilon_greedy_policy(s)
                 a=np.random.choice(self.action_count,p=action_prob)
             else:
                 if self.epsilon==None:
                     self.epsilon=self.nn.epsilon(self.sc)
-                action_prob=self.epsilon_greedy_policy(s)
+                if self.epsilon==None and hasattr(self.nn,'epsilon')!=True:
+                    s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                    action_prob=self.nn.nn(s)
+                else:
+                    action_prob=self.epsilon_greedy_policy(s)
                 a=np.random.choice(self.action_count,p=action_prob)
         else:
             if hasattr(self.nn,'action'):
