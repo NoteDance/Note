@@ -103,6 +103,43 @@ class SwiftFormer:
         self.dtype=dtype
         self.optimizer=AdamW(epsilon=epsilon,weight_decay=weight_decay)
         self.param=Module.param
+    
+    
+    def fine_tuning(self,classes=None,flag=0):
+        param=[]
+        if flag==0:
+            self.param_=self.param
+            self.head_=self.head
+            self.head=dense(
+                classes, self.head.input_size, weight_initializer=['truncated_normal',.02], dtype=self.head.dtype) if classes > 0 \
+                else identity()
+            if self.dist:
+                self.dist_head_=self.dist_head
+                self.dist_head = dense(
+                    classes, self.dist_head.input_size, weight_initializer=['truncated_normal',.02], dtype=self.dist_head.dtype) if classes > 0 \
+                    else identity()
+                param.extend(self.dist_head.param)
+            param.extend(self.head.param)
+            self.param=param
+        elif flag==1:
+            if self.dist:
+                del self.param_[-len(self.dist_head.param):]
+            del self.param_[-len(self.head.param):]
+            self.param_.extend(self.head.param)
+            if self.dist:
+                self.param_.extend(self.dist_head.param)
+            self.param=self.param_
+        else:
+            self.head,self.head_=self.head_,self.head
+            if self.dist:
+                self.dist_head,self.dist_head_=self.dist_head_,self.dist_head
+                del self.param_[-len(self.dist_head.param):]
+            del self.param_[-len(self.head.param):]
+            self.param_.extend(self.head.param)
+            if self.dist:
+                self.param_.extend(self.dist_head.param)
+            self.param=self.param_
+        return
 
 
     def forward_tokens(self, x, train_flag=True):
