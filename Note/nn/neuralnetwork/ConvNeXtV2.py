@@ -122,6 +122,28 @@ class ConvNeXtV2:
         self.optimizer=Adam()
         self.param=Module.param
         return
+    
+    
+    def fine_tuning(self,classes=None,flag=0):
+        param=[]
+        if flag==0:
+            self.param_=self.param
+            self.dense_=self.dense
+            self.dense=dense(classes,self.dense.input_size,weight_initializer=['truncated_normal',.02],activation=self.classifier_activation,dtype=self.dense.dtype)
+            self.dense.weight.assign(tf.cast(self.head_init_scale,self.dense.weight.dtype)*self.dense.weight)
+            self.dense.bias.assign(tf.cast(self.head_init_scale,self.dense.bias.dtype)*self.dense.bias)
+            param.extend(self.dense.param)
+            self.param=param
+        elif flag==1:
+            del self.param_[-len(self.dense.param):]
+            self.param_.extend(self.dense.param)
+            self.param=self.param_
+        else:
+            self.dense,self.dense_=self.dense_,self.dense
+            del self.param_[-len(self.dense.param):]
+            self.param_.extend(self.dense.param)
+            self.param=self.param_
+        return
 
 
     def fp(self,data,p=None):
