@@ -117,6 +117,26 @@ class ConvNeXt:
         return
     
     
+    def fine_tuning(self,classes=None,flag=0):
+        param=[]
+        if flag==0:
+            self.param_=self.param
+            self.dense_=self.dense
+            self.dense=dense(classes,self.dense.input_size,activation=self.classifier_activation,dtype=self.dense.dtype)
+            param.extend(self.dense.param)
+            self.param=param
+        elif flag==1:
+            del self.param_[-len(self.dense.param):]
+            self.param_.extend(self.dense.param)
+            self.param=self.param_
+        else:
+            self.dense,self.dense_=self.dense_,self.dense
+            del self.param_[-len(self.dense.param):]
+            self.param_.extend(self.dense.param)
+            self.param=self.param_
+        return
+    
+    
     def fp(self,data,p=None):
         if self.km==1:
             with tf.device(assign_device(p,self.device)):
