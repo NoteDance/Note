@@ -70,6 +70,8 @@ class VGG16:
             self.param=self.param_
         else:
             self.dense3,self.dense3_=self.dense3_,self.dense3
+            del self.param_[-len(self.dense3.param):]
+            self.param_.extend(self.dense3.param)
             self.param=self.param_
         return
     
