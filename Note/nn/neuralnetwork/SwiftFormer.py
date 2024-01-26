@@ -107,7 +107,6 @@ class SwiftFormer:
     
     def fine_tuning(self,classes=None,lr=None,flag=0):
         param=[]
-        self.optimizer.lr=lr
         if flag==0:
             self.param_=self.param
             self.head_=self.head
@@ -122,6 +121,8 @@ class SwiftFormer:
                 param.extend(self.dist_head.param)
             param.extend(self.head.param)
             self.param=param
+            self.optimizer_=self.optimizer
+            self.optimizer=AdamW(lr=lr,param=self.param)
         elif flag==1:
             if self.dist:
                 del self.param_[-len(self.dist_head.param):]
