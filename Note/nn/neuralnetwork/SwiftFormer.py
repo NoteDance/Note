@@ -105,8 +105,9 @@ class SwiftFormer:
         self.param=Module.param
     
     
-    def fine_tuning(self,classes=None,flag=0):
+    def fine_tuning(self,classes=None,lr=None,flag=0):
         param=[]
+        self.optimizer.lr=lr
         if flag==0:
             self.param_=self.param
             self.head_=self.head
