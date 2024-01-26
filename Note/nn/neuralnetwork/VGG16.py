@@ -54,8 +54,9 @@ class VGG16:
         return
     
     
-    def fine_tuning(self,classes=None,flag=0):
+    def fine_tuning(self,classes=None,lr=None,flag=0):
         param=[]
+        self.optimizer.lr=lr
         if flag==0:
             self.param_=self.param
             self.dense3_=self.dense3
