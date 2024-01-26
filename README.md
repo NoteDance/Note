@@ -287,7 +287,7 @@ for p in range(3):                   #loop over the processes
 	Process(target=kernel.train,args=(p,)).start() #start each process with the train function and pass the process id as argument
 kernel.update_nn_param()             #update the network parameters after training
 ```
-**Use the trained model.**
+**Use the trained model:**
 ```python
 convnext_atto.km=0
 output=convnext_atto.fp(data)
@@ -312,7 +312,7 @@ for p in range(3):                   #loop over the processes
 	Process(target=kernel.train,args=(p,)).start() #start each process with the train function and pass the process id as argument
 kernel.update_nn_param()             #update the network parameters after training
 ```
-**Fine tuning.**
+**Fine tuning:**
 ```python
 convnext_atto.fine_tuning(10,0.0001)
 kernel.process=3
