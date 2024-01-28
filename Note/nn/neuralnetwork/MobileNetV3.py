@@ -151,6 +151,28 @@ class MobileNetV3:
         
         self.optimizer=Adam()
         self.param=Module.param
+        
+        
+    def fine_tuning(self,classes=None,lr=None,flag=0):
+        param=[]
+        if flag==0:
+            self.param_=self.param
+            self.conv2d=self.layers.layer[-1]
+            self.layers.layer[-1]=conv2d(classes, input_size=self.conv2d.input_size, kernel_size=1, padding="SAME", dtype=self.conv2d.dtype)
+            param.extend(self.layers.layer[-1].param)
+            self.param=param
+            self.optimizer_=self.optimizer
+            self.optimizer=Adam(lr=lr,param=self.param)
+        elif flag==1:
+            del self.param_[-len(self.layers.layer[-1].param):]
+            self.param_.extend(self.layers.layer[-1].param)
+            self.param=self.param_
+        else:
+            self.layers.layer[-1],self.conv2d=self.conv2d,self.layers.layer[-1]
+            del self.param_[-len(self.layers.layer[-1].param):]
+            self.param_.extend(self.layers.layer[-1].param)
+            self.param=self.param_
+        return
     
     
     def fp(self,data,p=None):
