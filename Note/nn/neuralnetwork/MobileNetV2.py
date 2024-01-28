@@ -143,7 +143,7 @@ class MobileNetV2:
         if flag==0:
             self.param_=self.param
             self.dense_=self.dense
-            self.dense=dense(classes,self.dense.input_size,activation=self.classifier_activation,dtype=self.dense.dtype)
+            self.dense=dense(classes,self.dense.input_size,activation='softmax',dtype=self.dense.dtype)
             param.extend(self.dense.param)
             self.param=param
             self.optimizer_=self.optimizer
