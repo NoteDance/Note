@@ -58,6 +58,30 @@ class VGG19:
         return
     
     
+    def fine_tuning(self,classes=None,lr=None,flag=0):
+        param=[]
+        if flag==0:
+            self.param_=self.param
+            self.dense3_=self.dense3
+            self.dense3=dense(classes,self.dense3.input_size,activation='softmax',dtype=self.dense3.dtype)
+            param.extend(self.dense1.param)
+            self.param=param
+            self.param.extend(self.dense2.param)
+            self.param.extend(self.dense3.param)
+            self.optimizer_=self.optimizer
+            self.optimizer=Adam(lr=lr,param=self.param)
+        elif flag==1:
+            del self.param_[-len(self.dense3.param):]
+            self.param_.extend(self.dense3.param)
+            self.param=self.param_
+        else:
+            self.dense3,self.dense3_=self.dense3_,self.dense3
+            del self.param_[-len(self.dense3.param):]
+            self.param_.extend(self.dense3.param)
+            self.param=self.param_
+        return
+    
+    
     def fp(self,data,p=None):
         if self.km==1:
             with tf.device(assign_device(p,self.device)):
