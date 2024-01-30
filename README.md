@@ -324,6 +324,12 @@ for p in range(3):
 	Process(target=kernel.train,args=(p,)).start()
 kernel.update_nn_param()
 ```
+**Use the trained model:**
+```python
+convnext_atto.fine_tuning(flag=1)
+convnext_atto.km=0
+output=convnext_atto.fp(data)
+```
 
 
 # Layer modules:
