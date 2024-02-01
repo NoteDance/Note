@@ -317,6 +317,7 @@ kernel.update_nn_param()             #update the network parameters after traini
 convnext_atto.fine_tuning(10,0.0001)
 kernel.process=3
 kernel.epoch=1
+kernel.batch=32                      #set the batch size
 kernel.data(fine_tuning_data,fine_tuning_labels)
 manager=Manager()
 kernel.init(manager)
