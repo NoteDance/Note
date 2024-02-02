@@ -256,38 +256,21 @@ class EfficientNetV2:
     
     
     def fp(self,data):
-        if self.km==1:
-            data=self.rescaling.output(data)
-            data=self.normalization.output(data)
-            x=self.layers1.output(data)
-            x=self.layers2.output(x)
-            x=self.layers3.output(x)
-            if self.include_top:
-                x=self.global_avg_pool2d.output(x)
-                if self.dropout_rate > 0:
-                    x=self.dropout.output(x)
-                x=self.dense.output(x)
-            else:
-                if self.pooling == "avg":
-                    x=self.global_avg_pool2d.output(x)
-                else:
-                    x=self.global_max_pool2d.output(x)
+        data=self.rescaling.output(data)
+        data=self.normalization.output(data)
+        x=self.layers1.output(data,self.km)
+        x=self.layers2.output(x,self.km)
+        x=self.layers3.output(x,self.km)
+        if self.include_top:
+            x=self.global_avg_pool2d.output(x)
+            if self.dropout_rate > 0:
+                x=self.dropout.output(x)
+            x=self.dense.output(x)
         else:
-            data=self.rescaling.output(data)
-            data=self.normalization.output(data)
-            x=self.layers1.output(data,self.km)
-            x=self.layers2.output(x,self.km)
-            x=self.layers3.output(x,self.km)
-            if self.include_top:
+            if self.pooling == "avg":
                 x=self.global_avg_pool2d.output(x)
-                if self.dropout_rate > 0:
-                    x=self.dropout.output(x)
-                x=self.dense.output(x)
             else:
-                if self.pooling == "avg":
-                    x=self.global_avg_pool2d.output(x)
-                else:
-                    x=self.global_max_pool2d.output(x)
+                x=self.global_max_pool2d.output(x)
         return x
 
 
