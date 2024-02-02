@@ -171,30 +171,17 @@ class MobileNetV3:
     
     
     def fp(self,data):
-        if self.km==1:
-            if self.include_preprocessing:
-                data=self.rescaling.output(data)
-            x=self.layers.output(data)
-            if self.include_top:
-                x=self.flatten.output(x)
-                x=self.activation(x)
-            else:
-                if self.pooling=="avg":
-                    x=tf.math.reduce_mean(x,axis=[1,2])
-                elif self.pooling=="max":
-                    x=tf.math.reduce_max(x,axis=[1,2])
+        if self.include_preprocessing:
+            data=self.rescaling.output(data)
+        x=self.layers.output(data,self.km)
+        if self.include_top:
+            x=self.flatten.output(x)
+            x=self.activation(x)
         else:
-            if self.include_preprocessing:
-                data=self.rescaling.output(data)
-            x=self.layers.output(data,self.km)
-            if self.include_top:
-                x=self.flatten.output(x)
-                x=self.activation(x)
-            else:
-                if self.pooling=="avg":
-                    x=tf.math.reduce_mean(x,axis=[1,2])
-                elif self.pooling=="max":
-                    x=tf.math.reduce_max(x,axis=[1,2])
+            if self.pooling=="avg":
+                x=tf.math.reduce_mean(x,axis=[1,2])
+            elif self.pooling=="max":
+                x=tf.math.reduce_max(x,axis=[1,2])
         return x
                 
     
