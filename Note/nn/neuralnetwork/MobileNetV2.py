@@ -101,7 +101,7 @@ class MobileNetV2:
         self.layers=Layers()
         
         self.layers.add(conv2d(self.first_block_filters,[3,3],3,strides=[2,2],padding='SAME',use_bias=False,dtype=dtype))
-        self.layers.add(batch_normalization(momentum=0.999))
+        self.layers.add(batch_normalization(momentum=0.999,dtype=dtype))
         
         self.layers.add(_inverted_res_block(self.layers.output_size, filters=16, alpha=self.alpha, stride=1, expansion=1, block_id=0, dtype=dtype))
         self.layers.add(_inverted_res_block(self.layers.output_size, filters=24, alpha=self.alpha, stride=2, expansion=6, block_id=1, dtype=dtype))
@@ -130,7 +130,7 @@ class MobileNetV2:
             last_block_filters = 1280
             
         self.layers.add(conv2d(last_block_filters,[1,1],use_bias=False,dtype=dtype))
-        self.layers.add(batch_normalization(momentum=0.999))
+        self.layers.add(batch_normalization(momentum=0.999,dtype=dtype))
         
         self.dense=dense(self.classes,self.layers.output_size,activation='softmax',dtype=dtype)
         self.optimizer=Adam()
