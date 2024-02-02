@@ -189,6 +189,7 @@ class SwiftFormer:
                         x = tf.math.reduce_mean(x, axis=[1, 2])
                     else:
                         x = tf.math.reduce_max(x, axis=[1, 2])
+                    return x
         else:
             x = self.patch_embed.output(x,self.km)
             x = self.forward_tokens(x,self.km)
@@ -209,13 +210,15 @@ class SwiftFormer:
                     x = tf.reshape(x, [tf.shape(x)[0], tf.shape(x)[1], -1])
                     x = tf.reduce_mean(x, axis=-1)
                     cls_out = self.head.output(x)
+                # For image classification
+                return cls_out
             else:
                 if self.pooling=="avg":
                     x = tf.math.reduce_mean(x, axis=[1, 2])
                 else:
                     x = tf.math.reduce_max(x, axis=[1, 2])
-            # For image classification
-            return cls_out
+                return x
+
     
     
     def distill_loss(self, student, teacher, temperature):
