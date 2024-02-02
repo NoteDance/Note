@@ -136,34 +136,19 @@ class ConvNeXt:
     
     
     def fp(self,data):
-        if self.km==1:
-            for i in range(self.num_convnext_blocks):
-                data = self.downsample_layers[i].output(data)
-                for j in range(self.depths[i]):
-                    data=self.blocks[i].output(data)
-            if self.include_top:
-                data = tf.math.reduce_mean(data, axis=[1, 2])
-                data = self.layer_normalization.output(data)
-                data = self.dense.output(data)
-            else:
-                if self.pooling=="avg":
-                    data = tf.math.reduce_mean(data, axis=[1, 2])
-                elif self.pooling=="max":
-                    data = tf.math.reduce_max(data, axis=[1, 2])
+        for i in range(self.num_convnext_blocks):
+            data = self.downsample_layers[i].output(data,self.km)
+            for j in range(self.depths[i]):
+                data=self.blocks[i].output(data,self.km)
+        if self.include_top:
+            data = tf.math.reduce_mean(data, axis=[1, 2])
+            data = self.layer_normalization.output(data)
+            data = self.dense.output(data)
         else:
-            for i in range(self.num_convnext_blocks):
-                data = self.downsample_layers[i].output(data,self.km)
-                for j in range(self.depths[i]):
-                    data=self.blocks[i].output(data,self.km)
-            if self.include_top:
+            if self.pooling=="avg":
                 data = tf.math.reduce_mean(data, axis=[1, 2])
-                data = self.layer_normalization.output(data)
-                data = self.dense.output(data)
-            else:
-                if self.pooling=="avg":
-                    data = tf.math.reduce_mean(data, axis=[1, 2])
-                elif self.pooling=="max":
-                    data = tf.math.reduce_max(data, axis=[1, 2])
+            elif self.pooling=="max":
+                data = tf.math.reduce_max(data, axis=[1, 2])
         return data
     
     
