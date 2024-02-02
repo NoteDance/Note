@@ -156,60 +156,34 @@ class SwiftFormer:
     
 
     def fp(self, x):
-        if self.km==1:
-            x = self.patch_embed.output(x)
-            x = self.forward_tokens(x)
-            if self.fork_feat:
-                # Output features of four stages for dense prediction
-                return x
-    
-            x = self.norm.output(x)
-            if self.include_top:
-                x = tf.transpose(x,perm=[0,3,1,2])
-                if self.dist:
-                    x = tf.reshape(x, [tf.shape(x)[0], tf.shape(x)[1], -1])
-                    x = tf.reduce_mean(x, axis=-1)
-                    cls_out = self.head.output(x), self.dist_head.output(x)
-                    if not self.km:
-                        cls_out = (cls_out[0] + cls_out[1]) / 2
-                else:
-                    x = tf.reshape(x, [tf.shape(x)[0], tf.shape(x)[1], -1])
-                    x = tf.reduce_mean(x, axis=-1)
-                    cls_out = self.head.output(x)
-                # For image classification
-                return cls_out
+        x = self.patch_embed.output(x,self.km)
+        x = self.forward_tokens(x,self.km)
+        if self.fork_feat:
+            # Output features of four stages for dense prediction
+            return x
+
+        x = self.norm.output(x,self.km)
+        if self.include_top:
+            x = tf.transpose(x,perm=[0,3,1,2])
+            if self.dist:
+                x = tf.reshape(x, [tf.shape(x)[0], tf.shape(x)[1], -1])
+                x = tf.reduce_mean(x, axis=-1)
+                cls_out = self.head.output(x), self.dist_head.output(x)
+                if not self.km:
+                    cls_out = (cls_out[0] + cls_out[1]) / 2
             else:
-                if self.pooling=="avg":
-                    x = tf.math.reduce_mean(x, axis=[1, 2])
-                else:
-                    x = tf.math.reduce_max(x, axis=[1, 2])
-        else:
-            x = self.patch_embed.output(x,self.km)
-            x = self.forward_tokens(x,self.km)
-            if self.fork_feat:
-                # Output features of four stages for dense prediction
-                return x
-    
-            x = self.norm.output(x,self.km)
-            if self.include_top:
-                x = tf.transpose(x,perm=[0,3,1,2])
-                if self.dist:
-                    x = tf.reshape(x, [tf.shape(x)[0], tf.shape(x)[1], -1])
-                    x = tf.reduce_mean(x, axis=-1)
-                    cls_out = self.head.output(x), self.dist_head.output(x)
-                    if not self.km:
-                        cls_out = (cls_out[0] + cls_out[1]) / 2
-                else:
-                    x = tf.reshape(x, [tf.shape(x)[0], tf.shape(x)[1], -1])
-                    x = tf.reduce_mean(x, axis=-1)
-                    cls_out = self.head.output(x)
-            else:
-                if self.pooling=="avg":
-                    x = tf.math.reduce_mean(x, axis=[1, 2])
-                else:
-                    x = tf.math.reduce_max(x, axis=[1, 2])
+                x = tf.reshape(x, [tf.shape(x)[0], tf.shape(x)[1], -1])
+                x = tf.reduce_mean(x, axis=-1)
+                cls_out = self.head.output(x)
             # For image classification
             return cls_out
+        else:
+            if self.pooling=="avg":
+                x = tf.math.reduce_mean(x, axis=[1, 2])
+            else:
+                x = tf.math.reduce_max(x, axis=[1, 2])
+            return x
+
     
     
     def distill_loss(self, student, teacher, temperature):
