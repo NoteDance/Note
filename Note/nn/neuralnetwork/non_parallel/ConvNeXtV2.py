@@ -145,36 +145,20 @@ class ConvNeXtV2:
 
 
     def fp(self,data):
-        if self.km==1:
-            x = data
-            for i in range(4):
-                x = self.downsample_layers[i].output(x)
-                for j in range(self.depths[i]):
-                    x = self.stages[i].output(x)
-            if self.include_top:
-                x = tf.math.reduce_mean(x, axis=[1, 2])
-                x = self.layer_normalization.output(x)
-                x = self.dense.output(x)
-            else:
-                if self.pooling=="avg":
-                    x = tf.math.reduce_mean(x, axis=[1, 2])
-                else:
-                    x = tf.math.reduce_max(x, axis=[1, 2])
+        x = data
+        for i in range(4):
+            x = self.downsample_layers[i].output(x,self.km)
+            for j in range(self.depths[i]):
+                x = self.stages[i].output(x,self.km)
+        if self.include_top:
+            x = tf.math.reduce_mean(x, axis=[1, 2])
+            x = self.layer_normalization.output(x)
+            x = self.dense.output(x)
         else:
-            x = data
-            for i in range(4):
-                x = self.downsample_layers[i].output(x,self.km)
-                for j in range(self.depths[i]):
-                    x = self.stages[i].output(x,self.km)
-            if self.include_top:
+            if self.pooling=="avg":
                 x = tf.math.reduce_mean(x, axis=[1, 2])
-                x = self.layer_normalization.output(x)
-                x = self.dense.output(x)
             else:
-                if self.pooling=="avg":
-                    x = tf.math.reduce_mean(x, axis=[1, 2])
-                else:
-                    x = tf.math.reduce_max(x, axis=[1, 2])
+                x = tf.math.reduce_max(x, axis=[1, 2])
         return x
     
     
