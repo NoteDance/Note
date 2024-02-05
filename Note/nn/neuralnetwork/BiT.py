@@ -88,7 +88,6 @@ class BiT:
     wf = model_type['width_factor']  # shortcut 'cause we'll use it a lot.
     
     self.wf = wf
-    self.head_size = head_size
 
     # The following will be unreadable if we split lines.
     # pylint: disable=line-too-long
@@ -132,9 +131,9 @@ class BiT:
           self.param_=self.param
           self.conv2d=self.head.layer[-1]
           if self.zero_head:
-              self.head.layer[-1]=conv2d(self.head_size, 1, 2048*self.wf, weight_initializer='zeros')
+              self.head.layer[-1]=conv2d(classes, 1, 2048*self.wf, weight_initializer='zeros')
           else:
-              self.head.layer[-1]=conv2d(self.head_size, 1, 2048*self.wf)
+              self.head.layer[-1]=conv2d(classes, 1, 2048*self.wf)
           param.extend(self.head.layer[-1].param)
           self.param=param
           self.optimizer_=self.optimizer
@@ -156,11 +155,11 @@ class BiT:
         with tf.device(assign_device(p,self.device)):
             output = self.head.output(self.body.output(self.root.output(data)))
             assert output.shape[-2:] == (1, 1)  # We should have no spatial shape left.
-        return tf.transpose(output,[0,3,1,2])[...,0,0]
+        return tf.nn.softmax(tf.transpose(output,[0,3,1,2])[...,0,0])
     else:
         output = self.head.output(self.body.output(self.root.output(data)))
         assert output.shape[-2:] == (1, 1)  # We should have no spatial shape left.
-        return tf.transpose(output,[0,3,1,2])[...,0,0]
+        return tf.nn.softmax(tf.transpose(output,[0,3,1,2])[...,0,0])
     
     
   def loss(self,output,labels,p):
