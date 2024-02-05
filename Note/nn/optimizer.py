@@ -14,7 +14,6 @@ class Gradient:
         for i in range(len(gradient_flat)):
             lr=tf.cast(self.lr, dtype=parameter_flat[i].dtype)
             state_ops.assign(parameter_flat[i],parameter_flat[i]-lr*gradient_flat[i])
-        parameter=nest.pack_sequence_as(parameter,parameter_flat)
         return
 
 
@@ -127,8 +126,7 @@ class SGD:
                         parameter_flat[i].assign_add(m)
                 else:
                     parameter_flat[i].assign_add(-gradient_flat[i] * lr)
-        parameter=nest.pack_sequence_as(parameter,parameter_flat)
-        return parameter
+        return
     
     
 class Adagrad:
@@ -226,8 +224,7 @@ class Adagrad:
                 # Dense gradients.
                 accumulator.assign_add(gradient_flat[i] * gradient_flat[i])
                 parameter_flat[i].assign_sub(lr * gradient_flat[i] / tf.sqrt(accumulator + self.epsilon))
-        parameter=nest.pack_sequence_as(parameter,parameter_flat)
-        return parameter
+        return
 
 
 class Adafactor:
@@ -368,8 +365,7 @@ class Adafactor:
             u_t_hat = u_t / tf.maximum(one, (self._rms(u_t) / self.clip_threshold))
             parameter_flat[i].assign_add(-alpha_t * u_t_hat)
         self.iterations.assign_add(1)
-        parameter=nest.pack_sequence_as(parameter,parameter_flat)
-        return parameter
+        return
 
     
 
@@ -510,8 +506,7 @@ class RMSprop:
                     parameter_flat[i].assign_add(-momentum)
                 else:
                     parameter_flat[i].assign_add(-increment)
-        parameter=nest.pack_sequence_as(parameter,parameter_flat)
-        return parameter
+        return
 
 
 class Adadelta:
@@ -617,8 +612,7 @@ class Adadelta:
                     rho * self.accumulated_delta_var[i] + (1 - rho) * delta_var * delta_var
                 )
             parameter_flat[i].assign_add(lr * delta_var)
-        parameter=nest.pack_sequence_as(parameter,parameter_flat)
-        return parameter
+        return
 
 
 class Adam:
@@ -760,8 +754,7 @@ class Adam:
                     v = v_hat
                 parameter_flat[i].assign_sub((m * alpha) / (tf.sqrt(v) + self.epsilon))
         self.iterations.assign_add(1)
-        parameter=nest.pack_sequence_as(parameter,parameter_flat)
-        return parameter
+        return
 
 
 class Nadam:
@@ -886,8 +879,7 @@ class Nadam:
     
                 parameter_flat[i].assign_sub((m_hat * lr) / (tf.sqrt(v_hat) + self.epsilon))
         self.iterations.assign_add(1)
-        parameter=nest.pack_sequence_as(parameter,parameter_flat)
-        return parameter
+        return
 
 
 class Adamax:
@@ -1007,8 +999,7 @@ class Adamax:
                     (lr * m) / ((1 - beta_1_power) * (u + self.epsilon))
                 )
         self.iterations.assign_add(1)
-        parameter=nest.pack_sequence_as(parameter,parameter_flat)
-        return parameter
+        return
 
 
 class AdamW:
@@ -1147,8 +1138,7 @@ class AdamW:
                     v = v_hat
                 parameter_flat[i].assign_sub((m * alpha) / (tf.sqrt(v) + self.epsilon))
         self.iterations.assign_add(1)
-        parameter=nest.pack_sequence_as(parameter,parameter_flat)
-        return parameter
+        return
 
 
 class Ftrl:
@@ -1308,8 +1298,7 @@ class Ftrl:
             )
             parameter_flat[i].assign((linear_clipped - linear) / quadratic)
             accum.assign(new_accum)
-        parameter=nest.pack_sequence_as(parameter,parameter_flat)
-        return parameter
+        return
 
 
 class Lion:
@@ -1410,5 +1399,4 @@ class Lion:
                     lr * tf.math.sign(m * beta_1 + gradient_flat[i] * (1.0 - beta_1))
                 )
                 m.assign(m * beta_2 + gradient_flat[i] * (1.0 - beta_2))
-        parameter=nest.pack_sequence_as(parameter,parameter_flat)
-        return parameter
+        return
