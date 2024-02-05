@@ -286,8 +286,6 @@ class kernel:
                 state_ops.assign(parameter_flat[i],parameter7_flat[i])
             else:
                 state_ops.assign(parameter_flat[i],parameter7_flat[i])
-        self.nn.param=nest.pack_sequence_as(self.nn.param,parameter_flat)
-        self.param[7]=nest.pack_sequence_as(self.param[7],parameter7_flat)
         return
     
     
