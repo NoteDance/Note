@@ -122,6 +122,8 @@ class EfficientNet:
     
     
     def build(self):
+        Module.init()
+        
         def round_filters(filters, divisor=self.depth_divisor):
             """Round number of filters based on depth multiplier."""
             filters *= self.width_coefficient

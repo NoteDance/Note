@@ -95,6 +95,8 @@ class MobileNetV2:
         
         
     def build(self,dtype='float32'):
+        Module.init()
+        
         self.layers=Layers()
         
         self.layers.add(conv2d(self.first_block_filters,[3,3],3,strides=[2,2],padding='SAME',use_bias=False,dtype=dtype))

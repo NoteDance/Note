@@ -33,6 +33,7 @@ class SwiftFormer:
                  weight_decay=0.025,
                  dtype='float32'
                  ):
+        Module.init()
         
         layers=SwiftFormer_depth[model_type]
         embed_dims=SwiftFormer_width[model_type]

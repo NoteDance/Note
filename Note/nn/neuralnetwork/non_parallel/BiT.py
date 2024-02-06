@@ -82,6 +82,8 @@ class BiT:
   """Implementation of Pre-activation (v2) ResNet mode."""
 
   def __init__(self, model_type, head_size=21843, zero_head=False):
+    Module.init()
+    
     block_units = model_type['block_units']
     wf = model_type['width_factor']  # shortcut 'cause we'll use it a lot.
     

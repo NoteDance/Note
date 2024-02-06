@@ -326,6 +326,8 @@ class ResNetRS:
     
         
     def build(self,dtype='float32'):
+        Module.init()
+        
         self.layers=Layers()
         # Build stem
         self.layers.add(STEM(bn_momentum=self.bn_momentum, bn_epsilon=self.bn_epsilon, activation=self.activation, dtype=dtype))
