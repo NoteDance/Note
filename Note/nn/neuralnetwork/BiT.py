@@ -50,12 +50,12 @@ class PreActBottleneck:
     cout = cout or cin
     cmid = cmid or cout//4
 
-    self.gn1 = group_normalization(cin, 32)
+    self.gn1 = group_normalization(32, cin)
     self.conv1 = conv1x1(cin, cmid)
-    self.gn2 = group_normalization(cmid, 32)
+    self.gn2 = group_normalization(32, cmid)
     self.conv2 = conv3x3(cmid, cmid, stride)  # Original code has it on conv1!!
     self.zeropadding2d=zeropadding2d(cmid, 1)
-    self.gn3 = group_normalization(cmid, 32)
+    self.gn3 = group_normalization(32, cmid)
     self.conv3 = conv1x1(cmid, cout)
     self.relu = tf.nn.relu
 
@@ -115,7 +115,7 @@ class BiT:
 
     self.zero_head = zero_head
     self.head = Layers()
-    self.head.add(group_normalization(2048*wf, 32))
+    self.head.add(group_normalization(32, 2048*wf))
     self.head.add(tf.nn.relu)
     self.head.add(adaptive_avg_pooling2d(1))
     self.head.add(conv2d(head_size, 1, 2048*wf))
