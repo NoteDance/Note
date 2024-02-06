@@ -53,8 +53,8 @@ class group_normalization:
 
     def __init__(
         self,
-        input_size=None,
         groups=32,
+        input_size=None,
         axis=-1,
         epsilon=1e-3,
         center=True,
