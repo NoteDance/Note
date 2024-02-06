@@ -58,6 +58,8 @@ class DenseNet201:
     
     
     def build(self):
+        Module.init()
+        
         self.layers=Layers()
         self.layers.add(zeropadding2d(3,padding=[3, 3]))
         self.layers.add(conv2d(64,[7,7],strides=2,use_bias=False,dtype=self.dtype))

@@ -88,6 +88,8 @@ class ConvNeXtV2:
     
 
     def build(self, dtype='float32'):
+        Module.init()
+        
         stem=Layers()
         stem.add(conv2d(self.dims[0],kernel_size=4,input_size=self.in_chans,strides=4,
                         weight_initializer=['truncated_normal',.02],dtype=dtype))

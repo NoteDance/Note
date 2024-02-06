@@ -20,6 +20,8 @@ class VGG19:
     
     
     def build(self,dtype='float32'):
+        Module.init()
+        
         self.layers=Layers()
         # Block 1
         self.layers.add(conv2d(64,(3,3),3,activation="relu", padding="SAME",dtype=dtype))

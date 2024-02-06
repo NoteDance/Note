@@ -66,6 +66,8 @@ class ConvNeXt:
     
     
     def build(self,dtype='float32'):
+        Module.init()
+        
         # Stem block.
         layers=Layers()
         layers.add(conv2d(self.projection_dims[0],[4,4],3,dtype=dtype))

@@ -68,6 +68,7 @@ class MobileNet:
         
         
     def build(self,dtype='float32'):
+        Module.init()
         self.layers=Layers()
         self.layers.add(_conv_block(3, 32, self.alpha, strides=[2, 2],dtype=dtype))
         self.layers.add(_depthwise_conv_block(self.layers.output_size, 64, self.alpha, self.depth_multiplier, block_id=1,dtype=dtype))

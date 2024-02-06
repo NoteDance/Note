@@ -258,6 +258,7 @@ class RegNet:
         
     
     def build(self,dtype='float32'):
+        Module.init()
         self.dtype=dtype
         self.layers=Layers()
         self.layers.add(Stem(3,dtype))

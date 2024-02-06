@@ -74,6 +74,7 @@ class ResNet50:
     
     
     def build(self,dtype='float32'):
+        Module.init()
         self.layers=Layers()
         self.layers.add(zeropadding2d(3,[3,3]))
         self.layers.add(conv2d(64,[7,7],strides=[2],use_bias=self.use_bias,dtype=dtype))

@@ -112,6 +112,7 @@ class MobileNetV3:
     
     
     def build(self,dtype='float32'):
+        Module.init()
         if self.include_preprocessing:
             self.rescaling=rescaling(scale=1.0 / 127.5, offset=-1.0)
         self.layers=Layers()

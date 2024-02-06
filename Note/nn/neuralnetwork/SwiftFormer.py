@@ -36,6 +36,7 @@ class SwiftFormer:
                  device='GPU',
                  dtype='float32'
                  ):
+        Module.init()
         
         layers=SwiftFormer_depth[model_type]
         embed_dims=SwiftFormer_width[model_type]
