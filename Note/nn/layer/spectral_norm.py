@@ -2,7 +2,7 @@ import tensorflow as tf
 from Note.nn.initializer import initializer
 
 
-class spectral_normalization:
+class spectral_norm:
     """Performs spectral normalization on the weights of a target layer.
 
     This wrapper controls the Lipschitz constant of the weights of a layer by
