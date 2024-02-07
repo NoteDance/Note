@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 
-class unit_normalization:
+class unit_norm:
     """Unit normalization layer.
 
     Normalize a batch of inputs so that each input in the batch has a L2 norm
