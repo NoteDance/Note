@@ -2,11 +2,11 @@ import tensorflow as tf
 from Note.nn.layer.conv2d import conv2d
 from Note.nn.layer.depthwise_conv2d import depthwise_conv2d
 from Note.nn.layer.dense import dense
-from Note.nn.layer.batch_normalization import batch_normalization
+from Note.nn.layer.batch_norm import batch_norm
 from Note.nn.layer.dropout import dropout
 from Note.nn.layer.global_avg_pool2d import global_avg_pool2d
 from Note.nn.layer.global_max_pool2d import global_max_pool2d
-from Note.nn.layer.normalization import normalization
+from Note.nn.layer.norm import norm
 from Note.nn.layer.image_preprocessing.rescaling import rescaling
 from Note.nn.layer.multiply import multiply
 from Note.nn.layer.reshape import reshape
@@ -82,7 +82,7 @@ class EfficientNetV2:
             # Apply original V1 preprocessing for Bx variants
             if model_name.split("-")[-1].startswith("b"):
                 self.rescaling=rescaling(scale=1.0 / 255)
-                self.normalization=normalization(
+                self.norm=norm(
                     input_shape,
                     mean=[0.485, 0.456, 0.406],
                     variance=[0.229**2, 0.224**2, 0.225**2],
@@ -120,7 +120,7 @@ class EfficientNetV2:
         self.pooling=pooling
         self.classifier_activation=classifier_activation
         self.dtype=dtype
-        self.normalization=normalization(input_shape,dtype=dtype)
+        self.norm=norm(input_shape,dtype=dtype)
         self.loss_object=tf.keras.losses.SparseCategoricalCrossentropy() # create a sparse categorical crossentropy loss object
         self.km=0
     
@@ -153,7 +153,7 @@ class EfficientNetV2:
         self.layers1=Layers()
         self.layers1.add(conv2d(stem_filters,[3,3],3,strides=2,padding="SAME",use_bias=False,
                            weight_initializer=CONV_KERNEL_INITIALIZER,dtype=self.dtype))
-        self.layers1.add(batch_normalization(axis=-1,momentum=self.bn_momentum,parallel=False,dtype=self.dtype))
+        self.layers1.add(batch_norm(axis=-1,momentum=self.bn_momentum,parallel=False,dtype=self.dtype))
         self.layers1.add(activation_dict[self.activation])    
     
         # Build blocks
@@ -220,7 +220,7 @@ class EfficientNetV2:
             weight_initializer=CONV_KERNEL_INITIALIZER,
             dtype=self.dtype
         ))
-        self.layers3.add(batch_normalization(axis=-1,momentum=self.bn_momentum,parallel=False,dtype=self.dtype))
+        self.layers3.add(batch_norm(axis=-1,momentum=self.bn_momentum,parallel=False,dtype=self.dtype))
         self.layers3.add(activation_dict[self.activation])
         if self.include_top:
             self.global_avg_pool2d=global_avg_pool2d()
@@ -259,7 +259,7 @@ class EfficientNetV2:
     
     def fp(self,data):
         data=self.rescaling.output(data)
-        data=self.normalization.output(data)
+        data=self.norm.output(data)
         x=self.layers1.output(data,self.km)
         x=self.layers2.output(x,self.km)
         x=self.layers3.output(x,self.km)
@@ -323,7 +323,7 @@ class MBConvBlock:
                 use_bias=False,
                 dtype=dtype
             ))
-            self.layers.add(batch_normalization(
+            self.layers.add(batch_norm(
                 axis=-1,
                 momentum=bn_momentum,
                 parallel=False,
@@ -342,7 +342,7 @@ class MBConvBlock:
             use_bias=False,
             dtype=dtype
         ))
-        self.layers.add(batch_normalization(
+        self.layers.add(batch_norm(
             axis=-1, momentum=bn_momentum, parallel=False, dtype=dtype
         ))
         self.layers.add(activation_dict[activation],save_data=True)
@@ -382,7 +382,7 @@ class MBConvBlock:
             use_bias=False,
             dtype=dtype
         ))
-        self.layers.add(batch_normalization(
+        self.layers.add(batch_norm(
             axis=-1, momentum=bn_momentum, parallel=False, dtype=dtype
         ))
     
@@ -436,7 +436,7 @@ class FusedMBConvBlock:
                 use_bias=False,
                 dtype=dtype
             ))
-            self.layers.add(batch_normalization(
+            self.layers.add(batch_norm(
                 axis=-1, momentum=bn_momentum, parallel=False, dtype=dtype
             ))
             self.layers.add(activation_dict[activation],save_data=True)
@@ -478,7 +478,7 @@ class FusedMBConvBlock:
             padding="SAME",
             use_bias=False,
         ))
-        self.layers.add(batch_normalization(
+        self.layers.add(batch_norm(
             axis=-1, momentum=bn_momentum, parallel=False, dtype=dtype
         ))
         if expand_ratio == 1:

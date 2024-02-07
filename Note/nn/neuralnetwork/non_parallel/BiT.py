@@ -1,6 +1,6 @@
 import tensorflow as tf
 from Note.nn.layer.conv2d import conv2d
-from Note.nn.layer.group_normalization import group_normalization
+from Note.nn.layer.group_norm import group_norm
 from Note.nn.layer.zeropadding2d import zeropadding2d
 from Note.nn.layer.max_pool2d import max_pool2d
 from Note.nn.layer.adaptive_avg_pooling2d import adaptive_avg_pooling2d
@@ -48,12 +48,12 @@ class PreActBottleneck:
     cout = cout or cin
     cmid = cmid or cout//4
 
-    self.gn1 = group_normalization(32, cin)
+    self.gn1 = group_norm(32, cin)
     self.conv1 = conv1x1(cin, cmid)
-    self.gn2 = group_normalization(32, cmid)
+    self.gn2 = group_norm(32, cmid)
     self.conv2 = conv3x3(cmid, cmid, stride)  # Original code has it on conv1!!
     self.zeropadding2d=zeropadding2d(cmid, 1)
-    self.gn3 = group_normalization(32, cmid)
+    self.gn3 = group_norm(32, cmid)
     self.conv3 = conv1x1(cmid, cout)
     self.relu = tf.nn.relu
 
@@ -113,7 +113,7 @@ class BiT:
 
     self.zero_head = zero_head
     self.head = Layers()
-    self.head.add(group_normalization(32, 2048*wf))
+    self.head.add(group_norm(32, 2048*wf))
     self.head.add(tf.nn.relu)
     self.head.add(adaptive_avg_pooling2d(1))
     self.head.add(conv2d(head_size, 1, 2048*wf))

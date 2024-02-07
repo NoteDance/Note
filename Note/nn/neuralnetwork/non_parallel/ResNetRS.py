@@ -3,7 +3,7 @@ from Note.nn.layer.conv2d import conv2d
 from Note.nn.layer.dense import dense
 from Note.nn.layer.avg_pool2d import avg_pool2d
 from Note.nn.layer.global_avg_pool2d import global_avg_pool2d
-from Note.nn.layer.batch_normalization import batch_normalization
+from Note.nn.layer.batch_norm import batch_norm
 from Note.nn.layer.identity import identity
 from Note.nn.activation import activation_dict
 from Note.nn.Layers import Layers
@@ -55,7 +55,7 @@ def STEM(
     layers.add(Conv2DFixedPadding(
         filters=32, kernel_size=[3,3], strides=2, in_channels=3, dtype=dtype
     ))
-    layers.add(batch_normalization(
+    layers.add(batch_norm(
         momentum=bn_momentum,
         epsilon=bn_epsilon,
         parallel=False,
@@ -67,7 +67,7 @@ def STEM(
     layers.add(Conv2DFixedPadding(
         filters=32, kernel_size=[3,3], strides=1, in_channels=layers.output_size, dtype=dtype
     ))
-    layers.add(batch_normalization(
+    layers.add(batch_norm(
         momentum=bn_momentum,
         epsilon=bn_epsilon,
         parallel=False,
@@ -79,7 +79,7 @@ def STEM(
     layers.add(Conv2DFixedPadding(
         filters=64, kernel_size=[3,3], strides=1, in_channels=layers.output_size, dtype=dtype
     ))
-    layers.add(batch_normalization(
+    layers.add(batch_norm(
         momentum=bn_momentum,
         epsilon=bn_epsilon,
         parallel=False,
@@ -91,7 +91,7 @@ def STEM(
     layers.add(Conv2DFixedPadding(
         filters=64, kernel_size=[3,3], strides=2, in_channels=layers.output_size, dtype=dtype
     ))
-    layers.add(batch_normalization(
+    layers.add(batch_norm(
         momentum=bn_momentum,
         epsilon=bn_epsilon,
         parallel=False,
@@ -173,7 +173,7 @@ class BottleneckBlock:
                     dtype=dtype
                 ))
     
-            self.layers1.add(batch_normalization(
+            self.layers1.add(batch_norm(
                 momentum=bn_momentum,
                 epsilon=bn_epsilon,
                 parallel=False,
@@ -187,7 +187,7 @@ class BottleneckBlock:
         self.layers2.add(Conv2DFixedPadding(
             filters=filters, kernel_size=[1,1], strides=1, in_channels=self.layers2.output_size, dtype=dtype
         ))
-        self.layers2.add(batch_normalization(
+        self.layers2.add(batch_norm(
             momentum=bn_momentum,
             epsilon=bn_epsilon,
             parallel=False,
@@ -203,7 +203,7 @@ class BottleneckBlock:
             in_channels=self.layers2.output_size,
             dtype=dtype
         ))
-        self.layers2.add(batch_normalization(
+        self.layers2.add(batch_norm(
             momentum=bn_momentum,
             epsilon=bn_epsilon,
             parallel=False,
@@ -215,7 +215,7 @@ class BottleneckBlock:
         self.layers2.add(Conv2DFixedPadding(
             filters=filters * 4, kernel_size=[1,1], strides=1, in_channels=self.layers2.output_size, dtype=dtype
         ))
-        self.layers2.add(batch_normalization(
+        self.layers2.add(batch_norm(
             momentum=bn_momentum,
             epsilon=bn_epsilon,
             parallel=False,
@@ -387,7 +387,7 @@ class ResNetRS:
             rescaling_data = tf.multiply(data, scale)
             mean = tf.constant([0.485, 0.456, 0.406], dtype=self.dtype)
             variance = tf.constant([0.229**2, 0.224**2, 0.225**2], dtype=self.dtype)
-            normalization_data = tf.nn.batch_normalization(rescaling_data, mean, variance, None, None, 1e-12)
+            normalization_data = tf.nn.batch_norm(rescaling_data, mean, variance, None, None, 1e-12)
             data=normalization_data
         x=self.layers.output(data,self.km)
         # Build head:

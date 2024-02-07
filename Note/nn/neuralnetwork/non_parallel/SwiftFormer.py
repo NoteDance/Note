@@ -2,7 +2,7 @@ import tensorflow as tf
 from Note.nn.layer.conv2d import conv2d
 from Note.nn.layer.depthwise_conv2d import depthwise_conv2d
 from Note.nn.layer.dense import dense
-from Note.nn.layer.batch_normalization import batch_normalization
+from Note.nn.layer.batch_norm import batch_norm
 from Note.nn.layer.zeropadding2d import zeropadding2d
 from Note.nn.layer.dropout import dropout
 from Note.nn.layer.stochastic_depth import stochastic_depth
@@ -82,12 +82,12 @@ class SwiftFormer:
                 if i_emb == 0:
                     layer = identity()
                 else:
-                    layer = batch_normalization(embed_dims[i_emb],parallel=False,dtype=dtype)
+                    layer = batch_norm(embed_dims[i_emb],parallel=False,dtype=dtype)
                 layer_name = f'norm{i_layer}'
                 self.layers_dict[layer_name]=layer
         else:
             # Classifier head
-            self.norm = batch_normalization(embed_dims[-1],parallel=False,dtype=dtype)
+            self.norm = batch_norm(embed_dims[-1],parallel=False,dtype=dtype)
             self.head = dense(
                 num_classes, embed_dims[-1], weight_initializer=['truncated_normal',.02], dtype=dtype) if num_classes > 0 \
                 else identity()
@@ -241,11 +241,11 @@ def stem(in_chs, out_chs, dtype):
     layers=Layers()
     layers.add(conv2d(out_chs // 2, kernel_size=3, input_size=in_chs, strides=2, dtype=dtype))
     layers.add(zeropadding2d(padding=1))
-    layers.add(batch_normalization(parallel=False, dtype=dtype))
+    layers.add(batch_norm(parallel=False, dtype=dtype))
     layers.add(activation_dict['relu'])
     layers.add(conv2d(out_chs, kernel_size=3, strides=2, dtype=dtype))
     layers.add(zeropadding2d(padding=1))
-    layers.add(batch_normalization(parallel=False, dtype=dtype))
+    layers.add(batch_norm(parallel=False, dtype=dtype))
     layers.add(activation_dict['relu'])
     return layers
 
@@ -256,14 +256,14 @@ class Embedding:
     """
 
     def __init__(self, patch_size=16, stride=16, padding=0,
-                 in_chans=3, embed_dim=768, norm_layer=batch_normalization, dtype='float32'):
+                 in_chans=3, embed_dim=768, norm_layer=batch_norm, dtype='float32'):
         patch_size = to_2tuple(patch_size)
         stride = to_2tuple(stride)
         padding = to_2tuple(padding)
         self.proj = conv2d(embed_dim, kernel_size=patch_size, input_size=in_chans,
                               strides=stride, dtype=dtype)
         self.zeropadding2d=zeropadding2d(padding=padding)
-        self.norm = batch_normalization(embed_dim, parallel=False, dtype=dtype) if norm_layer else identity()
+        self.norm = batch_norm(embed_dim, parallel=False, dtype=dtype) if norm_layer else identity()
         self.train_flag=True
     
     
@@ -286,7 +286,7 @@ class ConvEncoder:
         self.layers.add(depthwise_conv2d(kernel_size=kernel_size, input_size=dim, 
                                        weight_initializer=['truncated_normal',.02], dtype=dtype))
         self.layers.add(zeropadding2d(padding=kernel_size // 2))
-        self.layers.add(batch_normalization(parallel=False, dtype=dtype))
+        self.layers.add(batch_norm(parallel=False, dtype=dtype))
         self.layers.add(conv2d(hidden_dim, kernel_size=1, 
                               weight_initializer=['truncated_normal',.02], dtype=dtype))
         self.layers.add(activation_dict['gelu'])
@@ -326,7 +326,7 @@ class Mlp:
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
         self.layers=Layers()
-        self.layers.add(batch_normalization(in_features, parallel=False, dtype=dtype))
+        self.layers.add(batch_norm(in_features, parallel=False, dtype=dtype))
         self.layers.add(conv2d(hidden_features, 1, weight_initializer=['truncated_normal',.02],
                                   dtype=dtype))
         self.layers.add(act_layer)
@@ -390,7 +390,7 @@ class SwiftFormerLocalRepresentation:
         self.layers=Layers()
         self.layers.add(depthwise_conv2d(kernel_size=kernel_size, input_size=dim, weight_initializer=['truncated_normal',.02], dtype=dtype))
         self.layers.add(zeropadding2d(padding=kernel_size // 2))
-        self.layers.add(batch_normalization(parallel=False, dtype=dtype))
+        self.layers.add(batch_norm(parallel=False, dtype=dtype))
         self.layers.add(conv2d(dim, kernel_size=1, weight_initializer=['truncated_normal',.02], dtype=dtype))
         self.layers.add(activation_dict['gelu'])
         self.layers.add(conv2d(dim, kernel_size=1, weight_initializer=['truncated_normal',.02], dtype=dtype))
