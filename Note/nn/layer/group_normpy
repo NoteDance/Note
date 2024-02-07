@@ -3,7 +3,7 @@ from Note.nn.initializer import initializer
 from Note.nn.Module import Module
 
 
-class group_normalization:
+class group_norm:
     """Group normalization layer.
 
     Group Normalization divides the channels into groups and computes
