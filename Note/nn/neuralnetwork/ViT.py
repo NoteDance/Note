@@ -1,5 +1,5 @@
 import tensorflow as tf
-from Note.nn.layer.layer_normalization import layer_normalization
+from Note.nn.layer.layer_norm import layer_norm
 from Note.nn.layer.dense import dense
 from Note.nn.layer.dropout import dropout
 from Note.nn.layer.identity import identity
@@ -17,7 +17,7 @@ def pair(t):
 class FeedForward:
     def __init__(self, dim, hidden_dim, drop_rate = 0.):
         self.net = Layers()
-        self.net.add(layer_normalization(dim))
+        self.net.add(layer_norm(dim))
         self.net.add(dense(hidden_dim, dim))
         self.net.add(tf.nn.gelu)
         self.net.add(dropout(drop_rate))
@@ -36,7 +36,7 @@ class Attention:
         self.heads = heads
         self.scale = dim_head ** -0.5
 
-        self.norm = layer_normalization(dim)
+        self.norm = layer_norm(dim)
 
         self.attend = tf.nn.softmax
         self.dropout = dropout(drop_rate)
@@ -76,7 +76,7 @@ class Attention:
 
 class Transformer:
     def __init__(self, dim, depth, heads, dim_head, mlp_dim, dropout = 0.):
-        self.norm = layer_normalization(dim)
+        self.norm = layer_norm(dim)
         self.layers = []
         for _ in range(depth):
             self.layers.append([Attention(dim, heads = heads, dim_head = dim_head, dropout = dropout),
@@ -106,9 +106,9 @@ class ViT:
         assert pool in {'cls', 'mean'}, 'pool type must be either cls (cls token) or mean (mean pooling)'
 
         self.to_patch_embedding = Layers()
-        self.to_patch_embedding.add(layer_normalization(patch_dim))
+        self.to_patch_embedding.add(layer_norm(patch_dim))
         self.to_patch_embedding.add(dense(dim, patch_dim))
-        self.to_patch_embedding.add(layer_normalization(dim))
+        self.to_patch_embedding.add(layer_norm(dim))
 
         self.pos_embedding = initializer_((1, num_patches + 1, dim), 'normal', 'float32')
         self.cls_token = initializer_((1, 1, dim), 'normal', 'float32')

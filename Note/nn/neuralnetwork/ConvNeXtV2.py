@@ -3,7 +3,7 @@ import numpy as np
 from Note.nn.layer.conv2d import conv2d
 from Note.nn.layer.depthwise_conv2d import depthwise_conv2d
 from Note.nn.layer.dense import dense
-from Note.nn.layer.layer_normalization import layer_normalization
+from Note.nn.layer.layer_norm import layer_norm
 from Note.nn.layer.stochastic_depth import stochastic_depth
 from Note.nn.layer.identity import identity
 from Note.nn.initializer import initializer_
@@ -39,7 +39,7 @@ class Block:
     def __init__(self, dim, drop_path=0., dtype='float32'):
         self.layers=Layers()
         self.layers.add(depthwise_conv2d(7,input_size=dim,padding='SAME',weight_initializer=['truncated_normal',.02],dtype=dtype))
-        self.layers.add(layer_normalization(epsilon=1e-6,dtype=dtype))
+        self.layers.add(layer_norm(epsilon=1e-6,dtype=dtype))
         self.layers.add(dense(4*dim,weight_initializer=['truncated_normal',.02],dtype=dtype))
         self.layers.add(activation_dict['gelu'])
         self.layers.add(GRN(4*dim,dtype))
@@ -93,12 +93,12 @@ class ConvNeXtV2:
         stem=Layers()
         stem.add(conv2d(self.dims[0],kernel_size=4,input_size=self.in_chans,strides=4,
                         weight_initializer=['truncated_normal',.02],dtype=dtype))
-        stem.add(layer_normalization(epsilon=1e-6,dtype=dtype))
+        stem.add(layer_norm(epsilon=1e-6,dtype=dtype))
         self.downsample_layers.append(stem)
         
         for i in range(3):
             downsample_layer=Layers()
-            downsample_layer.add(layer_normalization(input_size=self.dims[i],epsilon=1e-6,dtype=dtype))
+            downsample_layer.add(layer_norm(input_size=self.dims[i],epsilon=1e-6,dtype=dtype))
             downsample_layer.add(conv2d(self.dims[i+1],kernel_size=2,input_size=self.dims[i],strides=2,
                             weight_initializer=['truncated_normal',.02],dtype=dtype))
             self.downsample_layers.append(downsample_layer)
@@ -115,7 +115,7 @@ class ConvNeXtV2:
             self.stages.append(stage)
             cur += self.depths[i]
         
-        self.layer_normalization=layer_normalization(self.dims[-1],epsilon=1e-6,dtype=dtype)
+        self.layer_norm=layer_norm(self.dims[-1],epsilon=1e-6,dtype=dtype)
         self.dense=dense(self.classes,self.dims[-1],weight_initializer=['truncated_normal',.02],activation=self.classifier_activation,dtype=dtype)
         self.dense.weight.assign(tf.cast(self.head_init_scale,self.dense.weight.dtype)*self.dense.weight)
         self.dense.bias.assign(tf.cast(self.head_init_scale,self.dense.bias.dtype)*self.dense.bias)
@@ -160,7 +160,7 @@ class ConvNeXtV2:
                         x = self.stages[i].output(x)
                 if self.include_top:
                     x = tf.math.reduce_mean(x, axis=[1, 2])
-                    x = self.layer_normalization.output(x)
+                    x = self.layer_norm.output(x)
                     x = self.dense.output(x)
                 else:
                     if self.pooling=="avg":
@@ -175,7 +175,7 @@ class ConvNeXtV2:
                     x = self.stages[i].output(x,self.km)
             if self.include_top:
                 x = tf.math.reduce_mean(x, axis=[1, 2])
-                x = self.layer_normalization.output(x)
+                x = self.layer_norm.output(x)
                 x = self.dense.output(x)
             else:
                 if self.pooling=="avg":

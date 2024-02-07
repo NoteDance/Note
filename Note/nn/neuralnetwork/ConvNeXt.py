@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 from Note.nn.layer.conv2d import conv2d
 from Note.nn.layer.dense import dense
-from Note.nn.layer.layer_normalization import layer_normalization
+from Note.nn.layer.layer_norm import layer_norm
 from Note.nn.Layers import Layers
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
@@ -12,7 +12,7 @@ from Note.nn.Module import Module
 class ConvNeXtBlock:
     def __init__(self, input_channels, projection_dim, drop_path_rate=0.0, layer_scale_init_value=1e-6, dtype='float32'):
         self.conv2d=conv2d(projection_dim,[7,7],input_channels//projection_dim,padding='SAME',dtype=dtype)
-        self.layer_normalization=layer_normalization(self.conv2d.output_size,dtype=dtype)
+        self.layer_norm=layer_norm(self.conv2d.output_size,dtype=dtype)
         self.dense1=dense(4*projection_dim,projection_dim,activation='gelu',dtype=dtype)
         self.dense2=dense(projection_dim,4*projection_dim,dtype=dtype)
         self.gamma=tf.Variable(tf.ones([projection_dim],dtype=dtype)*layer_scale_init_value)
@@ -37,7 +37,7 @@ class ConvNeXtBlock:
     
     def output(self,data,train_flag=True):
         x=self.conv2d.output(data)
-        x=self.layer_normalization.output(x)
+        x=self.layer_norm.output(x)
         x=self.dense1.output(x)
         x=self.dense2.output(x)
         if self.layer_scale_init_value is not None:
@@ -71,7 +71,7 @@ class ConvNeXt:
         # Stem block.
         layers=Layers()
         layers.add(conv2d(self.projection_dims[0],[4,4],3,dtype=dtype))
-        layers.add(layer_normalization(dtype=dtype))
+        layers.add(layer_norm(dtype=dtype))
         
         # Downsampling blocks.
         self.downsample_layers = []
@@ -80,7 +80,7 @@ class ConvNeXt:
         num_downsample_layers = 3
         for i in range(num_downsample_layers):
             layers=Layers()
-            layers.add(layer_normalization(self.projection_dims[i],dtype=dtype))
+            layers.add(layer_norm(self.projection_dims[i],dtype=dtype))
             layers.add(conv2d(self.projection_dims[i+1],[2,2],self.projection_dims[i],dtype=dtype))
             self.downsample_layers.append(layers)
         
@@ -110,7 +110,7 @@ class ConvNeXt:
                 input_channels=block.output_size
             self.blocks.append(block)
             cur += self.depths[i]
-        self.layer_normalization=layer_normalization(self.blocks[-1].output_size,dtype=dtype)
+        self.layer_norm=layer_norm(self.blocks[-1].output_size,dtype=dtype)
         self.dense=dense(self.classes,self.blocks[-1].output_size,activation=self.classifier_activation,dtype=dtype)
         
         self.dtype=dtype
@@ -150,7 +150,7 @@ class ConvNeXt:
                         data=self.blocks[i].output(data)
                 if self.include_top:
                     data = tf.math.reduce_mean(data, axis=[1, 2])
-                    data = self.layer_normalization.output(data)
+                    data = self.layer_norm.output(data)
                     data = self.dense.output(data)
                 else:
                     if self.pooling=="avg":
@@ -164,7 +164,7 @@ class ConvNeXt:
                     data=self.blocks[i].output(data,self.km)
             if self.include_top:
                 data = tf.math.reduce_mean(data, axis=[1, 2])
-                data = self.layer_normalization.output(data)
+                data = self.layer_norm.output(data)
                 data = self.dense.output(data)
             else:
                 if self.pooling=="avg":

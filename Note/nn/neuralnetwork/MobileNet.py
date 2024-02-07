@@ -2,7 +2,7 @@ import tensorflow as tf
 from Note.nn.layer.conv2d import conv2d
 from Note.nn.layer.depthwise_conv2d import depthwise_conv2d
 from Note.nn.layer.dense import dense
-from Note.nn.layer.batch_normalization import batch_normalization
+from Note.nn.layer.batch_norm import batch_norm
 from Note.nn.layer.zeropadding2d import zeropadding2d
 from Note.nn.Layers import Layers
 from Note.nn.activation import activation_dict
@@ -15,7 +15,7 @@ class _conv_block:
     def __init__(self, in_channels, filters, alpha, kernel=(3, 3), strides=[1, 1], dtype='float32'):
         filters = int(filters * alpha)
         self.conv2d=conv2d(filters,kernel,in_channels,strides=strides,padding='SAME',use_bias=False,dtype=dtype)
-        self.batch_norm=batch_normalization(self.conv2d.output_size,dtype=dtype)
+        self.batch_norm=batch_norm(self.conv2d.output_size,dtype=dtype)
         self.train_flag=True
         self.output_size=self.conv2d.output_size
     
@@ -33,9 +33,9 @@ class _depthwise_conv_block:
         self.strides=strides
         self.zeropadding2d=zeropadding2d()
         self.depthwiseconv2d=depthwise_conv2d([3,3],depth_multiplier,in_channels,strides=[1,strides[0],strides[1],1],padding="SAME" if strides == [1, 1] else "VALID",use_bias=False,dtype=dtype)
-        self.batch_norm1=batch_normalization(self.depthwiseconv2d.output_size,dtype=dtype)
+        self.batch_norm1=batch_norm(self.depthwiseconv2d.output_size,dtype=dtype)
         self.conv2d=conv2d(pointwise_conv_filters,[1,1],self.depthwiseconv2d.output_size,strides=[1, 1],padding='SAME',use_bias=False,dtype=dtype)
-        self.batch_norm2=batch_normalization(self.conv2d.output_size,dtype=dtype)
+        self.batch_norm2=batch_norm(self.conv2d.output_size,dtype=dtype)
         self.train_flag=True
         self.output_size=self.conv2d.output_size
     

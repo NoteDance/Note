@@ -4,7 +4,7 @@ import numpy as np
 import six
 import tensorflow as tf
 from Note.nn.layer.dense import dense
-from Note.nn.layer.layer_normalization import layer_normalization
+from Note.nn.layer.layer_norm import layer_norm
 from Note.nn.Module import Module
 
 
@@ -401,7 +401,7 @@ class embedding_postprocessor:
       self.full_position_embeddings = tf.random.truncated_normal(
               shape=[max_position_embeddings, embedding_size],
               stddev=initializer_range)
-      self.layer_norm=layer_normalization(embedding_size)
+      self.layer_norm=layer_norm(embedding_size)
       self.use_token_type=use_token_type
       self.token_type_ids=token_type_ids
       self.token_type_vocab_size=token_type_vocab_size
@@ -768,7 +768,7 @@ class transformer_model:
                                   hidden_size,
                                   attention_output_input_size,
                                   weight_initializer=['truncated_normal',initializer_range])
-          layer_norm = layer_normalization(attention_output.output_size)
+          layer_norm = layer_norm(attention_output.output_size)
           self.attention_layers.append(attention_output)
           self.layer_norms1.append(layer_norm)
           intermediate_output = dense(
@@ -781,7 +781,7 @@ class transformer_model:
                           hidden_size,
                           intermediate_output.output_size,
                           weight_initializer=['truncated_normal',initializer_range])
-          layer_norm = layer_normalization(layer_output.output_size)
+          layer_norm = layer_norm(layer_output.output_size)
           self.layers.append(layer_output)
           self.layer_norms2.append(layer_norm)
       self.hidden_size=hidden_size

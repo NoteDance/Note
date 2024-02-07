@@ -2,7 +2,7 @@ import tensorflow as tf
 from Note.nn.layer.dense import dense
 from Note.nn.layer.conv1d import conv1d
 from Note.nn.layer.zeropadding1d import zeropadding1d
-from Note.nn.layer.layer_normalization import layer_normalization
+from Note.nn.layer.layer_norm import layer_norm
 from Note.nn.initializer import initializer_
 from Note.nn.Layers import Layers
 import base64
@@ -94,12 +94,12 @@ class cached_attention:
 class ResidualAttentionBlock:
     def __init__(self, n_state: int, n_head: int, cross_attention: bool = False):
         self.attn = cached_attention(n_state, n_head)
-        self.attn_ln = layer_normalization(n_state)
+        self.attn_ln = layer_norm(n_state)
 
         self.cross_attn = (
             cached_attention(n_state, n_head) if cross_attention else None
         )
-        self.cross_attn_ln = layer_normalization(n_state) if cross_attention else None
+        self.cross_attn_ln = layer_norm(n_state) if cross_attention else None
 
         n_mlp = n_state * 4
         self.mlp = Layers()
@@ -107,7 +107,7 @@ class ResidualAttentionBlock:
         self.mlp.add(tf.nn.gelu)
         self.mlp.add(dense(n_state, n_mlp))
         
-        self.mlp_ln = layer_normalization(n_state)
+        self.mlp_ln = layer_norm(n_state)
 
     def output(
         self,
@@ -134,7 +134,7 @@ class AudioEncoder:
         self.positional_embedding=sinusoids(n_ctx, n_state)
 
         self.blocks = [ResidualAttentionBlock(n_state, n_head) for _ in range(n_layer)]
-        self.ln_post = layer_normalization(n_state)
+        self.ln_post = layer_norm(n_state)
 
 
     def output(self, x):
@@ -166,7 +166,7 @@ class TextDecoder:
                 ResidualAttentionBlock(n_state, n_head, cross_attention=True)
                 for _ in range(n_layer)]
         
-        self.ln = layer_normalization(n_state)
+        self.ln = layer_norm(n_state)
 
         self.mask = tf.math.multiply(tf.linalg.band_part(tf.ones((n_ctx, n_ctx)), -1, 0), tf.fill((n_ctx, n_ctx), tf.float32.min))
 
