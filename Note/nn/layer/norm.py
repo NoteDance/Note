@@ -3,7 +3,7 @@ import numpy as np
 from Note.nn.initializer import initializer
 
 
-class normalization:
+class norm:
     """A preprocessing layer which normalizes continuous features.
 
     This layer will shift and scale inputs into a distribution centered around
