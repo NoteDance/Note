@@ -2,7 +2,7 @@ import tensorflow as tf
 from Note.nn.initializer import initializer_
 
 
-class filter_response_normalization:
+class filter_response_norm:
     """Filter response normalization layer.
 
     Filter Response Normalization (FRN), a normalization
@@ -70,7 +70,7 @@ class filter_response_normalization:
         self._check_axis(axis)
             
 
-    def output(self, data):
+    def __call__(self, data):
         if data.dtype!=self.dtype:
             data=tf.cast(data,self.dtype)
         if self.input_shape is None:
