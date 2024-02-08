@@ -44,41 +44,34 @@ class Layers:
         return
     
     
-    def output(self,data,train_flag=True):
+    def __call__(self,data,train_flag=True):
         for i,layer in enumerate(self.layer):
-            if hasattr(layer,'output'):
+            if not hasattr(layer,'concat'):
                 if not hasattr(layer,'train_flag'):
                     if self.use_data_flag[i]==False:
-                        data=layer.output(data)
+                        data=layer(data)
                     else:
                         if hasattr(layer,'save_data_count'):
-                            data=layer.output(self.saved_data)
+                            data=layer(self.saved_data)
                         else:
-                            data=layer.output(data,self.saved_data.pop(0))
+                            data=layer(data,self.saved_data.pop(0))
                 else:
                     if self.use_data_flag[i]==False:
                         if not train_flag:
-                            data=layer.output(data,train_flag)
+                            data=layer(data,train_flag)
                         else:
-                            data=layer.output(data)
+                            data=layer(data)
                     else:
                         if hasattr(layer,'save_data_count'):
                             if not train_flag:
-                                data=layer.output(self.saved_data,train_flag)
+                                data=layer(self.saved_data,train_flag)
                             else:
-                                data=layer.output(self.saved_data)
+                                data=layer(self.saved_data)
                         else:
                             if not train_flag:
-                                data=layer.output(data,self.saved_data.pop(0),train_flag)
+                                data=layer(data,self.saved_data.pop(0),train_flag)
                             else:
-                                data=layer.output(data,self.saved_data.pop(0))
-                if self.save_data_flag[i]==True:
-                    self.saved_data.append(data)
-            elif not hasattr(layer,'concat'):
-                if self.use_data_flag[i]==False:
-                    data=layer(data)
-                else:
-                    data=layer(data,self.saved_data.pop(0))
+                                data=layer(data,self.saved_data.pop(0))
                 if self.save_data_flag[i]==True:
                     self.saved_data.append(data)
             else:
