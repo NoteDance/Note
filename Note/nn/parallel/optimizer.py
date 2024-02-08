@@ -10,7 +10,7 @@ class Gradient:
         self.lr=lr
     
     
-    def opt(self,gradient,parameter):
+    def __call__(self,gradient,parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         for i in range(len(gradient_flat)):
@@ -85,7 +85,7 @@ class SGD:
                 )
 
 
-    def opt(self, gradient, parameter):
+    def __call__(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         
@@ -214,7 +214,7 @@ class Adagrad:
                 )
     
 
-    def opt(self, gradient, parameter):
+    def __call__(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         
@@ -357,7 +357,7 @@ class Adafactor:
         return tf.sqrt(tf.reduce_mean(tf.square(x)))
 
 
-    def opt(self, gradient, parameter, iterations):
+    def __call__(self, gradient, parameter, iterations):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         
@@ -519,7 +519,7 @@ class RMSprop:
                     )
 
 
-    def opt(self, gradient, parameter):
+    def __call__(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         
@@ -675,7 +675,7 @@ class Adadelta:
                 )
 
 
-    def opt(self, gradient, parameter):
+    def __call__(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
 
@@ -835,7 +835,7 @@ class Adam:
                         )
 
 
-    def opt(self, gradient, parameter, iterations):
+    def __call__(self, gradient, parameter, iterations):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         
@@ -972,7 +972,7 @@ class Nadam:
                 )
                 
 
-    def opt(self, gradient, parameter, iterations):
+    def __call__(self, gradient, parameter, iterations):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         
@@ -1136,7 +1136,7 @@ class Adamax:
                 )
 
 
-    def opt(self, gradient, parameter, iterations):
+    def __call__(self, gradient, parameter, iterations):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         
@@ -1291,7 +1291,7 @@ class AdamW:
                         )
 
 
-    def opt(self, gradient, parameter, iterations):
+    def __call__(self, gradient, parameter, iterations):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         
@@ -1487,7 +1487,7 @@ class Ftrl:
                 self._linears.append(tf.Variable(tf.zeros_like(param,dtype=param.dtype)))
 
 
-    def opt(self, gradient, parameter):
+    def __call__(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         
@@ -1608,7 +1608,7 @@ class Lion:
                         )
 
 
-    def opt(self, gradient, parameter):
+    def __call__(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         
