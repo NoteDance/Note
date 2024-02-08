@@ -124,10 +124,10 @@ class DenseNet201:
     
     
     def fp(self, data):
-        x=self.layers.output(data,self.km)
+        x=self.layers(data,self.km)
         if self.include_top:
             x = tf.math.reduce_mean(x, axis=[1, 2])
-            x = self.dense.output(x)
+            x = self.dense(x)
         else:
             if self.pooling=="avg":
                 x = tf.math.reduce_mean(x, axis=[1, 2])

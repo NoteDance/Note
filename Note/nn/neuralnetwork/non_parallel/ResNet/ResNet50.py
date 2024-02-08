@@ -15,26 +15,26 @@ class block1:
         self.layers1=Layers()
         if conv_shortcut:
             self.layers1.add(conv2d(4 * filters,[1,1],in_channels,strides=[stride],dtype=dtype))
-            self.layers1.add(batch_norm(epsilon=1.001e-5,parallel=False,dtype=dtype))
+            self.layers1.add(batch_norm(epsilon=1.001e-5,dtype=dtype))
         else:
             self.layers1.add(identity(in_channels))
         self.layers2=Layers()
         self.layers2.add(conv2d(filters,[1,1],in_channels,strides=[stride],dtype=dtype))
-        self.layers2.add(batch_norm(epsilon=1.001e-5,parallel=False,dtype=dtype))
+        self.layers2.add(batch_norm(epsilon=1.001e-5,dtype=dtype))
         self.layers2.add(activation_dict['relu'])
         self.layers2.add(conv2d(filters,[kernel_size,kernel_size],padding='SAME',dtype=dtype))
-        self.layers2.add(batch_norm(epsilon=1.001e-5,parallel=False,dtype=dtype))
+        self.layers2.add(batch_norm(epsilon=1.001e-5,dtype=dtype))
         self.layers2.add(activation_dict['relu'])
         self.layers2.add(conv2d(4 * filters,[1,1],dtype=dtype))
-        self.layers2.add(batch_norm(epsilon=1.001e-5,parallel=False,dtype=dtype))
+        self.layers2.add(batch_norm(epsilon=1.001e-5,dtype=dtype))
         self.train_flag=True
         self.output_size=self.layers2.output_size
     
     
-    def output(self,data,train_flag=True):
+    def __call__(self,data,train_flag=True):
         self.train_flag=train_flag
-        shortcut=self.layers1.output(data,self.train_flag)
-        x=self.layers2.output(data,self.train_flag)
+        shortcut=self.layers1(data,self.train_flag)
+        x=self.layers2(data,self.train_flag)
         x=shortcut+x
         x=activation_dict['relu'](x)
         return x
@@ -76,13 +76,13 @@ class ResNet50:
         self.layers.add(zeropadding2d(3,[3,3]))
         self.layers.add(conv2d(64,[7,7],strides=[2],use_bias=self.use_bias,dtype=dtype))
         if not self.preact:
-            self.layers.add(batch_norm(epsilon=1.001e-5,parallel=False,dtype=dtype))
+            self.layers.add(batch_norm(epsilon=1.001e-5,dtype=dtype))
             self.layers.add(activation_dict['relu'])
         self.layers.add(zeropadding2d(padding=[1,1]))
         self.layers.add(max_pool2d(ksize=[3, 3],strides=[2, 2],padding='SAME'))
         self.layers.add(stack_fn(self.layers.output_size,dtype=dtype))
         if self.preact:
-            self.layers.add(batch_norm(self.layers.output_size,epsilon=1.001e-5,parallel=False,dtype=dtype))
+            self.layers.add(batch_norm(self.layers.output_size,epsilon=1.001e-5,dtype=dtype))
             self.layers.add(activation_dict['relu'])
         self.dense=dense(self.classes,self.layers.output_size,activation='softmax',dtype=dtype)
         self.opt=tf.keras.optimizers.Adam()
@@ -112,10 +112,10 @@ class ResNet50:
     
     
     def fp(self,data):
-        x=self.layers.output(data,self.km)
+        x=self.layers(data,self.km)
         if self.include_top:
             x=tf.math.reduce_mean(x,axis=[1,2])
-            x=self.dense.output(x)
+            x=self.dense(x)
         else:
             if self.pooling=="avg":
                 x=tf.math.reduce_mean(x,axis=[1,2])
