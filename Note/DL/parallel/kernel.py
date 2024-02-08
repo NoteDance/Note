@@ -145,16 +145,16 @@ class kernel:
                 with tf.GradientTape(persistent=True) as tape:
                     try:
                         try:
-                            output=self.nn.fp(data,p)
+                            output=self.nn(data,p)
                             loss=self.nn.loss(output,labels,p)
                         except Exception:
-                            output,loss=self.nn.fp(data,labels,p)
+                            output,loss=self.nn(data,labels,p)
                     except Exception:
                         try:
-                            output=self.nn.fp(data)
+                            output=self.nn(data)
                             loss=self.nn.loss(output,labels)
                         except Exception:
-                            output,loss=self.nn.fp(data,labels)
+                            output,loss=self.nn(data,labels)
         except Exception as e:
             raise e
         if self.PO==1:
@@ -474,10 +474,10 @@ class kernel:
     def test_(self,data,labels):
         try:
             try:
-                output=self.nn.fp(data)
+                output=self.nn(data)
                 loss=self.nn.loss(output,labels)
             except Exception:
-                output,loss=self.nn.fp(data,labels)
+                output,loss=self.nn(data,labels)
         except Exception as e:
             raise e
         try:
