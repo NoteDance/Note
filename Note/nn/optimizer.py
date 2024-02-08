@@ -8,7 +8,7 @@ class Gradient:
         self.lr=lr
     
     
-    def opt(self,gradient,parameter):
+    def __call__(self,gradient,parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         for i in range(len(gradient_flat)):
@@ -70,7 +70,7 @@ class SGD:
         self.flag = 0
 
 
-    def opt(self, gradient, parameter):
+    def __call__(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         
@@ -177,7 +177,7 @@ class Adagrad:
         self.flag = 0
 
 
-    def opt(self, gradient, parameter):
+    def __call__(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         
@@ -277,7 +277,7 @@ class Adafactor:
         return tf.sqrt(tf.reduce_mean(tf.square(x)))
 
 
-    def opt(self, gradient, parameter):
+    def __call__(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         
@@ -413,7 +413,7 @@ class RMSprop:
         self.flag = 0
 
 
-    def opt(self, gradient, parameter):
+    def __call__(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         
@@ -551,7 +551,7 @@ class Adadelta:
         self.flag = 0
 
 
-    def opt(self, gradient, parameter):
+    def __call__(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         
@@ -681,7 +681,7 @@ class Adam:
         self.flag = 0
 
 
-    def opt(self, gradient, parameter):
+    def __call__(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         if self.flag==0:
@@ -797,7 +797,7 @@ class Nadam:
         self.flag = 0
                 
 
-    def opt(self, gradient, parameter):
+    def __call__(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         if self.flag==0:
@@ -940,7 +940,7 @@ class Adamax:
         self.flag = 0
 
 
-    def opt(self, gradient, parameter):
+    def __call__(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         if self.flag==0:
@@ -1065,7 +1065,7 @@ class AdamW:
         self.flag = 0
 
 
-    def opt(self, gradient, parameter):
+    def __call__(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         if self.flag==0:
@@ -1245,7 +1245,7 @@ class Ftrl:
         self.flag = 0
 
 
-    def opt(self, gradient, parameter):
+    def __call__(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         if self.flag==0:
@@ -1348,7 +1348,7 @@ class Lion:
         self.flag = 0
 
 
-    def opt(self, gradient, parameter):
+    def __call__(self, gradient, parameter):
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         if self.flag==0:
