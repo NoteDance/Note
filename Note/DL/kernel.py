@@ -161,10 +161,10 @@ class kernel:
             else:
                 with self.platform.GradientTape(persistent=True) as tape:
                     try:
-                        output=self.nn.fp(data)
+                        output=self.nn(data)
                         loss=self.nn.loss(output,labels)
                     except Exception:
-                        output,loss=self.nn.fp(data,labels)
+                        output,loss=self.nn(data,labels)
         except Exception as e:
             raise e
         if hasattr(self.nn,'gradient'):
@@ -179,7 +179,7 @@ class kernel:
     
     
     def pytorch_opt(self,data,labels):
-        output=self.nn.fp(data)
+        output=self.nn(data)
         loss=self.nn.loss(output,labels)
         if hasattr(self.nn.opt,'zero_grad'):
             self.nn.opt.zero_grad()
@@ -461,10 +461,10 @@ class kernel:
     def test_tf(self,data,labels):
         try:
             try:
-                output=self.nn.fp(data)
+                output=self.nn(data)
                 loss=self.nn.loss(output,labels)
             except Exception:
-                output,loss=self.nn.fp(data,labels)
+                output,loss=self.nn(data,labels)
         except Exception as e:
             raise e
         try:
@@ -480,10 +480,10 @@ class kernel:
     def test_pytorch(self,data,labels):
         try:
             try:
-                output=self.nn.fp(data)
+                output=self.nn(data)
                 loss=self.nn.loss(output,labels)
             except Exception:
-                output,loss=self.nn.fp(data,labels)
+                output,loss=self.nn(data,labels)
         except Exception as e:
             raise e
         try:
