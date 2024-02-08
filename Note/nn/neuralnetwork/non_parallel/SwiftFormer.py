@@ -82,12 +82,12 @@ class SwiftFormer:
                 if i_emb == 0:
                     layer = identity()
                 else:
-                    layer = batch_norm(embed_dims[i_emb],parallel=False,dtype=dtype)
+                    layer = batch_norm(embed_dims[i_emb],dtype=dtype)
                 layer_name = f'norm{i_layer}'
                 self.layers_dict[layer_name]=layer
         else:
             # Classifier head
-            self.norm = batch_norm(embed_dims[-1],parallel=False,dtype=dtype)
+            self.norm = batch_norm(embed_dims[-1],dtype=dtype)
             self.head = dense(
                 num_classes, embed_dims[-1], weight_initializer=['truncated_normal',.02], dtype=dtype) if num_classes > 0 \
                 else identity()
@@ -143,13 +143,13 @@ class SwiftFormer:
     def forward_tokens(self, x, train_flag=True):
         outs = []
         for idx, block in enumerate(self.network):
-            x = block.output(x,train_flag)
+            x = block(x,train_flag)
             if self.fork_feat and idx in self.out_indices:
                 norm_layer = self.layers_dict[f'norm{idx}']
                 if hasattr(norm_layer, 'train_flag'):
-                    x_out = norm_layer.output(x,train_flag)
+                    x_out = norm_layer(x,train_flag)
                 else:
-                    x_out = norm_layer.output(x)
+                    x_out = norm_layer(x)
                 outs.append(x_out)
         if self.fork_feat:
             return outs
@@ -157,25 +157,25 @@ class SwiftFormer:
     
 
     def fp(self, x):
-        x = self.patch_embed.output(x,self.km)
+        x = self.patch_embed(x,self.km)
         x = self.forward_tokens(x,self.km)
         if self.fork_feat:
             # Output features of four stages for dense prediction
             return x
 
-        x = self.norm.output(x,self.km)
+        x = self.norm(x,self.km)
         if self.include_top:
             x = tf.transpose(x,perm=[0,3,1,2])
             if self.dist:
                 x = tf.reshape(x, [tf.shape(x)[0], tf.shape(x)[1], -1])
                 x = tf.reduce_mean(x, axis=-1)
-                cls_out = self.head.output(x), self.dist_head.output(x)
+                cls_out = self.head(x), self.dist_head(x)
                 if not self.km:
                     cls_out = (cls_out[0] + cls_out[1]) / 2
             else:
                 x = tf.reshape(x, [tf.shape(x)[0], tf.shape(x)[1], -1])
                 x = tf.reduce_mean(x, axis=-1)
-                cls_out = self.head.output(x)
+                cls_out = self.head(x)
             # For image classification
             return cls_out
         else:
@@ -241,11 +241,11 @@ def stem(in_chs, out_chs, dtype):
     layers=Layers()
     layers.add(conv2d(out_chs // 2, kernel_size=3, input_size=in_chs, strides=2, dtype=dtype))
     layers.add(zeropadding2d(padding=1))
-    layers.add(batch_norm(parallel=False, dtype=dtype))
+    layers.add(batch_norm(dtype=dtype))
     layers.add(activation_dict['relu'])
     layers.add(conv2d(out_chs, kernel_size=3, strides=2, dtype=dtype))
     layers.add(zeropadding2d(padding=1))
-    layers.add(batch_norm(parallel=False, dtype=dtype))
+    layers.add(batch_norm(dtype=dtype))
     layers.add(activation_dict['relu'])
     return layers
 
@@ -263,16 +263,16 @@ class Embedding:
         self.proj = conv2d(embed_dim, kernel_size=patch_size, input_size=in_chans,
                               strides=stride, dtype=dtype)
         self.zeropadding2d=zeropadding2d(padding=padding)
-        self.norm = batch_norm(embed_dim, parallel=False, dtype=dtype) if norm_layer else identity()
+        self.norm = batch_norm(embed_dim, dtype=dtype) if norm_layer else identity()
         self.train_flag=True
     
     
-    def output(self, x, train_flag=True):
-        x = self.proj.output(x)
+    def __call__(self, x, train_flag=True):
+        x = self.proj(x)
         if hasattr(self.norm, 'train_flag'):
-            x = self.norm.output(x, train_flag)
+            x = self.norm(x, train_flag)
         else:
-            x = self.norm.output(x)
+            x = self.norm(x)
         return x
 
 
@@ -286,7 +286,7 @@ class ConvEncoder:
         self.layers.add(depthwise_conv2d(kernel_size=kernel_size, input_size=dim, 
                                        weight_initializer=['truncated_normal',.02], dtype=dtype))
         self.layers.add(zeropadding2d(padding=kernel_size // 2))
-        self.layers.add(batch_norm(parallel=False, dtype=dtype))
+        self.layers.add(batch_norm(dtype=dtype))
         self.layers.add(conv2d(hidden_dim, kernel_size=1, 
                               weight_initializer=['truncated_normal',.02], dtype=dtype))
         self.layers.add(activation_dict['gelu'])
@@ -300,19 +300,19 @@ class ConvEncoder:
         self.train_flag=True
 
 
-    def output(self, x, train_flag=True):
+    def __call__(self, x, train_flag=True):
         input = x
-        x = self.layers.output(x,train_flag)
+        x = self.layers(x,train_flag)
         if self.use_layer_scale:
             if hasattr(self.drop_path, 'train_flag'):
-                x = input + self.drop_path.output(self.layer_scale * x, train_flag)
+                x = input + self.drop_path(self.layer_scale * x, train_flag)
             else:
-                x = input + self.drop_path.output(self.layer_scale * x)
+                x = input + self.drop_path(self.layer_scale * x)
         else:
             if hasattr(self.drop_path, 'train_flag'):
-                x = input + self.drop_path.output(x, train_flag)
+                x = input + self.drop_path(x, train_flag)
             else:
-                x = input + self.drop_path.output(x)
+                x = input + self.drop_path(x)
         return x
 
 
@@ -326,7 +326,7 @@ class Mlp:
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
         self.layers=Layers()
-        self.layers.add(batch_norm(in_features, parallel=False, dtype=dtype))
+        self.layers.add(batch_norm(in_features, dtype=dtype))
         self.layers.add(conv2d(hidden_features, 1, weight_initializer=['truncated_normal',.02],
                                   dtype=dtype))
         self.layers.add(act_layer)
@@ -335,8 +335,8 @@ class Mlp:
         self.layers.add(dropout(drop))
 
 
-    def output(self, x, train_flag=True):
-        x=self.layers.output(x,train_flag)
+    def __call__(self, x, train_flag=True):
+        x=self.layers(x,train_flag)
         return x
 
 
@@ -355,9 +355,9 @@ class EfficientAdditiveAttnetion:
         self.final = dense(token_dim, token_dim * num_heads)
 
 
-    def output(self, x):
-        query = self.to_query.output(x)
-        key = self.to_key.output(x)
+    def __call__(self, x):
+        query = self.to_query(x)
+        key = self.to_key(x)
 
         query = tf.math.l2_normalize(query, axis=-1) #BxNxD
         key = tf.math.l2_normalize(key, axis=-1) #BxNxD
@@ -374,9 +374,9 @@ class EfficientAdditiveAttnetion:
         G = tf.tile(G, multiples)
         G = tf.reshape(G, (tf.shape(G)[0], repeat, -1)) # BxNxD
 
-        out = self.Proj.output(G * key) + query #BxNxD
+        out = self.Proj(G * key) + query #BxNxD
 
-        out = self.final.output(out) # BxNxD
+        out = self.final(out) # BxNxD
 
         return out
 
@@ -390,7 +390,7 @@ class SwiftFormerLocalRepresentation:
         self.layers=Layers()
         self.layers.add(depthwise_conv2d(kernel_size=kernel_size, input_size=dim, weight_initializer=['truncated_normal',.02], dtype=dtype))
         self.layers.add(zeropadding2d(padding=kernel_size // 2))
-        self.layers.add(batch_norm(parallel=False, dtype=dtype))
+        self.layers.add(batch_norm(dtype=dtype))
         self.layers.add(conv2d(dim, kernel_size=1, weight_initializer=['truncated_normal',.02], dtype=dtype))
         self.layers.add(activation_dict['gelu'])
         self.layers.add(conv2d(dim, kernel_size=1, weight_initializer=['truncated_normal',.02], dtype=dtype))
@@ -401,19 +401,19 @@ class SwiftFormerLocalRepresentation:
             self.layer_scale = initializer_([dim],'ones',dtype)
 
 
-    def output(self, x, train_flag=True):
+    def __call__(self, x, train_flag=True):
         input = x
-        x = self.layers.output(x,train_flag)
+        x = self.layers(x,train_flag)
         if self.use_layer_scale:
             if hasattr(self.drop_path, 'train_flag'):
-                x = input + self.drop_path.output(self.layer_scale * x, train_flag)
+                x = input + self.drop_path(self.layer_scale * x, train_flag)
             else:
-                x = input + self.drop_path.output(self.layer_scale * x)
+                x = input + self.drop_path(self.layer_scale * x)
         else:
             if hasattr(self.drop_path, 'train_flag'):
-                x = input + self.drop_path.output(x, train_flag)
+                x = input + self.drop_path(x, train_flag)
             else:
-                x = input + self.drop_path.output(x)
+                x = input + self.drop_path(x)
         return x
 
 
@@ -441,39 +441,39 @@ class SwiftFormerEncoder:
         self.train_flag=True
         
 
-    def output(self, x, train_flag=True):
-        x = self.local_representation.output(x,train_flag)
+    def __call__(self, x, train_flag=True):
+        x = self.local_representation(x,train_flag)
         B, H, W, C = x.shape
         if self.use_layer_scale:
             if hasattr(self.drop_path, 'train_flag'):
                 x = tf.transpose(x, perm=[0, 2, 3, 1])
                 x = tf.reshape(x, shape=(B, H * W, C))
-                x=self.attn.output(x)
+                x=self.attn(x)
                 x = tf.reshape(x, shape=(B, H, W, C))
-                x = x + self.drop_path.output(self.layer_scale_1 * x, train_flag)
-                x = x + self.drop_path.output(self.layer_scale_2 * self.linear.output(x, train_flag), train_flag)
+                x = x + self.drop_path(self.layer_scale_1 * x, train_flag)
+                x = x + self.drop_path(self.layer_scale_2 * self.linear(x, train_flag), train_flag)
             else:
                 x = tf.transpose(x, perm=[0, 2, 3, 1])
                 x = tf.reshape(x, shape=(B, H * W, C))
-                x=self.attn.output(x)
+                x=self.attn(x)
                 x = tf.reshape(x, shape=(B, H, W, C))
-                x = x + self.drop_path.output(self.layer_scale_1 * x)
-                x = x + self.drop_path.output(self.layer_scale_2 * self.linear.output(x, train_flag)) 
+                x = x + self.drop_path(self.layer_scale_1 * x)
+                x = x + self.drop_path(self.layer_scale_2 * self.linear(x, train_flag)) 
         else:
             if hasattr(self.drop_path, 'train_flag'):
                 x = tf.transpose(x, perm=[0, 2, 3, 1])
                 x = tf.reshape(x, shape=(B, H * W, C))
-                x=self.attn.output(x)
+                x=self.attn(x)
                 x = tf.reshape(x, shape=(B, H, W, C))
-                x = x + self.drop_path.output(x, train_flag)
-                x = x + self.drop_path.output(self.linear.output(x, train_flag), train_flag)
+                x = x + self.drop_path(x, train_flag)
+                x = x + self.drop_path(self.linear(x, train_flag), train_flag)
             else:
                 x = tf.transpose(x, perm=[0, 2, 3, 1])
                 x = tf.reshape(x, shape=(B, H * W, C))
-                x=self.attn.output(x)
+                x=self.attn(x)
                 x = tf.reshape(x, shape=(B, H, W, C))
-                x = x + self.drop_path.output(x)
-                x = x + self.drop_path.output(self.linear.output(x, train_flag))
+                x = x + self.drop_path(x)
+                x = x + self.drop_path(self.linear(x, train_flag))
         return x
 
 

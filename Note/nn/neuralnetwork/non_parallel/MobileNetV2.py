@@ -46,16 +46,16 @@ def correct_pad(inputs, kernel_size):
 class _inverted_res_block:
     def __init__(self, in_channels=None, expansion=None, stride=None, alpha=None, filters=None, block_id=None, dtype='float32'):
         self.conv2d1=conv2d(expansion * in_channels,[1,1],in_channels,padding="SAME",use_bias=False,dtype=dtype)
-        self.batch_normalization1=batch_norm(self.conv2d1.output_size,momentum=0.999,parallel=False,dtype=dtype)
+        self.batch_normalization1=batch_norm(self.conv2d1.output_size,momentum=0.999,dtype=dtype)
         self.zeropadding2d=zeropadding2d()
         self.depthwiseconv2d=depthwise_conv2d([3,3],1,self.conv2d1.output_size,strides=[1,stride,stride,1],use_bias=False,padding="SAME" if stride == 1 else "VALID",dtype=dtype)
-        self.batch_normalization2=batch_norm(self.depthwiseconv2d.output_size,momentum=0.999,parallel=False,dtype=dtype)
+        self.batch_normalization2=batch_norm(self.depthwiseconv2d.output_size,momentum=0.999,dtype=dtype)
         pointwise_conv_filters = int(filters * alpha)
         # Ensure the number of filters on the last 1x1 convolution is divisible by
         # 8.
         self.pointwise_filters = _make_divisible(pointwise_conv_filters, 8)
         self.conv2d2=conv2d(self.pointwise_filters,[1,1],self.depthwiseconv2d.output_size,padding="SAME",use_bias=False,dtype=dtype)
-        self.batch_normalization3=batch_norm(self.conv2d2.output_size,momentum=0.999,parallel=False,dtype=dtype)
+        self.batch_normalization3=batch_norm(self.conv2d2.output_size,momentum=0.999,dtype=dtype)
         self.in_channels=in_channels
         self.stride=stride
         self.block_id=block_id
@@ -63,21 +63,21 @@ class _inverted_res_block:
         self.output_size=self.conv2d2.output_size
     
     
-    def output(self,data,train_flag=True):
+    def __call__(self,data,train_flag=True):
         self.train_flag=train_flag
         x=data
         if self.block_id:
-            x=self.conv2d1.output(x)
-            x=self.batch_normalization1.output(x,self.train_flag)
+            x=self.conv2d1(x)
+            x=self.batch_normalization1(x,self.train_flag)
             x=activation_dict['relu6'](x)
         if self.stride==2:
             padding = correct_pad(x, 3)
-            x=self.zeropadding2d.output(x, padding)
-        x=self.depthwiseconv2d.output(x)
-        x=self.batch_normalization2.output(x,self.train_flag)
+            x=self.zeropadding2d(x, padding)
+        x=self.depthwiseconv2d(x)
+        x=self.batch_normalization2(x,self.train_flag)
         x=activation_dict['relu6'](x)
-        x=self.conv2d2.output(x)
-        x=self.batch_normalization3.output(x,self.train_flag)
+        x=self.conv2d2(x)
+        x=self.batch_normalization3(x,self.train_flag)
         if self.in_channels == self.pointwise_filters and self.stride == 1:
             return data+x
         return x
@@ -100,7 +100,7 @@ class MobileNetV2:
         self.layers=Layers()
         
         self.layers.add(conv2d(self.first_block_filters,[3,3],3,strides=[2,2],padding='SAME',use_bias=False,dtype=dtype))
-        self.layers.add(batch_norm(momentum=0.999,parallel=False,dtype=dtype))
+        self.layers.add(batch_norm(momentum=0.999,dtype=dtype))
         
         self.layers.add(_inverted_res_block(self.layers.output_size, filters=16, alpha=self.alpha, stride=1, expansion=1, block_id=0, dtype=dtype))
         self.layers.add(_inverted_res_block(self.layers.output_size, filters=24, alpha=self.alpha, stride=2, expansion=6, block_id=1, dtype=dtype))
@@ -129,7 +129,7 @@ class MobileNetV2:
             last_block_filters = 1280
             
         self.layers.add(conv2d(last_block_filters,[1,1],use_bias=False,dtype=dtype))
-        self.layers.add(batch_norm(momentum=0.999,parallel=False,dtype=dtype))
+        self.layers.add(batch_norm(momentum=0.999,dtype=dtype))
         
         self.dense=dense(self.classes,self.layers.output_size,activation='softmax',dtype=dtype)
         self.opt=tf.keras.optimizers.Adam()
@@ -159,10 +159,10 @@ class MobileNetV2:
     
     
     def fp(self,data):
-        x=self.layers.output(data,self.km)
+        x=self.layers(data,self.km)
         if self.include_top:
             x=tf.math.reduce_mean(x,axis=[1,2])
-            x=self.dense.output(x)
+            x=self.dense(x)
         else:
             if self.pooling=="avg":
                 x=tf.math.reduce_mean(x,axis=[1,2])

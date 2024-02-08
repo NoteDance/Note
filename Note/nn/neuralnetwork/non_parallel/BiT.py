@@ -19,9 +19,9 @@ class StdConv2d:
       self.conv2d.weight = w
 
 
-  def output(self, x):
-    out = self.conv2d.output(x)
-    out = self.zeropadding2d.output(out)
+  def __call__(self, x):
+    out = self.conv2d(x)
+    out = self.zeropadding2d(out)
     return out
 
 
@@ -61,19 +61,19 @@ class PreActBottleneck:
       # Projection also with pre-activation according to paper.
       self.downsample = conv1x1(cin, cout, stride)
 
-  def output(self, x):
-    out = self.relu(self.gn1.output(x))
+  def __call__(self, x):
+    out = self.relu(self.gn1(x))
 
     # Residual branch
     residual = x
     if hasattr(self, 'downsample'):
-      residual = self.downsample.output(out)
+      residual = self.downsample(out)
 
     # Unit's branch
-    out = self.conv1.output(out)
-    out = self.conv2.output(self.relu(self.gn2.output(out)))
-    out = self.zeropadding2d.output(out)
-    out = self.conv3.output(self.relu(self.gn3.output(out)))
+    out = self.conv1(out)
+    out = self.conv2(self.relu(self.gn2(out)))
+    out = self.zeropadding2d(out)
+    out = self.conv3(self.relu(self.gn3(out)))
 
     return out + residual
 
@@ -121,6 +121,7 @@ class BiT:
     self.loss_object=tf.keras.losses.SparseCategoricalCrossentropy()
     self.opt=tf.keras.optimizers.Adam()
     self.param=Module.param
+    self.km=0
     
     
   def fine_tuning(self,classes=None,lr=None,flag=0):
@@ -148,7 +149,7 @@ class BiT:
 
 
   def fp(self, data):
-    output = self.head.output(self.body.output(self.root.output(data)))
+    output = self.head(self.body(self.root(data)))
     assert output.shape[-2:] == (1, 1)  # We should have no spatial shape left.
     return tf.nn.softmax(tf.transpose(output,[0,3,1,2])[...,0,0])
     

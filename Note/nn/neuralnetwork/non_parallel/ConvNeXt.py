@@ -33,11 +33,11 @@ class ConvNeXtBlock:
         return x
     
     
-    def output(self,data,train_flag=True):
-        x=self.conv2d.output(data)
-        x=self.layer_norm.output(x)
-        x=self.dense1.output(x)
-        x=self.dense2.output(x)
+    def __call__(self,data,train_flag=True):
+        x=self.conv2d(data)
+        x=self.layer_norm(x)
+        x=self.dense1(x)
+        x=self.dense2(x)
         if self.layer_scale_init_value is not None:
             x=self.LayerScale(x)
         if self.drop_path_rate:
@@ -139,13 +139,13 @@ class ConvNeXt:
     
     def fp(self,data):
         for i in range(self.num_convnext_blocks):
-            data = self.downsample_layers[i].output(data,self.km)
+            data = self.downsample_layers[i](data,self.km)
             for j in range(self.depths[i]):
-                data=self.blocks[i].output(data,self.km)
+                data=self.blocks[i](data,self.km)
         if self.include_top:
             data = tf.math.reduce_mean(data, axis=[1, 2])
-            data = self.layer_norm.output(data)
-            data = self.dense.output(data)
+            data = self.layer_norm(data)
+            data = self.dense(data)
         else:
             if self.pooling=="avg":
                 data = tf.math.reduce_mean(data, axis=[1, 2])

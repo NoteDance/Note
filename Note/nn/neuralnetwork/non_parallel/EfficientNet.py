@@ -17,7 +17,6 @@ import copy
 from Note.nn.Module import Module
 
 
-
 class EfficientNet:
     """Instantiates the EfficientNet architecture.
     
@@ -144,7 +143,7 @@ class EfficientNet:
         self.layers1=Layers()
         self.layers1.add(conv2d(round_filters(32),[3,3],3,strides=2,padding="VALID",use_bias=False,
                            weight_initializer=CONV_KERNEL_INITIALIZER,dtype=self.dtype))
-        self.layers1.add(batch_norm(axis=-1,parallel=False,dtype=self.dtype))
+        self.layers1.add(batch_norm(axis=-1,dtype=self.dtype))
         self.layers1.add(activation_dict[self.activation])    
     
         # Build blocks
@@ -187,7 +186,7 @@ class EfficientNet:
             weight_initializer=CONV_KERNEL_INITIALIZER,
             dtype=self.dtype
         ))
-        self.layers3.add(batch_norm(axis=-1,parallel=False,dtype=self.dtype))
+        self.layers3.add(batch_norm(axis=-1,dtype=self.dtype))
         self.layers3.add(activation_dict[self.activation])
         if self.include_top:
             self.global_avg_pool2d=global_avg_pool2d()
@@ -225,22 +224,22 @@ class EfficientNet:
     
     
     def fp(self,data):
-        data=self.rescaling.output(data)
-        data=self.norm.output(data)
-        x=self.zeropadding2d.output(data,correct_pad(data,3))
-        x=self.layers1.output(x,self.km)
-        x=self.layers2.output(x,self.km)
-        x=self.layers3.output(x,self.km)
+        data=self.rescaling(data)
+        data=self.norm(data)
+        x=self.zeropadding2d(data,correct_pad(data,3))
+        x=self.layers1(x,self.km)
+        x=self.layers2(x,self.km)
+        x=self.layers3(x,self.km)
         if self.include_top:
-            x=self.global_avg_pool2d.output(x)
+            x=self.global_avg_pool2d(x)
             if self.dropout_rate > 0:
-                x=self.dropout.output(x)
-            x=self.dense.output(x)
+                x=self.dropout(x)
+            x=self.dense(x)
         else:
             if self.pooling == "avg":
-                x=self.global_avg_pool2d.output(x)
+                x=self.global_avg_pool2d(x)
             else:
-                x=self.global_max_pool2d.output(x)
+                x=self.global_max_pool2d(x)
         return x
     
     
@@ -306,7 +305,7 @@ class block:
                               in_channels,padding="SAME",
                               use_bias=False,
                               weight_initializer=CONV_KERNEL_INITIALIZER,dtype=dtype))
-            self.layers1.add(batch_norm(axis=-1,parallel=False,dtype=dtype))
+            self.layers1.add(batch_norm(axis=-1,dtype=dtype))
             self.layers1.add(activation_dict[activation])
         else:
             self.layers1.add(identity(in_channels))
@@ -326,7 +325,7 @@ class block:
                                             use_bias=False,
                                             weight_initializer=CONV_KERNEL_INITIALIZER,
                                             dtype=dtype))
-        self.layers2.add(batch_norm(axis=-1,parallel=False,dtype=dtype))
+        self.layers2.add(batch_norm(axis=-1,dtype=dtype))
         self.layers2.add(activation_dict[activation])
 
         # Squeeze and Excitation phase
@@ -343,7 +342,7 @@ class block:
         self.layers3=Layers()
         self.layers3.add(conv2d(filters_out,[1,1],self.conv2d2.output_size,padding="SAME",
                             use_bias=False,weight_initializer=CONV_KERNEL_INITIALIZER,dtype=dtype))
-        self.layers3.add(batch_norm(axis=-1,parallel=False,dtype=dtype))
+        self.layers3.add(batch_norm(axis=-1,dtype=dtype))
         if id_skip and strides == 1 and filters_in == filters_out:
             if drop_rate > 0:
                 self.dropout=dropout(drop_rate,noise_shape=(None, 1, 1, 1))
@@ -351,21 +350,21 @@ class block:
         self.train_flag=True
     
     
-    def output(self,data,train_flag=True):
-        x=self.layers1.output(data,train_flag)
+    def __call__(self,data,train_flag=True):
+        x=self.layers1(data,train_flag)
         if self.strides==2:
-            x=self.zeropadding2d.output(x,correct_pad(x,self.kernel_size))
-        x=self.layers2.output(x,train_flag)
+            x=self.zeropadding2d(x,correct_pad(x,self.kernel_size))
+        x=self.layers2(x,train_flag)
         if 0 < self.se_ratio <= 1:
-            se=self.global_avg_pool2d.output(x)
-            se=self.reshape.output(se)
-            se=self.conv2d1.output(se)
-            se=self.conv2d2.output(se)
+            se=self.global_avg_pool2d(x)
+            se=self.reshape(se)
+            se=self.conv2d1(se)
+            se=self.conv2d2(se)
             x=tf.math.multiply(x,se)
-        x=self.layers3.output(x,train_flag)
+        x=self.layers3(x,train_flag)
         if self.id_skip and self.strides == 1 and self.filters_in == self.filters_out:
             if self.drop_rate > 0:
-                x=self.dropout.output(x,train_flag)
+                x=self.dropout(x,train_flag)
             x=tf.math.add(x,data)
         return x
 

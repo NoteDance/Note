@@ -13,15 +13,15 @@ class _conv_block:
     def __init__(self, in_channels, filters, alpha, kernel=(3, 3), strides=[1, 1], dtype='float32'):
         filters = int(filters * alpha)
         self.conv2d=conv2d(filters,kernel,in_channels,strides=strides,padding='SAME',use_bias=False,dtype=dtype)
-        self.batch_norm=batch_norm(self.conv2d.output_size,parallel=False,dtype=dtype)
+        self.batch_norm=batch_norm(self.conv2d.output_size,dtype=dtype)
         self.train_flag=True
         self.output_size=self.conv2d.output_size
     
     
-    def output(self,data,train_flag=True):
+    def __call__(self,data,train_flag=True):
         self.train_flag=train_flag
-        x=self.conv2d.output(data)
-        x=self.batch_norm.output(x,self.train_flag)
+        x=self.conv2d(data)
+        x=self.batch_norm(x,self.train_flag)
         return activation_dict['relu6'](x)
 
 
@@ -31,24 +31,24 @@ class _depthwise_conv_block:
         self.strides=strides
         self.zeropadding2d=zeropadding2d()
         self.depthwiseconv2d=depthwise_conv2d([3,3],depth_multiplier,in_channels,strides=[1,strides[0],strides[1],1],padding="SAME" if strides == [1, 1] else "VALID",use_bias=False,dtype=dtype)
-        self.batch_norm1=batch_norm(self.depthwiseconv2d.output_size,parallel=False,dtype=dtype)
+        self.batch_norm1=batch_norm(self.depthwiseconv2d.output_size,dtype=dtype)
         self.conv2d=conv2d(pointwise_conv_filters,[1,1],self.depthwiseconv2d.output_size,strides=[1, 1],padding='SAME',use_bias=False,dtype=dtype)
-        self.batch_norm2=batch_norm(self.conv2d.output_size,parallel=False,dtype=dtype)
+        self.batch_norm2=batch_norm(self.conv2d.output_size,dtype=dtype)
         self.train_flag=True
         self.output_size=self.conv2d.output_size
     
     
-    def output(self,data,train_flag=True):
+    def __call__(self,data,train_flag=True):
         self.train_flag=train_flag
         if self.strides == [1, 1]:
             x = data
         else:
-            x = self.zeropadding2d.output(data, ((0, 1), (0, 1)))
-        x=self.depthwiseconv2d.output(x)
-        x=self.batch_norm1.output(x,self.train_flag)
+            x = self.zeropadding2d(data, ((0, 1), (0, 1)))
+        x=self.depthwiseconv2d(x)
+        x=self.batch_norm1(x,self.train_flag)
         x=activation_dict['relu6'](x)
-        x=self.conv2d.output(x)
-        x=self.batch_norm2.output(x,self.train_flag)
+        x=self.conv2d(x)
+        x=self.batch_norm2(x,self.train_flag)
         return activation_dict['relu6'](x)
 
 
@@ -118,12 +118,12 @@ class MobileNet:
     
     
     def fp(self,data):
-        x=self.layers.output(data,self.km)
+        x=self.layers(data,self.km)
         if self.include_top:
             x=tf.math.reduce_mean(x,axis=[1,2],keepdims=True)
-            x=self.conv2d.output(x)
+            x=self.conv2d(x)
             x=tf.reshape(x,[x.shape[0],self.classes])
-            x=self.dense.output(x)
+            x=self.dense(x)
         else:
             if self.pooling == "avg":
                 x=tf.math.reduce_mean(x,axis=[1,2])

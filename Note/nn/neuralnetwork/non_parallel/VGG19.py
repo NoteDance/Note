@@ -81,12 +81,12 @@ class VGG19:
     
     
     def fp(self,data):
-        x=self.layers.output(data)
+        x=self.layers(data)
         if self.include_top:
             x=self.flatten(x)
-            x=self.dense1.output(x)
-            x=self.dense2.output(x)
-            x=self.dense3.output(x)
+            x=self.dense1(x)
+            x=self.dense2(x)
+            x=self.dense3(x)
         else:
             if self.pooling=="avg":
                 data = tf.math.reduce_mean(data, axis=[1, 2])

@@ -153,7 +153,7 @@ class EfficientNetV2:
         self.layers1=Layers()
         self.layers1.add(conv2d(stem_filters,[3,3],3,strides=2,padding="SAME",use_bias=False,
                            weight_initializer=CONV_KERNEL_INITIALIZER,dtype=self.dtype))
-        self.layers1.add(batch_norm(axis=-1,momentum=self.bn_momentum,parallel=False,dtype=self.dtype))
+        self.layers1.add(batch_norm(axis=-1,momentum=self.bn_momentum,dtype=self.dtype))
         self.layers1.add(activation_dict[self.activation])    
     
         # Build blocks
@@ -220,7 +220,7 @@ class EfficientNetV2:
             weight_initializer=CONV_KERNEL_INITIALIZER,
             dtype=self.dtype
         ))
-        self.layers3.add(batch_norm(axis=-1,momentum=self.bn_momentum,parallel=False,dtype=self.dtype))
+        self.layers3.add(batch_norm(axis=-1,momentum=self.bn_momentum,dtype=self.dtype))
         self.layers3.add(activation_dict[self.activation])
         if self.include_top:
             self.global_avg_pool2d=global_avg_pool2d()
@@ -258,21 +258,21 @@ class EfficientNetV2:
     
     
     def fp(self,data):
-        data=self.rescaling.output(data)
-        data=self.norm.output(data)
-        x=self.layers1.output(data,self.km)
-        x=self.layers2.output(x,self.km)
-        x=self.layers3.output(x,self.km)
+        data=self.rescaling(data)
+        data=self.norm(data)
+        x=self.layers1(data,self.km)
+        x=self.layers2(x,self.km)
+        x=self.layers3(x,self.km)
         if self.include_top:
-            x=self.global_avg_pool2d.output(x)
+            x=self.global_avg_pool2d(x)
             if self.dropout_rate > 0:
-                x=self.dropout.output(x)
-            x=self.dense.output(x)
+                x=self.dropout(x)
+            x=self.dense(x)
         else:
             if self.pooling == "avg":
-                x=self.global_avg_pool2d.output(x)
+                x=self.global_avg_pool2d(x)
             else:
-                x=self.global_max_pool2d.output(x)
+                x=self.global_max_pool2d(x)
         return x
 
 
@@ -326,7 +326,6 @@ class MBConvBlock:
             self.layers.add(batch_norm(
                 axis=-1,
                 momentum=bn_momentum,
-                parallel=False,
                 dtype=dtype
             ))
             self.layers.add(activation_dict[activation])
@@ -343,7 +342,7 @@ class MBConvBlock:
             dtype=dtype
         ))
         self.layers.add(batch_norm(
-            axis=-1, momentum=bn_momentum, parallel=False, dtype=dtype
+            axis=-1, momentum=bn_momentum, dtype=dtype
         ))
         self.layers.add(activation_dict[activation],save_data=True)
     
@@ -383,7 +382,7 @@ class MBConvBlock:
             dtype=dtype
         ))
         self.layers.add(batch_norm(
-            axis=-1, momentum=bn_momentum, parallel=False, dtype=dtype
+            axis=-1, momentum=bn_momentum, dtype=dtype
         ))
     
         if strides == 1 and input_filters == output_filters:
@@ -396,8 +395,8 @@ class MBConvBlock:
         self.train_flag=True
     
     
-    def output(self,data,train_flag=True):
-        x=self.layers.output(data,train_flag)
+    def __call__(self,data,train_flag=True):
+        x=self.layers(data,train_flag)
         if self.strides == 1 and self.input_filters == self.output_filters:
             x=tf.math.add(x,data)
         return x
@@ -437,7 +436,7 @@ class FusedMBConvBlock:
                 dtype=dtype
             ))
             self.layers.add(batch_norm(
-                axis=-1, momentum=bn_momentum, parallel=False, dtype=dtype
+                axis=-1, momentum=bn_momentum, dtype=dtype
             ))
             self.layers.add(activation_dict[activation],save_data=True)
         else:
@@ -479,7 +478,7 @@ class FusedMBConvBlock:
             use_bias=False,
         ))
         self.layers.add(batch_norm(
-            axis=-1, momentum=bn_momentum, parallel=False, dtype=dtype
+            axis=-1, momentum=bn_momentum, dtype=dtype
         ))
         if expand_ratio == 1:
             self.layers.add(activation_dict[activation])
@@ -495,8 +494,8 @@ class FusedMBConvBlock:
         self.train_flag=True
     
     
-    def output(self,data,train_flag=True):
-        x=self.layers.output(data,train_flag)
+    def __call__(self,data,train_flag=True):
+        x=self.layers(data,train_flag)
         if self.strides == 1 and self.input_filters == self.output_filters:
             x=tf.math.add(x,data)
         return x

@@ -109,12 +109,11 @@ class MobileNetV3:
     
     def build(self,dtype='float32'):
         Module.init()
-        
         if self.include_preprocessing:
             self.rescaling=rescaling(scale=1.0 / 127.5, offset=-1.0)
         self.layers=Layers()
         self.layers.add(conv2d(16,kernel_size=3,input_size=3,strides=(2, 2),padding="SAME",use_bias=False,dtype=dtype))
-        self.layers.add(batch_norm(epsilon=1e-3,momentum=0.999,parallel=False,dtype=dtype))
+        self.layers.add(batch_norm(epsilon=1e-3,momentum=0.999,dtype=dtype))
         self.layers.add(self.activation)
         
         if self.model_type=='small':
@@ -131,7 +130,7 @@ class MobileNetV3:
         else:
             last_point_ch = self.last_point_ch
         self.layers.add(conv2d(last_conv_ch,kernel_size=1,padding="SAME",use_bias=False,dtype=dtype))
-        self.layers.add(batch_norm(epsilon=1e-3,momentum=0.999,parallel=False,dtype=dtype))
+        self.layers.add(batch_norm(epsilon=1e-3,momentum=0.999,dtype=dtype))
         self.layers.add(self.activation)
         if self.include_top:
             self.layers.add(global_avg_pool2d(keepdims=True))
@@ -174,10 +173,10 @@ class MobileNetV3:
     
     def fp(self,data):
         if self.include_preprocessing:
-            data=self.rescaling.output(data)
-        x=self.layers.output(data,self.km)
+            data=self.rescaling(data)
+        x=self.layers(data,self.km)
         if self.include_top:
-            x=self.flatten.output(x)
+            x=self.flatten(x)
             x=self.activation(x)
         else:
             if self.pooling=="avg":
@@ -253,17 +252,17 @@ def correct_pad(inputs, kernel_size):
 class _inverted_res_block:
     def __init__(self, in_channels, expansion, filters, kernel_size, stride, se_ratio, activation, block_id, dtype):
         self.conv2d1=conv2d(_depth(in_channels * expansion),1,in_channels,padding="SAME",use_bias=False,dtype=dtype)
-        self.batch_normalization1=batch_norm(self.conv2d1.output_size,epsilon=1e-3,momentum=0.999,parallel=False,dtype=dtype)
+        self.batch_normalization1=batch_norm(self.conv2d1.output_size,epsilon=1e-3,momentum=0.999,dtype=dtype)
         if stride == 2:
             self.zeropadding2d=zeropadding2d()
         self.depthwiseconv2d=depthwise_conv2d(kernel_size,input_size=self.conv2d1.output_size,strides=stride,use_bias=False,padding="SAME" if stride == 1 else "VALID",dtype=dtype)
-        self.batch_normalization2=batch_norm(self.depthwiseconv2d.output_size,epsilon=1e-3,momentum=0.999,parallel=False,dtype=dtype)
+        self.batch_normalization2=batch_norm(self.depthwiseconv2d.output_size,epsilon=1e-3,momentum=0.999,dtype=dtype)
         if se_ratio:
             self.layers=_se_block(self.depthwiseconv2d.output_size, _depth(in_channels * expansion), se_ratio, dtype)
             self.conv2d2=conv2d(filters,1,self.layers.output_size,padding="SAME",use_bias=False,dtype=dtype)
         else:
             self.conv2d2=conv2d(filters,1,self.depthwiseconv2d.output_size,padding="SAME",use_bias=False,dtype=dtype)
-        self.batch_normalization3=batch_norm(self.conv2d2.output_size,epsilon=1e-3,momentum=0.999,parallel=False,dtype=dtype)
+        self.batch_normalization3=batch_norm(self.conv2d2.output_size,epsilon=1e-3,momentum=0.999,dtype=dtype)
         self.in_channels=in_channels
         self.filters=filters
         self.stride=stride
@@ -274,24 +273,24 @@ class _inverted_res_block:
         self.output_size=self.conv2d2.output_size
     
     
-    def output(self,data,train_flag=True):
+    def __call__(self,data,train_flag=True):
         self.train_flag=train_flag
         x=data
         shortcut=data
         if self.block_id:
-            x=self.conv2d1.output(x)
-            x=self.batch_normalization1.output(x,self.train_flag)
+            x=self.conv2d1(x)
+            x=self.batch_normalization1(x,self.train_flag)
             x=self.activation(x)
         if self.stride==2:
             padding = correct_pad(x, 3)
-            x=self.zeropadding2d.output(x, padding)
-        x=self.depthwiseconv2d.output(x)
-        x=self.batch_normalization2.output(x,self.train_flag)
+            x=self.zeropadding2d(x, padding)
+        x=self.depthwiseconv2d(x)
+        x=self.batch_normalization2(x,self.train_flag)
         x=self.activation(x)
         if self.se_ratio:
-            x=self.layers.output(x)
-        x=self.conv2d2.output(x)
-        x=self.batch_normalization3.output(x,self.train_flag)
+            x=self.layers(x)
+        x=self.conv2d2(x)
+        x=self.batch_normalization3(x,self.train_flag)
         if self.stride == 1 and self.in_channels == self.filters:
             return shortcut+x
         return x
