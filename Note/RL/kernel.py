@@ -95,7 +95,7 @@ class kernel:
         action_prob=self.action_one*self.epsilon/len(self.action_one)
         try:
             if hasattr(self.platform,'DType'):
-                best_a=np.argmax(self.nn.nn(s))
+                best_a=np.argmax(self.nn.nn.fp(s))
                 action_prob[best_a]+=1-self.epsilon
             else:
                 s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
@@ -120,7 +120,7 @@ class kernel:
                 if hasattr(self.nn,'nn'):
                     if hasattr(self.platform,'DType'):
                         s=np.expand_dims(s,axis=0)
-                        a=np.argmax(self.nn.nn(s))
+                        a=np.argmax(self.nn.nn.fp(s))
                     else:
                         s=np.expand_dims(s,axis=0)
                         s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
@@ -136,7 +136,7 @@ class kernel:
                     else:
                         if hasattr(self.platform,'DType'):
                             s=np.expand_dims(s,axis=0)
-                            a=self.nn.actor(s).numpy()
+                            a=self.nn.actor.fp(s).numpy()
                             a=np.squeeze(a)
                         else:
                             s=np.expand_dims(s,axis=0)
@@ -159,7 +159,7 @@ class kernel:
                 if hasattr(self.nn,'nn'):
                     if hasattr(self.platform,'DType'):
                         s=np.expand_dims(s,axis=0)
-                        a=np.argmax(self.nn.nn(s))
+                        a=np.argmax(self.nn.nn.fp(s))
                     else:
                         s=np.expand_dims(s,axis=0)
                         s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
@@ -175,7 +175,7 @@ class kernel:
                     else:
                         if hasattr(self.platform,'DType'):
                             s=np.expand_dims(s,axis=0)
-                            a=self.nn.actor(s).numpy()
+                            a=self.nn.actor.fp(s).numpy()
                             a=np.squeeze(a)
                         else:
                             s=np.expand_dims(s,axis=0)
@@ -207,7 +207,7 @@ class kernel:
             if hasattr(self.nn,'nn'):
                 if hasattr(self.platform,'DType'):
                     s=np.expand_dims(s,axis=0)
-                    a=np.argmax(self.nn.nn(s))
+                    a=np.argmax(self.nn.nn.fp(s))
                 else:
                     s=np.expand_dims(s,axis=0)
                     s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
@@ -223,7 +223,7 @@ class kernel:
                 else:
                     if hasattr(self.platform,'DType'):
                         s=np.expand_dims(s,axis=0)
-                        a=self.nn.actor(s).numpy()
+                        a=self.nn.actor.fp(s).numpy()
                         a=np.squeeze(a)
                     else:
                         s=np.expand_dims(s,axis=0)
@@ -328,7 +328,7 @@ class kernel:
                 if self.epsilon==None:
                     self.epsilon=self.nn.epsilon(self.sc)
                 if self.epsilon==None and hasattr(self.nn,'epsilon')!=True:
-                    action_prob=self.nn.nn(s)
+                    action_prob=self.nn.nn.fp(s)
                 else:
                     action_prob=self.epsilon_greedy_policy(s)
                 a=np.random.choice(self.action_count,p=action_prob)
@@ -363,7 +363,7 @@ class kernel:
                         a=self.nn.action(s).detach().numpy()
             else:
                 if hasattr(self.platform,'DType'):
-                    a=(self.nn.actor(s)+self.nn.noise()).numpy()
+                    a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
                 else:
                     s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                     a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
