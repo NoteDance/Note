@@ -50,5 +50,5 @@ class repeat_vector:
                 f"Expected an integer value for `n`, got {type(n)}."
             )
 
-    def output(self, data):
+    def __call__(self, data):
         return repeat(data, self.n)

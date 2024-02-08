@@ -38,7 +38,7 @@ class talking_heads_attention:
         self.param=[self._pre_softmax_weight, self._post_softmax_weight]
 
 
-    def output(self,
+    def __call__(self,
               query_tensor,
               key_tensor,
               value_tensor,

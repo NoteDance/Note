@@ -23,7 +23,7 @@ class RNNCell: # define a class for recurrent neural network (RNN) cell
         Module.param.extend(self.param)
     
     
-    def output(self,data,state): # define the output method
+    def __call__(self,data,state): # define the output method
         if data.dtype!=self.dtype:
             data=tf.cast(data,self.dtype)
         output=tf.matmul(data,self.weight_i)+tf.matmul(state,self.weight_s) # calculate the linear transformation of input data and previous state

@@ -34,5 +34,5 @@ class unit_norm:
             )
 
 
-    def output(self, inputs):
+    def __call__(self, inputs):
         return tf.linalg.l2_normalize(inputs, axis=self.axis)

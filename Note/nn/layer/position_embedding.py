@@ -44,7 +44,7 @@ class position_embedding:
       return
 
 
-  def output(self, data):
+  def __call__(self, data):
     input_shape = tf.shape(data)
     actual_seq_len = input_shape[self._seq_axis]
     position_embeddings = self._position_embeddings[:actual_seq_len, :]

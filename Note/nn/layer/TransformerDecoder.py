@@ -5,7 +5,7 @@ class TransformerDecoder:
         self.norm = norm
 
 
-    def output(self, tgt, memory, tgt_mask = None,
+    def __call__(self, tgt, memory, tgt_mask = None,
                 memory_mask = None, train_flag=True):
         output = tgt
 

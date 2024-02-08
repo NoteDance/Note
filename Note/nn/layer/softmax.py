@@ -49,7 +49,7 @@ class softmax:
         self.axis = axis
 
 
-    def output(self, inputs, mask=None):
+    def __call__(self, inputs, mask=None):
         if mask is not None:
             # Since mask is 1.0 for positions we want to keep and 0.0 for masked
             # positions, this operation will create a tensor which is 0.0 for

@@ -36,7 +36,7 @@ class Transformer:
         self.dtype=dtype
 
 
-    def output(self, src, tgt, src_mask = None, tgt_mask = None, memory_mask = None, train_flag=True):
+    def __call__(self, src, tgt, src_mask = None, tgt_mask = None, memory_mask = None, train_flag=True):
         if src.dtype!=self.dtype:
             src=tf.cast(src,self.dtype)
         if tgt.dtype!=self.dtype:

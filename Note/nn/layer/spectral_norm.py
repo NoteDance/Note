@@ -48,7 +48,7 @@ class spectral_norm:
         self.train_flag=True
         self.output_size=layer.output_size
 
-    def output(self, data, train_flag=True):
+    def __call__(self, data, train_flag=True):
         self.train_flag=train_flag
         if train_flag:
             self.normalize_weights()

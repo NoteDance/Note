@@ -80,7 +80,7 @@ class zeropadding3d:
             self.output_size=input_size
             
             
-    def output(self, data, padding=(1, 1, 1)):
+    def __call__(self, data, padding=(1, 1, 1)):
         if self.pattern is None:
             if isinstance(padding, int):
                 padding = (

@@ -7,7 +7,7 @@ class stochastic_depth:
         self.train_flag=True
     
     
-    def output(self, x, train_flag=True):
+    def __call__(self, x, train_flag=True):
         self.train_flag=train_flag
         if train_flag:
             keep_prob = 1 - self.drop_path_rate

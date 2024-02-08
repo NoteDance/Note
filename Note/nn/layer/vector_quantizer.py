@@ -19,7 +19,7 @@ class vector_quantizer:
                         ['VarianceScaling',1.0,'fan_in','uniform'], 
                         dtype)
 
-  def output(self, data, is_training):
+  def __call__(self, data, is_training):
     flat_inputs = tf.reshape(data, [-1, self.embedding_dim])
 
     distances = (

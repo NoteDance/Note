@@ -13,7 +13,7 @@ class self_attention_mask:
       float Tensor of shape [batch_size, from_seq_length, to_seq_length].
   """
 
-  def output(self, inputs, to_mask=None):
+  def __call__(self, inputs, to_mask=None):
     if isinstance(inputs, list) and to_mask is None:
       to_mask = inputs[1]
       inputs = inputs[0]

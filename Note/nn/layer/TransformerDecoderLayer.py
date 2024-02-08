@@ -1,7 +1,7 @@
 import tensorflow as tf
 from Note.nn.layer.multihead_attention import multihead_attention
 from Note.nn.layer.dense import dense
-from Note.nn.layer.layer_normalization import layer_normalization
+from Note.nn.layer.layer_norm import layer_norm
 from Note.nn.layer.dropout import dropout
 from Note.nn.activation import activation_dict
 
@@ -19,9 +19,9 @@ class TransformerDecoderLayer:
         self.linear2 = dense(d_model, dim_feedforward, use_bias=bias, dtype=dtype)
 
         self.norm_first = norm_first
-        self.norm1 = layer_normalization(d_model, epsilon=layer_norm_eps, dtype=dtype)
-        self.norm2 = layer_normalization(d_model, epsilon=layer_norm_eps, dtype=dtype)
-        self.norm3 = layer_normalization(d_model, epsilon=layer_norm_eps, dtype=dtype)
+        self.norm1 = layer_norm(d_model, epsilon=layer_norm_eps, dtype=dtype)
+        self.norm2 = layer_norm(d_model, epsilon=layer_norm_eps, dtype=dtype)
+        self.norm3 = layer_norm(d_model, epsilon=layer_norm_eps, dtype=dtype)
         self.dropout1 = dropout(dropout_rate)
         self.dropout2 = dropout(dropout_rate)
         self.dropout3 = dropout(dropout_rate)
@@ -32,7 +32,7 @@ class TransformerDecoderLayer:
             self.activation = activation
 
 
-    def output(
+    def __call__(
         self,
         tgt,
         memory,
@@ -43,13 +43,13 @@ class TransformerDecoderLayer:
 
         x = tgt
         if self.norm_first:
-            x = x + self._sa_block(self.norm1.output(x), tgt_mask)
-            x = x + self._mha_block(self.norm2.output(x), memory, memory_mask)
-            x = x + self._ff_block(self.norm3.output(x))
+            x = x + self._sa_block(self.norm1(x), tgt_mask)
+            x = x + self._mha_block(self.norm2(x), memory, memory_mask)
+            x = x + self._ff_block(self.norm3(x))
         else:
-            x = self.norm1.output(x + self._sa_block(x, tgt_mask))
-            x = self.norm2.output(x + self._mha_block(x, memory, memory_mask))
-            x = self.norm3.output(x + self._ff_block(x))
+            x = self.norm1(x + self._sa_block(x, tgt_mask))
+            x = self.norm2(x + self._mha_block(x, memory, memory_mask))
+            x = self.norm3(x + self._ff_block(x))
 
         return x
 
@@ -57,11 +57,11 @@ class TransformerDecoderLayer:
     # self-attention block
     def _sa_block(self, x,
                   attn_mask=None, train_flag=True):
-        x = self.self_attn.output(x,
+        x = self.self_attn(x,
                            mask=attn_mask,
                            )[0]
         if train_flag:
-            return self.dropout1.output(x)
+            return self.dropout1(x)
         else:
             return x
 
@@ -69,10 +69,10 @@ class TransformerDecoderLayer:
     # multihead attention block
     def _mha_block(self, x, mem,
                    attn_mask=None, train_flag=True):
-        x = self.multihead_attn.output(x, mem,
+        x = self.multihead_attn(x, mem,
                                 )[0]
         if train_flag:
-            return self.dropout2.output(x)
+            return self.dropout2(x)
         else:
             return x
 
@@ -80,7 +80,7 @@ class TransformerDecoderLayer:
     # feed forward block
     def _ff_block(self, x, train_flag):
         if train_flag:
-            x = self.linear2.output(self.dropout.output(self.activation(self.linear1.output(x))))
-            return self.dropout3.output(x)
+            x = self.linear2(self.dropout(self.activation(self.linear1(x))))
+            return self.dropout3(x)
         else:
-            return self.linear2.output(self.activation(self.linear1.output(x)))
+            return self.linear2(self.activation(self.linear1(x)))

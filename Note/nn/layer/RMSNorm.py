@@ -32,7 +32,7 @@ class RMSNorm:
     else:
       self.param_axis = to_axes_or_slice(param_axis)
 
-  def output(self, data):
+  def __call__(self, data):
     """Connects the layer norm.
 
     Args:

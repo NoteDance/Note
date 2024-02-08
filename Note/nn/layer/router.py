@@ -79,7 +79,7 @@ class router:
         bias_initializer=bias_initializer,
         dtype=tf.float32)
 
-  def output(self,
+  def __call__(self,
            inputs: tf.Tensor,
            expert_capacity: int,
            train_flag = True) -> RouterOutput:

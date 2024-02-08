@@ -5,7 +5,7 @@ class TransformerEncoder:
         self.norm = norm
 
 
-    def output(
+    def __call__(
             self,
             src,
             mask = None,

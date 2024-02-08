@@ -1,3 +1,3 @@
 class subtract:
-    def output(self,data1,data2):
+    def __call__(self,data1,data2):
         return data1-data2

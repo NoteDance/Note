@@ -84,7 +84,7 @@ class reshape:
             )
         return tf.TensorShape(output_shape)
 
-    def output(self, data):
+    def __call__(self, data):
         result = tf.reshape(data, (tf.shape(data)[0],) + self.target_shape)
         if not tf.executing_eagerly():
             # Set the static shape for the result since it might lost during

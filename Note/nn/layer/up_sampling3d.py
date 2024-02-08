@@ -7,7 +7,7 @@ class up_sampling3d:
             size = (size, size, size)
         self.size = size
 
-    def output(self, inputs):
+    def __call__(self, inputs):
         # Repeat each spatial dimension size times along the depth, height and width axes
         outputs = tf.repeat(inputs, self.size[0], axis=1)
         outputs = tf.repeat(outputs, self.size[1], axis=2)

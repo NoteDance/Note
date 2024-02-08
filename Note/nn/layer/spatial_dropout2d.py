@@ -27,7 +27,7 @@ class spatial_dropout2d:
         self.seed = seed
         self.train_flag = True
 
-    def output(self, data, train_flag=True):
+    def __call__(self, data, train_flag=True):
         self.train_flag = train_flag
         def dropped_inputs():
             # Generate a mask with shape (batch_size, 1, 1, channels)

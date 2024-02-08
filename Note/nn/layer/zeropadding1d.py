@@ -55,7 +55,7 @@ class zeropadding1d:
             self.output_size=input_size
     
     
-    def output(self, data, padding=1):
+    def __call__(self, data, padding=1):
         if self.pattern is None:
             padding = normalize_tuple(
                 padding, 2, allow_zero=True

@@ -7,7 +7,7 @@ class reversible_residual:
         self.g=g
     
     
-    def output(self, data):
+    def __call__(self, data):
         data1, data2 = tf.split(data, 2, axis=-1) # split the input into two halves
         output1 = data1 + self.f(data2) # compute the first output half
         output2 = data2 + self.g(output1) # compute the second output half

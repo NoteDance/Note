@@ -43,7 +43,7 @@ class TLU:
                 self.alpha = initializer_(param_shape, self.alpha_initializer, dtype)
 
 
-    def output(self, data):
+    def __call__(self, data):
         if data.dtype!=self.dtype:
             data=tf.cast(data,self.dtype)
         if self.input_shape is None:

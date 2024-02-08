@@ -247,7 +247,7 @@ class reuse_multihead_attention:
                 tf.einsum(self._combine_equation, new_scores, value[-1]))
       return attention_output, attention_scores
     
-    def output(self,
+    def __call__(self,
              query,
              value,
              key=None,
@@ -275,18 +275,18 @@ class reuse_multihead_attention:
       #   N = `num_attention_heads`
       #   H = `size_per_head`
       # `value` = [B, S, N, H]
-      value = [vd(value) for vd in self._value_dense]
+      value = [vd(value) for vd in self.value_dense]
       for i in range(len(value)):
           n_batch, n_ctx, n_state = value[i].shape
           value[i] = tf.reshape(value[i], [n_batch, n_ctx, self.n_head, -1])
       if self._reuse_heads < self._num_heads:
         # `query` = [B, T, N ,H]
-        query = self._query_dense(query)
+        query = self.query_dense(query)
         n_batch, n_ctx, n_state = query.shape
         query = tf.reshape(query, [n_batch, n_ctx, self.n_head, -1])
     
         # `key` = [B, S, N, H]
-        key = self._key_dense(key)
+        key = self.key_dense(key)
         n_batch, n_ctx, n_state = key.shape
         key = tf.reshape(key, [n_batch, n_ctx, self.n_head, -1])
       else:
@@ -298,7 +298,7 @@ class reuse_multihead_attention:
           B, T, _, _ = attention_output[i].shape
           attention_output[i] = tf.reshape(attention_output[i], [B, T, -1])
       attention_output = [od(attention_output[i]) for i, od in enumerate(
-          self._output_dense)]
+          self.output_dense)]
       if len(attention_output) == 1:
         attention_output = attention_output[0]
       else:

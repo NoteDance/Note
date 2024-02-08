@@ -38,7 +38,7 @@ class voting_attention:
         self._key_dense=dense(self._num_heads*self._head_size,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
         self.param=[self._query_dense.param,self._key_dense.param]
 
-  def output(self, encoder_outputs, doc_attention_mask):
+  def __call__(self, encoder_outputs, doc_attention_mask):
     if encoder_outputs.dtype!=self.dtype:
         encoder_outputs=tf.cast(encoder_outputs,self.dtype)
     if self.input_size==None:
@@ -47,10 +47,10 @@ class voting_attention:
         
     num_docs = get_shape_list(encoder_outputs, expected_rank=[4])[1]
     cls_embeddings = encoder_outputs[:, :, 0, :]
-    key = self._key_dense.output(cls_embeddings)
+    key = self._key_dense(cls_embeddings)
     n_batch, n_ctx, n_state = key.shape
     key = tf.reshape(key, [n_batch, n_ctx, self._num_heads, -1])
-    query = self._query_dense.output(cls_embeddings)
+    query = self._query_dense(cls_embeddings)
     n_batch, n_ctx, n_state = query.shape
     query = tf.reshape(query, [n_batch, n_ctx, self._num_heads, -1])
     doc_attention_mask = tf.cast(doc_attention_mask, self.dtype)

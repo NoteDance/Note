@@ -32,5 +32,5 @@ class permute:
             )
 
 
-    def output(self, data):
+    def __call__(self, data):
         return tf.transpose(data, perm=(0,) + self.dims)

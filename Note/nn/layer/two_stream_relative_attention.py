@@ -117,7 +117,7 @@ class two_stream_relative_attention:
                 attention_mask = tf.expand_dims(
                     attention_mask, axis=mask_expansion_axis
                 )
-        return self._softmax.output(attention_scores, attention_mask)
+        return self._softmax(attention_scores, attention_mask)
     
     
     def compute_attention(self,
@@ -197,7 +197,7 @@ class two_stream_relative_attention:
       return attention_output
   
     
-    def output(self,
+    def __call__(self,
              content_stream,
              content_attention_bias,
              positional_attention_bias,
@@ -278,22 +278,22 @@ class two_stream_relative_attention:
           self.build()
     
       # `query` = [B, T, N, H]
-      query = self.query_dense.output(content_stream)
+      query = self.query_dense(content_stream)
       n_batch, n_ctx, n_state = query.shape
       query = tf.reshape(query, [n_batch, n_ctx, self.n_head, -1])
     
       # `key` = [B, S + M, N, H]
-      key = self.key_dense.output(content_and_memory_stream)
+      key = self.key_dense(content_and_memory_stream)
       n_batch, n_ctx, n_state = key.shape
       key = tf.reshape(key, [n_batch, n_ctx, self.n_head, -1])
     
       # `value` = [B, S + M, N, H]
-      value = self.value_dense.output(content_and_memory_stream)
+      value = self.value_dense(content_and_memory_stream)
       n_batch, n_ctx, n_state = value.shape
       value = tf.reshape(value, [n_batch, n_ctx, self.n_head, -1])
     
       # `position` = [B, L, N, H]
-      position = self.encoding_dense.output(relative_position_encoding)
+      position = self.encoding_dense(relative_position_encoding)
       n_batch, n_ctx, n_state = position.shape
       position = tf.reshape(position, [n_batch, n_ctx, self.n_head, -1])
     
@@ -312,13 +312,13 @@ class two_stream_relative_attention:
       # `content_attention_output` = [B, S, N, H]
       B, S, _, _ = content_attention_output.shape
       content_attention_output = tf.reshape(content_attention_output, [B, S, -1])
-      content_attention_output = self.output_dense.output(content_attention_output)
+      content_attention_output = self.output_dense(content_attention_output)
     
       query_attention_output = None
       if query_stream is not None:
         if query_stream.dtype!=self.dtype:
             query_stream=tf.cast(query_stream,self.dtype)
-        query = self.query_dense.output(query_stream)
+        query = self.query_dense(query_stream)
         n_batch, n_ctx, n_state = query.shape
         query = tf.reshape(query, [n_batch, n_ctx, self.n_head, -1])
         if target_mapping is not None:
@@ -351,7 +351,7 @@ class two_stream_relative_attention:
               attention_mask=query_attention_mask)
         B, S, _, _ = query_attention_output.shape
         query_attention_output = tf.reshape(query_attention_output, [B, S, -1])
-        query_attention_output = self.output_dense.output(query_attention_output)
+        query_attention_output = self.output_dense(query_attention_output)
     
       return content_attention_output, query_attention_output
 
