@@ -120,7 +120,7 @@ class ViT:
         self.mlp_head = dense(num_classes, dim)
         
         self.loss_object=tf.keras.losses.SparseCategoricalCrossentropy()
-        self.optimizer=tf.keras.optimizers.Adam()
+        self.opt=tf.keras.optimizers.Adam()
         self.param=Module.param
         self.km=0
         
