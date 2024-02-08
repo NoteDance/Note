@@ -88,7 +88,7 @@ class random_brightness:
                 self._FACTOR_VALIDATION_ERROR + f"Got {input_number}"
             )
 
-    def output(self, data, train_flag=True):
+    def __call__(self, data, train_flag=True):
         if train_flag:
             return self._brightness_adjust(data)
         else:

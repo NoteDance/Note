@@ -90,7 +90,7 @@ class random_rotation:
         self.interpolation = interpolation
         self.random_generator = tf.random.Generator.from_seed(seed)
 
-    def output(self, data, train_flag=True):
+    def __call__(self, data, train_flag=True):
         def random_rotated_inputs(data):
             """Rotated inputs with random ops."""
             original_shape = data.shape

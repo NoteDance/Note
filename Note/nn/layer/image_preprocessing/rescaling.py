@@ -37,7 +37,7 @@ class rescaling:
         self.scale = scale
         self.offset = offset
 
-    def output(self, data):
+    def __call__(self, data):
         dtype = data.dtype
         scale = tf.cast(self.scale, dtype)
         offset = tf.cast(self.offset, dtype)

@@ -72,7 +72,7 @@ class resizing:
         self.method = method(interpolation)
         self.crop_to_aspect_ratio = crop_to_aspect_ratio
 
-    def output(self, data):
+    def __call__(self, data):
         # tf.image.resize will always output float32
         # and operate more efficiently on float32
         # unless interpolation is nearest, in which case ouput type matches

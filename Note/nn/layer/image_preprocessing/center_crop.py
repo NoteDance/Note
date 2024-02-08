@@ -12,9 +12,9 @@ class center_crop:
         self.compute_dtype=dtype
 
 
-    def output(self, inputs):
-        inputs = tf.cast(inputs, self.compute_dtype)
-        input_shape = tf.shape(inputs)
+    def __call__(self, data):
+        data = tf.cast(data, self.compute_dtype)
+        input_shape = tf.shape(data)
         h_diff = input_shape[H_AXIS] - self.height
         w_diff = input_shape[W_AXIS] - self.width
 
@@ -22,12 +22,12 @@ class center_crop:
             h_start = tf.cast(h_diff / 2, tf.int32)
             w_start = tf.cast(w_diff / 2, tf.int32)
             return tf.image.crop_to_bounding_box(
-                inputs, h_start, w_start, self.height, self.width
+                data, h_start, w_start, self.height, self.width
             )
 
         def upsize():
             outputs = tf.image.resize(
-                inputs, [self.height, self.width], method=tf.image.ResizeMethod.BICUBIC
+                data, [self.height, self.width], method=tf.image.ResizeMethod.BICUBIC
             )
             # resize will always output float32, so we need to re-cast.
             return tf.cast(outputs, self.compute_dtype)

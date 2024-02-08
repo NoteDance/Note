@@ -88,7 +88,7 @@ class random_height:
         )
         self.random_generator = tf.random.Generator.from_seed(seed)
 
-    def output(self, data, train_flag=True):
+    def __call__(self, data, train_flag=True):
         def random_height_inputs(data):
             """Inputs height-adjusted with random ops."""
             inputs_shape = tf.shape(data)

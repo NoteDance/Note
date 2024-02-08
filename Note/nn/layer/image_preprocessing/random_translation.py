@@ -55,7 +55,7 @@ class random_translation:
         self.interpolation = interpolation
         self.random_generator = tf.random.Generator.from_seed(seed)
 
-    def output(self, data, train_flag=True):
+    def __call__(self, data, train_flag=True):
         def random_translated_inputs(data):
             """Translated inputs with random ops."""
             # The transform op only accepts rank 4 inputs,

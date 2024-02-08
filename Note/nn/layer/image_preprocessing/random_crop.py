@@ -43,7 +43,7 @@ class random_crop:
         self.seed = seed
         self.random_generator = tf.random.Generator.from_seed(seed)
 
-    def output(self, data, train_flag=True):
+    def __call__(self, data, train_flag=True):
         input_shape = tf.shape(data)
         h_diff = input_shape[H_AXIS] - self.height
         w_diff = input_shape[W_AXIS] - self.width
