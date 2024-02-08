@@ -268,7 +268,7 @@ class kernel_attention:
                                      denominator)
       return attention_output
     
-    def output(self, query, value, key=None, attention_mask=None, cache=None,
+    def __call__(self, query, value, key=None, attention_mask=None, cache=None,
              train_flag=True):
       """Compute attention with kernel mechanism.
     
@@ -320,17 +320,17 @@ class kernel_attention:
       #   N = `num_attention_heads`
       #   H = `size_per_head`
       # `query` = [B, T, N ,H]
-      query = self.query_dense.output(query)
+      query = self.query_dense(query)
       n_batch, n_ctx, n_state = query.shape
       query = tf.reshape(query, [n_batch, n_ctx, self.n_head, -1])
     
       # `key` = [B, S, N, H]
-      key = self.key_dense.output(key)
+      key = self.key_dense(key)
       n_batch, n_ctx, n_state = key.shape
       key = tf.reshape(key, [n_batch, n_ctx, self.n_head, -1])
     
       # `value` = [B, S, N, D]
-      value = self.value_dense.output(value)
+      value = self.value_dense(value)
       n_batch, n_ctx, n_state = value.shape
       value = tf.reshape(value, [n_batch, n_ctx, self.n_head, -1])
     
@@ -342,7 +342,7 @@ class kernel_attention:
             attention_output_softmax = tf.nn.dropout(attention_output_softmax, self.dropout_rate)
         B, T, _, _ = attention_output_softmax.shape
         attention_output_softmax = tf.reshape(attention_output_softmax, [B, T, -1])
-        attention_output_softmax = self.output_dense_softmax.output(
+        attention_output_softmax = self.output_dense_softmax(
             attention_output_softmax)
     
         attention_output_kernel = self._compute_attention(
@@ -352,7 +352,7 @@ class kernel_attention:
             attention_output_kernel = tf.nn.dropout(attention_output_kernel, self.dropout_rate)
         B, T, _, _ = attention_output_kernel.shape
         attention_output_kernel = tf.reshape(attention_output_kernel, [B, T, -1])
-        attention_output_kernel = self.output_dense.output(attention_output_kernel)
+        attention_output_kernel = self.output_dense(attention_output_kernel)
         attention_output = tf.concat(
             [attention_output_softmax, attention_output_kernel], axis=1)
       else:
@@ -368,7 +368,7 @@ class kernel_attention:
             attention_output = tf.nn.dropout(attention_output, self.dropout_rate)
         B, T, _, _ = attention_output.shape
         attention_output = tf.reshape(attention_output, [B, T, -1])
-        attention_output = self.output_dense.output(attention_output)
+        attention_output = self.output_dense(attention_output)
       return attention_output
 
 

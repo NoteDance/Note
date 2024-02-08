@@ -32,7 +32,7 @@ class gaussian_dropout:
         self.random_generator = tf.random.Generator.from_seed(self.seed)
         self.train_flag = True
 
-    def output(self, data, train_flag=True):
+    def __call__(self, data, train_flag=True):
         self.train_flag = train_flag
         if 0 < self.rate < 1:
             def noised():

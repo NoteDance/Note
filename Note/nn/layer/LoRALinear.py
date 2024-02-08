@@ -53,7 +53,7 @@ class LoRALinear:
         )
         self.lora_b = tf.zeros(shape=(lora_rank, output_dims))
 
-    def output(self, data):
+    def __call__(self, data):
         dtype = self.linear.weight.dtype
         y = self.linear(tf.cast(data, dtype))
         z = tf.matmul(tf.matmul(data, self.lora_a), self.lora_b)

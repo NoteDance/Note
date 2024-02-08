@@ -53,7 +53,7 @@ class Linformer_self_attention:
         self.dropout_rate=dropout
         Module.param.extend(self.param)
 
-    def output(self, x, context = None, train_flag=True):
+    def __call__(self, x, context = None, train_flag=True):
         if x.dtype!=self.dtype:
             x=tf.cast(x,self.dtype)
             
@@ -62,14 +62,14 @@ class Linformer_self_attention:
         kv_len = n if context is None else context.shape[1]
         assert kv_len == self.seq_len, f'the sequence length of the key / values must be {self.seq_len} - {kv_len} given'
         
-        queries = self.to_q.output(x)
+        queries = self.to_q(x)
         
         proj_seq_len = lambda args: tf.einsum('bnd,nk->bkd', *args)
 
         kv_input = x if context is None else context
 
-        keys = self.to_k.output(kv_input)
-        values = self.to_v.output(kv_input) if not self.share_kv else keys
+        keys = self.to_k(kv_input)
+        values = self.to_v(kv_input) if not self.share_kv else keys
 
         kv_projs = (self.proj_k, self.proj_v if not self.share_kv else self.proj_k)
 
@@ -95,4 +95,4 @@ class Linformer_self_attention:
 
         # split heads
         out = tf.reshape(tf.transpose(out, perm=[0, 2, 1, 3]), shape=(b, n, -1))
-        return self.to_out.output(out)
+        return self.to_out(out)

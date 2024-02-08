@@ -87,7 +87,7 @@ class einsum_dense:
             Module.param.extend(self.param)
 
 
-    def output(self, data):
+    def __call__(self, data):
         if data.dtype!=self.dtype:
             data=tf.cast(data,self.dtype)
         if self.input_shape is None:

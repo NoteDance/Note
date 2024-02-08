@@ -118,7 +118,7 @@ class multiheadrelative_attention:
                 attention_mask = tf.expand_dims(
                     attention_mask, axis=mask_expansion_axis
                 )
-        return self._softmax.output(attention_scores, attention_mask)
+        return self._softmax(attention_scores, attention_mask)
     
     
     def compute_attention(self,
@@ -198,7 +198,7 @@ class multiheadrelative_attention:
       return attention_output
     
     
-    def output(self,  # pytype: disable=signature-mismatch  # overriding-parameter-count-checks
+    def __call__(self,  # pytype: disable=signature-mismatch  # overriding-parameter-count-checks
              query,
              value,
              content_attention_bias,
@@ -271,22 +271,22 @@ class multiheadrelative_attention:
           self.build()
     
       # `query` = [B, T, N ,H]
-      query = self.query_dense.output(query)
+      query = self.query_dense(query)
       n_batch, n_ctx, n_state = query.shape
       query = tf.reshape(query, [n_batch, n_ctx, self.n_head, -1])
     
       # `key` = [B, S + M, N, H]
-      key = self.key_dense.output(key)
+      key = self.key_dense(key)
       n_batch, n_ctx, n_state = key.shape
       key = tf.reshape(key, [n_batch, n_ctx, self.n_head, -1])
     
       # `value` = [B, S + M, N, H]
-      value = self.value_dense.output(value)
+      value = self.value_dense(value)
       n_batch, n_ctx, n_state = value.shape
       value = tf.reshape(value, [n_batch, n_ctx, self.n_head, -1])
     
       # `position` = [B, L, N, H]
-      position = self.encoding_dense.output(relative_position_encoding)
+      position = self.encoding_dense(relative_position_encoding)
       n_batch, n_ctx, n_state = position.shape
       position = tf.reshape(position, [n_batch, n_ctx, self.n_head, -1])
     
@@ -305,7 +305,7 @@ class multiheadrelative_attention:
       # `attention_output` = [B, S, N, H]
       B, S, _, _ = attention_output.shape
       attention_output = tf.reshape(attention_output, [B, S, -1])
-      attention_output = self.output_dense.output(attention_output)
+      attention_output = self.output_dense(attention_output)
     
       return attention_output
 

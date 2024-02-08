@@ -6,7 +6,7 @@ class flatten:
         self.output_size=None
     
     
-    def output(self,data):
+    def __call__(self,data):
         data_shape=tf.shape(data)
         batch_size=data_shape[0]
         num_elements=tf.reduce_prod(data_shape[1:])

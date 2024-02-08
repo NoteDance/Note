@@ -61,7 +61,7 @@ class MoE_layer:
     self._eval_capacity_factor = eval_capacity_factor
     self._examples_per_group = examples_per_group
 
-  def output(self,
+  def __call__(self,
            inputs: tf.Tensor,
            train_flag = True) -> tf.Tensor:
     """Applies MoeLayer.
@@ -130,7 +130,7 @@ class MoE_layer:
         experts.
     """
     # Shape [num_groups, tokens_per_group, num_experts, expert_capacity]
-    router_mask = self._router.output(
+    router_mask = self._router(
         inputs,
         expert_capacity=expert_capacity,
         training=train_flag)
@@ -141,7 +141,7 @@ class MoE_layer:
         router_mask.dispatch_mask,
         inputs)
 
-    expert_outputs = self._experts.output(expert_inputs, train_flag=train_flag)
+    expert_outputs = self._experts(expert_inputs, train_flag=train_flag)
 
     # Shape [num_groups, tokens_per_group, hidden_dim]
     combined_outputs = tf.einsum(

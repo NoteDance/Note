@@ -15,10 +15,10 @@ class LlamaAttention:
         self.output_size = self.out_proj.output_size
         self.param = [self.query_proj.param, self.key_proj.param, self.value_proj.param, self.out_proj.param]
 
-    def output(self, queries, keys, values, mask=None, cache=None):
-        queries = self.query_proj.output(queries)
-        keys = self.key_proj.output(keys)
-        values = self.value_proj.output(values)
+    def __call__(self, queries, keys, values, mask=None, cache=None):
+        queries = self.query_proj(queries)
+        keys = self.key_proj(keys)
+        values = self.value_proj(values)
 
         num_heads = self.num_heads
         B, L, D = queries.shape
@@ -31,13 +31,13 @@ class LlamaAttention:
 
         if cache is not None:
             key_cache, value_cache = cache
-            queries = self.rope.output(queries, offset=key_cache.shape[2])
-            keys = self.rope.output(keys, offset=key_cache.shape[2])
+            queries = self.rope(queries, offset=key_cache.shape[2])
+            keys = self.rope(keys, offset=key_cache.shape[2])
             keys = tf.concat([key_cache, keys], axis=2)
             values = tf.concat([value_cache, values], axis=2)
         else:
-            queries = self.rope.output(queries)
-            keys = self.rope.output(keys)
+            queries = self.rope(queries)
+            keys = self.rope(keys)
 
         # Dimensions are [batch x num heads x sequence x hidden dim]
         scale = tf.math.sqrt(1 / queries.shape[-1])
@@ -48,7 +48,7 @@ class LlamaAttention:
         scores = tf.nn.softmax(scores, axis=-1)
         values_hat = tf.reshape(tf.transpose(tf.matmul(scores, values), (0, 2, 1, 3)), (B, L, -1))
 
-        return self.out_proj.output(values_hat), (keys, values)
+        return self.out_proj(values_hat), (keys, values)
 
 
 class LlamaEncoderLayer:
@@ -66,16 +66,16 @@ class LlamaEncoderLayer:
         self.param = [self.attention.param, self.norm1.param, self.norm2.param, self.linear1.param,
                       self.linear2.param, self.linear3.param]
 
-    def output(self, x, mask=None, cache=None):
-        y = self.norm1.output(x)
-        y, cache = self.attention.output(y, y, y, mask, cache)
+    def __call__(self, x, mask=None, cache=None):
+        y = self.norm1(x)
+        y, cache = self.attention(y, y, y, mask, cache)
         x = x + y
 
-        y = self.norm2.output(x)
-        a = self.linear1.output(y)
-        b = self.linear2.output(y)
+        y = self.norm2(x)
+        a = self.linear1(y)
+        b = self.linear2(y)
         y = activation_dict['silu'](a) * b
-        y = self.linear3.output(y)
+        y = self.linear3(y)
         x = x + y
 
         return x, cache
@@ -114,7 +114,7 @@ class RoPE:
 
         return rx
 
-    def output(self, x, offset: int = 0):
+    def __call__(self, x, offset: int = 0):
         shape = x.shape
         x = tf.reshape(x, (-1, shape[-2], shape[-1]))
         N = x.shape[1] + offset
@@ -155,6 +155,6 @@ class RMSNorm:
         self.epsilon = epsilon
         self.param = [self.gamma]
 
-    def output(self, x):
+    def __call__(self, x):
         n = tf.math.rsqrt(tf.math.reduce_mean(tf.math.square(x), axis=-1, keepdims=True) + self.epsilon)
         return self.gamma * x * n

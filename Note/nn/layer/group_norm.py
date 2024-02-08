@@ -104,7 +104,7 @@ class group_norm:
         Module.param.extend(self.param)
         return
 
-    def output(self, data):
+    def __call__(self, data):
         if data.dtype!=self.dtype:
             data=tf.cast(data,self.dtype)
         

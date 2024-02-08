@@ -37,7 +37,7 @@ class masked_softmax:
       self._normalization_axes = normalization_axes
 
 
-  def output(self, scores, mask=None):
+  def __call__(self, scores, mask=None):
 
     if mask is not None:
       for _ in range(len(scores.shape) - len(mask.shape)):

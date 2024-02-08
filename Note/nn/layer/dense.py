@@ -45,7 +45,7 @@ class dense: # define a class for dense (fully connected) layer
         return
     
     
-    def output(self,data): # define the output method
+    def __call__(self,data): # define the output method
         if data.dtype!=self.dtype:
             data=tf.cast(data,self.dtype)
         if self.input_size==None:

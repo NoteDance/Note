@@ -17,7 +17,7 @@ class matmul_with_margin:
     self.logit_scale = logit_scale
     self.logit_margin = logit_margin
 
-  def output(self, left_encoded: tf.Tensor,
+  def __call__(self, left_encoded: tf.Tensor,
            right_encoded: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
     batch_size = left_encoded[0]
 

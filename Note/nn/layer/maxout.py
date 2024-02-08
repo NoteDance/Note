@@ -44,7 +44,7 @@ class maxout:
             assert self.axis_ >= 0, "Find invalid axis: {}".format(self.axis)
 
 
-    def output(self,data):
+    def __call__(self,data):
         if self.input_shape is None:
             self.input_shape=list(data.shape)
             num_channels = self.input_shape[self.axis]

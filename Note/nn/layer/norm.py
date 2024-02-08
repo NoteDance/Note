@@ -162,7 +162,7 @@ class norm:
         return
     
     
-    def output(self, data):
+    def __call__(self, data):
         if self.input_shape is None and self.flag==0:
             self.flag=1
             self.build(data)

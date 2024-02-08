@@ -52,7 +52,7 @@ class FAVOR_attention:
             self._features = tf.transpose(self._features)
         return self._features
 
-    def output(self, keys, values, queries):
+    def __call__(self, keys, values, queries):
         """
         keys: (batch, keys_dimension, *keys_locations)
         values: (batch, values_dimension, *keys_locations)

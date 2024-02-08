@@ -20,7 +20,7 @@ class GRUCell: # define a class for gated recurrent unit (GRU) cell
         Module.param.extend(self.param)
     
     
-    def output(self,data,state): # define the output method
+    def __call__(self,data,state): # define the output method
         if data.dtype!=self.dtype:
             data=tf.cast(data,self.dtype)
         x=tf.concat([data,state],axis=-1) # concatenate the input data and state along the last dimension

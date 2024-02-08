@@ -105,7 +105,7 @@ class feed_forward_experts:
         )
     return
 
-  def output(self,
+  def __call__(self,
            data: tf.Tensor,
            train_flag = True):
     """Applies layer to inputs.
@@ -122,9 +122,9 @@ class feed_forward_experts:
     if self.input_shape==None:
         self.input_shape=data.shape
         self.build()
-    x = self.intermediate_layer.output(data)
+    x = self.intermediate_layer(data)
     x = self.activation(x)
-    x = self.inner_dropout_layer.output(x, train_flag=train_flag)
-    x = self.output_layer.output(x)
-    x = self.output_dropout_layer.output(x, train_flag=train_flag)
+    x = self.inner_dropout_layer(x, train_flag=train_flag)
+    x = self.output_layer(x)
+    x = self.output_dropout_layer(x, train_flag=train_flag)
     return x

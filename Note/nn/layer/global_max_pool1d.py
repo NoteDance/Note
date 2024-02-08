@@ -6,5 +6,5 @@ class global_max_pool1d:
         self.keepdims=keepdims
     
     
-    def output(self,data):
+    def __call__(self,data):
         return tf.reduce_max(data,[1],keepdims=self.keepdims)

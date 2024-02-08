@@ -51,7 +51,7 @@ class multihead_attention:
         return tf.reshape(tf.transpose(tf.matmul(w, v), [0, 2, 1, 3]), [n_batch_q, n_ctx_q, n_state]), qk
     
     
-    def output(
+    def __call__(
         self,
         target,
         source = None,
@@ -66,9 +66,9 @@ class multihead_attention:
             self.input_size=target.shape[-1]
             self.build()
             
-        q = self.query.output(target)
-        k = self.key.output(target if source is None else source)
-        v = self.value.output(target if source is None else source)
+        q = self.query(target)
+        k = self.key(target if source is None else source)
+        v = self.value(target if source is None else source)
 
         wv, qk = self.qkv_attention(q, k, v, mask)
-        return self.out.output(wv), qk
+        return self.out(wv), qk

@@ -9,7 +9,7 @@ class dropout:
         self.train_flag=True
     
     
-    def output(self,data,train_flag=True):
+    def __call__(self,data,train_flag=True):
         self.train_flag=train_flag
         if train_flag==True:
             output=tf.nn.dropout(data,self.rate,noise_shape=self.noise_shape,seed=self.seed)

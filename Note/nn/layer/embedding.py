@@ -31,7 +31,7 @@ class embedding:
         return
     
     
-    def output(self, data):
+    def __call__(self, data):
         if data.dtype != "int32" and data.dtype != "int64":
             data = tf.cast(data, "int32")
         if self.input_size==None:

@@ -47,7 +47,7 @@ class layer_norm:
         return
     
     
-    def output(self, data):
+    def __call__(self, data):
         if data.dtype!=self.dtype:
             data=tf.cast(data,self.dtype)
         if self.input_size==None:

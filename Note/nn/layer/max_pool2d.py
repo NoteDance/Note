@@ -8,5 +8,5 @@ class max_pool2d:
         self.padding=padding
     
     
-    def output(self,data):
+    def __call__(self,data):
         return tf.nn.max_pool2d(data,ksize=self.ksize,strides=self.strides,padding=self.padding)

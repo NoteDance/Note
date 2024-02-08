@@ -34,7 +34,7 @@ class gaussian_noise:
         self.seed = seed
         self.random_generator = tf.random.Generator.from_seed(self.seed)
 
-    def output(self, data, train_flag=True):
+    def __call__(self, data, train_flag=True):
         def noised():
             return data + self.random_generator.normal(
                                 shape=tf.shape(data),

@@ -5,5 +5,5 @@ class identity:
             self.output_size=input_size
     
     
-    def output(self,data):
+    def __call__(self,data):
         return data

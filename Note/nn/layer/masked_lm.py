@@ -78,7 +78,7 @@ class masked_lm:
         dtype=self.dtype
         )
 
-  def output(self, sequence_data, embedding_table, masked_positions):
+  def __call__(self, sequence_data, embedding_table, masked_positions):
     if sequence_data.dtype!=self.dtype:
         sequence_data=tf.cast(sequence_data,self.dtype)
     if embedding_table.dtype!=self.dtype:
@@ -89,8 +89,8 @@ class masked_lm:
     if self.input_size==None:
         self.input_size=masked_lm_input.shape[-1]
         self.build()
-    lm_data = self.dense.output(masked_lm_input)
-    lm_data = self.layer_norm.output(lm_data)
+    lm_data = self.dense(masked_lm_input)
+    lm_data = self.layer_norm(lm_data)
     lm_data = tf.matmul(lm_data, embedding_table, transpose_b=True)
     logits = lm_data+self.bias
     masked_positions_length = masked_positions.shape.as_list()[1] or tf.shape(

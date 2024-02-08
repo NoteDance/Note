@@ -82,7 +82,7 @@ class multi_cls_heads:
       output_size=self.out_projs[-1].output_size
     self.output_size = output_size
 
-  def output(self, features: tf.Tensor, only_project: bool = False):
+  def __call__(self, features: tf.Tensor, only_project: bool = False):
     """Implements call().
 
     Args:

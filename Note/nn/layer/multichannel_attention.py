@@ -50,7 +50,7 @@ class multichannel_attention:
         return
 
     
-    def output(self,
+    def __call__(self,
              query,
              value,
              key=None,
@@ -79,17 +79,17 @@ class multichannel_attention:
       #   N = `num_attention_heads`
       #   H = `size_per_head`
       # `query_tensor` = [B, F, N ,H]
-      query_tensor = self.query_dense.output(query)
+      query_tensor = self.query_dense(query)
       n_batch, n_ctx, n_state = query_tensor.shape
       query_tensor = tf.reshape(query_tensor, [n_batch, n_ctx, self.n_head, -1])
     
       # `key_tensor` = [B, A, T, N, H]
-      key_tensor = self.key_dense.output(key)
+      key_tensor = self.key_dense(key)
       n_batch, n_doc, n_ctx, n_state = key_tensor.shape
       key_tensor = tf.reshape(key_tensor, [n_batch, n_doc, n_ctx, self.n_head, -1])
     
       # `value_tensor` = [B, A, T, N, H]
-      value_tensor = self.value_dense.output(value)
+      value_tensor = self.value_dense(value)
       n_batch, n_doc, n_ctx, n_state = value_tensor.shape
       value_tensor = tf.reshape(value_tensor, [n_batch, n_doc, n_ctx, self.n_head, -1])
     
@@ -101,7 +101,7 @@ class multichannel_attention:
     
       # Normalize the attention scores to probabilities.
       # `attention_probs` = [B, A, N, F, T]
-      attention_probs = self._masked_softmax.output(attention_scores, attention_mask)
+      attention_probs = self._masked_softmax(attention_scores, attention_mask)
     
       # This is actually dropping out entire tokens to attend to, which might
       # seem a bit unusual, but is taken from the original Transformer paper.
@@ -115,5 +115,5 @@ class multichannel_attention:
                                    context_layer)
       B, F, _, _ = attention_output.shape
       attention_output = tf.reshape(attention_output, [B, F, -1])
-      attention_output = self.output_dense.output(attention_output)
+      attention_output = self.output_dense(attention_output)
       return attention_output
