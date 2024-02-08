@@ -107,7 +107,7 @@ class kernel:
     
     def epsilon_greedy_policy(self,s,epsilon):
         action_prob=self.action_one*epsilon/len(self.action_one)
-        best_a=np.argmax(self.nn.nn(s))
+        best_a=np.argmax(self.nn.nn.fp(s))
         action_prob[best_a]+=1-epsilon
         return action_prob
     
@@ -192,7 +192,7 @@ class kernel:
         if hasattr(self.nn,'nn'):
             s=np.expand_dims(s,axis=0)
             if epsilon==None:
-                action_prob=self.nn.nn(s)
+                action_prob=self.nn.nn.fp(s)
             else:
                 action_prob=self.epsilon_greedy_policy(s,epsilon)
             a=np.random.choice(self.action_count,p=action_prob)
@@ -202,7 +202,7 @@ class kernel:
                 a=self.nn.action(s).numpy()
             else:
                 s=np.expand_dims(s,axis=0)
-                a=(self.nn.actor(s)+self.nn.noise()).numpy()
+                a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
         next_s,r,done=self.nn.env(a,p)
         index=self.get_index(p,lock)
         if type(self.nn.param[0])!=list:
