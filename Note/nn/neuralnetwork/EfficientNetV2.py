@@ -265,37 +265,37 @@ class EfficientNetV2:
     def fp(self,data,p=None):
         if self.km==1:
             with tf.device(assign_device(p,self.device)):
-                data=self.rescaling.output(data)
-                data=self.norm.output(data)
-                x=self.layers1.output(data)
-                x=self.layers2.output(x)
-                x=self.layers3.output(x)
+                data=self.rescaling(data)
+                data=self.norm(data)
+                x=self.layers1(data)
+                x=self.layers2(x)
+                x=self.layers3(x)
                 if self.include_top:
-                    x=self.global_avg_pool2d.output(x)
+                    x=self.global_avg_pool2d(x)
                     if self.dropout_rate > 0:
-                        x=self.dropout.output(x)
-                    x=self.dense.output(x)
+                        x=self.dropout(x)
+                    x=self.dense(x)
                 else:
                     if self.pooling == "avg":
-                        x=self.global_avg_pool2d.output(x)
+                        x=self.global_avg_pool2d(x)
                     else:
-                        x=self.global_max_pool2d.output(x)
+                        x=self.global_max_pool2d(x)
         else:
-            data=self.rescaling.output(data)
-            data=self.norm.output(data)
-            x=self.layers1.output(data,self.km)
-            x=self.layers2.output(x,self.km)
-            x=self.layers3.output(x,self.km)
+            data=self.rescaling(data)
+            data=self.norm(data)
+            x=self.layers1(data,self.km)
+            x=self.layers2(x,self.km)
+            x=self.layers3(x,self.km)
             if self.include_top:
-                x=self.global_avg_pool2d.output(x)
+                x=self.global_avg_pool2d(x)
                 if self.dropout_rate > 0:
-                    x=self.dropout.output(x)
-                x=self.dense.output(x)
+                    x=self.dropout(x)
+                x=self.dense(x)
             else:
                 if self.pooling == "avg":
-                    x=self.global_avg_pool2d.output(x)
+                    x=self.global_avg_pool2d(x)
                 else:
-                    x=self.global_max_pool2d.output(x)
+                    x=self.global_max_pool2d(x)
         return x
 
 
@@ -334,7 +334,7 @@ class EfficientNetV2:
             param: list, the updated model parameters.
         """
         with tf.device(assign_device(p,self.device)): # assign the device to use
-            param=self.optimizer.opt(gradient,self.param,self.bc[0]) # update the model parameters using Adam optimizer and batch count
+            param=self.optimizer(gradient,self.param,self.bc[0]) # update the model parameters using Adam optimizer and batch count
             return param # return the updated model parameters
 
 
@@ -442,8 +442,8 @@ class MBConvBlock:
         self.train_flag=True
     
     
-    def output(self,data,train_flag=True):
-        x=self.layers.output(data,train_flag)
+    def __call__(self,data,train_flag=True):
+        x=self.layers(data,train_flag)
         if self.strides == 1 and self.input_filters == self.output_filters:
             x=tf.math.add(x,data)
         return x
@@ -541,8 +541,8 @@ class FusedMBConvBlock:
         self.train_flag=True
     
     
-    def output(self,data,train_flag=True):
-        x=self.layers.output(data,train_flag)
+    def __call__(self,data,train_flag=True):
+        x=self.layers(data,train_flag)
         if self.strides == 1 and self.input_filters == self.output_filters:
             x=tf.math.add(x,data)
         return x

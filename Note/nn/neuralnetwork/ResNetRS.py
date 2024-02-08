@@ -37,10 +37,10 @@ class Conv2DFixedPadding:
         self.output_size=filters
     
     
-    def output(self,data):
+    def __call__(self,data):
         if self.strides > 1:
             data = fixed_padding(data, self.kernel_size)
-        return self.conv2d.output(data)
+        return self.conv2d(data)
     
     
 def STEM(
@@ -119,12 +119,12 @@ class SE:
         self.output_size=self.conv2d2.output_size
     
     
-    def output(self,data):
-        x=self.global_avg_pool2d.output(data)
+    def __call__(self,data):
+        x=self.global_avg_pool2d(data)
         se_shape = (x.shape[0], 1, 1, x.shape[-1])
         x=tf.reshape(x,se_shape)
-        x=self.conv2d1.output(x)
-        x=self.conv2d2.output(x)
+        x=self.conv2d1(x)
+        x=self.conv2d2(x)
         return tf.math.multiply(data,x)
 
 
@@ -224,9 +224,9 @@ class BottleneckBlock:
         self.output_size=self.layers2.output_size
     
     
-    def output(self,data,train_flag=True):
-        shortcut=self.layers1.output(data,train_flag)
-        x=self.layers2.output(data,train_flag)
+    def __call__(self,data,train_flag=True):
+        shortcut=self.layers1(data,train_flag)
+        x=self.layers2(data,train_flag)
         # Drop connect
         if train_flag==True and self.survival_probability:
             x = tf.nn.dropout(
@@ -388,13 +388,13 @@ class ResNetRS:
                     variance = tf.constant([0.229**2, 0.224**2, 0.225**2], dtype=self.dtype)
                     normalization_data = tf.nn.batch_norm(rescaling_data, mean, variance, None, None, 1e-12)
                     data=normalization_data
-                x=self.layers.output(data)
+                x=self.layers(data)
                 # Build head:
                 if self.include_top:
                     x = tf.reduce_mean(x, axis=[1, 2])
                     if self.dropout_rate > 0:
                         x = tf.nn.dropout(x,self.dropout_rate)
-                    x=self.dense.output(x)
+                    x=self.dense(x)
                 else:
                     if self.pooling == "avg":
                         x = tf.reduce_mean(x, axis=[1, 2])
@@ -408,13 +408,13 @@ class ResNetRS:
                 variance = tf.constant([0.229**2, 0.224**2, 0.225**2], dtype=self.dtype)
                 normalization_data = tf.nn.batch_norm(rescaling_data, mean, variance, None, None, 1e-12)
                 data=normalization_data
-            x=self.layers.output(data,self.km)
+            x=self.layers(data,self.km)
             # Build head:
             if self.include_top:
                 x = tf.reduce_mean(x, axis=[1, 2])
                 if self.dropout_rate > 0:
                     x = tf.nn.dropout(x,self.dropout_rate)
-                x=self.dense.output(x)
+                x=self.dense(x)
             else:
                 if self.pooling == "avg":
                     x = tf.reduce_mean(x, axis=[1, 2])
@@ -439,7 +439,7 @@ class ResNetRS:
     
     def opt(self,gradient,p):
         with tf.device(assign_device(p,self.device)):
-            param=self.optimizer.opt(gradient,self.param,self.bc[0])
+            param=self.optimizer(gradient,self.param,self.bc[0])
             return param
 
 

@@ -180,10 +180,10 @@ class MobileNetV3:
         if self.km==1:
             with tf.device(assign_device(p,self.device)):
                 if self.include_preprocessing:
-                    data=self.rescaling.output(data)
-                x=self.layers.output(data)
+                    data=self.rescaling(data)
+                x=self.layers(data)
                 if self.include_top:
-                    x=self.flatten.output(x)
+                    x=self.flatten(x)
                     x=self.activation(x)
                 else:
                     if self.pooling=="avg":
@@ -192,10 +192,10 @@ class MobileNetV3:
                         x=tf.math.reduce_max(x,axis=[1,2])
         else:
             if self.include_preprocessing:
-                data=self.rescaling.output(data)
-            x=self.layers.output(data,self.km)
+                data=self.rescaling(data)
+            x=self.layers(data,self.km)
             if self.include_top:
-                x=self.flatten.output(x)
+                x=self.flatten(x)
                 x=self.activation(x)
             else:
                 if self.pooling=="avg":
@@ -221,7 +221,7 @@ class MobileNetV3:
     
     def opt(self,gradient,p):
         with tf.device(assign_device(p,self.device)):
-            param=self.optimizer.opt(gradient,self.param,self.bc[0])
+            param=self.optimizer(gradient,self.param,self.bc[0])
             return param
 
 
@@ -307,24 +307,24 @@ class _inverted_res_block:
         self.output_size=self.conv2d2.output_size
     
     
-    def output(self,data,train_flag=True):
+    def __call__(self,data,train_flag=True):
         self.train_flag=train_flag
         x=data
         shortcut=data
         if self.block_id:
-            x=self.conv2d1.output(x)
-            x=self.batch_normalization1.output(x,self.train_flag)
+            x=self.conv2d1(x)
+            x=self.batch_normalization1(x,self.train_flag)
             x=self.activation(x)
         if self.stride==2:
             padding = correct_pad(x, 3)
-            x=self.zeropadding2d.output(x, padding)
-        x=self.depthwiseconv2d.output(x)
-        x=self.batch_normalization2.output(x,self.train_flag)
+            x=self.zeropadding2d(x, padding)
+        x=self.depthwiseconv2d(x)
+        x=self.batch_normalization2(x,self.train_flag)
         x=self.activation(x)
         if self.se_ratio:
-            x=self.layers.output(x)
-        x=self.conv2d2.output(x)
-        x=self.batch_normalization3.output(x,self.train_flag)
+            x=self.layers(x)
+        x=self.conv2d2(x)
+        x=self.batch_normalization3(x,self.train_flag)
         if self.stride == 1 and self.in_channels == self.filters:
             return shortcut+x
         return x

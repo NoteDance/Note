@@ -24,8 +24,8 @@ class FeedForward:
         self.net.add(dense(dim, hidden_dim))
         self.net.add(dropout(drop_rate))
 
-    def output(self, x, train_flag=True):
-        return self.net.output(x, train_flag)
+    def __call__(self, x, train_flag=True):
+        return self.net(x, train_flag)
 
 
 class Attention:
@@ -50,10 +50,10 @@ class Attention:
         else:
             self.to_out = identity()
 
-    def output(self, x, train_flag=True):
-        x = self.norm.output(x)
+    def __call__(self, x, train_flag=True):
+        x = self.norm(x)
 
-        qkv = self.to_qkv.output(x)
+        qkv = self.to_qkv(x)
         q, k, v = tf.split(qkv, 3, axis=-1)
         b = q.shape[0]
         h = self.heads
@@ -66,12 +66,12 @@ class Attention:
         dots = tf.matmul(q, tf.transpose(k, [0, 1, 3, 2])) * self.scale
 
         attn = self.attend(dots)
-        attn = self.dropout.output(attn, train_flag)
+        attn = self.dropout(attn, train_flag)
 
         out = tf.matmul(attn, v)
         out = tf.transpose(out, [0, 1, 3, 2])
         out = tf.reshape(out, shape=[-1, n, h*d])
-        return self.to_out.output(out)
+        return self.to_out(out)
 
 
 class Transformer:
@@ -82,12 +82,12 @@ class Transformer:
             self.layers.append([Attention(dim, heads = heads, dim_head = dim_head, dropout = dropout),
                                 FeedForward(dim, mlp_dim, dropout = dropout)])
 
-    def output(self, x, train_flag=True):
+    def __call__(self, x, train_flag=True):
         for attn, ff in self.layers:
-            x = attn.output(x, train_flag) + x
-            x = ff(x, train_flag).output + x
+            x = attn(x, train_flag) + x
+            x = ff(x, train_flag) + x
 
-        return self.norm.output(x)
+        return self.norm(x)
 
 
 class ViT:
@@ -158,40 +158,40 @@ class ViT:
                 w = data.shape[2] // self.p2
                 c = data.shape[3]
                 data = tf.reshape(data, (b, h * w, self.p1 * self.p2 * c))
-                x = self.to_patch_embedding.output(data)
+                x = self.to_patch_embedding(data)
                 b, n, _ = x.shape
         
                 cls_tokens = tf.tile(self.cls_token, multiples=[b, 1, 1])
                 x = tf.concat([cls_tokens, x], axis=1)
                 x += self.pos_embedding[:, :(n + 1)]
-                x = self.dropout.output(x, self.km)
+                x = self.dropout(x, self.km)
         
-                x = self.transformer.output(x, self.km)
+                x = self.transformer(x, self.km)
         
                 x = tf.reduce_mean(x, axis = 1) if self.pool == 'mean' else x[:, 0]
         
-                x = self.to_latent.output(x)
-                return tf.nn.softmax(self.mlp_head.output(x))
+                x = self.to_latent(x)
+                return tf.nn.softmax(self.mlp_head(x))
         else:
             b = data.shape[0]
             h = data.shape[1] // self.p1
             w = data.shape[2] // self.p2
             c = data.shape[3]
             data = tf.reshape(data, (b, h * w, self.p1 * self.p2 * c))
-            x = self.to_patch_embedding.output(data)
+            x = self.to_patch_embedding(data)
             b, n, _ = x.shape
     
             cls_tokens = tf.tile(self.cls_token, multiples=[b, 1, 1])
             x = tf.concat([cls_tokens, x], axis=1)
             x += self.pos_embedding[:, :(n + 1)]
-            x = self.dropout.output(x, self.km)
+            x = self.dropout(x, self.km)
     
-            x = self.transformer.output(x, self.km)
+            x = self.transformer(x, self.km)
     
             x = tf.reduce_mean(x, axis = 1) if self.pool == 'mean' else x[:, 0]
     
-            x = self.to_latent.output(x)
-            return tf.nn.softmax(self.mlp_head.output(x))
+            x = self.to_latent(x)
+            return tf.nn.softmax(self.mlp_head(x))
 
     
     def loss(self,output,labels,p):
@@ -210,5 +210,5 @@ class ViT:
     
     def opt(self,gradient,p):
         with tf.device(assign_device(p,self.device)):
-            param=self.optimizer.opt(gradient,self.param,self.bc[0])
+            param=self.optimizer(gradient,self.param,self.bc[0])
             return param

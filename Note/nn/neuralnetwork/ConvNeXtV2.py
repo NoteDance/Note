@@ -23,7 +23,7 @@ class GRN:
         Module.param.extend([self.gamma,self.beta])
     
     
-    def output(self, x):
+    def __call__(self, x):
         Gx = tf.norm(x, ord=2, axis=(1,2), keepdims=True)
         Nx = tf.math.divide(Gx, tf.math.add(tf.reduce_mean(Gx, axis=-1, keepdims=True), 1e-6))
         return self.gamma * (x * Nx) + self.beta + x
@@ -47,9 +47,9 @@ class Block:
         self.layers.add(stochastic_depth(drop_path)) if drop_path > 0. else self.layers.add(identity())
 
 
-    def output(self, x):
+    def __call__(self, x):
         input = x
-        x = self.layers.output(x)
+        x = self.layers(x)
 
         x = input + x
         return x
@@ -155,13 +155,13 @@ class ConvNeXtV2:
             with tf.device(assign_device(p,self.device)):
                 x = data
                 for i in range(4):
-                    x = self.downsample_layers[i].output(x)
+                    x = self.downsample_layers[i](x)
                     for j in range(self.depths[i]):
-                        x = self.stages[i].output(x)
+                        x = self.stages[i](x)
                 if self.include_top:
                     x = tf.math.reduce_mean(x, axis=[1, 2])
-                    x = self.layer_norm.output(x)
-                    x = self.dense.output(x)
+                    x = self.layer_norm(x)
+                    x = self.dense(x)
                 else:
                     if self.pooling=="avg":
                         x = tf.math.reduce_mean(x, axis=[1, 2])
@@ -170,13 +170,13 @@ class ConvNeXtV2:
         else:
             x = data
             for i in range(4):
-                x = self.downsample_layers[i].output(x,self.km)
+                x = self.downsample_layers[i](x,self.km)
                 for j in range(self.depths[i]):
-                    x = self.stages[i].output(x,self.km)
+                    x = self.stages[i](x,self.km)
             if self.include_top:
                 x = tf.math.reduce_mean(x, axis=[1, 2])
-                x = self.layer_norm.output(x)
-                x = self.dense.output(x)
+                x = self.layer_norm(x)
+                x = self.dense(x)
             else:
                 if self.pooling=="avg":
                     x = tf.math.reduce_mean(x, axis=[1, 2])
@@ -201,7 +201,7 @@ class ConvNeXtV2:
     
     def opt(self,gradient,p):
         with tf.device(assign_device(p,self.device)):
-            param=self.optimizer.opt(gradient,self.param,self.bc[0])
+            param=self.optimizer(gradient,self.param,self.bc[0])
             return param
 
 

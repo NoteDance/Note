@@ -83,24 +83,24 @@ class VGG16:
     def fp(self,data,p=None):
         if self.km==1:
             with tf.device(assign_device(p,self.device)):
-                x=self.layers.output(data)
+                x=self.layers(data)
                 if self.include_top:
-                    x=self.flatten.output(x)
-                    x=self.dense1.output(x)
-                    x=self.dense2.output(x)
-                    x=self.dense3.output(x)
+                    x=self.flatten(x)
+                    x=self.dense1(x)
+                    x=self.dense2(x)
+                    x=self.dense3(x)
                 else:
                     if self.pooling=="avg":
                         x = tf.math.reduce_mean(x, axis=[1, 2])
                     elif self.pooling=="max":
                         x = tf.math.reduce_max(x, axis=[1, 2])
         else:
-            x=self.layers.output(data)
+            x=self.layers(data)
             if self.include_top:
-                x=self.flatten.output(x)
-                x=self.dense1.output(x)
-                x=self.dense2.output(x)
-                x=self.dense3.output(x)
+                x=self.flatten(x)
+                x=self.dense1(x)
+                x=self.dense2(x)
+                x=self.dense3(x)
             else:
                 if self.pooling=="avg":
                     x = tf.math.reduce_mean(x, axis=[1, 2])
@@ -125,5 +125,5 @@ class VGG16:
     
     def opt(self,gradient,p):
         with tf.device(assign_device(p,self.device)):
-            param=self.optimizer.opt(gradient,self.param,self.bc[0])
+            param=self.optimizer(gradient,self.param,self.bc[0])
             return param

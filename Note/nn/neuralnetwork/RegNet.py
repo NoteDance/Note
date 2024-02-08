@@ -316,10 +316,10 @@ class RegNet:
                 x = data
                 if self.include_preprocessing:
                     x = PreStem(x,self.dtype)
-                x = self.layers.output(x)
+                x = self.layers(x)
                 if self.include_top:
-                    x = self.global_avg_pool2d.output(x)
-                    x = self.dense.output(x)
+                    x = self.global_avg_pool2d(x)
+                    x = self.dense(x)
                 else:
                     if self.pooling=="avg":
                         x=tf.math.reduce_mean(x,axis=[1,2])
@@ -329,10 +329,10 @@ class RegNet:
             x = data
             if self.include_preprocessing:
                 x = PreStem(x,self.dtype)
-            x = self.layers.output(x,self.km)
+            x = self.layers(x,self.km)
             if self.include_top:
-                x = self.global_avg_pool2d.output(x)
-                x = self.dense.output(x)
+                x = self.global_avg_pool2d(x)
+                x = self.dense(x)
             else:
                 if self.pooling=="avg":
                     x=tf.math.reduce_mean(x,axis=[1,2])
@@ -357,7 +357,7 @@ class RegNet:
     
     def opt(self,gradient,p):
         with tf.device(assign_device(p,self.device)):
-            param=self.optimizer.opt(gradient,self.param,self.bc[0])
+            param=self.optimizer(gradient,self.param,self.bc[0])
             return param
 
 

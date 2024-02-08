@@ -65,21 +65,21 @@ class _inverted_res_block:
         self.output_size=self.conv2d2.output_size
     
     
-    def output(self,data,train_flag=True):
+    def __call__(self,data,train_flag=True):
         self.train_flag=train_flag
         x=data
         if self.block_id:
-            x=self.conv2d1.output(x)
-            x=self.batch_normalization1.output(x,self.train_flag)
+            x=self.conv2d1(x)
+            x=self.batch_normalization1(x,self.train_flag)
             x=activation_dict['relu6'](x)
         if self.stride==2:
             padding = correct_pad(x, 3)
-            x=self.zeropadding2d.output(x, padding)
-        x=self.depthwiseconv2d.output(x)
-        x=self.batch_normalization2.output(x,self.train_flag)
+            x=self.zeropadding2d(x, padding)
+        x=self.depthwiseconv2d(x)
+        x=self.batch_normalization2(x,self.train_flag)
         x=activation_dict['relu6'](x)
-        x=self.conv2d2.output(x)
-        x=self.batch_normalization3.output(x,self.train_flag)
+        x=self.conv2d2(x)
+        x=self.batch_normalization3(x,self.train_flag)
         if self.in_channels == self.pointwise_filters and self.stride == 1:
             return data+x
         return x
@@ -165,20 +165,20 @@ class MobileNetV2:
     def fp(self,data,p=None):
         if self.km==1:
             with tf.device(assign_device(p,self.device)):
-                x=self.layers.output(data)
+                x=self.layers(data)
                 if self.include_top:
                     x=tf.math.reduce_mean(x,axis=[1,2])
-                    x=self.dense.output(x)
+                    x=self.dense(x)
                 else:
                     if self.pooling=="avg":
                         x=tf.math.reduce_mean(x,axis=[1,2])
                     elif self.pooling=="max":
                         x=tf.math.reduce_max(x,axis=[1,2])
         else:
-            x=self.layers.output(data,self.km)
+            x=self.layers(data,self.km)
             if self.include_top:
                 x=tf.math.reduce_mean(x,axis=[1,2])
-                x=self.dense.output(x)
+                x=self.dense(x)
             else:
                 if self.pooling=="avg":
                     x=tf.math.reduce_mean(x,axis=[1,2])
@@ -203,5 +203,5 @@ class MobileNetV2:
     
     def opt(self,gradient,p):
         with tf.device(assign_device(p,self.device)):
-            param=self.optimizer.opt(gradient,self.param,self.bc[0])
+            param=self.optimizer(gradient,self.param,self.bc[0])
             return param

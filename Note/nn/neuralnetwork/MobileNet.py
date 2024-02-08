@@ -20,10 +20,10 @@ class _conv_block:
         self.output_size=self.conv2d.output_size
     
     
-    def output(self,data,train_flag=True):
+    def __call__(self,data,train_flag=True):
         self.train_flag=train_flag
-        x=self.conv2d.output(data)
-        x=self.batch_norm.output(x,self.train_flag)
+        x=self.conv2d(data)
+        x=self.batch_norm(x,self.train_flag)
         return activation_dict['relu6'](x)
 
 
@@ -40,17 +40,17 @@ class _depthwise_conv_block:
         self.output_size=self.conv2d.output_size
     
     
-    def output(self,data,train_flag=True):
+    def __call__(self,data,train_flag=True):
         self.train_flag=train_flag
         if self.strides == [1, 1]:
             x = data
         else:
-            x = self.zeropadding2d.output(data, ((0, 1), (0, 1)))
-        x=self.depthwiseconv2d.output(x)
-        x=self.batch_norm1.output(x,self.train_flag)
+            x = self.zeropadding2d(data, ((0, 1), (0, 1)))
+        x=self.depthwiseconv2d(x)
+        x=self.batch_norm1(x,self.train_flag)
         x=activation_dict['relu6'](x)
-        x=self.conv2d.output(x)
-        x=self.batch_norm2.output(x,self.train_flag)
+        x=self.conv2d(x)
+        x=self.batch_norm2(x,self.train_flag)
         return activation_dict['relu6'](x)
 
 
@@ -124,25 +124,25 @@ class MobileNet:
     def fp(self,data,p=None):
         if self.km==1:
             with tf.device(assign_device(p,self.device)):
-                x=self.layers.output(data)
+                x=self.layers(data)
                 if self.include_top:
                     x=tf.math.reduce_mean(x,axis=[1,2],keepdims=True)
                     x=tf.nn.dropout(x,self.dropout)
-                    x=self.conv2d.output(x)
+                    x=self.conv2d(x)
                     x=tf.reshape(x,[x.shape[0],self.classes])
-                    x=self.dense.output(x)
+                    x=self.dense(x)
                 else:
                     if self.pooling == "avg":
                         x=tf.math.reduce_mean(x,axis=[1,2])
                     elif self.pooling == "max":
                         x=tf.math.reduce_max(x,axis=[1,2])
         else:
-            x=self.layers.output(data,self.km)
+            x=self.layers(data,self.km)
             if self.include_top:
                 x=tf.math.reduce_mean(x,axis=[1,2],keepdims=True)
-                x=self.conv2d.output(x)
+                x=self.conv2d(x)
                 x=tf.reshape(x,[x.shape[0],self.classes])
-                x=self.dense.output(x)
+                x=self.dense(x)
             else:
                 if self.pooling == "avg":
                     x=tf.math.reduce_mean(x,axis=[1,2])
@@ -167,5 +167,5 @@ class MobileNet:
     
     def opt(self,gradient,p):
         with tf.device(assign_device(p,self.device)):
-            param=self.optimizer.opt(gradient,self.param,self.bc[0])
+            param=self.optimizer(gradient,self.param,self.bc[0])
             return param

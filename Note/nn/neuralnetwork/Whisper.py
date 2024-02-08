@@ -57,22 +57,22 @@ class cached_attention:
     return key, value
 
 
-  def output(self,
+  def __call__(self,
            x,
            xa,
            mask=None,
            cache=None,
            ):
-    query = self.query_dense.output(x)
+    query = self.query_dense(x)
     n_batch, n_ctx, n_state = query.shape
     scale = (n_state // self.n_head) ** -0.25
     query = tf.reshape(query, [n_batch, n_ctx, self.n_head, -1])
 
-    key = self.key_dense.output(x if xa is None else xa)
+    key = self.key_dense(x if xa is None else xa)
     n_batch, n_ctx, n_state = key.shape
     key = tf.reshape(key, [n_batch, n_ctx, self.n_head, -1])
 
-    value = self.value_dense.output(x if xa is None else xa)
+    value = self.value_dense(x if xa is None else xa)
     n_batch, n_ctx, n_state = key.shape
     value = tf.reshape(value, [n_batch, n_ctx, self.n_head, -1])
 
@@ -88,7 +88,7 @@ class cached_attention:
         qk = qk + mask[:n_ctx, :n_ctx]
     w = tf.nn.softmax(qk)
     wv = tf.reshape(tf.transpose(tf.matmul(w, value), [0, 2, 1, 3]), [n_batch, n_ctx, n_state])
-    return self.output_dense.output(wv), qk
+    return self.output_dense(wv), qk
 
 
 class ResidualAttentionBlock:
@@ -109,17 +109,17 @@ class ResidualAttentionBlock:
         
         self.mlp_ln = layer_norm(n_state)
 
-    def output(
+    def __call__(
         self,
         x,
         xa = None,
         mask = None,
         kv_cache = None,
     ):
-        x = x + self.attn.output(self.attn_ln.output(x), mask=mask, kv_cache=kv_cache)[0]
+        x = x + self.attn(self.attn_ln(x), mask=mask, kv_cache=kv_cache)[0]
         if self.cross_attn:
-            x = x + self.cross_attn.output(self.cross_attn_ln(x), xa, kv_cache=kv_cache)[0]
-        x = x + self.mlp.output(self.mlp_ln.output(x))
+            x = x + self.cross_attn(self.cross_attn_ln(x), xa, kv_cache=kv_cache)[0]
+        x = x + self.mlp(self.mlp_ln(x))
         return x
 
 
@@ -137,21 +137,21 @@ class AudioEncoder:
         self.ln_post = layer_norm(n_state)
 
 
-    def output(self, x):
-        x = self.conv1.output(x)
-        x = self.zeropadding1d1.output(x)
+    def __call__(self, x):
+        x = self.conv1(x)
+        x = self.zeropadding1d1(x)
         x = tf.nn.gelu(x)
-        x = self.conv2.output(x)
-        x = self.zeropadding1d2.output(x)
+        x = self.conv2(x)
+        x = self.zeropadding1d2(x)
         x = tf.nn.gelu(x)
         x = tf.transpose(x, [0, 2, 1])
 
         x = x + tf.cast(self.positional_embedding, x.dtype)
 
         for block in self.blocks:
-            x = block.output(x)
+            x = block(x)
 
-        x = self.ln_post.output(x)
+        x = self.ln_post(x)
         return x
 
 
@@ -171,7 +171,7 @@ class TextDecoder:
         self.mask = tf.math.multiply(tf.linalg.band_part(tf.ones((n_ctx, n_ctx)), -1, 0), tf.fill((n_ctx, n_ctx), tf.float32.min))
 
 
-    def output(self, x, xa, kv_cache = None):
+    def __call__(self, x, xa, kv_cache = None):
         offset = next(iter(kv_cache.values())).shape[1] if kv_cache else 0
         x = (
             tf.matmul(x, self.token_embedding)
@@ -179,9 +179,9 @@ class TextDecoder:
         )
 
         for block in self.blocks:
-            x = block.output(x, xa, mask=self.mask, kv_cache=kv_cache)
+            x = block(x, xa, mask=self.mask, kv_cache=kv_cache)
 
-        x = self.ln.output(x)
+        x = self.ln(x)
         logits = tf.matmul(x, tf.cast(tf.transpose(self.token_embedding, perm=[0, 1])), x.dtype)
 
         return logits
@@ -222,12 +222,12 @@ class Whisper:
 
 
     def embed_audio(self, mel):
-        return self.encoder.output(mel)
+        return self.encoder(mel)
 
 
     def logits(self, tokens, audio_features):
-        return self.decoder.output(tokens, audio_features)
+        return self.decoder(tokens, audio_features)
 
 
-    def output(self, mel, tokens, cache):
-        return self.decoder.output(tokens, self.encoder.output(mel), cache)
+    def __call__(self, mel, tokens, cache):
+        return self.decoder(tokens, self.encoder(mel), cache)

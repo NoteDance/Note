@@ -192,8 +192,8 @@ class BertModel(object):
 
       if self.token_type_ids is None:
         self.token_type_ids = tf.zeros(shape=[batch_size, seq_length], dtype=tf.int32)
-      (self.embedding_output, self.embedding_table) = self.embedding_lookup.output(input_ids)
-      self.embedding_output = self.embedding_postprocessor.output(self.embedding_output)
+      (self.embedding_output, self.embedding_table) = self.embedding_lookup(input_ids)
+      self.embedding_output = self.embedding_postprocessor(self.embedding_output)
       # This converts a 2D mask of shape [batch_size, seq_length] to a 3D
       # mask of shape [batch_size, seq_length, seq_length] which is used
       # for the attention scores.
@@ -201,7 +201,7 @@ class BertModel(object):
           input_ids, self.input_mask)
       # Run the stacked transformer.
       # `sequence_output` shape = [batch_size, seq_length, hidden_size].
-      self.sequence_output = self.all_encoder_layers.output(self.embedding_output,attention_mask)
+      self.sequence_output = self.all_encoder_layers(self.embedding_output,attention_mask)
       # The "pooler" converts the encoded sequence tensor of shape
       # [batch_size, seq_length, hidden_size] to a tensor of shape
       # [batch_size, hidden_size]. This is necessary for segment-level
@@ -211,7 +211,7 @@ class BertModel(object):
       # We "pool" the model by simply taking the hidden state corresponding
       # to the first token. We assume that this has been pre-trained
       self.first_token_tensor = tf.squeeze(self.sequence_output[:, 0:1, :], axis=1)
-      self.pooled_output = self.pooled_layer.output(self.first_token_tensor)
+      self.pooled_output = self.pooled_layer(self.first_token_tensor)
       
 
   def get_pooled_output(self):
@@ -339,7 +339,7 @@ class embedding_lookup:
       self.use_one_hot_embeddings=use_one_hot_embeddings
       Module.param.extend(self.embedding_table)
       
-  def output(self,input_ids):
+  def __call__(self,input_ids):
       # This function assumes that the input is of shape [batch_size, seq_length,
       # num_inputs].
       #
@@ -410,7 +410,7 @@ class embedding_postprocessor:
       Module.param.extend([self.token_type_table,self.full_position_embeddings])
       
       
-  def output(self,input_tensor):
+  def __call__(self,input_tensor):
       input_shape = get_shape_list(input_tensor, expected_rank=3)
       batch_size = input_shape[0]
       seq_length = input_shape[1]
@@ -452,7 +452,7 @@ class embedding_postprocessor:
                                            position_broadcast_shape)
           output += position_embeddings
     
-      output = dropout(self.layer_norm.output(output),self.dropout_prob)
+      output = dropout(self.layer_norm(output),self.dropout_prob)
       return output
 
 
@@ -579,7 +579,7 @@ class attention_layer:
     self.do_return_2d_tensor=do_return_2d_tensor
     self.output_size=num_attention_heads * size_per_head
   
-  def output(self,from_tensor,to_tensor,attention_mask=None):
+  def __call__(self,from_tensor,to_tensor,attention_mask=None):
       def transpose_for_scores(input_tensor, batch_size, num_attention_heads,
                                seq_length, width):
         output_tensor = tf.reshape(
@@ -617,13 +617,13 @@ class attention_layer:
       to_tensor_2d = reshape_to_matrix(to_tensor)
     
       # `query_layer` = [B*F, N*H]
-      query_layer = self.query_layer.output(from_tensor_2d)
+      query_layer = self.query_layer(from_tensor_2d)
     
       # `key_layer` = [B*T, N*H]
-      key_layer = self.key_layer.output(to_tensor_2d)
+      key_layer = self.key_layer(to_tensor_2d)
     
       # `value_layer` = [B*T, N*H]
-      value_layer = self.value_layer.output(to_tensor_2d)
+      value_layer = self.value_layer(to_tensor_2d)
     
       # `query_layer` = [B, N, F, H]
       query_layer = transpose_for_scores(query_layer, batch_size,
@@ -768,9 +768,9 @@ class transformer_model:
                                   hidden_size,
                                   attention_output_input_size,
                                   weight_initializer=['truncated_normal',initializer_range])
-          layer_norm = layer_norm(attention_output.output_size)
+          layer_norm_ = layer_norm(attention_output.output_size)
           self.attention_layers.append(attention_output)
-          self.layer_norms1.append(layer_norm)
+          self.layer_norms1.append(layer_norm_)
           intermediate_output = dense(
                               intermediate_size,
                               attention_output.output_size,
@@ -781,15 +781,15 @@ class transformer_model:
                           hidden_size,
                           intermediate_output.output_size,
                           weight_initializer=['truncated_normal',initializer_range])
-          layer_norm = layer_norm(layer_output.output_size)
+          layer_norm_ = layer_norm(layer_output.output_size)
           self.layers.append(layer_output)
-          self.layer_norms2.append(layer_norm)
+          self.layer_norms2.append(layer_norm_)
       self.hidden_size=hidden_size
       self.num_hidden_layers=num_hidden_layers
       self.hidden_dropout_prob=hidden_dropout_prob
       self.do_return_all_layers=do_return_all_layers
           
-  def output(self,input_tensor,attention_mask=None):
+  def __call__(self,input_tensor,attention_mask=None):
       input_shape = get_shape_list(input_tensor, expected_rank=3)
       input_width = input_shape[2]
     
@@ -810,7 +810,7 @@ class transformer_model:
       for layer_idx in range(self.num_hidden_layers):
           layer_input = prev_output
             
-          attention_head = self.attention_heads_layers[layer_idx].output(layer_input,layer_input,attention_mask)
+          attention_head = self.attention_heads_layers[layer_idx](layer_input,layer_input,attention_mask)
           attention_heads.append(attention_head)
 
           if len(attention_heads) == 1:
@@ -822,17 +822,17 @@ class transformer_model:
 
           # Run a linear projection of `hidden_size` then add a residual
           # with `layer_input`.
-          attention_output = self.attention_layers[layer_idx].output(attention_output)
+          attention_output = self.attention_layers[layer_idx](attention_output)
           attention_output = dropout(attention_output, self.hidden_dropout_prob)
-          attention_output = self.layer_norms1.output(attention_output + layer_input)
+          attention_output = self.layer_norms1(attention_output + layer_input)
 
           # The activation is only applied to the "intermediate" hidden layer.
-          intermediate_output = self.intermediate_layers.output(attention_output)
+          intermediate_output = self.intermediate_layers(attention_output)
   
           # Down-project back to `hidden_size` then add the residual.
-          layer_output = self.layers.output(intermediate_output)
+          layer_output = self.layers(intermediate_output)
           layer_output = dropout(layer_output, self.hidden_dropout_prob)
-          layer_output = self.layer_norms2.output(layer_output + attention_output)
+          layer_output = self.layer_norms2(layer_output + attention_output)
           prev_output = layer_output
           all_layer_outputs.append(layer_output)
     

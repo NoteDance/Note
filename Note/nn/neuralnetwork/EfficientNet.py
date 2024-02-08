@@ -19,7 +19,6 @@ from Note.nn.parallel.assign_device import assign_device
 from Note.nn.Module import Module
 
 
-
 class EfficientNet:
     """Instantiates the EfficientNet architecture.
     
@@ -232,39 +231,39 @@ class EfficientNet:
     def fp(self,data,p=None):
         if self.km==1:
             with tf.device(assign_device(p,self.device)):
-                data=self.rescaling.output(data)
-                data=self.norm.output(data)
-                x=self.zeropadding2d.output(data,correct_pad(data,3))
-                x=self.layers1.output(x)
-                x=self.layers2.output(x)
-                x=self.layers3.output(x)
+                data=self.rescaling(data)
+                data=self.norm(data)
+                x=self.zeropadding2d(data,correct_pad(data,3))
+                x=self.layers1(x)
+                x=self.layers2(x)
+                x=self.layers3(x)
                 if self.include_top:
-                    x=self.global_avg_pool2d.output(x)
+                    x=self.global_avg_pool2d(x)
                     if self.dropout_rate > 0:
-                        x=self.dropout.output(x)
-                    x=self.dense.output(x)
+                        x=self.dropout(x)
+                    x=self.dense(x)
                 else:
                     if self.pooling == "avg":
-                        x=self.global_avg_pool2d.output(x)
+                        x=self.global_avg_pool2d(x)
                     else:
-                        x=self.global_max_pool2d.output(x)
+                        x=self.global_max_pool2d(x)
         else:
-            data=self.rescaling.output(data)
-            data=self.norm.output(data)
-            x=self.zeropadding2d.output(data,correct_pad(data,3))
-            x=self.layers1.output(x,self.km)
-            x=self.layers2.output(x,self.km)
-            x=self.layers3.output(x,self.km)
+            data=self.rescaling(data)
+            data=self.norm(data)
+            x=self.zeropadding2d(data,correct_pad(data,3))
+            x=self.layers1(x,self.km)
+            x=self.layers2(x,self.km)
+            x=self.layers3(x,self.km)
             if self.include_top:
-                x=self.global_avg_pool2d.output(x)
+                x=self.global_avg_pool2d(x)
                 if self.dropout_rate > 0:
-                    x=self.dropout.output(x)
-                x=self.dense.output(x)
+                    x=self.dropout(x)
+                x=self.dense(x)
             else:
                 if self.pooling == "avg":
-                    x=self.global_avg_pool2d.output(x)
+                    x=self.global_avg_pool2d(x)
                 else:
-                    x=self.global_max_pool2d.output(x)
+                    x=self.global_max_pool2d(x)
         return x
     
     
@@ -303,7 +302,7 @@ class EfficientNet:
             param: list, the updated model parameters.
         """
         with tf.device(assign_device(p,self.device)): # assign the device to use
-            param=self.optimizer.opt(gradient,self.param,self.bc[0]) # update the model parameters using Adam optimizer and batch count
+            param=self.optimizer(gradient,self.param,self.bc[0]) # update the model parameters using Adam optimizer and batch count
             return param # return the updated model parameters
 
 
@@ -399,21 +398,21 @@ class block:
         self.train_flag=True
     
     
-    def output(self,data,train_flag=True):
-        x=self.layers1.output(data,train_flag)
+    def __call__(self,data,train_flag=True):
+        x=self.layers1(data,train_flag)
         if self.strides==2:
-            x=self.zeropadding2d.output(x,correct_pad(x,self.kernel_size))
-        x=self.layers2.output(x,train_flag)
+            x=self.zeropadding2d(x,correct_pad(x,self.kernel_size))
+        x=self.layers2(x,train_flag)
         if 0 < self.se_ratio <= 1:
-            se=self.global_avg_pool2d.output(x)
-            se=self.reshape.output(se)
-            se=self.conv2d1.output(se)
-            se=self.conv2d2.output(se)
+            se=self.global_avg_pool2d(x)
+            se=self.reshape(se)
+            se=self.conv2d1(se)
+            se=self.conv2d2(se)
             x=tf.math.multiply(x,se)
-        x=self.layers3.output(x,train_flag)
+        x=self.layers3(x,train_flag)
         if self.id_skip and self.strides == 1 and self.filters_in == self.filters_out:
             if self.drop_rate > 0:
-                x=self.dropout.output(x,train_flag)
+                x=self.dropout(x,train_flag)
             x=tf.math.add(x,data)
         return x
 
