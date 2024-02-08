@@ -53,7 +53,7 @@ class conv3d_transpose: # define a class for 3D transposed convolutional layer
         return
     
     
-    def output(self,data): # define the output method
+    def __call__(self,data): # define the output method
         if data.dtype!=self.dtype:
             data=tf.cast(data,self.dtype)
             

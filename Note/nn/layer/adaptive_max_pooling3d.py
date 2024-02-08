@@ -27,7 +27,7 @@ class adaptive_max_pooling3d:
         self.reduce_function = tf.reduce_max
         self.output_size = normalize_tuple(output_size, 3, "output_size")
 
-    def output(self, data):
+    def __call__(self, data):
         h_bins = self.output_size[0]
         w_bins = self.output_size[1]
         d_bins = self.output_size[2]

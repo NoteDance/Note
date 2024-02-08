@@ -39,7 +39,7 @@ class alpha_dropout:
     def _get_noise_shape(self, inputs):
         return self.noise_shape if self.noise_shape else tf.shape(inputs)
 
-    def output(self, inputs, train_flag=None):
+    def __call__(self, inputs, train_flag=None):
         if 0.0 < self.rate < 1.0:
             noise_shape = self._get_noise_shape(inputs)
 

@@ -27,7 +27,7 @@ class adaptive_avg_pooling1d:
         self.reduce_function = tf.reduce_mean
         self.output_size = normalize_tuple(output_size, 1, "output_size")
 
-    def output(self, data):
+    def __call__(self, data):
         bins = self.output_size[0]
         if self.data_format == "channels_last":
             splits = tf.split(data, bins, axis=1)

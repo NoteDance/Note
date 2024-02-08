@@ -8,5 +8,5 @@ class avg_pool1d:
         self.padding=padding
     
     
-    def output(self,data):
+    def __call__(self,data):
         return tf.nn.avg_pool1d(data,ksize=self.ksize,strides=self.strides,padding=self.padding)

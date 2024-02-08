@@ -72,7 +72,7 @@ class batch_norm:
         return
     
     
-    def output(self, data, train_flag=True):
+    def __call__(self, data, train_flag=True):
         if data.dtype!=self.dtype:
             data=tf.cast(data,self.dtype)
         if self.input_size==None:

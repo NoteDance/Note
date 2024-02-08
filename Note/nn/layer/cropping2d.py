@@ -13,5 +13,5 @@ class cropping2d:
             raise ValueError("Invalid cropping argument. It should be an int or a list of two or four ints.")
     
     
-    def output(self, data):
+    def __call__(self, data):
         return tf.slice(data, begin=[0, self.cropping[1][0], self.cropping[2][0], 0], size=[-1, -1 - self.cropping[1][0] - self.cropping[1][1], -1 - self.cropping[2][0] - self.cropping[2][1], -1])

@@ -52,7 +52,7 @@ class adaptive_conv2d:
         return
     
     
-    def output(self,data):
+    def __call__(self,data):
         # data: the input tensor, shape [batch_size, height, width, channels]
         # strides: the strides of the convolution
         # padding: the padding mode, either 'VALID' or 'SAME'

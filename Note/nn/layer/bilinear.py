@@ -31,7 +31,7 @@ class bilinear:
         initializer='zeros',
         dtype=dtype)
 
-  def output(self, data: Tuple[tf.Tensor]) -> tf.Tensor:
+  def __call__(self, data: Tuple[tf.Tensor]) -> tf.Tensor:
     """Computes bilinear interaction between two vector tensors.
 
     Args:

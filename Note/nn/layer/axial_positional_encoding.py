@@ -36,7 +36,7 @@ class axial_positional_encoding:
     Module.param.extend(self.param)
     
 
-  def output(self, data):
+  def __call__(self, data):
     """Generates the axial positional encoding for the input tensor.
 
     Args:

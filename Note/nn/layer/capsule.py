@@ -66,7 +66,7 @@ class capsule:
         return
     
 
-    def output(self, data):
+    def __call__(self, data):
         if self.input_shape is None:
             self.input_shape = data.shape
             self.build()
@@ -75,7 +75,7 @@ class capsule:
         '''
         if self.layer_type == 'CONV':
             if not self.with_routing:
-                capsules = self.capsules.output(data)
+                capsules = self.capsules(data)
                 capsules = tf.reshape(capsules, (data.shape[0], -1, self.vec_len, 1))
                 capsules = self.squash(capsules)
                 return (capsules)

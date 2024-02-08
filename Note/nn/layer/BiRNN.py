@@ -9,7 +9,7 @@ class BiRNN:
         self.output_size=self.fw_cells.output_size+self.bw_cells.output_size
     
     
-    def output(self,data):
+    def __call__(self,data):
         # Get batch_size from data
         batch_size=tf.shape(data)[0]
         # Reverse the input data along the time dimension to get the backward input data

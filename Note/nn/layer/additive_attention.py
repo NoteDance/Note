@@ -20,7 +20,7 @@ class additive_attention:
             Module.param.extend(self.param)
         return
 
-    def output(self, query, key):
+    def __call__(self, query, key):
         """Calculates attention scores as a nonlinear sum of query and key.
 
         Args:

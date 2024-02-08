@@ -76,7 +76,7 @@ class cached_attention:
               attention_mask = tf.expand_dims(
                   attention_mask, axis=mask_expansion_axis
               )
-      return self._softmax.output(attention_scores, attention_mask)
+      return self._softmax(attention_scores, attention_mask)
 
   def _update_cache(self, key, value, cache, decode_loop_step):
     """Updates cache states and gets full-length key/value tensors."""
@@ -103,7 +103,7 @@ class cached_attention:
 
     return key, value
 
-  def output(self,
+  def __call__(self,
            query,
            value,
            key=None,
@@ -132,17 +132,17 @@ class cached_attention:
     #   N = `num_attention_heads`
     #   H = `size_per_head`
     # `query` = [B, F, N ,H]
-    query = self.query_dense.output(query)
+    query = self.query_dense(query)
     n_batch, n_ctx, n_state = query.shape
     query = tf.reshape(query, [n_batch, n_ctx, self.n_head, -1])
 
     # `key` = [B, T, N, H]
-    key = self.key_dense.output(key)
+    key = self.key_dense(key)
     n_batch, n_ctx, n_state = key.shape
     key = tf.reshape(key, [n_batch, n_ctx, self.n_head, -1])
 
     # `value` = [B, T, N, H]
-    value = self.value_dense.output(value)
+    value = self.value_dense(value)
     n_batch, n_ctx, n_state = key.shape
     value = tf.reshape(value, [n_batch, n_ctx, self.n_head, -1])
 
@@ -167,7 +167,7 @@ class cached_attention:
                                  value)
     B, F, _, _ = attention_output.shape
     attention_output = tf.reshape(attention_output, [B, F, -1])
-    attention_output = self.output_dense.output(attention_output)
+    attention_output = self.output_dense(attention_output)
     if return_attention_scores:
       return attention_output, attention_scores, cache
     return attention_output, cache

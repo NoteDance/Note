@@ -11,7 +11,7 @@ class cropping1d:
             raise ValueError("Invalid cropping argument. It should be an int or a list of two ints.")
     
     
-    def output(self, data):
+    def __call__(self, data):
         shape = tf.shape(data)
         size = shape[1] - self.cropping[1][0] - self.cropping[1][1]
         return tf.slice(data, begin=[0, self.cropping[1][0], 0], size=[-1, size, -1])

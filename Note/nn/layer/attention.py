@@ -18,7 +18,7 @@ class attention: # define a class for attention mechanism
         Module.param.extend(self.param)
     
     
-    def output(self, query, value, key=None): # define the output method
+    def __call__(self, query, value, key=None): # define the output method
         if query.dtype!=self.dtype:
             query=tf.cast(query,self.dtype)
         if value.dtype!=self.dtype:
