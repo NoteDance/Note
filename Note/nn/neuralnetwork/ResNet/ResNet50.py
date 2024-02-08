@@ -33,10 +33,10 @@ class block1:
         self.output_size=self.layers2.output_size
     
     
-    def output(self,data,train_flag=True):
+    def __call__(self,data,train_flag=True):
         self.train_flag=train_flag
-        shortcut=self.layers1.output(data,self.train_flag)
-        x=self.layers2.output(data,self.train_flag)
+        shortcut=self.layers1(data,self.train_flag)
+        x=self.layers2(data,self.train_flag)
         x=shortcut+x
         x=activation_dict['relu'](x)
         return x
@@ -118,20 +118,20 @@ class ResNet50:
     def fp(self,data,p=None):
         if self.km==1:
             with tf.device(assign_device(p,self.device)):
-                x=self.layers.output(data)
+                x=self.layers(data)
                 if self.include_top:
                     x=tf.math.reduce_mean(x,axis=[1,2])
-                    x=self.dense.output(x)
+                    x=self.dense(x)
                 else:
                     if self.pooling=="avg":
                         x=tf.math.reduce_mean(x,axis=[1,2])
                     elif self.pooling=="max":
                         x=tf.math.reduce_max(x,axis=[1,2])
         else:
-            x=self.layers.output(data,self.km)
+            x=self.layers(data,self.km)
             if self.include_top:
                 x=tf.math.reduce_mean(x,axis=[1,2])
-                x=self.dense.output(x)
+                x=self.dense(x)
             else:
                 if self.pooling=="avg":
                     x=tf.math.reduce_mean(x,axis=[1,2])
@@ -156,5 +156,5 @@ class ResNet50:
     
     def opt(self,gradient,p):
         with tf.device(assign_device(p,self.device)):
-            param=self.optimizer.opt(gradient,self.param,self.bc[0])
+            param=self.optimizer(gradient,self.param,self.bc[0])
             return param
