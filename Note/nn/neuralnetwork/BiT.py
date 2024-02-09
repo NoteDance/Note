@@ -18,7 +18,7 @@ class StdConv2d:
       w = self.conv2d.weight
       v, m = tf.nn.moments(w, axes=[1, 2, 3], keepdims=True)
       w = (w - m) / tf.math.sqrt(v + 1e-10)
-      self.conv2d.weight = w
+      self.conv2d.weight.assign(w)
 
 
   def __call__(self, x):
