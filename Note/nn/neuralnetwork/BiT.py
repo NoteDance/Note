@@ -11,9 +11,9 @@ from Note.nn.Module import Module
 
 
 class StdConv2d:
-  def __init__(self,filters,kernel_size,input_size,strides=[1,1],padding=None,use_bias=True):
+  def __init__(self,filters,kernel_size,input_size,stride=[1,1],padding=None,use_bias=True):
       self.conv2d = conv2d(filters=filters,kernel_size=kernel_size,input_size=input_size,
-                           strides=strides,use_bias=use_bias)
+                           strides=stride,use_bias=use_bias)
       self.zeropadding2d = zeropadding2d(filters, padding)
       w = self.conv2d.weight
       v, m = tf.nn.moments(w, axes=[1, 2, 3], keepdims=True)
@@ -28,12 +28,12 @@ class StdConv2d:
 
 
 def conv3x3(cin, cout, stride=1, bias=False):
-  return StdConv2d(cout, input_size=cin, kernel_size=3, stride=stride,
+  return StdConv2d(cout, input_size=cin, kernel_size=3, strides=stride,
                    bias=bias)
 
 
 def conv1x1(cin, cout, stride=1, bias=False):
-  return StdConv2d(cout, input_size=cin, kernel_size=1, stride=stride,
+  return StdConv2d(cout, input_size=cin, kernel_size=1, strides=stride,
                    bias=bias)
 
 
