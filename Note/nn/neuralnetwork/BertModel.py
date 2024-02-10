@@ -103,7 +103,7 @@ class BertModel(object):
 
   model = Note.nn.neuralnetwork.BertModel(config=config, seq_length, is_training=True,
                                 input_mask=input_mask, token_type_ids=token_type_ids)
-  model.fp(input_ids)
+  model(input_ids)
 
   label_embeddings = Note.nn.initializer.initializer_(...)
   pooled_output = model.get_pooled_output()
@@ -183,7 +183,7 @@ class BertModel(object):
         weight_initializer=['truncated_normal',config.initializer_range])
   
     
-  def fp(self,input_ids):
+  def __call__(self,input_ids):
       input_shape = get_shape_list(input_ids, expected_rank=2)
       batch_size = input_shape[0]
       seq_length = input_shape[1]
