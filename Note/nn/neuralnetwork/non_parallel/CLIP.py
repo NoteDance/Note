@@ -399,7 +399,6 @@ class CLIP:
         Module.param.append(self.logit_scale)
 
         self.initialize_parameters()
-        self.param=Module.param
 
     def initialize_parameters(self):
         if isinstance(self.visual, ModifiedResNet):
