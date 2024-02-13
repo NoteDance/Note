@@ -10,6 +10,8 @@ from Note.nn.layer.identity import identity
 from Note.nn.initializer import initializer_
 from Note.nn.Layers import Layers
 from Note.nn.Module import Module
+from Note.nn.parallel.optimizer import Adam
+from Note.nn.parallel.assign_device import assign_device
 import numpy as np
 from typing import Tuple, Union
 
@@ -397,8 +399,11 @@ class CLIP:
                                             'float32')
         self.logit_scale = tf.Variable(tf.ones([]) * np.log(1 / 0.07))
         Module.param.append(self.logit_scale)
+        self.param=Module.param
+        self.optimizer=Adam()
 
         self.initialize_parameters()
+        self.km=0
 
     def initialize_parameters(self):
         if isinstance(self.visual, ModifiedResNet):
@@ -447,23 +452,63 @@ class CLIP:
 
         return x
 
-    def __call__(self, image, text, train_flag=True):
-        image_features = self.encode_image(image, train_flag)
-        text_features = self.encode_text(text)
+    def fp(self, data, p=None):
+        if self.km==1:
+            with tf.device(assign_device(p,self.device)):
+                image = data[0]
+                text = data[1]
+                image_features = self.encode_image(image, self.km)
+                text_features = self.encode_text(text)
+        
+                # normalized features
+                image_features = image_features / tf.norm(image_features, axis=1, keepdims=True)
+                text_features = text_features / tf.norm(text_features, axis=1, keepdims=True)
+        
+                # cosine similarity as logits
+                logit_scale = tf.math.exp(self.logit_scale)
+                logits_per_image = tf.matmul(logit_scale * image_features, tf.transpose(text_features))
+                logits_per_text = tf.transpose(logits_per_image)
+        
+                # shape = [global_batch_size, global_batch_size]
+                return logits_per_image, logits_per_text
+        else:
+            image = data[0]
+            text = data[1]
+            image_features = self.encode_image(image, self.km)
+            text_features = self.encode_text(text)
+    
+            # normalized features
+            image_features = image_features / tf.norm(image_features, axis=1, keepdims=True)
+            text_features = text_features / tf.norm(text_features, axis=1, keepdims=True)
+    
+            # cosine similarity as logits
+            logit_scale = tf.math.exp(self.logit_scale)
+            logits_per_image = tf.matmul(logit_scale * image_features, tf.transpose(text_features))
+            logits_per_text = tf.transpose(logits_per_image)
+    
+            # shape = [global_batch_size, global_batch_size]
+            return logits_per_image, logits_per_text
+    
+    def loss(self, output, labels, p):
+        with tf.device(assign_device(p,self.device)):
+            logits_per_image, logits_per_text = output
+            labels = tf.cast(labels, logits_per_image.dtype)
+            image_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels, logits_per_image)
+            text_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels, logits_per_text)
+            return tf.reduce_mean(image_loss + text_loss) / 2
 
-        # normalized features
-        image_features = image_features / tf.norm(image_features, axis=1, keepdims=True)
-        text_features = text_features / tf.norm(text_features, axis=1, keepdims=True)
-
-        # cosine similarity as logits
-        logit_scale = tf.math.exp(self.logit_scale)
-        logits_per_image = tf.matmul(logit_scale * image_features, tf.transpose(text_features))
-        logits_per_text = tf.transpose(logits_per_image)
-
-        # shape = [global_batch_size, global_batch_size]
-        return logits_per_image, logits_per_text
-
-
+    def GradientTape(self,data,labels,p):
+        with tf.device(assign_device(p,self.device)):
+            with tf.GradientTape(persistent=True) as tape:
+                output=self.fp(data,p)
+                loss=self.loss(output,labels,p)
+            return tape,output,loss
+    
+    def opt(self,gradient,p):
+        with tf.device(assign_device(p,self.device)):
+            param=self.optimizer(gradient,self.param,self.bc[0])
+            return param
+        
     def convert_weights(self):
         """Convert applicable model parameters to fp16"""
         self.visual.convert_weights()
