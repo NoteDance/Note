@@ -397,8 +397,11 @@ class CLIP:
                                             'float32')
         self.logit_scale = tf.Variable(tf.ones([]) * np.log(1 / 0.07))
         Module.param.append(self.logit_scale)
+        self.param=Module.param
+        self.opt=tf.keras.optimizers.Adam()
 
         self.initialize_parameters()
+        self.km=0
 
     def initialize_parameters(self):
         if isinstance(self.visual, ModifiedResNet):
@@ -447,8 +450,10 @@ class CLIP:
 
         return x
 
-    def __call__(self, image, text, train_flag=True):
-        image_features = self.encode_image(image, train_flag)
+    def fp(self, data):
+        image = data[0]
+        text = data[1]
+        image_features = self.encode_image(image, self.km)
         text_features = self.encode_text(text)
 
         # normalized features
@@ -462,7 +467,13 @@ class CLIP:
 
         # shape = [global_batch_size, global_batch_size]
         return logits_per_image, logits_per_text
-
+    
+    def loss(self, output, labels):
+        logits_per_image, logits_per_text = output
+        labels = tf.cast(labels, logits_per_image.dtype)
+        image_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels, logits_per_image)
+        text_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels, logits_per_text)
+        return tf.reduce_mean(image_loss + text_loss) / 2
 
     def convert_weights(self):
         """Convert applicable model parameters to fp16"""
