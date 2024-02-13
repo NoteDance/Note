@@ -247,6 +247,7 @@ class EfficientNet:
                         x=self.global_avg_pool2d(x)
                     else:
                         x=self.global_max_pool2d(x)
+                return x
         else:
             data=self.rescaling(data)
             data=self.norm(data)
@@ -264,7 +265,7 @@ class EfficientNet:
                     x=self.global_avg_pool2d(x)
                 else:
                     x=self.global_max_pool2d(x)
-        return x
+            return x
     
     
     def loss(self,output,labels,p):
@@ -288,7 +289,7 @@ class EfficientNet:
             with tf.GradientTape(persistent=True) as tape:
                 output=self.fp(data,p)
                 loss=self.loss(output,labels,p)
-        return tape,output,loss
+            return tape,output,loss
     
     
     def opt(self,gradient,p):

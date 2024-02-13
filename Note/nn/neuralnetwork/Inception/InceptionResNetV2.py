@@ -297,6 +297,7 @@ class InceptionResNetV2:
                     elif self.pooling == 'max':
                         # perform global max pooling on the result
                         data = tf.reduce_max(data, axis=[1, 2])
+                return data
         else:
             # Stem block: 35 x 35 x 192
             data=self.Stem_layer1.output(data, 2, padding='VALID' ,train_flag=self.km)
@@ -370,7 +371,7 @@ class InceptionResNetV2:
                 elif self.pooling == 'max':
                     # perform global max pooling on the result
                     data = tf.reduce_max(data, axis=[1, 2])
-        return data
+            return data
     
     
     # define a method for calculating the loss value
@@ -379,8 +380,8 @@ class InceptionResNetV2:
         with tf.device(assign_device(p,self.device)):
             # calculate the categorical crossentropy loss between output and labels 
             loss=self.loss_object(labels,output)
-        # return the loss value    
-        return loss
+            # return the loss value    
+            return loss
     
     
     def GradientTape(self,data,labels,p):
@@ -388,7 +389,7 @@ class InceptionResNetV2:
             with tf.GradientTape(persistent=True) as tape:
                 output=self.fp(data,p)
                 loss=self.loss(output,labels,p)
-        return tape,output,loss
+            return tape,output,loss
     
     
     # define a method for applying the optimizer

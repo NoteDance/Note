@@ -400,6 +400,7 @@ class ResNetRS:
                         x = tf.reduce_mean(x, axis=[1, 2])
                     elif self.pooling == "max":
                         x = tf.reduce_max(x, axis=[1, 2])
+                return x
         else:
             if self.include_preprocessing:
                 scale = tf.constant(1.0 / 255, dtype=self.dtype)
@@ -420,13 +421,13 @@ class ResNetRS:
                     x = tf.reduce_mean(x, axis=[1, 2])
                 elif self.pooling == "max":
                     x = tf.reduce_max(x, axis=[1, 2])
-        return x
+            return x
     
     
     def loss(self,output,labels,p):
         with tf.device(assign_device(p,self.device)):
             loss=self.loss_object(labels,output)
-        return loss
+            return loss
     
     
     def GradientTape(self,data,labels,p):
@@ -434,7 +435,7 @@ class ResNetRS:
             with tf.GradientTape(persistent=True) as tape:
                 output=self.fp(data,p)
                 loss=self.loss(output,labels,p)
-        return tape,output,loss
+            return tape,output,loss
     
     
     def opt(self,gradient,p):

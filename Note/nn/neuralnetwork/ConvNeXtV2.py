@@ -167,6 +167,7 @@ class ConvNeXtV2:
                         x = tf.math.reduce_mean(x, axis=[1, 2])
                     else:
                         x = tf.math.reduce_max(x, axis=[1, 2])
+                return x
         else:
             x = data
             for i in range(4):
@@ -182,13 +183,13 @@ class ConvNeXtV2:
                     x = tf.math.reduce_mean(x, axis=[1, 2])
                 else:
                     x = tf.math.reduce_max(x, axis=[1, 2])
-        return x
+            return x
     
     
     def loss(self,output,labels,p):
         with tf.device(assign_device(p,self.device)):
             loss=self.loss_object(labels,output)
-        return loss
+            return loss
     
     
     def GradientTape(self,data,labels,p):
@@ -196,7 +197,7 @@ class ConvNeXtV2:
             with tf.GradientTape(persistent=True) as tape:
                 output=self.fp(data,p)
                 loss=self.loss(output,labels,p)
-        return tape,output,loss
+            return tape,output,loss
     
     
     def opt(self,gradient,p):

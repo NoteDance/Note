@@ -197,7 +197,7 @@ class ViT:
     def loss(self,output,labels,p):
         with tf.device(assign_device(p,self.device)):
             loss=self.loss_object(labels,output)
-        return loss
+            return loss
     
     
     def GradientTape(self,data,labels,p):
@@ -205,7 +205,7 @@ class ViT:
             with tf.GradientTape(persistent=True) as tape:
                 output=self.fp(data,p)
                 loss=self.loss(output,labels,p)
-        return tape,output,loss
+            return tape,output,loss
     
     
     def opt(self,gradient,p):

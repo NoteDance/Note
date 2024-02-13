@@ -242,7 +242,7 @@ class SwiftFormer:
     def loss(self,output,labels,p):
         with tf.device(assign_device(p,self.device)):
             loss_value = self.total_loss(output, labels, self.alpha, self.temperature)
-        return loss_value
+            return loss_value
     
     
     def GradientTape(self,data,labels,p):
@@ -250,7 +250,7 @@ class SwiftFormer:
             with tf.GradientTape(persistent=True) as tape:
                 output=self.fp(data,p)
                 loss=self.loss(output,labels,p)
-        return tape,output,loss
+            return tape,output,loss
     
     
     def opt(self,gradient,p):

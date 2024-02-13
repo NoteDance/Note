@@ -157,6 +157,7 @@ class ConvNeXt:
                         data = tf.math.reduce_mean(data, axis=[1, 2])
                     elif self.pooling=="max":
                         data = tf.math.reduce_max(data, axis=[1, 2])
+                return data
         else:
             for i in range(self.num_convnext_blocks):
                 data = self.downsample_layers[i](data,self.km)
@@ -171,13 +172,13 @@ class ConvNeXt:
                     data = tf.math.reduce_mean(data, axis=[1, 2])
                 elif self.pooling=="max":
                     data = tf.math.reduce_max(data, axis=[1, 2])
-        return data
+            return data
     
     
     def loss(self,output,labels,p):
         with tf.device(assign_device(p,self.device)):
             loss=self.loss_object(labels,output)
-        return loss
+            return loss
     
     
     def GradientTape(self,data,labels,p):
@@ -185,7 +186,7 @@ class ConvNeXt:
             with tf.GradientTape(persistent=True) as tape:
                 output=self.fp(data,p)
                 loss=self.loss(output,labels,p)
-        return tape,output,loss
+            return tape,output,loss
     
     
     def opt(self,gradient,p):

@@ -157,7 +157,7 @@ class BiT:
         with tf.device(assign_device(p,self.device)):
             output = self.head(self.body(self.root(data)))
             assert output.shape[-2:] == (1, 1)  # We should have no spatial shape left.
-        return tf.nn.softmax(tf.transpose(output,[0,3,1,2])[...,0,0])
+            return tf.nn.softmax(tf.transpose(output,[0,3,1,2])[...,0,0])
     else:
         output = self.head(self.body(self.root(data)))
         assert output.shape[-2:] == (1, 1)  # We should have no spatial shape left.
@@ -167,7 +167,7 @@ class BiT:
   def loss(self,output,labels,p):
       with tf.device(assign_device(p,self.device)):
           loss=self.loss_object(labels,output)
-      return loss
+          return loss
     
     
   def GradientTape(self,data,labels,p):
@@ -175,13 +175,13 @@ class BiT:
           with tf.GradientTape(persistent=True) as tape:
               output=self.fp(data,p)
               loss=self.loss(output,labels,p)
-      return tape,output,loss
+          return tape,output,loss
     
     
   def opt(self,gradient,p):
       with tf.device(assign_device(p,self.device)):
           param=self.optimizer(gradient,self.param,self.bc[0])
-      return param
+          return param
 
 
 MODEL_CONFIGS = {

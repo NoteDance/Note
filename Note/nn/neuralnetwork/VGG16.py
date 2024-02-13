@@ -94,6 +94,7 @@ class VGG16:
                         x = tf.math.reduce_mean(x, axis=[1, 2])
                     elif self.pooling=="max":
                         x = tf.math.reduce_max(x, axis=[1, 2])
+                return x
         else:
             x=self.layers(data)
             if self.include_top:
@@ -106,13 +107,13 @@ class VGG16:
                     x = tf.math.reduce_mean(x, axis=[1, 2])
                 elif self.pooling=="max":
                     x = tf.math.reduce_max(x, axis=[1, 2])
-        return x
+            return x
 
 
     def loss(self,output,labels,p):
         with tf.device(assign_device(p,self.device)):
             loss=self.loss_object(labels,output)
-        return loss
+            return loss
     
     
     def GradientTape(self,data,labels,p):
@@ -120,7 +121,7 @@ class VGG16:
             with tf.GradientTape(persistent=True) as tape:
                 output=self.fp(data,p)
                 loss=self.loss(output,labels,p)
-        return tape,output,loss
+            return tape,output,loss
     
     
     def opt(self,gradient,p):

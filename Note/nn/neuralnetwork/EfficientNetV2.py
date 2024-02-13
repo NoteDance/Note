@@ -280,6 +280,7 @@ class EfficientNetV2:
                         x=self.global_avg_pool2d(x)
                     else:
                         x=self.global_max_pool2d(x)
+                return x
         else:
             data=self.rescaling(data)
             data=self.norm(data)
@@ -296,7 +297,7 @@ class EfficientNetV2:
                     x=self.global_avg_pool2d(x)
                 else:
                     x=self.global_max_pool2d(x)
-        return x
+            return x
 
 
     def loss(self,output,labels,p):
@@ -312,7 +313,7 @@ class EfficientNetV2:
         """
         with tf.device(assign_device(p,self.device)): # assign the device to use
             loss=self.loss_object(labels,output) # calculate the loss value using categorical crossentropy loss function
-        return loss # return the loss value
+            return loss # return the loss value
     
     
     def GradientTape(self,data,labels,p):
@@ -320,7 +321,7 @@ class EfficientNetV2:
             with tf.GradientTape(persistent=True) as tape:
                 output=self.fp(data,p)
                 loss=self.loss(output,labels,p)
-        return tape,output,loss
+            return tape,output,loss
     
     
     def opt(self,gradient,p):

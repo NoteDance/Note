@@ -388,6 +388,7 @@ class InceptionV3:
                         data = tf.reduce_mean(x, axis=[1, 2])
                     elif self.pooling == 'max':
                         data = tf.reduce_max(x, axis=[1, 2])
+                return data
         else:
             x=self.conv2d_bn1.output(data,(2,2),'VALID',train_flag=self.km)
             x=self.conv2d_bn2.output(x,padding='VALID',train_flag=self.km)
@@ -513,13 +514,13 @@ class InceptionV3:
                     data = tf.reduce_mean(x, axis=[1, 2])
                 elif self.pooling == 'max':
                     data = tf.reduce_max(x, axis=[1, 2])
-        return data
+            return data
     
     
     def loss(self,output,labels,p):
         with tf.device(assign_device(p,self.device)):
             loss=self.loss_object(labels,output)
-        return loss
+            return loss
     
     
     def GradientTape(self,data,labels,p):
@@ -527,7 +528,7 @@ class InceptionV3:
             with tf.GradientTape(persistent=True) as tape:
                 output=self.fp(data,p)
                 loss=self.loss(output,labels,p)
-        return tape,output,loss
+            return tape,output,loss
     
     
     def opt(self,gradient,p):
