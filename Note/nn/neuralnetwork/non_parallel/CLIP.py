@@ -354,6 +354,8 @@ class CLIP:
                  transformer_heads: int,
                  transformer_layers: int
                  ):
+        Module.init()
+        
         self.context_length = context_length
 
         if isinstance(vision_layers, (tuple, list)):
