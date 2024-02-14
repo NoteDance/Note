@@ -82,9 +82,10 @@ class LlamaEncoderLayer:
 
 
 class RoPE:
-    def __init__(self, dims: int, traditional: bool = False):
+    def __init__(self, dims: int, traditional: bool = False, base=None):
         self.dims = dims
         self.traditional = traditional
+        self.base = base
 
     def _compute_rope(self, costheta, sintheta, x):
         x1 = x[..., : self.dims // 2]
@@ -119,7 +120,7 @@ class RoPE:
         x = tf.reshape(x, (-1, shape[-2], shape[-1]))
         N = x.shape[1] + offset
         costheta, sintheta = RoPE.create_cos_sin_theta(
-            N, self.dims, offset=offset, device=x.device, dtype=x.dtype
+            N, self.dims, offset=offset, base=self.base, dtype=x.dtype
         )
 
         rope = (
