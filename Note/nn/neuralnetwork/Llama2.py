@@ -205,18 +205,17 @@ class Llama2:
         self.vocab_size = params.vocab_size
         self.n_layers = params.n_layers
 
-        self.tok_embeddings = initializer_((params.vocab_size, params.dim), ['normal', 0.0, 0.02], 'float32')
         self.dropout = dropout(params.dropout)
         self.layers = []
         for layer_id in range(params.n_layers):
             self.layers.append(TransformerBlock(layer_id, params))
         self.norm = RMSNorm(params.dim, eps=params.norm_eps)
-        self.output = dense(params.vocab_size, params.dim, use_bias=False)
+        self.output = dense(params.vocab_size, params.dim, weight_initializer=['normal', 0.0, 0.02], use_bias=False)
         self.output.weight.assign(params.weight_decay * self.output.weight)
 
         # share the unembedding parameters with the embedding parameters
-        self.tok_embeddings.weight = self.output.weight # https://paperswithcode.com/method/weight-tying
-        self.tok_embeddings.weight.assign(self.tok_embeddings.weight)
+        self.tok_embeddings = self.output.weight # https://paperswithcode.com/method/weight-tying
+        Module.param.append(self.tok_embeddings)
 
         # some useful precompute for the RoPE relative positional embeddings
         freqs_cos, freqs_sin = precompute_freqs_cis(self.params.dim // self.params.n_heads, self.params.max_seq_len)
