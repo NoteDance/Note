@@ -354,7 +354,8 @@ class CLIP:
                  vocab_size: int,
                  transformer_width: int,
                  transformer_heads: int,
-                 transformer_layers: int
+                 transformer_layers: int,
+                 device='GPU'
                  ):
         Module.init()
         
@@ -401,10 +402,12 @@ class CLIP:
                                             'float32')
         self.logit_scale = tf.Variable(tf.ones([]) * np.log(1 / 0.07))
         Module.param.append(self.logit_scale)
-        self.param=Module.param
-        self.optimizer=Adam()
 
         self.initialize_parameters()
+        
+        self.param=Module.param
+        self.optimizer=Adam()
+        self.device=device
         self.km=0
 
     def initialize_parameters(self):
