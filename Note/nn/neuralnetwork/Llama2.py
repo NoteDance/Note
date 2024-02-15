@@ -211,7 +211,7 @@ class Llama2:
         for layer_id in range(params.n_layers):
             self.layers.append(TransformerBlock(layer_id, params))
         self.norm = RMSNorm(params.dim, eps=params.norm_eps)
-        self.output = dense(params.dim, params.vocab_size, use_bias=False)
+        self.output = dense(params.vocab_size, params.dim, use_bias=False)
         self.output.weight.assign(params.weight_decay * self.output.weight)
 
         # share the unembedding parameters with the embedding parameters
@@ -225,6 +225,27 @@ class Llama2:
         self.param = Module.param
         self.device=self.params.device
         self.km=0
+    
+    def fine_tuning(self,flag=0):
+        param=[]
+        if flag==0:
+            self.param_=self.param
+            self.output_=self.output
+            self.output=dense(ModelArgs.vocab_size, ModelArgs.dim, use_bias=False)
+            param.extend(self.output.param)
+            self.param=param
+            self.optimizer_=self.optimizer
+            self.optimizer=AdamW(lr=ModelArgs.lr,param=self.param)
+        elif flag==1:
+            del self.param_[-len(self.output.param):]
+            self.param_.extend(self.output.param)
+            self.param=self.param_
+        else:
+            self.output,self.output_=self.output_,self.output
+            del self.param_[-len(self.dense.param):]
+            self.param_.extend(self.dense.param)
+            self.param=self.param_
+        return
 
     def fp(self, tokens, p = None):
         if self.km==1:
