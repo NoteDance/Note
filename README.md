@@ -259,7 +259,7 @@ for p in range(5):           #loop over the processes
 
 https://github.com/NoteDance/Note/tree/Note-7.0/Note/nn/neuralnetwork
 
-**Documentation:** https://github.com/NoteDance/Note-documentation/tree/neural-network
+**Documentation:** https://github.com/NoteDance/Note-documentation/tree/neural-network-7.0
 
 **The following is an example of training on the CIFAR10 dataset.**
 
@@ -333,13 +333,20 @@ output=convnext_atto.fp(data)
 ```
 
 
+# The models that can be trained with TensorFlow:
+**This package include Llama2, CLIP, ViT, ConvNeXt, SwiftFormer, etc. These models built with Note are compatible with TensorFlow and can be trained with TensorFlow.**
+
+https://github.com/NoteDance/Note/tree/Note-7.0/Note/nn/neuralnetwork/tf
+
+**Documentation:** https://github.com/NoteDance/Note-documentation/tree/tf-7.0
+
+
 # Layer modules:
 **The usage of the layer module is similar to pytorch, which is to create an object first and then get the output. To use the layer module, you first need to create a layer object, then pass in the data and get the output.**
 
 https://github.com/NoteDance/Note/tree/Note-7.0/Note/nn/layer
 
-**Documentation:** https://github.com/NoteDance/Note-documentation/tree/layer
-
+**Documentation:** https://github.com/NoteDance/Note-documentation/tree/layer-7.0
 
 # Study kernel:
 **If you want to study kernel, you can see the kernel with comments at the link below.**
