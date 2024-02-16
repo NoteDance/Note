@@ -439,7 +439,7 @@ class CLIP:
     def dtype(self):
         return self.visual.conv1.weight.dtype
 
-    def encode_image(self, image, train_flag):
+    def encode_image(self, image, train_flag=True):
         return self.visual(tf.cast(image, self.dtype), train_flag)
 
     def encode_text(self, text):
@@ -462,7 +462,7 @@ class CLIP:
             with tf.device(assign_device(p,self.device)):
                 image = data[0]
                 text = data[1]
-                image_features = self.encode_image(image, self.km)
+                image_features = self.encode_image(image)
                 text_features = self.encode_text(text)
         
                 # normalized features
