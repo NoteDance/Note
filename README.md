@@ -257,7 +257,7 @@ for p in range(5):           #loop over the processes
 # Neural network:
 **The neuralnetwork package in Note has models that can be trained in parallel on Note, such as ConvNeXt, EfficientNetV2, EfficientNet, etc. You only need to provide the training data and operate simply, then you can train these neural networks in parallel on Note.**
 
-https://github.com/NoteDance/Note/tree/Note-7.0/Note/nn/neuralnetwork
+https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork
 
 **Documentation:** https://github.com/NoteDance/Note-documentation/tree/neural-network-7.0
 
@@ -268,7 +268,7 @@ https://github.com/NoteDance/Note/tree/Note-7.0/Note/nn/neuralnetwork
 **Train:**
 ```python
 import Note.DL.parallel.kernel as k   #import kernel module
-from Note.nn.neuralnetwork.ConvNeXtV2 import ConvNeXtV2 #import neural network class
+from Note.neuralnetwork.ConvNeXtV2 import ConvNeXtV2 #import neural network class
 from tensorflow.keras import datasets
 from multiprocessing import Process,Manager #import multiprocessing tools
 (train_images,train_labels),(test_images,test_labels)=datasets.cifar10.load_data()
@@ -297,7 +297,7 @@ output=convnext_atto.fp(data)
 **Train:**
 ```python
 import Note.DL.parallel.kernel as k   #import kernel module
-from Note.nn.neuralnetwork.ConvNeXtV2 import ConvNeXtV2 #import neural network class
+from Note.neuralnetwork.ConvNeXtV2 import ConvNeXtV2 #import neural network class
 convnext_atto=ConvNeXtV2(model_type='atto',classes=1000)  #create neural network object
 convnext_atto.build()                           #build the network structure
 kernel=k.kernel(convnext_atto)                  #create kernel object with the network
@@ -336,7 +336,7 @@ output=convnext_atto.fp(data)
 # The models that can be trained with TensorFlow:
 **This package include Llama2, CLIP, ViT, ConvNeXt, SwiftFormer, etc. These models built with Note are compatible with TensorFlow and can be trained with TensorFlow.**
 
-https://github.com/NoteDance/Note/tree/Note-7.0/Note/nn/neuralnetwork/tf
+https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
 
 **Documentation:** https://github.com/NoteDance/Note-documentation/tree/tf-7.0
 
