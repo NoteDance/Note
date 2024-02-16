@@ -111,7 +111,6 @@ class Attention:
         self.wo.weight.assign(args.weight_decay * self.wo.weight)
         self.attn_dropout = dropout(args.dropout)
         self.resid_dropout = dropout(args.dropout)
-        self.dropout = args.dropout
         self.mask = tf.fill((3, 3), float("-inf"))
         self.mask = tf.linalg.band_part(self.mask, 0, -1)
         self.mask = tf.linalg.set_diag(self.mask, tf.zeros(3))
@@ -121,6 +120,7 @@ class Attention:
         x,
         freqs_cos,
         freqs_sin,
+        train_flag=True
     ):
         bsz, seqlen, _ = x.shape
 
@@ -146,7 +146,7 @@ class Attention:
         assert hasattr(self, 'mask')
         scores = scores + self.mask[:, :, :seqlen, :seqlen]   # (bs, n_local_heads, seqlen, cache_len + seqlen)
         scores = tf.cast(tf.nn.softmax(tf.cast(scores, 'float32'), axis=-1), xq.dtype)
-        scores = self.attn_dropout(scores)
+        scores = self.attn_dropout(scores, train_flag)
         output = tf.matmul(scores, xv)  # (bs, n_local_heads, seqlen, head_dim)
 
         # restore time as batch dimension and concat heads
@@ -154,7 +154,7 @@ class Attention:
 
         # final projection into the residual stream
         output = self.wo(output)
-        output = self.resid_dropout(output)
+        output = self.resid_dropout(output, train_flag)
         return output
 
 
@@ -172,8 +172,8 @@ class FeedForward:
         self.w3.weight.assign(ModelArgs.weight_decay * self.w3.weight)
         self.dropout = dropout(drop_rate)
 
-    def __call__(self, x):
-        return self.dropout(self.w2(tf.nn.silu(self.w1(x)) * self.w3(x)))
+    def __call__(self, x, train_flag=True):
+        return self.dropout(self.w2(tf.nn.silu(self.w1(x)) * self.w3(x)), train_flag)
 
 
 class TransformerBlock:
@@ -192,9 +192,9 @@ class TransformerBlock:
         self.attention_norm = RMSNorm(args.dim, eps=args.norm_eps)
         self.ffn_norm = RMSNorm(args.dim, eps=args.norm_eps)
 
-    def forward(self, x, freqs_cos, freqs_sin):
-        h = x + self.attention(self.attention_norm(x), freqs_cos, freqs_sin)
-        out = h + self.feed_forward(self.ffn_norm(h))
+    def forward(self, x, freqs_cos, freqs_sin, train_flag=True):
+        h = x + self.attention(self.attention_norm(x), freqs_cos, freqs_sin, train_flag)
+        out = h + self.feed_forward(self.ffn_norm(h), train_flag)
         return out
 
 
@@ -263,19 +263,19 @@ class Llama2:
 
                 return logits
         else:
-                _bsz, seqlen = tokens.shape
-                h = tf.matmul(tokens, self.tok_embeddings)
-                h = self.dropout(h)
-                freqs_cos = self.freqs_cos[:seqlen]
-                freqs_sin = self.freqs_sin[:seqlen]
+            _bsz, seqlen = tokens.shape
+            h = tf.matmul(tokens, self.tok_embeddings)
+            h = self.dropout(h, self.km)
+            freqs_cos = self.freqs_cos[:seqlen]
+            freqs_sin = self.freqs_sin[:seqlen]
+    
+            for layer in self.layers:
+                h = layer(h, freqs_cos, freqs_sin, self.km)
+            h = self.norm(h)
         
-                for layer in self.layers:
-                    h = layer(h, freqs_cos, freqs_sin)
-                h = self.norm(h)
-            
-                logits = self.output(h[:, [-1], :]) # note: using list [-1] to preserve the time dim
-        
-                return logits
+            logits = self.output(h[:, [-1], :]) # note: using list [-1] to preserve the time dim
+    
+            return logits
     
     def loss(self, output, labels, p):
         with tf.device(assign_device(p,self.device)):
