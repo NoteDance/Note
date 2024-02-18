@@ -134,7 +134,7 @@ class AudioEncoder:
     ):
         self.conv1 = conv1d(filters=n_state, input_size=n_mels, kernel_size=3)
         self.zeropadding1d1 = zeropadding1d(padding=1)
-        self.conv2 = conv1d(filters=n_state, input_size=n_state, kernel_size=3, stride=2)
+        self.conv2 = conv1d(filters=n_state, input_size=n_state, kernel_size=3, strides=2)
         self.zeropadding1d2 = zeropadding1d(padding=1)
         self._positional_embedding = tf.cast(sinusoids(n_ctx, n_state), dtype)
 
@@ -173,8 +173,8 @@ class TextDecoder:
         ]
         self.ln = LayerNorm(n_state)
         self._mask = tf.fill((3, 3), float("-inf"))
-        self._mask = tf.linalg.band_part(self.mask, 0, -1)
-        self._mask = tf.linalg.set_diag(self.mask, tf.zeros(3))
+        self._mask = tf.linalg.band_part(self._mask, 0, -1)
+        self._mask = tf.linalg.set_diag(self._mask, tf.zeros(3))
         self._mask = tf.cast(self._mask, dtype)
 
     def __call__(self, x, xa, kv_cache=None):
