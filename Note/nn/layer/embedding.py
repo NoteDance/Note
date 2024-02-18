@@ -4,7 +4,7 @@ from Note.nn.Module import Module
 
 
 class embedding:
-    def __init__(self,output_size,input_size=None,initializer=None,sparse=False,use_one_hot_matmul=False,trainable=True,dtype='int32'):
+    def __init__(self,output_size,input_size=None,initializer='normal',sparse=False,use_one_hot_matmul=False,trainable=True,dtype='int32'):
         self.input_size=input_size
         self.initializer=initializer
         self.sparse=sparse
@@ -85,7 +85,7 @@ class embedding:
             )
             out = tf.matmul(one_hot_data, self.embeddings)
         else:
-            out = tf.nn.embedding_lookup(self.embeddings, data)
+            out = tf.gather(self.embeddings, data)
 
         if self.sparse and not isinstance(out, tf.SparseTensor):
             out = tf.sparse.from_dense(out)
