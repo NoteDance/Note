@@ -17,7 +17,7 @@ class Module:
     
     
     def init():
-        Module.param=[]
-        Module.ctl_list=[]
-        Module.ctsl_list=[]
+        Module.param.clear()
+        Module.ctl_list.clear()
+        Module.ctsl_list.clear()
         return
