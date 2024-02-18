@@ -443,7 +443,7 @@ class CLIP:
         return self.visual(tf.cast(image, self.dtype), train_flag)
 
     def encode_text(self, text):
-        x = tf.cast(self.token_embedding(text), self.dtype)  # [batch_size, n_ctx, d_model]
+        x = tf.cast(tf.gather(self.token_embedding, text), self.dtype)  # [batch_size, n_ctx, d_model]
 
         x = x + tf.cast(self.positional_embedding, self.dtype)
         x = tf.transpose(x, (1, 0, 2))  # NLD -> LND
