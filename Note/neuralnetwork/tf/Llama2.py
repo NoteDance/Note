@@ -220,7 +220,7 @@ class Llama2:
 
     def __call__(self, tokens):
         _bsz, seqlen = tokens.shape
-        h = tf.matmul(tokens, self.tok_embeddings)
+        h = tf.gather(self.tok_embeddings, tokens)
         h = self.dropout(h, self.training)
         freqs_cos = self.freqs_cos[:seqlen]
         freqs_sin = self.freqs_sin[:seqlen]
