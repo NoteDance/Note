@@ -186,7 +186,7 @@ class TextDecoder:
         """
         offset = kv_cache[0][0][0].shape[1] if kv_cache else 0
         x = (
-            self.token_embedding(x)
+            tf.gather(self.token_embedding, x)
             + self.positional_embedding[offset : offset + x.shape[-1]]
         )
 
