@@ -243,7 +243,7 @@ class Llama2:
     def fp(self, tokens):
         if self.km==1:
             _bsz, seqlen = tokens.shape
-            h = tf.matmul(tokens, self.tok_embeddings)
+            h = tf.gather(self.tok_embeddings, tokens)
             h = self.dropout(h)
             freqs_cos = self.freqs_cos[:seqlen]
             freqs_sin = self.freqs_sin[:seqlen]
@@ -257,7 +257,7 @@ class Llama2:
             return logits
         else:
             _bsz, seqlen = tokens.shape
-            h = tf.matmul(tokens, self.tok_embeddings)
+            h = tf.gather(self.tok_embeddings, tokens)
             h = self.dropout(h, self.km)
             freqs_cos = self.freqs_cos[:seqlen]
             freqs_sin = self.freqs_sin[:seqlen]
