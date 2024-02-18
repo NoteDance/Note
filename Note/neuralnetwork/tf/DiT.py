@@ -194,7 +194,7 @@ class DiT:
     def __call__(self, x, t, y):
         """
         Forward pass of DiT.
-        x: (N, C, H, W) tensor of spatial inputs (images or latent representations of images)
+        x: (N, H, W, C) tensor of spatial inputs (images or latent representations of images)
         t: (N,) tensor of diffusion timesteps
         y: (N,) tensor of class labels
         """
