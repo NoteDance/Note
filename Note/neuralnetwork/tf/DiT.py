@@ -286,41 +286,41 @@ def get_1d_sincos_pos_embed_from_grid(embed_dim, pos):
 #                                   DiT Configs                                  #
 #################################################################################
 
-def DiT_XL_2(**kwargs):
-    return DiT(depth=28, hidden_size=1152, patch_size=2, num_heads=16, **kwargs)
+def DiT_XL_2():
+    return DiT(depth=28, hidden_size=1152, patch_size=2, num_heads=16)
 
-def DiT_XL_4(**kwargs):
-    return DiT(depth=28, hidden_size=1152, patch_size=4, num_heads=16, **kwargs)
+def DiT_XL_4():
+    return DiT(depth=28, hidden_size=1152, patch_size=4, num_heads=16)
 
-def DiT_XL_8(**kwargs):
-    return DiT(depth=28, hidden_size=1152, patch_size=8, num_heads=16, **kwargs)
+def DiT_XL_8():
+    return DiT(depth=28, hidden_size=1152, patch_size=8, num_heads=16)
 
-def DiT_L_2(**kwargs):
-    return DiT(depth=24, hidden_size=1024, patch_size=2, num_heads=16, **kwargs)
+def DiT_L_2():
+    return DiT(depth=24, hidden_size=1024, patch_size=2, num_heads=16)
 
-def DiT_L_4(**kwargs):
-    return DiT(depth=24, hidden_size=1024, patch_size=4, num_heads=16, **kwargs)
+def DiT_L_4():
+    return DiT(depth=24, hidden_size=1024, patch_size=4, num_heads=16)
 
-def DiT_L_8(**kwargs):
-    return DiT(depth=24, hidden_size=1024, patch_size=8, num_heads=16, **kwargs)
+def DiT_L_8():
+    return DiT(depth=24, hidden_size=1024, patch_size=8, num_heads=16)
 
-def DiT_B_2(**kwargs):
-    return DiT(depth=12, hidden_size=768, patch_size=2, num_heads=12, **kwargs)
+def DiT_B_2():
+    return DiT(depth=12, hidden_size=768, patch_size=2, num_heads=12)
 
-def DiT_B_4(**kwargs):
-    return DiT(depth=12, hidden_size=768, patch_size=4, num_heads=12, **kwargs)
+def DiT_B_4():
+    return DiT(depth=12, hidden_size=768, patch_size=4, num_heads=12)
 
-def DiT_B_8(**kwargs):
-    return DiT(depth=12, hidden_size=768, patch_size=8, num_heads=12, **kwargs)
+def DiT_B_8():
+    return DiT(depth=12, hidden_size=768, patch_size=8, num_heads=12)
 
-def DiT_S_2(**kwargs):
-    return DiT(depth=12, hidden_size=384, patch_size=2, num_heads=6, **kwargs)
+def DiT_S_2():
+    return DiT(depth=12, hidden_size=384, patch_size=2, num_heads=6)
 
-def DiT_S_4(**kwargs):
-    return DiT(depth=12, hidden_size=384, patch_size=4, num_heads=6, **kwargs)
+def DiT_S_4():
+    return DiT(depth=12, hidden_size=384, patch_size=4, num_heads=6)
 
-def DiT_S_8(**kwargs):
-    return DiT(depth=12, hidden_size=384, patch_size=8, num_heads=6, **kwargs)
+def DiT_S_8():
+    return DiT(depth=12, hidden_size=384, patch_size=8, num_heads=6)
 
 
 DiT_models = {
