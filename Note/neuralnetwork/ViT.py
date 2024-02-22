@@ -79,8 +79,8 @@ class Transformer:
         self.norm = layer_norm(dim)
         self.layers = []
         for _ in range(depth):
-            self.layers.append([Attention(dim, heads = heads, dim_head = dim_head, dropout = dropout),
-                                FeedForward(dim, mlp_dim, dropout = dropout)])
+            self.layers.append([Attention(dim, heads = heads, dim_head = dim_head, drop_rate = dropout),
+                                FeedForward(dim, mlp_dim, drop_rate = dropout)])
 
     def __call__(self, x, train_flag=True):
         for attn, ff in self.layers:
@@ -91,7 +91,7 @@ class Transformer:
 
 
 class ViT:
-    def __init__(self, image_size, patch_size, num_classes, dim, depth, heads, mlp_dim, pool = 'cls', channels = 3, dim_head = 64, dropout = 0., emb_dropout = 0., device='GPU'):
+    def __init__(self, image_size, patch_size, num_classes, dim, depth, heads, mlp_dim, pool = 'cls', channels = 3, dim_head = 64, drop_rate = 0., emb_dropout = 0., device='GPU'):
         Module.init()
         
         image_height, image_width = pair(image_size)
@@ -114,7 +114,7 @@ class ViT:
         self.cls_token = initializer_((1, 1, dim), 'normal', 'float32')
         self.dropout = dropout(emb_dropout)
 
-        self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout)
+        self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, drop_rate)
 
         self.pool = pool
         self.to_latent = identity()
