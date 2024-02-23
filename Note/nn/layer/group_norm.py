@@ -87,6 +87,7 @@ class group_norm:
                 self.param.append(self.beta)
             else:
                 self.beta = None
+            self.output_size = input_size
             Module.param.extend(self.param)
     
     def build(self):
