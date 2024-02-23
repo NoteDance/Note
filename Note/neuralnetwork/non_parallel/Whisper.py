@@ -130,10 +130,10 @@ class AudioEncoder:
         n_layer: int,
         dtype = tf.float16,
     ):
-        self.conv1 = conv1d(filters=n_state, input_size=n_mels, kernel_size=3)
         self.zeropadding1d1 = zeropadding1d(padding=1)
-        self.conv2 = conv1d(filters=n_state, input_size=n_state, kernel_size=3, strides=2)
+        self.conv1 = conv1d(filters=n_state, input_size=n_mels, kernel_size=3)
         self.zeropadding1d2 = zeropadding1d(padding=1)
+        self.conv2 = conv1d(filters=n_state, input_size=n_state, kernel_size=3, strides=2)
         self._positional_embedding = tf.cast(sinusoids(n_ctx, n_state), dtype)
 
         self.blocks = [ResidualAttentionBlock(n_state, n_head) for _ in range(n_layer)]
