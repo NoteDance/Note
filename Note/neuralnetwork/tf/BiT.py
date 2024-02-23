@@ -70,9 +70,7 @@ class PreActBottleneck:
 
     # Unit's branch
     out = self.conv1(out)
-#    print(out.shape,residual.shape)
     out = self.conv2(self.relu(self.gn2(out)))
-#    print(out.shape,residual.shape)
     out = self.conv3(self.relu(self.gn3(out)))
 
     return out + residual
