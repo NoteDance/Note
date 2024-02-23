@@ -170,9 +170,9 @@ class TextDecoder:
             for _ in range(n_layer)
         ]
         self.ln = LayerNorm(n_state)
-        self._mask = tf.fill((3, 3), float("-inf"))
+        self._mask = tf.fill((n_ctx, n_ctx), float("-inf"))
         self._mask = tf.linalg.band_part(self._mask, 0, -1)
-        self._mask = tf.linalg.set_diag(self._mask, tf.zeros(3))
+        self._mask = tf.linalg.set_diag(self._mask, tf.zeros(n_ctx))
         self._mask = tf.cast(self._mask, dtype)
 
     def __call__(self, x, xa, kv_cache=None):
