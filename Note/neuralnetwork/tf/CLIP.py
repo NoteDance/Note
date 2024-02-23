@@ -448,7 +448,8 @@ class CLIP:
 
         # x.shape = [batch_size, n_ctx, transformer.width]
         # take features from the eot embedding (eot_token is the highest number in each sequence)
-        x = tf.matmul(tf.gather_nd(x, tf.stack([tf.range(x.shape[0], dtype='int32'), tf.argmax(text, axis=-1, output_type='int32')], axis=1)), self.text_projection)
+        x = tf.matmul(tf.gather_nd(x, tf.stack([tf.range(x.shape[0], dtype='int32'), 
+                        tf.argmax(text, axis=-1, output_type='int32')], axis=1)), self.text_projection)
 
         return x
 
