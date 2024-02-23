@@ -61,7 +61,7 @@ def apply_rotary_emb(
 
     # reshape xq and xk to match the complex representation
     xq_r, xq_i = tf.unstack(tf.reshape(tf.cast(xq, 'float32'), (xq.shape[:-1] + (xq.shape[-1] // 2, 2))), axis=-1)
-    xk_r, xk_i = tf.unstack(tf.reshape(tf.cast(xk,  'float32'), (xk.shape[:-1] + (xq.shape[-1] // 2, 2))), axis=-1)
+    xk_r, xk_i = tf.unstack(tf.reshape(tf.cast(xk,  'float32'), (xk.shape[:-1] + (xk.shape[-1] // 2, 2))), axis=-1)
 
     # reshape freqs_cos and freqs_sin for broadcasting
     freqs_cos = reshape_for_broadcast(freqs_cos, xq_r)
