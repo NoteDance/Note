@@ -5,6 +5,7 @@ from Note.nn.initializer import initializer_
 from Note.nn.parallel.optimizer import AdamW
 from Note.nn.parallel.assign_device import assign_device
 from Note.nn.Module import Module
+import math
 from dataclasses import dataclass
 from typing import Optional
 
@@ -23,7 +24,7 @@ class ModelArgs:
     max_seq_len: int = 2048
     dropout: float = 0.0
     lr = 0.0003
-    weight_decay = tf.cast(0.1, 'float32')
+    weight_decay: float = 0.1
     device = 'GPU'
 
 
@@ -33,9 +34,9 @@ class RMSNorm:
         self.weight = initializer_((dim,), 'ones', 'float32')
 
     def _norm(self, x):
-        return x * tf.math.rsqrt(tf.reduce_mean(tf.math.pow(x, 2), -1, keepdim=True) + self.eps)
+        return x * tf.math.rsqrt(tf.reduce_mean(tf.math.pow(x, 2), -1, keepdims=True) + self.eps)
 
-    def forward(self, x):
+    def __call__(self, x):
         output = tf.cast(self._norm(tf.cast(x, 'float32')), x.dtype)
         return output * self.weight
 
@@ -43,7 +44,7 @@ class RMSNorm:
 def precompute_freqs_cis(dim: int, end: int, theta: float = 10000.0):
     freqs = 1.0 / (theta ** (tf.cast(tf.range(0, dim, 2)[: (dim // 2)], 'float32') / dim))
     t = tf.range(end)  # type: ignore
-    freqs = tf.cast(tf.multiply(t, freqs), 'float32')  # type: ignore
+    freqs = tf.cast(tf.experimental.numpy.outer(t, freqs), 'float32')  # type: ignore
     freqs_cos = tf.math.cos(freqs)  # real part
     freqs_sin = tf.math.sin(freqs)  # imaginary part
     return freqs_cos, freqs_sin
@@ -63,8 +64,8 @@ def apply_rotary_emb(
 ):
 
     # reshape xq and xk to match the complex representation
-    xq_r, xq_i = tf.unstack(tf.reshape(tf.cast(xq, 'float32'), (xq.shape[:-1] + (-1, 2))), -1)
-    xk_r, xk_i = tf.unstack(tf.reshape(tf.cast(xk,  'float32'), (xk.shape[:-1] + (-1, 2))), -1)
+    xq_r, xq_i = tf.unstack(tf.reshape(tf.cast(xq, 'float32'), (xq.shape[-1] // 2, 2)), axis=-1)
+    xk_r, xk_i = tf.unstack(tf.reshape(tf.cast(xk,  'float32'), (xk.shape[-1] // 2, 2)), axis=-1)
 
     # reshape freqs_cos and freqs_sin for broadcasting
     freqs_cos = reshape_for_broadcast(freqs_cos, xq_r)
@@ -79,10 +80,10 @@ def apply_rotary_emb(
     # flatten last two dimensions
     xq_out = tf.stack([xq_out_r, xq_out_i], axis=-1)
     shape = xq_out.shape
-    xq_out = tf.reshape(xq_out, [-1, shape[1], shape[2] * shape[3]])
+    xq_out = tf.reshape(xq_out, [-1, shape[1], shape[2], shape[3] * shape[4]])
     xk_out = tf.stack([xk_out_r, xk_out_i], axis=-1)
     shape = xk_out.shape
-    xk_out = tf.reshape(xk_out, [-1, shape[1], shape[2] * shape[3]])
+    xk_out = tf.reshape(xk_out, [-1, shape[1], shape[2], shape[3] * shape[4]])
 
     return tf.cast(xq_out, xq.dtype), tf.cast(xk_out, xk.dtype)
 
@@ -107,13 +108,14 @@ class Attention:
         self.wk.weight.assign(args.weight_decay * self.wk.weight)
         self.wv = dense(self.n_kv_heads * self.head_dim, args.dim, weight_initializer=['normal', 0.0, 0.02], use_bias=False)
         self.wv.weight.assign(args.weight_decay * self.wv.weight)
-        self.wo = dense(args.dim, args.n_heads * self.head_dim, weight_initializer=['normal', 0.0, 0.02/tf.math.sqrt(2 * args.n_layers)], use_bias=False)
+        self.wo = dense(args.dim, args.n_heads * self.head_dim, weight_initializer=['normal', 0.0, 0.02/math.sqrt(2 * args.n_layers)], use_bias=False)
         self.wo.weight.assign(args.weight_decay * self.wo.weight)
         self.attn_dropout = dropout(args.dropout)
         self.resid_dropout = dropout(args.dropout)
-        self.mask = tf.fill((3, 3), float("-inf"))
+        self.mask = tf.fill((args.max_seq_len, args.max_seq_len), float("-inf"))
         self.mask = tf.linalg.band_part(self.mask, 0, -1)
-        self.mask = tf.linalg.set_diag(self.mask, tf.zeros(3))
+        self.mask = tf.linalg.set_diag(self.mask, tf.zeros(args.max_seq_len))
+        self.mask = tf.reshape(self.mask, (1, 1, *self.mask.shape))
 
     def __call__(
         self,
@@ -142,7 +144,7 @@ class Attention:
         xk = tf.transpose(xk, (0, 2, 1, 3))
         xv = tf.transpose(xv, (0, 2, 1, 3))
 
-        scores = tf.matmul(xq, tf.transpose(xk, (0, 1, 3, 2))) / tf.math.sqrt(self.head_dim)
+        scores = tf.matmul(xq, tf.transpose(xk, (0, 1, 3, 2))) / math.sqrt(self.head_dim)
         assert hasattr(self, 'mask')
         scores = scores + self.mask[:, :, :seqlen, :seqlen]   # (bs, n_local_heads, seqlen, cache_len + seqlen)
         scores = tf.cast(tf.nn.softmax(tf.cast(scores, 'float32'), axis=-1), xq.dtype)
@@ -168,7 +170,7 @@ class FeedForward:
         self.w1.weight.assign(ModelArgs.weight_decay * self.w1.weight)
         self.w2 = dense(dim, hidden_dim, weight_initializer=['normal', 0.0, 0.02], use_bias=False)
         self.w2.weight.assign(ModelArgs.weight_decay * self.w2.weight)
-        self.w3 = dense(hidden_dim, dim, weight_initializer=['normal', 0.0, 0.02/tf.math.sqrt(2 * ModelArgs.n_layers)], use_bias=False)
+        self.w3 = dense(hidden_dim, dim, weight_initializer=['normal', 0.0, 0.02/math.sqrt(2 * ModelArgs.n_layers)], use_bias=False)
         self.w3.weight.assign(ModelArgs.weight_decay * self.w3.weight)
         self.dropout = dropout(drop_rate)
 
@@ -186,13 +188,13 @@ class TransformerBlock:
             dim=args.dim,
             hidden_dim=args.hidden_dim,
             multiple_of=args.multiple_of,
-            dropout=args.dropout,
+            drop_rate=args.dropout,
         )
         self.layer_id = layer_id
         self.attention_norm = RMSNorm(args.dim, eps=args.norm_eps)
         self.ffn_norm = RMSNorm(args.dim, eps=args.norm_eps)
 
-    def forward(self, x, freqs_cos, freqs_sin, train_flag=True):
+    def __call__(self, x, freqs_cos, freqs_sin, train_flag=True):
         h = x + self.attention(self.attention_norm(x), freqs_cos, freqs_sin, train_flag)
         out = h + self.feed_forward(self.ffn_norm(h), train_flag)
         return out
@@ -214,11 +216,11 @@ class Llama2:
         self.output.weight.assign(params.weight_decay * self.output.weight)
 
         # share the unembedding parameters with the embedding parameters
-        self.tok_embeddings = self.output.weight # https://paperswithcode.com/method/weight-tying
+        self.tok_embeddings = tf.transpose(self.output.weight) # https://paperswithcode.com/method/weight-tying
         Module.param.append(self.tok_embeddings)
 
         # some useful precompute for the RoPE relative positional embeddings
-        freqs_cos, freqs_sin = precompute_freqs_cis(self.params.dim // self.params.n_heads, self.params.max_seq_len)
+        self.freqs_cos, self.freqs_sin = precompute_freqs_cis(self.params.dim // self.params.n_heads, self.params.max_seq_len)
         
         self.optimizer=AdamW(lr=self.params.lr, beta1=0.9, beta2=0.95)
         self.param = Module.param
