@@ -23,7 +23,7 @@ class ModelArgs:
     norm_eps: float = 1e-5
     max_seq_len: int = 2048
     dropout: float = 0.0
-    lr = 0.0003
+    lr: float = 0.0003
     weight_decay: float = 0.1
     device = 'GPU'
 
