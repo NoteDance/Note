@@ -109,7 +109,7 @@ class AttentionPool2d:
         query=self.q_proj(x[:1])
         key=self.k_proj(x)
         value=self.v_proj(x)
-        query = tf.reshape(query, [bsz, tgt_len, self.num_heads, -1])
+        query = tf.reshape(query, [bsz, 1, self.num_heads, -1])
         query = tf.transpose(query, [0, 2, 1, 3])
         query = tf.multiply(query, 1.0 / tf.math.sqrt(float(embed_dim)))
         key = tf.reshape(key, [bsz, tgt_len, self.num_heads, -1])
@@ -118,7 +118,7 @@ class AttentionPool2d:
         value = tf.transpose(value, [0, 2, 1, 3])
         qk = tf.matmul(query, key)
         w = tf.nn.softmax(qk)
-        wv = tf.reshape(tf.transpose(tf.matmul(w, value), [0, 2, 1, 3]), [tgt_len, bsz, embed_dim])
+        wv = tf.reshape(tf.transpose(tf.matmul(w, value), [0, 2, 1, 3]), [1, bsz, -1])
         x = self.c_proj(wv)
         return tf.squeeze(x, 0)
 
@@ -202,7 +202,7 @@ class ModifiedResNet:
             x = self.avgpool(x)
             return x
 
-        x = x.type(self.conv1.weight.dtype)
+        x = tf.cast(x, self.conv1.weight.dtype)
         x = stem(x)
         x = self.layer1(x, train_flag)
         x = self.layer2(x, train_flag)
@@ -242,7 +242,7 @@ class ResidualAttentionBlock:
 
     def attention(self, x):
         self.attn_mask = tf.cast(self.attn_mask, x.dtype) if self.attn_mask is not None else None
-        return self.attn(x, x, x, attn_mask=self.attn_mask)[0]
+        return self.attn(x, mask=self.attn_mask)[0]
     
     def init(self,attn_std, proj_std, fc_std):
         shape = self.attn.query.weight.shape
@@ -284,7 +284,7 @@ class Transformer:
         self.layers = layers
         self.resblocks = Layers()
         for _ in range(layers):
-            self.resblocks = self.resblocks.add(ResidualAttentionBlock(width, heads, attn_mask))
+            self.resblocks.add(ResidualAttentionBlock(width, heads, attn_mask))
     
     def convert_weights(self):
         for layer in self.resblocks.layer:
@@ -449,7 +449,8 @@ class CLIP:
 
         # x.shape = [batch_size, n_ctx, transformer.width]
         # take features from the eot embedding (eot_token is the highest number in each sequence)
-        x = tf.matmul(x[tf.range(x.shape[0]), tf.argmax(text, axis=-1)], self.text_projection)
+        x = tf.matmul(tf.gather_nd(x, tf.stack([tf.range(x.shape[0], dtype='int32'), 
+                        tf.argmax(text, axis=-1, output_type='int32')], axis=1)), self.text_projection)
 
         return x
 
