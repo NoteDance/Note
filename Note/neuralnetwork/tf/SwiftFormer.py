@@ -213,12 +213,12 @@ def stem(in_chs, out_chs, dtype):
     Stem Layer that is implemented by two layers of conv.
     """
     layers=Layers()
-    layers.add(conv2d(out_chs // 2, kernel_size=3, input_size=in_chs, strides=2, dtype=dtype))
     layers.add(zeropadding2d(padding=1))
+    layers.add(conv2d(out_chs // 2, kernel_size=3, input_size=in_chs, strides=2, dtype=dtype))
     layers.add(batch_norm(dtype=dtype))
     layers.add(activation_dict['relu'])
-    layers.add(conv2d(out_chs, kernel_size=3, strides=2, dtype=dtype))
     layers.add(zeropadding2d(padding=1))
+    layers.add(conv2d(out_chs, kernel_size=3, strides=2, dtype=dtype))
     layers.add(batch_norm(dtype=dtype))
     layers.add(activation_dict['relu'])
     return layers
@@ -234,14 +234,15 @@ class Embedding:
         patch_size = to_2tuple(patch_size)
         stride = to_2tuple(stride)
         padding = to_2tuple(padding)
+        self.zeropadding2d=zeropadding2d(padding=padding)
         self.proj = conv2d(embed_dim, kernel_size=patch_size, input_size=in_chans,
                               strides=stride, dtype=dtype)
-        self.zeropadding2d=zeropadding2d(padding=padding)
         self.norm = batch_norm(embed_dim, dtype=dtype) if norm_layer else identity()
         self.train_flag=True
     
     
     def __call__(self, x, train_flag=True):
+        x = self.zeropadding2d(x)
         x = self.proj(x)
         if hasattr(self.norm, 'train_flag'):
             x = self.norm(x, train_flag)
@@ -257,9 +258,9 @@ class ConvEncoder:
 
     def __init__(self, dim, hidden_dim=64, kernel_size=3, drop_path=0., use_layer_scale=True, dtype='float32'):
         self.layers=Layers()
+        self.layers.add(zeropadding2d(padding=kernel_size // 2))
         self.layers.add(depthwise_conv2d(kernel_size=kernel_size, input_size=dim, 
                                        weight_initializer=['truncated_normal',.02], dtype=dtype))
-        self.layers.add(zeropadding2d(padding=kernel_size // 2))
         self.layers.add(batch_norm(dtype=dtype))
         self.layers.add(conv2d(hidden_dim, kernel_size=1, 
                               weight_initializer=['truncated_normal',.02], dtype=dtype))
@@ -362,8 +363,8 @@ class SwiftFormerLocalRepresentation:
 
     def __init__(self, dim, kernel_size=3, drop_path=0., use_layer_scale=True, dtype='float32'):
         self.layers=Layers()
-        self.layers.add(depthwise_conv2d(kernel_size=kernel_size, input_size=dim, weight_initializer=['truncated_normal',.02], dtype=dtype))
         self.layers.add(zeropadding2d(padding=kernel_size // 2))
+        self.layers.add(depthwise_conv2d(kernel_size=kernel_size, input_size=dim, weight_initializer=['truncated_normal',.02], dtype=dtype))
         self.layers.add(batch_norm(dtype=dtype))
         self.layers.add(conv2d(dim, kernel_size=1, weight_initializer=['truncated_normal',.02], dtype=dtype))
         self.layers.add(activation_dict['gelu'])
