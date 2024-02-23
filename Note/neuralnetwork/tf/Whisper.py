@@ -130,17 +130,19 @@ class AudioEncoder:
         n_layer: int,
         dtype = tf.float16,
     ):
-        self.conv1 = conv1d(filters=n_state, input_size=n_mels, kernel_size=3)
         self.zeropadding1d1 = zeropadding1d(padding=1)
-        self.conv2 = conv1d(filters=n_state, input_size=n_state, kernel_size=3, strides=2)
+        self.conv1 = conv1d(filters=n_state, input_size=n_mels, kernel_size=3)
         self.zeropadding1d2 = zeropadding1d(padding=1)
+        self.conv2 = conv1d(filters=n_state, input_size=n_state, kernel_size=3, strides=2)
         self._positional_embedding = tf.cast(sinusoids(n_ctx, n_state), dtype)
 
         self.blocks = [ResidualAttentionBlock(n_state, n_head) for _ in range(n_layer)]
         self.ln_post = LayerNorm(n_state)
 
     def __call__(self, x):
+        x = self.zeropadding1d1(x)
         x = tf.cast(tf.nn.gelu(self.conv1(x)), x.dtype)
+        x = self.zeropadding1d2(x)
         x = tf.cast(tf.nn.gelu(self.conv2(x)), x.dtype)
         assert x.shape[1:] == self._positional_embedding.shape, "incorrect audio shape"
         x = x + self._positional_embedding
