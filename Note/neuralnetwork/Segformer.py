@@ -254,7 +254,8 @@ class Segformer:
         with tf.device(assign_device(p,self.device)):
             output = tf.reshape(output, [-1, output.shape[-1]])
             labels = tf.reshape(labels, [-1, labels.shape[-1]])
-            return tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=output)
+            loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=output)
+            return tf.reduce_mean(loss)
     
     def GradientTape(self,data,labels,p):
         with tf.device(assign_device(p,self.device)):
