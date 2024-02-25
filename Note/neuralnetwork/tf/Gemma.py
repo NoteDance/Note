@@ -268,8 +268,28 @@ class Gemma:
         for _ in range(config.num_hidden_layers):
             self.layers.append(GemmaDecoderLayer(config))
         self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+        self.output = dense(config.vocab_size, config.hidden_size)
         
         self.param = Module.param
+    
+    def fine_tuning(self,vocab_size,flag=0):
+        param=[]
+        if flag==0:
+            self.param_=self.param
+            self.output_=self.output
+            self.output=dense(vocab_size, GemmaConfig.hidden_size)
+            param.extend(self.output.param)
+            self.param=param
+        elif flag==1:
+            del self.param_[-len(self.output.param):]
+            self.param_.extend(self.output.param)
+            self.param=self.param_
+        else:
+            self.output,self.output_=self.output_,self.output
+            del self.param_[-len(self.dense.param):]
+            self.param_.extend(self.dense.param)
+            self.param=self.param_
+        return
 
     def __call__(
         self,
@@ -289,4 +309,5 @@ class Gemma:
                 mask=mask,
             )
         hidden_states = self.norm(hidden_states)
-        return hidden_states
+        logits = self.output(hidden_states)
+        return logits
