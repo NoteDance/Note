@@ -25,7 +25,7 @@ class ModelArgs:
     dropout: float = 0.0
     lr: float = 0.0003
     weight_decay: float = 0.1
-    device = 'GPU'
+    device: str = 'GPU'
 
 
 class RMSNorm:
