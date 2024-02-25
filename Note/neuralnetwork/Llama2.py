@@ -284,7 +284,8 @@ class Llama2:
             output = tf.reshape(output, [-1, output.shape[-1]])
             labels = tf.reshape(labels, [-1])
             mask = tf.not_equal(labels, -1)
-            return tf.boolean_mask(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=output), mask)
+            loss = tf.boolean_mask(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=output), mask)
+            return tf.reduce_mean(loss)
     
     def GradientTape(self,data,labels,p):
         with tf.device(assign_device(p,self.device)):
