@@ -276,7 +276,8 @@ class Llama2:
         output = tf.reshape(output, [-1, output.shape[-1]])
         labels = tf.reshape(labels, [-1])
         mask = tf.not_equal(labels, -1)
-        return tf.boolean_mask(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=output), mask)
+        loss = tf.boolean_mask(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=output), mask)
+        return tf.reduce_mean(loss)
 
     def estimate_mfu(self, fwdbwd_per_iter, dt):
         """ estimate model flops utilization (MFU) in units of A100 bfloat16 peak FLOPS """
