@@ -239,4 +239,5 @@ class Segformer:
     def loss(self, output, labels):
         output = tf.reshape(output, [-1, output.shape[-1]])
         labels = tf.reshape(labels, [-1, labels.shape[-1]])
-        return tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=output)
+        loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=output)
+        return tf.reduce_mean(loss)
