@@ -131,7 +131,7 @@ class ViT:
     def fine_tuning(self,classes=None,lr=None,flag=0):
         param=[]
         if flag==0:
-            self.param_=self.param
+            self.param_=self.param.copy()
             self.mlp_head_=self.mlp_head
             self.mlp_head=dense(classes, self.dim)
             param.extend(self.mlp_head.param)

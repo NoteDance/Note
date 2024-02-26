@@ -217,7 +217,7 @@ class Segformer:
     def fine_tuning(self,classes=None,lr=None,flag=0):
         param=[]
         if flag==0:
-            self.param_=self.param
+            self.param_=self.param.copy()
             self.conv2d=self.to_segmentation.layer[-1]
             self.to_segmentation.layer[-1]=conv2d(classes, input_size=self.conv2d.input_size, kernel_size=1)
             param.extend(self.to_segmentation.layer[-1].param)

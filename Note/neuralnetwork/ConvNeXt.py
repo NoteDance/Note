@@ -122,7 +122,7 @@ class ConvNeXt:
     def fine_tuning(self,classes=None,lr=None,flag=0):
         param=[]
         if flag==0:
-            self.param_=self.param
+            self.param_=self.param.copy()
             self.dense_=self.dense
             self.dense=dense(classes,self.dense.input_size,activation=self.classifier_activation,dtype=self.dense.dtype)
             param.extend(self.dense.param)

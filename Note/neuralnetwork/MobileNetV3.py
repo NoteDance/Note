@@ -157,7 +157,7 @@ class MobileNetV3:
     def fine_tuning(self,classes=None,lr=None,flag=0):
         param=[]
         if flag==0:
-            self.param_=self.param
+            self.param_=self.param.copy()
             self.conv2d=self.layers.layer[-1]
             self.layers.layer[-1]=conv2d(classes, input_size=self.conv2d.input_size, kernel_size=1, padding="SAME", dtype=self.conv2d.dtype)
             param.extend(self.layers.layer[-1].param)
