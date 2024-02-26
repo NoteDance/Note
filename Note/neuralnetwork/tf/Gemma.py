@@ -73,8 +73,6 @@ class Embedder:
     self.vocab_size = config.vocab_size
     self.embed_dim = config.hidden_size
     self.input_embedding_table = initializer_((self.vocab_size, self.embed_dim), 'normal', 'float32')
-    self.input_embedding_table_ = tf.transpose(self.input_embedding_table)
-    Module.param.append(self.input_embedding_table_)
 
   def encode(self, x):
     x = tf.gather(self.input_embedding_table, x)
@@ -82,7 +80,7 @@ class Embedder:
     return x
 
   def decode(self, x):
-    return tf.matmul(x, self.input_embedding_table_)
+    return tf.matmul(x, tf.transpose(self.input_embedding_table))
 
 
 class RMSNorm:
@@ -297,18 +295,16 @@ class Gemma:
             self.param_=self.param.copy()
             self.embedder_=self.embedder
             self.embedder=Embedder()
-            param.extend([self.embedder.input_embedding_table, self.embedder.input_embedding_table_])
+            param.append(self.embedder.input_embedding_table)
             self.param=param
         elif flag==1:
             self.param_.remove(self.embedder_.input_embedding_table)
-            self.param_.remove(self.embedder_.input_embedding_table_)
-            self.param_.extend([self.embedder.input_embedding_table, self.embedder.input_embedding_table_])
+            self.param_.append(self.embedder.input_embedding_table)
             self.param=self.param_
         else:
             self.embedder,self.embedder_=self.embedder_,self.embedder
             self.param_.remove(self.embedder_.input_embedding_table)
-            self.param_.remove(self.embedder_.input_embedding_table_)
-            self.param_.extend([self.embedder.input_embedding_table, self.embedder.input_embedding_table_])
+            self.param_.append(self.embedder.input_embedding_table)
             self.param=self.param_
         return
 
