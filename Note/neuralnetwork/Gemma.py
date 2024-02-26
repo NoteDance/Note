@@ -308,20 +308,18 @@ class Gemma:
             self.param_=self.param.copy()
             self.embedder_=self.embedder
             self.embedder=Embedder()
-            param.extend([self.embedder.input_embedding_table, self.embedder.input_embedding_table_])
+            param.append(self.embedder.input_embedding_table)
             self.param=param
             self.optimizer_=self.optimizer
             self.optimizer=Adam(lr=lr,param=self.param)
         elif flag==1:
             self.param_.remove(self.embedder_.input_embedding_table)
-            self.param_.remove(self.embedder_.input_embedding_table_)
-            self.param_.extend([self.embedder.input_embedding_table, self.embedder.input_embedding_table_])
+            self.param_.append(self.embedder.input_embedding_table)
             self.param=self.param_
         else:
             self.embedder,self.embedder_=self.embedder_,self.embedder
             self.param_.remove(self.embedder_.input_embedding_table)
-            self.param_.remove(self.embedder_.input_embedding_table_)
-            self.param_.extend([self.embedder.input_embedding_table, self.embedder.input_embedding_table_])
+            self.param_.append(self.embedder.input_embedding_table)
             self.param=self.param_
         return
 
