@@ -105,7 +105,7 @@ class SwiftFormer:
     def fine_tuning(self,classes=None,lr=None,flag=0):
         param=[]
         if flag==0:
-            self.param_=self.param
+            self.param_=self.param.copy()
             self.head_=self.head
             self.head=dense(
                 classes, self.head.input_size, weight_initializer=['truncated_normal',.02], dtype=self.head.dtype) if classes > 0 \

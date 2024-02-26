@@ -126,7 +126,7 @@ class ConvNeXtV2:
     def fine_tuning(self,classes=None,lr=None,flag=0):
         param=[]
         if flag==0:
-            self.param_=self.param
+            self.param_=self.param.copy()
             self.dense_=self.dense
             self.dense=dense(classes,self.dense.input_size,weight_initializer=['truncated_normal',.02],activation=self.classifier_activation,dtype=self.dense.dtype)
             self.dense.weight.assign(tf.cast(self.head_init_scale,self.dense.weight.dtype)*self.dense.weight)

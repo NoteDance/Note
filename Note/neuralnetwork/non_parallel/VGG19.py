@@ -60,7 +60,7 @@ class VGG19:
     def fine_tuning(self,classes=None,lr=None,flag=0):
         param=[]
         if flag==0:
-            self.param_=self.param
+            self.param_=self.param.copy()
             self.dense3_=self.dense3
             self.dense3=dense(classes,self.dense3.input_size,activation='softmax',dtype=self.dense3.dtype)
             param.extend(self.dense1.param)
