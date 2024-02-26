@@ -302,7 +302,7 @@ class Gemma:
         self.device = config.device
         self.km = 0
     
-    def fine_tuning(self,flag=0):
+    def fine_tuning(self,lr=None,flag=0):
         param=[]
         if flag==0:
             self.param_=self.param.copy()
@@ -310,6 +310,8 @@ class Gemma:
             self.embedder=Embedder()
             param.extend([self.embedder.input_embedding_table, self.embedder.input_embedding_table_])
             self.param=param
+            self.optimizer_=self.optimizer
+            self.optimizer=Adam(lr=lr,param=self.param)
         elif flag==1:
             self.param_.remove(self.embedder_.input_embedding_table)
             self.param_.remove(self.embedder_.input_embedding_table_)
