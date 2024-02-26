@@ -212,10 +212,6 @@ class Llama2:
         self.output = dense(params.vocab_size, params.dim, weight_initializer=['normal', 0.0, 0.02], use_bias=False)
         self.output.weight.assign(params.weight_decay * self.output.weight)
 
-        # share the unembedding parameters with the embedding parameters
-        self.tok_embeddings = tf.transpose(self.output.weight) # https://paperswithcode.com/method/weight-tying
-        Module.param.append(self.tok_embeddings)
-
         # some useful precompute for the RoPE relative positional embeddings
         self.freqs_cos, self.freqs_sin = precompute_freqs_cis(self.params.dim // self.params.n_heads, self.params.max_seq_len)
         
@@ -245,7 +241,7 @@ class Llama2:
     def fp(self, tokens):
         if self.km==1:
             _bsz, seqlen = tokens.shape
-            h = tf.gather(self.tok_embeddings, tokens)
+            h = tf.gather(tf.transpose(self.output.weight), tokens)
             h = self.dropout(h)
             freqs_cos = self.freqs_cos[:seqlen]
             freqs_sin = self.freqs_sin[:seqlen]
