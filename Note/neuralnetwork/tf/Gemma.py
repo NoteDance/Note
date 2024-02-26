@@ -318,7 +318,7 @@ class Gemma:
         freqs_cis,
         kv_write_indices,
         kv_caches,
-        mask,
+        mask
     ):
         hidden_states = self.embedder.encode(data)
         for i in range(len(self.layers)):
