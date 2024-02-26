@@ -77,8 +77,6 @@ class Embedder:
     self.vocab_size = config.vocab_size
     self.embed_dim = config.hidden_size
     self.input_embedding_table = initializer_((self.vocab_size, self.embed_dim), 'normal', 'float32')
-    self.input_embedding_table_ = tf.transpose(self.input_embedding_table)
-    Module.param.append(self.input_embedding_table_)
 
   def encode(self, x):
     x = tf.gather(self.input_embedding_table, x)
@@ -86,7 +84,7 @@ class Embedder:
     return x
 
   def decode(self, x):
-    return tf.matmul(x, self.input_embedding_table_)
+    return tf.matmul(x, tf.transpose(self.input_embedding_table))
 
 
 class RMSNorm:
