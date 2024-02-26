@@ -67,6 +67,24 @@ def apply_rotary_emb(x, freqs_cis):
     return x_out
 
 
+class Embedder:
+  """Embedder module."""
+  def __init__(self, config: GemmaConfig):
+    self.vocab_size = config.vocab_size
+    self.embed_dim = config.hidden_size
+    self.input_embedding_table = initializer_((self.vocab_size, self.embed_dim), 'normal', 'float32')
+    self.input_embedding_table_ = tf.transpose(self.input_embedding_table)
+    Module.param.append(self.input_embedding_table_)
+
+  def encode(self, x):
+    x = tf.gather(self.input_embedding_table, x)
+    x *= tf.cast(tf.math.sqrt(self.embed_dim), x.dtype)
+    return x
+
+  def decode(self, x):
+    return tf.matmul(x, self.input_embedding_table_)
+
+
 class RMSNorm:
 
     def __init__(
@@ -264,6 +282,7 @@ class Gemma:
         self.config = config
         self.vocab_size = config.vocab_size
 
+        self.embedder = Embedder()
         self.layers = []
         for _ in range(config.num_hidden_layers):
             self.layers.append(GemmaDecoderLayer(config))
@@ -272,33 +291,36 @@ class Gemma:
         
         self.param = Module.param
     
-    def fine_tuning(self,vocab_size,flag=0):
+    def fine_tuning(self,flag=0):
         param=[]
         if flag==0:
-            self.param_=self.param
-            self.output_=self.output
-            self.output=dense(vocab_size, GemmaConfig.hidden_size)
-            param.extend(self.output.param)
+            self.param_=self.param.copy()
+            self.embedder_=self.embedder
+            self.embedder=Embedder()
+            param.extend([self.embedder.input_embedding_table, self.embedder.input_embedding_table_])
             self.param=param
         elif flag==1:
-            del self.param_[-len(self.output.param):]
-            self.param_.extend(self.output.param)
+            self.param_.remove(self.embedder_.input_embedding_table)
+            self.param_.remove(self.embedder_.input_embedding_table_)
+            self.param_.extend([self.embedder.input_embedding_table, self.embedder.input_embedding_table_])
             self.param=self.param_
         else:
-            self.output,self.output_=self.output_,self.output
-            del self.param_[-len(self.dense.param):]
-            self.param_.extend(self.dense.param)
+            self.embedder,self.embedder_=self.embedder_,self.embedder
+            self.param_.remove(self.embedder_.input_embedding_table)
+            self.param_.remove(self.embedder_.input_embedding_table_)
+            self.param_.extend([self.embedder.input_embedding_table, self.embedder.input_embedding_table_])
             self.param=self.param_
         return
 
     def __call__(
         self,
-        hidden_states,
+        data,
         freqs_cis,
         kv_write_indices,
         kv_caches,
         mask,
     ):
+        hidden_states = self.embedder.encode(data)
         for i in range(len(self.layers)):
             layer = self.layers[i]
             hidden_states = layer(
@@ -309,5 +331,5 @@ class Gemma:
                 mask=mask,
             )
         hidden_states = self.norm(hidden_states)
-        logits = self.output(hidden_states)
+        logits = self.embedder.decode(hidden_states)
         return logits

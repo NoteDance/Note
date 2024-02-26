@@ -122,7 +122,7 @@ class BiT:
   def fine_tuning(self,classes=None,flag=0):
       param=[]
       if flag==0:
-          self.param_=self.param
+          self.param_=self.param.copy()
           self.conv2d=self.head.layer[-1]
           if self.zero_head:
               self.head.layer[-1]=conv2d(classes, 1, 2048*self.wf, weight_initializer='zeros')

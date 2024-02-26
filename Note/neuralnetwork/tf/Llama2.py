@@ -243,7 +243,7 @@ class Llama2:
     def fine_tuning(self,flag=0):
         param=[]
         if flag==0:
-            self.param_=self.param
+            self.param_=self.param.copy()
             self.output_=self.output
             self.output=dense(ModelArgs.vocab_size, ModelArgs.dim, use_bias=False)
             param.extend(self.output.param)
