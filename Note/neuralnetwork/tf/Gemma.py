@@ -187,8 +187,8 @@ class GemmaAttention:
         # Write new kv cache.
         # [batch_size, input_len, n_local_kv_heads, head_dim]
         k_cache, v_cache = kv_cache
-        k_cache = tf.tensor_scatter_nd_update(k_cache, kv_write_indices, xk)
-        v_cache = tf.tensor_scatter_nd_update(v_cache, kv_write_indices, xv)
+        k_cache.assign(tf.tensor_scatter_nd_update(k_cache, kv_write_indices, xk))
+        v_cache.assign(tf.tensor_scatter_nd_update(v_cache, kv_write_indices, xv))
 
         key = k_cache
         value = v_cache
