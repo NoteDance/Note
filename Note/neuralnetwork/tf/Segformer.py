@@ -62,7 +62,6 @@ class EfficientSelfAttention:
         self.to_q = conv2d(dim, 1, input_size = dim, use_bias = False)
         self.to_kv = conv2d(dim * 2, reduction_ratio, input_size = dim, strides = reduction_ratio, use_bias = False)
         self.to_out = conv2d(dim, 1, input_size = dim, use_bias = False)
-        self.output_size = self.to_out.output_size
 
     def __call__(self, x):
         h, w = x.shape[1], x.shape[2]
@@ -90,11 +89,9 @@ class MixFeedForward:
         self.net.add(DsConv2d(hidden_dim, hidden_dim, 3, padding = 1))
         self.net.add(tf.nn.gelu)
         self.net.add(conv2d(dim, 1, hidden_dim))
-        self.output_size = self.net.output_size
 
     def __call__(self, x):
         return self.net(x)
-
 
 class Unfold:
     def __init__(self, kernel, stride, padding):
@@ -108,7 +105,6 @@ class Unfold:
         x = tf.image.extract_patches(x, sizes=[1, self.kernel, self.kernel, 1], strides=[1, self.stride, self.stride, 1], rates=[1, 1, 1, 1], padding='VALID')
         x = tf.reshape(x, (x.shape[0], -1, x.shape[-1]))
         return x
-
 
 class MiT:
     def __init__(
