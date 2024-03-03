@@ -348,6 +348,38 @@ https://github.com/NoteDance/Note/tree/Note-7.0/Note/nn/layer
 
 **Documentation:** https://github.com/NoteDance/Note-documentation/tree/layer-7.0
 
+**Using Note’s Layer module, you can determine the shape of the training parameters when you input data like Keras, or you can give the shape of the training parameters in advance like PyTorch.**
+
+**Pytorch:**
+```python
+from Note.nn.layer.dense import dense
+
+class nn:
+    def __init__(self):
+        self.layer1=dense(128,784,activation='relu')
+        self.layer2=dense(10,128)
+    
+    def __call__(self,data):
+        x=self.layer1(data)
+        x=self.layer2(x)
+        return x
+```
+**Keras:**
+```python
+from Note.nn.layer.dense import dense
+
+class nn:
+    def __init__(self):
+        self.layer1=dense(128,activation='relu')
+        self.layer2=dense(10)
+    
+    def __call__(self,data):
+        x=self.layer1(data)
+        x=self.layer2(x)
+        return x
+```
+
+
 # Study kernel:
 **If you want to study kernel, you can see the kernel with comments at the link below.**
 
