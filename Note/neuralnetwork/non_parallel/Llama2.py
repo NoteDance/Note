@@ -233,8 +233,8 @@ class Llama2:
             self.param=self.param_
         else:
             self.output,self.output_=self.output_,self.output
-            del self.param_[-len(self.dense.param):]
-            self.param_.extend(self.dense.param)
+            del self.param_[-len(self.output.param):]
+            self.param_.extend(self.output.param)
             self.param=self.param_
         return
 
