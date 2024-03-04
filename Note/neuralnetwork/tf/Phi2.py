@@ -1,5 +1,5 @@
 import tensorflow as tf
-from Note.nn.layer.llama import RoPE
+from Note.nn.layer.RoPE import RoPE
 from Note.nn.layer.dense import dense
 from Note.nn.layer.layer_norm import layer_norm
 from Note.nn.layer.embedding import embedding
