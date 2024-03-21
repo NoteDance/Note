@@ -2,7 +2,7 @@ import tensorflow as tf
 from Note.nn.Module import Module
 
 
-def initializer(shape,initializer,dtype):
+def initializer(shape,initializer,dtype='float32'):
     if type(initializer)==list:
         if initializer[0]=='normal':
             param=tf.Variable(tf.random.normal(shape=shape,mean=initializer[1],stddev=initializer[2],dtype=dtype))
@@ -88,7 +88,7 @@ def initializer(shape,initializer,dtype):
     return param
 
 
-def initializer_(shape,initializer,dtype):
+def initializer_(shape,initializer,dtype='float32'):
     if type(initializer)==list:
         if initializer[0]=='normal':
             param=tf.Variable(tf.random.normal(shape=shape,mean=initializer[1],stddev=initializer[2],dtype=dtype))
