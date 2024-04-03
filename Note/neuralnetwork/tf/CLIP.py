@@ -1,7 +1,7 @@
 import tensorflow as tf
 from Note.nn.layer.dense import dense
 from Note.nn.layer.conv2d import conv2d
-from Note.nn.layer.batch_norm import batch_norm
+from Note.nn.layer.batch_norm import batch_norm_
 from Note.nn.layer.layer_norm import layer_norm
 from Note.nn.layer.multihead_attention import multihead_attention
 from Note.nn.layer.zeropadding2d import zeropadding2d
@@ -20,18 +20,18 @@ class Bottleneck:
     def __init__(self, inplanes, planes, stride=1):
         # all conv layers have stride 1. an avgpool is performed after the second convolution when stride > 1
         self.conv1 = conv2d(planes, 1, inplanes, use_bias=False)
-        self.bn1 = batch_norm(planes, parallel=False)
+        self.bn1 = batch_norm_(planes, parallel=False)
         self.relu1 = tf.nn.relu
 
         self.zeropadding2d = zeropadding2d(padding=1)
         self.conv2 = conv2d(planes, 3, planes, use_bias=False)
-        self.bn2 = batch_norm(planes, parallel=False)
+        self.bn2 = batch_norm_(planes, parallel=False)
         self.relu2 = tf.nn.relu
 
         self.avgpool = avg_pool2d(stride, stride, 'VALID') if stride > 1 else identity()
 
         self.conv3 = conv2d(planes * self.expansion, 1, planes, use_bias=False)
-        self.bn3 = batch_norm(planes * self.expansion, parallel=False)
+        self.bn3 = batch_norm_(planes * self.expansion, parallel=False)
         self.relu3 = tf.nn.relu
 
         self.downsample = None
@@ -42,7 +42,7 @@ class Bottleneck:
             self.downsample = Layers()
             self.downsample.add(avg_pool2d(stride, stride, 'VALID'))
             self.downsample.add(conv2d(planes * self.expansion, 1, inplanes, strides=1, use_bias=False))
-            self.downsample.add(batch_norm(planes * self.expansion, parallel=False))
+            self.downsample.add(batch_norm_(planes * self.expansion, parallel=False))
     
     def convert_weights(self):
         self.conv1.weight.assign(tf.cast(self.conv1.weight, 'float16'))
@@ -138,13 +138,13 @@ class ModifiedResNet:
         # the 3-layer stem
         self.zeropadding2d = zeropadding2d(padding=1)
         self.conv1 = conv2d(width // 2, input_size=3, kernel_size=3, strides=2, use_bias=False)
-        self.bn1 = batch_norm(width // 2, parallel=False)
+        self.bn1 = batch_norm_(width // 2, parallel=False)
         self.relu1 = tf.nn.relu
         self.conv2 = conv2d(width // 2, input_size=width // 2, kernel_size=3, use_bias=False)
-        self.bn2 = batch_norm(width // 2, parallel=False)
+        self.bn2 = batch_norm_(width // 2, parallel=False)
         self.relu2 = tf.nn.relu
         self.conv3 = conv2d(width, input_size=width // 2, kernel_size=3, use_bias=False)
-        self.bn3 = batch_norm(width, parallel=False)
+        self.bn3 = batch_norm_(width, parallel=False)
         self.relu3 = tf.nn.relu
         self.avgpool = avg_pool2d(2, 2, 'VALID')
 

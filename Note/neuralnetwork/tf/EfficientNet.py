@@ -2,7 +2,7 @@ import tensorflow as tf
 from Note.nn.layer.conv2d import conv2d
 from Note.nn.layer.depthwise_conv2d import depthwise_conv2d
 from Note.nn.layer.dense import dense
-from Note.nn.layer.batch_norm import batch_norm
+from Note.nn.layer.batch_norm import batch_norm_
 from Note.nn.layer.dropout import dropout
 from Note.nn.layer.zeropadding2d import zeropadding2d
 from Note.nn.layer.global_avg_pool2d import global_avg_pool2d
@@ -142,7 +142,7 @@ class EfficientNet:
         self.layers1=Layers()
         self.layers1.add(conv2d(round_filters(32),[3,3],3,strides=2,padding="VALID",use_bias=False,
                            weight_initializer=CONV_KERNEL_INITIALIZER,dtype=self.dtype))
-        self.layers1.add(batch_norm(axis=-1,dtype=self.dtype))
+        self.layers1.add(batch_norm_(axis=-1,dtype=self.dtype))
         self.layers1.add(activation_dict[self.activation])    
     
         # Build blocks
@@ -185,7 +185,7 @@ class EfficientNet:
             weight_initializer=CONV_KERNEL_INITIALIZER,
             dtype=self.dtype
         ))
-        self.layers3.add(batch_norm(axis=-1,dtype=self.dtype))
+        self.layers3.add(batch_norm_(axis=-1,dtype=self.dtype))
         self.layers3.add(activation_dict[self.activation])
         if self.include_top:
             self.global_avg_pool2d=global_avg_pool2d()
@@ -287,7 +287,7 @@ class block:
                               in_channels,padding="SAME",
                               use_bias=False,
                               weight_initializer=CONV_KERNEL_INITIALIZER,dtype=dtype))
-            self.layers1.add(batch_norm(axis=-1,dtype=dtype))
+            self.layers1.add(batch_norm_(axis=-1,dtype=dtype))
             self.layers1.add(activation_dict[activation])
         else:
             self.layers1.add(identity(in_channels))
@@ -307,7 +307,7 @@ class block:
                                             use_bias=False,
                                             weight_initializer=CONV_KERNEL_INITIALIZER,
                                             dtype=dtype))
-        self.layers2.add(batch_norm(axis=-1,dtype=dtype))
+        self.layers2.add(batch_norm_(axis=-1,dtype=dtype))
         self.layers2.add(activation_dict[activation])
 
         # Squeeze and Excitation phase
@@ -324,7 +324,7 @@ class block:
         self.layers3=Layers()
         self.layers3.add(conv2d(filters_out,[1,1],self.conv2d2.output_size,padding="SAME",
                             use_bias=False,weight_initializer=CONV_KERNEL_INITIALIZER,dtype=dtype))
-        self.layers3.add(batch_norm(axis=-1,dtype=dtype))
+        self.layers3.add(batch_norm_(axis=-1,dtype=dtype))
         if id_skip and strides == 1 and filters_in == filters_out:
             if drop_rate > 0:
                 self.dropout=dropout(drop_rate,noise_shape=(None, 1, 1, 1))

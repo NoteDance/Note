@@ -1,7 +1,7 @@
 import tensorflow as tf
 from Note.nn.layer.conv2d import conv2d
 from Note.nn.layer.depthwise_conv2d import depthwise_conv2d
-from Note.nn.layer.batch_norm import batch_norm
+from Note.nn.layer.batch_norm import batch_norm_
 from Note.nn.layer.zeropadding2d import zeropadding2d
 from Note.nn.layer.global_avg_pool2d import global_avg_pool2d
 from Note.nn.layer.dropout import dropout
@@ -112,7 +112,7 @@ class MobileNetV3:
             self.rescaling=rescaling(scale=1.0 / 127.5, offset=-1.0)
         self.layers=Layers()
         self.layers.add(conv2d(16,kernel_size=3,input_size=3,strides=(2, 2),padding="SAME",use_bias=False,dtype=dtype))
-        self.layers.add(batch_norm(epsilon=1e-3,momentum=0.999,dtype=dtype))
+        self.layers.add(batch_norm_(epsilon=1e-3,momentum=0.999,dtype=dtype))
         self.layers.add(self.activation)
         
         if self.model_type=='small':
@@ -129,7 +129,7 @@ class MobileNetV3:
         else:
             last_point_ch = self.last_point_ch
         self.layers.add(conv2d(last_conv_ch,kernel_size=1,padding="SAME",use_bias=False,dtype=dtype))
-        self.layers.add(batch_norm(epsilon=1e-3,momentum=0.999,dtype=dtype))
+        self.layers.add(batch_norm_(epsilon=1e-3,momentum=0.999,dtype=dtype))
         self.layers.add(self.activation)
         if self.include_top:
             self.layers.add(global_avg_pool2d(keepdims=True))
@@ -244,17 +244,17 @@ def correct_pad(inputs, kernel_size):
 class _inverted_res_block:
     def __init__(self, in_channels, expansion, filters, kernel_size, stride, se_ratio, activation, block_id, dtype):
         self.conv2d1=conv2d(_depth(in_channels * expansion),1,in_channels,padding="SAME",use_bias=False,dtype=dtype)
-        self.batch_normalization1=batch_norm(self.conv2d1.output_size,epsilon=1e-3,momentum=0.999,dtype=dtype)
+        self.batch_normalization1=batch_norm_(self.conv2d1.output_size,epsilon=1e-3,momentum=0.999,dtype=dtype)
         if stride == 2:
             self.zeropadding2d=zeropadding2d()
         self.depthwiseconv2d=depthwise_conv2d(kernel_size,input_size=self.conv2d1.output_size,strides=stride,use_bias=False,padding="SAME" if stride == 1 else "VALID",dtype=dtype)
-        self.batch_normalization2=batch_norm(self.depthwiseconv2d.output_size,epsilon=1e-3,momentum=0.999,dtype=dtype)
+        self.batch_normalization2=batch_norm_(self.depthwiseconv2d.output_size,epsilon=1e-3,momentum=0.999,dtype=dtype)
         if se_ratio:
             self.layers=_se_block(self.depthwiseconv2d.output_size, _depth(in_channels * expansion), se_ratio, dtype)
             self.conv2d2=conv2d(filters,1,self.layers.output_size,padding="SAME",use_bias=False,dtype=dtype)
         else:
             self.conv2d2=conv2d(filters,1,self.depthwiseconv2d.output_size,padding="SAME",use_bias=False,dtype=dtype)
-        self.batch_normalization3=batch_norm(self.conv2d2.output_size,epsilon=1e-3,momentum=0.999,dtype=dtype)
+        self.batch_normalization3=batch_norm_(self.conv2d2.output_size,epsilon=1e-3,momentum=0.999,dtype=dtype)
         self.in_channels=in_channels
         self.filters=filters
         self.stride=stride
