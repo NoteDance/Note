@@ -4,13 +4,14 @@ from Note.nn.Module import Module
 
 
 class layer_norm:
-    def __init__(self, input_size=None, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, beta_initializer='zeros', gamma_initializer='ones', dtype='float32'):
+    def __init__(self, input_size=None, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, rms_scaling=False, beta_initializer='zeros', gamma_initializer='ones', dtype='float32'):
         self.input_size=input_size
-        self.axis=axis
+        self.axis=[axis]
         self.momentum=momentum
         self.epsilon=epsilon
         self.center=center
         self.scale=scale
+        self.rms_scaling=rms_scaling
         self.beta_initializer=beta_initializer
         self.gamma_initializer=gamma_initializer
         self.dtype=dtype
@@ -48,18 +49,54 @@ class layer_norm:
     
     
     def __call__(self, data):
+        # Compute the axes along which to reduce the mean / variance
+        input_shape = data.shape
+        ndims = len(input_shape)
+
+        # Broadcasting only necessary for norm when the axis is not just
+        # the last dimension
+        broadcast_shape = [1] * ndims
+        for dim in self.axis:
+            broadcast_shape[dim] = input_shape[dim]
+
+        def _broadcast(v):
+            if (
+                v is not None
+                and len(v.shape) != ndims
+                and self.axis != [ndims - 1]
+            ):
+                return tf.reshape(v, broadcast_shape)
+            return v
+
         if data.dtype!=self.dtype:
             data=tf.cast(data,self.dtype)
         if self.input_size==None:
             self.input_size=data.shape[-1]
             self.build()
-        mean, variance = tf.nn.moments(data, self.axis, keepdims=True)
-        output = tf.nn.batch_normalization(
-            data,
-            mean,
-            variance,
-            offset=self.beta,
-            scale=self.gamma,
-            variance_epsilon=self.epsilon,
-        )
-        return output
+
+        if self.rms_scaling:
+            # Calculate outputs with only variance and gamma if rms scaling
+            # is enabled
+            # Calculate the variance along self.axis (layer activations).
+            variance = tf.math.reduce_variance(data, axis=self.axis, keepdims=True)
+            inv = tf.math.rsqrt(variance + self.epsilon)
+
+            outputs = data * inv * tf.cast(self.gamma, data.dtype)
+        else:
+            # Calculate the mean & variance along self.axis (layer activations).
+            mean, variance = tf.nn.moments(data, axes=self.axis, keepdims=True)
+            gamma, beta = _broadcast(self.gamma), _broadcast(self.beta)
+
+            inv = tf.math.rsqrt(variance + self.epsilon)
+            if gamma is not None:
+                gamma = tf.cast(gamma, data.dtype)
+                inv = inv * gamma
+
+            res = -mean * inv
+            if beta is not None:
+                beta = tf.cast(beta, data.dtype)
+                res = res + beta
+
+            outputs = data * inv + res
+
+        return outputs
