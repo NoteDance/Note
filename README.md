@@ -38,30 +38,6 @@ kernel.train(32,5)           #train the network with batch size 32 and epoch 5
 kernel.test(x_test,y_test,32)#test the network performance on the test set with batch size 32
 ```
 
-### Pytorch platform:
-```python
-import Note.DL.kernel as k   #import kernel module
-import torch                 #import torch library
-import neuralnetwork.DL.pytorch.non_parallel.nn as n   #import neural network module
-from torch.utils.data import DataLoader #import data loader tool
-from torchvision import datasets        #import datasets tool
-from torchvision.transforms import ToTensor #import tensor transformation tool
-training_data=datasets.FashionMNIST(    #load FashionMNIST dataset
-    root="data",                        #set the root directory for data
-    train=True,                         #set the flag to use train data
-    download=True,                      #set the flag to download data if not available
-    transform=ToTensor(),               #set the transformation to convert images to tensors
-)
-train_dataloader=DataLoader(training_data,batch_size=60000) #create a data loader object with the training data and batch size 60000
-for train_data,train_labels in train_dataloader: #loop over the data loader
-    break                                      #break the loop after getting one batch of data and labels
-nn=n.neuralnetwork()                          #create neural network object
-kernel=k.kernel(nn)                           #create kernel object with the network
-kernel.platform=torch                         #set the platform to torch
-kernel.data(train_data,train_labels)          #input train data and labels to the kernel
-kernel.train(64,5)                            #train the network with batch size 64 and epoch 5
-```
-
 
 ## Parallel training:
 
@@ -131,31 +107,6 @@ kernel.update_nn_param()             #update the network parameters after traini
 kernel.test(x_train,y_train,32)      #test the network performance on the train set with batch size 32
 ```
 
-### Pytorch platform:
-```python
-import Note.DL.parallel.kernel_pytorch as k   #import kernel module
-from torchvision import datasets
-from torchvision.transforms import ToTensor
-import neuralnetwork.DL.pytorch.parallel.nn as n   #import neural network module
-from multiprocessing import Process,Manager #import multiprocessing tools
-training_data = datasets.FashionMNIST(
-    root="data",
-    train=True,
-    download=True,
-    transform=ToTensor(),
-)
-nn=n.neuralnetwork()                            #create neural network object
-kernel=k.kernel(nn)                  #create kernel object with the network
-kernel.process=3                     #set the number of processes to train
-kernel.epoch=5                       #set the number of epochs to train
-kernel.batch=64                      #set the batch size
-kernel.data(training_data)         #input train data to the kernel
-manager=Manager()                    #create manager object to share data among processes
-kernel.init(manager)                 #initialize shared data with the manager
-for p in range(3):                   #loop over the processes
-    Process(target=kernel.train,args=(p,)).start()
-```
-
 
 # Reinforcement Learning:
 
@@ -190,21 +141,6 @@ kernel.visualize_train()
 kernel.visualize_reward()
 ```
 
-### Pytorch platform:
-```python
-import Note.RL.kernel as k   #import kernel module
-import torch                      #import torch library
-import neuralnetwork.RL.pytorch.non_parallrl.DQN as d   #import deep Q-network module
-dqn=d.DQN(4,128,2)                #create neural network object with 4 inputs, 128 hidden units and 2 outputs
-kernel=k.kernel(dqn)              #create kernel object with the network
-kernel.platform=torch             #set the platform to torch
-kernel.action_count=2             #set the number of actions to 2
-kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10) #set up the hyperparameters for training
-kernel.train(100)                 #train the network for 100 episodes
-kernel.visualize_train()
-kernel.visualize_reward()
-```
-
 
 ## Parallel training:
 
@@ -232,24 +168,6 @@ pool_lock=[Lock(),Lock(),Lock(),Lock(),Lock()] #create a list of locks for each 
 lock=[Lock(),Lock()]         #create two locks for synchronization
 for p in range(5):           #loop over the processes
     Process(target=kernel.train,args=(p,lock,pool_lock)).start() #start each process with the train function and pass the process id, the number of episodes, the locks and the pool locks as arguments
-```
-
-### Pytorch platform:
-```python
-import Note.RL.parallel.kernel_pytorch as k   #import kernel module
-import neuralnetwork.RL.pytorch.parallrl.DQN as d   #import deep Q-network module
-from multiprocessing import Process,Lock,Manager #import multiprocessing tools
-dqn=d.DQN(4,128,2)           #create neural network object with 4 inputs, 128 hidden units and 2 outputs
-kernel=k.kernel(dqn,5)       #create kernel object with the network and 5 processes to train
-kernel.episode=100           #set the number of episodes to 100
-manager=Manager()            #create manager object to share data among processes
-kernel.init(manager)         #initialize shared data with the manager
-kernel.action_count=2        #set the number of actions to 2
-kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10) #set up the hyperparameters for training
-pool_lock=[Lock(),Lock(),Lock(),Lock(),Lock()] #create a list of locks for each process's replay pool
-lock=[Lock(),Lock()]         #create two locks for synchronization
-for p in range(5):           #loop over the processes
-    Process(target=kernel.train,args=(p,lock,pool_lock)).start()
 ```
 
 
