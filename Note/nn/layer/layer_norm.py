@@ -6,7 +6,15 @@ from Note.nn.Module import Module
 class layer_norm:
     def __init__(self, input_size=None, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, rms_scaling=False, beta_initializer='zeros', gamma_initializer='ones', dtype='float32'):
         self.input_size=input_size
-        self.axis=[axis]
+        if isinstance(axis, (list, tuple)):
+            self.axis = list(axis)
+        elif isinstance(axis, int):
+            self.axis = axis
+        else:
+            raise TypeError(
+                "Expected an int or a list/tuple of ints for the "
+                "argument 'axis', but received: %r" % axis
+            )
         self.momentum=momentum
         self.epsilon=epsilon
         self.center=center
@@ -15,6 +23,7 @@ class layer_norm:
         self.beta_initializer=beta_initializer
         self.gamma_initializer=gamma_initializer
         self.dtype=dtype
+        self.input_shape=None
         if input_size!=None:
             self.output_size=input_size
             self.param=[]
@@ -33,14 +42,19 @@ class layer_norm:
     
     def build(self):
         self.output_size=self.input_size
+        if isinstance(self.axis, list):
+            shape = tuple([self.input_shape[dim] for dim in self.axis])
+        else:
+            shape = (self.input_shape[self.axis],)
+            self.axis = [self.axis]
         self.param=[]
         if self.center==True:
-            self.beta=initializer([self.input_size], self.beta_initializer, self.dtype)
+            self.beta=initializer(shape, self.beta_initializer, self.dtype)
             self.param.append(self.beta)
         else:
             self.beta=None
         if self.scale==True:
-            self.gamma=initializer([self.input_size], self.gamma_initializer, self.dtype)
+            self.gamma=initializer(shape, self.gamma_initializer, self.dtype)
             self.param.append(self.gamma)
         else:
             self.gamma=None
@@ -52,6 +66,13 @@ class layer_norm:
         # Compute the axes along which to reduce the mean / variance
         input_shape = data.shape
         ndims = len(input_shape)
+        
+        if data.dtype!=self.dtype:
+            data=tf.cast(data,self.dtype)
+        if self.input_size==None:
+            self.input_size=data.shape[-1]
+            self.input_shape=input_shape
+            self.build()
 
         # Broadcasting only necessary for norm when the axis is not just
         # the last dimension
@@ -67,12 +88,6 @@ class layer_norm:
             ):
                 return tf.reshape(v, broadcast_shape)
             return v
-
-        if data.dtype!=self.dtype:
-            data=tf.cast(data,self.dtype)
-        if self.input_size==None:
-            self.input_size=data.shape[-1]
-            self.build()
 
         if self.rms_scaling:
             # Calculate outputs with only variance and gamma if rms scaling
