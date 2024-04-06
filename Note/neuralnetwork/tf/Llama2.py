@@ -99,13 +99,9 @@ class Attention:
         self.n_rep = self.n_local_heads // self.n_local_kv_heads
         self.head_dim = args.dim // args.n_heads
         self.wq = dense(args.n_heads * self.head_dim, args.dim, weight_initializer=['normal', 0.0, 0.02], use_bias=False)
-        self.wq.weight.assign(args.weight_decay * self.wq.weight)
         self.wk = dense(self.n_kv_heads * self.head_dim, args.dim, weight_initializer=['normal', 0.0, 0.02], use_bias=False)
-        self.wk.weight.assign(args.weight_decay * self.wk.weight)
         self.wv = dense(self.n_kv_heads * self.head_dim, args.dim, weight_initializer=['normal', 0.0, 0.02], use_bias=False)
-        self.wv.weight.assign(args.weight_decay * self.wv.weight)
         self.wo = dense(args.dim, args.n_heads * self.head_dim, weight_initializer=['normal', 0.0, 0.02/math.sqrt(2 * args.n_layers)], use_bias=False)
-        self.wo.weight.assign(args.weight_decay * self.wo.weight)
         self.attn_dropout = dropout(args.dropout)
         self.resid_dropout = dropout(args.dropout)
         self.mask = tf.fill((args.max_seq_len, args.max_seq_len), float("-inf"))
@@ -163,11 +159,8 @@ class FeedForward:
             hidden_dim = int(2 * hidden_dim / 3)
             hidden_dim = multiple_of * ((hidden_dim + multiple_of - 1) // multiple_of)
         self.w1 = dense(hidden_dim, dim, weight_initializer=['normal', 0.0, 0.02], use_bias=False)
-        self.w1.weight.assign(ModelArgs.weight_decay * self.w1.weight)
         self.w2 = dense(dim, hidden_dim, weight_initializer=['normal', 0.0, 0.02], use_bias=False)
-        self.w2.weight.assign(ModelArgs.weight_decay * self.w2.weight)
         self.w3 = dense(hidden_dim, dim, weight_initializer=['normal', 0.0, 0.02/math.sqrt(2 * ModelArgs.n_layers)], use_bias=False)
-        self.w3.weight.assign(ModelArgs.weight_decay * self.w3.weight)
         self.dropout = dropout(drop_rate)
 
     def __call__(self, x, train_flag):
@@ -209,10 +202,13 @@ class Llama2:
             self.layers.append(TransformerBlock(layer_id, params))
         self.norm = RMSNorm(params.dim, eps=params.norm_eps)
         self.output = dense(params.vocab_size, params.dim, weight_initializer=['normal', 0.0, 0.02], use_bias=False)
-        self.output.weight.assign(params.weight_decay * self.output.weight)
 
         # some useful precompute for the RoPE relative positional embeddings
         self.freqs_cos, self.freqs_sin = precompute_freqs_cis(self.params.dim // self.params.n_heads, self.params.max_seq_len)
+        
+        for param in Module.param_table['dense_weight']:
+            param.assign(ModelArgs.weight_decay * param)
+            
         self.param = Module.param
         self.training = True
 
