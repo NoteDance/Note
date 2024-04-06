@@ -43,20 +43,6 @@ class Bottleneck:
             self.downsample.add(avg_pool2d(stride, stride, 'VALID'))
             self.downsample.add(conv2d(planes * self.expansion, 1, inplanes, strides=1, use_bias=False))
             self.downsample.add(batch_norm(planes * self.expansion, parallel=False))
-    
-    def convert_weights(self):
-        self.conv1.weight.assign(tf.cast(self.conv1.weight, 'float16'))
-        if self.conv1.use_bias:
-            self.conv1.bias.assign(tf.cast(self.conv1.bias, 'float16'))
-        self.conv2.weight.assign(tf.cast(self.conv2.weight, 'float16'))
-        if self.conv2.use_bias:
-            self.conv2.bias.assign(tf.cast(self.conv2.bias, 'float16'))
-        self.conv3.weight.assign(tf.cast(self.conv3.weight, 'float16'))
-        if self.conv3.use_bias:
-            self.conv3.bias.assign(tf.cast(self.conv3.bias, 'float16'))
-        self.downsample.layer[1].weight.assign(tf.cast(self.downsample.layer[1].weight, 'float16'))
-        if self.downsample.layer[1].use_bias:
-            self.downsample.layer[1].bias.assign(tf.cast(self.downsample.layer[1].bias, 'float16'))
 
     def __call__(self, x, train_flag=True):
         identity = x
@@ -85,16 +71,6 @@ class AttentionPool2d:
         self.num_heads = num_heads
         Module.param.append(self.positional_embedding)
         
-    def convert_weights(self):
-        self.k_proj.weight.assign(tf.cast(self.k_proj.weight, 'float16'))
-        self.k_proj.bias.assign(tf.cast(self.k_proj.bias, 'float16'))
-        self.q_proj.weight.assign(tf.cast(self.q_proj.weight, 'float16'))
-        self.q_proj.bias.assign(tf.cast(self.q_proj.bias, 'float16'))
-        self.v_proj.weight.assign(tf.cast(self.v_proj.weight, 'float16'))
-        self.v_proj.bias.assign(tf.cast(self.v_proj.bias, 'float16'))
-        self.c_proj.weight.assign(tf.cast(self.c_proj.weight, 'float16'))
-        self.c_proj.bias.assign(tf.cast(self.c_proj.bias, 'float16'))
-
     def __call__(self, x):
         shape = x.shape
         batch_size = shape[0]
@@ -167,26 +143,6 @@ class ModifiedResNet:
             layers.add(Bottleneck(self._inplanes, planes))
 
         return layers
-    
-    def convert_weights(self):
-        self.conv1.weight.assign(tf.cast(self.conv1.weight, 'float16'))
-        if self.conv1.use_bias:
-            self.conv1.bias.assign(tf.cast(self.conv1.bias, 'float16'))
-        self.conv2.weight.assign(tf.cast(self.conv2.weight, 'float16'))
-        if self.conv2.use_bias:
-            self.conv2.bias.assign(tf.cast(self.conv2.bias, 'float16'))
-        self.conv3.weight.assign(tf.cast(self.conv3.weight, 'float16'))
-        if self.conv3.use_bias:
-            self.conv3.bias.assign(tf.cast(self.conv3.bias, 'float16'))
-        for layer in self.layer1.layer:
-            layer.convert_weights()
-        for layer in self.layer2.layer:
-            layer.convert_weights()
-        for layer in self.layer3.layer:
-            layer.convert_weights()
-        for layer in self.layer4.layer:
-            layer.convert_weights()
-        self.attnpool.convert_weights()
 
     def __call__(self, x, train_flag=True):
         def stem(x):
@@ -257,20 +213,6 @@ class ResidualAttentionBlock:
         self.mlp.layer[0].weight.assign(tf.Variable(tf.random.normal(shape,stddev=fc_std)))
         shape = self.mlp.layer[2].weight.shape
         self.mlp.layer[2].weight.assign(tf.Variable(tf.random.normal(shape,stddev=proj_std)))
-    
-    def convert_weights(self):
-        self.attn.query.weight.assign(tf.cast(self.attn.query.weight.weight, 'float16'))
-        self.attn.query.bias.assign(tf.cast(self.attn.query.bias, 'float16'))
-        self.attn.key.weight.assign(tf.cast(self.attn.key.weight, 'float16'))
-        self.attn.key.bias.assign(tf.cast(self.attn.key.bias, 'float16'))
-        self.attn.value.weight.assign(tf.cast(self.attn.value.weight, 'float16'))
-        self.attn.value.bias.assign(tf.cast(self.attn.value.bias, 'float16'))
-        self.attn.out.weight.assign(tf.cast(self.attn.out.weight, 'float16'))
-        self.attn.out.bias.assign(tf.cast(self.attn.out.bias, 'float16'))
-        self.mlp.layer[0].weight.assign(tf.cast(self.mlp.layer[0].weight, 'float16'))
-        self.mlp.layer[0].bias.assign(tf.cast(self.mlp.layer[0].bias, 'float16'))
-        self.mlp.layer[2].weight.assign(tf.cast(self.mlp.layer[0].weight, 'float16'))
-        self.mlp.layer[2].bias.assign(tf.cast(self.mlp.layer[0].bias, 'float16'))
 
     def __call__(self, x):
         x = x + self.attention(self.ln_1(x))
@@ -285,10 +227,6 @@ class Transformer:
         self.resblocks = Layers()
         for _ in range(layers):
             self.resblocks.add(ResidualAttentionBlock(width, heads, attn_mask))
-    
-    def convert_weights(self):
-        for layer in self.resblocks.layer:
-            layer.convert_weights()
 
     def __call__(self, x):
         return self.resblocks(x)
@@ -312,13 +250,6 @@ class VisionTransformer:
         Module.param.append(self.class_embedding)
         Module.param.append(self.positional_embedding)
         Module.param.append(self.proj)
-    
-    def convert_weights(self):
-        self.conv1.weight.assign(tf.cast(self.conv1.weight, 'float16'))
-        if self.conv1.use_bias:
-            self.conv1.bias.assign(tf.cast(self.conv1.bias, 'float16'))
-        self.transformer.convert_weights()
-        self.proj.assign(tf.cast(self.proj, 'float16'))
 
     def __call__(self, x, train_flag=True):
         x = self.conv1(x)  # shape = [*, width, grid, grid]
@@ -481,6 +412,7 @@ class CLIP:
 
     def convert_weights(self):
         """Convert applicable model parameters to fp16"""
-        self.visual.convert_weights()
-        self.transformer.convert_weights()
-        self.text_projection.assign(tf.cast(self.text_projection, 'float16'))
+        Module.cast_param('dense_weight', 'float16')
+        Module.cast_param('dense_bias', 'float16')
+        Module.cast_param('conv2d_weight', 'float16')
+        Module.cast_param('conv2d_bias', 'float16')
