@@ -3,17 +3,17 @@ import tensorflow as tf
 
 class Module:
     param=[]
-    param_table=dict()
-    param_table['dense_weight']=[]
-    param_table['dense_bias']=[]
-    param_table['conv2d_weight']=[]
-    param_table['conv2d_bias']=[]
+    param_dict=dict()
+    param_dict['dense_weight']=[]
+    param_dict['dense_bias']=[]
+    param_dict['conv2d_weight']=[]
+    param_dict['conv2d_bias']=[]
     ctl_list=[]
     ctsl_list=[]
     
     
     def cast_param(key,dtype):
-        for param in Module.param_table[key]:
+        for param in Module.param_dict[key]:
             param.assign(tf.cast(param,dtype))
         return
     
@@ -32,11 +32,11 @@ class Module:
     
     def init():
         Module.param.clear()
-        param_table=dict()
-        param_table['dense_weight']=[]
-        param_table['dense_bias']=[]
-        param_table['conv2d_weight']=[]
-        param_table['conv2d_bias']=[]
+        param_dict=dict()
+        param_dict['dense_weight']=[]
+        param_dict['dense_bias']=[]
+        param_dict['conv2d_weight']=[]
+        param_dict['conv2d_bias']=[]
         Module.ctl_list.clear()
         Module.ctsl_list.clear()
         return
