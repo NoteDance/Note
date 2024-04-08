@@ -8,6 +8,53 @@
 **To import the neural network example conveniently, you can download it from https://github.com/NoteDance/Note-documentation/tree/neural-network-example and unzip the neuralnetwork package to the site-packages folder of your Python environment.**
 
 
+# The models that can be trained with TensorFlow:
+**This package include Llama2, CLIP, ViT, ConvNeXt, SwiftFormer, etc. These models built with Note are compatible with TensorFlow and can be trained with TensorFlow.**
+
+https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
+
+**Documentation:** https://github.com/NoteDance/Note-documentation/tree/tf-7.0
+
+
+# Layer modules:
+**The usage of the layer module is similar to pytorch, which is to create an object first and then get the output. To use the layer module, you first need to create a layer object, then pass in the data and get the output. Neural networks created with the layer module are compatible with TensorFlow, which means you can train these neural networks with TensorFlow.**
+
+https://github.com/NoteDance/Note/tree/Note-7.0/Note/nn/layer
+
+**Documentation:** https://github.com/NoteDance/Note-documentation/tree/layer-7.0
+
+**Using Note’s Layer module, you can determine the shape of the training parameters when you input data like Keras, or you can give the shape of the training parameters in advance like PyTorch.**
+
+**Pytorch:**
+```python
+from Note.nn.layer.dense import dense
+
+class nn:
+    def __init__(self):
+        self.layer1=dense(128,784,activation='relu')
+        self.layer2=dense(10,128)
+    
+    def __call__(self,data):
+        x=self.layer1(data)
+        x=self.layer2(x)
+        return x
+```
+**Keras:**
+```python
+from Note.nn.layer.dense import dense
+
+class nn:
+    def __init__(self):
+        self.layer1=dense(128,activation='relu')
+        self.layer2=dense(10)
+    
+    def __call__(self,data):
+        x=self.layer1(data)
+        x=self.layer2(x)
+        return x
+```
+
+
 # Create neural network:
 - **Every neural network is regarded as an object, and the neural network object is passed into the kernel and trained by the kernel. To build a neural network that can be trained on Note, you need to follow some rules, otherwise you will get errors during training. You can see the examples of neural networks in the documentation. You can first learn the rules from the simple neural network examples named nn.py, nn_acc.py, and nn_device.py. Then, you can write a Python module for your neural network class and import it. Next, pass the neural network object to the kernel and train it.**
 
@@ -247,53 +294,6 @@ kernel.update_nn_param()
 convnext_atto.fine_tuning(flag=1)
 convnext_atto.km=0
 output=convnext_atto.fp(data)
-```
-
-
-# The models that can be trained with TensorFlow:
-**This package include Llama2, CLIP, ViT, ConvNeXt, SwiftFormer, etc. These models built with Note are compatible with TensorFlow and can be trained with TensorFlow.**
-
-https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
-
-**Documentation:** https://github.com/NoteDance/Note-documentation/tree/tf-7.0
-
-
-# Layer modules:
-**The usage of the layer module is similar to pytorch, which is to create an object first and then get the output. To use the layer module, you first need to create a layer object, then pass in the data and get the output.**
-
-https://github.com/NoteDance/Note/tree/Note-7.0/Note/nn/layer
-
-**Documentation:** https://github.com/NoteDance/Note-documentation/tree/layer-7.0
-
-**Using Note’s Layer module, you can determine the shape of the training parameters when you input data like Keras, or you can give the shape of the training parameters in advance like PyTorch.**
-
-**Pytorch:**
-```python
-from Note.nn.layer.dense import dense
-
-class nn:
-    def __init__(self):
-        self.layer1=dense(128,784,activation='relu')
-        self.layer2=dense(10,128)
-    
-    def __call__(self,data):
-        x=self.layer1(data)
-        x=self.layer2(x)
-        return x
-```
-**Keras:**
-```python
-from Note.nn.layer.dense import dense
-
-class nn:
-    def __init__(self):
-        self.layer1=dense(128,activation='relu')
-        self.layer2=dense(10)
-    
-    def __call__(self,data):
-        x=self.layer1(data)
-        x=self.layer2(x)
-        return x
 ```
 
 
