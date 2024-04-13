@@ -12,8 +12,8 @@ class Module:
     ctsl_list=[]
     
     
-    def cast_param(key,dtype):
-        for param in Module.param_dict[key]:
+    def cast_param(dict,key,dtype):
+        for param in dict[key]:
             param.assign(tf.cast(param,dtype))
         return
     
@@ -32,11 +32,10 @@ class Module:
     
     def init():
         Module.param.clear()
-        param_dict=dict()
-        param_dict['dense_weight']=[]
-        param_dict['dense_bias']=[]
-        param_dict['conv2d_weight']=[]
-        param_dict['conv2d_bias']=[]
+        Module.param_dict['dense_weight'].clear()
+        Module.param_dict['dense_bias'].clear()
+        Module.param_dict['conv2d_weight'].clear()
+        Module.param_dict['conv2d_bias'].clear()
         Module.ctl_list.clear()
         Module.ctsl_list.clear()
         return
