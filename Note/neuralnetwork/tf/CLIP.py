@@ -335,6 +335,7 @@ class CLIP:
         self.initialize_parameters()
         self.training=True
         self.param=Module.param
+        self.param_dict=Module.param_dict
 
     def initialize_parameters(self):
         if isinstance(self.visual, ModifiedResNet):
@@ -402,7 +403,7 @@ class CLIP:
 
     def convert_weights(self):
         """Convert applicable model parameters to fp16"""
-        Module.cast_param('dense_weight', 'float16')
-        Module.cast_param('dense_bias', 'float16')
-        Module.cast_param('conv2d_weight', 'float16')
-        Module.cast_param('conv2d_bias', 'float16')
+        Module.cast_param(self.param_dict, 'dense_weight', 'float16')
+        Module.cast_param(self.param_dict, 'dense_bias', 'float16')
+        Module.cast_param(self.param_dict, 'conv2d_weight', 'float16')
+        Module.cast_param(self.param_dict, 'conv2d_bias', 'float16')
