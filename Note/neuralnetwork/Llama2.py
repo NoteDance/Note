@@ -210,7 +210,8 @@ class Llama2:
         # some useful precompute for the RoPE relative positional embeddings
         self.freqs_cos, self.freqs_sin = precompute_freqs_cis(self.params.dim // self.params.n_heads, self.params.max_seq_len)
         
-        for param in Module.param_dict['dense_weight']:
+        self.param_dict=Module.param_dict
+        for param in self.param_dict['dense_weight']:
             param.assign(ModelArgs.weight_decay * param)
         
         self.optimizer=AdamW(lr=self.params.lr, beta1=0.9, beta2=0.95)
