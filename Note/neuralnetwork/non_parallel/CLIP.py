@@ -332,6 +332,7 @@ class CLIP:
         self.logit_scale = tf.Variable(tf.ones([]) * np.log(1 / 0.07))
         Module.param.append(self.logit_scale)
         self.param=Module.param
+        self.param_dict=Module.param_dict
         self.opt=tf.keras.optimizers.Adam()
 
         self.initialize_parameters()
@@ -412,7 +413,7 @@ class CLIP:
 
     def convert_weights(self):
         """Convert applicable model parameters to fp16"""
-        Module.cast_param('dense_weight', 'float16')
-        Module.cast_param('dense_bias', 'float16')
-        Module.cast_param('conv2d_weight', 'float16')
-        Module.cast_param('conv2d_bias', 'float16')
+        Module.cast_param(self.param_dict, 'dense_weight', 'float16')
+        Module.cast_param(self.param_dict, 'dense_bias', 'float16')
+        Module.cast_param(self.param_dict, 'conv2d_weight', 'float16')
+        Module.cast_param(self.param_dict, 'conv2d_bias', 'float16')
