@@ -51,6 +51,13 @@ https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
 **Documentation:** https://github.com/NoteDance/Note-documentation/tree/tf-7.0
 
 
+# Note.nn.Module.Module:
+**Module class manages the parameters of the neural network. You can initialize the param list by calling the init function of the Module class, which can clear the neural network parameters stored in the param list.**
+```python
+Module.init()
+```
+
+
 # Note.nn.initializer.initializer:
 **This function returns a TensorFlow variable.**
 
@@ -61,13 +68,6 @@ https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
 
 # Note.nn.Layers.Layers:
 **This class is used similarly to the tf.keras.Sequential class.**
-
-
-# Note.nn.Module.Module:
-**Module class manages the parameters of the neural network. You can initialize the param list by calling the init function of the Module class, which can clear the neural network parameters stored in the param list.**
-```python
-Module.init()
-```
 
 
 # The models that can be trained with TensorFlow:
