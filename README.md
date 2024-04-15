@@ -67,7 +67,7 @@ https://github.com/NoteDance/Note/blob/Note-7.0/Note/nn/initializer.py
 
 
 # Note.nn.initializer.initializer_:
-**This function is used to initialize the parameters of the neural network, and it returns a TensorFlow variable and stores the variable in Module.param.**
+**This function is used to initialize the parameters of the neural network, it returns a TensorFlow variable and stores the variable in Module.param.**
 
 https://github.com/NoteDance/Note/blob/Note-7.0/Note/nn/initializer.py
 
