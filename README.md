@@ -9,7 +9,7 @@
 
 
 # Layer modules:
-**The usage of the layer module is similar to pytorch, which is to create an object first and then get the output. To use the layer module, you first need to create a layer object, then pass in the data and get the output. The args of the layer classes in Note are similar to those of the layer classes in tf.keras.layers, so you can refer to the API documentation of tf.keras.layers to use the layer classes in Note. Neural networks created with the layer module are compatible with TensorFlow, which means you can train these neural networks with TensorFlow.**
+**To use the layer module, you first need to create a layer object, then input data to get the output, like using pytorch, or you can use the layer module like using keras. The args of the layer classes in Note are similar to those of the layer classes in tf.keras.layers, so you can refer to the API documentation of tf.keras.layers to use the layer classes in Note. Neural networks created with the layer module are compatible with TensorFlow, which means you can train these neural networks with TensorFlow.**
 
 https://github.com/NoteDance/Note/tree/Note-7.0/Note/nn/layer
 
@@ -43,6 +43,17 @@ class nn:
     def __call__(self,data):
         x=self.layer1(data)
         x=self.layer2(x)
+        return x
+```
+```python
+from Note.nn.layer.dense import dense
+
+class nn:
+    def __init__(self):
+    
+    def __call__(self,data):
+        x=dense(128,activation='relu')(data)
+        x=dense(10)(x)
         return x
 ```
 **Note.neuralnetwork.tf package contains neural networks implemented with Note’s layer module that can be trained with TensorFlow.**
