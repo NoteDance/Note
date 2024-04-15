@@ -99,8 +99,6 @@ https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
 # Deep Learning:
 
 ## Non-parallel training:
-
-### Tensorflow platform:
 ```python
 import Note.DL.kernel as k   #import kernel module
 import tensorflow as tf      #import tensorflow library
@@ -132,8 +130,6 @@ kernel.test(x_test,y_test,32)#test the network performance on the test set with 
 **3. Perform forward propagation, gradient calculation and optimization in parallel without locks. (PO3)**
 
 **Neural networks built with Keras may not be able to train in parallel on Note’s parallel kernel. You can use the layer modules in the Note.nn.layer package and the low-level API of Tensorflow to build neural networks that can train in parallel on Note’s parallel kernel. Do not use Keras’s optimizers because they cannot be serialized by the multiprocessing module. You can use the optimizers in the Note.nn.parallel package, or implement your own optimizers with the low-level API of Tensorflow.**
-
-### Tensorflow platform:
 ```python
 import Note.DL.parallel.kernel as k   #import kernel module
 import tensorflow as tf              #import tensorflow library
@@ -191,8 +187,6 @@ kernel.test(x_train,y_train,32)      #test the network performance on the train 
 **The version of gym used in the example is less than 0.26.0.**
 
 ## Non-parallel training:
-
-### Tensorflow platform:
 ```python
 import Note.RL.kernel as k   #import kernel module
 import tensorflow as tf           #import tensorflow library
@@ -216,8 +210,6 @@ kernel.visualize_reward()
 
 **Pool net use multiprocessing parallel and random add episode in pool,which would make data being uncorrelated in pool,
 then pools would be used parallel training agent.**
-
-### Tensorflow platform:
 ```python
 import Note.RL.parallel.kernel as k   #import kernel module
 import neuralnetwork.RL.tensorflow.parallrl.DQN as d   #import deep Q-network module
