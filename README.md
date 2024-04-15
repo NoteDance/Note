@@ -57,17 +57,25 @@ https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
 Module.init()
 ```
 
+https://github.com/NoteDance/Note/blob/Note-7.0/Note/nn/Module.py
+
 
 # Note.nn.initializer.initializer:
-**This function returns a TensorFlow variable.**
+**This function is used to initialize the parameters of the neural network, and it returns a TensorFlow variable.**
+
+https://github.com/NoteDance/Note/blob/Note-7.0/Note/nn/initializer.py
 
 
 # Note.nn.initializer.initializer_:
-**This function returns a TensorFlow variable and stores the variable in Module.param.**
+**This function is used to initialize the parameters of the neural network, and it returns a TensorFlow variable and stores the variable in Module.param.**
+
+https://github.com/NoteDance/Note/blob/Note-7.0/Note/nn/initializer.py
 
 
 # Note.nn.Layers.Layers:
 **This class is used similarly to the tf.keras.Sequential class.**
+
+https://github.com/NoteDance/Note/blob/Note-7.0/Note/nn/Layers.py
 
 
 # The models that can be trained with TensorFlow:
@@ -195,18 +203,6 @@ kernel.platform=tf                #set the platform to tensorflow
 kernel.action_count=2             #set the number of actions to 2
 kernel.set_up(epsilon=0.01,pool_size=10000,batch=64,update_step=10) #set up the hyperparameters for training
 kernel.train(100)                 #train the network for 100 episodes
-kernel.visualize_train()
-kernel.visualize_reward()
-```
-```python
-import Note.RL.kernel as k   #import kernel module
-import tensorflow as tf           #import tensorflow library
-import neuralnetwork.RL.tensorflow.non_parallrl.DDPG as d   #import deep deterministic policy gradient module
-ddpg=d.DDPG(64,0.01,0.98,0.005,5e-4,5e-3) #create neural network object with 64 inputs, 0.01 learning rate, 0.98 discount factor, 0.005 noise scale, 5e-4 actor learning rate and 5e-3 critic learning rate
-kernel=k.kernel(ddpg)             #create kernel object with the network
-kernel.platform=tf                #set the platform to tensorflow
-kernel.set_up(pool_size=10000,batch=64) #set up the hyperparameters for training
-kernel.train(200)                 #train the network for 200 episodes
 kernel.visualize_train()
 kernel.visualize_reward()
 ```
