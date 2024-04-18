@@ -21,11 +21,14 @@ https://github.com/NoteDance/Note/tree/Note-7.0/Note/nn/layer
 **Pytorch:**
 ```python
 from Note.nn.layer.dense import dense
+from Note.nn.Module import Module
 
 class nn:
     def __init__(self):
+	Module.init()
         self.layer1=dense(128,784,activation='relu')
         self.layer2=dense(10,128)
+	self.param=Module.param
     
     def __call__(self,data):
         x=self.layer1(data)
@@ -35,11 +38,14 @@ class nn:
 **Keras:**
 ```python
 from Note.nn.layer.dense import dense
+from Note.nn.Module import Module
 
 class nn:
     def __init__(self):
+	Module.init()
         self.layer1=dense(128,activation='relu')
         self.layer2=dense(10)
+	self.param=Module.param
     
     def __call__(self,data):
         x=self.layer1(data)
@@ -48,14 +54,12 @@ class nn:
 ```
 ```python
 from Note.nn.layer.dense import dense
+from Note.nn.Module import Module
 
-class nn:
-    def __init__(self):
-    
-    def __call__(self,data):
-        x=dense(128,activation='relu')(data)
-        x=dense(10)(x)
-        return x
+def nn(data):
+    x=dense(128,activation='relu')(data)
+    x=dense(10)(x)
+    return x
 ```
 **Note.neuralnetwork.tf package contains neural networks implemented with Note’s layer module that can be trained with TensorFlow.**
 https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
