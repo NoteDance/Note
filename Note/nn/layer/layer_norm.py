@@ -10,6 +10,7 @@ class layer_norm:
             self.axis = list(axis)
         elif isinstance(axis, int):
             self.axis = axis
+            self.axis = [self.axis]
         else:
             raise TypeError(
                 "Expected an int or a list/tuple of ints for the "
