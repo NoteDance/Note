@@ -4,7 +4,7 @@ from Note.nn.Module import Module
 
 
 class embedding:
-    def __init__(self,output_size,input_size=None,initializer='normal',sparse=False,use_one_hot_matmul=False,trainable=True,dtype='int32'):
+    def __init__(self,output_size,input_size=None,initializer='normal',sparse=False,use_one_hot_matmul=False,trainable=True,dtype='float32'):
         self.input_size=input_size
         self.initializer=initializer
         self.sparse=sparse
