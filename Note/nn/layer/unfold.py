@@ -2,7 +2,7 @@ import tensorflow as tf
 from Note.nn.layer.zeropadding2d import zeropadding2d
 
 
-class Unfold:
+class unfold:
     def __init__(self, kernel, stride=1, padding=0, dilation=1):
         self.kernel = kernel
         self.stride = stride
