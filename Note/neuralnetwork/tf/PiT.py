@@ -128,6 +128,7 @@ class PiT:
         heads = cast_tuple(heads, len(depth))
 
         patch_dim = channels * patch_size ** 2
+        self.dim = dim
 
         self.to_patch_embedding = Layers()
         self.to_patch_embedding.add(unfold(kernel = patch_size, stride = patch_size // 2))

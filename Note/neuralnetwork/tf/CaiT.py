@@ -142,6 +142,7 @@ class CaiT:
         num_patches = (image_size // patch_size) ** 2
         patch_dim = 3 * patch_size ** 2
         self.patch_size = patch_size
+        self.dim = dim
 
         self.to_patch_embedding = Layers()
         self.to_patch_embedding.add(layer_norm(patch_dim))
