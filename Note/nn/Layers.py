@@ -57,21 +57,12 @@ class Layers:
                             data=layer(data,self.saved_data.pop(0))
                 else:
                     if self.use_data_flag[i]==False:
-                        if not train_flag:
-                            data=layer(data,train_flag)
-                        else:
-                            data=layer(data)
+                        data=layer(data,train_flag)
                     else:
                         if hasattr(layer,'save_data_count'):
-                            if not train_flag:
-                                data=layer(self.saved_data,train_flag)
-                            else:
-                                data=layer(self.saved_data)
+                            data=layer(self.saved_data,train_flag)
                         else:
-                            if not train_flag:
-                                data=layer(data,self.saved_data.pop(0),train_flag)
-                            else:
-                                data=layer(data,self.saved_data.pop(0))
+                            data=layer(data,self.saved_data.pop(0),train_flag)
                 if self.save_data_flag[i]==True:
                     self.saved_data.append(data)
             else:
