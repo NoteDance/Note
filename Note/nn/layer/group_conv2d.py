@@ -6,6 +6,10 @@ from Note.nn.Module import Module
 
 class group_conv2d: # define a class for group convolutional layer
     def __init__(self,filters,kernel_size,num_groups,input_size=None,strides=[1,1],padding='VALID',weight_initializer='Xavier',bias_initializer='zeros',activation=None,data_format='NHWC',dilations=None,use_bias=True,dtype='float32'): # define the constructor method
+        if isinstance(kernel_size,int):
+            kernel_size=[kernel_size,kernel_size]
+        if isinstance(strides,int):
+            strides=[strides,strides]
         self.kernel_size=kernel_size
         self.num_groups=num_groups # set the number of groups
         self.input_size=input_size
