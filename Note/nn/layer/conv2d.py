@@ -26,9 +26,20 @@ class conv2d: # define a class for 2D convolutional layer
         if input_size!=None:
             self.weight=i.initializer([kernel_size[0],kernel_size[1],input_size,filters],weight_initializer,dtype) # initialize the weight tensor
             Module.param_dict['conv2d_weight'].append(self.weight)
+            if Module.name!=None and Module.name not in Module.layer_dict:
+                Module.layer_dict[Module.name]=dict()
+                Module.layer_dict[Module.name]['conv2d_weight']=[]
+                Module.layer_dict[Module.name]['conv2d_weight'].append(self.weight)
+            else:
+                Module.layer_dict[Module.name]['conv2d_weight'].append(self.weight)
             if use_bias==True: # if use bias is True
                 self.bias=i.initializer([filters],bias_initializer,dtype) # initialize the bias vector
                 Module.param_dict['conv2d_bias'].append(self.bias)
+                if Module.name!=None and 'conv2d_bias' not in Module.layer_dict[Module.name]:
+                    Module.layer_dict[Module.name]['conv2d_bias']=[]
+                    Module.layer_dict[Module.name]['conv2d_bias'].append(self.bias)
+                else:
+                    Module.layer_dict[Module.name]['conv2d_bias'].append(self.bias)
             if use_bias==True: # if use bias is True
                 self.param=[self.weight,self.bias] # store the parameters in a list
             else: # if use bias is False
@@ -41,9 +52,20 @@ class conv2d: # define a class for 2D convolutional layer
     def build(self):
         self.weight=i.initializer([self.kernel_size[0],self.kernel_size[1],self.input_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight tensor
         Module.param_dict['conv2d_weight'].append(self.weight)
+        if Module.name!=None and Module.name not in Module.layer_dict:
+            Module.layer_dict[Module.name]=dict()
+            Module.layer_dict[Module.name]['conv2d_weight']=[]
+            Module.layer_dict[Module.name]['conv2d_weight'].append(self.weight)
+        else:
+            Module.layer_dict[Module.name]['conv2d_weight'].append(self.weight)
         if self.use_bias==True: # if use bias is True
             self.bias=i.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector
             Module.param_dict['conv2d_bias'].append(self.bias)
+            if Module.name!=None and 'conv2d_bias' not in Module.layer_dict[Module.name]:
+                Module.layer_dict[Module.name]['conv2d_bias']=[]
+                Module.layer_dict[Module.name]['conv2d_bias'].append(self.bias)
+            else:
+                Module.layer_dict[Module.name]['conv2d_bias'].append(self.bias)
         if self.use_bias==True: # if use bias is True
             self.param=[self.weight,self.bias] # store the parameters in a list
         else: # if use bias is False
