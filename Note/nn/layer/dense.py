@@ -17,9 +17,20 @@ class dense: # define a class for dense (fully connected) layer
         if input_size!=None:
             self.weight=i.initializer([input_size,output_size],weight_initializer,dtype) # initialize the weight matrix
             Module.param_dict['dense_weight'].append(self.weight)
+            if Module.name!=None and Module.name not in Module.layer_dict:
+                Module.layer_dict[Module.name]=dict()
+                Module.layer_dict[Module.name]['dense_weight']=[]
+                Module.layer_dict[Module.name]['dense_weight'].append(self.weight)
+            else:
+                Module.layer_dict[Module.name]['dense_weight'].append(self.weight)
             if use_bias==True: # if use bias is True
                 self.bias=i.initializer([output_size],bias_initializer,dtype) # initialize the bias vector
                 Module.param_dict['dense_bias'].append(self.bias)
+                if Module.name!=None and 'dense_bias' not in Module.layer_dict[Module.name]:
+                    Module.layer_dict[Module.name]['dense_bias']=[]
+                    Module.layer_dict[Module.name]['dense_bias'].append(self.bias)
+                else:
+                    Module.layer_dict[Module.name]['dense_bias'].append(self.bias)
             else: # if use bias is False
                 self.bias=None # set the bias to None
             if use_bias==True: # if use bias is True
@@ -34,9 +45,20 @@ class dense: # define a class for dense (fully connected) layer
     def build(self):
         self.weight=i.initializer([self.input_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix
         Module.param_dict['dense_weight'].append(self.weight)
+        if Module.name!=None and Module.name not in Module.layer_dict:
+            Module.layer_dict[Module.name]=dict()
+            Module.layer_dict[Module.name]['dense_weight']=[]
+            Module.layer_dict[Module.name]['dense_weight'].append(self.weight)
+        else:
+            Module.layer_dict[Module.name]['dense_weight'].append(self.weight)
         if self.use_bias==True: # if use bias is True
             self.bias=i.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector
             Module.param_dict['dense_bias'].append(self.bias)
+            if Module.name!=None and 'dense_bias' not in Module.layer_dict[Module.name]:
+                Module.layer_dict[Module.name]['dense_bias']=[]
+                Module.layer_dict[Module.name]['dense_bias'].append(self.bias)
+            else:
+                Module.layer_dict[Module.name]['dense_bias'].append(self.bias)
         else: # if use bias is False
             self.bias=None # set the bias to None
         if self.use_bias==True: # if use bias is True
