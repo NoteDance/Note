@@ -1,9 +1,8 @@
 from Note.nn.layer.dense import dense
 
-def fine_tuning(param,param_,layer,layer_,classes,dim,flag=0):
+def fine_tuning(param,param_,layer,layer_,classes,dim,flag):
     _param=[]
     if flag==0:
-        param_=param.copy()
         layer_=layer
         layer=dense(classes, dim)
         param.extend(layer.param)
