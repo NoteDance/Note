@@ -14,6 +14,13 @@ class Module:
     name=None
     
     
+    def apply(key,func):
+        if key in Module.layer_dict[Module.name]:
+            for param in Module.layer_dict[Module.name][key]:
+                func(param)
+        return
+    
+    
     def cast_param(dict,key,dtype):
         for param in dict[key]:
             param.assign(tf.cast(param,dtype))
