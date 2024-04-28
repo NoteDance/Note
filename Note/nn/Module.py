@@ -8,8 +8,10 @@ class Module:
     param_dict['dense_bias']=[]
     param_dict['conv2d_weight']=[]
     param_dict['conv2d_bias']=[]
+    layer_dict=dict()
     ctl_list=[]
     ctsl_list=[]
+    name=None
     
     
     def cast_param(dict,key,dtype):
@@ -36,6 +38,8 @@ class Module:
         Module.param_dict['dense_bias'].clear()
         Module.param_dict['conv2d_weight'].clear()
         Module.param_dict['conv2d_bias'].clear()
+        Module.layer_dict=dict()
         Module.ctl_list.clear()
         Module.ctsl_list.clear()
+        Module.name=None
         return
