@@ -351,14 +351,15 @@ class CCT:
             attention_dropout=0.1,
             stochastic_depth=0.1,
             *args, **kwargs)
-        self.fc = None
+        self.fc = [0]
         
+        self.param_ = [0]
         self.param = Module.param
         self.training = True
     
     def fine_tuning(self,classes=None,flag=0):
         self.flag = flag
-        fine_tuning(self.param, self.param.copy(), self.classifier.fc, self.fc, classes, self.embedding_dim, flag)
+        fine_tuning(self.param, self.param_, self.classifier.fc, self.fc, classes, self.embedding_dim, flag)
         return
 
     def __call__(self, x):
