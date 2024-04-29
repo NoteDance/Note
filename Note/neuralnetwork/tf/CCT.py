@@ -354,12 +354,11 @@ class CCT:
         self.fc = None
         
         self.param = Module.param
-        self.param_ = self.param.copy()
         self.training = True
     
     def fine_tuning(self,classes=None,flag=0):
         self.flag = flag
-        fine_tuning(self.param, self.param_, self.classifier.fc, self.fc, classes, self.embedding_dim, flag)
+        fine_tuning(self.param, self.param.copy(), self.classifier.fc, self.fc, classes, self.embedding_dim, flag)
         return
 
     def __call__(self, x):
