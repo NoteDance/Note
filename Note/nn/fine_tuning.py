@@ -2,6 +2,8 @@ from Note.nn.layer.dense import dense
 
 def fine_tuning(param,param_,layer,layer_,classes,dim,flag):
     _param=[]
+    if type(layer)==list:
+        layer=layer[-1]
     if flag==0:
         param_[0]=param.copy()
         layer_[0]=layer
