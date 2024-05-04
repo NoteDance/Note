@@ -22,6 +22,8 @@ class dense: # define a class for dense (fully connected) layer
                 Module.layer_dict[Module.name]['dense_weight']=[]
                 Module.layer_dict[Module.name]['dense_weight'].append(self.weight)
             elif Module.name!=None:
+                if 'dense_weight' not in Module.layer_dict[Module.name]:
+                    Module.layer_dict[Module.name]['dense_weight']=[]
                 Module.layer_dict[Module.name]['dense_weight'].append(self.weight)
             if use_bias==True: # if use bias is True
                 self.bias=i.initializer([output_size],bias_initializer,dtype) # initialize the bias vector
@@ -30,6 +32,8 @@ class dense: # define a class for dense (fully connected) layer
                     Module.layer_dict[Module.name]['dense_bias']=[]
                     Module.layer_dict[Module.name]['dense_bias'].append(self.bias)
                 elif Module.name!=None:
+                    if 'dense_bias' not in Module.layer_dict[Module.name]:
+                        Module.layer_dict[Module.name]['dense_bias']=[]
                     Module.layer_dict[Module.name]['dense_bias'].append(self.bias)
             else: # if use bias is False
                 self.bias=None # set the bias to None
@@ -50,6 +54,8 @@ class dense: # define a class for dense (fully connected) layer
             Module.layer_dict[Module.name]['dense_weight']=[]
             Module.layer_dict[Module.name]['dense_weight'].append(self.weight)
         elif Module.name!=None:
+            if 'dense_weight' not in Module.layer_dict[Module.name]:
+                Module.layer_dict[Module.name]['dense_weight']=[]
             Module.layer_dict[Module.name]['dense_weight'].append(self.weight)
         if self.use_bias==True: # if use bias is True
             self.bias=i.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector
@@ -58,6 +64,8 @@ class dense: # define a class for dense (fully connected) layer
                 Module.layer_dict[Module.name]['dense_bias']=[]
                 Module.layer_dict[Module.name]['dense_bias'].append(self.bias)
             elif Module.name!=None:
+                if 'dense_bias' not in Module.layer_dict[Module.name]:
+                    Module.layer_dict[Module.name]['dense_bias']=[]
                 Module.layer_dict[Module.name]['dense_bias'].append(self.bias)
         else: # if use bias is False
             self.bias=None # set the bias to None
