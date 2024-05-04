@@ -31,6 +31,8 @@ class conv2d: # define a class for 2D convolutional layer
                 Module.layer_dict[Module.name]['conv2d_weight']=[]
                 Module.layer_dict[Module.name]['conv2d_weight'].append(self.weight)
             elif Module.name!=None:
+                if 'conv2d_weight' not in Module.layer_dict[Module.name]:
+                    Module.layer_dict[Module.name]['conv2d_weight']=[]
                 Module.layer_dict[Module.name]['conv2d_weight'].append(self.weight)
             if use_bias==True: # if use bias is True
                 self.bias=i.initializer([filters],bias_initializer,dtype) # initialize the bias vector
@@ -39,6 +41,8 @@ class conv2d: # define a class for 2D convolutional layer
                     Module.layer_dict[Module.name]['conv2d_bias']=[]
                     Module.layer_dict[Module.name]['conv2d_bias'].append(self.bias)
                 elif Module.name!=None:
+                    if 'conv2d_bias' not in Module.layer_dict[Module.name]:
+                        Module.layer_dict[Module.name]['conv2d_bias']=[]
                     Module.layer_dict[Module.name]['conv2d_bias'].append(self.bias)
             if use_bias==True: # if use bias is True
                 self.param=[self.weight,self.bias] # store the parameters in a list
@@ -57,6 +61,8 @@ class conv2d: # define a class for 2D convolutional layer
             Module.layer_dict[Module.name]['conv2d_weight']=[]
             Module.layer_dict[Module.name]['conv2d_weight'].append(self.weight)
         elif Module.name!=None:
+            if 'conv2d_weight' not in Module.layer_dict[Module.name]:
+                Module.layer_dict[Module.name]['conv2d_weight']=[]
             Module.layer_dict[Module.name]['conv2d_weight'].append(self.weight)
         if self.use_bias==True: # if use bias is True
             self.bias=i.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector
@@ -65,6 +71,8 @@ class conv2d: # define a class for 2D convolutional layer
                 Module.layer_dict[Module.name]['conv2d_bias']=[]
                 Module.layer_dict[Module.name]['conv2d_bias'].append(self.bias)
             elif Module.name!=None:
+                if 'conv2d_bias' not in Module.layer_dict[Module.name]:
+                    Module.layer_dict[Module.name]['conv2d_bias']=[]
                 Module.layer_dict[Module.name]['conv2d_bias'].append(self.bias)
         if self.use_bias==True: # if use bias is True
             self.param=[self.weight,self.bias] # store the parameters in a list
