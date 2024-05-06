@@ -9,6 +9,7 @@ class Module:
     param_dict['conv2d_weight']=[]
     param_dict['conv2d_bias']=[]
     layer_dict=dict()
+    layer_param=dict()
     ctl_list=[]
     ctsl_list=[]
     name=None
@@ -24,6 +25,18 @@ class Module:
     def cast_param(dict,key,dtype):
         for param in dict[key]:
             param.assign(tf.cast(param,dtype))
+        return
+    
+    
+    def freeze(dict,key):
+        for param in dict[key]:
+            param.trainable=False
+        return
+    
+    
+    def unfreeze(dict,key):
+        for param in dict[key]:
+            param.trainable=True
         return
     
     
@@ -46,6 +59,7 @@ class Module:
         Module.param_dict['conv2d_weight'].clear()
         Module.param_dict['conv2d_bias'].clear()
         Module.layer_dict=dict()
+        Module.layer_param=dict()
         Module.ctl_list.clear()
         Module.ctsl_list.clear()
         Module.name=None
