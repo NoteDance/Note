@@ -5,7 +5,7 @@ from Note.nn.Module import Module
 
 
 class group_conv2d: # define a class for group convolutional layer
-    def __init__(self,filters,kernel_size,num_groups,input_size=None,strides=[1,1],padding='VALID',weight_initializer='Xavier',bias_initializer='zeros',activation=None,data_format='NHWC',dilations=None,use_bias=True,dtype='float32'): # define the constructor method
+    def __init__(self,filters,kernel_size,num_groups=1,input_size=None,strides=[1,1],padding='VALID',weight_initializer='Xavier',bias_initializer='zeros',activation=None,data_format='NHWC',dilations=None,use_bias=True,dtype='float32'): # define the constructor method
         if isinstance(kernel_size,int):
             kernel_size=[kernel_size,kernel_size]
         if isinstance(strides,int):
@@ -26,6 +26,11 @@ class group_conv2d: # define a class for group convolutional layer
         self.weight=[] # initialize an empty list for weight tensors
         self.bias=[] # initialize an empty list for bias vectors
         if input_size!=None:
+            if Module.name!=None and Module.name not in Module.layer_dict:
+                Module.layer_dict[Module.name]=[]
+                Module.layer_dict[Module.name].append(self)
+            elif Module.name!=None:
+                Module.layer_dict[Module.name].append(self)
             self.num_groups=num_groups if input_size%num_groups==0 else 1 # check if the number of input channels is divisible by the number of groups, otherwise set it to 1
             for i in range(num_groups): # loop over the number of groups
                 self.weight.append(initializer([kernel_size[0],kernel_size[1],input_size//num_groups,filters//num_groups],weight_initializer,dtype)) # initialize a weight tensor for each group with the given shape, initializer and data type, and append it to the weight list
@@ -39,6 +44,11 @@ class group_conv2d: # define a class for group convolutional layer
     
     
     def build(self):
+        if Module.name!=None and Module.name not in Module.layer_dict:
+            Module.layer_dict[Module.name]=[]
+            Module.layer_dict[Module.name].append(self)
+        elif Module.name!=None:
+            Module.layer_dict[Module.name].append(self)
         self.num_groups=self.num_groups if self.input_size%self.num_groups==0 else 1 # check if the number of input channels is divisible by the number of groups, otherwise set it to 1
         for i in range(self.num_groups): # loop over the number of groups
             self.weight.append(initializer([self.kernel_size[0],self.kernel_size[1],self.input_size//self.num_groups,self.output_size//self.num_groups],self.weight_initializer,self.dtype)) # initialize a weight tensor for each group with the given shape, initializer and data type, and append it to the weight list
