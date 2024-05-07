@@ -15,10 +15,9 @@ class Module:
     name=None
     
     
-    def apply(key,func):
-        if key in Module.layer_dict[Module.name]:
-            for param in Module.layer_dict[Module.name][key]:
-                func(param)
+    def apply(func):
+        for layer in Module.layer_dict[Module.name]:
+            func(layer)
         return
     
     
