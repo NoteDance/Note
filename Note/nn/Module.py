@@ -13,6 +13,7 @@ class Module:
     ctl_list=[]
     ctsl_list=[]
     name=None
+    name_=None
     
     
     def apply(func):
@@ -62,4 +63,5 @@ class Module:
         Module.ctl_list.clear()
         Module.ctsl_list.clear()
         Module.name=None
+        Module.name_=None
         return
