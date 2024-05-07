@@ -22,19 +22,19 @@ class dense: # define a class for dense (fully connected) layer
                 Module.layer_dict[Module.name].append(self)
             elif Module.name!=None:
                    Module.layer_dict[Module.name].append(self)
-            if Module.name!=None and Module.name not in Module.layer_param:
-                Module.layer_param[Module.name]=[]
-                Module.layer_param[Module.name].append(self.weight)
-            elif Module.name!=None:
-                Module.layer_param[Module.name].append(self.weight)
+            if Module.name_!=None and Module.name_ not in Module.layer_param:
+                Module.layer_param[Module.name_]=[]
+                Module.layer_param[Module.name_].append(self.weight)
+            elif Module.name_!=None:
+                Module.layer_param[Module.name_].append(self.weight)
             if use_bias==True: # if use bias is True
                 self.bias=i.initializer([output_size],bias_initializer,dtype) # initialize the bias vector
                 Module.param_dict['dense_bias'].append(self.bias)
-                if Module.name!=None and Module.name not in Module.layer_param:
-                    Module.layer_param[Module.name]=[]
-                    Module.layer_param[Module.name].append(self.bias)
-                elif Module.name!=None:
-                    Module.layer_param[Module.name].append(self.bias)
+                if Module.name_!=None and Module.name_ not in Module.layer_param:
+                    Module.layer_param[Module.name_]=[]
+                    Module.layer_param[Module.name_].append(self.bias)
+                elif Module.name_!=None:
+                    Module.layer_param[Module.name_].append(self.bias)
             else: # if use bias is False
                 self.bias=None # set the bias to None
             if use_bias==True: # if use bias is True
@@ -54,19 +54,19 @@ class dense: # define a class for dense (fully connected) layer
             Module.layer_dict[Module.name].append(self)
         elif Module.name!=None:
                Module.layer_dict[Module.name].append(self)
-        if Module.name!=None and Module.name not in Module.layer_param:
-            Module.layer_param[Module.name]=[]
-            Module.layer_param[Module.name].append(self.weight)
+        if Module.name_!=None and Module.name_ not in Module.layer_param:
+            Module.layer_param[Module.name_]=[]
+            Module.layer_param[Module.name_].append(self.weight)
         elif Module.name!=None:
-            Module.layer_param[Module.name].append(self.weight)
+            Module.layer_param[Module.name_].append(self.weight)
         if self.use_bias==True: # if use bias is True
             self.bias=i.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector
             Module.param_dict['dense_bias'].append(self.bias)
-            if Module.name!=None and Module.name not in Module.layer_param:
-                Module.layer_param[Module.name]=[]
-                Module.layer_param[Module.name].append(self.bias)
+            if Module.name_!=None and Module.name_ not in Module.layer_param:
+                Module.layer_param[Module.name_]=[]
+                Module.layer_param[Module.name_].append(self.bias)
             elif Module.name!=None:
-                Module.layer_param[Module.name].append(self.bias)
+                Module.layer_param[Module.name_].append(self.bias)
         else: # if use bias is False
             self.bias=None # set the bias to None
         if self.use_bias==True: # if use bias is True
