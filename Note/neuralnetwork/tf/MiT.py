@@ -210,6 +210,7 @@ class MiT:
             l.weight.assign(initializer(l.weight.shape, ['truncated_normal', 0.2]))
         elif isinstance(l, group_conv2d):
             fan_out = l.kernel_size[0] * l.kernel_size[1] * l.output_size
+            fan_out //= l.num_groups
             for weight in l.weight:
                 weight.assign(initializer(weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
 
