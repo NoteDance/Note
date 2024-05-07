@@ -202,7 +202,6 @@ class Tokenizer:
             self.conv_layers.add(conv_layers)
 
         Module.apply(self.init_weight)
-        Module.name = None
 
     def sequence_length(self, n_channels=3, height=224, width=224):
         return self.__call__(tf.zeros((1, height, width, n_channels))).shape[1]
@@ -271,8 +270,6 @@ class TransformerClassifier:
 
         self.fc = dense(num_classes, embedding_dim)
         Module.apply(self.init_weight)
-        
-        Module.name = None
 
     def __call__(self, x, training):
         b = x.shape[0]
