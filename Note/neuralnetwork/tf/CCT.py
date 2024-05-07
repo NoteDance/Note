@@ -201,7 +201,7 @@ class Tokenizer:
                 conv_layers.add(identity())
             self.conv_layers.add(conv_layers)
 
-        Module.apply('conv2d_weight',self.init_weight)
+        Module.apply(self.init_weight)
         Module.name = None
 
     def sequence_length(self, n_channels=3, height=224, width=224):
@@ -210,8 +210,9 @@ class Tokenizer:
     def __call__(self, x):
         return rearrange(self.conv_layers(x), 'b h w c -> b (h w) c')
 
-    def init_weight(self, param):
-        param.assign(initializer(param.shape, 'He'))
+    def init_weight(self, l):
+        if isinstance(l, conv2d):
+            l.weight.assign(initializer(l.weight.shape, 'He'))
 
 
 class TransformerClassifier:
@@ -269,8 +270,7 @@ class TransformerClassifier:
         self.norm = layer_norm(embedding_dim)
 
         self.fc = dense(num_classes, embedding_dim)
-        Module.apply('dense_weight',self.init_weight)
-        Module.apply('dense_bias',self.init_weight)
+        Module.apply(self.init_weight)
         
         Module.name = None
 
@@ -302,8 +302,11 @@ class TransformerClassifier:
 
         return self.fc(x)
 
-    def init_weight(self, param):
-        param.assign(initializer(param.shape, ['truncated_normal', 0.2]))
+    def init_weight(self, l):
+        if isinstance(l, dense):
+            l.weight.assign(initializer(l.weight.shape, ['truncated_normal', 0.2]))
+            if l.use_bias is not False:
+                l.bias.assign(initializer(l.bias.shape, ['truncated_normal', 0.2]))
         
 
 # CCT Main model
