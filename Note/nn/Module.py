@@ -16,6 +16,11 @@ class Module:
     name_=None
     
     
+    def __init__(self):
+        Module.name=None
+        Module.name_=None
+    
+    
     def apply(func):
         for layer in Module.layer_dict[Module.name]:
             func(layer)
