@@ -31,20 +31,20 @@ class Module:
         return
     
     
-    def cast_param(dict,key,dtype):
-        for param in dict[key]:
+    def cast_param(key,dtype):
+        for param in Module.param_dict[key]:
             param.assign(tf.cast(param,dtype))
         return
     
     
-    def freeze(dict,key):
-        for param in dict[key]:
+    def freeze(key):
+        for param in Module.layer_param[key]:
             param.trainable=False
         return
     
     
-    def unfreeze(dict,key):
-        for param in dict[key]:
+    def unfreeze(key):
+        for param in Module.layer_param[key]:
             param.trainable=True
         return
     
