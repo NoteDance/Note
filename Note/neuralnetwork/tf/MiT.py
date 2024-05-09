@@ -233,7 +233,7 @@ class MiT:
             self.block4[i].drop_path.drop_path_rate = dpr[cur + i]
 
     def freeze_patch_emb(self):
-        Module.freeze(self.layer_param, 'patch_embed1')
+        Module.freeze('patch_embed1')
 
     def no_weight_decay(self):
         return {'pos_embed1', 'pos_embed2', 'pos_embed3', 'pos_embed4', 'cls_token'}  # has pos_embed may be better
