@@ -17,12 +17,11 @@ class Module:
     
     
     def __init__(self):
+        Module.init()
         self.param=Module.param
         self.param_dict=Module.param_dict
         self.layer_dict=Module.layer_dict
         self.layer_param=Module.layer_param
-        Module.name=None
-        Module.name_=None
     
     
     def apply(func):
@@ -58,6 +57,12 @@ class Module:
     def convert_to_shared_list(manager):
         for ctsl in Module.ctsl_list:
             ctsl(manager)
+        return
+    
+    
+    def init_():
+        Module.name=None
+        Module.name_=None
         return
     
     
