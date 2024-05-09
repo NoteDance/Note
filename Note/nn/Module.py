@@ -17,6 +17,10 @@ class Module:
     
     
     def __init__(self):
+        self.param=Module.param
+        self.param_dict=Module.param_dict
+        self.layer_dict=Module.layer_dict
+        self.layer_param=Module.layer_param
         Module.name=None
         Module.name_=None
     
