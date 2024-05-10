@@ -23,12 +23,11 @@ https://github.com/NoteDance/Note/tree/Note-7.0/Note/nn/layer
 from Note.nn.layer.dense import dense
 from Note.nn.Module import Module
 
-class nn:
+class nn(Module):
     def __init__(self):
-	Module.init()
+	super().__init__()
         self.layer1=dense(128,784,activation='relu')
         self.layer2=dense(10,128)
-	self.param=Module.param
     
     def __call__(self,data):
         x=self.layer1(data)
@@ -40,12 +39,11 @@ class nn:
 from Note.nn.layer.dense import dense
 from Note.nn.Module import Module
 
-class nn:
+class nn(Module):
     def __init__(self):
-	Module.init()
+	super().__init__()
         self.layer1=dense(128,activation='relu')
         self.layer2=dense(10)
-	self.param=Module.param
     
     def __call__(self,data):
         x=self.layer1(data)
@@ -56,6 +54,7 @@ class nn:
 from Note.nn.layer.dense import dense
 from Note.nn.Module import Module
 
+Module.init()
 def nn(data):
     x=dense(128,activation='relu')(data)
     x=dense(10)(x)
