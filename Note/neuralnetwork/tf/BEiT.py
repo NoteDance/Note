@@ -26,7 +26,7 @@ import numpy as np
 import math
 
 
-class BEiT(Module):
+class VisionTransformerForMaskedImageModeling(Module):
     def __init__(self, img_size=224, patch_size=16, in_chans=3, vocab_size=8192, embed_dim=768, depth=12,
                  num_heads=12, mlp_ratio=4., qkv_bias=True, qk_scale=None, drop_rate=0., attn_drop_rate=0.,
                  drop_path_rate=0., norm_layer=None, init_values=None, attn_head_dim=None,
@@ -116,7 +116,7 @@ class BEiT(Module):
         self.flag=flag
         if flag==0:
             self.param_=self.param.copy()
-            self.lm_head_=self.head
+            self.lm_head_=self.lm_head
             self.lm_head=dense(classes,self.embed_dim)
             param.extend(self.lm_head.param)
             self.param=param
@@ -141,16 +141,191 @@ class BEiT(Module):
 
 
 def beit_base_patch16_224_8k_vocab(**kwargs):
-    model = BEiT(
+    model = VisionTransformerForMaskedImageModeling(
         patch_size=16, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4, qkv_bias=True,
         norm_layer=partial(layer_norm, epsilon=1e-6), vocab_size=8192, **kwargs)
     return model
 
 
 def beit_large_patch16_224_8k_vocab(**kwargs):
-    model = BEiT(
+    model = VisionTransformerForMaskedImageModeling(
         patch_size=16, embed_dim=1024, depth=24, num_heads=16, mlp_ratio=4, qkv_bias=True,
         norm_layer=partial(layer_norm, epsilon=1e-6), vocab_size=8192, **kwargs)
+    return model
+
+
+class VisionTransformer(Module):
+    """ Vision Transformer with support for patch or hybrid CNN input stage
+    """
+    def __init__(self, img_size=224, patch_size=16, in_chans=3, num_classes=1000, embed_dim=768, depth=12,
+                 num_heads=12, mlp_ratio=4., qkv_bias=False, qk_scale=None, drop_rate=0., attn_drop_rate=0.,
+                 drop_path_rate=0., norm_layer=layer_norm, init_values=None,
+                 use_abs_pos_emb=True, use_rel_pos_bias=False, use_shared_rel_pos_bias=False,
+                 use_mean_pooling=True, init_scale=0.001):
+        super().__init__()
+        Module.name = 'BEiT'
+        self.num_classes = num_classes
+        self.num_features = self.embed_dim = embed_dim  # num_features for consistency with other models
+
+        self.patch_embed = PatchEmbed(
+            img_size=img_size, patch_size=patch_size, in_chans=in_chans, embed_dim=embed_dim)
+        num_patches = self.patch_embed.num_patches
+
+        self.cls_token = initializer_((1, 1, embed_dim), ['truncated_normal', .02])
+        # self.mask_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
+        if use_abs_pos_emb:
+            self.pos_embed = initializer_((1, num_patches + 1, embed_dim), ['truncated_normal', .02])
+        else:
+            self.pos_embed = None
+        self.pos_drop = dropout(drop_rate)
+
+        if use_shared_rel_pos_bias:
+            self.rel_pos_bias = RelativePositionBias(window_size=self.patch_embed.patch_shape, num_heads=num_heads)
+        else:
+            self.rel_pos_bias = None
+
+        dpr = tf.linspace(0., drop_path_rate, depth)  # stochastic depth decay rule
+        self.use_rel_pos_bias = use_rel_pos_bias
+        self.blocks = [
+            Block(
+                dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                drop=drop_rate, attn_drop=attn_drop_rate, drop_path=dpr[i], norm_layer=norm_layer,
+                init_values=init_values, window_size=self.patch_embed.patch_shape if use_rel_pos_bias else None)
+            for i in range(depth)]
+        self.norm = identity() if use_mean_pooling else norm_layer(embed_dim)
+        self.fc_norm = norm_layer(embed_dim) if use_mean_pooling else None
+        self.head = dense(num_classes, embed_dim, weight_initializer=['truncated_normal', .02]) if num_classes > 0 else identity()
+
+        # trunc_normal_(self.mask_token, std=.02)
+        Module.apply(self.init_weights)
+        self.fix_init_weight()
+
+        if isinstance(self.head, dense):
+            self.head.weight.assign(self.head.weight * init_scale)
+            self.head.bias.assign(self.head.bias * init_scale)
+
+    def fix_init_weight(self):
+        def rescale(param, layer_id):
+            param.assign(tf.math.divide(param, math.sqrt(2.0 * layer_id)))
+
+        for layer_id, layer in enumerate(self.blocks):
+            rescale(layer.attn.proj.weight, layer_id + 1)
+            rescale(layer.mlp.fc2.weight, layer_id + 1)
+
+    def init_weights(self, l):
+        if isinstance(l, dense):
+            l.weight.assign(initializer(l.weight.shape, ['truncated_normal', .02]))
+
+    def get_num_layers(self):
+        return len(self.blocks)
+
+    def no_weight_decay(self):
+        return {'pos_embed', 'cls_token'}
+
+    def get_classifier(self):
+        return self.head
+
+    def reset_classifier(self, num_classes, global_pool=''):
+        self.num_classes = num_classes
+        self.head = dense(num_classes, self.embed_dim) if num_classes > 0 else identity()
+
+    def forward_features(self, x):
+        x = self.patch_embed(x)
+        batch_size, seq_len, _ = x.shape
+
+        cls_tokens = tf.tile(self.cls_token, (batch_size, 1, 1))  # stole cls_tokens impl from Phil Wang, thanks
+        x = tf.concat((cls_tokens, x), axis=1)
+        if self.pos_embed is not None:
+            x = x + self.pos_embed
+        x = self.pos_drop(x)
+
+        rel_pos_bias = self.rel_pos_bias() if self.rel_pos_bias is not None else None
+        for blk in self.blocks:
+            x = blk(x, rel_pos_bias=rel_pos_bias)
+
+        x = self.norm(x)
+        if self.fc_norm is not None:
+            t = x[:, 1:, :]
+            return self.fc_norm(tf.reduce_mean(t,axis=1))
+        else:
+            return x[:, 0]
+    
+    def fine_tuning(self,classes=None,flag=0):
+        param=[]
+        self.flag=flag
+        if flag==0:
+            self.param_=self.param.copy()
+            self.head_=self.head
+            self.head=dense(classes,self.embed_dim)
+            param.extend(self.head.param)
+            self.param=param
+        elif flag==1:
+            del self.param_[-len(self.head.param):]
+            self.param_.extend(self.head.param)
+            self.param=self.param_
+        else:
+            self.head,self.head_=self.head_,self.head
+            del self.param_[-len(self.head.param):]
+            self.param_.extend(self.head.param)
+            self.param=self.param_
+        return
+
+    def __call__(self, x):
+        x = self.forward_features(x)
+        x = self.head(x)
+        return x
+
+    def get_intermediate_layers(self, x):
+        x = self.patch_embed(x)
+        batch_size, seq_len, _ = x.shape
+
+        cls_tokens = tf.tile(self.cls_token, (batch_size, 1, 1))  # stole cls_tokens impl from Phil Wang, thanks
+        x = tf.concat((cls_tokens, x), axis=1)
+        if self.pos_embed is not None:
+            x = x + self.pos_embed
+        x = self.pos_drop(x)
+
+        features = []
+        rel_pos_bias = self.rel_pos_bias() if self.rel_pos_bias is not None else None
+        for blk in self.blocks:
+            x = blk(x, rel_pos_bias)
+            features.append(x)
+
+        return features
+
+
+def beit_base_patch16_224(**kwargs):
+    model = VisionTransformer(
+        patch_size=16, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4, qkv_bias=True,
+        norm_layer=partial(layer_norm, epsilon=1e-6), **kwargs)
+    return model
+
+
+def beit_base_patch16_384(**kwargs):
+    model = VisionTransformer(
+        img_size=384, patch_size=16, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4, qkv_bias=True,
+        norm_layer=partial(layer_norm, epsilon=1e-6), **kwargs)
+    return model
+
+
+def beit_large_patch16_224(**kwargs):
+    model = VisionTransformer(
+        patch_size=16, embed_dim=1024, depth=24, num_heads=16, mlp_ratio=4, qkv_bias=True,
+        norm_layer=partial(layer_norm, epsilon=1e-6), **kwargs)
+    return model
+
+
+def beit_large_patch16_384(**kwargs):
+    model = VisionTransformer(
+        img_size=384, patch_size=16, embed_dim=1024, depth=24, num_heads=16, mlp_ratio=4, qkv_bias=True,
+        norm_layer=partial(layer_norm, epsilon=1e-6), **kwargs)
+    return model
+
+
+def beit_large_patch16_512(**kwargs):
+    model = VisionTransformer(
+        img_size=512, patch_size=16, embed_dim=1024, depth=24, num_heads=16, mlp_ratio=4, qkv_bias=True,
+        norm_layer=partial(layer_norm, epsilon=1e-6), **kwargs)
     return model
 
 
