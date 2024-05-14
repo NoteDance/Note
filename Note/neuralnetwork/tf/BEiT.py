@@ -375,21 +375,21 @@ class Attention:
             # cls to token & token 2 cls & cls to cls
 
             # get pair-wise relative position index for each token inside the window
-            coords_h = tf.arange(window_size[0])
-            coords_w = tf.arange(window_size[1])
-            coords = tf.stack(tf.meshgrid([coords_h, coords_w]))  # 2, Wh, Ww
-            coords_flatten = tf.reshape(coords, [0, -1])  # 2, Wh*Ww
-            relative_coords = coords_flatten[:, :, None] - coords_flatten[:, None, :]  # 2, Wh*Ww, Wh*Ww
-            relative_coords = tf.transpose(relative_coords, (1, 2, 0))  # Wh*Ww, Wh*Ww, 2
-            relative_coords[:, :, 0] += window_size[0] - 1  # shift to start from 0
-            relative_coords[:, :, 1] += window_size[1] - 1
-            relative_coords[:, :, 0] *= 2 * window_size[1] - 1
-            relative_position_index = \
-                tf.zeros((window_size[0] * window_size[1] + 1, ) * 2, dtype=relative_coords.dtype)
-            relative_position_index[1:, 1:] = tf.reduce_sum(relative_coords, axis=-1)  # Wh*Ww, Wh*Ww
-            relative_position_index[0, 0:] = self.num_relative_distance - 3
-            relative_position_index[0:, 0] = self.num_relative_distance - 2
-            relative_position_index[0, 0] = self.num_relative_distance - 1
+            coords_h = tf.range(window_size[0])
+            coords_w = tf.range(window_size[1])
+            coords = tf.stack(tf.meshgrid(coords_h, coords_w))  # 2, Wh, Ww
+            coords_flatten = tf.reshape(coords, [coords.shape[0], -1])  # 2, Wh*Ww
+            self.relative_coords = coords_flatten[:, :, None] - coords_flatten[:, None, :]  # 2, Wh*Ww, Wh*Ww
+            self.relative_coords = tf.Variable(tf.transpose(self.relative_coords, (1, 2, 0)))  # Wh*Ww, Wh*Ww, 2
+            self.relative_coords[:, :, 0].assign(self.relative_coords[:, :, 0] + (window_size[0] - 1))  # shift to start from 0
+            self.relative_coords[:, :, 1].assign(self.relative_coords[:, :, 1] + (window_size[1] - 1))
+            self.relative_coords[:, :, 0].assign(self.relative_coords[:, :, 0] * (2 * window_size[1] - 1))
+            self.relative_position_index = \
+                    tf.Variable(tf.zeros((window_size[0] * window_size[1] + 1, ) * 2, dtype=self.relative_coords.dtype))
+            self.relative_position_index[1:, 1:].assign(tf.reduce_sum(self.relative_coords, axis=-1))  # Wh*Ww, Wh*Ww
+            self.relative_position_index[0, 0:].assign(self.num_relative_distance - 3)
+            self.relative_position_index[0:, 0].assign(self.num_relative_distance - 2)
+            self.relative_position_index[0, 0].assign(self.num_relative_distance - 1)
         else:
             self.window_size = None
             self.relative_position_bias_table = None
@@ -420,7 +420,7 @@ class Attention:
                     self.window_size[0] * self.window_size[1] + 1,
                     self.window_size[0] * self.window_size[1] + 1, -1))  # Wh*Ww,Wh*Ww,nH
             relative_position_bias = tf.transpose(relative_position_bias, (2, 0, 1))  # nH, Wh*Ww, Wh*Ww
-            attn = attn + relative_position_bias.unsqueeze(0)
+            attn = attn + tf.expand_dims(relative_position_bias, 0)
 
         if rel_pos_bias is not None:
             attn = attn + rel_pos_bias
@@ -510,19 +510,19 @@ class RelativePositionBias:
         # get pair-wise relative position index for each token inside the window
         coords_h = tf.arange(window_size[0])
         coords_w = tf.arange(window_size[1])
-        coords = tf.stack(tf.meshgrid([coords_h, coords_w]))  # 2, Wh, Ww
+        coords = tf.stack(tf.meshgrid(coords_h, coords_w))  # 2, Wh, Ww
         coords_flatten = tf.reshape(coords, [0, -1])  # 2, Wh*Ww
-        relative_coords = coords_flatten[:, :, None] - coords_flatten[:, None, :]  # 2, Wh*Ww, Wh*Ww
-        relative_coords = tf.transpose(relative_coords, (1, 2, 0))  # Wh*Ww, Wh*Ww, 2
-        relative_coords[:, :, 0] += window_size[0] - 1  # shift to start from 0
-        relative_coords[:, :, 1] += window_size[1] - 1
-        relative_coords[:, :, 0] *= 2 * window_size[1] - 1
-        relative_position_index = \
-            tf.zeros((window_size[0] * window_size[1] + 1,) * 2, dtype=relative_coords.dtype)
-        relative_position_index[1:, 1:] = tf.reduce_sum(relative_coords, axis=-1)  # Wh*Ww, Wh*Ww
-        relative_position_index[0, 0:] = self.num_relative_distance - 3
-        relative_position_index[0:, 0] = self.num_relative_distance - 2
-        relative_position_index[0, 0] = self.num_relative_distance - 1
+        self.relative_coords = coords_flatten[:, :, None] - coords_flatten[:, None, :]  # 2, Wh*Ww, Wh*Ww
+        self.relative_coords = tf.Variable(tf.transpose(self.relative_coords, (1, 2, 0)))  # Wh*Ww, Wh*Ww, 2
+        self.relative_coords[:, :, 0].assign(self.relative_coords[:, :, 0] + (window_size[0] - 1))  # shift to start from 0
+        self.relative_coords[:, :, 1].assign(self.relative_coords[:, :, 1] + (window_size[1] - 1))
+        self.relative_coords[:, :, 0].assign(self.relative_coords[:, :, 0] * (2 * window_size[1] - 1))
+        self.relative_position_index = \
+            tf.Variable(tf.zeros((window_size[0] * window_size[1] + 1,) * 2, dtype=self.relative_coords.dtype))
+        self.relative_position_index[1:, 1:].assign(tf.reduce_sum(self.relative_coords, axis=-1))  # Wh*Ww, Wh*Ww
+        self.relative_position_index[0, 0:].assign(self.num_relative_distance - 3)
+        self.relative_position_index[0:, 0].assign(self.num_relative_distance - 2)
+        self.relative_position_index[0, 0].assign(self.num_relative_distance - 1)
 
         # trunc_normal_(self.relative_position_bias_table, std=.02)
 
