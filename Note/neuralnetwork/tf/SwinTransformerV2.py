@@ -8,7 +8,6 @@
 import tensorflow as tf
 from Note.nn.layer.dense import dense
 from Note.nn.layer.conv2d import conv2d
-from Note.nn.layer.group_conv1d import group_conv1d
 from Note.nn.layer.layer_norm import layer_norm
 from Note.nn.layer.adaptive_avg_pooling1d import adaptive_avg_pooling1d
 from Note.nn.layer.dropout import dropout
