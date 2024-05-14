@@ -5,7 +5,7 @@ from Note.nn.Module import Module
 
 
 class group_conv2d: # define a class for group convolutional layer
-    def __init__(self,filters,kernel_size,num_groups=1,input_size=None,strides=[1,1],padding='VALID',weight_initializer='Xavier',bias_initializer='zeros',activation=None,data_format='NHWC',dilations=None,use_bias=True,dtype='float32'): # define the constructor method
+    def __init__(self,filters,kernel_size,num_groups=1,input_size=None,strides=[1,1],padding='VALID',weight_initializer='Xavier',bias_initializer='zeros',activation=None,data_format='NHWC',dilations=None,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
         if isinstance(kernel_size,int):
             kernel_size=[kernel_size,kernel_size]
         if isinstance(strides,int):
@@ -32,14 +32,16 @@ class group_conv2d: # define a class for group convolutional layer
             elif Module.name!=None:
                 Module.layer_dict[Module.name].append(self)
             self.num_groups=num_groups if input_size%num_groups==0 else 1 # check if the number of input channels is divisible by the number of groups, otherwise set it to 1
-            for i in range(num_groups): # loop over the number of groups
-                self.weight.append(initializer([kernel_size[0],kernel_size[1],input_size//num_groups,filters//num_groups],weight_initializer,dtype)) # initialize a weight tensor for each group with the given shape, initializer and data type, and append it to the weight list
+            for i in range(self.num_groups): # loop over the number of groups
+                self.weight.append(initializer([kernel_size[0],kernel_size[1],input_size//self.num_groups,filters//self.num_groups],weight_initializer,dtype)) # initialize a weight tensor for each group with the given shape, initializer and data type, and append it to the weight list
                 if use_bias==True: # if use bias is True
-                    self.bias.append(initializer([filters//num_groups],bias_initializer,dtype)) # initialize a bias vector for each group with the given shape, initializer and data type, and append it to the bias list
+                    self.bias.append(initializer([filters//self.num_groups],bias_initializer,dtype)) # initialize a bias vector for each group with the given shape, initializer and data type, and append it to the bias list
             if use_bias==True: # if use bias is True
                 self.param=self.weight+self.bias # store the parameters in a list by concatenating the weight and bias lists
             else: # if use bias is False
                 self.param=self.weight # store only the weight list as the parameters
+            if trainable==False:
+                self.param=[]
             Module.param.extend(self.param)
     
     
@@ -58,6 +60,8 @@ class group_conv2d: # define a class for group convolutional layer
             self.param=self.weight+self.bias # store the parameters in a list by concatenating the weight and bias lists
         else: # if use bias is False
             self.param=self.weight # store only the weight list as the parameters
+        if self.trainable==False:
+            self.param=[]
         Module.param.extend(self.param)
         return
     
