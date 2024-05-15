@@ -309,7 +309,8 @@ class vit_models:
     def init_weights(self, l):
         if isinstance(l, dense):
             l.weight.assign(initializer(l.weight.shape, ['truncated_normal', .02]))
-            l.bias.assign(initializer(l.bias.shape, ['truncated_normal', .02]))
+            if l.use_bias==True:
+                l.bias.assign(initializer(l.bias.shape, ['truncated_normal', .02]))
 
     def no_weight_decay(self):
         return {'pos_embed', 'cls_token'}
