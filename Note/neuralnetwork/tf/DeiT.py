@@ -300,15 +300,16 @@ class vit_models:
         self.feature_info = [dict(num_chs=embed_dim, reduction=0, module='head')]
         self.head = dense(num_classes, embed_dim) if num_classes > 0 else identity()
 
-        Module.apply('dense_weight', self.init_weights)
-        Module.apply('dense_bias', self.init_weights)
+        Module.apply(self.init_weights)
         Module.name = None
         
         self.param = Module.param
         self.training = True
 
-    def init_weights(self, param):
-        param.assign(initializer(param.shape, ['truncated_normal', .02]))
+    def init_weights(self, l):
+        if isinstance(l, dense):
+            l.weight.assign(initializer(l.weight.shape, ['truncated_normal', .02]))
+            l.bias.assign(initializer(l.bias.shape, ['truncated_normal', .02]))
 
     def no_weight_decay(self):
         return {'pos_embed', 'cls_token'}
