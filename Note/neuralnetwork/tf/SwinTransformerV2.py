@@ -1,8 +1,8 @@
 # --------------------------------------------------------
 # Swin Transformer V2
-# Copyright (c) 2022 Microsoft
+# Copyright (c) 2024 NoteDance
 # Licensed under The MIT License [see LICENSE for details]
-# Written by Ze Liu
+# Written by NoteDance
 # --------------------------------------------------------
 
 import tensorflow as tf

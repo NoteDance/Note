@@ -1,12 +1,9 @@
 # --------------------------------------------------------
 # BEIT: BERT Pre-Training of Image Transformers (https://arxiv.org/abs/2106.08254)
-# Github source: https://github.com/microsoft/unilm/tree/master/beit
-# Copyright (c) 2021 Microsoft
+# Github source: https://github.com/NoteDance/Note/blob/Note-7.0/Note/neuralnetwork/tf/BEiT.py
+# Copyright (c) 2024 NoteDance
 # Licensed under The MIT License [see LICENSE for details]
-# By Hangbo Bao
-# Based on timm and DeiT code bases
-# https://github.com/rwightman/pytorch-image-models/tree/master/timm
-# https://github.com/facebookresearch/deit/
+# By NoteDance
 # --------------------------------------------------------'
 import tensorflow as tf
 from Note.nn.layer.dense import dense

@@ -1,4 +1,4 @@
-# Copyright (c) Meta Platforms, Inc. and affiliates.
+# Copyright (c) NoteDance
 # This software may be used and distributed in accordance with the terms of the Llama 3 Community License Agreement.
 import tensorflow as tf
 from Note.nn.layer.dense import dense

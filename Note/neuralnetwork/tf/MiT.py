@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------
-# Copyright (c) 2021, NVIDIA Corporation. All rights reserved.
+# Copyright (c) 2024, NoteDance. All rights reserved.
 #
 # This work is licensed under the NVIDIA Source Code License
 # ---------------------------------------------------------------

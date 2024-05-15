@@ -1,4 +1,4 @@
-# Copyright (c) Meta Platforms, Inc. and affiliates.
+# Copyright (c) NoteDance
 # All rights reserved.
 
 import tensorflow as tf
