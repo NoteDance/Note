@@ -20,7 +20,7 @@ from functools import partial
 
 class Mlp:
     def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=tf.nn.gelu, drop=0.):
-        Module.name = 'Mlp'
+        Module.add()
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
         self.fc1 = dense(hidden_features, in_features)
@@ -45,7 +45,7 @@ class Mlp:
 class GPSA:
     def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.,
                  locality_strength=1., use_local_init=True):
-        Module.name = 'GPSA'
+        Module.add()
         self.num_heads = num_heads
         self.dim = dim
         head_dim = dim // num_heads
@@ -138,7 +138,7 @@ class GPSA:
  
 class MHSA:
     def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.):
-        Module.name = 'MHSA'
+        Module.add()
         self.num_heads = num_heads
         head_dim = dim // num_heads
         self.scale = qk_scale or head_dim ** -0.5
@@ -225,7 +225,7 @@ class PatchEmbed:
     """ Image to Patch Embedding, from timm
     """
     def __init__(self, img_size=224, patch_size=16, in_chans=3, embed_dim=768):
-        Module.name = 'PatchEmbed'
+        Module.add()
         img_size = to_2tuple(img_size)
         patch_size = to_2tuple(patch_size)
         num_patches = (img_size[1] // patch_size[1]) * (img_size[0] // patch_size[0])
@@ -258,10 +258,10 @@ class HybridEmbed:
         self.img_size = img_size
         self.backbone = backbone
         if feature_size is None:
-            x = tf.stop_gradient(tf.zeros(1, img_size[0], img_size[1], in_chans))
-            o = self.backbone(x)[-1]
-            feature_size = o.shape[-2:]
-            feature_dim = o.shape[1]
+            with tf.stop_gradient():
+                o = self.backbone(tf.zeros(1, img_size[0], img_size[1], in_chans))[-1]
+                feature_size = o.shape[-2:]
+                feature_dim = o.shape[1]
         else:
             feature_size = to_2tuple(feature_size)
             feature_dim = self.backbone.feature_info.channels()[-1]
