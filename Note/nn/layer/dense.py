@@ -17,6 +17,8 @@ class dense: # define a class for dense (fully connected) layer
         if input_size!=None:
             self.weight=i.initializer([input_size,output_size],weight_initializer,dtype) # initialize the weight matrix
             Module.param_dict['dense_weight'].append(self.weight)
+            if len(Module.name_list)>0:
+                Module.name=Module.name_list[-1]
             if Module.name!=None and Module.name not in Module.layer_dict:
                 Module.layer_dict[Module.name]=[]
                 Module.layer_dict[Module.name].append(self)
@@ -49,11 +51,6 @@ class dense: # define a class for dense (fully connected) layer
     def build(self):
         self.weight=i.initializer([self.input_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix
         Module.param_dict['dense_weight'].append(self.weight)
-        if Module.name!=None and Module.name not in Module.layer_dict:
-            Module.layer_dict[Module.name]=[]
-            Module.layer_dict[Module.name].append(self)
-        elif Module.name!=None:
-               Module.layer_dict[Module.name].append(self)
         if Module.name_!=None and Module.name_ not in Module.layer_param:
             Module.layer_param[Module.name_]=[]
             Module.layer_param[Module.name_].append(self.weight)
