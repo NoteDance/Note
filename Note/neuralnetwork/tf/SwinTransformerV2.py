@@ -541,7 +541,7 @@ class SwinTransformerV2(Module):
                  norm_layer=layer_norm, ape=False, patch_norm=True,
                  pretrained_window_sizes=[0, 0, 0, 0], **kwargs):
         super().__init__()
-        Module.name = 'SwinTransformerV2'
+        Module.add()
 
         self.num_classes = num_classes
         self.num_layers = len(depths)
