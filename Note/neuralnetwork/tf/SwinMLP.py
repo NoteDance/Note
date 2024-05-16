@@ -383,7 +383,7 @@ class SwinMLP(Module):
                  norm_layer=layer_norm, ape=False, patch_norm=True,
                  **kwargs):
         super().__init__()
-        Module.name = 'SwinMLP'
+        Module.add()
 
         self.num_classes = num_classes
         self.num_layers = len(depths)
