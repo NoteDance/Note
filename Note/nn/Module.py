@@ -10,6 +10,8 @@ class Module:
     param_dict['conv2d_bias']=[]
     layer_dict=dict()
     layer_param=dict()
+    counter=0
+    name_list=[]
     ctl_list=[]
     ctsl_list=[]
     name=None
@@ -24,9 +26,17 @@ class Module:
         self.layer_param=Module.layer_param
     
     
+    def add():
+        Module.counter+=1
+        Module.name_list.append('layer'+str(Module.counter))
+        return
+    
+    
     def apply(func):
         for layer in Module.layer_dict[Module.name]:
             func(layer)
+        if len(Module.name_list)>0:
+            Module.name_list.pop()
         return
     
     
@@ -60,12 +70,6 @@ class Module:
         return
     
     
-    def init_():
-        Module.name=None
-        Module.name_=None
-        return
-    
-    
     def init():
         Module.param.clear()
         Module.param_dict['dense_weight'].clear()
@@ -74,6 +78,8 @@ class Module:
         Module.param_dict['conv2d_bias'].clear()
         Module.layer_dict=dict()
         Module.layer_param=dict()
+        Module.counter=0
+        Module.name_list=[]
         Module.ctl_list.clear()
         Module.ctsl_list.clear()
         Module.name=None
