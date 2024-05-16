@@ -253,7 +253,7 @@ class hMLP_stem:
         x = tf.transpose(x, [0, 2, 1])
         return x
     
-class vit_models:
+class vit_models(Module):
     """ Vision Transformer with LayerScale (https://arxiv.org/abs/2103.17239) support
     taken from https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py
     with slight modifications
@@ -267,8 +267,8 @@ class vit_models:
                 dpr_constant=True,init_scale=1e-4,
                 mlp_ratio_clstk = 4.0,**kwargs):
         
-        Module.init()
-        Module.name = 'vit_models'
+        super().__init__()
+        Module.add()
         
         self.dropout_rate = drop_rate
 
@@ -291,9 +291,6 @@ class vit_models:
                 drop=0.0, attn_drop=attn_drop_rate, drop_path=dpr[i], norm_layer=norm_layer,
                 act_layer=act_layer,Attention_block=Attention_block,Mlp_block=Mlp_block,init_values=init_scale)
             for i in range(depth)]
-        
-
-        
             
         self.norm = norm_layer(embed_dim)
 
@@ -301,9 +298,6 @@ class vit_models:
         self.head = dense(num_classes, embed_dim) if num_classes > 0 else identity()
 
         Module.apply(self.init_weights)
-        Module.name = None
-        
-        self.param = Module.param
         self.training = True
 
     def init_weights(self, l):
