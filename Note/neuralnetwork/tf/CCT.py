@@ -176,7 +176,7 @@ class Tokenizer:
                  activation=None,
                  max_pool=True,
                  conv_bias=False):
-        Module.name = 'Tokenizer'
+        Module.add()
         
         n_filter_list = [n_input_channels] + \
                         [in_planes for _ in range(n_conv_layers - 1)] + \
@@ -228,7 +228,7 @@ class TransformerClassifier:
                  positional_embedding='sine',
                  sequence_length=None,
                  *args, **kwargs):
-        Module.name = 'TransformerClassifier'
+        Module.add()
         
         assert positional_embedding in {'sine', 'learnable', 'none'}
 
@@ -308,7 +308,7 @@ class TransformerClassifier:
 
 # CCT Main model
 
-class CCT:
+class CCT(Module):
     def __init__(
         self,
         img_size=224,
@@ -323,7 +323,7 @@ class CCT:
         pooling_padding=1,
         *args, **kwargs
     ):
-        Module.init()
+        super().__init__()
         
         img_height, img_width = pair(img_size)
         self.embedding_dim = embedding_dim
@@ -354,7 +354,6 @@ class CCT:
         self.fc = [0]
         
         self.param_ = [0]
-        self.param = Module.param
         self.training = True
     
     def fine_tuning(self,classes=None,flag=0):
