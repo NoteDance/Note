@@ -202,7 +202,6 @@ class MiT(Module):
         # self.head = dense(num_classes, embed_dims[3]) if num_classes > 0 else identity()
 
         Module.apply(self.init_weights)
-        self.layer_param = Module.layer_param
     
     def init_weights(self, l):
         if isinstance(l, dense):
@@ -232,7 +231,7 @@ class MiT(Module):
             self.block4[i].drop_path.drop_path_rate = dpr[cur + i]
 
     def freeze_patch_emb(self):
-        Module.freeze('patch_embed1')
+        self.freeze('patch_embed1')
 
     def no_weight_decay(self):
         return {'pos_embed1', 'pos_embed2', 'pos_embed3', 'pos_embed4', 'cls_token'}  # has pos_embed may be better
