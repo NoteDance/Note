@@ -273,7 +273,7 @@ class VisionTransformer:
         return x
 
 
-class CLIP:
+class CLIP(Module):
     def __init__(self,
                  embed_dim: int,
                  # vision
@@ -289,7 +289,7 @@ class CLIP:
                  transformer_layers: int,
                  device='GPU'
                  ):
-        Module.init()
+        super().__init__()
         
         self.context_length = context_length
 
@@ -337,8 +337,6 @@ class CLIP:
 
         self.initialize_parameters()
         
-        self.param=Module.param
-        self.param_dict=Module.param_dict
         self.optimizer=Adam()
         self.device=device
         self.km=0
@@ -450,7 +448,7 @@ class CLIP:
         
     def convert_weights(self):
         """Convert applicable model parameters to fp16"""
-        Module.cast_param('dense_weight', 'float16')
-        Module.cast_param('dense_bias', 'float16')
-        Module.cast_param('conv2d_weight', 'float16')
-        Module.cast_param('conv2d_bias', 'float16')
+        self.cast_param('dense_weight', 'float16')
+        self.cast_param('dense_bias', 'float16')
+        self.cast_param('conv2d_weight', 'float16')
+        self.cast_param('conv2d_bias', 'float16')
