@@ -26,6 +26,8 @@ class group_conv2d: # define a class for group convolutional layer
         self.weight=[] # initialize an empty list for weight tensors
         self.bias=[] # initialize an empty list for bias vectors
         if input_size!=None:
+            if len(Module.name_list)>0:
+                Module.name=Module.name_list[-1]
             if Module.name!=None and Module.name not in Module.layer_dict:
                 Module.layer_dict[Module.name]=[]
                 Module.layer_dict[Module.name].append(self)
@@ -46,11 +48,6 @@ class group_conv2d: # define a class for group convolutional layer
     
     
     def build(self):
-        if Module.name!=None and Module.name not in Module.layer_dict:
-            Module.layer_dict[Module.name]=[]
-            Module.layer_dict[Module.name].append(self)
-        elif Module.name!=None:
-            Module.layer_dict[Module.name].append(self)
         self.num_groups=self.num_groups if self.input_size%self.num_groups==0 else 1 # check if the number of input channels is divisible by the number of groups, otherwise set it to 1
         for i in range(self.num_groups): # loop over the number of groups
             self.weight.append(initializer([self.kernel_size[0],self.kernel_size[1],self.input_size//self.num_groups,self.output_size//self.num_groups],self.weight_initializer,self.dtype)) # initialize a weight tensor for each group with the given shape, initializer and data type, and append it to the weight list
