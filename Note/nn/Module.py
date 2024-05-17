@@ -40,6 +40,16 @@ class Module:
         return
     
     
+    def apply_decay(self,str,weight_decay,flag=True):
+        if flag==True:
+            for param in self.param_dict[str]:
+                param.assign(weight_decay * param)
+        else:
+            for param in self.param_dict[str]:
+                param.assign(param / weight_decay)
+        return
+    
+    
     def cast_param(self,key,dtype):
         for param in self.param_dict[key]:
             param.assign(tf.cast(param,dtype))
