@@ -190,9 +190,9 @@ class TransformerBlock:
         return out
 
 
-class Llama2:
+class Llama2(Module):
     def __init__(self, params: ModelArgs):
-        Module.init()
+        super().__init__()
         self.params = params
         self.vocab_size = params.vocab_size
         self.n_layers = params.n_layers
@@ -207,16 +207,14 @@ class Llama2:
         # some useful precompute for the RoPE relative positional embeddings
         self.freqs_cos, self.freqs_sin = precompute_freqs_cis(self.params.dim // self.params.n_heads, self.params.max_seq_len)
         
-        self.param_dict=Module.param_dict
-        for param in self.param_dict['dense_weight']:
-            param.assign(ModelArgs.weight_decay * param)
+        self.apply_decay('dense_weight', ModelArgs.weight_decay)
         
         self.opt=tf.keras.optimizers.AdamW(lr=self.params.lr, beta1=0.9, beta2=0.95)
-        self.param = Module.param
         self.km=0
     
     def fine_tuning(self,flag=0):
         param=[]
+        self.flag=flag
         if flag==0:
             self.param_=self.param.copy()
             self.output_=self.output
