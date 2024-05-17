@@ -104,13 +104,13 @@ class WindowAttention:
         self.pretrained_window_size = pretrained_window_size
         self.num_heads = num_heads
 
-        self.logit_scale = variable(tf.math.log(10 * tf.ones((num_heads, 1, 1))))
+        self.logit_scale = variable(tf.math.log(10 * tf.ones((num_heads, 1, 1))), name='logit_scale')
 
         # mlp to generate continuous relative position bias
         self.cpb_mlp = Layers()
-        self.cpb_mlp.add(dense(512, 2, use_bias=True))
+        self.cpb_mlp.add(dense(512, 2, use_bias=True, name='cpb_mlp'))
         self.cpb_mlp.add(tf.nn.relu)
-        self.cpb_mlp.add(dense(num_heads, 512, use_bias=False))
+        self.cpb_mlp.add(dense(num_heads, 512, use_bias=False, name='cpb_mlp'))
 
         # get relative_coords_table
         relative_coords_h = tf.range(-(self.window_size[0] - 1), self.window_size[0], dtype=tf.float32)
@@ -174,7 +174,7 @@ class WindowAttention:
 
         # cosine attention
         attn = tf.matmul(tf.math.l2_normalize(q, axis=-1), tf.transpose(tf.math.l2_normalize(k, axis=-1), (0, 1, 3, 2)))
-        logit_scale = logit_scale = tf.clip_by_value(self.logit_scale, clip_value_min=-float('inf'), clip_value_max=tf.math.log(1. / 0.01))
+        logit_scale = tf.clip_by_value(self.logit_scale, clip_value_min=-float('inf'), clip_value_max=tf.math.log(1. / 0.01))
         logit_scale = tf.math.exp(logit_scale)
         attn = attn * logit_scale
 
@@ -561,7 +561,7 @@ class SwinTransformerV2(Module):
 
         # absolute position embedding
         if self.ape:
-            self.absolute_pos_embed = initializer_((1, num_patches, embed_dim), ['truncated_normal', .02])
+            self.absolute_pos_embed = initializer_((1, num_patches, embed_dim), ['truncated_normal', .02], name='absolute_pos_embed')
 
         self.pos_drop = dropout(drop_rate)
 
@@ -597,10 +597,7 @@ class SwinTransformerV2(Module):
             l.weight.assign(initializer(l.weight.shape, ['truncated_normal', 0.2]))
 
     def no_weight_decay(self):
-        return {'absolute_pos_embed'}
-
-    def no_weight_decay_keywords(self):
-        return {"cpb_mlp", "logit_scale", 'relative_position_bias_table'}
+        return ['absolute_pos_embed', 'cpb_mlp', 'logit_scale']
 
     def forward_features(self, x):
         x = self.patch_embed(x)
