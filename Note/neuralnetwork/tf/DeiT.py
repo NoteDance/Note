@@ -280,9 +280,9 @@ class vit_models(Module):
                 img_size=img_size, patch_size=patch_size, in_chans=in_chans, embed_dim=embed_dim)
         num_patches = self.patch_embed.num_patches
 
-        self.cls_token = initializer_((1, 1, embed_dim), ['truncated_normal', .02])
+        self.cls_token = initializer_((1, 1, embed_dim), ['truncated_normal', .02], name='cls_token')
 
-        self.pos_embed = initializer_((1, num_patches, embed_dim), ['truncated_normal', .02])
+        self.pos_embed = initializer_((1, num_patches, embed_dim), ['truncated_normal', .02], name='pos_embed')
 
         dpr = [drop_path_rate for i in range(depth)]
         self.blocks = [
@@ -307,7 +307,7 @@ class vit_models(Module):
                 l.bias.assign(initializer(l.bias.shape, ['truncated_normal', .02]))
 
     def no_weight_decay(self):
-        return {'pos_embed', 'cls_token'}
+        return ['pos_embed', 'cls_token']
 
     def get_classifier(self):
         return self.head
