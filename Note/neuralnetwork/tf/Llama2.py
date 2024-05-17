@@ -189,9 +189,9 @@ class TransformerBlock:
         return out
 
 
-class Llama2:
+class Llama2(Module):
     def __init__(self, params: ModelArgs):
-        Module.init()
+        super().__init__()
         self.params = params
         self.vocab_size = params.vocab_size
         self.n_layers = params.n_layers
@@ -206,12 +206,27 @@ class Llama2:
         # some useful precompute for the RoPE relative positional embeddings
         self.freqs_cos, self.freqs_sin = precompute_freqs_cis(self.params.dim // self.params.n_heads, self.params.max_seq_len)
         
-        self.param_dict=Module.param_dict
-        for param in self.param_dict['dense_weight']:
-            param.assign(ModelArgs.weight_decay * param)
-            
-        self.param = Module.param
         self.training = True
+        
+    def fine_tuning(self,flag=0):
+        param=[]
+        self.flag=flag
+        if flag==0:
+            self.param_=self.param.copy()
+            self.output_=self.output
+            self.output=dense(ModelArgs.vocab_size, ModelArgs.dim, use_bias=False)
+            param.extend(self.output.param)
+            self.param=param
+        elif flag==1:
+            del self.param_[-len(self.output.param):]
+            self.param_.extend(self.output.param)
+            self.param=self.param_
+        else:
+            self.output,self.output_=self.output_,self.output
+            del self.param_[-len(self.output.param):]
+            self.param_.extend(self.output.param)
+            self.param=self.param_
+        return
 
     def __call__(self, tokens):
         _bsz, seqlen = tokens.shape
@@ -233,24 +248,8 @@ class Llama2:
 
         return logits
     
-    def fine_tuning(self,flag=0):
-        param=[]
-        if flag==0:
-            self.param_=self.param.copy()
-            self.output_=self.output
-            self.output=dense(ModelArgs.vocab_size, ModelArgs.dim, use_bias=False)
-            param.extend(self.output.param)
-            self.param=param
-        elif flag==1:
-            del self.param_[-len(self.output.param):]
-            self.param_.extend(self.output.param)
-            self.param=self.param_
-        else:
-            self.output,self.output_=self.output_,self.output
-            del self.param_[-len(self.output.param):]
-            self.param_.extend(self.output.param)
-            self.param=self.param_
-        return
+    def no_weight_decay(self):
+        return self.param_dict['dense_weight']
 
     def estimate_mfu(self, fwdbwd_per_iter, dt):
         """ estimate model flops utilization (MFU) in units of A100 bfloat16 peak FLOPS """
