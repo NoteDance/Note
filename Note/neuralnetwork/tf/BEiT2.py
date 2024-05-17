@@ -218,7 +218,7 @@ class VisionTransformerForMaskedImageModeling(Module):
         # we add a small number to avoid floating point error in the interpolation
         # see discussion at https://github.com/facebookresearch/dino/issues/8
         w0, h0 = w0 + 0.1, h0 + 0.1
-        patch_pos_embed = tf.reshape(patch_pos_embed, [1, int(math.sqrt(N)), int(math.sqrt(N)), dim])
+        patch_pos_embed = tf.transpose(tf.reshape(patch_pos_embed, [1, int(math.sqrt(N)), int(math.sqrt(N)), dim]), (0, 3, 1, 2))
         new_width = w0 / math.sqrt(N)
         new_height = h0 / math.sqrt(N)
         patch_pos_embed = tf.image.resize(patch_pos_embed, [int(new_height), int(new_width)], method='bicubic')
