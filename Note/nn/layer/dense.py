@@ -5,7 +5,7 @@ from Note.nn.Module import Module
 
 
 class dense: # define a class for dense (fully connected) layer
-    def __init__(self,output_size,input_size=None,weight_initializer='Xavier',bias_initializer='zeros',activation=None,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
+    def __init__(self,output_size,input_size=None,weight_initializer='Xavier',bias_initializer='zeros',activation=None,use_bias=True,trainable=True,dtype='float32',name=None): # define the constructor method
         self.input_size=input_size
         self.weight_initializer=weight_initializer
         self.bias_initializer=bias_initializer
@@ -40,8 +40,13 @@ class dense: # define a class for dense (fully connected) layer
             else: # if use bias is False
                 self.bias=None # set the bias to None
             if use_bias==True: # if use bias is True
+                if name!=None:
+                    self.weight.name=name
+                    self.bias.name=name
                 self.param=[self.weight,self.bias] # store the parameters in a list
             else: # if use bias is False
+                if name!=None:
+                    self.weight.name=name
                 self.param=[self.weight] # store only the weight in a list
             if trainable==False:
                 self.param=[]
