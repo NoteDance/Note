@@ -2,7 +2,7 @@ import tensorflow as tf
 from Note.nn.Module import Module
 
 
-def initializer(shape,initializer,dtype='float32'):
+def initializer(shape,initializer,dtype='float32',name=None):
     if type(initializer)==list:
         if initializer[0]=='normal':
             param=tf.Variable(tf.random.normal(shape=shape,mean=initializer[1],stddev=initializer[2],dtype=dtype))
@@ -85,10 +85,12 @@ def initializer(shape,initializer,dtype='float32'):
         elif initializer=='Orthogonal':
             orthogonal=Orthogonal()
             param=tf.Variable(orthogonal(shape,dtype))
+    if name!=None:
+        param.name=name
     return param
 
 
-def initializer_(shape,initializer,dtype='float32'):
+def initializer_(shape,initializer,dtype='float32',name=None):
     if type(initializer)==list:
         if initializer[0]=='normal':
             param=tf.Variable(tf.random.normal(shape=shape,mean=initializer[1],stddev=initializer[2],dtype=dtype))
@@ -171,6 +173,8 @@ def initializer_(shape,initializer,dtype='float32'):
         elif initializer=='Orthogonal':
             orthogonal=Orthogonal()
             param=tf.Variable(orthogonal(shape,dtype))
+    if name!=None:
+        param.name=name
     Module.param.append(param)
     return param
 
