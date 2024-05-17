@@ -36,10 +36,10 @@ class VisionTransformerForMaskedImageModeling(Module):
         num_patches = self.patch_embed.num_patches
         self.num_heads = num_heads
 
-        self.cls_token = initializer_((1, 1, embed_dim), ['truncated_normal', init_std])
+        self.cls_token = initializer_((1, 1, embed_dim), ['truncated_normal', init_std], name='cls_token')
         self.mask_token = initializer_((1, 1, embed_dim), ['truncated_normal', init_std])
         if use_abs_pos_emb:
-            self.pos_embed = initializer_((1, num_patches + 1, embed_dim), ['truncated_normal', init_std])
+            self.pos_embed = initializer_((1, num_patches + 1, embed_dim), ['truncated_normal', init_std], name='pos_embed')
         else:
             self.pos_embed = None
         self.pos_drop = dropout(drop_rate)
@@ -82,7 +82,7 @@ class VisionTransformerForMaskedImageModeling(Module):
             l.weight.assign(initializer(l.weight.shape, ['truncated_normal', self.init_std]))
 
     def no_weight_decay(self):
-        return {'pos_embed', 'cls_token'}
+        return ['pos_embed', 'cls_token']
 
     def get_num_layers(self):
         return len(self.blocks)
