@@ -403,7 +403,7 @@ class SwinMLP(Module):
 
         # absolute position embedding
         if self.ape:
-            self.absolute_pos_embed = initializer_((1, num_patches, embed_dim), ['truncated_normal', .02])
+            self.absolute_pos_embed = initializer_((1, num_patches, embed_dim), ['truncated_normal', .02], name='absolute_pos_embed')
 
         self.pos_drop = dropout(drop_rate)
 
@@ -440,10 +440,7 @@ class SwinMLP(Module):
                 weight.assign(initializer(weight.shape, ['truncated_normal', 0.2]))
 
     def no_weight_decay(self):
-        return {'absolute_pos_embed'}
-
-    def no_weight_decay_keywords(self):
-        return {'relative_position_bias_table'}
+        return ['absolute_pos_embed']
 
     def forward_features(self, x):
         x = self.patch_embed(x)
