@@ -233,6 +233,7 @@ class Llama2(Module):
         return
 
     def fp(self, tokens):
+        self.apply_decay('dense_weight', ModelArgs.weight_decay, False)
         if self.km==1:
             _bsz, seqlen = tokens.shape
             h = tf.gather(tf.transpose(self.output.weight), tokens)
