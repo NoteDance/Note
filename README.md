@@ -345,3 +345,9 @@ https://github.com/NoteDance/Note-documentation
 **You can support this project on Patreon.**
 
 https://www.patreon.com/NoteDance
+
+
+# Contact:
+**If you have any issues with the use, or you have any suggestions, you can contact me.**
+
+**E-mail:** notedance@outlook.com
