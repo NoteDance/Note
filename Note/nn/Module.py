@@ -37,6 +37,7 @@ class Module:
             func(layer)
         if len(Module.name_list)>0:
             Module.name_list.pop()
+            Module.name=None
         return
     
     
