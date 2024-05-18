@@ -53,6 +53,13 @@ class group_conv1d: # define a class for 1D convolutional layer
     
     
     def build(self):
+        if len(Module.name_list)>0:
+            Module.name=Module.name_list[-1]
+        if Module.name!=None and Module.name not in Module.layer_dict:
+            Module.layer_dict[Module.name]=[]
+            Module.layer_dict[Module.name].append(self)
+        elif Module.name!=None:
+            Module.layer_dict[Module.name].append(self)
         self.num_groups=self.num_groups if self.input_size%self.num_groups==0 else 1
         for i in range(self.num_groups):
             self.weight.append(initializer([self.kernel_size,self.input_size//self.num_groups,self.output_size//self.num_groups],self.weight_initializer,self.dtype)) # initialize the weight tensor
