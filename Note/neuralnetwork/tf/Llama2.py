@@ -249,7 +249,11 @@ class Llama2(Module):
         return logits
     
     def no_weight_decay(self):
-        return self.param_dict['dense_weight']
+        param_list=[]
+        for param in self.param:
+            if param not in self.param_dict['dense_weight']:
+                param_list.append(param)
+        return param_list
 
     def estimate_mfu(self, fwdbwd_per_iter, dt):
         """ estimate model flops utilization (MFU) in units of A100 bfloat16 peak FLOPS """
