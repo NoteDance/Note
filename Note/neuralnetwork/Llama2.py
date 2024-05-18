@@ -210,8 +210,6 @@ class Llama2(Module):
         # some useful precompute for the RoPE relative positional embeddings
         self.freqs_cos, self.freqs_sin = precompute_freqs_cis(self.params.dim // self.params.n_heads, self.params.max_seq_len)
         
-        self.apply_decay('dense_weight', ModelArgs.weight_decay)
-        
         self.optimizer=AdamW(lr=self.params.lr, beta1=0.9, beta2=0.95)
         self.device=self.params.device
         self.km=0
@@ -239,6 +237,7 @@ class Llama2(Module):
         return
 
     def fp(self, tokens, p = None):
+        self.apply_decay('dense_weight', ModelArgs.weight_decay, False)
         if self.km==1:
             with tf.device(assign_device(p,self.device)):
                 _bsz, seqlen = tokens.shape
@@ -286,6 +285,7 @@ class Llama2(Module):
     
     def opt(self,gradient,p):
         with tf.device(assign_device(p,self.device)):
+            self.apply_decay('dense_weight', ModelArgs.weight_decay)
             param=self.optimizer(gradient,self.param,self.bc[0])
             return param
 
