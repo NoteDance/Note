@@ -2,7 +2,7 @@ import tensorflow as tf
 from multiprocessing import Manager
 from tensorflow.python.ops import state_ops
 from tensorflow.python.util import nest
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 class Gradient:
@@ -72,7 +72,7 @@ class SGD:
         manager=Manager()
         self.momentums = manager.list()
         if param is None:
-            parameter_flat=nest.flatten(Module.param)
+            parameter_flat=nest.flatten(Model.param)
             for param in parameter_flat:
                 self.momentums.append(
                     tf.Variable(tf.zeros_like(param,dtype=param.dtype))
@@ -195,7 +195,7 @@ class Adagrad:
         manager=Manager()
         self._accumulators = manager.list()
         if param is None:
-            parameter_flat=nest.flatten(Module.param)
+            parameter_flat=nest.flatten(Model.param)
             for param in parameter_flat:
                 self._accumulators.append(
                     tf.Variable(
@@ -310,7 +310,7 @@ class Adafactor:
         self._c = manager.list()
         self._v = manager.list()
         if param is None:
-            parameter_flat=nest.flatten(Module.param)
+            parameter_flat=nest.flatten(Model.param)
             for param in parameter_flat:
                 if len(param.shape) < 2:
                     # Don't factor if variable is of dimension < 2, but we still
@@ -482,7 +482,7 @@ class RMSprop:
         self._momentums = manager.list()
         self._average_gradients = manager.list()
         if param is None:
-            parameter_flat=nest.flatten(Module.param)
+            parameter_flat=nest.flatten(Model.param)
             for param in parameter_flat:
                 self._velocities.append(
                     tf.Variable(tf.zeros_like(param,dtype=param.dtype))
@@ -656,7 +656,7 @@ class Adadelta:
         self._accumulated_grads = manager.list()
         self._accumulated_delta_vars = manager.list()
         if param is None:
-            parameter_flat=nest.flatten(Module.param)
+            parameter_flat=nest.flatten(Model.param)
             for param in parameter_flat:
                 self.accumulated_grads.append(
                     tf.Variable(tf.zeros_like(param,dtype=param.dtype))
@@ -806,7 +806,7 @@ class Adam:
         if self.amsgrad:
             self._velocity_hats = manager.list()
         if param is None:
-            parameter_flat=nest.flatten(Module.param)
+            parameter_flat=nest.flatten(Model.param)
             for param in parameter_flat:
                 self._momentums.append(
                     tf.Variable(tf.zeros_like(param,dtype=param.dtype))
@@ -951,7 +951,7 @@ class Nadam:
         # avoid duplicated computations.
         self._u_product_counter = 1
         if param is None:
-            parameter_flat=nest.flatten(Module.param)
+            parameter_flat=nest.flatten(Model.param)
             for param in parameter_flat:
                 self._u_product.append(tf.Variable(1.0, param.dtype))
                 self._momentums.append(
@@ -1117,7 +1117,7 @@ class Adamax:
         self._m = manager.list()
         self._u = manager.list()
         if param is None:
-            parameter_flat=nest.flatten(Module.param)
+            parameter_flat=nest.flatten(Model.param)
             for param in parameter_flat:
                 self._m.append(
                     tf.Variable(tf.zeros_like(param,dtype=param.dtype))
@@ -1262,7 +1262,7 @@ class AdamW:
         if self.amsgrad:
             self._velocity_hats = manager.list()
         if param is None:
-            parameter_flat=nest.flatten(Module.param)
+            parameter_flat=nest.flatten(Model.param)
             for param in parameter_flat:
                 self._momentums.append(
                     tf.Variable(tf.zeros_like(param,dtype=param.dtype))
@@ -1472,7 +1472,7 @@ class Ftrl:
         self._accumulators = manager.list()
         self._linears = manager.list()
         if param is None:
-            parameter_flat=nest.flatten(Module.param)
+            parameter_flat=nest.flatten(Model.param)
             for param in parameter_flat:
                 self._accumulators.append(tf.Vriable(tf.fill(dims=param.shape, 
                                                     value=self.initial_accumulator_value),
@@ -1595,7 +1595,7 @@ class Lion:
         manager=Manager()
         self.momentums = manager.list()
         if param is None:
-            parameter_flat=nest.flatten(Module.param)
+            parameter_flat=nest.flatten(Model.param)
             for param in parameter_flat:
                 self.momentums.append(
                         tf.Variable(tf.zeros_like(param,dtype=param.dtype))
