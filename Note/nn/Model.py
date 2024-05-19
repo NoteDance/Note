@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 
-class Module:
+class Model:
     param=[]
     param_dict=dict()
     param_dict['dense_weight']=[]
@@ -19,25 +19,25 @@ class Module:
     
     
     def __init__(self):
-        Module.init()
-        self.param=Module.param
-        self.param_dict=Module.param_dict
-        self.layer_dict=Module.layer_dict
-        self.layer_param=Module.layer_param
+        Model.init()
+        self.param=Model.param
+        self.param_dict=Model.param_dict
+        self.layer_dict=Model.layer_dict
+        self.layer_param=Model.layer_param
     
     
     def add():
-        Module.counter+=1
-        Module.name_list.append('layer'+str(Module.counter))
+        Model.counter+=1
+        Model.name_list.append('layer'+str(Model.counter))
         return
     
     
     def apply(func):
-        for layer in Module.layer_dict[Module.name]:
+        for layer in Model.layer_dict[Model.name]:
             func(layer)
-        if len(Module.name_list)>0:
-            Module.name_list.pop()
-            Module.name=None
+        if len(Model.name_list)>0:
+            Model.name_list.pop()
+            Model.name=None
         return
     
     
@@ -70,29 +70,29 @@ class Module:
     
     
     def convert_to_list():
-        for ctl in Module.ctl_list:
+        for ctl in Model.ctl_list:
             ctl()
         return
     
     
     def convert_to_shared_list(manager):
-        for ctsl in Module.ctsl_list:
+        for ctsl in Model.ctsl_list:
             ctsl(manager)
         return
     
     
     def init():
-        Module.param.clear()
-        Module.param_dict['dense_weight'].clear()
-        Module.param_dict['dense_bias'].clear()
-        Module.param_dict['conv2d_weight'].clear()
-        Module.param_dict['conv2d_bias'].clear()
-        Module.layer_dict=dict()
-        Module.layer_param=dict()
-        Module.counter=0
-        Module.name_list=[]
-        Module.ctl_list.clear()
-        Module.ctsl_list.clear()
-        Module.name=None
-        Module.name_=None
+        Model.param.clear()
+        Model.param_dict['dense_weight'].clear()
+        Model.param_dict['dense_bias'].clear()
+        Model.param_dict['conv2d_weight'].clear()
+        Model.param_dict['conv2d_bias'].clear()
+        Model.layer_dict=dict()
+        Model.layer_param=dict()
+        Model.counter=0
+        Model.name_list=[]
+        Model.ctl_list.clear()
+        Model.ctsl_list.clear()
+        Model.name=None
+        Model.name_=None
         return
