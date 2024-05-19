@@ -1,9 +1,9 @@
 import tensorflow as tf
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 def variable(initial_value,name=None):
     variable=tf.Variable(initial_value)
     if name!=None:
         variable.name=name
-    Module.param.append(variable)
+    Model.param.append(variable)
     return variable
