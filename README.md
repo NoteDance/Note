@@ -18,9 +18,9 @@ https://github.com/NoteDance/Note/tree/Note-7.0/Note/nn/layer
 **Pytorch:**
 ```python
 from Note.nn.layer.dense import dense
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
-class nn(Module):
+class nn(Model):
     def __init__(self):
 	super().__init__()
         self.layer1=dense(128,784,activation='relu')
@@ -34,9 +34,9 @@ class nn(Module):
 **Keras:**
 ```python
 from Note.nn.layer.dense import dense
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
-class nn(Module):
+class nn(Model):
     def __init__(self):
 	super().__init__()
         self.layer1=dense(128,activation='relu')
@@ -49,9 +49,9 @@ class nn(Module):
 ```
 ```python
 from Note.nn.layer.dense import dense
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
-Module.init()
+Model.init()
 def nn(data):
     x=dense(128,activation='relu')(data)
     x=dense(10)(x)
@@ -63,8 +63,8 @@ https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
 **Documentation:** https://github.com/NoteDance/Note-documentation/tree/tf-7.0
 
 
-# Note.nn.Module.Module:
-**Module class manages the parameters of the neural network.**
+# Note.nn.Model.Model:
+**Model class manages the parameters of the neural network.**
 
 https://github.com/NoteDance/Note/blob/Note-7.0/Note/nn/Module.py
 
