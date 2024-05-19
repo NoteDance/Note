@@ -66,7 +66,7 @@ https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
 # Note.nn.Model.Model:
 **Model class manages the parameters of the neural network.**
 
-https://github.com/NoteDance/Note/blob/Note-7.0/Note/nn/Module.py
+https://github.com/NoteDance/Note/blob/Note-7.0/Note/nn/Model.py
 
 
 # Note.nn.initializer.initializer:
