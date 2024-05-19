@@ -96,7 +96,7 @@ https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
 
 
 # Documentation:
-**The document has kernel code and other code with comments that can help you understand.**
+**The document contains tutorials on how to build neural networks that can be trained on Note, how to train neural networks with Note, and kernel code as well as other code with comments that can help you understand.**
 
 https://github.com/NoteDance/Note-documentation
 
