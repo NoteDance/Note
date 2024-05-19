@@ -4,7 +4,7 @@ from Note.nn.layer.conv2d import conv2d
 from Note.nn.layer.dense import dense
 from Note.nn.layer.layer_norm import layer_norm
 from Note.nn.Layers import Layers
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 class ConvNeXtBlock:
@@ -62,7 +62,7 @@ class ConvNeXt:
     
     
     def build(self,dtype='float32'):
-        Module.init()
+        Model.init()
         
         # Stem block.
         layers=Layers()
@@ -110,7 +110,7 @@ class ConvNeXt:
         self.dense=dense(self.classes,self.blocks[-1].output_size,activation=self.classifier_activation,dtype=dtype)
         
         self.dtype=dtype
-        self.param=Module.param
+        self.param=Model.param
         return
     
     

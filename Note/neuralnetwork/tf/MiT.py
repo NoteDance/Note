@@ -12,7 +12,7 @@ from Note.nn.layer.dropout import dropout
 from Note.nn.layer.stochastic_depth import stochastic_depth
 from Note.nn.layer.identity import identity 
 from Note.nn.initializer import initializer
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 from functools import partial
 import math
 import collections.abc
@@ -119,7 +119,7 @@ class OverlapPatchEmbed:
     """
 
     def __init__(self, img_size=224, patch_size=7, stride=4, in_chans=3, embed_dim=768, name=None):
-        Module.name_ = name
+        Model.name_ = name
         
         img_size = to_2tuple(img_size)
         patch_size = to_2tuple(patch_size)
@@ -143,13 +143,13 @@ class OverlapPatchEmbed:
         return x, H, W
 
 
-class MiT(Module):
+class MiT(Model):
     def __init__(self, img_size=224, patch_size=16, in_chans=3, num_classes=1000, embed_dims=[64, 128, 256, 512],
                  num_heads=[1, 2, 4, 8], mlp_ratios=[4, 4, 4, 4], qkv_bias=False, qk_scale=None, drop_rate=0.,
                  attn_drop_rate=0., drop_path_rate=0., norm_layer=layer_norm,
                  depths=[3, 4, 6, 3], sr_ratios=[8, 4, 2, 1]):
         super().__init__()
-        Module.add()
+        Model.add()
         
         self.num_classes = num_classes
         self.depths = depths
@@ -201,7 +201,7 @@ class MiT(Module):
         # classification head
         # self.head = dense(num_classes, embed_dims[3]) if num_classes > 0 else identity()
 
-        Module.apply(self.init_weights)
+        Model.apply(self.init_weights)
     
     def init_weights(self, l):
         if isinstance(l, dense):

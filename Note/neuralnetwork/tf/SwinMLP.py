@@ -15,7 +15,7 @@ from Note.nn.layer.dropout import dropout
 from Note.nn.layer.stochastic_depth import stochastic_depth
 from Note.nn.layer.identity import identity
 from Note.nn.initializer import initializer,initializer_
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 from itertools import repeat
 import collections.abc
 
@@ -356,7 +356,7 @@ class PatchEmbed:
         return flops
 
 
-class SwinMLP(Module):
+class SwinMLP(Model):
     r""" Swin MLP
 
     Args:
@@ -383,7 +383,7 @@ class SwinMLP(Module):
                  norm_layer=layer_norm, ape=False, patch_norm=True,
                  **kwargs):
         super().__init__()
-        Module.add()
+        Model.add()
 
         self.num_classes = num_classes
         self.num_layers = len(depths)
@@ -430,7 +430,7 @@ class SwinMLP(Module):
         self.avgpool = adaptive_avg_pooling1d(1)
         self.head = dense(num_classes, self.num_features) if num_classes > 0 else identity()
 
-        Module.apply(self.init_weights)
+        Model.apply(self.init_weights)
 
     def init_weights(self, l):
         if isinstance(l, dense):

@@ -15,20 +15,20 @@ from Note.nn.layer.stochastic_depth import stochastic_depth
 from Note.nn.layer.identity import identity
 from Note.nn.initializer import initializer,initializer_
 from Note.nn.variable import variable
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 from functools import partial
 from itertools import repeat
 import collections.abc
 import math
 
 
-class VisionTransformerForMaskedImageModeling(Module):
+class VisionTransformerForMaskedImageModeling(Model):
     def __init__(self, img_size=224, patch_size=16, in_chans=3, vocab_size=8192, embed_dim=768, depth=12,
                  num_heads=12, mlp_ratio=4., qkv_bias=True, qk_scale=None, drop_rate=0., attn_drop_rate=0.,
                  drop_path_rate=0., norm_layer=None, init_values=None, attn_head_dim=None,
                  use_abs_pos_emb=True, use_rel_pos_bias=False, use_shared_rel_pos_bias=False, init_std=0.02):
         super().__init__()
-        Module.add()
+        Model.add()
         self.num_features = self.embed_dim = embed_dim  # num_features for consistency with other models
 
         self.patch_embed = PatchEmbed(
@@ -64,7 +64,7 @@ class VisionTransformerForMaskedImageModeling(Module):
         self.lm_head = dense(vocab_size, embed_dim)
 
         self.lm_head.weight.assign(initializer_(self.lm_head.weight.shape, ['truncated_normal', self.init_std]))
-        Module.apply(self.init_weights)
+        Model.apply(self.init_weights)
         self.fix_init_weight()
 
     def fix_init_weight(self):

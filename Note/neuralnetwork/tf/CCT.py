@@ -10,7 +10,7 @@ from Note.nn.initializer import initializer
 from Note.nn.initializer import initializer_
 from Note.nn.fine_tuning import fine_tuning
 from Note.nn.Layers import Layers
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 from einops import rearrange, repeat
 
@@ -176,7 +176,7 @@ class Tokenizer:
                  activation=None,
                  max_pool=True,
                  conv_bias=False):
-        Module.add()
+        Model.add()
         
         n_filter_list = [n_input_channels] + \
                         [in_planes for _ in range(n_conv_layers - 1)] + \
@@ -201,7 +201,7 @@ class Tokenizer:
                 conv_layers.add(identity())
             self.conv_layers.add(conv_layers)
 
-        Module.apply(self.init_weight)
+        Model.apply(self.init_weight)
 
     def sequence_length(self, n_channels=3, height=224, width=224):
         return self.__call__(tf.zeros((1, height, width, n_channels))).shape[1]
@@ -228,7 +228,7 @@ class TransformerClassifier:
                  positional_embedding='sine',
                  sequence_length=None,
                  *args, **kwargs):
-        Module.add()
+        Model.add()
         
         assert positional_embedding in {'sine', 'learnable', 'none'}
 
@@ -269,7 +269,7 @@ class TransformerClassifier:
         self.norm = layer_norm(embedding_dim)
 
         self.fc = dense(num_classes, embedding_dim)
-        Module.apply(self.init_weight)
+        Model.apply(self.init_weight)
 
     def __call__(self, x, training):
         b = x.shape[0]
@@ -308,7 +308,7 @@ class TransformerClassifier:
 
 # CCT Main model
 
-class CCT(Module):
+class CCT(Model):
     def __init__(
         self,
         img_size=224,

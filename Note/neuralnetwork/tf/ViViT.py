@@ -5,7 +5,7 @@ from Note.nn.layer.dropout import dropout
 from Note.nn.layer.identity import identity
 from Note.nn.initializer import initializer_
 from Note.nn.Layers import Layers
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 from einops import rearrange, repeat, reduce
 from einops.layers.tensorflow import Rearrange
@@ -84,7 +84,7 @@ class Transformer:
             x = ff(x, training) + x
         return self.norm(x)
 
-class ViViT:
+class ViViT(Model):
     def __init__(
         self,
         image_size,
@@ -103,7 +103,7 @@ class ViViT:
         dropout_rate = 0.,
         emb_dropout = 0.
     ):
-        Module.init()
+        super().__init__()
         
         image_height, image_width = pair(image_size)
         patch_height, patch_width = pair(image_patch_size)
@@ -141,7 +141,6 @@ class ViViT:
 
         self.mlp_head = dense(num_classes, dim)
         
-        self.param = Module.param
         self.training = True
     
     def fine_tuning(self,classes=None,flag=0):

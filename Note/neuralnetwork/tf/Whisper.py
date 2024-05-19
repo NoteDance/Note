@@ -4,7 +4,7 @@ from Note.nn.layer.conv1d import conv1d
 from Note.nn.layer.zeropadding1d import zeropadding1d
 from Note.nn.layer.layer_norm import layer_norm
 from Note.nn.initializer import initializer_
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 import base64
 import gzip
 import numpy as np
@@ -202,9 +202,9 @@ class TextDecoder:
         return tf.matmul(x, tf.transpose(self.token_embedding)), kv_cache, cross_qk
 
 
-class Whisper:
+class Whisper(Model):
     def __init__(self, dims: ModelDimensions, dtype = tf.float16):
-        Module.init()
+        super().__init__()
         self.dims = dims
         self.encoder = AudioEncoder(
             self.dims.n_mels,
@@ -229,7 +229,6 @@ class Whisper:
         )
         all_heads[self.dims.n_text_layer // 2 :] = True
         self.alignment_heads = tf.transpose(tf.cast(tf.where(all_heads != 0), dtype=tf.int32))
-        self.param = Module.param
 
     def set_alignment_heads(self, dump: Union[bytes, np.ndarray]):
         if isinstance(dump, np.ndarray):

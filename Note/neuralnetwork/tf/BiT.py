@@ -5,7 +5,7 @@ from Note.nn.layer.zeropadding2d import zeropadding2d
 from Note.nn.layer.max_pool2d import max_pool2d
 from Note.nn.layer.adaptive_avg_pooling2d import adaptive_avg_pooling2d
 from Note.nn.Layers import Layers
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 class StdConv2d:
@@ -80,7 +80,7 @@ class BiT:
   """Implementation of Pre-activation (v2) ResNet mode."""
 
   def __init__(self, model_type, head_size=21843, zero_head=False):
-    Module.init()
+    Model.init()
     
     block_units = model_type['block_units']
     wf = model_type['width_factor']  # shortcut 'cause we'll use it a lot.
@@ -116,7 +116,7 @@ class BiT:
     self.head.add(adaptive_avg_pooling2d(1))
     self.head.add(conv2d(head_size, 1, 2048*wf))
     
-    self.param=Module.param
+    self.param=Model.param
     
     
   def fine_tuning(self,classes=None,flag=0):

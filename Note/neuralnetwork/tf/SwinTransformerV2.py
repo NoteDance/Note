@@ -16,7 +16,7 @@ from Note.nn.layer.identity import identity
 from Note.nn.initializer import initializer,initializer_
 from Note.nn.variable import variable
 from Note.nn.Layers import Layers
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 from itertools import repeat
 import collections.abc
 import numpy as np
@@ -508,7 +508,7 @@ class PatchEmbed:
         return flops
 
 
-class SwinTransformerV2(Module):
+class SwinTransformerV2(Model):
     r""" Swin Transformer
         A PyTorch impl of : `Swin Transformer: Hierarchical Vision Transformer using Shifted Windows`  -
           https://arxiv.org/pdf/2103.14030
@@ -541,7 +541,7 @@ class SwinTransformerV2(Module):
                  norm_layer=layer_norm, ape=False, patch_norm=True,
                  pretrained_window_sizes=[0, 0, 0, 0], **kwargs):
         super().__init__()
-        Module.add()
+        Model.add()
 
         self.num_classes = num_classes
         self.num_layers = len(depths)
@@ -590,7 +590,7 @@ class SwinTransformerV2(Module):
         self.avgpool = adaptive_avg_pooling1d(1)
         self.head = dense(num_classes, self.num_features) if num_classes > 0 else identity()
 
-        Module.apply(self.init_weights)
+        Model.apply(self.init_weights)
 
     def init_weights(self, l):
         if isinstance(l, dense):

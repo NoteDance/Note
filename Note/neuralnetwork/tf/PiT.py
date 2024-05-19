@@ -8,7 +8,7 @@ from Note.nn.layer.zeropadding2d import zeropadding2d
 from Note.nn.layer.identity import identity
 from Note.nn.initializer import initializer_
 from Note.nn.Layers import Layers
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 from math import sqrt
 from einops import rearrange, repeat
 
@@ -106,7 +106,7 @@ class Pool:
         return tf.concat((cls_token, tokens), axis = 1)
 
 
-class PiT:
+class PiT(Model):
     def __init__(
         self,
         image_size,
@@ -121,7 +121,7 @@ class PiT:
         emb_dropout = 0.,
         channels = 3
     ):
-        Module.init()
+        super().__init__()
         
         assert image_size % patch_size == 0, 'Image dimensions must be divisible by the patch size.'
         assert isinstance(depth, tuple), 'depth must be a tuple of integers, specifying the number of blocks before each downsizing'
@@ -158,7 +158,6 @@ class PiT:
         self.mlp_head.add(layer_norm(dim))
         self.mlp_head.add(dense(num_classes, dim))
         
-        self.param = Module.param
         self.training=True
     
     def fine_tuning(self,classes=None,flag=0):

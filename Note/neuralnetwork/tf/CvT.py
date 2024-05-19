@@ -9,7 +9,7 @@ from Note.nn.layer.adaptive_avg_pooling2d import adaptive_avg_pooling2d
 from Note.nn.layer.dropout import dropout
 from Note.nn.initializer import initializer_
 from Note.nn.Layers import Layers
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 from einops import rearrange
 from einops.layers.tensorflow import Rearrange
@@ -117,7 +117,7 @@ class Transformer:
             x = ff(x, training) + x
         return x
 
-class CvT:
+class CvT(Model):
     def __init__(
         self,
         num_classes,
@@ -148,7 +148,7 @@ class CvT:
         dropout = 0.,
         channels = 3
     ):
-        Module.init()
+        super().__init__()
 
         kwargs = dict(locals())
 
@@ -173,7 +173,6 @@ class CvT:
         self.to_logits.add(Rearrange('() () ... -> ...'))
         self.to_logits.add(dense(num_classes, dim))
 
-        self.param = Module.param
         self.training = True
         
     def fine_tuning(self,classes=None,flag=0):

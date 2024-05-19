@@ -6,7 +6,7 @@ from Note.nn.layer.batch_norm import batch_norm_
 from Note.nn.layer.zeropadding2d import zeropadding2d
 from Note.nn.Layers import Layers
 from Note.nn.activation import activation_dict
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 def _make_divisible(v, divisor, min_value=None):
@@ -94,7 +94,7 @@ class MobileNetV2:
         
         
     def build(self,dtype='float32'):
-        Module.init()
+        Model.init()
         
         self.layers=Layers()
         
@@ -131,7 +131,7 @@ class MobileNetV2:
         self.layers.add(batch_norm_(momentum=0.999,dtype=dtype))
         
         self.dense=dense(self.classes,self.layers.output_size,activation='softmax',dtype=dtype)
-        self.param=Module.param
+        self.param=Model.param
         return
     
     

@@ -5,7 +5,7 @@ from Note.nn.layer.dropout import dropout
 from Note.nn.layer.layer_norm import layer_norm
 from Note.nn.initializer import initializer_
 from Note.nn.Layers import Layers
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 import collections.abc
 from itertools import repeat
 from typing import Optional
@@ -131,7 +131,7 @@ class FinalLayer:
         return x
 
 
-class DiT:
+class DiT(Model):
     """
     Diffusion model with a Transformer backbone.
     """
@@ -148,7 +148,7 @@ class DiT:
         num_classes=1000,
         learn_sigma=True,
     ):
-        Module.init()
+        super().__inint__()
         self.learn_sigma = learn_sigma
         self.in_channels = in_channels
         self.out_channels = in_channels * 2 if learn_sigma else in_channels
@@ -168,13 +168,12 @@ class DiT:
         self.final_layer = FinalLayer(hidden_size, patch_size, self.out_channels)
         self.initialize_weights()
         self.training = True
-        self.param = Module.param
 
     def initialize_weights(self):
         # Initialize (and freeze) pos_embed by sin-cos embedding:
         pos_embed = get_2d_sincos_pos_embed(self.pos_embed.shape[-1], int(self.x_embedder.num_patches ** 0.5))
-        self.pos_embed = tf.convert_to_tensor(pos_embed, dtype=tf.float32)[tf.newaxis, :]
-        Module.param.append(self.pos_embed)
+        self.pos_embed = tf.Variable(tf.convert_to_tensor(pos_embed, dtype=tf.float32)[tf.newaxis, :])
+        Model.param.append(self.pos_embed)
 
     def unpatchify(self, x):
         """

@@ -8,7 +8,7 @@ from Note.nn.layer.identity import identity
 from Note.nn.layer.add import add
 from Note.nn.Layers import Layers
 from Note.nn.activation import activation_dict
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 def PreStem(x,dtype='float32'):
@@ -253,7 +253,7 @@ class RegNet:
         
     
     def build(self,dtype='float32'):
-        Module.init()
+        Model.init()
         self.dtype=dtype
         self.layers=Layers()
         self.layers.add(Stem(3,dtype))
@@ -279,7 +279,7 @@ class RegNet:
                 self.global_avg_pool2d=global_avg_pool2d()
             elif self.pooling == "max":
                 self.global_max_pool2d=global_max_pool2d()
-        self.param=Module.param
+        self.param=Model.param
     
     
     def fine_tuning(self,classes=None,flag=0):

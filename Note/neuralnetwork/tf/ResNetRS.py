@@ -9,7 +9,7 @@ from Note.nn.activation import activation_dict
 from Note.nn.Layers import Layers
 from typing import List
 from typing import Dict
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 def fixed_padding(inputs, kernel_size):
@@ -317,7 +317,7 @@ class ResNetRS:
     
         
     def build(self,dtype='float32'):
-        Module.init()
+        Model.init()
         
         self.layers=Layers()
         # Build stem
@@ -347,7 +347,7 @@ class ResNetRS:
             ))
         self.dense=dense(self.classes,self.layers.output_size,activation='softmax',dtype=dtype)
         self.dtype=dtype
-        self.param=Module.param
+        self.param=Model.param
     
     
     def fine_tuning(self,classes=None,flag=0):

@@ -5,7 +5,7 @@ from Note.nn.layer.identity import identity
 from Note.nn.layer.layer_norm import layer_norm
 from Note.nn.initializer import initializer_
 from Note.nn.Layers import Layers
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 from einops import rearrange, repeat
 from einops.layers.tensorflow import Rearrange
@@ -195,7 +195,7 @@ class ImageEmbedder:
 
 # cross ViT class
 
-class CrossViT:
+class CrossViT(Model):
     def __init__(
         self,
         image_size,
@@ -220,7 +220,7 @@ class CrossViT:
         emb_dropout = 0.1,
         channels = 3
     ):
-        Module.init()
+        super().__init__()
         
         self.sm_dim = sm_dim
         self.lg_dim = lg_dim
@@ -257,7 +257,6 @@ class CrossViT:
         self.lg_mlp_head.add(layer_norm(lg_dim))
         self.lg_mlp_head.add(dense(num_classes, lg_dim))
         
-        self.param = Module.param
         self.training = True
     
     def fine_tuning(self,classes=None,flag=0):

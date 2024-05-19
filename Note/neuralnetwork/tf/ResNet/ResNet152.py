@@ -7,7 +7,7 @@ from Note.nn.layer.zeropadding2d import zeropadding2d
 from Note.nn.layer.identity import identity
 from Note.nn.Layers import Layers
 from Note.nn.activation import activation_dict
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 class block1:
@@ -71,7 +71,7 @@ class ResNet152:
     
     
     def build(self,dtype='float32'):
-        Module.init()
+        Model.init()
         self.layers=Layers()
         self.layers.add(zeropadding2d(3,[3,3]))
         self.layers.add(conv2d(64,[7,7],strides=[2],use_bias=self.use_bias,dtype=dtype))
@@ -85,7 +85,7 @@ class ResNet152:
             self.layers.add(batch_norm_(self.layers.output_size,epsilon=1.001e-5,dtype=dtype))
             self.layers.add(activation_dict['relu'])
         self.dense=dense(self.classes,self.layers.output_size,activation='softmax',dtype=dtype)
-        self.param=Module.param
+        self.param=Model.param
         return
     
     

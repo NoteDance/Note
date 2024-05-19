@@ -13,7 +13,7 @@ from Note.nn.layer.dropout import dropout
 from Note.nn.layer.stochastic_depth import stochastic_depth
 from Note.nn.layer.identity import identity
 from Note.nn.initializer import initializer,initializer_
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 from Note.nn.variable import variable
 from itertools import repeat
 import collections.abc
@@ -23,13 +23,13 @@ import numpy as np
 import math
 
 
-class VisionTransformerForMaskedImageModeling(Module):
+class VisionTransformerForMaskedImageModeling(Model):
     def __init__(self, img_size=224, patch_size=16, in_chans=3, vocab_size=8192, embed_dim=768, depth=12,
                  num_heads=12, mlp_ratio=4., qkv_bias=True, qk_scale=None, drop_rate=0., attn_drop_rate=0.,
                  drop_path_rate=0., norm_layer=None, init_values=None, attn_head_dim=None,
                  use_abs_pos_emb=True, use_rel_pos_bias=False, use_shared_rel_pos_bias=False, init_std=0.02, **kwargs):
         super().__init__()
-        Module.add()
+        Model.add()
         self.num_features = self.embed_dim = embed_dim  # num_features for consistency with other models
         self.init_std = init_std
 
@@ -63,7 +63,7 @@ class VisionTransformerForMaskedImageModeling(Module):
 
         self.lm_head = dense(vocab_size, embed_dim)
 
-        Module.apply(self.init_weights)
+        Model.apply(self.init_weights)
         self.fix_init_weight()
 
     def fix_init_weight(self):
@@ -151,7 +151,7 @@ def beit_large_patch16_224_8k_vocab(**kwargs):
     return model
 
 
-class VisionTransformer(Module):
+class VisionTransformer(Model):
     """ Vision Transformer with support for patch or hybrid CNN input stage
     """
     def __init__(self, img_size=224, patch_size=16, in_chans=3, num_classes=1000, embed_dim=768, depth=12,
@@ -160,7 +160,7 @@ class VisionTransformer(Module):
                  use_abs_pos_emb=True, use_rel_pos_bias=False, use_shared_rel_pos_bias=False,
                  use_mean_pooling=True, init_scale=0.001):
         super().__init__()
-        Module.add()
+        Model.add()
         self.num_classes = num_classes
         self.num_features = self.embed_dim = embed_dim  # num_features for consistency with other models
 
@@ -194,7 +194,7 @@ class VisionTransformer(Module):
         self.head = dense(num_classes, embed_dim, weight_initializer=['truncated_normal', .02]) if num_classes > 0 else identity()
 
         # trunc_normal_(self.mask_token, std=.02)
-        Module.apply(self.init_weights)
+        Model.apply(self.init_weights)
         self.fix_init_weight()
 
         if isinstance(self.head, dense):

@@ -9,7 +9,7 @@ from Note.nn.layer.layer_norm import layer_norm
 from Note.nn.layer.dropout import dropout
 from Note.nn.initializer import initializer_
 from Note.nn.Layers import Layers
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 from einops import rearrange, repeat, pack, unpack
 from einops.layers.tensorflow import Rearrange
@@ -208,7 +208,7 @@ class XCATransformer:
 
         return x
 
-class XCiT:
+class XCiT(Model):
     def __init__(
         self,
         image_size,
@@ -225,7 +225,7 @@ class XCiT:
         local_patch_kernel_size = 3,
         layer_dropout = 0.
     ):
-        Module.init()
+        super().__init__()
         
         assert image_size % patch_size == 0, 'Image dimensions must be divisible by the patch size.'
 
@@ -254,7 +254,6 @@ class XCiT:
         self.mlp_head.add(layer_norm(dim))
         self.mlp_head.add(dense(num_classes, dim))
         
-        self.param = Module.param
         self.training = True
         
     def fine_tuning(self,classes=None,flag=0):

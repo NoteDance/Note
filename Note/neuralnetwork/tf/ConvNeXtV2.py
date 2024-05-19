@@ -9,7 +9,7 @@ from Note.nn.layer.identity import identity
 from Note.nn.initializer import initializer_
 from Note.nn.activation import activation_dict
 from Note.nn.Layers import Layers
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 class GRN:
@@ -84,7 +84,7 @@ class ConvNeXtV2:
     
 
     def build(self, dtype='float32'):
-        Module.init()
+        Model.init()
         
         stem=Layers()
         stem.add(conv2d(self.dims[0],kernel_size=4,input_size=self.in_chans,strides=4,
@@ -117,7 +117,7 @@ class ConvNeXtV2:
         self.dense.bias.assign(tf.cast(self.head_init_scale,self.dense.bias.dtype)*self.dense.bias)
         
         self.dtype=dtype
-        self.param=Module.param
+        self.param=Model.param
         return
     
     

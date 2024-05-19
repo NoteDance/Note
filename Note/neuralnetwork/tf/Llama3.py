@@ -4,7 +4,7 @@ import tensorflow as tf
 from Note.nn.layer.dense import dense
 from Note.nn.layer.embedding import embedding
 from Note.nn.initializer import initializer_
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 import math
 from dataclasses import dataclass
@@ -241,9 +241,9 @@ class TransformerBlock:
         return out
 
 
-class Llama3:
+class Llama3(Model):
     def __init__(self, params: ModelArgs):
-        Module.init()
+        super().__init__()
         self.params = params
         self.vocab_size = params.vocab_size
         self.n_layers = params.n_layers
@@ -266,7 +266,6 @@ class Llama3:
             params.max_seq_len * 2,
             params.rope_theta,
         )
-        self.param = Module.param
     
     def fine_tuning(self,flag=0):
         param=[]

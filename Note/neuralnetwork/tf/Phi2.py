@@ -3,7 +3,7 @@ from Note.nn.layer.RoPE import RoPE
 from Note.nn.layer.dense import dense
 from Note.nn.layer.layer_norm import layer_norm
 from Note.nn.layer.embedding import embedding
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 import math
 from dataclasses import dataclass
 
@@ -107,12 +107,11 @@ class Transformer:
         return self.final_layernorm(x), cache
 
 
-class Phi2:
+class Phi2(Model):
     def __init__(self, config: ModelArgs):
-        Module.init()
+        super().__init__()
         self.model = Transformer(config)
         self.lm_head = dense(config.vocab_size, config.n_embd)
-        self.param = Module.param
     
     def fine_tuning(self,flag=0):
         param=[]

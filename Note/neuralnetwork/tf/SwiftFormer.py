@@ -10,10 +10,10 @@ from Note.nn.layer.identity import identity
 from Note.nn.initializer import initializer_
 from Note.nn.activation import activation_dict
 from Note.nn.Layers import Layers
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
-class SwiftFormer:
+class SwiftFormer(Model):
 
     def __init__(self, model_type,
                  mlp_ratios=4, downsamples=[True, True, True, True],
@@ -33,7 +33,7 @@ class SwiftFormer:
                  weight_decay=0.025,
                  dtype='float32'
                  ):
-        Module.init()
+        super().__init__()
         
         layers=SwiftFormer_depth[model_type]
         embed_dims=SwiftFormer_width[model_type]
@@ -97,7 +97,6 @@ class SwiftFormer:
                     else identity()
         
         self.dtype=dtype
-        self.param=Module.param
     
     
     def fine_tuning(self,classes=None,flag=0):

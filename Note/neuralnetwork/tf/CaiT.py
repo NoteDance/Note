@@ -5,7 +5,7 @@ from Note.nn.layer.dense import dense
 from Note.nn.layer.layer_norm import layer_norm
 from Note.nn.layer.dropout import dropout
 from Note.nn.initializer import initializer_
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 from einops import rearrange, repeat
 
@@ -40,7 +40,7 @@ class LayerScale:
 
         scale = tf.fill([1, 1, dim], init_eps)
         self.scale = tf.Variable(scale)
-        Module.param.append(self.scale)
+        Model.param.append(self.scale)
         self.fn = fn
         
     def __call__(self, x, **kwargs):
@@ -120,7 +120,7 @@ class Transformer:
             x = ff(x, training=training) + x
         return x
 
-class CaiT:
+class CaiT(Model):
     def __init__(
         self,
         image_size,
@@ -136,7 +136,7 @@ class CaiT:
         emb_dropout = 0.,
         layer_dropout = 0.
     ):
-        Module.init()
+        super().__init__()
         
         assert image_size % patch_size == 0, 'Image dimensions must be divisible by the patch size.'
         num_patches = (image_size // patch_size) ** 2
@@ -161,7 +161,6 @@ class CaiT:
         self.mlp_head.add(layer_norm(dim))
         self.mlp_head.add(dense(num_classes, dim))
         
-        self.param=Module.param
         self.training=True
     
     def fine_tuning(self,classes=None,flag=0):

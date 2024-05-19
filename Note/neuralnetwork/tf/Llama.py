@@ -3,7 +3,7 @@ from Note.nn.layer.dense import dense
 from Note.nn.layer.RoPE import RoPE
 from Note.nn.initializer import initializer_
 from dataclasses import dataclass
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 @dataclass
@@ -124,16 +124,15 @@ class TransformerBlock:
         return out, cache
 
 
-class Llama:
+class Llama(Model):
     def __init__(self, args: ModelArgs):
-        Module.init()
+        super().__init__()
         self.args = args
         self.vocab_size = args.vocab_size
         self.tok_embeddings = initializer_((args.vocab_size, args.dim), 'normal', 'float32')
         self.layers = [TransformerBlock(args=args) for _ in range(args.n_layers)]
         self.norm = RMSNorm(args.dim, eps=args.norm_eps)
         self.output = dense(args.vocab_size, args.dim, use_bias=False)
-        self.param=Module.param
 
     def __call__(self, x):
         mask = tf.linalg.band_part(tf.ones((x.shape[0], x.shape[1], x.shape[1])), -1, 0)

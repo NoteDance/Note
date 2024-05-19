@@ -9,7 +9,7 @@ from Note.nn.layer.avg_pool2d import avg_pool2d
 from Note.nn.layer.identity import identity
 from Note.nn.initializer import initializer_
 from Note.nn.Layers import Layers
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 import numpy as np
 from typing import Tuple, Union
 
@@ -69,7 +69,7 @@ class AttentionPool2d:
         self.v_proj = dense(embed_dim, embed_dim)
         self.c_proj = dense(output_dim or embed_dim, embed_dim)
         self.num_heads = num_heads
-        Module.param.append(self.positional_embedding)
+        Model.param.append(self.positional_embedding)
 
     def __call__(self, x):
         shape = x.shape
@@ -247,9 +247,9 @@ class VisionTransformer:
 
         self.ln_post = LayerNorm(width)
         self.proj = tf.Variable(scale * tf.random.normal(width, output_dim))
-        Module.param.append(self.class_embedding)
-        Module.param.append(self.positional_embedding)
-        Module.param.append(self.proj)
+        Model.param.append(self.class_embedding)
+        Model.param.append(self.positional_embedding)
+        Model.param.append(self.proj)
 
     def __call__(self, x, train_flag=True):
         x = self.conv1(x)  # shape = [*, width, grid, grid]
@@ -271,7 +271,7 @@ class VisionTransformer:
         return x
 
 
-class CLIP(Module):
+class CLIP(Model):
     def __init__(self,
                  embed_dim: int,
                  # vision
@@ -330,7 +330,6 @@ class CLIP(Module):
                                             ['normal', 0.0,self.transformer.width ** -0.5], 
                                             'float32')
         self.logit_scale = tf.Variable(tf.ones([]) * np.log(1 / 0.07))
-        Module.param.append(self.logit_scale)
 
         self.initialize_parameters()
         self.training=True

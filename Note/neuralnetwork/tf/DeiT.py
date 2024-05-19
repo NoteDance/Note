@@ -11,8 +11,9 @@ from Note.nn.layer.stochastic_depth import stochastic_depth
 from Note.nn.layer.identity import identity
 from Note.nn.initializer import initializer
 from Note.nn.initializer import initializer_
+from Note.nn.variable import variable
 from Note.nn.Layers import Layers
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 from itertools import repeat
 from typing import Optional
 import collections.abc
@@ -156,10 +157,8 @@ class Layer_scale_init_Block:
         self.norm2 = norm_layer(dim)
         mlp_hidden_dim = int(dim * mlp_ratio)
         self.mlp = Mlp_block(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
-        self.gamma_1 = tf.Variable(init_values * tf.ones((dim)))
-        self.gamma_2 = tf.Variable(init_values * tf.ones((dim)))
-        Module.param.append(self.gamma_1)
-        Module.param.append(self.gamma_2)
+        self.gamma_1 = variable(init_values * tf.ones((dim)))
+        self.gamma_2 = variable(init_values * tf.ones((dim)))
 
     def __call__(self, x):
         x = x + self.drop_path(self.gamma_1 * self.attn(self.norm1(x)))
@@ -185,14 +184,10 @@ class Layer_scale_init_Block_paralx2:
         mlp_hidden_dim = int(dim * mlp_ratio)
         self.mlp = Mlp_block(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
         self.mlp1 = Mlp_block(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
-        self.gamma_1 = tf.Variable(init_values * tf.ones((dim)))
-        self.gamma_1_1 = tf.Variable(init_values * tf.ones((dim)))
-        self.gamma_2 = tf.Variable(init_values * tf.ones((dim)))
-        self.gamma_2_1 = tf.Variable(init_values * tf.ones((dim)))
-        Module.param.append(self.gamma_1)
-        Module.param.append(self.gamma_1_1)
-        Module.param.append(self.gamma_2)
-        Module.param.append(self.gamma_2_1)
+        self.gamma_1 = variable(init_values * tf.ones((dim)))
+        self.gamma_1_1 = variable(init_values * tf.ones((dim)))
+        self.gamma_2 = variable(init_values * tf.ones((dim)))
+        self.gamma_2_1 = variable(init_values * tf.ones((dim)))
         
     def __call__(self, x):
         x = x + self.drop_path(self.gamma_1*self.attn(self.norm1(x))) + self.drop_path(self.gamma_1_1 * self.attn1(self.norm11(x)))
@@ -253,7 +248,7 @@ class hMLP_stem:
         x = tf.transpose(x, [0, 2, 1])
         return x
     
-class vit_models(Module):
+class vit_models(Model):
     """ Vision Transformer with LayerScale (https://arxiv.org/abs/2103.17239) support
     taken from https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py
     with slight modifications
@@ -268,7 +263,7 @@ class vit_models(Module):
                 mlp_ratio_clstk = 4.0,**kwargs):
         
         super().__init__()
-        Module.add()
+        Model.add()
         
         self.dropout_rate = drop_rate
 
@@ -297,7 +292,7 @@ class vit_models(Module):
         self.feature_info = [dict(num_chs=embed_dim, reduction=0, module='head')]
         self.head = dense(num_classes, embed_dim) if num_classes > 0 else identity()
 
-        Module.apply(self.init_weights)
+        Model.apply(self.init_weights)
         self.training = True
 
     def init_weights(self, l):

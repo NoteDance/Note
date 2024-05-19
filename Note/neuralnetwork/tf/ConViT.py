@@ -12,7 +12,7 @@ from Note.nn.layer.dropout import dropout
 from Note.nn.layer.stochastic_depth import stochastic_depth
 from Note.nn.layer.identity import identity
 from Note.nn.initializer import initializer,initializer_
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 from itertools import repeat
 import collections.abc
 from functools import partial
@@ -20,14 +20,14 @@ from functools import partial
 
 class Mlp:
     def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=tf.nn.gelu, drop=0.):
-        Module.add()
+        Model.add()
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
         self.fc1 = dense(hidden_features, in_features)
         self.act = act_layer
         self.fc2 = dense(out_features, hidden_features)
         self.drop = dropout(drop)
-        Module.apply(self.init_weights)
+        Model.apply(self.init_weights)
     
     def init_weights(self, l):
         if isinstance(l, dense):
@@ -45,7 +45,7 @@ class Mlp:
 class GPSA:
     def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.,
                  locality_strength=1., use_local_init=True):
-        Module.add()
+        Model.add()
         self.num_heads = num_heads
         self.dim = dim
         head_dim = dim // num_heads
@@ -60,7 +60,7 @@ class GPSA:
         self.proj_drop = dropout(proj_drop)
         self.locality_strength = locality_strength
         self.gating_param = initializer_((self.num_heads), 'ones')
-        Module.apply(self.init_weights)
+        Model.apply(self.init_weights)
         if use_local_init:
             self.local_init(locality_strength=locality_strength)
     
@@ -138,7 +138,7 @@ class GPSA:
  
 class MHSA:
     def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.):
-        Module.add()
+        Model.add()
         self.num_heads = num_heads
         head_dim = dim // num_heads
         self.scale = qk_scale or head_dim ** -0.5
@@ -147,7 +147,7 @@ class MHSA:
         self.attn_drop = dropout(attn_drop)
         self.proj = dense(dim, dim)
         self.proj_drop = dropout(proj_drop)
-        Module.apply(self.init_weights)
+        Model.apply(self.init_weights)
     
     def init_weights(self, l):
         if isinstance(l, dense):
@@ -225,7 +225,7 @@ class PatchEmbed:
     """ Image to Patch Embedding, from timm
     """
     def __init__(self, img_size=224, patch_size=16, in_chans=3, embed_dim=768):
-        Module.add()
+        Model.add()
         img_size = to_2tuple(img_size)
         patch_size = to_2tuple(patch_size)
         num_patches = (img_size[1] // patch_size[1]) * (img_size[0] // patch_size[0])
@@ -234,7 +234,7 @@ class PatchEmbed:
         self.num_patches = num_patches
 
         self.proj = conv2d(embed_dim, input_size=in_chans, kernel_size=patch_size, strides=patch_size)
-        Module.apply(self.init_weights)
+        Model.apply(self.init_weights)
     
     def init_weights(self, l):
         if isinstance(l, dense):
@@ -276,7 +276,7 @@ class HybridEmbed:
         return x
 
 
-class VisionTransformer(Module):
+class VisionTransformer(Model):
     """ Vision Transformer with support for patch or hybrid CNN input stage
     """
     def __init__(self, img_size=224, patch_size=16, in_chans=3, num_classes=1000, embed_dim=48, depth=12,

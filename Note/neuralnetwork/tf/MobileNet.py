@@ -6,7 +6,7 @@ from Note.nn.layer.batch_norm import batch_norm_
 from Note.nn.layer.zeropadding2d import zeropadding2d
 from Note.nn.Layers import Layers
 from Note.nn.activation import activation_dict
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 class _conv_block:
@@ -64,7 +64,7 @@ class MobileNet:
         
         
     def build(self,dtype='float32'):
-        Module.init()
+        Model.init()
         self.layers=Layers()
         self.layers.add(_conv_block(3, 32, self.alpha, strides=[2, 2],dtype=dtype))
         self.layers.add(_depthwise_conv_block(self.layers.output_size, 64, self.alpha, self.depth_multiplier, block_id=1,dtype=dtype))
@@ -90,7 +90,7 @@ class MobileNet:
         self.layers.add(_depthwise_conv_block(self.layers.output_size, 1024, self.alpha, self.depth_multiplier, block_id=13, dtype=dtype))
         self.conv2d=conv2d(self.classes,[1,1],self.layers.output_size,padding='SAME',dtype=dtype)
         self.dense=dense(self.classes,self.conv2d.output_size,activation='softmax',dtype=dtype)
-        self.param=Module.param
+        self.param=Model.param
         return
     
     

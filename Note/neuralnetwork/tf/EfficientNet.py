@@ -14,7 +14,7 @@ from Note.nn.layer.identity import identity
 from Note.nn.Layers import Layers
 from Note.nn.activation import activation_dict
 import copy
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 class EfficientNet:
@@ -120,7 +120,7 @@ class EfficientNet:
     
     
     def build(self):
-        Module.init()
+        Model.init()
         
         def round_filters(filters, divisor=self.depth_divisor):
             """Round number of filters based on depth multiplier."""
@@ -197,7 +197,7 @@ class EfficientNet:
                 self.global_avg_pool2d=global_avg_pool2d()
             elif self.pooling == "max":
                 self.global_max_pool2d=global_max_pool2d()
-        self.param=Module.param
+        self.param=Model.param
     
     
     def fine_tuning(self,classes=None,flag=0):
