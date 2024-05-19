@@ -10,7 +10,7 @@ from Note.nn.Layers import Layers
 from Note.nn.activation import activation_dict
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 def PreStem(x,dtype='float32'):
@@ -258,7 +258,7 @@ class RegNet:
         
     
     def build(self,dtype='float32'):
-        Module.init()
+        Model.init()
         self.dtype=dtype
         self.layers=Layers()
         self.layers.add(Stem(3,dtype))
@@ -285,7 +285,7 @@ class RegNet:
             elif self.pooling == "max":
                 self.global_max_pool2d=global_max_pool2d()
         self.optimizer=Adam()
-        self.param=Module.param
+        self.param=Model.param
     
     
     def fine_tuning(self,classes=None,lr=None,flag=0):

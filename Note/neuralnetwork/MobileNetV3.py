@@ -13,7 +13,7 @@ from Note.nn.Layers import Layers
 from Note.nn.activation import activation_dict
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 class MobileNetV3:
@@ -112,7 +112,7 @@ class MobileNetV3:
     
     
     def build(self,dtype='float32'):
-        Module.init()
+        Model.init()
         if self.include_preprocessing:
             self.rescaling=rescaling(scale=1.0 / 127.5, offset=-1.0)
         self.layers=Layers()
@@ -151,7 +151,7 @@ class MobileNetV3:
         self.activation=activation_dict[self.classifier_activation]
         
         self.optimizer=Adam()
-        self.param=Module.param
+        self.param=Model.param
         
         
     def fine_tuning(self,classes=None,lr=None,flag=0):

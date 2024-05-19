@@ -6,7 +6,7 @@ from Note.nn.layer.flatten import flatten
 from Note.nn.Layers import Layers
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 class VGG16:
@@ -20,7 +20,7 @@ class VGG16:
     
     
     def build(self,dtype='float32'):
-        Module.init()
+        Model.init()
         
         self.layers=Layers()
         # Block 1
@@ -52,7 +52,7 @@ class VGG16:
         self.dense3=dense(self.classes,self.dense2.output_size,activation='softmax',dtype=dtype)
         
         self.optimizer=Adam()
-        self.param=Module.param
+        self.param=Model.param
         return
     
     

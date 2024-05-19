@@ -6,7 +6,7 @@ from Note.nn.layer.layer_norm import layer_norm
 from Note.nn.Layers import Layers
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 class ConvNeXtBlock:
@@ -66,7 +66,7 @@ class ConvNeXt:
     
     
     def build(self,dtype='float32'):
-        Module.init()
+        Model.init()
         
         # Stem block.
         layers=Layers()
@@ -115,7 +115,7 @@ class ConvNeXt:
         
         self.dtype=dtype
         self.optimizer=Adam()
-        self.param=Module.param
+        self.param=Model.param
         return
     
     

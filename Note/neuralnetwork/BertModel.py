@@ -5,7 +5,7 @@ import six
 import tensorflow as tf
 from Note.nn.layer.dense import dense
 from Note.nn.layer.layer_norm import layer_norm
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 class BertConfig(object):
@@ -337,7 +337,7 @@ class embedding_lookup:
       self.vocab_size=vocab_size
       self.embedding_size=embedding_size
       self.use_one_hot_embeddings=use_one_hot_embeddings
-      Module.param.extend(self.embedding_table)
+      Model.param.extend(self.embedding_table)
       
   def __call__(self,input_ids):
       # This function assumes that the input is of shape [batch_size, seq_length,
@@ -407,7 +407,7 @@ class embedding_postprocessor:
       self.token_type_vocab_size=token_type_vocab_size
       self.use_position_embeddings=use_position_embeddings
       self.dropout_prob=dropout_prob
-      Module.param.extend([self.token_type_table,self.full_position_embeddings])
+      Model.param.extend([self.token_type_table,self.full_position_embeddings])
       
       
   def __call__(self,input_tensor):

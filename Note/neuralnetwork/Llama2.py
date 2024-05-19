@@ -4,7 +4,7 @@ from Note.nn.layer.dropout import dropout
 from Note.nn.initializer import initializer_
 from Note.nn.parallel.optimizer import AdamW
 from Note.nn.parallel.assign_device import assign_device
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 import math
 from dataclasses import dataclass
 from typing import Optional
@@ -193,7 +193,7 @@ class TransformerBlock:
         return out
 
 
-class Llama2(Module):
+class Llama2(Model):
     def __init__(self, params: ModelArgs):
         super().__init__()
         self.params = params

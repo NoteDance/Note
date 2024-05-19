@@ -9,7 +9,7 @@ from Note.nn.Layers import Layers
 from Note.nn.activation import activation_dict
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 class block1:
@@ -74,7 +74,7 @@ class ResNet50:
     
     
     def build(self,dtype='float32'):
-        Module.init()
+        Model.init()
         self.layers=Layers()
         self.layers.add(zeropadding2d(3,[3,3]))
         self.layers.add(conv2d(64,[7,7],strides=[2],use_bias=self.use_bias,dtype=dtype))
@@ -89,7 +89,7 @@ class ResNet50:
             self.layers.add(activation_dict['relu'])
         self.dense=dense(self.classes,self.layers.output_size,activation='softmax',dtype=dtype)
         self.optimizer=Adam()
-        self.param=Module.param
+        self.param=Model.param
         return
     
     

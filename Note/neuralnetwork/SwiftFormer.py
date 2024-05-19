@@ -12,10 +12,10 @@ from Note.nn.activation import activation_dict
 from Note.nn.Layers import Layers
 from Note.nn.parallel.optimizer import AdamW
 from Note.nn.parallel.assign_device import assign_device
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
-class SwiftFormer:
+class SwiftFormer(Model):
 
     def __init__(self, model_type,
                  mlp_ratios=4, downsamples=[True, True, True, True],
@@ -36,7 +36,7 @@ class SwiftFormer:
                  device='GPU',
                  dtype='float32'
                  ):
-        Module.init()
+        super().__init__()
         
         layers=SwiftFormer_depth[model_type]
         embed_dims=SwiftFormer_width[model_type]
@@ -103,7 +103,6 @@ class SwiftFormer:
         
         self.dtype=dtype
         self.optimizer=AdamW(epsilon=epsilon,weight_decay=weight_decay)
-        self.param=Module.param
     
     
     def fine_tuning(self,classes=None,lr=None,flag=0):

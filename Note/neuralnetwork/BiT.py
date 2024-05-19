@@ -7,7 +7,7 @@ from Note.nn.layer.adaptive_avg_pooling2d import adaptive_avg_pooling2d
 from Note.nn.Layers import Layers
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 class StdConv2d:
@@ -78,11 +78,11 @@ class PreActBottleneck:
     return out + residual
 
 
-class BiT:
+class BiT(Model):
   """Implementation of Pre-activation (v2) ResNet mode."""
 
   def __init__(self, model_type, head_size=21843, zero_head=False, device='GPU'):
-    Module.init()
+    super().__init__()
     
     block_units = model_type['block_units']
     wf = model_type['width_factor']  # shortcut 'cause we'll use it a lot.
@@ -120,7 +120,6 @@ class BiT:
     
     self.loss_object=tf.keras.losses.SparseCategoricalCrossentropy()
     self.optimizer=Adam()
-    self.param=Module.param
     self.device=device
     self.km=0
     

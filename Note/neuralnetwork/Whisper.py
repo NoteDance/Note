@@ -6,7 +6,7 @@ from Note.nn.layer.layer_norm import layer_norm
 from Note.nn.initializer import initializer_
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 import base64
 import gzip
 import numpy as np
@@ -202,9 +202,9 @@ class TextDecoder:
         return tf.matmul(x, tf.transpose(self.token_embedding)), kv_cache, cross_qk
 
 
-class Whisper:
+class Whisper(Model):
     def __init__(self, dims: ModelDimensions, dtype = tf.float16, device = 'GPU'):
-        Module.init()
+        super().__init__()
         self.dims = dims
         self.encoder = AudioEncoder(
             self.dims.n_mels,
@@ -231,7 +231,6 @@ class Whisper:
         self.alignment_heads = tf.transpose(tf.cast(tf.where(all_heads != 0), dtype=tf.int32))
         self.loss_object=tf.keras.losses.SparseCategoricalCrossentropy()
         self.optimizer=Adam()
-        self.param = Module.param
         self.device=device
 
     def set_alignment_heads(self, dump: Union[bytes, np.ndarray]):

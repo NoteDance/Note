@@ -16,7 +16,7 @@ from Note.nn.activation import activation_dict
 import copy
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 class EfficientNetV2:
@@ -130,7 +130,7 @@ class EfficientNetV2:
     
     
     def build(self):
-        Module.init()
+        Model.init()
         
         def round_filters(filters, width_coefficient, min_depth, depth_divisor):
             """Round number of filters based on depth multiplier."""
@@ -236,7 +236,7 @@ class EfficientNetV2:
                 self.global_avg_pool2d=global_avg_pool2d()
             elif self.pooling == "max":
                 self.global_max_pool2d=global_max_pool2d()
-        self.param=Module.param
+        self.param=Model.param
         self.optimizer=Adam()
         
         

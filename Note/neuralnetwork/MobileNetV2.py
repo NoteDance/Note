@@ -8,7 +8,7 @@ from Note.nn.Layers import Layers
 from Note.nn.activation import activation_dict
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 def _make_divisible(v, divisor, min_value=None):
@@ -98,7 +98,7 @@ class MobileNetV2:
         
         
     def build(self,dtype='float32'):
-        Module.init()
+        Model.init()
         
         self.layers=Layers()
         
@@ -136,7 +136,7 @@ class MobileNetV2:
         
         self.dense=dense(self.classes,self.layers.output_size,activation='softmax',dtype=dtype)
         self.optimizer=Adam()
-        self.param=Module.param
+        self.param=Model.param
         return
     
     
