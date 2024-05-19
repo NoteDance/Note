@@ -16,7 +16,7 @@
 import tensorflow as tf
 from Note.nn.layer.dense import dense
 from Note.nn.initializer import initializer_
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 import dataclasses
 
 
@@ -272,10 +272,10 @@ class GemmaDecoderLayer:
         return hidden_states
 
 
-class Gemma:
+class Gemma(Model):
 
     def __init__(self, config: GemmaConfig, freqs_cis, kv_write_indices, kv_caches, mask):
-        Module.init()
+        super().__init__()
         
         self.config = config
         self.vocab_size = config.vocab_size
@@ -292,7 +292,6 @@ class Gemma:
         self.output = dense(config.vocab_size, config.hidden_size)
         
         self.opt=tf.keras.optimizers.Adam()
-        self.param = Module.param
     
     def fine_tuning(self,lr=None,flag=0):
         param=[]

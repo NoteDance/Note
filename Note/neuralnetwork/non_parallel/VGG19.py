@@ -4,7 +4,7 @@ from Note.nn.layer.dense import dense
 from Note.nn.layer.max_pool2d import max_pool2d
 from Note.nn.layer.flatten import flatten 
 from Note.nn.Layers import Layers
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 class VGG19:
@@ -17,7 +17,7 @@ class VGG19:
     
     
     def build(self,dtype='float32'):
-        Module.init()
+        Model.init()
         
         self.layers=Layers()
         # Block 1
@@ -53,7 +53,7 @@ class VGG19:
         self.dense3=dense(self.classes,self.dense2.output_size,activation='softmax',dtype=dtype)
         
         self.opt=tf.keras.optimizers.Adam()
-        self.param=Module.param
+        self.param=Model.param
         return
     
     

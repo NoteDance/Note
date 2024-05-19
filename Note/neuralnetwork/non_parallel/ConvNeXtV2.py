@@ -9,7 +9,7 @@ from Note.nn.layer.identity import identity
 from Note.nn.initializer import initializer_
 from Note.nn.activation import activation_dict
 from Note.nn.Layers import Layers
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 class GRN:
@@ -18,7 +18,7 @@ class GRN:
     def __init__(self, dim, dtype):
         self.gamma = initializer_([1, 1, 1, dim], 'zeros', dtype)
         self.beta = initializer_([1, 1, 1, dim], 'zeros', dtype)
-        Module.param.extend([self.gamma,self.beta])
+        Model.param.extend([self.gamma,self.beta])
     
     
     def __call__(self, x):
@@ -85,7 +85,7 @@ class ConvNeXtV2:
     
 
     def build(self, dtype='float32'):
-        Module.init()
+        Model.init()
         
         stem=Layers()
         stem.add(conv2d(self.dims[0],kernel_size=4,input_size=self.in_chans,strides=4,
@@ -119,7 +119,7 @@ class ConvNeXtV2:
         
         self.dtype=dtype
         self.opt=tf.keras.optimizers.Adam()
-        self.param=Module.param
+        self.param=Model.param
         return
     
     

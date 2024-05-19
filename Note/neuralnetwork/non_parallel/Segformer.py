@@ -5,7 +5,7 @@ from Note.nn.layer.zeropadding2d import zeropadding2d
 from Note.nn.layer.up_sampling2d import up_sampling2d
 from Note.nn.initializer import initializer_
 from Note.nn.Layers import Layers
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 from einops import rearrange
 from math import sqrt
 from functools import partial
@@ -170,7 +170,7 @@ class MiT:
         ret = x if not return_layer_outputs else layer_outputs
         return ret
 
-class Segformer:
+class Segformer(Model):
     def __init__(
         self,
         dims = (32, 64, 160, 256),
@@ -182,7 +182,7 @@ class Segformer:
         decoder_dim = 256,
         num_classes = 4
     ):
-        Module.init()
+        super().__init__()
         dims, heads, ff_expansion, reduction_ratio, num_layers = map(partial(cast_tuple, depth = 4), (dims, heads, ff_expansion, reduction_ratio, num_layers))
         assert all([*map(lambda t: len(t) == 4, (dims, heads, ff_expansion, reduction_ratio, num_layers))]), 'only four stages are allowed, all keyword arguments must be either a single value or a tuple of 4 values'
 
@@ -207,7 +207,6 @@ class Segformer:
         self.to_segmentation.add(conv2d(num_classes, 1, decoder_dim))
         
         self.opt = tf.keras.optimizers.Adam()
-        self.param = Module.param
     
     def fine_tuning(self,classes=None,lr=None,flag=0):
         param=[]

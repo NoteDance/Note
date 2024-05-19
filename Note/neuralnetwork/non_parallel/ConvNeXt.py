@@ -4,7 +4,7 @@ from Note.nn.layer.conv2d import conv2d
 from Note.nn.layer.dense import dense
 from Note.nn.layer.layer_norm import layer_norm
 from Note.nn.Layers import Layers
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 class ConvNeXtBlock:
@@ -63,7 +63,7 @@ class ConvNeXt:
     
     
     def build(self,dtype='float32'):
-        Module.init()
+        Model.init()
         
         # Stem block.
         layers=Layers()
@@ -112,7 +112,7 @@ class ConvNeXt:
         
         self.dtype=dtype
         self.opt=tf.keras.optimizers.Adam()
-        self.param=Module.param
+        self.param=Model.param
         return
     
     

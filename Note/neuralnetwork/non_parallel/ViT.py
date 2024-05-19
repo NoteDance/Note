@@ -5,7 +5,7 @@ from Note.nn.layer.dropout import dropout
 from Note.nn.layer.identity import identity
 from Note.nn.initializer import initializer_
 from Note.nn.Layers import Layers
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 def pair(t):
@@ -88,9 +88,9 @@ class Transformer:
         return self.norm(x)
 
 
-class ViT:
+class ViT(Model):
     def __init__(self, image_size, patch_size, num_classes, dim, depth, heads, mlp_dim, pool = 'cls', channels = 3, dim_head = 64, drop_rate = 0., emb_dropout = 0.):
-        Module.init()
+        super().__init__()
         
         image_height, image_width = pair(image_size)
         patch_height, patch_width = pair(patch_size)
@@ -121,7 +121,6 @@ class ViT:
         
         self.loss_object=tf.keras.losses.SparseCategoricalCrossentropy()
         self.opt=tf.keras.optimizers.Adam()
-        self.param=Module.param
         self.km=0
         
         

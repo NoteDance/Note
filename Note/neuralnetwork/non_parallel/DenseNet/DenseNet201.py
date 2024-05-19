@@ -9,7 +9,7 @@ from Note.nn.layer.identity import identity
 from Note.nn.layer.concat import concat
 from Note.nn.Layers import Layers
 from Note.nn.activation import activation_dict
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 def DenseLayer(input_channels, growth_rate, dtype='float32'):
@@ -55,7 +55,7 @@ class DenseNet201:
     
     
     def build(self):
-        Module.init()
+        Model.init()
         
         self.layers=Layers()
         self.layers.add(zeropadding2d(3,padding=[3, 3]))
@@ -98,7 +98,7 @@ class DenseNet201:
         self.dense=dense(self.num_classes,self.layers.output_size,activation='softmax',dtype=self.dtype)
         
         self.opt=tf.keras.optimizers.Adam()
-        self.param=Module.param
+        self.param=Model.param
         return
     
     

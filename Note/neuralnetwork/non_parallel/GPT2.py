@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from Note.nn.initializer import initializer_
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 class hparams:
     n_vocab=0
@@ -10,13 +10,13 @@ class hparams:
     n_head=12
     n_layer=12
 
-class GPT2:
+class GPT2(Model):
     def __init__(self,one_hot=True):
+        super().__init__()
         self.one_hot=one_hot
         self.norm=norm()
         self.block={}
         self.opt=tf.keras.optimizers.Adam()
-        self.param=Module.param
         self.flag=0
         
     def fp(self, X, past=None):
