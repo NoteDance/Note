@@ -1,7 +1,7 @@
 import tensorflow as tf # import the TensorFlow library
 import Note.nn.activation as a # import the activation module from Note.nn package
 import Note.nn.initializer as i # import the initializer module from Note.nn package
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 class conv3d_transpose: # define a class for 3D transposed convolutional layer
@@ -36,7 +36,7 @@ class conv3d_transpose: # define a class for 3D transposed convolutional layer
                 self.param=[self.weight] # store only the weight in a list
             if trainable==False:
                 self.param=[]
-            Module.param.extend(self.param)
+            Model.param.extend(self.param)
     
     
     def build(self):
@@ -49,7 +49,7 @@ class conv3d_transpose: # define a class for 3D transposed convolutional layer
             self.param=[self.weight] # store only the weight in a list
         if self.trainable==False:
             self.param=[]
-        Module.param.extend(self.param)
+        Model.param.extend(self.param)
         return
     
     

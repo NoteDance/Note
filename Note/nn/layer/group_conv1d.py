@@ -1,7 +1,7 @@
 import tensorflow as tf # import the TensorFlow library
 import Note.nn.activation as a # import the activation module from Note.nn package
 from Note.nn.initializer import initializer # import the initializer module from Note.nn package
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 class group_conv1d: # define a class for 1D convolutional layer
@@ -31,13 +31,13 @@ class group_conv1d: # define a class for 1D convolutional layer
         self.weight=[]
         self.bias=[]
         if input_size!=None:
-            if len(Module.name_list)>0:
-                Module.name=Module.name_list[-1]
-            if Module.name!=None and Module.name not in Module.layer_dict:
-                Module.layer_dict[Module.name]=[]
-                Module.layer_dict[Module.name].append(self)
-            elif Module.name!=None:
-                Module.layer_dict[Module.name].append(self)
+            if len(Model.name_list)>0:
+                Model.name=Model.name_list[-1]
+            if Model.name!=None and Model.name not in Model.layer_dict:
+                Model.layer_dict[Model.name]=[]
+                Model.layer_dict[Model.name].append(self)
+            elif Model.name!=None:
+                Model.layer_dict[Model.name].append(self)
             self.num_groups=num_groups if input_size%num_groups==0 else 1
             for i in range(self.num_groups):
                 self.weight.append(initializer([kernel_size,input_size//self.num_groups,filters//self.num_groups],weight_initializer,dtype)) # initialize the weight tensor
@@ -49,17 +49,17 @@ class group_conv1d: # define a class for 1D convolutional layer
                 self.param=self.weight # store only the weight in a list
             if trainable==False:
                 self.param=[]
-            Module.param.extend(self.param)
+            Model.param.extend(self.param)
     
     
     def build(self):
-        if len(Module.name_list)>0:
-            Module.name=Module.name_list[-1]
-        if Module.name!=None and Module.name not in Module.layer_dict:
-            Module.layer_dict[Module.name]=[]
-            Module.layer_dict[Module.name].append(self)
-        elif Module.name!=None:
-            Module.layer_dict[Module.name].append(self)
+        if len(Model.name_list)>0:
+            Model.name=Model.name_list[-1]
+        if Model.name!=None and Model.name not in Model.layer_dict:
+            Model.layer_dict[Model.name]=[]
+            Model.layer_dict[Model.name].append(self)
+        elif Model.name!=None:
+            Model.layer_dict[Model.name].append(self)
         self.num_groups=self.num_groups if self.input_size%self.num_groups==0 else 1
         for i in range(self.num_groups):
             self.weight.append(initializer([self.kernel_size,self.input_size//self.num_groups,self.output_size//self.num_groups],self.weight_initializer,self.dtype)) # initialize the weight tensor
@@ -71,7 +71,7 @@ class group_conv1d: # define a class for 1D convolutional layer
             self.param=self.weight # store only the weight in a list
         if self.trainable==False:
             self.param=[]
-        Module.param.extend(self.param)
+        Model.param.extend(self.param)
         return
     
     

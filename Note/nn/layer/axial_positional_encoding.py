@@ -1,6 +1,6 @@
 import tensorflow as tf
 import Note.nn.initializer as i_
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 class axial_positional_encoding:
@@ -33,7 +33,7 @@ class axial_positional_encoding:
           weight = i_.initializer((dim, self.d_axial_pos_embs), initializer, dtype)
           self.weights.append(weight)
           self.param.append(weight)
-    Module.param.extend(self.param)
+    Model.param.extend(self.param)
     
 
   def __call__(self, data):

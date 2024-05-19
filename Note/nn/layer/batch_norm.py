@@ -4,7 +4,7 @@ from keras import ops
 from tensorflow.keras.layers import Layer
 from Note.nn.initializer import initializer
 from multiprocessing import Manager
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 class batch_norm:
@@ -30,8 +30,8 @@ class batch_norm:
                 manager=Manager()
                 self.moving_mean=manager.list([self.moving_mean])
                 self.moving_var=manager.list([self.moving_var])
-                Module.ctl_list.append(self.convert_to_list)
-                Module.ctsl_list.append(self.convert_to_shared_list)
+                Model.ctl_list.append(self.convert_to_list)
+                Model.ctsl_list.append(self.convert_to_shared_list)
             self.param=[]
             if center==True:
                 self.beta=initializer([input_size], beta_initializer, dtype)
@@ -45,7 +45,7 @@ class batch_norm:
                     self.param.append(self.gamma)
             else:
                 self.gamma=None
-            Module.param.extend(self.param)
+            Model.param.extend(self.param)
     
     
     def build(self):
@@ -56,8 +56,8 @@ class batch_norm:
             manager=Manager()
             self.moving_mean=manager.list([self.moving_mean])
             self.moving_var=manager.list([self.moving_var])
-            Module.ctl_list.append(self.convert_to_list)
-            Module.ctsl_list.append(self.convert_to_shared_list)
+            Model.ctl_list.append(self.convert_to_list)
+            Model.ctsl_list.append(self.convert_to_shared_list)
         self.param=[]
         if self.center==True:
             self.beta=initializer([self.input_size], self.beta_initializer, self.dtype)
@@ -71,7 +71,7 @@ class batch_norm:
                 self.param.append(self.gamma)
         else:
             self.gamma=None
-        Module.param.extend(self.param)
+        Model.param.extend(self.param)
         return
     
     
@@ -156,7 +156,7 @@ class batch_norm_(Layer):
                     self.param.append(self.gamma)
             else:
                 self.gamma=None
-            Module.param.extend(self.param)
+            Model.param.extend(self.param)
     
     
     def build(self):
@@ -176,7 +176,7 @@ class batch_norm_(Layer):
                 self.param.append(self.gamma)
         else:
             self.gamma=None
-        Module.param.extend(self.param)
+        Model.param.extend(self.param)
         return
     
     

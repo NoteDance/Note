@@ -1,6 +1,6 @@
 import tensorflow as tf
 from Note.nn.initializer import initializer
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 class layer_norm:
@@ -31,24 +31,24 @@ class layer_norm:
             if center==True:
                 self.beta=initializer([input_size], beta_initializer, dtype)
                 self.param.append(self.beta)
-                if Module.name_!=None and Module.name_ not in Module.layer_param:
-                    Module.layer_param[Module.name_]=[]
-                    Module.layer_param[Module.name_].append(self.beta)
-                elif Module.name_!=None:
-                    Module.layer_param[Module.name_].append(self.beta)
+                if Model.name_!=None and Model.name_ not in Model.layer_param:
+                    Model.layer_param[Model.name_]=[]
+                    Model.layer_param[Model.name_].append(self.beta)
+                elif Model.name_!=None:
+                    Model.layer_param[Model.name_].append(self.beta)
             else:
                 self.beta=None
             if scale==True:
                 self.gamma=initializer([input_size], gamma_initializer, dtype)
                 self.param.append(self.gamma)
-                if Module.name_!=None and Module.name_ not in Module.layer_param:
-                    Module.layer_param[Module.name_]=[]
-                    Module.layer_param[Module.name_].append(self.gamma)
-                elif Module.name_!=None:
-                    Module.layer_param[Module.name_].append(self.gamma)
+                if Model.name_!=None and Model.name_ not in Model.layer_param:
+                    Model.layer_param[Model.name_]=[]
+                    Model.layer_param[Model.name_].append(self.gamma)
+                elif Model.name_!=None:
+                    Model.layer_param[Model.name_].append(self.gamma)
             else:
                 self.gamma=None
-            Module.param.extend(self.param)
+            Model.param.extend(self.param)
     
     
     def build(self):
@@ -62,24 +62,24 @@ class layer_norm:
         if self.center==True:
             self.beta=initializer(shape, self.beta_initializer, self.dtype)
             self.param.append(self.beta)
-            if Module.name_!=None and Module.name_ not in Module.layer_param:
-                Module.layer_param[Module.name_]=[]
-                Module.layer_param[Module.name_].append(self.beta)
-            elif Module.name_!=None:
-                Module.layer_param[Module.name_].append(self.beta)
+            if Model.name_!=None and Model.name_ not in Model.layer_param:
+                Model.layer_param[Model.name_]=[]
+                Model.layer_param[Model.name_].append(self.beta)
+            elif Model.name_!=None:
+                Model.layer_param[Model.name_].append(self.beta)
         else:
             self.beta=None
         if self.scale==True:
             self.gamma=initializer(shape, self.gamma_initializer, self.dtype)
             self.param.append(self.gamma)
-            if Module.name_!=None and Module.name_ not in Module.layer_param:
-                Module.layer_param[Module.name_]=[]
-                Module.layer_param[Module.name_].append(self.gamma)
-            elif Module.name_!=None:
-                Module.layer_param[Module.name_].append(self.gamma)
+            if Model.name_!=None and Model.name_ not in Model.layer_param:
+                Model.layer_param[Model.name_]=[]
+                Model.layer_param[Model.name_].append(self.gamma)
+            elif Model.name_!=None:
+                Model.layer_param[Model.name_].append(self.gamma)
         else:
             self.gamma=None
-        Module.param.extend(self.param)
+        Model.param.extend(self.param)
         return
     
     

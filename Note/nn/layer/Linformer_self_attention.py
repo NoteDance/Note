@@ -1,7 +1,7 @@
 import tensorflow as tf
 from Note.nn.layer.dense import dense
 import math
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 def default(val, default_val):
@@ -51,7 +51,7 @@ class Linformer_self_attention:
         self.to_out = dense(dim, dim_head * heads, dtype=dtype)
         self.param.append(self.to_out.param)
         self.dropout_rate=dropout
-        Module.param.extend(self.param)
+        Model.param.extend(self.param)
 
     def __call__(self, x, context = None, train_flag=True):
         if x.dtype!=self.dtype:

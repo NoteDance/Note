@@ -1,7 +1,7 @@
 import tensorflow as tf
 import Note.nn.activation as a # import the activation module from Note.nn package
 import Note.nn.initializer as i # import the initializer module from Note.nn package
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 class dense: # define a class for dense (fully connected) layer
@@ -16,27 +16,27 @@ class dense: # define a class for dense (fully connected) layer
         self.output_size=output_size
         if input_size!=None:
             self.weight=i.initializer([input_size,output_size],weight_initializer,dtype) # initialize the weight matrix
-            Module.param_dict['dense_weight'].append(self.weight)
-            if len(Module.name_list)>0:
-                Module.name=Module.name_list[-1]
-            if Module.name!=None and Module.name not in Module.layer_dict:
-                Module.layer_dict[Module.name]=[]
-                Module.layer_dict[Module.name].append(self)
-            elif Module.name!=None:
-                   Module.layer_dict[Module.name].append(self)
-            if Module.name_!=None and Module.name_ not in Module.layer_param:
-                Module.layer_param[Module.name_]=[]
-                Module.layer_param[Module.name_].append(self.weight)
-            elif Module.name_!=None:
-                Module.layer_param[Module.name_].append(self.weight)
+            Model.param_dict['dense_weight'].append(self.weight)
+            if len(Model.name_list)>0:
+                Model.name=Model.name_list[-1]
+            if Model.name!=None and Model.name not in Model.layer_dict:
+                Model.layer_dict[Model.name]=[]
+                Model.layer_dict[Model.name].append(self)
+            elif Model.name!=None:
+                   Model.layer_dict[Model.name].append(self)
+            if Model.name_!=None and Model.name_ not in Model.layer_param:
+                Model.layer_param[Model.name_]=[]
+                Model.layer_param[Model.name_].append(self.weight)
+            elif Model.name_!=None:
+                Model.layer_param[Model.name_].append(self.weight)
             if use_bias==True: # if use bias is True
                 self.bias=i.initializer([output_size],bias_initializer,dtype) # initialize the bias vector
-                Module.param_dict['dense_bias'].append(self.bias)
-                if Module.name_!=None and Module.name_ not in Module.layer_param:
-                    Module.layer_param[Module.name_]=[]
-                    Module.layer_param[Module.name_].append(self.bias)
-                elif Module.name_!=None:
-                    Module.layer_param[Module.name_].append(self.bias)
+                Model.param_dict['dense_bias'].append(self.bias)
+                if Model.name_!=None and Model.name_ not in Model.layer_param:
+                    Model.layer_param[Model.name_]=[]
+                    Model.layer_param[Model.name_].append(self.bias)
+                elif Model.name_!=None:
+                    Model.layer_param[Model.name_].append(self.bias)
             else: # if use bias is False
                 self.bias=None # set the bias to None
             if use_bias==True: # if use bias is True
@@ -50,32 +50,32 @@ class dense: # define a class for dense (fully connected) layer
                 self.param=[self.weight] # store only the weight in a list
             if trainable==False:
                 self.param=[]
-            Module.param.extend(self.param)
+            Model.param.extend(self.param)
     
     
     def build(self):
         self.weight=i.initializer([self.input_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix
-        Module.param_dict['dense_weight'].append(self.weight)
-        if len(Module.name_list)>0:
-            Module.name=Module.name_list[-1]
-        if Module.name!=None and Module.name not in Module.layer_dict:
-            Module.layer_dict[Module.name]=[]
-            Module.layer_dict[Module.name].append(self)
-        elif Module.name!=None:
-               Module.layer_dict[Module.name].append(self)
-        if Module.name_!=None and Module.name_ not in Module.layer_param:
-            Module.layer_param[Module.name_]=[]
-            Module.layer_param[Module.name_].append(self.weight)
-        elif Module.name!=None:
-            Module.layer_param[Module.name_].append(self.weight)
+        Model.param_dict['dense_weight'].append(self.weight)
+        if len(Model.name_list)>0:
+            Model.name=Model.name_list[-1]
+        if Model.name!=None and Model.name not in Model.layer_dict:
+            Model.layer_dict[Model.name]=[]
+            Model.layer_dict[Model.name].append(self)
+        elif Model.name!=None:
+               Model.layer_dict[Model.name].append(self)
+        if Model.name_!=None and Model.name_ not in Model.layer_param:
+            Model.layer_param[Model.name_]=[]
+            Model.layer_param[Model.name_].append(self.weight)
+        elif Model.name!=None:
+            Model.layer_param[Model.name_].append(self.weight)
         if self.use_bias==True: # if use bias is True
             self.bias=i.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector
-            Module.param_dict['dense_bias'].append(self.bias)
-            if Module.name_!=None and Module.name_ not in Module.layer_param:
-                Module.layer_param[Module.name_]=[]
-                Module.layer_param[Module.name_].append(self.bias)
-            elif Module.name!=None:
-                Module.layer_param[Module.name_].append(self.bias)
+            Model.param_dict['dense_bias'].append(self.bias)
+            if Model.name_!=None and Model.name_ not in Model.layer_param:
+                Model.layer_param[Model.name_]=[]
+                Model.layer_param[Model.name_].append(self.bias)
+            elif Model.name!=None:
+                Model.layer_param[Model.name_].append(self.bias)
         else: # if use bias is False
             self.bias=None # set the bias to None
         if self.use_bias==True: # if use bias is True
@@ -84,7 +84,7 @@ class dense: # define a class for dense (fully connected) layer
             self.param=[self.weight] # store only the weight in a list
         if self.trainable==False:
             self.param=[]
-        Module.param.extend(self.param)
+        Model.param.extend(self.param)
         return
     
     

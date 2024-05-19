@@ -1,6 +1,6 @@
 import tensorflow as tf # import the TensorFlow library
 import Note.nn.initializer as i # import the initializer module from Note.nn package
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 class LSTMCell: # define a class for long short-term memory (LSTM) cell
@@ -17,7 +17,7 @@ class LSTMCell: # define a class for long short-term memory (LSTM) cell
                 self.param=[self.weight] # store only the weight matrix in a list
         else:
             self.param=[]
-        Module.param.extend(self.param)
+        Model.param.extend(self.param)
     
     
     def __call__(self,data,state): # define the output method

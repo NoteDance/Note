@@ -1,7 +1,7 @@
 import tensorflow as tf
 import Note.nn.initializer as i
 from Note.nn.activation import activation_dict
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 class adaptive_conv2d:
@@ -36,7 +36,7 @@ class adaptive_conv2d:
                 self.param.append(self.bias)
             if trainable==False:
                 self.param=[]
-            Module.param.extend(self.param)
+            Model.param.extend(self.param)
     
     
     def build(self):
@@ -48,7 +48,7 @@ class adaptive_conv2d:
             self.param.append(self.bias)
         if self.trainable==False:
             self.param=[]
-        Module.param.extend(self.param)
+        Model.param.extend(self.param)
         return
     
     

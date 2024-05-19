@@ -1,6 +1,6 @@
 import tensorflow as tf # import the TensorFlow library
 import Note.nn.initializer as i # import the initializer module from Note.nn package
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 class GRU: # define a class for gated recurrent unit (GRU) layer
@@ -34,7 +34,7 @@ class GRU: # define a class for gated recurrent unit (GRU) layer
                     self.param=[self.weight_r1,self.weight_z1,self.weight_h1,self.weight_r2,self.weight_z2,self.weight_h2] # store only the weight matrices in a list
             else:
                 self.param=[]
-            Module.param.extend(self.param)
+            Model.param.extend(self.param)
     
     
     def build(self):
@@ -55,7 +55,7 @@ class GRU: # define a class for gated recurrent unit (GRU) layer
                 self.param=[self.weight_r1,self.weight_z1,self.weight_h1,self.weight_r2,self.weight_z2,self.weight_h2] # store only the weight matrices in a list
         else:
             self.param=[]
-        Module.param.extend(self.param)
+        Model.param.extend(self.param)
         return
     
     

@@ -1,7 +1,7 @@
 import tensorflow as tf # import the TensorFlow library
 import Note.nn.initializer as i # import the initializer module from Note.nn package
 from Note.nn.activation import activation_dict # import the activation function dictionary from Note.nn package
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 class RNN: # define a class for recurrent neural network (RNN) layer
@@ -29,7 +29,7 @@ class RNN: # define a class for recurrent neural network (RNN) layer
                     self.param=[self.weight_i,self.weight_s] # store only the weight matrices in a list
             else:
                 self.param=[]
-            Module.param.extend(self.param)
+            Model.param.extend(self.param)
     
     
     def build(self):
@@ -44,7 +44,7 @@ class RNN: # define a class for recurrent neural network (RNN) layer
                 self.param=[self.weight_i,self.weight_s] # store only the weight matrices in a list
         else:
             self.param=[]
-        Module.param.extend(self.param)
+        Model.param.extend(self.param)
         return
     
     

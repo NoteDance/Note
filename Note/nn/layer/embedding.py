@@ -1,6 +1,6 @@
 import tensorflow as tf
 import Note.nn.initializer as i
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 class embedding:
@@ -18,7 +18,7 @@ class embedding:
                 self.param=[self.embeddings]
             else:
                 self.param=[]
-            Module.param.extend(self.param)
+            Model.param.extend(self.param)
     
     
     def build(self):
@@ -27,7 +27,7 @@ class embedding:
             self.param=[self.embeddings]
         else:
             self.param=[]
-        Module.param.extend(self.param)
+        Model.param.extend(self.param)
         return
     
     
