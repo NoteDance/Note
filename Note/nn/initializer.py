@@ -1,5 +1,5 @@
 import tensorflow as tf
-from Note.nn.Module import Module
+from Note.nn.Model import Model
 
 
 def initializer(shape,initializer,dtype='float32',name=None):
@@ -175,7 +175,7 @@ def initializer_(shape,initializer,dtype='float32',name=None):
             param=tf.Variable(orthogonal(shape,dtype))
     if name!=None:
         param.name=name
-    Module.param.append(param)
+    Model.param.append(param)
     return param
 
 
