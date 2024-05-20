@@ -76,11 +76,11 @@ class PreActBottleneck:
     return out + residual
 
 
-class BiT:
+class BiT(Model):
   """Implementation of Pre-activation (v2) ResNet mode."""
 
   def __init__(self, model_type, head_size=21843, zero_head=False):
-    Model.init()
+    super().__init__()
     
     block_units = model_type['block_units']
     wf = model_type['width_factor']  # shortcut 'cause we'll use it a lot.
@@ -115,8 +115,6 @@ class BiT:
     self.head.add(tf.nn.relu)
     self.head.add(adaptive_avg_pooling2d(1))
     self.head.add(conv2d(head_size, 1, 2048*wf))
-    
-    self.param=Model.param
     
     
   def fine_tuning(self,classes=None,flag=0):
