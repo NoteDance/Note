@@ -3,7 +3,7 @@ from Note.nn.layer.TransformerEncoder import TransformerEncoder
 from Note.nn.layer.TransformerDecoder import TransformerDecoder
 from Note.nn.layer.TransformerEncoderLayer import TransformerEncoderLayer
 from Note.nn.layer.TransformerDecoderLayer import TransformerDecoderLayer
-from Note.nn.layer.layer_normalization import layer_normalization
+from Note.nn.layer.layer_norm import layer_norm
 
 
 class Transformer:
@@ -19,7 +19,7 @@ class Transformer:
             encoder_layers = [TransformerEncoderLayer(d_model, nhead, dim_feedforward, dropout,
                                                     activation, layer_norm_eps, norm_first,
                                                     bias) for _ in range(num_encoder_layers)]
-            encoder_norm = layer_normalization(d_model, epsilon=layer_norm_eps, dtype=dtype)
+            encoder_norm = layer_norm(d_model, epsilon=layer_norm_eps, dtype=dtype)
             self.encoder = TransformerEncoder(encoder_layers, num_encoder_layers, encoder_norm)
 
         if custom_decoder is not None:
@@ -28,7 +28,7 @@ class Transformer:
             decoder_layers = [TransformerDecoderLayer(d_model, nhead, dim_feedforward, dropout,
                                                     activation, layer_norm_eps, norm_first,
                                                     bias) for _ in range(num_decoder_layers)]
-            decoder_norm = layer_normalization(d_model, epsilon=layer_norm_eps, dtype=dtype)
+            decoder_norm = layer_norm(d_model, epsilon=layer_norm_eps, dtype=dtype)
             self.decoder = TransformerDecoder(decoder_layers, num_decoder_layers, decoder_norm)
 
         self.d_model = d_model

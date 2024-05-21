@@ -1,7 +1,7 @@
 import tensorflow as tf
 from Note.nn.layer.multihead_attention import multihead_attention
 from Note.nn.layer.dense import dense
-from Note.nn.layer.layer_normalization import layer_normalization
+from Note.nn.layer.layer_norm import layer_norm
 from Note.nn.layer.dropout import dropout
 from Note.nn.activation import activation_dict
 
@@ -18,8 +18,8 @@ class TransformerEncoderLayer:
         self.linear2 = dense(d_model, dim_feedforward, use_bias=bias, dtype=dtype)
 
         self.norm_first = norm_first
-        self.norm1 = layer_normalization(d_model, epsilon=layer_norm_eps, dtype=dtype)
-        self.norm2 = layer_normalization(d_model, epsilon=layer_norm_eps, dtype=dtype)
+        self.norm1 = layer_norm(d_model, epsilon=layer_norm_eps, dtype=dtype)
+        self.norm2 = layer_norm(d_model, epsilon=layer_norm_eps, dtype=dtype)
         self.dropout1 = dropout(dropout_rate)
         self.dropout2 = dropout(dropout_rate)
 

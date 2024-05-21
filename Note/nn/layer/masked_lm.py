@@ -1,6 +1,6 @@
 import tensorflow as tf
 from Note.nn.layer.dense import dense
-from Note.nn.layer.layer_normalization import layer_normalization
+from Note.nn.layer.layer_norm import layer_norm
 from Note.nn.initializer import initializer_
 
 class masked_lm:
@@ -54,7 +54,7 @@ class masked_lm:
             weight_initializer=self.initializer,
             dtype=dtype
             )
-        self.layer_norm = layer_normalization(hidden_size,
+        self.layer_norm = layer_norm(hidden_size,
             axis=-1, epsilon=1e-12)
         self.bias = initializer_(
             shape=(self._vocab_size,),
@@ -70,7 +70,7 @@ class masked_lm:
         weight_initializer=self.initializer,
         dtype=self.dtype
         )
-    self.layer_norm = layer_normalization(self.hidden_size,
+    self.layer_norm = layer_norm(self.hidden_size,
         axis=-1, epsilon=1e-12)
     self.bias = initializer_(
         shape=(self._vocab_size,),
