@@ -17,14 +17,13 @@ https://github.com/NoteDance/Note/tree/Note-7.0/Note/nn/layer
 
 **Pytorch:**
 ```python
-from Note.nn.layer.dense import dense
-from Note.nn.Model import Model
+from Note import nn
 
-class nn(Model):
+class nn(nn.Model):
     def __init__(self):
 	super().__init__()
-        self.layer1=dense(128,784,activation='relu')
-        self.layer2=dense(10,128)
+        self.layer1=nn.dense(128,784,activation='relu')
+        self.layer2=nn.dense(10,128)
     
     def __call__(self,data):
         x=self.layer1(data)
@@ -33,14 +32,13 @@ class nn(Model):
 ```
 **Keras:**
 ```python
-from Note.nn.layer.dense import dense
-from Note.nn.Model import Model
+from Note import nn
 
-class nn(Model):
+class nn(nn.Model):
     def __init__(self):
 	super().__init__()
-        self.layer1=dense(128,activation='relu')
-        self.layer2=dense(10)
+        self.layer1=nn.dense(128,activation='relu')
+        self.layer2=nn.dense(10)
     
     def __call__(self,data):
         x=self.layer1(data)
@@ -48,13 +46,12 @@ class nn(Model):
         return x
 ```
 ```python
-from Note.nn.layer.dense import dense
-from Note.nn.Model import Model
+from Note import nn
 
-Model.init()
+nn.Model.init()
 def nn(data):
-    x=dense(128,activation='relu')(data)
-    x=dense(10)(x)
+    x=nn.dense(128,activation='relu')(data)
+    x=nn.dense(10)(x)
     return x
 ```
 **Note.neuralnetwork.tf package contains neural networks implemented with Note’s layer module that can be trained with TensorFlow.**
