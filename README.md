@@ -19,7 +19,7 @@ https://github.com/NoteDance/Note/tree/Note-7.0/Note/nn/layer
 ```python
 from Note import nn
 
-class nn(nn.Model):
+class model(nn.Model):
     def __init__(self):
 	super().__init__()
         self.layer1=nn.dense(128,784,activation='relu')
@@ -34,7 +34,7 @@ class nn(nn.Model):
 ```python
 from Note import nn
 
-class nn(nn.Model):
+class model(nn.Model):
     def __init__(self):
 	super().__init__()
         self.layer1=nn.dense(128,activation='relu')
@@ -49,7 +49,7 @@ class nn(nn.Model):
 from Note import nn
 
 nn.Model.init()
-def nn(data):
+def model(data):
     x=nn.dense(128,activation='relu')(data)
     x=nn.dense(10)(x)
     return x
