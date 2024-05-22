@@ -11,8 +11,6 @@
 
 https://github.com/NoteDance/Note/tree/Note-7.0/Note/nn/layer
 
-**Documentation:** https://github.com/NoteDance/Note-documentation/tree/layer-7.0
-
 **Using Note’s Layer module, you can determine the shape of the training parameters when you input data like Keras, or you can give the shape of the training parameters in advance like PyTorch.**
 
 **Pytorch:**
@@ -54,7 +52,8 @@ def model(data):
     x=nn.dense(10)(x)
     return x
 ```
-**Note.neuralnetwork.tf package contains neural networks implemented with Note’s layer module that can be trained with TensorFlow.**
+**Note.neuralnetwork.tf package contains neural networks implemented with Note’s layer module that can be trained with TensorFlow. You can also consider these models as examples using the Note.**
+
 https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
 
 **Documentation:** https://github.com/NoteDance/Note-documentation/tree/tf-7.0
