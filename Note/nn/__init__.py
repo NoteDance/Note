@@ -127,6 +127,7 @@ from Note.nn.layer.zeropadding3d import zeropadding3d
 from Note.nn.accuracy import *
 from Note.nn.activation import activation,activation_conv,activation_conv_transpose
 from Note.nn.cosine_similarity import cosine_similarity
+from Note.nn.create_additive_causal_mask import create_additive_causal_mask
 from Note.nn.fine_tuning import fine_tuning
 from Note.nn.initializer import initializer,initializer_
 from Note.nn.interpolate import interpolate
