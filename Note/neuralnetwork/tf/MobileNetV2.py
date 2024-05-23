@@ -1,12 +1,6 @@
 import tensorflow as tf
-from Note.nn.layer.conv2d import conv2d
-from Note.nn.layer.depthwise_conv2d import depthwise_conv2d
-from Note.nn.layer.dense import dense
-from Note.nn.layer.batch_norm import batch_norm_
-from Note.nn.layer.zeropadding2d import zeropadding2d
-from Note.nn.Layers import Layers
+from Note import nn
 from Note.nn.activation import activation_dict
-from Note.nn.Model import Model
 
 
 def _make_divisible(v, divisor, min_value=None):
@@ -45,17 +39,17 @@ def correct_pad(inputs, kernel_size):
 
 class _inverted_res_block:
     def __init__(self, in_channels=None, expansion=None, stride=None, alpha=None, filters=None, block_id=None, dtype='float32'):
-        self.conv2d1=conv2d(expansion * in_channels,[1,1],in_channels,padding="SAME",use_bias=False,dtype=dtype)
-        self.batch_normalization1=batch_norm_(self.conv2d1.output_size,momentum=0.999,dtype=dtype)
-        self.zeropadding2d=zeropadding2d()
-        self.depthwiseconv2d=depthwise_conv2d([3,3],1,self.conv2d1.output_size,strides=[1,stride,stride,1],use_bias=False,padding="SAME" if stride == 1 else "VALID",dtype=dtype)
-        self.batch_normalization2=batch_norm_(self.depthwiseconv2d.output_size,momentum=0.999,dtype=dtype)
+        self.conv2d1=nn.conv2d(expansion * in_channels,[1,1],in_channels,padding="SAME",use_bias=False,dtype=dtype)
+        self.batch_normalization1=nn.batch_norm_(self.conv2d1.output_size,momentum=0.999,dtype=dtype)
+        self.zeropadding2d=nn.zeropadding2d()
+        self.depthwiseconv2d=nn.depthwise_conv2d([3,3],1,self.conv2d1.output_size,strides=[1,stride,stride,1],use_bias=False,padding="SAME" if stride == 1 else "VALID",dtype=dtype)
+        self.batch_normalization2=nn.batch_norm_(self.depthwiseconv2d.output_size,momentum=0.999,dtype=dtype)
         pointwise_conv_filters = int(filters * alpha)
         # Ensure the number of filters on the last 1x1 convolution is divisible by
         # 8.
         self.pointwise_filters = _make_divisible(pointwise_conv_filters, 8)
-        self.conv2d2=conv2d(self.pointwise_filters,[1,1],self.depthwiseconv2d.output_size,padding="SAME",use_bias=False,dtype=dtype)
-        self.batch_normalization3=batch_norm_(self.conv2d2.output_size,momentum=0.999,dtype=dtype)
+        self.conv2d2=nn.conv2d(self.pointwise_filters,[1,1],self.depthwiseconv2d.output_size,padding="SAME",use_bias=False,dtype=dtype)
+        self.batch_normalization3=nn.batch_norm_(self.conv2d2.output_size,momentum=0.999,dtype=dtype)
         self.in_channels=in_channels
         self.stride=stride
         self.block_id=block_id
@@ -94,12 +88,12 @@ class MobileNetV2:
         
         
     def build(self,dtype='float32'):
-        Model.init()
+        nn.Model.init()
         
-        self.layers=Layers()
+        self.layers=nn.Layers()
         
-        self.layers.add(conv2d(self.first_block_filters,[3,3],3,strides=[2,2],padding='SAME',use_bias=False,dtype=dtype))
-        self.layers.add(batch_norm_(momentum=0.999,dtype=dtype))
+        self.layers.add(nn.conv2d(self.first_block_filters,[3,3],3,strides=[2,2],padding='SAME',use_bias=False,dtype=dtype))
+        self.layers.add(nn.batch_norm_(momentum=0.999,dtype=dtype))
         
         self.layers.add(_inverted_res_block(self.layers.output_size, filters=16, alpha=self.alpha, stride=1, expansion=1, block_id=0, dtype=dtype))
         self.layers.add(_inverted_res_block(self.layers.output_size, filters=24, alpha=self.alpha, stride=2, expansion=6, block_id=1, dtype=dtype))
@@ -127,11 +121,11 @@ class MobileNetV2:
         else:
             last_block_filters = 1280
             
-        self.layers.add(conv2d(last_block_filters,[1,1],use_bias=False,dtype=dtype))
-        self.layers.add(batch_norm_(momentum=0.999,dtype=dtype))
+        self.layers.add(nn.conv2d(last_block_filters,[1,1],use_bias=False,dtype=dtype))
+        self.layers.add(nn.batch_norm_(momentum=0.999,dtype=dtype))
         
-        self.dense=dense(self.classes,self.layers.output_size,activation='softmax',dtype=dtype)
-        self.param=Model.param
+        self.dense=nn.dense(self.classes,self.layers.output_size,activation='softmax',dtype=dtype)
+        self.param=nn.Model.param
         return
     
     
@@ -140,7 +134,7 @@ class MobileNetV2:
         if flag==0:
             self.param_=self.param.copy()
             self.dense_=self.dense
-            self.dense=dense(classes,self.dense.input_size,activation='softmax',dtype=self.dense.dtype)
+            self.dense=nn.dense(classes,self.dense.input_size,activation='softmax',dtype=self.dense.dtype)
             param.extend(self.dense.param)
             self.param=param
         elif flag==1:

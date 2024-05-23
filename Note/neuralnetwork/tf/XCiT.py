@@ -1,15 +1,7 @@
 from random import randrange
 
 import tensorflow as tf
-from Note.nn.layer.dense import dense
-from Note.nn.layer.group_conv2d import group_conv2d
-from Note.nn.layer.zeropadding2d import zeropadding2d
-from Note.nn.layer.batch_norm import batch_norm_
-from Note.nn.layer.layer_norm import layer_norm
-from Note.nn.layer.dropout import dropout
-from Note.nn.initializer import initializer_
-from Note.nn.Layers import Layers
-from Note.nn.Model import Model
+from Note import nn
 
 from einops import rearrange, repeat, pack, unpack
 from einops.layers.tensorflow import Rearrange
@@ -62,13 +54,13 @@ class LayerScale:
 
 class FeedForward:
     def __init__(self, dim, hidden_dim, dropout_rate = 0.):
-        self.net = Layers()
-        self.net.add(layer_norm(dim))
-        self.net.add(dense(hidden_dim, dim))
+        self.net = nn.Layers()
+        self.net.add(nn.layer_norm(dim))
+        self.net.add(nn.dense(hidden_dim, dim))
         self.net.add(tf.nn.gelu)
-        self.net.add(dropout(dropout_rate))
-        self.net.add(dense(dim, hidden_dim))
-        self.net.add(dropout(dropout_rate))
+        self.net.add(nn.dropout(dropout_rate))
+        self.net.add(nn.dense(dim, hidden_dim))
+        self.net.add(nn.dropout(dropout_rate))
         
     def __call__(self, x, training):
         return self.net(x, training)
@@ -79,16 +71,16 @@ class Attention:
         self.heads = heads
         self.scale = dim_head ** -0.5
 
-        self.norm = layer_norm(dim)
-        self.to_q = dense(inner_dim, dim, use_bias = False)
-        self.to_kv = dense(inner_dim * 2, dim, use_bias = False)
+        self.norm = nn.layer_norm(dim)
+        self.to_q = nn.dense(inner_dim, dim, use_bias = False)
+        self.to_kv = nn.dense(inner_dim * 2, dim, use_bias = False)
 
         self.attend = tf.nn.softmax
-        self.dropout = dropout(dropout_rate)
+        self.dropout = nn.dropout(dropout_rate)
 
-        self.to_out = Layers()
-        self.to_out.add(dense(dim, inner_dim))
-        self.to_out.add(dropout(dropout_rate))
+        self.to_out = nn.Layers()
+        self.to_out.add(nn.dense(dim, inner_dim))
+        self.to_out.add(nn.dropout(dropout_rate))
 
     def __call__(self, x, training, context = None):
         h = self.heads
@@ -112,18 +104,18 @@ class XCAttention:
     def __init__(self, dim, heads = 8, dim_head = 64, dropout_rate = 0.):
         inner_dim = dim_head * heads
         self.heads = heads
-        self.norm = layer_norm(dim)
+        self.norm = nn.layer_norm(dim)
 
-        self.to_qkv = dense(inner_dim * 3, dim, use_bias = False)
+        self.to_qkv = nn.dense(inner_dim * 3, dim, use_bias = False)
 
-        self.temperature = initializer_((heads, 1, 1), 'ones')
+        self.temperature = nn.initializer_((heads, 1, 1), 'ones')
 
         self.attend = tf.nn.softmax
-        self.dropout = dropout(dropout_rate)
+        self.dropout = nn.dropout(dropout_rate)
 
-        self.to_out = Layers()
-        self.to_out.add(dense(dim, inner_dim))
-        self.to_out.add(dropout(dropout_rate))
+        self.to_out = nn.Layers()
+        self.to_out.add(nn.dense(dim, inner_dim))
+        self.to_out.add(nn.dropout(dropout_rate))
 
     def __call__(self, x, training):
         h = self.heads
@@ -152,14 +144,14 @@ class LocalPatchInteraction:
         assert (kernel_size % 2) == 1
         padding = kernel_size // 2
 
-        self.net = Layers()
-        self.net.add(layer_norm(dim))
-        self.net.add(zeropadding2d(padding = padding))
-        self.net.add(group_conv2d(dim, kernel_size, dim, dim))
-        self.net.add(batch_norm_(dim))
+        self.net = nn.Layers()
+        self.net.add(nn.layer_norm(dim))
+        self.net.add(nn.zeropadding2d(padding = padding))
+        self.net.add(nn.group_conv2d(dim, kernel_size, dim, dim))
+        self.net.add(nn.batch_norm_(dim))
         self.net.add(tf.nn.gelu)
-        self.net.add(zeropadding2d(padding = padding))
-        self.net.add(group_conv2d(dim, kernel_size, dim, dim))
+        self.net.add(nn.zeropadding2d(padding = padding))
+        self.net.add(nn.group_conv2d(dim, kernel_size, dim, dim))
 
     def __call__(self, x, training):
         return self.net(x, training)
@@ -208,7 +200,7 @@ class XCATransformer:
 
         return x
 
-class XCiT(Model):
+class XCiT(nn.Model):
     def __init__(
         self,
         image_size,
@@ -233,26 +225,26 @@ class XCiT(Model):
         patch_dim = 3 * patch_size ** 2
         self.dim = dim
 
-        self.to_patch_embedding = Layers()
+        self.to_patch_embedding = nn.Layers()
         self.to_patch_embedding.add(Rearrange('b (h p1) (w p2) c -> b h w (p1 p2 c)', p1 = patch_size, p2 = patch_size))
-        self.to_patch_embedding.add(layer_norm(patch_dim))
-        self.to_patch_embedding.add(dense(dim, patch_dim))
-        self.to_patch_embedding.add(layer_norm(dim))
+        self.to_patch_embedding.add(nn.layer_norm(patch_dim))
+        self.to_patch_embedding.add(nn.dense(dim, patch_dim))
+        self.to_patch_embedding.add(nn.layer_norm(dim))
 
-        self.pos_embedding = initializer_((1, num_patches, dim), 'normal')
-        self.cls_token = initializer_([dim], 'normal')
+        self.pos_embedding = nn.initializer_((1, num_patches, dim), 'normal')
+        self.cls_token = nn.initializer_([dim], 'normal')
 
-        self.dropout = dropout(emb_dropout)
+        self.dropout = nn.dropout(emb_dropout)
 
         self.xcit_transformer = XCATransformer(dim, depth, heads, dim_head, mlp_dim, local_patch_kernel_size, dropout_rate, layer_dropout)
 
-        self.final_norm = layer_norm(dim)
+        self.final_norm = nn.layer_norm(dim)
 
         self.cls_transformer = Transformer(dim, cls_depth, heads, dim_head, mlp_dim, dropout_rate, layer_dropout)
 
-        self.mlp_head = Layers()
-        self.mlp_head.add(layer_norm(dim))
-        self.mlp_head.add(dense(num_classes, dim))
+        self.mlp_head = nn.Layers()
+        self.mlp_head.add(nn.layer_norm(dim))
+        self.mlp_head.add(nn.dense(num_classes, dim))
         
         self.training = True
         
@@ -262,7 +254,7 @@ class XCiT(Model):
         if flag==0:
             self.param_=self.param.copy()
             self.mlp_head_=self.mlp_head.layer[-1]
-            self.mlp_head.layer[-1]=dense(classes, self.dim)
+            self.mlp_head.layer[-1]=nn.dense(classes, self.dim)
             param.extend(self.mlp_head.layer[-1].param)
             self.param=param
         elif flag==1:

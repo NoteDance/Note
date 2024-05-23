@@ -1,15 +1,5 @@
 import tensorflow as tf
-from Note.nn.layer.dense import dense
-from Note.nn.layer.conv2d import conv2d
-from Note.nn.layer.batch_norm import batch_norm_
-from Note.nn.layer.layer_norm import layer_norm
-from Note.nn.layer.multihead_attention import multihead_attention
-from Note.nn.layer.zeropadding2d import zeropadding2d
-from Note.nn.layer.avg_pool2d import avg_pool2d
-from Note.nn.layer.identity import identity
-from Note.nn.initializer import initializer_
-from Note.nn.Layers import Layers
-from Note.nn.Model import Model
+from Note import nn
 import numpy as np
 from typing import Tuple, Union
 
@@ -19,19 +9,19 @@ class Bottleneck:
 
     def __init__(self, inplanes, planes, stride=1):
         # all conv layers have stride 1. an avgpool is performed after the second convolution when stride > 1
-        self.conv1 = conv2d(planes, 1, inplanes, use_bias=False)
-        self.bn1 = batch_norm_(planes)
+        self.conv1 = nn.conv2d(planes, 1, inplanes, use_bias=False)
+        self.bn1 = nn.batch_norm_(planes)
         self.relu1 = tf.nn.relu
 
-        self.zeropadding2d = zeropadding2d(padding=1)
-        self.conv2 = conv2d(planes, 3, planes, use_bias=False)
-        self.bn2 = batch_norm_(planes)
+        self.zeropadding2d = nn.zeropadding2d(padding=1)
+        self.conv2 = nn.conv2d(planes, 3, planes, use_bias=False)
+        self.bn2 = nn.batch_norm_(planes)
         self.relu2 = tf.nn.relu
 
-        self.avgpool = avg_pool2d(stride, stride, 'VALID') if stride > 1 else identity()
+        self.avgpool = nn.avg_pool2d(stride, stride, 'VALID') if stride > 1 else nn.identity()
 
-        self.conv3 = conv2d(planes * self.expansion, 1, planes, use_bias=False)
-        self.bn3 = batch_norm_(planes * self.expansion)
+        self.conv3 = nn.conv2d(planes * self.expansion, 1, planes, use_bias=False)
+        self.bn3 = nn.batch_norm_(planes * self.expansion)
         self.relu3 = tf.nn.relu
 
         self.downsample = None
@@ -39,13 +29,13 @@ class Bottleneck:
 
         if stride > 1 or inplanes != planes * Bottleneck.expansion:
             # downsampling layer is prepended with an avgpool, and the subsequent convolution has stride 1
-            self.downsample = Layers()
-            self.downsample.add(avg_pool2d(stride, stride, 'VALID'))
-            self.downsample.add(conv2d(planes * self.expansion, 1, inplanes, strides=1, use_bias=False))
-            self.downsample.add(batch_norm_(planes * self.expansion))
+            self.downsample = nn.Layers()
+            self.downsample.add(nn.avg_pool2d(stride, stride, 'VALID'))
+            self.downsample.add(nn.conv2d(planes * self.expansion, 1, inplanes, strides=1, use_bias=False))
+            self.downsample.add(nn.batch_norm_(planes * self.expansion))
 
     def __call__(self, x, train_flag=True):
-        identity = x
+        nn.identity = x
 
         out = self.relu1(self.bn1(self.conv1(x), train_flag))
         out = self.zeropadding2d(out)
@@ -54,9 +44,9 @@ class Bottleneck:
         out = self.bn3(self.conv3(out), train_flag)
 
         if self.downsample is not None:
-            identity = self.downsample(x, train_flag)
+            nn.identity = self.downsample(x, train_flag)
 
-        out += identity
+        out += nn.identity
         out = self.relu3(out)
         return out
 
@@ -64,12 +54,12 @@ class Bottleneck:
 class AttentionPool2d:
     def __init__(self, spacial_dim: int, embed_dim: int, num_heads: int, output_dim: int = None):
         self.positional_embedding = tf.Variable(tf.random.normal([spacial_dim ** 2 + 1, embed_dim]) / embed_dim ** 0.5)
-        self.k_proj = dense(embed_dim, embed_dim)
-        self.q_proj = dense(embed_dim, embed_dim)
-        self.v_proj = dense(embed_dim, embed_dim)
-        self.c_proj = dense(output_dim or embed_dim, embed_dim)
+        self.k_proj = nn.dense(embed_dim, embed_dim)
+        self.q_proj = nn.dense(embed_dim, embed_dim)
+        self.v_proj = nn.dense(embed_dim, embed_dim)
+        self.c_proj = nn.dense(output_dim or embed_dim, embed_dim)
         self.num_heads = num_heads
-        Model.param.append(self.positional_embedding)
+        nn.Model.param.append(self.positional_embedding)
 
     def __call__(self, x):
         shape = x.shape
@@ -112,17 +102,17 @@ class ModifiedResNet:
         self.input_resolution = input_resolution
 
         # the 3-layer stem
-        self.zeropadding2d = zeropadding2d(padding=1)
-        self.conv1 = conv2d(width // 2, input_size=3, kernel_size=3, strides=2, use_bias=False)
-        self.bn1 = batch_norm_(width // 2)
+        self.zeropadding2d = nn.zeropadding2d(padding=1)
+        self.conv1 = nn.conv2d(width // 2, input_size=3, kernel_size=3, strides=2, use_bias=False)
+        self.bn1 = nn.batch_norm_(width // 2)
         self.relu1 = tf.nn.relu
-        self.conv2 = conv2d(width // 2, input_size=width // 2, kernel_size=3, use_bias=False)
-        self.bn2 = batch_norm_(width // 2)
+        self.conv2 = nn.conv2d(width // 2, input_size=width // 2, kernel_size=3, use_bias=False)
+        self.bn2 = nn.batch_norm_(width // 2)
         self.relu2 = tf.nn.relu
-        self.conv3 = conv2d(width, input_size=width // 2, kernel_size=3, use_bias=False)
-        self.bn3 = batch_norm_(width)
+        self.conv3 = nn.conv2d(width, input_size=width // 2, kernel_size=3, use_bias=False)
+        self.bn3 = nn.batch_norm_(width)
         self.relu3 = tf.nn.relu
-        self.avgpool = avg_pool2d(2, 2, 'VALID')
+        self.avgpool = nn.avg_pool2d(2, 2, 'VALID')
 
         # residual layers
         self._inplanes = width  # this is a *mutable* variable used during construction
@@ -135,7 +125,7 @@ class ModifiedResNet:
         self.attnpool = AttentionPool2d(input_resolution // 32, embed_dim, heads, output_dim)
 
     def _make_layer(self, planes, blocks, stride=1):
-        layers = Layers()
+        layers = nn.Layers()
         layers.add(Bottleneck(self._inplanes, planes, stride))
 
         self._inplanes = planes * Bottleneck.expansion
@@ -172,7 +162,7 @@ class ModifiedResNet:
 class LayerNorm:
     """Subclass torch's LayerNorm to handle fp16."""
     def __init__(self, input_size):
-        self.layer_norm = layer_norm(input_size)
+        self.layer_norm = nn.layer_norm(input_size)
 
     def __call__(self, x):
         orig_type = x.dtype
@@ -187,12 +177,12 @@ class QuickGELU:
 
 class ResidualAttentionBlock:
     def __init__(self, d_model: int, n_head: int, attn_mask = None):
-        self.attn = multihead_attention(n_head, d_model)
+        self.attn = nn.multihead_attention(n_head, d_model)
         self.ln_1 = LayerNorm(d_model)
-        self.mlp = Layers()
-        self.mlp.add(dense(d_model * 4, d_model))
+        self.mlp = nn.Layers()
+        self.mlp.add(nn.dense(d_model * 4, d_model))
         self.mlp.add(QuickGELU())
-        self.mlp.add(dense(d_model, d_model * 4))
+        self.mlp.add(nn.dense(d_model, d_model * 4))
         self.ln_2 = LayerNorm(d_model)
         self.attn_mask = attn_mask
 
@@ -224,7 +214,7 @@ class Transformer:
     def __init__(self, width: int, layers: int, heads: int, attn_mask = None):
         self.width = width
         self.layers = layers
-        self.resblocks = Layers()
+        self.resblocks = nn.Layers()
         for _ in range(layers):
             self.resblocks.add(ResidualAttentionBlock(width, heads, attn_mask))
 
@@ -236,7 +226,7 @@ class VisionTransformer:
     def __init__(self, input_resolution: int, patch_size: int, width: int, layers: int, heads: int, output_dim: int):
         self.input_resolution = input_resolution
         self.output_dim = output_dim
-        self.conv1 = conv2d(width, input_size=3, kernel_size=patch_size, strides=patch_size, use_bias=False)
+        self.conv1 = nn.conv2d(width, input_size=3, kernel_size=patch_size, strides=patch_size, use_bias=False)
 
         scale = width ** -0.5
         self.class_embedding = tf.Variable(scale * tf.random.normal([width]))
@@ -247,9 +237,9 @@ class VisionTransformer:
 
         self.ln_post = LayerNorm(width)
         self.proj = tf.Variable(scale * tf.random.normal(width, output_dim))
-        Model.param.append(self.class_embedding)
-        Model.param.append(self.positional_embedding)
-        Model.param.append(self.proj)
+        nn.Model.param.append(self.class_embedding)
+        nn.Model.param.append(self.positional_embedding)
+        nn.Model.param.append(self.proj)
 
     def __call__(self, x, train_flag=True):
         x = self.conv1(x)  # shape = [*, width, grid, grid]
@@ -271,7 +261,7 @@ class VisionTransformer:
         return x
 
 
-class CLIP(Model):
+class CLIP(nn.Model):
     def __init__(self,
                  embed_dim: int,
                  # vision
@@ -318,15 +308,15 @@ class CLIP(Model):
         )
 
         self.vocab_size = vocab_size
-        self.token_embedding = initializer_((vocab_size, transformer_width), 
+        self.token_embedding = nn.initializer_((vocab_size, transformer_width), 
                                             ['normal', 0.0, 0.02],
                                                 'float32')
-        self.positional_embedding = initializer_((self.context_length, transformer_width), 
+        self.positional_embedding = nn.initializer_((self.context_length, transformer_width), 
                                                  ['normal', 0.0, 0.01],
                                                  'float32')
         self.ln_final = LayerNorm(transformer_width)
 
-        self.text_projection = initializer_((transformer_width, embed_dim), 
+        self.text_projection = nn.initializer_((transformer_width, embed_dim), 
                                             ['normal', 0.0,self.transformer.width ** -0.5], 
                                             'float32')
         self.logit_scale = tf.Variable(tf.ones([]) * np.log(1 / 0.07))

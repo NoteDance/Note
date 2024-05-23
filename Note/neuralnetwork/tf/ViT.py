@@ -1,11 +1,5 @@
 import tensorflow as tf
-from Note.nn.layer.layer_norm import layer_norm
-from Note.nn.layer.dense import dense
-from Note.nn.layer.dropout import dropout
-from Note.nn.layer.identity import identity
-from Note.nn.initializer import initializer_
-from Note.nn.Layers import Layers
-from Note.nn.Model import Model
+from Note import nn
 
 
 def pair(t):
@@ -14,13 +8,13 @@ def pair(t):
 
 class FeedForward:
     def __init__(self, dim, hidden_dim, drop_rate = 0.):
-        self.net = Layers()
-        self.net.add(layer_norm(dim))
-        self.net.add(dense(hidden_dim, dim))
+        self.net = nn.Layers()
+        self.net.add(nn.layer_norm(dim))
+        self.net.add(nn.dense(hidden_dim, dim))
         self.net.add(tf.nn.gelu)
-        self.net.add(dropout(drop_rate))
-        self.net.add(dense(dim, hidden_dim))
-        self.net.add(dropout(drop_rate))
+        self.net.add(nn.dropout(drop_rate))
+        self.net.add(nn.dense(dim, hidden_dim))
+        self.net.add(nn.dropout(drop_rate))
 
     def __call__(self, x, train_flag=True):
         return self.net(x, train_flag)
@@ -34,19 +28,19 @@ class Attention:
         self.heads = heads
         self.scale = dim_head ** -0.5
 
-        self.norm = layer_norm(dim)
+        self.norm = nn.layer_norm(dim)
 
         self.attend = tf.nn.softmax
-        self.dropout = dropout(drop_rate)
+        self.dropout = nn.dropout(drop_rate)
 
-        self.to_qkv = dense(inner_dim * 3, dim, use_bias = False)
+        self.to_qkv = nn.dense(inner_dim * 3, dim, use_bias = False)
         
         if project_out:
-            self.to_out = Layers()
-            self.to_out.add(dense(dim, inner_dim))
-            self.to_out.add(dropout(drop_rate))
+            self.to_out = nn.Layers()
+            self.to_out.add(nn.dense(dim, inner_dim))
+            self.to_out.add(nn.dropout(drop_rate))
         else:
-            self.to_out = identity()
+            self.to_out = nn.identity()
 
     def __call__(self, x, train_flag=True):
         x = self.norm(x)
@@ -74,7 +68,7 @@ class Attention:
 
 class Transformer:
     def __init__(self, dim, depth, heads, dim_head, mlp_dim, dropout = 0.):
-        self.norm = layer_norm(dim)
+        self.norm = nn.layer_norm(dim)
         self.layers = []
         for _ in range(depth):
             self.layers.append([Attention(dim, heads = heads, dim_head = dim_head, drop_rate = dropout),
@@ -88,7 +82,7 @@ class Transformer:
         return self.norm(x)
 
 
-class ViT(Model):
+class ViT(nn.Model):
     def __init__(self, image_size, patch_size, num_classes, dim, depth, heads, mlp_dim, pool = 'cls', channels = 3, dim_head = 64, drop_rate = 0., emb_dropout = 0.):
         super().__init__()
         
@@ -103,21 +97,21 @@ class ViT(Model):
         patch_dim = channels * patch_height * patch_width
         assert pool in {'cls', 'mean'}, 'pool type must be either cls (cls token) or mean (mean pooling)'
 
-        self.to_patch_embedding = Layers()
-        self.to_patch_embedding.add(layer_norm(patch_dim))
-        self.to_patch_embedding.add(dense(dim, patch_dim))
-        self.to_patch_embedding.add(layer_norm(dim))
+        self.to_patch_embedding = nn.Layers()
+        self.to_patch_embedding.add(nn.layer_norm(patch_dim))
+        self.to_patch_embedding.add(nn.dense(dim, patch_dim))
+        self.to_patch_embedding.add(nn.layer_norm(dim))
 
-        self.pos_embedding = initializer_((1, num_patches + 1, dim), 'normal', 'float32')
-        self.cls_token = initializer_((1, 1, dim), 'normal', 'float32')
-        self.dropout = dropout(emb_dropout)
+        self.pos_embedding = nn.initializer_((1, num_patches + 1, dim), 'normal', 'float32')
+        self.cls_token = nn.initializer_((1, 1, dim), 'normal', 'float32')
+        self.dropout = nn.dropout(emb_dropout)
 
         self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, drop_rate)
 
         self.pool = pool
-        self.to_latent = identity()
+        self.to_latent = nn.identity()
 
-        self.mlp_head = dense(num_classes, dim)
+        self.mlp_head = nn.dense(num_classes, dim)
         
         self.training=True
         
@@ -127,7 +121,7 @@ class ViT(Model):
         if flag==0:
             self.param_=self.param.copy()
             self.mlp_head_=self.mlp_head
-            self.mlp_head=dense(classes, self.dim)
+            self.mlp_head=nn.dense(classes, self.dim)
             param.extend(self.mlp_head.param)
             self.param=param
         elif flag==1:

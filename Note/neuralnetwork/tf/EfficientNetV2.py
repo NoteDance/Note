@@ -1,20 +1,8 @@
 import tensorflow as tf
-from Note.nn.layer.conv2d import conv2d
-from Note.nn.layer.depthwise_conv2d import depthwise_conv2d
-from Note.nn.layer.dense import dense
-from Note.nn.layer.batch_norm import batch_norm_
-from Note.nn.layer.dropout import dropout
-from Note.nn.layer.global_avg_pool2d import global_avg_pool2d
-from Note.nn.layer.global_max_pool2d import global_max_pool2d
-from Note.nn.layer.norm import norm
+from Note import nn
 from Note.nn.layer.image_preprocessing.rescaling import rescaling
-from Note.nn.layer.multiply import multiply
-from Note.nn.layer.reshape import reshape
-from Note.nn.layer.identity import identity
-from Note.nn.Layers import Layers
 from Note.nn.activation import activation_dict
 import copy
-from Note.nn.Model import Model
 
 
 class EfficientNetV2:
@@ -82,7 +70,7 @@ class EfficientNetV2:
             # Apply original V1 preprocessing for Bx variants
             if model_name.split("-")[-1].startswith("b"):
                 self.rescaling=rescaling(scale=1.0 / 255)
-                self.norm=norm(
+                self.norm=nn.norm(
                     input_shape,
                     mean=[0.485, 0.456, 0.406],
                     variance=[0.229**2, 0.224**2, 0.225**2],
@@ -120,12 +108,12 @@ class EfficientNetV2:
         self.pooling=pooling
         self.classifier_activation=classifier_activation
         self.dtype=dtype
-        self.norm=norm(input_shape,dtype=dtype)
+        self.norm=nn.norm(input_shape,dtype=dtype)
         self.training=True
     
     
     def build(self):
-        Model.init()
+        nn.Model.init()
         
         def round_filters(filters, width_coefficient, min_depth, depth_divisor):
             """Round number of filters based on depth multiplier."""
@@ -149,17 +137,17 @@ class EfficientNetV2:
             min_depth=self.min_depth,
             depth_divisor=self.depth_divisor,
         )
-        self.layers1=Layers()
-        self.layers1.add(conv2d(stem_filters,[3,3],3,strides=2,padding="SAME",use_bias=False,
+        self.layers1=nn.Layers()
+        self.layers1.add(nn.conv2d(stem_filters,[3,3],3,strides=2,padding="SAME",use_bias=False,
                            weight_initializer=CONV_KERNEL_INITIALIZER,dtype=self.dtype))
-        self.layers1.add(batch_norm_(axis=-1,momentum=self.bn_momentum,dtype=self.dtype))
+        self.layers1.add(nn.batch_norm_(axis=-1,momentum=self.bn_momentum,dtype=self.dtype))
         self.layers1.add(activation_dict[self.activation])    
     
         # Build blocks
         blocks_args = copy.deepcopy(self.blocks_args)
         b = 0
         blocks = float(sum(args["num_repeat"] for args in blocks_args))
-        self.layers2=Layers()
+        self.layers2=nn.Layers()
         for i, args in enumerate(blocks_args):
             assert args["num_repeat"] > 0
     
@@ -209,8 +197,8 @@ class EfficientNetV2:
             min_depth=self.min_depth,
             depth_divisor=self.depth_divisor,
         )
-        self.layers3=Layers()
-        self.layers3.add(conv2d(
+        self.layers3=nn.Layers()
+        self.layers3.add(nn.conv2d(
             top_filters,
             [1,1],
             self.layers2.output_size,
@@ -219,19 +207,19 @@ class EfficientNetV2:
             weight_initializer=CONV_KERNEL_INITIALIZER,
             dtype=self.dtype
         ))
-        self.layers3.add(batch_norm_(axis=-1,momentum=self.bn_momentum,dtype=self.dtype))
+        self.layers3.add(nn.batch_norm_(axis=-1,momentum=self.bn_momentum,dtype=self.dtype))
         self.layers3.add(activation_dict[self.activation])
         if self.include_top:
-            self.global_avg_pool2d=global_avg_pool2d()
+            self.global_avg_pool2d=nn.global_avg_pool2d()
             if self.dropout_rate > 0:
-                self.dropout=dropout(self.dropout_rate)
-            self.dense=dense(self.classes,self.layers3.output_size,activation=self.classifier_activation,weight_initializer=DENSE_KERNEL_INITIALIZER,dtype=self.dtype)
+                self.dropout=nn.dropout(self.dropout_rate)
+            self.dense=nn.dense(self.classes,self.layers3.output_size,activation=self.classifier_activation,weight_initializer=DENSE_KERNEL_INITIALIZER,dtype=self.dtype)
         else:
             if self.pooling == "avg":
-                self.global_avg_pool2d=global_avg_pool2d()
+                self.global_avg_pool2d=nn.global_avg_pool2d()
             elif self.pooling == "max":
-                self.global_max_pool2d=global_max_pool2d()
-        self.param=Model.param
+                self.global_max_pool2d=nn.global_max_pool2d()
+        self.param=nn.Model.param
         
         
     def fine_tuning(self,classes=None,flag=0):
@@ -239,7 +227,7 @@ class EfficientNetV2:
         if flag==0:
             self.param_=self.param.copy()
             self.dense_=self.dense
-            self.dense=dense(classes,self.dense.input_size,activation=self.classifier_activation,dtype=self.dense.dtype)
+            self.dense=nn.dense(classes,self.dense.input_size,activation=self.classifier_activation,dtype=self.dense.dtype)
             param.extend(self.dense.param)
             self.param=param
         elif flag==1:
@@ -293,9 +281,9 @@ class MBConvBlock:
         self.output_filters = output_filters
         # Expansion phase
         filters = input_filters * expand_ratio
-        self.layers=Layers()
+        self.layers=nn.Layers()
         if expand_ratio != 1:
-            self.layers.add(conv2d(
+            self.layers.add(nn.conv2d(
                 filters=filters,
                 kernel_size=[1,1],
                 input_size=in_channels,
@@ -305,17 +293,17 @@ class MBConvBlock:
                 use_bias=False,
                 dtype=dtype
             ))
-            self.layers.add(batch_norm_(
+            self.layers.add(nn.batch_norm_(
                 axis=-1,
                 momentum=bn_momentum,
                 dtype=dtype
             ))
             self.layers.add(activation_dict[activation])
         else:
-            self.layers.add(identity(in_channels))
+            self.layers.add(nn.identity(in_channels))
     
         # Depthwise conv
-        self.layers.add(depthwise_conv2d(
+        self.layers.add(nn.depthwise_conv2d(
             kernel_size=[kernel_size,kernel_size],
             strides=strides,
             weight_initializer=CONV_KERNEL_INITIALIZER,
@@ -323,7 +311,7 @@ class MBConvBlock:
             use_bias=False,
             dtype=dtype
         ))
-        self.layers.add(batch_norm_(
+        self.layers.add(nn.batch_norm_(
             axis=-1, momentum=bn_momentum, dtype=dtype
         ))
         self.layers.add(activation_dict[activation],save_data=True)
@@ -331,10 +319,10 @@ class MBConvBlock:
         # Squeeze and excite
         if 0 < se_ratio <= 1:
             filters_se = max(1, int(input_filters * se_ratio))
-            self.layers.add(global_avg_pool2d())
+            self.layers.add(nn.global_avg_pool2d())
             se_shape = (1, 1, filters)
-            self.layers.add(reshape(se_shape))
-            self.layers.add(conv2d(
+            self.layers.add(nn.reshape(se_shape))
+            self.layers.add(nn.conv2d(
                 filters_se,
                 [1,1],
                 padding="SAME",
@@ -342,7 +330,7 @@ class MBConvBlock:
                 weight_initializer=CONV_KERNEL_INITIALIZER,
                 dtype=dtype
             ))
-            self.layers.add(conv2d(
+            self.layers.add(nn.conv2d(
                 filters,
                 [1,1],
                 padding="SAME",
@@ -351,10 +339,10 @@ class MBConvBlock:
                 dtype=dtype
             ),save_data=True)
     
-            self.layers.add(multiply(),use_data=True)
+            self.layers.add(nn.multiply(),use_data=True)
     
         # Output phase
-        self.layers.add(conv2d(
+        self.layers.add(nn.conv2d(
             filters=output_filters,
             kernel_size=[1,1],
             strides=1,
@@ -363,13 +351,13 @@ class MBConvBlock:
             use_bias=False,
             dtype=dtype
         ))
-        self.layers.add(batch_norm_(
+        self.layers.add(nn.batch_norm_(
             axis=-1, momentum=bn_momentum, dtype=dtype
         ))
     
         if strides == 1 and input_filters == output_filters:
             if survival_probability:
-                self.layers.add(dropout(
+                self.layers.add(nn.dropout(
                     survival_probability,
                     noise_shape=(None, 1, 1, 1),
                 ))
@@ -405,9 +393,9 @@ class FusedMBConvBlock:
         self.input_filters = input_filters
         self.output_filters = output_filters
         filters = input_filters * expand_ratio
-        self.layers=Layers()
+        self.layers=nn.Layers()
         if expand_ratio != 1:
-            self.layers.add(conv2d(
+            self.layers.add(nn.conv2d(
                 filters,
                 kernel_size=[kernel_size,kernel_size],
                 input_size=in_channels,
@@ -417,21 +405,21 @@ class FusedMBConvBlock:
                 use_bias=False,
                 dtype=dtype
             ))
-            self.layers.add(batch_norm_(
+            self.layers.add(nn.batch_norm_(
                 axis=-1, momentum=bn_momentum, dtype=dtype
             ))
             self.layers.add(activation_dict[activation],save_data=True)
         else:
-            self.layers.add(identity(in_channels))
+            self.layers.add(nn.identity(in_channels))
 
         # Squeeze and excite
         if 0 < se_ratio <= 1:
             filters_se = max(1, int(input_filters * se_ratio))
-            self.layers.add(global_avg_pool2d())
+            self.layers.add(nn.global_avg_pool2d())
             se_shape = (1, 1, filters)
-            self.layers.add(reshape(se_shape))
+            self.layers.add(nn.reshape(se_shape))
 
-            self.layers.add(conv2d(
+            self.layers.add(nn.conv2d(
                 filters_se,
                 [1,1],
                 padding="SAME",
@@ -439,7 +427,7 @@ class FusedMBConvBlock:
                 weight_initializer=CONV_KERNEL_INITIALIZER,
                 dtype=dtype
             ))
-            self.layers.add(conv2d(
+            self.layers.add(nn.conv2d(
                 filters,
                 [1,1],
                 padding="SAME",
@@ -448,10 +436,10 @@ class FusedMBConvBlock:
                 dtype=dtype
             ),save_data=True)
             
-            self.layers.add(multiply(),use_data=True)
+            self.layers.add(nn.multiply(),use_data=True)
 
         # Output phase:
-        self.layers.add(conv2d(
+        self.layers.add(nn.conv2d(
             output_filters,
             kernel_size=[1,1] if expand_ratio != 1 else [kernel_size,kernel_size],
             strides=1 if expand_ratio != 1 else strides,
@@ -459,7 +447,7 @@ class FusedMBConvBlock:
             padding="SAME",
             use_bias=False,
         ))
-        self.layers.add(batch_norm_(
+        self.layers.add(nn.batch_norm_(
             axis=-1, momentum=bn_momentum, dtype=dtype
         ))
         if expand_ratio == 1:
@@ -468,7 +456,7 @@ class FusedMBConvBlock:
         # Residual:
         if strides == 1 and input_filters == output_filters:
             if survival_probability:
-                self.layers.add(dropout(
+                self.layers.add(nn.dropout(
                     survival_probability,
                     noise_shape=(None, 1, 1, 1),
                 ))

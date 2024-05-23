@@ -1,16 +1,5 @@
 import tensorflow as tf
-from Note.nn.layer.dense import dense
-from Note.nn.layer.conv2d import conv2d
-from Note.nn.layer.dropout import dropout
-from Note.nn.layer.zeropadding2d import zeropadding2d
-from Note.nn.layer.layer_norm import layer_norm
-from Note.nn.layer.max_pool2d import max_pool2d
-from Note.nn.layer.identity import identity
-from Note.nn.initializer import initializer
-from Note.nn.initializer import initializer_
-from Note.nn.fine_tuning import fine_tuning
-from Note.nn.Layers import Layers
-from Note.nn.Model import Model
+from Note import nn
 
 from einops import rearrange, repeat
 
@@ -97,10 +86,10 @@ class Attention:
         head_dim = dim // self.heads
         self.scale = head_dim ** -0.5
 
-        self.qkv = dense(dim * 3, dim, use_bias=False)
-        self.attn_drop = dropout(attention_dropout)
-        self.proj = dense(dim, dim)
-        self.proj_drop = dropout(projection_dropout)
+        self.qkv = nn.dense(dim * 3, dim, use_bias=False)
+        self.attn_drop = nn.dropout(attention_dropout)
+        self.proj = nn.dense(dim, dim)
+        self.proj_drop = nn.dropout(projection_dropout)
 
     def __call__(self, x):
         B, N, C = x.shape
@@ -127,15 +116,15 @@ class TransformerEncoderLayer:
     """
     def __init__(self, d_model, nhead, dim_feedforward=2048, dropout_rate=0.1,
                  attention_dropout=0.1, drop_path_rate=0.1):
-        self.pre_norm = layer_norm(d_model)
+        self.pre_norm = nn.layer_norm(d_model)
         self.self_attn = Attention(dim=d_model, num_heads=nhead,
                                    attention_dropout=attention_dropout, projection_dropout=dropout_rate)
 
-        self.linear1  = dense(dim_feedforward, d_model)
-        self.dropout1 = dropout(dropout_rate)
-        self.norm1    = layer_norm(d_model)
-        self.linear2  = dense(d_model, dim_feedforward)
-        self.dropout2 = dropout(dropout_rate)
+        self.linear1  = nn.dense(dim_feedforward, d_model)
+        self.dropout1 = nn.dropout(dropout_rate)
+        self.norm1    = nn.layer_norm(d_model)
+        self.linear2  = nn.dense(d_model, dim_feedforward)
+        self.dropout2 = nn.dropout(dropout_rate)
 
         self.drop_path = DropPath(drop_path_rate)
 
@@ -176,7 +165,7 @@ class Tokenizer:
                  activation=None,
                  max_pool=True,
                  conv_bias=False):
-        Model.add()
+        nn.Model.add()
         
         n_filter_list = [n_input_channels] + \
                         [in_planes for _ in range(n_conv_layers - 1)] + \
@@ -184,24 +173,24 @@ class Tokenizer:
 
         n_filter_list_pairs = zip(n_filter_list[:-1], n_filter_list[1:])
 
-        self.conv_layers = Layers()
+        self.conv_layers = nn.Layers()
         for chan_in, chan_out in n_filter_list_pairs:
-            conv_layers = Layers()
-            conv_layers.add(zeropadding2d(padding=(padding, padding)))
-            conv_layers.add(conv2d(chan_out, (kernel_size, kernel_size), chan_in, strides=(stride, stride),
+            conv_layers = nn.Layers()
+            conv_layers.add(nn.zeropadding2d(padding=(padding, padding)))
+            conv_layers.add(nn.conv2d(chan_out, (kernel_size, kernel_size), chan_in, strides=(stride, stride),
                                    use_bias=conv_bias))
             if not exists(activation):
-                conv_layers.add(identity())
+                conv_layers.add(nn.identity())
             else:
                 conv_layers.add(activation)
             if max_pool:
-                conv_layers.add(zeropadding2d(padding=pooling_padding))
-                conv_layers.add(max_pool2d(pooling_kernel_size, pooling_stride, 'VALID'))
+                conv_layers.add(nn.zeropadding2d(padding=pooling_padding))
+                conv_layers.add(nn.max_pool2d(pooling_kernel_size, pooling_stride, 'VALID'))
             else:
-                conv_layers.add(identity())
+                conv_layers.add(nn.identity())
             self.conv_layers.add(conv_layers)
 
-        Model.apply(self.init_weight)
+        nn.Model.apply(self.init_weight)
 
     def sequence_length(self, n_channels=3, height=224, width=224):
         return self.__call__(tf.zeros((1, height, width, n_channels))).shape[1]
@@ -210,8 +199,8 @@ class Tokenizer:
         return rearrange(self.conv_layers(x), 'b h w c -> b (h w) c')
 
     def init_weight(self, l):
-        if isinstance(l, conv2d):
-            l.weight.assign(initializer(l.weight.shape, 'He'))
+        if isinstance(l, nn.conv2d):
+            l.weight.assign(nn.initializer(l.weight.shape, 'He'))
 
 
 class TransformerClassifier:
@@ -228,7 +217,7 @@ class TransformerClassifier:
                  positional_embedding='sine',
                  sequence_length=None,
                  *args, **kwargs):
-        Model.add()
+        nn.Model.add()
         
         assert positional_embedding in {'sine', 'learnable', 'none'}
 
@@ -243,18 +232,18 @@ class TransformerClassifier:
 
         if not seq_pool:
             sequence_length += 1
-            self.class_emb = initializer_((1, 1, self.embedding_dim), 'zeros')
+            self.class_emb = nn.initializer_((1, 1, self.embedding_dim), 'zeros')
         else:
-            self.attention_pool = dense(1, self.embedding_dim)
+            self.attention_pool = nn.dense(1, self.embedding_dim)
 
         if positional_embedding == 'none':
             self.positional_emb = None
         elif positional_embedding == 'learnable':
-            self.positional_emb = initializer_((1, sequence_length, embedding_dim), ['truncated_normal', 0.2])
+            self.positional_emb = nn.initializer_((1, sequence_length, embedding_dim), ['truncated_normal', 0.2])
         else:
             self.positional_emb = sinusoidal_embedding(sequence_length, embedding_dim)
 
-        self.dropout = dropout(dropout_rate)
+        self.dropout = nn.dropout(dropout_rate)
 
         dpr = tf.linspace(0.0, stochastic_depth_rate, num_layers)
 
@@ -266,10 +255,10 @@ class TransformerClassifier:
                                         attention_dropout=attention_dropout, drop_path_rate=layer_dpr)
                 )
 
-        self.norm = layer_norm(embedding_dim)
+        self.norm = nn.layer_norm(embedding_dim)
 
-        self.fc = dense(num_classes, embedding_dim)
-        Model.apply(self.init_weight)
+        self.fc = nn.dense(num_classes, embedding_dim)
+        nn.Model.apply(self.init_weight)
 
     def __call__(self, x, training):
         b = x.shape[0]
@@ -300,15 +289,15 @@ class TransformerClassifier:
         return self.fc(x)
 
     def init_weight(self, l):
-        if isinstance(l, dense):
-            l.weight.assign(initializer(l.weight.shape, ['truncated_normal', 0.2]))
+        if isinstance(l, nn.dense):
+            l.weight.assign(nn.initializer(l.weight.shape, ['truncated_normal', 0.2]))
             if l.use_bias is not False:
-                l.bias.assign(initializer(l.bias.shape, ['truncated_normal', 0.2]))
+                l.bias.assign(nn.initializer(l.bias.shape, ['truncated_normal', 0.2]))
         
 
 # CCT Main model
 
-class CCT(Model):
+class CCT(nn.Model):
     def __init__(
         self,
         img_size=224,
@@ -358,7 +347,7 @@ class CCT(Model):
     
     def fine_tuning(self,classes=None,flag=0):
         self.flag = flag
-        fine_tuning(self.param, self.param_, self.classifier.fc, self.fc, classes, self.embedding_dim, flag)
+        nn.fine_tuning(self.param, self.param_, self.classifier.fc, self.fc, classes, self.embedding_dim, flag)
         return
 
     def __call__(self, x):

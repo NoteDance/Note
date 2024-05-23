@@ -1,18 +1,14 @@
 import tensorflow as tf
+from Note import nn
 import numpy as np
-from Note.nn.layer.conv2d import conv2d
-from Note.nn.layer.dense import dense
-from Note.nn.layer.layer_norm import layer_norm
-from Note.nn.Layers import Layers
-from Note.nn.Model import Model
 
 
 class ConvNeXtBlock:
     def __init__(self, input_channels, projection_dim, drop_path_rate=0.0, layer_scale_init_value=1e-6, dtype='float32'):
-        self.conv2d=conv2d(projection_dim,[7,7],input_channels//projection_dim,padding='SAME',dtype=dtype)
-        self.layer_norm=layer_norm(self.conv2d.output_size,dtype=dtype)
-        self.dense1=dense(4*projection_dim,projection_dim,activation='gelu',dtype=dtype)
-        self.dense2=dense(projection_dim,4*projection_dim,dtype=dtype)
+        self.conv2d=nn.conv2d(projection_dim,[7,7],input_channels//projection_dim,padding='SAME',dtype=dtype)
+        self.layer_norm=nn.layer_norm(self.conv2d.output_size,dtype=dtype)
+        self.dense1=nn.dense(4*projection_dim,projection_dim,activation='gelu',dtype=dtype)
+        self.dense2=nn.dense(projection_dim,4*projection_dim,dtype=dtype)
         self.gamma=tf.Variable(tf.ones([projection_dim],dtype=dtype)*layer_scale_init_value)
         self.drop_path_rate=drop_path_rate
         self.layer_scale_init_value=layer_scale_init_value
@@ -62,12 +58,12 @@ class ConvNeXt:
     
     
     def build(self,dtype='float32'):
-        Model.init()
+        nn.Model.init()
         
         # Stem block.
-        layers=Layers()
-        layers.add(conv2d(self.projection_dims[0],[4,4],3,dtype=dtype))
-        layers.add(layer_norm(dtype=dtype))
+        layers=nn.Layers()
+        layers.add(nn.conv2d(self.projection_dims[0],[4,4],3,dtype=dtype))
+        layers.add(nn.layer_norm(dtype=dtype))
         
         # Downsampling blocks.
         self.downsample_layers = []
@@ -75,9 +71,9 @@ class ConvNeXt:
         
         num_downsample_layers = 3
         for i in range(num_downsample_layers):
-            layers=Layers()
-            layers.add(layer_norm(self.projection_dims[i],dtype=dtype))
-            layers.add(conv2d(self.projection_dims[i+1],[2,2],self.projection_dims[i],dtype=dtype))
+            layers=nn.Layers()
+            layers.add(nn.layer_norm(self.projection_dims[i],dtype=dtype))
+            layers.add(nn.conv2d(self.projection_dims[i+1],[2,2],self.projection_dims[i],dtype=dtype))
             self.downsample_layers.append(layers)
         
         # Stochastic depth schedule.
@@ -95,7 +91,7 @@ class ConvNeXt:
         for i in range(self.num_convnext_blocks):
             input_channels=self.downsample_layers[i].output_size
             for j in range(self.depths[i]):
-                block = Layers()
+                block = nn.Layers()
                 block.add(ConvNeXtBlock(
                     input_channels=input_channels,
                     projection_dim=self.projection_dims[i],
@@ -106,11 +102,11 @@ class ConvNeXt:
                 input_channels=block.output_size
             self.blocks.append(block)
             cur += self.depths[i]
-        self.layer_norm=layer_norm(self.blocks[-1].output_size,dtype=dtype)
-        self.dense=dense(self.classes,self.blocks[-1].output_size,activation=self.classifier_activation,dtype=dtype)
+        self.layer_norm=nn.layer_norm(self.blocks[-1].output_size,dtype=dtype)
+        self.dense=nn.dense(self.classes,self.blocks[-1].output_size,activation=self.classifier_activation,dtype=dtype)
         
         self.dtype=dtype
-        self.param=Model.param
+        self.param=nn.Model.param
         return
     
     
@@ -119,7 +115,7 @@ class ConvNeXt:
         if flag==0:
             self.param_=self.param.copy()
             self.dense_=self.dense
-            self.dense=dense(classes,self.dense.input_size,activation=self.classifier_activation,dtype=self.dense.dtype)
+            self.dense=nn.dense(classes,self.dense.input_size,activation=self.classifier_activation,dtype=self.dense.dtype)
             param.extend(self.dense.param)
             self.param=param
         elif flag==1:

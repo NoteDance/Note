@@ -5,14 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import tensorflow as tf
-from Note.nn.layer.dense import dense
-from Note.nn.layer.conv2d import conv2d
-from Note.nn.layer.layer_norm import layer_norm
-from Note.nn.layer.dropout import dropout
-from Note.nn.layer.stochastic_depth import stochastic_depth
-from Note.nn.layer.identity import identity
-from Note.nn.initializer import initializer,initializer_
-from Note.nn.Model import Model
+from Note import nn
 from itertools import repeat
 import collections.abc
 from functools import partial
@@ -20,18 +13,18 @@ from functools import partial
 
 class Mlp:
     def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=tf.nn.gelu, drop=0.):
-        Model.add()
+        nn.Model.add()
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
-        self.fc1 = dense(hidden_features, in_features)
+        self.fc1 = nn.dense(hidden_features, in_features)
         self.act = act_layer
-        self.fc2 = dense(out_features, hidden_features)
-        self.drop = dropout(drop)
-        Model.apply(self.init_weights)
+        self.fc2 = nn.dense(out_features, hidden_features)
+        self.drop = nn.dropout(drop)
+        nn.Model.apply(self.init_weights)
     
     def init_weights(self, l):
-        if isinstance(l, dense):
-            l.weight.assign(initializer(l.weight.shape, ['truncated_normal', .02]))
+        if isinstance(l, nn.dense):
+            l.weight.assign(nn.initializer(l.weight.shape, ['truncated_normal', .02]))
             
     def __call__(self, x):
         x = self.fc1(x)
@@ -45,28 +38,28 @@ class Mlp:
 class GPSA:
     def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.,
                  locality_strength=1., use_local_init=True):
-        Model.add()
+        nn.Model.add()
         self.num_heads = num_heads
         self.dim = dim
         head_dim = dim // num_heads
         self.scale = qk_scale or head_dim ** -0.5
 
-        self.qk = dense(dim * 2, dim, use_bias=qkv_bias)       
-        self.v = dense(dim, dim, use_bias=qkv_bias)       
+        self.qk = nn.dense(dim * 2, dim, use_bias=qkv_bias)       
+        self.v = nn.dense(dim, dim, use_bias=qkv_bias)       
         
-        self.attn_drop = dropout(attn_drop)
-        self.proj = dense(dim, dim)
-        self.pos_proj = dense(num_heads, 3)
-        self.proj_drop = dropout(proj_drop)
+        self.attn_drop = nn.dropout(attn_drop)
+        self.proj = nn.dense(dim, dim)
+        self.pos_proj = nn.dense(num_heads, 3)
+        self.proj_drop = nn.dropout(proj_drop)
         self.locality_strength = locality_strength
-        self.gating_param = initializer_((self.num_heads), 'ones')
-        Model.apply(self.init_weights)
+        self.gating_param = nn.initializer_((self.num_heads), 'ones')
+        nn.Model.apply(self.init_weights)
         if use_local_init:
             self.local_init(locality_strength=locality_strength)
     
     def init_weights(self, l):
-        if isinstance(l, dense):
-            l.weight.assign(initializer(l.weight.shape, ['truncated_normal', .02]))
+        if isinstance(l, nn.dense):
+            l.weight.assign(nn.initializer(l.weight.shape, ['truncated_normal', .02]))
         
     def __call__(self, x):
         B, N, C = x.shape
@@ -138,20 +131,20 @@ class GPSA:
  
 class MHSA:
     def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.):
-        Model.add()
+        nn.Model.add()
         self.num_heads = num_heads
         head_dim = dim // num_heads
         self.scale = qk_scale or head_dim ** -0.5
 
-        self.qkv = dense(dim * 3, dim, use_bias=qkv_bias)
-        self.attn_drop = dropout(attn_drop)
-        self.proj = dense(dim, dim)
-        self.proj_drop = dropout(proj_drop)
-        Model.apply(self.init_weights)
+        self.qkv = nn.dense(dim * 3, dim, use_bias=qkv_bias)
+        self.attn_drop = nn.dropout(attn_drop)
+        self.proj = nn.dense(dim, dim)
+        self.proj_drop = nn.dropout(proj_drop)
+        nn.Model.apply(self.init_weights)
     
     def init_weights(self, l):
-        if isinstance(l, dense):
-            l.weight.assign(initializer(l.weight.shape, ['truncated_normal', .02]))
+        if isinstance(l, nn.dense):
+            l.weight.assign(nn.initializer(l.weight.shape, ['truncated_normal', .02]))
 
     def get_attention_map(self, x, return_map = False):
         B, N, C = x.shape
@@ -193,14 +186,14 @@ class MHSA:
 class Block:
 
     def __init__(self, dim, num_heads,  mlp_ratio=4., qkv_bias=False, qk_scale=None, drop=0., attn_drop=0.,
-                 drop_path=0., act_layer=tf.nn.gelu, norm_layer=layer_norm, use_gpsa=True, **kwargs):
+                 drop_path=0., act_layer=tf.nn.gelu, norm_layer=nn.layer_norm, use_gpsa=True, **kwargs):
         self.norm1 = norm_layer(dim)
         self.use_gpsa = use_gpsa
         if self.use_gpsa:
             self.attn = GPSA(dim, num_heads=num_heads, qkv_bias=qkv_bias, qk_scale=qk_scale, attn_drop=attn_drop, proj_drop=drop, **kwargs)
         else:
             self.attn = MHSA(dim, num_heads=num_heads, qkv_bias=qkv_bias, qk_scale=qk_scale, attn_drop=attn_drop, proj_drop=drop, **kwargs)
-        self.drop_path = stochastic_depth(drop_path) if drop_path > 0. else identity()
+        self.drop_path = nn.stochastic_depth(drop_path) if drop_path > 0. else nn.identity()
         self.norm2 = norm_layer(dim)
         mlp_hidden_dim = int(dim * mlp_ratio)
         self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
@@ -225,7 +218,7 @@ class PatchEmbed:
     """ Image to Patch Embedding, from timm
     """
     def __init__(self, img_size=224, patch_size=16, in_chans=3, embed_dim=768):
-        Model.add()
+        nn.Model.add()
         img_size = to_2tuple(img_size)
         patch_size = to_2tuple(patch_size)
         num_patches = (img_size[1] // patch_size[1]) * (img_size[0] // patch_size[0])
@@ -233,12 +226,12 @@ class PatchEmbed:
         self.patch_size = patch_size
         self.num_patches = num_patches
 
-        self.proj = conv2d(embed_dim, input_size=in_chans, kernel_size=patch_size, strides=patch_size)
-        Model.apply(self.init_weights)
+        self.proj = nn.conv2d(embed_dim, input_size=in_chans, kernel_size=patch_size, strides=patch_size)
+        nn.Model.apply(self.init_weights)
     
     def init_weights(self, l):
-        if isinstance(l, dense):
-            l.weight.assign(initializer(l.weight.shape, ['truncated_normal', .02]))
+        if isinstance(l, nn.dense):
+            l.weight.assign(nn.initializer(l.weight.shape, ['truncated_normal', .02]))
         
     def __call__(self, x):
         B, H, W, C = x.shape
@@ -266,7 +259,7 @@ class HybridEmbed:
             feature_size = to_2tuple(feature_size)
             feature_dim = self.backbone.feature_info.channels()[-1]
         self.num_patches = feature_size[0] * feature_size[1]
-        self.proj = dense(embed_dim, feature_dim)
+        self.proj = nn.dense(embed_dim, feature_dim)
 
     def __call__(self, x):
         x = self.backbone(x)[-1]
@@ -276,12 +269,12 @@ class HybridEmbed:
         return x
 
 
-class VisionTransformer(Model):
+class VisionTransformer(nn.Model):
     """ Vision Transformer with support for patch or hybrid CNN input stage
     """
     def __init__(self, img_size=224, patch_size=16, in_chans=3, num_classes=1000, embed_dim=48, depth=12,
                  num_heads=12, mlp_ratio=4., qkv_bias=False, qk_scale=None, drop_rate=0., attn_drop_rate=0.,
-                 drop_path_rate=0., hybrid_backbone=None, norm_layer=layer_norm, global_pool=None,
+                 drop_path_rate=0., hybrid_backbone=None, norm_layer=nn.layer_norm, global_pool=None,
                  local_up_to_layer=10, locality_strength=1., use_pos_embed=True):
         super().__init__()
         self.num_classes = num_classes
@@ -299,11 +292,11 @@ class VisionTransformer(Model):
         num_patches = self.patch_embed.num_patches
         self.num_patches = num_patches
         
-        self.cls_token = initializer_((1, 1, embed_dim), ['truncated_normal', .02])
-        self.pos_drop = dropout(drop_rate)
+        self.cls_token = nn.initializer_((1, 1, embed_dim), ['truncated_normal', .02])
+        self.pos_drop = nn.dropout(drop_rate)
 
         if self.use_pos_embed:
-            self.pos_embed = initializer_((1, num_patches, embed_dim), ['truncated_normal', .02])
+            self.pos_embed = nn.initializer_((1, num_patches, embed_dim), ['truncated_normal', .02])
 
         dpr = tf.linspace(0., drop_path_rate, depth)  # stochastic depth decay rule
         self.blocks = [
@@ -322,9 +315,9 @@ class VisionTransformer(Model):
 
         # Classifier head
         self.feature_info = [dict(num_chs=embed_dim, reduction=0, module='head')]
-        self.head = dense(num_classes, embed_dim) if num_classes > 0 else identity()
+        self.head = nn.dense(num_classes, embed_dim) if num_classes > 0 else nn.identity()
 
-        self.head.weight.assign(initializer(self.head.weight.shape, ['truncated_normal', .02]))
+        self.head.weight.assign(nn.initializer(self.head.weight.shape, ['truncated_normal', .02]))
 
     def no_weight_decay(self):
         return {'pos_embed', 'cls_token'}
@@ -334,7 +327,7 @@ class VisionTransformer(Model):
 
     def reset_classifier(self, num_classes, global_pool=''):
         self.num_classes = num_classes
-        self.head = dense(num_classes, self.embed_dim) if num_classes > 0 else identity()
+        self.head = nn.dense(num_classes, self.embed_dim) if num_classes > 0 else nn.identity()
 
     def forward_features(self, x):
         B = x.shape[0]
@@ -360,7 +353,7 @@ class VisionTransformer(Model):
         if flag==0:
             self.param_=self.param.copy()
             self.head_=self.head
-            self.head=dense(classes,self.embed_dim)
+            self.head=nn.dense(classes,self.embed_dim)
             param.extend(self.head.param)
             self.param=param
         elif flag==1:
@@ -385,7 +378,7 @@ def convit_tiny(**kwargs):
     kwargs['embed_dim'] *= num_heads
     model = VisionTransformer(
         num_heads=num_heads,
-        norm_layer=partial(layer_norm, epsilon=1e-6), **kwargs)
+        norm_layer=partial(nn.layer_norm, epsilon=1e-6), **kwargs)
     return model
 
 def convit_small(**kwargs):
@@ -393,7 +386,7 @@ def convit_small(**kwargs):
     kwargs['embed_dim'] *= num_heads
     model = VisionTransformer(
         num_heads=num_heads,
-        norm_layer=partial(layer_norm, epsilon=1e-6), **kwargs)
+        norm_layer=partial(nn.layer_norm, epsilon=1e-6), **kwargs)
     return model
 
 def convit_base(**kwargs):
@@ -401,5 +394,5 @@ def convit_base(**kwargs):
     kwargs['embed_dim'] *= num_heads
     model = VisionTransformer(
         num_heads=num_heads,
-        norm_layer=partial(layer_norm, epsilon=1e-6), **kwargs)
+        norm_layer=partial(nn.layer_norm, epsilon=1e-6), **kwargs)
     return model

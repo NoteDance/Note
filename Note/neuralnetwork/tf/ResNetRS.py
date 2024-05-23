@@ -1,15 +1,8 @@
 import tensorflow as tf
-from Note.nn.layer.conv2d import conv2d
-from Note.nn.layer.dense import dense
-from Note.nn.layer.avg_pool2d import avg_pool2d
-from Note.nn.layer.global_avg_pool2d import global_avg_pool2d
-from Note.nn.layer.batch_norm import batch_norm_
-from Note.nn.layer.identity import identity
+from Note import nn
 from Note.nn.activation import activation_dict
-from Note.nn.Layers import Layers
 from typing import List
 from typing import Dict
-from Note.nn.Model import Model
 
 
 def fixed_padding(inputs, kernel_size):
@@ -28,7 +21,7 @@ def fixed_padding(inputs, kernel_size):
 class Conv2DFixedPadding:
     def __init__(self,filters, kernel_size, strides, in_channels, dtype):
         """Conv2D block with fixed padding."""
-        self.conv2d=conv2d(filters,kernel_size,in_channels,strides=[strides],padding='SAME' if strides==1 else 'VALID',use_bias=False,
+        self.conv2d=nn.conv2d(filters,kernel_size,in_channels,strides=[strides],padding='SAME' if strides==1 else 'VALID',use_bias=False,
                            weight_initializer=['VarianceScaling',2.0,'fan_out','truncated_normal'],dtype=dtype)
         self.kernel_size=kernel_size
         self.strides=strides
@@ -49,13 +42,13 @@ def STEM(
 ):
     """ResNet-D type STEM block."""
     
-    layers=Layers()
+    layers=nn.Layers()
     
     # First stem block
     layers.add(Conv2DFixedPadding(
         filters=32, kernel_size=[3,3], strides=2, in_channels=3, dtype=dtype
     ))
-    layers.add(batch_norm_(
+    layers.add(nn.batch_norm_(
         momentum=bn_momentum,
         epsilon=bn_epsilon,
         dtype=dtype
@@ -66,7 +59,7 @@ def STEM(
     layers.add(Conv2DFixedPadding(
         filters=32, kernel_size=[3,3], strides=1, in_channels=layers.output_size, dtype=dtype
     ))
-    layers.add(batch_norm_(
+    layers.add(nn.batch_norm_(
         momentum=bn_momentum,
         epsilon=bn_epsilon,
         dtype=dtype
@@ -77,7 +70,7 @@ def STEM(
     layers.add(Conv2DFixedPadding(
         filters=64, kernel_size=[3,3], strides=1, in_channels=layers.output_size, dtype=dtype
     ))
-    layers.add(batch_norm_(
+    layers.add(nn.batch_norm_(
         momentum=bn_momentum,
         epsilon=bn_epsilon,
         dtype=dtype
@@ -88,7 +81,7 @@ def STEM(
     layers.add(Conv2DFixedPadding(
         filters=64, kernel_size=[3,3], strides=2, in_channels=layers.output_size, dtype=dtype
     ))
-    layers.add(batch_norm_(
+    layers.add(nn.batch_norm_(
         momentum=bn_momentum,
         epsilon=bn_epsilon,
         dtype=dtype
@@ -106,12 +99,12 @@ class SE:
     def __init__(self, in_filters: int, se_ratio: float = 0.25, expand_ratio: int = 1, in_channels=None, dtype='float32'):
         """Squeeze and Excitation block."""
 
-        self.global_avg_pool2d=global_avg_pool2d()
+        self.global_avg_pool2d=nn.global_avg_pool2d()
         
         num_reduced_filters = max(1, int(in_filters * 4 * se_ratio))
-        self.conv2d1=conv2d(num_reduced_filters,[1, 1],in_channels,strides=[1, 1],weight_initializer=['VarianceScaling',2.0,'fan_out','truncated_normal'],
+        self.conv2d1=nn.conv2d(num_reduced_filters,[1, 1],in_channels,strides=[1, 1],weight_initializer=['VarianceScaling',2.0,'fan_out','truncated_normal'],
                             padding="SAME",use_bias=True,activation="relu",dtype=dtype)
-        self.conv2d2=conv2d(4*in_filters*expand_ratio,[1, 1],self.conv2d1.output_size,strides=[1, 1],
+        self.conv2d2=nn.conv2d(4*in_filters*expand_ratio,[1, 1],self.conv2d1.output_size,strides=[1, 1],
                             weight_initializer=['VarianceScaling',2.0,'fan_out','truncated_normal'],padding="SAME",
                             use_bias=True,activation="sigmoid",dtype=dtype)
         self.output_size=self.conv2d2.output_size
@@ -142,13 +135,13 @@ class BottleneckBlock:
         ):
         """Bottleneck block variant for residual networks with BN."""
     
-        self.layers1=Layers()
-        self.layers1.add(identity(in_channels))
+        self.layers1=nn.Layers()
+        self.layers1.add(nn.identity(in_channels))
     
         if use_projection:
             filters_out = filters * 4
             if strides == 2:
-                self.layers1.add(avg_pool2d(
+                self.layers1.add(nn.avg_pool2d(
                     ksize=(2, 2),
                     strides=(2, 2),
                     padding="SAME",
@@ -169,20 +162,20 @@ class BottleneckBlock:
                     dtype=dtype
                 ))
     
-            self.layers1.add(batch_norm_(
+            self.layers1.add(nn.batch_norm_(
                 momentum=bn_momentum,
                 epsilon=bn_epsilon,
                 dtype=dtype
             ))
         
-        self.layers2=Layers()
-        self.layers2.add(identity(in_channels))
+        self.layers2=nn.Layers()
+        self.layers2.add(nn.identity(in_channels))
     
         # First conv layer:
         self.layers2.add(Conv2DFixedPadding(
             filters=filters, kernel_size=[1,1], strides=1, in_channels=self.layers2.output_size, dtype=dtype
         ))
-        self.layers2.add(batch_norm_(
+        self.layers2.add(nn.batch_norm_(
             momentum=bn_momentum,
             epsilon=bn_epsilon,
             dtype=dtype
@@ -197,7 +190,7 @@ class BottleneckBlock:
             in_channels=self.layers2.output_size,
             dtype=dtype
         ))
-        self.layers2.add(batch_norm_(
+        self.layers2.add(nn.batch_norm_(
             momentum=bn_momentum,
             epsilon=bn_epsilon,
             dtype=dtype
@@ -208,7 +201,7 @@ class BottleneckBlock:
         self.layers2.add(Conv2DFixedPadding(
             filters=filters * 4, kernel_size=[1,1], strides=1, in_channels=self.layers2.output_size, dtype=dtype
         ))
-        self.layers2.add(batch_norm_(
+        self.layers2.add(nn.batch_norm_(
             momentum=bn_momentum,
             epsilon=bn_epsilon,
             dtype=dtype
@@ -252,7 +245,7 @@ def BlockGroup(
 ):
     """Create one group of blocks for the ResNet model."""
     
-    layers=Layers()
+    layers=nn.Layers()
 
     # Only the first block per block_group uses projection shortcut and
     # strides.
@@ -317,9 +310,9 @@ class ResNetRS:
     
         
     def build(self,dtype='float32'):
-        Model.init()
+        nn.Model.init()
         
-        self.layers=Layers()
+        self.layers=nn.Layers()
         # Build stem
         self.layers.add(STEM(bn_momentum=self.bn_momentum, bn_epsilon=self.bn_epsilon, activation=self.activation, dtype=dtype))
         
@@ -345,9 +338,9 @@ class ResNetRS:
                 survival_probability=survival_probability,
                 dtype=dtype
             ))
-        self.dense=dense(self.classes,self.layers.output_size,activation='softmax',dtype=dtype)
+        self.dense=nn.dense(self.classes,self.layers.output_size,activation='softmax',dtype=dtype)
         self.dtype=dtype
-        self.param=Model.param
+        self.param=nn.Model.param
     
     
     def fine_tuning(self,classes=None,flag=0):
@@ -355,7 +348,7 @@ class ResNetRS:
         if flag==0:
             self.param_=self.param.copy()
             self.dense_=self.dense
-            self.dense=dense(classes,self.dense.input_size,activation='softmax',dtype=self.dense.dtype)
+            self.dense=nn.dense(classes,self.dense.input_size,activation='softmax',dtype=self.dense.dtype)
             param.extend(self.dense.param)
             self.param=param
         elif flag==1:
@@ -376,7 +369,7 @@ class ResNetRS:
             rescaling_data = tf.multiply(data, scale)
             mean = tf.constant([0.485, 0.456, 0.406], dtype=self.dtype)
             variance = tf.constant([0.229**2, 0.224**2, 0.225**2], dtype=self.dtype)
-            normalization_data = tf.nn.batch_norm_(rescaling_data, mean, variance, None, None, 1e-12)
+            normalization_data = tf.nn.batch_normalization(rescaling_data, mean, variance, None, None, 1e-12)
             data=normalization_data
         x=self.layers(data,self.training)
         # Build head:

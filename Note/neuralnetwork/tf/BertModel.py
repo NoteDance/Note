@@ -3,9 +3,7 @@ import json
 import numpy as np
 import six
 import tensorflow as tf
-from Note.nn.layer.dense import dense
-from Note.nn.layer.layer_norm import layer_norm
-from Note.nn.Model import Model
+from Note import nn
 
 
 class BertConfig(object):
@@ -176,7 +174,7 @@ class BertModel(object):
         initializer_range=config.initializer_range,
         do_return_all_layers=True)
 
-    self.pooled_layer = dense(
+    self.pooled_layer = nn.dense(
         config.hidden_size,
         config.hidden_size,
         activation='tanh',
@@ -337,7 +335,7 @@ class embedding_lookup:
       self.vocab_size=vocab_size
       self.embedding_size=embedding_size
       self.use_one_hot_embeddings=use_one_hot_embeddings
-      Model.param.extend(self.embedding_table)
+      nn.Model.param.extend(self.embedding_table)
       
   def __call__(self,input_ids):
       # This function assumes that the input is of shape [batch_size, seq_length,
@@ -401,13 +399,13 @@ class embedding_postprocessor:
       self.full_position_embeddings = tf.random.truncated_normal(
               shape=[max_position_embeddings, embedding_size],
               stddev=initializer_range)
-      self.layer_norm=layer_norm(embedding_size)
+      self.nn.layer_norm=nn.layer_norm(embedding_size)
       self.use_token_type=use_token_type
       self.token_type_ids=token_type_ids
       self.token_type_vocab_size=token_type_vocab_size
       self.use_position_embeddings=use_position_embeddings
       self.dropout_prob=dropout_prob
-      Model.param.extend([self.token_type_table,self.full_position_embeddings])
+      nn.Model.param.extend([self.token_type_table,self.full_position_embeddings])
       
       
   def __call__(self,input_tensor):
@@ -452,7 +450,7 @@ class embedding_postprocessor:
                                            position_broadcast_shape)
           output += position_embeddings
     
-      output = dropout(self.layer_norm(output),self.dropout_prob)
+      output = dropout(self.nn.layer_norm(output),self.dropout_prob)
       return output
 
 
@@ -558,17 +556,17 @@ class attention_layer:
                initializer_range=0.02,
                do_return_2d_tensor=False,
                ):
-    self.query_layer=dense(
+    self.query_layer=nn.dense(
                     num_attention_heads * size_per_head,
                     width,
                     activation=query_act,
                     weight_initializer=['truncated_normal',initializer_range])
-    self.key_layer=dense(
+    self.key_layer=nn.dense(
                     num_attention_heads * size_per_head,
                     width,
                     activation=key_act,
                     weight_initializer=['truncated_normal',initializer_range])
-    self.value_layer=tf.layers.dense(
+    self.value_layer=tf.layers.nn.dense(
                     num_attention_heads * size_per_head,
                     width,
                     activation=value_act,
@@ -764,24 +762,24 @@ class transformer_model:
                 do_return_2d_tensor=True)
           self.attention_heads_layers.append(attention_head)
           attention_output_input_size += attention_head.output_size
-          attention_output = dense(
+          attention_output = nn.dense(
                                   hidden_size,
                                   attention_output_input_size,
                                   weight_initializer=['truncated_normal',initializer_range])
-          layer_norm_ = layer_norm(attention_output.output_size)
+          layer_norm_ = nn.layer_norm(attention_output.output_size)
           self.attention_layers.append(attention_output)
           self.layer_norms1.append(layer_norm_)
-          intermediate_output = dense(
+          intermediate_output = nn.dense(
                               intermediate_size,
                               attention_output.output_size,
                               activation=intermediate_act_fn,
                               weight_initializer=['truncated_normal',initializer_range])
           self.intermediate_layers.append(intermediate_output)
-          layer_output = dense(
+          layer_output = nn.dense(
                           hidden_size,
                           intermediate_output.output_size,
                           weight_initializer=['truncated_normal',initializer_range])
-          layer_norm_ = layer_norm(layer_output.output_size)
+          layer_norm_ = nn.layer_norm(layer_output.output_size)
           self.layers.append(layer_output)
           self.layer_norms2.append(layer_norm_)
       self.hidden_size=hidden_size

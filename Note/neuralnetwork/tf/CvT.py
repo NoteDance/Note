@@ -1,15 +1,5 @@
 import tensorflow as tf
-from Note.nn.layer.dense import dense
-from Note.nn.layer.conv2d import conv2d
-from Note.nn.layer.group_conv2d import group_conv2d
-from Note.nn.layer.batch_norm import batch_norm_
-from Note.nn.layer.layer_norm import layer_norm
-from Note.nn.layer.zeropadding2d import zeropadding2d
-from Note.nn.layer.adaptive_avg_pooling2d import adaptive_avg_pooling2d
-from Note.nn.layer.dropout import dropout
-from Note.nn.initializer import initializer_
-from Note.nn.Layers import Layers
-from Note.nn.Model import Model
+from Note import nn
 
 from einops import rearrange
 from einops.layers.tensorflow import Rearrange
@@ -34,8 +24,8 @@ def group_by_key_prefix_and_remove_prefix(prefix, d):
 class LayerNorm: # layernorm, but done in the channel dimension #1
     def __init__(self, dim, eps = 1e-5):
         self.eps = eps
-        self.g = initializer_((1, dim, 1, 1), 'ones')
-        self.b = initializer_((1, dim, 1, 1), 'zeros')
+        self.g = nn.initializer_((1, dim, 1, 1), 'ones')
+        self.b = nn.initializer_((1, dim, 1, 1), 'zeros')
 
     def __call__(self, x):
         var = tf.math.reduce_variance(x, axis=1, keepdims=True)
@@ -44,24 +34,24 @@ class LayerNorm: # layernorm, but done in the channel dimension #1
 
 class FeedForward:
     def __init__(self, dim, mult = 4, dropout_rate = 0.):
-        self.net = Layers()
-        self.net.add(layer_norm(dim))
-        self.net.add(conv2d(dim * mult, 1, dim))
+        self.net = nn.Layers()
+        self.net.add(nn.layer_norm(dim))
+        self.net.add(nn.conv2d(dim * mult, 1, dim))
         self.net.add(tf.nn.gelu)
-        self.net.add(dropout(dropout_rate))
-        self.net.add(conv2d(dim, 1, dim * mult))
-        self.net.add(dropout(dropout_rate))
+        self.net.add(nn.dropout(dropout_rate))
+        self.net.add(nn.conv2d(dim, 1, dim * mult))
+        self.net.add(nn.dropout(dropout_rate))
 
     def __call__(self, x, training):
         return self.net(x, training)
 
 class DepthWiseConv2d:
     def __init__(self, dim_in, dim_out, kernel_size, padding, stride, bias = True):
-        self.net = Layers()
-        self.net.add(zeropadding2d(padding=padding))
-        self.net.add(group_conv2d(dim_in, kernel_size, dim_in, dim_in, strides = stride, use_bias = bias))
-        self.net.add(batch_norm_(dim_in))
-        self.net.add(conv2d(dim_out, 1, dim_in, use_bias = bias))
+        self.net = nn.Layers()
+        self.net.add(nn.zeropadding2d(padding=padding))
+        self.net.add(nn.group_conv2d(dim_in, kernel_size, dim_in, dim_in, strides = stride, use_bias = bias))
+        self.net.add(nn.batch_norm_(dim_in))
+        self.net.add(nn.conv2d(dim_out, 1, dim_in, use_bias = bias))
 
     def __call__(self, x, training):
         return self.net(x, training)
@@ -73,16 +63,16 @@ class Attention:
         self.heads = heads
         self.scale = dim_head ** -0.5
 
-        self.norm = layer_norm(dim)
+        self.norm = nn.layer_norm(dim)
         self.attend = tf.nn.softmax
-        self.dropout = dropout(dropout_rate)
+        self.dropout = nn.dropout(dropout_rate)
 
         self.to_q = DepthWiseConv2d(dim, inner_dim, proj_kernel, padding = padding, stride = 1, bias = False)
         self.to_kv = DepthWiseConv2d(dim, inner_dim * 2, proj_kernel, padding = padding, stride = kv_proj_stride, bias = False)
 
-        self.to_out = Layers()
-        self.to_out.add(conv2d(dim, 1, inner_dim))
-        self.to_out.add(dropout(dropout_rate))
+        self.to_out = nn.Layers()
+        self.to_out.add(nn.conv2d(dim, 1, inner_dim))
+        self.to_out.add(nn.dropout(dropout_rate))
 
     def __call__(self, x, training):
         shape = x.shape
@@ -106,7 +96,7 @@ class Transformer:
         self.layers = []
         for _ in range(depth):
             self.layers.append([
-                Attention(dim, proj_kernel = proj_kernel, kv_proj_stride = kv_proj_stride, heads = heads, dim_head = dim_head, dropout_rate = dropout),
+                Attention(dim, proj_kernel = proj_kernel, kv_proj_stride = kv_proj_stride, heads = heads, dim_head = dim_head, dropout_rate = nn.dropout),
                 FeedForward(dim, mlp_mult, dropout_rate = dropout)
             ])
         self.train_flag = True
@@ -117,7 +107,7 @@ class Transformer:
             x = ff(x, training) + x
         return x
 
-class CvT(Model):
+class CvT(nn.Model):
     def __init__(
         self,
         num_classes,
@@ -154,24 +144,24 @@ class CvT(Model):
 
         dim = channels
         self.dim = dim
-        self.layers = Layers()
+        self.layers = nn.Layers()
 
         for prefix in ('s1', 's2', 's3'):
-            layers = Layers()
+            layers = nn.Layers()
             config, kwargs = group_by_key_prefix_and_remove_prefix(f'{prefix}_', kwargs)
 
-            layers.add(zeropadding2d(padding = (config['emb_kernel'] // 2)))
-            layers.add(conv2d(config['emb_dim'], config['emb_kernel'], dim, strides = config['emb_stride']))
-            layers.add(layer_norm(config['emb_dim']))
+            layers.add(nn.zeropadding2d(padding = (config['emb_kernel'] // 2)))
+            layers.add(nn.conv2d(config['emb_dim'], config['emb_kernel'], dim, strides = config['emb_stride']))
+            layers.add(nn.layer_norm(config['emb_dim']))
             layers.add(Transformer(dim = config['emb_dim'], proj_kernel = config['proj_kernel'], kv_proj_stride = config['kv_proj_stride'], depth = config['depth'], heads = config['heads'], mlp_mult = config['mlp_mult'], dropout = dropout))
             self.layers.add(layers)
 
             dim = config['emb_dim']
 
-        self.to_logits = Layers()
-        self.to_logits.add(adaptive_avg_pooling2d(1))
+        self.to_logits = nn.Layers()
+        self.to_logits.add(nn.adaptive_avg_pooling2d(1))
         self.to_logits.add(Rearrange('() () ... -> ...'))
-        self.to_logits.add(dense(num_classes, dim))
+        self.to_logits.add(nn.dense(num_classes, dim))
 
         self.training = True
         
@@ -181,7 +171,7 @@ class CvT(Model):
         if flag==0:
             self.param_=self.param.copy()
             self.to_logits_=self.to_logits.layer[-1]
-            self.to_logits.layer[-1]=dense(classes, self.dim)
+            self.to_logits.layer[-1]=nn.dense(classes, self.dim)
             param.extend(self.to_logits.layer[-1].param)
             self.param=param
         elif flag==1:

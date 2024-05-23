@@ -1,20 +1,8 @@
 import tensorflow as tf
-from Note.nn.layer.conv2d import conv2d
-from Note.nn.layer.depthwise_conv2d import depthwise_conv2d
-from Note.nn.layer.dense import dense
-from Note.nn.layer.batch_norm import batch_norm_
-from Note.nn.layer.dropout import dropout
-from Note.nn.layer.zeropadding2d import zeropadding2d
-from Note.nn.layer.global_avg_pool2d import global_avg_pool2d
-from Note.nn.layer.global_max_pool2d import global_max_pool2d
-from Note.nn.layer.norm import norm
+from Note import nn
 from Note.nn.layer.image_preprocessing.rescaling import rescaling
-from Note.nn.layer.reshape import reshape
-from Note.nn.layer.identity import identity
-from Note.nn.Layers import Layers
 from Note.nn.activation import activation_dict
 import copy
-from Note.nn.Model import Model
 
 
 class EfficientNet:
@@ -115,12 +103,12 @@ class EfficientNet:
         self.pooling=pooling
         self.classifier_activation=classifier_activation
         self.dtype=dtype
-        self.norm=norm(input_shape,dtype=dtype)
+        self.norm=nn.norm(input_shape,dtype=dtype)
         self.training=True
     
     
     def build(self):
-        Model.init()
+        nn.Model.init()
         
         def round_filters(filters, divisor=self.depth_divisor):
             """Round number of filters based on depth multiplier."""
@@ -138,11 +126,11 @@ class EfficientNet:
             return int(tf.math.ceil(self.depth_coefficient * repeats))
     
         # Build stem
-        self.zeropadding2d=zeropadding2d()
-        self.layers1=Layers()
-        self.layers1.add(conv2d(round_filters(32),[3,3],3,strides=2,padding="VALID",use_bias=False,
+        self.zeropadding2d=nn.zeropadding2d()
+        self.layers1=nn.Layers()
+        self.layers1.add(nn.conv2d(round_filters(32),[3,3],3,strides=2,padding="VALID",use_bias=False,
                            weight_initializer=CONV_KERNEL_INITIALIZER,dtype=self.dtype))
-        self.layers1.add(batch_norm_(axis=-1,dtype=self.dtype))
+        self.layers1.add(nn.batch_norm_(axis=-1,dtype=self.dtype))
         self.layers1.add(activation_dict[self.activation])    
     
         # Build blocks
@@ -150,7 +138,7 @@ class EfficientNet:
         
         b = 0
         blocks = float(sum(round_repeats(args["repeats"]) for args in blocks_args))
-        self.layers2=Layers()
+        self.layers2=nn.Layers()
         for i, args in enumerate(blocks_args):
             assert args["repeats"] > 0
             # Update block input and output filters based on depth multiplier.
@@ -175,8 +163,8 @@ class EfficientNet:
                 in_channels=self.layers2.output_size
         
         # Build top
-        self.layers3=Layers()
-        self.layers3.add(conv2d(
+        self.layers3=nn.Layers()
+        self.layers3.add(nn.conv2d(
             round_filters(1280),
             [1,1],
             self.layers2.output_size,
@@ -185,19 +173,19 @@ class EfficientNet:
             weight_initializer=CONV_KERNEL_INITIALIZER,
             dtype=self.dtype
         ))
-        self.layers3.add(batch_norm_(axis=-1,dtype=self.dtype))
+        self.layers3.add(nn.batch_norm_(axis=-1,dtype=self.dtype))
         self.layers3.add(activation_dict[self.activation])
         if self.include_top:
-            self.global_avg_pool2d=global_avg_pool2d()
+            self.global_avg_pool2d=nn.global_avg_pool2d()
             if self.dropout_rate > 0:
-                self.dropout=dropout(self.dropout_rate)
-            self.dense=dense(self.classes,self.layers3.output_size,activation=self.classifier_activation,weight_initializer=DENSE_KERNEL_INITIALIZER,dtype=self.dtype)
+                self.dropout=nn.dropout(self.dropout_rate)
+            self.dense=nn.dense(self.classes,self.layers3.output_size,activation=self.classifier_activation,weight_initializer=DENSE_KERNEL_INITIALIZER,dtype=self.dtype)
         else:
             if self.pooling == "avg":
-                self.global_avg_pool2d=global_avg_pool2d()
+                self.global_avg_pool2d=nn.global_avg_pool2d()
             elif self.pooling == "max":
-                self.global_max_pool2d=global_max_pool2d()
-        self.param=Model.param
+                self.global_max_pool2d=nn.global_max_pool2d()
+        self.param=nn.Model.param
     
     
     def fine_tuning(self,classes=None,flag=0):
@@ -205,7 +193,7 @@ class EfficientNet:
         if flag==0:
             self.param_=self.param.copy()
             self.dense_=self.dense
-            self.dense=dense(classes,self.dense.input_size,activation=self.classifier_activation,dtype=self.dense.dtype)
+            self.dense=nn.dense(classes,self.dense.input_size,activation=self.classifier_activation,dtype=self.dense.dtype)
             param.extend(self.dense.param)
             self.param=param
         elif flag==1:
@@ -279,27 +267,27 @@ class block:
         self.kernel_size=kernel_size
         self.drop_rate=drop_rate
         
-        self.layers1=Layers()
+        self.layers1=nn.Layers()
         # Expansion phase
         filters = filters_in * expand_ratio
         if expand_ratio != 1:
-            self.layers1.add(conv2d(filters,[1,1],
+            self.layers1.add(nn.conv2d(filters,[1,1],
                               in_channels,padding="SAME",
                               use_bias=False,
                               weight_initializer=CONV_KERNEL_INITIALIZER,dtype=dtype))
-            self.layers1.add(batch_norm_(axis=-1,dtype=dtype))
+            self.layers1.add(nn.batch_norm_(axis=-1,dtype=dtype))
             self.layers1.add(activation_dict[activation])
         else:
-            self.layers1.add(identity(in_channels))
+            self.layers1.add(nn.identity(in_channels))
 
         # Depthwise Convolution
         if strides == 2:
-            self.zeropadding2d=zeropadding2d()
+            self.zeropadding2d=nn.zeropadding2d()
             conv_pad = "VALID"
         else:
             conv_pad = "SAME"
-        self.layers2=Layers()
-        self.layers2.add(depthwise_conv2d(
+        self.layers2=nn.Layers()
+        self.layers2.add(nn.depthwise_conv2d(
                                             [kernel_size,kernel_size],
                                             input_size=self.layers1.output_size,
                                             strides=strides,
@@ -307,27 +295,27 @@ class block:
                                             use_bias=False,
                                             weight_initializer=CONV_KERNEL_INITIALIZER,
                                             dtype=dtype))
-        self.layers2.add(batch_norm_(axis=-1,dtype=dtype))
+        self.layers2.add(nn.batch_norm_(axis=-1,dtype=dtype))
         self.layers2.add(activation_dict[activation])
 
         # Squeeze and Excitation phase
         if 0 < se_ratio <= 1:
             filters_se = max(1, int(filters_in * se_ratio))
-            self.global_avg_pool2d=global_avg_pool2d()
-            self.reshape=reshape((1, 1, filters))
-            self.conv2d1=conv2d(filters_se,[1,1],self.layers2.output_size,padding="SAME",
+            self.global_avg_pool2d=nn.global_avg_pool2d()
+            self.reshape=nn.reshape((1, 1, filters))
+            self.conv2d1=nn.conv2d(filters_se,[1,1],self.layers2.output_size,padding="SAME",
                                activation=activation,weight_initializer=CONV_KERNEL_INITIALIZER,dtype=dtype)
-            self.conv2d2=conv2d(filters,[1,1],padding="SAME",activation="sigmoid",
+            self.conv2d2=nn.conv2d(filters,[1,1],padding="SAME",activation="sigmoid",
                                 weight_initializer=CONV_KERNEL_INITIALIZER,dtype=dtype)
 
         # Output phase
-        self.layers3=Layers()
-        self.layers3.add(conv2d(filters_out,[1,1],self.conv2d2.output_size,padding="SAME",
+        self.layers3=nn.Layers()
+        self.layers3.add(nn.conv2d(filters_out,[1,1],self.conv2d2.output_size,padding="SAME",
                             use_bias=False,weight_initializer=CONV_KERNEL_INITIALIZER,dtype=dtype))
-        self.layers3.add(batch_norm_(axis=-1,dtype=dtype))
+        self.layers3.add(nn.batch_norm_(axis=-1,dtype=dtype))
         if id_skip and strides == 1 and filters_in == filters_out:
             if drop_rate > 0:
-                self.dropout=dropout(drop_rate,noise_shape=(None, 1, 1, 1))
+                self.dropout=nn.dropout(drop_rate,noise_shape=(None, 1, 1, 1))
         self.output_size=self.layers3.output_size
         self.train_flag=True
     

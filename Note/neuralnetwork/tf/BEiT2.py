@@ -7,28 +7,20 @@
 # --------------------------------------------------------'
 
 import tensorflow as tf
-from Note.nn.layer.dense import dense
-from Note.nn.layer.conv2d import conv2d
-from Note.nn.layer.layer_norm import layer_norm
-from Note.nn.layer.dropout import dropout
-from Note.nn.layer.stochastic_depth import stochastic_depth
-from Note.nn.layer.identity import identity
-from Note.nn.initializer import initializer,initializer_
-from Note.nn.variable import variable
-from Note.nn.Model import Model
+from Note import nn
 from functools import partial
 from itertools import repeat
 import collections.abc
 import math
 
 
-class VisionTransformerForMaskedImageModeling(Model):
+class VisionTransformerForMaskedImageModeling(nn.Model):
     def __init__(self, img_size=224, patch_size=16, in_chans=3, vocab_size=8192, embed_dim=768, depth=12,
                  num_heads=12, mlp_ratio=4., qkv_bias=True, qk_scale=None, drop_rate=0., attn_drop_rate=0.,
                  drop_path_rate=0., norm_layer=None, init_values=None, attn_head_dim=None,
                  use_abs_pos_emb=True, use_rel_pos_bias=False, use_shared_rel_pos_bias=False, init_std=0.02):
         super().__init__()
-        Model.add()
+        nn.Model.add()
         self.num_features = self.embed_dim = embed_dim  # num_features for consistency with other models
 
         self.patch_embed = PatchEmbed(
@@ -36,13 +28,13 @@ class VisionTransformerForMaskedImageModeling(Model):
         num_patches = self.patch_embed.num_patches
         self.num_heads = num_heads
 
-        self.cls_token = initializer_((1, 1, embed_dim), ['truncated_normal', init_std], name='cls_token')
-        self.mask_token = initializer_((1, 1, embed_dim), ['truncated_normal', init_std])
+        self.cls_token = nn.initializer_((1, 1, embed_dim), ['truncated_normal', init_std], name='cls_token')
+        self.mask_token = nn.initializer_((1, 1, embed_dim), ['truncated_normal', init_std])
         if use_abs_pos_emb:
-            self.pos_embed = initializer_((1, num_patches + 1, embed_dim), ['truncated_normal', init_std], name='pos_embed')
+            self.pos_embed = nn.initializer_((1, num_patches + 1, embed_dim), ['truncated_normal', init_std], name='pos_embed')
         else:
             self.pos_embed = None
-        self.pos_drop = dropout(drop_rate)
+        self.pos_drop = nn.dropout(drop_rate)
 
         if use_shared_rel_pos_bias:
             self.rel_pos_bias = RelativePositionBias(window_size=self.patch_embed.patch_shape, num_heads=num_heads)
@@ -61,10 +53,10 @@ class VisionTransformerForMaskedImageModeling(Model):
         self.norm = norm_layer(embed_dim)
 
         self.init_std = init_std
-        self.lm_head = dense(vocab_size, embed_dim)
+        self.lm_head = nn.dense(vocab_size, embed_dim)
 
-        self.lm_head.weight.assign(initializer_(self.lm_head.weight.shape, ['truncated_normal', self.init_std]))
-        Model.apply(self.init_weights)
+        self.lm_head.weight.assign(nn.initializer_(self.lm_head.weight.shape, ['truncated_normal', self.init_std]))
+        nn.Model.apply(self.init_weights)
         self.fix_init_weight()
 
     def fix_init_weight(self):
@@ -76,10 +68,10 @@ class VisionTransformerForMaskedImageModeling(Model):
             rescale(layer.mlp.fc2.weight, layer_id + 1)
     
     def init_weights(self, l):
-        if isinstance(l, dense):
-            l.weight.assign(initializer(l.weight.shape, ['truncated_normal', self.init_std]))
-        elif isinstance(l, conv2d):
-            l.weight.assign(initializer(l.weight.shape, ['truncated_normal', self.init_std]))
+        if isinstance(l, nn.dense):
+            l.weight.assign(nn.initializer(l.weight.shape, ['truncated_normal', self.init_std]))
+        elif isinstance(l, nn.conv2d):
+            l.weight.assign(nn.initializer(l.weight.shape, ['truncated_normal', self.init_std]))
 
     def no_weight_decay(self):
         return ['pos_embed', 'cls_token']
@@ -276,7 +268,7 @@ class VisionTransformerForMaskedImageModelingCLS(VisionTransformerForMaskedImage
         self.shared_lm_head = shared_lm_head
         if not shared_lm_head:
             self.cls_pt_norm = norm_layer(embed_dim)
-            self.cls_pt_lm_head = dense(vocab_size, embed_dim, weight_initializer=['truncated_normal', self.init_std])
+            self.cls_pt_lm_head = nn.dense(vocab_size, embed_dim, weight_initializer=['truncated_normal', self.init_std])
 
     def fix_init_cls_pt_weight(self):
         def rescale(param, layer_id):
@@ -339,7 +331,7 @@ def beit_base_patch16_224_8k_vocab_cls_pt(**kwargs):
         vocab_size = 8192
     model = VisionTransformerForMaskedImageModelingCLS(
         patch_size=16, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4, qkv_bias=True,
-        norm_layer=partial(layer_norm, epsilon=1e-6), vocab_size=vocab_size, **kwargs)
+        norm_layer=partial(nn.layer_norm, epsilon=1e-6), vocab_size=vocab_size, **kwargs)
     return model
 
 def beit_base_patch16_224_8k_vocab(**kwargs):
@@ -352,7 +344,7 @@ def beit_base_patch16_224_8k_vocab(**kwargs):
         vocab_size = 8192
     model = VisionTransformerForMaskedImageModeling(
         patch_size=16, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4, qkv_bias=True,
-        norm_layer=partial(layer_norm, epsilon=1e-6), vocab_size=vocab_size, **kwargs)
+        norm_layer=partial(nn.layer_norm, epsilon=1e-6), vocab_size=vocab_size, **kwargs)
     return model
 
 def beit_base_patch16_192_8k_vocab(**kwargs):
@@ -365,7 +357,7 @@ def beit_base_patch16_192_8k_vocab(**kwargs):
         vocab_size = 8192
     model = VisionTransformerForMaskedImageModeling(
         img_size=192, patch_size=16, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4, qkv_bias=True,
-        norm_layer=partial(layer_norm, epsilon=1e-6), vocab_size=vocab_size, **kwargs)
+        norm_layer=partial(nn.layer_norm, epsilon=1e-6), vocab_size=vocab_size, **kwargs)
     return model
 
 def beit_base_patch16_256_8k_vocab(**kwargs):
@@ -378,7 +370,7 @@ def beit_base_patch16_256_8k_vocab(**kwargs):
         vocab_size = 8192
     model = VisionTransformerForMaskedImageModeling(
         img_size=256, patch_size=16, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4, qkv_bias=True,
-        norm_layer=partial(layer_norm, epsilon=1e-6), vocab_size=vocab_size, **kwargs)
+        norm_layer=partial(nn.layer_norm, epsilon=1e-6), vocab_size=vocab_size, **kwargs)
     return model
 
 def beit_24x544_patch16_224_8k_vocab(**kwargs):
@@ -391,7 +383,7 @@ def beit_24x544_patch16_224_8k_vocab(**kwargs):
         vocab_size = 8192
     model = VisionTransformerForMaskedImageModeling(
         img_size=224, patch_size=16, embed_dim=544, depth=24, num_heads=16, mlp_ratio=4, qkv_bias=True,
-        norm_layer=partial(layer_norm, epsilon=1e-6), vocab_size=vocab_size, **kwargs)
+        norm_layer=partial(nn.layer_norm, epsilon=1e-6), vocab_size=vocab_size, **kwargs)
     return model
 
 def beit_24x544_patch16_224_8k_vocab_cls_pt(**kwargs):
@@ -404,7 +396,7 @@ def beit_24x544_patch16_224_8k_vocab_cls_pt(**kwargs):
         vocab_size = 8192
     model = VisionTransformerForMaskedImageModelingCLS(
         img_size=224, patch_size=16, embed_dim=544, depth=24, num_heads=16, mlp_ratio=4, qkv_bias=True,
-        norm_layer=partial(layer_norm, epsilon=1e-6), vocab_size=vocab_size, **kwargs)
+        norm_layer=partial(nn.layer_norm, epsilon=1e-6), vocab_size=vocab_size, **kwargs)
     return model
 
 def beit_large_patch16_224_8k_vocab(**kwargs):
@@ -417,7 +409,7 @@ def beit_large_patch16_224_8k_vocab(**kwargs):
         vocab_size = 8192
     model = VisionTransformerForMaskedImageModeling(
         patch_size=16, embed_dim=1024, depth=24, num_heads=16, mlp_ratio=4, qkv_bias=True,
-        norm_layer=partial(layer_norm, epsilon=1e-6), vocab_size=vocab_size, **kwargs)
+        norm_layer=partial(nn.layer_norm, epsilon=1e-6), vocab_size=vocab_size, **kwargs)
     return model
 
 def beit_large_patch16_224_8k_vocab_cls_pt(**kwargs):
@@ -430,7 +422,7 @@ def beit_large_patch16_224_8k_vocab_cls_pt(**kwargs):
         vocab_size = 8192
     model = VisionTransformerForMaskedImageModelingCLS(
         patch_size=16, embed_dim=1024, depth=24, num_heads=16, mlp_ratio=4, qkv_bias=True,
-        norm_layer=partial(layer_norm, epsilon=1e-6), vocab_size=vocab_size, **kwargs)
+        norm_layer=partial(nn.layer_norm, epsilon=1e-6), vocab_size=vocab_size, **kwargs)
     return model
 
 def beit_huge_patch14_224_8k_vocab(**kwargs):
@@ -444,7 +436,7 @@ def beit_huge_patch14_224_8k_vocab(**kwargs):
         vocab_size = 8192
     model = VisionTransformerForMaskedImageModeling(
         patch_size=14, embed_dim=1280, depth=32, num_heads=16, mlp_ratio=4, qkv_bias=True,
-        norm_layer=partial(layer_norm, epsilon=1e-6), vocab_size=vocab_size, **kwargs)
+        norm_layer=partial(nn.layer_norm, epsilon=1e-6), vocab_size=vocab_size, **kwargs)
     return model
 
 
@@ -452,10 +444,10 @@ class Mlp:
     def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=tf.nn.gelu, drop=0.):
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
-        self.fc1 = dense(hidden_features, in_features)
+        self.fc1 = nn.dense(hidden_features, in_features)
         self.act = act_layer
-        self.fc2 = dense(out_features, hidden_features)
-        self.drop = dropout(drop)
+        self.fc2 = nn.dense(out_features, hidden_features)
+        self.drop = nn.dropout(drop)
 
     def __call__(self, x):
         x = self.fc1(x)
@@ -478,10 +470,10 @@ class Attention:
         all_head_dim = head_dim * self.num_heads
         self.scale = qk_scale or head_dim ** -0.5
 
-        self.qkv = dense(all_head_dim * 3, dim, use_bias=False)
+        self.qkv = nn.dense(all_head_dim * 3, dim, use_bias=False)
         if qkv_bias:
-            self.q_bias = initializer_((all_head_dim), 'zeros')
-            self.v_bias = initializer_((all_head_dim), 'zeros')
+            self.q_bias = nn.initializer_((all_head_dim), 'zeros')
+            self.v_bias = nn.initializer_((all_head_dim), 'zeros')
         else:
             self.q_bias = None
             self.v_bias = None
@@ -489,7 +481,7 @@ class Attention:
         if window_size:
             self.window_size = window_size
             self.num_relative_distance = (2 * window_size[0] - 1) * (2 * window_size[1] - 1) + 3
-            self.relative_position_bias_table = initializer_(
+            self.relative_position_bias_table = nn.initializer_(
                             (self.num_relative_distance, num_heads), 'zeros')  # 2*Wh-1 * 2*Ww-1, nH
             # cls to token & token 2 cls & cls to cls
 
@@ -514,9 +506,9 @@ class Attention:
             self.relative_position_bias_table = None
             self.relative_position_index = None
 
-        self.attn_drop = dropout(attn_drop)
-        self.proj = dense(dim, all_head_dim)
-        self.proj_drop = dropout(proj_drop)
+        self.attn_drop = nn.dropout(attn_drop)
+        self.proj = nn.dense(dim, all_head_dim)
+        self.proj_drop = nn.dropout(proj_drop)
 
     def __call__(self, x, rel_pos_bias=None, return_attention=False, return_qkv=False):
         B, N, C = x.shape
@@ -563,21 +555,21 @@ class Attention:
 class Block:
 
     def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, qk_scale=None, drop=0., attn_drop=0.,
-                 drop_path=0., init_values=None, act_layer=tf.nn.gelu, norm_layer=layer_norm,
+                 drop_path=0., init_values=None, act_layer=tf.nn.gelu, norm_layer=nn.layer_norm,
                  window_size=None, attn_head_dim=None):
         self.norm1 = norm_layer(dim)
         self.attn = Attention(
             dim, num_heads=num_heads, qkv_bias=qkv_bias, qk_scale=qk_scale,
             attn_drop=attn_drop, proj_drop=drop, window_size=window_size, attn_head_dim=attn_head_dim)
-        # NOTE: drop path for stochastic depth, we shall see if this is better than dropout here
-        self.drop_path = stochastic_depth(drop_path) if drop_path > 0. else identity()
+        # NOTE: drop path for stochastic depth, we shall see if this is better than nn.dropout here
+        self.drop_path = nn.stochastic_depth(drop_path) if drop_path > 0. else nn.identity()
         self.norm2 = norm_layer(dim)
         mlp_hidden_dim = int(dim * mlp_ratio)
         self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
 
         if init_values is not None and init_values > 0:
-            self.gamma_1 = variable(init_values * tf.ones((dim)))
-            self.gamma_2 = variable(init_values * tf.ones((dim)))
+            self.gamma_1 = nn.variable(init_values * tf.ones((dim)))
+            self.gamma_2 = nn.variable(init_values * tf.ones((dim)))
         else:
             self.gamma_1, self.gamma_2 = None, None
 
@@ -620,7 +612,7 @@ class PatchEmbed:
         self.num_patches = num_patches
         self.embed_dim = embed_dim
 
-        self.proj = conv2d(embed_dim, input_size=in_chans, kernel_size=patch_size, strides=patch_size)
+        self.proj = nn.conv2d(embed_dim, input_size=in_chans, kernel_size=patch_size, strides=patch_size)
 
     def __call__(self, x, **kwargs):
         B, H, W, C = x.shape
@@ -636,7 +628,7 @@ class RelativePositionBias:
     def __init__(self, window_size, num_heads):
         self.window_size = window_size
         self.num_relative_distance = (2 * window_size[0] - 1) * (2 * window_size[1] - 1) + 3
-        self.relative_position_bias_table = initializer_(
+        self.relative_position_bias_table = nn.initializer_(
                         (self.num_relative_distance, num_heads), 'zeros')  # 2*Wh-1 * 2*Ww-1, nH
         # cls to token & token 2 cls & cls to cls
 

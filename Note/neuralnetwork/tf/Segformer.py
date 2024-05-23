@@ -1,11 +1,5 @@
 import tensorflow as tf
-from Note.nn.layer.conv2d import conv2d
-from Note.nn.layer.layer_norm import layer_norm
-from Note.nn.layer.zeropadding2d import zeropadding2d
-from Note.nn.layer.up_sampling2d import up_sampling2d
-from Note.nn.initializer import initializer_
-from Note.nn.Layers import Layers
-from Note.nn.Model import Model
+from Note import nn
 from einops import rearrange
 from math import sqrt
 from functools import partial
@@ -22,10 +16,10 @@ def cast_tuple(val, depth):
 
 class DsConv2d:
     def __init__(self, dim_in, dim_out, kernel_size, padding, stride = 1, bias = True):
-        self.net = Layers()
-        self.net.add(conv2d(dim_in, input_size = dim_in, kernel_size = kernel_size, strides = stride, use_bias = bias))
-        self.net.add(zeropadding2d(dim_in, padding))
-        self.net.add(conv2d(dim_out, input_size = dim_in, kernel_size = 1, use_bias = bias))
+        self.net = nn.Layers()
+        self.net.add(nn.conv2d(dim_in, input_size = dim_in, kernel_size = kernel_size, strides = stride, use_bias = bias))
+        self.net.add(nn.zeropadding2d(dim_in, padding))
+        self.net.add(nn.conv2d(dim_out, input_size = dim_in, kernel_size = 1, use_bias = bias))
         
     def __call__(self, x):
         return self.net(x)
@@ -33,8 +27,8 @@ class DsConv2d:
 class LayerNorm:
     def __init__(self, dim, eps = 1e-5):
         self.eps = eps
-        self.g = initializer_((1, dim, 1, 1), 'ones', 'float32')
-        self.b = initializer_((1, dim, 1, 1), 'zeros', 'float32')
+        self.g = nn.initializer_((1, dim, 1, 1), 'ones', 'float32')
+        self.b = nn.initializer_((1, dim, 1, 1), 'zeros', 'float32')
 
     def __call__(self, x):
         std = tf.math.sqrt(tf.math.reduce_variance(x, axis=1, keepdims=True))
@@ -44,7 +38,7 @@ class LayerNorm:
 class PreNorm:
     def __init__(self, dim, fn):
         self.fn = fn
-        self.norm = layer_norm(dim)
+        self.norm = nn.layer_norm(dim)
 
     def __call__(self, x):
         return self.fn(self.norm(x))
@@ -59,9 +53,9 @@ class EfficientSelfAttention:
         self.scale = (dim // heads) ** -0.5
         self.heads = heads
 
-        self.to_q = conv2d(dim, 1, input_size = dim, use_bias = False)
-        self.to_kv = conv2d(dim * 2, reduction_ratio, input_size = dim, strides = reduction_ratio, use_bias = False)
-        self.to_out = conv2d(dim, 1, input_size = dim, use_bias = False)
+        self.to_q = nn.conv2d(dim, 1, input_size = dim, use_bias = False)
+        self.to_kv = nn.conv2d(dim * 2, reduction_ratio, input_size = dim, strides = reduction_ratio, use_bias = False)
+        self.to_out = nn.conv2d(dim, 1, input_size = dim, use_bias = False)
 
     def __call__(self, x):
         h, w = x.shape[1], x.shape[2]
@@ -84,11 +78,11 @@ class MixFeedForward:
         expansion_factor
     ):
         hidden_dim = dim * expansion_factor
-        self.net = Layers()
-        self.net.add(conv2d(hidden_dim, 1, dim))
+        self.net = nn.Layers()
+        self.net.add(nn.conv2d(hidden_dim, 1, dim))
         self.net.add(DsConv2d(hidden_dim, hidden_dim, 3, padding = 1))
         self.net.add(tf.nn.gelu)
-        self.net.add(conv2d(dim, 1, hidden_dim))
+        self.net.add(nn.conv2d(dim, 1, hidden_dim))
 
     def __call__(self, x):
         return self.net(x)
@@ -98,7 +92,7 @@ class Unfold:
         self.kernel = kernel
         self.stride = stride
         self.padding = padding
-        self.zeropadding2d = zeropadding2d(padding=padding)
+        self.zeropadding2d = nn.zeropadding2d(padding=padding)
     
     def __call__(self, x):
         x = self.zeropadding2d(x)
@@ -125,7 +119,7 @@ class MiT:
         
         for (dim_in, dim_out), (kernel, stride, padding), num_layers, ff_expansion, heads, reduction_ratio in zip(dim_pairs, stage_kernel_stride_pad, num_layers, ff_expansion, heads, reduction_ratio):
             get_overlap_patches = Unfold(kernel, stride, padding)
-            overlap_patch_embed = conv2d(dim_out, 1, dim_in * kernel ** 2)
+            overlap_patch_embed = nn.conv2d(dim_out, 1, dim_in * kernel ** 2)
 
             layers = []
 
@@ -166,7 +160,7 @@ class MiT:
         ret = x if not return_layer_outputs else layer_outputs
         return ret
 
-class Segformer(Model):
+class Segformer(nn.Model):
     def __init__(
         self,
         dims = (32, 64, 160, 256),
@@ -193,14 +187,14 @@ class Segformer(Model):
         
         self.to_fused = []
         for i, dim in enumerate(dims):
-            to_fused = Layers()
-            to_fused.add(conv2d(decoder_dim, 1, dim))
-            to_fused.add(up_sampling2d(2 ** i))
+            to_fused = nn.Layers()
+            to_fused.add(nn.conv2d(decoder_dim, 1, dim))
+            to_fused.add(nn.up_sampling2d(2 ** i))
             self.to_fused.append(to_fused)
 
-        self.to_segmentation = Layers()
-        self.to_segmentation.add(conv2d(decoder_dim, 1, 4 * decoder_dim))
-        self.to_segmentation.add(conv2d(num_classes, 1, decoder_dim))
+        self.to_segmentation = nn.Layers()
+        self.to_segmentation.add(nn.conv2d(decoder_dim, 1, 4 * decoder_dim))
+        self.to_segmentation.add(nn.conv2d(num_classes, 1, decoder_dim))
         
     
     def fine_tuning(self,classes=None,flag=0):
@@ -208,7 +202,7 @@ class Segformer(Model):
         if flag==0:
             self.param_=self.param.copy()
             self.conv2d=self.to_segmentation.layer[-1]
-            self.to_segmentation.layer[-1]=conv2d(classes, input_size=self.conv2d.input_size, kernel_size=1)
+            self.to_segmentation.layer[-1]=nn.conv2d(classes, input_size=self.conv2d.input_size, kernel_size=1)
             param.extend(self.to_segmentation.layer[-1].param)
             self.param=param
         elif flag==1:

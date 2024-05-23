@@ -1,14 +1,5 @@
 import tensorflow as tf
-from Note.nn.layer.dense import dense
-from Note.nn.layer.depthwise_conv2d import depthwise_conv2d
-from Note.nn.layer.layer_norm import layer_norm
-from Note.nn.layer.dropout import dropout
-from Note.nn.layer.unfold import unfold
-from Note.nn.layer.zeropadding2d import zeropadding2d
-from Note.nn.layer.identity import identity
-from Note.nn.initializer import initializer_
-from Note.nn.Layers import Layers
-from Note.nn.Model import Model
+from Note import nn
 from math import sqrt
 from einops import rearrange, repeat
 
@@ -22,13 +13,13 @@ def conv_output_size(image_size, kernel_size, stride, padding = 0):
 
 class FeedForward:
     def __init__(self, dim, hidden_dim, dropout_rate = 0.):
-        self.net = Layers()
-        self.net.add(layer_norm(dim))
-        self.net.add(dense(hidden_dim, dim))
+        self.net = nn.Layers()
+        self.net.add(nn.layer_norm(dim))
+        self.net.add(nn.dense(hidden_dim, dim))
         self.net.add(tf.nn.gelu)
-        self.net.add(dropout(dropout_rate))
-        self.net.add(dense(dim, hidden_dim))
-        self.net.add(dropout(dropout_rate))
+        self.net.add(nn.dropout(dropout_rate))
+        self.net.add(nn.dense(dim, hidden_dim))
+        self.net.add(nn.dropout(dropout_rate))
         
     def __call__(self, x, training):
         return self.net(x, training)
@@ -41,17 +32,17 @@ class Attention:
         self.heads = heads
         self.scale = dim_head ** -0.5
 
-        self.norm = layer_norm(dim)
+        self.norm = nn.layer_norm(dim)
         self.attend = tf.nn.softmax
-        self.dropout = dropout(dropout_rate)
-        self.to_qkv = dense(inner_dim * 3, dim, use_bias = False)
+        self.dropout = nn.dropout(dropout_rate)
+        self.to_qkv = nn.dense(inner_dim * 3, dim, use_bias = False)
 
-        self.to_out = Layers()
+        self.to_out = nn.Layers()
         if project_out:
-            self.to_out.add(dense(dim, inner_dim))
-            self.to_out.add(dropout(dropout_rate))
+            self.to_out.add(nn.dense(dim, inner_dim))
+            self.to_out.add(nn.dropout(dropout_rate))
         else:
-            self.to_out.add(identity())
+            self.to_out.add(nn.identity())
 
     def __call__(self, x, training):
         b, n, _, h = *x.shape, self.heads
@@ -89,9 +80,9 @@ class Transformer:
 
 class Pool:
     def __init__(self, dim):
-        self.zeropadding2d = zeropadding2d(padding=1)
-        self.downsample = depthwise_conv2d(input_size = dim, depth_multiplier = 2, kernel_size = 3, strides = 2)
-        self.cls_ff = dense(dim * 2, dim)
+        self.zeropadding2d = nn.zeropadding2d(padding=1)
+        self.downsample = nn.depthwise_conv2d(input_size = dim, depth_multiplier = 2, kernel_size = 3, strides = 2)
+        self.cls_ff = nn.dense(dim * 2, dim)
 
     def __call__(self, x):
         cls_token, tokens = x[:, :1], x[:, 1:]
@@ -106,7 +97,7 @@ class Pool:
         return tf.concat((cls_token, tokens), axis = 1)
 
 
-class PiT(Model):
+class PiT(nn.Model):
     def __init__(
         self,
         image_size,
@@ -130,18 +121,18 @@ class PiT(Model):
         patch_dim = channels * patch_size ** 2
         self.dim = dim
 
-        self.to_patch_embedding = Layers()
-        self.to_patch_embedding.add(unfold(kernel = patch_size, stride = patch_size // 2))
-        self.to_patch_embedding.add(dense(dim, patch_dim))
+        self.to_patch_embedding = nn.Layers()
+        self.to_patch_embedding.add(nn.unfold(kernel = patch_size, stride = patch_size // 2))
+        self.to_patch_embedding.add(nn.dense(dim, patch_dim))
 
         output_size = conv_output_size(image_size, patch_size, patch_size // 2)
         num_patches = output_size ** 2
 
-        self.pos_embedding = initializer_((1, num_patches + 1, dim), 'normal')
-        self.cls_token = initializer_((1, 1, dim), 'normal')
-        self.dropout = dropout(emb_dropout)
+        self.pos_embedding = nn.initializer_((1, num_patches + 1, dim), 'normal')
+        self.cls_token = nn.initializer_((1, 1, dim), 'normal')
+        self.dropout = nn.dropout(emb_dropout)
 
-        layers = Layers()
+        layers = nn.Layers()
 
         for ind, (layer_depth, layer_heads) in enumerate(zip(depth, heads)):
             not_last = ind < (len(depth) - 1)
@@ -154,9 +145,9 @@ class PiT(Model):
 
         self.layers = layers
 
-        self.mlp_head = Layers()
-        self.mlp_head.add(layer_norm(dim))
-        self.mlp_head.add(dense(num_classes, dim))
+        self.mlp_head = nn.Layers()
+        self.mlp_head.add(nn.layer_norm(dim))
+        self.mlp_head.add(nn.dense(num_classes, dim))
         
         self.training=True
     
@@ -165,7 +156,7 @@ class PiT(Model):
         if flag==0:
             self.param_=self.param.copy()
             self.mlp_head_=self.mlp_head.layer[-1]
-            self.mlp_head.layer[-1]=dense(classes, self.dim)
+            self.mlp_head.layer[-1]=nn.dense(classes, self.dim)
             param.extend(self.mlp_head.layer[-1].param)
             self.param=param
         elif flag==1:

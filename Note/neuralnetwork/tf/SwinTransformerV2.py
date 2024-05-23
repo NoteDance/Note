@@ -6,17 +6,7 @@
 # --------------------------------------------------------
 
 import tensorflow as tf
-from Note.nn.layer.dense import dense
-from Note.nn.layer.conv2d import conv2d
-from Note.nn.layer.layer_norm import layer_norm
-from Note.nn.layer.adaptive_avg_pooling1d import adaptive_avg_pooling1d
-from Note.nn.layer.dropout import dropout
-from Note.nn.layer.stochastic_depth import stochastic_depth
-from Note.nn.layer.identity import identity
-from Note.nn.initializer import initializer,initializer_
-from Note.nn.variable import variable
-from Note.nn.Layers import Layers
-from Note.nn.Model import Model
+from Note import nn
 from itertools import repeat
 import collections.abc
 import numpy as np
@@ -36,10 +26,10 @@ class Mlp:
     def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=tf.nn.gelu, drop=0.):
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
-        self.fc1 = dense(hidden_features, in_features)
+        self.fc1 = nn.dense(hidden_features, in_features)
         self.act = act_layer
-        self.fc2 = dense(out_features, hidden_features)
-        self.drop = dropout(drop)
+        self.fc2 = nn.dense(out_features, hidden_features)
+        self.drop = nn.dropout(drop)
 
     def __call__(self, x):
         x = self.fc1(x)
@@ -104,13 +94,13 @@ class WindowAttention:
         self.pretrained_window_size = pretrained_window_size
         self.num_heads = num_heads
 
-        self.logit_scale = variable(tf.math.log(10 * tf.ones((num_heads, 1, 1))), name='logit_scale')
+        self.logit_scale = nn.variable(tf.math.log(10 * tf.ones((num_heads, 1, 1))), name='logit_scale')
 
         # mlp to generate continuous relative position bias
-        self.cpb_mlp = Layers()
-        self.cpb_mlp.add(dense(512, 2, use_bias=True, name='cpb_mlp'))
+        self.cpb_mlp = nn.Layers()
+        self.cpb_mlp.add(nn.dense(512, 2, use_bias=True, name='cpb_mlp'))
         self.cpb_mlp.add(tf.nn.relu)
-        self.cpb_mlp.add(dense(num_heads, 512, use_bias=False, name='cpb_mlp'))
+        self.cpb_mlp.add(nn.dense(num_heads, 512, use_bias=False, name='cpb_mlp'))
 
         # get relative_coords_table
         relative_coords_h = tf.range(-(self.window_size[0] - 1), self.window_size[0], dtype=tf.float32)
@@ -144,16 +134,16 @@ class WindowAttention:
         self.relative_coords[:, :, 0].assign(self.relative_coords[:, :, 0] * (2 * self.window_size[1] - 1))
         self.relative_position_index = tf.reduce_sum(self.relative_coords, axis=-1)  # Wh*Ww, Wh*Ww
 
-        self.qkv = dense(dim * 3, dim, use_bias=False)
+        self.qkv = nn.dense(dim * 3, dim, use_bias=False)
         if qkv_bias:
-            self.q_bias = initializer_((dim), 'zeros')
-            self.v_bias = initializer_((dim), 'zeros')
+            self.q_bias = nn.initializer_((dim), 'zeros')
+            self.v_bias = nn.initializer_((dim), 'zeros')
         else:
             self.q_bias = None
             self.v_bias = None
-        self.attn_drop = dropout(attn_drop)
-        self.proj = dense(dim, dim)
-        self.proj_drop = dropout(proj_drop)
+        self.attn_drop = nn.dropout(attn_drop)
+        self.proj = nn.dense(dim, dim)
+        self.proj_drop = nn.dropout(proj_drop)
         self.softmax = tf.nn.softmax
 
     def __call__(self, x, mask=None):
@@ -232,14 +222,14 @@ class SwinTransformerBlock:
         drop (float, optional): Dropout rate. Default: 0.0
         attn_drop (float, optional): Attention dropout rate. Default: 0.0
         drop_path (float, optional): Stochastic depth rate. Default: 0.0
-        act_layer (nn.Module, optional): Activation layer. Default: nn.GELU
-        norm_layer (nn.Module, optional): Normalization layer.  Default: nn.LayerNorm
+        act_layer: Activation layer. Default: tf.nn.gelu
+        norm_layer: Normalization layer.  Default: nn.layer_norm
         pretrained_window_size (int): Window size in pre-training.
     """
 
     def __init__(self, dim, input_resolution, num_heads, window_size=7, shift_size=0,
                  mlp_ratio=4., qkv_bias=True, drop=0., attn_drop=0., drop_path=0.,
-                 act_layer=tf.nn.gelu, norm_layer=layer_norm, pretrained_window_size=0):
+                 act_layer=tf.nn.gelu, norm_layer=nn.layer_norm, pretrained_window_size=0):
         self.dim = dim
         self.input_resolution = input_resolution
         self.num_heads = num_heads
@@ -258,7 +248,7 @@ class SwinTransformerBlock:
             qkv_bias=qkv_bias, attn_drop=attn_drop, proj_drop=drop,
             pretrained_window_size=to_2tuple(pretrained_window_size))
 
-        self.drop_path = stochastic_depth(drop_path) if drop_path > 0. else identity()
+        self.drop_path = nn.stochastic_depth(drop_path) if drop_path > 0. else nn.identity()
         self.norm2 = norm_layer(dim)
         mlp_hidden_dim = int(dim * mlp_ratio)
         self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
@@ -350,13 +340,13 @@ class PatchMerging:
     Args:
         input_resolution (tuple[int]): Resolution of input feature.
         dim (int): Number of input channels.
-        norm_layer (nn.Module, optional): Normalization layer.  Default: nn.LayerNorm
+        norm_layer: Normalization layer.  Default: nn.layer_norm
     """
 
-    def __init__(self, input_resolution, dim, norm_layer=layer_norm):
+    def __init__(self, input_resolution, dim, norm_layer=nn.layer_norm):
         self.input_resolution = input_resolution
         self.dim = dim
-        self.reduction = dense(2 * dim, 4 * dim, use_bias=False)
+        self.reduction = nn.dense(2 * dim, 4 * dim, use_bias=False)
         self.norm = norm_layer(2 * dim)
 
     def __call__(self, x):
@@ -406,7 +396,7 @@ class BasicLayer:
         drop (float, optional): Dropout rate. Default: 0.0
         attn_drop (float, optional): Attention dropout rate. Default: 0.0
         drop_path (float | tuple[float], optional): Stochastic depth rate. Default: 0.0
-        norm_layer (nn.Module, optional): Normalization layer. Default: nn.LayerNorm
+        norm_layer: Normalization layer. Default: nn.layer_norm
         downsample (nn.Module | None, optional): Downsample layer at the end of the layer. Default: None
         use_checkpoint (bool): Whether to use checkpointing to save memory. Default: False.
         pretrained_window_size (int): Local window size in pre-training.
@@ -414,7 +404,7 @@ class BasicLayer:
 
     def __init__(self, dim, input_resolution, depth, num_heads, window_size,
                  mlp_ratio=4., qkv_bias=True, drop=0., attn_drop=0.,
-                 drop_path=0., norm_layer=layer_norm, downsample=None,
+                 drop_path=0., norm_layer=nn.layer_norm, downsample=None,
                  pretrained_window_size=0):
 
         self.dim = dim
@@ -467,7 +457,7 @@ class PatchEmbed:
         patch_size (int): Patch token size. Default: 4.
         in_chans (int): Number of input image channels. Default: 3.
         embed_dim (int): Number of linear projection output channels. Default: 96.
-        norm_layer (nn.Module, optional): Normalization layer. Default: None
+        norm_layer: Normalization layer. Default: None
     """
 
     def __init__(self, img_size=224, patch_size=4, in_chans=3, embed_dim=96, norm_layer=None):
@@ -482,7 +472,7 @@ class PatchEmbed:
         self.in_chans = in_chans
         self.embed_dim = embed_dim
 
-        self.proj = conv2d(embed_dim, input_size=in_chans, kernel_size=patch_size, strides=patch_size)
+        self.proj = nn.conv2d(embed_dim, input_size=in_chans, kernel_size=patch_size, strides=patch_size)
         if norm_layer is not None:
             self.norm = norm_layer(embed_dim)
         else:
@@ -508,7 +498,7 @@ class PatchEmbed:
         return flops
 
 
-class SwinTransformerV2(Model):
+class SwinTransformerV2(nn.Model):
     r""" Swin Transformer
         A PyTorch impl of : `Swin Transformer: Hierarchical Vision Transformer using Shifted Windows`  -
           https://arxiv.org/pdf/2103.14030
@@ -527,7 +517,7 @@ class SwinTransformerV2(Model):
         drop_rate (float): Dropout rate. Default: 0
         attn_drop_rate (float): Attention dropout rate. Default: 0
         drop_path_rate (float): Stochastic depth rate. Default: 0.1
-        norm_layer (nn.Module): Normalization layer. Default: nn.LayerNorm.
+        norm_layer: Normalization layer. Default: nn.layer_norm.
         ape (bool): If True, add absolute position embedding to the patch embedding. Default: False
         patch_norm (bool): If True, add normalization after patch embedding. Default: True
         use_checkpoint (bool): Whether to use checkpointing to save memory. Default: False
@@ -538,10 +528,10 @@ class SwinTransformerV2(Model):
                  embed_dim=96, depths=[2, 2, 6, 2], num_heads=[3, 6, 12, 24],
                  window_size=7, mlp_ratio=4., qkv_bias=True,
                  drop_rate=0., attn_drop_rate=0., drop_path_rate=0.1,
-                 norm_layer=layer_norm, ape=False, patch_norm=True,
+                 norm_layer=nn.layer_norm, ape=False, patch_norm=True,
                  pretrained_window_sizes=[0, 0, 0, 0], **kwargs):
         super().__init__()
-        Model.add()
+        nn.Model.add()
 
         self.num_classes = num_classes
         self.num_layers = len(depths)
@@ -561,9 +551,9 @@ class SwinTransformerV2(Model):
 
         # absolute position embedding
         if self.ape:
-            self.absolute_pos_embed = initializer_((1, num_patches, embed_dim), ['truncated_normal', .02], name='absolute_pos_embed')
+            self.absolute_pos_embed = nn.initializer_((1, num_patches, embed_dim), ['truncated_normal', .02], name='absolute_pos_embed')
 
-        self.pos_drop = dropout(drop_rate)
+        self.pos_drop = nn.dropout(drop_rate)
 
         # stochastic depth
         dpr = tf.linspace(0., drop_path_rate, sum(depths))  # stochastic depth decay rule
@@ -587,14 +577,14 @@ class SwinTransformerV2(Model):
             self.layers.append(layer)
 
         self.norm = norm_layer(self.num_features)
-        self.avgpool = adaptive_avg_pooling1d(1)
-        self.head = dense(num_classes, self.num_features) if num_classes > 0 else identity()
+        self.avgpool = nn.adaptive_avg_pooling1d(1)
+        self.head = nn.dense(num_classes, self.num_features) if num_classes > 0 else nn.identity()
 
-        Model.apply(self.init_weights)
+        nn.Model.apply(self.init_weights)
 
     def init_weights(self, l):
-        if isinstance(l, dense):
-            l.weight.assign(initializer(l.weight.shape, ['truncated_normal', 0.2]))
+        if isinstance(l, nn.dense):
+            l.weight.assign(nn.initializer(l.weight.shape, ['truncated_normal', 0.2]))
 
     def no_weight_decay(self):
         return ['absolute_pos_embed', 'cpb_mlp', 'logit_scale']
@@ -619,7 +609,7 @@ class SwinTransformerV2(Model):
         if flag==0:
             self.param_=self.param.copy()
             self.head_=self.head
-            self.head=dense(classes,self.num_features)
+            self.head=nn.dense(classes,self.num_features)
             param.extend(self.head.param)
             self.param=param
         elif flag==1:

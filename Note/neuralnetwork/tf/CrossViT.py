@@ -1,11 +1,5 @@
 import tensorflow as tf
-from Note.nn.layer.dense import dense
-from Note.nn.layer.dropout import dropout
-from Note.nn.layer.identity import identity
-from Note.nn.layer.layer_norm import layer_norm
-from Note.nn.initializer import initializer_
-from Note.nn.Layers import Layers
-from Note.nn.Model import Model
+from Note import nn
 
 from einops import rearrange, repeat
 from einops.layers.tensorflow import Rearrange
@@ -22,13 +16,13 @@ def default(val, d):
 
 class FeedForward:
     def __init__(self, dim, hidden_dim, dropout_rate = 0.):
-        self.net = Layers()
-        self.net.add(layer_norm(dim))
-        self.net.add(dense(hidden_dim, dim))
+        self.net = nn.Layers()
+        self.net.add(nn.layer_norm(dim))
+        self.net.add(nn.dense(hidden_dim, dim))
         self.net.add(tf.nn.gelu)
-        self.net.add(dropout(dropout_rate))
-        self.net.add(dense(dim, hidden_dim))
-        self.net.add(dropout(dropout_rate))
+        self.net.add(nn.dropout(dropout_rate))
+        self.net.add(nn.dense(dim, hidden_dim))
+        self.net.add(nn.dropout(dropout_rate))
         
     def __call__(self, x, training=True):
         return self.net(x, training)
@@ -41,16 +35,16 @@ class Attention:
         self.heads = heads
         self.scale = dim_head ** -0.5
 
-        self.norm = layer_norm(dim)
+        self.norm = nn.layer_norm(dim)
         self.attend = tf.nn.softmax
-        self.dropout = dropout(dropout_rate)
+        self.dropout = nn.dropout(dropout_rate)
 
-        self.to_q = dense(inner_dim, dim, use_bias = False)
-        self.to_kv = dense(inner_dim * 2, dim, use_bias = False)
+        self.to_q = nn.dense(inner_dim, dim, use_bias = False)
+        self.to_kv = nn.dense(inner_dim * 2, dim, use_bias = False)
 
-        self.to_out = Layers()
-        self.to_out.add(dense(dim, inner_dim))
-        self.to_out.add(dropout(dropout_rate))
+        self.to_out = nn.Layers()
+        self.to_out.add(nn.dense(dim, inner_dim))
+        self.to_out.add(nn.dropout(dropout_rate))
 
     def __call__(self, x, context = None, kv_include_self = False, training=True):
         b, n, _, h = *x.shape, self.heads
@@ -77,7 +71,7 @@ class Attention:
 class Transformer:
     def __init__(self, dim, depth, heads, dim_head, mlp_dim, dropout = 0.):
         self.layers = []
-        self.norm = layer_norm(dim)
+        self.norm = nn.layer_norm(dim)
         for _ in range(depth):
             self.layers.append([
                 Attention(dim, heads = heads, dim_head = dim_head, dropout_rate = dropout),
@@ -97,8 +91,8 @@ class ProjectInOut:
         self.fn = fn
 
         need_projection = dim_in != dim_out
-        self.project_in = dense(dim_out, dim_in) if need_projection else identity()
-        self.project_out = dense(dim_in, dim_out) if need_projection else identity()
+        self.project_in = nn.dense(dim_out, dim_in) if need_projection else nn.identity()
+        self.project_out = nn.dense(dim_in, dim_out) if need_projection else nn.identity()
 
     def __call__(self, x, *args, **kwargs):
         x = self.project_in(x)
@@ -173,15 +167,15 @@ class ImageEmbedder:
         num_patches = (image_size // patch_size) ** 2
         patch_dim = channels * patch_size ** 2
 
-        self.to_patch_embedding = Layers()
+        self.to_patch_embedding = nn.Layers()
         self.to_patch_embedding.add(Rearrange('b (h p1) (w p2) c -> b (h w) (p1 p2 c)', p1 = patch_size, p2 = patch_size))
-        self.to_patch_embedding.add(layer_norm(patch_dim))
-        self.to_patch_embedding.add(dense(dim, patch_dim))
-        self.to_patch_embedding.add(layer_norm(dim))
+        self.to_patch_embedding.add(nn.layer_norm(patch_dim))
+        self.to_patch_embedding.add(nn.dense(dim, patch_dim))
+        self.to_patch_embedding.add(nn.layer_norm(dim))
 
-        self.pos_embedding = initializer_((1, num_patches + 1, dim), 'normal')
-        self.cls_token = initializer_((1, 1, dim), 'normal')
-        self.dropout = dropout(dropout_rate)
+        self.pos_embedding = nn.initializer_((1, num_patches + 1, dim), 'normal')
+        self.cls_token = nn.initializer_((1, 1, dim), 'normal')
+        self.dropout = nn.dropout(dropout_rate)
 
     def __call__(self, img, training=True):
         x = self.to_patch_embedding(img)
@@ -195,7 +189,7 @@ class ImageEmbedder:
 
 # cross ViT class
 
-class CrossViT(Model):
+class CrossViT(nn.Model):
     def __init__(
         self,
         image_size,
@@ -250,12 +244,12 @@ class CrossViT(Model):
             dropout = dropout
         )
 
-        self.sm_mlp_head = Layers()
-        self.sm_mlp_head.add(layer_norm(sm_dim))
-        self.sm_mlp_head.add(dense(num_classes, sm_dim))
-        self.lg_mlp_head = Layers()
-        self.lg_mlp_head.add(layer_norm(lg_dim))
-        self.lg_mlp_head.add(dense(num_classes, lg_dim))
+        self.sm_mlp_head = nn.Layers()
+        self.sm_mlp_head.add(nn.layer_norm(sm_dim))
+        self.sm_mlp_head.add(nn.dense(num_classes, sm_dim))
+        self.lg_mlp_head = nn.Layers()
+        self.lg_mlp_head.add(nn.layer_norm(lg_dim))
+        self.lg_mlp_head.add(nn.dense(num_classes, lg_dim))
         
         self.training = True
     
@@ -264,9 +258,9 @@ class CrossViT(Model):
         if flag==0:
             self.param_=self.param.copy()
             self.sm_mlp_head_=self.sm_mlp_head.layer[-1]
-            self.sm_mlp_head.layer[-1]=dense(classes, self.sm_dim)
+            self.sm_mlp_head.layer[-1]=nn.dense(classes, self.sm_dim)
             self.lg_mlp_head_=self.lg_mlp_head.layer[-1]
-            self.lg_mlp_head.layer[-1]=dense(classes, self.lg_dim)
+            self.lg_mlp_head.layer[-1]=nn.dense(classes, self.lg_dim)
             param.extend(self.sm_mlp_head.layer[-1].param)
             param.extend(self.lg_mlp_head.layer[-1].param)
             self.param=param

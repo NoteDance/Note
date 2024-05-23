@@ -1,10 +1,5 @@
 import tensorflow as tf
-from Note.nn.layer.dense import dense
-from Note.nn.layer.conv1d import conv1d
-from Note.nn.layer.zeropadding1d import zeropadding1d
-from Note.nn.layer.layer_norm import layer_norm
-from Note.nn.initializer import initializer_
-from Note.nn.Model import Model
+from Note import nn
 import base64
 import gzip
 import numpy as np
@@ -35,7 +30,7 @@ def sinusoids(length, channels, max_timescale=10000):
 
 class LayerNorm:
     def __init__(self, n_state):
-        self.layer_norm = layer_norm(n_state)
+        self.layer_norm = nn.layer_norm(n_state)
         
     def __call__(self, x):
         return tf.cast(self.layer_norm(tf.cast(x, 'float32')), x.dtype)
@@ -44,10 +39,10 @@ class LayerNorm:
 class MultiHeadAttention:
     def __init__(self, n_state: int, n_head: int):
         self.n_head = n_head
-        self.query = dense(n_state, n_state)
-        self.key = dense(n_state, n_state, use_bias=False)
-        self.value = dense(n_state, n_state)
-        self.out = dense(n_state, n_state)
+        self.query = nn.dense(n_state, n_state)
+        self.key = nn.dense(n_state, n_state, use_bias=False)
+        self.value = nn.dense(n_state, n_state)
+        self.out = nn.dense(n_state, n_state)
 
     def __call__(
         self,
@@ -102,8 +97,8 @@ class ResidualAttentionBlock:
         self.cross_attn_ln = LayerNorm(n_state) if cross_attention else None
 
         n_mlp = n_state * 4
-        self.mlp1 = dense(n_mlp, n_state)
-        self.mlp2 = dense(n_state, n_mlp)
+        self.mlp1 = nn.dense(n_mlp, n_state)
+        self.mlp2 = nn.dense(n_state, n_mlp)
         self.mlp_ln = LayerNorm(n_state)
 
     def __call__(self, x, xa=None, mask=None, kv_cache=None):
@@ -130,10 +125,10 @@ class AudioEncoder:
         n_layer: int,
         dtype = tf.float16,
     ):
-        self.zeropadding1d1 = zeropadding1d(padding=1)
-        self.conv1 = conv1d(filters=n_state, input_size=n_mels, kernel_size=3)
-        self.zeropadding1d2 = zeropadding1d(padding=1)
-        self.conv2 = conv1d(filters=n_state, input_size=n_state, kernel_size=3, strides=2)
+        self.zeropadding1d1 = nn.zeropadding1d(padding=1)
+        self.conv1 = nn.conv1d(filters=n_state, input_size=n_mels, kernel_size=3)
+        self.zeropadding1d2 = nn.zeropadding1d(padding=1)
+        self.conv2 = nn.conv1d(filters=n_state, input_size=n_state, kernel_size=3, strides=2)
         self._positional_embedding = tf.cast(sinusoids(n_ctx, n_state), dtype)
 
         self.blocks = [ResidualAttentionBlock(n_state, n_head) for _ in range(n_layer)]
@@ -164,8 +159,8 @@ class TextDecoder:
         n_layer: int,
         dtype = tf.float16,
     ):
-        self.token_embedding = initializer_([n_vocab, n_state], 'normal', 'float32')
-        self.positional_embedding = initializer_([n_ctx, n_state], 'zeros', 'float32')
+        self.token_embedding = nn.initializer_([n_vocab, n_state], 'normal', 'float32')
+        self.positional_embedding = nn.initializer_([n_ctx, n_state], 'zeros', 'float32')
 
         self.blocks = [
             ResidualAttentionBlock(n_state, n_head, cross_attention=True)
@@ -202,7 +197,7 @@ class TextDecoder:
         return tf.matmul(x, tf.transpose(self.token_embedding)), kv_cache, cross_qk
 
 
-class Whisper(Model):
+class Whisper(nn.Model):
     def __init__(self, dims: ModelDimensions, dtype = tf.float16):
         super().__init__()
         self.dims = dims

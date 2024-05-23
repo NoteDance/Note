@@ -1,27 +1,21 @@
 import tensorflow as tf
-from Note.nn.layer.conv2d import conv2d
-from Note.nn.layer.group_norm import group_norm
-from Note.nn.layer.zeropadding2d import zeropadding2d
-from Note.nn.layer.max_pool2d import max_pool2d
-from Note.nn.layer.adaptive_avg_pooling2d import adaptive_avg_pooling2d
-from Note.nn.Layers import Layers
-from Note.nn.Model import Model
+from Note import nn
 
 
 class StdConv2d:
   def __init__(self,filters,kernel_size,input_size,stride=[1,1],padding=None,bias=True):
-      self.zeropadding2d = zeropadding2d(filters, padding)
-      self.conv2d = conv2d(filters=filters,kernel_size=kernel_size,input_size=input_size,
+      self.nn.zeropadding2d = nn.zeropadding2d(filters, padding)
+      self.nn.conv2d = nn.conv2d(filters=filters,kernel_size=kernel_size,input_size=input_size,
                            strides=stride,use_bias=bias)
-      w = self.conv2d.weight
+      w = self.nn.conv2d.weight
       v, m = tf.nn.moments(w, axes=[1, 2, 3], keepdims=True)
       w = (w - m) / tf.math.sqrt(v + 1e-10)
-      self.conv2d.weight.assign(w)
+      self.nn.conv2d.weight.assign(w)
 
 
   def __call__(self, x):
-    out = self.zeropadding2d(x)
-    out = self.conv2d(out)
+    out = self.nn.zeropadding2d(x)
+    out = self.nn.conv2d(out)
     return out
 
 
@@ -48,11 +42,11 @@ class PreActBottleneck:
     cout = cout or cin
     cmid = cmid or cout//4
 
-    self.gn1 = group_norm(32, cin)
+    self.gn1 = nn.group_norm(32, cin)
     self.conv1 = conv1x1(cin, cmid)
-    self.gn2 = group_norm(32, cmid)
+    self.gn2 = nn.group_norm(32, cmid)
     self.conv2 = conv3x3(cmid, cmid, stride)  # Original code has it on conv1!!
-    self.gn3 = group_norm(32, cmid)
+    self.gn3 = nn.group_norm(32, cmid)
     self.conv3 = conv1x1(cmid, cout)
     self.relu = tf.nn.relu
 
@@ -76,7 +70,7 @@ class PreActBottleneck:
     return out + residual
 
 
-class BiT(Model):
+class BiT(nn.Model):
   """Implementation of Pre-activation (v2) ResNet mode."""
 
   def __init__(self, model_type, head_size=21843, zero_head=False):
@@ -89,12 +83,12 @@ class BiT(Model):
 
     # The following will be unreadable if we split lines.
     # pylint: disable=line-too-long
-    self.root = Layers()
+    self.root = nn.Layers()
     self.root.add(StdConv2d(64*wf, input_size=3, kernel_size=7, stride=2, padding=3, bias=False))
-    self.root.add(zeropadding2d(64*wf,1))
-    self.root.add(max_pool2d(3, 2, 'VALID'))
+    self.root.add(nn.zeropadding2d(64*wf,1))
+    self.root.add(nn.max_pool2d(3, 2, 'VALID'))
 
-    self.body = Layers()
+    self.body = nn.Layers()
     self.body.add(PreActBottleneck(cin=64*wf, cout=256*wf, cmid=64*wf))
     for i in range(2, block_units[0] + 1):
         self.body.add(PreActBottleneck(cin=256*wf, cout=256*wf, cmid=64*wf))
@@ -110,22 +104,22 @@ class BiT(Model):
     # pylint: enable=line-too-long
 
     self.zero_head = zero_head
-    self.head = Layers()
-    self.head.add(group_norm(32, 2048*wf))
+    self.head = nn.Layers()
+    self.head.add(nn.group_norm(32, 2048*wf))
     self.head.add(tf.nn.relu)
-    self.head.add(adaptive_avg_pooling2d(1))
-    self.head.add(conv2d(head_size, 1, 2048*wf))
+    self.head.add(nn.adaptive_avg_pooling2d(1))
+    self.head.add(nn.conv2d(head_size, 1, 2048*wf))
     
     
   def fine_tuning(self,classes=None,flag=0):
       param=[]
       if flag==0:
           self.param_=self.param.copy()
-          self.conv2d=self.head.layer[-1]
+          self.nn.conv2d=self.head.layer[-1]
           if self.zero_head:
-              self.head.layer[-1]=conv2d(classes, 1, 2048*self.wf, weight_initializer='zeros')
+              self.head.layer[-1]=nn.conv2d(classes, 1, 2048*self.wf, weight_initializer='zeros')
           else:
-              self.head.layer[-1]=conv2d(classes, 1, 2048*self.wf)
+              self.head.layer[-1]=nn.conv2d(classes, 1, 2048*self.wf)
           param.extend(self.head.layer[-1].param)
           self.param=param
       elif flag==1:
@@ -133,7 +127,7 @@ class BiT(Model):
           self.param_.extend(self.head.layer[-1].param)
           self.param=self.param_
       else:
-          self.head.layer[-1],self.conv2d=self.conv2d,self.head.layer[-1]
+          self.head.layer[-1],self.nn.conv2d=self.nn.conv2d,self.head.layer[-1]
           del self.param_[-len(self.head.layer[-1].param):]
           self.param_.extend(self.head.layer[-1].param)
           self.param=self.param_

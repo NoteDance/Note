@@ -1,11 +1,6 @@
 from random import randrange
 import tensorflow as tf
-from Note.nn.Layers import Layers
-from Note.nn.layer.dense import dense
-from Note.nn.layer.layer_norm import layer_norm
-from Note.nn.layer.dropout import dropout
-from Note.nn.initializer import initializer_
-from Note.nn.Model import Model
+from Note import nn
 
 from einops import rearrange, repeat
 
@@ -40,7 +35,7 @@ class LayerScale:
 
         scale = tf.fill([1, 1, dim], init_eps)
         self.scale = tf.Variable(scale)
-        Model.param.append(self.scale)
+        nn.Model.param.append(self.scale)
         self.fn = fn
         
     def __call__(self, x, **kwargs):
@@ -48,13 +43,13 @@ class LayerScale:
 
 class FeedForward:
     def __init__(self, dim, hidden_dim, dropout_rate = 0.):
-        self.net = Layers()
-        self.net.add(layer_norm(dim))
-        self.net.add(dense(hidden_dim, dim))
+        self.net = nn.Layers()
+        self.net.add(nn.layer_norm(dim))
+        self.net.add(nn.dense(hidden_dim, dim))
         self.net.add(tf.nn.gelu)
-        self.net.add(dropout(dropout_rate))
-        self.net.add(dense(dim, hidden_dim))
-        self.net.add(dropout(dropout_rate))
+        self.net.add(nn.dropout(dropout_rate))
+        self.net.add(nn.dense(dim, hidden_dim))
+        self.net.add(nn.dropout(dropout_rate))
         
     def __call__(self, x, training=True):
         return self.net(x, training)
@@ -65,19 +60,19 @@ class Attention:
         self.heads = heads
         self.scale = dim_head ** -0.5
 
-        self.norm = layer_norm(dim)
-        self.to_q = dense(inner_dim, dim, use_bias = False)
-        self.to_kv = dense(inner_dim * 2, dim, use_bias = False)
+        self.norm = nn.layer_norm(dim)
+        self.to_q = nn.dense(inner_dim, dim, use_bias = False)
+        self.to_kv = nn.dense(inner_dim * 2, dim, use_bias = False)
 
         self.attend = tf.nn.softmax
-        self.dropout = dropout(dropout_rate)
+        self.dropout = nn.dropout(dropout_rate)
 
-        self.mix_heads_pre_attn = initializer_((heads, heads), 'normal')
-        self.mix_heads_post_attn = initializer_((heads, heads), 'normal')
+        self.mix_heads_pre_attn = nn.initializer_((heads, heads), 'normal')
+        self.mix_heads_post_attn = nn.initializer_((heads, heads), 'normal')
 
-        self.to_out = Layers()
-        self.to_out.add(dense(dim, inner_dim))
-        self.to_out.add(dropout(dropout_rate))
+        self.to_out = nn.Layers()
+        self.to_out.add(nn.dense(dim, inner_dim))
+        self.to_out.add(nn.dropout(dropout_rate))
 
     def __call__(self, x, context = None, training=True):
         b, n, _, h = *x.shape, self.heads
@@ -120,7 +115,7 @@ class Transformer:
             x = ff(x, training=training) + x
         return x
 
-class CaiT(Model):
+class CaiT(nn.Model):
     def __init__(
         self,
         image_size,
@@ -144,22 +139,22 @@ class CaiT(Model):
         self.patch_size = patch_size
         self.dim = dim
 
-        self.to_patch_embedding = Layers()
-        self.to_patch_embedding.add(layer_norm(patch_dim))
-        self.to_patch_embedding.add(dense(dim, patch_dim))
-        self.to_patch_embedding.add(layer_norm(dim))
+        self.to_patch_embedding = nn.Layers()
+        self.to_patch_embedding.add(nn.layer_norm(patch_dim))
+        self.to_patch_embedding.add(nn.dense(dim, patch_dim))
+        self.to_patch_embedding.add(nn.layer_norm(dim))
 
-        self.pos_embedding = initializer_((1, num_patches, dim), 'normal')
-        self.cls_token = initializer_((1, 1, dim), 'normal')
+        self.pos_embedding = nn.initializer_((1, num_patches, dim), 'normal')
+        self.cls_token = nn.initializer_((1, 1, dim), 'normal')
 
-        self.dropout = dropout(emb_dropout)
+        self.dropout = nn.dropout(emb_dropout)
 
         self.patch_transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout_rate, layer_dropout)
         self.cls_transformer = Transformer(dim, cls_depth, heads, dim_head, mlp_dim, dropout_rate, layer_dropout)
 
-        self.mlp_head = Layers()
-        self.mlp_head.add(layer_norm(dim))
-        self.mlp_head.add(dense(num_classes, dim))
+        self.mlp_head = nn.Layers()
+        self.mlp_head.add(nn.layer_norm(dim))
+        self.mlp_head.add(nn.dense(num_classes, dim))
         
         self.training=True
     
@@ -168,7 +163,7 @@ class CaiT(Model):
         if flag==0:
             self.param_=self.param.copy()
             self.mlp_head_=self.mlp_head.layer[-1]
-            self.mlp_head.layer[-1]=dense(classes, self.dim)
+            self.mlp_head.layer[-1]=nn.dense(classes, self.dim)
             param.extend(self.mlp_head.layer[-1].param)
             self.param=param
         elif flag==1:

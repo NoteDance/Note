@@ -1,10 +1,7 @@
 # Copyright (c) NoteDance
 # This software may be used and distributed in accordance with the terms of the Llama 3 Community License Agreement.
 import tensorflow as tf
-from Note.nn.layer.dense import dense
-from Note.nn.layer.embedding import embedding
-from Note.nn.initializer import initializer_
-from Note.nn.Model import Model
+from Note import nn
 
 import math
 from dataclasses import dataclass
@@ -30,7 +27,7 @@ class ModelArgs:
 class RMSNorm:
     def __init__(self, dim: int, eps: float = 1e-6):
         self.eps = eps
-        self.weight = initializer_((dim), 'ones')
+        self.weight = nn.initializer_((dim), 'ones')
 
     def _norm(self, x):
         return x * tf.math.rsqrt(tf.reduce_mean(tf.pow(x, 2), -1, keepdims=True) + self.eps) 
@@ -100,22 +97,22 @@ class Attention:
         self.n_rep = self.n_local_heads // self.n_local_kv_heads
         self.head_dim = args.dim // args.n_heads
 
-        self.wq = dense(
+        self.wq = nn.dense(
             args.n_heads * self.head_dim,
             args.dim,
             use_bias=False,
         )
-        self.wk = dense(
+        self.wk = nn.dense(
             self.n_kv_heads * self.head_dim,
             args.dim,
             use_bias=False,
         )
-        self.wv = dense(
+        self.wv = nn.dense(
             self.n_kv_heads * self.head_dim,
             args.dim,
             use_bias=False,
         )
-        self.wo = dense(
+        self.wo = nn.dense(
             args.dim,
             args.n_heads * self.head_dim,
             use_bias=False,
@@ -199,13 +196,13 @@ class FeedForward:
             hidden_dim = int(ffn_dim_multiplier * hidden_dim)
         hidden_dim = multiple_of * ((hidden_dim + multiple_of - 1) // multiple_of)
 
-        self.w1 = dense(
+        self.w1 = nn.dense(
             hidden_dim, dim, use_bias=False
         )
-        self.w2 = dense(
+        self.w2 = nn.dense(
             dim, hidden_dim, use_bias=False
         )
-        self.w3 = dense(
+        self.w3 = nn.dense(
             hidden_dim, dim, use_bias=False
         )
 
@@ -241,14 +238,14 @@ class TransformerBlock:
         return out
 
 
-class Llama3(Model):
+class Llama3(nn.Model):
     def __init__(self, params: ModelArgs):
         super().__init__()
         self.params = params
         self.vocab_size = params.vocab_size
         self.n_layers = params.n_layers
 
-        self.tok_embeddings = embedding(
+        self.tok_embeddings = nn.embedding(
             params.dim, params.vocab_size
         )
 
@@ -257,7 +254,7 @@ class Llama3(Model):
             self.layers.append(TransformerBlock(layer_id, params))
 
         self.norm = RMSNorm(params.dim, eps=params.norm_eps)
-        self.output = dense(
+        self.output = nn.dense(
             params.vocab_size, params.dim, use_bias=False
         )
 
@@ -272,7 +269,7 @@ class Llama3(Model):
         if flag==0:
             self.param_=self.param.copy()
             self.output_=self.output
-            self.output=dense(ModelArgs.vocab_size, ModelArgs.dim, use_bias=False)
+            self.output=nn.dense(ModelArgs.vocab_size, ModelArgs.dim, use_bias=False)
             param.extend(self.output.param)
             self.param=param
         elif flag==1:

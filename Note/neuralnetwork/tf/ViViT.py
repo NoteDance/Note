@@ -1,11 +1,5 @@
 import tensorflow as tf
-from Note.nn.layer.dense import dense
-from Note.nn.layer.layer_norm import layer_norm
-from Note.nn.layer.dropout import dropout
-from Note.nn.layer.identity import identity
-from Note.nn.initializer import initializer_
-from Note.nn.Layers import Layers
-from Note.nn.Model import Model
+from Note import nn
 
 from einops import rearrange, repeat, reduce
 from einops.layers.tensorflow import Rearrange
@@ -22,13 +16,13 @@ def pair(t):
 
 class FeedForward:
     def __init__(self, dim, hidden_dim, dropout_rate = 0.):
-        self.net = Layers()
-        self.net.add(layer_norm(dim))
-        self.net.add(dense(hidden_dim, dim))
+        self.net = nn.Layers()
+        self.net.add(nn.layer_norm(dim))
+        self.net.add(nn.dense(hidden_dim, dim))
         self.net.add(tf.nn.gelu)
-        self.net.add(dropout(dropout_rate))
-        self.net.add(dense(dim, hidden_dim))
-        self.net.add(dropout(dropout_rate))
+        self.net.add(nn.dropout(dropout_rate))
+        self.net.add(nn.dense(dim, hidden_dim))
+        self.net.add(nn.dropout(dropout_rate))
         
     def __call__(self, x, training):
         return self.net(x, training)
@@ -41,18 +35,18 @@ class Attention:
         self.heads = heads
         self.scale = dim_head ** -0.5
 
-        self.norm = layer_norm(dim)
+        self.norm = nn.layer_norm(dim)
         self.attend = tf.nn.softmax
-        self.dropout = dropout(dropout_rate)
+        self.dropout = nn.dropout(dropout_rate)
 
-        self.to_qkv = dense(inner_dim * 3, dim, use_bias = False)
+        self.to_qkv = nn.dense(inner_dim * 3, dim, use_bias = False)
 
-        self.to_out = Layers()
+        self.to_out = nn.Layers()
         if project_out:
-            self.to_out.add(dense(dim, inner_dim))
-            self.to_out.add(dropout(dropout_rate))
+            self.to_out.add(nn.dense(dim, inner_dim))
+            self.to_out.add(nn.dropout(dropout_rate))
         else:
-            self.to_out.add(identity())
+            self.to_out.add(nn.identity())
 
     def __call__(self, x, training):
         x = self.norm(x)
@@ -70,7 +64,7 @@ class Attention:
 
 class Transformer:
     def __init__(self, dim, depth, heads, dim_head, mlp_dim, dropout_rate = 0.):
-        self.norm = layer_norm(dim)
+        self.norm = nn.layer_norm(dim)
         self.layers = []
         for _ in range(depth):
             self.layers.append([
@@ -84,7 +78,7 @@ class Transformer:
             x = ff(x, training) + x
         return self.norm(x)
 
-class ViViT(Model):
+class ViViT(nn.Model):
     def __init__(
         self,
         image_size,
@@ -121,25 +115,25 @@ class ViViT(Model):
 
         self.global_average_pool = pool == 'mean'
 
-        self.to_patch_embedding = Layers()
+        self.to_patch_embedding = nn.Layers()
         self.to_patch_embedding.add(Rearrange('b (f pf) (h p1) (w p2) c -> b f (h w) (p1 p2 pf c)', p1 = patch_height, p2 = patch_width, pf = frame_patch_size))
-        self.to_patch_embedding.add(layer_norm(patch_dim))
-        self.to_patch_embedding.add(dense(dim, patch_dim))
-        self.to_patch_embedding.add(layer_norm(dim))
+        self.to_patch_embedding.add(nn.layer_norm(patch_dim))
+        self.to_patch_embedding.add(nn.dense(dim, patch_dim))
+        self.to_patch_embedding.add(nn.layer_norm(dim))
 
-        self.pos_embedding = initializer_((1, num_frame_patches, num_image_patches, dim), 'normal')
-        self.dropout = dropout(emb_dropout)
+        self.pos_embedding = nn.initializer_((1, num_frame_patches, num_image_patches, dim), 'normal')
+        self.dropout = nn.dropout(emb_dropout)
 
-        self.spatial_cls_token = initializer_((1, 1, dim), 'normal') if not self.global_average_pool else None
-        self.temporal_cls_token = initializer_((1, 1, dim), 'normal') if not self.global_average_pool else None
+        self.spatial_cls_token = nn.initializer_((1, 1, dim), 'normal') if not self.global_average_pool else None
+        self.temporal_cls_token = nn.initializer_((1, 1, dim), 'normal') if not self.global_average_pool else None
 
         self.spatial_transformer = Transformer(dim, spatial_depth, heads, dim_head, mlp_dim, dropout_rate)
         self.temporal_transformer = Transformer(dim, temporal_depth, heads, dim_head, mlp_dim, dropout_rate)
 
         self.pool = pool
-        self.to_latent = identity()
+        self.to_latent = nn.identity()
 
-        self.mlp_head = dense(num_classes, dim)
+        self.mlp_head = nn.dense(num_classes, dim)
         
         self.training = True
     
@@ -149,7 +143,7 @@ class ViViT(Model):
         if flag==0:
             self.param_=self.param.copy()
             self.mlp_head_=self.mlp_head
-            self.mlp_head=dense(classes, self.dim)
+            self.mlp_head=nn.dense(classes, self.dim)
             param.extend(self.mlp_head.param)
             self.param=param
         elif flag==1:

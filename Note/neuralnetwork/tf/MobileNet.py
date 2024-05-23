@@ -1,19 +1,13 @@
 import tensorflow as tf
-from Note.nn.layer.conv2d import conv2d
-from Note.nn.layer.depthwise_conv2d import depthwise_conv2d
-from Note.nn.layer.dense import dense
-from Note.nn.layer.batch_norm import batch_norm_
-from Note.nn.layer.zeropadding2d import zeropadding2d
-from Note.nn.Layers import Layers
+from Note import nn
 from Note.nn.activation import activation_dict
-from Note.nn.Model import Model
 
 
 class _conv_block:
     def __init__(self, in_channels, filters, alpha, kernel=(3, 3), strides=[1, 1], dtype='float32'):
         filters = int(filters * alpha)
-        self.conv2d=conv2d(filters,kernel,in_channels,strides=strides,padding='SAME',use_bias=False,dtype=dtype)
-        self.batch_norm_=batch_norm_(self.conv2d.output_size,dtype=dtype)
+        self.conv2d=nn.conv2d(filters,kernel,in_channels,strides=strides,padding='SAME',use_bias=False,dtype=dtype)
+        self.batch_norm_=nn.batch_norm_(self.conv2d.output_size,dtype=dtype)
         self.train_flag=True
         self.output_size=self.conv2d.output_size
     
@@ -29,11 +23,11 @@ class _depthwise_conv_block:
     def __init__(self,in_channels,pointwise_conv_filters,alpha,depth_multiplier=1,strides=[1, 1],block_id=1,dtype='float32'):
         pointwise_conv_filters = int(pointwise_conv_filters * alpha)
         self.strides=strides
-        self.zeropadding2d=zeropadding2d()
-        self.depthwiseconv2d=depthwise_conv2d([3,3],depth_multiplier,in_channels,strides=[1,strides[0],strides[1],1],padding="SAME" if strides == [1, 1] else "VALID",use_bias=False,dtype=dtype)
-        self.batch_norm1=batch_norm_(self.depthwiseconv2d.output_size,dtype=dtype)
-        self.conv2d=conv2d(pointwise_conv_filters,[1,1],self.depthwiseconv2d.output_size,strides=[1, 1],padding='SAME',use_bias=False,dtype=dtype)
-        self.batch_norm2=batch_norm_(self.conv2d.output_size,dtype=dtype)
+        self.zeropadding2d=nn.zeropadding2d()
+        self.depthwiseconv2d=nn.depthwise_conv2d([3,3],depth_multiplier,in_channels,strides=[1,strides[0],strides[1],1],padding="SAME" if strides == [1, 1] else "VALID",use_bias=False,dtype=dtype)
+        self.batch_norm1=nn.batch_norm_(self.depthwiseconv2d.output_size,dtype=dtype)
+        self.conv2d=nn.conv2d(pointwise_conv_filters,[1,1],self.depthwiseconv2d.output_size,strides=[1, 1],padding='SAME',use_bias=False,dtype=dtype)
+        self.batch_norm2=nn.batch_norm_(self.conv2d.output_size,dtype=dtype)
         self.train_flag=True
         self.output_size=self.conv2d.output_size
     
@@ -64,8 +58,8 @@ class MobileNet:
         
         
     def build(self,dtype='float32'):
-        Model.init()
-        self.layers=Layers()
+        nn.Model.init()
+        self.layers=nn.Layers()
         self.layers.add(_conv_block(3, 32, self.alpha, strides=[2, 2],dtype=dtype))
         self.layers.add(_depthwise_conv_block(self.layers.output_size, 64, self.alpha, self.depth_multiplier, block_id=1,dtype=dtype))
         self.layers.add(_depthwise_conv_block(
@@ -88,9 +82,9 @@ class MobileNet:
         self.layers.output_size, 1024, self.alpha, self.depth_multiplier, strides=[2, 2], block_id=12, dtype=dtype
         ))
         self.layers.add(_depthwise_conv_block(self.layers.output_size, 1024, self.alpha, self.depth_multiplier, block_id=13, dtype=dtype))
-        self.conv2d=conv2d(self.classes,[1,1],self.layers.output_size,padding='SAME',dtype=dtype)
-        self.dense=dense(self.classes,self.conv2d.output_size,activation='softmax',dtype=dtype)
-        self.param=Model.param
+        self.conv2d=nn.conv2d(self.classes,[1,1],self.layers.output_size,padding='SAME',dtype=dtype)
+        self.dense=nn.dense(self.classes,self.conv2d.output_size,activation='softmax',dtype=dtype)
+        self.param=nn.Model.param
         return
     
     
@@ -98,8 +92,8 @@ class MobileNet:
         param=[]
         if flag==0:
             self.param_=self.param.copy()
-            self.dense_=self.dense
-            self.dense=dense(classes,self.dense.input_size,activation='softmax',dtype=self.dense.dtype)
+            self.dense_=self.nn.dense
+            self.dense=nn.dense(classes,self.dense.input_size,activation='softmax',dtype=self.dense.dtype)
             param.extend(self.dense.param)
             self.param=param
         elif flag==1:

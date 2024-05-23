@@ -1,10 +1,5 @@
 import tensorflow as tf
-from Note.nn.layer.conv2d import conv2d
-from Note.nn.layer.dense import dense
-from Note.nn.layer.max_pool2d import max_pool2d
-from Note.nn.layer.flatten import flatten 
-from Note.nn.Layers import Layers
-from Note.nn.Model import Model
+from Note import nn
 
 
 class VGG19:
@@ -15,42 +10,42 @@ class VGG19:
     
     
     def build(self,dtype='float32'):
-        Model.init()
+        nn.Model.init()
         
-        self.layers=Layers()
+        self.layers=nn.Layers()
         # Block 1
-        self.layers.add(conv2d(64,(3,3),3,activation="relu", padding="SAME",dtype=dtype))
-        self.layers.add(conv2d(64,(3,3),activation="relu", padding="SAME",dtype=dtype))
-        self.layers.add(max_pool2d((2, 2), strides=(2, 2), padding='VALID'))
+        self.layers.add(nn.conv2d(64,(3,3),3,activation="relu", padding="SAME",dtype=dtype))
+        self.layers.add(nn.conv2d(64,(3,3),activation="relu", padding="SAME",dtype=dtype))
+        self.layers.add(nn.max_pool2d((2, 2), strides=(2, 2), padding='VALID'))
         # Block 2
-        self.layers.add(conv2d(128,(3,3),activation="relu", padding="SAME",dtype=dtype))
-        self.layers.add(conv2d(128,(3,3),activation="relu", padding="SAME",dtype=dtype))
-        self.layers.add(max_pool2d((2, 2), strides=(2, 2), padding='VALID'))
+        self.layers.add(nn.conv2d(128,(3,3),activation="relu", padding="SAME",dtype=dtype))
+        self.layers.add(nn.conv2d(128,(3,3),activation="relu", padding="SAME",dtype=dtype))
+        self.layers.add(nn.max_pool2d((2, 2), strides=(2, 2), padding='VALID'))
         # Block 3
-        self.layers.add(conv2d(256,(3,3),activation="relu", padding="SAME",dtype=dtype))
-        self.layers.add(conv2d(256,(3,3),activation="relu", padding="SAME",dtype=dtype))
-        self.layers.add(conv2d(256,(3,3),activation="relu", padding="SAME",dtype=dtype))
-        self.layers.add(conv2d(256,(3,3),activation="relu", padding="SAME",dtype=dtype))
-        self.layers.add(max_pool2d((2, 2), strides=(2, 2), padding='VALID'))
+        self.layers.add(nn.conv2d(256,(3,3),activation="relu", padding="SAME",dtype=dtype))
+        self.layers.add(nn.conv2d(256,(3,3),activation="relu", padding="SAME",dtype=dtype))
+        self.layers.add(nn.conv2d(256,(3,3),activation="relu", padding="SAME",dtype=dtype))
+        self.layers.add(nn.conv2d(256,(3,3),activation="relu", padding="SAME",dtype=dtype))
+        self.layers.add(nn.max_pool2d((2, 2), strides=(2, 2), padding='VALID'))
         # Block 4
-        self.layers.add(conv2d(512,(3,3),activation="relu", padding="SAME",dtype=dtype))
-        self.layers.add(conv2d(512,(3,3),activation="relu", padding="SAME",dtype=dtype))
-        self.layers.add(conv2d(512,(3,3),activation="relu", padding="SAME",dtype=dtype))
-        self.layers.add(conv2d(512,(3,3),activation="relu", padding="SAME",dtype=dtype))
-        self.layers.add(max_pool2d((2, 2), strides=(2, 2), padding='VALID'))
+        self.layers.add(nn.conv2d(512,(3,3),activation="relu", padding="SAME",dtype=dtype))
+        self.layers.add(nn.conv2d(512,(3,3),activation="relu", padding="SAME",dtype=dtype))
+        self.layers.add(nn.conv2d(512,(3,3),activation="relu", padding="SAME",dtype=dtype))
+        self.layers.add(nn.conv2d(512,(3,3),activation="relu", padding="SAME",dtype=dtype))
+        self.layers.add(nn.max_pool2d((2, 2), strides=(2, 2), padding='VALID'))
         # Block 5
-        self.layers.add(conv2d(512,(3,3),activation="relu", padding="SAME",dtype=dtype))
-        self.layers.add(conv2d(512,(3,3),activation="relu", padding="SAME",dtype=dtype))
-        self.layers.add(conv2d(512,(3,3),activation="relu", padding="SAME",dtype=dtype))
-        self.layers.add(conv2d(512,(3,3),activation="relu", padding="SAME",dtype=dtype))
-        self.layers.add(max_pool2d((2, 2), strides=(2, 2), padding='VALID'))
+        self.layers.add(nn.conv2d(512,(3,3),activation="relu", padding="SAME",dtype=dtype))
+        self.layers.add(nn.conv2d(512,(3,3),activation="relu", padding="SAME",dtype=dtype))
+        self.layers.add(nn.conv2d(512,(3,3),activation="relu", padding="SAME",dtype=dtype))
+        self.layers.add(nn.conv2d(512,(3,3),activation="relu", padding="SAME",dtype=dtype))
+        self.layers.add(nn.max_pool2d((2, 2), strides=(2, 2), padding='VALID'))
         
-        self.flatten=flatten
-        self.dense1=dense(4096,25088,activation='relu',dtype=dtype)
-        self.dense2=dense(4096,self.dense1.output_size,activation='relu',dtype=dtype)
-        self.dense3=dense(self.classes,self.dense2.output_size,activation='softmax',dtype=dtype)
+        self.flatten=nn.flatten
+        self.dense1=nn.dense(4096,25088,activation='relu',dtype=dtype)
+        self.dense2=nn.dense(4096,self.dense1.output_size,activation='relu',dtype=dtype)
+        self.dense3=nn.dense(self.classes,self.dense2.output_size,activation='softmax',dtype=dtype)
         
-        self.param=Model.param
+        self.param=nn.Model.param
         return
     
     
@@ -59,7 +54,7 @@ class VGG19:
         if flag==0:
             self.param_=self.param.copy()
             self.dense3_=self.dense3
-            self.dense3=dense(classes,self.dense3.input_size,activation='softmax',dtype=self.dense3.dtype)
+            self.dense3=nn.dense(classes,self.dense3.input_size,activation='softmax',dtype=self.dense3.dtype)
             param.extend(self.dense1.param)
             self.param=param
             self.param.extend(self.dense2.param)

@@ -1,24 +1,16 @@
 import tensorflow as tf
+from Note import nn
 import numpy as np
-from Note.nn.layer.conv2d import conv2d
-from Note.nn.layer.depthwise_conv2d import depthwise_conv2d
-from Note.nn.layer.dense import dense
-from Note.nn.layer.layer_norm import layer_norm
-from Note.nn.layer.stochastic_depth import stochastic_depth
-from Note.nn.layer.identity import identity
-from Note.nn.initializer import initializer_
 from Note.nn.activation import activation_dict
-from Note.nn.Layers import Layers
-from Note.nn.Model import Model
 
 
 class GRN:
     """ GRN (Global Response Normalization) layer
     """
     def __init__(self, dim, dtype):
-        self.gamma = initializer_([1, 1, 1, dim], 'zeros', dtype)
-        self.beta = initializer_([1, 1, 1, dim], 'zeros', dtype)
-        Module.param.extend([self.gamma,self.beta])
+        self.gamma = nn.initializer_([1, 1, 1, dim], 'zeros', dtype)
+        self.beta = nn.initializer_([1, 1, 1, dim], 'zeros', dtype)
+        nn.Model.param.extend([self.gamma,self.beta])
     
     
     def __call__(self, x):
@@ -35,14 +27,14 @@ class Block:
         drop_path (float): Stochastic depth rate. Default: 0.0
     """
     def __init__(self, dim, drop_path=0., dtype='float32'):
-        self.layers=Layers()
-        self.layers.add(depthwise_conv2d(7,input_size=dim,padding='SAME',weight_initializer=['truncated_normal',.02],dtype=dtype))
-        self.layers.add(layer_norm(epsilon=1e-6,dtype=dtype))
-        self.layers.add(dense(4*dim,weight_initializer=['truncated_normal',.02],dtype=dtype))
+        self.layers=nn.Layers()
+        self.layers.add(nn.depthwise_conv2d(7,input_size=dim,padding='SAME',weight_initializer=['truncated_normal',.02],dtype=dtype))
+        self.layers.add(nn.layer_norm(epsilon=1e-6,dtype=dtype))
+        self.layers.add(nn.dense(4*dim,weight_initializer=['truncated_normal',.02],dtype=dtype))
         self.layers.add(activation_dict['gelu'])
         self.layers.add(GRN(4*dim,dtype))
-        self.layers.add(dense(dim,weight_initializer=['truncated_normal',.02],dtype=dtype))
-        self.layers.add(stochastic_depth(drop_path)) if drop_path > 0. else self.layers.add(identity())
+        self.layers.add(nn.dense(dim,weight_initializer=['truncated_normal',.02],dtype=dtype))
+        self.layers.add(nn.stochastic_depth(drop_path)) if drop_path > 0. else self.layers.add(nn.identity())
 
 
     def __call__(self, x):
@@ -84,18 +76,18 @@ class ConvNeXtV2:
     
 
     def build(self, dtype='float32'):
-        Model.init()
+        nn.Model.init()
         
-        stem=Layers()
-        stem.add(conv2d(self.dims[0],kernel_size=4,input_size=self.in_chans,strides=4,
+        stem=nn.Layers()
+        stem.add(nn.conv2d(self.dims[0],kernel_size=4,input_size=self.in_chans,strides=4,
                         weight_initializer=['truncated_normal',.02],dtype=dtype))
-        stem.add(layer_norm(epsilon=1e-6,dtype=dtype))
+        stem.add(nn.layer_norm(epsilon=1e-6,dtype=dtype))
         self.downsample_layers.append(stem)
         
         for i in range(3):
-            downsample_layer=Layers()
-            downsample_layer.add(layer_norm(input_size=self.dims[i],epsilon=1e-6,dtype=dtype))
-            downsample_layer.add(conv2d(self.dims[i+1],kernel_size=2,input_size=self.dims[i],strides=2,
+            downsample_layer=nn.Layers()
+            downsample_layer.add(nn.layer_norm(input_size=self.dims[i],epsilon=1e-6,dtype=dtype))
+            downsample_layer.add(nn.conv2d(self.dims[i+1],kernel_size=2,input_size=self.dims[i],strides=2,
                             weight_initializer=['truncated_normal',.02],dtype=dtype))
             self.downsample_layers.append(downsample_layer)
         
@@ -104,20 +96,20 @@ class ConvNeXtV2:
             ]
         cur = 0
         for i in range(4):
-            layers=Layers()
+            layers=nn.Layers()
             for j in range(self.depths[i]):
                 layers.add(Block(dim=self.dims[i], drop_path=dp_rates[cur + j], dtype=dtype))
             stage=layers
             self.stages.append(stage)
             cur += self.depths[i]
         
-        self.layer_norm=layer_norm(self.dims[-1],epsilon=1e-6,dtype=dtype)
-        self.dense=dense(self.classes,self.dims[-1],weight_initializer=['truncated_normal',.02],activation=self.classifier_activation,dtype=dtype)
+        self.layer_norm=nn.layer_norm(self.dims[-1],epsilon=1e-6,dtype=dtype)
+        self.dense=nn.dense(self.classes,self.dims[-1],weight_initializer=['truncated_normal',.02],activation=self.classifier_activation,dtype=dtype)
         self.dense.weight.assign(tf.cast(self.head_init_scale,self.dense.weight.dtype)*self.dense.weight)
         self.dense.bias.assign(tf.cast(self.head_init_scale,self.dense.bias.dtype)*self.dense.bias)
         
         self.dtype=dtype
-        self.param=Model.param
+        self.param=nn.Model.param
         return
     
     
@@ -126,7 +118,7 @@ class ConvNeXtV2:
         if flag==0:
             self.param_=self.param.copy()
             self.dense_=self.dense
-            self.dense=dense(classes,self.dense.input_size,weight_initializer=['truncated_normal',.02],activation=self.classifier_activation,dtype=self.dense.dtype)
+            self.dense=nn.dense(classes,self.dense.input_size,weight_initializer=['truncated_normal',.02],activation=self.classifier_activation,dtype=self.dense.dtype)
             self.dense.weight.assign(tf.cast(self.head_init_scale,self.dense.weight.dtype)*self.dense.weight)
             self.dense.bias.assign(tf.cast(self.head_init_scale,self.dense.bias.dtype)*self.dense.bias)
             param.extend(self.dense.param)

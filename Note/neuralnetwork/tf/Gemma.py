@@ -14,9 +14,7 @@
 """Inference-only Gemma model implementation."""
 
 import tensorflow as tf
-from Note.nn.layer.dense import dense
-from Note.nn.initializer import initializer_
-from Note.nn.Model import Model
+from Note import nn
 import dataclasses
 
 
@@ -72,7 +70,7 @@ class Embedder:
   def __init__(self, config: GemmaConfig):
     self.vocab_size = config.vocab_size
     self.embed_dim = config.hidden_size
-    self.input_embedding_table = initializer_((self.vocab_size, self.embed_dim), 'normal', 'float32')
+    self.input_embedding_table = nn.initializer_((self.vocab_size, self.embed_dim), 'normal', 'float32')
 
   def encode(self, x):
     x = tf.gather(self.input_embedding_table, x)
@@ -93,7 +91,7 @@ class RMSNorm:
     ):
         self.eps = eps
         self.add_unit_offset = add_unit_offset
-        self.weight = initializer_((dim), 'zeros', 'float32')
+        self.weight = nn.initializer_((dim), 'zeros', 'float32')
 
     def _norm(self, x):
         return x * tf.math.rsqrt(tf.reduce_mean(tf.math.pow(x, 2), axis=-1, keepdims=True) + self.eps)
@@ -114,9 +112,9 @@ class GemmaMLP:
         hidden_size: int,
         intermediate_size: int,
     ):
-        self.gate_proj = dense(intermediate_size, hidden_size)
-        self.up_proj = dense(intermediate_size, hidden_size)
-        self.down_proj = dense(hidden_size, intermediate_size)
+        self.gate_proj = nn.dense(intermediate_size, hidden_size)
+        self.up_proj = nn.dense(intermediate_size, hidden_size)
+        self.down_proj = nn.dense(hidden_size, intermediate_size)
 
     def __call__(self, x):
         gate = self.gate_proj(x)
@@ -150,11 +148,11 @@ class GemmaAttention:
 
         self.scaling = self.head_dim**-0.5
 
-        self.qkv_proj = dense(
+        self.qkv_proj = nn.dense(
             (self.num_heads + 2 * self.num_kv_heads) * self.head_dim,
             self.hidden_size,
             )
-        self.o_proj = dense(
+        self.o_proj = nn.dense(
             self.hidden_size,
             self.num_heads * self.head_dim,
             )
@@ -272,7 +270,7 @@ class GemmaDecoderLayer:
         return hidden_states
 
 
-class Gemma(Model):
+class Gemma(nn.Model):
 
     def __init__(self, config: GemmaConfig):
         super().__init__()
@@ -285,7 +283,7 @@ class Gemma(Model):
         for _ in range(config.num_hidden_layers):
             self.layers.append(GemmaDecoderLayer(config))
         self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
-        self.output = dense(config.vocab_size, config.hidden_size)
+        self.output = nn.dense(config.vocab_size, config.hidden_size)
         
     
     def fine_tuning(self,flag=0):

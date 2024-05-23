@@ -1,9 +1,6 @@
 import tensorflow as tf
-from Note.nn.layer.dense import dense
-from Note.nn.layer.RoPE import RoPE
-from Note.nn.initializer import initializer_
+from Note import nn
 from dataclasses import dataclass
-from Note.nn.Model import Model
 
 
 @dataclass
@@ -22,7 +19,7 @@ class ModelArgs:
 
 class RMSNorm:
     def __init__(self, dims: int, eps: float = 1e-5):
-        self.weight = initializer_((dims,), 'ones', 'float32')
+        self.weight = nn.initializer_((dims,), 'ones', 'float32')
         self.eps = eps
 
     def _norm(self, x):
@@ -44,11 +41,11 @@ class Attention:
 
         self.scale = self.args.head_dim**-0.5
 
-        self.wq = dense(args.n_heads * args.head_dim, args.dim, use_bias=False)
-        self.wk = dense(args.n_kv_heads * args.head_dim, args.dim, use_bias=False)
-        self.wv = dense(args.n_kv_heads * args.head_dim, args.dim, use_bias=False)
-        self.wo = dense(args.dim, args.n_heads * args.head_dim, use_bias=False)
-        self.rope = RoPE(
+        self.wq = nn.dense(args.n_heads * args.head_dim, args.dim, use_bias=False)
+        self.wk = nn.dense(args.n_kv_heads * args.head_dim, args.dim, use_bias=False)
+        self.wv = nn.dense(args.n_kv_heads * args.head_dim, args.dim, use_bias=False)
+        self.wo = nn.dense(args.dim, args.n_heads * args.head_dim, use_bias=False)
+        self.rope = nn.RoPE(
             args.head_dim, traditional=args.rope_traditional, base=args.rope_theta
         )
 
@@ -93,9 +90,9 @@ class Attention:
 
 class FeedForward:
     def __init__(self, args: ModelArgs):
-        self.w1 = dense(args.hidden_dim, args.dim, use_bias=False)
-        self.w2 = dense(args.dim, args.hidden_dim, use_bias=False)
-        self.w3 = dense(args.hidden_dim, args.dim, use_bias=False)
+        self.w1 = nn.dense(args.hidden_dim, args.dim, use_bias=False)
+        self.w2 = nn.dense(args.dim, args.hidden_dim, use_bias=False)
+        self.w3 = nn.dense(args.hidden_dim, args.dim, use_bias=False)
 
     def __call__(self, x):
         return self.w2(tf.nn.silu(self.w1(x)) * self.w3(x))
@@ -124,15 +121,15 @@ class TransformerBlock:
         return out, cache
 
 
-class Llama(Model):
+class Llama(nn.Model):
     def __init__(self, args: ModelArgs):
         super().__init__()
         self.args = args
         self.vocab_size = args.vocab_size
-        self.tok_embeddings = initializer_((args.vocab_size, args.dim), 'normal', 'float32')
+        self.tok_embeddings = nn.initializer_((args.vocab_size, args.dim), 'normal', 'float32')
         self.layers = [TransformerBlock(args=args) for _ in range(args.n_layers)]
         self.norm = RMSNorm(args.dim, eps=args.norm_eps)
-        self.output = dense(args.vocab_size, args.dim, use_bias=False)
+        self.output = nn.dense(args.vocab_size, args.dim, use_bias=False)
 
     def __call__(self, x):
         mask = tf.linalg.band_part(tf.ones((x.shape[0], x.shape[1], x.shape[1])), -1, 0)

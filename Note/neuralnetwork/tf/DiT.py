@@ -1,11 +1,5 @@
 import tensorflow as tf
-from Note.nn.layer.conv2d import conv2d
-from Note.nn.layer.dense import dense
-from Note.nn.layer.dropout import dropout
-from Note.nn.layer.layer_norm import layer_norm
-from Note.nn.initializer import initializer_
-from Note.nn.Layers import Layers
-from Note.nn.Model import Model
+from Note import nn
 import collections.abc
 from itertools import repeat
 from typing import Optional
@@ -26,10 +20,10 @@ class TimestepEmbedder:
     Embeds scalar timesteps into vector representations.
     """
     def __init__(self, hidden_size, frequency_embedding_size=256):
-        self.mlp = Layers()
-        self.mlp.add(dense(hidden_size, frequency_embedding_size, weight_initializer=['normal', 0.0, 0.02], use_bias=True))
+        self.mlp = nn.Layers()
+        self.mlp.add(nn.dense(hidden_size, frequency_embedding_size, weight_initializer=['normal', 0.0, 0.02], use_bias=True))
         self.mlp.add(tf.nn.silu)
-        self.mlp.add(dense(hidden_size, hidden_size, weight_initializer=['normal', 0.0, 0.02], use_bias=True))
+        self.mlp.add(nn.dense(hidden_size, hidden_size, weight_initializer=['normal', 0.0, 0.02], use_bias=True))
         self.frequency_embedding_size = frequency_embedding_size
 
     @staticmethod
@@ -65,7 +59,7 @@ class LabelEmbedder:
     """
     def __init__(self, num_classes, hidden_size, dropout_prob):
         use_cfg_embedding = dropout_prob > 0
-        self.embedding_table = initializer_((num_classes + use_cfg_embedding, hidden_size), ['normal', 0.0, 0.02], tf.float32)
+        self.embedding_table = nn.initializer_((num_classes + use_cfg_embedding, hidden_size), ['normal', 0.0, 0.02], tf.float32)
         self.num_classes = num_classes
         self.dropout_prob = dropout_prob
 
@@ -97,14 +91,14 @@ class DiTBlock:
     A DiT block with adaptive layer norm zero (adaLN-Zero) conditioning.
     """
     def __init__(self, hidden_size, num_heads, mlp_ratio=4.0):
-        self.norm1 = layer_norm(hidden_size, epsilon=1e-6)
+        self.norm1 = nn.layer_norm(hidden_size, epsilon=1e-6)
         self.attn = Attention(hidden_size, num_heads=num_heads, qkv_bias=True)
-        self.norm2 = layer_norm(hidden_size, epsilon=1e-6)
+        self.norm2 = nn.layer_norm(hidden_size, epsilon=1e-6)
         mlp_hidden_dim = int(hidden_size * mlp_ratio)
         self.mlp = Mlp(in_features=hidden_size, hidden_features=mlp_hidden_dim, drop=0)
-        self.adaLN_modulation = Layers()
+        self.adaLN_modulation = nn.Layers()
         self.adaLN_modulation.add(tf.nn.silu)
-        self.adaLN_modulation.add(dense(6 * hidden_size, hidden_size, weight_initializer='zeros', use_bias=True))
+        self.adaLN_modulation.add(nn.dense(6 * hidden_size, hidden_size, weight_initializer='zeros', use_bias=True))
 
     def __call__(self, x, c):
         shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = tf.split(self.adaLN_modulation(c), num_or_size_splits=6, axis=1)
@@ -118,11 +112,11 @@ class FinalLayer:
     The final layer of DiT.
     """
     def __init__(self, hidden_size, patch_size, out_channels):
-        self.norm_final = layer_norm(hidden_size, epsilon=1e-6)
-        self.linear = dense(patch_size * patch_size * out_channels, hidden_size, weight_initializer='zeros', use_bias=True)
-        self.adaLN_modulation = Layers()
+        self.norm_final = nn.layer_norm(hidden_size, epsilon=1e-6)
+        self.linear = nn.dense(patch_size * patch_size * out_channels, hidden_size, weight_initializer='zeros', use_bias=True)
+        self.adaLN_modulation = nn.Layers()
         self.adaLN_modulation.add(tf.nn.silu)
-        self.adaLN_modulation.add(dense(2 * hidden_size, hidden_size, weight_initializer='zeros', use_bias=True))
+        self.adaLN_modulation.add(nn.dense(2 * hidden_size, hidden_size, weight_initializer='zeros', use_bias=True))
 
     def __call__(self, x, c):
         shift, scale = tf.split(self.adaLN_modulation(c), num_or_size_splits=2, axis=1)
@@ -131,7 +125,7 @@ class FinalLayer:
         return x
 
 
-class DiT(Model):
+class DiT(nn.Model):
     """
     Diffusion model with a Transformer backbone.
     """
@@ -173,7 +167,7 @@ class DiT(Model):
         # Initialize (and freeze) pos_embed by sin-cos embedding:
         pos_embed = get_2d_sincos_pos_embed(self.pos_embed.shape[-1], int(self.x_embedder.num_patches ** 0.5))
         self.pos_embed = tf.Variable(tf.convert_to_tensor(pos_embed, dtype=tf.float32)[tf.newaxis, :])
-        Model.param.append(self.pos_embed)
+        nn.Model.param.append(self.pos_embed)
 
     def unpatchify(self, x):
         """
@@ -365,7 +359,7 @@ class PatchEmbed:
         # flatten spatial dim and transpose to channels last, kept for bwd compat
         self.flatten = flatten
 
-        self.proj = conv2d(embed_dim, input_size=in_chans, kernel_size=patch_size, strides=patch_size, use_bias=bias)
+        self.proj = nn.conv2d(embed_dim, input_size=in_chans, kernel_size=patch_size, strides=patch_size, use_bias=bias)
 
     def __call__(self, x):
         x = self.proj(x)
@@ -394,11 +388,11 @@ class Mlp:
         bias = to_2tuple(bias)
         drop_probs = to_2tuple(drop)
 
-        self.fc1 = dense(hidden_features, in_features, use_bias=bias[0])
+        self.fc1 = nn.dense(hidden_features, in_features, use_bias=bias[0])
         self.act = act_layer
-        self.drop1 = dropout(drop_probs[0])
-        self.fc2 = dense(out_features, hidden_features, use_bias=bias[1])
-        self.drop2 = dropout(drop_probs[1])
+        self.drop1 = nn.dropout(drop_probs[0])
+        self.fc2 = nn.dense(out_features, hidden_features, use_bias=bias[1])
+        self.drop2 = nn.dropout(drop_probs[1])
 
     def __call__(self, x):
         x = self.fc1(x)
@@ -423,10 +417,10 @@ class Attention:
         self.head_dim = dim // num_heads
         self.scale = self.head_dim ** -0.5
 
-        self.qkv = dense(dim * 3, dim, use_bias=qkv_bias)
-        self.attn_drop = dropout(attn_drop)
-        self.proj = dense(dim, dim)
-        self.proj_drop = dropout(proj_drop)
+        self.qkv = nn.dense(dim * 3, dim, use_bias=qkv_bias)
+        self.attn_drop = nn.dropout(attn_drop)
+        self.proj = nn.dense(dim, dim)
+        self.proj_drop = nn.dropout(proj_drop)
 
     def __call__(self, x):
         B, N, C = x.shape

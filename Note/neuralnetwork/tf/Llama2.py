@@ -1,8 +1,5 @@
 import tensorflow as tf
-from Note.nn.layer.dense import dense
-from Note.nn.layer.dropout import dropout
-from Note.nn.initializer import initializer_
-from Note.nn.Model import Model
+from Note import nn
 import math
 from dataclasses import dataclass
 from typing import Optional
@@ -27,7 +24,7 @@ class ModelArgs:
 class RMSNorm:
     def __init__(self, dim: int, eps: float):
         self.eps = eps
-        self.weight = initializer_((dim,), 'ones', 'float32')
+        self.weight = nn.initializer_((dim,), 'ones', 'float32')
 
     def _norm(self, x):
         return x * tf.math.rsqrt(tf.reduce_mean(tf.math.pow(x, 2), -1, keepdims=True) + self.eps)
@@ -98,12 +95,12 @@ class Attention:
         self.n_local_kv_heads = self.n_kv_heads // model_parallel_size
         self.n_rep = self.n_local_heads // self.n_local_kv_heads
         self.head_dim = args.dim // args.n_heads
-        self.wq = dense(args.n_heads * self.head_dim, args.dim, weight_initializer=['normal', 0.0, 0.02], use_bias=False)
-        self.wk = dense(self.n_kv_heads * self.head_dim, args.dim, weight_initializer=['normal', 0.0, 0.02], use_bias=False)
-        self.wv = dense(self.n_kv_heads * self.head_dim, args.dim, weight_initializer=['normal', 0.0, 0.02], use_bias=False)
-        self.wo = dense(args.dim, args.n_heads * self.head_dim, weight_initializer=['normal', 0.0, 0.02/math.sqrt(2 * args.n_layers)], use_bias=False)
-        self.attn_dropout = dropout(args.dropout)
-        self.resid_dropout = dropout(args.dropout)
+        self.wq = nn.dense(args.n_heads * self.head_dim, args.dim, weight_initializer=['normal', 0.0, 0.02], use_bias=False)
+        self.wk = nn.dense(self.n_kv_heads * self.head_dim, args.dim, weight_initializer=['normal', 0.0, 0.02], use_bias=False)
+        self.wv = nn.dense(self.n_kv_heads * self.head_dim, args.dim, weight_initializer=['normal', 0.0, 0.02], use_bias=False)
+        self.wo = nn.dense(args.dim, args.n_heads * self.head_dim, weight_initializer=['normal', 0.0, 0.02/math.sqrt(2 * args.n_layers)], use_bias=False)
+        self.attn_dropout = nn.dropout(args.dropout)
+        self.resid_dropout = nn.dropout(args.dropout)
         self.mask = tf.fill((args.max_seq_len, args.max_seq_len), float("-inf"))
         self.mask = tf.linalg.band_part(self.mask, 0, -1)
         self.mask = tf.linalg.set_diag(self.mask, tf.zeros(args.max_seq_len))
@@ -158,10 +155,10 @@ class FeedForward:
             hidden_dim = 4 * dim
             hidden_dim = int(2 * hidden_dim / 3)
             hidden_dim = multiple_of * ((hidden_dim + multiple_of - 1) // multiple_of)
-        self.w1 = dense(hidden_dim, dim, weight_initializer=['normal', 0.0, 0.02], use_bias=False)
-        self.w2 = dense(dim, hidden_dim, weight_initializer=['normal', 0.0, 0.02], use_bias=False)
-        self.w3 = dense(hidden_dim, dim, weight_initializer=['normal', 0.0, 0.02/math.sqrt(2 * ModelArgs.n_layers)], use_bias=False)
-        self.dropout = dropout(drop_rate)
+        self.w1 = nn.dense(hidden_dim, dim, weight_initializer=['normal', 0.0, 0.02], use_bias=False)
+        self.w2 = nn.dense(dim, hidden_dim, weight_initializer=['normal', 0.0, 0.02], use_bias=False)
+        self.w3 = nn.dense(hidden_dim, dim, weight_initializer=['normal', 0.0, 0.02/math.sqrt(2 * ModelArgs.n_layers)], use_bias=False)
+        self.dropout = nn.dropout(drop_rate)
 
     def __call__(self, x, train_flag):
         return self.dropout(self.w2(tf.nn.silu(self.w1(x)) * self.w3(x)), train_flag)
@@ -189,19 +186,19 @@ class TransformerBlock:
         return out
 
 
-class Llama2(Model):
+class Llama2(nn.Model):
     def __init__(self, params: ModelArgs):
         super().__init__()
         self.params = params
         self.vocab_size = params.vocab_size
         self.n_layers = params.n_layers
 
-        self.dropout = dropout(params.dropout)
+        self.dropout = nn.dropout(params.dropout)
         self.layers = []
         for layer_id in range(params.n_layers):
             self.layers.append(TransformerBlock(layer_id, params))
         self.norm = RMSNorm(params.dim, eps=params.norm_eps)
-        self.output = dense(params.vocab_size, params.dim, weight_initializer=['normal', 0.0, 0.02], use_bias=False)
+        self.output = nn.dense(params.vocab_size, params.dim, weight_initializer=['normal', 0.0, 0.02], use_bias=False)
 
         # some useful precompute for the RoPE relative positional embeddings
         self.freqs_cos, self.freqs_sin = precompute_freqs_cis(self.params.dim // self.params.n_heads, self.params.max_seq_len)
@@ -214,7 +211,7 @@ class Llama2(Model):
         if flag==0:
             self.param_=self.param.copy()
             self.output_=self.output
-            self.output=dense(ModelArgs.vocab_size, ModelArgs.dim, use_bias=False)
+            self.output=nn.dense(ModelArgs.vocab_size, ModelArgs.dim, use_bias=False)
             param.extend(self.output.param)
             self.param=param
         elif flag==1:

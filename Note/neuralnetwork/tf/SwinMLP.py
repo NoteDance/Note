@@ -6,16 +6,7 @@
 # --------------------------------------------------------
 
 import tensorflow as tf
-from Note.nn.layer.dense import dense
-from Note.nn.layer.conv2d import conv2d
-from Note.nn.layer.group_conv1d import group_conv1d
-from Note.nn.layer.layer_norm import layer_norm
-from Note.nn.layer.adaptive_avg_pooling1d import adaptive_avg_pooling1d
-from Note.nn.layer.dropout import dropout
-from Note.nn.layer.stochastic_depth import stochastic_depth
-from Note.nn.layer.identity import identity
-from Note.nn.initializer import initializer,initializer_
-from Note.nn.Model import Model
+from Note import nn
 from itertools import repeat
 import collections.abc
 
@@ -34,10 +25,10 @@ class Mlp:
     def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=tf.nn.gelu, drop=0.):
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
-        self.fc1 = dense(hidden_features, in_features)
+        self.fc1 = nn.dense(hidden_features, in_features)
         self.act = act_layer
-        self.fc2 = dense(out_features, hidden_features)
-        self.drop = dropout(drop)
+        self.fc2 = nn.dense(out_features, hidden_features)
+        self.drop = nn.dropout(drop)
 
     def __call__(self, x):
         x = self.fc1(x)
@@ -92,13 +83,13 @@ class SwinMLPBlock:
         mlp_ratio (float): Ratio of mlp hidden dim to embedding dim.
         drop (float, optional): Dropout rate. Default: 0.0
         drop_path (float, optional): Stochastic depth rate. Default: 0.0
-        act_layer (nn.Module, optional): Activation layer. Default: nn.GELU
-        norm_layer (nn.Module, optional): Normalization layer.  Default: nn.LayerNorm
+        act_layer: Activation layer. Default: tf.nn.gelu
+        norm_layer: Normalization layer.  Default: nn.layer_norm
     """
 
     def __init__(self, dim, input_resolution, num_heads, window_size=7, shift_size=0,
                  mlp_ratio=4., drop=0., drop_path=0.,
-                 act_layer=tf.nn.gelu, norm_layer=layer_norm):
+                 act_layer=tf.nn.gelu, norm_layer=nn.layer_norm):
         self.dim = dim
         self.input_resolution = input_resolution
         self.num_heads = num_heads
@@ -116,12 +107,12 @@ class SwinMLPBlock:
 
         self.norm1 = norm_layer(dim)
         # use group convolution to implement multi-head MLP
-        self.spatial_mlp = group_conv1d(self.num_heads * self.window_size ** 2,
+        self.spatial_mlp = nn.group_conv1d(self.num_heads * self.window_size ** 2,
                                      input_size=self.num_heads * self.window_size ** 2,
                                      kernel_size=1,
                                      num_groups=self.num_heads)
 
-        self.drop_path = stochastic_depth(drop_path) if drop_path > 0. else identity()
+        self.drop_path = nn.stochastic_depth(drop_path) if drop_path > 0. else nn.identity()
         self.norm2 = norm_layer(dim)
         mlp_hidden_dim = int(dim * mlp_ratio)
         self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
@@ -204,13 +195,13 @@ class PatchMerging:
     Args:
         input_resolution (tuple[int]): Resolution of input feature.
         dim (int): Number of input channels.
-        norm_layer (nn.Module, optional): Normalization layer.  Default: nn.LayerNorm
+        norm_layer: Normalization layer.  Default: nn.layer_norm
     """
 
-    def __init__(self, input_resolution, dim, norm_layer=layer_norm):
+    def __init__(self, input_resolution, dim, norm_layer=nn.layer_norm):
         self.input_resolution = input_resolution
         self.dim = dim
-        self.reduction = dense(2 * dim, 4 * dim, use_bias=False)
+        self.reduction = nn.dense(2 * dim, 4 * dim, use_bias=False)
         self.norm = norm_layer(4 * dim)
 
     def __call__(self, x):
@@ -258,14 +249,14 @@ class BasicLayer:
         mlp_ratio (float): Ratio of mlp hidden dim to embedding dim.
         drop (float, optional): Dropout rate. Default: 0.0
         drop_path (float | tuple[float], optional): Stochastic depth rate. Default: 0.0
-        norm_layer (nn.Module, optional): Normalization layer. Default: nn.LayerNorm
+        norm_layer: Normalization layer. Default: nn.layer_norm
         downsample (nn.Module | None, optional): Downsample layer at the end of the layer. Default: None
         use_checkpoint (bool): Whether to use checkpointing to save memory. Default: False.
     """
 
     def __init__(self, dim, input_resolution, depth, num_heads, window_size,
                  mlp_ratio=4., drop=0., drop_path=0.,
-                 norm_layer=layer_norm, downsample=None):
+                 norm_layer=nn.layer_norm, downsample=None):
 
         self.dim = dim
         self.input_resolution = input_resolution
@@ -315,7 +306,7 @@ class PatchEmbed:
         patch_size (int): Patch token size. Default: 4.
         in_chans (int): Number of input image channels. Default: 3.
         embed_dim (int): Number of linear projection output channels. Default: 96.
-        norm_layer (nn.Module, optional): Normalization layer. Default: None
+        norm_layer: Normalization layer. Default: None
     """
 
     def __init__(self, img_size=224, patch_size=4, in_chans=3, embed_dim=96, norm_layer=None):
@@ -330,7 +321,7 @@ class PatchEmbed:
         self.in_chans = in_chans
         self.embed_dim = embed_dim
 
-        self.proj = conv2d(embed_dim, input_size=in_chans, kernel_size=patch_size, strides=patch_size)
+        self.proj = nn.conv2d(embed_dim, input_size=in_chans, kernel_size=patch_size, strides=patch_size)
         if norm_layer is not None:
             self.norm = norm_layer(embed_dim)
         else:
@@ -356,7 +347,7 @@ class PatchEmbed:
         return flops
 
 
-class SwinMLP(Model):
+class SwinMLP(nn.Model):
     r""" Swin MLP
 
     Args:
@@ -371,7 +362,7 @@ class SwinMLP(Model):
         mlp_ratio (float): Ratio of mlp hidden dim to embedding dim. Default: 4
         drop_rate (float): Dropout rate. Default: 0
         drop_path_rate (float): Stochastic depth rate. Default: 0.1
-        norm_layer (nn.Module): Normalization layer. Default: nn.LayerNorm.
+        norm_layer: Normalization layer. Default: nn.layer_norm.
         ape (bool): If True, add absolute position embedding to the patch embedding. Default: False
         patch_norm (bool): If True, add normalization after patch embedding. Default: True
         use_checkpoint (bool): Whether to use checkpointing to save memory. Default: False
@@ -380,10 +371,10 @@ class SwinMLP(Model):
     def __init__(self, img_size=224, patch_size=4, in_chans=3, num_classes=1000,
                  embed_dim=96, depths=[2, 2, 6, 2], num_heads=[3, 6, 12, 24],
                  window_size=7, mlp_ratio=4., drop_rate=0., drop_path_rate=0.1,
-                 norm_layer=layer_norm, ape=False, patch_norm=True,
+                 norm_layer=nn.layer_norm, ape=False, patch_norm=True,
                  **kwargs):
         super().__init__()
-        Model.add()
+        nn.Model.add()
 
         self.num_classes = num_classes
         self.num_layers = len(depths)
@@ -403,9 +394,9 @@ class SwinMLP(Model):
 
         # absolute position embedding
         if self.ape:
-            self.absolute_pos_embed = initializer_((1, num_patches, embed_dim), ['truncated_normal', .02], name='absolute_pos_embed')
+            self.absolute_pos_embed = nn.initializer_((1, num_patches, embed_dim), ['truncated_normal', .02], name='absolute_pos_embed')
 
-        self.pos_drop = dropout(drop_rate)
+        self.pos_drop = nn.dropout(drop_rate)
 
         # stochastic depth
         dpr = tf.linspace(0., drop_path_rate, sum(depths))  # stochastic depth decay rule
@@ -427,17 +418,17 @@ class SwinMLP(Model):
             self.layers.append(layer)
 
         self.norm = norm_layer(self.num_features)
-        self.avgpool = adaptive_avg_pooling1d(1)
-        self.head = dense(num_classes, self.num_features) if num_classes > 0 else identity()
+        self.avgpool = nn.adaptive_avg_pooling1d(1)
+        self.head = nn.dense(num_classes, self.num_features) if num_classes > 0 else nn.identity()
 
-        Model.apply(self.init_weights)
+        nn.Model.apply(self.init_weights)
 
     def init_weights(self, l):
-        if isinstance(l, dense):
-            l.weight.assign(initializer(l.weight.shape, ['truncated_normal', 0.2]))
-        elif isinstance(l, group_conv1d):
+        if isinstance(l, nn.dense):
+            l.weight.assign(nn.initializer(l.weight.shape, ['truncated_normal', 0.2]))
+        elif isinstance(l, nn.group_conv1d):
             for weight in l.weight:
-                weight.assign(initializer(weight.shape, ['truncated_normal', 0.2]))
+                weight.assign(nn.initializer(weight.shape, ['truncated_normal', 0.2]))
 
     def no_weight_decay(self):
         return ['absolute_pos_embed']
@@ -463,7 +454,7 @@ class SwinMLP(Model):
         if flag==0:
             self.param_=self.param.copy()
             self.head_=self.head
-            self.head=dense(classes,self.num_features)
+            self.head=nn.dense(classes,self.num_features)
             param.extend(self.head.param)
             self.param=param
         elif flag==1:
