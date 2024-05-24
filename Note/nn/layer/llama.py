@@ -151,11 +151,11 @@ class RoPE:
 
 
 class RMSNorm:
-    def __init__(self, dims: int, epsilon: float = 1e-6, dtype='float32'):
+    def __init__(self, dims: int, eps: float = 1e-6, dtype='float32'):
         self.gamma = initializer_((dims,), 'ones', dtype)
-        self.epsilon = epsilon
+        self.eps = eps
         self.param = [self.gamma]
 
     def __call__(self, x):
-        n = tf.math.rsqrt(tf.math.reduce_mean(tf.math.square(x), axis=-1, keepdims=True) + self.epsilon)
+        n = tf.math.rsqrt(tf.math.reduce_mean(tf.math.square(x), axis=-1, keepdims=True) + self.eps)
         return self.gamma * x * n
