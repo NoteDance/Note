@@ -90,6 +90,7 @@ from Note.nn.layer.repeat_vector import repeat_vector
 from Note.nn.layer.reshape import reshape
 from Note.nn.layer.reuse_multihead_attention import reuse_multihead_attention
 from Note.nn.layer.reversible_residual import reversible_residual
+from Note.nn.layer.RMSNorm import RMSNorm
 from Note.nn.layer.RNN import RNN
 from Note.nn.layer.RNNCell import RNNCell
 from Note.nn.layer.RoPE import RoPE
@@ -105,6 +106,7 @@ from Note.nn.layer.spatial_dropout3d import spatial_dropout3d
 from Note.nn.layer.spectral_norm import spectral_norm
 from Note.nn.layer.stochastic_depth import stochastic_depth
 from Note.nn.layer.subtract import subtract
+from Note.nn.layer.SwitchGLU import SwitchGLU
 from Note.nn.layer.talking_heads_attention import talking_heads_attention
 from Note.nn.layer.thresholded_relu import thresholded_relu
 from Note.nn.layer.TLU import TLU
@@ -129,6 +131,7 @@ from Note.nn.activation import activation,activation_conv,activation_conv_transp
 from Note.nn.cosine_similarity import cosine_similarity
 from Note.nn.create_additive_causal_mask import create_additive_causal_mask
 from Note.nn.fine_tuning import fine_tuning
+from Note.nn.gather_mm import gather_mm
 from Note.nn.initializer import initializer,initializer_
 from Note.nn.interpolate import interpolate
 from Note.nn.Layers import Layers
