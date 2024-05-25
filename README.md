@@ -68,7 +68,11 @@ https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
 
 
 # Note.nn.initializer.initializer_:
-**This function is used to initialize the parameters of the neural network, it returns a TensorFlow variable and stores the variable in Model.param.**
+**This function is used to initialize the parameters of the neural network, it returns a TensorFlow variable and stores the variable in trainable parameters list(Model.param).**
+
+
+# Note.nn.variable.variable:
+**Its function is similar to torch.nn.parameter.Parameter.**
 
 
 # Note.nn.Layers.Layers:
