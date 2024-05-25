@@ -86,7 +86,7 @@ def initializer(shape,initializer,dtype='float32',name=None):
             orthogonal=Orthogonal()
             param=tf.Variable(orthogonal(shape,dtype))
     if name!=None:
-        param.name=name
+        param=tf.Variable(param,name=name)
     return param
 
 
@@ -174,7 +174,7 @@ def initializer_(shape,initializer,dtype='float32',name=None):
             orthogonal=Orthogonal()
             param=tf.Variable(orthogonal(shape,dtype))
     if name!=None:
-        param.name=name
+        param=tf.Variable(param,name=name)
     Model.param.append(param)
     return param
 
