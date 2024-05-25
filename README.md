@@ -62,25 +62,17 @@ https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
 # Note.nn.Model.Model:
 **Model class manages the parameters of the neural network.**
 
-https://github.com/NoteDance/Note/blob/Note-7.0/Note/nn/Model.py
-
 
 # Note.nn.initializer.initializer:
 **This function is used to initialize the parameters of the neural network, and it returns a TensorFlow variable.**
 
-https://github.com/NoteDance/Note/blob/Note-7.0/Note/nn/initializer.py
-
 
 # Note.nn.initializer.initializer_:
-**This function is used to initialize the parameters of the neural network, it returns a TensorFlow variable and stores the variable in Module.param.**
-
-https://github.com/NoteDance/Note/blob/Note-7.0/Note/nn/initializer.py
+**This function is used to initialize the parameters of the neural network, it returns a TensorFlow variable and stores the variable in Model.param.**
 
 
 # Note.nn.Layers.Layers:
-**This class is used similarly to the tf.keras.Sequential class.**
-
-https://github.com/NoteDance/Note/blob/Note-7.0/Note/nn/Layers.py
+**This class is used similarly to tf.keras.Sequential and torch.nn.Sequential.**
 
 
 # The models that can be trained with TensorFlow:
