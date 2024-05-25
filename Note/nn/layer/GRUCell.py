@@ -1,13 +1,13 @@
 import tensorflow as tf # import the TensorFlow library
-import Note.nn.initializer as i # import the initializer module from Note.nn package
+from Note import nn
 from Note.nn.Model import Model
 
 
 class GRUCell: # define a class for gated recurrent unit (GRU) cell
     def __init__(self,weight_shape,weight_initializer='Xavier',bias_initializer='zeros',use_bias=True,trainable=True,dtype='float32'): # define the constructor method
-        self.weight=i.initializer([weight_shape[0]+weight_shape[1],3*weight_shape[1]],weight_initializer,dtype) # initialize the weight matrix for all gates and candidate hidden state
+        self.weight=nn.initializer([weight_shape[0]+weight_shape[1],3*weight_shape[1]],weight_initializer,dtype) # initialize the weight matrix for all gates and candidate hidden state
         if use_bias==True: # if use bias is True
-            self.bias=i.initializer([3*weight_shape[1]],bias_initializer,dtype) # initialize the bias vector for all gates and candidate hidden state
+            self.bias=nn.initializer([3*weight_shape[1]],bias_initializer,dtype) # initialize the bias vector for all gates and candidate hidden state
         self.use_bias=use_bias # set the use bias flag
         self.output_size=weight_shape[-1]
         if trainable==True:

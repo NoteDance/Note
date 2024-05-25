@@ -1,5 +1,5 @@
 import tensorflow as tf # import the TensorFlow library
-import Note.nn.initializer as i # import the initializer module from Note.nn package
+from Note import nn
 from Note.nn.Model import Model
 
 
@@ -17,19 +17,19 @@ class LSTM: # define a class for long short-term memory (LSTM) layer
         self.dtype=dtype
         self.output_size=output_size
         if input_size!=None:
-            self.weight_i1=i.initializer([input_size,output_size],weight_initializer,dtype) # initialize the weight matrix for input gate input
-            self.weight_i2=i.initializer([output_size,output_size],weight_initializer,dtype) # initialize the weight matrix for input gate hidden state
-            self.weight_f1=i.initializer([input_size,output_size],weight_initializer,dtype) # initialize the weight matrix for forget gate input
-            self.weight_f2=i.initializer([output_size,output_size],weight_initializer,dtype) # initialize the weight matrix for forget gate hidden state
-            self.weight_o1=i.initializer([input_size,output_size],weight_initializer,dtype) # initialize the weight matrix for output gate input
-            self.weight_o2=i.initializer([output_size,output_size],weight_initializer,dtype) # initialize the weight matrix for output gate hidden state
-            self.weight_c1=i.initializer([input_size,output_size],weight_initializer,dtype) # initialize the weight matrix for candidate cell state input
-            self.weight_c2=i.initializer([output_size,output_size],weight_initializer,dtype) # initialize the weight matrix for candidate cell state hidden state
+            self.weight_i1=nn.initializer([input_size,output_size],weight_initializer,dtype) # initialize the weight matrix for input gate input
+            self.weight_i2=nn.initializer([output_size,output_size],weight_initializer,dtype) # initialize the weight matrix for input gate hidden state
+            self.weight_f1=nn.initializer([input_size,output_size],weight_initializer,dtype) # initialize the weight matrix for forget gate input
+            self.weight_f2=nn.initializer([output_size,output_size],weight_initializer,dtype) # initialize the weight matrix for forget gate hidden state
+            self.weight_o1=nn.initializer([input_size,output_size],weight_initializer,dtype) # initialize the weight matrix for output gate input
+            self.weight_o2=nn.initializer([output_size,output_size],weight_initializer,dtype) # initialize the weight matrix for output gate hidden state
+            self.weight_c1=nn.initializer([input_size,output_size],weight_initializer,dtype) # initialize the weight matrix for candidate cell state input
+            self.weight_c2=nn.initializer([output_size,output_size],weight_initializer,dtype) # initialize the weight matrix for candidate cell state hidden state
             if use_bias==True: # if use bias is True
-                self.bias_i=i.initializer([output_size],bias_initializer,dtype) # initialize the bias vector for input gate
-                self.bias_f=i.initializer([output_size],bias_initializer,dtype) # initialize the bias vector for forget gate
-                self.bias_o=i.initializer([output_size],bias_initializer,dtype) # initialize the bias vector for output gate
-                self.bias_c=i.initializer([output_size],bias_initializer,dtype) # initialize the bias vector for candidate cell state
+                self.bias_i=nn.initializer([output_size],bias_initializer,dtype) # initialize the bias vector for input gate
+                self.bias_f=nn.initializer([output_size],bias_initializer,dtype) # initialize the bias vector for forget gate
+                self.bias_o=nn.initializer([output_size],bias_initializer,dtype) # initialize the bias vector for output gate
+                self.bias_c=nn.initializer([output_size],bias_initializer,dtype) # initialize the bias vector for candidate cell state
             if trainable==True:
                 if use_bias==True: # if use bias is True
                     self.param=[self.weight_i1,self.weight_f1,self.weight_o1,self.weight_c1,self.weight_i2,self.weight_f2,self.weight_o2,self.weight_c2,self.bias_i,self.bias_f,self.bias_o,self.bias_c] # store the parameters in a list
@@ -41,19 +41,19 @@ class LSTM: # define a class for long short-term memory (LSTM) layer
     
     
     def build(self):
-        self.weight_i1=i.initializer([self.input_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for input gate input
-        self.weight_i2=i.initializer([self.output_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for input gate hidden state
-        self.weight_f1=i.initializer([self.input_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for forget gate input
-        self.weight_f2=i.initializer([self.output_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for forget gate hidden state
-        self.weight_o1=i.initializer([self.input_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for output gate input
-        self.weight_o2=i.initializer([self.output_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for output gate hidden state
-        self.weight_c1=i.initializer([self.input_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for candidate cell state input
-        self.weight_c2=i.initializer([self.output_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for candidate cell state hidden state
+        self.weight_i1=nn.initializer([self.input_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for input gate input
+        self.weight_i2=nn.initializer([self.output_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for input gate hidden state
+        self.weight_f1=nn.initializer([self.input_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for forget gate input
+        self.weight_f2=nn.initializer([self.output_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for forget gate hidden state
+        self.weight_o1=nn.initializer([self.input_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for output gate input
+        self.weight_o2=nn.initializer([self.output_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for output gate hidden state
+        self.weight_c1=nn.initializer([self.input_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for candidate cell state input
+        self.weight_c2=nn.initializer([self.output_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for candidate cell state hidden state
         if self.use_bias==True: # if use bias is True
-            self.bias_i=i.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector for input gate
-            self.bias_f=i.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector for forget gate
-            self.bias_o=i.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector for output gate
-            self.bias_c=i.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector for candidate cell state
+            self.bias_i=nn.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector for input gate
+            self.bias_f=nn.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector for forget gate
+            self.bias_o=nn.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector for output gate
+            self.bias_c=nn.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector for candidate cell state
         if self.trainable==True:
             if self.use_bias==True: # if use bias is True
                 self.param=[self.weight_i1,self.weight_f1,self.weight_o1,self.weight_c1,self.weight_i2,self.weight_f2,self.weight_o2,self.weight_c2,self.bias_i,self.bias_f,self.bias_o,self.bias_c] # store the parameters in a list

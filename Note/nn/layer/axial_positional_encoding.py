@@ -1,5 +1,5 @@
 import tensorflow as tf
-import Note.nn.initializer as i_
+from Note import nn
 from Note.nn.Model import Model
 
 
@@ -30,7 +30,7 @@ class axial_positional_encoding:
     
     if trainable==True:
         for i, dim in enumerate(axial_shape):
-          weight = i_.initializer((dim, self.d_axial_pos_embs), initializer, dtype)
+          weight = nn.initializer((dim, self.d_axial_pos_embs), initializer, dtype)
           self.weights.append(weight)
           self.param.append(weight)
     Model.param.extend(self.param)

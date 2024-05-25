@@ -1,6 +1,5 @@
 import tensorflow as tf # import the TensorFlow library
-import Note.nn.activation as a # import the activation module from Note.nn package
-import Note.nn.initializer as i # import the initializer module from Note.nn package
+from Note import nn
 from Note.nn.Model import Model
 
 
@@ -26,9 +25,9 @@ class conv3d: # define a class for 3D convolutional layer
         self.dtype=dtype
         self.output_size=filters
         if input_size!=None:
-            self.weight=i.initializer([kernel_size[0],kernel_size[1],kernel_size[2],input_size,filters],weight_initializer,dtype) # initialize the weight tensor
+            self.weight=nn.initializer([kernel_size[0],kernel_size[1],kernel_size[2],input_size,filters],weight_initializer,dtype) # initialize the weight tensor
             if use_bias==True: # if use bias is True
-                self.bias=i.initializer([filters],bias_initializer,dtype) # initialize the bias vector
+                self.bias=nn.initializer([filters],bias_initializer,dtype) # initialize the bias vector
             if use_bias==True: # if use bias is True
                 self.param=[self.weight,self.bias] # store the parameters in a list
             else: # if use bias is False
@@ -40,9 +39,9 @@ class conv3d: # define a class for 3D convolutional layer
     
     
     def build(self):
-        self.weight=i.initializer([self.kernel_size[0],self.kernel_size[1],self.kernel_size[2],self.input_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight tensor
+        self.weight=nn.initializer([self.kernel_size[0],self.kernel_size[1],self.kernel_size[2],self.input_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight tensor
         if self.use_bias==True: # if use bias is True
-            self.bias=i.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector
+            self.bias=nn.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector
         if self.use_bias==True: # if use bias is True
             self.param=[self.weight,self.bias] # store the parameters in a list
         else: # if use bias is False
@@ -60,6 +59,6 @@ class conv3d: # define a class for 3D convolutional layer
             self.input_size=data.shape[-1]
             self.build()
         if self.use_bias==True: # if use bias is True
-            return a.activation_conv(data,self.weight,self.activation,self.strides,self.padding,self.data_format,self.dilations,tf.nn.conv3d,self.bias) # return the output of applying activation function to the convolution of data and weight, plus bias
+            return nn.activation_conv(data,self.weight,self.activation,self.strides,self.padding,self.data_format,self.dilations,tf.nn.conv3d,self.bias) # return the output of applying activation function to the convolution of data and weight, plus bias
         else: # if use bias is False
-            return a.activation_conv(data,self.weight,self.activation,self.strides,self.padding,self.data_format,self.dilations,tf.nn.conv3d) # return the output of applying activation function to the convolution of data and weight
+            return nn.activation_conv(data,self.weight,self.activation,self.strides,self.padding,self.data_format,self.dilations,tf.nn.conv3d) # return the output of applying activation function to the convolution of data and weight

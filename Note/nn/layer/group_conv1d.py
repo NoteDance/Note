@@ -1,5 +1,5 @@
 import tensorflow as tf # import the TensorFlow library
-import Note.nn.activation as a # import the activation module from Note.nn package
+from Note import nn
 from Note.nn.initializer import initializer # import the initializer module from Note.nn package
 from Note.nn.Model import Model
 
@@ -85,9 +85,9 @@ class group_conv1d: # define a class for 1D convolutional layer
         output_groups=[]
         for i in range(self.num_groups):
             if self.use_bias==True: # if use bias is True
-                output=a.activation_conv(input_groups[i],self.weight[i],self.activation,self.strides,self.padding,self.data_format,self.dilations,tf.nn.conv1d,self.bias[i]) # return the output of applying activation function to the convolution of data and weight, plus bias
+                output=nn.activation_conv(input_groups[i],self.weight[i],self.activation,self.strides,self.padding,self.data_format,self.dilations,tf.nn.conv1d,self.bias[i]) # return the output of applying activation function to the convolution of data and weight, plus bias
             else: # if use bias is False
-                output=a.activation_conv(input_groups[i],self.weight[i],self.activation,self.strides,self.padding,self.data_format,self.dilations,tf.nn.conv1d) # return the output of applying activation function to the convolution of data and weight
+                output=nn.activation_conv(input_groups[i],self.weight[i],self.activation,self.strides,self.padding,self.data_format,self.dilations,tf.nn.conv1d) # return the output of applying activation function to the convolution of data and weight
             output_groups.append(output)
         output=tf.concat(output_groups,axis=-1)
         return output

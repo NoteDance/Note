@@ -1,6 +1,5 @@
 import tensorflow as tf # import the TensorFlow library
-import Note.nn.activation as a # import the activation module from Note.nn package
-import Note.nn.initializer as i # import the initializer module from Note.nn package
+from Note import nn
 from Note.nn.Model import Model
 
 
@@ -27,9 +26,9 @@ class conv3d_transpose: # define a class for 3D transposed convolutional layer
         self.dtype=dtype
         self.output_size=filters
         if input_size!=None:
-            self.weight=i.initializer([kernel_size[0],kernel_size[1],kernel_size[2],filters,input_size],weight_initializer,dtype) # initialize the weight tensor with reversed input and output channels
+            self.weight=nn.initializer([kernel_size[0],kernel_size[1],kernel_size[2],filters,input_size],weight_initializer,dtype) # initialize the weight tensor with reversed input and output channels
             if use_bias==True: # if use bias is True
-                self.bias=i.initializer([filters],bias_initializer,dtype) # initialize the bias vector
+                self.bias=nn.initializer([filters],bias_initializer,dtype) # initialize the bias vector
             if use_bias==True: # if use bias is True
                 self.param=[self.weight,self.bias] # store the parameters in a list
             else: # if use bias is False
@@ -40,9 +39,9 @@ class conv3d_transpose: # define a class for 3D transposed convolutional layer
     
     
     def build(self):
-        self.weight=i.initializer([self.kernel_size[0],self.kernel_size[1],self.kernel_size[2],self.filters,self.input_size],self.weight_initializer,self.dtype) # initialize the weight tensor with reversed input and output channels
+        self.weight=nn.initializer([self.kernel_size[0],self.kernel_size[1],self.kernel_size[2],self.filters,self.input_size],self.weight_initializer,self.dtype) # initialize the weight tensor with reversed input and output channels
         if self.use_bias==True: # if use bias is True
-            self.bias=i.initializer([self.filters],self.bias_initializer,self.dtype) # initialize the bias vector
+            self.bias=nn.initializer([self.filters],self.bias_initializer,self.dtype) # initialize the bias vector
         if self.use_bias==True: # if use bias is True
             self.param=[self.weight,self.bias] # store the parameters in a list
         else: # if use bias is False
@@ -80,6 +79,6 @@ class conv3d_transpose: # define a class for 3D transposed convolutional layer
         new_cols = ((cols - 1) * self.strides[3] + self.kernel_size[2] - 2 * padding[2] + output_padding[2]) # calculate the new number of columns for the output using the formula 
         
         if self.use_bias==True: # if use bias is True
-            return a.activation_conv_transpose(data,self.weight,[data.shape[0],new_depth,new_rows,new_cols,self.output_size],self.activation,self.strides,self.padding,self.data_format,self.dilations,tf.nn.conv3d_transpose,bias=self.bias) # return the output of applying activation function to the transposed convolution of data and weight, plus bias, using output_shape as output shape
+            return nn.activation_conv_transpose(data,self.weight,[data.shape[0],new_depth,new_rows,new_cols,self.output_size],self.activation,self.strides,self.padding,self.data_format,self.dilations,tf.nn.conv3d_transpose,bias=self.bias) # return the output of applying activation function to the transposed convolution of data and weight, plus bias, using output_shape as output shape
         else: # if use bias is False
-            return a.activation_conv_transpose(data,self.weight,[data.shape[0],new_depth,new_rows,new_cols,self.output_size],self.activation,self.strides,self.padding,self.data_format,self.dilations,tf.nn.conv3d_transpose) # return the output of applying activation function to the transposed convolution of data and weight, using output_shape as output shape
+            return nn.activation_conv_transpose(data,self.weight,[data.shape[0],new_depth,new_rows,new_cols,self.output_size],self.activation,self.strides,self.padding,self.data_format,self.dilations,tf.nn.conv3d_transpose) # return the output of applying activation function to the transposed convolution of data and weight, using output_shape as output shape

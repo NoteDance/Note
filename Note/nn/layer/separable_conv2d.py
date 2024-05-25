@@ -1,7 +1,6 @@
 import tensorflow as tf # import the TensorFlow library
-import Note.nn.activation as a # import the activation module from Note.nn package
+from Note import nn
 from Note.nn.activation import activation_dict
-import Note.nn.initializer as i # import the initializer module from Note.nn package
 from Note.nn.Model import Model
 
 
@@ -23,10 +22,10 @@ class separable_conv2d: # define a class for separable convolutional layer
         self.output_size=filters
         if input_size!=None:
             depthwise_filter=[kernel_size[0],kernel_size[1],input_size,depth_multiplier]
-            self.depthwise_kernel=i.initializer(depthwise_filter,weight_initializer,dtype) # initialize the weight matrix for depthwise convolution
-            self.pointwise_kernel=i.initializer([1,1,depthwise_filter[-1]*depthwise_filter[-2],filters],weight_initializer,dtype) # initialize the weight matrix for pointwise convolution
+            self.depthwise_kernel=nn.initializer(depthwise_filter,weight_initializer,dtype) # initialize the weight matrix for depthwise convolution
+            self.pointwise_kernel=nn.initializer([1,1,depthwise_filter[-1]*depthwise_filter[-2],filters],weight_initializer,dtype) # initialize the weight matrix for pointwise convolution
             if use_bias==True: # if use bias is True
-                self.bias=i.initializer([filters],bias_initializer,dtype) # initialize the bias vector
+                self.bias=nn.initializer([filters],bias_initializer,dtype) # initialize the bias vector
                 self.param=[self.depthwise_kernel,self.pointwise_kernel,self.bias] # store the parameters in a list
             else: # if use bias is False
                 self.param=[self.depthwise_kernel,self.pointwise_kernel] # store only the weight matrices in a list
@@ -37,10 +36,10 @@ class separable_conv2d: # define a class for separable convolutional layer
     
     def build(self):
         depthwise_filter=[self.kernel_size[0],self.kernel_size[1],self.input_size,self.depth_multiplier]
-        self.depthwise_kernel=i.initializer(depthwise_filter,self.weight_initializer,self.dtype) # initialize the weight matrix for depthwise convolution
-        self.pointwise_kernel=i.initializer([1,1,depthwise_filter[-1]*depthwise_filter[-2],self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for pointwise convolution
+        self.depthwise_kernel=nn.initializer(depthwise_filter,self.weight_initializer,self.dtype) # initialize the weight matrix for depthwise convolution
+        self.pointwise_kernel=nn.initializer([1,1,depthwise_filter[-1]*depthwise_filter[-2],self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for pointwise convolution
         if self.use_bias==True: # if use bias is True
-            self.bias=i.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector
+            self.bias=nn.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector
             self.param=[self.depthwise_kernel,self.pointwise_kernel,self.bias] # store the parameters in a list
         else: # if use bias is False
             self.param=[self.depthwise_kernel,self.pointwise_kernel] # store only the weight matrices in a list
@@ -57,8 +56,8 @@ class separable_conv2d: # define a class for separable convolutional layer
             self.input_size=data.shape[-1]
             self.build()
         strides = (1,) + tuple(self.strides) + (1,)
-        output=a.activation_conv(data,self.depthwise_kernel,None,strides,self.padding,self.data_format,self.dilations,tf.nn.depthwise_conv2d) # calculate the output of applying activation function to the depthwise convolution of input data and weight matrix, plus bias vector
-        output=a.activation_conv(output,self.pointwise_kernel,None,[1,1,1,1],'VALID',self.data_format,None,tf.nn.conv2d) # calculate the output of applying activation function to the pointwise convolution of previous output and weight matrix, plus bias vector
+        output=nn.activation_conv(data,self.depthwise_kernel,None,strides,self.padding,self.data_format,self.dilations,tf.nn.depthwise_conv2d) # calculate the output of applying activation function to the depthwise convolution of input data and weight matrix, plus bias vector
+        output=nn.activation_conv(output,self.pointwise_kernel,None,[1,1,1,1],'VALID',self.data_format,None,tf.nn.conv2d) # calculate the output of applying activation function to the pointwise convolution of previous output and weight matrix, plus bias vector
         if self.use_bias==True: # if use bias is True
             output+=self.bias
         if self.activation!=None:

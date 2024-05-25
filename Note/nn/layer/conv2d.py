@@ -1,6 +1,5 @@
 import tensorflow as tf # import the TensorFlow library
-import Note.nn.activation as a # import the activation module from Note.nn package
-import Note.nn.initializer as i # import the initializer module from Note.nn package
+from Note import nn
 from Note.nn.Model import Model
 
 
@@ -24,7 +23,7 @@ class conv2d: # define a class for 2D convolutional layer
         self.dtype=dtype
         self.output_size=filters
         if input_size!=None:
-            self.weight=i.initializer([kernel_size[0],kernel_size[1],input_size,filters],weight_initializer,dtype) # initialize the weight tensor
+            self.weight=nn.initializer([kernel_size[0],kernel_size[1],input_size,filters],weight_initializer,dtype) # initialize the weight tensor
             Model.param_dict['conv2d_weight'].append(self.weight)
             if len(Model.name_list)>0:
                 Model.name=Model.name_list[-1]
@@ -39,7 +38,7 @@ class conv2d: # define a class for 2D convolutional layer
             elif Model.name_!=None:
                 Model.layer_param[Model.name_].append(self.weight)
             if use_bias==True: # if use bias is True
-                self.bias=i.initializer([filters],bias_initializer,dtype) # initialize the bias vector
+                self.bias=nn.initializer([filters],bias_initializer,dtype) # initialize the bias vector
                 Model.param_dict['conv2d_bias'].append(self.bias)
                 if Model.name_!=None and Model.name_ not in Model.layer_param:
                     Model.layer_param[Model.name_]=[]
@@ -56,7 +55,7 @@ class conv2d: # define a class for 2D convolutional layer
     
     
     def build(self):
-        self.weight=i.initializer([self.kernel_size[0],self.kernel_size[1],self.input_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight tensor
+        self.weight=nn.initializer([self.kernel_size[0],self.kernel_size[1],self.input_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight tensor
         Model.param_dict['conv2d_weight'].append(self.weight)
         if len(Model.name_list)>0:
             Model.name=Model.name_list[-1]
@@ -71,7 +70,7 @@ class conv2d: # define a class for 2D convolutional layer
         elif Model.name_!=None:
             Model.layer_param[Model.name_].append(self.weight)
         if self.use_bias==True: # if use bias is True
-            self.bias=i.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector
+            self.bias=nn.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector
             Model.param_dict['conv2d_bias'].append(self.bias)
             if Model.name_!=None and Model.name_ not in Model.layer_param:
                 Model.layer_param[Model.name_]=[]
@@ -95,6 +94,6 @@ class conv2d: # define a class for 2D convolutional layer
             self.input_size=data.shape[-1]
             self.build()
         if self.use_bias==True: # if use bias is True
-            return a.activation_conv(data,self.weight,self.activation,self.strides,self.padding,self.data_format,self.dilations,tf.nn.conv2d,self.bias) # return the output of applying activation function to the convolution of data and weight, plus bias
+            return nn.activation_conv(data,self.weight,self.activation,self.strides,self.padding,self.data_format,self.dilations,tf.nn.conv2d,self.bias) # return the output of applying activation function to the convolution of data and weight, plus bias
         else: # if use bias is False
-            return a.activation_conv(data,self.weight,self.activation,self.strides,self.padding,self.data_format,self.dilations,tf.nn.conv2d) # return the output of applying activation function to the convolution of data and weight
+            return nn.activation_conv(data,self.weight,self.activation,self.strides,self.padding,self.data_format,self.dilations,tf.nn.conv2d) # return the output of applying activation function to the convolution of data and weight

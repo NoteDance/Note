@@ -1,7 +1,6 @@
 import tensorflow as tf # import the TensorFlow library
-import Note.nn.activation as a # import the activation module from Note.nn package
+from Note import nn
 from Note.nn.activation import activation_dict
-import Note.nn.initializer as i # import the initializer module from Note.nn package
 from Note.nn.Model import Model
 
 
@@ -23,9 +22,9 @@ class depthwise_conv1d: # define a class for depthwise convolutional layer
         self.dtype=dtype
         if input_size!=None:
             self.output_size=depth_multiplier*input_size
-            self.depthwise_kernel=i.initializer([kernel_size,input_size,depth_multiplier],weight_initializer,dtype) # initialize the weight tensor
+            self.depthwise_kernel=nn.initializer([kernel_size,input_size,depth_multiplier],weight_initializer,dtype) # initialize the weight tensor
             if use_bias==True: # if use bias is True
-                self.bias=i.initializer([depth_multiplier*input_size],bias_initializer,dtype) # initialize the bias vector
+                self.bias=nn.initializer([depth_multiplier*input_size],bias_initializer,dtype) # initialize the bias vector
             if use_bias==True: # if use bias is True
                 self.param=[self.depthwise_kernel,self.bias] # store the parameters in a list
             else: # if use bias is False
@@ -36,9 +35,9 @@ class depthwise_conv1d: # define a class for depthwise convolutional layer
     
     
     def build(self):
-        self.depthwise_kernel=i.initializer([self.kernel_size,self.input_size,self.depth_multiplier],self.weight_initializer,self.dtype) # initialize the weight tensor
+        self.depthwise_kernel=nn.initializer([self.kernel_size,self.input_size,self.depth_multiplier],self.weight_initializer,self.dtype) # initialize the weight tensor
         if self.use_bias==True: # if use bias is True
-            self.bias=i.initializer([self.depth_multiplier*self.input_size],self.bias_initializer,self.dtype) # initialize the bias vector
+            self.bias=nn.initializer([self.depth_multiplier*self.input_size],self.bias_initializer,self.dtype) # initialize the bias vector
         if self.use_bias==True: # if use bias is True
             self.param=[self.depthwise_kernel,self.bias] # store the parameters in a list
         else: # if use bias is False
@@ -57,7 +56,7 @@ class depthwise_conv1d: # define a class for depthwise convolutional layer
             self.build()
         data = tf.expand_dims(data, 1)
         depthwise_kernel = tf.expand_dims(self.depthwise_kernel, axis=0)
-        output=a.activation_conv(data,depthwise_kernel,None,self.strides,self.padding,self.data_format,self.dilations,tf.nn.depthwise_conv2d) # return the output of applying activation function to the depthwise convolution of data and weight
+        output=nn.activation_conv(data,depthwise_kernel,None,self.strides,self.padding,self.data_format,self.dilations,tf.nn.depthwise_conv2d) # return the output of applying activation function to the depthwise convolution of data and weight
         if self.use_bias==True: # if use bias is True
             output+=self.bias
         output = tf.squeeze(output, [1]) # remove the extra dimension from output data to make it three-dimensional
