@@ -1,197 +1,422 @@
-from random import randrange
+# Copyright (c) 2024-present, NoteDance, Inc.
+# All rights reserved.
+
 import tensorflow as tf
 from Note import nn
-
-from einops import rearrange, repeat
-
-
-def exists(val):
-    return val is not None
-
-def dropout_layers(layers, dropout):
-    if dropout == 0:
-        return layers
-
-    num_layers = len(layers)
-    to_drop = tf.random.uniform(shape=[num_layers], minval=0., maxval=1.) < dropout
-
-    # make sure at least one layer makes it
-    if all(to_drop):
-        rand_index = randrange(num_layers)
-        to_drop[rand_index] = False
-
-    layers = [layer for (layer, drop) in zip(layers, to_drop) if not drop]
-    return layers
+from itertools import repeat
+from typing import Optional
+import collections.abc
+from functools import partial
 
 
-class LayerScale:
-    def __init__(self, dim, fn, depth):
-        if depth <= 18:  # epsilon detailed in section 2 of paper
-            init_eps = 0.1
-        elif depth > 18 and depth <= 24:
-            init_eps = 1e-5
+__all__ = [
+    'cait_M48', 'cait_M36',
+    'cait_S36', 'cait_S24','cait_S24_224',
+    'cait_XS24','cait_XXS24','cait_XXS24_224',
+    'cait_XXS36','cait_XXS36_224'
+]
+
+
+def _ntuple(n):
+    def parse(x):
+        if isinstance(x, collections.abc.Iterable) and not isinstance(x, str):
+            return tuple(x)
+        return tuple(repeat(x, n))
+    return parse
+
+to_2tuple = _ntuple(2)
+
+
+class PatchEmbed:
+    """ 2D Image to Patch Embedding
+    """
+    def __init__(
+            self,
+            img_size: Optional[int] = 224,
+            patch_size: int = 16,
+            in_chans: int = 3,
+            embed_dim: int = 768,
+            flatten: bool = True,
+            bias: bool = True,
+    ):
+        self.patch_size = to_2tuple(patch_size)
+        if img_size is not None:
+            self.img_size = to_2tuple(img_size)
+            self.grid_size = tuple([s // p for s, p in zip(self.img_size, self.patch_size)])
+            self.num_patches = self.grid_size[0] * self.grid_size[1]
         else:
-            init_eps = 1e-6
+            self.img_size = None
+            self.grid_size = None
+            self.num_patches = None
 
-        scale = tf.fill([1, 1, dim], init_eps)
-        self.scale = tf.Variable(scale)
-        nn.Model.param.append(self.scale)
-        self.fn = fn
-        
-    def __call__(self, x, **kwargs):
-        return self.fn(x, **kwargs) * self.scale
+        # flatten spatial dim and transpose to channels last, kept for bwd compat
+        self.flatten = flatten
 
-class FeedForward:
-    def __init__(self, dim, hidden_dim, dropout_rate = 0.):
-        self.net = nn.Layers()
-        self.net.add(nn.layer_norm(dim))
-        self.net.add(nn.dense(hidden_dim, dim))
-        self.net.add(tf.nn.gelu)
-        self.net.add(nn.dropout(dropout_rate))
-        self.net.add(nn.dense(dim, hidden_dim))
-        self.net.add(nn.dropout(dropout_rate))
-        
-    def __call__(self, x, training=True):
-        return self.net(x, training)
+        self.proj = nn.conv2d(embed_dim, input_size=in_chans, kernel_size=patch_size, strides=patch_size, use_bias=bias)
 
-class Attention:
-    def __init__(self, dim, heads = 8, dim_head = 64, dropout_rate = 0.):
-        inner_dim = dim_head *  heads
-        self.heads = heads
-        self.scale = dim_head ** -0.5
-
-        self.norm = nn.layer_norm(dim)
-        self.to_q = nn.dense(inner_dim, dim, use_bias = False)
-        self.to_kv = nn.dense(inner_dim * 2, dim, use_bias = False)
-
-        self.attend = tf.nn.softmax
-        self.dropout = nn.dropout(dropout_rate)
-
-        self.mix_heads_pre_attn = nn.initializer_((heads, heads), 'normal')
-        self.mix_heads_post_attn = nn.initializer_((heads, heads), 'normal')
-
-        self.to_out = nn.Layers()
-        self.to_out.add(nn.dense(dim, inner_dim))
-        self.to_out.add(nn.dropout(dropout_rate))
-
-    def __call__(self, x, context = None, training=True):
-        b, n, _, h = *x.shape, self.heads
-
-        x = self.norm(x)
-        context = x if not exists(context) else tf.concat((x, context), axis = 1)
-
-        qkv = (self.to_q(x), *tf.split(self.to_kv(context), 2, axis = -1))
-        q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h = h), qkv)
-
-        dots = tf.einsum('b h i d, b h j d -> b h i j', q, k) * self.scale
-
-        dots = tf.einsum('b h i j, h g -> b g i j', dots, self.mix_heads_pre_attn)    # talking heads, pre-softmax
-
-        attn = self.attend(dots)
-        attn = self.dropout(attn, training)
-
-        attn = tf.einsum('b h i j, h g -> b g i j', attn, self.mix_heads_post_attn)   # talking heads, post-softmax
-
-        out = tf.einsum('b h i j, b h j d -> b h i d', attn, v)
-        out = rearrange(out, 'b h n d -> b n (h d)')
-        return self.to_out(out, training)
-
-class Transformer:
-    def __init__(self, dim, depth, heads, dim_head, mlp_dim, dropout = 0., layer_dropout = 0.):
-        self.layers = []
-        self.layer_dropout = layer_dropout
-
-        for ind in range(depth):
-            self.layers.append([
-                LayerScale(dim, Attention(dim, heads = heads, dim_head = dim_head, dropout_rate = dropout), depth = ind + 1),
-                LayerScale(dim, FeedForward(dim, mlp_dim, dropout_rate = dropout), depth = ind + 1)
-            ])
-            
-    def __call__(self, x, context = None, training=True):
-        layers = dropout_layers(self.layers, dropout = self.layer_dropout)
-
-        for attn, ff in layers:
-            x = attn(x, context = context, training=training) + x
-            x = ff(x, training=training) + x
+    def __call__(self, x):
+        x = self.proj(x)
+        B, H, W, C = x.shape
+        if self.flatten:
+            x = tf.reshape(x, [B, H*W, C])  # NHWC -> NLC
         return x
 
-class CaiT(nn.Model):
+
+class Mlp:
+    """ MLP as used in Vision Transformer, MLP-Mixer and related networks
+    """
     def __init__(
-        self,
-        image_size,
-        patch_size,
-        num_classes,
-        dim,
-        depth,
-        cls_depth,
-        heads,
-        mlp_dim,
-        dim_head = 64,
-        dropout_rate = 0.,
-        emb_dropout = 0.,
-        layer_dropout = 0.
+            self,
+            in_features,
+            hidden_features=None,
+            out_features=None,
+            act_layer=tf.nn.gelu,
+            norm_layer=None,
+            bias=True,
+            drop=0.,
+            use_conv=False,
     ):
+        out_features = out_features or in_features
+        hidden_features = hidden_features or in_features
+        bias = to_2tuple(bias)
+        drop_probs = to_2tuple(drop)
+
+        self.fc1 = nn.dense(hidden_features, in_features, use_bias=bias[0])
+        self.act = act_layer
+        self.drop1 = nn.dropout(drop_probs[0])
+        self.fc2 = nn.dense(out_features, hidden_features, use_bias=bias[1])
+        self.drop2 = nn.dropout(drop_probs[1])
+
+    def __call__(self, x):
+        x = self.fc1(x)
+        x = self.act(x, approximate="tanh")
+        x = self.drop1(x)
+        x = self.fc2(x)
+        x = self.drop2(x)
+        return x  
+
+
+class Class_Attention:
+    # taken from https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py
+    # with slight modifications to do CA 
+    def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.):
+        self.num_heads = num_heads
+        head_dim = dim // num_heads
+        self.scale = qk_scale or head_dim ** -0.5
+
+        self.q = nn.dense(dim, dim, use_bias=qkv_bias)
+        self.k = nn.dense(dim, dim, use_bias=qkv_bias)
+        self.v = nn.dense(dim, dim, use_bias=qkv_bias)
+        self.attn_drop = nn.dropout(attn_drop)
+        self.proj = nn.dense(dim, dim)
+        self.proj_drop = nn.dropout(proj_drop)
+
+    
+    def __call__(self, x ):
+        
+        B, N, C = x.shape
+        q = tf.transpose(tf.reshape(tf.expand_dims(self.q(x[:,0]), 1), (B, 1, self.num_heads, C // self.num_heads)), (0, 2, 1, 3))
+        k = tf.transpose(tf.reshape(self.k(x), (B, N, self.num_heads, C // self.num_heads)), (0, 2, 1, 3))
+
+        q = q * self.scale
+        v = tf.transpose(tf.reshape(self.v(x), (B, N, self.num_heads, C // self.num_heads)), (0, 2, 1, 3))
+
+        attn = tf.matmul(q, tf.transpose(k, (0, 1, 3, 2)))
+        attn = tf.nn.softmax(attn, axis=-1)
+        attn = self.attn_drop(attn)
+
+        x_cls = tf.reshape(tf.transpose(tf.matmul(attn, v), (0, 2, 1, 3)), (B, 1, C))
+        x_cls = self.proj(x_cls)
+        x_cls = self.proj_drop(x_cls)
+        
+        return x_cls     
+        
+class LayerScale_Block_CA:
+    # taken from https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py
+    # with slight modifications to add CA and LayerScale
+    def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, qk_scale=None, drop=0., attn_drop=0.,
+                 drop_path=0., act_layer=tf.nn.gelu, norm_layer=nn.layer_norm, Attention_block = Class_Attention,
+                 Mlp_block=Mlp,init_values=1e-4):
+        self.norm1 = norm_layer(dim)
+        self.attn = Attention_block(
+            dim, num_heads=num_heads, qkv_bias=qkv_bias, qk_scale=qk_scale, attn_drop=attn_drop, proj_drop=drop)
+        self.drop_path = nn.stochastic_depth(drop_path) if drop_path > 0. else nn.identity()
+        self.norm2 = norm_layer(dim)
+        mlp_hidden_dim = int(dim * mlp_ratio)
+        self.mlp = Mlp_block(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
+        self.gamma_1 = nn.variable(init_values * tf.ones((dim)))
+        self.gamma_2 = nn.variable(init_values * tf.ones((dim)))
+
+    
+    def __call__(self, x, x_cls):
+        
+        u = tf.concat((x_cls,x),axis=1)
+        
+        
+        x_cls = x_cls + self.drop_path(self.gamma_1 * self.attn(self.norm1(u)))
+        
+        x_cls = x_cls + self.drop_path(self.gamma_2 * self.mlp(self.norm2(x_cls)))
+        
+        return x_cls 
+        
+        
+class Attention_talking_head:
+    # taken from https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py
+    # with slight modifications to add Talking Heads Attention (https://arxiv.org/pdf/2003.02436v1.pdf)
+    def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.):
+        self.num_heads = num_heads
+        
+        head_dim = dim // num_heads
+        
+        self.scale = qk_scale or head_dim ** -0.5
+
+        self.qkv = nn.dense(dim * 3, dim, use_bias=qkv_bias)
+        self.attn_drop = nn.dropout(attn_drop)
+        
+        self.proj = nn.dense(dim, dim)
+        
+        self.proj_l = nn.dense(num_heads, num_heads)
+        self.proj_w = nn.dense(num_heads, num_heads)
+        
+        self.proj_drop = nn.dropout(proj_drop)
+
+
+    
+    def __call__(self, x):
+        B, N, C = x.shape
+        qkv = tf.transpose(tf.reshape(self.qkv(x), (B, N, 3, self.num_heads, C // self.num_heads)), (2, 0, 3, 1, 4))
+        q, k, v = qkv[0] * self.scale , qkv[1], qkv[2] 
+    
+        attn = tf.matmul(q, tf.transpose(k, (0, 1, 3, 2))) 
+        
+        attn = tf.transpose(self.proj_l(tf.transpose(attn, (0,2,3,1))), (0,3,1,2))
+                
+        attn = tf.nn.softmax(attn, axis=-1)
+  
+        attn = tf.transpose(self.proj_w(tf.transpose(attn, (0,2,3,1))), (0,3,1,2))
+        attn = self.attn_drop(attn)
+
+        x = tf.reshape(tf.transpose(tf.matmul(attn, v), (0, 2, 1, 3)), (B, N, C))
+        x = self.proj(x)
+        x = self.proj_drop(x)
+        return x
+    
+class LayerScale_Block:
+    # taken from https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py
+    # with slight modifications to add layerScale
+    def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, qk_scale=None, drop=0., attn_drop=0.,
+                 drop_path=0., act_layer=tf.nn.gelu, norm_layer=nn.layer_norm,Attention_block = Attention_talking_head,
+                 Mlp_block=Mlp,init_values=1e-4):
+        self.norm1 = norm_layer(dim)
+        self.attn = Attention_block(
+            dim, num_heads=num_heads, qkv_bias=qkv_bias, qk_scale=qk_scale, attn_drop=attn_drop, proj_drop=drop)
+        self.drop_path = nn.stochastic_depth(drop_path) if drop_path > 0. else nn.identity()
+        self.norm2 = norm_layer(dim)
+        mlp_hidden_dim = int(dim * mlp_ratio)
+        self.mlp = Mlp_block(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
+        self.gamma_1 = nn.variable(init_values * tf.ones((dim)))
+        self.gamma_2 = nn.variable(init_values * tf.ones((dim)))
+
+    def __call__(self, x):        
+        x = x + self.drop_path(self.gamma_1 * self.attn(self.norm1(x)))
+        x = x + self.drop_path(self.gamma_2 * self.mlp(self.norm2(x)))
+        return x 
+    
+    
+class CaiT(nn.Model):
+    # taken from https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py
+    # with slight modifications to adapt to our cait models
+    def __init__(self, img_size=224, patch_size=16, in_chans=3, num_classes=1000, embed_dim=768, depth=12,
+                 num_heads=12, mlp_ratio=4., qkv_bias=False, qk_scale=None, drop_rate=0., attn_drop_rate=0.,
+                 drop_path_rate=0., norm_layer=nn.layer_norm, global_pool=None,
+                 block_layers = LayerScale_Block,
+                 block_layers_token = LayerScale_Block_CA,
+                 Patch_layer=PatchEmbed,act_layer=tf.nn.gelu,
+                 Attention_block = Attention_talking_head,Mlp_block=Mlp,
+                init_scale=1e-4,
+                Attention_block_token_only=Class_Attention,
+                Mlp_block_token_only= Mlp, 
+                depth_token_only=2,
+                mlp_ratio_clstk = 4.0):
         super().__init__()
+        nn.Model.add()
+
+            
+        self.num_classes = num_classes
+        self.num_features = self.embed_dim = embed_dim  
+
+        self.patch_embed = Patch_layer(
+                img_size=img_size, patch_size=patch_size, in_chans=in_chans, embed_dim=embed_dim)
         
-        assert image_size % patch_size == 0, 'Image dimensions must be divisible by the patch size.'
-        num_patches = (image_size // patch_size) ** 2
-        patch_dim = 3 * patch_size ** 2
-        self.patch_size = patch_size
-        self.dim = dim
+        num_patches = self.patch_embed.num_patches
 
-        self.to_patch_embedding = nn.Layers()
-        self.to_patch_embedding.add(nn.layer_norm(patch_dim))
-        self.to_patch_embedding.add(nn.dense(dim, patch_dim))
-        self.to_patch_embedding.add(nn.layer_norm(dim))
+        self.cls_token = nn.initializer_((1, 1, embed_dim), ['truncated_normal', .02], name='cls_token')
+        self.pos_embed = nn.initializer_((1, num_patches, embed_dim), ['truncated_normal', .02], name='pos_embed')
+        self.pos_drop = nn.dropout(drop_rate)
 
-        self.pos_embedding = nn.initializer_((1, num_patches, dim), 'normal')
-        self.cls_token = nn.initializer_((1, 1, dim), 'normal')
-
-        self.dropout = nn.dropout(emb_dropout)
-
-        self.patch_transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout_rate, layer_dropout)
-        self.cls_transformer = Transformer(dim, cls_depth, heads, dim_head, mlp_dim, dropout_rate, layer_dropout)
-
-        self.mlp_head = nn.Layers()
-        self.mlp_head.add(nn.layer_norm(dim))
-        self.mlp_head.add(nn.dense(num_classes, dim))
+        dpr = [drop_path_rate for i in range(depth)] 
+        self.blocks = [
+            block_layers(
+                dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                drop=drop_rate, attn_drop=attn_drop_rate, drop_path=dpr[i], norm_layer=norm_layer,
+                act_layer=act_layer,Attention_block=Attention_block,Mlp_block=Mlp_block,init_values=init_scale)
+            for i in range(depth)]
         
-        self.training=True
+
+        self.blocks_token_only = [
+            block_layers_token(
+                dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio_clstk, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                drop=0.0, attn_drop=0.0, drop_path=0.0, norm_layer=norm_layer,
+                act_layer=act_layer,Attention_block=Attention_block_token_only,
+                Mlp_block=Mlp_block_token_only,init_values=init_scale)
+            for i in range(depth_token_only)]
+            
+        self.norm = norm_layer(embed_dim)
+
+
+        self.feature_info = [dict(num_chs=embed_dim, reduction=0, module='head')]
+        self.head = nn.dense(num_classes, embed_dim) if num_classes > 0 else nn.identity()
+
+        nn.Model.apply(self.init_weights)
+
+    def init_weights(self, l):
+        if isinstance(l, nn.dense):
+            l.weight.assign(nn.initializer(l.weight.shape, ['truncated_normal', .02]))
+
+    def no_weight_decay(self):
+        return ['pos_embed', 'cls_token']
     
     def fine_tuning(self,classes=None,flag=0):
         param=[]
+        self.flag=flag
         if flag==0:
             self.param_=self.param.copy()
-            self.mlp_head_=self.mlp_head.layer[-1]
-            self.mlp_head.layer[-1]=nn.dense(classes, self.dim)
-            param.extend(self.mlp_head.layer[-1].param)
+            self.head_=self.head
+            self.head=nn.dense(classes,self.embed_dim)
+            param.extend(self.head.param)
             self.param=param
         elif flag==1:
-            del self.param_[-len(self.mlp_head.layer[-1].param):]
-            self.param_.extend(self.mlp_head.layer[-1].param)
+            del self.param_[-len(self.head.param):]
+            self.param_.extend(self.head.param)
             self.param=self.param_
         else:
-            self.mlp_head.layer[-1],self.mlp_head_=self.mlp_head_,self.mlp_head.layer[-1]
-            del self.param_[-len(self.mlp_head.layer[-1].param):]
-            self.param_.extend(self.mlp_head.layer[-1].param)
+            self.head,self.head_=self.head_,self.head
+            del self.param_[-len(self.head.param):]
+            self.param_.extend(self.head.param)
             self.param=self.param_
         return
 
-    def __call__(self, data):
-        b = data.shape[0]
-        h = data.shape[1] // self.patch_size
-        w = data.shape[2] // self.patch_size
-        c = data.shape[3]
-        data = tf.reshape(data, (b, h * w, self.patch_size * self.patch_size * c))
-        x = self.to_patch_embedding(data)
-        b, n, _ = x.shape
+    def forward_features(self, x):
+        B = x.shape[0]
+        x = self.patch_embed(x)
 
-        x += self.pos_embedding[:, :n]
-        x = self.dropout(x, self.training)
+        cls_tokens = tf.tile(self.cls_token, (B, 1, 1))
+        
+        x = x + self.pos_embed
+        x = self.pos_drop(x)
 
-        x = self.patch_transformer(x, training=self.training)
+        for i , blk in enumerate(self.blocks):
+            x = blk(x)
+            
+        for i , blk in enumerate(self.blocks_token_only):
+            cls_tokens = blk(x,cls_tokens)
 
-        cls_tokens = repeat(self.cls_token, '() n d -> b n d', b = b)
-        x = self.cls_transformer(cls_tokens, context = x, training=self.training)
+        x = tf.concat((cls_tokens, x), axis=1)
+            
+                
+        x = self.norm(x)
+        return x[:, 0]
 
-        return self.mlp_head(x[:, 0])
+    def __call__(self, x):
+        x = self.forward_features(x)
+        
+        x = self.head(x)
+
+        return x 
+        
+    
+def cait_XXS24_224(**kwargs):
+    model = CaiT(
+        img_size= 224,patch_size=16, embed_dim=192, depth=24, num_heads=4, mlp_ratio=4, qkv_bias=True,
+        norm_layer=partial(nn.layer_norm, epsilon=1e-6),
+        init_scale=1e-5,
+        depth_token_only=2,**kwargs)
+    return model 
+
+def cait_XXS24(**kwargs):
+    model = CaiT(
+        img_size= 384,patch_size=16, embed_dim=192, depth=24, num_heads=4, mlp_ratio=4, qkv_bias=True,
+        norm_layer=partial(nn.layer_norm, epsilon=1e-6),
+        init_scale=1e-5,
+        depth_token_only=2,**kwargs)
+    return model 
+
+def cait_XXS36_224(**kwargs):
+    model = CaiT(
+        img_size= 224,patch_size=16, embed_dim=192, depth=36, num_heads=4, mlp_ratio=4, qkv_bias=True,
+        norm_layer=partial(nn.layer_norm, epsilon=1e-6),
+        init_scale=1e-5,
+        depth_token_only=2,**kwargs)
+    return model 
+
+def cait_XXS36(**kwargs):
+    model = CaiT(
+        img_size= 384,patch_size=16, embed_dim=192, depth=36, num_heads=4, mlp_ratio=4, qkv_bias=True,
+        norm_layer=partial(nn.layer_norm, epsilon=1e-6),
+        init_scale=1e-5,
+        depth_token_only=2,**kwargs)
+    return model 
+
+
+
+def cait_XS24(**kwargs):
+    model = CaiT(
+        img_size= 384,patch_size=16, embed_dim=288, depth=24, num_heads=6, mlp_ratio=4, qkv_bias=True,
+        norm_layer=partial(nn.layer_norm, epsilon=1e-6),
+        init_scale=1e-5,
+        depth_token_only=2,**kwargs)
+    return model 
+
+
+
+def cait_S24_224(**kwargs):
+    model = CaiT(
+        img_size= 224,patch_size=16, embed_dim=384, depth=24, num_heads=8, mlp_ratio=4, qkv_bias=True,
+        norm_layer=partial(nn.layer_norm, epsilon=1e-6),
+        init_scale=1e-5,
+        depth_token_only=2,**kwargs)
+    return model 
+
+def cait_S24(**kwargs):
+    model = CaiT(
+        img_size= 384,patch_size=16, embed_dim=384, depth=24, num_heads=8, mlp_ratio=4, qkv_bias=True,
+        norm_layer=partial(nn.layer_norm, epsilon=1e-6),
+        init_scale=1e-5,
+        depth_token_only=2,**kwargs)
+    return model 
+
+def cait_S36(**kwargs):
+    model = CaiT(
+        img_size= 384,patch_size=16, embed_dim=384, depth=36, num_heads=8, mlp_ratio=4, qkv_bias=True,
+        norm_layer=partial(nn.layer_norm, epsilon=1e-6),
+        init_scale=1e-6,
+        depth_token_only=2,**kwargs)
+    return model 
+
+
+
+def cait_M36(**kwargs):
+    model = CaiT(
+        img_size= 384, patch_size=16, embed_dim=768, depth=36, num_heads=16, mlp_ratio=4, qkv_bias=True,
+        norm_layer=partial(nn.layer_norm, epsilon=1e-6),
+        init_scale=1e-6,
+        depth_token_only=2,**kwargs)
+    return model 
+
+def cait_M48(**kwargs):
+    model = CaiT(
+        img_size= 448 , patch_size=16, embed_dim=768, depth=48, num_heads=16, mlp_ratio=4, qkv_bias=True,
+        norm_layer=partial(nn.layer_norm, epsilon=1e-6),
+        init_scale=1e-6,
+        depth_token_only=2,**kwargs)
+    return model       
