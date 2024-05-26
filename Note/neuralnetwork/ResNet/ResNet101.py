@@ -1,7 +1,7 @@
 import tensorflow as tf
 from Note.nn.layer.conv2d import conv2d
 from Note.nn.layer.dense import dense
-from Note.nn.layer.batch_norm import batch_norm
+from Note.nn.layer.batch_norm_ import batch_norm_
 from Note.nn.layer.max_pool2d import max_pool2d
 from Note.nn.layer.zeropadding2d import zeropadding2d
 from Note.nn.layer.identity import identity
@@ -17,18 +17,18 @@ class block1:
         self.layers1=Layers()
         if conv_shortcut:
             self.layers1.add(conv2d(4 * filters,[1,1],in_channels,strides=[stride],dtype=dtype))
-            self.layers1.add(batch_norm(epsilon=1.001e-5,dtype=dtype))
+            self.layers1.add(batch_norm_(epsilon=1.001e-5,dtype=dtype))
         else:
             self.layers1.add(identity(in_channels))
         self.layers2=Layers()
         self.layers2.add(conv2d(filters,[1,1],in_channels,strides=[stride],dtype=dtype))
-        self.layers2.add(batch_norm(epsilon=1.001e-5,dtype=dtype))
+        self.layers2.add(batch_norm_(epsilon=1.001e-5,dtype=dtype))
         self.layers2.add(activation_dict['relu'])
         self.layers2.add(conv2d(filters,[kernel_size,kernel_size],padding='SAME',dtype=dtype))
-        self.layers2.add(batch_norm(epsilon=1.001e-5,dtype=dtype))
+        self.layers2.add(batch_norm_(epsilon=1.001e-5,dtype=dtype))
         self.layers2.add(activation_dict['relu'])
         self.layers2.add(conv2d(4 * filters,[1,1],dtype=dtype))
-        self.layers2.add(batch_norm(epsilon=1.001e-5,dtype=dtype))
+        self.layers2.add(batch_norm_(epsilon=1.001e-5,dtype=dtype))
         self.train_flag=True
         self.output_size=self.layers2.output_size
     
@@ -79,13 +79,13 @@ class ResNet101:
         self.layers.add(zeropadding2d(3,[3,3]))
         self.layers.add(conv2d(64,[7,7],strides=[2],use_bias=self.use_bias,dtype=dtype))
         if not self.preact:
-            self.layers.add(batch_norm(epsilon=1.001e-5,dtype=dtype))
+            self.layers.add(batch_norm_(epsilon=1.001e-5,dtype=dtype))
             self.layers.add(activation_dict['relu'])
         self.layers.add(zeropadding2d(padding=[1,1]))
         self.layers.add(max_pool2d(ksize=[3, 3],strides=[2, 2],padding='SAME'))
         self.layers.add(stack_fn(self.layers.output_size,dtype=dtype))
         if self.preact:
-            self.layers.add(batch_norm(self.layers.output_size,epsilon=1.001e-5,dtype=dtype))
+            self.layers.add(batch_norm_(self.layers.output_size,epsilon=1.001e-5,dtype=dtype))
             self.layers.add(activation_dict['relu'])
         self.dense=dense(self.classes,self.layers.output_size,activation='softmax',dtype=dtype)
         self.optimizer=Adam()
