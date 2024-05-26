@@ -122,6 +122,7 @@ from Note.nn.layer.up_sampling1d import up_sampling1d
 from Note.nn.layer.up_sampling2d import up_sampling2d
 from Note.nn.layer.up_sampling3d import up_sampling3d
 from Note.nn.layer.vector_quantizer import vector_quantizer
+from Note.nn.layer.vision_transformer import *
 from Note.nn.layer.voting_attention import voting_attention
 from Note.nn.layer.zeropadding1d import zeropadding1d
 from Note.nn.layer.zeropadding2d import zeropadding2d
