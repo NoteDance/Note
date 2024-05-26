@@ -1,17 +1,17 @@
 # Introduction:
-**Note is a system(library) for deep learning and reinforcement learning. Note makes the building and training of neural networks easy and flexible. Note.nn.layer package contains many layer modules, you can use them to build neural networks. Note’s layer modules are implemented based on TensorFlow, which means they are compatible with TensorFlow’s API. The layer modules allow you to build neural networks in the style of PyTorch or Keras. You can not only use the layer modules to build neural networks trained on Note but also use them to build neural networks trained with TensorFlow.**
+Note is a system(library) for deep learning and reinforcement learning. Note makes the building and training of neural networks easy and flexible. Note.nn.layer package contains many layer modules, you can use them to build neural networks. Note’s layer modules are implemented based on TensorFlow, which means they are compatible with TensorFlow’s API. The layer modules allow you to build neural networks in the style of PyTorch or Keras. You can not only use the layer modules to build neural networks trained on Note but also use them to build neural networks trained with TensorFlow.
 
 
 # Installation:
-**To use Note, you need to download it from https://github.com/NoteDance/Note and then unzip it to the site-packages folder of your Python environment.**
+To use Note, you need to download it from https://github.com/NoteDance/Note and then unzip it to the site-packages folder of your Python environment.
 
 
 # Layer modules:
-**To use the layer module, you first need to create a layer object, then input data to get the output, like using pytorch, or you can use the layer module like using keras. The args of the layer classes in Note are similar to those of the layer classes in tf.keras.layers, so you can refer to the API documentation of tf.keras.layers to use the layer classes in Note. Neural networks created with the layer module are compatible with TensorFlow, which means you can train these neural networks with TensorFlow.**
+To use the layer module, you first need to create a layer object, then input data to get the output, like using pytorch, or you can use the layer module like using keras. The args of the layer classes in Note are similar to those of the layer classes in tf.keras.layers, so you can refer to the API documentation of tf.keras.layers to use the layer classes in Note. Neural networks created with the layer module are compatible with TensorFlow, which means you can train these neural networks with TensorFlow.
 
 https://github.com/NoteDance/Note/tree/Note-7.0/Note/nn/layer
 
-**Using Note’s Layer module, you can determine the shape of the training parameters when you input data like Keras, or you can give the shape of the training parameters in advance like PyTorch.**
+Using Note’s Layer module, you can determine the shape of the training parameters when you input data like Keras, or you can give the shape of the training parameters in advance like PyTorch.
 
 **Pytorch:**
 ```python
@@ -52,7 +52,7 @@ def model(data):
     x=nn.dense(10)(x)
     return x
 ```
-**Note.neuralnetwork.tf package contains neural networks implemented with Note’s layer module that can be trained with TensorFlow. You can also consider these models as examples using the Note.**
+Note.neuralnetwork.tf package contains neural networks implemented with Note’s layer module that can be trained with TensorFlow. You can also consider these models as examples using the Note.
 
 https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
 
@@ -60,27 +60,27 @@ https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
 
 
 # Note.nn.Model.Model:
-**Model class manages the parameters of the neural network.**
+Model class manages the parameters of the neural network.
 
 
 # Note.nn.initializer.initializer:
-**This function is used to initialize the parameters of the neural network, and it returns a TensorFlow variable.**
+This function is used to initialize the parameters of the neural network, and it returns a TensorFlow variable.
 
 
 # Note.nn.initializer.initializer_:
-**This function is used to initialize the parameters of the neural network, it returns a TensorFlow variable and stores the variable in trainable parameters list(Model.param).**
+This function is used to initialize the parameters of the neural network, it returns a TensorFlow variable and stores the variable in trainable parameters list(Model.param).
 
 
 # Note.nn.variable.variable:
-**Its function is similar to torch.nn.parameter.Parameter.**
+Its function is similar to torch.nn.parameter.Parameter.
 
 
 # Note.nn.Layers.Layers:
-**This class is used similarly to tf.keras.Sequential and torch.nn.Sequential.**
+This class is used similarly to tf.keras.Sequential and torch.nn.Sequential.
 
 
 # The models that can be trained with TensorFlow:
-**This package include Llama2, CLIP, ViT, ConvNeXt, SwiftFormer, etc. These models built with Note are compatible with TensorFlow and can be trained with TensorFlow.**
+This package include Llama2, CLIP, ViT, ConvNeXt, SwiftFormer, etc. These models built with Note are compatible with TensorFlow and can be trained with TensorFlow.
 
 https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
 
@@ -88,18 +88,18 @@ https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
 
 
 # Documentation:
-**The document contains tutorials on how to build neural networks that can be trained on Note, how to train neural networks with Note, and kernel code as well as other code with comments that can help you understand.**
+The document contains tutorials on how to build neural networks that can be trained on Note, how to train neural networks with Note, and kernel code as well as other code with comments that can help you understand.
 
 https://github.com/NoteDance/Note-documentation
 
 
 # Patreon:
-**You can support this project on Patreon.**
+You can support this project on Patreon.
 
 https://www.patreon.com/NoteDance
 
 
 # Contact:
-**If you have any issues with the use, or you have any suggestions, you can contact me.**
+If you have any issues with the use, or you have any suggestions, you can contact me.
 
 **E-mail:** notedance@outlook.com
