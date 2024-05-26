@@ -7,7 +7,7 @@ class _conv_block:
     def __init__(self, in_channels, filters, alpha, kernel=(3, 3), strides=[1, 1], dtype='float32'):
         filters = int(filters * alpha)
         self.conv2d=nn.conv2d(filters,kernel,in_channels,strides=strides,padding='SAME',use_bias=False,dtype=dtype)
-        self.batch_norm_=nn.batch_norm_(self.conv2d.output_size,dtype=dtype)
+        self.batch_norm=nn.batch_norm(self.conv2d.output_size,dtype=dtype)
         self.train_flag=True
         self.output_size=self.conv2d.output_size
     
@@ -15,7 +15,7 @@ class _conv_block:
     def __call__(self,data,train_flag=True):
         self.train_flag=train_flag
         x=self.conv2d(data)
-        x=self.batch_norm_(x,self.train_flag)
+        x=self.batch_norm(x,self.train_flag)
         return activation_dict['relu6'](x)
 
 
@@ -25,9 +25,9 @@ class _depthwise_conv_block:
         self.strides=strides
         self.zeropadding2d=nn.zeropadding2d()
         self.depthwiseconv2d=nn.depthwise_conv2d([3,3],depth_multiplier,in_channels,strides=[1,strides[0],strides[1],1],padding="SAME" if strides == [1, 1] else "VALID",use_bias=False,dtype=dtype)
-        self.batch_norm1=nn.batch_norm_(self.depthwiseconv2d.output_size,dtype=dtype)
+        self.batch_norm1=nn.batch_norm(self.depthwiseconv2d.output_size,dtype=dtype)
         self.conv2d=nn.conv2d(pointwise_conv_filters,[1,1],self.depthwiseconv2d.output_size,strides=[1, 1],padding='SAME',use_bias=False,dtype=dtype)
-        self.batch_norm2=nn.batch_norm_(self.conv2d.output_size,dtype=dtype)
+        self.batch_norm2=nn.batch_norm(self.conv2d.output_size,dtype=dtype)
         self.train_flag=True
         self.output_size=self.conv2d.output_size
     

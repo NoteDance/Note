@@ -148,7 +148,7 @@ class LocalPatchInteraction:
         self.net.add(nn.layer_norm(dim))
         self.net.add(nn.zeropadding2d(padding = padding))
         self.net.add(nn.group_conv2d(dim, kernel_size, dim, dim))
-        self.net.add(nn.batch_norm_(dim))
+        self.net.add(nn.batch_norm(dim))
         self.net.add(tf.nn.gelu)
         self.net.add(nn.zeropadding2d(padding = padding))
         self.net.add(nn.group_conv2d(dim, kernel_size, dim, dim))

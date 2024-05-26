@@ -71,12 +71,12 @@ class SwiftFormer(nn.Model):
                 if i_emb == 0:
                     layer = nn.identity()
                 else:
-                    layer = nn.batch_norm_(embed_dims[i_emb],dtype=dtype)
+                    layer = nn.batch_norm(embed_dims[i_emb],dtype=dtype)
                 layer_name = f'norm{i_layer}'
                 self.layers_dict[layer_name]=layer
         else:
             # Classifier head
-            self.norm = nn.batch_norm_(embed_dims[-1],dtype=dtype)
+            self.norm = nn.batch_norm(embed_dims[-1],dtype=dtype)
             self.head = nn.dense(
                 num_classes, embed_dims[-1], weight_initializer=['truncated_normal',.02], dtype=dtype) if num_classes > 0 \
                 else nn.identity()
@@ -204,11 +204,11 @@ def stem(in_chs, out_chs, dtype):
     layers=nn.Layers()
     layers.add(nn.zeropadding2d(padding=1))
     layers.add(nn.conv2d(out_chs // 2, kernel_size=3, input_size=in_chs, strides=2, dtype=dtype))
-    layers.add(nn.batch_norm_(dtype=dtype))
+    layers.add(nn.batch_norm(dtype=dtype))
     layers.add(activation_dict['relu'])
     layers.add(nn.zeropadding2d(padding=1))
     layers.add(nn.conv2d(out_chs, kernel_size=3, strides=2, dtype=dtype))
-    layers.add(nn.batch_norm_(dtype=dtype))
+    layers.add(nn.batch_norm(dtype=dtype))
     layers.add(activation_dict['relu'])
     return layers
 
@@ -219,14 +219,14 @@ class Embedding:
     """
 
     def __init__(self, patch_size=16, stride=16, padding=0,
-                 in_chans=3, embed_dim=768, norm_layer=nn.batch_norm_, dtype='float32'):
+                 in_chans=3, embed_dim=768, norm_layer=nn.batch_norm, dtype='float32'):
         patch_size = to_2tuple(patch_size)
         stride = to_2tuple(stride)
         padding = to_2tuple(padding)
         self.zeropadding2d=nn.zeropadding2d(padding=padding)
         self.proj = nn.conv2d(embed_dim, kernel_size=patch_size, input_size=in_chans,
                               strides=stride, dtype=dtype)
-        self.norm = nn.batch_norm_(embed_dim, dtype=dtype) if norm_layer else nn.identity()
+        self.norm = nn.batch_norm(embed_dim, dtype=dtype) if norm_layer else nn.identity()
         self.train_flag=True
     
     
@@ -250,7 +250,7 @@ class ConvEncoder:
         self.layers.add(nn.zeropadding2d(padding=kernel_size // 2))
         self.layers.add(nn.depthwise_conv2d(kernel_size=kernel_size, input_size=dim, 
                                        weight_initializer=['truncated_normal',.02], dtype=dtype))
-        self.layers.add(nn.batch_norm_(dtype=dtype))
+        self.layers.add(nn.batch_norm(dtype=dtype))
         self.layers.add(nn.conv2d(hidden_dim, kernel_size=1, 
                               weight_initializer=['truncated_normal',.02], dtype=dtype))
         self.layers.add(activation_dict['gelu'])
@@ -290,7 +290,7 @@ class Mlp:
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
         self.layers=nn.Layers()
-        self.layers.add(nn.batch_norm_(in_features, dtype=dtype))
+        self.layers.add(nn.batch_norm(in_features, dtype=dtype))
         self.layers.add(nn.conv2d(hidden_features, 1, weight_initializer=['truncated_normal',.02],
                                   dtype=dtype))
         self.layers.add(act_layer)
@@ -354,7 +354,7 @@ class SwiftFormerLocalRepresentation:
         self.layers=nn.Layers()
         self.layers.add(nn.zeropadding2d(padding=kernel_size // 2))
         self.layers.add(nn.depthwise_conv2d(kernel_size=kernel_size, input_size=dim, weight_initializer=['truncated_normal',.02], dtype=dtype))
-        self.layers.add(nn.batch_norm_(dtype=dtype))
+        self.layers.add(nn.batch_norm(dtype=dtype))
         self.layers.add(nn.conv2d(dim, kernel_size=1, weight_initializer=['truncated_normal',.02], dtype=dtype))
         self.layers.add(activation_dict['gelu'])
         self.layers.add(nn.conv2d(dim, kernel_size=1, weight_initializer=['truncated_normal',.02], dtype=dtype))

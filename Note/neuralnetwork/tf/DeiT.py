@@ -223,13 +223,13 @@ class hMLP_stem:
         self.num_patches = num_patches
         self.proj = nn.Layers()
         self.proj.add(nn.conv2d(embed_dim//4, 4, in_chans, 4))
-        self.proj.add(nn.batch_norm_(embed_dim//4, synchronized=True))
+        self.proj.add(nn.batch_norm(embed_dim//4, synchronized=True))
         self.proj.add(tf.nn.gelu)
         self.proj.add(nn.conv2d(embed_dim//4, 2, embed_dim//4, 2))
-        self.proj.add(nn.batch_norm_(embed_dim//4, synchronized=True))
+        self.proj.add(nn.batch_norm(embed_dim//4, synchronized=True))
         self.proj.add(tf.nn.gelu)
         self.proj.add(nn.conv2d(embed_dim, 2, embed_dim//4, 2))
-        self.proj.add(nn.batch_norm_(embed_dim, synchronized=True))
+        self.proj.add(nn.batch_norm(embed_dim, synchronized=True))
 
     def __call__(self, x):
         B, C, H, W = x.shape

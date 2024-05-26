@@ -140,7 +140,7 @@ class EfficientNetV2:
         self.layers1=nn.Layers()
         self.layers1.add(nn.conv2d(stem_filters,[3,3],3,strides=2,padding="SAME",use_bias=False,
                            weight_initializer=CONV_KERNEL_INITIALIZER,dtype=self.dtype))
-        self.layers1.add(nn.batch_norm_(axis=-1,momentum=self.bn_momentum,dtype=self.dtype))
+        self.layers1.add(nn.batch_norm(axis=-1,momentum=self.bn_momentum,dtype=self.dtype))
         self.layers1.add(activation_dict[self.activation])    
     
         # Build blocks
@@ -207,7 +207,7 @@ class EfficientNetV2:
             weight_initializer=CONV_KERNEL_INITIALIZER,
             dtype=self.dtype
         ))
-        self.layers3.add(nn.batch_norm_(axis=-1,momentum=self.bn_momentum,dtype=self.dtype))
+        self.layers3.add(nn.batch_norm(axis=-1,momentum=self.bn_momentum,dtype=self.dtype))
         self.layers3.add(activation_dict[self.activation])
         if self.include_top:
             self.global_avg_pool2d=nn.global_avg_pool2d()
@@ -293,7 +293,7 @@ class MBConvBlock:
                 use_bias=False,
                 dtype=dtype
             ))
-            self.layers.add(nn.batch_norm_(
+            self.layers.add(nn.batch_norm(
                 axis=-1,
                 momentum=bn_momentum,
                 dtype=dtype
@@ -311,7 +311,7 @@ class MBConvBlock:
             use_bias=False,
             dtype=dtype
         ))
-        self.layers.add(nn.batch_norm_(
+        self.layers.add(nn.batch_norm(
             axis=-1, momentum=bn_momentum, dtype=dtype
         ))
         self.layers.add(activation_dict[activation],save_data=True)
@@ -351,7 +351,7 @@ class MBConvBlock:
             use_bias=False,
             dtype=dtype
         ))
-        self.layers.add(nn.batch_norm_(
+        self.layers.add(nn.batch_norm(
             axis=-1, momentum=bn_momentum, dtype=dtype
         ))
     
@@ -405,7 +405,7 @@ class FusedMBConvBlock:
                 use_bias=False,
                 dtype=dtype
             ))
-            self.layers.add(nn.batch_norm_(
+            self.layers.add(nn.batch_norm(
                 axis=-1, momentum=bn_momentum, dtype=dtype
             ))
             self.layers.add(activation_dict[activation],save_data=True)
@@ -447,7 +447,7 @@ class FusedMBConvBlock:
             padding="SAME",
             use_bias=False,
         ))
-        self.layers.add(nn.batch_norm_(
+        self.layers.add(nn.batch_norm(
             axis=-1, momentum=bn_momentum, dtype=dtype
         ))
         if expand_ratio == 1:

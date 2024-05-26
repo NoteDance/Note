@@ -6,10 +6,10 @@ from Note.nn.activation import activation_dict
 def DenseLayer(input_channels, growth_rate, dtype='float32'):
         layers=nn.Layers()
         layers.add(nn.identity(input_channels),save_data=True)
-        layers.add(nn.batch_norm_(epsilon=1.001e-5,dtype=dtype))
+        layers.add(nn.batch_norm(epsilon=1.001e-5,dtype=dtype))
         layers.add(activation_dict['relu'])
         layers.add(nn.conv2d(4*growth_rate,[1,1],strides=1,padding="SAME",use_bias=False,dtype=dtype))
-        layers.add(nn.batch_norm_(epsilon=1.001e-5,dtype=dtype))
+        layers.add(nn.batch_norm(epsilon=1.001e-5,dtype=dtype))
         layers.add(activation_dict['relu'])
         layers.add(nn.conv2d(growth_rate,[3,3],strides=1,padding="SAME",use_bias=False,dtype=dtype),save_data=True)
         layers.add(nn.concat(),use_data=True)
@@ -26,7 +26,7 @@ def DenseBlock(input_channels, num_layers, growth_rate, dtype='float32'):
 
 def TransitionLayer(input_channels, compression_factor, dtype='float32'):
         layers=nn.Layers()
-        layers.add(nn.batch_norm_(input_channels,dtype=dtype))
+        layers.add(nn.batch_norm(input_channels,dtype=dtype))
         layers.add(activation_dict['relu'])
         layers.add(nn.conv2d(int(compression_factor * input_channels),[1,1],strides=[1, 1, 1, 1],padding="SAME",use_bias=False,dtype=dtype))
         layers.add(nn.avg_pool2d(ksize=[2, 2],strides=[2, 2],padding="SAME"))
@@ -50,7 +50,7 @@ class DenseNet201:
         self.layers=nn.Layers()
         self.layers.add(nn.zeropadding2d(3,padding=[3, 3]))
         self.layers.add(nn.conv2d(64,[7,7],strides=2,use_bias=False,dtype=self.dtype))
-        self.layers.add(nn.batch_norm_(epsilon=1.001e-5,dtype=self.dtype))
+        self.layers.add(nn.batch_norm(epsilon=1.001e-5,dtype=self.dtype))
         self.layers.add(activation_dict['relu'])
         self.layers.add(nn.zeropadding2d(padding=[1, 1]))
         self.layers.add(nn.max_pool2d(ksize=[3, 3],strides=[2, 2],padding="VALID"))
@@ -81,7 +81,7 @@ class DenseNet201:
                                  growth_rate=self.growth_rate,
                                  dtype=self.dtype))
         
-        self.layers.add(nn.batch_norm_(epsilon=1.001e-5,dtype=self.dtype))
+        self.layers.add(nn.batch_norm(epsilon=1.001e-5,dtype=self.dtype))
         
         self.layers.add(activation_dict['relu'])
         

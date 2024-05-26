@@ -50,7 +50,7 @@ class DepthWiseConv2d:
         self.net = nn.Layers()
         self.net.add(nn.zeropadding2d(padding=padding))
         self.net.add(nn.group_conv2d(dim_in, kernel_size, dim_in, dim_in, strides = stride, use_bias = bias))
-        self.net.add(nn.batch_norm_(dim_in))
+        self.net.add(nn.batch_norm(dim_in))
         self.net.add(nn.conv2d(dim_out, 1, dim_in, use_bias = bias))
 
     def __call__(self, x, training):

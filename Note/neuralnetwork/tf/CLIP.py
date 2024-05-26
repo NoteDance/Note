@@ -10,18 +10,18 @@ class Bottleneck:
     def __init__(self, inplanes, planes, stride=1):
         # all conv layers have stride 1. an avgpool is performed after the second convolution when stride > 1
         self.conv1 = nn.conv2d(planes, 1, inplanes, use_bias=False)
-        self.bn1 = nn.batch_norm_(planes)
+        self.bn1 = nn.batch_norm(planes)
         self.relu1 = tf.nn.relu
 
         self.zeropadding2d = nn.zeropadding2d(padding=1)
         self.conv2 = nn.conv2d(planes, 3, planes, use_bias=False)
-        self.bn2 = nn.batch_norm_(planes)
+        self.bn2 = nn.batch_norm(planes)
         self.relu2 = tf.nn.relu
 
         self.avgpool = nn.avg_pool2d(stride, stride, 'VALID') if stride > 1 else nn.identity()
 
         self.conv3 = nn.conv2d(planes * self.expansion, 1, planes, use_bias=False)
-        self.bn3 = nn.batch_norm_(planes * self.expansion)
+        self.bn3 = nn.batch_norm(planes * self.expansion)
         self.relu3 = tf.nn.relu
 
         self.downsample = None
@@ -32,7 +32,7 @@ class Bottleneck:
             self.downsample = nn.Layers()
             self.downsample.add(nn.avg_pool2d(stride, stride, 'VALID'))
             self.downsample.add(nn.conv2d(planes * self.expansion, 1, inplanes, strides=1, use_bias=False))
-            self.downsample.add(nn.batch_norm_(planes * self.expansion))
+            self.downsample.add(nn.batch_norm(planes * self.expansion))
 
     def __call__(self, x, train_flag=True):
         nn.identity = x
@@ -104,13 +104,13 @@ class ModifiedResNet:
         # the 3-layer stem
         self.zeropadding2d = nn.zeropadding2d(padding=1)
         self.conv1 = nn.conv2d(width // 2, input_size=3, kernel_size=3, strides=2, use_bias=False)
-        self.bn1 = nn.batch_norm_(width // 2)
+        self.bn1 = nn.batch_norm(width // 2)
         self.relu1 = tf.nn.relu
         self.conv2 = nn.conv2d(width // 2, input_size=width // 2, kernel_size=3, use_bias=False)
-        self.bn2 = nn.batch_norm_(width // 2)
+        self.bn2 = nn.batch_norm(width // 2)
         self.relu2 = tf.nn.relu
         self.conv3 = nn.conv2d(width, input_size=width // 2, kernel_size=3, use_bias=False)
-        self.bn3 = nn.batch_norm_(width)
+        self.bn3 = nn.batch_norm(width)
         self.relu3 = tf.nn.relu
         self.avgpool = nn.avg_pool2d(2, 2, 'VALID')
 

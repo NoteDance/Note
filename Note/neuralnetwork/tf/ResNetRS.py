@@ -48,7 +48,7 @@ def STEM(
     layers.add(Conv2DFixedPadding(
         filters=32, kernel_size=[3,3], strides=2, in_channels=3, dtype=dtype
     ))
-    layers.add(nn.batch_norm_(
+    layers.add(nn.batch_norm(
         momentum=bn_momentum,
         epsilon=bn_epsilon,
         dtype=dtype
@@ -59,7 +59,7 @@ def STEM(
     layers.add(Conv2DFixedPadding(
         filters=32, kernel_size=[3,3], strides=1, in_channels=layers.output_size, dtype=dtype
     ))
-    layers.add(nn.batch_norm_(
+    layers.add(nn.batch_norm(
         momentum=bn_momentum,
         epsilon=bn_epsilon,
         dtype=dtype
@@ -70,7 +70,7 @@ def STEM(
     layers.add(Conv2DFixedPadding(
         filters=64, kernel_size=[3,3], strides=1, in_channels=layers.output_size, dtype=dtype
     ))
-    layers.add(nn.batch_norm_(
+    layers.add(nn.batch_norm(
         momentum=bn_momentum,
         epsilon=bn_epsilon,
         dtype=dtype
@@ -81,7 +81,7 @@ def STEM(
     layers.add(Conv2DFixedPadding(
         filters=64, kernel_size=[3,3], strides=2, in_channels=layers.output_size, dtype=dtype
     ))
-    layers.add(nn.batch_norm_(
+    layers.add(nn.batch_norm(
         momentum=bn_momentum,
         epsilon=bn_epsilon,
         dtype=dtype
@@ -162,7 +162,7 @@ class BottleneckBlock:
                     dtype=dtype
                 ))
     
-            self.layers1.add(nn.batch_norm_(
+            self.layers1.add(nn.batch_norm(
                 momentum=bn_momentum,
                 epsilon=bn_epsilon,
                 dtype=dtype
@@ -175,7 +175,7 @@ class BottleneckBlock:
         self.layers2.add(Conv2DFixedPadding(
             filters=filters, kernel_size=[1,1], strides=1, in_channels=self.layers2.output_size, dtype=dtype
         ))
-        self.layers2.add(nn.batch_norm_(
+        self.layers2.add(nn.batch_norm(
             momentum=bn_momentum,
             epsilon=bn_epsilon,
             dtype=dtype
@@ -190,7 +190,7 @@ class BottleneckBlock:
             in_channels=self.layers2.output_size,
             dtype=dtype
         ))
-        self.layers2.add(nn.batch_norm_(
+        self.layers2.add(nn.batch_norm(
             momentum=bn_momentum,
             epsilon=bn_epsilon,
             dtype=dtype
@@ -201,7 +201,7 @@ class BottleneckBlock:
         self.layers2.add(Conv2DFixedPadding(
             filters=filters * 4, kernel_size=[1,1], strides=1, in_channels=self.layers2.output_size, dtype=dtype
         ))
-        self.layers2.add(nn.batch_norm_(
+        self.layers2.add(nn.batch_norm(
             momentum=bn_momentum,
             epsilon=bn_epsilon,
             dtype=dtype
