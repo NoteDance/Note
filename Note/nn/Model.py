@@ -39,7 +39,8 @@ class Model:
             func(layer)
         if len(Model.name_list)>0:
             Model.name_list.pop()
-            Model.name=None
+            if len(Model.name_list)==0:
+                Model.name=None
         return
     
     
