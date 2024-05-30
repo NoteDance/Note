@@ -10,6 +10,7 @@ class Model:
     param_dict['conv2d_bias']=[]
     layer_dict=dict()
     layer_param=dict()
+    layer_list=[]
     counter=0
     name_list=[]
     ctl_list=[]
@@ -24,7 +25,8 @@ class Model:
         self.param_dict=Model.param_dict
         self.layer_dict=Model.layer_dict
         self.layer_param=Model.layer_param
-    
+        self.layer_list=Model.layer_list
+        
     
     def add():
         Model.counter+=1
@@ -38,6 +40,12 @@ class Model:
         if len(Model.name_list)>0:
             Model.name_list.pop()
             Model.name=None
+        return
+    
+    
+    def training(self,flag=True):
+        for layer in self.layer_list:
+            layer.train_flag=flag
         return
     
     
@@ -89,6 +97,7 @@ class Model:
         Model.param_dict['conv2d_bias'].clear()
         Model.layer_dict=dict()
         Model.layer_param=dict()
+        Model.layer_list.clear()
         Model.counter=0
         Model.name_list=[]
         Model.ctl_list.clear()
