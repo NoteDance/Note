@@ -38,6 +38,7 @@ class batch_norm(Layer):
             else:
                 self.gamma=None
             Model.param.extend(self.param)
+        Model.layer_list.append(self)
     
     
     def build(self):
@@ -61,12 +62,13 @@ class batch_norm(Layer):
         return
     
     
-    def __call__(self, data, train_flag=True, mask=None):
+    def __call__(self, data, train_flag=None, mask=None):
         data=tf.cast(data,'float32')
         if self.input_size==None:
             self.input_size=data.shape[-1]
             self.build()
-        self.train_flag=train_flag
+        if train_flag==None:
+            train_flag=self.train_flag
         if train_flag and self.trainable:
             mean, variance = self._moments(
                 data,
@@ -199,6 +201,7 @@ class batch_norm_:
             else:
                 self.gamma=None
             Model.param.extend(self.param)
+        Model.layer_list.append(self)
     
     
     def build(self):
@@ -228,13 +231,14 @@ class batch_norm_:
         return
     
     
-    def __call__(self, data, train_flag=True):
+    def __call__(self, data, train_flag=None):
         if data.dtype!=self.dtype:
             data=tf.cast(data,self.dtype)
         if self.input_size==None:
             self.input_size=data.shape[-1]
             self.build()
-        self.train_flag=train_flag
+        if train_flag==None:
+            train_flag=self.train_flag
         if self.train_flag:
             mean, var = tf.nn.moments(data, self.axis, keepdims=self.keepdims)
             if self.parallel:
