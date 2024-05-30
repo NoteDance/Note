@@ -43,7 +43,7 @@ class Model:
         return
     
     
-    def training(self,flag=True):
+    def training(self,flag=False):
         for layer in self.layer_list:
             layer.train_flag=flag
         return
