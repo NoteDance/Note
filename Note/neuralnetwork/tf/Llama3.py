@@ -291,16 +291,16 @@ class Llama3(nn.Model):
 
         mask = None
         if seqlen > 1:
-            mask = tf.fill([seqlen, seqlen], float("-inf"))
-
-            mask = tf.linalg.band_part(mask, 0, -1)
-            mask = mask - tf.linalg.band_part(mask, 0, 0)
+            mask = tf.fill((seqlen, seqlen), float("-inf"))
+            mask = tf.linalg.band_part(mask, 0, -1) - tf.linalg.band_part(mask, 0, 0)
+            mask = tf.linalg.set_diag(mask, tf.zeros(seqlen))
+            zero_mask = tf.zeros((seqlen, start_pos), dtype=h.dtype)
 
             # When performing key-value caching, we compute the attention scores
             # only for the new sequence. Thus, the matrix of scores is of size
             # (seqlen, cache_len + seqlen), and the only masked entries are (i, j) for
             # j > cache_len + i, since row i corresponds to token cache_len + i.
-            mask = tf.linalg.set_diag(mask, tf.zeros(seqlen))
+            mask = tf.concat([zero_mask, mask], axis=1)
             mask = tf.cast(mask, h.dtype)
 
         for layer in self.layers:
