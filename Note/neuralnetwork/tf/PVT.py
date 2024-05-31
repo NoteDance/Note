@@ -200,11 +200,15 @@ class PyramidVisionTransformerV2:
         cur = 0
 
         for i in range(num_stages):
+            if i==0:
+                freeze_name=f"patch_embed{i + 1}"
+            else:
+                freeze_name=None
             patch_embed = OverlapPatchEmbed(img_size=img_size if i == 0 else img_size // (2 ** (i + 1)),
                                             patch_size=7 if i == 0 else 3,
                                             stride=4 if i == 0 else 2,
                                             in_chans=in_chans if i == 0 else embed_dims[i - 1],
-                                            embed_dim=embed_dims[i], name=f"patch_embed{i + 1}")
+                                            embed_dim=embed_dims[i], name=freeze_name)
 
             block = [Block(
                 dim=embed_dims[i], num_heads=num_heads[i], mlp_ratio=mlp_ratios[i], qkv_bias=qkv_bias, qk_scale=qk_scale,
