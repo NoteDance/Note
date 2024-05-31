@@ -101,10 +101,7 @@ class Attention:
         self.wo = nn.dense(args.dim, args.n_heads * self.head_dim, weight_initializer=['normal', 0.0, 0.02/math.sqrt(2 * args.n_layers)], use_bias=False)
         self.attn_dropout = nn.dropout(args.dropout)
         self.resid_dropout = nn.dropout(args.dropout)
-        self.mask = tf.fill((args.max_seq_len, args.max_seq_len), float("-inf"))
-        self.mask = tf.linalg.band_part(self.mask, 0, -1)
-        self.mask = tf.linalg.set_diag(self.mask, tf.zeros(args.max_seq_len))
-        self.mask = tf.reshape(self.mask, (1, 1, *self.mask.shape))
+        self.mask = nn.create_additive_causal_mask(args.max_seq_len)
 
     def __call__(
         self,
