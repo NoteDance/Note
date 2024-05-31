@@ -149,9 +149,7 @@ class Phi3Model:
 
         mask = None
         if h.shape[1] > 1:
-            mask = tf.fill((h.shape[1], h.shape[1]), float("-inf"))
-            mask = tf.linalg.band_part(mask, 0, -1)
-            mask = tf.linalg.set_diag(mask, tf.zeros(h.shape[1]))
+            mask = nn.create_additive_causal_mask(h.shape[1])
             mask = tf.cast(mask, h.dtype)
 
         if cache is None:
