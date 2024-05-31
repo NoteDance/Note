@@ -23,7 +23,7 @@ class conv2d: # define a class for 2D convolutional layer
         self.dtype=dtype
         self.output_size=filters
         if input_size!=None:
-            self.weight=nn.initializer([kernel_size[0],kernel_size[1],input_size,filters],weight_initializer,dtype) # initialize the weight tensor
+            self.weight=nn.initializer([kernel_size[0],kernel_size[1],input_size,filters],weight_initializer,dtype,trainable) # initialize the weight tensor
             Model.param_dict['conv2d_weight'].append(self.weight)
             if len(Model.name_list)>0:
                 Model.name=Model.name_list[-1]
@@ -38,7 +38,7 @@ class conv2d: # define a class for 2D convolutional layer
             elif Model.name_!=None:
                 Model.layer_param[Model.name_].append(self.weight)
             if use_bias==True: # if use bias is True
-                self.bias=nn.initializer([filters],bias_initializer,dtype) # initialize the bias vector
+                self.bias=nn.initializer([filters],bias_initializer,dtype,trainable) # initialize the bias vector
                 Model.param_dict['conv2d_bias'].append(self.bias)
                 if Model.name_!=None and Model.name_ not in Model.layer_param:
                     Model.layer_param[Model.name_]=[]
@@ -49,13 +49,11 @@ class conv2d: # define a class for 2D convolutional layer
                 self.param=[self.weight,self.bias] # store the parameters in a list
             else: # if use bias is False
                 self.param=[self.weight] # store only the weight in a list
-            if trainable==False:
-                self.param=[]
             Model.param.extend(self.param)
     
     
     def build(self):
-        self.weight=nn.initializer([self.kernel_size[0],self.kernel_size[1],self.input_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight tensor
+        self.weight=nn.initializer([self.kernel_size[0],self.kernel_size[1],self.input_size,self.output_size],self.weight_initializer,self.dtype,self.trainable) # initialize the weight tensor
         Model.param_dict['conv2d_weight'].append(self.weight)
         if len(Model.name_list)>0:
             Model.name=Model.name_list[-1]
@@ -70,7 +68,7 @@ class conv2d: # define a class for 2D convolutional layer
         elif Model.name_!=None:
             Model.layer_param[Model.name_].append(self.weight)
         if self.use_bias==True: # if use bias is True
-            self.bias=nn.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector
+            self.bias=nn.initializer([self.output_size],self.bias_initializer,self.dtype,self.trainable) # initialize the bias vector
             Model.param_dict['conv2d_bias'].append(self.bias)
             if Model.name_!=None and Model.name_ not in Model.layer_param:
                 Model.layer_param[Model.name_]=[]
@@ -81,8 +79,6 @@ class conv2d: # define a class for 2D convolutional layer
             self.param=[self.weight,self.bias] # store the parameters in a list
         else: # if use bias is False
             self.param=[self.weight] # store only the weight in a list
-        if self.trainable==False:
-            self.param=[]
         Model.param.extend(self.param)
         return
     

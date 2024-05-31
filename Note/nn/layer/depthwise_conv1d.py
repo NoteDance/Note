@@ -22,28 +22,24 @@ class depthwise_conv1d: # define a class for depthwise convolutional layer
         self.dtype=dtype
         if input_size!=None:
             self.output_size=depth_multiplier*input_size
-            self.depthwise_kernel=nn.initializer([kernel_size,input_size,depth_multiplier],weight_initializer,dtype) # initialize the weight tensor
+            self.depthwise_kernel=nn.initializer([kernel_size,input_size,depth_multiplier],weight_initializer,dtype,trainable) # initialize the weight tensor
             if use_bias==True: # if use bias is True
-                self.bias=nn.initializer([depth_multiplier*input_size],bias_initializer,dtype) # initialize the bias vector
+                self.bias=nn.initializer([depth_multiplier*input_size],bias_initializer,dtype,trainable) # initialize the bias vector
             if use_bias==True: # if use bias is True
                 self.param=[self.depthwise_kernel,self.bias] # store the parameters in a list
             else: # if use bias is False
                 self.param=[self.depthwise_kernel] # store only the weight in a list
-            if trainable==False:
-                self.param=[]
             Model.param.extend(self.param)
     
     
     def build(self):
-        self.depthwise_kernel=nn.initializer([self.kernel_size,self.input_size,self.depth_multiplier],self.weight_initializer,self.dtype) # initialize the weight tensor
+        self.depthwise_kernel=nn.initializer([self.kernel_size,self.input_size,self.depth_multiplier],self.weight_initializer,self.dtype,self.trainable) # initialize the weight tensor
         if self.use_bias==True: # if use bias is True
-            self.bias=nn.initializer([self.depth_multiplier*self.input_size],self.bias_initializer,self.dtype) # initialize the bias vector
+            self.bias=nn.initializer([self.depth_multiplier*self.input_size],self.bias_initializer,self.dtype,self.trainable) # initialize the bias vector
         if self.use_bias==True: # if use bias is True
             self.param=[self.depthwise_kernel,self.bias] # store the parameters in a list
         else: # if use bias is False
             self.param=[self.depthwise_kernel] # store only the weight in a list
-        if self.trainable==False:
-            self.param=[]
         Model.param.extend(self.param)
         return
     

@@ -28,26 +28,22 @@ class adaptive_conv2d:
         self.dtype=dtype
         self.output_size=filters
         if input_size!=None:
-            self.kernel=i.initializer([kernel_size[0],kernel_size[1],input_size,filters],weight_initializer,dtype)
-            self.attention=i.initializer([1,1,input_size,filters],weight_initializer,dtype)
+            self.kernel=i.initializer([kernel_size[0],kernel_size[1],input_size,filters],weight_initializer,dtype,trainable)
+            self.attention=i.initializer([1,1,input_size,filters],weight_initializer,dtype,trainable)
             self.param=[self.kerne,self.attention]
             if use_bias:
-                self.bias=i.initializer([filters],bias_initializer,dtype)
+                self.bias=i.initializer([filters],bias_initializer,dtype,trainable)
                 self.param.append(self.bias)
-            if trainable==False:
-                self.param=[]
             Model.param.extend(self.param)
     
     
     def build(self):
-        self.kernel=i.initializer([self.kernel_size[0],self.kernel_size[1],self.input_size,self.filters],self.weight_initializer,self.dtype)
-        self.attention=i.initializer([1,1,self.input_size,self.filters],self.weight_initializer,self.dtype)
+        self.kernel=i.initializer([self.kernel_size[0],self.kernel_size[1],self.input_size,self.filters],self.weight_initializer,self.dtype,self.trainable)
+        self.attention=i.initializer([1,1,self.input_size,self.filters],self.weight_initializer,self.dtype,self.trainable)
         self.param=[self.kerne,self.attention]
         if self.use_bias:
-            self.bias=i.initializer([self.filters],self.bias_initializer,self.dtype)
+            self.bias=i.initializer([self.filters],self.bias_initializer,self.dtype,self.trainable)
             self.param.append(self.bias)
-        if self.trainable==False:
-            self.param=[]
         Model.param.extend(self.param)
         return
     

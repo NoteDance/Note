@@ -18,32 +18,26 @@ class RNN: # define a class for recurrent neural network (RNN) layer
         self.dtype=dtype
         self.output_size=output_size
         if input_size!=None:
-            self.weight_i=nn.initializer([input_size,output_size],weight_initializer,dtype) # initialize the weight matrix for input data
-            self.weight_s=nn.initializer([output_size,output_size],weight_initializer,dtype) # initialize the weight matrix for previous state
+            self.weight_i=nn.initializer([input_size,output_size],weight_initializer,dtype,trainable) # initialize the weight matrix for input data
+            self.weight_s=nn.initializer([output_size,output_size],weight_initializer,dtype,trainable) # initialize the weight matrix for previous state
             if use_bias==True: # if use bias is True
-                self.bias=nn.initializer([output_size],bias_initializer,dtype) # initialize the bias vector
-            if trainable==True:
-                if use_bias==True: # if use bias is True
-                    self.param=[self.weight_i,self.weight_s,self.bias] # store the parameters in a list
-                else: # if use bias is False
-                    self.param=[self.weight_i,self.weight_s] # store only the weight matrices in a list
-            else:
-                self.param=[]
+                self.bias=nn.initializer([output_size],bias_initializer,dtype,trainable) # initialize the bias vector
+            if use_bias==True: # if use bias is True
+                self.param=[self.weight_i,self.weight_s,self.bias] # store the parameters in a list
+            else: # if use bias is False
+                self.param=[self.weight_i,self.weight_s] # store only the weight matrices in a list
             Model.param.extend(self.param)
     
     
     def build(self):
-        self.weight_i=nn.initializer([self.input_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for input data
-        self.weight_s=nn.initializer([self.output_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for previous state
+        self.weight_i=nn.initializer([self.input_size,self.output_size],self.weight_initializer,self.dtype,self.trainable) # initialize the weight matrix for input data
+        self.weight_s=nn.initializer([self.output_size,self.output_size],self.weight_initializer,self.dtype,self.trainable) # initialize the weight matrix for previous state
         if self.use_bias==True: # if use bias is True
-            self.bias=nn.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector
-        if self.trainable==True:
-            if self.use_bias==True: # if use bias is True
-                self.param=[self.weight_i,self.weight_s,self.bias] # store the parameters in a list
-            else: # if use bias is False
-                self.param=[self.weight_i,self.weight_s] # store only the weight matrices in a list
-        else:
-            self.param=[]
+            self.bias=nn.initializer([self.output_size],self.bias_initializer,self.dtype,self.trainable) # initialize the bias vector
+        if self.use_bias==True: # if use bias is True
+            self.param=[self.weight_i,self.weight_s,self.bias] # store the parameters in a list
+        else: # if use bias is False
+            self.param=[self.weight_i,self.weight_s] # store only the weight matrices in a list
         Model.param.extend(self.param)
         return
     

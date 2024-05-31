@@ -6,20 +6,17 @@ from Note.nn.Model import Model
 
 class RNNCell: # define a class for recurrent neural network (RNN) cell
     def __init__(self,weight_shape,weight_initializer='Xavier',bias_initializer='zeros',activation=None,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
-        self.weight_i=nn.initializer(weight_shape,weight_initializer,dtype) # initialize the weight matrix for input data
-        self.weight_s=nn.initializer([weight_shape[1],weight_shape[1]],weight_initializer,dtype) # initialize the weight matrix for previous state
+        self.weight_i=nn.initializer(weight_shape,weight_initializer,dtype,trainable) # initialize the weight matrix for input data
+        self.weight_s=nn.initializer([weight_shape[1],weight_shape[1]],weight_initializer,dtype,trainable) # initialize the weight matrix for previous state
         if use_bias==True: # if use bias is True
-            self.bias=nn.initializer([weight_shape[1]],bias_initializer,dtype) # initialize the bias vector
+            self.bias=nn.initializer([weight_shape[1]],bias_initializer,dtype,trainable) # initialize the bias vector
         self.activation=activation_dict[activation] # get the activation function from the activation dictionary
         self.use_bias=use_bias # set the use bias flag
         self.output_size=weight_shape[-1]
-        if trainable==True:
-            if use_bias==True: # if use bias is True
-                self.param=[self.weight_i,self.weight_s,self.bias] # store the parameters in a list
-            else: # if use bias is False
-                self.param=[self.weight_i,self.weight_s] # store only the weight matrices in a list
-        else:
-            self.param=[]
+        if use_bias==True: # if use bias is True
+            self.param=[self.weight_i,self.weight_s,self.bias] # store the parameters in a list
+        else: # if use bias is False
+            self.param=[self.weight_i,self.weight_s] # store only the weight matrices in a list
         Model.param.extend(self.param)
     
     

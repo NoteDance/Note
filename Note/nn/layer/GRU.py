@@ -17,44 +17,38 @@ class GRU: # define a class for gated recurrent unit (GRU) layer
         self.dtype=dtype
         self.output_size=output_size
         if input_size!=None:
-            self.weight_r1=nn.initializer([input_size,output_size],weight_initializer,dtype) # initialize the weight matrix for reset gate input
-            self.weight_r2=nn.initializer([output_size,output_size],weight_initializer,dtype) # initialize the weight matrix for reset gate hidden state
-            self.weight_z1=nn.initializer([input_size,output_size],weight_initializer,dtype) # initialize the weight matrix for update gate input
-            self.weight_z2=nn.initializer([output_size,output_size],weight_initializer,dtype) # initialize the weight matrix for update gate hidden state
-            self.weight_h1=nn.initializer([input_size,output_size],weight_initializer,dtype) # initialize the weight matrix for candidate hidden state input
-            self.weight_h2=nn.initializer([output_size,output_size],weight_initializer,dtype) # initialize the weight matrix for candidate hidden state hidden state
+            self.weight_r1=nn.initializer([input_size,output_size],weight_initializer,dtype,trainable) # initialize the weight matrix for reset gate input
+            self.weight_r2=nn.initializer([output_size,output_size],weight_initializer,dtype,trainable) # initialize the weight matrix for reset gate hidden state
+            self.weight_z1=nn.initializer([input_size,output_size],weight_initializer,dtype,trainable) # initialize the weight matrix for update gate input
+            self.weight_z2=nn.initializer([output_size,output_size],weight_initializer,dtype,trainable) # initialize the weight matrix for update gate hidden state
+            self.weight_h1=nn.initializer([input_size,output_size],weight_initializer,dtype,trainable) # initialize the weight matrix for candidate hidden state input
+            self.weight_h2=nn.initializer([output_size,output_size],weight_initializer,dtype,trainable) # initialize the weight matrix for candidate hidden state hidden state
             if use_bias==True: # if use bias is True
-                self.bias_r=nn.initializer([output_size],bias_initializer,dtype) # initialize the bias vector for reset gate
-                self.bias_z=nn.initializer([output_size],bias_initializer,dtype) # initialize the bias vector for update gate
-                self.bias_h=nn.initializer([output_size],bias_initializer,dtype) # initialize the bias vector for candidate hidden state
-            if trainable==True:
-                if use_bias==True: # if use bias is True
-                    self.param=[self.weight_r1,self.weight_z1,self.weight_h1,self.weight_r2,self.weight_z2,self.weight_h2,self.bias_r,self.bias_z,self.bias_h] # store the parameters in a list
-                else: # if use bias is False
-                    self.param=[self.weight_r1,self.weight_z1,self.weight_h1,self.weight_r2,self.weight_z2,self.weight_h2] # store only the weight matrices in a list
-            else:
-                self.param=[]
+                self.bias_r=nn.initializer([output_size],bias_initializer,dtype,trainable) # initialize the bias vector for reset gate
+                self.bias_z=nn.initializer([output_size],bias_initializer,dtype,trainable) # initialize the bias vector for update gate
+                self.bias_h=nn.initializer([output_size],bias_initializer,dtype,trainable) # initialize the bias vector for candidate hidden state
+            if use_bias==True: # if use bias is True
+                self.param=[self.weight_r1,self.weight_z1,self.weight_h1,self.weight_r2,self.weight_z2,self.weight_h2,self.bias_r,self.bias_z,self.bias_h] # store the parameters in a list
+            else: # if use bias is False
+                self.param=[self.weight_r1,self.weight_z1,self.weight_h1,self.weight_r2,self.weight_z2,self.weight_h2] # store only the weight matrices in a list
             Model.param.extend(self.param)
     
     
     def build(self):
-        self.weight_r1=nn.initializer([self.input_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for reset gate input
-        self.weight_r2=nn.initializer([self.output_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for reset gate hidden state
-        self.weight_z1=nn.initializer([self.input_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for update gate input
-        self.weight_z2=nn.initializer([self.output_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for update gate hidden state
-        self.weight_h1=nn.initializer([self.input_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for candidate hidden state input
-        self.weight_h2=nn.initializer([self.output_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for candidate hidden state hidden state
+        self.weight_r1=nn.initializer([self.input_size,self.output_size],self.weight_initializer,self.dtype,self.trainable) # initialize the weight matrix for reset gate input
+        self.weight_r2=nn.initializer([self.output_size,self.output_size],self.weight_initializer,self.dtype,self.trainable) # initialize the weight matrix for reset gate hidden state
+        self.weight_z1=nn.initializer([self.input_size,self.output_size],self.weight_initializer,self.dtype,self.trainable) # initialize the weight matrix for update gate input
+        self.weight_z2=nn.initializer([self.output_size,self.output_size],self.weight_initializer,self.dtype,self.trainable) # initialize the weight matrix for update gate hidden state
+        self.weight_h1=nn.initializer([self.input_size,self.output_size],self.weight_initializer,self.dtype,self.trainable) # initialize the weight matrix for candidate hidden state input
+        self.weight_h2=nn.initializer([self.output_size,self.output_size],self.weight_initializer,self.dtype,self.trainable) # initialize the weight matrix for candidate hidden state hidden state
         if self.use_bias==True: # if use bias is True
-            self.bias_r=nn.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector for reset gate
-            self.bias_z=nn.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector for update gate
-            self.bias_h=nn.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector for candidate hidden state
-        if self.trainable==True:
-            if self.use_bias==True: # if use bias is True
-                self.param=[self.weight_r1,self.weight_z1,self.weight_h1,self.weight_r2,self.weight_z2,self.weight_h2,self.bias_r,self.bias_z,self.bias_h] # store the parameters in a list
-            else: # if use bias is False
-                self.param=[self.weight_r1,self.weight_z1,self.weight_h1,self.weight_r2,self.weight_z2,self.weight_h2] # store only the weight matrices in a list
-        else:
-            self.param=[]
+            self.bias_r=nn.initializer([self.output_size],self.bias_initializer,self.dtype,self.trainable) # initialize the bias vector for reset gate
+            self.bias_z=nn.initializer([self.output_size],self.bias_initializer,self.dtype,self.trainable) # initialize the bias vector for update gate
+            self.bias_h=nn.initializer([self.output_size],self.bias_initializer,self.dtype,self.trainable) # initialize the bias vector for candidate hidden state
+        if self.use_bias==True: # if use bias is True
+            self.param=[self.weight_r1,self.weight_z1,self.weight_h1,self.weight_r2,self.weight_z2,self.weight_h2,self.bias_r,self.bias_z,self.bias_h] # store the parameters in a list
+        else: # if use bias is False
+            self.param=[self.weight_r1,self.weight_z1,self.weight_h1,self.weight_r2,self.weight_z2,self.weight_h2] # store only the weight matrices in a list
         Model.param.extend(self.param)
         return
     

@@ -13,20 +13,14 @@ class embedding:
         self.dtype=dtype
         self.output_size=output_size
         if input_size!=None:
-            self.embeddings=nn.initializer([input_size,output_size],initializer,dtype)
-            if trainable==True:
-                self.param=[self.embeddings]
-            else:
-                self.param=[]
+            self.embeddings=nn.initializer([input_size,output_size],initializer,dtype,trainable)
+            self.param=[self.embeddings]
             Model.param.extend(self.param)
     
     
     def build(self):
-        self.embeddings=nn.initializer([self.input_size,self.output_size],self.initializer,self.dtype)
-        if self.trainable==True:
-            self.param=[self.embeddings]
-        else:
-            self.param=[]
+        self.embeddings=nn.initializer([self.input_size,self.output_size],self.initializer,self.dtype,self.trainable)
+        self.param=[self.embeddings]
         Model.param.extend(self.param)
         return
     

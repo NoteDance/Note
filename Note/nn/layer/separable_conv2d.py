@@ -22,29 +22,25 @@ class separable_conv2d: # define a class for separable convolutional layer
         self.output_size=filters
         if input_size!=None:
             depthwise_filter=[kernel_size[0],kernel_size[1],input_size,depth_multiplier]
-            self.depthwise_kernel=nn.initializer(depthwise_filter,weight_initializer,dtype) # initialize the weight matrix for depthwise convolution
-            self.pointwise_kernel=nn.initializer([1,1,depthwise_filter[-1]*depthwise_filter[-2],filters],weight_initializer,dtype) # initialize the weight matrix for pointwise convolution
+            self.depthwise_kernel=nn.initializer(depthwise_filter,weight_initializer,dtype,trainable) # initialize the weight matrix for depthwise convolution
+            self.pointwise_kernel=nn.initializer([1,1,depthwise_filter[-1]*depthwise_filter[-2],filters],weight_initializer,dtype,trainable) # initialize the weight matrix for pointwise convolution
             if use_bias==True: # if use bias is True
-                self.bias=nn.initializer([filters],bias_initializer,dtype) # initialize the bias vector
+                self.bias=nn.initializer([filters],bias_initializer,dtype,trainable) # initialize the bias vector
                 self.param=[self.depthwise_kernel,self.pointwise_kernel,self.bias] # store the parameters in a list
             else: # if use bias is False
                 self.param=[self.depthwise_kernel,self.pointwise_kernel] # store only the weight matrices in a list
-            if trainable==False:
-                self.param=[]
             Model.param.extend(self.param)
     
     
     def build(self):
         depthwise_filter=[self.kernel_size[0],self.kernel_size[1],self.input_size,self.depth_multiplier]
-        self.depthwise_kernel=nn.initializer(depthwise_filter,self.weight_initializer,self.dtype) # initialize the weight matrix for depthwise convolution
-        self.pointwise_kernel=nn.initializer([1,1,depthwise_filter[-1]*depthwise_filter[-2],self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix for pointwise convolution
+        self.depthwise_kernel=nn.initializer(depthwise_filter,self.weight_initializer,self.dtype,self.trainable) # initialize the weight matrix for depthwise convolution
+        self.pointwise_kernel=nn.initializer([1,1,depthwise_filter[-1]*depthwise_filter[-2],self.output_size],self.weight_initializer,self.dtype,self.trainable) # initialize the weight matrix for pointwise convolution
         if self.use_bias==True: # if use bias is True
-            self.bias=nn.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector
+            self.bias=nn.initializer([self.output_size],self.bias_initializer,self.dtype,self.trainable) # initialize the bias vector
             self.param=[self.depthwise_kernel,self.pointwise_kernel,self.bias] # store the parameters in a list
         else: # if use bias is False
             self.param=[self.depthwise_kernel,self.pointwise_kernel] # store only the weight matrices in a list
-        if self.trainable==False:
-            self.param=[]
         Model.param.extend(self.param)
         return
     

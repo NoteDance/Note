@@ -68,6 +68,7 @@ class einsum_dense:
             self.weight = initializer(
                 shape=kernel_shape,
                 initializer=self.weight_initializer,
+                trainable=trainable,
                 dtype=dtype,
             )
             self.param.append(self.weight)
@@ -76,14 +77,13 @@ class einsum_dense:
                 self.bias = initializer(
                     shape=bias_shape,
                     initializer=self.bias_initializer,
+                    trainable=trainable,
                     dtype=dtype,
                 )
                 self.param.append(self.bias)
             else:
                 self.bias = None
             
-            if trainable==False:
-                self.param=[]
             Model.param.extend(self.param)
 
 
@@ -103,6 +103,7 @@ class einsum_dense:
             self.weight = initializer(
                 shape=kernel_shape,
                 initializer=self.weight_initializer,
+                trainable=self.trainable,
                 dtype=self.dtype,
             )
             self.param.append(self.weight)
@@ -111,14 +112,13 @@ class einsum_dense:
                 self.bias = initializer(
                     shape=bias_shape,
                     initializer=self.bias_initializer,
+                    trainable=self.trainable,
                     dtype=self.dtype,
                 )
                 self.param.append(self.bias)
             else:
                 self.bias = None
             
-            if self.trainable==False:
-                self.param=[]
             Model.param.extend(self.param)
         ret = tf.einsum(self.equation, data, self.weight)
         if self.bias is not None:

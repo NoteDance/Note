@@ -27,28 +27,24 @@ class conv1d: # define a class for 1D convolutional layer
         self.dtype=dtype
         self.output_size=filters
         if input_size!=None:
-            self.weight=nn.initializer([kernel_size,input_size,filters],weight_initializer,dtype) # initialize the weight tensor
+            self.weight=nn.initializer([kernel_size,input_size,filters],weight_initializer,dtype,trainable) # initialize the weight tensor
             if use_bias==True: # if use bias is True
-                self.bias=nn.initializer([filters],bias_initializer,dtype) # initialize the bias vector
+                self.bias=nn.initializer([filters],bias_initializer,dtype,trainable) # initialize the bias vector
             if use_bias==True: # if use bias is True
                 self.param=[self.weight,self.bias] # store the parameters in a list
             else: # if use bias is False
                 self.param=[self.weight] # store only the weight in a list
-            if trainable==False:
-                self.param=[]
             Model.param.extend(self.param)
     
     
     def build(self):
-        self.weight=nn.initializer([self.kernel_size,self.input_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight tensor
+        self.weight=nn.initializer([self.kernel_size,self.input_size,self.output_size],self.weight_initializer,self.dtype,self.trainable) # initialize the weight tensor
         if self.use_bias==True: # if use bias is True
-            self.bias=nn.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector
+            self.bias=nn.initializer([self.output_size],self.bias_initializer,self.dtype,self.trainable) # initialize the bias vector
         if self.use_bias==True: # if use bias is True
             self.param=[self.weight,self.bias] # store the parameters in a list
         else: # if use bias is False
             self.param=[self.weight] # store only the weight in a list
-        if self.trainable==False:
-            self.param=[]
         Model.param.extend(self.param)
         return
     

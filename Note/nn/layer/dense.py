@@ -15,7 +15,7 @@ class dense: # define a class for dense (fully connected) layer
         self.output_size=output_size
         self.name=name
         if input_size!=None:
-            self.weight=nn.initializer([input_size,output_size],weight_initializer,dtype) # initialize the weight matrix
+            self.weight=nn.initializer([input_size,output_size],weight_initializer,dtype,trainable) # initialize the weight matrix
             Model.param_dict['dense_weight'].append(self.weight)
             if len(Model.name_list)>0:
                 Model.name=Model.name_list[-1]
@@ -30,7 +30,7 @@ class dense: # define a class for dense (fully connected) layer
             elif Model.name_!=None:
                 Model.layer_param[Model.name_].append(self.weight)
             if use_bias==True: # if use bias is True
-                self.bias=nn.initializer([output_size],bias_initializer,dtype) # initialize the bias vector
+                self.bias=nn.initializer([output_size],bias_initializer,dtype,trainable) # initialize the bias vector
                 Model.param_dict['dense_bias'].append(self.bias)
                 if Model.name_!=None and Model.name_ not in Model.layer_param:
                     Model.layer_param[Model.name_]=[]
@@ -41,20 +41,18 @@ class dense: # define a class for dense (fully connected) layer
                 self.bias=None # set the bias to None
             if use_bias==True: # if use bias is True
                 if name!=None:
-                    self.weight=tf.Variable(self.weight,name=name)
-                    self.bias=tf.Variable(self.bias,name=name)
+                    self.weight=tf.Variable(self.weight,trainable=trainable,name=name)
+                    self.bias=tf.Variable(self.bias,trainable=trainable,name=name)
                 self.param=[self.weight,self.bias] # store the parameters in a list
             else: # if use bias is False
                 if name!=None:
-                    self.weight=tf.Variable(self.weight,name=name)
+                    self.weight=tf.Variable(self.weight,trainable=trainable,name=name)
                 self.param=[self.weight] # store only the weight in a list
-            if trainable==False:
-                self.param=[]
             Model.param.extend(self.param)
     
     
     def build(self):
-        self.weight=nn.initializer([self.input_size,self.output_size],self.weight_initializer,self.dtype) # initialize the weight matrix
+        self.weight=nn.initializer([self.input_size,self.output_size],self.weight_initializer,self.dtype,self.trainable) # initialize the weight matrix
         Model.param_dict['dense_weight'].append(self.weight)
         if len(Model.name_list)>0:
             Model.name=Model.name_list[-1]
@@ -69,7 +67,7 @@ class dense: # define a class for dense (fully connected) layer
         elif Model.name!=None:
             Model.layer_param[Model.name_].append(self.weight)
         if self.use_bias==True: # if use bias is True
-            self.bias=nn.initializer([self.output_size],self.bias_initializer,self.dtype) # initialize the bias vector
+            self.bias=nn.initializer([self.output_size],self.bias_initializer,self.dtype,self.trainable) # initialize the bias vector
             Model.param_dict['dense_bias'].append(self.bias)
             if Model.name_!=None and Model.name_ not in Model.layer_param:
                 Model.layer_param[Model.name_]=[]
@@ -80,15 +78,13 @@ class dense: # define a class for dense (fully connected) layer
             self.bias=None # set the bias to None
         if self.use_bias==True: # if use bias is True
             if self.name!=None:
-                self.weight=tf.Variable(self.weight,name=self.name)
-                self.bias=tf.Variable(self.bias,name=self.name)
+                self.weight=tf.Variable(self.weight,trainable=self.trainable,name=self.name)
+                self.bias=tf.Variable(self.bias,trainable=self.trainable,name=self.name)
             self.param=[self.weight,self.bias] # store the parameters in a list
         else: # if use bias is False
             if self.name!=None:
-                self.weight=tf.Variable(self.weight,name=self.name)
+                self.weight=tf.Variable(self.weight,trainable=self.trainable,name=self.name)
             self.param=[self.weight] # store only the weight in a list
-        if self.trainable==False:
-            self.param=[]
         Model.param.extend(self.param)
         return
     

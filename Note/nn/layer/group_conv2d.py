@@ -35,15 +35,13 @@ class group_conv2d: # define a class for group convolutional layer
                 Model.layer_dict[Model.name].append(self)
             self.num_groups=num_groups if input_size%num_groups==0 else 1 # check if the number of input channels is divisible by the number of groups, otherwise set it to 1
             for i in range(self.num_groups): # loop over the number of groups
-                self.weight.append(initializer([kernel_size[0],kernel_size[1],input_size//self.num_groups,filters//self.num_groups],weight_initializer,dtype)) # initialize a weight tensor for each group with the given shape, initializer and data type, and append it to the weight list
+                self.weight.append(initializer([kernel_size[0],kernel_size[1],input_size//self.num_groups,filters//self.num_groups],weight_initializer,dtype,trainable)) # initialize a weight tensor for each group with the given shape, initializer and data type, and append it to the weight list
                 if use_bias==True: # if use bias is True
-                    self.bias.append(initializer([filters//self.num_groups],bias_initializer,dtype)) # initialize a bias vector for each group with the given shape, initializer and data type, and append it to the bias list
+                    self.bias.append(initializer([filters//self.num_groups],bias_initializer,dtype,trainable)) # initialize a bias vector for each group with the given shape, initializer and data type, and append it to the bias list
             if use_bias==True: # if use bias is True
                 self.param=self.weight+self.bias # store the parameters in a list by concatenating the weight and bias lists
             else: # if use bias is False
                 self.param=self.weight # store only the weight list as the parameters
-            if trainable==False:
-                self.param=[]
             Model.param.extend(self.param)
     
     
@@ -57,15 +55,13 @@ class group_conv2d: # define a class for group convolutional layer
             Model.layer_dict[Model.name].append(self)
         self.num_groups=self.num_groups if self.input_size%self.num_groups==0 else 1 # check if the number of input channels is divisible by the number of groups, otherwise set it to 1
         for i in range(self.num_groups): # loop over the number of groups
-            self.weight.append(initializer([self.kernel_size[0],self.kernel_size[1],self.input_size//self.num_groups,self.output_size//self.num_groups],self.weight_initializer,self.dtype)) # initialize a weight tensor for each group with the given shape, initializer and data type, and append it to the weight list
+            self.weight.append(initializer([self.kernel_size[0],self.kernel_size[1],self.input_size//self.num_groups,self.output_size//self.num_groups],self.weight_initializer,self.dtype,self.trainable)) # initialize a weight tensor for each group with the given shape, initializer and data type, and append it to the weight list
             if self.use_bias==True: # if use bias is True
-                self.bias.append(initializer([self.output_size//self.num_groups],self.bias_initializer,self.dtype)) # initialize a bias vector for each group with the given shape, initializer and data type, and append it to the bias list
+                self.bias.append(initializer([self.output_size//self.num_groups],self.bias_initializer,self.dtype,self.trainable)) # initialize a bias vector for each group with the given shape, initializer and data type, and append it to the bias list
         if self.use_bias==True: # if use bias is True
             self.param=self.weight+self.bias # store the parameters in a list by concatenating the weight and bias lists
         else: # if use bias is False
             self.param=self.weight # store only the weight list as the parameters
-        if self.trainable==False:
-            self.param=[]
         Model.param.extend(self.param)
         return
     
