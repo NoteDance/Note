@@ -136,9 +136,7 @@ class Phi2(nn.Model):
     ):
         mask = None
         if x.shape[1] > 1:
-            mask = tf.fill((x.shape[1], x.shape[1]), float("-inf"))
-            mask = tf.linalg.band_part(mask, 0, -1)
-            mask = tf.linalg.set_diag(mask, tf.zeros(x.shape[1]))
+            mask = nn.create_additive_causal_mask(x.shape[1])
             mask = tf.cast(mask, x.dtype)
 
         y, cache = self.model(x, mask, cache)
