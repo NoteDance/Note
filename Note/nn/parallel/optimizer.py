@@ -14,6 +14,8 @@ class Gradient:
         gradient_flat=nest.flatten(gradient)
         parameter_flat=nest.flatten(parameter)
         for i in range(len(gradient_flat)):
+            if parameter_flat[i].trainable!=True:
+                continue
             lr=tf.cast(self.lr, dtype=parameter_flat[i].dtype)
             state_ops.assign(parameter_flat[i],parameter_flat[i]-lr*gradient_flat[i])
         return parameter_flat
@@ -95,6 +97,9 @@ class SGD:
             gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
             
         for i in range(len(gradient_flat)):
+            if parameter_flat[i].trainable!=True:
+                continue
+            
             lr = tf.cast(self.lr, parameter_flat[i].dtype)
             m = None
             momentum = tf.cast(self.momentum, parameter_flat[i].dtype)
@@ -224,6 +229,9 @@ class Adagrad:
             gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm) 
             
         for i in range(len(gradient_flat)):
+            if parameter_flat[i].trainable!=True:
+                continue
+            
             lr = tf.cast(self.learning_rate, parameter_flat[i].dtype)
 
             accumulator = self._accumulators[i]
@@ -367,6 +375,9 @@ class Adafactor:
             gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
             
         for i in range(len(gradient_flat)):
+            if parameter_flat[i].trainable!=True:
+                continue
+            
             lr = tf.cast(self.lr, parameter_flat[i].dtype)
             epsilon_2 = tf.cast(self.epsilon_2, parameter_flat[i].dtype)
             one = tf.cast(1.0, parameter_flat[i].dtype)
@@ -529,6 +540,9 @@ class RMSprop:
             gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
 
         for i in range(len(gradient_flat)):
+            if parameter_flat[i].trainable!=True:
+                continue
+            
             lr = tf.cast(self.lr, dtype=parameter_flat[i].dtype)
             
             velocity = self._velocities[i]
@@ -690,6 +704,9 @@ class Adadelta:
             gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
 
         for i in range(len(gradient_flat)):
+            if parameter_flat[i].trainable!=True:
+                continue
+            
             lr = tf.cast(self.lr, dtype=parameter_flat[i].dtype)
             
             if self.weight_decay!=None and self.global_clipnorm==None:
@@ -845,6 +862,9 @@ class Adam:
             gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
                             
         for i in range(len(gradient_flat)):
+            if parameter_flat[i].trainable!=True:
+                continue
+            
             lr = tf.cast(self.lr, dtype=parameter_flat[i].dtype)
             
             local_step = tf.cast(iterations + 1, parameter_flat[i].dtype)
@@ -982,6 +1002,9 @@ class Nadam:
             gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
         
         for i in range(len(gradient_flat)):
+            if parameter_flat[i].trainable!=True:
+                continue
+            
             var_dtype = parameter_flat[i].dtype
             lr = tf.cast(self.lr, var_dtype)
             local_step = tf.cast(iterations + 1, var_dtype)
@@ -1146,6 +1169,9 @@ class Adamax:
             gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
         
         for i in range(len(gradient_flat)):
+            if parameter_flat[i].trainable!=True:
+                continue
+            
             lr = tf.cast(self.lr, dtype=parameter_flat[i].dtype)
             
             local_step = tf.cast(iterations + 1, parameter_flat[i].dtype)
@@ -1301,6 +1327,9 @@ class AdamW:
             gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
                     
         for i in range(len(gradient_flat)):  
+            if parameter_flat[i].trainable!=True:
+                continue
+            
             lr = tf.cast(self.lr, dtype=parameter_flat[i].dtype)
             
             local_step = tf.cast(iterations + 1, parameter_flat[i].dtype)
@@ -1497,6 +1526,9 @@ class Ftrl:
             gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
         
         for i in range(len(gradient_flat)):
+            if parameter_flat[i].trainable!=True:
+                continue
+            
             lr = tf.cast(self.lr, parameter_flat[i].dtype)
             accum = self._accumulators[i]
             linear = self._linears[i]
@@ -1618,6 +1650,9 @@ class Lion:
             gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
                 
         for i in range(len(gradient_flat)):
+            if parameter_flat[i].trainable!=True:
+                continue
+            
             lr = tf.cast(self.learning_rate, parameter_flat[i].dtype)
             beta_1 = tf.cast(self.beta_1, parameter_flat[i].dtype)
             beta_2 = tf.cast(self.beta_2, parameter_flat[i].dtype)
