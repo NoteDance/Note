@@ -85,6 +85,13 @@ class SGD:
                 self.momentums.append(
                     tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                 )
+        self.var_list=None
+        self.var_names=None
+    
+    
+    def exclude_from_weight_decay(self,var_list=None,var_names=None):
+        self.var_list=var_list
+        self.var_names=var_names
 
 
     def __call__(self, gradient, parameter):
@@ -92,7 +99,14 @@ class SGD:
         parameter_flat=nest.flatten(parameter)
         
         if self.weight_decay!=None and self.global_clipnorm!=None:
-            wd_p = [tf.cast(self.weight_decay, p.dtype) * p for p in parameter_flat]
+            wd_p = []
+            for p in parameter_flat:
+                if self.var_list!=None and p not in self.var_list:
+                    wd_p.append(tf.cast(self.weight_decay, p.dtype) * p)
+                elif self.var_names!=None and p.name not in self.var_names:
+                    wd_p.append(tf.cast(self.weight_decay, p.dtype) * p)
+                else:
+                    wd_p.append(p)
             gradient_flat = [g + wd_p[i] for i,g in enumerate(gradient_flat)]
             gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
             
@@ -106,8 +120,14 @@ class SGD:
             m = self.momentums[i]
             
             if self.weight_decay!=None and self.global_clipnorm==None:
-                wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
-                gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                if self.var_list!=None and parameter_flat[i] not in self.var_list:
+                    wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                    gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                elif self.var_names!=None and parameter_flat[i].name not in self.var_names:
+                    wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                    gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                else:
+                    gradient_flat[i] = gradient_flat[i] + parameter_flat[i]
             if self.clipnorm!=None:
                 gradient_flat[i] = tf.clip_by_norm(gradient_flat[i], self.clipnorm)
             if self.clipvalue!=None:
@@ -217,6 +237,13 @@ class Adagrad:
                         dtype=param.dtype
                     )
                 )
+        self.var_list=None
+        self.var_names=None
+        
+        
+    def exclude_from_weight_decay(self,var_list=None,var_names=None):
+        self.var_list=var_list
+        self.var_names=var_names
     
 
     def __call__(self, gradient, parameter):
@@ -224,7 +251,14 @@ class Adagrad:
         parameter_flat=nest.flatten(parameter)
         
         if self.weight_decay!=None and self.global_clipnorm!=None:
-            wd_p = [tf.cast(self.weight_decay, p.dtype) * p for p in parameter_flat]
+            wd_p = []
+            for p in parameter_flat:
+                if self.var_list!=None and p not in self.var_list:
+                    wd_p.append(tf.cast(self.weight_decay, p.dtype) * p)
+                elif self.var_names!=None and p.name not in self.var_names:
+                    wd_p.append(tf.cast(self.weight_decay, p.dtype) * p)
+                else:
+                    wd_p.append(p)
             gradient_flat = [g + wd_p[i] for i,g in enumerate(gradient_flat)]
             gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm) 
             
@@ -237,8 +271,14 @@ class Adagrad:
             accumulator = self._accumulators[i]
             
             if self.weight_decay!=None and self.global_clipnorm==None:
-                wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
-                gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                if self.var_list!=None and parameter_flat[i] not in self.var_list:
+                    wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                    gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                elif self.var_names!=None and parameter_flat[i].name not in self.var_names:
+                    wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                    gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                else:
+                    gradient_flat[i] = gradient_flat[i] + parameter_flat[i]
             if self.clipnorm!=None:
                 gradient_flat[i] = tf.clip_by_norm(gradient_flat[i], self.clipnorm)
             if self.clipvalue!=None:
@@ -359,6 +399,13 @@ class Adafactor:
                 self._v.append(
                         tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                 )
+        self.var_list=None
+        self.var_names=None
+        
+        
+    def exclude_from_weight_decay(self,var_list=None,var_names=None):
+        self.var_list=var_list
+        self.var_names=var_names
         
 
     def _rms(self, x):
@@ -370,7 +417,14 @@ class Adafactor:
         parameter_flat=nest.flatten(parameter)
         
         if self.weight_decay!=None and self.global_clipnorm!=None:
-            wd_p = [tf.cast(self.weight_decay, p.dtype) * p for p in parameter_flat]
+            wd_p = []
+            for p in parameter_flat:
+                if self.var_list!=None and p not in self.var_list:
+                    wd_p.append(tf.cast(self.weight_decay, p.dtype) * p)
+                elif self.var_names!=None and p.name not in self.var_names:
+                    wd_p.append(tf.cast(self.weight_decay, p.dtype) * p)
+                else:
+                    wd_p.append(p)
             gradient_flat = [g + wd_p[i] for i,g in enumerate(gradient_flat)]
             gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
             
@@ -392,8 +446,14 @@ class Adafactor:
             v = self._v[i]
             
             if self.weight_decay!=None and self.global_clipnorm==None:
-                wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
-                gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                if self.var_list!=None and parameter_flat[i] not in self.var_list:
+                    wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                    gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                elif self.var_names!=None and parameter_flat[i].name not in self.var_names:
+                    wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                    gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                else:
+                    gradient_flat[i] = gradient_flat[i] + parameter_flat[i]
             if self.clipnorm!=None:
                 gradient_flat[i] = tf.clip_by_norm(gradient_flat[i], self.clipnorm)
             if self.clipvalue!=None:
@@ -528,6 +588,13 @@ class RMSprop:
                     self._average_gradients.append(
                         tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                     )
+        self.var_list=None
+        self.var_names=None
+    
+    
+    def exclude_from_weight_decay(self,var_list=None,var_names=None):
+        self.var_list=var_list
+        self.var_names=var_names
 
 
     def __call__(self, gradient, parameter):
@@ -535,7 +602,14 @@ class RMSprop:
         parameter_flat=nest.flatten(parameter)
         
         if self.weight_decay!=None and self.global_clipnorm!=None:
-            wd_p = [tf.cast(self.weight_decay, p.dtype) * p for p in parameter_flat]
+            wd_p = []
+            for p in parameter_flat:
+                if self.var_list!=None and p not in self.var_list:
+                    wd_p.append(tf.cast(self.weight_decay, p.dtype) * p)
+                elif self.var_names!=None and p.name not in self.var_names:
+                    wd_p.append(tf.cast(self.weight_decay, p.dtype) * p)
+                else:
+                    wd_p.append(p)
             gradient_flat = [g + wd_p[i] for i,g in enumerate(gradient_flat)]
             gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
 
@@ -556,8 +630,14 @@ class RMSprop:
             rho = self.rho
             
             if self.weight_decay!=None and self.global_clipnorm==None:
-                wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
-                gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                if self.var_list!=None and parameter_flat[i] not in self.var_list:
+                    wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                    gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                elif self.var_names!=None and parameter_flat[i].name not in self.var_names:
+                    wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                    gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                else:
+                    gradient_flat[i] = gradient_flat[i] + parameter_flat[i]
             if self.clipnorm!=None:
                 gradient_flat[i] = tf.clip_by_norm(gradient_flat[i], self.clipnorm)
             if self.clipvalue!=None:
@@ -687,6 +767,13 @@ class Adadelta:
                 self.accumulated_delta_vars.append(
                     tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                 )
+        self.var_list=None
+        self.var_names=None
+        
+        
+    def exclude_from_weight_decay(self,var_list=None,var_names=None):
+        self.var_list=var_list
+        self.var_names=var_names
 
 
     def __call__(self, gradient, parameter):
@@ -699,7 +786,14 @@ class Adadelta:
             return tf.sqrt(x + self.epsilon)
         
         if self.weight_decay!=None and self.global_clipnorm!=None:
-            wd_p = [tf.cast(self.weight_decay, p.dtype) * p for p in parameter_flat]
+            wd_p = []
+            for p in parameter_flat:
+                if self.var_list!=None and p not in self.var_list:
+                    wd_p.append(tf.cast(self.weight_decay, p.dtype) * p)
+                elif self.var_names!=None and p.name not in self.var_names:
+                    wd_p.append(tf.cast(self.weight_decay, p.dtype) * p)
+                else:
+                    wd_p.append(p)
             gradient_flat = [g + wd_p[i] for i,g in enumerate(gradient_flat)]
             gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
 
@@ -710,8 +804,14 @@ class Adadelta:
             lr = tf.cast(self.lr, dtype=parameter_flat[i].dtype)
             
             if self.weight_decay!=None and self.global_clipnorm==None:
-                wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
-                gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                if self.var_list!=None and parameter_flat[i] not in self.var_list:
+                    wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                    gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                elif self.var_names!=None and parameter_flat[i].name not in self.var_names:
+                    wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                    gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                else:
+                    gradient_flat[i] = gradient_flat[i] + parameter_flat[i]
             if self.clipnorm!=None:
                 gradient_flat[i] = tf.clip_by_norm(gradient_flat[i], self.clipnorm)
             if self.clipvalue!=None:
@@ -850,6 +950,13 @@ class Adam:
                         self._velocity_hats.append(
                                 tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                         )
+        self.var_list=None
+        self.var_names=None
+        
+        
+    def exclude_from_weight_decay(self,var_list=None,var_names=None):
+        self.var_list=var_list
+        self.var_names=var_names
 
 
     def __call__(self, gradient, parameter, iterations):
@@ -857,7 +964,14 @@ class Adam:
         parameter_flat=nest.flatten(parameter)
         
         if self.weight_decay!=None and self.global_clipnorm!=None:
-            wd_p = [tf.cast(self.weight_decay, p.dtype) * p for p in parameter_flat]
+            wd_p = []
+            for p in parameter_flat:
+                if self.var_list!=None and p not in self.var_list:
+                    wd_p.append(tf.cast(self.weight_decay, p.dtype) * p)
+                elif self.var_names!=None and p.name not in self.var_names:
+                    wd_p.append(tf.cast(self.weight_decay, p.dtype) * p)
+                else:
+                    wd_p.append(p)
             gradient_flat = [g + wd_p[i] for i,g in enumerate(gradient_flat)]
             gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
                             
@@ -877,8 +991,14 @@ class Adam:
             alpha = lr * tf.sqrt(1 - beta_2_power) / (1 - beta_1_power)
             
             if self.weight_decay!=None and self.global_clipnorm==None:
-                wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
-                gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                if self.var_list!=None and parameter_flat[i] not in self.var_list:
+                    wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                    gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                elif self.var_names!=None and parameter_flat[i].name not in self.var_names:
+                    wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                    gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                else:
+                    gradient_flat[i] = gradient_flat[i] + parameter_flat[i]
             if self.clipnorm!=None:
                 gradient_flat[i] = tf.clip_by_norm(gradient_flat[i], self.clipnorm)
             if self.clipvalue!=None:
@@ -990,6 +1110,13 @@ class Nadam:
                 self._velocities.append(
                     tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                 )
+        self.var_list=None
+        self.var_names=None
+        
+        
+    def exclude_from_weight_decay(self,var_list=None,var_names=None):
+        self.var_list=var_list
+        self.var_names=var_names
                 
 
     def __call__(self, gradient, parameter, iterations):
@@ -997,7 +1124,14 @@ class Nadam:
         parameter_flat=nest.flatten(parameter)
         
         if self.weight_decay!=None and self.global_clipnorm!=None:
-            wd_p = [tf.cast(self.weight_decay, p.dtype) * p for p in parameter_flat]
+            wd_p = []
+            for p in parameter_flat:
+                if self.var_list!=None and p not in self.var_list:
+                    wd_p.append(tf.cast(self.weight_decay, p.dtype) * p)
+                elif self.var_names!=None and p.name not in self.var_names:
+                    wd_p.append(tf.cast(self.weight_decay, p.dtype) * p)
+                else:
+                    wd_p.append(p)
             gradient_flat = [g + wd_p[i] for i,g in enumerate(gradient_flat)]
             gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
         
@@ -1029,8 +1163,14 @@ class Nadam:
             v = self._velocities[i]
             
             if self.weight_decay!=None and self.global_clipnorm==None:
-                wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
-                gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                if self.var_list!=None and parameter_flat[i] not in self.var_list:
+                    wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                    gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                elif self.var_names!=None and parameter_flat[i].name not in self.var_names:
+                    wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                    gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                else:
+                    gradient_flat[i] = gradient_flat[i] + parameter_flat[i]
             if self.clipnorm!=None:
                 gradient_flat[i] = tf.clip_by_norm(gradient_flat[i], self.clipnorm)
             if self.clipvalue!=None:
@@ -1157,6 +1297,13 @@ class Adamax:
                 self._u.append(
                     tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                 )
+        self.var_list=None
+        self.var_names=None
+        
+        
+    def exclude_from_weight_decay(self,var_list=None,var_names=None):
+        self.var_list=var_list
+        self.var_names=var_names
 
 
     def __call__(self, gradient, parameter, iterations):
@@ -1164,7 +1311,14 @@ class Adamax:
         parameter_flat=nest.flatten(parameter)
         
         if self.weight_decay!=None and self.global_clipnorm!=None:
-            wd_p = [tf.cast(self.weight_decay, p.dtype) * p for p in parameter_flat]
+            wd_p = []
+            for p in parameter_flat:
+                if self.var_list!=None and p not in self.var_list:
+                    wd_p.append(tf.cast(self.weight_decay, p.dtype) * p)
+                elif self.var_names!=None and p.name not in self.var_names:
+                    wd_p.append(tf.cast(self.weight_decay, p.dtype) * p)
+                else:
+                    wd_p.append(p)
             gradient_flat = [g + wd_p[i] for i,g in enumerate(gradient_flat)]
             gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
         
@@ -1181,8 +1335,14 @@ class Adamax:
             u = self._u[i]
             
             if self.weight_decay!=None and self.global_clipnorm==None:
-                wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
-                gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                if self.var_list!=None and parameter_flat[i] not in self.var_list:
+                    wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                    gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                elif self.var_names!=None and parameter_flat[i].name not in self.var_names:
+                    wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                    gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                else:
+                    gradient_flat[i] = gradient_flat[i] + parameter_flat[i]
             if self.clipnorm!=None:
                 gradient_flat[i] = tf.clip_by_norm(gradient_flat[i], self.clipnorm)
             if self.clipvalue!=None:
@@ -1315,6 +1475,13 @@ class AdamW:
                         self._velocity_hats.append(
                             tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                         )
+        self.var_list=None
+        self.var_names=None
+
+
+    def exclude_from_weight_decay(self,var_list=None,var_names=None):
+        self.var_list=var_list
+        self.var_names=var_names
 
 
     def __call__(self, gradient, parameter, iterations):
@@ -1322,7 +1489,14 @@ class AdamW:
         parameter_flat=nest.flatten(parameter)
         
         if self.weight_decay!=None and self.global_clipnorm!=None:
-            wd_p = [tf.cast(self.weight_decay, p.dtype) * p for p in parameter_flat]
+            wd_p = []
+            for p in parameter_flat:
+                if self.var_list!=None and p not in self.var_list:
+                    wd_p.append(tf.cast(self.weight_decay, p.dtype) * p)
+                elif self.var_names!=None and p.name not in self.var_names:
+                    wd_p.append(tf.cast(self.weight_decay, p.dtype) * p)
+                else:
+                    wd_p.append(p)
             gradient_flat = [g + wd_p[i] for i,g in enumerate(gradient_flat)]
             gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
                     
@@ -1342,8 +1516,14 @@ class AdamW:
             alpha = lr * tf.sqrt(1 - beta_2_power) / (1 - beta_1_power)
             
             if self.weight_decay!=None and self.global_clipnorm==None:
-                wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
-                gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                if self.var_list!=None and parameter_flat[i] not in self.var_list:
+                    wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                    gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                elif self.var_names!=None and parameter_flat[i].name not in self.var_names:
+                    wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                    gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                else:
+                    gradient_flat[i] = gradient_flat[i] + parameter_flat[i]
             if self.clipnorm!=None:
                 gradient_flat[i] = tf.clip_by_norm(gradient_flat[i], self.clipnorm)
             if self.clipvalue!=None:
@@ -1514,6 +1694,13 @@ class Ftrl:
                                                     value=self.initial_accumulator_value),
                                                      dtype=param.dtype))
                 self._linears.append(tf.Variable(tf.zeros_like(param,dtype=param.dtype)))
+        self.var_list=None
+        self.var_names=None
+    
+    
+    def exclude_from_weight_decay(self,var_list=None,var_names=None):
+        self.var_list=var_list
+        self.var_names=var_names
 
 
     def __call__(self, gradient, parameter):
@@ -1521,7 +1708,14 @@ class Ftrl:
         parameter_flat=nest.flatten(parameter)
         
         if self.weight_decay!=None and self.global_clipnorm!=None:
-            wd_p = [tf.cast(self.weight_decay, p.dtype) * p for p in parameter_flat]
+            wd_p = []
+            for p in parameter_flat:
+                if self.var_list!=None and p not in self.var_list:
+                    wd_p.append(tf.cast(self.weight_decay, p.dtype) * p)
+                elif self.var_names!=None and p.name not in self.var_names:
+                    wd_p.append(tf.cast(self.weight_decay, p.dtype) * p)
+                else:
+                    wd_p.append(p)
             gradient_flat = [g + wd_p[i] for i,g in enumerate(gradient_flat)]
             gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
         
@@ -1538,8 +1732,14 @@ class Ftrl:
             l2_reg = l2_reg + self.beta / (2.0 * lr)
             
             if self.weight_decay!=None and self.global_clipnorm==None:
-                wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
-                gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                if self.var_list!=None and parameter_flat[i] not in self.var_list:
+                    wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                    gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                elif self.var_names!=None and parameter_flat[i].name not in self.var_names:
+                    wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                    gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                else:
+                    gradient_flat[i] = gradient_flat[i] + parameter_flat[i]
             if self.clipnorm!=None:
                 gradient_flat[i] = tf.clip_by_norm(gradient_flat[i], self.clipnorm)
             if self.clipvalue!=None:
@@ -1638,6 +1838,13 @@ class Lion:
                 self.momentums.append(
                         tf.Variable(tf.zeros_like(param,dtype=param.dtype))
                         )
+        self.var_list=None
+        self.var_names=None
+        
+        
+    def exclude_from_weight_decay(self,var_list=None,var_names=None):
+        self.var_list=var_list
+        self.var_names=var_names
 
 
     def __call__(self, gradient, parameter):
@@ -1645,7 +1852,14 @@ class Lion:
         parameter_flat=nest.flatten(parameter)
         
         if self.weight_decay!=None and self.global_clipnorm!=None:
-            wd_p = [tf.cast(self.weight_decay, p.dtype) * p for p in parameter_flat]
+            wd_p = []
+            for p in parameter_flat:
+                if self.var_list!=None and p not in self.var_list:
+                    wd_p.append(tf.cast(self.weight_decay, p.dtype) * p)
+                elif self.var_names!=None and p.name not in self.var_names:
+                    wd_p.append(tf.cast(self.weight_decay, p.dtype) * p)
+                else:
+                    wd_p.append(p)
             gradient_flat = [g + wd_p[i] for i,g in enumerate(gradient_flat)]
             gradient_flat, _ = tf.clip_by_global_norm(gradient_flat, self.global_clipnorm)
                 
@@ -1659,8 +1873,14 @@ class Lion:
             m = self.momentums[i]
             
             if self.weight_decay!=None and self.global_clipnorm==None:
-                wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
-                gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                if self.var_list!=None and parameter_flat[i] not in self.var_list:
+                    wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                    gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                elif self.var_names!=None and parameter_flat[i].name not in self.var_names:
+                    wd = tf.cast(self.weight_decay, parameter_flat[i].dtype)
+                    gradient_flat[i] = gradient_flat[i] + wd * parameter_flat[i]
+                else:
+                    gradient_flat[i] = gradient_flat[i] + parameter_flat[i]
             if self.clipnorm!=None:
                 gradient_flat[i] = tf.clip_by_norm(gradient_flat[i], self.clipnorm)
             if self.clipvalue!=None:
