@@ -3,17 +3,23 @@ from Note import nn
 from Note.nn.activation import activation_dict
 
 
-def DenseLayer(input_channels, growth_rate, dtype='float32'):
-        layers=nn.Layers()
-        layers.add(nn.identity(input_channels),save_data=True)
-        layers.add(nn.batch_norm(epsilon=1.001e-5,dtype=dtype))
-        layers.add(activation_dict['relu'])
-        layers.add(nn.conv2d(4*growth_rate,[1,1],strides=1,padding="SAME",use_bias=False,dtype=dtype))
-        layers.add(nn.batch_norm(epsilon=1.001e-5,dtype=dtype))
-        layers.add(activation_dict['relu'])
-        layers.add(nn.conv2d(growth_rate,[3,3],strides=1,padding="SAME",use_bias=False,dtype=dtype),save_data=True)
-        layers.add(nn.concat(),use_data=True)
-        return layers
+class DenseLayer:
+    def __init__(self,input_channels, growth_rate, dtype='float32'):
+        self.layers=nn.Layers()
+        self.layers.add(nn.batch_norm(epsilon=1.001e-5,dtype=dtype))
+        self.layers.add(activation_dict['relu'])
+        self.layers.add(nn.conv2d(4*growth_rate,[1,1],strides=1,padding="SAME",use_bias=False,dtype=dtype))
+        self.layers.add(nn.batch_norm(epsilon=1.001e-5,dtype=dtype))
+        self.layers.add(activation_dict['relu'])
+        self.layers.add(nn.conv2d(growth_rate,[3,3],strides=1,padding="SAME",use_bias=False,dtype=dtype))
+        self.concat=nn.concat()
+        
+        
+    def __call__(self,x):
+        x_=x
+        x=self.layers(x)
+        x=self.concat([x_,x])
+        return x
 
 
 def DenseBlock(input_channels, num_layers, growth_rate, dtype='float32'):
@@ -56,28 +62,28 @@ class DenseNet121:
         self.layers.add(nn.max_pool2d(ksize=[3, 3],strides=[2, 2],padding="VALID"))
         
         
-        self.layers.add(DenseBlock(input_channels=self.layers.output_size,num_layers=6,
+        self.layers.add(DenseBlock(input_channels=64,num_layers=6,
                                  growth_rate=self.growth_rate,
                                  dtype=self.dtype))
         
-        self.layers.add(TransitionLayer(input_channels=self.layers.output_size,compression_factor=self.compression_factor,
+        self.layers.add(TransitionLayer(input_channels=64,compression_factor=self.compression_factor,
                                       dtype=self.dtype))
         
-        self.layers.add(DenseBlock(input_channels=self.layers.output_size,num_layers=12,
+        self.layers.add(DenseBlock(input_channels=int(64 * self.compression_factor),num_layers=12,
                                  growth_rate=self.growth_rate,
                                  dtype=self.dtype))
         
-        self.layers.add(TransitionLayer(input_channels=self.layers.output_size,compression_factor=self.compression_factor,
+        self.layers.add(TransitionLayer(input_channels=int(64 * self.compression_factor),compression_factor=self.compression_factor,
                                       dtype=self.dtype))
         
-        self.layers.add(DenseBlock(input_channels=self.layers.output_size,num_layers=24,
+        self.layers.add(DenseBlock(input_channels=int(64 * self.compression_factor**2),num_layers=24,
                                  growth_rate=self.growth_rate,
                                  dtype=self.dtype))
         
-        self.layers.add(TransitionLayer(input_channels=self.layers.output_size,compression_factor=self.compression_factor,
+        self.layers.add(TransitionLayer(input_channels=int(64 * self.compression_factor**2),compression_factor=self.compression_factor,
                                       dtype=self.dtype))
         
-        self.layers.add(DenseBlock(input_channels=self.layers.output_size,num_layers=16,
+        self.layers.add(DenseBlock(input_channels=int(64 * self.compression_factor**3),num_layers=16,
                                  growth_rate=self.growth_rate,
                                  dtype=self.dtype))
         
@@ -85,7 +91,7 @@ class DenseNet121:
         
         self.layers.add(activation_dict['relu'])
         
-        self.dense=nn.dense(self.num_classes,self.layers.output_size,activation='softmax',dtype=self.dtype)
+        self.dense=nn.dense(self.num_classes,int(64 * self.compression_factor**3),activation='softmax',dtype=self.dtype)
         
         self.param=nn.Model.param
         return
@@ -111,7 +117,7 @@ class DenseNet121:
         return
     
     
-    def fp(self, data):
+    def __call__(self, data):
         x=self.layers(data,self.training)
         if self.include_top:
             x = tf.math.reduce_mean(x, axis=[1, 2])
