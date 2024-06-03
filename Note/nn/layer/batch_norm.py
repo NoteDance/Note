@@ -1,14 +1,13 @@
 import tensorflow as tf
 from keras import backend
 from keras import ops
-from tensorflow.keras.layers import Layer
 from Note.nn.initializer import initializer
 from multiprocessing import Manager
 from Note.nn.Model import Model
 
 
-class batch_norm(Layer):
-    def __init__(self, input_size=None, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, beta_initializer='zeros', gamma_initializer='ones', moving_mean_initializer='zeros', moving_variance_initializer='ones', trainable=True, synchronized=False):
+class batch_norm:
+    def __init__(self, input_size=None, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, beta_initializer='zeros', gamma_initializer='ones', moving_mean_initializer='zeros', moving_variance_initializer='ones', synchronized=False, trainable=True, dtype='float32'):
         self.input_size=input_size
         self.axis=axis
         self.momentum=momentum
@@ -17,22 +16,23 @@ class batch_norm(Layer):
         self.scale=scale
         self.beta_initializer=beta_initializer
         self.gamma_initializer=gamma_initializer
-        self.trainable=trainable
         self.synchronized=synchronized
+        self.trainable=trainable
+        self.dtype=dtype
+        self.output_size=input_size
         self.train_flag=True
         if input_size!=None:
-            self.output_size=input_size
             self.moving_mean=tf.Variable(tf.zeros([input_size]))
             self.moving_variance=tf.Variable(tf.ones([input_size]))
             self.param=[]
             if center==True:
-                self.beta=initializer([input_size], beta_initializer)
+                self.beta=initializer([input_size], beta_initializer, dtype)
                 if trainable==True:
                     self.param.append(self.beta)
             else:
                 self.beta=None
             if scale==True:
-                self.gamma=initializer([input_size], gamma_initializer)
+                self.gamma=initializer([input_size], gamma_initializer, dtype)
                 if trainable==True:
                     self.param.append(self.gamma)
             else:
@@ -47,13 +47,13 @@ class batch_norm(Layer):
         self.moving_variance=tf.Variable(tf.ones([self.input_size]))
         self.param=[]
         if self.center==True:
-            self.beta=initializer([self.input_size], self.beta_initializer)
+            self.beta=initializer([self.input_size], self.beta_initializer, self.dtype)
             if self.trainable==True:
                 self.param.append(self.beta)
         else:
             self.beta=None
         if self.scale==True:
-            self.gamma=initializer([self.input_size], self.gamma_initializer)
+            self.gamma=initializer([self.input_size], self.gamma_initializer, self.dtype)
             if self.trainable==True:
                 self.param.append(self.gamma)
         else:
@@ -63,7 +63,8 @@ class batch_norm(Layer):
     
     
     def __call__(self, data, train_flag=None, mask=None):
-        data=tf.cast(data,'float32')
+        if data.dtype!=self.dtype:
+            data=tf.cast(data,self.dtype)
         if self.input_size==None:
             self.input_size=data.shape[-1]
             self.build()
@@ -176,9 +177,9 @@ class batch_norm_:
         self.trainable=trainable
         self.parallel=parallel
         self.dtype=dtype
+        self.output_size=input_size
         self.train_flag=True
         if input_size!=None:
-            self.output_size=input_size
             self.moving_mean=tf.zeros([input_size],dtype)
             self.moving_var=tf.ones([input_size],dtype)
             if parallel:
