@@ -2,6 +2,7 @@ class Layers:
     def __init__(self):
         self.layer=[]
         self.param=[]
+        self.output_size=None
         self.train_flag=True
     
     
