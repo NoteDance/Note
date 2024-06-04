@@ -5,24 +5,29 @@ from Note.nn.layer.batch_norm_ import batch_norm_
 from Note.nn.layer.avg_pool2d import avg_pool2d
 from Note.nn.layer.max_pool2d import max_pool2d
 from Note.nn.layer.zeropadding2d import zeropadding2d
-from Note.nn.layer.identity import identity
 from Note.nn.layer.concat import concat
 from Note.nn.Layers import Layers
 from Note.nn.activation import activation_dict
 from Note.nn.Model import Model
 
 
-def DenseLayer(input_channels, growth_rate, dtype='float32'):
-        layers=Layers()
-        layers.add(identity(input_channels),save_data=True)
-        layers.add(batch_norm_(epsilon=1.001e-5,parallel=False,dtype=dtype))
-        layers.add(activation_dict['relu'])
-        layers.add(conv2d(4*growth_rate,[1,1],strides=1,padding="SAME",use_bias=False,dtype=dtype))
-        layers.add(batch_norm_(epsilon=1.001e-5,parallel=False,dtype=dtype))
-        layers.add(activation_dict['relu'])
-        layers.add(conv2d(growth_rate,[3,3],strides=1,padding="SAME",use_bias=False,dtype=dtype),save_data=True)
-        layers.add(concat(),use_data=True)
-        return layers
+class DenseLayer:
+    def __init__(self,input_channels, growth_rate, dtype='float32'):
+        self.layers=Layers()
+        self.layers.add(batch_norm_(epsilon=1.001e-5,dtype=dtype))
+        self.layers.add(activation_dict['relu'])
+        self.layers.add(conv2d(4*growth_rate,[1,1],strides=1,padding="SAME",use_bias=False,dtype=dtype))
+        self.layers.add(batch_norm_(epsilon=1.001e-5,dtype=dtype))
+        self.layers.add(activation_dict['relu'])
+        self.layers.add(conv2d(growth_rate,[3,3],strides=1,padding="SAME",use_bias=False,dtype=dtype))
+        self.concat=concat()
+        
+        
+    def __call__(self,x):
+        x_=x
+        x=self.layers(x)
+        x=self.concat([x_,x])
+        return x
 
 
 def DenseBlock(input_channels, num_layers, growth_rate, dtype='float32'):
@@ -60,42 +65,42 @@ class DenseNet121:
         self.layers=Layers()
         self.layers.add(zeropadding2d(3,padding=[3, 3]))
         self.layers.add(conv2d(64,[7,7],strides=2,use_bias=False,dtype=self.dtype))
-        self.layers.add(batch_norm_(epsilon=1.001e-5,parallel=False,dtype=self.dtype))
+        self.layers.add(batch_norm_(epsilon=1.001e-5,dtype=self.dtype))
         self.layers.add(activation_dict['relu'])
         self.layers.add(zeropadding2d(padding=[1, 1]))
         self.layers.add(max_pool2d(ksize=[3, 3],strides=[2, 2],padding="VALID"))
         
         
-        self.layers.add(DenseBlock(input_channels=self.layers.output_size,num_layers=6,
+        self.layers.add(DenseBlock(input_channels=64,num_layers=6,
                                  growth_rate=self.growth_rate,
                                  dtype=self.dtype))
         
-        self.layers.add(TransitionLayer(input_channels=self.layers.output_size,compression_factor=self.compression_factor,
+        self.layers.add(TransitionLayer(input_channels=64,compression_factor=self.compression_factor,
                                       dtype=self.dtype))
         
-        self.layers.add(DenseBlock(input_channels=self.layers.output_size,num_layers=12,
+        self.layers.add(DenseBlock(input_channels=int(64 * self.compression_factor),num_layers=12,
                                  growth_rate=self.growth_rate,
                                  dtype=self.dtype))
         
-        self.layers.add(TransitionLayer(input_channels=self.layers.output_size,compression_factor=self.compression_factor,
+        self.layers.add(TransitionLayer(input_channels=int(64 * self.compression_factor),compression_factor=self.compression_factor,
                                       dtype=self.dtype))
         
-        self.layers.add(DenseBlock(input_channels=self.layers.output_size,num_layers=24,
+        self.layers.add(DenseBlock(input_channels=int(64 * self.compression_factor**2),num_layers=24,
                                  growth_rate=self.growth_rate,
                                  dtype=self.dtype))
         
-        self.layers.add(TransitionLayer(input_channels=self.layers.output_size,compression_factor=self.compression_factor,
+        self.layers.add(TransitionLayer(input_channels=int(64 * self.compression_factor**2),compression_factor=self.compression_factor,
                                       dtype=self.dtype))
         
-        self.layers.add(DenseBlock(input_channels=self.layers.output_size,num_layers=16,
+        self.layers.add(DenseBlock(input_channels=int(64 * self.compression_factor**3),num_layers=16,
                                  growth_rate=self.growth_rate,
                                  dtype=self.dtype))
         
-        self.layers.add(batch_norm_(epsilon=1.001e-5,parallel=False,dtype=self.dtype))
+        self.layers.add(batch_norm_(epsilon=1.001e-5,dtype=self.dtype))
         
         self.layers.add(activation_dict['relu'])
         
-        self.dense=dense(self.num_classes,self.layers.output_size,activation='softmax',dtype=self.dtype)
+        self.dense=dense(self.num_classes,int(64 * self.compression_factor**3),activation='softmax',dtype=self.dtype)
         
         self.opt=tf.keras.optimizers.Adam()
         self.param=Model.param
