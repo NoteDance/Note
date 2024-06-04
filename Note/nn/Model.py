@@ -17,6 +17,7 @@ class Model:
     ctsl_list=[]
     name=None
     name_=None
+    training=True
     
     
     def __init__(self):
@@ -45,6 +46,7 @@ class Model:
     
     
     def training(self,flag=False):
+        Model.training=flag
         for layer in self.layer_list:
             layer.train_flag=flag
         return
@@ -105,4 +107,5 @@ class Model:
         Model.ctsl_list.clear()
         Model.name=None
         Model.name_=None
+        Model.training=True
         return
