@@ -1,8 +1,6 @@
 import tensorflow as tf
 from Note import nn
-from itertools import repeat
 from typing import Optional
-import collections.abc
 
 
 class PatchEmbed:
@@ -17,9 +15,9 @@ class PatchEmbed:
             flatten: bool = True,
             bias: bool = True,
     ):
-        self.patch_size = to_2tuple(patch_size)
+        self.patch_size = nn.to_2tuple(patch_size)
         if img_size is not None:
-            self.img_size = to_2tuple(img_size)
+            self.img_size = nn.to_2tuple(img_size)
             self.grid_size = tuple([s // p for s, p in zip(self.img_size, self.patch_size)])
             self.num_patches = self.grid_size[0] * self.grid_size[1]
         else:
@@ -122,13 +120,3 @@ class Block:
         x = x + self.drop_path1(self.ls1(self.attn(self.norm1(x))))
         x = x + self.drop_path2(self.ls2(self.mlp(self.norm2(x))))
         return x
-
-
-def _ntuple(n):
-    def parse(x):
-        if isinstance(x, collections.abc.Iterable) and not isinstance(x, str):
-            return tuple(x)
-        return tuple(repeat(x, n))
-    return parse
-
-to_2tuple = _ntuple(2)
