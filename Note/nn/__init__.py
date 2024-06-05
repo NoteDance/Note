@@ -1,6 +1,7 @@
 from Note.nn.layer.adaptive_avg_pooling1d import adaptive_avg_pooling1d
 from Note.nn.layer.adaptive_avg_pooling2d import adaptive_avg_pooling2d
 from Note.nn.layer.adaptive_avg_pooling3d import adaptive_avg_pooling3d
+from Note.nn.layer.adaptive_avgmax_pool import *
 from Note.nn.layer.adaptive_conv2d import adaptive_conv2d
 from Note.nn.layer.adaptive_max_pooling1d import adaptive_max_pooling1d
 from Note.nn.layer.adaptive_max_pooling2d import adaptive_max_pooling2d
@@ -21,6 +22,7 @@ from Note.nn.layer.bilinear import bilinear
 from Note.nn.layer.BiRNN import BiRNN
 from Note.nn.layer.cached_attention import cached_attention
 from Note.nn.layer.capsule import capsule
+from Note.nn.layer.classifier import *
 from Note.nn.layer.concat import concat
 from Note.nn.layer.conv1d import conv1d
 from Note.nn.layer.conv1d_transpose import conv1d_transpose
@@ -42,6 +44,7 @@ from Note.nn.layer.FAVOR_attention import FAVOR_attention
 from Note.nn.layer.feed_forward_experts import feed_forward_experts
 from Note.nn.layer.filter_response_norm import filter_response_norm
 from Note.nn.layer.flatten import flatten
+from Note.nn.layer.format import *
 from Note.nn.layer.gaussian_dropout import gaussian_dropout
 from Note.nn.layer.gaussian_noise import gaussian_noise
 from Note.nn.layer.GCN import GCN
@@ -57,6 +60,7 @@ from Note.nn.layer.group_norm import group_norm
 from Note.nn.layer.grouped_query_attention import grouped_query_attention
 from Note.nn.layer.GRU import GRU
 from Note.nn.layer.GRUCell import GRUCell
+from Note.nn.layer.helpers import *
 from Note.nn.layer.identity import identity
 from Note.nn.layer.kernel_attention import kernel_attention
 from Note.nn.layer.layer_norm import layer_norm
@@ -105,6 +109,7 @@ from Note.nn.layer.spatial_dropout1d import spatial_dropout1d
 from Note.nn.layer.spatial_dropout2d import spatial_dropout2d
 from Note.nn.layer.spatial_dropout3d import spatial_dropout3d
 from Note.nn.layer.spectral_norm import spectral_norm
+from Note.nn.layer.squeeze_excite import *
 from Note.nn.layer.stochastic_depth import stochastic_depth
 from Note.nn.layer.subtract import subtract
 from Note.nn.layer.SwitchGLU import SwitchGLU
@@ -129,7 +134,7 @@ from Note.nn.layer.zeropadding1d import zeropadding1d
 from Note.nn.layer.zeropadding2d import zeropadding2d
 from Note.nn.layer.zeropadding3d import zeropadding3d
 from Note.nn.accuracy import *
-from Note.nn.activation import activation,activation_conv,activation_conv_transpose
+from Note.nn.activation import activation,activation_conv,activation_conv_transpose,activation_dict
 from Note.nn.cosine_similarity import cosine_similarity
 from Note.nn.create_additive_causal_mask import create_additive_causal_mask
 from Note.nn.fine_tuning import fine_tuning
