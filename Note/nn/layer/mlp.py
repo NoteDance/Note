@@ -1,7 +1,5 @@
 import tensorflow as tf
 from Note import nn
-from itertools import repeat
-import collections.abc
 from functools import partial
 
 
@@ -21,8 +19,8 @@ class Mlp:
     ):
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
-        bias = to_2tuple(bias)
-        drop_probs = to_2tuple(drop)
+        bias = nn.to_2tuple(bias)
+        drop_probs = nn.to_2tuple(drop)
         linear_layer = partial(nn.conv2d, kernel_size=1) if use_conv else nn.dense
 
         self.fc1 = linear_layer(in_features, hidden_features, bias=bias[0])
@@ -61,8 +59,8 @@ class GluMlp:
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
         assert hidden_features % 2 == 0
-        bias = to_2tuple(bias)
-        drop_probs = to_2tuple(drop)
+        bias = nn.to_2tuple(bias)
+        drop_probs = nn.to_2tuple(drop)
         linear_layer = partial(nn.conv2d, kernel_size=1) if use_conv else nn.dense
         self.chunk_dim = 1 if use_conv else -1
         self.gate_last = gate_last  # use second half of width for gate
@@ -105,8 +103,8 @@ class SwiGLU:
     ):
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
-        bias = to_2tuple(bias)
-        drop_probs = to_2tuple(drop)
+        bias = nn.to_2tuple(bias)
+        drop_probs = nn.to_2tuple(drop)
 
         self.fc1_g = nn.dense(hidden_features, in_features, use_bias=bias[0])
         self.fc1_x = nn.dense(hidden_features, in_features, use_bias=bias[0])
@@ -143,8 +141,8 @@ class GatedMlp:
     ):
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
-        bias = to_2tuple(bias)
-        drop_probs = to_2tuple(drop)
+        bias = nn.to_2tuple(bias)
+        drop_probs = nn.to_2tuple(drop)
 
         self.fc1 = nn.dense(hidden_features, in_features, use_bias=bias[0])
         self.act = act_layer
@@ -185,7 +183,7 @@ class ConvMlp:
     ):
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
-        bias = to_2tuple(bias)
+        bias = nn.to_2tuple(bias)
 
         self.fc1 = nn.conv2d(hidden_features, 1, in_features, use_bias=bias[0])
         self.norm = norm_layer(hidden_features) if norm_layer else nn.identity()
@@ -217,8 +215,8 @@ class GlobalResponseNormMlp:
     ):
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
-        bias = to_2tuple(bias)
-        drop_probs = to_2tuple(drop)
+        bias = nn.to_2tuple(bias)
+        drop_probs = nn.to_2tuple(drop)
         linear_layer = partial(nn.conv2d, kernel_size=1) if use_conv else nn.dense
 
         self.fc1 = linear_layer(hidden_features, input_size=in_features, use_bias=bias[0])
@@ -261,13 +259,3 @@ class GlobalResponseNorm:
         x_mul_xn = tf.multiply(x, x_n)
         weighted_product = tf.multiply(x_mul_xn, tf.reshape(self.weight, self.wb_shape))
         return x + tf.add(tf.reshape(self.bias, self.wb_shape), weighted_product)
-
-
-def _ntuple(n):
-    def parse(x):
-        if isinstance(x, collections.abc.Iterable) and not isinstance(x, str):
-            return tuple(x)
-        return tuple(repeat(x, n))
-    return parse
-
-to_2tuple = _ntuple(2)
