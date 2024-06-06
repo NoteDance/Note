@@ -257,7 +257,7 @@ class TransformerClassifier:
 
         self.norm = nn.layer_norm(embedding_dim)
 
-        self.fc = nn.dense(num_classes, embedding_dim)
+        self.fc = None
         nn.Model.apply(self.init_weight)
 
     def __call__(self, x, training):
@@ -340,15 +340,9 @@ class CCT(nn.Model):
             attention_dropout=0.1,
             stochastic_depth=0.1,
             *args, **kwargs)
-        self.fc = [0]
+        self.classifier.fc = self.dense(1000, embedding_dim, ['truncated_normal', 0.2])
         
-        self.param_ = [0]
         self.training = True
-    
-    def fine_tuning(self,classes=None,flag=0):
-        self.flag = flag
-        nn.fine_tuning(self.param, self.param_, self.classifier.fc, self.fc, classes, self.embedding_dim, flag)
-        return
 
     def __call__(self, x):
         x = self.tokenizer(x)
