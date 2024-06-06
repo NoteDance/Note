@@ -56,19 +56,19 @@ class Model:
         return
     
     
-    def dense(self,num_classes,dim,weight_initializer='Xavier'):
+    def dense(self,num_classes,dim,weight_initializer='Xavier',use_bias=True):
         self.dim=dim
-        self.head=nn.dense(num_classes,dim,weight_initializer)
+        self.head=nn.dense(num_classes,dim,weight_initializer,use_bias=use_bias)
         return self.head
     
     
-    def fine_tuning(self,num_classes,flag=0,weight_initializer='Xavier'):
+    def fine_tuning(self,num_classes,flag=0,weight_initializer='Xavier',use_bias=True):
         param=[]
         self.ft_flag=flag
         if flag==0:
             self.param_=self.param.copy()
             self.head_=self.head
-            self.head=nn.dense(num_classes,self.dim,weight_initializer)
+            self.head=nn.dense(num_classes,self.dim,weight_initializer,use_bias=use_bias)
             param.extend(self.head.param)
             self.param=param
         elif flag==1:
