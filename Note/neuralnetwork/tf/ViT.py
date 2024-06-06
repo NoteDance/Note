@@ -111,30 +111,9 @@ class ViT(nn.Model):
         self.pool = pool
         self.to_latent = nn.identity()
 
-        self.mlp_head = nn.dense(num_classes, dim)
+        self.head = self.dense(num_classes, dim)
         
         self.training=True
-        
-        
-    def fine_tuning(self,classes=None,flag=0):
-        param=[]
-        if flag==0:
-            self.param_=self.param.copy()
-            self.mlp_head_=self.mlp_head
-            self.mlp_head=nn.dense(classes, self.dim)
-            param.extend(self.mlp_head.param)
-            self.param=param
-        elif flag==1:
-            del self.param_[-len(self.mlp_head.param):]
-            self.param_.extend(self.mlp_head.param)
-            self.param=self.param_
-        else:
-            self.mlp_head,self.mlp_head_=self.mlp_head_,self.mlp_head
-            del self.param_[-len(self.mlp_head.param):]
-            self.param_.extend(self.mlp_head.param)
-            self.param=self.param_
-        return
-
 
     def __call__(self, data):
         b = data.shape[0]

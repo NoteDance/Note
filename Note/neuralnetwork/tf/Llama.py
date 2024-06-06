@@ -129,7 +129,7 @@ class Llama(nn.Model):
         self.tok_embeddings = nn.initializer_((args.vocab_size, args.dim), 'normal', 'float32')
         self.layers = [TransformerBlock(args=args) for _ in range(args.n_layers)]
         self.norm = RMSNorm(args.dim, eps=args.norm_eps)
-        self.output = nn.dense(args.vocab_size, args.dim, use_bias=False)
+        self.head = self.dense(args.vocab_size, args.dim, use_bias=False)
 
     def __call__(self, x):
         mask = tf.linalg.band_part(tf.ones((x.shape[0], x.shape[1], x.shape[1])), -1, 0)
@@ -139,7 +139,7 @@ class Llama(nn.Model):
         for l in self.layers:
             x, _ = l(x, mask)
         x = self.norm(x)
-        return self.output(x)
+        return self.head(x)
 
     def generate(self, x, temp=1.0):
         def sample(logits):

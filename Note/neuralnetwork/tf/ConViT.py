@@ -315,7 +315,7 @@ class VisionTransformer(nn.Model):
 
         # Classifier head
         self.feature_info = [dict(num_chs=embed_dim, reduction=0, module='head')]
-        self.head = nn.dense(num_classes, embed_dim) if num_classes > 0 else nn.identity()
+        self.head = self.dense(num_classes, embed_dim) if num_classes > 0 else nn.identity()
 
         self.head.weight.assign(nn.initializer(self.head.weight.shape, ['truncated_normal', .02]))
 
@@ -346,26 +346,6 @@ class VisionTransformer(nn.Model):
 
         x = self.norm(x)
         return x[:, 0]
-    
-    def fine_tuning(self,classes=None,flag=0):
-        param=[]
-        self.flag=flag
-        if flag==0:
-            self.param_=self.param.copy()
-            self.head_=self.head
-            self.head=nn.dense(classes,self.embed_dim)
-            param.extend(self.head.param)
-            self.param=param
-        elif flag==1:
-            del self.param_[-len(self.head.param):]
-            self.param_.extend(self.head.param)
-            self.param=self.param_
-        else:
-            self.head,self.head_=self.head_,self.head
-            del self.param_[-len(self.head.param):]
-            self.param_.extend(self.head.param)
-            self.param=self.param_
-        return
 
     def __call__(self, x):
         x = self.forward_features(x)

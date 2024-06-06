@@ -177,7 +177,7 @@ class Mixtral(nn.Model):
         super().__init__()
         self.model_type = args.model_type
         self.model = MixtralModel(args)
-        self.lm_head = nn.dense(args.vocab_size, args.hidden_size, use_bias=False)
+        self.head = self.dense(args.vocab_size, args.hidden_size, use_bias=False)
         self.args = args
 
     def __call__(
@@ -186,27 +186,7 @@ class Mixtral(nn.Model):
         cache=None,
     ):
         out = self.model(inputs, cache)
-        return self.lm_head(out)
-    
-    def fine_tuning(self,flag=0):
-        param=[]
-        self.flag=flag
-        if flag==0:
-            self.param_=self.param.copy()
-            self.lm_head_=self.lm_head
-            self.lm_head=nn.dense(ModelArgs.vocab_size, ModelArgs.hidden_size)
-            param.extend(self.lm_head.param)
-            self.param=param
-        elif flag==1:
-            del self.param_[-len(self.lm_head.param):]
-            self.param_.extend(self.lm_head.param)
-            self.param=self.param_
-        else:
-            self.lm_head,self.lm_head_=self.lm_head_,self.lm_head
-            del self.param_[-len(self.lm_head.param):]
-            self.param_.extend(self.lm_head.param)
-            self.param=self.param_
-        return
+        return self.head(out)
 
     def sanitize(self, weights):
         if "model.layers.0.block_sparse_moe.experts.0.w1.weight" not in weights:

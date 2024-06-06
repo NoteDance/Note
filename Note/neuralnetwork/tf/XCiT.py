@@ -342,7 +342,7 @@ class XCiT(nn.Model):
                 eta=eta, tokens_norm=tokens_norm)
             for i in range(cls_attn_layers)]
         self.norm = norm_layer(embed_dim)
-        self.head = nn.dense(num_classes, self.num_features) if num_classes > 0 else nn.identity()
+        self.head = self.dense(num_classes, self.num_features) if num_classes > 0 else nn.identity()
 
         self.pos_embeder = PositionalEncodingFourier(dim=embed_dim)
         self.use_pos = use_pos
@@ -358,26 +358,6 @@ class XCiT(nn.Model):
 
     def no_weight_decay(self):
         return ['pos_embed', 'cls_token', 'dist_token']
-    
-    def fine_tuning(self,classes=None,flag=0):
-        param=[]
-        self.flag=flag
-        if flag==0:
-            self.param_=self.param.copy()
-            self.head_=self.head
-            self.head=nn.dense(classes,self.embed_dim)
-            param.extend(self.head.param)
-            self.param=param
-        elif flag==1:
-            del self.param_[-len(self.head.param):]
-            self.param_.extend(self.head.param)
-            self.param=self.param_
-        else:
-            self.head,self.head_=self.head_,self.head
-            del self.param_[-len(self.head.param):]
-            self.param_.extend(self.head.param)
-            self.param=self.param_
-        return
 
     def forward_features(self, x):
         B, H, W, C = x.shape

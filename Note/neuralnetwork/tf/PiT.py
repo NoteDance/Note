@@ -132,7 +132,7 @@ class PoolingTransformer(nn.Model):
 
         # Classifier head
         if num_classes > 0:
-            self.head = nn.dense(num_classes, base_dims[-1] * heads[-1])
+            self.head = self.dense(num_classes, base_dims[-1] * heads[-1])
         else:
             self.head = nn.identity()
 
@@ -148,26 +148,6 @@ class PoolingTransformer(nn.Model):
             self.head = nn.dense(num_classes, self.embed_dim)
         else:
             self.head = nn.identity()
-    
-    def fine_tuning(self,classes=None,flag=0):
-        param=[]
-        self.flag=flag
-        if flag==0:
-            self.param_=self.param.copy()
-            self.head_=self.head
-            self.head=nn.dense(classes,self.embed_dim)
-            param.extend(self.head.param)
-            self.param=param
-        elif flag==1:
-            del self.param_[-len(self.head.param):]
-            self.param_.extend(self.head.param)
-            self.param=self.param_
-        else:
-            self.head,self.head_=self.head_,self.head
-            del self.param_[-len(self.head.param):]
-            self.param_.extend(self.head.param)
-            self.param=self.param_
-        return
 
     def forward_features(self, x):
         x = self.patch_embed(x)

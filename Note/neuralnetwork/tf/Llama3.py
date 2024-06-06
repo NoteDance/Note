@@ -254,7 +254,7 @@ class Llama3(nn.Model):
             self.layers.append(TransformerBlock(layer_id, params))
 
         self.norm = RMSNorm(params.dim, eps=params.norm_eps)
-        self.output = nn.dense(
+        self.head = self.dense(
             params.vocab_size, params.dim, use_bias=False
         )
 
@@ -263,25 +263,6 @@ class Llama3(nn.Model):
             params.max_seq_len * 2,
             params.rope_theta,
         )
-    
-    def fine_tuning(self,flag=0):
-        param=[]
-        if flag==0:
-            self.param_=self.param.copy()
-            self.output_=self.output
-            self.output=nn.dense(ModelArgs.vocab_size, ModelArgs.dim, use_bias=False)
-            param.extend(self.output.param)
-            self.param=param
-        elif flag==1:
-            del self.param_[-len(self.output.param):]
-            self.param_.extend(self.output.param)
-            self.param=self.param_
-        else:
-            self.output,self.output_=self.output_,self.output
-            del self.param_[-len(self.output.param):]
-            self.param_.extend(self.output.param)
-            self.param=self.param_
-        return
 
     def __call__(self, tokens, start_pos: int):
         _bsz, seqlen = tokens.shape
@@ -306,5 +287,5 @@ class Llama3(nn.Model):
         for layer in self.layers:
             h = layer(h, start_pos, freqs_cis, mask)
         h = self.norm(h)
-        output = tf.cast(self.output(h), 'float32')
+        output = tf.cast(self.head(h), 'float32')
         return output

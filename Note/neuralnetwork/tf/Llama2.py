@@ -195,32 +195,12 @@ class Llama2(nn.Model):
         for layer_id in range(params.n_layers):
             self.layers.append(TransformerBlock(layer_id, params))
         self.norm = RMSNorm(params.dim, eps=params.norm_eps)
-        self.output = nn.dense(params.vocab_size, params.dim, weight_initializer=['normal', 0.0, 0.02], use_bias=False)
+        self.head = self.dense(params.vocab_size, params.dim, weight_initializer=['normal', 0.0, 0.02], use_bias=False)
 
         # some useful precompute for the RoPE relative positional embeddings
         self.freqs_cos, self.freqs_sin = precompute_freqs_cis(self.params.dim // self.params.n_heads, self.params.max_seq_len)
         
         self.training = True
-        
-    def fine_tuning(self,flag=0):
-        param=[]
-        self.flag=flag
-        if flag==0:
-            self.param_=self.param.copy()
-            self.output_=self.output
-            self.output=nn.dense(ModelArgs.vocab_size, ModelArgs.dim, use_bias=False)
-            param.extend(self.output.param)
-            self.param=param
-        elif flag==1:
-            del self.param_[-len(self.output.param):]
-            self.param_.extend(self.output.param)
-            self.param=self.param_
-        else:
-            self.output,self.output_=self.output_,self.output
-            del self.param_[-len(self.output.param):]
-            self.param_.extend(self.output.param)
-            self.param=self.param_
-        return
 
     def __call__(self, tokens):
         _bsz, seqlen = tokens.shape
@@ -235,10 +215,10 @@ class Llama2(nn.Model):
 
         if self.training:
             # if we are given some desired targets also calculate the loss
-            logits = self.output(h)
+            logits = self.head(h)
         else:
             # inference-time mini-optimization: only forward the output on the very last position
-            logits = self.output(h[:, [-1], :]) # note: using list [-1] to preserve the time dim
+            logits = self.head(h[:, [-1], :]) # note: using list [-1] to preserve the time dim
 
         return logits
     

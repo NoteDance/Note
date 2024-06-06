@@ -53,7 +53,7 @@ class VisionTransformerForMaskedImageModeling(nn.Model):
             for i in range(depth)]
         self.norm = norm_layer(embed_dim)
 
-        self.lm_head = nn.dense(vocab_size, embed_dim)
+        self.head = self.dense(vocab_size, embed_dim)
 
         nn.Model.apply(self.init_weights)
         self.fix_init_weight()
@@ -99,34 +99,14 @@ class VisionTransformerForMaskedImageModeling(nn.Model):
             x = blk(x, rel_pos_bias=rel_pos_bias)
 
         return self.norm(x)
-    
-    def fine_tuning(self,classes=None,flag=0):
-        param=[]
-        self.flag=flag
-        if flag==0:
-            self.param_=self.param.copy()
-            self.lm_head_=self.lm_head
-            self.lm_head=nn.dense(classes,self.embed_dim)
-            param.extend(self.lm_head.param)
-            self.param=param
-        elif flag==1:
-            del self.param_[-len(self.lm_head.param):]
-            self.param_.extend(self.lm_head.param)
-            self.param=self.param_
-        else:
-            self.lm_head,self.lm_head_=self.lm_head_,self.lm_head
-            del self.param_[-len(self.lm_head.param):]
-            self.param_.extend(self.lm_head.param)
-            self.param=self.param_
-        return
 
     def __call__(self, x, bool_masked_pos, return_all_tokens=False):
         x = self.forward_features(x, bool_masked_pos=bool_masked_pos)
         x = x[:, 1:]
         if return_all_tokens:
-            return self.lm_head(x)
+            return self.head(x)
         else:
-            return self.lm_head(tf.boolean_mask(x, bool_masked_pos, axis=1))
+            return self.head(tf.boolean_mask(x, bool_masked_pos, axis=1))
 
 
 def beit_base_patch16_224_8k_vocab(**kwargs):

@@ -419,7 +419,7 @@ class SwinMLP(nn.Model):
 
         self.norm = norm_layer(self.num_features)
         self.avgpool = nn.adaptive_avg_pooling1d(1)
-        self.head = nn.dense(num_classes, self.num_features) if num_classes > 0 else nn.identity()
+        self.head = self.dense(num_classes, self.num_features) if num_classes > 0 else nn.identity()
 
         nn.Model.apply(self.init_weights)
 
@@ -447,26 +447,6 @@ class SwinMLP(nn.Model):
         
         x = tf.reshape(x, (x.shape[0],-1))
         return x
-    
-    def fine_tuning(self,classes=None,flag=0):
-        param=[]
-        self.flag=flag
-        if flag==0:
-            self.param_=self.param.copy()
-            self.head_=self.head
-            self.head=nn.dense(classes,self.num_features)
-            param.extend(self.head.param)
-            self.param=param
-        elif flag==1:
-            del self.param_[-len(self.head.param):]
-            self.param_.extend(self.head.param)
-            self.param=self.param_
-        else:
-            self.head,self.head_=self.head_,self.head
-            del self.param_[-len(self.head.param):]
-            self.param_.extend(self.head.param)
-            self.param=self.param_
-        return
 
     def __call__(self, x):
         x = self.forward_features(x)

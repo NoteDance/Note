@@ -107,26 +107,7 @@ class Phi2(nn.Model):
     def __init__(self, config: ModelArgs):
         super().__init__()
         self.model = Transformer(config)
-        self.lm_head = nn.dense(config.vocab_size, config.n_embd)
-    
-    def fine_tuning(self,flag=0):
-        param=[]
-        if flag==0:
-            self.param_=self.param.copy()
-            self.lm_head_=self.lm_head
-            self.lm_head=nn.dense(ModelArgs.vocab_size, ModelArgs.n_embd)
-            param.extend(self.lm_head.param)
-            self.param=param
-        elif flag==1:
-            del self.param_[-len(self.lm_head.param):]
-            self.param_.extend(self.lm_head.param)
-            self.param=self.param_
-        else:
-            self.lm_head,self.lm_head_=self.lm_head_,self.lm_head
-            del self.param_[-len(self.lm_head.param):]
-            self.param_.extend(self.lm_head.param)
-            self.param=self.param_
-        return
+        self.head = self.dense(config.vocab_size, config.n_embd)
 
     def __call__(
         self,
@@ -140,4 +121,4 @@ class Phi2(nn.Model):
             mask = tf.cast(mask, x.dtype)
 
         y, cache = self.model(x, mask, cache)
-        return self.lm_head(y), cache
+        return self.head(y), cache

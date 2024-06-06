@@ -191,7 +191,7 @@ class MiT(nn.Model):
         self.norm4 = norm_layer(embed_dims[3])
 
         # classification head
-        # self.head = nn.dense(num_classes, embed_dims[3]) if num_classes > 0 else nn.identity()
+        # self.head = self.dense(num_classes, embed_dims[3]) if num_classes > 0 else nn.identity()
 
         nn.Model.apply(self.init_weights)
     
@@ -272,26 +272,6 @@ class MiT(nn.Model):
         outs.append(x)
 
         return outs
-    
-    def fine_tuning(self,classes=None,flag=0):
-        param=[]
-        self.flag=flag
-        if flag==0:
-            self.param_=self.param.copy()
-            self.head_=self.head
-            self.head=nn.dense(classes,self.embed_dim)
-            param.extend(self.head.param)
-            self.param=param
-        elif flag==1:
-            del self.param_[-len(self.head.param):]
-            self.param_.extend(self.head.param)
-            self.param=self.param_
-        else:
-            self.head,self.head_=self.head_,self.head
-            del self.param_[-len(self.head.param):]
-            self.param_.extend(self.head.param)
-            self.param=self.param_
-        return
 
     def __call__(self, x):
         x = self.forward_features(x)

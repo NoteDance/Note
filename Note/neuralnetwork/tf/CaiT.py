@@ -275,7 +275,7 @@ class CaiT(nn.Model):
 
 
         self.feature_info = [dict(num_chs=embed_dim, reduction=0, module='head')]
-        self.head = nn.dense(num_classes, embed_dim) if num_classes > 0 else nn.identity()
+        self.head = self.dense(num_classes, embed_dim) if num_classes > 0 else nn.identity()
 
         nn.Model.apply(self.init_weights)
 
@@ -285,26 +285,6 @@ class CaiT(nn.Model):
 
     def no_weight_decay(self):
         return ['pos_embed', 'cls_token']
-    
-    def fine_tuning(self,classes=None,flag=0):
-        param=[]
-        self.flag=flag
-        if flag==0:
-            self.param_=self.param.copy()
-            self.head_=self.head
-            self.head=nn.dense(classes,self.embed_dim)
-            param.extend(self.head.param)
-            self.param=param
-        elif flag==1:
-            del self.param_[-len(self.head.param):]
-            self.param_.extend(self.head.param)
-            self.param=self.param_
-        else:
-            self.head,self.head_=self.head_,self.head
-            del self.param_[-len(self.head.param):]
-            self.param_.extend(self.head.param)
-            self.param=self.param_
-        return
 
     def forward_features(self, x):
         B = x.shape[0]

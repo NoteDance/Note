@@ -166,7 +166,7 @@ class Phi3(nn.Model):
         super().__init__()
         self.model_type = args.model_type
         self.model = Phi3Model(args)
-        self.lm_head = nn.dense(args.vocab_size, args.hidden_size, use_bias=False)
+        self.head = self.dense(args.vocab_size, args.hidden_size, use_bias=False)
         self.args = args
 
     def __call__(
@@ -175,27 +175,7 @@ class Phi3(nn.Model):
         cache=None,
     ):
         out = self.model(inputs, cache)
-        return self.lm_head(out)
-    
-    def fine_tuning(self,flag=0):
-        param=[]
-        self.flag=flag
-        if flag==0:
-            self.param_=self.param.copy()
-            self.lm_head_=self.lm_head
-            self.lm_head=nn.dense(ModelArgs.vocab_size, ModelArgs.n_embd)
-            param.extend(self.lm_head.param)
-            self.param=param
-        elif flag==1:
-            del self.param_[-len(self.lm_head.param):]
-            self.param_.extend(self.lm_head.param)
-            self.param=self.param_
-        else:
-            self.lm_head,self.lm_head_=self.lm_head_,self.lm_head
-            del self.param_[-len(self.lm_head.param):]
-            self.param_.extend(self.lm_head.param)
-            self.param=self.param_
-        return
+        return self.head(out)
 
     @property
     def layers(self):
