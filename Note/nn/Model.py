@@ -57,7 +57,7 @@ class Model:
     
     def dense(self,num_classes,dim,weight_initializer='Xavier'):
         self.head=nn.dense(num_classes,dim,weight_initializer)
-        return
+        return self.head
     
     
     def fine_tuning(self,num_classes,dim,flag=0,weight_initializer='Xavier'):
