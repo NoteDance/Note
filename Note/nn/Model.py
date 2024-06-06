@@ -1,4 +1,5 @@
 import tensorflow as tf
+from Note import nn
 
 
 class Model:
@@ -27,6 +28,8 @@ class Model:
         self.layer_dict=Model.layer_dict
         self.layer_param=Model.layer_param
         self.layer_list=Model.layer_list
+        self.head=None
+        self.ft_flag=0
         
     
     def add():
@@ -49,6 +52,32 @@ class Model:
         Model.training=flag
         for layer in self.layer_list:
             layer.train_flag=flag
+        return
+    
+    
+    def dense(self,num_classes,dim,weight_initializer='Xavier'):
+        self.head=nn.dense(num_classes,dim,weight_initializer)
+        return
+    
+    
+    def fine_tuning(self,num_classes,dim,flag=0,weight_initializer='Xavier'):
+        param=[]
+        self.ft_flag=flag
+        if flag==0:
+            self.param_=self.param.copy()
+            self.head_=self.head
+            self.head=nn.dense(num_classes,dim,weight_initializer)
+            param.extend(self.head.param)
+            self.param=param
+        elif flag==1:
+            del self.param_[-len(self.head.param):]
+            self.param_.extend(self.head.param)
+            self.param=self.param_
+        else:
+            self.head,self.head_=self.head_,self.head
+            del self.param_[-len(self.head.param):]
+            self.param_.extend(self.head.param)
+            self.param=self.param_
         return
     
     
