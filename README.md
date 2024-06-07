@@ -71,7 +71,7 @@ This function is used to initialize the parameters of the neural network, and it
 This function is used to initialize the parameters of the neural network, it returns a TensorFlow variable and stores the variable in trainable parameters list(Model.param).
 
 
-# Note.nn.variable.variable:
+# Note.nn.parameter.Parameter:
 Its function is similar to torch.nn.parameter.Parameter.
 
 
