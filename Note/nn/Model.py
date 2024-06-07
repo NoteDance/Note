@@ -67,26 +67,24 @@ class Model:
     
     
     def fine_tuning(self,num_classes,flag=0):
-        param=[]
         self.ft_flag=flag
         if flag==0:
-            self.param_=self.param.copy()
             self.head_=self.head
             if isinstance(self.head,nn.dense):
                 self.head=nn.dense(num_classes,self.head.input_size,self.head.weight_initializer,use_bias=self.head.use_bias)
             elif isinstance(self.head,nn.conv2d):
                 self.head=nn.conv2d(num_classes,self.head.kernel_size,self.head.input_size,weight_initializer=self.head.weight_initializer,use_bias=self.head.use_bias)
-            param.extend(self.head.param)
-            self.param=param
+            self.param[-len(self.head.param):]=self.head.param
+            for param in self.param[:-len(self.head.param)]:
+                param._trainable=False
         elif flag==1:
-            del self.param_[-len(self.head.param):]
-            self.param_.extend(self.head.param)
-            self.param=self.param_
+            for param in self.param[:-len(self.head.param)]:
+                param._trainable=True
         else:
             self.head,self.head_=self.head_,self.head
-            del self.param_[-len(self.head.param):]
-            self.param_.extend(self.head.param)
-            self.param=self.param_
+            self.param[-len(self.head.param):]=self.head.param
+            for param in self.param[:-len(self.head.param)]:
+                param._trainable=True
         return
     
     
@@ -108,13 +106,13 @@ class Model:
     
     def freeze(self,key):
         for param in self.layer_param[key]:
-            param.trainable=False
+            param._trainable=False
         return
     
     
     def unfreeze(self,key):
         for param in self.layer_param[key]:
-            param.trainable=True
+            param._trainable=True
         return
     
     
