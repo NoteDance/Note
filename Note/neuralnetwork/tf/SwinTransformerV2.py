@@ -94,7 +94,7 @@ class WindowAttention:
         self.pretrained_window_size = pretrained_window_size
         self.num_heads = num_heads
 
-        self.logit_scale = nn.variable(tf.math.log(10 * tf.ones((num_heads, 1, 1))), name='logit_scale')
+        self.logit_scale = nn.Parameter(tf.math.log(10 * tf.ones((num_heads, 1, 1))), name='logit_scale')
 
         # mlp to generate continuous relative position bias
         self.cpb_mlp = nn.Layers()

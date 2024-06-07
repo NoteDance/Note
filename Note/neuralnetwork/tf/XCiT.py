@@ -187,8 +187,8 @@ class ClassAttentionBlock:
                        drop=drop)
 
         if eta is not None:     # LayerScale Initialization (no layerscale when None)
-            self.gamma1 = nn.variable(eta * tf.ones(dim))
-            self.gamma2 = nn.variable(eta * tf.ones(dim))
+            self.gamma1 = nn.Parameter(eta * tf.ones(dim))
+            self.gamma2 = nn.Parameter(eta * tf.ones(dim))
         else:
             self.gamma1, self.gamma2 = 1.0, 1.0
 
@@ -270,9 +270,9 @@ class XCABlock:
         self.norm3 = norm_layer(dim)
         self.local_mp = LPI(in_features=dim, act_layer=act_layer)
 
-        self.gamma1 = nn.variable(eta * tf.ones(dim))
-        self.gamma2 = nn.variable(eta * tf.ones(dim))
-        self.gamma3 = nn.variable(eta * tf.ones(dim))
+        self.gamma1 = nn.Parameter(eta * tf.ones(dim))
+        self.gamma2 = nn.Parameter(eta * tf.ones(dim))
+        self.gamma3 = nn.Parameter(eta * tf.ones(dim))
 
     def __call__(self, x, H, W):
         x = x + self.drop_path(self.gamma1 * self.attn(self.norm1(x)))

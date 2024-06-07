@@ -211,7 +211,7 @@ class CrossViT(nn.Model):
 
         self.patch_embed = []
         if hybrid_backbone is None:
-            self.pos_embed = [nn.variable(tf.zeros((1, 1 + num_patches[i], embed_dim[i]))) for i in range(self.num_branches)]
+            self.pos_embed = [nn.Parameter(tf.zeros((1, 1 + num_patches[i], embed_dim[i]))) for i in range(self.num_branches)]
             for im_s, p, d in zip(img_size, patch_size, embed_dim):
                 self.patch_embed.append(PatchEmbed(img_size=im_s, patch_size=p, in_chans=in_chans, embed_dim=d, multi_conv=multi_conv))
         else:
@@ -223,9 +223,9 @@ class CrossViT(nn.Model):
                 self.pos_embed.append(tf.Variable(get_sinusoid_encoding(n_position=1 + num_patches[idx], d_hid=embed_dim[idx]), trainable=False))
 
             del self.pos_embed
-            self.pos_embed = [nn.variable(tf.zeros((1, 1 + num_patches[i], embed_dim[i]))) for i in range(self.num_branches)]
+            self.pos_embed = [nn.Parameter(tf.zeros((1, 1 + num_patches[i], embed_dim[i]))) for i in range(self.num_branches)]
 
-        self.cls_token = [nn.variable(tf.zeros((1, 1, embed_dim[i]))) for i in range(self.num_branches)]
+        self.cls_token = [nn.Parameter(tf.zeros((1, 1, embed_dim[i]))) for i in range(self.num_branches)]
         self.pos_drop = nn.dropout(drop_rate)
 
         total_depth = sum([sum(x[-2:]) for x in depth])

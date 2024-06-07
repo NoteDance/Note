@@ -146,8 +146,8 @@ class Layer_scale_init_Block:
         self.norm2 = norm_layer(dim)
         mlp_hidden_dim = int(dim * mlp_ratio)
         self.mlp = Mlp_block(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
-        self.gamma_1 = nn.variable(init_values * tf.ones((dim)))
-        self.gamma_2 = nn.variable(init_values * tf.ones((dim)))
+        self.gamma_1 = nn.Parameter(init_values * tf.ones((dim)))
+        self.gamma_2 = nn.Parameter(init_values * tf.ones((dim)))
 
     def __call__(self, x):
         x = x + self.drop_path(self.gamma_1 * self.attn(self.norm1(x)))
@@ -173,10 +173,10 @@ class Layer_scale_init_Block_paralx2:
         mlp_hidden_dim = int(dim * mlp_ratio)
         self.mlp = Mlp_block(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
         self.mlp1 = Mlp_block(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
-        self.gamma_1 = nn.variable(init_values * tf.ones((dim)))
-        self.gamma_1_1 = nn.variable(init_values * tf.ones((dim)))
-        self.gamma_2 = nn.variable(init_values * tf.ones((dim)))
-        self.gamma_2_1 = nn.variable(init_values * tf.ones((dim)))
+        self.gamma_1 = nn.Parameter(init_values * tf.ones((dim)))
+        self.gamma_1_1 = nn.Parameter(init_values * tf.ones((dim)))
+        self.gamma_2 = nn.Parameter(init_values * tf.ones((dim)))
+        self.gamma_2_1 = nn.Parameter(init_values * tf.ones((dim)))
         
     def __call__(self, x):
         x = x + self.drop_path(self.gamma_1*self.attn(self.norm1(x))) + self.drop_path(self.gamma_1_1 * self.attn1(self.norm11(x)))

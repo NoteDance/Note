@@ -568,8 +568,8 @@ class Block:
         self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
 
         if init_values is not None and init_values > 0:
-            self.gamma_1 = nn.variable(init_values * tf.ones((dim)))
-            self.gamma_2 = nn.variable(init_values * tf.ones((dim)))
+            self.gamma_1 = nn.Parameter(init_values * tf.ones((dim)))
+            self.gamma_2 = nn.Parameter(init_values * tf.ones((dim)))
         else:
             self.gamma_1, self.gamma_2 = None, None
 
