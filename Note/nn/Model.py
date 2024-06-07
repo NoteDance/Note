@@ -61,8 +61,8 @@ class Model:
         return self.head
     
     
-    def conv2d(self,num_classes,dim,kernel_size=1,weight_initializer='Xavier',use_bias=True):
-        self.head=nn.conv2d(num_classes,kernel_size,dim,weight_initializer=weight_initializer,use_bias=use_bias)
+    def conv2d(self,num_classes,dim,kernel_size=1,weight_initializer='Xavier',padding='SAME',use_bias=True):
+        self.head=nn.conv2d(num_classes,kernel_size,dim,weight_initializer=weight_initializer,padding=padding,use_bias=use_bias)
         return self.head
     
     
@@ -73,7 +73,7 @@ class Model:
             if isinstance(self.head,nn.dense):
                 self.head=nn.dense(num_classes,self.head.input_size,self.head.weight_initializer,use_bias=self.head.use_bias)
             elif isinstance(self.head,nn.conv2d):
-                self.head=nn.conv2d(num_classes,self.head.kernel_size,self.head.input_size,weight_initializer=self.head.weight_initializer,use_bias=self.head.use_bias)
+                self.head=nn.conv2d(num_classes,self.head.kernel_size,self.head.input_size,weight_initializer=self.head.weight_initializer,padding=self.head.padding,use_bias=self.head.use_bias)
             self.param[-len(self.head.param):]=self.head.param
             for param in self.param[:-len(self.head.param)]:
                 param._trainable=False
