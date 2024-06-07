@@ -34,7 +34,6 @@ class SwiftFormer(Model):
                  epsilon=1e-8,
                  weight_decay=0.025,
                  device='GPU',
-                 dtype='float32'
                  ):
         super().__init__()
         
@@ -50,12 +49,12 @@ class SwiftFormer(Model):
         self.epsilon=epsilon
         self.weight_decay=weight_decay
         self.device=device
-        self.alpha = tf.constant(0.5, dtype)
-        self.temperature = tf.constant(10, dtype)
+        self.alpha = tf.constant(0.5)
+        self.temperature = tf.constant(10.)
         self.ce_loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
         self.km=0
 
-        self.patch_embed = stem(3, embed_dims[0], dtype)
+        self.patch_embed = stem(3, embed_dims[0])
 
         self.network = []
         for i in range(len(layers)):
