@@ -39,89 +39,57 @@ def TransitionLayer(input_channels, compression_factor, dtype='float32'):
         return layers
 
 
-class DenseNet169:
-    def __init__(self, growth_rate=32, compression_factor=0.5, num_classes=1000, include_top=True, pooling=None, dtype='float32'):
+class DenseNet169(nn.Model):
+    def __init__(self, growth_rate=32, compression_factor=0.5, num_classes=1000, include_top=True, pooling=None):
+        super().__init__()
         self.num_classes=num_classes
         self.growth_rate=growth_rate
         self.compression_factor=compression_factor
         self.include_top=include_top
         self.pooling=pooling
-        self.dtype=dtype
-        self.training=True
-    
-    
-    def build(self):
-        nn.Model.init()
         
         self.layers=nn.Layers()
         self.layers.add(nn.zeropadding2d(3,padding=[3, 3]))
-        self.layers.add(nn.conv2d(64,[7,7],strides=2,use_bias=False,dtype=self.dtype))
-        self.layers.add(nn.batch_norm(epsilon=1.001e-5,dtype=self.dtype))
+        self.layers.add(nn.conv2d(64,[7,7],strides=2,use_bias=False))
+        self.layers.add(nn.batch_norm(epsilon=1.001e-5))
         self.layers.add(activation_dict['relu'])
         self.layers.add(nn.zeropadding2d(padding=[1, 1]))
         self.layers.add(nn.max_pool2d(ksize=[3, 3],strides=[2, 2],padding="VALID"))
         
         
         self.layers.add(DenseBlock(input_channels=64,num_layers=6,
-                                 growth_rate=self.growth_rate,
-                                 dtype=self.dtype))
+                                 growth_rate=self.growth_rate))
         
         self.layers.add(TransitionLayer(input_channels=64,compression_factor=self.compression_factor,
                                       dtype=self.dtype))
         
         self.layers.add(DenseBlock(input_channels=int(64 * self.compression_factor),num_layers=12,
-                                 growth_rate=self.growth_rate,
-                                 dtype=self.dtype))
+                                 growth_rate=self.growth_rate))
         
-        self.layers.add(TransitionLayer(input_channels=int(64 * self.compression_factor),compression_factor=self.compression_factor,
-                                      dtype=self.dtype))
+        self.layers.add(TransitionLayer(input_channels=int(64 * self.compression_factor),compression_factor=self.compression_factor))
         
         self.layers.add(DenseBlock(input_channels=int(64 * self.compression_factor**2),num_layers=32,
-                                 growth_rate=self.growth_rate,
-                                 dtype=self.dtype))
+                                 growth_rate=self.growth_rate))
         
-        self.layers.add(TransitionLayer(input_channels=int(64 * self.compression_factor**2),compression_factor=self.compression_factor,
-                                      dtype=self.dtype))
+        self.layers.add(TransitionLayer(input_channels=int(64 * self.compression_factor**2),compression_factor=self.compression_factor))
         
         self.layers.add(DenseBlock(input_channels=int(64 * self.compression_factor**3),num_layers=32,
-                                 growth_rate=self.growth_rate,
-                                 dtype=self.dtype))
+                                 growth_rate=self.growth_rate))
         
-        self.layers.add(nn.batch_norm(epsilon=1.001e-5,dtype=self.dtype))
+        self.layers.add(nn.batch_norm(epsilon=1.001e-5))
         
         self.layers.add(activation_dict['relu'])
         
-        self.dense=nn.dense(self.num_classes,int(64 * self.compression_factor**3),activation='softmax',dtype=self.dtype)
+        self.head=self.dense(self.num_classes,int(64 * self.compression_factor**3))
         
-        self.param=nn.Model.param
-        return
-    
-    
-    def fine_tuning(self,classes=None,flag=0):
-        param=[]
-        if flag==0:
-            self.param_=self.param.copy()
-            self.dense_=self.dense
-            self.dense=nn.dense(classes,self.dense.input_size,activation='softmax',dtype=self.dense.dtype)
-            param.extend(self.dense.param)
-            self.param=param
-        elif flag==1:
-            del self.param_[-len(self.dense.param):]
-            self.param_.extend(self.dense.param)
-            self.param=self.param_
-        else:
-            self.dense,self.dense_=self.dense_,self.dense
-            del self.param_[-len(self.dense.param):]
-            self.param_.extend(self.dense.param)
-            self.param=self.param_
-        return
+        self.training=True
     
     
     def __call__(self, data):
         x=self.layers(data,self.training)
         if self.include_top:
             x = tf.math.reduce_mean(x, axis=[1, 2])
-            x = self.dense(x)
+            x = self.head(x)
         else:
             if self.pooling=="avg":
                 x = tf.math.reduce_mean(x, axis=[1, 2])

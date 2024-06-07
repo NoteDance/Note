@@ -45,7 +45,7 @@ class Block:
         return x
 
 
-class ConvNeXtV2:
+class ConvNeXtV2(nn.Model):
     """ ConvNeXt V2
         
     Args:
@@ -57,13 +57,12 @@ class ConvNeXtV2:
         head_init_scale (float): Init scaling value for classifier weights and biases. Default: 1.
     """
     def __init__(self, model_type='tiny', classes=1000,
-                 classifier_activation="softmax",
                  drop_path_rate=0., head_init_scale=1., include_top=True,
                  pooling=None
                  ):
+        super().__init__()
         self.in_chans = 3
         self.classes = classes
-        self.classifier_activation = classifier_activation
         self.depths = MODEL_CONFIGS[model_type]['depths']
         self.dims = MODEL_CONFIGS[model_type]['dims']
         self.drop_path_rate = drop_path_rate
@@ -72,23 +71,18 @@ class ConvNeXtV2:
         self.stages = [] # 4 feature resolution stages, each consisting of multiple residual blocks
         self.include_top=include_top
         self.pooling=pooling
-        self.training=True
-    
-
-    def build(self, dtype='float32'):
-        nn.Model.init()
         
         stem=nn.Layers()
         stem.add(nn.conv2d(self.dims[0],kernel_size=4,input_size=self.in_chans,strides=4,
-                        weight_initializer=['truncated_normal',.02],dtype=dtype))
-        stem.add(nn.layer_norm(epsilon=1e-6,dtype=dtype))
+                        weight_initializer=['truncated_normal',.02]))
+        stem.add(nn.layer_norm(epsilon=1e-6))
         self.downsample_layers.append(stem)
         
         for i in range(3):
             downsample_layer=nn.Layers()
-            downsample_layer.add(nn.layer_norm(input_size=self.dims[i],epsilon=1e-6,dtype=dtype))
+            downsample_layer.add(nn.layer_norm(input_size=self.dims[i],epsilon=1e-6))
             downsample_layer.add(nn.conv2d(self.dims[i+1],kernel_size=2,input_size=self.dims[i],strides=2,
-                            weight_initializer=['truncated_normal',.02],dtype=dtype))
+                            weight_initializer=['truncated_normal',.02]))
             self.downsample_layers.append(downsample_layer)
         
         dp_rates = [
@@ -98,41 +92,17 @@ class ConvNeXtV2:
         for i in range(4):
             layers=nn.Layers()
             for j in range(self.depths[i]):
-                layers.add(Block(dim=self.dims[i], drop_path=dp_rates[cur + j], dtype=dtype))
+                layers.add(Block(dim=self.dims[i], drop_path=dp_rates[cur + j]))
             stage=layers
             self.stages.append(stage)
             cur += self.depths[i]
         
-        self.layer_norm=nn.layer_norm(self.dims[-1],epsilon=1e-6,dtype=dtype)
-        self.dense=nn.dense(self.classes,self.dims[-1],weight_initializer=['truncated_normal',.02],activation=self.classifier_activation,dtype=dtype)
-        self.dense.weight.assign(tf.cast(self.head_init_scale,self.dense.weight.dtype)*self.dense.weight)
-        self.dense.bias.assign(tf.cast(self.head_init_scale,self.dense.bias.dtype)*self.dense.bias)
+        self.layer_norm=nn.layer_norm(self.dims[-1],epsilon=1e-6)
+        self.head=self.dense(self.classes,self.dims[-1],weight_initializer=['truncated_normal',.02])
+        self.head.weight.assign(tf.cast(self.head_init_scale,self.dense.weight.dtype)*self.dense.weight)
+        self.head.bias.assign(tf.cast(self.head_init_scale,self.dense.bias.dtype)*self.dense.bias)
         
-        self.dtype=dtype
-        self.param=nn.Model.param
-        return
-    
-    
-    def fine_tuning(self,classes=None,flag=0):
-        param=[]
-        if flag==0:
-            self.param_=self.param.copy()
-            self.dense_=self.dense
-            self.dense=nn.dense(classes,self.dense.input_size,weight_initializer=['truncated_normal',.02],activation=self.classifier_activation,dtype=self.dense.dtype)
-            self.dense.weight.assign(tf.cast(self.head_init_scale,self.dense.weight.dtype)*self.dense.weight)
-            self.dense.bias.assign(tf.cast(self.head_init_scale,self.dense.bias.dtype)*self.dense.bias)
-            param.extend(self.dense.param)
-            self.param=param
-        elif flag==1:
-            del self.param_[-len(self.dense.param):]
-            self.param_.extend(self.dense.param)
-            self.param=self.param_
-        else:
-            self.dense,self.dense_=self.dense_,self.dense
-            del self.param_[-len(self.dense.param):]
-            self.param_.extend(self.dense.param)
-            self.param=self.param_
-        return
+        self.training=True
 
 
     def __call__(self,data):
@@ -144,7 +114,7 @@ class ConvNeXtV2:
         if self.include_top:
             x = tf.math.reduce_mean(x, axis=[1, 2])
             x = self.layer_norm(x)
-            x = self.dense(x)
+            x = self.head(x)
         else:
             if self.pooling=="avg":
                 x = tf.math.reduce_mean(x, axis=[1, 2])

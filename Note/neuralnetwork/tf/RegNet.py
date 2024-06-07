@@ -3,31 +3,31 @@ from Note import nn
 from Note.nn.activation import activation_dict
 
 
-def PreStem(x,dtype='float32'):
-    x = tf.cast(x, dtype)
-    x = tf.math.divide(x, tf.cast(255.0,dtype))
+def PreStem(x):
+    x = x
+    x = tf.math.divide(x, 255.0)
     return x
 
 
-def Stem(in_channels,dtype='float32'):
+def Stem(in_channels):
     layers=nn.Layers()
-    layers.add(nn.conv2d(32,[3,3],in_channels,strides=[2],use_bias=False,padding='SAME',weight_initializer='He',dtype=dtype))
-    layers.add(nn.batch_norm(momentum=0.9,epsilon=1e-5,dtype=dtype))
+    layers.add(nn.conv2d(32,[3,3],in_channels,strides=[2],use_bias=False,padding='SAME',weight_initializer='He'))
+    layers.add(nn.batch_norm(momentum=0.9,epsilon=1e-5))
     layers.add(activation_dict['relu'])
     return layers
 
 
-def SqueezeAndExciteBlock(in_channels, filters_in, se_filters, dtype='float32'):
+def SqueezeAndExciteBlock(in_channels, filters_in, se_filters):
     layers=nn.Layers()
     layers.add(nn.identity(in_channels),save_data=True)
     layers.add(nn.global_avg_pool2d(keepdims=True))
-    layers.add(nn.conv2d(se_filters,[1,1],activation='relu',weight_initializer='He',dtype=dtype))
-    layers.add(nn.conv2d(filters_in,[1,1],activation='sigmoid',weight_initializer='He',dtype=dtype))
+    layers.add(nn.conv2d(se_filters,[1,1],activation='relu',weight_initializer='He'))
+    layers.add(nn.conv2d(filters_in,[1,1],activation='sigmoid',weight_initializer='He'))
     layers.add(tf.math.multiply,use_data=True)
     return layers
 
 
-def XBlock(in_channels, filters_in, filters_out, group_width, stride=1, dtype='float32'):
+def XBlock(in_channels, filters_in, filters_out, group_width, stride=1):
     if filters_in != filters_out and stride == 1:
         raise ValueError(
             f"Input filters({filters_in}) and output "
@@ -41,25 +41,25 @@ def XBlock(in_channels, filters_in, filters_out, group_width, stride=1, dtype='f
     
     layers=nn.Layers()
     if stride!=1:
-        layers.add(nn.conv2d(filters_out,[1,1],in_channels,strides=[2],use_bias=False,weight_initializer='He',dtype=dtype))
-        layers.add(nn.batch_norm(momentum=0.9,epsilon=1e-5,dtype=dtype))
+        layers.add(nn.conv2d(filters_out,[1,1],in_channels,strides=[2],use_bias=False,weight_initializer='He'))
+        layers.add(nn.batch_norm(momentum=0.9,epsilon=1e-5))
     else:
         layers.add(nn.identity(in_channels),save_data=True)
 
     # Build block
     # conv_1x1_1
-    layers.add(nn.conv2d(filters_out,[1,1],use_bias=False,weight_initializer='He',dtype=dtype))
-    layers.add(nn.batch_norm(momentum=0.9,epsilon=1e-5,dtype=dtype))
+    layers.add(nn.conv2d(filters_out,[1,1],use_bias=False,weight_initializer='He'))
+    layers.add(nn.batch_norm(momentum=0.9,epsilon=1e-5))
     layers.add(activation_dict['relu'])
 
     # conv_3x3
-    layers.add(nn.conv2d(filters_out,[3,3],layers.output_size//groups,use_bias=False,strides=[stride],padding='SAME',weight_initializer='He',dtype=dtype))
-    layers.add(nn.batch_norm(momentum=0.9,epsilon=1e-5,dtype=dtype))
+    layers.add(nn.conv2d(filters_out,[3,3],layers.output_size//groups,use_bias=False,strides=[stride],padding='SAME',weight_initializer='He'))
+    layers.add(nn.batch_norm(momentum=0.9,epsilon=1e-5))
     layers.add(activation_dict['relu'])
 
     # conv_1x1_2
-    layers.add(nn.conv2d(filters_out,[1,1],use_bias=False,weight_initializer='He',dtype=dtype))
-    layers.add(nn.batch_norm(momentum=0.9,epsilon=1e-5,dtype=dtype),save_data=True)
+    layers.add(nn.conv2d(filters_out,[1,1],use_bias=False,weight_initializer='He'))
+    layers.add(nn.batch_norm(momentum=0.9,epsilon=1e-5),save_data=True)
     
     layers.add(nn.add(),use_data=True)
     
@@ -75,7 +75,6 @@ def YBlock(
     group_width,
     stride=1,
     squeeze_excite_ratio=0.25,
-    dtype='float32'
 ):
     if filters_in != filters_out and stride == 1:
         raise ValueError(
@@ -90,28 +89,28 @@ def YBlock(
 
     layers=nn.Layers()
     if stride!=1:
-        layers.add(nn.conv2d(filters_out,[1,1],in_channels,strides=[2],use_bias=False,weight_initializer='He',dtype=dtype))
-        layers.add(nn.batch_norm(momentum=0.9,epsilon=1e-5,dtype=dtype))
+        layers.add(nn.conv2d(filters_out,[1,1],in_channels,strides=[2],use_bias=False,weight_initializer='He'))
+        layers.add(nn.batch_norm(momentum=0.9,epsilon=1e-5))
     else:
         layers.add(nn.identity(in_channels),save_data=True)
 
     # Build block
     # conv_1x1_1
-    layers.add(nn.conv2d(filters_out,[1,1],use_bias=False,weight_initializer='He',dtype=dtype))
-    layers.add(nn.batch_norm(momentum=0.9,epsilon=1e-5,dtype=dtype))
+    layers.add(nn.conv2d(filters_out,[1,1],use_bias=False,weight_initializer='He'))
+    layers.add(nn.batch_norm(momentum=0.9,epsilon=1e-5))
     layers.add(activation_dict['relu'])
 
     # conv_3x3
-    layers.add(nn.conv2d(filters_out,[3,3],layers.output_size//groups,use_bias=False,strides=[stride],padding='SAME',weight_initializer='He',dtype=dtype))
-    layers.add(nn.batch_norm(momentum=0.9,epsilon=1e-5,dtype=dtype))
+    layers.add(nn.conv2d(filters_out,[3,3],layers.output_size//groups,use_bias=False,strides=[stride],padding='SAME',weight_initializer='He'))
+    layers.add(nn.batch_norm(momentum=0.9,epsilon=1e-5))
     layers.add(activation_dict['relu'])
 
     # Squeeze-Excitation block
-    layers.add(SqueezeAndExciteBlock(layers.output_size, filters_out, se_filters, dtype=dtype))
+    layers.add(SqueezeAndExciteBlock(layers.output_size, filters_out, se_filters))
 
     # conv_1x1_2
-    layers.add(nn.conv2d(filters_out,[1,1],use_bias=False,weight_initializer='He',dtype=dtype))
-    layers.add(nn.batch_norm(momentum=0.9,epsilon=1e-5,dtype=dtype),save_data=True)
+    layers.add(nn.conv2d(filters_out,[1,1],use_bias=False,weight_initializer='He'))
+    layers.add(nn.batch_norm(momentum=0.9,epsilon=1e-5),save_data=True)
     
     layers.add(nn.add(),use_data=True)
 
@@ -128,7 +127,6 @@ def ZBlock(
     stride=1,
     squeeze_excite_ratio=0.25,
     bottleneck_ratio=0.25,
-    dtype='float32'
 ):
     if filters_in != filters_out and stride == 1:
         raise ValueError(
@@ -147,28 +145,28 @@ def ZBlock(
     
     # Build block
     # conv_1x1_1
-    layers.add(nn.conv2d(inv_btlneck_filters,[1,1],use_bias=False,weight_initializer='He',dtype=dtype))
-    layers.add(nn.batch_norm(layers.output_size,momentum=0.9,epsilon=1e-5,dtype=dtype))
+    layers.add(nn.conv2d(inv_btlneck_filters,[1,1],use_bias=False,weight_initializer='He'))
+    layers.add(nn.batch_norm(layers.output_size,momentum=0.9,epsilon=1e-5))
     layers.add(activation_dict['silu'])
 
     # conv_3x3
-    layers.add(nn.conv2d(inv_btlneck_filters,[3,3],layers.output_size//groups,use_bias=False,strides=[stride],padding='SAME',weight_initializer='He',dtype=dtype))
-    layers.add(nn.batch_norm(momentum=0.9,epsilon=1e-5,dtype=dtype))
+    layers.add(nn.conv2d(inv_btlneck_filters,[3,3],layers.output_size//groups,use_bias=False,strides=[stride],padding='SAME',weight_initializer='He'))
+    layers.add(nn.batch_norm(momentum=0.9,epsilon=1e-5))
     layers.add(activation_dict['silu'])
 
     # Squeeze-Excitation block
-    layers.add(SqueezeAndExciteBlock(layers.output_size, inv_btlneck_filters, se_filters, dtype=dtype))
+    layers.add(SqueezeAndExciteBlock(layers.output_size, inv_btlneck_filters, se_filters))
 
     # conv_1x1_2
-    layers.add(nn.conv2d(filters_out,[1,1],layers.output_size,use_bias=False,weight_initializer='He',dtype=dtype))
-    layers.add(nn.batch_norm(momentum=0.9,epsilon=1e-5,dtype=dtype),save_data=True)
+    layers.add(nn.conv2d(filters_out,[1,1],layers.output_size,use_bias=False,weight_initializer='He'))
+    layers.add(nn.batch_norm(momentum=0.9,epsilon=1e-5),save_data=True)
     
     if stride == 1:
         layers.add(tf.math.add,use_data=True)
     return layers
 
 
-def Stage(in_channels, block_type, depth, group_width, filters_in, filters_out, dtype='float32'):
+def Stage(in_channels, block_type, depth, group_width, filters_in, filters_out):
     layers=nn.Layers()
     if block_type == "X":
         layers.add(XBlock(
@@ -223,15 +221,15 @@ def Stage(in_channels, block_type, depth, group_width, filters_in, filters_out, 
     return layers
 
 
-class RegNet:
+class RegNet(nn.Model):
     def __init__(self,
     model_name='x002',
     include_preprocessing=True,
     include_top=True,
     pooling=None,
     classes=1000,
-    classifier_activation="softmax",
     ):
+        super().__init__()
         self.depths=MODEL_CONFIGS[model_name]['depths']
         self.widths=MODEL_CONFIGS[model_name]['widths']
         self.group_width=MODEL_CONFIGS[model_name]['group_width']
@@ -240,15 +238,9 @@ class RegNet:
         self.include_top=include_top
         self.pooling=pooling
         self.classes=classes
-        self.classifier_activation=classifier_activation
-        self.training=True
         
-    
-    def build(self,dtype='float32'):
-        nn.Model.init()
-        self.dtype=dtype
         self.layers=nn.Layers()
-        self.layers.add(Stem(3,dtype))
+        self.layers.add(Stem(3))
         in_channels = 32
         for num_stage in range(4):
             depth = self.depths[num_stage]
@@ -265,43 +257,24 @@ class RegNet:
             in_channels = out_channels
         if self.include_top:
             self.global_avg_pool2d=nn.global_avg_pool2d()
-            self.dense=nn.dense(self.classes,self.layers.output_size,activation=self.classifier_activation,dtype=dtype)
+            self.head=self.dense(self.classes,self.layers.output_size)
         else:
             if self.pooling == "avg":
                 self.global_avg_pool2d=nn.global_avg_pool2d()
             elif self.pooling == "max":
                 self.global_max_pool2d=nn.global_max_pool2d()
-        self.param=nn.Model.param
-    
-    
-    def fine_tuning(self,classes=None,flag=0):
-        param=[]
-        if flag==0:
-            self.param_=self.param.copy()
-            self.dense_=self.dense
-            self.dense=nn.dense(classes,self.dense.input_size,activation=self.classifier_activation,dtype=self.dense.dtype)
-            param.extend(self.dense.param)
-            self.param=param
-        elif flag==1:
-            del self.param_[-len(self.dense.param):]
-            self.param_.extend(self.dense.param)
-            self.param=self.param_
-        else:
-            self.dense,self.dense_=self.dense_,self.dense
-            del self.param_[-len(self.dense.param):]
-            self.param_.extend(self.dense.param)
-            self.param=self.param_
-        return
+                
+        self.training=True
     
     
     def __call__(self,data):
         x = data
         if self.include_preprocessing:
-            x = PreStem(x,self.dtype)
+            x = PreStem(x)
         x = self.layers(x,self.training)
         if self.include_top:
             x = self.global_avg_pool2d(x)
-            x = self.dense(x)
+            x = self.head(x)
         else:
             if self.pooling=="avg":
                 x=tf.math.reduce_mean(x,axis=[1,2])

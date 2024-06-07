@@ -5,7 +5,7 @@ from Note.nn.activation import activation_dict
 import copy
 
 
-class EfficientNetV2:
+class EfficientNetV2(nn.Model):
     """Instantiates the EfficientNetV2 architecture using given scaling
     coefficients.
 
@@ -62,10 +62,9 @@ class EfficientNetV2:
                 weights="imagenet",
                 pooling=None,
                 classes=1000,
-                classifier_activation="softmax",
                 include_preprocessing=True,
-                dtype='float32'
             ):
+        super().__init__()
         if include_preprocessing:
             # Apply original V1 preprocessing for Bx variants
             if model_name.split("-")[-1].startswith("b"):
@@ -106,14 +105,7 @@ class EfficientNetV2:
         self.classes=classes # store the number of classes
         self.include_top=include_top
         self.pooling=pooling
-        self.classifier_activation=classifier_activation
-        self.dtype=dtype
-        self.norm=nn.norm(input_shape,dtype=dtype)
-        self.training=True
-    
-    
-    def build(self):
-        nn.Model.init()
+        self.norm=nn.norm(input_shape)
         
         def round_filters(filters, width_coefficient, min_depth, depth_divisor):
             """Round number of filters based on depth multiplier."""
@@ -139,8 +131,8 @@ class EfficientNetV2:
         )
         self.layers1=nn.Layers()
         self.layers1.add(nn.conv2d(stem_filters,[3,3],3,strides=2,padding="SAME",use_bias=False,
-                           weight_initializer=CONV_KERNEL_INITIALIZER,dtype=self.dtype))
-        self.layers1.add(nn.batch_norm(axis=-1,momentum=self.bn_momentum,dtype=self.dtype))
+                           weight_initializer=CONV_KERNEL_INITIALIZER))
+        self.layers1.add(nn.batch_norm(axis=-1,momentum=self.bn_momentum))
         self.layers1.add(activation_dict[self.activation])    
     
         # Build blocks
@@ -184,8 +176,7 @@ class EfficientNetV2:
                     activation=self.activation,
                     bn_momentum=self.bn_momentum,
                     survival_probability=self.drop_connect_rate * b / blocks,
-                    **args,
-                    dtype=self.dtype
+                    **args
                 ))
                 b += 1
                 in_channels=self.layers2.output_size
@@ -204,42 +195,22 @@ class EfficientNetV2:
             self.layers2.output_size,
             padding="SAME",
             use_bias=False,
-            weight_initializer=CONV_KERNEL_INITIALIZER,
-            dtype=self.dtype
+            weight_initializer=CONV_KERNEL_INITIALIZER
         ))
-        self.layers3.add(nn.batch_norm(axis=-1,momentum=self.bn_momentum,dtype=self.dtype))
+        self.layers3.add(nn.batch_norm(axis=-1,momentum=self.bn_momentum))
         self.layers3.add(activation_dict[self.activation])
         if self.include_top:
             self.global_avg_pool2d=nn.global_avg_pool2d()
             if self.dropout_rate > 0:
                 self.dropout=nn.dropout(self.dropout_rate)
-            self.dense=nn.dense(self.classes,self.layers3.output_size,activation=self.classifier_activation,weight_initializer=DENSE_KERNEL_INITIALIZER,dtype=self.dtype)
+            self.head=self.dense(self.classes,self.layers3.output_size,weight_initializer=DENSE_KERNEL_INITIALIZER)
         else:
             if self.pooling == "avg":
                 self.global_avg_pool2d=nn.global_avg_pool2d()
             elif self.pooling == "max":
                 self.global_max_pool2d=nn.global_max_pool2d()
-        self.param=nn.Model.param
-        
-        
-    def fine_tuning(self,classes=None,flag=0):
-        param=[]
-        if flag==0:
-            self.param_=self.param.copy()
-            self.dense_=self.dense
-            self.dense=nn.dense(classes,self.dense.input_size,activation=self.classifier_activation,dtype=self.dense.dtype)
-            param.extend(self.dense.param)
-            self.param=param
-        elif flag==1:
-            del self.param_[-len(self.dense.param):]
-            self.param_.extend(self.dense.param)
-            self.param=self.param_
-        else:
-            self.dense,self.dense_=self.dense_,self.dense
-            del self.param_[-len(self.dense.param):]
-            self.param_.extend(self.dense.param)
-            self.param=self.param_
-        return
+                
+        self.training=True
     
     
     def __call__(self,data):
@@ -252,7 +223,7 @@ class EfficientNetV2:
             x=self.global_avg_pool2d(x)
             if self.dropout_rate > 0:
                 x=self.dropout(x)
-            x=self.dense(x)
+            x=self.head(x)
         else:
             if self.pooling == "avg":
                 x=self.global_avg_pool2d(x)
@@ -273,8 +244,7 @@ class MBConvBlock:
             se_ratio=0.0,
             bn_momentum=0.9,
             activation="swish",
-            survival_probability: float = 0.8,
-            dtype='float32'
+            survival_probability: float = 0.8
             ):
         self.strides = strides
         self.input_filters = input_filters
@@ -290,13 +260,11 @@ class MBConvBlock:
                 strides=1,
                 weight_initializer=CONV_KERNEL_INITIALIZER,
                 padding="SAME",
-                use_bias=False,
-                dtype=dtype
+                use_bias=False
             ))
             self.layers.add(nn.batch_norm(
                 axis=-1,
-                momentum=bn_momentum,
-                dtype=dtype
+                momentum=bn_momentum
             ))
             self.layers.add(activation_dict[activation])
         else:
@@ -308,11 +276,10 @@ class MBConvBlock:
             strides=strides,
             weight_initializer=CONV_KERNEL_INITIALIZER,
             padding="SAME",
-            use_bias=False,
-            dtype=dtype
+            use_bias=False
         ))
         self.layers.add(nn.batch_norm(
-            axis=-1, momentum=bn_momentum, dtype=dtype
+            axis=-1, momentum=bn_momentum
         ))
         self.layers.add(activation_dict[activation],save_data=True)
     
@@ -327,16 +294,14 @@ class MBConvBlock:
                 [1,1],
                 padding="SAME",
                 activation=activation,
-                weight_initializer=CONV_KERNEL_INITIALIZER,
-                dtype=dtype
+                weight_initializer=CONV_KERNEL_INITIALIZER
             ))
             self.layers.add(nn.conv2d(
                 filters,
                 [1,1],
                 padding="SAME",
                 activation="sigmoid",
-                weight_initializer=CONV_KERNEL_INITIALIZER,
-                dtype=dtype
+                weight_initializer=CONV_KERNEL_INITIALIZER
             ),save_data=True)
     
             self.layers.add(nn.multiply(),use_data=True)
@@ -348,11 +313,10 @@ class MBConvBlock:
             strides=1,
             weight_initializer=CONV_KERNEL_INITIALIZER,
             padding="SAME",
-            use_bias=False,
-            dtype=dtype
+            use_bias=False
         ))
         self.layers.add(nn.batch_norm(
-            axis=-1, momentum=bn_momentum, dtype=dtype
+            axis=-1, momentum=bn_momentum
         ))
     
         if strides == 1 and input_filters == output_filters:
@@ -385,7 +349,6 @@ class FusedMBConvBlock:
         bn_momentum=0.9,
         activation="swish",
         survival_probability: float = 0.8,
-        dtype='float32'
         ):
         """Fused MBConv Block: Fusing the proj conv1x1 and depthwise_conv into a
         conv2d."""
@@ -402,11 +365,10 @@ class FusedMBConvBlock:
                 strides=strides,
                 weight_initializer=CONV_KERNEL_INITIALIZER,
                 padding="SAME",
-                use_bias=False,
-                dtype=dtype
+                use_bias=False
             ))
             self.layers.add(nn.batch_norm(
-                axis=-1, momentum=bn_momentum, dtype=dtype
+                axis=-1, momentum=bn_momentum
             ))
             self.layers.add(activation_dict[activation],save_data=True)
         else:
@@ -424,16 +386,14 @@ class FusedMBConvBlock:
                 [1,1],
                 padding="SAME",
                 activation=activation,
-                weight_initializer=CONV_KERNEL_INITIALIZER,
-                dtype=dtype
+                weight_initializer=CONV_KERNEL_INITIALIZER
             ))
             self.layers.add(nn.conv2d(
                 filters,
                 [1,1],
                 padding="SAME",
                 activation="sigmoid",
-                weight_initializer=CONV_KERNEL_INITIALIZER,
-                dtype=dtype
+                weight_initializer=CONV_KERNEL_INITIALIZER
             ),save_data=True)
             
             self.layers.add(nn.multiply(),use_data=True)
@@ -448,7 +408,7 @@ class FusedMBConvBlock:
             use_bias=False,
         ))
         self.layers.add(nn.batch_norm(
-            axis=-1, momentum=bn_momentum, dtype=dtype
+            axis=-1, momentum=bn_momentum
         ))
         if expand_ratio == 1:
             self.layers.add(activation_dict[activation])

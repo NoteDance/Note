@@ -38,18 +38,18 @@ def correct_pad(inputs, kernel_size):
 
 
 class _inverted_res_block:
-    def __init__(self, in_channels=None, expansion=None, stride=None, alpha=None, filters=None, block_id=None, dtype='float32'):
-        self.conv2d1=nn.conv2d(expansion * in_channels,[1,1],in_channels,padding="SAME",use_bias=False,dtype=dtype)
-        self.batch_normalization1=nn.batch_norm(self.conv2d1.output_size,momentum=0.999,dtype=dtype)
+    def __init__(self, in_channels=None, expansion=None, stride=None, alpha=None, filters=None, block_id=None):
+        self.conv2d1=nn.conv2d(expansion * in_channels,[1,1],in_channels,padding="SAME",use_bias=False)
+        self.batch_normalization1=nn.batch_norm(self.conv2d1.output_size,momentum=0.999)
         self.zeropadding2d=nn.zeropadding2d()
-        self.depthwiseconv2d=nn.depthwise_conv2d([3,3],1,self.conv2d1.output_size,strides=[1,stride,stride,1],use_bias=False,padding="SAME" if stride == 1 else "VALID",dtype=dtype)
-        self.batch_normalization2=nn.batch_norm(self.depthwiseconv2d.output_size,momentum=0.999,dtype=dtype)
+        self.depthwiseconv2d=nn.depthwise_conv2d([3,3],1,self.conv2d1.output_size,strides=[1,stride,stride,1],use_bias=False,padding="SAME" if stride == 1 else "VALID")
+        self.batch_normalization2=nn.batch_norm(self.depthwiseconv2d.output_size,momentum=0.999)
         pointwise_conv_filters = int(filters * alpha)
         # Ensure the number of filters on the last 1x1 convolution is divisible by
         # 8.
         self.pointwise_filters = _make_divisible(pointwise_conv_filters, 8)
-        self.conv2d2=nn.conv2d(self.pointwise_filters,[1,1],self.depthwiseconv2d.output_size,padding="SAME",use_bias=False,dtype=dtype)
-        self.batch_normalization3=nn.batch_norm(self.conv2d2.output_size,momentum=0.999,dtype=dtype)
+        self.conv2d2=nn.conv2d(self.pointwise_filters,[1,1],self.depthwiseconv2d.output_size,padding="SAME",use_bias=False)
+        self.batch_normalization3=nn.batch_norm(self.conv2d2.output_size,momentum=0.999)
         self.in_channels=in_channels
         self.stride=stride
         self.block_id=block_id
@@ -77,41 +77,37 @@ class _inverted_res_block:
         return x
 
 
-class MobileNetV2:
+class MobileNetV2(nn.Model):
     def __init__(self,alpha=1.0,classes=1000,include_top=True,pooling=None):
+        super().__init__()
         self.classes=classes
         self.alpha=alpha
         self.include_top=include_top
         self.pooling=pooling
         self.first_block_filters = _make_divisible(32 * alpha, 8)
-        self.training=True
-        
-        
-    def build(self,dtype='float32'):
-        nn.Model.init()
         
         self.layers=nn.Layers()
         
-        self.layers.add(nn.conv2d(self.first_block_filters,[3,3],3,strides=[2,2],padding='SAME',use_bias=False,dtype=dtype))
-        self.layers.add(nn.batch_norm(momentum=0.999,dtype=dtype))
+        self.layers.add(nn.conv2d(self.first_block_filters,[3,3],3,strides=[2,2],padding='SAME',use_bias=False))
+        self.layers.add(nn.batch_norm(momentum=0.999))
         
-        self.layers.add(_inverted_res_block(self.layers.output_size, filters=16, alpha=self.alpha, stride=1, expansion=1, block_id=0, dtype=dtype))
-        self.layers.add(_inverted_res_block(self.layers.output_size, filters=24, alpha=self.alpha, stride=2, expansion=6, block_id=1, dtype=dtype))
-        self.layers.add(_inverted_res_block(self.layers.output_size, filters=24, alpha=self.alpha, stride=1, expansion=6, block_id=2, dtype=dtype))
-        self.layers.add(_inverted_res_block(self.layers.output_size, filters=32, alpha=self.alpha, stride=2, expansion=6, block_id=3, dtype=dtype))
-        self.layers.add(_inverted_res_block(self.layers.output_size, filters=32, alpha=self.alpha, stride=1, expansion=6, block_id=4, dtype=dtype))
-        self.layers.add(_inverted_res_block(self.layers.output_size, filters=32, alpha=self.alpha, stride=1, expansion=6, block_id=5, dtype=dtype))
-        self.layers.add(_inverted_res_block(self.layers.output_size, filters=64, alpha=self.alpha, stride=2, expansion=6, block_id=6, dtype=dtype))
-        self.layers.add(_inverted_res_block(self.layers.output_size, filters=64, alpha=self.alpha, stride=1, expansion=6, block_id=7, dtype=dtype))
-        self.layers.add(_inverted_res_block(self.layers.output_size, filters=64, alpha=self.alpha, stride=1, expansion=6, block_id=8, dtype=dtype))
-        self.layers.add(_inverted_res_block(self.layers.output_size, filters=64, alpha=self.alpha, stride=1, expansion=6, block_id=9, dtype=dtype))
-        self.layers.add(_inverted_res_block(self.layers.output_size, filters=96, alpha=self.alpha, stride=1, expansion=6, block_id=10, dtype=dtype))
-        self.layers.add(_inverted_res_block(self.layers.output_size, filters=96, alpha=self.alpha, stride=1, expansion=6, block_id=11, dtype=dtype))
-        self.layers.add(_inverted_res_block(self.layers.output_size, filters=96, alpha=self.alpha, stride=1, expansion=6, block_id=12, dtype=dtype))
-        self.layers.add(_inverted_res_block(self.layers.output_size, filters=160, alpha=self.alpha, stride=2, expansion=6, block_id=13, dtype=dtype))
-        self.layers.add(_inverted_res_block(self.layers.output_size, filters=160, alpha=self.alpha, stride=1, expansion=6, block_id=14, dtype=dtype))
-        self.layers.add(_inverted_res_block(self.layers.output_size, filters=160, alpha=self.alpha, stride=1, expansion=6, block_id=15, dtype=dtype))
-        self.layers.add(_inverted_res_block(self.layers.output_size, filters=320, alpha=self.alpha, stride=1, expansion=6, block_id=16, dtype=dtype))
+        self.layers.add(_inverted_res_block(self.layers.output_size, filters=16, alpha=self.alpha, stride=1, expansion=1, block_id=0))
+        self.layers.add(_inverted_res_block(self.layers.output_size, filters=24, alpha=self.alpha, stride=2, expansion=6, block_id=1))
+        self.layers.add(_inverted_res_block(self.layers.output_size, filters=24, alpha=self.alpha, stride=1, expansion=6, block_id=2))
+        self.layers.add(_inverted_res_block(self.layers.output_size, filters=32, alpha=self.alpha, stride=2, expansion=6, block_id=3))
+        self.layers.add(_inverted_res_block(self.layers.output_size, filters=32, alpha=self.alpha, stride=1, expansion=6, block_id=4))
+        self.layers.add(_inverted_res_block(self.layers.output_size, filters=32, alpha=self.alpha, stride=1, expansion=6, block_id=5))
+        self.layers.add(_inverted_res_block(self.layers.output_size, filters=64, alpha=self.alpha, stride=2, expansion=6, block_id=6))
+        self.layers.add(_inverted_res_block(self.layers.output_size, filters=64, alpha=self.alpha, stride=1, expansion=6, block_id=7))
+        self.layers.add(_inverted_res_block(self.layers.output_size, filters=64, alpha=self.alpha, stride=1, expansion=6, block_id=8))
+        self.layers.add(_inverted_res_block(self.layers.output_size, filters=64, alpha=self.alpha, stride=1, expansion=6, block_id=9))
+        self.layers.add(_inverted_res_block(self.layers.output_size, filters=96, alpha=self.alpha, stride=1, expansion=6, block_id=10))
+        self.layers.add(_inverted_res_block(self.layers.output_size, filters=96, alpha=self.alpha, stride=1, expansion=6, block_id=11))
+        self.layers.add(_inverted_res_block(self.layers.output_size, filters=96, alpha=self.alpha, stride=1, expansion=6, block_id=12))
+        self.layers.add(_inverted_res_block(self.layers.output_size, filters=160, alpha=self.alpha, stride=2, expansion=6, block_id=13))
+        self.layers.add(_inverted_res_block(self.layers.output_size, filters=160, alpha=self.alpha, stride=1, expansion=6, block_id=14))
+        self.layers.add(_inverted_res_block(self.layers.output_size, filters=160, alpha=self.alpha, stride=1, expansion=6, block_id=15))
+        self.layers.add(_inverted_res_block(self.layers.output_size, filters=320, alpha=self.alpha, stride=1, expansion=6, block_id=16))
 
         # no alpha applied to last conv as stated in the paper:
         # if the width multiplier is greater than 1 we increase the number of output
@@ -121,39 +117,19 @@ class MobileNetV2:
         else:
             last_block_filters = 1280
             
-        self.layers.add(nn.conv2d(last_block_filters,[1,1],use_bias=False,dtype=dtype))
-        self.layers.add(nn.batch_norm(momentum=0.999,dtype=dtype))
+        self.layers.add(nn.conv2d(last_block_filters,[1,1],use_bias=False))
+        self.layers.add(nn.batch_norm(momentum=0.999))
         
-        self.dense=nn.dense(self.classes,self.layers.output_size,activation='softmax',dtype=dtype)
-        self.param=nn.Model.param
-        return
-    
-    
-    def fine_tuning(self,classes=None,flag=0):
-        param=[]
-        if flag==0:
-            self.param_=self.param.copy()
-            self.dense_=self.dense
-            self.dense=nn.dense(classes,self.dense.input_size,activation='softmax',dtype=self.dense.dtype)
-            param.extend(self.dense.param)
-            self.param=param
-        elif flag==1:
-            del self.param_[-len(self.dense.param):]
-            self.param_.extend(self.dense.param)
-            self.param=self.param_
-        else:
-            self.dense,self.dense_=self.dense_,self.dense
-            del self.param_[-len(self.dense.param):]
-            self.param_.extend(self.dense.param)
-            self.param=self.param_
-        return
+        self.head=self.dense(self.classes,self.layers.output_size)
+        
+        self.training=True
     
     
     def __call__(self,data):
         x=self.layers(data,self.training)
         if self.include_top:
             x=tf.math.reduce_mean(x,axis=[1,2])
-            x=self.dense(x)
+            x=self.head(x)
         else:
             if self.pooling=="avg":
                 x=tf.math.reduce_mean(x,axis=[1,2])

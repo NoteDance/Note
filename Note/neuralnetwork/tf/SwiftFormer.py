@@ -21,7 +21,6 @@ class SwiftFormer(nn.Model):
                  pooling=None,
                  epsilon=1e-8,
                  weight_decay=0.025,
-                 dtype='float32'
                  ):
         super().__init__()
         
@@ -36,11 +35,11 @@ class SwiftFormer(nn.Model):
         self.pooling=pooling
         self.epsilon=epsilon
         self.weight_decay=weight_decay
-        self.alpha = tf.constant(0.5, dtype)
-        self.temperature = tf.constant(10, dtype)
+        self.alpha = tf.constant(0.5)
+        self.temperature = tf.constant(10.)
         self.training=True
 
-        self.patch_embed = stem(3, embed_dims[0], dtype)
+        self.patch_embed = stem(3, embed_dims[0])
 
         self.network = []
         for i in range(len(layers)):
@@ -60,7 +59,7 @@ class SwiftFormer(nn.Model):
                     Embedding(
                         patch_size=down_patch_size, stride=down_stride,
                         padding=down_pad,
-                        in_chans=embed_dims[i], embed_dim=embed_dims[i + 1], dtype=dtype
+                        in_chans=embed_dims[i], embed_dim=embed_dims[i + 1]
                     )
                 )
 
@@ -71,58 +70,55 @@ class SwiftFormer(nn.Model):
                 if i_emb == 0:
                     layer = nn.identity()
                 else:
-                    layer = nn.batch_norm(embed_dims[i_emb],dtype=dtype)
+                    layer = nn.batch_norm(embed_dims[i_emb])
                 layer_name = f'norm{i_layer}'
                 self.layers_dict[layer_name]=layer
         else:
             # Classifier head
-            self.norm = nn.batch_norm(embed_dims[-1],dtype=dtype)
+            self.norm = nn.batch_norm(embed_dims[-1])
             self.head = nn.dense(
-                num_classes, embed_dims[-1], weight_initializer=['truncated_normal',.02], dtype=dtype) if num_classes > 0 \
+                num_classes, embed_dims[-1], weight_initializer=['truncated_normal',.02]) if num_classes > 0 \
                 else nn.identity()
             self.dist = distillation
             if self.dist:
                 self.dist_head = nn.dense(
-                    num_classes, embed_dims[-1], weight_initializer=['truncated_normal',.02], dtype=dtype) if num_classes > 0 \
+                    num_classes, embed_dims[-1], weight_initializer=['truncated_normal',.02]) if num_classes > 0 \
                     else nn.identity()
-        
-        self.dtype=dtype
     
     
     def fine_tuning(self,classes=None,flag=0):
-        param=[]
+        self.flag=flag
         if flag==0:
-            self.param_=self.param.copy()
             self.head_=self.head
             self.head=nn.dense(
-                classes, self.head.input_size, weight_initializer=['truncated_normal',.02], dtype=self.head.dtype) if classes > 0 \
-                else nn.identity()
+                classes, self.head.input_size, weight_initializer=['truncated_normal',.02])
             if self.dist:
                 self.dist_head_=self.dist_head
                 self.dist_head = nn.dense(
-                    classes, self.dist_head.input_size, weight_initializer=['truncated_normal',.02], dtype=self.dist_head.dtype) if classes > 0 \
-                    else nn.identity()
-                param.extend(self.dist_head.param)
-            param.extend(self.head.param)
-            self.param=param
+                    classes, self.dist_head.input_size, weight_initializer=['truncated_normal',.02])
+                self.param[-(len(self.head.param)+len(self.dist_head.param)):]=self.head.param+self.dist_head.param
+                for param in self.param[:-(len(self.head.param)+len(self.dist_head.param))]:
+                    param._trainable=False
+            else:
+                self.param[-len(self.head.param):]=self.head.param
+                for param in self.param[:-len(self.head.param)]:
+                    param._trainable=False
         elif flag==1:
             if self.dist:
-                del self.param_[-len(self.dist_head.param):]
-            del self.param_[-len(self.head.param):]
-            self.param_.extend(self.head.param)
-            if self.dist:
-                self.param_.extend(self.dist_head.param)
-            self.param=self.param_
+                for param in self.param[:-(len(self.head.param)+len(self.dist_head.param))]:
+                    param._trainable=True
+            else:
+                for param in self.param[:-len(self.head.param)]:
+                    param._trainable=True
         else:
             self.head,self.head_=self.head_,self.head
             if self.dist:
                 self.dist_head,self.dist_head_=self.dist_head_,self.dist_head
-                del self.param_[-len(self.dist_head.param):]
-            del self.param_[-len(self.head.param):]
-            self.param_.extend(self.head.param)
-            if self.dist:
-                self.param_.extend(self.dist_head.param)
-            self.param=self.param_
+                for param in self.param[:-(len(self.head.param)+len(self.dist_head.param))]:
+                    param._trainable=True
+            else:
+                for param in self.param[:-len(self.head.param)]:
+                    param._trainable=True
         return
 
 
@@ -197,18 +193,18 @@ def to_2tuple(x):
         raise ValueError("Unsupported type for to_2tuple: {}".format(type(x)))
 
 
-def stem(in_chs, out_chs, dtype):
+def stem(in_chs, out_chs):
     """
     Stem Layer that is implemented by two layers of conv.
     """
     layers=nn.Layers()
     layers.add(nn.zeropadding2d(padding=1))
-    layers.add(nn.conv2d(out_chs // 2, kernel_size=3, input_size=in_chs, strides=2, dtype=dtype))
-    layers.add(nn.batch_norm(dtype=dtype))
+    layers.add(nn.conv2d(out_chs // 2, kernel_size=3, input_size=in_chs, strides=2))
+    layers.add(nn.batch_norm())
     layers.add(activation_dict['relu'])
     layers.add(nn.zeropadding2d(padding=1))
-    layers.add(nn.conv2d(out_chs, kernel_size=3, strides=2, dtype=dtype))
-    layers.add(nn.batch_norm(dtype=dtype))
+    layers.add(nn.conv2d(out_chs, kernel_size=3, strides=2))
+    layers.add(nn.batch_norm())
     layers.add(activation_dict['relu'])
     return layers
 
@@ -219,14 +215,14 @@ class Embedding:
     """
 
     def __init__(self, patch_size=16, stride=16, padding=0,
-                 in_chans=3, embed_dim=768, norm_layer=nn.batch_norm, dtype='float32'):
+                 in_chans=3, embed_dim=768, norm_layer=nn.batch_norm):
         patch_size = to_2tuple(patch_size)
         stride = to_2tuple(stride)
         padding = to_2tuple(padding)
         self.zeropadding2d=nn.zeropadding2d(padding=padding)
         self.proj = nn.conv2d(embed_dim, kernel_size=patch_size, input_size=in_chans,
-                              strides=stride, dtype=dtype)
-        self.norm = nn.batch_norm(embed_dim, dtype=dtype) if norm_layer else nn.identity()
+                              strides=stride)
+        self.norm = nn.batch_norm(embed_dim) if norm_layer else nn.identity()
         self.train_flag=True
     
     
@@ -245,22 +241,22 @@ class ConvEncoder:
     Implementation of ConvEncoder with 3*3 and 1*1 convolutions.
     """
 
-    def __init__(self, dim, hidden_dim=64, kernel_size=3, drop_path=0., use_layer_scale=True, dtype='float32'):
+    def __init__(self, dim, hidden_dim=64, kernel_size=3, drop_path=0., use_layer_scale=True):
         self.layers=nn.Layers()
         self.layers.add(nn.zeropadding2d(padding=kernel_size // 2))
         self.layers.add(nn.depthwise_conv2d(kernel_size=kernel_size, input_size=dim, 
-                                       weight_initializer=['truncated_normal',.02], dtype=dtype))
-        self.layers.add(nn.batch_norm(dtype=dtype))
+                                       weight_initializer=['truncated_normal',.02]))
+        self.layers.add(nn.batch_norm())
         self.layers.add(nn.conv2d(hidden_dim, kernel_size=1, 
-                              weight_initializer=['truncated_normal',.02], dtype=dtype))
+                              weight_initializer=['truncated_normal',.02]))
         self.layers.add(activation_dict['gelu'])
         self.layers.add(nn.conv2d(dim, kernel_size=1, 
-                              weight_initializer=['truncated_normal',.02], dtype=dtype))
+                              weight_initializer=['truncated_normal',.02]))
         self.drop_path = nn.stochastic_depth(drop_path) if drop_path > 0. \
             else nn.identity()
         self.use_layer_scale = use_layer_scale
         if use_layer_scale:
-            self.layer_scale = nn.initializer_([dim],'ones',dtype)
+            self.layer_scale = nn.initializer_([dim],'ones')
         self.train_flag=True
 
 
@@ -286,16 +282,14 @@ class Mlp:
     """
 
     def __init__(self, in_features, hidden_features=None,
-                 out_features=None, act_layer=activation_dict['gelu'], drop=0., dtype='float32'):
+                 out_features=None, act_layer=activation_dict['gelu'], drop=0.):
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
         self.layers=nn.Layers()
-        self.layers.add(nn.batch_norm(in_features, dtype=dtype))
-        self.layers.add(nn.conv2d(hidden_features, 1, weight_initializer=['truncated_normal',.02],
-                                  dtype=dtype))
+        self.layers.add(nn.batch_norm(in_features))
+        self.layers.add(nn.conv2d(hidden_features, 1, weight_initializer=['truncated_normal',.02]))
         self.layers.add(act_layer)
-        self.layers.add(nn.conv2d(out_features, 1, weight_initializer=['truncated_normal',.02],
-                               dtype=dtype))
+        self.layers.add(nn.conv2d(out_features, 1, weight_initializer=['truncated_normal',.02]))
         self.layers.add(nn.dropout(drop))
 
 
@@ -309,11 +303,11 @@ class EfficientAdditiveAttnetion:
     Efficient Additive Attention module for SwiftFormer.
     """
 
-    def __init__(self, in_dims=512, token_dim=256, num_heads=2, dtype='float32'):
-        self.to_query = nn.dense(token_dim * num_heads, in_dims, dtype=dtype)
-        self.to_key = nn.dense(token_dim * num_heads, in_dims, dtype=dtype)
+    def __init__(self, in_dims=512, token_dim=256, num_heads=2):
+        self.to_query = nn.dense(token_dim * num_heads, in_dims)
+        self.to_key = nn.dense(token_dim * num_heads, in_dims)
 
-        self.w_g = nn.initializer_([token_dim * num_heads, 1],'normal',dtype)
+        self.w_g = nn.initializer_([token_dim * num_heads, 1],'normal')
         self.scale_factor = token_dim ** -0.5
         self.Proj = nn.dense(token_dim * num_heads, token_dim * num_heads)
         self.final = nn.dense(token_dim, token_dim * num_heads)
@@ -350,19 +344,19 @@ class SwiftFormerLocalRepresentation:
     Local Representation module for SwiftFormer that is implemented by 3*3 depth-wise and point-wise convolutions.
     """
 
-    def __init__(self, dim, kernel_size=3, drop_path=0., use_layer_scale=True, dtype='float32'):
+    def __init__(self, dim, kernel_size=3, drop_path=0., use_layer_scale=True):
         self.layers=nn.Layers()
         self.layers.add(nn.zeropadding2d(padding=kernel_size // 2))
-        self.layers.add(nn.depthwise_conv2d(kernel_size=kernel_size, input_size=dim, weight_initializer=['truncated_normal',.02], dtype=dtype))
-        self.layers.add(nn.batch_norm(dtype=dtype))
-        self.layers.add(nn.conv2d(dim, kernel_size=1, weight_initializer=['truncated_normal',.02], dtype=dtype))
+        self.layers.add(nn.depthwise_conv2d(kernel_size=kernel_size, input_size=dim, weight_initializer=['truncated_normal',.02]))
+        self.layers.add(nn.batch_norm())
+        self.layers.add(nn.conv2d(dim, kernel_size=1, weight_initializer=['truncated_normal',.02]))
         self.layers.add(activation_dict['gelu'])
-        self.layers.add(nn.conv2d(dim, kernel_size=1, weight_initializer=['truncated_normal',.02], dtype=dtype))
+        self.layers.add(nn.conv2d(dim, kernel_size=1, weight_initializer=['truncated_normal',.02]))
         self.drop_path = nn.stochastic_depth(drop_path) if drop_path > 0. \
             else nn.identity()
         self.use_layer_scale = use_layer_scale
         if use_layer_scale:
-            self.layer_scale = nn.initializer_([dim],'ones',dtype)
+            self.layer_scale = nn.initializer_([dim],'ones')
 
 
     def __call__(self, x, train_flag=True):
@@ -389,7 +383,7 @@ class SwiftFormerEncoder:
     def __init__(self, dim, mlp_ratio=4.,
                  act_layer=activation_dict['gelu'],
                  drop=0., drop_path=0.,
-                 use_layer_scale=True, layer_scale_init_value=1e-5, dtype='float32'):
+                 use_layer_scale=True, layer_scale_init_value=1e-5):
         self.local_representation = SwiftFormerLocalRepresentation(dim=dim, kernel_size=3, drop_path=0.,
                                                                    use_layer_scale=True)
         self.attn = EfficientAdditiveAttnetion(in_dims=dim, token_dim=dim, num_heads=1)
@@ -398,9 +392,9 @@ class SwiftFormerEncoder:
             else nn.identity()
         self.use_layer_scale = use_layer_scale
         if use_layer_scale:
-            self.layer_scale_1 = nn.initializer_([dim],'ones',dtype)
+            self.layer_scale_1 = nn.initializer_([dim],'ones')
             
-            self.layer_scale_2 = nn.initializer_([dim],'ones',dtype)
+            self.layer_scale_2 = nn.initializer_([dim],'ones')
             
         self.train_flag=True
         
@@ -444,7 +438,7 @@ class SwiftFormerEncoder:
 def Stage(dim, index, layers, mlp_ratio=4.,
           act_layer=activation_dict['gelu'],
           drop_rate=.0, drop_path_rate=0.,
-          use_layer_scale=True, layer_scale_init_value=1e-5, vit_num=1, dtype='float32'):
+          use_layer_scale=True, layer_scale_init_value=1e-5, vit_num=1):
     """
     Implementation of each SwiftFormer stages. Here, SwiftFormerEncoder used as the last block in all stages, while ConvEncoder used in the rest of the blocks.
     """
@@ -458,9 +452,9 @@ def Stage(dim, index, layers, mlp_ratio=4.,
                 dim, mlp_ratio=mlp_ratio,
                 act_layer=act_layer, drop_path=block_dpr,
                 use_layer_scale=use_layer_scale,
-                layer_scale_init_value=layer_scale_init_value,dtype=dtype))
+                layer_scale_init_value=layer_scale_init_value))
 
         else:
-            blocks.add(ConvEncoder(dim=dim, hidden_dim=int(mlp_ratio * dim), kernel_size=3 ,dtype=dtype))
+            blocks.add(ConvEncoder(dim=dim, hidden_dim=int(mlp_ratio * dim), kernel_size=3))
 
     return blocks

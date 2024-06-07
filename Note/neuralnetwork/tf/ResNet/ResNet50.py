@@ -52,60 +52,35 @@ def stack1(in_channels, filters, blocks, stride=2, dtype='float32'):
     return layers
 
 
-class ResNet50:
+class ResNet50(nn.Model):
     def __init__(self,preact=False,classes=1000,include_top=True,pooling=None,use_bias=True):
+        super().__init__()
         self.preact=preact
         self.classes=classes
         self.include_top=include_top
         self.pooling=pooling
         self.use_bias=use_bias
-        self.training=True
-    
-    
-    def build(self,dtype='float32'):
-        nn.Model.init()
         self.layers=nn.Layers()
         self.layers.add(nn.zeropadding2d(3,[3,3]))
-        self.layers.add(nn.conv2d(64,[7,7],strides=[2],use_bias=self.use_bias,dtype=dtype))
+        self.layers.add(nn.conv2d(64,[7,7],strides=[2],use_bias=self.use_bias))
         if not self.preact:
-            self.layers.add(nn.batch_norm(epsilon=1.001e-5,dtype=dtype))
+            self.layers.add(nn.batch_norm(epsilon=1.001e-5))
             self.layers.add(activation_dict['relu'])
         self.layers.add(nn.zeropadding2d(padding=[1,1]))
         self.layers.add(nn.max_pool2d(ksize=[3, 3],strides=[2, 2],padding='SAME'))
-        self.layers.add(stack_fn(self.layers.output_size,dtype=dtype))
+        self.layers.add(stack_fn(self.layers.output_size))
         if self.preact:
-            self.layers.add(nn.batch_norm(self.layers.output_size,epsilon=1.001e-5,dtype=dtype))
+            self.layers.add(nn.batch_norm(self.layers.output_size,epsilon=1.001e-5))
             self.layers.add(activation_dict['relu'])
-        self.dense=nn.dense(self.classes,self.layers.output_size,activation='softmax',dtype=dtype)
-        self.param=nn.Model.param
-        return
-    
-    
-    def fine_tuning(self,classes=None,flag=0):
-        param=[]
-        if flag==0:
-            self.param_=self.param.copy()
-            self.dense_=self.dense
-            self.dense=nn.dense(classes,self.dense.input_size,activation='softmax',dtype=self.dense.dtype)
-            param.extend(self.dense.param)
-            self.param=param
-        elif flag==1:
-            del self.param_[-len(self.dense.param):]
-            self.param_.extend(self.dense.param)
-            self.param=self.param_
-        else:
-            self.dense,self.dense_=self.dense_,self.dense
-            del self.param_[-len(self.dense.param):]
-            self.param_.extend(self.dense.param)
-            self.param=self.param_
-        return
+        self.head=self.dense(self.classes,self.layers.output_size)
+        self.training=True
     
     
     def __call__(self,data):
         x=self.layers(data,self.training)
         if self.include_top:
             x=tf.math.reduce_mean(x,axis=[1,2])
-            x=self.dense(x)
+            x=self.head(x)
         else:
             if self.pooling=="avg":
                 x=tf.math.reduce_mean(x,axis=[1,2])
