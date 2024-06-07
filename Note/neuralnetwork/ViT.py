@@ -119,34 +119,12 @@ class ViT(Model):
         self.pool = pool
         self.to_latent = identity()
 
-        self.mlp_head = dense(num_classes, dim)
+        self.head = self.dense(num_classes, dim)
         
         self.loss_object=tf.keras.losses.SparseCategoricalCrossentropy()
         self.optimizer=Adam()
         self.device=device
         self.km=0
-        
-        
-    def fine_tuning(self,classes=None,lr=None,flag=0):
-        param=[]
-        if flag==0:
-            self.param_=self.param.copy()
-            self.mlp_head_=self.mlp_head
-            self.mlp_head=dense(classes, self.dim)
-            param.extend(self.mlp_head.param)
-            self.param=param
-            self.optimizer_=self.optimizer
-            self.optimizer=Adam(lr=lr,param=self.param)
-        elif flag==1:
-            del self.param_[-len(self.mlp_head.param):]
-            self.param_.extend(self.mlp_head.param)
-            self.param=self.param_
-        else:
-            self.mlp_head,self.mlp_head_=self.mlp_head_,self.mlp_head
-            del self.param_[-len(self.mlp_head.param):]
-            self.param_.extend(self.mlp_head.param)
-            self.param=self.param_
-        return
 
 
     def fp(self, data, p=None):

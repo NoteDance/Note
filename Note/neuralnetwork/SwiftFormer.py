@@ -105,42 +105,39 @@ class SwiftFormer(Model):
         self.optimizer=AdamW(epsilon=epsilon,weight_decay=weight_decay)
     
     
-    def fine_tuning(self,classes=None,lr=None,flag=0):
-        param=[]
+    def fine_tuning(self,classes=None,flag=0):
+        self.flag=flag
         if flag==0:
-            self.param_=self.param.copy()
             self.head_=self.head
             self.head=dense(
-                classes, self.head.input_size, weight_initializer=['truncated_normal',.02], dtype=self.head.dtype) if classes > 0 \
-                else identity()
+                classes, self.head.input_size, weight_initializer=['truncated_normal',.02])
             if self.dist:
                 self.dist_head_=self.dist_head
                 self.dist_head = dense(
-                    classes, self.dist_head.input_size, weight_initializer=['truncated_normal',.02], dtype=self.dist_head.dtype) if classes > 0 \
-                    else identity()
-                param.extend(self.dist_head.param)
-            param.extend(self.head.param)
-            self.param=param
-            self.optimizer_=self.optimizer
-            self.optimizer=AdamW(lr=lr,param=self.param)
+                    classes, self.dist_head.input_size, weight_initializer=['truncated_normal',.02])
+                self.param[-(len(self.head.param)+len(self.dist_head.param)):]=self.head.param+self.dist_head.param
+                for param in self.param[:-(len(self.head.param)+len(self.dist_head.param))]:
+                    param._trainable=False
+            else:
+                self.param[-len(self.head.param):]=self.head.param
+                for param in self.param[:-len(self.head.param)]:
+                    param._trainable=False
         elif flag==1:
             if self.dist:
-                del self.param_[-len(self.dist_head.param):]
-            del self.param_[-len(self.head.param):]
-            self.param_.extend(self.head.param)
-            if self.dist:
-                self.param_.extend(self.dist_head.param)
-            self.param=self.param_
+                for param in self.param[:-(len(self.head.param)+len(self.dist_head.param))]:
+                    param._trainable=True
+            else:
+                for param in self.param[:-len(self.head.param)]:
+                    param._trainable=True
         else:
             self.head,self.head_=self.head_,self.head
             if self.dist:
                 self.dist_head,self.dist_head_=self.dist_head_,self.dist_head
-                del self.param_[-len(self.dist_head.param):]
-            del self.param_[-len(self.head.param):]
-            self.param_.extend(self.head.param)
-            if self.dist:
-                self.param_.extend(self.dist_head.param)
-            self.param=self.param_
+                for param in self.param[:-(len(self.head.param)+len(self.dist_head.param))]:
+                    param._trainable=True
+            else:
+                for param in self.param[:-len(self.head.param)]:
+                    param._trainable=True
         return
 
 

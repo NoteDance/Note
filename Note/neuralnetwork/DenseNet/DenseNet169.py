@@ -1,6 +1,5 @@
 import tensorflow as tf
 from Note.nn.layer.conv2d import conv2d
-from Note.nn.layer.dense import dense
 from Note.nn.layer.batch_norm_ import batch_norm_
 from Note.nn.layer.avg_pool2d import avg_pool2d
 from Note.nn.layer.max_pool2d import max_pool2d
@@ -49,87 +48,53 @@ def TransitionLayer(input_channels, compression_factor, dtype='float32'):
         return layers
 
 
-class DenseNet169:
-    def __init__(self, growth_rate=32, compression_factor=0.5, num_classes=1000, include_top=True, pooling=None, device='GPU', dtype='float32'):
+class DenseNet169(Model):
+    def __init__(self, growth_rate=32, compression_factor=0.5, num_classes=1000, include_top=True, pooling=None, device='GPU'):
+        super().__init__()
         self.num_classes=num_classes
         self.growth_rate=growth_rate
         self.compression_factor=compression_factor
         self.include_top=include_top
         self.pooling=pooling
-        self.loss_object=tf.keras.losses.SparseCategoricalCrossentropy()
-        self.device=device
-        self.dtype=dtype
-        self.km=0
-    
-    
-    def build(self):
-        Model.init()
         
         self.layers=Layers()
         self.layers.add(zeropadding2d(3,padding=[3, 3]))
-        self.layers.add(conv2d(64,[7,7],strides=2,use_bias=False,dtype=self.dtype))
-        self.layers.add(batch_norm_(epsilon=1.001e-5,dtype=self.dtype))
+        self.layers.add(conv2d(64,[7,7],strides=2,use_bias=False))
+        self.layers.add(batch_norm_(epsilon=1.001e-5))
         self.layers.add(activation_dict['relu'])
         self.layers.add(zeropadding2d(padding=[1, 1]))
         self.layers.add(max_pool2d(ksize=[3, 3],strides=[2, 2],padding="VALID"))
         
         
         self.layers.add(DenseBlock(input_channels=64,num_layers=6,
-                                 growth_rate=self.growth_rate,
-                                 dtype=self.dtype))
+                                 growth_rate=self.growth_rate))
         
         self.layers.add(TransitionLayer(input_channels=64,compression_factor=self.compression_factor,
                                       dtype=self.dtype))
         
         self.layers.add(DenseBlock(input_channels=int(64 * self.compression_factor),num_layers=12,
-                                 growth_rate=self.growth_rate,
-                                 dtype=self.dtype))
+                                 growth_rate=self.growth_rate))
         
-        self.layers.add(TransitionLayer(input_channels=int(64 * self.compression_factor),compression_factor=self.compression_factor,
-                                      dtype=self.dtype))
+        self.layers.add(TransitionLayer(input_channels=int(64 * self.compression_factor),compression_factor=self.compression_factor))
         
         self.layers.add(DenseBlock(input_channels=int(64 * self.compression_factor**2),num_layers=32,
-                                 growth_rate=self.growth_rate,
-                                 dtype=self.dtype))
+                                 growth_rate=self.growth_rate))
         
-        self.layers.add(TransitionLayer(input_channels=int(64 * self.compression_factor**2),compression_factor=self.compression_factor,
-                                      dtype=self.dtype))
+        self.layers.add(TransitionLayer(input_channels=int(64 * self.compression_factor**2),compression_factor=self.compression_factor))
         
         self.layers.add(DenseBlock(input_channels=int(64 * self.compression_factor**3),num_layers=32,
-                                 growth_rate=self.growth_rate,
-                                 dtype=self.dtype))
+                                 growth_rate=self.growth_rate))
         
-        self.layers.add(batch_norm_(epsilon=1.001e-5,dtype=self.dtype))
+        self.layers.add(batch_norm_(epsilon=1.001e-5))
         
         self.layers.add(activation_dict['relu'])
         
-        self.dense=dense(self.num_classes,int(64 * self.compression_factor**3),activation='softmax',dtype=self.dtype)
+        self.head=self.dense(self.num_classes,int(64 * self.compression_factor**3))
         
+        self.loss_object=tf.keras.losses.SparseCategoricalCrossentropy()
         self.optimizer=Adam()
-        self.param=Model.param
-        return
-    
-    
-    def fine_tuning(self,classes=None,lr=None,flag=0):
-        param=[]
-        if flag==0:
-            self.param_=self.param.copy()
-            self.dense_=self.dense
-            self.dense=dense(classes,self.dense.input_size,activation='softmax',dtype=self.dense.dtype)
-            param.extend(self.dense.param)
-            self.param=param
-            self.optimizer_=self.optimizer
-            self.optimizer=Adam(lr=lr,param=self.param)
-        elif flag==1:
-            del self.param_[-len(self.dense.param):]
-            self.param_.extend(self.dense.param)
-            self.param=self.param_
-        else:
-            self.dense,self.dense_=self.dense_,self.dense
-            del self.param_[-len(self.dense.param):]
-            self.param_.extend(self.dense.param)
-            self.param=self.param_
-        return
+        self.device=device
+        self.km=0
     
     
     def fp(self, data, p=None):
@@ -138,7 +103,7 @@ class DenseNet169:
                 x=self.layers(data)
                 if self.include_top:
                     x = tf.reduce_mean(x, axis=[1, 2])
-                    x = self.dense(x)
+                    x = self.head(x)
                 else:
                     if self.pooling == 'avg':
                         x = tf.reduce_mean(x, axis=[1, 2])
@@ -149,7 +114,7 @@ class DenseNet169:
             x=self.layers(data,self.km)
             if self.include_top:
                 x = tf.math.reduce_mean(x, axis=[1, 2])
-                x = self.dense(x)
+                x = self.head(x)
             else:
                 if self.pooling=="avg":
                     x = tf.math.reduce_mean(x, axis=[1, 2])

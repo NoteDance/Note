@@ -1,7 +1,6 @@
 import tensorflow as tf
 from Note.nn.layer.conv2d import conv2d
 from Note.nn.layer.depthwise_conv2d import depthwise_conv2d
-from Note.nn.layer.dense import dense
 from Note.nn.layer.batch_norm_ import batch_norm_
 from Note.nn.layer.dropout import dropout
 from Note.nn.layer.global_avg_pool2d import global_avg_pool2d
@@ -19,7 +18,7 @@ from Note.nn.parallel.assign_device import assign_device
 from Note.nn.Model import Model
 
 
-class EfficientNetV2:
+class EfficientNetV2(Model):
     """Instantiates the EfficientNetV2 architecture using given scaling
     coefficients.
 
@@ -76,11 +75,10 @@ class EfficientNetV2:
                 weights="imagenet",
                 pooling=None,
                 classes=1000,
-                classifier_activation="softmax",
                 include_preprocessing=True,
                 device='GPU',
-                dtype='float32'
             ):
+        super().__init__()
         if include_preprocessing:
             # Apply original V1 preprocessing for Bx variants
             if model_name.split("-")[-1].startswith("b"):
@@ -121,16 +119,6 @@ class EfficientNetV2:
         self.classes=classes # store the number of classes
         self.include_top=include_top
         self.pooling=pooling
-        self.classifier_activation=classifier_activation
-        self.device=device
-        self.dtype=dtype
-        self.norm=norm(input_shape,dtype=dtype)
-        self.loss_object=tf.keras.losses.SparseCategoricalCrossentropy() # create a sparse categorical crossentropy loss object
-        self.km=0
-    
-    
-    def build(self):
-        Model.init()
         
         def round_filters(filters, width_coefficient, min_depth, depth_divisor):
             """Round number of filters based on depth multiplier."""
@@ -156,8 +144,8 @@ class EfficientNetV2:
         )
         self.layers1=Layers()
         self.layers1.add(conv2d(stem_filters,[3,3],3,strides=2,padding="SAME",use_bias=False,
-                           weight_initializer=CONV_KERNEL_INITIALIZER,dtype=self.dtype))
-        self.layers1.add(batch_norm_(axis=-1,momentum=self.bn_momentum,dtype=self.dtype))
+                           weight_initializer=CONV_KERNEL_INITIALIZER))
+        self.layers1.add(batch_norm_(axis=-1,momentum=self.bn_momentum))
         self.layers1.add(activation_dict[self.activation])    
     
         # Build blocks
@@ -201,8 +189,7 @@ class EfficientNetV2:
                     activation=self.activation,
                     bn_momentum=self.bn_momentum,
                     survival_probability=self.drop_connect_rate * b / blocks,
-                    **args,
-                    dtype=self.dtype
+                    **args
                 ))
                 b += 1
                 in_channels=self.layers2.output_size
@@ -221,45 +208,26 @@ class EfficientNetV2:
             self.layers2.output_size,
             padding="SAME",
             use_bias=False,
-            weight_initializer=CONV_KERNEL_INITIALIZER,
-            dtype=self.dtype
+            weight_initializer=CONV_KERNEL_INITIALIZER
         ))
-        self.layers3.add(batch_norm_(axis=-1,momentum=self.bn_momentum,dtype=self.dtype))
+        self.layers3.add(batch_norm_(axis=-1,momentum=self.bn_momentum))
         self.layers3.add(activation_dict[self.activation])
         if self.include_top:
             self.global_avg_pool2d=global_avg_pool2d()
             if self.dropout_rate > 0:
                 self.dropout=dropout(self.dropout_rate)
-            self.dense=dense(self.classes,self.layers3.output_size,activation=self.classifier_activation,weight_initializer=DENSE_KERNEL_INITIALIZER,dtype=self.dtype)
+            self.head=self.dense(self.classes,self.layers3.output_size,weight_initializer=DENSE_KERNEL_INITIALIZER)
         else:
             if self.pooling == "avg":
                 self.global_avg_pool2d=global_avg_pool2d()
             elif self.pooling == "max":
                 self.global_max_pool2d=global_max_pool2d()
-        self.param=Model.param
+                
+        self.device=device
+        self.norm=norm(input_shape)
+        self.loss_object=tf.keras.losses.SparseCategoricalCrossentropy() # create a sparse categorical crossentropy loss object
         self.optimizer=Adam()
-        
-        
-    def fine_tuning(self,classes=None,lr=None,flag=0):
-        param=[]
-        if flag==0:
-            self.param_=self.param.copy()
-            self.dense_=self.dense
-            self.dense=dense(classes,self.dense.input_size,activation=self.classifier_activation,dtype=self.dense.dtype)
-            param.extend(self.dense.param)
-            self.param=param
-            self.optimizer_=self.optimizer
-            self.optimizer=Adam(lr=lr,param=self.param)
-        elif flag==1:
-            del self.param_[-len(self.dense.param):]
-            self.param_.extend(self.dense.param)
-            self.param=self.param_
-        else:
-            self.dense,self.dense_=self.dense_,self.dense
-            del self.param_[-len(self.dense.param):]
-            self.param_.extend(self.dense.param)
-            self.param=self.param_
-        return
+        self.km=0
     
     
     def fp(self,data,p=None):
@@ -274,7 +242,7 @@ class EfficientNetV2:
                     x=self.global_avg_pool2d(x)
                     if self.dropout_rate > 0:
                         x=self.dropout(x)
-                    x=self.dense(x)
+                    x=self.head(x)
                 else:
                     if self.pooling == "avg":
                         x=self.global_avg_pool2d(x)
@@ -291,7 +259,7 @@ class EfficientNetV2:
                 x=self.global_avg_pool2d(x)
                 if self.dropout_rate > 0:
                     x=self.dropout(x)
-                x=self.dense(x)
+                x=self.head(x)
             else:
                 if self.pooling == "avg":
                     x=self.global_avg_pool2d(x)
