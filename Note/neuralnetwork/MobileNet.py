@@ -1,7 +1,7 @@
 import tensorflow as tf
 from Note.nn.layer.conv2d import conv2d
 from Note.nn.layer.depthwise_conv2d import depthwise_conv2d
-from Note.nn.layer.batch_norm_ import batch_norm_
+from Note.nn.layer.batch_norm import batch_norm_
 from Note.nn.layer.zeropadding2d import zeropadding2d
 from Note.nn.Layers import Layers
 from Note.nn.activation import activation_dict
@@ -14,7 +14,7 @@ class _conv_block:
     def __init__(self, in_channels, filters, alpha, kernel=(3, 3), strides=[1, 1]):
         filters = int(filters * alpha)
         self.conv2d=conv2d(filters,kernel,in_channels,strides=strides,padding='SAME',use_bias=False)
-        self.batch_norm_=batch_norm_(self.conv2d.output_size)
+        self.batch_norm=batch_norm_(self.conv2d.output_size)
         self.train_flag=True
         self.output_size=self.conv2d.output_size
     
@@ -22,7 +22,7 @@ class _conv_block:
     def __call__(self,data,train_flag=True):
         self.train_flag=train_flag
         x=self.conv2d(data)
-        x=self.batch_norm_(x,self.train_flag)
+        x=self.batch_norm(x,self.train_flag)
         return activation_dict['relu6'](x)
 
 

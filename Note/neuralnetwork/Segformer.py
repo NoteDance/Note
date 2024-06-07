@@ -207,32 +207,11 @@ class Segformer(Model):
 
         self.to_segmentation = Layers()
         self.to_segmentation.add(conv2d(decoder_dim, 1, 4 * decoder_dim))
-        self.to_segmentation.add(conv2d(num_classes, 1, decoder_dim))
+        self.head=self.conv2d(num_classes, decoder_dim, 1)
         
         self.optimizer = Adam()
         self.device = device
         self.km = 0
-    
-    def fine_tuning(self,classes=None,lr=None,flag=0):
-        param=[]
-        if flag==0:
-            self.param_=self.param.copy()
-            self.conv2d=self.to_segmentation.layer[-1]
-            self.to_segmentation.layer[-1]=conv2d(classes, input_size=self.conv2d.input_size, kernel_size=1)
-            param.extend(self.to_segmentation.layer[-1].param)
-            self.param=param
-            self.optimizer_=self.optimizer
-            self.optimizer=Adam(lr=lr,param=self.param)
-        elif flag==1:
-            del self.param_[-len(self.to_segmentation.layer[-1].param):]
-            self.param_.extend(self.to_segmentation.layer[-1].param)
-            self.param=self.param_
-        else:
-            self.to_segmentation.layer[-1],self.conv2d=self.conv2d,self.to_segmentation.layer[-1]
-            del self.param_[-len(self.to_segmentation.layer[-1].param):]
-            self.param_.extend(self.to_segmentation.layer[-1].param)
-            self.param=self.param_
-        return
 
     def fp(self, x, p=None):
         if self.km==1:
@@ -241,13 +220,13 @@ class Segformer(Model):
         
                 fused = [to_fused(output) for output, to_fused in zip(layer_outputs, self.to_fused)]
                 fused = tf.concat(fused, axis = -1)
-                return self.to_segmentation(fused)
+                return self.head(self.to_segmentation(fused))
         else:
             layer_outputs = self.mit(x, return_layer_outputs = True)
         
             fused = [to_fused(output) for output, to_fused in zip(layer_outputs, self.to_fused)]
             fused = tf.concat(fused, axis = -1)
-            return self.to_segmentation(fused)
+            return self.head(self.to_segmentation(fused))
     
     def loss(self, output, labels, p):
         with tf.device(assign_device(p,self.device)):

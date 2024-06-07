@@ -2,7 +2,7 @@ import tensorflow as tf
 from Note.nn.layer.conv2d import conv2d
 from Note.nn.layer.depthwise_conv2d import depthwise_conv2d
 from Note.nn.layer.dense import dense
-from Note.nn.layer.batch_norm_ import batch_norm_
+from Note.nn.layer.batch_norm import batch_norm_
 from Note.nn.layer.zeropadding2d import zeropadding2d
 from Note.nn.layer.dropout import dropout
 from Note.nn.layer.stochastic_depth import stochastic_depth
@@ -74,7 +74,7 @@ class SwiftFormer(Model):
                     Embedding(
                         patch_size=down_patch_size, stride=down_stride,
                         padding=down_pad,
-                        in_chans=embed_dims[i], embed_dim=embed_dims[i + 1], dtype=dtype
+                        in_chans=embed_dims[i], embed_dim=embed_dims[i + 1]
                     )
                 )
 
@@ -85,22 +85,21 @@ class SwiftFormer(Model):
                 if i_emb == 0:
                     layer = identity()
                 else:
-                    layer = batch_norm_(embed_dims[i_emb],dtype=dtype)
+                    layer = batch_norm_(embed_dims[i_emb])
                 layer_name = f'norm{i_layer}'
                 self.layers_dict[layer_name]=layer
         else:
             # Classifier head
-            self.norm = batch_norm_(embed_dims[-1],dtype=dtype)
+            self.norm = batch_norm_(embed_dims[-1])
             self.head = dense(
-                num_classes, embed_dims[-1], weight_initializer=['truncated_normal',.02], dtype=dtype) if num_classes > 0 \
+                num_classes, embed_dims[-1], weight_initializer=['truncated_normal',.02]) if num_classes > 0 \
                 else identity()
             self.dist = distillation
             if self.dist:
                 self.dist_head = dense(
-                    num_classes, embed_dims[-1], weight_initializer=['truncated_normal',.02], dtype=dtype) if num_classes > 0 \
+                    num_classes, embed_dims[-1], weight_initializer=['truncated_normal',.02]) if num_classes > 0 \
                     else identity()
         
-        self.dtype=dtype
         self.optimizer=AdamW(epsilon=epsilon,weight_decay=weight_decay)
     
     

@@ -1,6 +1,6 @@
 import tensorflow as tf
 from Note.nn.layer.conv2d import conv2d
-from Note.nn.layer.batch_norm_ import batch_norm_
+from Note.nn.layer.batch_norm import batch_norm_
 from Note.nn.layer.avg_pool2d import avg_pool2d
 from Note.nn.layer.max_pool2d import max_pool2d
 from Note.nn.layer.zeropadding2d import zeropadding2d

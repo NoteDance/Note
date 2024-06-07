@@ -2,7 +2,7 @@ import tensorflow as tf
 from Note.nn.layer.conv2d import conv2d
 from Note.nn.layer.avg_pool2d import avg_pool2d
 from Note.nn.layer.global_avg_pool2d import global_avg_pool2d
-from Note.nn.layer.batch_norm_ import batch_norm_
+from Note.nn.layer.batch_norm import batch_norm_
 from Note.nn.layer.identity import identity
 from Note.nn.activation import activation_dict
 from Note.nn.Layers import Layers
@@ -342,7 +342,7 @@ class ResNetRS(Model):
                     rescaling_data = tf.multiply(data, scale)
                     mean = tf.constant([0.485, 0.456, 0.406])
                     variance = tf.constant([0.229**2, 0.224**2, 0.225**2])
-                    normalization_data = tf.nn.batch_norm_(rescaling_data, mean, variance, None, None, 1e-12)
+                    normalization_data = tf.nn.batch_normalization(rescaling_data, mean, variance, None, None, 1e-12)
                     data=normalization_data
                 x=self.layers(data)
                 # Build head:
@@ -363,7 +363,7 @@ class ResNetRS(Model):
                 rescaling_data = tf.multiply(data, scale)
                 mean = tf.constant([0.485, 0.456, 0.406])
                 variance = tf.constant([0.229**2, 0.224**2, 0.225**2])
-                normalization_data = tf.nn.batch_norm_(rescaling_data, mean, variance, None, None, 1e-12)
+                normalization_data = tf.nn.batch_normalization(rescaling_data, mean, variance, None, None, 1e-12)
                 data=normalization_data
             x=self.layers(data,self.km)
             # Build head:

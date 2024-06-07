@@ -129,9 +129,9 @@ class BiT(Model):
       if flag==0:
           self.conv2d=self.head.layer[-1]
           if self.zero_head:
-              self.head.layer[-1]=nn.conv2d(classes, 1, 2048*self.wf, weight_initializer='zeros')
+              self.head.layer[-1]=conv2d(classes, 1, 2048*self.wf, weight_initializer='zeros')
           else:
-              self.head.layer[-1]=nn.conv2d(classes, 1, 2048*self.wf)
+              self.head.layer[-1]=conv2d(classes, 1, 2048*self.wf)
           self.param[-len(self.head.layer[-1].param):]=self.head.layer[-1].param
           for param in self.param[:-len(self.head.layer[-1].param)]:
               param._trainable=False
