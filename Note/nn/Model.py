@@ -29,7 +29,7 @@ class Model:
         self.layer_param=Model.layer_param
         self.layer_list=Model.layer_list
         self.head=None
-        self.dim=None
+        self.head_=None
         self.ft_flag=0
         
     
@@ -57,18 +57,25 @@ class Model:
     
     
     def dense(self,num_classes,dim,weight_initializer='Xavier',use_bias=True):
-        self.dim=dim
         self.head=nn.dense(num_classes,dim,weight_initializer,use_bias=use_bias)
         return self.head
     
     
-    def fine_tuning(self,num_classes,flag=0,weight_initializer='Xavier',use_bias=True):
+    def conv2d(self,num_classes,dim,kernel_size=1,weight_initializer='Xavier',use_bias=True):
+        self.head=nn.conv2d(num_classes,kernel_size,dim,weight_initializer=weight_initializer,use_bias=use_bias)
+        return self.head
+    
+    
+    def fine_tuning(self,num_classes,flag=0):
         param=[]
         self.ft_flag=flag
         if flag==0:
             self.param_=self.param.copy()
             self.head_=self.head
-            self.head=nn.dense(num_classes,self.dim,weight_initializer,use_bias=use_bias)
+            if isinstance(self.head,nn.dense):
+                self.head=nn.dense(num_classes,self.head.input_size,self.head.weight_initializer,use_bias=self.head.use_bias)
+            elif isinstance(self.head,nn.conv2d):
+                self.head=nn.conv2d(num_classes,self.head.kernel_size,self.head.input_size,weight_initializer=self.head.weight_initializer,use_bias=self.head.use_bias)
             param.extend(self.head.param)
             self.param=param
         elif flag==1:
