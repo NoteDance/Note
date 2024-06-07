@@ -145,6 +145,6 @@ from Note.nn.Layers import Layers
 from Note.nn.Model import Model
 from Note.nn.parallel.optimizer import *
 from Note.nn.pairwise_distance import pairwise_distance
+from Note.nn.parameter import Parameter
 from Note.nn.positional_encoding import positional_encoding
 from Note.nn.scaled_dot_product_attention import scaled_dot_product_attention
-from Note.nn.variable import variable
