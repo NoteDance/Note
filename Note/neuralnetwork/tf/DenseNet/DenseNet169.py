@@ -4,14 +4,14 @@ from Note.nn.activation import activation_dict
 
 
 class DenseLayer:
-    def __init__(self,input_channels, growth_rate, dtype='float32'):
+    def __init__(self,input_channels, growth_rate):
         self.layers=nn.Layers()
-        self.layers.add(nn.batch_norm(input_channels,epsilon=1.001e-5,dtype=dtype))
+        self.layers.add(nn.batch_norm(input_channels,epsilon=1.001e-5))
         self.layers.add(activation_dict['relu'])
-        self.layers.add(nn.conv2d(4*growth_rate,[1,1],strides=1,padding="SAME",use_bias=False,dtype=dtype))
-        self.layers.add(nn.batch_norm(epsilon=1.001e-5,dtype=dtype))
+        self.layers.add(nn.conv2d(4*growth_rate,[1,1],strides=1,padding="SAME",use_bias=False))
+        self.layers.add(nn.batch_norm(epsilon=1.001e-5))
         self.layers.add(activation_dict['relu'])
-        self.layers.add(nn.conv2d(growth_rate,[3,3],strides=1,padding="SAME",use_bias=False,dtype=dtype))
+        self.layers.add(nn.conv2d(growth_rate,[3,3],strides=1,padding="SAME",use_bias=False))
         self.concat=nn.concat()
         
         
@@ -22,19 +22,19 @@ class DenseLayer:
         return x
 
 
-def DenseBlock(input_channels, num_layers, growth_rate, dtype='float32'):
+def DenseBlock(input_channels, num_layers, growth_rate):
         layers=nn.Layers()
         for i in range(num_layers):
-            layers.add(DenseLayer(input_channels, growth_rate, dtype))
+            layers.add(DenseLayer(input_channels, growth_rate))
             input_channels=layers.output_size
         return layers
 
 
-def TransitionLayer(input_channels, compression_factor, dtype='float32'):
+def TransitionLayer(input_channels, compression_factor):
         layers=nn.Layers()
-        layers.add(nn.batch_norm(input_channels,dtype=dtype))
+        layers.add(nn.batch_norm(input_channels))
         layers.add(activation_dict['relu'])
-        layers.add(nn.conv2d(int(compression_factor * input_channels),[1,1],strides=[1, 1, 1, 1],padding="SAME",use_bias=False,dtype=dtype))
+        layers.add(nn.conv2d(int(compression_factor * input_channels),[1,1],strides=[1, 1, 1, 1],padding="SAME",use_bias=False))
         layers.add(nn.avg_pool2d(ksize=[2, 2],strides=[2, 2],padding="SAME"))
         return layers
 
@@ -61,7 +61,7 @@ class DenseNet169(nn.Model):
                                  growth_rate=self.growth_rate))
         
         self.layers.add(TransitionLayer(input_channels=64,compression_factor=self.compression_factor,
-                                      dtype=self.dtype))
+                                      ))
         
         self.layers.add(DenseBlock(input_channels=int(64 * self.compression_factor),num_layers=12,
                                  growth_rate=self.growth_rate))

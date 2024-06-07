@@ -4,22 +4,22 @@ from Note.nn.activation import activation_dict
 
 
 class block1:
-    def __init__(self, in_channels, filters, kernel_size=3, stride=1, conv_shortcut=True, dtype='float32'):
+    def __init__(self, in_channels, filters, kernel_size=3, stride=1, conv_shortcut=True):
         self.layers1=nn.Layers()
         if conv_shortcut:
-            self.layers1.add(nn.conv2d(4 * filters,[1,1],in_channels,strides=[stride],dtype=dtype))
-            self.layers1.add(nn.batch_norm(epsilon=1.001e-5,dtype=dtype))
+            self.layers1.add(nn.conv2d(4 * filters,[1,1],in_channels,strides=[stride]))
+            self.layers1.add(nn.batch_norm(epsilon=1.001e-5))
         else:
             self.layers1.add(nn.identity(in_channels))
         self.layers2=nn.Layers()
-        self.layers2.add(nn.conv2d(filters,[1,1],in_channels,strides=[stride],dtype=dtype))
-        self.layers2.add(nn.batch_norm(epsilon=1.001e-5,dtype=dtype))
+        self.layers2.add(nn.conv2d(filters,[1,1],in_channels,strides=[stride]))
+        self.layers2.add(nn.batch_norm(epsilon=1.001e-5))
         self.layers2.add(activation_dict['relu'])
-        self.layers2.add(nn.conv2d(filters,[kernel_size,kernel_size],padding='SAME',dtype=dtype))
-        self.layers2.add(nn.batch_norm(epsilon=1.001e-5,dtype=dtype))
+        self.layers2.add(nn.conv2d(filters,[kernel_size,kernel_size],padding='SAME'))
+        self.layers2.add(nn.batch_norm(epsilon=1.001e-5))
         self.layers2.add(activation_dict['relu'])
-        self.layers2.add(nn.conv2d(4 * filters,[1,1],dtype=dtype))
-        self.layers2.add(nn.batch_norm(epsilon=1.001e-5,dtype=dtype))
+        self.layers2.add(nn.conv2d(4 * filters,[1,1]))
+        self.layers2.add(nn.batch_norm(epsilon=1.001e-5))
         self.train_flag=True
         self.output_size=self.layers2.output_size
     
@@ -33,21 +33,21 @@ class block1:
         return x
 
 
-def stack_fn(in_channels,dtype='float32'):
+def stack_fn(in_channels):
     layers=nn.Layers()
-    layers.add(stack1(in_channels, 64, 3, stride=1, dtype=dtype))
-    layers.add(stack1(layers.output_size, 128, 8, dtype=dtype))
-    layers.add(stack1(layers.output_size, 256, 36, dtype=dtype))
-    layers.add(stack1(layers.output_size, 512, 3, dtype=dtype))
+    layers.add(stack1(in_channels, 64, 3, stride=1))
+    layers.add(stack1(layers.output_size, 128, 8))
+    layers.add(stack1(layers.output_size, 256, 36))
+    layers.add(stack1(layers.output_size, 512, 3))
     return layers
 
 
-def stack1(in_channels, filters, blocks, stride=2, dtype='float32'):
+def stack1(in_channels, filters, blocks, stride=2):
     layers=nn.Layers()
-    layers.add(block1(in_channels, filters, stride=stride, dtype=dtype))
+    layers.add(block1(in_channels, filters, stride=stride))
     for i in range(2, blocks + 1):
         layers.add(block1(
-            layers.output_size, filters, conv_shortcut=False, dtype=dtype
+            layers.output_size, filters, conv_shortcut=False
         ))
     return layers
 
