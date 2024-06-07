@@ -202,7 +202,7 @@ class Llama2(Model):
         for layer_id in range(params.n_layers):
             self.layers.append(TransformerBlock(layer_id, params))
         self.norm = RMSNorm(params.dim, eps=params.norm_eps)
-        self.output = dense(params.vocab_size, params.dim, weight_initializer=['normal', 0.0, 0.02], use_bias=False)
+        self.head = self.dense(params.vocab_size, params.dim, weight_initializer=['normal', 0.0, 0.02], use_bias=False)
 
         # some useful precompute for the RoPE relative positional embeddings
         self.freqs_cos, self.freqs_sin = precompute_freqs_cis(self.params.dim // self.params.n_heads, self.params.max_seq_len)
@@ -211,26 +211,6 @@ class Llama2(Model):
         
         self.opt=tf.keras.optimizers.AdamW(lr=self.params.lr, beta1=0.9, beta2=0.95)
         self.km=0
-    
-    def fine_tuning(self,flag=0):
-        param=[]
-        self.flag=flag
-        if flag==0:
-            self.param_=self.param.copy()
-            self.output_=self.output
-            self.output=dense(ModelArgs.vocab_size, ModelArgs.dim, use_bias=False)
-            param.extend(self.output.param)
-            self.param=param
-        elif flag==1:
-            del self.param_[-len(self.output.param):]
-            self.param_.extend(self.output.param)
-            self.param=self.param_
-        else:
-            self.output,self.output_=self.output_,self.output
-            del self.param_[-len(self.output.param):]
-            self.param_.extend(self.output.param)
-            self.param=self.param_
-        return
 
     def fp(self, tokens):
         self.apply_decay('dense_weight', ModelArgs.weight_decay, False)

@@ -2,7 +2,7 @@ import tensorflow as tf
 from Note.nn.layer.conv2d import conv2d
 from Note.nn.layer.depthwise_conv2d import depthwise_conv2d
 from Note.nn.layer.dense import dense
-from Note.nn.layer.batch_norm_ import batch_norm_
+from Note.nn.layer.batch_norm import batch_norm_
 from Note.nn.layer.zeropadding2d import zeropadding2d
 from Note.nn.layer.dropout import dropout
 from Note.nn.layer.stochastic_depth import stochastic_depth
@@ -31,7 +31,6 @@ class SwiftFormer(Model):
                  pooling=None,
                  epsilon=1e-8,
                  weight_decay=0.025,
-                 dtype='float32'
                  ):
         super().__init__()
         
@@ -46,12 +45,12 @@ class SwiftFormer(Model):
         self.pooling=pooling
         self.epsilon=epsilon
         self.weight_decay=weight_decay
-        self.alpha = tf.constant(0.5, dtype)
-        self.temperature = tf.constant(10, dtype)
+        self.alpha = tf.constant(0.5)
+        self.temperature = tf.constant(10.)
         self.ce_loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
         self.km=0
 
-        self.patch_embed = stem(3, embed_dims[0], dtype)
+        self.patch_embed = stem(3, embed_dims[0])
 
         self.network = []
         for i in range(len(layers)):
@@ -71,7 +70,7 @@ class SwiftFormer(Model):
                     Embedding(
                         patch_size=down_patch_size, stride=down_stride,
                         padding=down_pad,
-                        in_chans=embed_dims[i], embed_dim=embed_dims[i + 1], dtype=dtype
+                        in_chans=embed_dims[i], embed_dim=embed_dims[i + 1]
                     )
                 )
 
@@ -82,60 +81,57 @@ class SwiftFormer(Model):
                 if i_emb == 0:
                     layer = identity()
                 else:
-                    layer = batch_norm_(embed_dims[i_emb],dtype=dtype)
+                    layer = batch_norm_(embed_dims[i_emb],parallel=False)
                 layer_name = f'norm{i_layer}'
                 self.layers_dict[layer_name]=layer
         else:
             # Classifier head
-            self.norm = batch_norm_(embed_dims[-1],dtype=dtype)
+            self.norm = batch_norm_(embed_dims[-1],parallel=False)
             self.head = dense(
-                num_classes, embed_dims[-1], weight_initializer=['truncated_normal',.02], dtype=dtype) if num_classes > 0 \
+                num_classes, embed_dims[-1], weight_initializer=['truncated_normal',.02]) if num_classes > 0 \
                 else identity()
             self.dist = distillation
             if self.dist:
                 self.dist_head = dense(
-                    num_classes, embed_dims[-1], weight_initializer=['truncated_normal',.02], dtype=dtype) if num_classes > 0 \
+                    num_classes, embed_dims[-1], weight_initializer=['truncated_normal',.02]) if num_classes > 0 \
                     else identity()
         
-        self.dtype=dtype
         self.opt=tf.keras.optimizers.AdamW(epsilon=epsilon,weight_decay=weight_decay)
     
     
-    def fine_tuning(self,classes=None,lr=None,flag=0):
-        param=[]
+    def fine_tuning(self,classes=None,flag=0):
+        self.flag=flag
         if flag==0:
-            self.param_=self.param.copy()
             self.head_=self.head
             self.head=dense(
-                classes, self.head.input_size, weight_initializer=['truncated_normal',.02], dtype=self.head.dtype) if classes > 0 \
-                else identity()
+                classes, self.head.input_size, weight_initializer=['truncated_normal',.02])
             if self.dist:
                 self.dist_head_=self.dist_head
                 self.dist_head = dense(
-                    classes, self.dist_head.input_size, weight_initializer=['truncated_normal',.02], dtype=self.dist_head.dtype) if classes > 0 \
-                    else identity()
-                param.extend(self.dist_head.param)
-            param.extend(self.head.param)
-            self.param=param
-            self.opt.lr=lr
+                    classes, self.dist_head.input_size, weight_initializer=['truncated_normal',.02])
+                self.param[-(len(self.head.param)+len(self.dist_head.param)):]=self.head.param+self.dist_head.param
+                for param in self.param[:-(len(self.head.param)+len(self.dist_head.param))]:
+                    param._trainable=False
+            else:
+                self.param[-len(self.head.param):]=self.head.param
+                for param in self.param[:-len(self.head.param)]:
+                    param._trainable=False
         elif flag==1:
             if self.dist:
-                del self.param_[-len(self.dist_head.param):]
-            del self.param_[-len(self.head.param):]
-            self.param_.extend(self.head.param)
-            if self.dist:
-                self.param_.extend(self.dist_head.param)
-            self.param=self.param_
+                for param in self.param[:-(len(self.head.param)+len(self.dist_head.param))]:
+                    param._trainable=True
+            else:
+                for param in self.param[:-len(self.head.param)]:
+                    param._trainable=True
         else:
             self.head,self.head_=self.head_,self.head
             if self.dist:
                 self.dist_head,self.dist_head_=self.dist_head_,self.dist_head
-                del self.param_[-len(self.dist_head.param):]
-            del self.param_[-len(self.head.param):]
-            self.param_.extend(self.head.param)
-            if self.dist:
-                self.param_.extend(self.dist_head.param)
-            self.param=self.param_
+                for param in self.param[:-(len(self.head.param)+len(self.dist_head.param))]:
+                    param._trainable=True
+            else:
+                for param in self.param[:-len(self.head.param)]:
+                    param._trainable=True
         return
 
 

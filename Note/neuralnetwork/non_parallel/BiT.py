@@ -121,27 +121,25 @@ class BiT(Model):
     self.km=0
     
     
-  def fine_tuning(self,classes=None,lr=None,flag=0):
-      param=[]
+  def fine_tuning(self,classes=None,flag=0):
+      self.flag=flag
       if flag==0:
-          self.param_=self.param.copy()
           self.conv2d=self.head.layer[-1]
           if self.zero_head:
               self.head.layer[-1]=conv2d(classes, 1, 2048*self.wf, weight_initializer='zeros')
           else:
               self.head.layer[-1]=conv2d(classes, 1, 2048*self.wf)
-          param.extend(self.head.layer[-1].param)
-          self.param=param
-          self.opt.lr=lr
+          self.param[-len(self.head.layer[-1].param):]=self.head.layer[-1].param
+          for param in self.param[:-len(self.head.layer[-1].param)]:
+              param._trainable=False
       elif flag==1:
-          del self.param_[-len(self.head.layer[-1].param):]
-          self.param_.extend(self.head.layer[-1].param)
-          self.param=self.param_
+            for param in self.param[:-len(self.head.layer[-1].param)]:
+                param._trainable=True
       else:
-          self.head.layer[-1],self.conv2d=self.conv2d,self.head.layer[-1]
-          del self.param_[-len(self.head.layer[-1].param):]
-          self.param_.extend(self.head.layer[-1].param)
-          self.param=self.param_
+          self.head.layer[-1],self.nn.conv2d=self.nn.conv2d,self.head.layer[-1]
+          self.param[-len(self.head.layer[-1].param):]=self.head.layer[-1].param
+          for param in self.param[:-len(self.head.layer[-1].param)]:
+              param._trainable=True
       return
 
 

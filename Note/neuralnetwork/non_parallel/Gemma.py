@@ -289,29 +289,9 @@ class Gemma(Model):
         for _ in range(config.num_hidden_layers):
             self.layers.append(GemmaDecoderLayer(config))
         self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
-        self.output = dense(config.vocab_size, config.hidden_size)
+        self.head = self.dense(config.vocab_size, config.hidden_size)
         
         self.opt=tf.keras.optimizers.Adam()
-    
-    def fine_tuning(self,lr=None,flag=0):
-        param=[]
-        if flag==0:
-            self.param_=self.param.copy()
-            self.embedder_=self.embedder
-            self.embedder=Embedder()
-            param.append(self.embedder.input_embedding_table)
-            self.param=param
-            self.opt.lr=lr
-        elif flag==1:
-            self.param_.remove(self.embedder_.input_embedding_table)
-            self.param_.append(self.embedder.input_embedding_table)
-            self.param=self.param_
-        else:
-            self.embedder,self.embedder_=self.embedder_,self.embedder
-            self.param_.remove(self.embedder_.input_embedding_table)
-            self.param_.append(self.embedder.input_embedding_table)
-            self.param=self.param_
-        return
 
     def fp(
         self,
