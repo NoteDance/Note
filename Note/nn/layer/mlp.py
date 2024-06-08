@@ -23,7 +23,7 @@ class Mlp:
         drop_probs = nn.to_2tuple(drop)
         linear_layer = partial(nn.conv2d, kernel_size=1) if use_conv else nn.dense
 
-        self.fc1 = linear_layer(in_features, hidden_features, bias=bias[0])
+        self.fc1 = linear_layer(hidden_features, input_size=in_features, use_bias=bias[0])
         self.act = act_layer
         self.drop1 = nn.dropout(drop_probs[0])
         self.norm = norm_layer(hidden_features) if norm_layer is not None else nn.identity()
