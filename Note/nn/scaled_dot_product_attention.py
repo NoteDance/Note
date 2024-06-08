@@ -4,7 +4,7 @@ import math
 def scaled_dot_product_attention(query, key, value, attn_mask=None, dropout_p=0.0, is_causal=False, scale=None):
     L, S = query.shape[-2], key.shape[-2]
     scale_factor = 1 / math.sqrt(query.shape[-1]) if scale is None else scale
-    attn_bias = tf.zeros(L, S, dtype=query.dtype)
+    attn_bias = tf.zeros((L, S), dtype=query.dtype)
     if is_causal:
         assert attn_mask is None
         temp_mask = tf.linalg.band_part(tf.ones((L, S), dtype=tf.bool), -1, 0)
