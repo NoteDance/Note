@@ -49,6 +49,15 @@ class Model:
         return
     
     
+    def detach(self):
+        self.param=Model.param.copy()
+        self.param_dict=Model.param_dict.copy()
+        self.layer_dict=Model.layer_dict.copy()
+        self.layer_param=Model.layer_param.copy()
+        self.layer_list=Model.layer_list.copy()
+        return
+    
+    
     def training(self,flag=False):
         Model.training=flag
         for layer in self.layer_list:
@@ -134,8 +143,8 @@ class Model:
         Model.param_dict['dense_bias'].clear()
         Model.param_dict['conv2d_weight'].clear()
         Model.param_dict['conv2d_bias'].clear()
-        Model.layer_dict=dict()
-        Model.layer_param=dict()
+        Model.layer_dict.clear()
+        Model.layer_param.clear()
         Model.layer_list.clear()
         Model.counter=0
         Model.name_list=[]
