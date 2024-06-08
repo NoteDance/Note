@@ -54,8 +54,6 @@ from Note.nn.layer.global_avg_pool3d import global_avg_pool3d
 from Note.nn.layer.global_max_pool1d import global_max_pool1d
 from Note.nn.layer.global_max_pool2d import global_max_pool2d
 from Note.nn.layer.global_max_pool3d import global_max_pool3d
-from Note.nn.layer.group_conv1d import group_conv1d
-from Note.nn.layer.group_conv2d import group_conv2d
 from Note.nn.layer.group_norm import group_norm
 from Note.nn.layer.grouped_query_attention import grouped_query_attention
 from Note.nn.layer.GRU import GRU
