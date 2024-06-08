@@ -220,7 +220,7 @@ class GlobalResponseNormMlp:
         linear_layer = partial(nn.conv2d, kernel_size=1) if use_conv else nn.dense
 
         self.fc1 = linear_layer(hidden_features, input_size=in_features, use_bias=bias[0])
-        self.act = act_layer()
+        self.act = act_layer
         self.drop1 = nn.dropout(drop_probs[0])
         self.grn = GlobalResponseNorm(hidden_features, channels_last=True)
         self.fc2 = linear_layer(out_features, input_size=hidden_features, use_bias=bias[1])
