@@ -23,6 +23,8 @@ class depthwise_conv2d: # define a class for depthwise convolutional layer
         self.use_bias=use_bias # set the use bias flag
         self.trainable=trainable
         self.dtype=dtype
+        if not isinstance(padding,str):
+            self.zeropadding2d=nn.zeropadding2d(padding=padding)
         if input_size!=None:
             self.output_size=depth_multiplier*input_size
             self.weight=nn.initializer([kernel_size[0],kernel_size[1],input_size,depth_multiplier],weight_initializer,dtype,trainable) # initialize the weight tensor
@@ -53,7 +55,12 @@ class depthwise_conv2d: # define a class for depthwise convolutional layer
         if self.input_size==None:
             self.input_size=data.shape[-1]
             self.build()
+        if not isinstance(self.padding,str):
+            data=self.zeropadding2d(data)
+            padding='VALID'
+        else:
+            padding=self.padding
         if self.use_bias==True: # if use bias is True
-            return nn.activation_conv(data,self.weight,self.activation,self.strides,self.padding,self.data_format,self.dilations,tf.nn.depthwise_conv2d,self.bias) # return the output of applying activation function to the depthwise convolution of data and weight, plus bias
+            return nn.activation_conv(data,self.weight,self.activation,self.strides,padding,self.data_format,self.dilations,tf.nn.depthwise_conv2d,self.bias) # return the output of applying activation function to the depthwise convolution of data and weight, plus bias
         else: # if use bias is False
-            return nn.activation_conv(data,self.weight,self.activation,self.strides,self.padding,self.data_format,self.dilations,tf.nn.depthwise_conv2d) # return the output of applying activation function to the depthwise convolution of data and weight
+            return nn.activation_conv(data,self.weight,self.activation,self.strides,padding,self.data_format,self.dilations,tf.nn.depthwise_conv2d) # return the output of applying activation function to the depthwise convolution of data and weight
