@@ -18,8 +18,7 @@ class DsConv2d:
     def __init__(self, dim_in, dim_out, kernel_size, padding, stride = 1, bias = True):
         self.net = nn.Layers()
         self.net.add(nn.conv2d(dim_in, input_size = dim_in, kernel_size = kernel_size, strides = stride, use_bias = bias))
-        self.net.add(nn.zeropadding2d(dim_in, padding))
-        self.net.add(nn.conv2d(dim_out, input_size = dim_in, kernel_size = 1, use_bias = bias))
+        self.net.add(nn.conv2d(dim_out, input_size = dim_in, kernel_size = 1, padding=padding, use_bias = bias))
         
     def __call__(self, x):
         return self.net(x)

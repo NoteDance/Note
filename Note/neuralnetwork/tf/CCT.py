@@ -176,9 +176,8 @@ class Tokenizer:
         self.conv_layers = nn.Layers()
         for chan_in, chan_out in n_filter_list_pairs:
             conv_layers = nn.Layers()
-            conv_layers.add(nn.zeropadding2d(padding=(padding, padding)))
             conv_layers.add(nn.conv2d(chan_out, (kernel_size, kernel_size), chan_in, strides=(stride, stride),
-                                   use_bias=conv_bias))
+                                   padding=(padding, padding),use_bias=conv_bias))
             if not exists(activation):
                 conv_layers.add(nn.identity())
             else:

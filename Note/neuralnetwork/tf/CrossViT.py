@@ -27,24 +27,18 @@ class PatchEmbed:
         if multi_conv:
             if patch_size[0] == 12:
                 self.proj = nn.Layers()
-                self.proj.add(nn.zeropadding2d(padding=3))
-                self.proj.add(nn.conv2d(embed_dim // 4, 7, in_chans, strides=4))
+                self.proj.add(nn.conv2d(embed_dim // 4, 7, in_chans, strides=4, padding=3))
                 self.proj.add(tf.nn.relu)
-                self.proj.add(nn.zeropadding2d(padding=0))
-                self.proj.add(nn.Conv2d(embed_dim // 2, 3, embed_dim // 4, strides=3))
+                self.proj.add(nn.Conv2d(embed_dim // 2, 3, embed_dim // 4, strides=3, padding=0))
                 self.proj.add(tf.nn.relu)
-                self.proj.add(nn.zeropadding2d(padding=1))
-                self.proj.add(nn.Conv2d(embed_dim, 3, embed_dim // 2, strides=1))
+                self.proj.add(nn.Conv2d(embed_dim, 3, embed_dim // 2, strides=1, padding=1))
             elif patch_size[0] == 16:
                 self.proj = nn.Layers()
-                self.proj.add(nn.zeropadding2d(padding=3))
-                self.proj.add(nn.conv2d(embed_dim // 4, 7, in_chans, strides=4))
+                self.proj.add(nn.conv2d(embed_dim // 4, 7, in_chans, strides=4, padding=3))
                 self.proj.add(tf.nn.relu)
-                self.proj.add(nn.zeropadding2d(padding=1))
-                self.proj.add(nn.Conv2d(embed_dim // 2, 3, embed_dim // 4, strides=2))
+                self.proj.add(nn.Conv2d(embed_dim // 2, 3, embed_dim // 4, strides=2, padding=1))
                 self.proj.add(tf.nn.relu)
-                self.proj.add(nn.zeropadding2d(padding=1))
-                self.proj.add(nn.Conv2d(embed_dim, 3, embed_dim // 2, strides=2))
+                self.proj.add(nn.Conv2d(embed_dim, 3, embed_dim // 2, strides=2, padding=1))
         else:
             self.proj = nn.conv2d(embed_dim, patch_size, in_chans, strides=patch_size)
 

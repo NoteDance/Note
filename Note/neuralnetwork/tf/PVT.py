@@ -22,11 +22,14 @@ class Mlp:
     def init_weights(self, l):
         if isinstance(l, nn.dense):
             l.weight.assign(nn.initializer(l.weight.shape, ['truncated_normal', .02]))
-        elif isinstance(l, nn.group_conv2d):
+        elif isinstance(l, nn.conv2d):
             fan_out = l.kernel_size[0] * l.kernel_size[1] * l.output_size
-            fan_out //= l.num_groups
-            for weight in l.weight:
-                weight.assign(nn.initializer(weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
+            fan_out //= l.groups
+            if l.groups==1:
+                l.weight.assign(nn.initializer(l.weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
+            else:
+                for weight in l.weight:
+                    weight.assign(nn.initializer(weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
 
     def __call__(self, x, H, W):
         x = self.fc1(x)
@@ -60,11 +63,11 @@ class Attention:
         self.sr_ratio = sr_ratio
         if not linear:
             if sr_ratio > 1:
-                self.sr = nn.group_conv2d(dim, sr_ratio, input_size=dim, strides=sr_ratio)
+                self.sr = nn.conv2d(dim, sr_ratio, input_size=dim, strides=sr_ratio)
                 self.norm = nn.layer_norm(dim)
         else:
             self.pool = nn.adaptive_avg_pooling2d(7)
-            self.sr = nn.group_conv2d(dim, 1, input_size=dim, strides=1)
+            self.sr = nn.conv2d(dim, 1, input_size=dim, strides=1)
             self.norm = nn.layer_norm(dim)
             self.act = tf.nn.gelu
         nn.Model.apply(self.init_weights)
@@ -72,11 +75,14 @@ class Attention:
     def init_weights(self, l):
         if isinstance(l, nn.dense):
             l.weight.assign(nn.initializer(l.weight.shape, ['truncated_normal', .02]))
-        elif isinstance(l, nn.group_conv2d):
+        elif isinstance(l, nn.conv2d):
             fan_out = l.kernel_size[0] * l.kernel_size[1] * l.output_size
-            fan_out //= l.num_groups
-            for weight in l.weight:
-                weight.assign(nn.initializer(weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
+            fan_out //= l.groups
+            if l.groups==1:
+                l.weight.assign(nn.initializer(l.weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
+            else:
+                for weight in l.weight:
+                    weight.assign(nn.initializer(weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
 
     def __call__(self, x, H, W):
         B, N, C = x.shape
@@ -130,11 +136,14 @@ class Block:
     def init_weights(self, l):
         if isinstance(l, nn.dense):
             l.weight.assign(nn.initializer(l.weight.shape, ['truncated_normal', .02]))
-        elif isinstance(l, nn.group_conv2d):
+        elif isinstance(l, nn.conv2d):
             fan_out = l.kernel_size[0] * l.kernel_size[1] * l.output_size
-            fan_out //= l.num_groups
-            for weight in l.weight:
-                weight.assign(nn.initializer(weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
+            fan_out //= l.groups
+            if l.groups==1:
+                l.weight.assign(nn.initializer(l.weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
+            else:
+                for weight in l.weight:
+                    weight.assign(nn.initializer(weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
 
     def __call__(self, x, H, W):
         x = x + self.drop_path(self.attn(self.norm1(x), H, W))
@@ -160,8 +169,8 @@ class OverlapPatchEmbed:
         self.patch_size = patch_size
         self.H, self.W = img_size[0] // stride, img_size[1] // stride
         self.num_patches = self.H * self.W
-        self.zeropadding2d = nn.zeropadding2d(padding=(patch_size[0] // 2, patch_size[1] // 2))
-        self.proj = nn.group_conv2d(embed_dim, patch_size, input_size=in_chans, strides=stride,
+        self.proj = nn.conv2d(embed_dim, patch_size, input_size=in_chans, strides=stride, 
+                              padding=(patch_size[0] // 2, patch_size[1] // 2)
                               )
         self.norm = nn.layer_norm(embed_dim)
 
@@ -170,11 +179,14 @@ class OverlapPatchEmbed:
     def init_weights(self, l):
         if isinstance(l, nn.dense):
             l.weight.assign(nn.initializer(l.weight.shape, ['truncated_normal', .02]))
-        elif isinstance(l, nn.group_conv2d):
+        elif isinstance(l, nn.conv2d):
             fan_out = l.kernel_size[0] * l.kernel_size[1] * l.output_size
-            fan_out //= l.num_groups
-            for weight in l.weight:
-                weight.assign(nn.initializer(weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
+            fan_out //= l.groups
+            if l.groups==1:
+                l.weight.assign(nn.initializer(l.weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
+            else:
+                for weight in l.weight:
+                    weight.assign(nn.initializer(weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
 
     def __call__(self, x):
         x = self.proj(x)
@@ -185,7 +197,7 @@ class OverlapPatchEmbed:
         return x, H, W
 
 
-class PyramidVisionTransformerV2:
+class PyramidVisionTransformerV2(nn.Model):
     def __init__(self, img_size=224, patch_size=16, in_chans=3, num_classes=1000, embed_dims=[64, 128, 256, 512],
                  num_heads=[1, 2, 4, 8], mlp_ratios=[4, 4, 4, 4], qkv_bias=False, qk_scale=None, drop_rate=0.,
                  attn_drop_rate=0., drop_path_rate=0., norm_layer=nn.layer_norm,
@@ -230,11 +242,14 @@ class PyramidVisionTransformerV2:
     def init_weights(self, l):
         if isinstance(l, nn.dense):
             l.weight.assign(nn.initializer(l.weight.shape, ['truncated_normal', .02]))
-        elif isinstance(l, nn.group_conv2d):
+        elif isinstance(l, nn.conv2d):
             fan_out = l.kernel_size[0] * l.kernel_size[1] * l.output_size
-            fan_out //= l.num_groups
-            for weight in l.weight:
-                weight.assign(nn.initializer(weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
+            fan_out //= l.groups
+            if l.groups==1:
+                l.weight.assign(nn.initializer(l.weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
+            else:
+                for weight in l.weight:
+                    weight.assign(nn.initializer(weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
 
     def freeze_patch_emb(self):
         self.freeze('patch_embed1')
@@ -274,13 +289,11 @@ class PyramidVisionTransformerV2:
 
 class DWConv:
     def __init__(self, dim=768):
-        self.zeropadding2d = nn.zeropadding2d(padding=1)
-        self.dwconv = nn.group_conv2d(dim, 3, dim, dim, 1, use_bias=True)
+        self.dwconv = nn.conv2d(dim, 3, dim, 1, groups=dim, padding=1, use_bias=True)
 
     def __call__(self, x, H, W):
         B, N, C = x.shape
         x = tf.reshape(x, (B, H, W, C))
-        x = self.zeropadding2d(x)
         x = self.dwconv(x)
         B, H, W, _ = x.shape
         x = tf.reshape(x, (B, H*W, -1))

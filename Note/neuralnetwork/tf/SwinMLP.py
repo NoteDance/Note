@@ -107,10 +107,10 @@ class SwinMLPBlock:
 
         self.norm1 = norm_layer(dim)
         # use group convolution to implement multi-head MLP
-        self.spatial_mlp = nn.group_conv1d(self.num_heads * self.window_size ** 2,
+        self.spatial_mlp = nn.conv1d(self.num_heads * self.window_size ** 2,
                                      input_size=self.num_heads * self.window_size ** 2,
                                      kernel_size=1,
-                                     num_groups=self.num_heads)
+                                     groups=self.num_heads)
 
         self.drop_path = nn.stochastic_depth(drop_path) if drop_path > 0. else nn.identity()
         self.norm2 = norm_layer(dim)
@@ -426,7 +426,7 @@ class SwinMLP(nn.Model):
     def init_weights(self, l):
         if isinstance(l, nn.dense):
             l.weight.assign(nn.initializer(l.weight.shape, ['truncated_normal', 0.2]))
-        elif isinstance(l, nn.group_conv1d):
+        elif isinstance(l, nn.conv1d):
             for weight in l.weight:
                 weight.assign(nn.initializer(weight.shape, ['truncated_normal', 0.2]))
 

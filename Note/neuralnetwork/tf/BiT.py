@@ -4,18 +4,16 @@ from Note import nn
 
 class StdConv2d:
   def __init__(self,filters,kernel_size,input_size,stride=[1,1],padding=None,bias=True):
-      self.nn.zeropadding2d = nn.zeropadding2d(filters, padding)
-      self.nn.conv2d = nn.conv2d(filters=filters,kernel_size=kernel_size,input_size=input_size,
+      self.conv2d = nn.conv2d(filters=filters,kernel_size=kernel_size,input_size=input_size,padding=padding,
                            strides=stride,use_bias=bias)
-      w = self.nn.conv2d.weight
+      w = self.conv2d.weight
       v, m = tf.nn.moments(w, axes=[1, 2, 3], keepdims=True)
       w = (w - m) / tf.math.sqrt(v + 1e-10)
-      self.nn.conv2d.weight.assign(w)
+      self.conv2d.weight.assign(w)
 
 
   def __call__(self, x):
-    out = self.nn.zeropadding2d(x)
-    out = self.nn.conv2d(out)
+    out = self.conv2d(x)
     return out
 
 
@@ -126,7 +124,7 @@ class BiT(nn.Model):
             for param in self.param[:-len(self.head.layer[-1].param)]:
                 param._trainable=True
       else:
-          self.head.layer[-1],self.nn.conv2d=self.nn.conv2d,self.head.layer[-1]
+          self.head.layer[-1],self.conv2d=self.conv2d,self.head.layer[-1]
           self.param[-len(self.head.layer[-1].param):]=self.head.layer[-1].param
           for param in self.param[:-len(self.head.layer[-1].param)]:
               param._trainable=True

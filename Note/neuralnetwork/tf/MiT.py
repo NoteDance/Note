@@ -57,7 +57,7 @@ class Attention:
 
         self.sr_ratio = sr_ratio
         if sr_ratio > 1:
-            self.sr = nn.group_conv2d(dim, kernel_size=sr_ratio, input_size=dim, strides=sr_ratio)
+            self.sr = nn.conv2d(dim, kernel_size=sr_ratio, input_size=dim, strides=sr_ratio)
             self.norm = nn.layer_norm(dim)
 
     def __call__(self, x, H, W):
@@ -120,13 +120,11 @@ class OverlapPatchEmbed:
         self.patch_size = patch_size
         self.H, self.W = img_size[0] // patch_size[0], img_size[1] // patch_size[1]
         self.num_patches = self.H * self.W
-        self.zeropadding2d = nn.zeropadding2d(padding=(patch_size[0] // 2, patch_size[1] // 2))
-        self.proj = nn.group_conv2d(embed_dim, kernel_size=patch_size, input_size=in_chans, strides=stride,
-                              )
+        self.proj = nn.conv2d(embed_dim, kernel_size=patch_size, input_size=in_chans, strides=stride,
+                              padding=(patch_size[0] // 2, patch_size[1] // 2))
         self.norm = nn.layer_norm(embed_dim)
 
     def __call__(self, x):
-        x = self.zeropadding2d(x)
         x = self.proj(x)
         B, H, W, C = x.shape
         x = tf.reshape(x, (B, H*W, C))
@@ -198,11 +196,14 @@ class MiT(nn.Model):
     def init_weights(self, l):
         if isinstance(l, nn.dense):
             l.weight.assign(nn.initializer(l.weight.shape, ['truncated_normal', 0.2]))
-        elif isinstance(l, nn.group_conv2d):
+        elif isinstance(l, nn.conv2d):
             fan_out = l.kernel_size[0] * l.kernel_size[1] * l.output_size
-            fan_out //= l.num_groups
-            for weight in l.weight:
-                weight.assign(nn.initializer(weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
+            fan_out //= l.groups
+            if l.groups==1:
+                l.weight.assign(nn.initializer(l.weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
+            else:
+                for weight in l.weight:
+                    weight.assign(nn.initializer(weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
 
     def reset_drop_path(self, drop_path_rate):
         dpr = tf.linspace(0., drop_path_rate, sum(self.depths))
@@ -282,13 +283,11 @@ class MiT(nn.Model):
 
 class DWConv:
     def __init__(self, dim=768):
-        self.zeropadding2d = nn.zeropadding2d(padding = 1)
-        self.dwconv = nn.group_conv2d(dim, 3, dim, dim, 1, use_bias=True)
+        self.dwconv = nn.conv2d(dim, 3, dim, 1, groups=dim, padding=1, use_bias=True)
 
     def __call__(self, x, H, W):
         B, N, C = x.shape
         x = tf.reshape(x, (B, H, W, C))
-        x = self.zeropadding2d(x)
         x = self.dwconv(x)
         x = tf.reshape(x, (B, H*W, C))
 

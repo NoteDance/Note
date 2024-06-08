@@ -53,8 +53,7 @@ class PositionalEncodingFourier:
 def conv3x3(in_planes, out_planes, stride=1):
     """3x3 convolution with padding"""
     layers = nn.Layers()
-    layers.add(nn.zeropadding2d(padding=1))
-    layers.add(nn.conv2d(out_planes, 3, in_planes, strides=stride, use_bias=False))
+    layers.add(nn.conv2d(out_planes, 3, in_planes, strides=stride, padding=1, use_bias=False))
     layers.add(nn.batch_norm(out_planes, synchronized=True))
     return layers
 
@@ -112,23 +111,20 @@ class LPI:
 
         padding = kernel_size // 2
 
-        self.conv1 = nn.group_conv2d(out_features, kernel_size, out_features,
-                                     in_features)
+        self.conv1 = nn.conv2d(out_features, kernel_size, in_features,
+                                     groups=out_features, padding=padding)
         self.act = act_layer
         self.bn = nn.batch_norm(in_features, synchronized=True)
-        self.conv2 = nn.group_conv2d(out_features, kernel_size, out_features,
-                                     in_features)
+        self.conv2 = nn.conv2d(out_features, kernel_size, in_features,
+                                     groups=out_features, padding=padding)
         
-        self.zeropadding2d = nn.zeropadding2d(padding=padding)
 
     def __call__(self, x, H, W):
         B, N, C = x.shape
         x = tf.reshape(tf.transpose(x, (0, 2, 1)), (B, H, W, C))
-        x = self.zeropadding2d(x)
         x = self.conv1(x)
         x = self.act(x)
         x = self.bn(x)
-        x = self.zeropadding2d(x)
         x = self.conv2(x)
         x = tf.reshape(x, (B, N, C))
 

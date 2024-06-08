@@ -13,8 +13,7 @@ class Bottleneck:
         self.bn1 = nn.batch_norm(planes)
         self.relu1 = tf.nn.relu
 
-        self.zeropadding2d = nn.zeropadding2d(padding=1)
-        self.conv2 = nn.conv2d(planes, 3, planes, use_bias=False)
+        self.conv2 = nn.conv2d(planes, 3, planes, padding=1, use_bias=False)
         self.bn2 = nn.batch_norm(planes)
         self.relu2 = tf.nn.relu
 
@@ -38,7 +37,6 @@ class Bottleneck:
         nn.identity = x
 
         out = self.relu1(self.bn1(self.conv1(x), train_flag))
-        out = self.zeropadding2d(out)
         out = self.relu2(self.bn2(self.conv2(out), train_flag))
         out = self.avgpool(out)
         out = self.bn3(self.conv3(out), train_flag)
@@ -102,14 +100,13 @@ class ModifiedResNet:
         self.input_resolution = input_resolution
 
         # the 3-layer stem
-        self.zeropadding2d = nn.zeropadding2d(padding=1)
-        self.conv1 = nn.conv2d(width // 2, input_size=3, kernel_size=3, strides=2, use_bias=False)
+        self.conv1 = nn.conv2d(width // 2, input_size=3, kernel_size=3, strides=2, padding=1, use_bias=False)
         self.bn1 = nn.batch_norm(width // 2)
         self.relu1 = tf.nn.relu
-        self.conv2 = nn.conv2d(width // 2, input_size=width // 2, kernel_size=3, use_bias=False)
+        self.conv2 = nn.conv2d(width // 2, input_size=width // 2, kernel_size=3, padding=1, use_bias=False)
         self.bn2 = nn.batch_norm(width // 2)
         self.relu2 = tf.nn.relu
-        self.conv3 = nn.conv2d(width, input_size=width // 2, kernel_size=3, use_bias=False)
+        self.conv3 = nn.conv2d(width, input_size=width // 2, kernel_size=3, padding=1, use_bias=False)
         self.bn3 = nn.batch_norm(width)
         self.relu3 = tf.nn.relu
         self.avgpool = nn.avg_pool2d(2, 2, 'VALID')
@@ -136,13 +133,10 @@ class ModifiedResNet:
 
     def __call__(self, x, train_flag=True):
         def stem(x):
-            x = self.zeropadding2d(x)
             x = self.conv1(x)
             x = self.relu1(self.bn1(x, train_flag))
-            x = self.zeropadding2d(x)
             x = self.conv2(x)
             x = self.relu2(self.bn2(x, train_flag))
-            x = self.zeropadding2d(x)
             x = self.conv3(x)
             x = self.relu3(self.bn3(x, train_flag))
             x = self.avgpool(x)

@@ -48,8 +48,7 @@ class FeedForward:
 class DepthWiseConv2d:
     def __init__(self, dim_in, dim_out, kernel_size, padding, stride, bias = True):
         self.net = nn.Layers()
-        self.net.add(nn.zeropadding2d(padding=padding))
-        self.net.add(nn.group_conv2d(dim_in, kernel_size, dim_in, dim_in, strides = stride, use_bias = bias))
+        self.net.add(nn.conv2d(dim_in, kernel_size, dim_in, groups=dim_in, strides = stride, padding=padding, use_bias = bias))
         self.net.add(nn.batch_norm(dim_in))
         self.net.add(nn.conv2d(dim_out, 1, dim_in, use_bias = bias))
 
@@ -96,7 +95,7 @@ class Transformer:
         self.layers = []
         for _ in range(depth):
             self.layers.append([
-                Attention(dim, proj_kernel = proj_kernel, kv_proj_stride = kv_proj_stride, heads = heads, dim_head = dim_head, dropout_rate = nn.dropout),
+                Attention(dim, proj_kernel = proj_kernel, kv_proj_stride = kv_proj_stride, heads = heads, dim_head = dim_head, dropout_rate = dropout),
                 FeedForward(dim, mlp_mult, dropout_rate = dropout)
             ])
         self.train_flag = True
@@ -150,8 +149,7 @@ class CvT(nn.Model):
             layers = nn.Layers()
             config, kwargs = group_by_key_prefix_and_remove_prefix(f'{prefix}_', kwargs)
 
-            layers.add(nn.zeropadding2d(padding = (config['emb_kernel'] // 2)))
-            layers.add(nn.conv2d(config['emb_dim'], config['emb_kernel'], dim, strides = config['emb_stride']))
+            layers.add(nn.conv2d(config['emb_dim'], config['emb_kernel'], dim, strides = config['emb_stride'], padding = (config['emb_kernel'] // 2)))
             layers.add(nn.layer_norm(config['emb_dim']))
             layers.add(Transformer(dim = config['emb_dim'], proj_kernel = config['proj_kernel'], kv_proj_stride = config['kv_proj_stride'], depth = config['depth'], heads = config['heads'], mlp_mult = config['mlp_mult'], dropout = dropout))
             self.layers.add(layers)

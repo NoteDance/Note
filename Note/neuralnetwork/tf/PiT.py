@@ -23,7 +23,7 @@ class Transformer:
                 num_heads=heads,
                 mlp_ratio=mlp_ratio,
                 qkv_bias=True,
-                drop=drop_rate,
+                proj_drop=drop_rate,
                 attn_drop=attn_drop_rate,
                 drop_path=drop_path_prob[i],
                 norm_layer=partial(nn.layer_norm, epsilon=1e-6)
@@ -49,15 +49,13 @@ class Transformer:
 class conv_head_pooling:
     def __init__(self, in_feature, out_feature, stride,
                  ):
-        self.zeropadding2d = nn.zeropadding2d(padding=stride // 2)
-        self.conv = nn.group_conv2d(out_feature, stride + 1, in_feature, in_feature,
-                              strides=stride,
+        self.conv = nn.conv2d(out_feature, stride + 1, in_feature, groups=in_feature,
+                              strides=stride, padding=stride // 2
                               )
         self.fc = nn.dense(out_feature, in_feature)
 
     def __call__(self, x, cls_token):
 
-        x = self.zeropadding2d(x)
         x = self.conv(x)
         cls_token = self.fc(cls_token)
 
@@ -67,12 +65,10 @@ class conv_head_pooling:
 class conv_embedding:
     def __init__(self, in_channels, out_channels, patch_size,
                  stride, padding):
-        self.zeropadding2d = nn.zeropadding2d(padding=padding)
         self.conv = nn.conv2d(out_channels, patch_size, in_channels,
-                              strides=stride, use_bias=True)
+                              strides=stride, padding=padding, use_bias=True)
 
     def __call__(self, x):
-        x = self.zeropadding2d(x)
         x = self.conv(x)
         return x
 
