@@ -104,7 +104,7 @@ class Block:
             norm_layer=norm_layer,
         )
         self.ls1 = LayerScale(dim, init_values=init_values) if init_values else nn.identity()
-        self.drop_path = nn.stochastic_depth(drop_path) if drop_path > 0. else nn.identity()
+        self.drop_path1 = nn.stochastic_depth(drop_path) if drop_path > 0. else nn.identity()
         
         self.norm2 = norm_layer(dim)
         self.mlp = mlp_layer(
