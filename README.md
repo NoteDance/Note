@@ -86,7 +86,7 @@ This package include Llama2, CLIP, ViT, ConvNeXt, SwiftFormer, etc. These models
 
 https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
 
-**Documentation:** https://github.com/NoteDance/Note-documentation/tree/tf-7.0
+Documentation: https://github.com/NoteDance/Note-documentation/tree/tf-7.0
 
 
 # Documentation:
