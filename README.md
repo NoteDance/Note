@@ -11,6 +11,8 @@ To use the layer module, you first need to create a layer object, then input dat
 
 https://github.com/NoteDance/Note/tree/Note-7.0/Note/nn/layer
 
+Documentation: https://github.com/NoteDance/Note-documentation/tree/layer-7.0
+
 Using Note’s Layer module, you can determine the shape of the training parameters when you input data like Keras, or you can give the shape of the training parameters in advance like PyTorch.
 
 **Pytorch:**
