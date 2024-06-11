@@ -7,7 +7,7 @@ To use Note, you need to download it from https://github.com/NoteDance/Note and 
 
 
 # Layer modules:
-To use the layer module, you first need to create a layer object, then input data to get the output, like using pytorch, or you can use the layer module like using keras. The args of the layer classes in Note are similar to those of the layer classes in tf.keras.layers, so you can refer to the API documentation of tf.keras.layers to use the layer classes in Note. Neural networks created with the layer module are compatible with TensorFlow, which means you can train these neural networks with TensorFlow.
+To use the layer module, you first need to create a layer object, then input data to get the output, like using pytorch, or you can use the layer module like using keras. Neural networks created with the layer module are compatible with TensorFlow, which means you can train these neural networks with TensorFlow.
 
 https://github.com/NoteDance/Note/tree/Note-7.0/Note/nn/layer
 
