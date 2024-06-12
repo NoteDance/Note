@@ -11,7 +11,7 @@ To use the layer module, you first need to create a layer object, then input dat
 
 https://github.com/NoteDance/Note/tree/Note-7.0/Note/nn/layer
 
-Documentation: https://github.com/NoteDance/Note-documentation/tree/layer-7.0
+**Documentation**: https://github.com/NoteDance/Note-documentation/tree/layer-7.0
 
 Using Note’s Layer module, you can determine the shape of the training parameters when you input data like Keras, or you can give the shape of the training parameters in advance like PyTorch.
 
@@ -58,7 +58,11 @@ Note.neuralnetwork.tf package contains neural networks implemented with Note’s
 
 https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
 
-**Documentation:** https://github.com/NoteDance/Note-documentation/tree/tf-7.0
+**Documentation**: https://github.com/NoteDance/Note-documentation/tree/tf-7.0
+
+
+# Function modules:
+**Documentation**: https://github.com/NoteDance/Note-documentation/tree/function-7.0
 
 
 # Note.nn.Model.Model:
@@ -86,7 +90,7 @@ This package include Llama2, CLIP, ViT, ConvNeXt, SwiftFormer, etc. These models
 
 https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
 
-Documentation: https://github.com/NoteDance/Note-documentation/tree/tf-7.0
+**Documentation**: https://github.com/NoteDance/Note-documentation/tree/tf-7.0
 
 
 # Documentation:
