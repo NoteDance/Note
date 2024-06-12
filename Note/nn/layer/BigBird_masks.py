@@ -6,7 +6,7 @@ class BigBird_masks:
   def __init__(self, block_size):
     self._block_size = block_size
 
-  def output(self, data, mask):
+  def __call__(self, data, mask):
     encoder_shape = tf.shape(mask)
     mask = tf.cast(mask, data.dtype)
     batch_size, seq_length = encoder_shape[0], encoder_shape[1]
