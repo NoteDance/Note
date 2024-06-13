@@ -18,7 +18,7 @@ class Model:
     ctsl_list=[]
     name=None
     name_=None
-    training=True
+    train_flag=True
     
     
     def __init__(self):
@@ -31,6 +31,7 @@ class Model:
         self.head=None
         self.head_=None
         self.ft_flag=0
+        self.detach_flag=False
         
     
     def add():
@@ -50,16 +51,19 @@ class Model:
     
     
     def detach(self):
+        if self.detach_flag:
+            return
         self.param=Model.param.copy()
         self.param_dict=Model.param_dict.copy()
         self.layer_dict=Model.layer_dict.copy()
         self.layer_param=Model.layer_param.copy()
         self.layer_list=Model.layer_list.copy()
+        self.detach_flag=True
         return
     
     
     def training(self,flag=False):
-        Model.training=flag
+        Model.train_flag=flag
         for layer in self.layer_list:
             layer.train_flag=flag
         return
@@ -152,5 +156,5 @@ class Model:
         Model.ctsl_list.clear()
         Model.name=None
         Model.name_=None
-        Model.training=True
+        Model.train_flag=True
         return
