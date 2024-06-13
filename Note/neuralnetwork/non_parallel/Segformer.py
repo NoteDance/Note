@@ -4,7 +4,7 @@ from Note.nn.layer.layer_norm import layer_norm
 from Note.nn.layer.zeropadding2d import zeropadding2d
 from Note.nn.layer.up_sampling2d import up_sampling2d
 from Note.nn.initializer import initializer_
-from Note.nn.Layers import Layers
+from Note.nn.Sequential import Sequential
 from Note.nn.Model import Model
 from einops import rearrange
 from math import sqrt
@@ -22,7 +22,7 @@ def cast_tuple(val, depth):
 
 class DsConv2d:
     def __init__(self, dim_in, dim_out, kernel_size, padding, stride = 1, bias = True):
-        self.net = Layers()
+        self.net = Sequential()
         self.net.add(conv2d(dim_in, input_size = dim_in, kernel_size = kernel_size, strides = stride, use_bias = bias))
         self.net.add(zeropadding2d(dim_in, padding))
         self.net.add(conv2d(dim_out, input_size = dim_in, kernel_size = 1, use_bias = bias))
@@ -85,7 +85,7 @@ class MixFeedForward:
         expansion_factor
     ):
         hidden_dim = dim * expansion_factor
-        self.net = Layers()
+        self.net = Sequential()
         self.net.add(conv2d(hidden_dim, 1, dim))
         self.net.add(DsConv2d(hidden_dim, hidden_dim, 3, padding = 1))
         self.net.add(tf.nn.gelu)
@@ -197,12 +197,12 @@ class Segformer(Model):
         
         self.to_fused = []
         for i, dim in enumerate(dims):
-            to_fused = Layers()
+            to_fused = Sequential()
             to_fused.add(conv2d(decoder_dim, 1, dim))
             to_fused.add(up_sampling2d(2 ** i))
             self.to_fused.append(to_fused)
 
-        self.to_segmentation = Layers()
+        self.to_segmentation = Sequential()
         self.to_segmentation.add(conv2d(decoder_dim, 1, 4 * decoder_dim))
         self.head=self.conv2d(num_classes, decoder_dim, 1)
         

@@ -3,7 +3,7 @@ from Note.nn.layer.conv2d import conv2d
 from Note.nn.layer.depthwise_conv2d import depthwise_conv2d
 from Note.nn.layer.batch_norm import batch_norm_
 from Note.nn.layer.zeropadding2d import zeropadding2d
-from Note.nn.Layers import Layers
+from Note.nn.Sequential import Sequential
 from Note.nn.activation import activation_dict
 from Note.nn.Model import Model
 
@@ -61,7 +61,7 @@ class MobileNet(Model):
         self.include_top=include_top
         self.pooling=pooling
         
-        self.layers=Layers()
+        self.layers=Sequential()
         self.layers.add(_conv_block(3, 32, self.alpha, strides=[2, 2]))
         self.layers.add(_depthwise_conv_block(self.layers.output_size, 64, self.alpha, self.depth_multiplier, block_id=1))
         self.layers.add(_depthwise_conv_block(

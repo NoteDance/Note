@@ -10,7 +10,7 @@ from Note.nn.layer.image_preprocessing.rescaling import rescaling
 from Note.nn.layer.multiply import multiply
 from Note.nn.layer.reshape import reshape
 from Note.nn.layer.identity import identity
-from Note.nn.Layers import Layers
+from Note.nn.Sequential import Sequential
 from Note.nn.activation import activation_dict
 import copy
 from Note.nn.Model import Model
@@ -141,7 +141,7 @@ class EfficientNetV2(Model):
             min_depth=self.min_depth,
             depth_divisor=self.depth_divisor,
         )
-        self.layers1=Layers()
+        self.layers1=Sequential()
         self.layers1.add(conv2d(stem_filters,[3,3],3,strides=2,padding="SAME",use_bias=False,
                            weight_initializer=CONV_KERNEL_INITIALIZER))
         self.layers1.add(batch_norm_(axis=-1,momentum=self.bn_momentum,parallel=False))
@@ -151,7 +151,7 @@ class EfficientNetV2(Model):
         blocks_args = copy.deepcopy(self.blocks_args)
         b = 0
         blocks = float(sum(args["num_repeat"] for args in blocks_args))
-        self.layers2=Layers()
+        self.layers2=Sequential()
         for i, args in enumerate(blocks_args):
             assert args["num_repeat"] > 0
     
@@ -200,7 +200,7 @@ class EfficientNetV2(Model):
             min_depth=self.min_depth,
             depth_divisor=self.depth_divisor,
         )
-        self.layers3=Layers()
+        self.layers3=Sequential()
         self.layers3.add(conv2d(
             top_filters,
             [1,1],
@@ -282,7 +282,7 @@ class MBConvBlock:
         self.output_filters = output_filters
         # Expansion phase
         filters = input_filters * expand_ratio
-        self.layers=Layers()
+        self.layers=Sequential()
         if expand_ratio != 1:
             self.layers.add(conv2d(
                 filters=filters,
@@ -394,7 +394,7 @@ class FusedMBConvBlock:
         self.input_filters = input_filters
         self.output_filters = output_filters
         filters = input_filters * expand_ratio
-        self.layers=Layers()
+        self.layers=Sequential()
         if expand_ratio != 1:
             self.layers.add(conv2d(
                 filters,

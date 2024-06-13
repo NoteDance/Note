@@ -5,7 +5,7 @@ from Note.nn.layer.global_max_pool2d import global_max_pool2d
 from Note.nn.layer.batch_norm import batch_norm_
 from Note.nn.layer.identity import identity
 from Note.nn.layer.add import add
-from Note.nn.Layers import Layers
+from Note.nn.Sequential import Sequential
 from Note.nn.activation import activation_dict
 from Note.nn.Model import Model
 
@@ -17,7 +17,7 @@ def PreStem(x):
 
 
 def Stem(in_channels):
-    layers=Layers()
+    layers=Sequential()
     layers.add(conv2d(32,[3,3],in_channels,strides=[2],use_bias=False,padding='SAME',weight_initializer='He'))
     layers.add(batch_norm_(momentum=0.9,epsilon=1e-5,parallel=False))
     layers.add(activation_dict['relu'])
@@ -25,7 +25,7 @@ def Stem(in_channels):
 
 
 def SqueezeAndExciteBlock(in_channels, filters_in, se_filters):
-    layers=Layers()
+    layers=Sequential()
     layers.add(identity(in_channels),save_data=True)
     layers.add(global_avg_pool2d(keepdims=True))
     layers.add(conv2d(se_filters,[1,1],activation='relu',weight_initializer='He'))
@@ -46,7 +46,7 @@ def XBlock(in_channels, filters_in, filters_out, group_width, stride=1):
     # Declare layers
     groups = filters_out // group_width
     
-    layers=Layers()
+    layers=Sequential()
     if stride!=1:
         layers.add(conv2d(filters_out,[1,1],in_channels,strides=[2],use_bias=False,weight_initializer='He'))
         layers.add(batch_norm_(momentum=0.9,epsilon=1e-5,parallel=False))
@@ -94,7 +94,7 @@ def YBlock(
     groups = filters_out // group_width
     se_filters = int(filters_in * squeeze_excite_ratio)
 
-    layers=Layers()
+    layers=Sequential()
     if stride!=1:
         layers.add(conv2d(filters_out,[1,1],in_channels,strides=[2],use_bias=False,weight_initializer='He'))
         layers.add(batch_norm_(momentum=0.9,epsilon=1e-5,parallel=False))
@@ -147,7 +147,7 @@ def ZBlock(
 
     inv_btlneck_filters = int(filters_out / bottleneck_ratio)
     
-    layers=Layers()
+    layers=Sequential()
     layers.add(identity(in_channels),save_data=True)
     
     # Build block
@@ -174,7 +174,7 @@ def ZBlock(
 
 
 def Stage(in_channels, block_type, depth, group_width, filters_in, filters_out):
-    layers=Layers()
+    layers=Sequential()
     if block_type == "X":
         layers.add(XBlock(
             in_channels,
@@ -246,7 +246,7 @@ class RegNet(Model):
         self.pooling=pooling
         self.classes=classes
         
-        self.layers=Layers()
+        self.layers=Sequential()
         self.layers.add(Stem(3))
         in_channels = 32
         for num_stage in range(4):

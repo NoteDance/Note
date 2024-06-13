@@ -8,7 +8,7 @@ from Note.nn.layer.zeropadding2d import zeropadding2d
 from Note.nn.layer.avg_pool2d import avg_pool2d
 from Note.nn.layer.identity import identity
 from Note.nn.initializer import initializer_
-from Note.nn.Layers import Layers
+from Note.nn.Sequential import Sequential
 from Note.nn.Model import Model
 import numpy as np
 from typing import Tuple, Union
@@ -39,7 +39,7 @@ class Bottleneck:
 
         if stride > 1 or inplanes != planes * Bottleneck.expansion:
             # downsampling layer is prepended with an avgpool, and the subsequent convolution has stride 1
-            self.downsample = Layers()
+            self.downsample = Sequential()
             self.downsample.add(avg_pool2d(stride, stride, 'VALID'))
             self.downsample.add(conv2d(planes * self.expansion, 1, inplanes, strides=1, use_bias=False))
             self.downsample.add(batch_norm_(planes * self.expansion, parallel=False))
@@ -135,7 +135,7 @@ class ModifiedResNet:
         self.attnpool = AttentionPool2d(input_resolution // 32, embed_dim, heads, output_dim)
 
     def _make_layer(self, planes, blocks, stride=1):
-        layers = Layers()
+        layers = Sequential()
         layers.add(Bottleneck(self._inplanes, planes, stride))
 
         self._inplanes = planes * Bottleneck.expansion
@@ -189,7 +189,7 @@ class ResidualAttentionBlock:
     def __init__(self, d_model: int, n_head: int, attn_mask = None):
         self.attn = multihead_attention(n_head, d_model)
         self.ln_1 = LayerNorm(d_model)
-        self.mlp = Layers()
+        self.mlp = Sequential()
         self.mlp.add(dense(d_model * 4, d_model))
         self.mlp.add(QuickGELU())
         self.mlp.add(dense(d_model, d_model * 4))
@@ -224,7 +224,7 @@ class Transformer:
     def __init__(self, width: int, layers: int, heads: int, attn_mask = None):
         self.width = width
         self.layers = layers
-        self.resblocks = Layers()
+        self.resblocks = Sequential()
         for _ in range(layers):
             self.resblocks.add(ResidualAttentionBlock(width, heads, attn_mask))
 

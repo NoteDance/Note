@@ -8,7 +8,7 @@ from Note.nn.layer.stochastic_depth import stochastic_depth
 from Note.nn.layer.identity import identity
 from Note.nn.initializer import initializer_
 from Note.nn.activation import activation_dict
-from Note.nn.Layers import Layers
+from Note.nn.Sequential import Sequential
 from Note.nn.Model import Model
 
 
@@ -35,7 +35,7 @@ class Block:
         drop_path (float): Stochastic depth rate. Default: 0.0
     """
     def __init__(self, dim, drop_path=0.):
-        self.layers=Layers()
+        self.layers=Sequential()
         self.layers.add(depthwise_conv2d(7,input_size=dim,padding='SAME',weight_initializer=['truncated_normal',.02]))
         self.layers.add(layer_norm(epsilon=1e-6))
         self.layers.add(dense(4*dim,weight_initializer=['truncated_normal',.02]))
@@ -81,14 +81,14 @@ class ConvNeXtV2(Model):
         self.include_top=include_top
         self.pooling=pooling
         
-        stem=Layers()
+        stem=Sequential()
         stem.add(conv2d(self.dims[0],kernel_size=4,input_size=self.in_chans,strides=4,
                         weight_initializer=['truncated_normal',.02]))
         stem.add(layer_norm(epsilon=1e-6))
         self.downsample_layers.append(stem)
         
         for i in range(3):
-            downsample_layer=Layers()
+            downsample_layer=Sequential()
             downsample_layer.add(layer_norm(input_size=self.dims[i],epsilon=1e-6))
             downsample_layer.add(conv2d(self.dims[i+1],kernel_size=2,input_size=self.dims[i],strides=2,
                             weight_initializer=['truncated_normal',.02]))
@@ -99,7 +99,7 @@ class ConvNeXtV2(Model):
             ]
         cur = 0
         for i in range(4):
-            layers=Layers()
+            layers=Sequential()
             for j in range(self.depths[i]):
                 layers.add(Block(dim=self.dims[i], drop_path=dp_rates[cur + j]))
             stage=layers
