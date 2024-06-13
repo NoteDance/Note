@@ -139,10 +139,10 @@ from Note.nn.fine_tuning import fine_tuning
 from Note.nn.gather_mm import gather_mm
 from Note.nn.initializer import initializer,initializer_
 from Note.nn.interpolate import interpolate
-from Note.nn.Layers import Layers
 from Note.nn.Model import Model
 from Note.nn.parallel.optimizer import *
 from Note.nn.pairwise_distance import pairwise_distance
 from Note.nn.parameter import Parameter
 from Note.nn.positional_encoding import positional_encoding
 from Note.nn.scaled_dot_product_attention import scaled_dot_product_attention
+from Note.nn.Sequential import Sequential
