@@ -4,7 +4,7 @@ from Note.nn.layer.dense import dense
 from Note.nn.layer.dropout import dropout
 from Note.nn.layer.identity import identity
 from Note.nn.initializer import initializer_
-from Note.nn.Layers import Layers
+from Note.nn.Sequential import Sequential
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
 from Note.nn.Model import Model
@@ -16,7 +16,7 @@ def pair(t):
 
 class FeedForward:
     def __init__(self, dim, hidden_dim, drop_rate = 0.):
-        self.net = Layers()
+        self.net = Sequential()
         self.net.add(layer_norm(dim))
         self.net.add(dense(hidden_dim, dim))
         self.net.add(tf.nn.gelu)
@@ -44,7 +44,7 @@ class Attention:
         self.to_qkv = dense(inner_dim * 3, dim, use_bias = False)
         
         if project_out:
-            self.to_out = Layers()
+            self.to_out = Sequential()
             self.to_out.add(dense(dim, inner_dim))
             self.to_out.add(dropout(drop_rate))
         else:
@@ -105,7 +105,7 @@ class ViT(Model):
         patch_dim = channels * patch_height * patch_width
         assert pool in {'cls', 'mean'}, 'pool type must be either cls (cls token) or mean (mean pooling)'
 
-        self.to_patch_embedding = Layers()
+        self.to_patch_embedding = Sequential()
         self.to_patch_embedding.add(layer_norm(patch_dim))
         self.to_patch_embedding.add(dense(dim, patch_dim))
         self.to_patch_embedding.add(layer_norm(dim))

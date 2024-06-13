@@ -9,7 +9,7 @@ from Note.nn.layer.multiply import multiply
 from Note.nn.layer.identity import identity
 from Note.nn.layer.image_preprocessing.rescaling import rescaling
 from Note.nn.layer.flatten import flatten
-from Note.nn.Layers import Layers
+from Note.nn.Sequential import Sequential
 from Note.nn.activation import activation_dict
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
@@ -52,7 +52,7 @@ class MobileNetV3(Model):
         
         if self.include_preprocessing:
             self.rescaling=rescaling(scale=1.0 / 127.5, offset=-1.0)
-        self.layers=Layers()
+        self.layers=Sequential()
         self.layers.add(conv2d(16,kernel_size=3,input_size=3,strides=(2, 2),padding="SAME",use_bias=False))
         self.layers.add(batch_norm_(epsilon=1e-3,momentum=0.999))
         self.layers.add(self.activation)
@@ -96,7 +96,7 @@ class MobileNetV3(Model):
         def depth(d):
             return _depth(d * self.alpha)
         
-        layers=Layers()
+        layers=Sequential()
     
         layers.add(_inverted_res_block(in_channels, 1, depth(16), 3, 2, se_ratio, relu, 0))
         layers.add(_inverted_res_block(layers.output_size, 72.0 / 16, depth(24), 3, 2, None, relu, 1))
@@ -118,7 +118,7 @@ class MobileNetV3(Model):
         def depth(d):
             return _depth(d * self.alpha)
         
-        layers=Layers()
+        layers=Sequential()
     
         layers.add(_inverted_res_block(in_channels, 1, depth(16), 3, 1, None, relu, 0))
         layers.add(_inverted_res_block(layers.output_size, 4, depth(24), 3, 2, None, relu, 1))
@@ -223,7 +223,7 @@ def _depth(v, divisor=8, min_value=None):
 
 
 def _se_block(in_channels, filters, se_ratio):
-    layers=Layers()
+    layers=Sequential()
     layers.add(identity(in_channels),save_data=True)
     layers.add(global_avg_pool2d(keepdims=True))
     layers.add(conv2d(_depth(filters * se_ratio),1,padding='SAME'))

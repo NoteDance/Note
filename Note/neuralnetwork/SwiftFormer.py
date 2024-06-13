@@ -9,7 +9,7 @@ from Note.nn.layer.stochastic_depth import stochastic_depth
 from Note.nn.layer.identity import identity
 from Note.nn.initializer import initializer_
 from Note.nn.activation import activation_dict
-from Note.nn.Layers import Layers
+from Note.nn.Sequential import Sequential
 from Note.nn.parallel.optimizer import AdamW
 from Note.nn.parallel.assign_device import assign_device
 from Note.nn.Model import Model
@@ -282,7 +282,7 @@ def stem(in_chs, out_chs, dtype):
     """
     Stem Layer that is implemented by two layers of conv.
     """
-    layers=Layers()
+    layers=Sequential()
     layers.add(zeropadding2d(padding=1))
     layers.add(conv2d(out_chs // 2, kernel_size=3, input_size=in_chs, strides=2, dtype=dtype))
     layers.add(batch_norm_(dtype=dtype))
@@ -327,7 +327,7 @@ class ConvEncoder:
     """
 
     def __init__(self, dim, hidden_dim=64, kernel_size=3, drop_path=0., use_layer_scale=True, dtype='float32'):
-        self.layers=Layers()
+        self.layers=Sequential()
         self.layers.add(zeropadding2d(padding=kernel_size // 2))
         self.layers.add(depthwise_conv2d(kernel_size=kernel_size, input_size=dim, 
                                        weight_initializer=['truncated_normal',.02], dtype=dtype))
@@ -370,7 +370,7 @@ class Mlp:
                  out_features=None, act_layer=activation_dict['gelu'], drop=0., dtype='float32'):
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
-        self.layers=Layers()
+        self.layers=Sequential()
         self.layers.add(batch_norm_(in_features, dtype=dtype))
         self.layers.add(conv2d(hidden_features, 1, weight_initializer=['truncated_normal',.02],
                                   dtype=dtype))
@@ -432,7 +432,7 @@ class SwiftFormerLocalRepresentation:
     """
 
     def __init__(self, dim, kernel_size=3, drop_path=0., use_layer_scale=True, dtype='float32'):
-        self.layers=Layers()
+        self.layers=Sequential()
         self.layers.add(zeropadding2d(padding=kernel_size // 2))
         self.layers.add(depthwise_conv2d(kernel_size=kernel_size, input_size=dim, weight_initializer=['truncated_normal',.02], dtype=dtype))
         self.layers.add(batch_norm_(dtype=dtype))
@@ -529,7 +529,7 @@ def Stage(dim, index, layers, mlp_ratio=4.,
     """
     Implementation of each SwiftFormer stages. Here, SwiftFormerEncoder used as the last block in all stages, while ConvEncoder used in the rest of the blocks.
     """
-    blocks = Layers()
+    blocks = Sequential()
 
     for block_idx in range(layers[index]):
         block_dpr = drop_path_rate * (block_idx + sum(layers[:index])) / (sum(layers) - 1)

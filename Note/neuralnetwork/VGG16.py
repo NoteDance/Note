@@ -3,7 +3,7 @@ from Note.nn.layer.conv2d import conv2d
 from Note.nn.layer.dense import dense
 from Note.nn.layer.max_pool2d import max_pool2d
 from Note.nn.layer.flatten import flatten 
-from Note.nn.Layers import Layers
+from Note.nn.Sequential import Sequential
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
 from Note.nn.Model import Model
@@ -16,7 +16,7 @@ class VGG16(Model):
         self.pooling=pooling
         self.classes=classes
         
-        self.layers=Layers()
+        self.layers=Sequential()
         # Block 1
         self.layers.add(conv2d(64,(3,3),3,activation="relu", padding="SAME"))
         self.layers.add(conv2d(64,(3,3),activation="relu", padding="SAME"))

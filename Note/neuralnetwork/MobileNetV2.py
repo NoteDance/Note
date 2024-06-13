@@ -3,7 +3,7 @@ from Note.nn.layer.conv2d import conv2d
 from Note.nn.layer.depthwise_conv2d import depthwise_conv2d
 from Note.nn.layer.batch_norm import batch_norm_
 from Note.nn.layer.zeropadding2d import zeropadding2d
-from Note.nn.Layers import Layers
+from Note.nn.Sequential import Sequential
 from Note.nn.activation import activation_dict
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
@@ -92,7 +92,7 @@ class MobileNetV2(Model):
         self.include_top=include_top
         self.pooling=pooling
         
-        self.layers=Layers()
+        self.layers=Sequential()
         
         self.layers.add(conv2d(self.first_block_filters,[3,3],3,strides=[2,2],padding='SAME',use_bias=False))
         self.layers.add(batch_norm_(momentum=0.999))

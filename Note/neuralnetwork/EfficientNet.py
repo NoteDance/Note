@@ -10,7 +10,7 @@ from Note.nn.layer.norm import norm
 from Note.nn.layer.image_preprocessing.rescaling import rescaling
 from Note.nn.layer.reshape import reshape
 from Note.nn.layer.identity import identity
-from Note.nn.Layers import Layers
+from Note.nn.Sequential import Sequential
 from Note.nn.activation import activation_dict
 import copy
 from Note.nn.parallel.optimizer import Adam
@@ -132,7 +132,7 @@ class EfficientNet(Model):
     
         # Build stem
         self.zeropadding2d=zeropadding2d()
-        self.layers1=Layers()
+        self.layers1=Sequential()
         self.layers1.add(conv2d(round_filters(32),[3,3],3,strides=2,padding="VALID",use_bias=False,
                            weight_initializer=CONV_KERNEL_INITIALIZER))
         self.layers1.add(batch_norm_(axis=-1))
@@ -143,7 +143,7 @@ class EfficientNet(Model):
         
         b = 0
         blocks = float(sum(round_repeats(args["repeats"]) for args in blocks_args))
-        self.layers2=Layers()
+        self.layers2=Sequential()
         for i, args in enumerate(blocks_args):
             assert args["repeats"] > 0
             # Update block input and output filters based on depth multiplier.
@@ -167,7 +167,7 @@ class EfficientNet(Model):
                 in_channels=self.layers2.output_size
         
         # Build top
-        self.layers3=Layers()
+        self.layers3=Sequential()
         self.layers3.add(conv2d(
             round_filters(1280),
             [1,1],
@@ -314,7 +314,7 @@ class block:
         self.kernel_size=kernel_size
         self.drop_rate=drop_rate
         
-        self.layers1=Layers()
+        self.layers1=Sequential()
         # Expansion phase
         filters = filters_in * expand_ratio
         if expand_ratio != 1:
@@ -333,7 +333,7 @@ class block:
             conv_pad = "VALID"
         else:
             conv_pad = "SAME"
-        self.layers2=Layers()
+        self.layers2=Sequential()
         self.layers2.add(depthwise_conv2d(
                                             [kernel_size,kernel_size],
                                             input_size=self.layers1.output_size,
@@ -356,7 +356,7 @@ class block:
                                 weight_initializer=CONV_KERNEL_INITIALIZER,dtype=dtype)
 
         # Output phase
-        self.layers3=Layers()
+        self.layers3=Sequential()
         self.layers3.add(conv2d(filters_out,[1,1],self.conv2d2.output_size,padding="SAME",
                             use_bias=False,weight_initializer=CONV_KERNEL_INITIALIZER,dtype=dtype))
         self.layers3.add(batch_norm_(axis=-1,dtype=dtype))

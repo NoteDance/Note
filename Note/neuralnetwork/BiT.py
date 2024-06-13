@@ -4,7 +4,7 @@ from Note.nn.layer.group_norm import group_norm
 from Note.nn.layer.zeropadding2d import zeropadding2d
 from Note.nn.layer.max_pool2d import max_pool2d
 from Note.nn.layer.adaptive_avg_pooling2d import adaptive_avg_pooling2d
-from Note.nn.Layers import Layers
+from Note.nn.Sequential import Sequential
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
 from Note.nn.Model import Model
@@ -91,12 +91,12 @@ class BiT(Model):
 
     # The following will be unreadable if we split lines.
     # pylint: disable=line-too-long
-    self.root = Layers()
+    self.root = Sequential()
     self.root.add(StdConv2d(64*wf, input_size=3, kernel_size=7, stride=2, padding=3, bias=False))
     self.root.add(zeropadding2d(64*wf,1))
     self.root.add(max_pool2d(3, 2, 'VALID'))
 
-    self.body = Layers()
+    self.body = Sequential()
     self.body.add(PreActBottleneck(cin=64*wf, cout=256*wf, cmid=64*wf))
     for i in range(2, block_units[0] + 1):
         self.body.add(PreActBottleneck(cin=256*wf, cout=256*wf, cmid=64*wf))
@@ -112,7 +112,7 @@ class BiT(Model):
     # pylint: enable=line-too-long
 
     self.zero_head = zero_head
-    self.head = Layers()
+    self.head = Sequential()
     self.head.add(group_norm(32, 2048*wf))
     self.head.add(tf.nn.relu)
     self.head.add(adaptive_avg_pooling2d(1))

@@ -4,7 +4,7 @@ from Note.nn.layer.batch_norm import batch_norm_
 from Note.nn.layer.max_pool2d import max_pool2d
 from Note.nn.layer.zeropadding2d import zeropadding2d
 from Note.nn.layer.identity import identity
-from Note.nn.Layers import Layers
+from Note.nn.Sequential import Sequential
 from Note.nn.activation import activation_dict
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
@@ -13,13 +13,13 @@ from Note.nn.Model import Model
 
 class block1:
     def __init__(self, in_channels, filters, kernel_size=3, stride=1, conv_shortcut=True):
-        self.layers1=Layers()
+        self.layers1=Sequential()
         if conv_shortcut:
             self.layers1.add(conv2d(4 * filters,[1,1],in_channels,strides=[stride]))
             self.layers1.add(batch_norm_(epsilon=1.001e-5))
         else:
             self.layers1.add(identity(in_channels))
-        self.layers2=Layers()
+        self.layers2=Sequential()
         self.layers2.add(conv2d(filters,[1,1],in_channels,strides=[stride]))
         self.layers2.add(batch_norm_(epsilon=1.001e-5))
         self.layers2.add(activation_dict['relu'])
@@ -42,7 +42,7 @@ class block1:
 
 
 def stack_fn(in_channels):
-    layers=Layers()
+    layers=Sequential()
     layers.add(stack1(in_channels, 64, 3, stride=1))
     layers.add(stack1(layers.output_size, 128, 4))
     layers.add(stack1(layers.output_size, 256, 23))
@@ -51,7 +51,7 @@ def stack_fn(in_channels):
 
 
 def stack1(in_channels, filters, blocks, stride=2):
-    layers=Layers()
+    layers=Sequential()
     layers.add(block1(in_channels, filters, stride=stride))
     for i in range(2, blocks + 1):
         layers.add(block1(
@@ -68,7 +68,7 @@ class ResNet101(Model):
         self.include_top=include_top
         self.pooling=pooling
         self.use_bias=use_bias
-        self.layers=Layers()
+        self.layers=Sequential()
         self.layers.add(zeropadding2d(3,[3,3]))
         self.layers.add(conv2d(64,[7,7],strides=[2],use_bias=self.use_bias))
         if not self.preact:

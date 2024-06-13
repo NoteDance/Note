@@ -5,7 +5,7 @@ from Note.nn.layer.global_avg_pool2d import global_avg_pool2d
 from Note.nn.layer.batch_norm import batch_norm_
 from Note.nn.layer.identity import identity
 from Note.nn.activation import activation_dict
-from Note.nn.Layers import Layers
+from Note.nn.Sequential import Sequential
 from typing import List
 from typing import Dict
 from Note.nn.parallel.optimizer import Adam
@@ -49,7 +49,7 @@ def STEM(
 ):
     """ResNet-D type STEM block."""
     
-    layers=Layers()
+    layers=Sequential()
     
     # First stem block
     layers.add(Conv2DFixedPadding(
@@ -137,7 +137,7 @@ class BottleneckBlock:
         ):
         """Bottleneck block variant for residual networks with BN."""
     
-        self.layers1=Layers()
+        self.layers1=Sequential()
         self.layers1.add(identity(in_channels))
     
         if use_projection:
@@ -167,7 +167,7 @@ class BottleneckBlock:
                 epsilon=bn_epsilon
             ))
         
-        self.layers2=Layers()
+        self.layers2=Sequential()
         self.layers2.add(identity(in_channels))
     
         # First conv layer:
@@ -239,7 +239,7 @@ def BlockGroup(
 ):
     """Create one group of blocks for the ResNet model."""
     
-    layers=Layers()
+    layers=Sequential()
 
     # Only the first block per block_group uses projection shortcut and
     # strides.
@@ -301,7 +301,7 @@ class ResNetRS(Model):
         self.classes=classes
         self.include_preprocessing=include_preprocessing
         
-        self.layers=Layers()
+        self.layers=Sequential()
         # Build stem
         self.layers.add(STEM(bn_momentum=self.bn_momentum, bn_epsilon=self.bn_epsilon, activation=self.activation))
         
