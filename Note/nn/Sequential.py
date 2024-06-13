@@ -1,4 +1,4 @@
-class Layers:
+class Sequential:
     def __init__(self):
         self.layer=[]
         self.param=[]
