@@ -97,7 +97,7 @@ class WindowAttention:
         self.logit_scale = nn.Parameter(tf.math.log(10 * tf.ones((num_heads, 1, 1))), name='logit_scale')
 
         # mlp to generate continuous relative position bias
-        self.cpb_mlp = nn.Layers()
+        self.cpb_mlp = nn.Sequential()
         self.cpb_mlp.add(nn.dense(512, 2, use_bias=True, name='cpb_mlp'))
         self.cpb_mlp.add(tf.nn.relu)
         self.cpb_mlp.add(nn.dense(num_heads, 512, use_bias=False, name='cpb_mlp'))

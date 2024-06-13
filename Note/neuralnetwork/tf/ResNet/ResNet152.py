@@ -5,13 +5,13 @@ from Note.nn.activation import activation_dict
 
 class block1:
     def __init__(self, in_channels, filters, kernel_size=3, stride=1, conv_shortcut=True):
-        self.layers1=nn.Layers()
+        self.layers1=nn.Sequential()
         if conv_shortcut:
             self.layers1.add(nn.conv2d(4 * filters,[1,1],in_channels,strides=[stride]))
             self.layers1.add(nn.batch_norm(epsilon=1.001e-5))
         else:
             self.layers1.add(nn.identity(in_channels))
-        self.layers2=nn.Layers()
+        self.layers2=nn.Sequential()
         self.layers2.add(nn.conv2d(filters,[1,1],in_channels,strides=[stride]))
         self.layers2.add(nn.batch_norm(epsilon=1.001e-5))
         self.layers2.add(activation_dict['relu'])
@@ -34,7 +34,7 @@ class block1:
 
 
 def stack_fn(in_channels):
-    layers=nn.Layers()
+    layers=nn.Sequential()
     layers.add(stack1(in_channels, 64, 3, stride=1))
     layers.add(stack1(layers.output_size, 128, 8))
     layers.add(stack1(layers.output_size, 256, 36))
@@ -43,7 +43,7 @@ def stack_fn(in_channels):
 
 
 def stack1(in_channels, filters, blocks, stride=2):
-    layers=nn.Layers()
+    layers=nn.Sequential()
     layers.add(block1(in_channels, filters, stride=stride))
     for i in range(2, blocks + 1):
         layers.add(block1(
@@ -60,7 +60,7 @@ class ResNet152(nn.Model):
         self.include_top=include_top
         self.pooling=pooling
         self.use_bias=use_bias
-        self.layers=nn.Layers()
+        self.layers=nn.Sequential()
         self.layers.add(nn.zeropadding2d(3,[3,3]))
         self.layers.add(nn.conv2d(64,[7,7],strides=[2],use_bias=self.use_bias))
         if not self.preact:

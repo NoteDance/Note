@@ -56,7 +56,7 @@ class MobileNet(nn.Model):
         self.include_top=include_top
         self.pooling=pooling
         
-        self.layers=nn.Layers()
+        self.layers=nn.Sequential()
         self.layers.add(_conv_block(3, 32, self.alpha, strides=[2, 2]))
         self.layers.add(_depthwise_conv_block(self.layers.output_size, 64, self.alpha, self.depth_multiplier, block_id=1))
         self.layers.add(_depthwise_conv_block(

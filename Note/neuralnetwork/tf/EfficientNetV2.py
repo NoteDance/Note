@@ -129,7 +129,7 @@ class EfficientNetV2(nn.Model):
             min_depth=self.min_depth,
             depth_divisor=self.depth_divisor,
         )
-        self.layers1=nn.Layers()
+        self.layers1=nn.Sequential()
         self.layers1.add(nn.conv2d(stem_filters,[3,3],3,strides=2,padding="SAME",use_bias=False,
                            weight_initializer=CONV_KERNEL_INITIALIZER))
         self.layers1.add(nn.batch_norm(axis=-1,momentum=self.bn_momentum))
@@ -139,7 +139,7 @@ class EfficientNetV2(nn.Model):
         blocks_args = copy.deepcopy(self.blocks_args)
         b = 0
         blocks = float(sum(args["num_repeat"] for args in blocks_args))
-        self.layers2=nn.Layers()
+        self.layers2=nn.Sequential()
         for i, args in enumerate(blocks_args):
             assert args["num_repeat"] > 0
     
@@ -188,7 +188,7 @@ class EfficientNetV2(nn.Model):
             min_depth=self.min_depth,
             depth_divisor=self.depth_divisor,
         )
-        self.layers3=nn.Layers()
+        self.layers3=nn.Sequential()
         self.layers3.add(nn.conv2d(
             top_filters,
             [1,1],
@@ -251,7 +251,7 @@ class MBConvBlock:
         self.output_filters = output_filters
         # Expansion phase
         filters = input_filters * expand_ratio
-        self.layers=nn.Layers()
+        self.layers=nn.Sequential()
         if expand_ratio != 1:
             self.layers.add(nn.conv2d(
                 filters=filters,
@@ -356,7 +356,7 @@ class FusedMBConvBlock:
         self.input_filters = input_filters
         self.output_filters = output_filters
         filters = input_filters * expand_ratio
-        self.layers=nn.Layers()
+        self.layers=nn.Sequential()
         if expand_ratio != 1:
             self.layers.add(nn.conv2d(
                 filters,

@@ -28,7 +28,7 @@ class Bottleneck:
 
         if stride > 1 or inplanes != planes * Bottleneck.expansion:
             # downsampling layer is prepended with an avgpool, and the subsequent convolution has stride 1
-            self.downsample = nn.Layers()
+            self.downsample = nn.Sequential()
             self.downsample.add(nn.avg_pool2d(stride, stride, 'VALID'))
             self.downsample.add(nn.conv2d(planes * self.expansion, 1, inplanes, strides=1, use_bias=False))
             self.downsample.add(nn.batch_norm(planes * self.expansion))
@@ -122,7 +122,7 @@ class ModifiedResNet:
         self.attnpool = AttentionPool2d(input_resolution // 32, embed_dim, heads, output_dim)
 
     def _make_layer(self, planes, blocks, stride=1):
-        layers = nn.Layers()
+        layers = nn.Sequential()
         layers.add(Bottleneck(self._inplanes, planes, stride))
 
         self._inplanes = planes * Bottleneck.expansion
@@ -173,7 +173,7 @@ class ResidualAttentionBlock:
     def __init__(self, d_model: int, n_head: int, attn_mask = None):
         self.attn = nn.multihead_attention(n_head, d_model)
         self.ln_1 = LayerNorm(d_model)
-        self.mlp = nn.Layers()
+        self.mlp = nn.Sequential()
         self.mlp.add(nn.dense(d_model * 4, d_model))
         self.mlp.add(QuickGELU())
         self.mlp.add(nn.dense(d_model, d_model * 4))
@@ -208,7 +208,7 @@ class Transformer:
     def __init__(self, width: int, layers: int, heads: int, attn_mask = None):
         self.width = width
         self.layers = layers
-        self.resblocks = nn.Layers()
+        self.resblocks = nn.Sequential()
         for _ in range(layers):
             self.resblocks.add(ResidualAttentionBlock(width, heads, attn_mask))
 

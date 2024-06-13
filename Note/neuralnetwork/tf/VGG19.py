@@ -9,7 +9,7 @@ class VGG19(nn.Model):
         self.pooling=pooling
         self.classes=classes
         
-        self.layers=nn.Layers()
+        self.layers=nn.Sequential()
         # Block 1
         self.layers.add(nn.conv2d(64,(3,3),3,activation="relu", padding="SAME"))
         self.layers.add(nn.conv2d(64,(3,3),activation="relu", padding="SAME"))

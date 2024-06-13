@@ -41,7 +41,7 @@ def STEM(
 ):
     """ResNet-D type STEM block."""
     
-    layers=nn.Layers()
+    layers=nn.Sequential()
     
     # First stem block
     layers.add(Conv2DFixedPadding(
@@ -129,7 +129,7 @@ class BottleneckBlock:
         ):
         """Bottleneck block variant for residual networks with BN."""
     
-        self.layers1=nn.Layers()
+        self.layers1=nn.Sequential()
         self.layers1.add(nn.identity(in_channels))
     
         if use_projection:
@@ -159,7 +159,7 @@ class BottleneckBlock:
                 epsilon=bn_epsilon
             ))
         
-        self.layers2=nn.Layers()
+        self.layers2=nn.Sequential()
         self.layers2.add(nn.identity(in_channels))
     
         # First conv layer:
@@ -231,7 +231,7 @@ def BlockGroup(
 ):
     """Create one group of blocks for the ResNet model."""
     
-    layers=nn.Layers()
+    layers=nn.Sequential()
 
     # Only the first block per block_group uses projection shortcut and
     # strides.
@@ -292,7 +292,7 @@ class ResNetRS(nn.Model):
         self.classes=classes
         self.include_preprocessing=include_preprocessing
         
-        self.layers=nn.Layers()
+        self.layers=nn.Sequential()
         # Build stem
         self.layers.add(STEM(bn_momentum=self.bn_momentum, bn_epsilon=self.bn_epsilon, activation=self.activation))
         

@@ -5,7 +5,7 @@ from Note.nn.activation import activation_dict
 
 class DenseLayer:
     def __init__(self,input_channels, growth_rate):
-        self.layers=nn.Layers()
+        self.layers=nn.Sequential()
         self.layers.add(nn.batch_norm(input_channels,epsilon=1.001e-5))
         self.layers.add(activation_dict['relu'])
         self.layers.add(nn.conv2d(4*growth_rate,[1,1],strides=1,padding="SAME",use_bias=False))
@@ -23,7 +23,7 @@ class DenseLayer:
 
 
 def DenseBlock(input_channels, num_layers, growth_rate):
-        layers=nn.Layers()
+        layers=nn.Sequential()
         for i in range(num_layers):
             layers.add(DenseLayer(input_channels, growth_rate))
             input_channels=layers.output_size
@@ -31,7 +31,7 @@ def DenseBlock(input_channels, num_layers, growth_rate):
 
 
 def TransitionLayer(input_channels, compression_factor):
-        layers=nn.Layers()
+        layers=nn.Sequential()
         layers.add(nn.batch_norm(input_channels))
         layers.add(activation_dict['relu'])
         layers.add(nn.conv2d(int(compression_factor * input_channels),[1,1],strides=[1, 1, 1, 1],padding="SAME",use_bias=False))
@@ -48,7 +48,7 @@ class DenseNet169(nn.Model):
         self.include_top=include_top
         self.pooling=pooling
         
-        self.layers=nn.Layers()
+        self.layers=nn.Sequential()
         self.layers.add(nn.zeropadding2d(3,padding=[3, 3]))
         self.layers.add(nn.conv2d(64,[7,7],strides=2,use_bias=False))
         self.layers.add(nn.batch_norm(epsilon=1.001e-5))

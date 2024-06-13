@@ -56,7 +56,7 @@ class ConvNeXt(nn.Model):
         self.pooling=pooling
         
         # Stem block.
-        layers=nn.Layers()
+        layers=nn.Sequential()
         layers.add(nn.conv2d(self.projection_dims[0],[4,4],3))
         layers.add(nn.layer_norm())
         
@@ -66,7 +66,7 @@ class ConvNeXt(nn.Model):
         
         num_downsample_layers = 3
         for i in range(num_downsample_layers):
-            layers=nn.Layers()
+            layers=nn.Sequential()
             layers.add(nn.layer_norm(self.projection_dims[i]))
             layers.add(nn.conv2d(self.projection_dims[i+1],[2,2],self.projection_dims[i]))
             self.downsample_layers.append(layers)
@@ -86,7 +86,7 @@ class ConvNeXt(nn.Model):
         for i in range(self.num_convnext_blocks):
             input_channels=self.downsample_layers[i].output_size
             for j in range(self.depths[i]):
-                block = nn.Layers()
+                block = nn.Sequential()
                 block.add(ConvNeXtBlock(
                     input_channels=input_channels,
                     projection_dim=self.projection_dims[i],

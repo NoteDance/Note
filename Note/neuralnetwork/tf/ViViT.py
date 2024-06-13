@@ -16,7 +16,7 @@ def pair(t):
 
 class FeedForward:
     def __init__(self, dim, hidden_dim, dropout_rate = 0.):
-        self.net = nn.Layers()
+        self.net = nn.Sequential()
         self.net.add(nn.layer_norm(dim))
         self.net.add(nn.dense(hidden_dim, dim))
         self.net.add(tf.nn.gelu)
@@ -41,7 +41,7 @@ class Attention:
 
         self.to_qkv = nn.dense(inner_dim * 3, dim, use_bias = False)
 
-        self.to_out = nn.Layers()
+        self.to_out = nn.Sequential()
         if project_out:
             self.to_out.add(nn.dense(dim, inner_dim))
             self.to_out.add(nn.dropout(dropout_rate))
@@ -115,7 +115,7 @@ class ViViT(nn.Model):
 
         self.global_average_pool = pool == 'mean'
 
-        self.to_patch_embedding = nn.Layers()
+        self.to_patch_embedding = nn.Sequential()
         self.to_patch_embedding.add(Rearrange('b (f pf) (h p1) (w p2) c -> b f (h w) (p1 p2 pf c)', p1 = patch_height, p2 = patch_width, pf = frame_patch_size))
         self.to_patch_embedding.add(nn.layer_norm(patch_dim))
         self.to_patch_embedding.add(nn.dense(dim, patch_dim))

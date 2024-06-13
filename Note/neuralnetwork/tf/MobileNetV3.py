@@ -39,7 +39,7 @@ class MobileNetV3(nn.Model):
         
         if self.include_preprocessing:
             self.rescaling=rescaling(scale=1.0 / 127.5, offset=-1.0)
-        self.layers=nn.Layers()
+        self.layers=nn.Sequential()
         self.layers.add(nn.conv2d(16,kernel_size=3,input_size=3,strides=(2, 2),padding="SAME",use_bias=False))
         self.layers.add(nn.batch_norm(epsilon=1e-3,momentum=0.999))
         self.layers.add(self.activation)
@@ -80,7 +80,7 @@ class MobileNetV3(nn.Model):
         def depth(d):
             return _depth(d * self.alpha)
         
-        layers=nn.Layers()
+        layers=nn.Sequential()
     
         layers.add(_inverted_res_block(in_channels, 1, depth(16), 3, 2, se_ratio, relu, 0))
         layers.add(_inverted_res_block(layers.output_size, 72.0 / 16, depth(24), 3, 2, None, relu, 1))
@@ -102,7 +102,7 @@ class MobileNetV3(nn.Model):
         def depth(d):
             return _depth(d * self.alpha)
         
-        layers=nn.Layers()
+        layers=nn.Sequential()
     
         layers.add(_inverted_res_block(in_channels, 1, depth(16), 3, 1, None, relu, 0))
         layers.add(_inverted_res_block(layers.output_size, 4, depth(24), 3, 2, None, relu, 1))
@@ -171,7 +171,7 @@ def _depth(v, divisor=8, min_value=None):
 
 
 def _se_block(in_channels, filters, se_ratio):
-    layers=nn.Layers()
+    layers=nn.Sequential()
     layers.add(nn.identity(in_channels),save_data=True)
     layers.add(nn.global_avg_pool2d(keepdims=True))
     layers.add(nn.conv2d(_depth(filters * se_ratio),1,padding='SAME'))

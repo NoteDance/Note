@@ -6,7 +6,7 @@ from einops.layers.tensorflow import Rearrange
 
 class FeedForward:
     def __init__(self, dim, hidden_dim, dropout_rate = 0.):
-        self.net = nn.Layers()
+        self.net = nn.Sequential()
         self.net.add(nn.layer_norm(dim))
         self.net.add(nn.dense(hidden_dim, dim))
         self.net.add(tf.nn.gelu)
@@ -30,12 +30,12 @@ class Attention:
 
         self.reattn_weights = nn.initializer_((heads, heads), 'normal')
 
-        self.reattn_norm = nn.Layers()
+        self.reattn_norm = nn.Sequential()
         self.reattn_norm.add(Rearrange('b h i j -> b i j h'))
         self.reattn_norm.add(nn.layer_norm(heads))
         self.reattn_norm.add(Rearrange('b i j h -> b h i j'))
 
-        self.to_out = nn.Layers()
+        self.to_out = nn.Sequential()
         self.to_out.add(nn.dense(dim, inner_dim))
         self.to_out.add(nn.dropout(dropout_rate))
 
@@ -89,7 +89,7 @@ class DeepViT(nn.Model):
         assert pool in {'cls', 'mean'}, 'pool type must be either cls (cls token) or mean (mean pooling)'
         self.dim = dim
 
-        self.to_patch_embedding = nn.Layers()
+        self.to_patch_embedding = nn.Sequential()
         self.to_patch_embedding.add(Rearrange('b (h p1) (w p2) c -> b (h w) (p1 p2 c)', p1 = patch_size, p2 = patch_size))
         self.to_patch_embedding.add(nn.layer_norm(patch_dim))
         self.to_patch_embedding.add(nn.dense(dim, patch_dim))
@@ -104,7 +104,7 @@ class DeepViT(nn.Model):
         self.pool = pool
         self.to_latent = nn.identity()
 
-        self.mlp_head = nn.Layers()
+        self.mlp_head = nn.Sequential()
         self.mlp_head.add(nn.layer_norm(dim))
         self.mlp_head.add(nn.dense(num_classes, dim))
         

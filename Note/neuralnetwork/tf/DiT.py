@@ -20,7 +20,7 @@ class TimestepEmbedder:
     Embeds scalar timesteps into vector representations.
     """
     def __init__(self, hidden_size, frequency_embedding_size=256):
-        self.mlp = nn.Layers()
+        self.mlp = nn.Sequential()
         self.mlp.add(nn.dense(hidden_size, frequency_embedding_size, weight_initializer=['normal', 0.0, 0.02], use_bias=True))
         self.mlp.add(tf.nn.silu)
         self.mlp.add(nn.dense(hidden_size, hidden_size, weight_initializer=['normal', 0.0, 0.02], use_bias=True))
@@ -96,7 +96,7 @@ class DiTBlock:
         self.norm2 = nn.layer_norm(hidden_size, epsilon=1e-6)
         mlp_hidden_dim = int(hidden_size * mlp_ratio)
         self.mlp = Mlp(in_features=hidden_size, hidden_features=mlp_hidden_dim, drop=0)
-        self.adaLN_modulation = nn.Layers()
+        self.adaLN_modulation = nn.Sequential()
         self.adaLN_modulation.add(tf.nn.silu)
         self.adaLN_modulation.add(nn.dense(6 * hidden_size, hidden_size, weight_initializer='zeros', use_bias=True))
 
@@ -114,7 +114,7 @@ class FinalLayer:
     def __init__(self, hidden_size, patch_size, out_channels):
         self.norm_final = nn.layer_norm(hidden_size, epsilon=1e-6)
         self.linear = nn.dense(patch_size * patch_size * out_channels, hidden_size, weight_initializer='zeros', use_bias=True)
-        self.adaLN_modulation = nn.Layers()
+        self.adaLN_modulation = nn.Sequential()
         self.adaLN_modulation.add(tf.nn.silu)
         self.adaLN_modulation.add(nn.dense(2 * hidden_size, hidden_size, weight_initializer='zeros', use_bias=True))
 

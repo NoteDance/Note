@@ -81,12 +81,12 @@ class BiT(nn.Model):
 
     # The following will be unreadable if we split lines.
     # pylint: disable=line-too-long
-    self.root = nn.Layers()
+    self.root = nn.Sequential()
     self.root.add(StdConv2d(64*wf, input_size=3, kernel_size=7, stride=2, padding=3, bias=False))
     self.root.add(nn.zeropadding2d(64*wf,1))
     self.root.add(nn.max_pool2d(3, 2, 'VALID'))
 
-    self.body = nn.Layers()
+    self.body = nn.Sequential()
     self.body.add(PreActBottleneck(cin=64*wf, cout=256*wf, cmid=64*wf))
     for i in range(2, block_units[0] + 1):
         self.body.add(PreActBottleneck(cin=256*wf, cout=256*wf, cmid=64*wf))
@@ -102,7 +102,7 @@ class BiT(nn.Model):
     # pylint: enable=line-too-long
 
     self.zero_head = zero_head
-    self.head = nn.Layers()
+    self.head = nn.Sequential()
     self.head.add(nn.group_norm(32, 2048*wf))
     self.head.add(tf.nn.relu)
     self.head.add(nn.adaptive_avg_pooling2d(1))

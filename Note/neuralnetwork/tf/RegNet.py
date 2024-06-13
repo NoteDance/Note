@@ -10,7 +10,7 @@ def PreStem(x):
 
 
 def Stem(in_channels):
-    layers=nn.Layers()
+    layers=nn.Sequential()
     layers.add(nn.conv2d(32,[3,3],in_channels,strides=[2],use_bias=False,padding='SAME',weight_initializer='He'))
     layers.add(nn.batch_norm(momentum=0.9,epsilon=1e-5))
     layers.add(activation_dict['relu'])
@@ -18,7 +18,7 @@ def Stem(in_channels):
 
 
 def SqueezeAndExciteBlock(in_channels, filters_in, se_filters):
-    layers=nn.Layers()
+    layers=nn.Sequential()
     layers.add(nn.identity(in_channels),save_data=True)
     layers.add(nn.global_avg_pool2d(keepdims=True))
     layers.add(nn.conv2d(se_filters,[1,1],activation='relu',weight_initializer='He'))
@@ -39,7 +39,7 @@ def XBlock(in_channels, filters_in, filters_out, group_width, stride=1):
     # Declare layers
     groups = filters_out // group_width
     
-    layers=nn.Layers()
+    layers=nn.Sequential()
     if stride!=1:
         layers.add(nn.conv2d(filters_out,[1,1],in_channels,strides=[2],use_bias=False,weight_initializer='He'))
         layers.add(nn.batch_norm(momentum=0.9,epsilon=1e-5))
@@ -87,7 +87,7 @@ def YBlock(
     groups = filters_out // group_width
     se_filters = int(filters_in * squeeze_excite_ratio)
 
-    layers=nn.Layers()
+    layers=nn.Sequential()
     if stride!=1:
         layers.add(nn.conv2d(filters_out,[1,1],in_channels,strides=[2],use_bias=False,weight_initializer='He'))
         layers.add(nn.batch_norm(momentum=0.9,epsilon=1e-5))
@@ -140,7 +140,7 @@ def ZBlock(
 
     inv_btlneck_filters = int(filters_out / bottleneck_ratio)
     
-    layers=nn.Layers()
+    layers=nn.Sequential()
     layers.add(nn.identity(in_channels),save_data=True)
     
     # Build block
@@ -167,7 +167,7 @@ def ZBlock(
 
 
 def Stage(in_channels, block_type, depth, group_width, filters_in, filters_out):
-    layers=nn.Layers()
+    layers=nn.Sequential()
     if block_type == "X":
         layers.add(XBlock(
             in_channels,
@@ -239,7 +239,7 @@ class RegNet(nn.Model):
         self.pooling=pooling
         self.classes=classes
         
-        self.layers=nn.Layers()
+        self.layers=nn.Sequential()
         self.layers.add(Stem(3))
         in_channels = 32
         for num_stage in range(4):

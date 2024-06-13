@@ -197,7 +197,7 @@ def stem(in_chs, out_chs):
     """
     Stem Layer that is implemented by two layers of conv.
     """
-    layers=nn.Layers()
+    layers=nn.Sequential()
     layers.add(nn.conv2d(out_chs // 2, kernel_size=3, input_size=in_chs, strides=2, padding=1))
     layers.add(nn.batch_norm())
     layers.add(activation_dict['relu'])
@@ -238,7 +238,7 @@ class ConvEncoder:
     """
 
     def __init__(self, dim, hidden_dim=64, kernel_size=3, drop_path=0., use_layer_scale=True):
-        self.layers=nn.Layers()
+        self.layers=nn.Sequential()
         self.layers.add(nn.depthwise_conv2d(kernel_size=kernel_size, input_size=dim, 
                                        weight_initializer=['truncated_normal',.02], padding=kernel_size // 2))
         self.layers.add(nn.batch_norm())
@@ -280,7 +280,7 @@ class Mlp:
                  out_features=None, act_layer=activation_dict['gelu'], drop=0.):
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
-        self.layers=nn.Layers()
+        self.layers=nn.Sequential()
         self.layers.add(nn.batch_norm(in_features))
         self.layers.add(nn.conv2d(hidden_features, 1, weight_initializer=['truncated_normal',.02]))
         self.layers.add(act_layer)
@@ -340,7 +340,7 @@ class SwiftFormerLocalRepresentation:
     """
 
     def __init__(self, dim, kernel_size=3, drop_path=0., use_layer_scale=True):
-        self.layers=nn.Layers()
+        self.layers=nn.Sequential()
         self.layers.add(nn.depthwise_conv2d(kernel_size=kernel_size, input_size=dim, weight_initializer=['truncated_normal',.02], padding=kernel_size // 2))
         self.layers.add(nn.batch_norm())
         self.layers.add(nn.conv2d(dim, kernel_size=1, weight_initializer=['truncated_normal',.02]))
@@ -436,7 +436,7 @@ def Stage(dim, index, layers, mlp_ratio=4.,
     """
     Implementation of each SwiftFormer stages. Here, SwiftFormerEncoder used as the last block in all stages, while ConvEncoder used in the rest of the blocks.
     """
-    blocks = nn.Layers()
+    blocks = nn.Sequential()
 
     for block_idx in range(layers[index]):
         block_dpr = drop_path_rate * (block_idx + sum(layers[:index])) / (sum(layers) - 1)

@@ -16,7 +16,7 @@ def cast_tuple(val, depth):
 
 class DsConv2d:
     def __init__(self, dim_in, dim_out, kernel_size, padding, stride = 1, bias = True):
-        self.net = nn.Layers()
+        self.net = nn.Sequential()
         self.net.add(nn.conv2d(dim_in, input_size = dim_in, kernel_size = kernel_size, strides = stride, use_bias = bias))
         self.net.add(nn.conv2d(dim_out, input_size = dim_in, kernel_size = 1, padding=padding, use_bias = bias))
         
@@ -77,7 +77,7 @@ class MixFeedForward:
         expansion_factor
     ):
         hidden_dim = dim * expansion_factor
-        self.net = nn.Layers()
+        self.net = nn.Sequential()
         self.net.add(nn.conv2d(hidden_dim, 1, dim))
         self.net.add(DsConv2d(hidden_dim, hidden_dim, 3, padding = 1))
         self.net.add(tf.nn.gelu)
@@ -186,12 +186,12 @@ class Segformer(nn.Model):
         
         self.to_fused = []
         for i, dim in enumerate(dims):
-            to_fused = nn.Layers()
+            to_fused = nn.Sequential()
             to_fused.add(nn.conv2d(decoder_dim, 1, dim))
             to_fused.add(nn.up_sampling2d(2 ** i))
             self.to_fused.append(to_fused)
 
-        self.to_segmentation = nn.Layers()
+        self.to_segmentation = nn.Sequential()
         self.to_segmentation.add(nn.conv2d(decoder_dim, 1, 4 * decoder_dim))
         self.head=self.conv2d(num_classes, decoder_dim, 1)
 

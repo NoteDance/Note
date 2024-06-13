@@ -119,7 +119,7 @@ class EfficientNet(nn.Model):
     
         # Build stem
         self.zeropadding2d=nn.zeropadding2d()
-        self.layers1=nn.Layers()
+        self.layers1=nn.Sequential()
         self.layers1.add(nn.conv2d(round_filters(32),[3,3],3,strides=2,padding="VALID",use_bias=False,
                            weight_initializer=CONV_KERNEL_INITIALIZER))
         self.layers1.add(nn.batch_norm(axis=-1))
@@ -130,7 +130,7 @@ class EfficientNet(nn.Model):
         
         b = 0
         blocks = float(sum(round_repeats(args["repeats"]) for args in blocks_args))
-        self.layers2=nn.Layers()
+        self.layers2=nn.Sequential()
         for i, args in enumerate(blocks_args):
             assert args["repeats"] > 0
             # Update block input and output filters based on depth multiplier.
@@ -154,7 +154,7 @@ class EfficientNet(nn.Model):
                 in_channels=self.layers2.output_size
         
         # Build top
-        self.layers3=nn.Layers()
+        self.layers3=nn.Sequential()
         self.layers3.add(nn.conv2d(
             round_filters(1280),
             [1,1],
@@ -237,7 +237,7 @@ class block:
         self.kernel_size=kernel_size
         self.drop_rate=drop_rate
         
-        self.layers1=nn.Layers()
+        self.layers1=nn.Sequential()
         # Expansion phase
         filters = filters_in * expand_ratio
         if expand_ratio != 1:
@@ -256,7 +256,7 @@ class block:
             conv_pad = "VALID"
         else:
             conv_pad = "SAME"
-        self.layers2=nn.Layers()
+        self.layers2=nn.Sequential()
         self.layers2.add(nn.depthwise_conv2d(
                                             [kernel_size,kernel_size],
                                             input_size=self.layers1.output_size,
@@ -278,7 +278,7 @@ class block:
                                 weight_initializer=CONV_KERNEL_INITIALIZER)
 
         # Output phase
-        self.layers3=nn.Layers()
+        self.layers3=nn.Sequential()
         self.layers3.add(nn.conv2d(filters_out,[1,1],self.conv2d2.output_size,padding="SAME",
                             use_bias=False,weight_initializer=CONV_KERNEL_INITIALIZER))
         self.layers3.add(nn.batch_norm(axis=-1))

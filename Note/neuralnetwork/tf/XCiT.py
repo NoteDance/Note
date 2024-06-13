@@ -52,7 +52,7 @@ class PositionalEncodingFourier:
 
 def conv3x3(in_planes, out_planes, stride=1):
     """3x3 convolution with padding"""
-    layers = nn.Layers()
+    layers = nn.Sequential()
     layers.add(nn.conv2d(out_planes, 3, in_planes, strides=stride, padding=1, use_bias=False))
     layers.add(nn.batch_norm(out_planes, synchronized=True))
     return layers
@@ -71,7 +71,7 @@ class ConvPatchEmbed:
         self.num_patches = num_patches
 
         if patch_size[0] == 16:
-            self.proj = nn.Layers()
+            self.proj = nn.Sequential()
             self.proj.add(conv3x3(3, embed_dim // 8, 2))
             self.proj.add(tf.nn.gelu)
             self.proj.add(conv3x3(embed_dim // 8, embed_dim // 4, 2))
@@ -80,7 +80,7 @@ class ConvPatchEmbed:
             self.proj.add(tf.nn.gelu)
             self.proj.add(conv3x3(embed_dim // 2, embed_dim, 2))
         elif patch_size[0] == 8:
-            self.proj = nn.Layers()
+            self.proj = nn.Sequential()
             self.proj.add(conv3x3(3, embed_dim // 4, 2))
             self.proj.add(tf.nn.gelu)
             self.proj.add(conv3x3(embed_dim // 4, embed_dim // 2, 2))

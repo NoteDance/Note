@@ -221,7 +221,7 @@ class hMLP_stem:
         self.img_size = img_size
         self.patch_size = patch_size
         self.num_patches = num_patches
-        self.proj = nn.Layers()
+        self.proj = nn.Sequential()
         self.proj.add(nn.conv2d(embed_dim//4, 4, in_chans, 4))
         self.proj.add(nn.batch_norm(embed_dim//4, synchronized=True))
         self.proj.add(tf.nn.gelu)

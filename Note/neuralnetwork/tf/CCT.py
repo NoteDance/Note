@@ -173,9 +173,9 @@ class Tokenizer:
 
         n_filter_list_pairs = zip(n_filter_list[:-1], n_filter_list[1:])
 
-        self.conv_layers = nn.Layers()
+        self.conv_layers = nn.Sequential()
         for chan_in, chan_out in n_filter_list_pairs:
-            conv_layers = nn.Layers()
+            conv_layers = nn.Sequential()
             conv_layers.add(nn.conv2d(chan_out, (kernel_size, kernel_size), chan_in, strides=(stride, stride),
                                    padding=(padding, padding),use_bias=conv_bias))
             if not exists(activation):

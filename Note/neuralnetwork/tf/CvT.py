@@ -34,7 +34,7 @@ class LayerNorm: # layernorm, but done in the channel dimension #1
 
 class FeedForward:
     def __init__(self, dim, mult = 4, dropout_rate = 0.):
-        self.net = nn.Layers()
+        self.net = nn.Sequential()
         self.net.add(nn.layer_norm(dim))
         self.net.add(nn.conv2d(dim * mult, 1, dim))
         self.net.add(tf.nn.gelu)
@@ -47,7 +47,7 @@ class FeedForward:
 
 class DepthWiseConv2d:
     def __init__(self, dim_in, dim_out, kernel_size, padding, stride, bias = True):
-        self.net = nn.Layers()
+        self.net = nn.Sequential()
         self.net.add(nn.conv2d(dim_in, kernel_size, dim_in, groups=dim_in, strides = stride, padding=padding, use_bias = bias))
         self.net.add(nn.batch_norm(dim_in))
         self.net.add(nn.conv2d(dim_out, 1, dim_in, use_bias = bias))
@@ -69,7 +69,7 @@ class Attention:
         self.to_q = DepthWiseConv2d(dim, inner_dim, proj_kernel, padding = padding, stride = 1, bias = False)
         self.to_kv = DepthWiseConv2d(dim, inner_dim * 2, proj_kernel, padding = padding, stride = kv_proj_stride, bias = False)
 
-        self.to_out = nn.Layers()
+        self.to_out = nn.Sequential()
         self.to_out.add(nn.conv2d(dim, 1, inner_dim))
         self.to_out.add(nn.dropout(dropout_rate))
 
@@ -143,10 +143,10 @@ class CvT(nn.Model):
 
         dim = channels
         self.dim = dim
-        self.layers = nn.Layers()
+        self.layers = nn.Sequential()
 
         for prefix in ('s1', 's2', 's3'):
-            layers = nn.Layers()
+            layers = nn.Sequential()
             config, kwargs = group_by_key_prefix_and_remove_prefix(f'{prefix}_', kwargs)
 
             layers.add(nn.conv2d(config['emb_dim'], config['emb_kernel'], dim, strides = config['emb_stride'], padding = (config['emb_kernel'] // 2)))
@@ -156,7 +156,7 @@ class CvT(nn.Model):
 
             dim = config['emb_dim']
 
-        self.to_logits = nn.Layers()
+        self.to_logits = nn.Sequential()
         self.to_logits.add(nn.adaptive_avg_pooling2d(1))
         self.to_logits.add(Rearrange('() () ... -> ...'))
         self.to_logits.add(nn.dense(num_classes, dim))

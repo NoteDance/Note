@@ -26,14 +26,14 @@ class PatchEmbed:
         self.num_patches = num_patches
         if multi_conv:
             if patch_size[0] == 12:
-                self.proj = nn.Layers()
+                self.proj = nn.Sequential()
                 self.proj.add(nn.conv2d(embed_dim // 4, 7, in_chans, strides=4, padding=3))
                 self.proj.add(tf.nn.relu)
                 self.proj.add(nn.Conv2d(embed_dim // 2, 3, embed_dim // 4, strides=3, padding=0))
                 self.proj.add(tf.nn.relu)
                 self.proj.add(nn.Conv2d(embed_dim, 3, embed_dim // 2, strides=1, padding=1))
             elif patch_size[0] == 16:
-                self.proj = nn.Layers()
+                self.proj = nn.Sequential()
                 self.proj.add(nn.conv2d(embed_dim // 4, 7, in_chans, strides=4, padding=3))
                 self.proj.add(tf.nn.relu)
                 self.proj.add(nn.Conv2d(embed_dim // 2, 3, embed_dim // 4, strides=2, padding=1))
@@ -122,7 +122,7 @@ class MultiScaleBlock:
                     nn.Block(dim=dim[d], num_heads=num_heads[d], mlp_ratio=mlp_ratio[d], qkv_bias=qkv_bias, 
                           proj_drop=drop, attn_drop=attn_drop, drop_path=drop_path[i], norm_layer=norm_layer))
             if len(tmp) != 0:
-                layers = nn.Layers()
+                layers = nn.Sequential()
                 layers.add(tmp)
                 self.blocks.append(layers)
 
@@ -135,7 +135,7 @@ class MultiScaleBlock:
                 tmp = [nn.identity()]
             else:
                 tmp = [norm_layer(dim[d]), act_layer, nn.dense(dim[(d+1) % num_branches], dim[d])]
-            layers = nn.Layers()
+            layers = nn.Sequential()
             layers.add(tmp)
             self.projs.append(layers)
 
@@ -153,7 +153,7 @@ class MultiScaleBlock:
                     tmp.append(CrossAttentionBlock(dim=dim[d_], num_heads=nh, mlp_ratio=mlp_ratio[d], qkv_bias=qkv_bias, qk_scale=qk_scale,
                                                    drop=drop, attn_drop=attn_drop, drop_path=drop_path[-1], norm_layer=norm_layer,
                                                    has_mlp=False))
-                layers = nn.Layers()
+                layers = nn.Sequential()
                 layers.add(tmp)
                 self.fusion.append(layers)
 
@@ -163,7 +163,7 @@ class MultiScaleBlock:
                 tmp = [nn.Identity()]
             else:
                 tmp = [norm_layer(dim[(d+1) % num_branches]), act_layer, nn.dense(dim[d], dim[(d+1) % num_branches])]
-            layers = nn.Layers()
+            layers = nn.Sequential()
             layers.add(tmp)
             self.revert_projs.append(layers)
 
@@ -401,7 +401,7 @@ class Token_performer:
         self.norm2 = nn.layer_norm(self.emb)
         self.epsilon = 1e-8  # for stable in division
 
-        self.mlp = nn.Layers()
+        self.mlp = nn.Sequential()
         self.mlp.add(nn.dense(1 * self.emb, self.emb))
         self.mlp.add(tf.nn.gelu)
         self.mlp.add(nn.dense(self.emb, 1 * self.emb))

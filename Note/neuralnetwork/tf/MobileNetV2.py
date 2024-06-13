@@ -86,7 +86,7 @@ class MobileNetV2(nn.Model):
         self.pooling=pooling
         self.first_block_filters = _make_divisible(32 * alpha, 8)
         
-        self.layers=nn.Layers()
+        self.layers=nn.Sequential()
         
         self.layers.add(nn.conv2d(self.first_block_filters,[3,3],3,strides=[2,2],padding='SAME',use_bias=False))
         self.layers.add(nn.batch_norm(momentum=0.999))
