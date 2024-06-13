@@ -81,7 +81,7 @@ This function is used to initialize the parameters of the neural network, it ret
 Its function is similar to torch.nn.parameter.Parameter.
 
 
-# Note.nn.Layers.Layers:
+# Note.nn.Sequential.Sequential:
 This class is used similarly to tf.keras.Sequential and torch.nn.Sequential.
 
 
