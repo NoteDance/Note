@@ -79,6 +79,6 @@ def trunc_normal_tf_(tensor, mean=0., std=1., a=-2., b=2.):
         >>> tensor = tf.Variable(tf.zeros((3, 5)), dtype=tf.float32)
         >>> trunc_normal_tf_(tensor)
     """
-    _trunc_normal_(tensor, a, b)
+    _trunc_normal_(tensor, 0, 1.0, a, b)
     tensor.assign(tensor * std + mean)
     return tensor
