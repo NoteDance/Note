@@ -80,6 +80,7 @@ from Note.nn.layer.max_pool3d import max_pool3d
 from Note.nn.layer.maximum import maximum
 from Note.nn.layer.maxout import maxout
 from Note.nn.layer.minimum import minimum
+from Note.nn.layer.ml_decoder import MLDecoder
 from Note.nn.layer.mlp import *
 from Note.nn.layer.MoE_layer import MoE_layer
 from Note.nn.layer.multi_cls_heads import multi_cls_heads
