@@ -118,7 +118,7 @@ class BottleneckAttn:
         # NOTE I'm only supporting relative pos embedding for now
         self.pos_embed = PosEmbedRel(feat_size, dim_head=self.dim_head_qk, scale=self.scale)
 
-        self.pool = nn.avg_pool2d(2, 2, 0) if stride == 2 else nn.identity()
+        self.pool = nn.avg_pool2d(2, 2) if stride == 2 else nn.identity()
 
         self.reset_parameters()
 
