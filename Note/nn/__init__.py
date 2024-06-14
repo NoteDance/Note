@@ -10,6 +10,8 @@ from Note.nn.layer.add import add
 from Note.nn.layer.additive_attention import additive_attention
 from Note.nn.layer.alpha_dropout import alpha_dropout
 from Note.nn.layer.attention import attention
+from Note.nn.layer.attention_pool import AttentionPoolLatent
+from Note.nn.layer.attention2d import *
 from Note.nn.layer.average import average
 from Note.nn.layer.avg_pool1d import avg_pool1d
 from Note.nn.layer.avg_pool2d import avg_pool2d
@@ -20,6 +22,7 @@ from Note.nn.layer.BigBird_attention import BigBird_attention
 from Note.nn.layer.BigBird_masks import BigBird_masks
 from Note.nn.layer.bilinear import bilinear
 from Note.nn.layer.BiRNN import BiRNN
+from Note.nn.layer.bottleneck_attn import BottleneckAttn
 from Note.nn.layer.cached_attention import cached_attention
 from Note.nn.layer.capsule import capsule
 from Note.nn.layer.classifier import *
@@ -143,6 +146,7 @@ from Note.nn.Model import Model
 from Note.nn.parallel.optimizer import *
 from Note.nn.pairwise_distance import pairwise_distance
 from Note.nn.parameter import Parameter
+from Note.nn.pos_embed import *
 from Note.nn.positional_encoding import positional_encoding
 from Note.nn.scaled_dot_product_attention import scaled_dot_product_attention
 from Note.nn.Sequential import Sequential
