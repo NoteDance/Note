@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-def interpolate(input, size=None, scale_factor=None, recompute_scale_factor=False, mode='nearest', align_corners=False):
+def interpolate(input, size=None, scale_factor=None, recompute_scale_factor=False, mode='nearest', align_corners=False, antialias=False):
     # Get input shape
     input_shape = tf.shape(input)
     
@@ -33,6 +33,6 @@ def interpolate(input, size=None, scale_factor=None, recompute_scale_factor=Fals
     elif mode == 'bicubic':
         tf.compat.v1.image.resize_bicubic(input, size=new_size, align_corners=align_corners)
     else:
-        resize_result = tf.image.resize(input, size=new_size, method=mode)
+        resize_result = tf.image.resize(input, size=new_size, method=mode, antialias=antialias)
     
     return resize_result
