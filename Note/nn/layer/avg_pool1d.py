@@ -1,4 +1,5 @@
 import tensorflow as tf
+from Note import nn
 
 
 class avg_pool1d:
@@ -6,7 +7,14 @@ class avg_pool1d:
         self.ksize=ksize
         self.strides=strides
         self.padding=padding
+        if not isinstance(padding,str):
+            self.zeropadding1d=nn.zeropadding1d(padding=padding)
     
     
     def __call__(self,data):
-        return tf.nn.avg_pool1d(data,ksize=self.ksize,strides=self.strides,padding=self.padding)
+        if not isinstance(self.padding,str):
+            data=self.zeropadding1d(data)
+            padding='VALID'
+        else:
+            padding=self.padding
+        return tf.nn.avg_pool1d(data,ksize=self.ksize,strides=self.strides,padding=padding)
