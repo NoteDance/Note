@@ -1,30 +1,32 @@
 import tensorflow as tf
-from Note.nn.layer.dense import dense
+from Note import nn
 
 
 class multihead_attention:
-    def __init__(self, n_head: int, input_size=None, kdim=None, vdim=None, weight_initializer='Xavier', bias_initializer='zeros', use_bias=True, dtype='float32'):
+    def __init__(self, n_head: int, input_size=None, kdim=None, vdim=None, dropout=0.0, weight_initializer='Xavier', bias_initializer='zeros', use_bias=True, dtype='float32'):
         self.n_head = n_head
         self.input_size = input_size
         self.kdim = kdim if kdim is not None else input_size
         self.vdim = vdim if vdim is not None else input_size
+        self.dropout_rate = dropout
         self.weight_initializer=weight_initializer
         self.bias_initializer=bias_initializer
         self.use_bias=use_bias
         self.dtype=dtype
+        self.dropout=nn.dropout(dropout)
         if input_size is not None:
-            self.query = dense(input_size,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
-            self.key = dense(input_size,self.kdim,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
-            self.value = dense(input_size,self.vdim,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
-            self.out = dense(input_size,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
+            self.query = nn.dense(input_size,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
+            self.key = nn.dense(input_size,self.kdim,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
+            self.value = nn.dense(input_size,self.vdim,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
+            self.out = nn.dense(input_size,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
             self.param = [self.query.param,self.key.param,self.value.param,self.out.param]
     
     
     def build(self):
-        self.query = dense(self.input_size,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
-        self.key = dense(self.input_size,self.kdim,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
-        self.value = dense(self.input_size,self.vdim,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
-        self.out = dense(self.input_size,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
+        self.query = nn.dense(self.input_size,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
+        self.key = nn.dense(self.input_size,self.kdim,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
+        self.value = nn.dense(self.input_size,self.vdim,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
+        self.out = nn.dense(self.input_size,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
         self.param = [self.query.param,self.key.param,self.value.param,self.out.param]
         return
     
@@ -48,6 +50,8 @@ class multihead_attention:
             qk = qk + mask[:n_ctx_q, :n_ctx_q]
 
         w = tf.nn.softmax(qk)
+        if self.dropout_rate:
+            w = self.dropout(w)
         return tf.reshape(tf.transpose(tf.matmul(w, v), [0, 2, 1, 3]), [n_batch_q, n_ctx_q, n_state]), qk
     
     
