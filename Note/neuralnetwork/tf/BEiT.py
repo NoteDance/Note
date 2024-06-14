@@ -68,9 +68,9 @@ class VisionTransformerForMaskedImageModeling(nn.Model):
     
     def init_weights(self, l):
         if isinstance(l, nn.dense):
-            l.weight.assign(nn.initializer(l.weight.shape, ['truncated_normal', self.init_std]))
+            l.weight.assign(nn.trunc_normal_(l.weight, std=self.init_std))
         elif isinstance(l, nn.conv2d):
-            l.weight.assign(nn.initializer(l.weight.shape, ['truncated_normal', self.init_std]))
+            l.weight.assign(nn.trunc_normal_(l.weight, std=self.init_std))
 
     def no_weight_decay(self):
         return {'pos_embed', 'cls_token'}
@@ -183,7 +183,7 @@ class VisionTransformer(nn.Model):
 
     def init_weights(self, l):
         if isinstance(l, nn.dense):
-            l.weight.assign(nn.initializer(l.weight.shape, ['truncated_normal', .02]))
+            l.weight.assign(nn.trunc_normal_(l.weight, std=.02))
 
     def get_num_layers(self):
         return len(self.blocks)

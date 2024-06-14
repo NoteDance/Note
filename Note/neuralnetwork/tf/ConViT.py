@@ -24,7 +24,7 @@ class Mlp:
     
     def init_weights(self, l):
         if isinstance(l, nn.dense):
-            l.weight.assign(nn.initializer(l.weight.shape, ['truncated_normal', .02]))
+            l.weight.assign(nn.trunc_normal_(l.weight, std=.02))
             
     def __call__(self, x):
         x = self.fc1(x)
@@ -59,7 +59,7 @@ class GPSA:
     
     def init_weights(self, l):
         if isinstance(l, nn.dense):
-            l.weight.assign(nn.initializer(l.weight.shape, ['truncated_normal', .02]))
+            l.weight.assign(nn.trunc_normal_(l.weight, std=.02))
         
     def __call__(self, x):
         B, N, C = x.shape
@@ -144,7 +144,7 @@ class MHSA:
     
     def init_weights(self, l):
         if isinstance(l, nn.dense):
-            l.weight.assign(nn.initializer(l.weight.shape, ['truncated_normal', .02]))
+            l.weight.assign(nn.trunc_normal_(l.weight, std=.02))
 
     def get_attention_map(self, x, return_map = False):
         B, N, C = x.shape
@@ -231,7 +231,7 @@ class PatchEmbed:
     
     def init_weights(self, l):
         if isinstance(l, nn.dense):
-            l.weight.assign(nn.initializer(l.weight.shape, ['truncated_normal', .02]))
+            l.weight.assign(nn.trunc_normal_(l.weight, std=.02))
         
     def __call__(self, x):
         B, H, W, C = x.shape

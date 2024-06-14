@@ -281,7 +281,7 @@ class CaiT(nn.Model):
 
     def init_weights(self, l):
         if isinstance(l, nn.dense):
-            l.weight.assign(nn.initializer(l.weight.shape, ['truncated_normal', .02]))
+            l.weight.assign(nn.trunc_normal_(l.weight, std=.02))
 
     def no_weight_decay(self):
         return ['pos_embed', 'cls_token']

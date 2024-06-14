@@ -584,7 +584,7 @@ class SwinTransformerV2(nn.Model):
 
     def init_weights(self, l):
         if isinstance(l, nn.dense):
-            l.weight.assign(nn.initializer(l.weight.shape, ['truncated_normal', 0.2]))
+            l.weight.assign(nn.trunc_normal_(l.weight, std=0.2))
 
     def no_weight_decay(self):
         return ['absolute_pos_embed', 'cpb_mlp', 'logit_scale']

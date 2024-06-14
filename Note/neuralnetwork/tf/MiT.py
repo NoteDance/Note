@@ -195,7 +195,7 @@ class MiT(nn.Model):
     
     def init_weights(self, l):
         if isinstance(l, nn.dense):
-            l.weight.assign(nn.initializer(l.weight.shape, ['truncated_normal', 0.2]))
+            l.weight.assign(nn.trunc_normal_(l.weight, std=0.2))
         elif isinstance(l, nn.conv2d):
             fan_out = l.kernel_size[0] * l.kernel_size[1] * l.output_size
             fan_out //= l.groups

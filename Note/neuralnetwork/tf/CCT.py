@@ -289,9 +289,9 @@ class TransformerClassifier:
 
     def init_weight(self, l):
         if isinstance(l, nn.dense):
-            l.weight.assign(nn.initializer(l.weight.shape, ['truncated_normal', 0.2]))
+            l.weight.assign(nn.trunc_normal_(l.weight, std=0.2))
             if l.use_bias is not False:
-                l.bias.assign(nn.initializer(l.bias.shape, ['truncated_normal', 0.2]))
+                l.bias.assign(nn.trunc_normal_(l.bias, std=0.2))
         
 
 # CCT Main model
