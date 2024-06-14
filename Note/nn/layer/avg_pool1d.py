@@ -3,7 +3,7 @@ from Note import nn
 
 
 class avg_pool1d:
-    def __init__(self,ksize,strides,padding):
+    def __init__(self,ksize,strides,padding=0):
         self.ksize=ksize
         self.strides=strides
         self.padding=padding
