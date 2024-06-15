@@ -41,6 +41,7 @@ from Note.nn.layer.dense import dense
 from Note.nn.layer.depthwise_conv1d import depthwise_conv1d
 from Note.nn.layer.depthwise_conv2d import depthwise_conv2d
 from Note.nn.layer.dropout import dropout
+from Note.nn.layer.eca import *
 from Note.nn.layer.einsum_dense import einsum_dense
 from Note.nn.layer.embedding import embedding
 from Note.nn.layer.FAVOR_attention import FAVOR_attention
