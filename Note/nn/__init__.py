@@ -62,6 +62,7 @@ from Note.nn.layer.group_norm import group_norm
 from Note.nn.layer.grouped_query_attention import grouped_query_attention
 from Note.nn.layer.GRU import GRU
 from Note.nn.layer.GRUCell import GRUCell
+from Note.nn.layer.halo_attn import HaloAttn
 from Note.nn.layer.helpers import *
 from Note.nn.layer.identity import identity
 from Note.nn.layer.kernel_attention import kernel_attention
