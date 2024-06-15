@@ -172,6 +172,8 @@ class HaloAttn:
             kv = tf.reshape(kv, (-1, H, W, 1))
             kv_pad = nn.zeropadding2d(padding=self.halo_size)(kv)
             kv = tf.nn.conv2d(kv_pad, pw, strides=self.block_size)
+            kv = tf.reshape(kv, 
+                            (B * self.num_heads, num_blocks, -1, self.dim_head_qk + self.dim_head_v))
         else:
             paddings = [[0, 0], [self.halo_size, self.halo_size], [self.halo_size, self.halo_size], [0, 0]]
             kv = tf.pad(kv, paddings, mode='CONSTANT')
