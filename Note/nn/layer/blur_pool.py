@@ -10,6 +10,7 @@ from typing import Optional
 
 import tensorflow as tf
 from Note import nn
+from Note.nn.layer import identity
 import numpy as np
 
 
@@ -69,7 +70,7 @@ def create_aa(
         channels: Optional[int] = None,
         stride: int = 2,
         enable: bool = True,
-        noop = nn.identity
+        noop = identity
 ):
     """ Anti-aliasing """
     if not aa_layer or not enable:
