@@ -22,6 +22,7 @@ from Note.nn.layer.BigBird_attention import BigBird_attention
 from Note.nn.layer.BigBird_masks import BigBird_masks
 from Note.nn.layer.bilinear import bilinear
 from Note.nn.layer.BiRNN import BiRNN
+from Note.nn.layer.blur_pool import *
 from Note.nn.layer.bottleneck_attn import BottleneckAttn
 from Note.nn.layer.cached_attention import cached_attention
 from Note.nn.layer.capsule import capsule
@@ -140,6 +141,7 @@ from Note.nn.layer.zeropadding2d import zeropadding2d
 from Note.nn.layer.zeropadding3d import zeropadding3d
 from Note.nn.accuracy import *
 from Note.nn.activation import activation,activation_conv,activation_conv_transpose,activation_dict
+from Note.nn.conv2d_func import conv2d_func
 from Note.nn.cosine_similarity import cosine_similarity
 from Note.nn.create_additive_causal_mask import create_additive_causal_mask
 from Note.nn.fine_tuning import fine_tuning
