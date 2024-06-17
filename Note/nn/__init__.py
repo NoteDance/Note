@@ -105,6 +105,7 @@ from Note.nn.layer.RNNCell import RNNCell
 from Note.nn.layer.RoPE import RoPE
 from Note.nn.layer.router import router
 from Note.nn.layer.select_topk import select_topk
+from Note.nn.layer.selective_kernel import SelectiveKernel
 from Note.nn.layer.self_attention_mask import self_attention_mask
 from Note.nn.layer.separable_conv1d import separable_conv1d
 from Note.nn.layer.separable_conv2d import separable_conv2d
