@@ -27,28 +27,15 @@ class conv1d: # define a class for 1D convolutional layer
         self.trainable=trainable
         self.dtype=dtype
         self.output_size=filters
-        self.weight=[] # initialize an empty list for weight tensors
-        self.bias=[] # initialize an empty list for bias vectors
         if not isinstance(padding,str):
             self.zeropadding1d=nn.zeropadding1d(padding=padding)
         if input_size!=None:
-            self.groups=groups if input_size%groups==0 else 1
-            if self.groups==1:
-                self.weight=nn.initializer([kernel_size,input_size,filters],weight_initializer,dtype,trainable) # initialize the weight tensor
-                if use_bias==True: # if use bias is True
-                    self.bias=nn.initializer([filters],bias_initializer,dtype,trainable) # initialize the bias vector
-                    self.param=[self.weight,self.bias] # store the parameters in a list
-                else: # if use bias is False
-                    self.param=[self.weight] # store only the weight in a list
-            else:
-                for i in range(self.groups):
-                    self.weight.append(nn.initializer([kernel_size,input_size//self.groups,filters//self.groups],weight_initializer,dtype,trainable)) # initialize the weight tensor
-                    if use_bias==True: # if use bias is True
-                        self.bias.append(nn.initializer([filters//self.groups],bias_initializer,dtype,trainable)) # initialize the bias vector
-                if use_bias==True: # if use bias is True
-                    self.param=self.weight+self.bias # store the parameters in a list
-                else: # if use bias is False
-                    self.param=self.weight # store only the weight in a list
+            self.weight=nn.initializer([kernel_size,input_size//groups,filters],weight_initializer,dtype,trainable) # initialize the weight tensor
+            if use_bias==True: # if use bias is True
+                self.bias=nn.initializer([filters],bias_initializer,dtype,trainable) # initialize the bias vector
+                self.param=[self.weight,self.bias] # store the parameters in a list
+            else: # if use bias is False
+                self.param=[self.weight] # store only the weight in a list
             if len(Model.name_list)>0:
                 Model.name=Model.name_list[-1]
             if Model.name!=None and Model.name not in Model.layer_dict:
@@ -60,23 +47,12 @@ class conv1d: # define a class for 1D convolutional layer
     
     
     def build(self):
-        self.groups=self.groups if self.input_size%self.groups==0 else 1
-        if self.groups==1:
-            self.weight=nn.initializer([self.kernel_size,self.input_size,self.output_size],self.weight_initializer,self.dtype,self.trainable) # initialize the weight tensor
-            if self.use_bias==True: # if use bias is True
-                self.bias=nn.initializer([self.output_size],self.bias_initializer,self.dtype,self.trainable) # initialize the bias vector
-                self.param=[self.weight,self.bias] # store the parameters in a list
-            else: # if use bias is False
-                self.param=[self.weight] # store only the weight in a list
-        else:
-            for i in range(self.groups):
-                self.weight.append(nn.initializer([self.kernel_size,self.input_size//self.groups,self.output_size//self.groups],self.weight_initializer,self.dtype,self.trainable)) # initialize the weight tensor
-                if self.use_bias==True: # if use bias is True
-                    self.bias.append(nn.initializer([self.output_size//self.groups],self.bias_initializer,self.dtype,self.trainable)) # initialize the bias vector
-            if self.use_bias==True: # if use bias is True
-                self.param=self.weight+self.bias # store the parameters in a list
-            else: # if use bias is False
-                self.param=self.weight # store only the weight in a list
+        self.weight=nn.initializer([self.kernel_size,self.input_size//self.groups,self.output_size],self.weight_initializer,self.dtype,self.trainable) # initialize the weight tensor
+        if self.use_bias==True: # if use bias is True
+            self.bias=nn.initializer([self.output_size],self.bias_initializer,self.dtype,self.trainable) # initialize the bias vector
+            self.param=[self.weight,self.bias] # store the parameters in a list
+        else: # if use bias is False
+            self.param=[self.weight] # store only the weight in a list
         if len(Model.name_list)>0:
             Model.name=Model.name_list[-1]
         if Model.name!=None and Model.name not in Model.layer_dict:
@@ -106,12 +82,12 @@ class conv1d: # define a class for 1D convolutional layer
                 return nn.activation_conv(data,self.weight,self.activation,self.strides,padding,self.data_format,self.dilations,tf.nn.conv1d) # return the output of applying activation function to the convolution of data and weight
         else:
             input_groups=tf.split(data,self.groups,axis=-1) # split the input data into groups along the last dimension (channel dimension)
+            weight_groups=tf.split(self.weight,self.groups,axis=-1)
             output_groups=[] # initialize an empty list for output groups
             for i in range(self.groups): # loop over the number of groups
-                if self.use_bias==True: # if use bias is True
-                    output=nn.activation_conv(input_groups[i],self.weight[i],self.activation,self.strides,padding,self.data_format,self.dilations,tf.nn.conv1d,self.bias[i]) # calculate the output of applying activation function to the convolution of input group and weight tensor, plus bias vector
-                else: # if use bias is False
-                    output=nn.activation_conv(input_groups[i],self.weight[i],self.activation,self.strides,padding,self.data_format,self.dilations,tf.nn.conv1d) # calculate the output of applying activation function to the convolution of input group and weight tensor
+                output=nn.activation_conv(input_groups[i],weight_groups[i],self.activation,self.strides,padding,self.data_format,self.dilations,tf.nn.conv1d) # calculate the output of applying activation function to the convolution of input group and weight tensor, plus bias vector
                 output_groups.append(output) # append the output to the output groups list
             output=tf.concat(output_groups,axis=-1) # concatenate the output groups along the last dimension (channel dimension)
+            if self.use_bias==True: # if use bias is True
+                output=output+self.bias
             return output # return the final output
