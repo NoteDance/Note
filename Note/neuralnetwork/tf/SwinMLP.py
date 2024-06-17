@@ -427,8 +427,7 @@ class SwinMLP(nn.Model):
         if isinstance(l, nn.dense):
             l.weight.assign(nn.trunc_normal_(l.weight, std=0.2))
         elif isinstance(l, nn.conv1d):
-            for weight in l.weight:
-                weight.assign(nn.trunc_normal_(l.weight, std=0.2))
+            l.weight.assign(nn.trunc_normal_(l.weight, std=0.2))
 
     def no_weight_decay(self):
         return ['absolute_pos_embed']
