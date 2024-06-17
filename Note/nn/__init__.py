@@ -2,7 +2,6 @@ from Note.nn.layer.adaptive_avg_pooling1d import adaptive_avg_pooling1d
 from Note.nn.layer.adaptive_avg_pooling2d import adaptive_avg_pooling2d
 from Note.nn.layer.adaptive_avg_pooling3d import adaptive_avg_pooling3d
 from Note.nn.layer.adaptive_avgmax_pool import *
-from Note.nn.layer.adaptive_conv2d import adaptive_conv2d
 from Note.nn.layer.adaptive_max_pooling1d import adaptive_max_pooling1d
 from Note.nn.layer.adaptive_max_pooling2d import adaptive_max_pooling2d
 from Note.nn.layer.adaptive_max_pooling3d import adaptive_max_pooling3d
