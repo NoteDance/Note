@@ -10,6 +10,7 @@ from Note.nn.layer.additive_attention import additive_attention
 from Note.nn.layer.alpha_dropout import alpha_dropout
 from Note.nn.layer.attention import attention
 from Note.nn.layer.attention_pool import AttentionPoolLatent
+from Note.nn.layer.attention_pool2d import *
 from Note.nn.layer.attention2d import *
 from Note.nn.layer.average import average
 from Note.nn.layer.avg_pool1d import avg_pool1d
@@ -93,6 +94,7 @@ from Note.nn.layer.multiply import multiply
 from Note.nn.layer.norm import norm
 from Note.nn.layer.perdimscale_attention import perdimscale_attention
 from Note.nn.layer.permute import permute
+from Note.nn.layer.pos_embed_sincos import *
 from Note.nn.layer.position_embedding import position_embedding
 from Note.nn.layer.PReLU import PReLU
 from Note.nn.layer.repeat_vector import repeat_vector
