@@ -60,6 +60,7 @@ class Model:
         self.layer_dict=Model.layer_dict.copy()
         self.layer_param=Model.layer_param.copy()
         self.layer_list=Model.layer_list.copy()
+        self.layer_eval=Model.layer_eval.copy()
         self.detach_flag=True
         return
     
