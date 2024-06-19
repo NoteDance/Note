@@ -630,8 +630,8 @@ class GCViT_detection(nn.Model):
                                input_resolution=int(2 ** (-2 - i) * resolution),
                                image_resolution=resolution,
                                use_rel_pos_bias=use_rel_pos_bias)
-            self.levels.append(level)
             nn.Model.name_ = None
+            self.levels.append(level)
             
         # add a norm layer for each output
         self.out_indices = out_indices
