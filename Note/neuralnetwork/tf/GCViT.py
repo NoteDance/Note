@@ -14,28 +14,6 @@ import tensorflow as tf
 from Note import nn
 
 
-def _to_channel_last(x):
-    """
-    Args:
-        x: (B, C, H, W)
-
-    Returns:
-        x: (B, H, W, C)
-    """
-    return x.permute(0, 2, 3, 1)
-
-
-def _to_channel_first(x):
-    """
-    Args:
-        x: (B, H, W, C)
-
-    Returns:
-        x: (B, C, H, W)
-    """
-    return x.permute(0, 3, 1, 2)
-
-
 def window_partition(x, window_size, h_w, w_w):
     """
     Args:
@@ -654,7 +632,7 @@ class GCViT(nn.Model):
             self.levels.append(level)
         self.norm = norm_layer(num_features)
         self.avgpool = nn.adaptive_avg_pooling2d(1)
-        self.head = nn.dense(num_classes, num_features) if num_classes > 0 else nn.identity()
+        self.head = self.dense(num_classes, num_features) if num_classes > 0 else nn.identity()
         nn.Model.apply(self.init_weights)
 
     def init_weights(self, l):
