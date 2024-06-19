@@ -66,7 +66,7 @@ https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
 
 
 # Note.nn.Model.Model:
-Model class manages the parameters of the neural network.
+Model class manages the parameters and layers of neural network.
 
 
 # Note.nn.initializer.initializer:
