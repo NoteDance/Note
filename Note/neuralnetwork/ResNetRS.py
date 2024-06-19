@@ -144,7 +144,7 @@ class BottleneckBlock:
             filters_out = filters * 4
             if strides == 2:
                 self.layers1.add(avg_pool2d(
-                    ksize=(2, 2),
+                    kernel_size=(2, 2),
                     strides=(2, 2),
                     padding="SAME",
                 ))

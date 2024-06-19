@@ -75,7 +75,7 @@ class ResNet152(Model):
             self.layers.add(batch_norm_(epsilon=1.001e-5))
             self.layers.add(activation_dict['relu'])
         self.layers.add(zeropadding2d(padding=[1,1]))
-        self.layers.add(max_pool2d(ksize=[3, 3],strides=[2, 2],padding='SAME'))
+        self.layers.add(max_pool2d(kernel_size=[3, 3],strides=[2, 2],padding='SAME'))
         self.layers.add(stack_fn(self.layers.output_size))
         if self.preact:
             self.layers.add(batch_norm_(self.layers.output_size,epsilon=1.001e-5))

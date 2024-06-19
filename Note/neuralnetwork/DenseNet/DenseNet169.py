@@ -44,7 +44,7 @@ def TransitionLayer(input_channels, compression_factor, dtype='float32'):
         layers.add(batch_norm_(input_channels,dtype=dtype))
         layers.add(activation_dict['relu'])
         layers.add(conv2d(int(compression_factor * input_channels),[1,1],strides=[1, 1, 1, 1],padding="SAME",use_bias=False,dtype=dtype))
-        layers.add(avg_pool2d(ksize=[2, 2],strides=[2, 2],padding="SAME"))
+        layers.add(avg_pool2d(kernel_size=[2, 2],strides=[2, 2],padding="SAME"))
         return layers
 
 
@@ -63,7 +63,7 @@ class DenseNet169(Model):
         self.layers.add(batch_norm_(epsilon=1.001e-5))
         self.layers.add(activation_dict['relu'])
         self.layers.add(zeropadding2d(padding=[1, 1]))
-        self.layers.add(max_pool2d(ksize=[3, 3],strides=[2, 2],padding="VALID"))
+        self.layers.add(max_pool2d(kernel_size=[3, 3],strides=[2, 2],padding="VALID"))
         
         
         self.layers.add(DenseBlock(input_channels=64,num_layers=6,
