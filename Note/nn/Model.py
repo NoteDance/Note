@@ -120,25 +120,25 @@ class Model:
         return
     
     
-    def freeze(self,key):
-        for param in self.layer_param[key]:
+    def freeze(self,name):
+        for param in self.layer_param[name]:
             param._trainable=False
         return
     
     
-    def unfreeze(self,key):
-        for param in self.layer_param[key]:
+    def unfreeze(self,name):
+        for param in self.layer_param[name]:
             param._trainable=True
         return
     
     
-    def eval(self,key=None,flag=True):
+    def eval(self,name=None,flag=True):
         if flag:
-            for layer in self.layer_eval[key]:
+            for layer in self.layer_eval[name]:
                 layer.train_flag=False
         else:
-            for key in self.layer_eval.keys():
-                for layer in self.layer_eval[key]:
+            for name in self.layer_eval.keys():
+                for layer in self.layer_eval[name]:
                     layer.train_flag=True
         return
     
