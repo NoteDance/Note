@@ -3,8 +3,8 @@ from Note import nn
 
 
 class max_pool1d:
-    def __init__(self,ksize,strides,padding=0):
-        self.ksize=ksize
+    def __init__(self,kernel_size,strides,padding=0):
+        self.kernel_size=kernel_size
         self.strides=strides
         self.padding=padding
         if not isinstance(padding,str):
@@ -17,4 +17,4 @@ class max_pool1d:
             padding='VALID'
         else:
             padding=self.padding
-        return tf.nn.max_pool1d(data,ksize=self.ksize,strides=self.strides,padding=padding)
+        return tf.nn.max_pool1d(data,ksize=self.kernel_size,strides=self.strides,padding=padding)
