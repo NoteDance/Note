@@ -31,7 +31,7 @@ class Sequential:
             else:
                 self.layer.append(layer)
             if hasattr(layer,'param'):
-                self.param.append(layer.param)
+                self.param.extend(layer.param)
             if hasattr(layer,'output_size'):
                 self.output_size=layer.output_size
             self.save_data_flag.append(save_data)
@@ -51,7 +51,7 @@ class Sequential:
                 else:
                     self.layer.append(layer)
                 if hasattr(layer,'param'):
-                    self.param.append(layer.param)
+                    self.param.extend(layer.param)
                 if hasattr(layer,'output_size'):
                     self.output_size=layer.output_size
         return
