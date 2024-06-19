@@ -208,6 +208,11 @@ class batch_norm_:
                 self.gamma=None
             Model.param.extend(self.param)
         Model.layer_list.append(self)
+        if Model.name_!=None and Model.name_ not in Model.layer_eval:
+            Model.layer_eval[Model.name_]=[]
+            Model.layer_eval[Model.name_].append(self)
+        elif Model.name_!=None:
+            Model.layer_eval[Model.name_].append(self)
     
     
     def build(self):
