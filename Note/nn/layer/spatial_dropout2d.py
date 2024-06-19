@@ -1,4 +1,5 @@
 import tensorflow as tf
+from Note import nn
 
 class spatial_dropout2d:
     """Spatial 2D dropout layer.
@@ -26,9 +27,16 @@ class spatial_dropout2d:
         self.rate = rate
         self.seed = seed
         self.train_flag = True
+        nn.Model.layer_list.append(self)
+        if nn.Model.name_!=None and nn.Model.name_ not in nn.Model.layer_eval:
+            nn.Model.layer_eval[nn.Model.name_]=[]
+            nn.Model.layer_eval[nn.Model.name_].append(self)
+        elif nn.Model.name_!=None:
+            nn.Model.layer_eval[nn.Model.name_].append(self)
 
-    def __call__(self, data, train_flag=True):
-        self.train_flag = train_flag
+    def __call__(self, data, train_flag=None):
+        if train_flag==None:
+            train_flag=self.train_flag
         def dropped_inputs():
             # Generate a mask with shape (batch_size, 1, 1, channels)
             noise_shape = (tf.shape(data)[0], 1, 1, tf.shape(data)[3])
