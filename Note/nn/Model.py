@@ -12,6 +12,7 @@ class Model:
     layer_dict=dict()
     layer_param=dict()
     layer_list=[]
+    layer_eval=dict()
     counter=0
     name_list=[]
     ctl_list=[]
@@ -28,6 +29,7 @@ class Model:
         self.layer_dict=Model.layer_dict
         self.layer_param=Model.layer_param
         self.layer_list=Model.layer_list
+        self.layer_eval=Model.layer_eval
         self.head=None
         self.head_=None
         self.ft_flag=0
@@ -129,6 +131,17 @@ class Model:
         return
     
     
+    def eval(self,key=None,flag=True):
+        if flag:
+            for layer in self.layer_eval[key]:
+                layer.train_flag=False
+        else:
+            for key in self.layer_eval.keys():
+                for layer in self.layer_eval[key]:
+                    layer.train_flag=True
+        return
+    
+    
     def convert_to_list():
         for ctl in Model.ctl_list:
             ctl()
@@ -150,6 +163,7 @@ class Model:
         Model.layer_dict.clear()
         Model.layer_param.clear()
         Model.layer_list.clear()
+        Model.layer_eval.clear()
         Model.counter=0
         Model.name_list=[]
         Model.ctl_list.clear()
