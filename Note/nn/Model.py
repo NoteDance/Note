@@ -68,8 +68,9 @@ class Model:
     def training(self,flag=False):
         Model.train_flag=flag
         for layer in self.layer_list:
-            layer.train_flag=flag
-            if hasattr(layer,'training'):
+            if hasattr(layer,'train_flag'):
+                layer.train_flag=flag
+            else:
                 layer.training=flag
         return
     
