@@ -16,6 +16,12 @@ def _kernel_valid(k):
     assert k >= 3 and k % 2
 
 
+# Calculate symmetric padding for a convolution
+def get_padding(kernel_size: int, stride: int = 1, dilation: int = 1, **_) -> int:
+    padding = ((stride - 1) + dilation * (kernel_size - 1)) // 2
+    return padding
+
+
 class SelectiveKernelAttn:
     def __init__(self, channels, num_paths=2, attn_channels=32, act_layer=tf.nn.relu, norm_layer=nn.batch_norm):
         """ Selective Kernel Attention Module
@@ -77,7 +83,8 @@ class SelectiveKernel:
 
         self.paths = nn.Sequential()
         for k, d in zip(kernel_size, dilation):
-            self.paths.add(nn.conv2d(out_channels, k, in_channels, strides=1 if aa_layer else stride, groups=groups, dilation=d))
+            padding = get_padding(kernel_size, stride=1 if aa_layer else stride, dilation=dilation)
+            self.paths.add(nn.conv2d(out_channels, k, in_channels, strides=1 if aa_layer else stride, padding=padding, groups=groups, dilation=d))
             self.paths.add(norm_layer(out_channels))
             self.paths.add(drop_layer(drop_rate))
             self.paths.add(act_layer)
