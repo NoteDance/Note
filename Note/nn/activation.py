@@ -207,6 +207,10 @@ def tanhshrink(x):
   return x - tf.math.tanh(x)
 
 
+def hardswish(x):
+    return x * tf.nn.relu6(x + 3) / 6
+
+
 activation_dict={
   'tanh':tf.nn.tanh,
   'relu':tf.nn.relu,
@@ -227,5 +231,6 @@ activation_dict={
   'glu':glu,
   'celu':celu,
   'logsigmoid':logsigmoid,
-  'tanhshrink':tanhshrink
+  'tanhshrink':tanhshrink,
+  'hardswish':hardswish
 }
