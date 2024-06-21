@@ -65,7 +65,7 @@ class ConvNormAct:
             in_channels,
             strides=stride,
             padding=padding,
-            dilation=dilation,
+            dilations=dilation,
             groups=groups,
             use_bias=bias,
         )
