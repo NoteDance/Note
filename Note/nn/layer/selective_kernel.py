@@ -84,7 +84,7 @@ class SelectiveKernel:
         self.paths = nn.Sequential()
         for k, d in zip(kernel_size, dilation):
             padding = get_padding(kernel_size, stride=1 if aa_layer else stride, dilation=dilation)
-            self.paths.add(nn.conv2d(out_channels, k, in_channels, strides=1 if aa_layer else stride, padding=padding, groups=groups, dilation=d))
+            self.paths.add(nn.conv2d(out_channels, k, in_channels, strides=1 if aa_layer else stride, padding=padding, groups=groups, dilations=d))
             self.paths.add(norm_layer(out_channels))
             self.paths.add(drop_layer(drop_rate))
             self.paths.add(act_layer)
