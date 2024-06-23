@@ -44,7 +44,10 @@ class Model:
     
     def apply(func):
         for layer in Model.layer_dict[Model.name]:
-            func(layer)
+            if layer.input_size!=None:
+                func(layer)
+            else:
+                layer.init_weights=func
         if len(Model.name_list)>0:
             Model.name_list.pop()
             if len(Model.name_list)==0:
