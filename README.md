@@ -45,15 +45,6 @@ class model(nn.Model):
         x=self.layer2(x)
         return x
 ```
-```python
-from Note import nn
-
-nn.Model.init()
-def model(data):
-    x=nn.dense(128,activation='relu')(data)
-    x=nn.dense(10)(x)
-    return x
-```
 Note.neuralnetwork.tf package contains neural networks implemented with Note’s layer module that can be trained with TensorFlow. You can also consider these models as examples using the Note.
 
 https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
