@@ -60,7 +60,7 @@ class Sequential:
     def __call__(self,data,train_flag=True):
         for i,layer in enumerate(self.layer):
             if not hasattr(layer,'train_flag'):
-                if self.use_data_flag[i]==False:
+                if len(self.use_data_flag)==0 or self.use_data_flag[i]==False:
                     data=layer(data)
                 else:
                     if hasattr(layer,'save_data_count'):
@@ -68,13 +68,13 @@ class Sequential:
                     else:
                         data=layer(data,self.saved_data.pop(0))
             else:
-                if self.use_data_flag[i]==False:
+                if len(self.use_data_flag)==0 or self.use_data_flag[i]==False:
                     data=layer(data,train_flag)
                 else:
                     if hasattr(layer,'save_data_count'):
                         data=layer(self.saved_data,train_flag)
                     else:
                         data=layer(data,self.saved_data.pop(0),train_flag)
-            if self.save_data_flag[i]==True:
+            if len(self.save_data_flag)>0 and self.save_data_flag[i]==True:
                 self.saved_data.append(data)
         return data
