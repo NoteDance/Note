@@ -23,8 +23,16 @@ class conv2d: # define a class for 2D convolutional layer
         self.trainable=trainable
         self.dtype=dtype
         self.output_size=filters
+        self.init_weights=None
         if not isinstance(padding,str):
             self.zeropadding2d=nn.zeropadding2d(padding=padding)
+        if len(Model.name_list)>0:
+            Model.name=Model.name_list[-1]
+        if Model.name!=None and Model.name not in Model.layer_dict:
+            Model.layer_dict[Model.name]=[]
+            Model.layer_dict[Model.name].append(self)
+        elif Model.name!=None:
+            Model.layer_dict[Model.name].append(self)
         if input_size!=None:
             self.weight=nn.initializer([kernel_size[0],kernel_size[1],input_size//groups,filters],weight_initializer,dtype,trainable) # initialize the weight tensor
             if use_bias==True: # if use bias is True
@@ -33,13 +41,6 @@ class conv2d: # define a class for 2D convolutional layer
             else: # if use bias is False
                 self.param=[self.weight] # store only the weight in a list
             Model.param_dict['conv2d_weight'].append(self.weight)
-            if len(Model.name_list)>0:
-                Model.name=Model.name_list[-1]
-            if Model.name!=None and Model.name not in Model.layer_dict:
-                Model.layer_dict[Model.name]=[]
-                Model.layer_dict[Model.name].append(self)
-            elif Model.name!=None:
-                Model.layer_dict[Model.name].append(self)
             if Model.name_!=None and Model.name_ not in Model.layer_param:
                 Model.layer_param[Model.name_]=[]
                 Model.layer_param[Model.name_].append(self.weight)
@@ -63,13 +64,6 @@ class conv2d: # define a class for 2D convolutional layer
         else: # if use bias is False
             self.param=[self.weight] # store only the weight in a list
         Model.param_dict['conv2d_weight'].append(self.weight)
-        if len(Model.name_list)>0:
-            Model.name=Model.name_list[-1]
-        if Model.name!=None and Model.name not in Model.layer_dict:
-            Model.layer_dict[Model.name]=[]
-            Model.layer_dict[Model.name].append(self)
-        elif Model.name!=None:
-            Model.layer_dict[Model.name].append(self)
         if Model.name_!=None and Model.name_ not in Model.layer_param:
             Model.layer_param[Model.name_]=[]
             Model.layer_param[Model.name_].append(self.weight)
@@ -80,8 +74,10 @@ class conv2d: # define a class for 2D convolutional layer
             if Model.name_!=None and Model.name_ not in Model.layer_param:
                 Model.layer_param[Model.name_]=[]
                 Model.layer_param[Model.name_].append(self.bias)
-            elif Model.name!=None:
+            elif Model.name_!=None:
                 Model.layer_param[Model.name_].append(self.bias)
+        if self.init_weights!=None:
+            self.init_weights(self)
         Model.param.extend(self.param)
         return
     
