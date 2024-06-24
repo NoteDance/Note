@@ -64,7 +64,6 @@ from Note.nn.layer.grouped_query_attention import grouped_query_attention
 from Note.nn.layer.GRU import GRU
 from Note.nn.layer.GRUCell import GRUCell
 from Note.nn.layer.halo_attn import HaloAttn
-from Note.nn.layer.helpers import *
 from Note.nn.layer.identity import identity
 from Note.nn.layer.kernel_attention import kernel_attention
 from Note.nn.layer.layer_norm import layer_norm
@@ -147,6 +146,7 @@ from Note.nn.cosine_similarity import cosine_similarity
 from Note.nn.create_additive_causal_mask import create_additive_causal_mask
 from Note.nn.fine_tuning import fine_tuning
 from Note.nn.gather_mm import gather_mm
+from Note.nn.helpers import *
 from Note.nn.initializer import initializer,initializer_
 from Note.nn.interpolate import interpolate
 from Note.nn.Model import Model
