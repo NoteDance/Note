@@ -16,14 +16,16 @@ class batch_norm:
         self.scale=scale
         self.beta_initializer=beta_initializer
         self.gamma_initializer=gamma_initializer
+        self.moving_mean_initializer=moving_mean_initializer
+        self.moving_variance_initializer=moving_variance_initializer
         self.synchronized=synchronized
         self.trainable=trainable
         self.dtype=dtype
         self.output_size=input_size
         self.train_flag=True
         if input_size!=None:
-            self.moving_mean=tf.Variable(tf.zeros([input_size]))
-            self.moving_variance=tf.Variable(tf.ones([input_size]))
+            self.moving_mean=initializer([input_size], moving_mean_initializer, dtype)
+            self.moving_variance=initializer([input_size], moving_variance_initializer, dtype)
             self.param=[]
             if center==True:
                 self.beta=initializer([input_size], beta_initializer, dtype)
@@ -48,8 +50,8 @@ class batch_norm:
     
     def build(self):
         self.output_size=self.input_size
-        self.moving_mean=tf.Variable(tf.zeros([self.input_size]))
-        self.moving_variance=tf.Variable(tf.ones([self.input_size]))
+        self.moving_mean=initializer([self.input_size], self.moving_mean_initializer, self.dtype)
+        self.moving_variance=initializer([self.input_size], self.moving_variance_initializer, self.dtype)
         self.param=[]
         if self.center==True:
             self.beta=initializer([self.input_size], self.beta_initializer, self.dtype)
@@ -178,6 +180,8 @@ class batch_norm_:
         self.scale=scale
         self.beta_initializer=beta_initializer
         self.gamma_initializer=gamma_initializer
+        self.moving_mean_initializer=moving_mean_initializer
+        self.moving_variance_initializer=moving_variance_initializer
         self.keepdims=keepdims
         self.trainable=trainable
         self.parallel=parallel
@@ -185,8 +189,8 @@ class batch_norm_:
         self.output_size=input_size
         self.train_flag=True
         if input_size!=None:
-            self.moving_mean=tf.zeros([input_size],dtype)
-            self.moving_var=tf.ones([input_size],dtype)
+            self.moving_mean=initializer([input_size], moving_mean_initializer, dtype)
+            self.moving_variance=initializer([input_size], moving_variance_initializer, dtype)
             if parallel:
                 manager=Manager()
                 self.moving_mean=manager.list([self.moving_mean])
@@ -217,8 +221,8 @@ class batch_norm_:
     
     def build(self):
         self.output_size=self.input_size
-        self.moving_mean=tf.zeros([self.input_size],self.dtype)
-        self.moving_var=tf.ones([self.input_size],self.dtype)
+        self.moving_mean=initializer([self.input_size], self.moving_mean_initializer, self.dtype)
+        self.moving_variance=initializer([self.input_size], self.moving_variance_initializer, self.dtype)
         if self.parallel:
             manager=Manager()
             self.moving_mean=manager.list([self.moving_mean])
