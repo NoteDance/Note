@@ -1,5 +1,9 @@
 import tensorflow as tf
 from Note import nn
+import numpy as np
+import numpy.ctypeslib as npc
+import matplotlib.pyplot as plt
+import time
 
 
 class Model:
@@ -34,6 +38,23 @@ class Model:
         self.head_=None
         self.ft_flag=0
         self.detach_flag=False
+        self.train_loss=None
+        self.train_acc=None
+        self.train_loss_list=[]
+        self.train_acc_list=[]
+        self.test_loss=None
+        self.test_acc=None
+        self.shared_test_loss_array=None
+        self.shared_test_acc_array=None
+        self.test_loss_list=[]
+        self.test_acc_list=[]
+        self.end_loss=None
+        self.end_acc=None
+        self.end_test_loss=None
+        self.end_test_acc=None
+        self.total_epoch=0
+        self.time=0
+        self.total_time=0
         
     
     def add():
@@ -158,6 +179,375 @@ class Model:
     def convert_to_shared_list(manager):
         for ctsl in Model.ctsl_list:
             ctsl(manager)
+        return
+    
+    
+    def end(self):
+        if self.end_acc!=None and self.train_acc!=None and self.train_acc>self.end_acc:
+            return True
+        elif self.end_loss!=None and self.train_loss!=None and self.train_loss<self.end_loss:
+            return True
+        elif self.end_test_acc!=None and self.test_acc!=None and self.test_acc>self.end_test_acc:
+            return True
+        elif self.end_test_loss!=None and self.test_loss!=None and self.test_loss<self.end_test_loss:
+            return True
+        elif self.end_acc!=None and self.end_test_acc!=None:
+            if self.train_acc!=None and self.test_acc!=None and self.train_acc>self.end_acc and self.test_acc>self.end_test_acc:
+                return True
+        elif self.end_loss!=None and self.end_test_loss!=None:
+            if self.train_loss!=None and self.test_loss!=None and self.train_loss<self.end_loss and self.test_loss<self.end_test_loss:
+                return True
+    
+    
+    def segment_data(self, data, labels, processes):
+        data=np.array_split(data, processes)
+        labels=np.array_split(labels, processes)
+        return
+    
+    
+    def parallel_test(self, test_ds, loss_object, test_loss, test_accuracy, jit_compile, p):
+        for test_data, labels in test_ds:
+            if jit_compile==True:
+                self.test_step(test_data, labels, loss_object, test_loss, test_accuracy)
+            else:
+                self.test_step_(test_data, labels, loss_object, test_loss, test_accuracy)
+        if test_accuracy!=None:
+            self.shared_test_loss_array[p]=test_loss.result()
+            self.shared_test_acc_array[p]=test_accuracy.result()
+        else:
+            self.shared_test_loss_array[p]=test_loss.result()
+        return
+    
+    
+    @tf.function(jit_compile=True)
+    def train_step(self, train_data, labels, loss_object, train_loss, train_accuracy, test_loss, test_accuracy, optimizer):
+        with tf.GradientTape() as tape:
+            output = self.__call__(train_data)
+            loss = loss_object(labels, output)
+        gradients = tape.gradient(loss, self.param)
+        optimizer.apply_gradients(zip(gradients, self.param))
+        train_loss(loss)
+        if train_accuracy!=None:
+            train_accuracy(labels, output)
+        return
+      
+      
+    @tf.function
+    def train_step_(self, train_data, labels, loss_object, train_loss, train_accuracy, optimizer):
+        with tf.GradientTape() as tape:
+            output = self.__call__(train_data)
+            loss = loss_object(labels, output)
+        gradients = tape.gradient(loss, self.param)
+        optimizer.apply_gradients(zip(gradients, self.param))
+        train_loss(loss)
+        if train_accuracy!=None:
+            train_accuracy(labels, output)
+        return
+        
+    
+    @tf.function(jit_compile=True)
+    def test_step(self, test_data, labels, loss_object, test_loss, test_accuracy):
+        self.training()
+        output = self.__call__(test_data)
+        loss = loss_object(labels, output)
+        test_loss(loss)
+        if test_accuracy!=None:
+            test_accuracy(labels, output)
+        self.training(True)
+        return
+      
+      
+    @tf.function
+    def test_step_(self, test_data, labels, loss_object, test_loss, test_accuracy):
+        self.training()
+        output = self.__call__(test_data)
+        loss = loss_object(labels, output)
+        test_loss(loss)
+        if test_accuracy!=None:
+            test_accuracy(labels, output)
+        self.training(True)
+        return
+    
+    
+    def fit(self, train_ds, loss_object, train_loss, optimizer, epochs=None, train_accuracy=None, test_ds=None, test_loss=None, test_accuracy=None, parallel_test=False, processes=None, mp=None, jit_compile=True, p=None):
+        if p==None:
+            p_=9
+        else:
+            p_=p-1
+        if epochs!=None:
+            for epoch in range(epochs):
+                t1=time.time()
+                train_loss.reset_states()
+                if train_accuracy!=None:
+                    train_accuracy.reset_states()
+                if parallel_test==False:
+                    if test_loss!=None:
+                        test_loss.reset_states()
+                    if test_accuracy!=None:
+                        test_accuracy.reset_states()
+            
+                for train_data, labels in train_ds:
+                    if self.end():
+                        return
+                    if jit_compile==True:
+                        self.train_step(train_data, labels, loss_object, train_loss, train_accuracy, optimizer)
+                    else:
+                        self.train_step_(train_data, labels, loss_object, train_loss, train_accuracy, optimizer)
+                
+                if parallel_test==False:
+                    if test_ds!=None:
+                        for test_data, labels in test_ds:
+                            if jit_compile==True:
+                                self.test_step(test_data, labels)
+                            else:
+                                self.test_step_(test_data, labels)
+                            
+                        self.test_loss=test_loss.result()
+                        self.test_loss_list.append(test_loss.result())
+                        if test_accuracy!=None:
+                            self.test_acc=test_accuracy.result()
+                            self.test_acc_list.append(test_accuracy.result())
+                else:
+                    if not isinstance(self.shared_test_loss_array, mp.sharedctypes.SynchronizedArray):
+                        self.shared_test_loss_array=mp.Array('f',np.zeros([processes],dtype='float32'))
+                    if test_accuracy!=None:
+                        if not isinstance(self.shared_test_acc_array, mp.sharedctypes.SynchronizedArray):
+                            self.shared_test_acc_array=mp.Array('f',np.zeros([processes],dtype='float32'))
+                    
+                    process_list=[]
+                    for p in range(processes):
+                        test_loss_=test_loss[p]
+                        if test_accuracy!=None:
+                            test_accuracy_=test_accuracy[p]
+                        process=mp.Process(target=self.parallel_test,args=(test_ds[p], loss_object, test_loss_, test_accuracy_, jit_compile, p))
+                        process.start()
+                        process_list.append(process)
+                    for process in process_list:
+                        test_loss[p].reset_states()
+                        if test_accuracy!=None:
+                            test_accuracy[p].reset_states()
+                        process.join()
+                    if test_accuracy!=None:
+                        self.test_loss,self.test_acc=np.sum(npc.as_array(self.loss.get_obj()))/processes,np.sum(npc.as_array(self.acc.get_obj()))/processes
+                        self.test_loss_list.append(self.test_loss)
+                        self.test_acc_list.append(self.test_acc)
+                    else:
+                        self.test_loss=np.sum(npc.as_array(self.loss.get_obj()))/processes
+                        self.test_loss_list.append(self.test_loss)
+                
+                self.train_loss=train_loss.result()
+                self.train_loss_list.append(train_loss.result())
+                if train_accuracy!=None:
+                    self.train_acc=train_accuracy.result()
+                    self.train_acc_list.append(train_accuracy.result())
+                    
+                self.total_epoch+=1     
+                if epochs%10!=0:
+                    p=epochs-epochs%p_
+                    p=int(p/p_)
+                else:
+                    p=epochs/(p_+1)
+                    p=int(p)
+                if p==0:
+                    p=1
+                if epoch%p==0:
+                    if self.test_ds==None:
+                        if train_accuracy!=None:
+                            print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, train_loss.result()))
+                            print('epoch:{0}   accuracy:{1:.4f}'.format(epoch+1, train_accuracy.result()))
+                            print()
+                        else:
+                            print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, train_loss.result()))
+                            print()
+                    else:
+                        if test_accuracy!=None:
+                            print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,train_loss.result(),test_loss.result()))
+                            print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(epoch+1,train_accuracy.result(),test_accuracy.result()))
+                            print()
+                        else:
+                            print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,train_loss.result(),test_loss.result()))
+                            print()
+                t2=time.time()
+                self.time+=(t2-t1)
+        else:
+            i=0
+            while True:
+                t1=time.time()
+                train_loss.reset_states()
+                if train_accuracy!=None:
+                    train_accuracy.reset_states()
+                if test_loss!=None:
+                    test_loss.reset_states()
+                if test_accuracy!=None:
+                    test_accuracy.reset_states()
+            
+                for train_data, labels in train_ds:
+                    if self.end():
+                        return
+                    if jit_compile==True:
+                        self.train_step(train_data, labels)
+                    else:
+                        self.train_step_(train_data, labels)
+                
+                if parallel_test==False:
+                    if test_ds!=None:
+                        for test_data, labels in test_ds:
+                            if jit_compile==True:
+                                self.test_step(test_data, labels)
+                            else:
+                                self.test_step_(test_data, labels)
+                                
+                        self.test_loss=test_loss.result()
+                        self.test_loss_list.append(test_loss.result())
+                        if test_accuracy!=None:
+                            self.test_acc=test_accuracy.result()
+                            self.test_acc_list.append(test_accuracy.result())
+                else:
+                    if not isinstance(self.shared_test_loss_array, mp.sharedctypes.SynchronizedArray):
+                        self.shared_test_loss_array=mp.Array('f',np.zeros([processes],dtype='float32'))
+                    if test_accuracy!=None:
+                        if not isinstance(self.shared_test_acc_array, mp.sharedctypes.SynchronizedArray):
+                            self.shared_test_acc_array=mp.Array('f',np.zeros([processes],dtype='float32'))
+                    
+                    process_list=[]
+                    for p in range(processes):
+                        test_loss_=test_loss[p]
+                        if test_accuracy!=None:
+                            test_accuracy_=test_accuracy[p]
+                        process=mp.Process(target=self.parallel_test,args=(test_ds[p], loss_object, test_loss_, test_accuracy_, jit_compile, p))
+                        process.start()
+                        process_list.append(process)
+                    for process in process_list:
+                        test_loss[p].reset_states()
+                        if test_accuracy!=None:
+                            test_accuracy[p].reset_states()
+                        process.join()
+                    if test_accuracy!=None:
+                        self.test_loss,self.test_acc=np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/processes,np.sum(npc.as_array(self.shared_test_acc_array.get_obj()))/processes
+                        self.test_loss_list.append(self.test_loss)
+                        self.test_acc_list.append(self.test_acc)
+                    else:
+                        self.test_loss=np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/processes
+                        self.test_loss_list.append(self.test_loss)
+            
+                self.train_loss=train_loss.result()
+                self.train_loss_list.append(train_loss.result())
+                if train_accuracy!=None:
+                    self.train_acc=train_accuracy.result()
+                    self.train_acc_list.append(train_accuracy.result())
+                
+                i+=1
+                self.total_epoch+=1
+                if epochs%10!=0:
+                    p=epochs-epochs%p_
+                    p=int(p/p_)
+                else:
+                    p=epochs/(p_+1)
+                    p=int(p)
+                if p==0:
+                    p=1
+                if i%p==0:
+                    if self.test_ds==None:
+                        if train_accuracy!=None:
+                            print('epoch:{0}   loss:{1:.4f}'.format(i+1, train_loss.result()))
+                            print('epoch:{0}   accuracy:{1:.4f}'.format(i+1, train_accuracy.result()))
+                            print()
+                        else:
+                            print('epoch:{0}   loss:{1:.4f}'.format(i+1, train_loss.result()))
+                            print()
+                    else:
+                        if test_accuracy!=None:
+                            print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,train_loss.result(),test_loss.result()))
+                            print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(i+1,train_accuracy.result(),test_accuracy.result()))
+                            print()
+                        else:
+                            print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,train_loss.result(),test_loss.result()))
+                            print()
+                t2=time.time()
+                self.time+=(t2-t1)
+        self._time=self.time-int(self.time)
+        if self._time<0.5:
+            self.time=int(self.time)
+        else:
+            self.time=int(self.time)+1
+        self.total_time+=self.time
+        if test_ds==None:
+            print('last loss:{0:.4f}'.format(train_loss.result()))
+            if train_accuracy!=None:
+                print('last accuracy:{0:.4f}'.format(train_accuracy.result()))
+        else:
+            print('last loss:{0:.4f},last test loss:{1:.4f}'.format(train_loss.result(),test_loss.result()))
+            if train_accuracy!=None and test_accuracy!=None:
+                print('last accuracy:{0:.4f},last test accuracy:{1:.4f}'.format(train_accuracy.result(),test_accuracy.result()))   
+            elif train_accuracy!=None:
+                print('last accuracy:{0:.4f}'.format(train_accuracy.result()))
+        print()
+        print('time:{0}s'.format(self.time))
+        return
+    
+    
+    def visualize_train(self):
+        print()
+        plt.figure(1)
+        plt.plot(np.arange(self.total_epoch),self.train_loss_list)
+        plt.title('train loss')
+        plt.xlabel('epoch')
+        plt.ylabel('loss')
+        print('train loss:{0:.4f}'.format(self.train_loss))
+        if self.train_acc!=None:
+            plt.figure(2)
+            plt.plot(np.arange(self.total_epoch),self.train_acc_list)
+            plt.title('train acc')
+            plt.xlabel('epoch')
+            plt.ylabel('acc')
+            print('train acc:{0:.4f}'.format(self.train_acc)) 
+        return
+    
+    
+    def visualize_test(self):
+        print()
+        plt.figure(1)
+        plt.plot(np.arange(self.total_epoch),self.test_loss_list)
+        plt.title('test loss')
+        plt.xlabel('epoch')
+        plt.ylabel('loss')
+        print('test loss:{0:.4f}'.format(self.test_loss))
+        if self.test_acc!=None:
+            plt.figure(2)
+            plt.plot(np.arange(self.total_epoch),self.test_acc_list)
+            plt.title('test acc')
+            plt.xlabel('epoch')
+            plt.ylabel('acc')
+            print('test acc:{0:.4f}'.format(self.test_acc))  
+        return 
+    
+    
+    def visualize_comparison(self):
+        print()
+        plt.figure(1)
+        plt.plot(np.arange(self.total_epoch),self.train_loss_list,'b-',label='train loss')
+        if self.test_loss!=None:
+            plt.plot(np.arange(self.total_epoch),self.test_loss_list,'r-',label='test loss')
+        plt.xlabel('epoch')
+        plt.ylabel('loss')
+        print('train loss:{0:.4f}'.format(self.train_loss))
+        plt.legend()
+        if self.train_acc!=None:
+            plt.figure(2)
+            plt.plot(np.arange(self.total_epoch),self.train_acc_list,'b-',label='train acc')
+            if self.test_acc!=None:
+                plt.plot(np.arange(self.total_epoch),self.test_acc_list,'r-',label='test acc')
+            plt.xlabel('epoch')
+            plt.ylabel('acc')
+            plt.legend()
+            print('train acc:{0:.4f}'.format(self.train_acc))
+        if self.test_loss!=None:   
+            print()
+            print('-------------------------------------')
+            print()
+            print('test loss:{0:.4f}'.format(self.test_loss))
+            if self.test_acc!=None:
+                print('test acc:{0:.4f}'.format(self.test_acc)) 
         return
     
     
