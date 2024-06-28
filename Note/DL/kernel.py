@@ -747,7 +747,7 @@ class kernel:
         return 
     
     
-    def comparison(self):
+    def visualize_comparison(self):
         print()
         plt.figure(1)
         plt.plot(np.arange(self.total_epoch),self.train_loss_list,'b-',label='train loss')
@@ -755,7 +755,7 @@ class kernel:
             plt.plot(np.arange(self.total_epoch),self.test_loss_list,'r-',label='test loss')
         plt.xlabel('epoch')
         plt.ylabel('loss')
-        print('train loss:{0}'.format(self.train_loss))
+        print('train loss:{0:.6f}'.format(self.train_loss))
         plt.legend()
         if hasattr(self.nn,'accuracy'):
             if self.nn.accuracy!=None:
