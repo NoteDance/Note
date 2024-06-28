@@ -489,17 +489,21 @@ class Model:
     def visualize_train(self):
         print()
         plt.figure(1)
-        plt.plot(np.arange(self.total_epoch),self.train_loss_list)
+        plt.plot(np.arange(1,self.total_epoch+1),self.train_loss_list)
         plt.title('train loss')
         plt.xlabel('epoch')
         plt.ylabel('loss')
+        plt.xticks(np.arange(1,self.total_epoch+1))
+        plt.show()
         print('train loss:{0:.4f}'.format(self.train_loss))
         if self.train_acc!=None:
             plt.figure(2)
-            plt.plot(np.arange(self.total_epoch),self.train_acc_list)
+            plt.plot(np.arange(1,self.total_epoch+1),self.train_acc_list)
             plt.title('train acc')
             plt.xlabel('epoch')
             plt.ylabel('acc')
+            plt.xticks(np.arange(1,self.total_epoch+1))
+            plt.show()
             print('train acc:{0:.4f}'.format(self.train_acc)) 
         return
     
@@ -507,17 +511,21 @@ class Model:
     def visualize_test(self):
         print()
         plt.figure(1)
-        plt.plot(np.arange(self.total_epoch),self.test_loss_list)
+        plt.plot(np.arange(1,self.total_epoch+1),self.test_loss_list)
         plt.title('test loss')
         plt.xlabel('epoch')
         plt.ylabel('loss')
+        plt.xticks(np.arange(1,self.total_epoch+1))
+        plt.show()
         print('test loss:{0:.4f}'.format(self.test_loss))
         if self.test_acc!=None:
             plt.figure(2)
-            plt.plot(np.arange(self.total_epoch),self.test_acc_list)
+            plt.plot(np.arange(1,self.total_epoch+1),self.test_acc_list)
             plt.title('test acc')
             plt.xlabel('epoch')
             plt.ylabel('acc')
+            plt.xticks(np.arange(1,self.total_epoch+1))
+            plt.show()
             print('test acc:{0:.4f}'.format(self.test_acc))  
         return 
     
@@ -525,21 +533,23 @@ class Model:
     def visualize_comparison(self):
         print()
         plt.figure(1)
-        plt.plot(np.arange(self.total_epoch),self.train_loss_list,'b-',label='train loss')
+        plt.plot(np.arange(1,self.total_epoch+1),self.train_loss_list,'b-',label='train loss')
         if self.test_loss!=None:
-            plt.plot(np.arange(self.total_epoch),self.test_loss_list,'r-',label='test loss')
+            plt.plot(np.arange(1,self.total_epoch+1),self.test_loss_list,'r-',label='test loss')
         plt.xlabel('epoch')
         plt.ylabel('loss')
+        plt.xticks(np.arange(1,self.total_epoch+1))
+        plt.show()
         print('train loss:{0:.4f}'.format(self.train_loss))
-        plt.legend()
         if self.train_acc!=None:
             plt.figure(2)
-            plt.plot(np.arange(self.total_epoch),self.train_acc_list,'b-',label='train acc')
+            plt.plot(np.arange(1,self.total_epoch+1),self.train_acc_list,'b-',label='train acc')
             if self.test_acc!=None:
-                plt.plot(np.arange(self.total_epoch),self.test_acc_list,'r-',label='test acc')
+                plt.plot(np.arange(1,self.total_epoch+1),self.test_acc_list,'r-',label='test acc')
             plt.xlabel('epoch')
             plt.ylabel('acc')
-            plt.legend()
+            plt.xticks(np.arange(1,self.total_epoch+1))
+            plt.show()
             print('train acc:{0:.4f}'.format(self.train_acc))
         if self.test_loss!=None:   
             print()
