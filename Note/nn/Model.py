@@ -294,9 +294,9 @@ class Model:
             
                 for train_data, labels in train_ds:
                     if jit_compile==True:
-                        self.train_step(train_data, labels, loss_object, train_loss, train_accuracy, optimizer)
+                        self.train_step(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer_)
                     else:
-                        self.train_step_(train_data, labels, loss_object, train_loss, train_accuracy, optimizer)
+                        self.train_step_(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer_)
                 
                 if parallel_test==False:
                     if test_ds!=None:
@@ -389,9 +389,9 @@ class Model:
             
                 for train_data, labels in train_ds:
                     if jit_compile==True:
-                        self.train_step(train_data, labels)
+                        self.train_step(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer_)
                     else:
-                        self.train_step_(train_data, labels)
+                        self.train_step_(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer_)
                 
                 if parallel_test==False:
                     if test_ds!=None:
@@ -588,6 +588,15 @@ class Model:
         pickle.dump(self,output_file)
         pickle.dump(optimizer_config,output_file)
         output_file.close()
+        return
+    
+    
+    def restore(self,path):
+        input_file=open(path,'rb')
+        model=pickle.load(input_file)
+        self.__dict__.update(model.__dict__)
+        self.optimizer_=tf.keras.optimizers.deserialize(pickle.load(input_file))
+        input_file.close()
         return
     
     
