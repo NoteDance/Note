@@ -1,8 +1,10 @@
 import tensorflow as tf
+from tensorflow.python.ops import state_ops
 from Note import nn
 import numpy as np
 import numpy.ctypeslib as npc
 import matplotlib.pyplot as plt
+import pickle
 import time
 
 
@@ -38,6 +40,7 @@ class Model:
         self.head_=None
         self.ft_flag=0
         self.detach_flag=False
+        self.optimizer_=None
         self.train_loss=None
         self.train_acc=None
         self.train_loss_list=[]
@@ -274,9 +277,12 @@ class Model:
             p_=9
         else:
             p_=p-1
+        self.optimizer_=optimizer
         if epochs!=None:
             for epoch in range(epochs):
                 t1=time.time()
+                if self.end():
+                    return
                 train_loss.reset_states()
                 if train_accuracy!=None:
                     train_accuracy.reset_states()
@@ -287,8 +293,6 @@ class Model:
                         test_accuracy.reset_states()
             
                 for train_data, labels in train_ds:
-                    if self.end():
-                        return
                     if jit_compile==True:
                         self.train_step(train_data, labels, loss_object, train_loss, train_accuracy, optimizer)
                     else:
@@ -373,6 +377,8 @@ class Model:
             i=0
             while True:
                 t1=time.time()
+                if self.end():
+                    return
                 train_loss.reset_states()
                 if train_accuracy!=None:
                     train_accuracy.reset_states()
@@ -382,8 +388,6 @@ class Model:
                     test_accuracy.reset_states()
             
                 for train_data, labels in train_ds:
-                    if self.end():
-                        return
                     if jit_compile==True:
                         self.train_step(train_data, labels)
                     else:
@@ -558,6 +562,32 @@ class Model:
             print('test loss:{0:.4f}'.format(self.test_loss))
             if self.test_acc!=None:
                 print('test acc:{0:.4f}'.format(self.test_acc)) 
+        return
+    
+    
+    def save_param(self,path):
+        parameter_file=open(path,'wb')
+        pickle.dump(self.param,parameter_file)
+        parameter_file.close()
+        return
+    
+    
+    def restore_param(self,path):
+        parameter_file=open(path,'rb')
+        param=pickle.load(parameter_file)
+        for i in range(len(self.param)):
+            state_ops.assign(self.param[i],param[i])
+        parameter_file.close()
+        return
+    
+    
+    def save(self,path):
+        output_file=open(path,'wb')
+        optimizer_config=tf.keras.optimizers.serialize(self.optimizer_)
+        self.optimizer_=None
+        pickle.dump(self,output_file)
+        pickle.dump(optimizer_config,output_file)
+        output_file.close()
         return
     
     
