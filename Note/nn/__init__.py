@@ -144,7 +144,6 @@ from Note.nn.activation import activation,activation_conv,activation_conv_transp
 from Note.nn.conv2d_func import conv2d_func
 from Note.nn.cosine_similarity import cosine_similarity
 from Note.nn.create_additive_causal_mask import create_additive_causal_mask
-from Note.nn.fine_tuning import fine_tuning
 from Note.nn.gather_mm import gather_mm
 from Note.nn.helpers import *
 from Note.nn.initializer import initializer,initializer_
@@ -155,6 +154,7 @@ from Note.nn.pairwise_distance import pairwise_distance
 from Note.nn.parameter import Parameter
 from Note.nn.pos_embed import *
 from Note.nn.positional_encoding import positional_encoding
+from Note.nn.restore import restore
 from Note.nn.scaled_dot_product_attention import scaled_dot_product_attention
 from Note.nn.Sequential import Sequential
 from Note.nn.weight_init import *
