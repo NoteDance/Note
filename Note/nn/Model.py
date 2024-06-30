@@ -306,11 +306,11 @@ class Model:
                             else:
                                 self.test_step_(test_data, labels)
                             
-                        self.test_loss=test_loss.result()
-                        self.test_loss_list.append(test_loss.result())
+                        self.test_loss=test_loss.result().numpy()
+                        self.test_loss_list.append(self.test_loss)
                         if test_accuracy!=None:
-                            self.test_acc=test_accuracy.result()
-                            self.test_acc_list.append(test_accuracy.result())
+                            self.test_acc=test_accuracy.result().numpy()
+                            self.test_acc_list.append(self.test_acc)
                 else:
                     if not isinstance(self.shared_test_loss_array, mp.sharedctypes.SynchronizedArray):
                         self.shared_test_loss_array=mp.Array('f',np.zeros([processes],dtype='float32'))
@@ -339,11 +339,11 @@ class Model:
                         self.test_loss=np.sum(npc.as_array(self.loss.get_obj()))/processes
                         self.test_loss_list.append(self.test_loss)
                 
-                self.train_loss=train_loss.result()
-                self.train_loss_list.append(train_loss.result())
+                self.train_loss=train_loss.result().numpy()
+                self.train_loss_list.append(self.train_loss)
                 if train_accuracy!=None:
-                    self.train_acc=train_accuracy.result()
-                    self.train_acc_list.append(train_accuracy.result())
+                    self.train_acc=train_accuracy.result().numpy()
+                    self.train_acc_list.append(self.train_acc)
                     
                 self.total_epoch+=1     
                 if epochs%10!=0:
@@ -357,19 +357,19 @@ class Model:
                 if epoch%p==0:
                     if self.test_ds==None:
                         if train_accuracy!=None:
-                            print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, train_loss.result()))
-                            print('epoch:{0}   accuracy:{1:.4f}'.format(epoch+1, train_accuracy.result()))
+                            print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
+                            print('epoch:{0}   accuracy:{1:.4f}'.format(epoch+1, self.train_acc))
                             print()
                         else:
-                            print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, train_loss.result()))
+                            print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
                             print()
                     else:
                         if test_accuracy!=None:
-                            print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,train_loss.result(),test_loss.result()))
-                            print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(epoch+1,train_accuracy.result(),test_accuracy.result()))
+                            print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
+                            print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(epoch+1,self.train_acc,self.test_acc))
                             print()
                         else:
-                            print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,train_loss.result(),test_loss.result()))
+                            print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
                             print()
                 t2=time.time()
                 self.time+=(t2-t1)
@@ -401,11 +401,11 @@ class Model:
                             else:
                                 self.test_step_(test_data, labels)
                                 
-                        self.test_loss=test_loss.result()
-                        self.test_loss_list.append(test_loss.result())
+                        self.test_loss=test_loss.result().numpy()
+                        self.test_loss_list.append(self.test_loss)
                         if test_accuracy!=None:
-                            self.test_acc=test_accuracy.result()
-                            self.test_acc_list.append(test_accuracy.result())
+                            self.test_acc=test_accuracy.result().numpy()
+                            self.test_acc_list.append(self.test_acc)
                 else:
                     if not isinstance(self.shared_test_loss_array, mp.sharedctypes.SynchronizedArray):
                         self.shared_test_loss_array=mp.Array('f',np.zeros([processes],dtype='float32'))
@@ -434,11 +434,11 @@ class Model:
                         self.test_loss=np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/processes
                         self.test_loss_list.append(self.test_loss)
             
-                self.train_loss=train_loss.result()
-                self.train_loss_list.append(train_loss.result())
+                self.train_loss=train_loss.result().numpy()
+                self.train_loss_list.append(self.train_loss)
                 if train_accuracy!=None:
-                    self.train_acc=train_accuracy.result()
-                    self.train_acc_list.append(train_accuracy.result())
+                    self.train_acc=train_accuracy.result().numpy()
+                    self.train_acc_list.append(self.train_acc)
                 
                 i+=1
                 self.total_epoch+=1
@@ -453,19 +453,19 @@ class Model:
                 if i%p==0:
                     if self.test_ds==None:
                         if train_accuracy!=None:
-                            print('epoch:{0}   loss:{1:.4f}'.format(i+1, train_loss.result()))
-                            print('epoch:{0}   accuracy:{1:.4f}'.format(i+1, train_accuracy.result()))
+                            print('epoch:{0}   loss:{1:.4f}'.format(i+1, self.train_loss))
+                            print('epoch:{0}   accuracy:{1:.4f}'.format(i+1, self.train_acc))
                             print()
                         else:
-                            print('epoch:{0}   loss:{1:.4f}'.format(i+1, train_loss.result()))
+                            print('epoch:{0}   loss:{1:.4f}'.format(i+1, self.train_loss))
                             print()
                     else:
                         if test_accuracy!=None:
-                            print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,train_loss.result(),test_loss.result()))
-                            print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(i+1,train_accuracy.result(),test_accuracy.result()))
+                            print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
+                            print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(i+1,self.train_acc,self.test_acc))
                             print()
                         else:
-                            print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,train_loss.result(),test_loss.result()))
+                            print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
                             print()
                 t2=time.time()
                 self.time+=(t2-t1)
@@ -476,15 +476,15 @@ class Model:
             self.time=int(self.time)+1
         self.total_time+=self.time
         if test_ds==None:
-            print('last loss:{0:.4f}'.format(train_loss.result()))
+            print('last loss:{0:.4f}'.format(self.train_loss))
             if train_accuracy!=None:
-                print('last accuracy:{0:.4f}'.format(train_accuracy.result()))
+                print('last accuracy:{0:.4f}'.format(self.train_acc))
         else:
-            print('last loss:{0:.4f},last test loss:{1:.4f}'.format(train_loss.result(),test_loss.result()))
+            print('last loss:{0:.4f},last test loss:{1:.4f}'.format(self.train_loss,self.test_loss))
             if train_accuracy!=None and test_accuracy!=None:
-                print('last accuracy:{0:.4f},last test accuracy:{1:.4f}'.format(train_accuracy.result(),test_accuracy.result()))   
+                print('last accuracy:{0:.4f},last test accuracy:{1:.4f}'.format(self.train_acc,self.test_acc))   
             elif train_accuracy!=None:
-                print('last accuracy:{0:.4f}'.format(train_accuracy.result()))
+                print('last accuracy:{0:.4f}'.format(self.train_acc))
         print()
         print('time:{0}s'.format(self.time))
         return
