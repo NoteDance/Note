@@ -5,6 +5,18 @@ Note is a machine learning library. Note makes the building and training of neur
 # Installation:
 To use Note, you need to download it from https://github.com/NoteDance/Note and then unzip it to the site-packages folder of your Python environment.
 
+**install requires**:
+
+tensorflow>=2.16.1
+
+pytorch>=2.3.1
+
+gym<=0.26.0
+
+matplotlib>=3.8.4
+
+einops>=0.8.0
+
 
 # Layer modules:
 To use the layer module, you first need to create a layer object, then input data to get the output, like using pytorch, or you can use the layer module like using keras. Neural networks created with the layer module are compatible with TensorFlow, which means you can train these neural networks with TensorFlow.
