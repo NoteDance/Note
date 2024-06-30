@@ -5,7 +5,7 @@ Note is a machine learning library. Note makes the building and training of neur
 # Installation:
 To use Note, you need to download it from https://github.com/NoteDance/Note and then unzip it to the site-packages folder of your Python environment.
 
-**install requires**:
+**dependent packages**:
 
 tensorflow>=2.16.1
 
