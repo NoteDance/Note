@@ -514,6 +514,8 @@ class Model:
                             print()
                 t2=time.time()
                 self.time+=(t2-t1)
+        self.shared_test_loss_array=None
+        self.shared_test_acc_array=None
         self._time=self.time-int(self.time)
         if self._time<0.5:
             self.time=int(self.time)
