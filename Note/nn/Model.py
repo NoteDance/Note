@@ -205,7 +205,7 @@ class Model:
     def segment_data(self, data, labels, processes):
         data=np.array_split(data, processes)
         labels=np.array_split(labels, processes)
-        return
+        return data,labels
     
     
     def parallel_test(self, test_ds, loss_object, test_loss, test_accuracy, jit_compile, p):
