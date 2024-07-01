@@ -308,10 +308,10 @@ class Model:
             self.shared_test_loss_array=None
             self.shared_test_acc_array=None
             if test_accuracy!=None:
-                test_loss,test_acc=np.sum(npc.as_array(self.loss.get_obj()))/processes,np.sum(npc.as_array(self.acc.get_obj()))/processes
+                test_loss,test_acc=np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/processes,np.sum(npc.as_array(self.shared_test_acc_array.get_obj()))/processes
                 return test_loss,test_acc
             else:
-                test_loss=np.sum(npc.as_array(self.loss.get_obj()))/processes
+                test_loss=np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/processes
                 return test_loss
     
     
@@ -376,11 +376,11 @@ class Model:
                         process.join()
                         
                     if test_accuracy!=None:
-                        self.test_loss,self.test_acc=np.sum(npc.as_array(self.loss.get_obj()))/processes,np.sum(npc.as_array(self.acc.get_obj()))/processes
+                        self.test_loss,self.test_acc=np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/processes,np.sum(npc.as_array(self.shared_test_acc_array.get_obj()))/processes
                         self.test_loss_list.append(self.test_loss)
                         self.test_acc_list.append(self.test_acc)
                     else:
-                        self.test_loss=np.sum(npc.as_array(self.loss.get_obj()))/processes
+                        self.test_loss=np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/processes
                         self.test_loss_list.append(self.test_loss)
                 
                 self.train_loss=train_loss.result().numpy()
