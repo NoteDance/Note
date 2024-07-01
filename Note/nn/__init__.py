@@ -154,7 +154,7 @@ from Note.nn.pairwise_distance import pairwise_distance
 from Note.nn.parameter import Parameter
 from Note.nn.pos_embed import *
 from Note.nn.positional_encoding import positional_encoding
-from Note.nn.restore import restore
+from Note.nn.restore import *
 from Note.nn.scaled_dot_product_attention import scaled_dot_product_attention
 from Note.nn.Sequential import Sequential
 from Note.nn.weight_init import *
