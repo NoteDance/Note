@@ -272,7 +272,50 @@ class Model:
         return
     
     
-    def fit(self, train_ds, loss_object, train_loss, optimizer, epochs=None, train_accuracy=None, test_ds=None, test_loss=None, test_accuracy=None, parallel_test=False, processes=None, mp=None, jit_compile=True, p=None):
+    def test(self, test_ds, loss_object, test_loss, test_accuracy=None, processes=None, mp=None, jit_compile=True):
+        if mp==None:
+            for test_data, labels in test_ds:
+                if jit_compile==True:
+                    self.test_step(test_data, labels)
+                else:
+                    self.test_step_(test_data, labels)
+                
+            test_loss=test_loss.result().numpy()
+            if test_accuracy!=None:
+                test_acc=test_accuracy.result().numpy()
+                return test_loss,test_acc
+            else:
+                return test_loss
+        else:
+            self.shared_test_loss_array=mp.Array('f',np.zeros([processes],dtype='float32'))
+            if test_accuracy!=None:
+                self.shared_test_acc_array=mp.Array('f',np.zeros([processes],dtype='float32'))
+            
+            process_list=[]
+            for p in range(processes):
+                test_loss_=test_loss[p]
+                if test_accuracy!=None:
+                    test_accuracy_=test_accuracy[p]
+                process=mp.Process(target=self.parallel_test,args=(test_ds[p], loss_object, test_loss_, test_accuracy_, jit_compile, p))
+                process.start()
+                process_list.append(process)
+            for process in process_list:
+                test_loss[p].reset_states()
+                if test_accuracy!=None:
+                    test_accuracy[p].reset_states()
+                process.join()
+                
+            self.shared_test_loss_array=None
+            self.shared_test_acc_array=None
+            if test_accuracy!=None:
+                test_loss,test_acc=np.sum(npc.as_array(self.loss.get_obj()))/processes,np.sum(npc.as_array(self.acc.get_obj()))/processes
+                return test_loss,test_acc
+            else:
+                test_loss=np.sum(npc.as_array(self.loss.get_obj()))/processes
+                return test_loss
+    
+    
+    def fit(self, train_ds, loss_object, train_loss, optimizer, epochs=None, train_accuracy=None, test_ds=None, test_loss=None, test_accuracy=None, processes=None, mp=None, jit_compile=True, p=None):
         if p==None:
             p_=9
         else:
@@ -286,7 +329,7 @@ class Model:
                 train_loss.reset_states()
                 if train_accuracy!=None:
                     train_accuracy.reset_states()
-                if parallel_test==False:
+                if mp==None:
                     if test_loss!=None:
                         test_loss.reset_states()
                     if test_accuracy!=None:
@@ -298,7 +341,7 @@ class Model:
                     else:
                         self.train_step_(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer_)
                 
-                if parallel_test==False:
+                if mp==None:
                     if test_ds!=None:
                         for test_data, labels in test_ds:
                             if jit_compile==True:
@@ -331,6 +374,7 @@ class Model:
                         if test_accuracy!=None:
                             test_accuracy[p].reset_states()
                         process.join()
+                        
                     if test_accuracy!=None:
                         self.test_loss,self.test_acc=np.sum(npc.as_array(self.loss.get_obj()))/processes,np.sum(npc.as_array(self.acc.get_obj()))/processes
                         self.test_loss_list.append(self.test_loss)
@@ -393,7 +437,7 @@ class Model:
                     else:
                         self.train_step_(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer_)
                 
-                if parallel_test==False:
+                if mp==None:
                     if test_ds!=None:
                         for test_data, labels in test_ds:
                             if jit_compile==True:
@@ -426,6 +470,7 @@ class Model:
                         if test_accuracy!=None:
                             test_accuracy[p].reset_states()
                         process.join()
+                        
                     if test_accuracy!=None:
                         self.test_loss,self.test_acc=np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/processes,np.sum(npc.as_array(self.shared_test_acc_array.get_obj()))/processes
                         self.test_loss_list.append(self.test_loss)
