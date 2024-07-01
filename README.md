@@ -17,6 +17,10 @@ matplotlib>=3.8.4
 
 einops>=0.8.0
 
+**python requirement**:
+
+python>=3.10
+
 
 # Layer modules:
 To use the layer module, you first need to create a layer object, then input data to get the output, like using pytorch, or you can use the layer module like using keras. Neural networks created with the layer module are compatible with TensorFlow, which means you can train these neural networks with TensorFlow.
