@@ -93,7 +93,7 @@ This class is used similarly to tf.keras.Sequential and torch.nn.Sequential.
 
 
 # The models that can be trained with TensorFlow:
-This package include Llama2, CLIP, ViT, ConvNeXt, SwiftFormer, etc. These models built with Note are compatible with TensorFlow and can be trained with TensorFlow.
+These models built with Note are compatible with TensorFlow and can be trained with TensorFlow. You can consider these models as examples using the Note. The documentation shows how to train, test, save, and restore models built with Note.
 
 https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
 
