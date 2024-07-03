@@ -1,5 +1,5 @@
 import tensorflow as tf
-from Note.nn.initializer import initializer
+from Note import nn
 
 
 class spectral_norm:
@@ -39,7 +39,7 @@ class spectral_norm:
 
         self.kernel_shape = self.kernel.shape.as_list()
 
-        self.vector_u = initializer(
+        self.vector_u = nn.initializer(
             shape=(1, self.kernel_shape[-1]),
             initializer=['truncated_normal',0.02],
             dtype=self.kernel.dtype,
@@ -47,13 +47,20 @@ class spectral_norm:
         
         self.train_flag=True
         self.output_size=layer.output_size
+        nn.Model.layer_list.append(self)
+        if nn.Model.name_!=None and nn.Model.name_ not in nn.Model.layer_eval:
+            nn.Model.layer_eval[nn.Model.name_]=[]
+            nn.Model.layer_eval[nn.Model.name_].append(self)
+        elif nn.Model.name_!=None:
+            nn.Model.layer_eval[nn.Model.name_].append(self)
 
-    def __call__(self, data, train_flag=True):
-        self.train_flag=train_flag
-        if train_flag:
+    def __call__(self, data, training=True):
+        if training==None:
+            training=self.train_flag
+        if training:
             self.normalize_weights()
 
-        output = self.layer.output(data)
+        output = self.layer(data)
         return output
 
     def normalize_weights(self):
