@@ -250,36 +250,34 @@ class Model:
     
     @tf.function(jit_compile=True)
     def test_step(self, test_data, labels, loss_object, test_loss, test_accuracy):
-        self.training()
         output = self.__call__(test_data)
         loss = loss_object(labels, output)
         test_loss(loss)
         if test_accuracy!=None:
             test_accuracy(labels, output)
-        self.training(True)
         return
       
       
     @tf.function
     def test_step_(self, test_data, labels, loss_object, test_loss, test_accuracy):
-        self.training()
         output = self.__call__(test_data)
         loss = loss_object(labels, output)
         test_loss(loss)
         if test_accuracy!=None:
             test_accuracy(labels, output)
-        self.training(True)
         return
     
     
     def test(self, test_ds, loss_object, test_loss, test_accuracy=None, processes=None, mp=None, jit_compile=True):
         if mp==None:
+            self.training()
             for test_data, labels in test_ds:
                 if jit_compile==True:
                     self.test_step(test_data, labels)
                 else:
                     self.test_step_(test_data, labels)
-                
+            self.training(True)
+            
             test_loss=test_loss.result().numpy()
             if test_accuracy!=None:
                 test_acc=test_accuracy.result().numpy()
@@ -287,6 +285,7 @@ class Model:
             else:
                 return test_loss
         else:
+            self.training()
             self.shared_test_loss_array=mp.Array('f',np.zeros([processes],dtype='float32'))
             if test_accuracy!=None:
                 self.shared_test_acc_array=mp.Array('f',np.zeros([processes],dtype='float32'))
@@ -304,6 +303,7 @@ class Model:
                 if test_accuracy!=None:
                     test_accuracy[p].reset_states()
                 process.join()
+            self.training(True)
                 
             self.shared_test_loss_array=None
             self.shared_test_acc_array=None
@@ -343,6 +343,7 @@ class Model:
                 
                 if mp==None:
                     if test_ds!=None:
+                        self.training()
                         for test_data, labels in test_ds:
                             if jit_compile==True:
                                 self.test_step(test_data, labels)
@@ -354,7 +355,9 @@ class Model:
                         if test_accuracy!=None:
                             self.test_acc=test_accuracy.result().numpy()
                             self.test_acc_list.append(self.test_acc)
+                        self.training(True)
                 else:
+                    self.training()
                     if not isinstance(self.shared_test_loss_array, mp.sharedctypes.SynchronizedArray):
                         self.shared_test_loss_array=mp.Array('f',np.zeros([processes],dtype='float32'))
                     if test_accuracy!=None:
@@ -382,6 +385,7 @@ class Model:
                     else:
                         self.test_loss=np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/processes
                         self.test_loss_list.append(self.test_loss)
+                    self.training(True)
                 
                 self.train_loss=train_loss.result().numpy()
                 self.train_loss_list.append(self.train_loss)
@@ -439,6 +443,7 @@ class Model:
                 
                 if mp==None:
                     if test_ds!=None:
+                        self.training()
                         for test_data, labels in test_ds:
                             if jit_compile==True:
                                 self.test_step(test_data, labels)
@@ -450,7 +455,9 @@ class Model:
                         if test_accuracy!=None:
                             self.test_acc=test_accuracy.result().numpy()
                             self.test_acc_list.append(self.test_acc)
+                        self.training(True)
                 else:
+                    self.training()
                     if not isinstance(self.shared_test_loss_array, mp.sharedctypes.SynchronizedArray):
                         self.shared_test_loss_array=mp.Array('f',np.zeros([processes],dtype='float32'))
                     if test_accuracy!=None:
@@ -478,6 +485,7 @@ class Model:
                     else:
                         self.test_loss=np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/processes
                         self.test_loss_list.append(self.test_loss)
+                    self.training(True)
             
                 self.train_loss=train_loss.result().numpy()
                 self.train_loss_list.append(self.train_loss)
