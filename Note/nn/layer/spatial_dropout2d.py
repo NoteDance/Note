@@ -34,9 +34,9 @@ class spatial_dropout2d:
         elif nn.Model.name_!=None:
             nn.Model.layer_eval[nn.Model.name_].append(self)
 
-    def __call__(self, data, train_flag=None):
-        if train_flag==None:
-            train_flag=self.train_flag
+    def __call__(self, data, training=None):
+        if training==None:
+            training=self.train_flag
         def dropped_inputs():
             # Generate a mask with shape (batch_size, 1, 1, channels)
             noise_shape = (tf.shape(data)[0], 1, 1, tf.shape(data)[3])
@@ -45,4 +45,4 @@ class spatial_dropout2d:
             # Scale up the input by 1/(1 - rate) and apply the mask
             return data * mask * (1.0 / (1.0 - self.rate))
 
-        return tf.cond(train_flag, dropped_inputs, lambda: data)
+        return tf.cond(training, dropped_inputs, lambda: data)
