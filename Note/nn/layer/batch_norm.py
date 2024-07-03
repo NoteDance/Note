@@ -69,15 +69,15 @@ class batch_norm:
         return
     
     
-    def __call__(self, data, train_flag=None, mask=None):
+    def __call__(self, data, training=None, mask=None):
         if data.dtype!=self.dtype:
             data=tf.cast(data,self.dtype)
         if self.input_size==None:
             self.input_size=data.shape[-1]
             self.build()
-        if train_flag==None:
-            train_flag=self.train_flag
-        if train_flag and self.trainable:
+        if training==None:
+            training=self.train_flag
+        if training and self.trainable:
             mean, variance = self._moments(
                 data,
                 mask,
@@ -246,15 +246,15 @@ class batch_norm_:
         return
     
     
-    def __call__(self, data, train_flag=None):
+    def __call__(self, data, training=None):
         if data.dtype!=self.dtype:
             data=tf.cast(data,self.dtype)
         if self.input_size==None:
             self.input_size=data.shape[-1]
             self.build()
-        if train_flag==None:
-            train_flag=self.train_flag
-        if self.train_flag:
+        if training==None:
+            training=self.train_flag
+        if training:
             mean, var = tf.nn.moments(data, self.axis, keepdims=self.keepdims)
             if self.parallel:
                 self.moving_mean[0]=self.moving_mean[0] * self.momentum + mean * (1 - self.momentum)
