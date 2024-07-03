@@ -16,10 +16,10 @@ class dropout:
             nn.Model.layer_eval[nn.Model.name_].append(self)
         
     
-    def __call__(self,data,train_flag=None):
-        if train_flag==None:
-            train_flag=self.train_flag
-        if train_flag==True:
+    def __call__(self,data,training=None):
+        if training==None:
+            training=self.train_flag
+        if training==True:
             output=tf.nn.dropout(data,self.rate,noise_shape=self.noise_shape,seed=self.seed)
         else:
             output=data
