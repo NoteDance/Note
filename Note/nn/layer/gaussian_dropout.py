@@ -1,4 +1,5 @@
 import tensorflow as tf
+from Note import nn
 
 
 class gaussian_dropout:
@@ -31,9 +32,16 @@ class gaussian_dropout:
         self.seed = seed
         self.random_generator = tf.random.Generator.from_seed(self.seed)
         self.train_flag = True
+        nn.Model.layer_list.append(self)
+        if nn.Model.name_!=None and nn.Model.name_ not in nn.Model.layer_eval:
+            nn.Model.layer_eval[nn.Model.name_]=[]
+            nn.Model.layer_eval[nn.Model.name_].append(self)
+        elif nn.Model.name_!=None:
+            nn.Model.layer_eval[nn.Model.name_].append(self)
 
-    def __call__(self, data, train_flag=True):
-        self.train_flag = train_flag
+    def __call__(self, data, training=None):
+        if training==None:
+            training=self.train_flag
         if 0 < self.rate < 1:
             def noised():
                 stddev = tf.math.sqrt(self.rate / (1.0 - self.rate))
@@ -44,5 +52,5 @@ class gaussian_dropout:
                     dtype=data.dtype,
                 )
 
-            return tf.cond(train_flag, noised, lambda: data)
+            return tf.cond(training, noised, lambda: data)
         return data
