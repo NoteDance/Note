@@ -9,7 +9,7 @@ class spectral_norm:
     constraining their spectral norm, which can stabilize the training of GANs.
 
     Args:
-      layer: A `Note.nn.layer.Layer` instance that
+      layer: A Note's layer instance that
         has either a `weight` (e.g. `Conv2D`, `Dense`...)
         or an `embeddings` attribute (`Embedding` layer).
       power_iterations: int, the number of iterations during normalization.
@@ -54,7 +54,7 @@ class spectral_norm:
         elif nn.Model.name_!=None:
             nn.Model.layer_eval[nn.Model.name_].append(self)
 
-    def __call__(self, data, training=True):
+    def __call__(self, data, training=None):
         if training==None:
             training=self.train_flag
         if training:
