@@ -11,7 +11,7 @@ tensorflow>=2.16.1
 
 pytorch>=2.3.1
 
-gym<=0.26.0
+gym<=0.25.2
 
 matplotlib>=3.8.4
 
