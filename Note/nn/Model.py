@@ -268,6 +268,57 @@ class Model:
         return
     
     
+    def _train_step(self, inputs, optimizer, train_accuracy):
+        data, labels = inputs
+    
+        with tf.GradientTape() as tape:
+            output = self.__call__(data)
+            loss = self.compute_loss(labels, output)
+        
+        gradients = tape.gradient(loss, self.param)
+        optimizer.apply_gradients(zip(gradients, self.param))
+        
+        if train_accuracy!=None:
+            train_accuracy.update_state(labels, output)
+        return loss 
+    
+    
+    def _test_step(self, inputs, loss_object, test_loss, test_accuracy):
+        data, labels = inputs
+    
+        predictions = self.__call__(data, training=False)
+        t_loss = loss_object(labels, predictions)
+    
+        test_loss.update_state(t_loss)
+        if test_accuracy!=None:
+            test_accuracy.update_state(labels, predictions)
+        return
+    
+    
+    @tf.function(jit_compile=True)
+    def distributed_train_step(self, dataset_inputs, optimizer, train_accuracy, strategy):
+        per_replica_losses = strategy.run(self._train_step, args=(dataset_inputs, optimizer, train_accuracy))
+        return strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses,
+                             axis=None)
+    
+    
+    @tf.function(jit_compile=True)
+    def distributed_test_step(self, dataset_inputs, loss_object, test_loss, test_accuracy, strategy):
+        return strategy.run(self._test_step, args=(dataset_inputs, loss_object, test_loss, test_accuracy))
+    
+    
+    @tf.function
+    def distributed_train_step_(self, dataset_inputs, optimizer, train_accuracy, strategy):
+        per_replica_losses = strategy.run(self._train_step, args=(dataset_inputs, optimizer, train_accuracy))
+        return strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses,
+                             axis=None)
+    
+    
+    @tf.function
+    def distributed_test_step_(self, dataset_inputs, loss_object, test_loss, test_accuracy, strategy):
+        return strategy.run(self._test_step, args=(dataset_inputs, loss_object, test_loss, test_accuracy))
+    
+    
     def test(self, test_ds, loss_object, test_loss, test_accuracy=None, processes=None, mp=None, jit_compile=True):
         if mp==None:
             self.training()
@@ -531,6 +582,181 @@ class Model:
             self.time=int(self.time)+1
         self.total_time+=self.time
         if test_ds==None:
+            print('last loss:{0:.4f}'.format(self.train_loss))
+            if train_accuracy!=None:
+                print('last accuracy:{0:.4f}'.format(self.train_acc))
+        else:
+            print('last loss:{0:.4f},last test loss:{1:.4f}'.format(self.train_loss,self.test_loss))
+            if train_accuracy!=None and test_accuracy!=None:
+                print('last accuracy:{0:.4f},last test accuracy:{1:.4f}'.format(self.train_acc,self.test_acc))   
+            elif train_accuracy!=None:
+                print('last accuracy:{0:.4f}'.format(self.train_acc))
+        print()
+        print('time:{0}s'.format(self.time))
+        return
+    
+    
+    def distributed_fit(self, train_dist_dataset, loss_object, global_batch_size, optimizer, strategy, epochs=None, train_accuracy=None, test_dist_dataset=None, test_loss=None, test_accuracy=None, jit_compile=True, p=None):
+        if p==None:
+            p_=9
+        else:
+            p_=p-1
+        self.optimizer_=optimizer
+        with strategy.scope():
+            def compute_loss(self, labels, output):
+                per_example_loss = loss_object(labels, output)
+                return tf.nn.compute_average_loss(per_example_loss, global_batch_size=global_batch_size)
+        if epochs!=None:
+            for epoch in range(epochs):
+                t1=time.time()
+                if self.end():
+                    return
+                if train_accuracy!=None:
+                    train_accuracy.reset_states()
+                if test_loss!=None:
+                    test_loss.reset_states()
+                if test_accuracy!=None:
+                    test_accuracy.reset_states()
+            
+                total_loss = 0.0
+                num_batches = 0
+                for x in train_dist_dataset:
+                    if jit_compile==True:
+                        total_loss += self.distributed_train_step(x, self.optimizer_, train_accuracy, strategy)
+                    else:
+                        total_loss += self.distributed_train_step_(x, self.optimizer_, train_accuracy, strategy)
+                    num_batches += 1
+                
+                if test_dist_dataset!=None:
+                    self.training()
+                    for x in test_dist_dataset:
+                        if jit_compile==True:
+                            self.distributed_test_step(x, loss_object, test_loss, test_accuracy, strategy)
+                        else:
+                            self.distributed_test_step_(x, loss_object, test_loss, test_accuracy, strategy)
+                        
+                    self.test_loss=test_loss.result().numpy()
+                    self.test_loss_list.append(self.test_loss)
+                    if test_accuracy!=None:
+                        self.test_acc=test_accuracy.result().numpy()
+                        self.test_acc_list.append(self.test_acc)
+                    self.training(True)
+                
+                self.train_loss=(total_loss / num_batches).numpy()
+                self.train_loss_list.append(self.train_loss)
+                if train_accuracy!=None:
+                    self.train_acc=train_accuracy.result().numpy()
+                    self.train_acc_list.append(self.train_acc)
+                    
+                self.total_epoch+=1     
+                if epochs%10!=0:
+                    p=epochs-epochs%p_
+                    p=int(p/p_)
+                else:
+                    p=epochs/(p_+1)
+                    p=int(p)
+                if p==0:
+                    p=1
+                if epoch%p==0:
+                    if self.test_ds==None:
+                        if train_accuracy!=None:
+                            print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
+                            print('epoch:{0}   accuracy:{1:.4f}'.format(epoch+1, self.train_acc))
+                            print()
+                        else:
+                            print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
+                            print()
+                    else:
+                        if test_accuracy!=None:
+                            print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
+                            print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(epoch+1,self.train_acc,self.test_acc))
+                            print()
+                        else:
+                            print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
+                            print()
+                t2=time.time()
+                self.time+=(t2-t1)
+        else:
+            i=0
+            while True:
+                t1=time.time()
+                if self.end():
+                    return
+                if train_accuracy!=None:
+                    train_accuracy.reset_states()
+                if test_loss!=None:
+                    test_loss.reset_states()
+                if test_accuracy!=None:
+                    test_accuracy.reset_states()
+            
+                total_loss = 0.0
+                num_batches = 0
+                for x in train_dist_dataset:
+                    if jit_compile==True:
+                        total_loss += self.distributed_train_step(x, self.optimizer_, train_accuracy, strategy)
+                    else:
+                        total_loss += self.distributed_train_step_(x, self.optimizer_, train_accuracy, strategy)
+                    num_batches += 1
+                
+                if test_dist_dataset!=None:
+                    self.training()
+                    for x in test_dist_dataset:
+                        if jit_compile==True:
+                            self.distributed_test_step(x, loss_object, test_loss, test_accuracy, strategy)
+                        else:
+                            self.distributed_test_step_(x, loss_object, test_loss, test_accuracy, strategy)
+                        
+                    self.test_loss=test_loss.result().numpy()
+                    self.test_loss_list.append(self.test_loss)
+                    if test_accuracy!=None:
+                        self.test_acc=test_accuracy.result().numpy()
+                        self.test_acc_list.append(self.test_acc)
+                    self.training(True)
+            
+                self.train_loss=(total_loss / num_batches).numpy()
+                self.train_loss_list.append(self.train_loss)
+                if train_accuracy!=None:
+                    self.train_acc=train_accuracy.result().numpy()
+                    self.train_acc_list.append(self.train_acc)
+                
+                i+=1
+                self.total_epoch+=1
+                if epochs%10!=0:
+                    p=epochs-epochs%p_
+                    p=int(p/p_)
+                else:
+                    p=epochs/(p_+1)
+                    p=int(p)
+                if p==0:
+                    p=1
+                if i%p==0:
+                    if self.test_ds==None:
+                        if train_accuracy!=None:
+                            print('epoch:{0}   loss:{1:.4f}'.format(i+1, self.train_loss))
+                            print('epoch:{0}   accuracy:{1:.4f}'.format(i+1, self.train_acc))
+                            print()
+                        else:
+                            print('epoch:{0}   loss:{1:.4f}'.format(i+1, self.train_loss))
+                            print()
+                    else:
+                        if test_accuracy!=None:
+                            print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
+                            print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(i+1,self.train_acc,self.test_acc))
+                            print()
+                        else:
+                            print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
+                            print()
+                t2=time.time()
+                self.time+=(t2-t1)
+        self.shared_test_loss_array=None
+        self.shared_test_acc_array=None
+        self._time=self.time-int(self.time)
+        if self._time<0.5:
+            self.time=int(self.time)
+        else:
+            self.time=int(self.time)+1
+        self.total_time+=self.time
+        if test_dist_dataset==None:
             print('last loss:{0:.4f}'.format(self.train_loss))
             if train_accuracy!=None:
                 print('last accuracy:{0:.4f}'.format(self.train_acc))
