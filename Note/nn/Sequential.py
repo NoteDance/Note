@@ -18,18 +18,7 @@ class Sequential:
                 layer.save_data_count=self.save_data_count
             if use_data==True:
                 self.save_data_count=0
-            if hasattr(layer,'build'):
-                if hasattr(layer,'input_size'):
-                    if layer.input_size==None and self.output_size!=None:
-                        layer.input_size=self.output_size
-                        layer.build()
-                        self.layer.append(layer)
-                    else:
-                        self.layer.append(layer)
-                else:
-                    self.layer.append(layer)
-            else:
-                self.layer.append(layer)
+            self.layer.append(layer)
             if hasattr(layer,'param'):
                 self.param.extend(layer.param)
             if hasattr(layer,'output_size'):
@@ -38,18 +27,7 @@ class Sequential:
             self.use_data_flag.append(use_data)
         else:
             for layer in layer:
-                if hasattr(layer,'build'):
-                    if hasattr(layer,'input_size'):
-                        if layer.input_size==None and self.output_size!=None:
-                            layer.input_size=self.output_size
-                            layer.build()
-                            self.layer.append(layer)
-                        else:
-                            self.layer.append(layer)
-                    else:
-                        self.layer.append(layer)
-                else:
-                    self.layer.append(layer)
+                self.layer.append(layer)
                 if hasattr(layer,'param'):
                     self.param.extend(layer.param)
                 if hasattr(layer,'output_size'):
