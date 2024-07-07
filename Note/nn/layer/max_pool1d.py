@@ -3,9 +3,9 @@ from Note import nn
 
 
 class max_pool1d:
-    def __init__(self,kernel_size,strides,padding=0):
+    def __init__(self,kernel_size=2,strides=None,padding=0):
         self.kernel_size=kernel_size
-        self.strides=strides
+        self.strides=strides if strides!=None else kernel_size
         self.padding=padding
         if not isinstance(padding,str):
             self.zeropadding1d=nn.zeropadding1d(padding=padding)
