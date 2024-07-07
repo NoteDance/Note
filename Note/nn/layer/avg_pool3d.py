@@ -3,9 +3,9 @@ from Note import nn
 
 
 class avg_pool3d:
-    def __init__(self,kernel_size,strides,padding=0):
+    def __init__(self,kernel_size,strides=None,padding=0):
         self.kernel_size=kernel_size
-        self.strides=strides
+        self.strides=strides if strides!=None else kernel_size
         self.padding=padding
         if not isinstance(padding,str):
             self.zeropadding3d=nn.zeropadding3d(padding=padding)
