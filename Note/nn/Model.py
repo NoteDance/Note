@@ -5,6 +5,7 @@ import numpy as np
 import numpy.ctypeslib as npc
 import matplotlib.pyplot as plt
 import pickle
+import os
 import time
 
 
@@ -366,11 +367,17 @@ class Model:
                 return test_loss
     
     
-    def fit(self, train_ds, loss_object, train_loss, optimizer, epochs=None, train_accuracy=None, test_ds=None, test_loss=None, test_accuracy=None, processes=None, mp=None, jit_compile=True, p=None):
+    def fit(self, train_ds, loss_object, train_loss, optimizer, epochs=None, train_accuracy=None, test_ds=None, test_loss=None, test_accuracy=None, processes=None, mp=None, jit_compile=True, path=None, s=None, p=None):
         if p==None:
             p_=9
         else:
             p_=p-1
+        if s==None:
+            self.s=1
+            self.path_list=None
+        else:
+            self.s=s-1
+            self.path_list=[]
         self.optimizer_=optimizer
         if epochs!=None:
             for epoch in range(epochs):
@@ -448,11 +455,17 @@ class Model:
                 if epochs%10!=0:
                     p=epochs-epochs%p_
                     p=int(p/p_)
+                    s=epochs-epochs%self.s
+                    s=int(s/self.s)
                 else:
                     p=epochs/(p_+1)
                     p=int(p)
+                    s=epochs/(self.s+1)
+                    s=int(s)
                 if p==0:
                     p=1
+                if s==0:
+                    s=1
                 if epoch%p==0:
                     if self.test_ds==None:
                         if train_accuracy!=None:
@@ -470,6 +483,8 @@ class Model:
                         else:
                             print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
                             print()
+                if path!=None and epoch%s==0:
+                    self.save(path)
                 t2=time.time()
                 self.time+=(t2-t1)
         else:
@@ -549,11 +564,17 @@ class Model:
                 if epochs%10!=0:
                     p=epochs-epochs%p_
                     p=int(p/p_)
+                    s=epochs-epochs%self.s
+                    s=int(s/self.s)
                 else:
                     p=epochs/(p_+1)
                     p=int(p)
+                    s=epochs/(self.s+1)
+                    s=int(s)
                 if p==0:
                     p=1
+                if s==0:
+                    s=1
                 if i%p==0:
                     if self.test_ds==None:
                         if train_accuracy!=None:
@@ -571,6 +592,8 @@ class Model:
                         else:
                             print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
                             print()
+                if path!=None and i%s==0:
+                    self.save(path)
                 t2=time.time()
                 self.time+=(t2-t1)
         self.shared_test_loss_array=None
@@ -596,11 +619,17 @@ class Model:
         return
     
     
-    def distributed_fit(self, train_dist_dataset, loss_object, global_batch_size, optimizer, strategy, epochs=None, train_accuracy=None, test_dist_dataset=None, test_loss=None, test_accuracy=None, jit_compile=True, p=None):
+    def distributed_fit(self, train_dist_dataset, loss_object, global_batch_size, optimizer, strategy, epochs=None, train_accuracy=None, test_dist_dataset=None, test_loss=None, test_accuracy=None, jit_compile=True, path=None, s=None, p=None):
         if p==None:
             p_=9
         else:
             p_=p-1
+        if s==None:
+            self.s=1
+            self.path_list=None
+        else:
+            self.s=s-1
+            self.path_list=[]
         self.optimizer_=optimizer
         with strategy.scope():
             def compute_loss(self, labels, output):
@@ -652,11 +681,17 @@ class Model:
                 if epochs%10!=0:
                     p=epochs-epochs%p_
                     p=int(p/p_)
+                    s=epochs-epochs%self.s
+                    s=int(s/self.s)
                 else:
                     p=epochs/(p_+1)
                     p=int(p)
+                    s=epochs/(self.s+1)
+                    s=int(s)
                 if p==0:
                     p=1
+                if s==0:
+                    s=1
                 if epoch%p==0:
                     if self.test_ds==None:
                         if train_accuracy!=None:
@@ -674,6 +709,8 @@ class Model:
                         else:
                             print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
                             print()
+                if path!=None and epoch%s==0:
+                    self.save(path)
                 t2=time.time()
                 self.time+=(t2-t1)
         else:
@@ -724,11 +761,17 @@ class Model:
                 if epochs%10!=0:
                     p=epochs-epochs%p_
                     p=int(p/p_)
+                    s=epochs-epochs%self.s
+                    s=int(s/self.s)
                 else:
                     p=epochs/(p_+1)
                     p=int(p)
+                    s=epochs/(self.s+1)
+                    s=int(s)
                 if p==0:
                     p=1
+                if s==0:
+                    s=1
                 if i%p==0:
                     if self.test_ds==None:
                         if train_accuracy!=None:
@@ -746,6 +789,8 @@ class Model:
                         else:
                             print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
                             print()
+                if path!=None and i%s==0:
+                    self.save(path)
                 t2=time.time()
                 self.time+=(t2-t1)
         self.shared_test_loss_array=None
@@ -863,7 +908,15 @@ class Model:
     
     
     def save(self,path):
-        output_file=open(path,'wb')
+        if self.s==1:
+            output_file=open(path,'wb')
+        else:
+            path=path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_epoch))
+            output_file=open(path,'wb')
+            self.path_list.append(path)
+            if len(self.path_list)>self.s+1:
+                os.remove(self.path_list[0])
+                del self.path_list[0]
         optimizer_config=tf.keras.optimizers.serialize(self.optimizer_)
         self.optimizer_=None
         pickle.dump(self,output_file)
