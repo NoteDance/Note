@@ -3,7 +3,7 @@ from Note import nn
 class Model(nn.Model):
   def __init__(self):
     super().__init__()
-    self.conv1 = nn.conv2D(32, 3, activation='relu')
+    self.conv1 = nn.conv2d(32, 3, activation='relu')
     self.flatten = nn.flatten()
     self.d1 = nn.dense(128, activation='relu')
     self.d2 = nn.dense(10)
