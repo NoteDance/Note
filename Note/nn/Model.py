@@ -862,7 +862,9 @@ class Model:
         if self.max_save_files==None:
             output_file=open(path,'wb')
         else:
-            if self.train_acc!=None:
+            if self.train_acc!=None and self.test_acc!=None:
+                path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc))
+            elif self.train_acc!=None:
                 path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc))
             else:
                 path=path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_epoch))
