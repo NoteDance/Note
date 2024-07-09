@@ -1,5 +1,5 @@
 import tensorflow as tf
-from Note.nn.initializer import initializer
+from Note.nn.initializer_ import initializer_
 from Note.nn.activation import activation_dict
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
@@ -7,7 +7,7 @@ from Note.nn.parallel.assign_device import assign_device
 
 class conv2d_bn:
     def __init__(self,input_channels,filters,num_row,num_col,dtype='float32'):
-        self.weight=initializer([num_row,num_col,input_channels,filters],'Xavier',dtype)
+        self.weight=initializer_([num_row,num_col,input_channels,filters],'Xavier',dtype)
         self.activation=activation_dict['relu']
         self.param=[self.weight]
         self.moving_mean=tf.zeros([filters])
@@ -254,8 +254,8 @@ class InceptionV3:
             self.blocks2.append(block)
             output_size=block.output_size
             self.param.extend([block.param])
-        self.fc_weight = initializer([output_size, self.classes], 'Xavier', dtype)
-        self.fc_bias = initializer([self.classes], 'Xavier', dtype)
+        self.fc_weight = initializer_([output_size, self.classes], 'Xavier', dtype)
+        self.fc_bias = initializer_([self.classes], 'Xavier', dtype)
         self.param.extend([self.fc_weight,self.fc_bias])
         self.optimizer=Adam(param=self.param)
         return
