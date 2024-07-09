@@ -77,11 +77,11 @@ Model class manages the parameters and layers of neural network.
 
 
 # Note.nn.initializer.initializer:
-This function is used to initialize the parameters of the neural network, and it returns a TensorFlow variable.
+This function is used to initialize the parameters of the neural network, it returns a TensorFlow variable and stores the variable in trainable parameters list(Model.param).
 
 
 # Note.nn.initializer.initializer_:
-This function is used to initialize the parameters of the neural network, it returns a TensorFlow variable and stores the variable in trainable parameters list(Model.param).
+This function is used to initialize the parameters of the neural network, and it returns a TensorFlow variable.
 
 
 # Note.nn.parameter.Parameter:
