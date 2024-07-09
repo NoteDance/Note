@@ -33,7 +33,7 @@ class kernel:
         self.save_epi=None
         self.max_episode_count=None
         self.save_episode=save_episode
-        self.filename='save.dat'
+        self.path_list=[]
         self.loss=None
         self.loss_list=[]
         self.sc=0
@@ -522,18 +522,21 @@ class kernel:
         return loss,episode,done
     
     
-    def train(self,episode_count,save=False,one=True,p=None,s=None):
+    def train(self,episode_count,path=None,save_freq=1,max_save_files=None,p=None):
         avg_reward=None
         if p==None:
             self.p=9
         else:
             self.p=p-1
-        if s==None:
-            self.s=1
-            self.file_list=None
+        if episode_count%10!=0:
+            p=episode_count-episode_count%self.p
+            p=int(p/self.p)
         else:
-            self.s=s-1
-            self.file_list=[]
+            p=episode_count/(self.p+1)
+            p=int(p)
+        if p==0:
+            p=1
+        self.max_save_files=max_save_files
         if episode_count!=None:
             for i in range(episode_count):
                 t1=time.time()
@@ -558,20 +561,6 @@ class kernel:
                 self.loss=loss
                 self.loss_list.append(loss)
                 self.total_episode+=1
-                if episode_count%10!=0:
-                    p=episode_count-episode_count%self.p
-                    p=int(p/self.p)
-                    s=episode_count-episode_count%self.s
-                    s=int(s/self.s)
-                else:
-                    p=episode_count/(self.p+1)
-                    p=int(p)
-                    s=episode_count/(self.s+1)
-                    s=int(s)
-                if p==0:
-                    p=1
-                if s==0:
-                    s=1
                 if i%p==0:
                     if len(self.state_pool)>=self.batch:
                         print('episode:{0}   loss:{1:.6f}'.format(i+1,loss))
@@ -580,8 +569,8 @@ class kernel:
                     else:
                         print('episode:{0}   reward:{1}'.format(i+1,self.reward))
                     print()
-                if save!=False and i%s==0:
-                    self.save(self.total_episode,one)
+                if path!=None and i%save_freq==0:
+                    self.save(path)
                 if self.save_episode==True:
                     if done:
                         episode.append('done')
@@ -623,20 +612,6 @@ class kernel:
                 self.loss_list.append(loss)
                 i+=1
                 self.total_episode+=1
-                if episode_count%10!=0:
-                    p=episode_count-episode_count%self.p
-                    p=int(p/self.p)
-                    s=episode_count-episode_count%self.s
-                    s=int(s/self.s)
-                else:
-                    p=episode_count/(self.p+1)
-                    p=int(p)
-                    s=episode_count/(self.s+1)
-                    s=int(s)
-                if p==0:
-                    p=1
-                if s==0:
-                    s=1
                 if i%p==0:
                     if len(self.state_pool)>=self.batch:
                         print('episode:{0}   loss:{1:.6f}'.format(i+1,loss))
@@ -645,8 +620,8 @@ class kernel:
                     else:
                         print('episode:{0}   reward:{1}'.format(i+1,self.reward))
                     print()
-                if save!=False and i%s==0:
-                    self.save(self.total_episode,one)
+                if path!=None and i%save_freq==0:
+                    self.save(path)
                 if self.save_episode==True:
                     if done:
                         episode.append('done')
@@ -771,32 +746,31 @@ class kernel:
         return
     
     
-    def save(self,i=None,one=True):
-        if one==True:
-            output_file=open(self.filename,'wb')
+    def save(self,path):
+        if self.max_save_files==None:
+            output_file=open(path,'wb')
             if self.save_episode==True:
                 episode_file=open('episode.dat','wb')
                 pickle.dump(self.episode_set,episode_file)
                 episode_file.close()
         else:
-            filename=self.filename.replace(self.filename[self.filename.find('.'):],'-{0}.dat'.format(i))
-            output_file=open(filename,'wb')
-            self.file_list.append([filename])
+            path=path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_episode))
+            output_file=open(path,'wb')
             if self.save_episode==True:
-                episode_file=open('episode-{0}.dat'.format(i),'wb')
+                episode_file=open('episode-{0}.dat'.format(self.total_episode),'wb')
                 pickle.dump(self.episode_set,episode_file)
                 episode_file.close()
             if self.save_episode==True:
-                self.file_list.append([filename,'episode-{0}.dat'])
-                if len(self.file_list)>self.s+1:
-                    os.remove(self.file_list[0][0])
-                    os.remove(self.file_list[0][1])
-                    del self.file_list[0]
+                self.path_list.append([path,'episode-{0}.dat'])
+                if len(self.path_list)>self.max_save_files:
+                    os.remove(self.path_list[0][0])
+                    os.remove(self.path_list[0][1])
+                    del self.path_list[0]
             else:
-                self.file_list.append([filename])
-                if len(self.file_list)>self.s+1:
-                    os.remove(self.file_list[0][0])
-                    del self.file_list[0]
+                self.path_list.append(path)
+                if len(self.path_list)>self.max_save_files:
+                    os.remove(self.path_list[0])
+                    del self.path_list[0]
         try:
             if hasattr(self.platform,'DType'):
                 try:
