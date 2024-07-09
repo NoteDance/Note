@@ -1,6 +1,5 @@
 import tensorflow as tf # import the TensorFlow library
 from Note import nn
-from Note.nn.Model import Model
 
 
 class LSTM: # define a class for long short-term memory (LSTM) layer
@@ -34,7 +33,6 @@ class LSTM: # define a class for long short-term memory (LSTM) layer
                 self.param=[self.weight_i1,self.weight_f1,self.weight_o1,self.weight_c1,self.weight_i2,self.weight_f2,self.weight_o2,self.weight_c2,self.bias_i,self.bias_f,self.bias_o,self.bias_c] # store the parameters in a list
             else: # if use bias is False
                 self.param=[self.weight_i1,self.weight_f1,self.weight_o1,self.weight_c1,self.weight_i2,self.weight_f2,self.weight_o2,self.weight_c2] # store only the weight matrices in a list
-            Model.param.extend(self.param)
     
     
     def build(self):
@@ -55,7 +53,6 @@ class LSTM: # define a class for long short-term memory (LSTM) layer
             self.param=[self.weight_i1,self.weight_f1,self.weight_o1,self.weight_c1,self.weight_i2,self.weight_f2,self.weight_o2,self.weight_c2,self.bias_i,self.bias_f,self.bias_o,self.bias_c] # store the parameters in a list
         else: # if use bias is False
             self.param=[self.weight_i1,self.weight_f1,self.weight_o1,self.weight_c1,self.weight_i2,self.weight_f2,self.weight_o2,self.weight_c2] # store only the weight matrices in a list
-        Model.param.extend(self.param)
         return
     
     

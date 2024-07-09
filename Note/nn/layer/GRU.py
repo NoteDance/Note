@@ -1,6 +1,5 @@
 import tensorflow as tf # import the TensorFlow library
 from Note import nn
-from Note.nn.Model import Model
 
 
 class GRU: # define a class for gated recurrent unit (GRU) layer
@@ -31,7 +30,6 @@ class GRU: # define a class for gated recurrent unit (GRU) layer
                 self.param=[self.weight_r1,self.weight_z1,self.weight_h1,self.weight_r2,self.weight_z2,self.weight_h2,self.bias_r,self.bias_z,self.bias_h] # store the parameters in a list
             else: # if use bias is False
                 self.param=[self.weight_r1,self.weight_z1,self.weight_h1,self.weight_r2,self.weight_z2,self.weight_h2] # store only the weight matrices in a list
-            Model.param.extend(self.param)
     
     
     def build(self):
@@ -49,7 +47,6 @@ class GRU: # define a class for gated recurrent unit (GRU) layer
             self.param=[self.weight_r1,self.weight_z1,self.weight_h1,self.weight_r2,self.weight_z2,self.weight_h2,self.bias_r,self.bias_z,self.bias_h] # store the parameters in a list
         else: # if use bias is False
             self.param=[self.weight_r1,self.weight_z1,self.weight_h1,self.weight_r2,self.weight_z2,self.weight_h2] # store only the weight matrices in a list
-        Model.param.extend(self.param)
         return
     
     

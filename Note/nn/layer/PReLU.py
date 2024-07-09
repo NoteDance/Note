@@ -1,5 +1,5 @@
 import tensorflow as tf
-from Note.nn.initializer import initializer_
+from Note.nn.initializer import initializer
 
 
 class PReLU:
@@ -55,7 +55,7 @@ class PReLU:
             if self.shared_axes is not None:
                 for i in self.shared_axes:
                     param_shape[i - 1] = 1
-            self.alpha = initializer_(
+            self.alpha = initializer(
                 shape=param_shape,
                 initializer=alpha_initializer,
                 dtype=dtype
@@ -72,7 +72,7 @@ class PReLU:
             if self.shared_axes is not None:
                 for i in self.shared_axes:
                     param_shape[i - 1] = 1
-            self.alpha = initializer_(
+            self.alpha = initializer(
                 shape=param_shape,
                 initializer=self.alpha_initializer,
                 dtype=self.dtype

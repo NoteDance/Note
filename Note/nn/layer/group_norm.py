@@ -1,6 +1,5 @@
 import tensorflow as tf
 from Note.nn.initializer import initializer
-from Note.nn.Model import Model
 
 
 class group_norm:
@@ -88,7 +87,6 @@ class group_norm:
             else:
                 self.beta = None
             self.output_size = input_size
-            Model.param.extend(self.param)
     
     def build(self):
         if self.scale:
@@ -102,7 +100,6 @@ class group_norm:
             self.param.append(self.beta)
         else:
             self.beta = None
-        Model.param.extend(self.param)
         return
 
     def __call__(self, data):

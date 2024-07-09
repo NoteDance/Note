@@ -1,5 +1,5 @@
 import tensorflow as tf
-from Note.nn.initializer import initializer_
+from Note import nn
 
 
 class position_embedding:
@@ -34,12 +34,12 @@ class position_embedding:
     self._seq_axis = seq_axis
     self.dtype = dtype
     if input_size is not None:
-        self._position_embeddings = initializer_([max_length, input_size], initializer, dtype)
+        self._position_embeddings = nn.initializer([max_length, input_size], initializer, dtype)
         self.param=[self._position_embeddings]
 
   
   def build(self):
-      self._position_embeddings = initializer_([self.max_length, self.input_size], self.initializer, self.dtype)
+      self._position_embeddings = nn.initializer([self.max_length, self.input_size], self.initializer, self.dtype)
       self.param=[self._position_embeddings]
       return
 

@@ -48,7 +48,6 @@ class layer_norm:
                     Model.layer_param[Model.name_].append(self.gamma)
             else:
                 self.gamma=None
-            Model.param.extend(self.param)
     
     
     def build(self):
@@ -79,7 +78,6 @@ class layer_norm:
                 Model.layer_param[Model.name_].append(self.gamma)
         else:
             self.gamma=None
-        Model.param.extend(self.param)
         return
     
     

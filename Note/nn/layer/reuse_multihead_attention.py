@@ -1,6 +1,6 @@
 import tensorflow as tf
 from Note.nn.layer.dense import dense
-from Note.nn.initializer import initializer_
+from Note.nn.initializer import initializer
 import collections
 
 
@@ -138,7 +138,7 @@ class reuse_multihead_attention:
               self.param.append(self.output_dense[1].param)
           # Use relative PE only if reuse_heads < num_heads.
           if self._use_relative_pe and self._reuse_heads < self._num_heads:
-              self._position_embeddings = initializer_([
+              self._position_embeddings = initializer([
                          1, self._num_heads - self._reuse_heads, 2 * self.
                          _pe_max_seq_length - 1],['truncated_normal',0.2],dtype)
               self.param.append(self._position_embeddings)
@@ -163,7 +163,7 @@ class reuse_multihead_attention:
             self.param.append(self.output_dense[1].param)
         # Use relative PE only if reuse_heads < num_heads.
         if self._use_relative_pe and self._reuse_heads < self._num_heads:
-            self._position_embeddings = initializer_([
+            self._position_embeddings = initializer([
                        1, self._num_heads - self._reuse_heads, 2 * self.
                        _pe_max_seq_length - 1],['truncated_normal',0.2],self.dtype)
             self.param.append(self._position_embeddings)

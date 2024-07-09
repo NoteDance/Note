@@ -1,6 +1,5 @@
 import tensorflow as tf # import the TensorFlow library
 from Note import nn
-from Note.nn.Model import Model
 
 
 class conv2d_transpose: # define a class for 2D transposed convolutional layer
@@ -31,7 +30,6 @@ class conv2d_transpose: # define a class for 2D transposed convolutional layer
                 self.param=[self.weight,self.bias] # store the parameters in a list
             else: # if use bias is False
                 self.param=[self.weight] # store only the weight in a list
-            Model.param.extend(self.param)
     
     
     def build(self):
@@ -42,7 +40,6 @@ class conv2d_transpose: # define a class for 2D transposed convolutional layer
             self.param=[self.weight,self.bias] # store the parameters in a list
         else: # if use bias is False
             self.param=[self.weight] # store only the weight in a list
-        Model.param.extend(self.param)
         return
     
     

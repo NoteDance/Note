@@ -39,7 +39,6 @@ class batch_norm:
                     self.param.append(self.gamma)
             else:
                 self.gamma=None
-            Model.param.extend(self.param)
         Model.layer_list.append(self)
         if Model.name_!=None and Model.name_ not in Model.layer_eval:
             Model.layer_eval[Model.name_]=[]
@@ -65,7 +64,6 @@ class batch_norm:
                 self.param.append(self.gamma)
         else:
             self.gamma=None
-        Model.param.extend(self.param)
         return
     
     
@@ -210,7 +208,6 @@ class batch_norm_:
                     self.param.append(self.gamma)
             else:
                 self.gamma=None
-            Model.param.extend(self.param)
         Model.layer_list.append(self)
         if Model.name_!=None and Model.name_ not in Model.layer_eval:
             Model.layer_eval[Model.name_]=[]
@@ -242,7 +239,6 @@ class batch_norm_:
                 self.param.append(self.gamma)
         else:
             self.gamma=None
-        Model.param.extend(self.param)
         return
     
     

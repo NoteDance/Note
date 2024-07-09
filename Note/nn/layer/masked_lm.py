@@ -1,7 +1,7 @@
 import tensorflow as tf
 from Note.nn.layer.dense import dense
 from Note.nn.layer.layer_norm import layer_norm
-from Note.nn.initializer import initializer_
+from Note.nn.initializer import initializer
 
 class masked_lm:
   """Masked language model network head for BERT modeling.
@@ -56,7 +56,7 @@ class masked_lm:
             )
         self.layer_norm = layer_norm(hidden_size,
             axis=-1, epsilon=1e-12)
-        self.bias = initializer_(
+        self.bias = initializer(
             shape=(self._vocab_size,),
             initializer='zeros',
             dtype=dtype
@@ -72,7 +72,7 @@ class masked_lm:
         )
     self.layer_norm = layer_norm(self.hidden_size,
         axis=-1, epsilon=1e-12)
-    self.bias = initializer_(
+    self.bias = initializer(
         shape=(self._vocab_size,),
         initializer='zeros',
         dtype=self.dtype

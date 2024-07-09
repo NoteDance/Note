@@ -1,6 +1,5 @@
 import tensorflow as tf # import the TensorFlow library
 from Note import nn
-from Note.nn.Model import Model
 
 
 class GRUCell: # define a class for gated recurrent unit (GRU) cell
@@ -14,7 +13,6 @@ class GRUCell: # define a class for gated recurrent unit (GRU) cell
             self.param=[self.weight,self.bias] # store the parameters in a list
         else: # if use bias is False
             self.param=[self.weight] # store only the weight matrix in a list
-        Model.param.extend(self.param)
     
     
     def __call__(self,data,state): # define the output method

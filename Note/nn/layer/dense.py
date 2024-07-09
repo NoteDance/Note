@@ -49,7 +49,6 @@ class dense: # define a class for dense (fully connected) layer
                 if name!=None:
                     self.weight=tf.Variable(self.weight,trainable=trainable,name=name)
                 self.param=[self.weight] # store only the weight in a list
-            Model.param.extend(self.param)
     
     
     def build(self):
@@ -77,7 +76,6 @@ class dense: # define a class for dense (fully connected) layer
             self.param=[self.weight] # store only the weight in a list
         if self.init_weights!=None:
             self.init_weights(self)
-        Model.param.extend(self.param)
         return
     
     

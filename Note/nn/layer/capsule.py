@@ -1,6 +1,6 @@
 import tensorflow as tf
 from Note.nn.layer.conv2d import conv2d
-from Note.nn.initializer import initializer_
+from Note.nn.initializer import initializer
 
 epsilon = 1e-9
 
@@ -41,10 +41,10 @@ class capsule:
                     self.b_IJ = tf.zeros([input_shape[0], input_shape[1], self.num_outputs, 1, 1])
                     self.shape = (input_shape[0], -1, 1, input_shape[-2], 1)
                     # W: [1, num_caps_i, num_caps_j * len_v_j, len_u_j, 1]
-                    self.W = initializer_([1, self.shape[1], vec_len * num_outputs] + self.shape[-2:], 
+                    self.W = initializer([1, self.shape[1], vec_len * num_outputs] + self.shape[-2:], 
                                           ['normal', 0.0, steddev], 
                                           tf.float32)
-                    self.biases = initializer_((1, 1, num_outputs, vec_len, 1), 'Xavier', tf.float32)
+                    self.biases = initializer((1, 1, num_outputs, vec_len, 1), 'Xavier', tf.float32)
     
     
     def build(self):
@@ -59,10 +59,10 @@ class capsule:
                 self.b_IJ = tf.zeros([self.input_shape[0], self.input_shape[1], self.num_outputs, 1, 1])
                 self.shape = (self.input_shape[0], -1, 1, self.input_shape[-2], 1)
                 # W: [1, num_caps_i, num_caps_j * len_v_j, len_u_j, 1]
-                self.W = initializer_([1, self.shape[1], self.vec_len * self.num_outputs] + self.shape[-2:], 
+                self.W = initializer([1, self.shape[1], self.vec_len * self.num_outputs] + self.shape[-2:], 
                                       ['normal', 0.0, self.steddev], 
                                       tf.float32)
-                self.biases = initializer_((1, 1, self.num_outputs, self.vec_len, 1), 'Xavier', tf.float32)
+                self.biases = initializer((1, 1, self.num_outputs, self.vec_len, 1), 'Xavier', tf.float32)
         return
     
 

@@ -1,5 +1,5 @@
 import tensorflow as tf
-from Note.nn.initializer import initializer_
+from Note.nn.initializer import initializer
 
 class vector_quantizer:
   def __init__(
@@ -15,7 +15,7 @@ class vector_quantizer:
 
     self._embedding_shape = [embedding_dim, num_embeddings]
     self._embedding_dtype = dtype
-    self.embeddings = initializer_(self._embedding_shape, 
+    self.embeddings = initializer(self._embedding_shape, 
                         ['VarianceScaling',1.0,'fan_in','uniform'], 
                         dtype)
 

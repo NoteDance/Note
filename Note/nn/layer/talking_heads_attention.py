@@ -1,5 +1,5 @@
 import tensorflow as tf
-from Note.nn.initializer import initializer_
+from Note import nn
 import string
 import collections
 
@@ -33,8 +33,8 @@ class talking_heads_attention:
         self._talking_heads_equation = "%s,%s->%s" % (
             scores_notation, projection_notation, projected_scores_notation)
     
-        self._pre_softmax_weight = initializer_((self._num_heads, self._num_heads), initializer, dtype)
-        self._post_softmax_weight = initializer_((self._num_heads, self._num_heads), initializer, dtype)
+        self._pre_softmax_weight = nn.initializer((self._num_heads, self._num_heads), initializer, dtype)
+        self._post_softmax_weight = nn.initializer((self._num_heads, self._num_heads), initializer, dtype)
         self.param=[self._pre_softmax_weight, self._post_softmax_weight]
 
 

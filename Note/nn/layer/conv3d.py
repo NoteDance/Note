@@ -1,6 +1,5 @@
 import tensorflow as tf # import the TensorFlow library
 from Note import nn
-from Note.nn.Model import Model
 
 
 class conv3d: # define a class for 3D convolutional layer
@@ -32,7 +31,6 @@ class conv3d: # define a class for 3D convolutional layer
                 self.param=[self.weight,self.bias] # store the parameters in a list
             else: # if use bias is False
                 self.param=[self.weight] # store only the weight in a list
-            Model.param.extend(self.param)
             
     
     
@@ -44,7 +42,6 @@ class conv3d: # define a class for 3D convolutional layer
             self.param=[self.weight,self.bias] # store the parameters in a list
         else: # if use bias is False
             self.param=[self.weight] # store only the weight in a list
-        Model.param.extend(self.param)
         return
     
     

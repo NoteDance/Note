@@ -1,6 +1,6 @@
 import tensorflow as tf
 from Note.nn.layer.dense import dense
-from Note.nn.initializer import initializer_
+from Note.nn.initializer import initializer
 from Note.nn.layer.softmax import softmax
 import numpy as np
 import collections
@@ -52,7 +52,7 @@ class perdimscale_attention:
       self.key_dense=dense(n_head*key_dim,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
       self.value_dense=dense(n_head*value_dim,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
       self.output_dense=dense(input_size,n_head*value_dim,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
-      self.per_dim_scale = initializer_((self._scale_dim,),'zeros',dtype)
+      self.per_dim_scale = initializer((self._scale_dim,),'zeros',dtype)
       self.param=[self.query_dense.param,self.key_dense.param,self.value_dense.param,self.output_dense.param,self.per_dim_scale]
     
   def build(self):
@@ -60,7 +60,7 @@ class perdimscale_attention:
       self.key_dense=dense(self.n_head*self.key_dim,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
       self.value_dense=dense(self.n_head*self.value_dim,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
       self.output_dense=dense(self.input_size,self.n_head*self.value_dim,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
-      self.per_dim_scale = initializer_((self._scale_dim,),'zeros',self.dtype)
+      self.per_dim_scale = initializer((self._scale_dim,),'zeros',self.dtype)
       self.param=[self.query_dense.param,self.key_dense.param,self.value_dense.param,self.output_dense.param,self.per_dim_scale]
       return
   

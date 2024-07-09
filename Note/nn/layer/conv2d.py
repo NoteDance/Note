@@ -53,7 +53,6 @@ class conv2d: # define a class for 2D convolutional layer
                     Model.layer_param[Model.name_].append(self.bias)
                 elif Model.name_!=None:
                     Model.layer_param[Model.name_].append(self.bias)
-            Model.param.extend(self.param)
     
     
     def build(self):
@@ -78,7 +77,6 @@ class conv2d: # define a class for 2D convolutional layer
                 Model.layer_param[Model.name_].append(self.bias)
         if self.init_weights!=None:
             self.init_weights(self)
-        Model.param.extend(self.param)
         return
     
     

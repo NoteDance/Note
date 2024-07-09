@@ -1,6 +1,5 @@
 import tensorflow as tf
 from Note.nn.initializer import initializer
-from Note.nn.Model import Model
 
 
 class additive_attention:
@@ -10,14 +9,12 @@ class additive_attention:
         if input_size!=None and use_scale:
             self.scale = initializer([input_size], 'Xavier', dtype)
             self.param=[self.scale]
-            Model.param.extend(self.param)
     
     def build(self):
         self.output_size=self.input_size
         if self.input_size!=None and self.use_scale:
             self.scale = initializer([self.input_size], 'Xavier', self.dtype)
             self.param=[self.scale]
-            Model.param.extend(self.param)
         return
 
     def __call__(self, query, key):

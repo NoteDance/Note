@@ -1,7 +1,6 @@
 import tensorflow as tf # import the TensorFlow library
 from Note import nn
 from Note.nn.activation import activation_dict # import the activation function dictionary from Note.nn package
-from Note.nn.Model import Model
 
 
 class RNNCell: # define a class for recurrent neural network (RNN) cell
@@ -17,7 +16,6 @@ class RNNCell: # define a class for recurrent neural network (RNN) cell
             self.param=[self.weight_i,self.weight_s,self.bias] # store the parameters in a list
         else: # if use bias is False
             self.param=[self.weight_i,self.weight_s] # store only the weight matrices in a list
-        Model.param.extend(self.param)
     
     
     def __call__(self,data,state): # define the output method

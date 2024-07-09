@@ -1,5 +1,5 @@
 import tensorflow as tf
-from Note.nn.initializer import initializer_
+from Note.nn.initializer import initializer
 
 
 class filter_response_norm:
@@ -91,7 +91,7 @@ class filter_response_norm:
         dim = input_shape[-1]
         shape = [1, 1, 1, dim]
         # Initialize gamma with shape (1, 1, 1, C)
-        self.gamma = initializer_(shape, self.gamma_initializer, self.dtype)
+        self.gamma = initializer(shape, self.gamma_initializer, self.dtype)
         return
 
 
@@ -100,7 +100,7 @@ class filter_response_norm:
         dim = input_shape[-1]
         shape = [1, 1, 1, dim]
         # Initialize beta with shape (1, 1, 1, C)
-        self.beta = initializer_(shape, self.beta_initializer, self.dtype)
+        self.beta = initializer(shape, self.beta_initializer, self.dtype)
         return
     
     

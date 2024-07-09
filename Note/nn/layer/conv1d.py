@@ -44,7 +44,6 @@ class conv1d: # define a class for 1D convolutional layer
                 self.param=[self.weight,self.bias] # store the parameters in a list
             else: # if use bias is False
                 self.param=[self.weight] # store only the weight in a list
-            Model.param.extend(self.param)
     
     
     def build(self):
@@ -56,7 +55,6 @@ class conv1d: # define a class for 1D convolutional layer
             self.param=[self.weight] # store only the weight in a list
         if self.init_weights!=None:
             self.init_weights(self)
-        Model.param.extend(self.param)
         return
     
     

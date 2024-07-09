@@ -1,5 +1,5 @@
 import tensorflow as tf
-from Note.nn.initializer import initializer_
+from Note.nn.initializer import initializer
 from typing import Tuple
 
 class bilinear:
@@ -14,19 +14,19 @@ class bilinear:
     self._embedding_dim = embedding_dim
     self._output_dim = output_dim
     self.dtype = dtype
-    self._bilinear_weight = initializer_(
+    self._bilinear_weight = initializer(
         shape=(self._embedding_dim, self._embedding_dim, self._output_dim),
         initializer=['normal', 0.0, 1. /self._embedding_dim],
         dtype=dtype)
-    self._linear_weight_1 = initializer_(
+    self._linear_weight_1 = initializer(
         shape=(self._embedding_dim, self._output_dim),
         initializer=['normal', 0.0, 1. / tf.math.sqrt(self._embedding_dim)],
         dtype=dtype)
-    self._linear_weight_2 = initializer_(
+    self._linear_weight_2 = initializer(
         shape=(self._embedding_dim, self._output_dim),
         initializer=['normal', 0.0, 1. / tf.math.sqrt(self._embedding_dim)],
         dtype=dtype)
-    self._bias = initializer_(
+    self._bias = initializer(
         shape=(self._output_dim),
         initializer='zeros',
         dtype=dtype)

@@ -1,6 +1,5 @@
 import tensorflow as tf
 from Note import nn
-from Note.nn.Model import Model
 
 
 class embedding:
@@ -15,13 +14,11 @@ class embedding:
         if input_size!=None:
             self.embeddings=nn.initializer([input_size,output_size],initializer,dtype,trainable)
             self.param=[self.embeddings]
-            Model.param.extend(self.param)
     
     
     def build(self):
         self.embeddings=nn.initializer([self.input_size,self.output_size],self.initializer,self.dtype,self.trainable)
         self.param=[self.embeddings]
-        Model.param.extend(self.param)
         return
     
     

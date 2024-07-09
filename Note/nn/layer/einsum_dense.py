@@ -1,7 +1,6 @@
 import tensorflow as tf
 from Note.nn.initializer import initializer
 from Note.nn.activation import activation_dict
-from Note.nn.Model import Model
 import re
 
 
@@ -83,8 +82,6 @@ class einsum_dense:
                 self.param.append(self.bias)
             else:
                 self.bias = None
-            
-            Model.param.extend(self.param)
 
 
     def __call__(self, data):
@@ -119,7 +116,6 @@ class einsum_dense:
             else:
                 self.bias = None
             
-            Model.param.extend(self.param)
         ret = tf.einsum(self.equation, data, self.weight)
         if self.bias is not None:
             ret += self.bias

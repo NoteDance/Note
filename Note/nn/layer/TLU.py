@@ -1,5 +1,5 @@
 import tensorflow as tf
-from Note.nn.initializer import initializer_
+from Note.nn.initializer import initializer
 
 
 class TLU:
@@ -38,9 +38,9 @@ class TLU:
         self.input_shape=input_shape
         if input_shape is not None:
             param_shape = list(input_shape[1:])
-            self.tau = initializer_(param_shape, self.tau_initializer, dtype)
+            self.tau = initializer(param_shape, self.tau_initializer, dtype)
             if self.affine:
-                self.alpha = initializer_(param_shape, self.alpha_initializer, dtype)
+                self.alpha = initializer(param_shape, self.alpha_initializer, dtype)
 
 
     def __call__(self, data):
@@ -49,8 +49,8 @@ class TLU:
         if self.input_shape is None:
             self.input_shape=data.shape
             param_shape = list(self.input_shape[1:])
-            self.tau = initializer_(param_shape, self.tau_initializer, self.dtype)
+            self.tau = initializer(param_shape, self.tau_initializer, self.dtype)
             if self.affine:
-                self.alpha = initializer_(param_shape, self.alpha_initializer, self.dtype)
+                self.alpha = initializer(param_shape, self.alpha_initializer, self.dtype)
         v = self.alpha * data if self.affine else 0
         return tf.maximum(data, self.tau + v)

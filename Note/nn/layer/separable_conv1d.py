@@ -1,7 +1,6 @@
 import tensorflow as tf # import the TensorFlow library
 from Note import nn
 from Note.nn.activation import activation_dict
-from Note.nn.Model import Model
 
 
 class separable_conv1d: # define a class for separable convolutional layer
@@ -29,7 +28,6 @@ class separable_conv1d: # define a class for separable convolutional layer
                 self.param=[self.depthwise_kernel,self.pointwise_kernel,self.bias] # store the parameters in a list
             else: # if use bias is False
                 self.param=[self.depthwise_kernel,self.pointwise_kernel] # store only the weight matrices in a list
-            Model.param.extend(self.param)
     
     
     def build(self):
@@ -41,7 +39,6 @@ class separable_conv1d: # define a class for separable convolutional layer
             self.param=[self.depthwise_kernel,self.pointwise_kernel,self.bias] # store the parameters in a list
         else: # if use bias is False
             self.param=[self.depthwise_kernel,self.pointwise_kernel] # store only the weight matrices in a list
-        Model.param.extend(self.param)
         return
     
     

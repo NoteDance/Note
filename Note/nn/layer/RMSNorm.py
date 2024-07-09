@@ -1,10 +1,10 @@
 import tensorflow as tf
-from Note.nn.initializer import initializer_
+from Note.nn.initializer import initializer
 
 
 class RMSNorm:
     def __init__(self, dims: int, eps: float = 1e-6, dtype='float32'):
-        self.gamma = initializer_((dims,), 'ones', dtype)
+        self.gamma = initializer((dims,), 'ones', dtype)
         self.eps = eps
         self.param = [self.gamma]
 
