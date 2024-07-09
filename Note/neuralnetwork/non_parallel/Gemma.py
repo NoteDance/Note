@@ -15,7 +15,7 @@
 
 import tensorflow as tf
 from Note.nn.layer.dense import dense
-from Note.nn.initializer import initializer_
+from Note.nn.initializer import initializer
 from Note.nn.Model import Model
 import dataclasses
 
@@ -72,7 +72,7 @@ class Embedder:
   def __init__(self, config: GemmaConfig):
     self.vocab_size = config.vocab_size
     self.embed_dim = config.hidden_size
-    self.input_embedding_table = initializer_((self.vocab_size, self.embed_dim), 'normal', 'float32')
+    self.input_embedding_table = initializer((self.vocab_size, self.embed_dim), 'normal', 'float32')
 
   def encode(self, x):
     x = tf.gather(self.input_embedding_table, x)
@@ -93,7 +93,7 @@ class RMSNorm:
     ):
         self.eps = eps
         self.add_unit_offset = add_unit_offset
-        self.weight = initializer_((dim), 'zeros', 'float32')
+        self.weight = initializer((dim), 'zeros', 'float32')
 
     def _norm(self, x):
         return x * tf.math.rsqrt(tf.reduce_mean(tf.math.pow(x, 2), axis=-1, keepdims=True) + self.eps)

@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from Note.nn.initializer import initializer_
+from Note.nn.initializer import initializer
 from Note.nn.Model import Model
 
 class hparams:
@@ -24,8 +24,8 @@ class GPT2(Model):
         batch, sequence = shape_list(X)
         
         if self.flag==0:
-            self.wpe = initializer_([hparams.n_ctx, hparams.n_embd], ['normal',0.0,0.01], 'float32')
-            self.wte = initializer_([hparams.n_vocab, hparams.n_embd], ['normal',0.0,0.02], 'float32')
+            self.wpe = initializer([hparams.n_ctx, hparams.n_embd], ['normal',0.0,0.01], 'float32')
+            self.wte = initializer([hparams.n_vocab, hparams.n_embd], ['normal',0.0,0.02], 'float32')
         past_length = 0 if past is None else tf.shape(past)[-2]
         h = tf.gather(self.wte, X) + tf.gather(self.wpe, self.positions_for(X, past_length))
     
@@ -121,8 +121,8 @@ class conv1d:
     def output(self, x, nf, w_init_stdev=0.02):
         *start, nx = shape_list(x)
         if self.flag==0:
-            self.w = initializer_([1, nx, nf], ['normal',0.0,w_init_stdev], 'float32')
-            self.b = initializer_([nf],'zeros','float32')
+            self.w = initializer([1, nx, nf], ['normal',0.0,w_init_stdev], 'float32')
+            self.b = initializer([nf],'zeros','float32')
             self.flag=1
         c = tf.reshape(tf.matmul(tf.reshape(x, [-1, nx]), tf.reshape(self.w, [-1, nf]))+self.b, start+[nf])
         return c
@@ -135,8 +135,8 @@ class norm:
         """Normalize to mean = 0, std = 1, then do a diagonal affine transform."""
         n_state = x.shape[-1]
         if self.flag==0:
-            self.g = initializer_([n_state],'ones','float32')
-            self.b = initializer_([n_state],'zeros','float32')
+            self.g = initializer([n_state],'ones','float32')
+            self.b = initializer([n_state],'zeros','float32')
             self.flag=1
         u = tf.reduce_mean(x, axis=axis, keepdims=True)
         s = tf.reduce_mean(tf.square(x-u), axis=axis, keepdims=True)

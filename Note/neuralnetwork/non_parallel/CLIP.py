@@ -7,7 +7,7 @@ from Note.nn.layer.multihead_attention import multihead_attention
 from Note.nn.layer.zeropadding2d import zeropadding2d
 from Note.nn.layer.avg_pool2d import avg_pool2d
 from Note.nn.layer.identity import identity
-from Note.nn.initializer import initializer_
+from Note.nn.initializer import initializer
 from Note.nn.Sequential import Sequential
 from Note.nn.Model import Model
 import numpy as np
@@ -318,15 +318,15 @@ class CLIP(Module):
         )
 
         self.vocab_size = vocab_size
-        self.token_embedding = initializer_((vocab_size, transformer_width), 
+        self.token_embedding = initializer((vocab_size, transformer_width), 
                                             ['normal', 0.0, 0.02],
                                                 'float32')
-        self.positional_embedding = initializer_((self.context_length, transformer_width), 
+        self.positional_embedding = initializer((self.context_length, transformer_width), 
                                                  ['normal', 0.0, 0.01],
                                                  'float32')
         self.ln_final = LayerNorm(transformer_width)
 
-        self.text_projection = initializer_((transformer_width, embed_dim), 
+        self.text_projection = initializer((transformer_width, embed_dim), 
                                             ['normal', 0.0,self.transformer.width ** -0.5], 
                                             'float32')
         self.logit_scale = tf.Variable(tf.ones([]) * np.log(1 / 0.07))

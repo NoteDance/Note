@@ -3,7 +3,7 @@ from Note.nn.layer.dense import dense
 from Note.nn.layer.conv1d import conv1d
 from Note.nn.layer.zeropadding1d import zeropadding1d
 from Note.nn.layer.layer_norm import layer_norm
-from Note.nn.initializer import initializer_
+from Note.nn.initializer import initializer
 from Note.nn.Model import Model
 import base64
 import gzip
@@ -162,8 +162,8 @@ class TextDecoder:
         n_layer: int,
         dtype = tf.float16,
     ):
-        self.token_embedding = initializer_([n_vocab, n_state], 'normal', 'float32')
-        self.positional_embedding = initializer_([n_ctx, n_state], 'zeros', 'float32')
+        self.token_embedding = initializer([n_vocab, n_state], 'normal', 'float32')
+        self.positional_embedding = initializer([n_ctx, n_state], 'zeros', 'float32')
 
         self.blocks = [
             ResidualAttentionBlock(n_state, n_head, cross_attention=True)

@@ -7,7 +7,7 @@ from Note.nn.layer.zeropadding2d import zeropadding2d
 from Note.nn.layer.dropout import dropout
 from Note.nn.layer.stochastic_depth import stochastic_depth
 from Note.nn.layer.identity import identity
-from Note.nn.initializer import initializer_
+from Note.nn.initializer import initializer
 from Note.nn.activation import activation_dict
 from Note.nn.Sequential import Sequential
 from Note.nn.Model import Model
@@ -292,7 +292,7 @@ class ConvEncoder:
             else identity()
         self.use_layer_scale = use_layer_scale
         if use_layer_scale:
-            self.layer_scale = initializer_([dim],'ones',dtype)
+            self.layer_scale = initializer([dim],'ones',dtype)
         self.train_flag=True
 
 
@@ -345,7 +345,7 @@ class EfficientAdditiveAttnetion:
         self.to_query = dense(token_dim * num_heads, in_dims, dtype=dtype)
         self.to_key = dense(token_dim * num_heads, in_dims, dtype=dtype)
 
-        self.w_g = initializer_([token_dim * num_heads, 1],'normal',dtype)
+        self.w_g = initializer([token_dim * num_heads, 1],'normal',dtype)
         self.scale_factor = token_dim ** -0.5
         self.Proj = dense(token_dim * num_heads, token_dim * num_heads)
         self.final = dense(token_dim, token_dim * num_heads)
@@ -394,7 +394,7 @@ class SwiftFormerLocalRepresentation:
             else identity()
         self.use_layer_scale = use_layer_scale
         if use_layer_scale:
-            self.layer_scale = initializer_([dim],'ones',dtype)
+            self.layer_scale = initializer([dim],'ones',dtype)
 
 
     def __call__(self, x, train_flag=True):
@@ -430,9 +430,9 @@ class SwiftFormerEncoder:
             else identity()
         self.use_layer_scale = use_layer_scale
         if use_layer_scale:
-            self.layer_scale_1 = initializer_([dim],'ones',dtype)
+            self.layer_scale_1 = initializer([dim],'ones',dtype)
             
-            self.layer_scale_2 = initializer_([dim],'ones',dtype)
+            self.layer_scale_2 = initializer([dim],'ones',dtype)
             
         self.train_flag=True
         

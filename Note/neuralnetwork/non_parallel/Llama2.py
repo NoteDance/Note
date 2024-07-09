@@ -1,7 +1,7 @@
 import tensorflow as tf
 from Note.nn.layer.dense import dense
 from Note.nn.layer.dropout import dropout
-from Note.nn.initializer import initializer_
+from Note.nn.initializer import initializer
 import math
 from Note.nn.Model import Model
 from dataclasses import dataclass
@@ -28,7 +28,7 @@ class ModelArgs:
 class RMSNorm:
     def __init__(self, dim: int, eps: float):
         self.eps = eps
-        self.weight = initializer_((dim,), 'ones', 'float32')
+        self.weight = initializer((dim,), 'ones', 'float32')
 
     def _norm(self, x):
         return x * tf.math.rsqrt(tf.reduce_mean(tf.math.pow(x, 2), -1, keepdims=True) + self.eps)
