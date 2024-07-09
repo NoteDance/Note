@@ -10,7 +10,6 @@ class GRN:
     def __init__(self, dim, dtype):
         self.gamma = nn.initializer([1, 1, 1, dim], 'zeros', dtype)
         self.beta = nn.initializer([1, 1, 1, dim], 'zeros', dtype)
-        nn.Model.param.extend([self.gamma,self.beta])
     
     
     def __call__(self, x):
