@@ -31,7 +31,7 @@ class kernel:
         self.end_test_acc=None
         self.acc_flag='%'
         self.train_counter=0
-        self.filename='save.dat'
+        self.path_list=[]
         self.train_loss=None
         self.train_acc=None
         self.train_loss_list=[]
@@ -273,7 +273,7 @@ class kernel:
         return
     
     
-    def train(self,batch=None,epoch=None,test_batch=None,save=False,one=True,p=None,s=None):
+    def train(self,batch=None,epoch=None,test_batch=None,path=None,save_freq=1,max_save_files=None,p=None):
         self.batch=batch
         self.epoch=0
         self.train_counter+=1
@@ -281,12 +281,15 @@ class kernel:
             self.p=9
         else:
             self.p=p-1
-        if s==None:
-            self.s=1
-            self.file_list=None
+        if epoch%10!=0:
+            p=epoch-epoch%self.p
+            p=int(p/self.p)
         else:
-            self.s=s-1
-            self.file_list=[]
+            p=epoch/(self.p+1)
+            p=int(p)
+        if p==0:
+            p=1
+        self.max_save_files=max_save_files
         if epoch!=None:
             for i in range(epoch):
                 t1=time.time()
@@ -299,20 +302,6 @@ class kernel:
                     except Exception:
                         self.nn.ec+=1
                 self.total_epoch+=1
-                if epoch%10!=0:
-                    p=epoch-epoch%self.p
-                    p=int(p/self.p)
-                    s=epoch-epoch%self.s
-                    s=int(s/self.s)
-                else:
-                    p=epoch/(self.p+1)
-                    p=int(p)
-                    s=epoch/(self.s+1)
-                    s=int(s)
-                if p==0:
-                    p=1
-                if s==0:
-                    s=1
                 if i%p==0:
                     if self.test_flag==False:
                         if hasattr(self.nn,'accuracy'):
@@ -336,8 +325,8 @@ class kernel:
                         else:
                             print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
                             print()
-                if save!=False and i%s==0:
-                    self.save(self.total_epoch,one)
+                if path!=None and i%save_freq==0:
+                    self.save(path)
                 t2=time.time()
                 self.time+=(t2-t1)
         else:
@@ -354,20 +343,6 @@ class kernel:
                     except Exception:
                         self.nn.ec+=1
                 self.total_epoch+=1
-                if epoch%10!=0:
-                    p=epoch-epoch%self.p
-                    p=int(p/self.p)
-                    s=epoch-epoch%self.s
-                    s=int(s/self.s)
-                else:
-                    p=epoch/(self.p+1)
-                    p=int(p)
-                    s=epoch/(self.s+1)
-                    s=int(s)
-                if p==0:
-                    p=1
-                if s==0:
-                    s=1
                 if i%p==0:
                     if self.test_flag==False:
                         if hasattr(self.nn,'accuracy'):
@@ -391,8 +366,8 @@ class kernel:
                         else:
                             print('epoch:{0}   loss:{1:.6f},test loss:{2:.6f}'.format(i+1,self.train_loss,self.test_loss))
                             print()
-                if save!=False and i%s==0:
-                    self.save(self.total_epoch,one)
+                if path!=None and i%save_freq==0:
+                    self.save(path)
                 t2=time.time()
                 self.time+=(t2-t1)
         self._time=self.time-int(self.time)
@@ -811,16 +786,21 @@ class kernel:
         return
     
     
-    def save(self,i=None,one=True):
-        if one==True:
-            output_file=open(self.filename,'wb')
+    def save(self,path):
+        if self.max_save_files==None:
+            output_file=open(path,'wb')
         else:
-            filename=self.filename.replace(self.filename[self.filename.find('.'):],'-{0}.dat'.format(i))
-            output_file=open(filename,'wb')
-            self.file_list.append(filename)
-            if len(self.file_list)>self.s+1:
-                os.remove(self.file_list[0])
-                del self.file_list[0]
+            if self.train_acc!=None and self.test_acc!=None:
+                path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc))
+            elif self.train_acc!=None:
+                path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc))
+            else:
+                path=path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_epoch))
+            output_file=open(path,'wb')
+            self.path_list.append(path)
+            if len(self.path_list)>self.max_save_files:
+                os.remove(self.path_list[0])
+                del self.path_list[0]
         try:
             pickle.dump(self.nn,output_file)
         except Exception as e:
