@@ -105,7 +105,7 @@ class BertModel(object):
                                 input_mask=input_mask, token_type_ids=token_type_ids)
   model(input_ids)
 
-  label_embeddings = Note.nn.initializer.initializer_(...)
+  label_embeddings = Note.nn.initializer.initializer(...)
   pooled_output = model.get_pooled_output()
   logits = tf.matmul(pooled_output, label_embeddings)
   ...

@@ -3,7 +3,7 @@ from Note.nn.layer.conv2d import conv2d
 from Note.nn.layer.layer_norm import layer_norm
 from Note.nn.layer.zeropadding2d import zeropadding2d
 from Note.nn.layer.up_sampling2d import up_sampling2d
-from Note.nn.initializer import initializer_
+from Note.nn.initializer import initializer
 from Note.nn.Sequential import Sequential
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
@@ -35,8 +35,8 @@ class DsConv2d:
 class LayerNorm:
     def __init__(self, dim, eps = 1e-5):
         self.eps = eps
-        self.g = initializer_((1, dim, 1, 1), 'ones', 'float32')
-        self.b = initializer_((1, dim, 1, 1), 'zeros', 'float32')
+        self.g = initializer((1, dim, 1, 1), 'ones', 'float32')
+        self.b = initializer((1, dim, 1, 1), 'zeros', 'float32')
 
     def __call__(self, x):
         std = tf.math.sqrt(tf.math.reduce_variance(x, axis=1, keepdims=True))

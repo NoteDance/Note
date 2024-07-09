@@ -6,7 +6,7 @@ from Note.nn.layer.dense import dense
 from Note.nn.layer.layer_norm import layer_norm
 from Note.nn.layer.stochastic_depth import stochastic_depth
 from Note.nn.layer.identity import identity
-from Note.nn.initializer import initializer_
+from Note.nn.initializer import initializer
 from Note.nn.activation import activation_dict
 from Note.nn.Sequential import Sequential
 from Note.nn.parallel.optimizer import Adam
@@ -18,9 +18,8 @@ class GRN:
     """ GRN (Global Response Normalization) layer
     """
     def __init__(self, dim):
-        self.gamma = initializer_([1, 1, 1, dim], 'zeros')
-        self.beta = initializer_([1, 1, 1, dim], 'zeros')
-        Model.param.extend([self.gamma,self.beta])
+        self.gamma = initializer([1, 1, 1, dim], 'zeros')
+        self.beta = initializer([1, 1, 1, dim], 'zeros')
     
     
     def __call__(self, x):

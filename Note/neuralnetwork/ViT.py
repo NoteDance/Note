@@ -3,7 +3,7 @@ from Note.nn.layer.layer_norm import layer_norm
 from Note.nn.layer.dense import dense
 from Note.nn.layer.dropout import dropout
 from Note.nn.layer.identity import identity
-from Note.nn.initializer import initializer_
+from Note.nn.initializer import initializer
 from Note.nn.Sequential import Sequential
 from Note.nn.parallel.optimizer import Adam
 from Note.nn.parallel.assign_device import assign_device
@@ -110,8 +110,8 @@ class ViT(Model):
         self.to_patch_embedding.add(dense(dim, patch_dim))
         self.to_patch_embedding.add(layer_norm(dim))
 
-        self.pos_embedding = initializer_((1, num_patches + 1, dim), 'normal', 'float32')
-        self.cls_token = initializer_((1, 1, dim), 'normal', 'float32')
+        self.pos_embedding = initializer((1, num_patches + 1, dim), 'normal', 'float32')
+        self.cls_token = initializer((1, 1, dim), 'normal', 'float32')
         self.dropout = dropout(emb_dropout)
 
         self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, drop_rate)
