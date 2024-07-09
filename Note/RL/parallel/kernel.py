@@ -29,8 +29,9 @@ class kernel:
         self.max_opt=None
         self.stop=False
         self.opt_counter=None
-        self.s=None
-        self.filename='save.dat'
+        self.save_freq=1
+        self.max_save_files=None
+        self.path=None
     
     
     def init(self,manager):
@@ -66,7 +67,7 @@ class kernel:
         self.episode_=Value('i',self.total_episode.value)
         self.stop_flag=Value('b',False)
         self.save_flag=Value('b',False)
-        self.file_list=manager.list([])
+        self.path_list=manager.list([])
         self.param=manager.dict()
         self.param[7]=self.nn.param
         return
@@ -683,26 +684,8 @@ class kernel:
     
     
     def save_(self):
-        if self.s!=None:
-            if self.s==1:
-                s_=1
-            else:
-                s_=self.s-1
-            if self.total_episode.value%10!=0:
-                s=self.total_episode.value-self.total_episode.value%s_
-                s=int(s/s_)
-                if s==0:
-                    s=1
-            else:
-                s=self.total_episode.value/(s_+1)
-                s=int(s)
-                if s==0:
-                    s=1
-            if self.episode_.value%s==0:
-                if self.saving_one==True:
-                    self.save(self.total_episode.value)
-                else:
-                    self.save(self.total_episode.value,False)
+        if self.path!=None and self.episode_.value%self.save_freq==0:
+            self.save()
         self.episode_.value+=1
         return
     
@@ -757,18 +740,18 @@ class kernel:
         return
     
     
-    def save(self,i=None,one=True):
+    def save(self):
         if self.save_flag.value==True:
             return
-        if one==True:
-            output_file=open(self.filename,'wb')
+        if self.max_save_files==None:
+            output_file=open(self.path,'wb')
         else:
-            filename=self.filename.replace(self.filename[self.filename.find('.'):],'-{0}.dat'.format(i))
-            output_file=open(filename,'wb')
-            self.file_list.append([filename])
-            if len(self.file_list)>self.s:
-                os.remove(self.file_list[0][0])
-                del self.file_list[0]
+            path=self.path.replace(self.path[self.path.find('.'):],'-{0}.dat'.format(self.total_episode.value))
+            output_file=open(path,'wb')
+            self.file_list.append([path])
+            if len(self.path_list)>self.max_save_files:
+                os.remove(self.path_list[0][0])
+                del self.path_list[0]
         self.update_nn_param()
         self.nn.opt_counter=None
         self.nn.ec=self.nn.ec[0]
