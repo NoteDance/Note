@@ -121,11 +121,11 @@ class ViViT(nn.Model):
         self.to_patch_embedding.add(nn.dense(dim, patch_dim))
         self.to_patch_embedding.add(nn.layer_norm(dim))
 
-        self.pos_embedding = nn.initializer_((1, num_frame_patches, num_image_patches, dim), 'normal')
+        self.pos_embedding = nn.initializer((1, num_frame_patches, num_image_patches, dim), 'normal')
         self.dropout = nn.dropout(emb_dropout)
 
-        self.spatial_cls_token = nn.initializer_((1, 1, dim), 'normal') if not self.global_average_pool else None
-        self.temporal_cls_token = nn.initializer_((1, 1, dim), 'normal') if not self.global_average_pool else None
+        self.spatial_cls_token = nn.initializer((1, 1, dim), 'normal') if not self.global_average_pool else None
+        self.temporal_cls_token = nn.initializer((1, 1, dim), 'normal') if not self.global_average_pool else None
 
         self.spatial_transformer = Transformer(dim, spatial_depth, heads, dim_head, mlp_dim, dropout_rate)
         self.temporal_transformer = Transformer(dim, temporal_depth, heads, dim_head, mlp_dim, dropout_rate)

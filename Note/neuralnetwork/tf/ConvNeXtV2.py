@@ -8,8 +8,8 @@ class GRN:
     """ GRN (Global Response Normalization) layer
     """
     def __init__(self, dim, dtype):
-        self.gamma = nn.initializer_([1, 1, 1, dim], 'zeros', dtype)
-        self.beta = nn.initializer_([1, 1, 1, dim], 'zeros', dtype)
+        self.gamma = nn.initializer([1, 1, 1, dim], 'zeros', dtype)
+        self.beta = nn.initializer([1, 1, 1, dim], 'zeros', dtype)
         nn.Model.param.extend([self.gamma,self.beta])
     
     

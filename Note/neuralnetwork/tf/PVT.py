@@ -25,7 +25,7 @@ class Mlp:
         elif isinstance(l, nn.conv2d):
             fan_out = l.kernel_size[0] * l.kernel_size[1] * l.output_size
             fan_out //= l.groups
-            l.weight.assign(nn.initializer(l.weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
+            l.weight.assign(nn.initializer_(l.weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
 
     def __call__(self, x, H, W):
         x = self.fc1(x)
@@ -74,7 +74,7 @@ class Attention:
         elif isinstance(l, nn.conv2d):
             fan_out = l.kernel_size[0] * l.kernel_size[1] * l.output_size
             fan_out //= l.groups
-            l.weight.assign(nn.initializer(l.weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
+            l.weight.assign(nn.initializer_(l.weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
 
     def __call__(self, x, H, W):
         B, N, C = x.shape
@@ -131,7 +131,7 @@ class Block:
         elif isinstance(l, nn.conv2d):
             fan_out = l.kernel_size[0] * l.kernel_size[1] * l.output_size
             fan_out //= l.groups
-            l.weight.assign(nn.initializer(l.weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
+            l.weight.assign(nn.initializer_(l.weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
 
     def __call__(self, x, H, W):
         x = x + self.drop_path(self.attn(self.norm1(x), H, W))
@@ -170,7 +170,7 @@ class OverlapPatchEmbed:
         elif isinstance(l, nn.conv2d):
             fan_out = l.kernel_size[0] * l.kernel_size[1] * l.output_size
             fan_out //= l.groups
-            l.weight.assign(nn.initializer(l.weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
+            l.weight.assign(nn.initializer_(l.weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
 
     def __call__(self, x):
         x = self.proj(x)
@@ -229,7 +229,7 @@ class PyramidVisionTransformerV2(nn.Model):
         elif isinstance(l, nn.conv2d):
             fan_out = l.kernel_size[0] * l.kernel_size[1] * l.output_size
             fan_out //= l.groups
-            l.weight.assign(nn.initializer(l.weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
+            l.weight.assign(nn.initializer_(l.weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
 
     def freeze_patch_emb(self):
         self.freeze('patch_embed1')

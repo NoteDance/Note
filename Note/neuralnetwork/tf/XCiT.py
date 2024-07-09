@@ -214,7 +214,7 @@ class XCA:
 
     def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.):
         self.num_heads = num_heads
-        self.temperature = nn.initializer_((num_heads, 1, 1), 'ones', name='temperature')
+        self.temperature = nn.initializer((num_heads, 1, 1), 'ones', name='temperature')
 
         self.qkv = nn.dense(dim * 3, dim, use_bias=qkv_bias)
         self.attn_drop = nn.dropout(attn_drop)
@@ -320,7 +320,7 @@ class XCiT(nn.Model):
 
         num_patches = self.patch_embed.num_patches
 
-        self.cls_token = nn.initializer_((1, 1, embed_dim), ['truncated_normal', .02], name='cls_token')
+        self.cls_token = nn.initializer((1, 1, embed_dim), ['truncated_normal', .02], name='cls_token')
         self.pos_drop = nn.dropout(drop_rate)
 
         dpr = [drop_path_rate for i in range(depth)]

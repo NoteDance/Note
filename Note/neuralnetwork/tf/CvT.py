@@ -24,8 +24,8 @@ def group_by_key_prefix_and_remove_prefix(prefix, d):
 class LayerNorm: # layernorm, but done in the channel dimension #1
     def __init__(self, dim, eps = 1e-5):
         self.eps = eps
-        self.g = nn.initializer_((1, dim, 1, 1), 'ones')
-        self.b = nn.initializer_((1, dim, 1, 1), 'zeros')
+        self.g = nn.initializer((1, dim, 1, 1), 'ones')
+        self.b = nn.initializer((1, dim, 1, 1), 'zeros')
 
     def __call__(self, x):
         var = tf.math.reduce_variance(x, axis=1, keepdims=True)

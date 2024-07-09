@@ -26,8 +26,8 @@ class DsConv2d:
 class LayerNorm:
     def __init__(self, dim, eps = 1e-5):
         self.eps = eps
-        self.g = nn.initializer_((1, dim, 1, 1), 'ones', 'float32')
-        self.b = nn.initializer_((1, dim, 1, 1), 'zeros', 'float32')
+        self.g = nn.initializer((1, dim, 1, 1), 'ones', 'float32')
+        self.b = nn.initializer((1, dim, 1, 1), 'zeros', 'float32')
 
     def __call__(self, x):
         std = tf.math.sqrt(tf.math.reduce_variance(x, axis=1, keepdims=True))

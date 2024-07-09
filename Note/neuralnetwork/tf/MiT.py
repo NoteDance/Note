@@ -199,7 +199,7 @@ class MiT(nn.Model):
         elif isinstance(l, nn.conv2d):
             fan_out = l.kernel_size[0] * l.kernel_size[1] * l.output_size
             fan_out //= l.groups
-            l.weight.assign(nn.initializer(l.weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
+            l.weight.assign(nn.initializer_(l.weight.shape, ['normal', 0, math.sqrt(2.0 / fan_out)]))
 
     def reset_drop_path(self, drop_path_rate):
         dpr = tf.linspace(0., drop_path_rate, sum(self.depths))

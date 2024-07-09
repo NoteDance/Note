@@ -19,7 +19,7 @@ class ModelArgs:
 
 class RMSNorm:
     def __init__(self, dims: int, eps: float = 1e-5):
-        self.weight = nn.initializer_((dims,), 'ones', 'float32')
+        self.weight = nn.initializer((dims,), 'ones', 'float32')
         self.eps = eps
 
     def _norm(self, x):
@@ -126,7 +126,7 @@ class Llama(nn.Model):
         super().__init__()
         self.args = args
         self.vocab_size = args.vocab_size
-        self.tok_embeddings = nn.initializer_((args.vocab_size, args.dim), 'normal', 'float32')
+        self.tok_embeddings = nn.initializer((args.vocab_size, args.dim), 'normal', 'float32')
         self.layers = [TransformerBlock(args=args) for _ in range(args.n_layers)]
         self.norm = RMSNorm(args.dim, eps=args.norm_eps)
         self.head = self.dense(args.vocab_size, args.dim, use_bias=False)

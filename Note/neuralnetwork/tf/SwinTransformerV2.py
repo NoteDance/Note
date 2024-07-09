@@ -136,8 +136,8 @@ class WindowAttention:
 
         self.qkv = nn.dense(dim * 3, dim, use_bias=False)
         if qkv_bias:
-            self.q_bias = nn.initializer_((dim), 'zeros')
-            self.v_bias = nn.initializer_((dim), 'zeros')
+            self.q_bias = nn.initializer((dim), 'zeros')
+            self.v_bias = nn.initializer((dim), 'zeros')
         else:
             self.q_bias = None
             self.v_bias = None
@@ -551,7 +551,7 @@ class SwinTransformerV2(nn.Model):
 
         # absolute position embedding
         if self.ape:
-            self.absolute_pos_embed = nn.initializer_((1, num_patches, embed_dim), ['truncated_normal', .02], name='absolute_pos_embed')
+            self.absolute_pos_embed = nn.initializer((1, num_patches, embed_dim), ['truncated_normal', .02], name='absolute_pos_embed')
 
         self.pos_drop = nn.dropout(drop_rate)
 

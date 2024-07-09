@@ -199,7 +199,7 @@ class Tokenizer:
 
     def init_weight(self, l):
         if isinstance(l, nn.conv2d):
-            l.weight.assign(nn.initializer(l.weight.shape, 'He'))
+            l.weight.assign(nn.initializer_(l.weight.shape, 'He'))
 
 
 class TransformerClassifier:
@@ -231,14 +231,14 @@ class TransformerClassifier:
 
         if not seq_pool:
             sequence_length += 1
-            self.class_emb = nn.initializer_((1, 1, self.embedding_dim), 'zeros')
+            self.class_emb = nn.initializer((1, 1, self.embedding_dim), 'zeros')
         else:
             self.attention_pool = nn.dense(1, self.embedding_dim)
 
         if positional_embedding == 'none':
             self.positional_emb = None
         elif positional_embedding == 'learnable':
-            self.positional_emb = nn.initializer_((1, sequence_length, embedding_dim), ['truncated_normal', 0.2])
+            self.positional_emb = nn.initializer((1, sequence_length, embedding_dim), ['truncated_normal', 0.2])
         else:
             self.positional_emb = sinusoidal_embedding(sequence_length, embedding_dim)
 

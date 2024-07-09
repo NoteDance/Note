@@ -24,7 +24,7 @@ class ModelArgs:
 class RMSNorm:
     def __init__(self, dim: int, eps: float):
         self.eps = eps
-        self.weight = nn.initializer_((dim,), 'ones', 'float32')
+        self.weight = nn.initializer((dim,), 'ones', 'float32')
 
     def _norm(self, x):
         return x * tf.math.rsqrt(tf.reduce_mean(tf.math.pow(x, 2), -1, keepdims=True) + self.eps)

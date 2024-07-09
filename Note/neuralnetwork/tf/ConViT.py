@@ -52,7 +52,7 @@ class GPSA:
         self.pos_proj = nn.dense(num_heads, 3)
         self.proj_drop = nn.dropout(proj_drop)
         self.locality_strength = locality_strength
-        self.gating_param = nn.initializer_((self.num_heads), 'ones')
+        self.gating_param = nn.initializer((self.num_heads), 'ones')
         nn.Model.apply(self.init_weights)
         if use_local_init:
             self.local_init(locality_strength=locality_strength)
@@ -292,11 +292,11 @@ class VisionTransformer(nn.Model):
         num_patches = self.patch_embed.num_patches
         self.num_patches = num_patches
         
-        self.cls_token = nn.initializer_((1, 1, embed_dim), ['truncated_normal', .02])
+        self.cls_token = nn.initializer((1, 1, embed_dim), ['truncated_normal', .02])
         self.pos_drop = nn.dropout(drop_rate)
 
         if self.use_pos_embed:
-            self.pos_embed = nn.initializer_((1, num_patches, embed_dim), ['truncated_normal', .02])
+            self.pos_embed = nn.initializer((1, num_patches, embed_dim), ['truncated_normal', .02])
 
         dpr = tf.linspace(0., drop_path_rate, depth)  # stochastic depth decay rule
         self.blocks = [
@@ -317,7 +317,7 @@ class VisionTransformer(nn.Model):
         self.feature_info = [dict(num_chs=embed_dim, reduction=0, module='head')]
         self.head = self.dense(num_classes, embed_dim) if num_classes > 0 else nn.identity()
 
-        self.head.weight.assign(nn.initializer(self.head.weight.shape, ['truncated_normal', .02]))
+        self.head.weight.assign(nn.initializer_(self.head.weight.shape, ['truncated_normal', .02]))
 
     def no_weight_decay(self):
         return {'pos_embed', 'cls_token'}

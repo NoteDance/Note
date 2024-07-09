@@ -240,8 +240,8 @@ class CrossViT(nn.Model):
 
         for i in range(self.num_branches):
             if self.pos_embed[i].trainable:
-                self.pos_embed[i].assign(nn.initializer(self.pos_embed[i].shape, ['truncated_normal', .02]))
-            self.cls_token[i].assign(nn.initializer(self.cls_token[i].shape, ['truncated_normal', .02]))
+                self.pos_embed[i].assign(nn.initializer_(self.pos_embed[i].shape, ['truncated_normal', .02]))
+            self.cls_token[i].assign(nn.initializer_(self.cls_token[i].shape, ['truncated_normal', .02]))
 
         nn.Model.apply(self.init_weights)
 

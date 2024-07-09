@@ -251,7 +251,7 @@ class ConvEncoder:
             else nn.identity()
         self.use_layer_scale = use_layer_scale
         if use_layer_scale:
-            self.layer_scale = nn.initializer_([dim],'ones')
+            self.layer_scale = nn.initializer([dim],'ones')
         self.train_flag=True
 
 
@@ -302,7 +302,7 @@ class EfficientAdditiveAttnetion:
         self.to_query = nn.dense(token_dim * num_heads, in_dims)
         self.to_key = nn.dense(token_dim * num_heads, in_dims)
 
-        self.w_g = nn.initializer_([token_dim * num_heads, 1],'normal')
+        self.w_g = nn.initializer([token_dim * num_heads, 1],'normal')
         self.scale_factor = token_dim ** -0.5
         self.Proj = nn.dense(token_dim * num_heads, token_dim * num_heads)
         self.final = nn.dense(token_dim, token_dim * num_heads)
@@ -350,7 +350,7 @@ class SwiftFormerLocalRepresentation:
             else nn.identity()
         self.use_layer_scale = use_layer_scale
         if use_layer_scale:
-            self.layer_scale = nn.initializer_([dim],'ones')
+            self.layer_scale = nn.initializer([dim],'ones')
 
 
     def __call__(self, x, train_flag=True):
@@ -386,9 +386,9 @@ class SwiftFormerEncoder:
             else nn.identity()
         self.use_layer_scale = use_layer_scale
         if use_layer_scale:
-            self.layer_scale_1 = nn.initializer_([dim],'ones')
+            self.layer_scale_1 = nn.initializer([dim],'ones')
             
-            self.layer_scale_2 = nn.initializer_([dim],'ones')
+            self.layer_scale_2 = nn.initializer([dim],'ones')
             
         self.train_flag=True
         

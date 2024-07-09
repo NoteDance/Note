@@ -159,8 +159,8 @@ class TextDecoder:
         n_layer: int,
         dtype = tf.float16,
     ):
-        self.token_embedding = nn.initializer_([n_vocab, n_state], 'normal', 'float32')
-        self.positional_embedding = nn.initializer_([n_ctx, n_state], 'zeros', 'float32')
+        self.token_embedding = nn.initializer([n_vocab, n_state], 'normal', 'float32')
+        self.positional_embedding = nn.initializer([n_ctx, n_state], 'zeros', 'float32')
 
         self.blocks = [
             ResidualAttentionBlock(n_state, n_head, cross_attention=True)

@@ -102,8 +102,8 @@ class ViT(nn.Model):
         self.to_patch_embedding.add(nn.dense(dim, patch_dim))
         self.to_patch_embedding.add(nn.layer_norm(dim))
 
-        self.pos_embedding = nn.initializer_((1, num_patches + 1, dim), 'normal', 'float32')
-        self.cls_token = nn.initializer_((1, 1, dim), 'normal', 'float32')
+        self.pos_embedding = nn.initializer((1, num_patches + 1, dim), 'normal', 'float32')
+        self.cls_token = nn.initializer((1, 1, dim), 'normal', 'float32')
         self.dropout = nn.dropout(emb_dropout)
 
         self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, drop_rate)

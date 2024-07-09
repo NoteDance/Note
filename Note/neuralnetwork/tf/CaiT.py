@@ -250,8 +250,8 @@ class CaiT(nn.Model):
         
         num_patches = self.patch_embed.num_patches
 
-        self.cls_token = nn.initializer_((1, 1, embed_dim), ['truncated_normal', .02], name='cls_token')
-        self.pos_embed = nn.initializer_((1, num_patches, embed_dim), ['truncated_normal', .02], name='pos_embed')
+        self.cls_token = nn.initializer((1, 1, embed_dim), ['truncated_normal', .02], name='cls_token')
+        self.pos_embed = nn.initializer((1, num_patches, embed_dim), ['truncated_normal', .02], name='pos_embed')
         self.pos_drop = nn.dropout(drop_rate)
 
         dpr = [drop_path_rate for i in range(depth)] 

@@ -28,7 +28,7 @@ class Attention:
 
         self.dropout = nn.dropout(dropout_rate)
 
-        self.reattn_weights = nn.initializer_((heads, heads), 'normal')
+        self.reattn_weights = nn.initializer((heads, heads), 'normal')
 
         self.reattn_norm = nn.Sequential()
         self.reattn_norm.add(Rearrange('b h i j -> b i j h'))
@@ -95,8 +95,8 @@ class DeepViT(nn.Model):
         self.to_patch_embedding.add(nn.dense(dim, patch_dim))
         self.to_patch_embedding.add(nn.layer_norm(dim))
 
-        self.pos_embedding = nn.initializer_((1, num_patches + 1, dim), 'normal')
-        self.cls_token = nn.initializer_((1, 1, dim), 'normal')
+        self.pos_embedding = nn.initializer((1, num_patches + 1, dim), 'normal')
+        self.cls_token = nn.initializer((1, 1, dim), 'normal')
         self.dropout = nn.dropout(emb_dropout)
 
         self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout_rate)

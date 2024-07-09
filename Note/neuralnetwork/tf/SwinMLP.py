@@ -394,7 +394,7 @@ class SwinMLP(nn.Model):
 
         # absolute position embedding
         if self.ape:
-            self.absolute_pos_embed = nn.initializer_((1, num_patches, embed_dim), ['truncated_normal', .02], name='absolute_pos_embed')
+            self.absolute_pos_embed = nn.initializer((1, num_patches, embed_dim), ['truncated_normal', .02], name='absolute_pos_embed')
 
         self.pos_drop = nn.dropout(drop_rate)
 

@@ -302,15 +302,15 @@ class CLIP(nn.Model):
         )
 
         self.vocab_size = vocab_size
-        self.token_embedding = nn.initializer_((vocab_size, transformer_width), 
+        self.token_embedding = nn.initializer((vocab_size, transformer_width), 
                                             ['normal', 0.0, 0.02],
                                                 'float32')
-        self.positional_embedding = nn.initializer_((self.context_length, transformer_width), 
+        self.positional_embedding = nn.initializer((self.context_length, transformer_width), 
                                                  ['normal', 0.0, 0.01],
                                                  'float32')
         self.ln_final = LayerNorm(transformer_width)
 
-        self.text_projection = nn.initializer_((transformer_width, embed_dim), 
+        self.text_projection = nn.initializer((transformer_width, embed_dim), 
                                             ['normal', 0.0,self.transformer.width ** -0.5], 
                                             'float32')
         self.logit_scale = tf.Variable(tf.ones([]) * np.log(1 / 0.07))

@@ -59,7 +59,7 @@ class LabelEmbedder:
     """
     def __init__(self, num_classes, hidden_size, dropout_prob):
         use_cfg_embedding = dropout_prob > 0
-        self.embedding_table = nn.initializer_((num_classes + use_cfg_embedding, hidden_size), ['normal', 0.0, 0.02], tf.float32)
+        self.embedding_table = nn.initializer((num_classes + use_cfg_embedding, hidden_size), ['normal', 0.0, 0.02], tf.float32)
         self.num_classes = num_classes
         self.dropout_prob = dropout_prob
 

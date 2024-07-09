@@ -28,10 +28,10 @@ class VisionTransformerForMaskedImageModeling(nn.Model):
         num_patches = self.patch_embed.num_patches
         self.num_heads = num_heads
 
-        self.cls_token = nn.initializer_((1, 1, embed_dim), ['truncated_normal', init_std], name='cls_token')
-        self.mask_token = nn.initializer_((1, 1, embed_dim), ['truncated_normal', init_std])
+        self.cls_token = nn.initializer((1, 1, embed_dim), ['truncated_normal', init_std], name='cls_token')
+        self.mask_token = nn.initializer((1, 1, embed_dim), ['truncated_normal', init_std])
         if use_abs_pos_emb:
-            self.pos_embed = nn.initializer_((1, num_patches + 1, embed_dim), ['truncated_normal', init_std], name='pos_embed')
+            self.pos_embed = nn.initializer((1, num_patches + 1, embed_dim), ['truncated_normal', init_std], name='pos_embed')
         else:
             self.pos_embed = None
         self.pos_drop = nn.dropout(drop_rate)
@@ -55,7 +55,7 @@ class VisionTransformerForMaskedImageModeling(nn.Model):
         self.init_std = init_std
         self.lm_head = nn.dense(vocab_size, embed_dim)
 
-        self.lm_head.weight.assign(nn.initializer_(self.lm_head.weight.shape, ['truncated_normal', self.init_std]))
+        self.lm_head.weight.assign(nn.initializer(self.lm_head.weight.shape, ['truncated_normal', self.init_std]))
         nn.Model.apply(self.init_weights)
         self.fix_init_weight()
 
@@ -472,8 +472,8 @@ class Attention:
 
         self.qkv = nn.dense(all_head_dim * 3, dim, use_bias=False)
         if qkv_bias:
-            self.q_bias = nn.initializer_((all_head_dim), 'zeros')
-            self.v_bias = nn.initializer_((all_head_dim), 'zeros')
+            self.q_bias = nn.initializer((all_head_dim), 'zeros')
+            self.v_bias = nn.initializer((all_head_dim), 'zeros')
         else:
             self.q_bias = None
             self.v_bias = None
@@ -481,7 +481,7 @@ class Attention:
         if window_size:
             self.window_size = window_size
             self.num_relative_distance = (2 * window_size[0] - 1) * (2 * window_size[1] - 1) + 3
-            self.relative_position_bias_table = nn.initializer_(
+            self.relative_position_bias_table = nn.initializer(
                             (self.num_relative_distance, num_heads), 'zeros')  # 2*Wh-1 * 2*Ww-1, nH
             # cls to token & token 2 cls & cls to cls
 
@@ -628,7 +628,7 @@ class RelativePositionBias:
     def __init__(self, window_size, num_heads):
         self.window_size = window_size
         self.num_relative_distance = (2 * window_size[0] - 1) * (2 * window_size[1] - 1) + 3
-        self.relative_position_bias_table = nn.initializer_(
+        self.relative_position_bias_table = nn.initializer(
                         (self.num_relative_distance, num_heads), 'zeros')  # 2*Wh-1 * 2*Ww-1, nH
         # cls to token & token 2 cls & cls to cls
 

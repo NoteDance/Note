@@ -29,10 +29,10 @@ class VisionTransformerForMaskedImageModeling(nn.Model):
             img_size=img_size, patch_size=patch_size, in_chans=in_chans, embed_dim=embed_dim)
         num_patches = self.patch_embed.num_patches
 
-        self.cls_token = nn.initializer_((1, 1, embed_dim), ['truncated_normal', init_std])
-        self.mask_token = nn.initializer_((1, 1, embed_dim), ['truncated_normal', init_std])
+        self.cls_token = nn.initializer((1, 1, embed_dim), ['truncated_normal', init_std])
+        self.mask_token = nn.initializer((1, 1, embed_dim), ['truncated_normal', init_std])
         if use_abs_pos_emb:
-            self.pos_embed = nn.initializer_((1, num_patches + 1, embed_dim), ['truncated_normal', init_std])
+            self.pos_embed = nn.initializer((1, num_patches + 1, embed_dim), ['truncated_normal', init_std])
         else:
             self.pos_embed = None
         self.pos_drop = nn.dropout(drop_rate)
@@ -140,10 +140,10 @@ class VisionTransformer(nn.Model):
             img_size=img_size, patch_size=patch_size, in_chans=in_chans, embed_dim=embed_dim)
         num_patches = self.patch_embed.num_patches
 
-        self.cls_token = nn.initializer_((1, 1, embed_dim), ['truncated_normal', .02], name='cls_token')
+        self.cls_token = nn.initializer((1, 1, embed_dim), ['truncated_normal', .02], name='cls_token')
         # self.mask_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
         if use_abs_pos_emb:
-            self.pos_embed = nn.initializer_((1, num_patches + 1, embed_dim), ['truncated_normal', .02], name='pos_embed')
+            self.pos_embed = nn.initializer((1, num_patches + 1, embed_dim), ['truncated_normal', .02], name='pos_embed')
         else:
             self.pos_embed = None
         self.pos_drop = nn.dropout(drop_rate)
@@ -330,8 +330,8 @@ class Attention:
 
         self.qkv = nn.dense(all_head_dim * 3, dim, use_bias=False)
         if qkv_bias:
-            self.q_bias = nn.initializer_((all_head_dim), 'zeros')
-            self.v_bias = nn.initializer_((all_head_dim), 'zeros')
+            self.q_bias = nn.initializer((all_head_dim), 'zeros')
+            self.v_bias = nn.initializer((all_head_dim), 'zeros')
         else:
             self.q_bias = None
             self.v_bias = None
@@ -339,7 +339,7 @@ class Attention:
         if window_size:
             self.window_size = window_size
             self.num_relative_distance = (2 * window_size[0] - 1) * (2 * window_size[1] - 1) + 3
-            self.relative_position_bias_table = nn.initializer_(
+            self.relative_position_bias_table = nn.initializer(
                             (self.num_relative_distance, num_heads), 'zeros')  # 2*Wh-1 * 2*Ww-1, nH
             # cls to token & token 2 cls & cls to cls
 
@@ -472,7 +472,7 @@ class RelativePositionBias:
     def __init__(self, window_size, num_heads):
         self.window_size = window_size
         self.num_relative_distance = (2 * window_size[0] - 1) * (2 * window_size[1] - 1) + 3
-        self.relative_position_bias_table = nn.initializer_(
+        self.relative_position_bias_table = nn.initializer(
                         (self.num_relative_distance, num_heads), 'zeros')  # 2*Wh-1 * 2*Ww-1, nH
         # cls to token & token 2 cls & cls to cls
 

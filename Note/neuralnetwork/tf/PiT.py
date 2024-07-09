@@ -91,13 +91,13 @@ class PoolingTransformer(nn.Model):
         self.num_classes = num_classes
 
         self.patch_size = patch_size
-        self.pos_embed = nn.initializer_(
+        self.pos_embed = nn.initializer(
             (1, width, width, base_dims[0] * heads[0]), ['truncated_normal', .02], name='pos_embed'
         )
         self.patch_embed = conv_embedding(in_chans, base_dims[0] * heads[0],
                                           patch_size, stride, padding)
 
-        self.cls_token = nn.initializer_(
+        self.cls_token = nn.initializer(
             (1, 1, base_dims[0] * heads[0]), ['truncated_normal', .02], name='cls_token'
         )
         self.pos_drop = nn.dropout(drop_rate)
@@ -170,7 +170,7 @@ class PoolingTransformer(nn.Model):
 class DistilledPoolingTransformer(PoolingTransformer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.cls_token = nn.initializer_(
+        self.cls_token = nn.initializer(
             (1, 2, self.base_dims[0] * self.heads[0]), ['truncated_normal', .02], name='cls_token'
             )
         if self.num_classes > 0:
