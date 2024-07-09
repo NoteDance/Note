@@ -28,9 +28,9 @@ class kernel:
         self.end_test_loss=None
         self.end_test_acc=None
         self.acc_flag='%'
-        self.s=None
-        self.saving_one=True
-        self.filename='save.dat'
+        self.save_freq=1
+        self.max_save_files=None
+        self.path=None
         self.test_flag=False
     
     
@@ -363,26 +363,8 @@ class kernel:
     
     
     def save_(self):
-        if self.s!=None:
-            if self.s==1:
-                s_=1
-            else:
-                s_=self.s-1
-            if self.epoch%10!=0:
-                s=self.epoch-self.epoch%s_
-                s=int(s/s_)
-                if s==0:
-                    s=1
-            else:
-                s=self.epoch/(s_+1)
-                s=int(s)
-                if s==0:
-                    s=1
-            if self.epoch_.value%s==0:
-                if self.saving_one==True:
-                    self.save(self.total_epoch.value)
-                else:
-                    self.save(self.total_epoch.value,False)
+        if self.path!=None and self.epoch_.value%self.save_freq==0:
+            self.save()
         self.epoch_.value+=1
         return
     
@@ -528,18 +510,23 @@ class kernel:
         return
     
     
-    def save(self,i=None,one=True):
+    def save(self):
         if self.save_flag.value==True:
             return
-        if one==True:
-            output_file=open(self.filename,'wb')
+        if self.max_save_files==None:
+            output_file=open(self.path,'wb')
         else:
-            filename=self.filename.replace(self.filename[self.filename.find('.'):],'-{0}.dat'.format(i))
-            output_file=open(filename,'wb')
-            self.file_list.append([filename])
-            if len(self.file_list)>self.s:
-                os.remove(self.file_list[0][0])
-                del self.file_list[0]
+            if hasattr(self.nn,'accuracy') and self.test_flag==True:
+                path=self.path.replace(self.path[self.path.find('.'):],'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch.value,self.train_acc.value,self.test_acc.value))
+            elif hasattr(self.nn,'accuracy'):
+                path=self.path.replace(self.path[self.path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch.value,self.train_acc.value))
+            else:
+                path=self.path.replace(self.path[self.path.find('.'):],'-{0}.dat'.format(self.total_epoch.value))
+            output_file=open(path,'wb')
+            self.file_list.append([path])
+            if len(self.path_list)>self.max_save_files:
+                os.remove(self.path_list[0][0])
+                del self.path_list[0]
         self.nn.opt_counter=self.nn.opt_counter[0] 
         self.nn.ec=self.nn.ec[0]
         self.nn.bc=self.nn.bc[0]
