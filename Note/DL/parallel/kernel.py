@@ -27,16 +27,15 @@ class kernel:
         self.max_opt=None
         self.epoch=None
         self.stop=False
-        self.save_epoch=None
         self.batch=None
         self.end_loss=None
         self.end_acc=None
         self.end_test_loss=None
         self.end_test_acc=None
         self.acc_flag='%'
-        self.s=None
-        self.saving_one=True
-        self.filename='save.dat'
+        self.save_freq=1
+        self.max_save_files=None
+        self.path=None
         self.test_flag=False
     
     
@@ -83,13 +82,12 @@ class kernel:
             self.test_loss=Value('f',0)
             self.test_loss_list=manager.list([])
         if hasattr(self.nn,'accuracy'):
-            if self.nn.accuracy!=None:
-                self.total_acc=Array('f',self.total_acc)
-                self.train_acc=Value('f',0)
-                self.train_acc_list=manager.list([])
-                if self.test_flag==True:
-                    self.test_acc=Value('f',0)
-                    self.test_acc_list=manager.list([])
+            self.total_acc=Array('f',self.total_acc)
+            self.train_acc=Value('f',0)
+            self.train_acc_list=manager.list([])
+            if self.test_flag==True:
+                self.test_acc=Value('f',0)
+                self.test_acc_list=manager.list([])
         if self.priority_flag==True:
             self.opt_counter=Array('i',self.opt_counter)
         if self.nn is not None:
@@ -103,7 +101,7 @@ class kernel:
         self.epoch_=Value('i',0)
         self.stop_flag=Value('b',False)
         self.save_flag=Value('b',False)
-        self.file_list=manager.list([])
+        self.path_list=manager.list([])
         self.param=manager.dict()
         self.param[7]=self.nn.param
         return
@@ -577,26 +575,8 @@ class kernel:
     
     
     def save_(self):
-        if self.s!=None:
-            if self.s==1:
-                s_=1
-            else:
-                s_=self.s-1
-            if self.epoch%10!=0:
-                s=self.epoch-self.epoch%s_
-                s=int(s/s_)
-                if s==0:
-                    s=1
-            else:
-                s=self.epoch/(s_+1)
-                s=int(s)
-                if s==0:
-                    s=1
-            if self.epoch_.value%s==0:
-                if self.saving_one==True:
-                    self.save(self.total_epoch.value)
-                else:
-                    self.save(self.total_epoch.value,False)
+        if self.path!=None and self.epoch_.value%self.save_freq==0:
+            self.save()
         self.epoch_.value+=1
         return
     
@@ -754,18 +734,23 @@ class kernel:
         return
     
     
-    def save(self,i=None,one=True):
+    def save(self):
         if self.save_flag.value==True:
             return
-        if one==True:
-            output_file=open(self.filename,'wb')
+        if self.max_save_files==None:
+            output_file=open(self.path,'wb')
         else:
-            filename=self.filename.replace(self.filename[self.filename.find('.'):],'-{0}.dat'.format(i))
-            output_file=open(filename,'wb')
-            self.file_list.append([filename])
-            if len(self.file_list)>self.s:
-                os.remove(self.file_list[0][0])
-                del self.file_list[0]
+            if hasattr(self.nn,'accuracy') and self.test_flag==True:
+                path=self.path.replace(self.path[self.path.find('.'):],'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch.value,self.train_acc.value,self.test_acc.value))
+            elif hasattr(self.nn,'accuracy'):
+                path=self.path.replace(self.path[self.path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch.value,self.train_acc.value))
+            else:
+                path=self.path.replace(self.path[self.path.find('.'):],'-{0}.dat'.format(self.total_epoch.value))
+            output_file=open(path,'wb')
+            self.file_list.append([path])
+            if len(self.path_list)>self.max_save_files:
+                os.remove(self.path_list[0][0])
+                del self.path_list[0]
         self.update_nn_param()
         self.nn.opt_counter=None
         self.nn.ec=self.nn.ec[0]
