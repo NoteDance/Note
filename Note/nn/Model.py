@@ -42,6 +42,17 @@ class Model:
         self.ft_flag=0
         self.detach_flag=False
         self.optimizer_=None
+        self.path=None
+        self.save_freq=1
+        self.save_freq_=None
+        self.max_save_files=None
+        self.steps_per_execution=None
+        self.monitor='val_loss'
+        self.val_loss=0
+        self.val_accuracy=1
+        self.save_best_only=False
+        self.save_param_only=False
+        self.batch_counter=0
         self.path_list=[]
         self.train_loss=None
         self.train_acc=None
@@ -368,7 +379,7 @@ class Model:
                 return test_loss
     
     
-    def fit(self, train_ds, loss_object, train_loss, optimizer, epochs=None, train_accuracy=None, test_ds=None, test_loss=None, test_accuracy=None, processes=None, mp=None, jit_compile=True, path=None, save_freq=1, max_save_files=None, p=None):
+    def fit(self, train_ds, loss_object, train_loss, optimizer, epochs=None, train_accuracy=None, test_ds=None, test_loss=None, test_accuracy=None, processes=None, mp=None, jit_compile=True, p=None):
         if p==None:
             p_=9
         else:
@@ -382,11 +393,10 @@ class Model:
         if p==0:
             p=1
         self.optimizer_=optimizer
-        self.max_save_files=max_save_files
         if epochs!=None:
             for epoch in range(epochs):
                 t1=time.time()
-                if self.end():
+                if self.steps_per_execution==None and self.end():
                     return
                 train_loss.reset_states()
                 if train_accuracy!=None:
@@ -398,10 +408,18 @@ class Model:
                         test_accuracy.reset_states()
             
                 for train_data, labels in train_ds:
+                    if self.batch_counter%self.steps_per_execution==0 and self.end():
+                        return
                     if jit_compile==True:
                         self.train_step(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer_)
                     else:
                         self.train_step_(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer_)
+                    self.batch_counter+=1
+                    if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
+                        if self.save_param_only==False:
+                            self.save_(self.path)
+                        else:
+                            self.save_param_(self.path)
                 
                 if mp==None:
                     if test_ds!=None:
@@ -473,15 +491,19 @@ class Model:
                         else:
                             print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
                             print()
-                if path!=None and epoch%save_freq==0:
-                    self.save(path)
+                if self.save_freq_==None:
+                    if self.path!=None and epoch%self.save_freq==0:
+                        if self.save_param_only==False:
+                            self.save_(self.path)
+                        else:
+                            self.save_param_(self.path)
                 t2=time.time()
                 self.time+=(t2-t1)
         else:
             i=0
             while True:
                 t1=time.time()
-                if self.end():
+                if self.steps_per_execution==None and self.end():
                     return
                 train_loss.reset_states()
                 if train_accuracy!=None:
@@ -492,10 +514,18 @@ class Model:
                     test_accuracy.reset_states()
             
                 for train_data, labels in train_ds:
+                    if self.batch_counter%self.steps_per_execution==0 and self.end():
+                        return
                     if jit_compile==True:
                         self.train_step(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer_)
                     else:
                         self.train_step_(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer_)
+                    self.batch_counter+=1
+                    if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
+                        if self.save_param_only==False:
+                            self.save_(self.path)
+                        else:
+                            self.save_param_(self.path)
                 
                 if mp==None:
                     if test_ds!=None:
@@ -568,8 +598,12 @@ class Model:
                         else:
                             print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
                             print()
-                if path!=None and i%save_freq==0:
-                    self.save(path)
+                if self.save_freq_==None:
+                    if self.path!=None and i%self.save_freq==0:
+                        if self.save_param_only==False:
+                            self.save_(self.path)
+                        else:
+                            self.save_param_(self.path)
                 t2=time.time()
                 self.time+=(t2-t1)
         self.shared_test_loss_array=None
@@ -595,7 +629,7 @@ class Model:
         return
     
     
-    def distributed_fit(self, train_dist_dataset, loss_object, global_batch_size, optimizer, strategy, epochs=None, train_accuracy=None, test_dist_dataset=None, test_loss=None, test_accuracy=None, jit_compile=True, path=None, save_freq=1, max_save_files=None, p=None):
+    def distributed_fit(self, train_dist_dataset, loss_object, global_batch_size, optimizer, strategy, epochs=None, train_accuracy=None, test_dist_dataset=None, test_loss=None, test_accuracy=None, jit_compile=True, p=None):
         if p==None:
             p_=9
         else:
@@ -609,7 +643,6 @@ class Model:
         if p==0:
             p=1
         self.optimizer_=optimizer
-        self.max_save_files=max_save_files
         with strategy.scope():
             def compute_loss(self, labels, output):
                 per_example_loss = loss_object(labels, output)
@@ -617,7 +650,7 @@ class Model:
         if epochs!=None:
             for epoch in range(epochs):
                 t1=time.time()
-                if self.end():
+                if self.steps_per_execution==None and self.end():
                     return
                 if train_accuracy!=None:
                     train_accuracy.reset_states()
@@ -629,11 +662,19 @@ class Model:
                 total_loss = 0.0
                 num_batches = 0
                 for x in train_dist_dataset:
+                    if self.batch_counter%self.steps_per_execution==0 and self.end():
+                        return
                     if jit_compile==True:
                         total_loss += self.distributed_train_step(x, self.optimizer_, train_accuracy, strategy)
                     else:
                         total_loss += self.distributed_train_step_(x, self.optimizer_, train_accuracy, strategy)
                     num_batches += 1
+                    self.batch_counter+=1
+                    if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
+                        if self.save_param_only==False:
+                            self.save_(self.path)
+                        else:
+                            self.save_param_(self.path)
                 
                 if test_dist_dataset!=None:
                     self.training()
@@ -674,15 +715,19 @@ class Model:
                         else:
                             print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
                             print()
-                if path!=None and epoch%save_freq==0:
-                    self.save(path)
+                if self.save_freq_==None:
+                    if self.path!=None and epoch%self.save_freq==0:
+                        if self.save_param_only==False:
+                            self.save_(self.path)
+                        else:
+                            self.save_param_(self.path)
                 t2=time.time()
                 self.time+=(t2-t1)
         else:
             i=0
             while True:
                 t1=time.time()
-                if self.end():
+                if self.steps_per_execution==None and self.end():
                     return
                 if train_accuracy!=None:
                     train_accuracy.reset_states()
@@ -694,11 +739,19 @@ class Model:
                 total_loss = 0.0
                 num_batches = 0
                 for x in train_dist_dataset:
+                    if self.batch_counter%self.steps_per_execution==0 and self.end():
+                        return
                     if jit_compile==True:
                         total_loss += self.distributed_train_step(x, self.optimizer_, train_accuracy, strategy)
                     else:
                         total_loss += self.distributed_train_step_(x, self.optimizer_, train_accuracy, strategy)
                     num_batches += 1
+                    self.batch_counter+=1
+                    if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
+                        if self.save_param_only==False:
+                            self.save_(self.path)
+                        else:
+                            self.save_param_(self.path)
                 
                 if test_dist_dataset!=None:
                     self.training()
@@ -740,8 +793,12 @@ class Model:
                         else:
                             print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
                             print()
-                if path!=None and i%save_freq==0:
-                    self.save(path)
+                if self.save_freq_==None:
+                    if self.path!=None and i%self.save_freq==0:
+                        if self.save_param_only==False:
+                            self.save_(self.path)
+                        else:
+                            self.save_param_(self.path)
                 t2=time.time()
                 self.time+=(t2-t1)
         self.shared_test_loss_array=None
@@ -842,37 +899,103 @@ class Model:
         return
     
     
+    def save_param_(self,path):
+        if self.save_best_only==False:
+            if self.max_save_files==None:
+                output_file=open(path,'wb')
+            else:
+                if self.train_acc!=None and self.test_acc!=None:
+                    path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc))
+                elif self.train_acc!=None:
+                    path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc))
+                else:
+                    path=path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_epoch))
+                output_file=open(path,'wb')
+                self.path_list.append(path)
+                if len(self.path_list)>self.max_save_files:
+                    os.remove(self.path_list[0])
+                    del self.path_list[0]
+            pickle.dump(self.param,output_file)
+            output_file.close()
+            return
+        else:
+            if self.monitor=='val_loss':
+                if self.test_loss<self.val_loss:
+                    output_file=open(path,'wb')
+                    pickle.dump(self.param,output_file)
+                    output_file.close()
+                self.val_loss=self.test_loss
+            elif self.monitor=='val_accuracy':
+                if self.test_acc>self.val_accuracy:
+                    output_file=open(path,'wb')
+                    pickle.dump(self.param,output_file)
+                    output_file.close()
+                self.val_accuracy=self.test_acc
+            return
+    
+    
     def save_param(self,path):
-        parameter_file=open(path,'wb')
-        pickle.dump(self.param,parameter_file)
-        parameter_file.close()
+        output_file=open(path,'wb')
+        pickle.dump(self.param,output_file)
+        output_file.close()
         return
     
     
     def restore_param(self,path):
-        parameter_file=open(path,'rb')
-        param=pickle.load(parameter_file)
+        input_file=open(path,'rb')
+        param=pickle.load(input_file)
         for i in range(len(self.param)):
             state_ops.assign(self.param[i],param[i])
-        parameter_file.close()
+        input_file.close()
         return
     
     
-    def save(self,path):
-        if self.max_save_files==None:
-            output_file=open(path,'wb')
-        else:
-            if self.train_acc!=None and self.test_acc!=None:
-                path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc))
-            elif self.train_acc!=None:
-                path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc))
+    def save_(self,path):
+        if self.save_best_only==False:
+            if self.max_save_files==None:
+                output_file=open(path,'wb')
             else:
-                path=path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_epoch))
-            output_file=open(path,'wb')
-            self.path_list.append(path)
-            if len(self.path_list)>self.max_save_files:
-                os.remove(self.path_list[0])
-                del self.path_list[0]
+                if self.train_acc!=None and self.test_acc!=None:
+                    path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch,self.train_acc,self.test_acc))
+                elif self.train_acc!=None:
+                    path=path.replace(path[path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch,self.train_acc))
+                else:
+                    path=path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_epoch))
+                output_file=open(path,'wb')
+                self.path_list.append(path)
+                if len(self.path_list)>self.max_save_files:
+                    os.remove(self.path_list[0])
+                    del self.path_list[0]
+            optimizer_config=tf.keras.optimizers.serialize(self.optimizer_)
+            self.optimizer_=None
+            pickle.dump(self,output_file)
+            pickle.dump(optimizer_config,output_file)
+            output_file.close()
+            return
+        else:
+            if self.monitor=='val_loss':
+                if self.test_loss<self.val_loss:
+                    output_file=open(path,'wb')
+                    optimizer_config=tf.keras.optimizers.serialize(self.optimizer_)
+                    self.optimizer_=None
+                    pickle.dump(self,output_file)
+                    pickle.dump(optimizer_config,output_file)
+                    output_file.close()
+                self.val_loss=self.test_loss
+            elif self.monitor=='val_accuracy':
+                if self.test_acc>self.val_accuracy:
+                    output_file=open(path,'wb')
+                    optimizer_config=tf.keras.optimizers.serialize(self.optimizer_)
+                    self.optimizer_=None
+                    pickle.dump(self,output_file)
+                    pickle.dump(optimizer_config,output_file)
+                    output_file.close()
+                self.val_accuracy=self.test_acc
+            return
+    
+    
+    def save(self,path):
+        output_file=open(path,'wb')
         optimizer_config=tf.keras.optimizers.serialize(self.optimizer_)
         self.optimizer_=None
         pickle.dump(self,output_file)
