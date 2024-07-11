@@ -975,22 +975,26 @@ class Model:
         else:
             if self.monitor=='val_loss':
                 if self.test_loss<self.val_loss:
+                    self.val_loss=self.test_loss
                     output_file=open(path,'wb')
                     optimizer_config=tf.keras.optimizers.serialize(self.optimizer_)
                     self.optimizer_=None
                     pickle.dump(self,output_file)
                     pickle.dump(optimizer_config,output_file)
                     output_file.close()
-                self.val_loss=self.test_loss
+                if self.val_loss==0:
+                    self.val_loss=self.test_loss
             elif self.monitor=='val_accuracy':
                 if self.test_acc>self.val_accuracy:
+                    self.val_accuracy=self.test_acc
                     output_file=open(path,'wb')
                     optimizer_config=tf.keras.optimizers.serialize(self.optimizer_)
                     self.optimizer_=None
                     pickle.dump(self,output_file)
                     pickle.dump(optimizer_config,output_file)
                     output_file.close()
-                self.val_accuracy=self.test_acc
+                if self.val_accuracy==1:
+                    self.val_accuracy=self.test_acc
             return
     
     
