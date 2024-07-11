@@ -917,21 +917,20 @@ class Model:
                     del self.path_list[0]
             pickle.dump(self.param,output_file)
             output_file.close()
-            return
         else:
             if self.monitor=='val_loss':
                 if self.test_loss<self.val_loss:
-                    output_file=open(path,'wb')
-                    pickle.dump(self.param,output_file)
-                    output_file.close()
-                self.val_loss=self.test_loss
+                    self.val_loss=self.test_loss
+                    self.save_param(path)
+                if self.val_loss==0:
+                    self.val_loss=self.test_loss
             elif self.monitor=='val_accuracy':
                 if self.test_acc>self.val_accuracy:
-                    output_file=open(path,'wb')
-                    pickle.dump(self.param,output_file)
-                    output_file.close()
-                self.val_accuracy=self.test_acc
-            return
+                    self.val_accuracy=self.test_acc
+                    self.save_param(path)
+                if self.val_accuracy==1:
+                    self.val_accuracy=self.test_acc
+        return
     
     
     def save_param(self,path):
@@ -971,31 +970,20 @@ class Model:
             pickle.dump(self,output_file)
             pickle.dump(optimizer_config,output_file)
             output_file.close()
-            return
         else:
             if self.monitor=='val_loss':
                 if self.test_loss<self.val_loss:
                     self.val_loss=self.test_loss
-                    output_file=open(path,'wb')
-                    optimizer_config=tf.keras.optimizers.serialize(self.optimizer_)
-                    self.optimizer_=None
-                    pickle.dump(self,output_file)
-                    pickle.dump(optimizer_config,output_file)
-                    output_file.close()
+                    self.save(path)
                 if self.val_loss==0:
                     self.val_loss=self.test_loss
             elif self.monitor=='val_accuracy':
                 if self.test_acc>self.val_accuracy:
                     self.val_accuracy=self.test_acc
-                    output_file=open(path,'wb')
-                    optimizer_config=tf.keras.optimizers.serialize(self.optimizer_)
-                    self.optimizer_=None
-                    pickle.dump(self,output_file)
-                    pickle.dump(optimizer_config,output_file)
-                    output_file.close()
+                    self.save(path)
                 if self.val_accuracy==1:
                     self.val_accuracy=self.test_acc
-            return
+        return
     
     
     def save(self,path):
