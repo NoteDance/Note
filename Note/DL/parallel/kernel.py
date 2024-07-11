@@ -33,9 +33,16 @@ class kernel:
         self.end_test_loss=None
         self.end_test_acc=None
         self.acc_flag='%'
-        self.save_freq=1
-        self.max_save_files=None
         self.path=None
+        self.save_freq=1
+        self.save_freq_=None
+        self.max_save_files=None
+        self.steps_per_execution=None
+        self.monitor='val_loss'
+        self.val_loss=0
+        self.val_accuracy=1
+        self.save_best_only=False
+        self.save_param_only=False
         self.test_flag=False
     
     
@@ -49,6 +56,7 @@ class kernel:
         if test_data is not None or test_dataset is not None:
             self.test_flag=True
         self.batch_counter=np.zeros(self.process,dtype='int32')
+        self.batch_counter_=np.zeros(self.process,dtype='int32')
         self.total_loss=np.zeros(self.process,dtype='float32')
         if hasattr(self.nn,'accuracy'):
             self.total_acc=np.zeros(self.process,dtype='float32')
@@ -73,6 +81,7 @@ class kernel:
     def init(self,manager):
         self.epoch_counter=Value('i',0)
         self.batch_counter=Array('i',self.batch_counter)
+        self.batch_counter_=Array('i',self.batch_counter_)
         self.total_loss=Array('f',self.total_loss)
         self.total_epoch=Value('i',0)
         self.train_loss=Value('f',0)
@@ -165,7 +174,7 @@ class kernel:
                     else:
                         continue
             lock[0].acquire()
-            if self.stop_func_(lock[0]):
+            if self.steps_per_execution==None and self.stop_func_(lock[0]):
                 return None,None,None
             try:
                 if hasattr(self.nn,'gradient'):
@@ -189,7 +198,7 @@ class kernel:
             lock[0].release()
         elif self.PO==2:
             g_lock.acquire()
-            if self.stop_func_(g_lock):
+            if self.steps_per_execution==None and self.stop_func_(g_lock):
                 return None,None,None
             try:
                 if hasattr(self.nn,'gradient'):
@@ -211,7 +220,7 @@ class kernel:
                     else:
                         continue
             lock[0].acquire()
-            if self.stop_func_(lock[0]):
+            if self.steps_per_execution==None and self.stop_func_(lock[0]):
                 return None,None,None
             if hasattr(self.nn,'attenuate'):
                 gradient=self.nn.attenuate(gradient,p)
@@ -232,7 +241,7 @@ class kernel:
                         break
                     else:
                         continue
-            if self.stop_func_():
+            if self.steps_per_execution==None and self.stop_func_():
                 return None,None,None
             try:
                 if hasattr(self.nn,'gradient'):
@@ -335,8 +344,16 @@ class kernel:
                 else:
                     self.total_loss[p]+=batch_loss
                 self.batch_counter[p]+=1
+                self.batch_counter_[p]+=1
                 if self.PO==1 or self.PO==2:
                     lock[1].acquire()
+                if self.save_freq_!=None and np.sum(self.batch_counter_)%self.save_freq_==0:
+                    if self.save_param_only==False:
+                        self.save_()
+                    else:
+                        self.save_param_()
+                if self.steps_per_execution!=None and np.sum(self.batch_counter_)%self.steps_per_execution==0 and self.stop_func():
+                    return
                 batches=np.sum(self.batch_counter)
                 if batches>=self.batches:
                     batch_counter=np.frombuffer(self.batch_counter.get_obj(),dtype='i')
@@ -362,7 +379,8 @@ class kernel:
                         else:
                             self.test_loss.value=self.test(self.test_data,self.test_labels,test_batch)
                             self.test_loss_list.append(self.test_loss.value)
-                    self.save_()
+                    if self.save_freq_==None:
+                        self.save_()
                     self.epoch_counter.value+=1
                     self.nn.ec[0]=sum(self._epoch_counter)+self.ec
                     _epoch_counter=self._epoch_counter[p]
@@ -559,7 +577,7 @@ class kernel:
     
     def stop_func(self):
         if self.end():
-            self.save(self.total_epoch.value,True)
+            self.save(self.path)
             self.save_flag.value=True
             self.stop_flag.value=True
             return True
@@ -576,7 +594,7 @@ class kernel:
     
     def save_(self):
         if self.path!=None and self.epoch_.value%self.save_freq==0:
-            self.save()
+            self._save()
         self.epoch_.value+=1
         return
     
@@ -715,6 +733,42 @@ class kernel:
         return
     
     
+    def save_param_(self):
+        if self.save_best_only==False:
+            if self.save_flag.value==True:
+                return
+            if self.max_save_files==None:
+                parameter_file=open(self.path,'wb')
+            else:
+                if hasattr(self.nn,'accuracy') and self.test_flag==True:
+                    path=self.path.replace(self.path[self.path.find('.'):],'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch.value,self.train_acc.value,self.test_acc.value))
+                elif hasattr(self.nn,'accuracy'):
+                    path=self.path.replace(self.path[self.path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch.value,self.train_acc.value))
+                else:
+                    path=self.path.replace(self.path[self.path.find('.'):],'-{0}.dat'.format(self.total_epoch.value))
+                parameter_file=open(path,'wb')
+                self.file_list.append([path])
+                if len(self.path_list)>self.max_save_files:
+                    os.remove(self.path_list[0][0])
+                    del self.path_list[0]
+            pickle.dump(self.param[7],parameter_file)
+            parameter_file.close()
+        else:
+            if self.monitor=='val_loss':
+                if self.test_loss<self.val_loss:
+                    self.val_loss=self.test_loss
+                    self.save_param(self.path)
+                if self.val_loss==0:
+                    self.val_loss=self.test_loss
+            elif self.monitor=='val_accuracy':
+                if self.test_acc>self.val_accuracy:
+                    self.val_accuracy=self.test_acc
+                    self.save_param(self.path)
+                if self.val_accuracy==1:
+                    self.val_accuracy=self.test_acc
+        return
+    
+    
     def save_param(self,path):
         parameter_file=open(path,'wb')
         pickle.dump(self.param[7],parameter_file)
@@ -734,23 +788,72 @@ class kernel:
         return
     
     
-    def save(self):
+    def _save(self):
+        if self.save_best_only==False:
+            if self.save_flag.value==True:
+                return
+            if self.max_save_files==None:
+                output_file=open(self.path,'wb')
+            else:
+                if hasattr(self.nn,'accuracy') and self.test_flag==True:
+                    path=self.path.replace(self.path[self.path.find('.'):],'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch.value,self.train_acc.value,self.test_acc.value))
+                elif hasattr(self.nn,'accuracy'):
+                    path=self.path.replace(self.path[self.path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch.value,self.train_acc.value))
+                else:
+                    path=self.path.replace(self.path[self.path.find('.'):],'-{0}.dat'.format(self.total_epoch.value))
+                output_file=open(path,'wb')
+                self.file_list.append([path])
+                if len(self.path_list)>self.max_save_files:
+                    os.remove(self.path_list[0][0])
+                    del self.path_list[0]
+            self.update_nn_param()
+            self.nn.opt_counter=None
+            self.nn.ec=self.nn.ec[0]
+            self.nn.bc=self.nn.bc[0]
+            self._epoch_counter=list(self._epoch_counter)
+            self._batch_counter=list(self._batch_counter)
+            self.nn.optimizer.convert_to_list()
+            Module.convert_to_list()
+            pickle.dump(self.nn,output_file)
+            pickle.dump(self.batch,output_file)
+            pickle.dump(self.end_loss,output_file)
+            pickle.dump(self.end_acc,output_file)
+            pickle.dump(self.end_test_loss,output_file)
+            pickle.dump(self.end_test_acc,output_file)
+            pickle.dump(self.acc_flag,output_file)
+            pickle.dump(self.file_list,output_file)
+            pickle.dump(self.train_loss.value,output_file)
+            pickle.dump(self.train_acc.value,output_file)
+            pickle.dump(list(self.train_loss_list),output_file)
+            pickle.dump(list(self.train_acc_list),output_file)
+            pickle.dump(self.test_flag,output_file)
+            if self.test_flag==True:
+                pickle.dump(self.test_loss.value,output_file)
+                pickle.dump(self.test_acc.value,output_file)
+                pickle.dump(list(self.test_loss_list),output_file)
+                pickle.dump(list(self.test_acc_list),output_file)
+            pickle.dump(self.total_epoch.value,output_file)
+            output_file.close()
+        else:
+            if self.monitor=='val_loss':
+                if self.test_loss<self.val_loss:
+                    self.val_loss=self.test_loss
+                    self.save(self.path)
+                if self.val_loss==0:
+                    self.val_loss=self.test_loss
+            elif self.monitor=='val_accuracy':
+                if self.test_acc>self.val_accuracy:
+                    self.val_accuracy=self.test_acc
+                    self.save(self.path)
+                if self.val_accuracy==1:
+                    self.val_accuracy=self.test_acc
+        return
+    
+    
+    def save(self,path):
         if self.save_flag.value==True:
             return
-        if self.max_save_files==None:
-            output_file=open(self.path,'wb')
-        else:
-            if hasattr(self.nn,'accuracy') and self.test_flag==True:
-                path=self.path.replace(self.path[self.path.find('.'):],'-{0}-{1:.4f}-{2:.4f}.dat'.format(self.total_epoch.value,self.train_acc.value,self.test_acc.value))
-            elif hasattr(self.nn,'accuracy'):
-                path=self.path.replace(self.path[self.path.find('.'):],'-{0}-{1:.4f}.dat'.format(self.total_epoch.value,self.train_acc.value))
-            else:
-                path=self.path.replace(self.path[self.path.find('.'):],'-{0}.dat'.format(self.total_epoch.value))
-            output_file=open(path,'wb')
-            self.file_list.append([path])
-            if len(self.path_list)>self.max_save_files:
-                os.remove(self.path_list[0][0])
-                del self.path_list[0]
+        output_file=open(path,'wb')
         self.update_nn_param()
         self.nn.opt_counter=None
         self.nn.ec=self.nn.ec[0]
