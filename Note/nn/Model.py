@@ -408,7 +408,7 @@ class Model:
                         test_accuracy.reset_states()
             
                 for train_data, labels in train_ds:
-                    if self.batch_counter%self.steps_per_execution==0 and self.end():
+                    if self.steps_per_execution!=None and self.batch_counter%self.steps_per_execution==0 and self.end():
                         return
                     if jit_compile==True:
                         self.train_step(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer_)
@@ -514,7 +514,7 @@ class Model:
                     test_accuracy.reset_states()
             
                 for train_data, labels in train_ds:
-                    if self.batch_counter%self.steps_per_execution==0 and self.end():
+                    if self.steps_per_execution!=None and self.batch_counter%self.steps_per_execution==0 and self.end():
                         return
                     if jit_compile==True:
                         self.train_step(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer_)
@@ -662,7 +662,7 @@ class Model:
                 total_loss = 0.0
                 num_batches = 0
                 for x in train_dist_dataset:
-                    if self.batch_counter%self.steps_per_execution==0 and self.end():
+                    if self.steps_per_execution!=None and self.batch_counter%self.steps_per_execution==0 and self.end():
                         return
                     if jit_compile==True:
                         total_loss += self.distributed_train_step(x, self.optimizer_, train_accuracy, strategy)
@@ -739,7 +739,7 @@ class Model:
                 total_loss = 0.0
                 num_batches = 0
                 for x in train_dist_dataset:
-                    if self.batch_counter%self.steps_per_execution==0 and self.end():
+                    if self.steps_per_execution!=None and self.batch_counter%self.steps_per_execution==0 and self.end():
                         return
                     if jit_compile==True:
                         total_loss += self.distributed_train_step(x, self.optimizer_, train_accuracy, strategy)
