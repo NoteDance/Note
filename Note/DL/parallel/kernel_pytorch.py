@@ -349,11 +349,13 @@ class kernel:
         batches=0
         test_loader=torch.utils.data.DataLoader(test_dataset,batch_size=batch)
         for data_batch,labels_batch in test_loader:
+            self.nn.training=False
             batches+=1
             batch_loss,batch_acc=self.test_(data_batch,labels_batch)
             total_loss+=batch_loss
             if hasattr(self.nn,'accuracy'):
                 total_acc+=batch_acc
+            self.nn.training=True
         test_loss=total_loss.detach().numpy()/batches
         if hasattr(self.nn,'accuracy'):
             test_acc=total_acc.detach().numpy()/batches
@@ -525,7 +527,7 @@ class kernel:
         if self.save_best_only==False:
             if self.save_flag.value==True:
                 return
-            if self.max_save_files==None:
+            if self.max_save_files==None or self.max_save_files==1:
                 parameter_file=open(self.path,'wb')
             else:
                 if hasattr(self.nn,'accuracy') and self.test_flag==True:
@@ -568,7 +570,7 @@ class kernel:
         if self.save_best_only==False:
             if self.save_flag.value==True:
                 return
-            if self.max_save_files==None:
+            if self.max_save_files==None or self.max_save_files==1:
                 output_file=open(self.path,'wb')
             else:
                 if hasattr(self.nn,'accuracy') and self.test_flag==True:
