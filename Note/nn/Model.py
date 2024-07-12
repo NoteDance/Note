@@ -399,11 +399,9 @@ class Model:
                 self.training(True)
         else:
             self.training()
-            if not isinstance(self.shared_test_loss_array, mp.sharedctypes.SynchronizedArray):
-                self.shared_test_loss_array=mp.Array('f',np.zeros([processes],dtype='float32'))
+            self.shared_test_loss_array=mp.Array('f',np.zeros([processes],dtype='float32'))
             if test_accuracy!=None:
-                if not isinstance(self.shared_test_acc_array, mp.sharedctypes.SynchronizedArray):
-                    self.shared_test_acc_array=mp.Array('f',np.zeros([processes],dtype='float32'))
+                self.shared_test_acc_array=mp.Array('f',np.zeros([processes],dtype='float32'))
             
             process_list=[]
             for p in range(processes):
@@ -581,8 +579,6 @@ class Model:
                             self.save_param_(self.path)
                 t2=time.time()
                 self.time+=(t2-t1)
-        self.shared_test_loss_array=None
-        self.shared_test_acc_array=None
         self._time=self.time-int(self.time)
         if self._time<0.5:
             self.time=int(self.time)
