@@ -369,8 +369,6 @@ class Model:
                 process.join()
             self.training(True)
                 
-            self.shared_test_loss_array=None
-            self.shared_test_acc_array=None
             if test_accuracy!=None:
                 test_loss,test_acc=np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/processes,np.sum(npc.as_array(self.shared_test_acc_array.get_obj()))/processes
                 return test_loss,test_acc
