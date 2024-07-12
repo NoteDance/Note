@@ -203,10 +203,11 @@ class kernel:
                     self.total_loss[p]+=batch_loss
                 self.batch_counter[p]+=1
                 self.batch_counter_[p]+=1
-                if self.steps_per_execution!=None and np.sum(self.batch_counter_)%self.steps_per_execution==0:
-                    loss=np.sum(self.total_loss)/np.sum(self.batch_counter_)
+                batches=np.sum(self.batch_counter_)
+                if self.steps_per_execution!=None and batches%self.steps_per_execution==0:
+                    loss=np.sum(self.total_loss)/batches
                     if hasattr(self.nn,'accuracy'):
-                        train_acc=np.sum(self.total_acc)/np.sum(self.batch_counter_)
+                        train_acc=np.sum(self.total_acc)/batches
                     if self.test_flag==True:
                         if hasattr(self.nn,'accuracy'):
                             self.test_loss.value,self.test_acc.value=self.test(self.test_data,self.test_labels,test_batch)
@@ -219,11 +220,13 @@ class kernel:
                             self.save_param_()
                     batch_counter=np.frombuffer(self.batch_counter_.get_obj(),dtype='i')
                     batch_counter*=0
-                if self.save_freq_!=None and np.sum(self.batch_counter_)%self.save_freq_==0:
+                if self.save_freq_!=None and batches>=self.save_freq_:
                     if self.save_param_only==False:
                         self.save_()
                     else:
                         self.save_param_()
+                    batch_counter=np.frombuffer(self.batch_counter_.get_obj(),dtype='i')
+                    batch_counter*=0
                 batches=np.sum(self.batch_counter)
                 if batches>=len(train_loader):
                     batch_counter=np.frombuffer(self.batch_counter.get_obj(),dtype='i')
