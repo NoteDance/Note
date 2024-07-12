@@ -198,15 +198,16 @@ class BottleneckBlock:
             self.layers2.add(SE(filters, se_ratio=se_ratio, in_channels=self.layers2.output_size))
         self.survival_probability=survival_probability
         self.activation=activation
-        self.train_flag=True
         self.output_size=self.layers2.output_size
+        self.training=True
+        nn.Model.layer_list.append(self)
     
     
-    def __call__(self,data,train_flag=True):
-        shortcut=self.layers1(data,train_flag)
-        x=self.layers2(data,train_flag)
+    def __call__(self,data):
+        shortcut=self.layers1(data)
+        x=self.layers2(data)
         # Drop connect
-        if train_flag==True and self.survival_probability:
+        if self.training==True and self.survival_probability:
             x = tf.nn.dropout(
                 x,
                 self.survival_probability,
@@ -319,8 +320,6 @@ class ResNetRS(nn.Model):
             ))
         self.head=self.dense(self.classes,self.layers.output_size)
         
-        self.training=True
-
 
     def __call__(self,data):
         if self.include_preprocessing:
@@ -330,7 +329,7 @@ class ResNetRS(nn.Model):
             variance = tf.constant([0.229**2, 0.224**2, 0.225**2])
             normalization_data = tf.nn.batch_normalization(rescaling_data, mean, variance, None, None, 1e-12)
             data=normalization_data
-        x=self.layers(data,self.training)
+        x=self.layers(data)
         # Build head:
         if self.include_top:
             x = tf.reduce_mean(x, axis=[1, 2])

@@ -161,7 +161,6 @@ class DiT(nn.Model):
         ]
         self.final_layer = FinalLayer(hidden_size, patch_size, self.out_channels)
         self.initialize_weights()
-        self.training = True
 
     def initialize_weights(self):
         # Initialize (and freeze) pos_embed by sin-cos embedding:
@@ -193,7 +192,7 @@ class DiT(nn.Model):
         """
         x = self.x_embedder(x) + self.pos_embed  # (N, T, D), where T = H * W / patch_size ** 2
         t = self.t_embedder(t)                   # (N, D)
-        y = self.y_embedder(y, self.training)    # (N, D)
+        y = self.y_embedder(y)    # (N, D)
         c = t + y                                # (N, D)
         for block in self.blocks:
             x = block(x, c)                      # (N, T, D)

@@ -210,15 +210,13 @@ class EfficientNetV2(nn.Model):
             elif self.pooling == "max":
                 self.global_max_pool2d=nn.global_max_pool2d()
                 
-        self.training=True
-    
     
     def __call__(self,data):
         data=self.rescaling(data)
         data=self.norm(data)
-        x=self.layers1(data,self.training)
-        x=self.layers2(x,self.training)
-        x=self.layers3(x,self.training)
+        x=self.layers1(data)
+        x=self.layers2(x)
+        x=self.layers3(x)
         if self.include_top:
             x=self.global_avg_pool2d(x)
             if self.dropout_rate > 0:
@@ -326,11 +324,10 @@ class MBConvBlock:
                     noise_shape=(None, 1, 1, 1),
                 ))
         self.output_size=self.layers.output_size
-        self.train_flag=True
     
     
-    def __call__(self,data,train_flag=True):
-        x=self.layers(data,train_flag)
+    def __call__(self,data):
+        x=self.layers(data)
         if self.strides == 1 and self.input_filters == self.output_filters:
             x=tf.math.add(x,data)
         return x
@@ -421,11 +418,10 @@ class FusedMBConvBlock:
                     noise_shape=(None, 1, 1, 1),
                 ))
         self.output_size=self.layers.output_size
-        self.train_flag=True
     
     
-    def __call__(self,data,train_flag=True):
-        x=self.layers(data,train_flag)
+    def __call__(self,data):
+        x=self.layers(data)
         if self.strides == 1 and self.input_filters == self.output_filters:
             x=tf.math.add(x,data)
         return x

@@ -8,14 +8,12 @@ class _conv_block:
         filters = int(filters * alpha)
         self.conv2d=nn.conv2d(filters,kernel,in_channels,strides=strides,padding='SAME',use_bias=False)
         self.batch_norm=nn.batch_norm(self.conv2d.output_size)
-        self.train_flag=True
         self.output_size=self.conv2d.output_size
     
     
-    def __call__(self,data,train_flag=True):
-        self.train_flag=train_flag
+    def __call__(self,data):
         x=self.conv2d(data)
-        x=self.batch_norm(x,self.train_flag)
+        x=self.batch_norm(x)
         return activation_dict['relu6'](x)
 
 
@@ -28,21 +26,19 @@ class _depthwise_conv_block:
         self.batch_norm1=nn.batch_norm(self.depthwiseconv2d.output_size)
         self.conv2d=nn.conv2d(pointwise_conv_filters,[1,1],self.depthwiseconv2d.output_size,strides=[1, 1],padding='SAME',use_bias=False)
         self.batch_norm2=nn.batch_norm(self.conv2d.output_size)
-        self.train_flag=True
         self.output_size=self.conv2d.output_size
     
     
-    def __call__(self,data,train_flag=True):
-        self.train_flag=train_flag
+    def __call__(self,data):
         if self.strides == [1, 1]:
             x = data
         else:
             x = self.zeropadding2d(data, ((0, 1), (0, 1)))
         x=self.depthwiseconv2d(x)
-        x=self.batch_norm1(x,self.train_flag)
+        x=self.batch_norm1(x)
         x=activation_dict['relu6'](x)
         x=self.conv2d(x)
-        x=self.batch_norm2(x,self.train_flag)
+        x=self.batch_norm2(x)
         return activation_dict['relu6'](x)
 
 
@@ -82,11 +78,9 @@ class MobileNet(nn.Model):
         self.conv2d=nn.conv2d(self.classes,[1,1],self.layers.output_size,padding='SAME')
         self.head=self.dense(self.classes,self.conv2d.output_size)
         
-        self.training=True
-    
     
     def __call__(self,data):
-        x=self.layers(data,self.training)
+        x=self.layers(data)
         if self.include_top:
             x=tf.math.reduce_mean(x,axis=[1,2],keepdims=True)
             x=self.conv2d(x)

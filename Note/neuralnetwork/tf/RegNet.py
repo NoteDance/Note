@@ -264,14 +264,12 @@ class RegNet(nn.Model):
             elif self.pooling == "max":
                 self.global_max_pool2d=nn.global_max_pool2d()
                 
-        self.training=True
-    
     
     def __call__(self,data):
         x = data
         if self.include_preprocessing:
             x = PreStem(x)
-        x = self.layers(x,self.training)
+        x = self.layers(x)
         if self.include_top:
             x = self.global_avg_pool2d(x)
             x = self.head(x)

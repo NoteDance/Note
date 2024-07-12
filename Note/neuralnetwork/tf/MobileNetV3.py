@@ -73,8 +73,6 @@ class MobileNetV3(nn.Model):
             )
         self.flatten=nn.flatten()
         
-        self.training=True
-    
     
     def stack_fn_small(self, in_channels, kernel, activation, se_ratio):
         def depth(d):
@@ -135,7 +133,7 @@ class MobileNetV3(nn.Model):
     def __call__(self,data):
         if self.include_preprocessing:
             data=self.rescaling(data)
-        x=self.layers(data,self.training)
+        x=self.layers(data)
         x=self.head(x)
         if self.include_top:
             x=self.flatten(x)
@@ -226,28 +224,26 @@ class _inverted_res_block:
         self.se_ratio=se_ratio
         self.activation=activation
         self.block_id=block_id
-        self.train_flag=True
         self.output_size=self.conv2d2.output_size
     
     
-    def __call__(self,data,train_flag=True):
-        self.train_flag=train_flag
+    def __call__(self,data):
         x=data
         shortcut=data
         if self.block_id:
             x=self.conv2d1(x)
-            x=self.batch_normalization1(x,self.train_flag)
+            x=self.batch_normalization1(x)
             x=self.activation(x)
         if self.stride==2:
             padding = correct_pad(x, 3)
             x=self.zeropadding2d(x, padding)
         x=self.depthwiseconv2d(x)
-        x=self.batch_normalization2(x,self.train_flag)
+        x=self.batch_normalization2(x)
         x=self.activation(x)
         if self.se_ratio:
             x=self.layers(x)
         x=self.conv2d2(x)
-        x=self.batch_normalization3(x,self.train_flag)
+        x=self.batch_normalization3(x)
         if self.stride == 1 and self.in_channels == self.filters:
             return shortcut+x
         return x

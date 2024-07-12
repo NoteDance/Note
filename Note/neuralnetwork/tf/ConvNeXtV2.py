@@ -101,15 +101,13 @@ class ConvNeXtV2(nn.Model):
         self.head.weight.assign(tf.cast(self.head_init_scale,self.dense.weight.dtype)*self.dense.weight)
         self.head.bias.assign(tf.cast(self.head_init_scale,self.dense.bias.dtype)*self.dense.bias)
         
-        self.training=True
-
 
     def __call__(self,data):
         x = data
         for i in range(4):
-            x = self.downsample_layers[i](x,self.training)
+            x = self.downsample_layers[i](x)
             for j in range(self.depths[i]):
-                x = self.stages[i](x,self.training)
+                x = self.stages[i](x)
         if self.include_top:
             x = tf.math.reduce_mean(x, axis=[1, 2])
             x = self.layer_norm(x)

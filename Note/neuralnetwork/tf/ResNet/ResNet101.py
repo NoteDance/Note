@@ -20,14 +20,12 @@ class block1:
         self.layers2.add(activation_dict['relu'])
         self.layers2.add(nn.conv2d(4 * filters,[1,1]))
         self.layers2.add(nn.batch_norm(epsilon=1.001e-5))
-        self.train_flag=True
         self.output_size=self.layers2.output_size
     
     
-    def __call__(self,data,train_flag=True):
-        self.train_flag=train_flag
-        shortcut=self.layers1(data,self.train_flag)
-        x=self.layers2(data,self.train_flag)
+    def __call__(self,data):
+        shortcut=self.layers1(data)
+        x=self.layers2(data)
         x=shortcut+x
         x=activation_dict['relu'](x)
         return x
@@ -73,11 +71,10 @@ class ResNet101(nn.Model):
             self.layers.add(nn.batch_norm(self.layers.output_size,epsilon=1.001e-5))
             self.layers.add(activation_dict['relu'])
         self.head=self.dense(self.classes,self.layers.output_size)
-        self.training=True
     
     
     def __call__(self,data):
-        x=self.layers(data,self.training)
+        x=self.layers(data)
         if self.include_top:
             x=tf.math.reduce_mean(x,axis=[1,2])
             x=self.head(x)

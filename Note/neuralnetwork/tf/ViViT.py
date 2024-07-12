@@ -24,8 +24,8 @@ class FeedForward:
         self.net.add(nn.dense(dim, hidden_dim))
         self.net.add(nn.dropout(dropout_rate))
         
-    def __call__(self, x, training):
-        return self.net(x, training)
+    def __call__(self, x):
+        return self.net(x)
 
 class Attention:
     def __init__(self, dim, heads = 8, dim_head = 64, dropout_rate = 0.):
@@ -48,7 +48,7 @@ class Attention:
         else:
             self.to_out.add(nn.identity())
 
-    def __call__(self, x, training):
+    def __call__(self, x):
         x = self.norm(x)
         qkv = tf.split(self.to_qkv(x), 3, axis = -1)
         q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h = self.heads), qkv)
@@ -56,11 +56,11 @@ class Attention:
         dots = tf.matmul(q, tf.transpose(k, (0, 1, 3, 2))) * self.scale
 
         attn = self.attend(dots)
-        attn = self.dropout(attn, training)
+        attn = self.dropout(attn)
 
         out = tf.matmul(attn, v)
         out = rearrange(out, 'b h n d -> b n (h d)')
-        return self.to_out(out, training)
+        return self.to_out(out)
 
 class Transformer:
     def __init__(self, dim, depth, heads, dim_head, mlp_dim, dropout_rate = 0.):
@@ -72,10 +72,10 @@ class Transformer:
                 FeedForward(dim, mlp_dim, dropout_rate = dropout_rate)
             ])
             
-    def __call__(self, x, training):
+    def __call__(self, x):
         for attn, ff in self.layers:
-            x = attn(x, training) + x
-            x = ff(x, training) + x
+            x = attn(x) + x
+            x = ff(x) + x
         return self.norm(x)
 
 class ViViT(nn.Model):
@@ -134,8 +134,6 @@ class ViViT(nn.Model):
         self.to_latent = nn.identity()
 
         self.head = self.dense(num_classes, dim)
-        
-        self.training = True
 
     def __call__(self, video):
         x = self.to_patch_embedding(video)
@@ -147,13 +145,13 @@ class ViViT(nn.Model):
             spatial_cls_tokens = repeat(self.spatial_cls_token, '1 1 d -> b f 1 d', b = b, f = f)
             x = tf.concat((spatial_cls_tokens, x), axis = 2)
 
-        x = self.dropout(x, self.training)
+        x = self.dropout(x)
 
         x = rearrange(x, 'b f n d -> (b f) n d')
 
         # attend across space
 
-        x = self.spatial_transformer(x, self.training)
+        x = self.spatial_transformer(x)
 
         x = rearrange(x, '(b f) n d -> b f n d', b = b)
 
@@ -170,7 +168,7 @@ class ViViT(nn.Model):
 
         # attend across time
 
-        x = self.temporal_transformer(x, self.training)
+        x = self.temporal_transformer(x)
 
         # excise out temporal cls token or average pool
 

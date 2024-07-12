@@ -38,6 +38,7 @@ class SwiftFormer(nn.Model):
         self.alpha = tf.constant(0.5)
         self.temperature = tf.constant(10.)
         self.training=True
+        nn.Model.layer_list.append(self)
 
         self.patch_embed = stem(3, embed_dims[0])
 
@@ -122,16 +123,13 @@ class SwiftFormer(nn.Model):
         return
 
 
-    def forward_tokens(self, x, train_flag=True):
+    def forward_tokens(self, x):
         outs = []
         for idx, block in enumerate(self.network):
-            x = block(x,train_flag)
+            x = block(x)
             if self.fork_feat and idx in self.out_indices:
                 norm_layer = self.layers_dict[f'norm{idx}']
-                if hasattr(norm_layer, 'train_flag'):
-                    x_out = norm_layer(x,train_flag)
-                else:
-                    x_out = norm_layer(x)
+                x_out = norm_layer(x)
                 outs.append(x_out)
         if self.fork_feat:
             return outs
@@ -139,13 +137,13 @@ class SwiftFormer(nn.Model):
     
 
     def __call__(self, x):
-        x = self.patch_embed(x,self.training)
-        x = self.forward_tokens(x,self.training)
+        x = self.patch_embed(x)
+        x = self.forward_tokens(x)
         if self.fork_feat:
             # Output features of four stages for dense prediction
             return x
 
-        x = self.norm(x,self.training)
+        x = self.norm(x)
         if self.include_top:
             x = tf.transpose(x,perm=[0,3,1,2])
             if self.dist:
@@ -220,15 +218,11 @@ class Embedding:
         self.proj = nn.conv2d(embed_dim, kernel_size=patch_size, input_size=in_chans,
                               strides=stride, padding=padding)
         self.norm = nn.batch_norm(embed_dim) if norm_layer else nn.identity()
-        self.train_flag=True
     
     
-    def __call__(self, x, train_flag=True):
+    def __call__(self, x):
         x = self.proj(x)
-        if hasattr(self.norm, 'train_flag'):
-            x = self.norm(x, train_flag)
-        else:
-            x = self.norm(x)
+        x = self.norm(x)
         return x
 
 
@@ -252,22 +246,15 @@ class ConvEncoder:
         self.use_layer_scale = use_layer_scale
         if use_layer_scale:
             self.layer_scale = nn.initializer([dim],'ones')
-        self.train_flag=True
 
 
-    def __call__(self, x, train_flag=True):
+    def __call__(self, x):
         input = x
-        x = self.layers(x,train_flag)
+        x = self.layers(x)
         if self.use_layer_scale:
-            if hasattr(self.drop_path, 'train_flag'):
-                x = input + self.drop_path(self.layer_scale * x, train_flag)
-            else:
-                x = input + self.drop_path(self.layer_scale * x)
+            x = input + self.drop_path(self.layer_scale * x)
         else:
-            if hasattr(self.drop_path, 'train_flag'):
-                x = input + self.drop_path(x, train_flag)
-            else:
-                x = input + self.drop_path(x)
+            x = input + self.drop_path(x)
         return x
 
 
@@ -288,8 +275,8 @@ class Mlp:
         self.layers.add(nn.dropout(drop))
 
 
-    def __call__(self, x, train_flag=True):
-        x=self.layers(x,train_flag)
+    def __call__(self, x):
+        x=self.layers(x)
         return x
 
 
@@ -353,19 +340,13 @@ class SwiftFormerLocalRepresentation:
             self.layer_scale = nn.initializer([dim],'ones')
 
 
-    def __call__(self, x, train_flag=True):
+    def __call__(self, x):
         input = x
-        x = self.layers(x,train_flag)
+        x = self.layers(x)
         if self.use_layer_scale:
-            if hasattr(self.drop_path, 'train_flag'):
-                x = input + self.drop_path(self.layer_scale * x, train_flag)
-            else:
-                x = input + self.drop_path(self.layer_scale * x)
+            x = input + self.drop_path(self.layer_scale * x)
         else:
-            if hasattr(self.drop_path, 'train_flag'):
-                x = input + self.drop_path(x, train_flag)
-            else:
-                x = input + self.drop_path(x)
+            x = input + self.drop_path(x)
         return x
 
 
@@ -390,42 +371,24 @@ class SwiftFormerEncoder:
             
             self.layer_scale_2 = nn.initializer([dim],'ones')
             
-        self.train_flag=True
-        
 
-    def __call__(self, x, train_flag=True):
-        x = self.local_representation(x,train_flag)
+    def __call__(self, xe):
+        x = self.local_representation(x)
         B, H, W, C = x.shape
         if self.use_layer_scale:
-            if hasattr(self.drop_path, 'train_flag'):
-                x = tf.transpose(x, perm=[0, 2, 3, 1])
-                x = tf.reshape(x, shape=(B, H * W, C))
-                x=self.attn(x)
-                x = tf.reshape(x, shape=(B, H, W, C))
-                x = x + self.drop_path(self.layer_scale_1 * x, train_flag)
-                x = x + self.drop_path(self.layer_scale_2 * self.linear(x, train_flag), train_flag)
-            else:
-                x = tf.transpose(x, perm=[0, 2, 3, 1])
-                x = tf.reshape(x, shape=(B, H * W, C))
-                x=self.attn(x)
-                x = tf.reshape(x, shape=(B, H, W, C))
-                x = x + self.drop_path(self.layer_scale_1 * x)
-                x = x + self.drop_path(self.layer_scale_2 * self.linear(x, train_flag)) 
+            x = tf.transpose(x, perm=[0, 2, 3, 1])
+            x = tf.reshape(x, shape=(B, H * W, C))
+            x=self.attn(x)
+            x = tf.reshape(x, shape=(B, H, W, C))
+            x = x + self.drop_path(self.layer_scale_1 * x)
+            x = x + self.drop_path(self.layer_scale_2 * self.linear(x)) 
         else:
-            if hasattr(self.drop_path, 'train_flag'):
-                x = tf.transpose(x, perm=[0, 2, 3, 1])
-                x = tf.reshape(x, shape=(B, H * W, C))
-                x=self.attn(x)
-                x = tf.reshape(x, shape=(B, H, W, C))
-                x = x + self.drop_path(x, train_flag)
-                x = x + self.drop_path(self.linear(x, train_flag), train_flag)
-            else:
-                x = tf.transpose(x, perm=[0, 2, 3, 1])
-                x = tf.reshape(x, shape=(B, H * W, C))
-                x=self.attn(x)
-                x = tf.reshape(x, shape=(B, H, W, C))
-                x = x + self.drop_path(x)
-                x = x + self.drop_path(self.linear(x, train_flag))
+            x = tf.transpose(x, perm=[0, 2, 3, 1])
+            x = tf.reshape(x, shape=(B, H * W, C))
+            x=self.attn(x)
+            x = tf.reshape(x, shape=(B, H, W, C))
+            x = x + self.drop_path(x)
+            x = x + self.drop_path(self.linear(x))
         return x
 
 

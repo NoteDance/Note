@@ -347,6 +347,7 @@ class XCiT(nn.Model):
         nn.Model.apply(self.init_weights)
         
         self.training = True
+        nn.Model.layer_list.append(self)
 
     def init_weights(self, l):
         if isinstance(l, nn.dense):

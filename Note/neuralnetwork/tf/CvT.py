@@ -42,8 +42,8 @@ class FeedForward:
         self.net.add(nn.conv2d(dim, 1, dim * mult))
         self.net.add(nn.dropout(dropout_rate))
 
-    def __call__(self, x, training):
-        return self.net(x, training)
+    def __call__(self, x):
+        return self.net(x)
 
 class DepthWiseConv2d:
     def __init__(self, dim_in, dim_out, kernel_size, padding, stride, bias = True):
@@ -52,8 +52,8 @@ class DepthWiseConv2d:
         self.net.add(nn.batch_norm(dim_in))
         self.net.add(nn.conv2d(dim_out, 1, dim_in, use_bias = bias))
 
-    def __call__(self, x, training):
-        return self.net(x, training)
+    def __call__(self, x):
+        return self.net(x)
 
 class Attention:
     def __init__(self, dim, proj_kernel, kv_proj_stride, heads = 8, dim_head = 64, dropout_rate = 0.):
@@ -73,22 +73,22 @@ class Attention:
         self.to_out.add(nn.conv2d(dim, 1, inner_dim))
         self.to_out.add(nn.dropout(dropout_rate))
 
-    def __call__(self, x, training):
+    def __call__(self, x):
         shape = x.shape
         b, _, y, n, h = *shape, self.heads
 
         x = self.norm(x)
-        q, k, v = (self.to_q(x, training), *tf.split(self.to_kv(x, training), 2, axis = -1))
+        q, k, v = (self.to_q(x), *tf.split(self.to_kv(x), 2, axis = -1))
         q, k, v = map(lambda t: rearrange(t, 'b x y (h d) -> (b h) (x y) d', h = h), (q, k, v))
 
         dots = tf.einsum('b i d, b j d -> b i j', q, k) * self.scale
 
         attn = self.attend(dots)
-        attn = self.dropout(attn, training)
+        attn = self.dropout(attn)
 
         out = tf.einsum('b i j, b j d -> b i d', attn, v)
         out = rearrange(out, '(b h) (x y) d -> b x y (h d)', h = h, y = y)
-        return self.to_out(out, training)
+        return self.to_out(out)
 
 class Transformer:
     def __init__(self, dim, proj_kernel, kv_proj_stride, depth, heads, dim_head = 64, mlp_mult = 4, dropout = 0.):
@@ -98,12 +98,11 @@ class Transformer:
                 Attention(dim, proj_kernel = proj_kernel, kv_proj_stride = kv_proj_stride, heads = heads, dim_head = dim_head, dropout_rate = dropout),
                 FeedForward(dim, mlp_mult, dropout_rate = dropout)
             ])
-        self.train_flag = True
 
-    def __call__(self, x, training):
+    def __call__(self, x):
         for attn, ff in self.layers:
-            x = attn(x, training) + x
-            x = ff(x, training) + x
+            x = attn(x) + x
+            x = ff(x) + x
         return x
 
 class CvT(nn.Model):
@@ -160,8 +159,6 @@ class CvT(nn.Model):
         self.to_logits.add(nn.adaptive_avg_pooling2d(1))
         self.to_logits.add(Rearrange('() () ... -> ...'))
         self.to_logits.add(nn.dense(num_classes, dim))
-
-        self.training = True
         
     def fine_tuning(self,classes=None,flag=0):
         param=[]
@@ -184,5 +181,5 @@ class CvT(nn.Model):
         return
 
     def __call__(self, data):
-        latents = self.layers(data, self.training)
+        latents = self.layers(data)
         return self.to_logits(latents)

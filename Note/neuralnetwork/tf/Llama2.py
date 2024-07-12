@@ -108,7 +108,6 @@ class Attention:
         x,
         freqs_cos,
         freqs_sin,
-        train_flag
     ):
         bsz, seqlen, _ = x.shape
 
@@ -134,7 +133,7 @@ class Attention:
         assert hasattr(self, 'mask')
         scores = scores + self.mask[:, :, :seqlen, :seqlen]   # (bs, n_local_heads, seqlen, cache_len + seqlen)
         scores = tf.cast(tf.nn.softmax(tf.cast(scores, 'float32'), axis=-1), xq.dtype)
-        scores = self.attn_dropout(scores, train_flag)
+        scores = self.attn_dropout(scores)
         output = tf.matmul(scores, xv)  # (bs, n_local_heads, seqlen, head_dim)
 
         # restore time as batch dimension and concat heads
@@ -142,7 +141,7 @@ class Attention:
 
         # final projection into the residual stream
         output = self.wo(output)
-        output = self.resid_dropout(output, train_flag)
+        output = self.resid_dropout(output)
         return output
 
 
@@ -157,8 +156,8 @@ class FeedForward:
         self.w3 = nn.dense(hidden_dim, dim, weight_initializer=['normal', 0.0, 0.02/math.sqrt(2 * ModelArgs.n_layers)], use_bias=False)
         self.dropout = nn.dropout(drop_rate)
 
-    def __call__(self, x, train_flag):
-        return self.dropout(self.w2(tf.nn.silu(self.w1(x)) * self.w3(x)), train_flag)
+    def __call__(self, x):
+        return self.dropout(self.w2(tf.nn.silu(self.w1(x)) * self.w3(x)))
 
 
 class TransformerBlock:
@@ -177,9 +176,9 @@ class TransformerBlock:
         self.attention_norm = RMSNorm(args.dim, eps=args.norm_eps)
         self.ffn_norm = RMSNorm(args.dim, eps=args.norm_eps)
 
-    def __call__(self, x, freqs_cos, freqs_sin, train_flag):
-        h = x + self.attention(self.attention_norm(x), freqs_cos, freqs_sin, train_flag)
-        out = h + self.feed_forward(self.ffn_norm(h), train_flag)
+    def __call__(self, x, freqs_cos, freqs_sin):
+        h = x + self.attention(self.attention_norm(x), freqs_cos, freqs_sin)
+        out = h + self.feed_forward(self.ffn_norm(h))
         return out
 
 
@@ -201,16 +200,17 @@ class Llama2(nn.Model):
         self.freqs_cos, self.freqs_sin = precompute_freqs_cis(self.params.dim // self.params.n_heads, self.params.max_seq_len)
         
         self.training = True
+        nn.Model.layer_list.append(self)
 
     def __call__(self, tokens):
         _bsz, seqlen = tokens.shape
         h = tf.gather(tf.transpose(self.output.weight), tokens)
-        h = self.dropout(h, self.training)
+        h = self.dropout(h)
         freqs_cos = self.freqs_cos[:seqlen]
         freqs_sin = self.freqs_sin[:seqlen]
 
         for layer in self.layers:
-            h = layer(h, freqs_cos, freqs_sin, self.training)
+            h = layer(h, freqs_cos, freqs_sin)
         h = self.norm(h)
 
         if self.training:

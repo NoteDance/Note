@@ -14,8 +14,8 @@ class FeedForward:
         self.net.add(nn.dense(dim, hidden_dim))
         self.net.add(nn.dropout(dropout_rate))
         
-    def __call__(self, x, training):
-        return self.net(x, training)
+    def __call__(self, x):
+        return self.net(x)
 
 class Attention:
     def __init__(self, dim, heads = 8, dim_head = 64, dropout_rate = 0.):
@@ -39,7 +39,7 @@ class Attention:
         self.to_out.add(nn.dense(dim, inner_dim))
         self.to_out.add(nn.dropout(dropout_rate))
 
-    def __call__(self, x, training):
+    def __call__(self, x):
         b, n, _, h = *x.shape, self.heads
         x = self.norm(x)
 
@@ -50,7 +50,7 @@ class Attention:
 
         dots = tf.einsum('b h i d, b h j d -> b h i j', q, k) * self.scale
         attn = tf.nn.softmax(dots)
-        attn = self.dropout(attn, training)
+        attn = self.dropout(attn)
 
         # re-attention
 
@@ -61,7 +61,7 @@ class Attention:
 
         out = tf.einsum('b h i j, b h j d -> b h i d', attn, v)
         out = rearrange(out, 'b h n d -> b n (h d)')
-        out =  self.to_out(out, training)
+        out =  self.to_out(out)
         return out
 
 class Transformer:
@@ -73,10 +73,10 @@ class Transformer:
                 FeedForward(dim, mlp_dim, dropout_rate = dropout_rate)
             ])
             
-    def __call__(self, x, training):
+    def __call__(self, x):
         for attn, ff in self.layers:
-            x = attn(x, training) + x
-            x = ff(x, training) + x
+            x = attn(x) + x
+            x = ff(x) + x
         return x
 
 class DeepViT(nn.Model):
@@ -107,8 +107,6 @@ class DeepViT(nn.Model):
         self.mlp_head = nn.Sequential()
         self.mlp_head.add(nn.layer_norm(dim))
         self.mlp_head.add(nn.dense(num_classes, dim))
-        
-        self.training = True
     
     def fine_tuning(self,classes=None,flag=0):
         param=[]
@@ -136,9 +134,9 @@ class DeepViT(nn.Model):
         cls_tokens = repeat(self.cls_token, '() n d -> b n d', b = b)
         x = tf.concat((cls_tokens, x), axis=1)
         x += self.pos_embedding[:, :(n + 1)]
-        x = self.dropout(x, self.training)
+        x = self.dropout(x)
 
-        x = self.transformer(x, self.training)
+        x = self.transformer(x)
 
         x = tf.reduce_mean(x, axis=-1) if self.pool == 'mean' else x[:, 0]
 

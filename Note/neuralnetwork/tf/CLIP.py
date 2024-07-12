@@ -33,16 +33,16 @@ class Bottleneck:
             self.downsample.add(nn.conv2d(planes * self.expansion, 1, inplanes, strides=1, use_bias=False))
             self.downsample.add(nn.batch_norm(planes * self.expansion))
 
-    def __call__(self, x, train_flag=True):
+    def __call__(self, x):
         nn.identity = x
 
-        out = self.relu1(self.bn1(self.conv1(x), train_flag))
-        out = self.relu2(self.bn2(self.conv2(out), train_flag))
+        out = self.relu1(self.bn1(self.conv1(x)))
+        out = self.relu2(self.bn2(self.conv2(out)))
         out = self.avgpool(out)
-        out = self.bn3(self.conv3(out), train_flag)
+        out = self.bn3(self.conv3(out))
 
         if self.downsample is not None:
-            nn.identity = self.downsample(x, train_flag)
+            nn.identity = self.downsample(x)
 
         out += nn.identity
         out = self.relu3(out)
@@ -131,23 +131,23 @@ class ModifiedResNet:
 
         return layers
 
-    def __call__(self, x, train_flag=True):
+    def __call__(self, x):
         def stem(x):
             x = self.conv1(x)
-            x = self.relu1(self.bn1(x, train_flag))
+            x = self.relu1(self.bn1(x))
             x = self.conv2(x)
-            x = self.relu2(self.bn2(x, train_flag))
+            x = self.relu2(self.bn2(x))
             x = self.conv3(x)
-            x = self.relu3(self.bn3(x, train_flag))
+            x = self.relu3(self.bn3(x))
             x = self.avgpool(x)
             return x
 
         x = tf.cast(x, self.conv1.weight.dtype)
         x = stem(x)
-        x = self.layer1(x, train_flag)
-        x = self.layer2(x, train_flag)
-        x = self.layer3(x, train_flag)
-        x = self.layer4(x, train_flag)
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
         x = self.attnpool(x)
 
         return x
@@ -235,7 +235,7 @@ class VisionTransformer:
         nn.Model.param.append(self.positional_embedding)
         nn.Model.param.append(self.proj)
 
-    def __call__(self, x, train_flag=True):
+    def __call__(self, x):
         x = self.conv1(x)  # shape = [*, width, grid, grid]
         x = tf.reshape(x, [x.shape[0], x.shape[1], -1])  # shape = [*, width, grid ** 2]
         x = tf.transpose(x, (0, 2, 1))  # shape = [*, grid ** 2, width]
@@ -316,7 +316,6 @@ class CLIP(nn.Model):
         self.logit_scale = tf.Variable(tf.ones([]) * np.log(1 / 0.07))
 
         self.initialize_parameters()
-        self.training=True
 
     def initialize_parameters(self):
         if isinstance(self.visual, ModifiedResNet):
@@ -347,8 +346,8 @@ class CLIP(nn.Model):
     def dtype(self):
         return self.visual.conv1.weight.dtype
 
-    def encode_image(self, image, train_flag):
-        return self.visual(tf.cast(image, self.dtype), train_flag)
+    def encode_image(self, image):
+        return self.visual(tf.cast(image, self.dtype))
 
     def encode_text(self, text):
         x = tf.cast(tf.gather(self.token_embedding, text), self.dtype)  # [batch_size, n_ctx, d_model]
@@ -367,7 +366,7 @@ class CLIP(nn.Model):
         return x
 
     def __call__(self, image, text):
-        image_features = self.encode_image(image, self.training)
+        image_features = self.encode_image(image)
         text_features = self.encode_text(text)
 
         # normalized features

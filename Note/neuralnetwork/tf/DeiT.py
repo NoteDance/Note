@@ -282,7 +282,6 @@ class vit_models(nn.Model):
         self.head = self.dense(num_classes, embed_dim) if num_classes > 0 else nn.identity()
 
         nn.Model.apply(self.init_weights)
-        self.training = True
 
     def init_weights(self, l):
         if isinstance(l, nn.dense):
@@ -324,7 +323,7 @@ class vit_models(nn.Model):
         x = self.forward_features(x)
         
         if self.dropout_rate:
-            x = nn.dropout(float(self.dropout_rate))(x, self.training)
+            x = nn.dropout(float(self.dropout_rate))(x)
         x = self.head(x)
         
         return x

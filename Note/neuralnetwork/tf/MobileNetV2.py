@@ -53,25 +53,23 @@ class _inverted_res_block:
         self.in_channels=in_channels
         self.stride=stride
         self.block_id=block_id
-        self.train_flag=True
         self.output_size=self.conv2d2.output_size
     
     
-    def __call__(self,data,train_flag=True):
-        self.train_flag=train_flag
+    def __call__(self,data):
         x=data
         if self.block_id:
             x=self.conv2d1(x)
-            x=self.batch_normalization1(x,self.train_flag)
+            x=self.batch_normalization1(x)
             x=activation_dict['relu6'](x)
         if self.stride==2:
             padding = correct_pad(x, 3)
             x=self.zeropadding2d(x, padding)
         x=self.depthwiseconv2d(x)
-        x=self.batch_normalization2(x,self.train_flag)
+        x=self.batch_normalization2(x)
         x=activation_dict['relu6'](x)
         x=self.conv2d2(x)
-        x=self.batch_normalization3(x,self.train_flag)
+        x=self.batch_normalization3(x)
         if self.in_channels == self.pointwise_filters and self.stride == 1:
             return data+x
         return x
@@ -122,11 +120,9 @@ class MobileNetV2(nn.Model):
         
         self.head=self.dense(self.classes,self.layers.output_size)
         
-        self.training=True
-    
     
     def __call__(self,data):
-        x=self.layers(data,self.training)
+        x=self.layers(data)
         if self.include_top:
             x=tf.math.reduce_mean(x,axis=[1,2])
             x=self.head(x)

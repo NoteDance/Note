@@ -13,14 +13,16 @@ class ConvNeXtBlock:
         self.drop_path_rate=drop_path_rate
         self.layer_scale_init_value=layer_scale_init_value
         self.output_size=projection_dim
+        nn.Model.layer_list.append(self)
+        self.training=True
         
     
     def LayerScale(self,x):
         return x * self.gamma
     
     
-    def StochasticDepth(self,x,train_flag=True):
-        if train_flag:
+    def StochasticDepth(self,x):
+        if self.training:
             keep_prob = 1 - self.drop_path_rate
             shape = (tf.shape(x)[0],) + (1,) * (len(tf.shape(x)) - 1)
             random_tensor = keep_prob + tf.random.uniform(shape, 0, 1, dtype=x.dtype)
@@ -29,7 +31,7 @@ class ConvNeXtBlock:
         return x
     
     
-    def __call__(self,data,train_flag=True):
+    def __call__(self,data):
         x=self.conv2d(data)
         x=self.layer_norm(x)
         x=self.dense1(x)
@@ -37,7 +39,7 @@ class ConvNeXtBlock:
         if self.layer_scale_init_value is not None:
             x=self.LayerScale(x)
         if self.drop_path_rate:
-            x=self.StochasticDepth(x,train_flag)
+            x=self.StochasticDepth(x)
         else:
             x=x
         return data + x
@@ -98,15 +100,13 @@ class ConvNeXt(nn.Model):
             cur += self.depths[i]
         self.layer_norm=nn.layer_norm(self.blocks[-1].output_size)
         self.head=self.dense(self.classes,self.blocks[-1].output_size)
-        
-        self.training=True
     
     
     def __call__(self,data):
         for i in range(self.num_convnext_blocks):
-            data = self.downsample_layers[i](data,self.training)
+            data = self.downsample_layers[i](data)
             for j in range(self.depths[i]):
-                data=self.blocks[i](data,self.training)
+                data=self.blocks[i](data)
         if self.include_top:
             data = tf.math.reduce_mean(data, axis=[1, 2])
             data = self.layer_norm(data)

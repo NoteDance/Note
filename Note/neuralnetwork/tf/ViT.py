@@ -16,8 +16,8 @@ class FeedForward:
         self.net.add(nn.dense(dim, hidden_dim))
         self.net.add(nn.dropout(drop_rate))
 
-    def __call__(self, x, train_flag=True):
-        return self.net(x, train_flag)
+    def __call__(self, x):
+        return self.net(x)
 
 
 class Attention:
@@ -42,7 +42,7 @@ class Attention:
         else:
             self.to_out = nn.identity()
 
-    def __call__(self, x, train_flag=True):
+    def __call__(self, x):
         x = self.norm(x)
 
         qkv = self.to_qkv(x)
@@ -58,7 +58,7 @@ class Attention:
         dots = tf.matmul(q, tf.transpose(k, [0, 1, 3, 2])) * self.scale
 
         attn = self.attend(dots)
-        attn = self.dropout(attn, train_flag)
+        attn = self.dropout(attn)
 
         out = tf.matmul(attn, v)
         out = tf.transpose(out, [0, 1, 3, 2])
@@ -74,10 +74,10 @@ class Transformer:
             self.layers.append([Attention(dim, heads = heads, dim_head = dim_head, drop_rate = dropout),
                                 FeedForward(dim, mlp_dim, drop_rate = dropout)])
 
-    def __call__(self, x, train_flag=True):
+    def __call__(self, x):
         for attn, ff in self.layers:
-            x = attn(x, train_flag) + x
-            x = ff(x, train_flag) + x
+            x = attn(x) + x
+            x = ff(x) + x
 
         return self.norm(x)
 
@@ -112,8 +112,6 @@ class ViT(nn.Model):
         self.to_latent = nn.identity()
 
         self.head = self.dense(num_classes, dim)
-        
-        self.training=True
 
     def __call__(self, data):
         b = data.shape[0]
@@ -127,9 +125,9 @@ class ViT(nn.Model):
         cls_tokens = tf.tile(self.cls_token, multiples=[b, 1, 1])
         x = tf.concat([cls_tokens, x], axis=1)
         x += self.pos_embedding[:, :(n + 1)]
-        x = self.dropout(x, self.training)
+        x = self.dropout(x)
 
-        x = self.transformer(x, self.training)
+        x = self.transformer(x)
 
         x = tf.reduce_mean(x, axis = 1) if self.pool == 'mean' else x[:, 0]
 

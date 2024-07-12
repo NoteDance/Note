@@ -130,21 +130,23 @@ class TransformerEncoderLayer:
 
         self.activation = tf.nn.gelu
 
-    def __call__(self, src, training, *args, **kwargs):
-        src = src + self.drop_path(self.self_attn(self.pre_norm(src)), training)
+    def __call__(self, src, *args, **kwargs):
+        src = src + self.drop_path(self.self_attn(self.pre_norm(src)))
         src = self.norm1(src)
-        src2 = self.linear2(self.dropout1(self.activation(self.linear1(src)), training))
-        src = src + self.drop_path(self.dropout2(src2, training), training)
+        src2 = self.linear2(self.dropout1(self.activation(self.linear1(src))))
+        src = src + self.drop_path(self.dropout2(src2))
         return src
 
 class DropPath:
     def __init__(self, drop_prob=None):
         self.drop_prob = float(drop_prob)
+        self.training = True
+        nn.Model.layer_list.append(self)
 
-    def __call__(self, x, training):
+    def __call__(self, x):
         batch, drop_prob, dtype = x.shape[0], self.drop_prob, x.dtype
 
-        if drop_prob <= 0. or not training:
+        if drop_prob <= 0. or not self.training:
             return x
 
         keep_prob = 1 - self.drop_prob
@@ -259,7 +261,7 @@ class TransformerClassifier:
         self.fc = nn.dense(num_classes, embedding_dim)
         nn.Model.apply(self.init_weight)
 
-    def __call__(self, x, training):
+    def __call__(self, x):
         b = x.shape[0]
 
         if not exists(self.positional_emb) and x.shape[1] < self.sequence_length:
@@ -275,7 +277,7 @@ class TransformerClassifier:
         x = self.dropout(x)
 
         for blk in self.blocks:
-            x = blk(x, training)
+            x = blk(x)
 
         x = self.norm(x)
 
@@ -339,9 +341,7 @@ class CCT(nn.Model):
             attention_dropout=0.1,
             stochastic_depth=0.1,
             *args, **kwargs)
-        
-        self.training = True
 
     def __call__(self, x):
         x = self.tokenizer(x)
-        return self.classifier(x, self.training)
+        return self.classifier(x)

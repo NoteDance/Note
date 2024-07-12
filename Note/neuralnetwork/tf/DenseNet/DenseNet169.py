@@ -82,11 +82,9 @@ class DenseNet169(nn.Model):
         
         self.head=self.dense(self.num_classes,int(64 * self.compression_factor**3))
         
-        self.training=True
-    
     
     def __call__(self, data):
-        x=self.layers(data,self.training)
+        x=self.layers(data)
         if self.include_top:
             x = tf.math.reduce_mean(x, axis=[1, 2])
             x = self.head(x)

@@ -179,6 +179,7 @@ class DistilledPoolingTransformer(PoolingTransformer):
             self.head_dist = nn.identity()
         
         self.training = True
+        nn.Model.layer_list.append(self)
 
     def __call__(self, x):
         cls_token = self.forward_features(x)
