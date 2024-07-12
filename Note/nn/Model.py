@@ -379,6 +379,54 @@ class Model:
                 return test_loss
     
     
+    def test_(self,test_ds, loss_object, test_loss, test_accuracy, processes, mp, jit_compile):
+        if mp==None:
+            if test_loss!=None:
+                test_loss.reset_states()
+            if test_accuracy!=None:
+                test_accuracy.reset_states()
+            if test_ds!=None:
+                self.training()
+                for test_data, labels in test_ds:
+                    if jit_compile==True:
+                        self.test_step(test_data, labels)
+                    else:
+                        self.test_step_(test_data, labels)
+                    
+                self.test_loss=test_loss.result().numpy()
+                if test_accuracy!=None:
+                    self.test_acc=test_accuracy.result().numpy()
+                self.training(True)
+        else:
+            self.training()
+            if not isinstance(self.shared_test_loss_array, mp.sharedctypes.SynchronizedArray):
+                self.shared_test_loss_array=mp.Array('f',np.zeros([processes],dtype='float32'))
+            if test_accuracy!=None:
+                if not isinstance(self.shared_test_acc_array, mp.sharedctypes.SynchronizedArray):
+                    self.shared_test_acc_array=mp.Array('f',np.zeros([processes],dtype='float32'))
+            
+            process_list=[]
+            for p in range(processes):
+                test_loss_=test_loss[p]
+                if test_accuracy!=None:
+                    test_accuracy_=test_accuracy[p]
+                process=mp.Process(target=self.parallel_test,args=(test_ds[p], loss_object, test_loss_, test_accuracy_, jit_compile, p))
+                process.start()
+                process_list.append(process)
+            for process in process_list:
+                test_loss[p].reset_states()
+                if test_accuracy!=None:
+                    test_accuracy[p].reset_states()
+                process.join()
+                
+            if test_accuracy!=None:
+                self.test_loss,self.test_acc=np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/processes,np.sum(npc.as_array(self.shared_test_acc_array.get_obj()))/processes
+            else:
+                self.test_loss=np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/processes
+            self.training(True)
+        return
+    
+    
     def fit(self, train_ds, loss_object, train_loss, optimizer, epochs=None, train_accuracy=None, test_ds=None, test_loss=None, test_accuracy=None, processes=None, mp=None, jit_compile=True, p=None):
         if p==None:
             p_=9
@@ -397,75 +445,38 @@ class Model:
             for epoch in range(epochs):
                 t1=time.time()
                 if self.steps_per_execution==None and self.end():
-                    return
+                    break
                 train_loss.reset_states()
                 if train_accuracy!=None:
                     train_accuracy.reset_states()
-                if mp==None:
-                    if test_loss!=None:
-                        test_loss.reset_states()
-                    if test_accuracy!=None:
-                        test_accuracy.reset_states()
             
                 for train_data, labels in train_ds:
-                    if self.steps_per_execution!=None and self.batch_counter%self.steps_per_execution==0 and self.end():
-                        return
                     if jit_compile==True:
                         self.train_step(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer_)
                     else:
                         self.train_step_(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer_)
                     self.batch_counter+=1
-                    if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
-                        if self.save_param_only==False:
-                            self.save_(self.path)
-                        else:
-                            self.save_param_(self.path)
-                
-                if mp==None:
-                    if test_ds!=None:
-                        self.training()
-                        for test_data, labels in test_ds:
-                            if jit_compile==True:
-                                self.test_step(test_data, labels)
+                    if self.steps_per_execution!=None and self.batch_counter%self.steps_per_execution==0:
+                        self.train_loss=train_loss.result().numpy()
+                        if train_accuracy!=None:
+                            self.train_acc=train_accuracy.result().numpy()
+                        self.test_(test_ds, loss_object, test_loss, test_accuracy, processes, mp, jit_compile)
+                        if self.end():
+                            if self.save_param_only==False:
+                                self.save_(self.path)
                             else:
-                                self.test_step_(test_data, labels)
-                            
-                        self.test_loss=test_loss.result().numpy()
-                        self.test_loss_list.append(self.test_loss)
-                        if test_accuracy!=None:
-                            self.test_acc=test_accuracy.result().numpy()
-                            self.test_acc_list.append(self.test_acc)
-                        self.training(True)
-                else:
-                    self.training()
-                    if not isinstance(self.shared_test_loss_array, mp.sharedctypes.SynchronizedArray):
-                        self.shared_test_loss_array=mp.Array('f',np.zeros([processes],dtype='float32'))
-                    if test_accuracy!=None:
-                        if not isinstance(self.shared_test_acc_array, mp.sharedctypes.SynchronizedArray):
-                            self.shared_test_acc_array=mp.Array('f',np.zeros([processes],dtype='float32'))
-                    
-                    process_list=[]
-                    for p in range(processes):
-                        test_loss_=test_loss[p]
-                        if test_accuracy!=None:
-                            test_accuracy_=test_accuracy[p]
-                        process=mp.Process(target=self.parallel_test,args=(test_ds[p], loss_object, test_loss_, test_accuracy_, jit_compile, p))
-                        process.start()
-                        process_list.append(process)
-                    for process in process_list:
-                        test_loss[p].reset_states()
-                        if test_accuracy!=None:
-                            test_accuracy[p].reset_states()
-                        process.join()
-                        
-                    if test_accuracy!=None:
-                        self.test_loss,self.test_acc=np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/processes,np.sum(npc.as_array(self.shared_test_acc_array.get_obj()))/processes
-                        self.test_loss_list.append(self.test_loss)
-                        self.test_acc_list.append(self.test_acc)
+                                self.save_param_(self.path)
                     else:
-                        self.test_loss=np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/processes
-                        self.test_loss_list.append(self.test_loss)
-                    self.training(True)
+                        if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
+                            if self.save_param_only==False:
+                                self.save_(self.path)
+                            else:
+                                self.save_param_(self.path)
+                
+                self.test_(test_ds, loss_object, test_loss, test_accuracy, processes, mp, jit_compile)
+                self.test_loss_list.append(self.test_loss)
+                if test_accuracy!=None:
+                    self.test_acc_list.append(self.test_acc)
                 
                 self.train_loss=train_loss.result().numpy()
                 self.train_loss_list.append(self.train_loss)
@@ -504,74 +515,38 @@ class Model:
             while True:
                 t1=time.time()
                 if self.steps_per_execution==None and self.end():
-                    return
+                    break
                 train_loss.reset_states()
                 if train_accuracy!=None:
                     train_accuracy.reset_states()
-                if test_loss!=None:
-                    test_loss.reset_states()
-                if test_accuracy!=None:
-                    test_accuracy.reset_states()
             
                 for train_data, labels in train_ds:
-                    if self.steps_per_execution!=None and self.batch_counter%self.steps_per_execution==0 and self.end():
-                        return
                     if jit_compile==True:
                         self.train_step(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer_)
                     else:
                         self.train_step_(train_data, labels, loss_object, train_loss, train_accuracy, self.optimizer_)
                     self.batch_counter+=1
-                    if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
-                        if self.save_param_only==False:
-                            self.save_(self.path)
-                        else:
-                            self.save_param_(self.path)
-                
-                if mp==None:
-                    if test_ds!=None:
-                        self.training()
-                        for test_data, labels in test_ds:
-                            if jit_compile==True:
-                                self.test_step(test_data, labels)
+                    if self.steps_per_execution!=None and self.batch_counter%self.steps_per_execution==0:
+                        self.train_loss=train_loss.result().numpy()
+                        if train_accuracy!=None:
+                            self.train_acc=train_accuracy.result().numpy()
+                        self.test_(test_ds, loss_object, test_loss, test_accuracy, processes, mp, jit_compile)
+                        if self.end():
+                            if self.save_param_only==False:
+                                self.save_(self.path)
                             else:
-                                self.test_step_(test_data, labels)
-                                
-                        self.test_loss=test_loss.result().numpy()
-                        self.test_loss_list.append(self.test_loss)
-                        if test_accuracy!=None:
-                            self.test_acc=test_accuracy.result().numpy()
-                            self.test_acc_list.append(self.test_acc)
-                        self.training(True)
-                else:
-                    self.training()
-                    if not isinstance(self.shared_test_loss_array, mp.sharedctypes.SynchronizedArray):
-                        self.shared_test_loss_array=mp.Array('f',np.zeros([processes],dtype='float32'))
-                    if test_accuracy!=None:
-                        if not isinstance(self.shared_test_acc_array, mp.sharedctypes.SynchronizedArray):
-                            self.shared_test_acc_array=mp.Array('f',np.zeros([processes],dtype='float32'))
-                    
-                    process_list=[]
-                    for p in range(processes):
-                        test_loss_=test_loss[p]
-                        if test_accuracy!=None:
-                            test_accuracy_=test_accuracy[p]
-                        process=mp.Process(target=self.parallel_test,args=(test_ds[p], loss_object, test_loss_, test_accuracy_, jit_compile, p))
-                        process.start()
-                        process_list.append(process)
-                    for process in process_list:
-                        test_loss[p].reset_states()
-                        if test_accuracy!=None:
-                            test_accuracy[p].reset_states()
-                        process.join()
-                        
-                    if test_accuracy!=None:
-                        self.test_loss,self.test_acc=np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/processes,np.sum(npc.as_array(self.shared_test_acc_array.get_obj()))/processes
-                        self.test_loss_list.append(self.test_loss)
-                        self.test_acc_list.append(self.test_acc)
+                                self.save_param_(self.path)
                     else:
-                        self.test_loss=np.sum(npc.as_array(self.shared_test_loss_array.get_obj()))/processes
-                        self.test_loss_list.append(self.test_loss)
-                    self.training(True)
+                        if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
+                            if self.save_param_only==False:
+                                self.save_(self.path)
+                            else:
+                                self.save_param_(self.path)
+                
+                self.test_(test_ds, loss_object, test_loss, test_accuracy, processes, mp, jit_compile)
+                self.test_loss_list.append(self.test_loss)
+                if test_accuracy!=None:
+                    self.test_acc_list.append(self.test_acc)
             
                 self.train_loss=train_loss.result().numpy()
                 self.train_loss_list.append(self.train_loss)
@@ -651,7 +626,7 @@ class Model:
             for epoch in range(epochs):
                 t1=time.time()
                 if self.steps_per_execution==None and self.end():
-                    return
+                    break
                 if train_accuracy!=None:
                     train_accuracy.reset_states()
                 if test_loss!=None:
@@ -662,20 +637,44 @@ class Model:
                 total_loss = 0.0
                 num_batches = 0
                 for x in train_dist_dataset:
-                    if self.steps_per_execution!=None and self.batch_counter%self.steps_per_execution==0 and self.end():
-                        return
                     if jit_compile==True:
                         total_loss += self.distributed_train_step(x, self.optimizer_, train_accuracy, strategy)
                     else:
                         total_loss += self.distributed_train_step_(x, self.optimizer_, train_accuracy, strategy)
                     num_batches += 1
                     self.batch_counter+=1
-                    if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
-                        if self.save_param_only==False:
-                            self.save_(self.path)
-                        else:
-                            self.save_param_(self.path)
+                    if self.steps_per_execution!=None and self.batch_counter%self.steps_per_execution==0:
+                        self.train_loss=(total_loss / num_batches).numpy()
+                        if train_accuracy!=None:
+                            self.train_acc=train_accuracy.result().numpy()
+                        if test_dist_dataset!=None:
+                            self.training()
+                            for x in test_dist_dataset:
+                                if jit_compile==True:
+                                    self.distributed_test_step(x, loss_object, test_loss, test_accuracy, strategy)
+                                else:
+                                    self.distributed_test_step_(x, loss_object, test_loss, test_accuracy, strategy)
+                                
+                            self.test_loss=test_loss.result().numpy()
+                            if test_accuracy!=None:
+                                self.test_acc=test_accuracy.result().numpy()
+                            self.training(True)
+                        if self.end():
+                            if self.save_param_only==False:
+                                self.save_(self.path)
+                            else:
+                                self.save_param_(self.path)
+                    else:
+                        if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
+                            if self.save_param_only==False:
+                                self.save_(self.path)
+                            else:
+                                self.save_param_(self.path)
                 
+                if test_loss!=None:
+                    test_loss.reset_states()
+                if test_accuracy!=None:
+                    test_accuracy.reset_states()
                 if test_dist_dataset!=None:
                     self.training()
                     for x in test_dist_dataset:
@@ -728,7 +727,7 @@ class Model:
             while True:
                 t1=time.time()
                 if self.steps_per_execution==None and self.end():
-                    return
+                    break
                 if train_accuracy!=None:
                     train_accuracy.reset_states()
                 if test_loss!=None:
@@ -739,20 +738,44 @@ class Model:
                 total_loss = 0.0
                 num_batches = 0
                 for x in train_dist_dataset:
-                    if self.steps_per_execution!=None and self.batch_counter%self.steps_per_execution==0 and self.end():
-                        return
                     if jit_compile==True:
                         total_loss += self.distributed_train_step(x, self.optimizer_, train_accuracy, strategy)
                     else:
                         total_loss += self.distributed_train_step_(x, self.optimizer_, train_accuracy, strategy)
                     num_batches += 1
                     self.batch_counter+=1
-                    if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
-                        if self.save_param_only==False:
-                            self.save_(self.path)
-                        else:
-                            self.save_param_(self.path)
+                    if self.steps_per_execution!=None and self.batch_counter%self.steps_per_execution==0:
+                        self.train_loss=(total_loss / num_batches).numpy()
+                        if train_accuracy!=None:
+                            self.train_acc=train_accuracy.result().numpy()
+                        if test_dist_dataset!=None:
+                            self.training()
+                            for x in test_dist_dataset:
+                                if jit_compile==True:
+                                    self.distributed_test_step(x, loss_object, test_loss, test_accuracy, strategy)
+                                else:
+                                    self.distributed_test_step_(x, loss_object, test_loss, test_accuracy, strategy)
+                                
+                            self.test_loss=test_loss.result().numpy()
+                            if test_accuracy!=None:
+                                self.test_acc=test_accuracy.result().numpy()
+                            self.training(True)
+                        if self.end():
+                            if self.save_param_only==False:
+                                self.save_(self.path)
+                            else:
+                                self.save_param_(self.path)
+                    else:
+                        if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
+                            if self.save_param_only==False:
+                                self.save_(self.path)
+                            else:
+                                self.save_param_(self.path)
                 
+                if test_loss!=None:
+                    test_loss.reset_states()
+                if test_accuracy!=None:
+                    test_accuracy.reset_states()
                 if test_dist_dataset!=None:
                     self.training()
                     for x in test_dist_dataset:
