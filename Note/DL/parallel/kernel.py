@@ -513,7 +513,7 @@ class kernel:
                 parallel_test_.segment_data()
             processes=[]
             for p in range(self.process_t):
-                process=Process(target=parallel_test_.test,args=(p,))
+                process=Process(target=parallel_test_.test,args=(p,self.nn.training))
                 process.start()
                 processes.append(process)
             for process in processes:
@@ -531,11 +531,13 @@ class kernel:
             if self.test_dataset!=None:
                 batches=0
                 for data_batch,labels_batch in self.test_dataset:
+                    self.nn.training()
                     batches+=1
                     batch_loss,batch_acc=self.test_(data_batch,labels_batch)
                     total_loss+=batch_loss
                     if hasattr(self.nn,'accuracy'):
                         total_acc+=batch_acc
+                    self.nn.training(True)
                 test_loss=total_loss.numpy()/batches
                 if hasattr(self.nn,'accuracy'):
                     test_acc=total_acc.numpy()/batches
@@ -543,6 +545,7 @@ class kernel:
                 shape0=test_data.shape[0]
                 batches=int((shape0-shape0%batch)/batch)
                 for j in range(batches):
+                    self.nn.training()
                     index1=j*batch
                     index2=(j+1)*batch
                     data_batch=test_data[index1:index2]
@@ -551,7 +554,9 @@ class kernel:
                     total_loss+=batch_loss
                     if hasattr(self.nn,'accuracy'):
                         total_acc+=batch_acc
+                    self.nn.training(True)
                 if shape0%batch!=0:
+                    self.nn.training()
                     batches+=1
                     index1=batches*batch
                     index2=batch-(shape0-batches*batch)
@@ -561,6 +566,7 @@ class kernel:
                     total_loss+=batch_loss
                     if hasattr(self.nn,'accuracy'):
                         total_acc+=batch_acc
+                    self.nn.training(True)
                 test_loss=total_loss.numpy()/batches
                 if hasattr(self.nn,'accuracy'):
                     test_acc=total_acc.numpy()/batches
@@ -737,7 +743,7 @@ class kernel:
         if self.save_best_only==False:
             if self.save_flag.value==True:
                 return
-            if self.max_save_files==None:
+            if self.max_save_files==None or self.max_save_files==1:
                 parameter_file=open(self.path,'wb')
             else:
                 if hasattr(self.nn,'accuracy') and self.test_flag==True:
@@ -792,7 +798,7 @@ class kernel:
         if self.save_best_only==False:
             if self.save_flag.value==True:
                 return
-            if self.max_save_files==None:
+            if self.max_save_files==None or self.max_save_files==1:
                 output_file=open(self.path,'wb')
             else:
                 if hasattr(self.nn,'accuracy') and self.test_flag==True:
