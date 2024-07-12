@@ -901,7 +901,7 @@ class Model:
     
     def save_param_(self,path):
         if self.save_best_only==False:
-            if self.max_save_files==None:
+            if self.max_save_files==None or self.max_save_files==1:
                 output_file=open(path,'wb')
             else:
                 if self.train_acc!=None and self.test_acc!=None:
@@ -951,7 +951,7 @@ class Model:
     
     def save_(self,path):
         if self.save_best_only==False:
-            if self.max_save_files==None:
+            if self.max_save_files==None or self.max_save_files==1:
                 output_file=open(path,'wb')
             else:
                 if self.train_acc!=None and self.test_acc!=None:
