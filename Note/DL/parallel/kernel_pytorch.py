@@ -219,12 +219,11 @@ class kernel:
                             self.save_param_()
                     batch_counter=np.frombuffer(self.batch_counter_.get_obj(),dtype='i')
                     batch_counter*=0
-                else:
-                    if self.save_freq_!=None and np.sum(self.batch_counter_)%self.save_freq_==0:
-                        if self.save_param_only==False:
-                            self.save_()
-                        else:
-                            self.save_param_()
+                if self.save_freq_!=None and np.sum(self.batch_counter_)%self.save_freq_==0:
+                    if self.save_param_only==False:
+                        self.save_()
+                    else:
+                        self.save_param_()
                 batches=np.sum(self.batch_counter)
                 if batches>=len(train_loader):
                     batch_counter=np.frombuffer(self.batch_counter.get_obj(),dtype='i')
