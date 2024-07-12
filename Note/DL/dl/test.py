@@ -161,7 +161,7 @@ class parallel_test:
         return loss,acc
     
     
-    def test(self,p):
+    def test(self,p,training=None):
         if self.test_dataset is None:
             test_ds=tf.data.Dataset.from_tensor_slices((self.test_data[p],self.test_labels[p])).batch(self.batch).prefetch(self.prefetch_batch_size)
         elif self.test_dataset is not None and type(self.test_dataset)==list:
@@ -169,6 +169,8 @@ class parallel_test:
         else:
             test_ds=self.test_dataset
         for data_batch,labels_batch in test_ds:
+            if training!=None:
+                training()
             try:
                 batch_loss,batch_acc=self.test_(data_batch,labels_batch,p)
             except Exception as e:
@@ -178,6 +180,8 @@ class parallel_test:
                 self.acc[p]+=batch_acc
             else:
                 self.loss[p]+=batch_loss
+            if training!=None:
+                training(False)
         return
     
     
