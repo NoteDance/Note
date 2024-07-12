@@ -464,12 +464,11 @@ class Model:
                                 self.save_(self.path)
                             else:
                                 self.save_param_(self.path)
-                    else:
-                        if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
-                            if self.save_param_only==False:
-                                self.save_(self.path)
-                            else:
-                                self.save_param_(self.path)
+                    if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
+                        if self.save_param_only==False:
+                            self.save_(self.path)
+                        else:
+                            self.save_param_(self.path)
                 
                 self.test_(test_ds, loss_object, test_loss, test_accuracy, processes, mp, jit_compile)
                 self.test_loss_list.append(self.test_loss)
@@ -534,12 +533,11 @@ class Model:
                                 self.save_(self.path)
                             else:
                                 self.save_param_(self.path)
-                    else:
-                        if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
-                            if self.save_param_only==False:
-                                self.save_(self.path)
-                            else:
-                                self.save_param_(self.path)
+                    if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
+                        if self.save_param_only==False:
+                            self.save_(self.path)
+                        else:
+                            self.save_param_(self.path)
                 
                 self.test_(test_ds, loss_object, test_loss, test_accuracy, processes, mp, jit_compile)
                 self.test_loss_list.append(self.test_loss)
@@ -662,12 +660,11 @@ class Model:
                                 self.save_(self.path)
                             else:
                                 self.save_param_(self.path)
-                    else:
-                        if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
-                            if self.save_param_only==False:
-                                self.save_(self.path)
-                            else:
-                                self.save_param_(self.path)
+                    if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
+                        if self.save_param_only==False:
+                            self.save_(self.path)
+                        else:
+                            self.save_param_(self.path)
                 
                 if test_loss!=None:
                     test_loss.reset_states()
@@ -763,12 +760,11 @@ class Model:
                                 self.save_(self.path)
                             else:
                                 self.save_param_(self.path)
-                    else:
-                        if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
-                            if self.save_param_only==False:
-                                self.save_(self.path)
-                            else:
-                                self.save_param_(self.path)
+                    if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
+                        if self.save_param_only==False:
+                            self.save_(self.path)
+                        else:
+                            self.save_param_(self.path)
                 
                 if test_loss!=None:
                     test_loss.reset_states()
