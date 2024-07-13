@@ -33,6 +33,11 @@ class kernel:
         self.save_epi=None
         self.max_episode_count=None
         self.save_episode=save_episode
+        self.path=None
+        self.reward_=None
+        self.avg_reward=None
+        self.save_best_only=False
+        self.save_param_only=False
         self.path_list=[]
         self.loss=None
         self.loss_list=[]
@@ -519,6 +524,8 @@ class kernel:
                     episode=[s,a,next_s,r]
                 s=next_s
         self.reward_list.append(self.reward)
+        if len(self.reward_list)>self.trial_count:
+            del self.reward_list[0]
         return loss,episode,done
     
     
@@ -570,7 +577,10 @@ class kernel:
                         print('episode:{0}   reward:{1}'.format(i+1,self.reward))
                     print()
                 if path!=None and i%save_freq==0:
-                    self.save(path)
+                    if self.save_param_only==False:
+                        self.save_param_(path)
+                    else:
+                        self.save_(path)
                 if self.save_episode==True:
                     if done:
                         episode.append('done')
@@ -592,7 +602,7 @@ class kernel:
                 t1=time.time()
                 loss,episode,done=self.train_()
                 if self.trial_count!=None:
-                    if len(self.reward_list)==self.trial_count:
+                    if len(self.reward_list)>=self.trial_count:
                         avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
                         if self.criterion!=None and avg_reward>=self.criterion:
                             t2=time.time()
@@ -621,7 +631,10 @@ class kernel:
                         print('episode:{0}   reward:{1}'.format(i+1,self.reward))
                     print()
                 if path!=None and i%save_freq==0:
-                    self.save(path)
+                    if self.save_param_only==False:
+                        self.save_param_(path)
+                    else:
+                        self.save_(path)
                 if self.save_episode==True:
                     if done:
                         episode.append('done')
@@ -651,7 +664,7 @@ class kernel:
     def train_online(self):
         while True:
             if hasattr(self.nn,'save'):
-                self.nn.save(self.save)
+                self.nn.save(self.save_)
             if hasattr(self.nn,'stop_flag'):
                 if self.nn.stop_flag==True:
                     return
@@ -690,7 +703,7 @@ class kernel:
     
     def _save(self):
         if self.save_epi==self.total_episode:
-            self.save(self.total_episode,False)
+            self.save_()
             self.save_epi=None
             print('\nNeural network have saved and training have suspended.')
             return
@@ -727,6 +740,48 @@ class kernel:
         return
     
     
+    def save_param_(self,path):
+        if self.save_best_only==False:
+            if self.max_save_files==None:
+                parameter_file=open(path,'wb')
+                if self.save_episode==True:
+                    episode_file=open('episode.dat','wb')
+                    pickle.dump(self.episode_set,episode_file)
+                    episode_file.close()
+            else:
+                path=path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_episode))
+                parameter_file=open(path,'wb')
+                if self.save_episode==True:
+                    episode_file=open('episode-{0}.dat'.format(self.total_episode),'wb')
+                    pickle.dump(self.episode_set,episode_file)
+                    episode_file.close()
+                if self.save_episode==True:
+                    self.path_list.append([path,'episode-{0}.dat'])
+                    if len(self.path_list)>self.max_save_files:
+                        os.remove(self.path_list[0][0])
+                        os.remove(self.path_list[0][1])
+                        del self.path_list[0]
+                else:
+                    self.path_list.append(path)
+                    if len(self.path_list)>self.max_save_files:
+                        os.remove(self.path_list[0])
+                        del self.path_list[0]
+            pickle.dump(self.nn.param,parameter_file)
+            parameter_file.close()
+        else:
+            if self.trial_count!=None:
+                if len(self.reward_list)>=self.trial_count:
+                    avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                    if self.avg_reward==None or avg_reward>self.avg_reward:
+                        self.save_param(path)
+                        self.avg_reward=avg_reward
+            else:
+                if self.reward_==None or self.reward>self.reward_:
+                    self.save_param(path)
+                    self.reward_=self.reward
+        return
+    
+    
     def save_param(self,path):
         parameter_file=open(path,'wb')
         pickle.dump(self.nn.param,parameter_file)
@@ -746,31 +801,87 @@ class kernel:
         return
     
     
-    def save(self,path):
-        if self.max_save_files==None:
-            output_file=open(path,'wb')
-            if self.save_episode==True:
-                episode_file=open('episode.dat','wb')
-                pickle.dump(self.episode_set,episode_file)
-                episode_file.close()
-        else:
-            path=path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_episode))
-            output_file=open(path,'wb')
-            if self.save_episode==True:
-                episode_file=open('episode-{0}.dat'.format(self.total_episode),'wb')
-                pickle.dump(self.episode_set,episode_file)
-                episode_file.close()
-            if self.save_episode==True:
-                self.path_list.append([path,'episode-{0}.dat'])
-                if len(self.path_list)>self.max_save_files:
-                    os.remove(self.path_list[0][0])
-                    os.remove(self.path_list[0][1])
-                    del self.path_list[0]
+    def save_(self,path):
+        if self.save_best_only==False:
+            if self.max_save_files==None:
+                output_file=open(path,'wb')
+                if self.save_episode==True:
+                    episode_file=open('episode.dat','wb')
+                    pickle.dump(self.episode_set,episode_file)
+                    episode_file.close()
             else:
-                self.path_list.append(path)
-                if len(self.path_list)>self.max_save_files:
-                    os.remove(self.path_list[0])
-                    del self.path_list[0]
+                path=path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_episode))
+                output_file=open(path,'wb')
+                if self.save_episode==True:
+                    episode_file=open('episode-{0}.dat'.format(self.total_episode),'wb')
+                    pickle.dump(self.episode_set,episode_file)
+                    episode_file.close()
+                if self.save_episode==True:
+                    self.path_list.append([path,'episode-{0}.dat'])
+                    if len(self.path_list)>self.max_save_files:
+                        os.remove(self.path_list[0][0])
+                        os.remove(self.path_list[0][1])
+                        del self.path_list[0]
+                else:
+                    self.path_list.append(path)
+                    if len(self.path_list)>self.max_save_files:
+                        os.remove(self.path_list[0])
+                        del self.path_list[0]
+            try:
+                if hasattr(self.platform,'DType'):
+                    try:
+                        pickle.dump(self.nn,output_file)
+                    except Exception:
+                        opt=self.nn.opt
+                        self.nn.opt=None
+                        pickle.dump(self.nn,output_file)
+                        self.nn.opt=opt
+            except Exception as e:
+                raise e
+            try:
+                try:
+                    pickle.dump(self.platform.keras.optimizers.serialize(opt),output_file)
+                except Exception:
+                    try:
+                        pickle.dump(self.nn.serialize(),output_file)
+                    except Exception:
+                        pickle.dump(None,output_file)
+            except Exception as e:
+                raise e
+            pickle.dump(self.epsilon,output_file)
+            pickle.dump(self.episode_step,output_file)
+            pickle.dump(self.pool_size,output_file)
+            pickle.dump(self.batch,output_file)
+            pickle.dump(self.update_step,output_file)
+            pickle.dump(self.max_episode_count,output_file)
+            pickle.dump(self.save_episode,output_file)
+            pickle.dump(self.reward_list,output_file)
+            pickle.dump(self.loss,output_file)
+            pickle.dump(self.loss_list,output_file)
+            pickle.dump(self.sc,output_file)
+            pickle.dump(self.total_episode,output_file)
+            pickle.dump(self.total_time,output_file)
+            output_file.close()
+        else:
+            if self.trial_count!=None:
+                if len(self.reward_list)>=self.trial_count:
+                    avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                    if self.avg_reward==None or avg_reward>self.avg_reward:
+                        self.save(path)
+                        self.avg_reward=avg_reward
+            else:
+                if self.reward_==None or self.reward>self.reward_:
+                    self.save(path)
+                    self.reward_=self.reward
+        return
+    
+    
+    def save(self,path):
+        output_file=open(path,'wb')
+        if self.save_episode==True:
+            episode_file=open('episode.dat','wb')
+            pickle.dump(self.episode_set,episode_file)
+            episode_file.close()
         try:
             if hasattr(self.platform,'DType'):
                 try:
