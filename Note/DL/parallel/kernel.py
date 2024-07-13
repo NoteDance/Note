@@ -349,9 +349,9 @@ class kernel:
                     lock[1].acquire()
                 batches=np.sum(self.batch_counter_)
                 if self.steps_per_execution!=None and batches%self.steps_per_execution==0:
-                    loss=np.sum(self.total_loss)/batches
+                    loss=np.sum(self.total_loss)/self.steps_per_execution
                     if hasattr(self.nn,'accuracy'):
-                        train_acc=np.sum(self.total_acc)/batches
+                        train_acc=np.sum(self.total_acc)/self.steps_per_execution
                     if self.test_flag==True:
                         if hasattr(self.nn,'accuracy'):
                             self.test_loss.value,self.test_acc.value=self.test(self.test_data,self.test_labels,test_batch)
@@ -362,15 +362,11 @@ class kernel:
                             self.save_()
                         else:
                             self.save_param_()
-                    batch_counter=np.frombuffer(self.batch_counter_.get_obj(),dtype='i')
-                    batch_counter*=0
-                if self.save_freq_!=None and batches>=self.save_freq_:
+                if self.save_freq_!=None and batches%self.save_freq_==0:
                     if self.save_param_only==False:
                         self.save_()
                     else:
                         self.save_param_()
-                    batch_counter=np.frombuffer(self.batch_counter_.get_obj(),dtype='i')
-                    batch_counter*=0
                 batches=np.sum(self.batch_counter)
                 if batches>=self.batches:
                     batch_counter=np.frombuffer(self.batch_counter.get_obj(),dtype='i')
