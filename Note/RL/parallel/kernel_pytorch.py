@@ -27,9 +27,11 @@ class kernel:
         self.priority_flag=False
         self.max_opt=None
         self.stop=False
+        self.path=None
         self.save_freq=1
         self.max_save_files=None
-        self.path=None
+        self.save_best_only=False
+        self.save_param_only=False
     
     
     def init(self,manager):
@@ -375,8 +377,13 @@ class kernel:
                             lock[3].release()
             if len(lock)==3 or len(lock)==4:
                 lock[2].acquire()
-            self.save_()
+            if self.save_param_only==False:
+                self.save_param_()
+            else:
+                self.save_()
             self.reward_list.append(self.reward[p])
+            if len(self.reward_list)>self.trial_count:
+                del self.reward_list[0]
             self.reward[p]=0
             if len(lock)==3 or len(lock)==4:
                 lock[2].release()
@@ -399,7 +406,7 @@ class kernel:
             self.nn.counter.append(0)
         while True:
             if hasattr(self.nn,'save'):
-                self.nn.save(self.save,p)
+                self.nn.save(self._save,p)
             if hasattr(self.nn,'stop_flag'):
                 if self.nn.stop_flag==True:
                     return
@@ -439,7 +446,7 @@ class kernel:
     
     def stop_func(self):
         if self.end():
-            self.save(self.total_episode)
+            self._save()
             self.save_flag.value=True
             self.stop_flag.value=True
             return True
@@ -455,7 +462,7 @@ class kernel:
     
     def save_(self):
         if self.path!=None and self.episode_.value%self.save_freq==0:
-            self.save()
+            self._save()
         self.episode_.value+=1
         return
     
@@ -491,25 +498,96 @@ class kernel:
         return
     
     
+    def save_param_(self):
+        if self.save_flag.value==True:
+            return
+        if self.save_best_only==False:
+            if self.max_save_files==None:
+                parameter_file=open(self.path,'wb')
+            else:
+                path=self.path.replace(self.path[self.path.find('.'):],'-{0}.dat'.format(self.total_episode.value))
+                parameter_file=open(path,'wb')
+                self.file_list.append([path])
+                if len(self.path_list)>self.max_save_files:
+                    os.remove(self.path_list[0][0])
+                    del self.path_list[0]
+            pickle.dump(self.param[7],parameter_file)
+            parameter_file.close()
+        else:
+            if self.trial_count!=None:
+                if len(self.reward_list)>=self.trial_count:
+                    avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                    if self.avg_reward==None or avg_reward>self.avg_reward:
+                        self.save_param(self.path)
+                        self.avg_reward=avg_reward
+            else:
+                if self.reward_==None or self.reward>self.reward_:
+                    self.save_param(self.path)
+                    self.reward_=self.reward
+        return
+    
+    
     def save_param(self,path):
-        parameter_file=open(path,'wb')
+        if self.max_save_files==None:
+            parameter_file=open(path,'wb')
+        else:
+            path=self.path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_episode.value))
+            parameter_file=open(path,'wb')
+            self.file_list.append([path])
+            if len(self.path_list)>self.max_save_files:
+                os.remove(self.path_list[0][0])
+                del self.path_list[0]
         pickle.dump(self.param[7],parameter_file)
         parameter_file.close()
         return
     
     
-    def save(self):
+    def _save(self):
         if self.save_flag.value==True:
             return
-        if self.max_save_files==None:
-            output_file=open(self.path,'wb')
+        if self.save_best_only==False:
+            if self.max_save_files==None:
+                output_file=open(self.path,'wb')
+            else:
+                path=self.path.replace(self.path[self.path.find('.'):],'-{0}.dat'.format(self.total_episode.value))
+                output_file=open(path,'wb')
+                self.file_list.append([path])
+                if len(self.path_list)>self.max_save_files:
+                    os.remove(self.path_list[0][0])
+                    del self.path_list[0]
+            self.update_nn_param()
+            self.nn.opt_counter=self.nn.opt_counter[0] 
+            self.nn.ec=self.nn.ec[0]
+            self.nn.bc=self.nn.bc[0]
+            self._epoch_counter=list(self._epoch_counter)
+            self._batch_counter=list(self._batch_counter)
+            pickle.dump(self.nn,output_file)
+            pickle.dump(self.epsilon,output_file)
+            pickle.dump(self.episode_step,output_file)
+            pickle.dump(self.pool_size,output_file)
+            pickle.dump(self.batch,output_file)
+            pickle.dump(np.array(self.sc,dtype=np.int32),output_file)
+            pickle.dump(self.update_step,output_file)
+            pickle.dump(list(self.reward_list),output_file)
+            pickle.dump(list(self.loss_list),output_file)
+            pickle.dump(self.total_episode.value,output_file)
+            output_file.close()
         else:
-            path=self.path.replace(self.path[self.path.find('.'):],'-{0}.dat'.format(self.total_episode.value))
-            output_file=open(path,'wb')
-            self.file_list.append([path])
-            if len(self.path_list)>self.max_save_files:
-                os.remove(self.path_list[0][0])
-                del self.path_list[0]
+            if self.trial_count!=None:
+                if len(self.reward_list)>=self.trial_count:
+                    avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                    if self.avg_reward==None or avg_reward>self.avg_reward:
+                        self.save(path)
+                        self.avg_reward=avg_reward
+            else:
+                if self.reward_==None or self.reward>self.reward_:
+                    self.save(path)
+                    self.reward_=self.reward
+        return
+    
+    
+    def save(self,path):
+        output_file=open(path,'wb')
         self.update_nn_param()
         self.nn.opt_counter=self.nn.opt_counter[0] 
         self.nn.ec=self.nn.ec[0]
