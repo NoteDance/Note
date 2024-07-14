@@ -639,8 +639,6 @@ class kernel:
     
     
     def save(self,path):
-        if self.save_flag.value==True:
-            return
         output_file=open(path,'wb')
         self.nn.opt_counter=self.nn.opt_counter[0] 
         self.nn.ec=self.nn.ec[0]
