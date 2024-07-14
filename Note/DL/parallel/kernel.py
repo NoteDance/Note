@@ -870,8 +870,6 @@ class kernel:
     
     
     def save(self,path):
-        if self.save_flag.value==True:
-            return
         output_file=open(path,'wb')
         self.update_nn_param()
         self.nn.opt_counter=None
