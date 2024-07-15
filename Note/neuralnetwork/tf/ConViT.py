@@ -251,10 +251,9 @@ class HybridEmbed:
         self.img_size = img_size
         self.backbone = backbone
         if feature_size is None:
-            with tf.stop_gradient():
-                o = self.backbone(tf.zeros(1, img_size[0], img_size[1], in_chans))[-1]
-                feature_size = o.shape[-2:]
-                feature_dim = o.shape[1]
+            o = tf.stop_gradient(self.backbone(tf.zeros(1, img_size[0], img_size[1], in_chans))[-1])
+            feature_size = o.shape[-2:]
+            feature_dim = o.shape[1]
         else:
             feature_size = to_2tuple(feature_size)
             feature_dim = self.backbone.feature_info.channels()[-1]
