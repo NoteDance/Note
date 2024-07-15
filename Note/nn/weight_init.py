@@ -118,11 +118,9 @@ def variance_scaling_(tensor, scale=1.0, mode='fan_in', distribution='normal'):
         # constant is stddev of standard normal truncated to (-2, 2)
         trunc_normal_tf_(tensor, std=math.sqrt(variance) / .87962566103423978)
     elif distribution == "normal":
-        tensor.assign(tf.stop_gradient(tensor))
         tensor.assign(tf.random.normal(tensor.shape, stddev=math.sqrt(variance)))
     elif distribution == "uniform":
         bound = math.sqrt(3 * variance)
-        tensor.assign(tf.stop_gradient(tensor))
         tensor.assign(tf.random.uniform(tensor.shape, -bound, bound))
     else:
         raise ValueError(f"invalid distribution {distribution}")
@@ -227,10 +225,8 @@ def xavier_uniform_(
     a = math.sqrt(3.0) * std  # Calculate uniform bounds from standard deviation
 
     if generator==None:
-        tensor.assign(tf.stop_gradient(tensor))
         return tensor.assign(tf.random.uniform(tensor, -a, a))
     else:
-        tensor.assign(tf.stop_gradient(tensor))
         return tensor.assign(generator.uniform(tensor, -a, a))
 
 
@@ -263,10 +259,8 @@ def xavier_normal_(
     std = gain * math.sqrt(2.0 / float(fan_in + fan_out))
 
     if generator==None:
-        tensor.assign(tf.stop_gradient(tensor))
         return tensor.assign(tf.random.normal(tensor.shape, 0., std))
     else:
-        tensor.assign(tf.stop_gradient(tensor))
         return tensor.assign(generator.normal(tensor.shape, 0., std))
 
 
@@ -313,10 +307,8 @@ def kaiming_uniform_(
     std = gain / math.sqrt(fan)
     bound = math.sqrt(3.0) * std  # Calculate uniform bounds from standard deviation
     if generator==None:
-        tensor.assign(tf.stop_gradient(tensor))
         return tensor.assign(tf.random.uniform(tensor.shape, -bound, bound))
     else:
-        tensor.assign(tf.stop_gradient(tensor))
         return tensor.assign(generator.uniform(tensor.shape, -bound, bound))
 
 
@@ -362,10 +354,8 @@ def kaiming_normal_(
     gain = calculate_gain(nonlinearity, a)
     std = gain / math.sqrt(fan)
     if generator==None:
-        tensor.assign(tf.stop_gradient(tensor))
         return tensor.assign(tf.random.normal(tensor.shape, 0, std))
     else:
-        tensor.assign(tf.stop_gradient(tensor))
         return tensor.assign(generator.normal(tensor.shape, 0, std))
     
     
@@ -417,10 +407,9 @@ def orthogonal_(
     if rows < cols:
         tf.transpose(q)
 
-    tensor.assign(tf.stop_gradient(tensor))
-    tensor = tf.reshape(tensor, q.shape).assign(q)
+    tensor.assign(tf.reshape(q, tensor.shape))
     tensor.assign(tensor * gain)
-    return tensor
+    return tf.reshape(tensor, q.shape)
 
 
 def sparse_(
@@ -452,7 +441,6 @@ def sparse_(
     rows, cols = tensor.shape
     num_zeros = int(math.ceil(sparsity * rows))
 
-    tensor.assign(tf.stop_gradient(tensor))
     if generator==None:
         tensor.assign(tf.random.normal(tensor.shape, 0, std))
     else:
