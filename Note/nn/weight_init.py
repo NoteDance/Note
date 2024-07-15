@@ -448,5 +448,6 @@ def sparse_(
     for col_idx in range(cols):
         row_indices = tf.random.shuffle(tf.range(rows))
         zero_indices = row_indices[:num_zeros]
-        tensor[zero_indices, col_idx].assign(0)
+        for zero_idx in zero_indices:
+            tensor[zero_idx, col_idx].assign(0)
     return tensor
