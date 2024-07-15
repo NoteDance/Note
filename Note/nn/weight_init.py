@@ -84,6 +84,49 @@ def trunc_normal_tf_(tensor, mean=0., std=1., a=-2., b=2.):
     return tensor
 
 
+def dirac_(tensor, groups=1):
+    r"""Fill the {3, 4, 5}-dimensional input `Tensor` with the Dirac delta function.
+
+    Preserves the identity of the inputs in `Convolutional`
+    layers, where as many input channels are preserved as possible. In case
+    of groups>1, each group of channels preserves identity
+
+    Args:
+        tensor: a {3, 4, 5}-dimensional `torch.Tensor`
+        groups (int, optional): number of groups in the conv layer (default: 1)
+    Examples:
+        >>> w = tf.Variable(tf.zeros([3, 16, 5, 5]))
+        >>> nn.dirac_(w)
+        >>> w = tf.Variable(tf.zeros([3, 24, 5, 5]))
+        >>> nn.dirac_(w, 3)
+    """
+    dimensions = tensor.shape.ndim
+    if dimensions not in [3, 4, 5]:
+        raise ValueError("Only tensors with 3, 4, or 5 dimensions are supported")
+
+    sizes = tensor.shape
+
+    if sizes[-1] % groups != 0:
+        raise ValueError('dim 0 must be divisible by groups')
+
+    out_chans_per_grp = sizes[-1] // groups
+    min_dim = min(out_chans_per_grp, sizes[-2])
+
+    tensor.assign(tf.zero(tensor.shape))
+
+    for g in range(groups):
+        for d in range(min_dim):
+            if dimensions == 3:  # Temporal convolution
+                tensor[tensor.shape[0] // 2, d, g * out_chans_per_grp + d].assign(1)
+            elif dimensions == 4:  # Spatial convolution
+                tensor[tensor.shape[0] // 2, tensor.shape[1] // 2, 
+                           d, g * out_chans_per_grp + d].assign(1)
+            else:  # Volumetric convolution
+                tensor[tensor.shape[0] // 2, tensor.shape[1] // 2, tensor.shape[2] // 2, 
+                           d, g * out_chans_per_grp + d].assign(1)
+    return tensor
+
+
 def _calculate_fan_in_and_fan_out(tensor):
     dimensions = tensor.shape.ndims
     if dimensions < 2:
