@@ -95,9 +95,9 @@ def dirac_(tensor, groups=1):
         tensor: a {3, 4, 5}-dimensional `torch.Tensor`
         groups (int, optional): number of groups in the conv layer (default: 1)
     Examples:
-        >>> w = tf.Variable(tf.zeros([3, 16, 5, 5]))
+        >>> w = tf.Variable(tf.zeros([5, 5, 16, 3]))
         >>> nn.dirac_(w)
-        >>> w = tf.Variable(tf.zeros([3, 24, 5, 5]))
+        >>> w = tf.Variable(tf.zeros([5, 5, 24, 3]))
         >>> nn.dirac_(w, 3)
     """
     dimensions = tensor.shape.ndim
