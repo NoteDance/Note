@@ -20,18 +20,23 @@ class ConvNorm:
         self.bn = nn.batch_norm(out_chs)
 
     def __call__(self):
-        with tf.stop_gradient():
-            c, bn = self.conv, self.bn
-            w = bn.gamma / (bn.moving_variance + bn.epsilon)**0.5
-            w = c.weight * w[None, None, None, :]
-            b = bn.beta - bn.moving_mean * bn.gamma / \
+        c, bn = self.conv, self.bn
+        c.weight._trainable=False
+        bn.gamma._trainable=False
+        bn.beta._trainable=False
+        w = bn.gamma / (bn.moving_variance + bn.epsilon)**0.5
+        w = c.weight * w[None, None, None, :]
+        b = bn.beta - bn.moving_mean * bn.gamma / \
                 (bn.moving_variance + bn.epsilon)**0.5
-            m = nn.conv2d(
-                w.size(0), w.shape[2:], w.size(1) * self.conv.groups,
-                strides=self.conv.stride, padding=self.conv.padding, dilations=self.conv.dilation, groups=self.conv.groups)
-            m.weight.assign(w)
-            m.bias.assign(b)
-            return m
+        m = nn.conv2d(
+            w.size(0), w.shape[2:], w.size(1) * self.conv.groups,
+            strides=self.conv.stride, padding=self.conv.padding, dilations=self.conv.dilation, groups=self.conv.groups)
+        c.weight._trainable=True
+        bn.gamma._trainable=True
+        bn.beta._trainable=True
+        m.weight.assign(w)
+        m.bias.assign(b)
+        return m
 
 
 class NormLinear:
@@ -43,20 +48,29 @@ class NormLinear:
         nn.trunc_normal_(self.linear.weight, std=std)
 
     def __call__(self):
-        with tf.stop_gradient():
-            bn, linear = self.bn, self.linear
-            w = bn.gamma / (bn.moving_variance + bn.epsilon)**0.5
-            b = bn.beta - self.bn.moving_mean * \
+        bn, linear = self.bn, self.linear
+        linear.weight._trainable=False
+        self.linear.weight._trainable=False
+        self.linear.bias._trainable=False
+        bn.gamma._trainable=False
+        bn.beta._trainable=False
+        w = bn.gamma / (bn.moving_variance + bn.epsilon)**0.5
+        b = bn.beta - self.bn.moving_mean * \
                 self.bn.gamma / (bn.moving_variance + bn.epsilon)**0.5
-            w = linear.weight * w[None, :]
-            if linear.bias is None:
-                b = tf.matmul(b, self.linear.weight, transpose_b=True)
-            else:
-                b = tf.reshape(tf.matmul(linear.weight, b[:, None]), (-1)) + self.linear.bias
-            m = nn.dense(w.shape[1], w.shape[0])
-            m.weight.assign(w)
-            m.bias.assign(b)
-            return m
+        w = linear.weight * w[None, :]
+        if linear.bias is None:
+            b = tf.matmul(b, self.linear.weight, transpose_b=True)
+        else:
+            b = tf.reshape(tf.matmul(linear.weight, b[:, None]), (-1)) + self.linear.bias
+        linear.weight._trainable=True
+        self.linear.weight._trainable=True
+        self.linear.bias._trainable=True
+        bn.gamma._trainable=True
+        bn.beta._trainable=True
+        m = nn.dense(w.shape[1], w.shape[0])
+        m.weight.assign(w)
+        m.bias.assign(b)
+        return m
 
 
 class PatchMerging:
