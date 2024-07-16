@@ -443,23 +443,18 @@ class kernel:
         s=self.nn.env(initial=True)
         if hasattr(self.platform,'DType'):
             if type(self.nn.param[0])!=list:
-                s=np.array(s,self.nn.param[0].dtype.name)
+                s=np.array(s)
             else:
-                s=np.array(s,self.nn.param[0][0].dtype.name)
+                s=np.array(s)
         if self.episode_step==None:
             while True:
                 s=np.expand_dims(s,axis=0)
                 a,reward=self.choose_action(s)
                 next_s,r,done=self.nn.env(a)
                 if hasattr(self.platform,'DType'):
-                    if type(self.nn.param[0])!=list:
-                        next_s=np.array(next_s,self.nn.param[0].dtype.name)
-                        r=np.array(r,self.nn.param[0].dtype.name)
-                        done=np.array(done,self.nn.param[0].dtype.name)
-                    else:
-                        next_s=np.array(next_s,self.nn.param[0][0].dtype.name)
-                        r=np.array(r,self.nn.param[0][0].dtype.name)
-                        done=np.array(done,self.nn.param[0][0].dtype.name)
+                    next_s=np.array(next_s)
+                    r=np.array(r)
+                    done=np.array(done)
                 if hasattr(self.nn,'pool'):
                     if hasattr(self.nn,'discriminator'):
                         self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done])
@@ -489,14 +484,9 @@ class kernel:
                 a,reward=self.choose_action(s)
                 next_s,r,done=self.nn.env(a)
                 if hasattr(self.platform,'DType'):
-                    if type(self.nn.param[0])!=list:
-                        next_s=np.array(next_s,self.nn.param[0].dtype.name)
-                        r=np.array(r,self.nn.param[0].dtype.name)
-                        done=np.array(done,self.nn.param[0].dtype.name)
-                    else:
-                        next_s=np.array(next_s,self.nn.param[0][0].dtype.name)
-                        r=np.array(r,self.nn.param[0][0].dtype.name)
-                        done=np.array(done,self.nn.param[0][0].dtype.name)
+                    next_s=np.array(next_s)
+                    r=np.array(r)
+                    done=np.array(done)
                 if hasattr(self.nn,'pool'):
                     if hasattr(self.nn,'discriminator'):
                         self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done])
