@@ -756,10 +756,6 @@ class kernel:
                     if self.avg_reward==None or avg_reward>self.avg_reward:
                         self.save_param(self.path)
                         self.avg_reward=avg_reward
-            else:
-                if self.reward_==None or self.reward>self.reward_:
-                    self.save_param(self.path)
-                    self.reward_=self.reward
         return
     
     
@@ -828,10 +824,6 @@ class kernel:
                     if self.avg_reward==None or avg_reward>self.avg_reward:
                         self.save(path)
                         self.avg_reward=avg_reward
-            else:
-                if self.reward_==None or self.reward>self.reward_:
-                    self.save(path)
-                    self.reward_=self.reward
         return
     
     
