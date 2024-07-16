@@ -532,7 +532,7 @@ class kernel:
             for i in range(episode_count):
                 t1=time.time()
                 loss,episode,done=self.train_()
-                if self.trial_count!=None:
+                if path==None and self.trial_count!=None:
                     if len(self.reward_list)>=self.trial_count:
                         avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
                         if self.criterion!=None and avg_reward>=self.criterion:
@@ -585,7 +585,7 @@ class kernel:
             while True:
                 t1=time.time()
                 loss,episode,done=self.train_()
-                if self.trial_count!=None:
+                if path==None and self.trial_count!=None:
                     if len(self.reward_list)>=self.trial_count:
                         avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
                         if self.criterion!=None and avg_reward>=self.criterion:
