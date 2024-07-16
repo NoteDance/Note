@@ -41,13 +41,16 @@ class PPO(nn.RL):
         self.param=[self.actor.param,self.critic.param]
         self.env=gym.make('CartPole-v0')
     
+    def action(self,s):
+        return self.actor_old(s)
+    
     def __call__(self,s,a,next_s,r,d):
         a=tf.expand_dims(a,axis=1)
-        action_prob=tf.gather(self.actor.fp(s),a,axis=1,batch_dims=1)
-        action_prob_old=tf.gather(self.nn.fp(s),a,axis=1,batch_dims=1)
+        action_prob=tf.gather(self.actor(s),a,axis=1,batch_dims=1)
+        action_prob_old=tf.gather(self.actor_old(s),a,axis=1,batch_dims=1)
         raito=action_prob/action_prob_old
-        value=self.critic.fp(s)
-        value_tar=r+0.98*self.critic.fp(next_s)*(1-d)
+        value=self.critic(s)
+        value_tar=r+0.98*self.critic(next_s)*(1-d)
         TD=value_tar-value
         sur1=raito*TD
         sur2=tf.clip_by_value(raito,clip_value_min=1-self.clip_eps,clip_value_max=1+self.clip_eps)*TD
