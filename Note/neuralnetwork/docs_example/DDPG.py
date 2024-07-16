@@ -19,7 +19,7 @@ class actor(nn.Model):
 class critic(nn.Model):
     def __init__(self,state_dim,hidden_dim,action_dim):
         super().__init__()
-        self.dense1 = nn.dense(hidden_dim, state_dim, activation='relu')
+        self.dense1 = nn.dense(hidden_dim, state_dim+1, activation='relu')
         self.dense2 = nn.dense(action_dim, hidden_dim)
     
     def __call__(self,x,a):
@@ -31,10 +31,10 @@ class critic(nn.Model):
 class DDPG(nn.RL):
     def __init__(self,hidden_dim,sigma,gamma,tau,actor_lr,critic_lr):
         super().__init__()
-        self.env=gym.make('Pendulum-v0')
-        state_dim=self.genv.observation_space.shape[0]
-        action_dim=self.genv.action_space.shape[0]
-        action_bound=self.genv.action_space.high[0]
+        self.env=gym.make('Pendulum-v1')
+        state_dim=self.env.observation_space.shape[0]
+        action_dim=self.env.action_space.shape[0]
+        action_bound=self.env.action_space.high[0]
         self.actor=actor(state_dim,hidden_dim,action_dim,action_bound)
         self.actor.detach()
         self.critic=critic(state_dim,hidden_dim,action_dim)
@@ -52,12 +52,15 @@ class DDPG(nn.RL):
     def noise(self):
         return np.random.normal(scale=self.sigma)
     
+    def action(self,s):
+        return self.actor(s)
+    
     def __call__(self,s,a,next_s,r,d):
         a=tf.expand_dims(a,axis=1)
-        next_q_value=self.target_critic.fp(next_s,self.target_actor.fp(next_s))
+        next_q_value=self.target_critic(next_s,self.target_actor(next_s))
         q_target=r+self.gamma*next_q_value*(1-d)
-        actor_loss=-tf.reduce_mean(self.critic.fp(s,self.actor.fp(s)))
-        critic_loss=tf.reduce_mean((self.critic.fp(s,a)-q_target)**2)
+        actor_loss=-tf.reduce_mean(self.critic(s,self.actor(s)))
+        critic_loss=tf.reduce_mean((self.critic(s,a)-q_target)**2)
         return -actor_loss+critic_loss
     
     def update_param(self):
