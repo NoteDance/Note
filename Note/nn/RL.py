@@ -16,6 +16,7 @@ class RL:
         self.next_state_pool=None
         self.reward_pool=None
         self.done_pool=None
+        self.epsilon=None
         self.reward_list=[]
         self.pr_=pr.pr()
         self.optimizer_=None
@@ -34,13 +35,13 @@ class RL:
     
     
     def action_vec(self):
-        if self.epsilon!=None:
+        if self.epsilon_!=None:
             self.action_one=np.ones(self.action_count,dtype=np.int8)
         return
     
     
     def set_up(self,epsilon=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None,pr=False,initial_TD=7,alpha=0.7,jit_compile=True):
-        if epsilon!=None:
+        if pr==False and epsilon!=None:
             self.epsilon_=epsilon
         if episode_step!=None:
             self.episode_step=episode_step
@@ -56,7 +57,7 @@ class RL:
             self.criterion=criterion
         self.pr=pr
         if pr==True:
-            self.epsilon=epsilon
+            self.epsilon_pr=epsilon
             self.initial_TD=initial_TD
             self.alpha=alpha
         self.jit_compile=jit_compile
@@ -102,7 +103,7 @@ class RL:
     
     
     def choose_action(self,s):
-        if self.epsilon_==None and type(self.epsilon)!=float:
+        if self.epsilon!=None:
             self.epsilon_=self.epsilon(self.sc)
         if self.epsilon_==None:
             if hasattr(self, 'action'):
@@ -126,7 +127,7 @@ class RL:
     
     
     def data_func(self):
-        s,a,next_s,r,d=self.pr_.sample(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.epsilon,self.alpha,self.batch)
+        s,a,next_s,r,d=self.pr_.sample(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.epsilon_pr,self.alpha,self.batch)
         return s,a,next_s,r,d
     
     
