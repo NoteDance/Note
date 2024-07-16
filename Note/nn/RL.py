@@ -358,7 +358,7 @@ class RL:
         return
     
     
-    def visualize_train(self):
+    def visualize_loss(self):
         print()
         plt.figure(1)
         plt.plot(np.arange(1,self.total_episode+1),self.loss_list)
