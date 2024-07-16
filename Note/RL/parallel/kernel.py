@@ -208,14 +208,9 @@ class kernel:
                 a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
         next_s,r,done=self.nn.env(a,p)
         index=self.get_index(p,lock)
-        if type(self.nn.param[0])!=list:
-            next_s=np.array(next_s,self.nn.param[0].dtype.name)
-            r=np.array(r,self.nn.param[0].dtype.name)
-            done=np.array(done,self.nn.param[0].dtype.name)
-        else:
-            next_s=np.array(next_s,self.nn.param[0][0].dtype.name)
-            r=np.array(r,self.nn.param[0][0].dtype.name)
-            done=np.array(done,self.nn.param[0][0].dtype.name)
+        next_s=np.array(next_s)
+        r=np.array(r)
+        done=np.array(done)
         self.pool(s,a,next_s,r,done,pool_lock,index)
         return next_s,r,done,index
     
@@ -511,10 +506,7 @@ class kernel:
             if self.episode!=None and self.episode_counter.value>=self.episode:
                 break
             s=self.nn.env(p=p,initial=True)
-            if type(self.nn.param[0])!=list:
-                s=np.array(s,self.nn.param[0].dtype.name)
-            else:
-                s=np.array(s,self.nn.param[0][0].dtype.name)
+            s=np.array(s)
             if self.episode_step==None:
                 while True:
                     if self.episode!=None and self.episode_counter.value>=self.episode:
