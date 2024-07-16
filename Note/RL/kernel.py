@@ -532,7 +532,21 @@ class kernel:
             for i in range(episode_count):
                 t1=time.time()
                 loss,episode,done=self.train_()
-                if path==None and self.trial_count!=None:
+                self.loss=loss
+                self.loss_list.append(loss)
+                self.total_episode+=1
+                if path!=None and i%save_freq==0:
+                    if self.save_param_only==False:
+                        self.save_param_(path)
+                    else:
+                        self.save_(path)
+                if self.save_episode==True:
+                    if done:
+                        episode.append('done')
+                    self.episode_set.append(episode)
+                    if self.max_episode_count!=None and len(self.episode_set)>=self.max_episode_count:
+                        self.save_episode=False
+                if self.trial_count!=None:
                     if len(self.reward_list)>=self.trial_count:
                         avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
                         if self.criterion!=None and avg_reward>=self.criterion:
@@ -549,9 +563,6 @@ class kernel:
                             print()
                             print('time:{0}s'.format(self.total_time))
                             return
-                self.loss=loss
-                self.loss_list.append(loss)
-                self.total_episode+=1
                 if i%p==0:
                     if len(self.state_pool)>=self.batch:
                         print('episode:{0}   loss:{1:.6f}'.format(i+1,loss))
@@ -560,17 +571,6 @@ class kernel:
                     else:
                         print('episode:{0}   reward:{1}'.format(i+1,self.reward))
                     print()
-                if path!=None and i%save_freq==0:
-                    if self.save_param_only==False:
-                        self.save_param_(path)
-                    else:
-                        self.save_(path)
-                if self.save_episode==True:
-                    if done:
-                        episode.append('done')
-                    self.episode_set.append(episode)
-                    if self.max_episode_count!=None and len(self.episode_set)>=self.max_episode_count:
-                        self.save_episode=False
                 try:
                     try:
                         self.nn.ec.assign_add(1)
@@ -585,7 +585,22 @@ class kernel:
             while True:
                 t1=time.time()
                 loss,episode,done=self.train_()
-                if path==None and self.trial_count!=None:
+                self.loss=loss
+                self.loss_list.append(loss)
+                i+=1
+                self.total_episode+=1
+                if path!=None and i%save_freq==0:
+                    if self.save_param_only==False:
+                        self.save_param_(path)
+                    else:
+                        self.save_(path)
+                if self.save_episode==True:
+                    if done:
+                        episode.append('done')
+                    self.episode_set.append(episode)
+                    if self.max_episode_count!=None and len(self.episode_set)>=self.max_episode_count:
+                        self.save_episode=False
+                if self.trial_count!=None:
                     if len(self.reward_list)>=self.trial_count:
                         avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
                         if self.criterion!=None and avg_reward>=self.criterion:
@@ -602,10 +617,6 @@ class kernel:
                             print()
                             print('time:{0}s'.format(self.total_time))
                             return
-                self.loss=loss
-                self.loss_list.append(loss)
-                i+=1
-                self.total_episode+=1
                 if i%p==0:
                     if len(self.state_pool)>=self.batch:
                         print('episode:{0}   loss:{1:.6f}'.format(i+1,loss))
@@ -614,17 +625,6 @@ class kernel:
                     else:
                         print('episode:{0}   reward:{1}'.format(i+1,self.reward))
                     print()
-                if path!=None and i%save_freq==0:
-                    if self.save_param_only==False:
-                        self.save_param_(path)
-                    else:
-                        self.save_(path)
-                if self.save_episode==True:
-                    if done:
-                        episode.append('done')
-                    self.episode_set.append(episode)
-                    if self.max_episode_count!=None and len(self.episode_set)>=self.max_episode_count:
-                        self.save_episode=False
                 if hasattr(self.nn,'ec'):
                     try:
                         self.nn.ec.assign_add(1)
