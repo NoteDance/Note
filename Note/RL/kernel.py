@@ -34,7 +34,6 @@ class kernel:
         self.max_episode_count=None
         self.save_episode=save_episode
         self.path=None
-        self.reward_=None
         self.avg_reward=None
         self.save_best_only=False
         self.save_param_only=False
@@ -789,10 +788,6 @@ class kernel:
                     if self.avg_reward==None or avg_reward>self.avg_reward:
                         self.save_param(path)
                         self.avg_reward=avg_reward
-            else:
-                if self.reward_==None or self.reward>self.reward_:
-                    self.save_param(path)
-                    self.reward_=self.reward
         return
     
     
@@ -883,10 +878,6 @@ class kernel:
                     if self.avg_reward==None or avg_reward>self.avg_reward:
                         self.save(path)
                         self.avg_reward=avg_reward
-            else:
-                if self.reward_==None or self.reward>self.reward_:
-                    self.save(path)
-                    self.reward_=self.reward
         return
     
     
