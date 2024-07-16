@@ -19,7 +19,7 @@ class actor(nn.Model):
 class critic(nn.Model):
     def __init__(self,state_dim,hidden_dim,action_dim):
         super().__init__()
-        self.dense1 = nn.dense(hidden_dim, state_dim+1, activation='relu')
+        self.dense1 = nn.dense(hidden_dim, state_dim+action_dim, activation='relu')
         self.dense2 = nn.dense(action_dim, hidden_dim)
     
     def __call__(self,x,a):
