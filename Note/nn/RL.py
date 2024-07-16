@@ -66,7 +66,7 @@ class RL:
     
     def epsilon_greedy_policy(self,s):
         action_prob=self.action_one*self.epsilon_/len(self.action_one)
-        best_a=np.argmax(self.__call__(s))
+        best_a=np.argmax(self.action(s))
         action_prob[best_a]+=1-self.epsilon_
         return action_prob
     
@@ -104,11 +104,15 @@ class RL:
     def choose_action(self,s):
         if self.epsilon_==None and type(self.epsilon)!=float:
             self.epsilon_=self.epsilon(self.sc)
-        elif self.epsilon_==None:
-            action_prob=self.__call__(s)
+        if self.epsilon_==None:
+            if hasattr(self, 'action'):
+                action_prob=self.action(s)
+                a=np.random.choice(self.action_count,p=action_prob)
+            elif hasattr(self, 'noise'):
+                a=(self.action(s)+self.noise()).numpy()
         else:
             action_prob=self.epsilon_greedy_policy(s)
-        a=np.random.choice(self.action_count,p=action_prob)
+            a=np.random.choice(self.action_count,p=action_prob)
         return a
     
     
