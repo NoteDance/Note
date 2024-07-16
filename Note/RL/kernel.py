@@ -442,10 +442,7 @@ class kernel:
         self.reward=0
         s=self.nn.env(initial=True)
         if hasattr(self.platform,'DType'):
-            if type(self.nn.param[0])!=list:
-                s=np.array(s)
-            else:
-                s=np.array(s)
+            s=np.array(s)
         if self.episode_step==None:
             while True:
                 s=np.expand_dims(s,axis=0)
