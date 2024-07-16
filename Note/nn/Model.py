@@ -236,7 +236,7 @@ class Model:
     
     
     @tf.function(jit_compile=True)
-    def train_step(self, train_data, labels, loss_object, train_loss, train_accuracy, test_loss, test_accuracy, optimizer):
+    def train_step(self, train_data, labels, loss_object, train_loss, train_accuracy, optimizer):
         with tf.GradientTape() as tape:
             output = self.__call__(train_data)
             loss = loss_object(labels, output)
