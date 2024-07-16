@@ -2,12 +2,12 @@ import tensorflow as tf
 from Note.nn.Model import Model
 
 
-def initializer(shape,initializer,dtype='float32',name=None):
+def initializer(shape,initializer,dtype='float32',trainable=True,name=None):
     if type(initializer)==list:
         if initializer[0]=='normal':
-            param=tf.Variable(tf.random.normal(shape=shape,mean=initializer[1],stddev=initializer[2],dtype=dtype))
+            param=tf.Variable(tf.random.normal(shape=shape,mean=initializer[1],stddev=initializer[2],dtype=dtype),trainable=trainable)
         elif initializer[0]=='uniform':
-            param=tf.Variable(tf.random.uniform(shape=shape,minval=initializer[1],maxval=initializer[2],dtype=dtype))
+            param=tf.Variable(tf.random.uniform(shape=shape,minval=initializer[1],maxval=initializer[2],dtype=dtype),trainable=trainable)
         elif initializer[0]=='VarianceScaling':
             scale=initializer[1]
             fan_in,fan_out=compute_fans(shape)
@@ -21,14 +21,14 @@ def initializer(shape,initializer,dtype='float32',name=None):
                 raise ValueError('Invalid mode:'+initializer[2])
             if initializer[3]=='truncated_normal':
                 stddev=tf.cast(tf.sqrt(scale)/0.87962566103423978,dtype)
-                param=tf.Variable(tf.random.truncated_normal(shape=shape,mean=0.0,stddev=stddev,dtype=dtype))
+                param=tf.Variable(tf.random.truncated_normal(shape=shape,mean=0.0,stddev=stddev,dtype=dtype),trainable=trainable)
             elif initializer[3]=='uniform':
                 limit=tf.cast(tf.sqrt(3.0*scale),dtype)
-                param=tf.Variable(tf.random.uniform(shape=shape,minval=-limit,maxval=limit,dtype=dtype))
+                param=tf.Variable(tf.random.uniform(shape=shape,minval=-limit,maxval=limit,dtype=dtype),trainable=trainable)
             else:
                 raise ValueError('Invalid distribution:'+initializer[3])
         elif initializer[0]=='truncated_normal':
-            param=tf.Variable(tf.random.truncated_normal(shape=shape,mean=0.0,stddev=initializer[1],dtype=dtype))
+            param=tf.Variable(tf.random.truncated_normal(shape=shape,mean=0.0,stddev=initializer[1],dtype=dtype),trainable=trainable)
         elif initializer[0]=='Orthogonal':
             if len(initializer)==3:
                 orthogonal=Orthogonal(initializer[1],initializer[2])
@@ -36,57 +36,57 @@ def initializer(shape,initializer,dtype='float32',name=None):
                 orthogonal=Orthogonal(initializer[1])
             else:
                 orthogonal=Orthogonal()
-            param=tf.Variable(orthogonal(shape,dtype))
+            param=tf.Variable(orthogonal(shape,dtype),trainable=trainable)
     else:
         if initializer=='normal':
-            param=tf.Variable(tf.random.normal(shape=shape,dtype=dtype))
+            param=tf.Variable(tf.random.normal(shape=shape,dtype=dtype),trainable=trainable)
         elif initializer=='uniform':
-            param=tf.Variable(tf.random.uniform(shape=shape,minval=-0.05,maxval=0.05,dtype=dtype))
+            param=tf.Variable(tf.random.uniform(shape=shape,minval=-0.05,maxval=0.05,dtype=dtype),trainable=trainable)
         elif initializer=='zeros':
-            param=tf.Variable(tf.zeros(shape=shape,dtype=dtype))
+            param=tf.Variable(tf.zeros(shape=shape,dtype=dtype),trainable=trainable)
         elif initializer=='ones':
-            param=tf.Variable(tf.ones(shape=shape,dtype=dtype))
+            param=tf.Variable(tf.ones(shape=shape,dtype=dtype),trainable=trainable)
         elif initializer=='Xavier':
             scale=1.0
             fan_in,fan_out=compute_fans(shape)
             scale/=max(1.0,(fan_in+fan_out)/2.0)
             limit=tf.cast(tf.sqrt(3.0*scale),dtype)
-            param=tf.Variable(tf.random.uniform(shape=shape,minval=-limit,maxval=limit,dtype=dtype))
+            param=tf.Variable(tf.random.uniform(shape=shape,minval=-limit,maxval=limit,dtype=dtype),trainable=trainable)
         elif initializer=='Xavier_normal':
             scale=1.0
             fan_in,fan_out=compute_fans(shape)
             scale/=max(1.0,(fan_in+fan_out)/2.0)
             stddev=tf.cast(tf.sqrt(scale)/0.87962566103423978,dtype)
-            param=tf.Variable(tf.random.truncated_normal(shape=shape,mean=0.0,stddev=stddev,dtype=dtype))
+            param=tf.Variable(tf.random.truncated_normal(shape=shape,mean=0.0,stddev=stddev,dtype=dtype),trainable=trainable)
         elif initializer=='He':
             scale=2.0
             fan_in,fan_out=compute_fans(shape)
             scale/=max(1.0,fan_in)
             stddev=tf.cast(tf.sqrt(scale)/0.87962566103423978,dtype)
-            param=tf.Variable(tf.random.truncated_normal(shape=shape,mean=0.0,stddev=stddev,dtype=dtype))
+            param=tf.Variable(tf.random.truncated_normal(shape=shape,mean=0.0,stddev=stddev,dtype=dtype),trainable=trainable)
         elif initializer=='He_uniform':
             scale=2.0
             fan_in,fan_out=compute_fans(shape)
             scale/=max(1.0,fan_in)
             limit=tf.cast(tf.sqrt(3.0*scale),dtype)
-            param=tf.Variable(tf.random.uniform(shape=shape,minval=-limit,maxval=limit,dtype=dtype))
+            param=tf.Variable(tf.random.uniform(shape=shape,minval=-limit,maxval=limit,dtype=dtype),trainable=trainable)
         elif initializer=='Lecun':
             scale=1.0
             fan_in,fan_out=compute_fans(shape)
             scale/=max(1.0,fan_in)
             stddev=tf.cast(tf.sqrt(scale)/0.87962566103423978,dtype)
-            param=tf.Variable(tf.random.truncated_normal(shape=shape,mean=0.0,stddev=stddev,dtype=dtype))
+            param=tf.Variable(tf.random.truncated_normal(shape=shape,mean=0.0,stddev=stddev,dtype=dtype),trainable=trainable)
         elif initializer=='Lecun_uniform':
             scale=1.0
             fan_in,fan_out=compute_fans(shape)
             scale/=max(1.0,fan_in)
             limit=tf.cast(tf.sqrt(3.0*scale),dtype)
-            param=tf.Variable(tf.random.uniform(shape=shape,minval=-limit,maxval=limit,dtype=dtype))
+            param=tf.Variable(tf.random.uniform(shape=shape,minval=-limit,maxval=limit,dtype=dtype),trainable=trainable)
         elif initializer=='Orthogonal':
             orthogonal=Orthogonal()
-            param=tf.Variable(orthogonal(shape,dtype))
+            param=tf.Variable(orthogonal(shape,dtype),trainable=trainable)
     if name!=None:
-        param=tf.Variable(param,name=name)
+        param=tf.Variable(param,trainable=trainable,name=name)
     Model.param.append(param)
     if Model.name_!=None and Model.name_ not in Model.layer_param:
         Model.layer_param[Model.name_]=[]
