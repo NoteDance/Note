@@ -408,7 +408,6 @@ class kernel:
                         except Exception:
                             self.nn.bc+=1
             else:
-                j=0
                 train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).shuffle(len(self.state_pool)).batch(self.batch)
                 for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
                     self.suspend_func()
@@ -422,7 +421,6 @@ class kernel:
                         done_batch=done_batch.numpy()
                     batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
                     loss+=batch_loss
-                    j+=1
                     if hasattr(self.nn,'bc'):
                         try:
                             self.nn.bc.assign_add(1)
@@ -715,9 +713,11 @@ class kernel:
     def visualize_reward(self):
         print()
         plt.figure(1)
-        plt.plot(np.arange(self.total_episode),self.reward_list)
+        plt.plot(np.arange(1,self.total_episode+1),self.reward_list)
         plt.xlabel('episode')
         plt.ylabel('reward')
+        plt.xticks(np.arange(1,self.total_episode+1))
+        plt.show()
         print('reward:{0:.6f}'.format(self.reward_list[-1]))
         return
     
@@ -725,11 +725,25 @@ class kernel:
     def visualize_train(self):
         print()
         plt.figure(1)
-        plt.plot(np.arange(self.total_episode),self.loss_list)
+        plt.plot(np.arange(1,self.total_episode+1),self.loss_list)
         plt.title('train loss')
         plt.xlabel('episode')
         plt.ylabel('loss')
+        plt.xticks(np.arange(1,self.total_episode+1))
+        plt.show()
         print('loss:{0:.6f}'.format(self.loss_list[-1]))
+        return
+    
+    
+    def visualize_reward_loss(self):
+        print()
+        plt.figure(1)
+        plt.plot(np.arange(1,self.total_episode+1),self.reward_list,'r-',label='reward')
+        plt.plot(np.arange(1,self.total_episode+1),self.loss_list,'b-',label='train loss')
+        plt.xlabel('epoch')
+        plt.ylabel('reward and loss')
+        plt.xticks(np.arange(1,self.total_epoch+1))
+        plt.show()
         return
     
     
