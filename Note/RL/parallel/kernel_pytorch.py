@@ -201,7 +201,7 @@ class kernel:
     
     
     def end(self):
-        if self.path==None and self.trial_count!=None:
+        if self.trial_count!=None:
             if len(self.reward_list)>=self.trial_count:
                 avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
                 if self.criterion!=None and avg_reward>=self.criterion:
