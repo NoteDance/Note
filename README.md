@@ -100,6 +100,10 @@ https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
 **Documentation**: https://github.com/NoteDance/Note-documentation/tree/tf-7.0
 
 
+# Reinforcement learning：
+**Documentation**: https://github.com/NoteDance/Note-documentation/tree/RL-7.0
+
+
 # Documentation:
 The document contains tutorials on how to build neural networks that can be trained on Note, how to train neural networks with Note, and kernel code as well as other code with comments that can help you understand.
 
