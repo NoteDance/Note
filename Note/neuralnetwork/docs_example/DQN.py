@@ -23,6 +23,9 @@ class DQN(nn.RL):
         self.param=self.q_net.param
         self.env=gym.make('CartPole-v0')
     
+    def action(self,s):
+        return self.q_net(s)
+    
     def __call__(self,s,a,next_s,r,d):
         a=tf.expand_dims(a,axis=1)
         q_value=tf.gather(self.q_net(s),a,axis=1,batch_dims=1)
