@@ -256,7 +256,7 @@ class RL:
                 t1=time.time()
                 train_loss.reset_states()
                 loss,done=self.train2(train_loss,optimizer)
-                if self.trial_count!=None:
+                if self.path==None and self.trial_count!=None:
                     if len(self.reward_list)>=self.trial_count:
                         avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
                         if self.criterion!=None and avg_reward>=self.criterion:
@@ -297,7 +297,7 @@ class RL:
                 t1=time.time()
                 train_loss.reset_states()
                 loss,done=self.train2(train_loss,optimizer)
-                if self.trial_count!=None:
+                if self.path==None and self.trial_count!=None:
                     if len(self.reward_list)>=self.trial_count:
                         avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
                         if self.criterion!=None and avg_reward>=self.criterion:
