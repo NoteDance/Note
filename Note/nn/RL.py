@@ -197,7 +197,7 @@ class RL:
                 r=np.array(r)
                 done=np.array(done)
                 self.pool(s,a,next_s,r,done)
-                if hasattr(self,'pr'):
+                if self.pr==True:
                     self.pr.TD=np.append(self.pr.TD,self.initial_TD)
                     if len(self.state_pool)>self.pool_size:
                         TD=np.array(0)
@@ -218,7 +218,7 @@ class RL:
                 r=np.array(r)
                 done=np.array(done)
                 self.pool(s,a,next_s,r,done)
-                if hasattr(self,'pr'):
+                if self.pr==True:
                     self.pr.TD=np.append(self.pr.TD,self.initial_TD)
                     if len(self.state_pool)>self.pool_size:
                         TD=np.array(0)
@@ -256,7 +256,15 @@ class RL:
                 t1=time.time()
                 train_loss.reset_states()
                 loss,done=self.train2(train_loss,optimizer)
-                if self.path==None and self.trial_count!=None:
+                self.loss=loss
+                self.loss_list.append(loss)
+                self.total_episode+=1
+                if self.path!=None and i%self.save_freq==0:
+                    if self.save_param_only==False:
+                        self.save_param_(self.path)
+                    else:
+                        self.save_(self.path)
+                if self.trial_count!=None:
                     if len(self.reward_list)>=self.trial_count:
                         avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
                         if self.criterion!=None and avg_reward>=self.criterion:
@@ -273,9 +281,6 @@ class RL:
                             print()
                             print('time:{0}s'.format(self.total_time))
                             return
-                self.loss=loss
-                self.loss_list.append(loss)
-                self.total_episode+=1
                 if i%p==0:
                     if len(self.state_pool)>=self.batch:
                         print('episode:{0}   loss:{1:.4f}'.format(i+1,loss))
@@ -284,11 +289,6 @@ class RL:
                     else:
                         print('episode:{0}   reward:{1}'.format(i+1,self.reward))
                     print()
-                if self.path!=None and i%self.save_freq==0:
-                    if self.save_param_only==False:
-                        self.save_param_(self.path)
-                    else:
-                        self.save_(self.path)
                 t2=time.time()
                 self.time+=(t2-t1)
         else:
@@ -297,7 +297,16 @@ class RL:
                 t1=time.time()
                 train_loss.reset_states()
                 loss,done=self.train2(train_loss,optimizer)
-                if self.path==None and self.trial_count!=None:
+                self.loss=loss
+                self.loss_list.append(loss)
+                i+=1
+                self.total_episode+=1
+                if self.path!=None and i%self.save_freq==0:
+                    if self.save_param_only==False:
+                        self.save_param_(self.path)
+                    else:
+                        self.save_(self.path)
+                if self.trial_count!=None:
                     if len(self.reward_list)>=self.trial_count:
                         avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
                         if self.criterion!=None and avg_reward>=self.criterion:
@@ -314,10 +323,6 @@ class RL:
                             print()
                             print('time:{0}s'.format(self.total_time))
                             return
-                self.loss=loss
-                self.loss_list.append(loss)
-                i+=1
-                self.total_episode+=1
                 if i%p==0:
                     if len(self.state_pool)>=self.batch:
                         print('episode:{0}   loss:{1:.4f}'.format(i+1,loss))
@@ -326,11 +331,6 @@ class RL:
                     else:
                         print('episode:{0}   reward:{1}'.format(i+1,self.reward))
                     print()
-                if self.path!=None and i%self.save_freq==0:
-                    if self.save_param_only==False:
-                        self.save_param_(self.path)
-                    else:
-                        self.save_(self.path)
                 t2=time.time()
                 self.time+=(t2-t1)
         time_=self.time-int(self.time)
