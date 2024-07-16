@@ -158,4 +158,4 @@ from Note.nn.positional_encoding import positional_encoding
 from Note.nn.restore import *
 from Note.nn.scaled_dot_product_attention import scaled_dot_product_attention
 from Note.nn.Sequential import Sequential
-from Note.nn.weight_init import *
+from Note.nn.init import *
