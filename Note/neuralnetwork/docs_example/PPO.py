@@ -8,7 +8,6 @@ class actor(nn.Model):
         super().__init__()
         self.dense1 = nn.dense(hidden_dim, state_dim, activation='relu')
         self.dense2 = nn.dense(action_dim, hidden_dim)
-        self.param=[self.dense1.param,self.dense2.param] # store the network parameters in a list
     
     def __call__(self,x):
         x=self.dense1(x)
@@ -20,7 +19,6 @@ class critic(nn.Model):
         super().__init__()
         self.dense1 = nn.dense(hidden_dim, state_dim, activation='relu')
         self.dense2 = nn.dense(1, hidden_dim)
-        self.param=[self.dense1.param,self.dense2.param] # store the network parameters in a list
     
     def __call__(self,x):
         x=self.dense1(x)
@@ -50,7 +48,7 @@ class PPO(nn.RL):
         action_prob_old=tf.gather(self.actor_old(s),a,axis=1,batch_dims=1)
         raito=action_prob/action_prob_old
         value=self.critic(s)
-        value_tar=r+0.98*self.critic(next_s)*(1-d)
+        value_tar=r+0.98*self.critic(next_s)*(1-tf.cast(d,'float32'))
         TD=value_tar-value
         sur1=raito*TD
         sur2=tf.clip_by_value(raito,clip_value_min=1-self.clip_eps,clip_value_max=1+self.clip_eps)*TD
