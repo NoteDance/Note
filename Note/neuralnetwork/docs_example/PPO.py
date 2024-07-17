@@ -48,7 +48,7 @@ class PPO(nn.RL):
         action_prob_old=tf.gather(self.actor_old(s),a,axis=1,batch_dims=1)
         raito=action_prob/action_prob_old
         value=self.critic(s)
-        value_tar=r+0.98*self.critic(next_s)*(1-tf.cast(d,'float32'))
+        value_tar=tf.cast(r,'float32')+0.98*self.critic(next_s)*(1-tf.cast(d,'float32'))
         TD=value_tar-value
         sur1=raito*TD
         sur2=tf.clip_by_value(raito,clip_value_min=1-self.clip_eps,clip_value_max=1+self.clip_eps)*TD
