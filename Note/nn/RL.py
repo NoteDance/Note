@@ -1,6 +1,6 @@
 import tensorflow as tf
+from Note import nn
 import Note.RL.rl.prioritized_replay as pr
-from tensorflow.python.ops import state_ops
 import numpy as np
 import matplotlib.pyplot as plt
 import statistics
@@ -264,7 +264,7 @@ class RL:
             for i in range(episodes):
                 t1=time.time()
                 train_loss.reset_states()
-                loss,done=self.train2(train_loss,optimizer)
+                loss,done=self.train2(train_loss,self.optimizer_)
                 self.loss=loss
                 self.loss_list.append(loss)
                 self.total_episode+=1
@@ -305,7 +305,7 @@ class RL:
             while True:
                 t1=time.time()
                 train_loss.reset_states()
-                loss,done=self.train2(train_loss,optimizer)
+                loss,done=self.train2(train_loss,self.optimizer_)
                 self.loss=loss
                 self.loss_list.append(loss)
                 i+=1
@@ -430,8 +430,7 @@ class RL:
     def restore_param(self,path):
         input_file=open(path,'rb')
         param=pickle.load(input_file)
-        for i in range(len(self.param)):
-            state_ops.assign(self.param[i],param[i])
+        nn.assign(self.param,param)
         input_file.close()
         return
     
