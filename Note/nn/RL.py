@@ -174,7 +174,8 @@ class RL:
                         self.train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
                     self.batch_counter+=1
             else:
-                train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).shuffle(len(self.state_pool)).batch(self.batch)
+                buffer_size = max(1, self.pool_size * (self.episodes - self.total_episode) // self.episodes)
+                train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).shuffle(buffer_size).batch(self.batch)
                 for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
                     if self.jit_compile==True:
                         self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
@@ -260,6 +261,7 @@ class RL:
         if p==0:
             p=1
         self.optimizer_=optimizer
+        self.episodes=episodes
         if episodes!=None:
             for i in range(episodes):
                 t1=time.time()
