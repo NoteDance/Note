@@ -101,6 +101,8 @@ https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
 
 
 # Reinforcement learning：
+The documentation shows how to train, test, save, and restore models built with Note, Keras and PyTorch.
+
 **Documentation**: https://github.com/NoteDance/Note-documentation/tree/RL-7.0
 
 
