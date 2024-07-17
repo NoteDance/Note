@@ -212,6 +212,8 @@ class RL:
                 self.sc+=1
                 if done:
                     self.reward_list.append(self.reward)
+                    if len(self.reward_list)>self.trial_count:
+                        del self.reward_list[0]
                     return train_loss.result().numpy(),done
                 s=next_s
         else:
@@ -233,6 +235,8 @@ class RL:
                 self.sc+=1
                 if done:
                     self.reward_list.append(self.reward)
+                    if len(self.reward_list)>self.trial_count:
+                        del self.reward_list[0]
                     return train_loss.result().numpy(),done
                 s=next_s
         self.reward_list.append(self.reward)
