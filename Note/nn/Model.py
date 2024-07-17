@@ -1,5 +1,4 @@
 import tensorflow as tf
-from tensorflow.python.ops import state_ops
 from Note import nn
 import numpy as np
 import numpy.ctypeslib as npc
@@ -960,8 +959,7 @@ class Model:
     def restore_param(self,path):
         input_file=open(path,'rb')
         param=pickle.load(input_file)
-        for i in range(len(self.param)):
-            state_ops.assign(self.param[i],param[i])
+        nn.assign_param(self.param,param)
         input_file.close()
         return
     
