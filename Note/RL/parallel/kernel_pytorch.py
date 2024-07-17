@@ -341,6 +341,10 @@ class kernel:
                     if done:
                         if len(lock)==4:
                             lock[3].acquire()
+                        self.reward_list.append(self.reward[p])
+                        if len(self.reward_list)>self.trial_count:
+                            del self.reward_list[0]
+                        self.reward[p]=0
                         self.episode_counter.value+=1
                         self.total_episode.value+=1
                         self.loss_list.append(self.loss[p])
@@ -361,6 +365,10 @@ class kernel:
                     if done:
                         if len(lock)==4:
                             lock[3].acquire()
+                        self.reward_list.append(self.reward[p])
+                        if len(self.reward_list)>self.trial_count:
+                            del self.reward_list[0]
+                        self.reward[p]=0
                         self.episode_counter.value+=1
                         self.total_episode.value+=1
                         self.loss_list.append(self.loss[p])
