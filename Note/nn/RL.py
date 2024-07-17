@@ -134,7 +134,7 @@ class RL:
     @tf.function(jit_compile=True)
     def train_step(self, train_data, train_loss, optimizer):
         with tf.GradientTape() as tape:
-            loss = self.__call__(train_data)
+            loss = self.__call__(*train_data)
         gradients = tape.gradient(loss, self.param)
         optimizer.apply_gradients(zip(gradients, self.param))
         train_loss(loss)
@@ -144,7 +144,7 @@ class RL:
     @tf.function
     def train_step_(self, train_data, train_loss, optimizer):
         with tf.GradientTape() as tape:
-            loss = self.__call__(train_data)
+            loss = self.__call__(*train_data)
         gradients = tape.gradient(loss, self.param)
         optimizer.apply_gradients(zip(gradients, self.param))
         train_loss(loss)
