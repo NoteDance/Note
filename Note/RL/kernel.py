@@ -471,6 +471,8 @@ class kernel:
                     if self.save_episode==True:
                         episode=[s,a,next_s,r]
                     self.reward_list.append(self.reward)
+                    if len(self.reward_list)>self.trial_count:
+                        del self.reward_list[0]
                     return loss,episode,done
                 elif self.save_episode==True:
                     episode=[s,a,next_s,r]
@@ -503,6 +505,8 @@ class kernel:
                     if self.save_episode==True:
                         episode=[s,a,next_s,r]
                     self.reward_list.append(self.reward)
+                    if len(self.reward_list)>self.trial_count:
+                        del self.reward_list[0]
                     return loss,episode,done
                 elif self.save_episode==True:
                     episode=[s,a,next_s,r]
