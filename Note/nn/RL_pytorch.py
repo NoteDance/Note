@@ -2,6 +2,7 @@ from torch.utils.data import DataLoader
 import Note.RL.rl.prioritized_replay as pr
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 import statistics
 import pickle
 import os
@@ -109,7 +110,7 @@ class RL:
                 action_prob=self.action(s)
                 a=np.random.choice(self.action_count,p=action_prob)
             elif hasattr(self, 'noise'):
-                a=(self.action(s)+self.noise()).numpy()
+                a=(self.action(s)+self.noise()).detach().numpy()
         else:
             action_prob=self.epsilon_greedy_policy(s)
             a=np.random.choice(self.action_count,p=action_prob)
@@ -329,6 +330,44 @@ class RL:
         print('last reward:{0}'.format(self.reward))
         print()
         print('time:{0}s'.format(self.time))
+        return
+    
+    
+    def run_agent(self, max_steps):
+        state_history = []
+
+        state = self.env.reset()
+        for step in range(max_steps):
+            if not hasattr(self, 'noise'):
+                action = np.argmax(self.action(state))
+            else:
+                action = self.action(state).detach().numpy()
+            next_state, reward, done, _ = self.env.step(action)
+            state_history.append(state)
+            if done:
+                break
+            state = next_state
+        
+        return state_history
+    
+    
+    def animate_agent(self, max_steps, mode='rgb_array', save_path=None, fps=None, writer='imagemagick'):
+        state_history = self.run_agent(max_steps)
+        
+        fig = plt.figure()
+        ax = fig.add_subplot()
+        self.env.reset()
+        img = ax.imshow(self.env.render(mode=mode))
+
+        def update(frame):
+            img.set_array(self.env.render(mode=mode))
+            return [img]
+
+        ani = animation.FuncAnimation(fig, update, frames=state_history, blit=True)
+        plt.show()
+        
+        if save_path!=None:
+            ani.save(save_path, writer=writer, fps=fps)
         return
     
     
