@@ -136,16 +136,26 @@ class RL:
         if self.pr:
             s,a,next_s,r,d=self.pr_.sample(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.epsilon_pr,self.alpha,self.batch)
         elif self.HER:
+            step_state_array = None
+            step_goal_array = None
             for _ in range(self.batch):
-                step_state = np.random.randint(0, len(self.state_pool)+1)
-                state = self.state_pool[step_state]
-                next_state = self.next_state_pool[step_state]
-                a = self.action_pool[step_state]
-                step_goal = np.random.randint(step_state+1, len(self.state_pool)+1)
-                goal = state[step_goal]
-                r, d = self.reward_done_func(next_state, goal)
-                s = np.hstack((state, goal))
-                next_s = np.hstack((next_state, goal))
+                if step_state_array==None:
+                    step_state = np.random.randint(0, len(self.state_pool)+1)
+                    step_state_array = np.expand_dims(step_state, 0)
+                else:
+                    step_state = np.random.randint(0, len(self.state_pool)+1)
+                    step_state_array = np.concatenate((step_state_array, np.expand_dims(step_state, 0)), 0)
+                if step_goal_array==None:
+                    step_goal_array = np.expand_dims(np.random.randint(step_state+1, len(self.state_pool)+1), 0)
+                else:
+                    step_goal_array = np.concatenate((step_goal_array, np.expand_dims(np.random.randint(step_state+1, len(self.state_pool)+1), 0)), 0)
+            state = self.state_pool[step_state_array]
+            next_state = self.next_state_pool[step_state_array]
+            a = self.action_pool[step_state_array]
+            goal = self.state_pool[step_goal_array]
+            r, d = self.reward_done_func(next_state, goal)
+            s = np.hstack((state, goal))
+            next_s = np.hstack((next_state, goal))
         return s,a,next_s,r,d
     
     
