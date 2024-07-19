@@ -29,7 +29,7 @@ class critic(nn.Model):
 
 
 class DDPG(nn.RL):
-    def __init__(self,hidden_dim,sigma,gamma,tau,actor_lr,critic_lr):
+    def __init__(self,hidden_dim,sigma,gamma,tau):
         super().__init__()
         self.env=gym.make('Pendulum-v1')
         state_dim=self.env.observation_space.shape[0]

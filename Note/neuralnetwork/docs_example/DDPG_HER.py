@@ -57,7 +57,7 @@ class WorldEnv:
 
 
 class DDPG(nn.RL):
-    def __init__(self,hidden_dim,sigma,gamma,tau,actor_lr,critic_lr):
+    def __init__(self,hidden_dim,sigma,gamma,tau):
         super().__init__()
         self.env=WorldEnv()
         state_dim=4
