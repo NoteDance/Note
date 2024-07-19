@@ -40,7 +40,7 @@ class RL:
         return
     
     
-    def set_up(self,epsilon=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None,pr=False,initial_TD=7,alpha=0.7,jit_compile=True):
+    def set_up(self,epsilon=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None,pr=False,HER=False,initial_TD=7,alpha=0.7):
         if pr==False and epsilon!=None:
             self.epsilon_=epsilon
         if episode_step!=None:
@@ -56,11 +56,11 @@ class RL:
         if criterion!=None:
             self.criterion=criterion
         self.pr=pr
+        self.HER=HER
         if pr==True:
             self.epsilon_pr=epsilon
             self.initial_TD=initial_TD
             self.alpha=alpha
-        self.jit_compile=jit_compile
         self.action_vec()
         return
     
@@ -74,7 +74,13 @@ class RL:
     
     def pool(self,s,a,next_s,r,done):
         if type(self.state_pool)!=np.ndarray and self.state_pool==None:
-            self.state_pool=s
+            if type(s) in [int,float]:
+                s=np.array(s)
+                self.state_pool=np.expand_dims(s,axis=0)
+            elif type(s)==tuple:
+                s=np.array(s)
+            else:
+                self.state_pool=s
             if type(a)==int:
                 a=np.array(a)
                 self.action_pool=np.expand_dims(a,axis=0)
@@ -127,7 +133,19 @@ class RL:
     
     
     def data_func(self):
-        s,a,next_s,r,d=self.pr_.sample(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.epsilon_pr,self.alpha,self.batch)
+        if self.pr:
+            s,a,next_s,r,d=self.pr_.sample(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.epsilon_pr,self.alpha,self.batch)
+        elif self.HER:
+            for _ in range(self.batch):
+                step_state = np.random.randint(0, len(self.state_pool))
+                state = self.state_pool[step_state]
+                next_state = self.next_state_pool[step_state]
+                a = self.action_pool[step_state]
+                step_goal = np.random.randint(step_state+1, len(self.state_pool))
+                goal = state[step_goal]
+                r, d = self.reward_done_func(next_state, goal)
+                s = np.hstack((state, goal))
+                next_s = np.hstack((next_state, goal))
         return s,a,next_s,r,d
     
     
