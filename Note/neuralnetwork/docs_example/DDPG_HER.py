@@ -60,9 +60,9 @@ class DDPG(nn.RL):
     def __init__(self,hidden_dim,sigma,gamma,tau,actor_lr,critic_lr):
         super().__init__()
         self.env=WorldEnv()
-        state_dim=self.env.observation_space.shape[0]
-        action_dim=self.env.action_space.shape[0]
-        action_bound=self.env.action_space.high[0]
+        state_dim=4
+        action_dim=2
+        action_bound=1
         self.actor=actor(state_dim,hidden_dim,action_dim,action_bound)
         self.actor.detach()
         self.critic=critic(state_dim,hidden_dim,action_dim)
