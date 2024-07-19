@@ -139,11 +139,11 @@ class RL:
             s,a,next_s,r,d=self.pr_.sample(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.epsilon_pr,self.alpha,self.batch)
         elif self.HER:
             for _ in range(self.batch):
-                step_state = np.random.randint(0, len(self.state_pool))
+                step_state = np.random.randint(0, len(self.state_pool)+1)
                 state = self.state_pool[step_state]
                 next_state = self.next_state_pool[step_state]
                 a = self.action_pool[step_state]
-                step_goal = np.random.randint(step_state+1, len(self.state_pool))
+                step_goal = np.random.randint(step_state+1, len(self.state_pool)+1)
                 goal = state[step_goal]
                 r, d = self.reward_done_func(next_state, goal)
                 s = np.hstack((state, goal))
