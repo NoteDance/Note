@@ -10,7 +10,7 @@ import time
 
 
 class kernel:
-    def __init__(self,nn=None,save_episode=False):
+    def __init__(self,nn=None):
         self.nn=nn
         if hasattr(self.nn,'km'):
             self.nn.km=1
@@ -32,7 +32,6 @@ class kernel:
         self.suspend=False
         self.save_epi=None
         self.max_episode_count=None
-        self.save_episode=save_episode
         self.path=None
         self.avg_reward=None
         self.save_best_only=False
@@ -110,145 +109,35 @@ class kernel:
         return action_prob
     
     
-    def get_reward(self,max_step=None,seed=None):
-        reward=0
+    def run_agent(self, max_steps, seed=None):
+        state_history = []
+
+        steps = 0
+        reward_ = 0
         if seed==None:
-            s=self.nn.genv.reset()
+            state = self.nn.genv.reset()
         else:
-            s=self.nn.genv.reset(seed=seed)
-        self.end_flag=False
-        if max_step!=None:
-            for i in range(max_step):
-                if self.end_flag==True:
-                    break
-                if hasattr(self.nn,'nn'):
-                    if hasattr(self.platform,'DType'):
-                        s=np.expand_dims(s,axis=0)
-                        a=np.argmax(self.nn.nn.fp(s))
-                    else:
-                        s=np.expand_dims(s,axis=0)
-                        s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                        a=self.nn.nn(s).detach().numpy().argmax()
+            state = self.nn.genv.reset(seed=seed)
+        for step in range(max_steps):
+            if hasattr(self.platform,'DType'):
+                if not hasattr(self, 'noise'):
+                    action = np.argmax(self.nn.nn.fp(state))
                 else:
-                    if hasattr(self.nn,'action'):
-                        if hasattr(self.platform,'DType'):
-                            s=np.expand_dims(s,axis=0)
-                            a=self.nn.action(s).numpy()
-                        else:
-                            s=np.expand_dims(s,axis=0)
-                            a=self.nn.action(s).detach().numpy()
-                    else:
-                        if hasattr(self.platform,'DType'):
-                            s=np.expand_dims(s,axis=0)
-                            a=self.nn.actor.fp(s).numpy()
-                            a=np.squeeze(a)
-                        else:
-                            s=np.expand_dims(s,axis=0)
-                            s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                            a=self.nn.actor(s).detach().numpy()
-                            a=np.squeeze(a)
-                next_s,r,done,_=self.nn.genv.step(a)
-                s=next_s
-                reward+=r
-                if hasattr(self.nn,'stop'):
-                    if self.nn.stop(next_s):
-                        break
-                if done:
-                    break
-            return reward
-        else:
-            while True:
-                if self.end_flag==True:
-                    break
-                if hasattr(self.nn,'nn'):
-                    if hasattr(self.platform,'DType'):
-                        s=np.expand_dims(s,axis=0)
-                        a=np.argmax(self.nn.nn.fp(s))
-                    else:
-                        s=np.expand_dims(s,axis=0)
-                        s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                        a=self.nn.nn(s).detach().numpy().argmax()
-                else:
-                    if hasattr(self.nn,'action'):
-                        if hasattr(self.platform,'DType'):
-                            s=np.expand_dims(s,axis=0)
-                            a=self.nn.action(s).numpy()
-                        else:
-                            s=np.expand_dims(s,axis=0)
-                            a=self.nn.action(s).detach().numpy()
-                    else:
-                        if hasattr(self.platform,'DType'):
-                            s=np.expand_dims(s,axis=0)
-                            a=self.nn.actor.fp(s).numpy()
-                            a=np.squeeze(a)
-                        else:
-                            s=np.expand_dims(s,axis=0)
-                            s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                            a=self.nn.actor(s).detach().numpy()
-                            a=np.squeeze(a)
-                next_s,r,done,_=self.nn.genv.step(a)
-                s=next_s
-                reward+=r
-                if hasattr(self.nn,'stop'):
-                    if self.nn.stop(next_s):
-                        break
-                if done:
-                    break
-            return reward
-    
-    
-    def get_episode(self,max_step=None,seed=None):
-        counter=0
-        episode=[]
-        if seed==None:
-            s=self.nn.genv.reset()
-        else:
-            s=self.nn.genv.reset(seed=seed)
-        self.end_flag=False
-        while True:
-            if self.end_flag==True:
-                break
-            if hasattr(self.nn,'nn'):
-                if hasattr(self.platform,'DType'):
-                    s=np.expand_dims(s,axis=0)
-                    a=np.argmax(self.nn.nn.fp(s))
-                else:
-                    s=np.expand_dims(s,axis=0)
-                    s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                    a=self.nn.nn(s).detach().numpy().argmax()
+                    action = self.nn.actor.fp(state).numpy()
             else:
-                if hasattr(self.nn,'action'):
-                    if hasattr(self.platform,'DType'):
-                        s=np.expand_dims(s,axis=0)
-                        a=self.nn.action(s).numpy()
-                    else:
-                        s=np.expand_dims(s,axis=0)
-                        a=self.nn.action(s).detach().numpy()
+                if not hasattr(self, 'noise'):
+                    action = np.argmax(self.nn.nn.fp(state))
                 else:
-                    if hasattr(self.platform,'DType'):
-                        s=np.expand_dims(s,axis=0)
-                        a=self.nn.actor.fp(s).numpy()
-                        a=np.squeeze(a)
-                    else:
-                        s=np.expand_dims(s,axis=0)
-                        s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                        a=self.nn.actor(s).detach().numpy()
-                        a=np.squeeze(a)
-            next_s,r,done=self.nn.env(a)
-            if hasattr(self.nn,'stop'):
-                if self.nn.stop(next_s):
-                    break
+                    action = self.nn.actor.fp(state).detach().numpy()
+            next_state, reward, done, _ = self.env.step(action)
+            state_history.append(state)
+            steps+=1
+            reward_+=reward
             if done:
-                episode.append([s,a,next_s,r])
-                episode.append('done')
                 break
-            else:
-                episode.append([s,a,next_s,r])
-            if max_step!=None and counter==max_step-1:
-                break
-            s=next_s
-            counter+=1
-        return episode
+            state = next_state
+        
+        return state_history,reward_,steps
     
     
     @tf.function(jit_compile=True)
@@ -350,31 +239,18 @@ class kernel:
                 if hasattr(self.platform,'DType'):
                     if self.epsilon==None:
                         self.epsilon=self.nn.epsilon(self.sc)
-                    if hasattr(self.nn,'discriminator'):
-                        a=self.nn.action(s)
-                        reward=self.nn.discriminator(s,a)
-                        s=np.squeeze(s)
-                    else:
-                        a=self.nn.action(s).numpy()
+                    a=self.nn.action(s).numpy()
                 else:
                     if self.epsilon==None:
                         self.epsilon=self.nn.epsilon(self.sc)
-                    if hasattr(self.nn,'discriminator'):
-                        a=self.nn.action(s)
-                        reward=self.nn.discriminator(s,a)
-                        s=np.squeeze(s)
-                    else:
-                        a=self.nn.action(s).detach().numpy()
+                    a=self.nn.action(s).detach().numpy()
             else:
                 if hasattr(self.platform,'DType'):
                     a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
                 else:
                     s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                     a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
-        if hasattr(self.nn,'discriminator'):
-            return a,reward
-        else:
-            return a,None
+        return a
         
     
     def _train(self):
@@ -446,17 +322,14 @@ class kernel:
         if self.episode_step==None:
             while True:
                 s=np.expand_dims(s,axis=0)
-                a,reward=self.choose_action(s)
+                a=self.choose_action(s)
                 next_s,r,done=self.nn.env(a)
                 if hasattr(self.platform,'DType'):
                     next_s=np.array(next_s)
                     r=np.array(r)
                     done=np.array(done)
                 if hasattr(self.nn,'pool'):
-                    if hasattr(self.nn,'discriminator'):
-                        self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done])
-                    else:
-                        self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,r,done])
+                    self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,r,done])
                 else:
                     self.pool(s,a,next_s,r,done)
                 if hasattr(self.nn,'pr'):
@@ -468,29 +341,22 @@ class kernel:
                 loss=self._train()
                 self.sc+=1
                 if done:
-                    if self.save_episode==True:
-                        episode=[s,a,next_s,r]
                     self.reward_list.append(self.reward)
                     if len(self.reward_list)>self.trial_count:
                         del self.reward_list[0]
                     return loss,episode,done
-                elif self.save_episode==True:
-                    episode=[s,a,next_s,r]
                 s=next_s
         else:
             for _ in range(self.episode_step):
                 s=np.expand_dims(s,axis=0)
-                a,reward=self.choose_action(s)
+                a=self.choose_action(s)
                 next_s,r,done=self.nn.env(a)
                 if hasattr(self.platform,'DType'):
                     next_s=np.array(next_s)
                     r=np.array(r)
                     done=np.array(done)
                 if hasattr(self.nn,'pool'):
-                    if hasattr(self.nn,'discriminator'):
-                        self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,reward,done])
-                    else:
-                        self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,r,done])
+                    self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,r,done])
                 else:
                     self.pool(s,a,next_s,r,done)
                 if hasattr(self.nn,'pr'):
@@ -502,14 +368,10 @@ class kernel:
                 loss=self._train()
                 self.sc+=1
                 if done:
-                    if self.save_episode==True:
-                        episode=[s,a,next_s,r]
                     self.reward_list.append(self.reward)
                     if len(self.reward_list)>self.trial_count:
                         del self.reward_list[0]
                     return loss,episode,done
-                elif self.save_episode==True:
-                    episode=[s,a,next_s,r]
                 s=next_s
         self.reward_list.append(self.reward)
         if len(self.reward_list)>self.trial_count:
@@ -544,12 +406,6 @@ class kernel:
                         self.save_param_(path)
                     else:
                         self.save_(path)
-                if self.save_episode==True:
-                    if done:
-                        episode.append('done')
-                    self.episode_set.append(episode)
-                    if self.max_episode_count!=None and len(self.episode_set)>=self.max_episode_count:
-                        self.save_episode=False
                 if self.trial_count!=None:
                     if len(self.reward_list)>=self.trial_count:
                         avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
@@ -598,12 +454,6 @@ class kernel:
                         self.save_param_(path)
                     else:
                         self.save_(path)
-                if self.save_episode==True:
-                    if done:
-                        episode.append('done')
-                    self.episode_set.append(episode)
-                    if self.max_episode_count!=None and len(self.episode_set)>=self.max_episode_count:
-                        self.save_episode=False
                 if self.trial_count!=None:
                     if len(self.reward_list)>=self.trial_count:
                         avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
@@ -737,39 +587,17 @@ class kernel:
         return
     
     
-    def save_episode(self,path):
-        episode_file=open(path,'wb')
-        pickle.dump(self.episode_set,episode_file)
-        episode_file.close()
-        return
-    
-    
     def save_param_(self,path):
         if self.save_best_only==False:
             if self.max_save_files==None:
                 parameter_file=open(path,'wb')
-                if self.save_episode==True:
-                    episode_file=open('episode.dat','wb')
-                    pickle.dump(self.episode_set,episode_file)
-                    episode_file.close()
             else:
                 path=path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_episode))
                 parameter_file=open(path,'wb')
-                if self.save_episode==True:
-                    episode_file=open('episode-{0}.dat'.format(self.total_episode),'wb')
-                    pickle.dump(self.episode_set,episode_file)
-                    episode_file.close()
-                if self.save_episode==True:
-                    self.path_list.append([path,'episode-{0}.dat'])
-                    if len(self.path_list)>self.max_save_files:
-                        os.remove(self.path_list[0][0])
-                        os.remove(self.path_list[0][1])
-                        del self.path_list[0]
-                else:
-                    self.path_list.append(path)
-                    if len(self.path_list)>self.max_save_files:
-                        os.remove(self.path_list[0])
-                        del self.path_list[0]
+                self.path_list.append(path)
+                if len(self.path_list)>self.max_save_files:
+                    os.remove(self.path_list[0])
+                    del self.path_list[0]
             pickle.dump(self.nn.param,parameter_file)
             parameter_file.close()
         else:
@@ -805,28 +633,13 @@ class kernel:
         if self.save_best_only==False:
             if self.max_save_files==None:
                 output_file=open(path,'wb')
-                if self.save_episode==True:
-                    episode_file=open('episode.dat','wb')
-                    pickle.dump(self.episode_set,episode_file)
-                    episode_file.close()
             else:
                 path=path.replace(path[path.find('.'):],'-{0}.dat'.format(self.total_episode))
                 output_file=open(path,'wb')
-                if self.save_episode==True:
-                    episode_file=open('episode-{0}.dat'.format(self.total_episode),'wb')
-                    pickle.dump(self.episode_set,episode_file)
-                    episode_file.close()
-                if self.save_episode==True:
-                    self.path_list.append([path,'episode-{0}.dat'])
-                    if len(self.path_list)>self.max_save_files:
-                        os.remove(self.path_list[0][0])
-                        os.remove(self.path_list[0][1])
-                        del self.path_list[0]
-                else:
-                    self.path_list.append(path)
-                    if len(self.path_list)>self.max_save_files:
-                        os.remove(self.path_list[0])
-                        del self.path_list[0]
+                self.path_list.append(path)
+                if len(self.path_list)>self.max_save_files:
+                    os.remove(self.path_list[0])
+                    del self.path_list[0]
             try:
                 if hasattr(self.platform,'DType'):
                     try:
@@ -853,8 +666,6 @@ class kernel:
             pickle.dump(self.pool_size,output_file)
             pickle.dump(self.batch,output_file)
             pickle.dump(self.update_step,output_file)
-            pickle.dump(self.max_episode_count,output_file)
-            pickle.dump(self.save_episode,output_file)
             pickle.dump(self.reward_list,output_file)
             pickle.dump(self.loss,output_file)
             pickle.dump(self.loss_list,output_file)
@@ -874,10 +685,6 @@ class kernel:
     
     def save(self,path):
         output_file=open(path,'wb')
-        if self.save_episode==True:
-            episode_file=open('episode.dat','wb')
-            pickle.dump(self.episode_set,episode_file)
-            episode_file.close()
         try:
             if hasattr(self.platform,'DType'):
                 try:
@@ -904,8 +711,6 @@ class kernel:
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.update_step,output_file)
-        pickle.dump(self.max_episode_count,output_file)
-        pickle.dump(self.save_episode,output_file)
         pickle.dump(self.reward_list,output_file)
         pickle.dump(self.loss,output_file)
         pickle.dump(self.loss_list,output_file)
@@ -938,8 +743,6 @@ class kernel:
         self.pool_size=pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.update_step=pickle.load(input_file)
-        self.max_episode_count=pickle.load(input_file)
-        self.save_episode=pickle.load(input_file)
         self.reward_list=pickle.load(input_file)
         self.loss=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
