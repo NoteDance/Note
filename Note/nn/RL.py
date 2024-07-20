@@ -20,7 +20,7 @@ class RL:
         self.epsilon=None
         self.reward_list=[]
         self.pr_=pr.pr()
-        self.seed=0
+        self.seed=7
         self.optimizer_=None
         self.path=None
         self.save_freq=1
