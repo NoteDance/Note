@@ -20,6 +20,7 @@ class RL:
         self.epsilon=None
         self.reward_list=[]
         self.pr_=pr.pr()
+        self.seed=0
         self.optimizer_=None
         self.path=None
         self.save_freq=1
@@ -127,7 +128,7 @@ class RL:
     
     def env_(self,a=None,initial=None):
         if initial==True:
-            state=self.env.reset(seed=0)
+            state=self.env.reset(seed=self.seed)
             return state
         else:
             next_state,reward,done,_=self.env.step(a)
@@ -394,6 +395,8 @@ class RL:
     def run_agent(self, max_steps):
         state_history = []
 
+        steps = 0
+        reward_ = 0
         state = self.env.reset()
         for step in range(max_steps):
             if not hasattr(self, 'noise'):
@@ -402,15 +405,17 @@ class RL:
                 action = self.action(state).numpy()
             next_state, reward, done, _ = self.env.step(action)
             state_history.append(state)
+            steps+=1
+            reward_+=reward
             if done:
                 break
             state = next_state
         
-        return state_history
+        return state_history,reward_,steps
     
     
     def animate_agent(self, max_steps, mode='rgb_array', save_path=None, fps=None, writer='imagemagick'):
-        state_history = self.run_agent(max_steps)
+        state_history,reward,steps = self.run_agent(max_steps)
         
         fig = plt.figure()
         ax = fig.add_subplot()
@@ -423,6 +428,9 @@ class RL:
 
         ani = animation.FuncAnimation(fig, update, frames=state_history, blit=True)
         plt.show()
+        
+        print('steps:{0}'.format(steps))
+        print('reward:{0}'.format(reward))
         
         if save_path!=None:
             ani.save(save_path, writer=writer, fps=fps)
