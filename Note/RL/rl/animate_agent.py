@@ -10,10 +10,15 @@ class animate_agent:
         self.platform=platform
     
     
-    def run_agent(self, max_steps):
+    def run_agent(self, max_steps, seed=None):
         state_history = []
 
-        state = self.env.reset()
+        steps = 0
+        reward_ = 0
+        if seed==None:
+            state = self.nn.genv.reset()
+        else:
+            state = self.nn.genv.reset(seed=seed)
         for step in range(max_steps):
             if self.platform=='tf':
                 if not hasattr(self, 'noise'):
@@ -27,15 +32,17 @@ class animate_agent:
                     action = self.agent.actor.fp(state).detach().numpy()
             next_state, reward, done, _ = self.env.step(action)
             state_history.append(state)
+            steps+=1
+            reward_+=reward
             if done:
                 break
             state = next_state
         
-        return state_history
+        return state_history,reward_,steps
     
     
     def __call__(self, max_steps, mode='rgb_array', save_path=None, fps=None, writer='imagemagick'):
-        state_history = self.run_agent(max_steps)
+        state_history,reward,steps = self.run_agent(max_steps)
         
         fig = plt.figure()
         ax = fig.add_subplot()
@@ -48,6 +55,9 @@ class animate_agent:
 
         ani = animation.FuncAnimation(fig, update, frames=state_history, blit=True)
         plt.show()
+        
+        print('steps:{0}'.format(steps))
+        print('reward:{0}'.format(reward))
         
         if save_path!=None:
             ani.save(save_path, writer=writer, fps=fps)
