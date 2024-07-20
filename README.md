@@ -101,7 +101,7 @@ https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
 
 
 # Reinforcement learning：
-The documentation shows how to train, test, save, and restore agent built with Note, Keras and PyTorch.
+You just need to have your agent class inherit from the RL or RL_pytorch class, and you can easily train your agent. The documentation shows how to train, save, and restore agent built with Note, Keras and PyTorch.
 
 **Documentation**: https://github.com/NoteDance/Note-documentation/tree/RL-7.0
 
