@@ -367,12 +367,15 @@ class RL:
         return
     
     
-    def run_agent(self, max_steps):
+    def run_agent(self, max_steps, seed=None):
         state_history = []
 
         steps = 0
         reward_ = 0
-        state = self.env.reset()
+        if seed==None:
+            state = self.env.reset()
+        else:
+            state = self.env.reset(seed=seed)
         for step in range(max_steps):
             if not hasattr(self, 'noise'):
                 action = np.argmax(self.action(state))
