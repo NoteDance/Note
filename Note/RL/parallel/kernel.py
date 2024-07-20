@@ -115,6 +115,31 @@ class kernel:
         return action_prob
     
     
+    def run_agent(self, max_steps, seed=None):
+        state_history = []
+
+        steps = 0
+        reward_ = 0
+        if seed==None:
+            state = self.nn.genv.reset()
+        else:
+            state = self.nn.genv.reset(seed=seed)
+        for step in range(max_steps):
+            if not hasattr(self, 'noise'):
+                action = np.argmax(self.nn.nn.fp(state))
+            else:
+                action = self.nn.actor.fp(state).numpy()
+            next_state, reward, done, _ = self.env.step(action)
+            state_history.append(state)
+            steps+=1
+            reward_+=reward
+            if done:
+                break
+            state = next_state
+        
+        return state_history,reward_,steps
+    
+    
     def pool(self,s,a,next_s,r,done,pool_lock,index):
         pool_lock[index].acquire()
         try:
