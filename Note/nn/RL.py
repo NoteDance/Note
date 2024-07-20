@@ -42,7 +42,7 @@ class RL:
         return
     
     
-    def set_up(self,epsilon=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None,pr=False,HER=False,initial_TD=7,alpha=0.7,jit_compile=True):
+    def set_up(self,epsilon=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None,pr=False,HER=False,initial_TD=7,alpha=0.7):
         if pr==False and epsilon!=None:
             self.epsilon_=epsilon
         if episode_step!=None:
@@ -63,7 +63,6 @@ class RL:
             self.epsilon_pr=epsilon
             self.initial_TD=initial_TD
             self.alpha=alpha
-        self.jit_compile=jit_compile
         self.action_vec()
         return
     
@@ -281,7 +280,7 @@ class RL:
         return train_loss.result().numpy(),done
     
     
-    def fit(self, train_loss, optimizer, episodes=None, p=None):
+    def fit(self, train_loss, optimizer, episodes=None, jit_compile=True, p=None):
         avg_reward=None
         if p==None:
             self.p=9
@@ -297,6 +296,7 @@ class RL:
             p=1
         self.optimizer_=optimizer
         self.episodes=episodes
+        self.jit_compile=jit_compile
         if episodes!=None:
             for i in range(episodes):
                 t1=time.time()
