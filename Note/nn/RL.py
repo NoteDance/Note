@@ -147,7 +147,7 @@ class RL:
             r = []
             d = []
             for _ in range(self.batch):
-                step_state = np.random.randint(0, int(np.mean(self.steps_list))-1)
+                step_state = np.random.randint(0, len(self.state_pool)-1)
                 step_goal = np.random.randint(step_state+1, int(np.mean(self.steps_list))-1)
                 state = self.state_pool[step_state]
                 next_state = self.next_state_pool[step_state]
