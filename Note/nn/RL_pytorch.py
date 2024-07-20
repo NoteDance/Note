@@ -208,6 +208,7 @@ class RL:
     
     def train2(self, optimizer):
         self.reward=0
+        self.step_counter_=0
         s=self.env_(initial=True)
         s=np.array(s)
         if self.episode_step==None:
