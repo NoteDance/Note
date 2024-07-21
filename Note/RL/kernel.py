@@ -22,7 +22,6 @@ class kernel:
         self.done_pool=None
         self.episode_set=[]
         self.epsilon=None
-        self.episode_step=None
         self.pool_size=None
         self.batch=None
         self.update_step=None
@@ -75,11 +74,9 @@ class kernel:
         return
     
     
-    def set_up(self,epsilon=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None):
+    def set_up(self,epsilon=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None):
         if epsilon!=None:
             self.epsilon=epsilon
-        if episode_step!=None:
-            self.episode_step=episode_step
         if pool_size!=None:
             self.pool_size=pool_size
         if batch!=None:
@@ -319,63 +316,32 @@ class kernel:
         s=self.nn.env(initial=True)
         if hasattr(self.platform,'DType'):
             s=np.array(s)
-        if self.episode_step==None:
-            while True:
-                s=np.expand_dims(s,axis=0)
-                a=self.choose_action(s)
-                next_s,r,done=self.nn.env(a)
-                if hasattr(self.platform,'DType'):
-                    next_s=np.array(next_s)
-                    r=np.array(r)
-                    done=np.array(done)
-                if hasattr(self.nn,'pool'):
-                    self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,r,done])
-                else:
-                    self.pool(s,a,next_s,r,done)
-                if hasattr(self.nn,'pr'):
-                    self.nn.pr.TD=np.append(self.nn.pr.TD,self.nn.initial_TD)
-                    if len(self.state_pool)>self.pool_size:
-                        TD=np.array(0)
-                        self.nn.pr.TD=np.append(TD,self.nn.pr.TD[2:])
-                self.reward=r+self.reward
-                loss=self._train()
-                self.sc+=1
-                if done:
-                    self.reward_list.append(self.reward)
-                    if len(self.reward_list)>self.trial_count:
-                        del self.reward_list[0]
-                    return loss,episode,done
-                s=next_s
-        else:
-            for _ in range(self.episode_step):
-                s=np.expand_dims(s,axis=0)
-                a=self.choose_action(s)
-                next_s,r,done=self.nn.env(a)
-                if hasattr(self.platform,'DType'):
-                    next_s=np.array(next_s)
-                    r=np.array(r)
-                    done=np.array(done)
-                if hasattr(self.nn,'pool'):
-                    self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,r,done])
-                else:
-                    self.pool(s,a,next_s,r,done)
-                if hasattr(self.nn,'pr'):
-                    self.nn.pr.TD=np.append(self.nn.pr.TD,self.nn.initial_TD)
-                    if len(self.state_pool)>self.pool_size:
-                        TD=np.array(0)
-                        self.nn.pr.TD=np.append(TD,self.nn.pr.TD[2:])
-                self.reward=r+self.reward
-                loss=self._train()
-                self.sc+=1
-                if done:
-                    self.reward_list.append(self.reward)
-                    if len(self.reward_list)>self.trial_count:
-                        del self.reward_list[0]
-                    return loss,episode,done
-                s=next_s
-        self.reward_list.append(self.reward)
-        if len(self.reward_list)>self.trial_count:
-            del self.reward_list[0]
+        while True:
+            s=np.expand_dims(s,axis=0)
+            a=self.choose_action(s)
+            next_s,r,done=self.nn.env(a)
+            if hasattr(self.platform,'DType'):
+                next_s=np.array(next_s)
+                r=np.array(r)
+                done=np.array(done)
+            if hasattr(self.nn,'pool'):
+                self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,r,done])
+            else:
+                self.pool(s,a,next_s,r,done)
+            if hasattr(self.nn,'pr'):
+                self.nn.pr.TD=np.append(self.nn.pr.TD,self.nn.initial_TD)
+                if len(self.state_pool)>self.pool_size:
+                    TD=np.array(0)
+                    self.nn.pr.TD=np.append(TD,self.nn.pr.TD[2:])
+            self.reward=r+self.reward
+            loss=self._train()
+            self.sc+=1
+            if done:
+                self.reward_list.append(self.reward)
+                if len(self.reward_list)>self.trial_count:
+                    del self.reward_list[0]
+                return loss,episode,done
+            s=next_s
         return loss,episode,done
     
     
@@ -662,7 +628,6 @@ class kernel:
             except Exception as e:
                 raise e
             pickle.dump(self.epsilon,output_file)
-            pickle.dump(self.episode_step,output_file)
             pickle.dump(self.pool_size,output_file)
             pickle.dump(self.batch,output_file)
             pickle.dump(self.update_step,output_file)
@@ -707,7 +672,6 @@ class kernel:
         except Exception as e:
             raise e
         pickle.dump(self.epsilon,output_file)
-        pickle.dump(self.episode_step,output_file)
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.update_step,output_file)
@@ -739,7 +703,6 @@ class kernel:
             except Exception:
                 pass
         self.epsilon=pickle.load(input_file)
-        self.episode_step=pickle.load(input_file)
         self.pool_size=pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.update_step=pickle.load(input_file)
