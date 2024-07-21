@@ -20,8 +20,6 @@ class RL:
         self.reward_list=[]
         self.step_counter=0
         self.pr_=pr.pr()
-        self.step_counter_=0
-        self.steps_list=[]
         self.seed=7
         self.optimizer_=None
         self.path=None
@@ -44,11 +42,9 @@ class RL:
         return
     
     
-    def set_up(self,epsilon=None,max_steps=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None,pr=False,HER=False,initial_TD=7,alpha=0.7):
+    def set_up(self,epsilon=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None,pr=False,HER=False,initial_TD=7,alpha=0.7):
         if pr==False and epsilon!=None:
             self.epsilon_=epsilon
-        if max_steps!=None:
-            self.max_steps=max_steps
         if pool_size!=None:
             self.pool_size=pool_size
         if batch!=None:
@@ -146,8 +142,8 @@ class RL:
             r = []
             d = []
             for _ in range(self.batch):
-                step_state = np.random.randint(0, len(self.state_pool)-1)
-                step_goal = np.random.randint(step_state+1, step_state+int(np.mean(self.steps_list)))
+                step_state = np.random.randint(0, len(self.state_pool)-2)
+                step_goal = np.random.randint(step_state+1, step_state+1+np.argmax(self.done_pool[step_state+1:]))
                 state = self.state_pool[step_state]
                 next_state = self.next_state_pool[step_state]
                 action = self.action_pool[step_state]
@@ -208,63 +204,30 @@ class RL:
     
     def train2(self, optimizer):
         self.reward=0
-        self.step_counter_=0
         s=self.env_(initial=True)
         s=np.array(s)
-        if self.episode_step==None:
-            while True:
-                s=np.expand_dims(s,axis=0)
-                a=self.choose_action(s)
-                next_s,r,done=self.env_(a)
-                next_s=np.array(next_s)
-                r=np.array(r)
-                done=np.array(done)
-                self.pool(s,a,next_s,r,done)
-                if self.pr==True:
-                    self.pr.TD=np.append(self.pr.TD,self.initial_TD)
-                    if len(self.state_pool)>self.pool_size:
-                        TD=np.array(0)
-                        self.pr.TD=np.append(TD,self.pr.TD[2:])
-                self.reward=r+self.reward
-                loss=self.train1(optimizer)
-                self.step_counter+=1
-                self.step_counter_+=1
-                if done:
-                    self.reward_list.append(self.reward)
-                    self.steps_list.append(self.step_counter_)
-                    if len(self.reward_list)>self.trial_count:
-                        del self.reward_list[0]
-                    return loss,done
-                s=next_s
-        else:
-            for _ in range(self.max_steps):
-                s=np.expand_dims(s,axis=0)
-                a=self.choose_action(s)
-                next_s,r,done=self.env_(a)
-                next_s=np.array(next_s)
-                r=np.array(r)
-                done=np.array(done)
-                self.pool(s,a,next_s,r,done)
-                if self.pr==True:
-                    self.pr.TD=np.append(self.pr.TD,self.initial_TD)
-                    if len(self.state_pool)>self.pool_size:
-                        TD=np.array(0)
-                        self.pr.TD=np.append(TD,self.pr.TD[2:])
-                self.reward=r+self.reward
-                loss=self.train1(optimizer)
-                self.step_counter+=1
-                self.step_counter_+=1
-                if done:
-                    self.reward_list.append(self.reward)
-                    self.steps_list.append(self.step_counter_)
-                    if len(self.reward_list)>self.trial_count:
-                        del self.reward_list[0]
-                    return loss,done
-                s=next_s
-            self.steps_list.append(self.step_counter_)
-        self.reward_list.append(self.reward)
-        if len(self.reward_list)>self.trial_count:
-            del self.reward_list[0]
+        while True:
+            s=np.expand_dims(s,axis=0)
+            a=self.choose_action(s)
+            next_s,r,done=self.env_(a)
+            next_s=np.array(next_s)
+            r=np.array(r)
+            done=np.array(done)
+            self.pool(s,a,next_s,r,done)
+            if self.pr==True:
+                self.pr.TD=np.append(self.pr.TD,self.initial_TD)
+                if len(self.state_pool)>self.pool_size:
+                    TD=np.array(0)
+                    self.pr.TD=np.append(TD,self.pr.TD[2:])
+            self.reward=r+self.reward
+            loss=self.train1(optimizer)
+            self.step_counter+=1
+            if done:
+                self.reward_list.append(self.reward)
+                if len(self.reward_list)>self.trial_count:
+                    del self.reward_list[0]
+                return loss,done
+            s=next_s
         return loss,done
     
     
