@@ -17,7 +17,6 @@ class kernel:
             self.reward=np.zeros(process,dtype='float32')
             self.sc=np.zeros(process,dtype='int32')
         self.epsilon=None
-        self.episode_step=None
         self.pool_size=None
         self.episode=None
         self.batch=None
@@ -89,12 +88,10 @@ class kernel:
         return
     
     
-    def set_up(self,epsilon=None,episode_step=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None):
+    def set_up(self,epsilon=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None):
         if epsilon!=None:
             self.epsilon=np.ones(self.process)*epsilon
             self.action_vec()
-        if episode_step!=None:
-            self.episode_step=episode_step
         if pool_size!=None:
             self.pool_size=pool_size
         if batch!=None:
@@ -532,74 +529,33 @@ class kernel:
                 break
             s=self.nn.env(p=p,initial=True)
             s=np.array(s)
-            if self.episode_step==None:
-                while True:
-                    if self.episode!=None and self.episode_counter.value>=self.episode:
+            while True:
+                if self.episode!=None and self.episode_counter.value>=self.episode:
+                    break
+                next_s,r,done,index=self.env(s,epsilon,p,lock,pool_lock)
+                self.reward[p]+=r
+                s=next_s
+                if type(self.done_pool[p])==np.ndarray:
+                    self.train_(p,lock,g_lock)
+                    if self.stop_flag.value==True:
                         break
-                    next_s,r,done,index=self.env(s,epsilon,p,lock,pool_lock)
-                    self.reward[p]+=r
-                    s=next_s
-                    if type(self.done_pool[p])==np.ndarray:
-                        self.train_(p,lock,g_lock)
-                        if self.stop_flag.value==True:
-                            break
-                    if done:
-                        if self.PO==1 or self.PO==2:
-                            lock[1].acquire()
-                        elif len(lock)==4:
-                            lock[3].acquire()
-                        self.reward_list.append(self.reward[p])
-                        if len(self.reward_list)>self.trial_count:
-                            del self.reward_list[0]
-                        self.reward[p]=0
-                        self.episode_counter.value+=1
-                        self.total_episode.value+=1
-                        self.loss_list.append(self.loss[p])
-                        if self.PO==1 or self.PO==2:
-                            lock[1].release()
-                        elif len(lock)==4:
-                            lock[3].release()
-                        break
-            else:
-                for l in range(self.episode_step):
-                    if self.episode!=None and self.episode_counter.value>=self.episode:
-                        break
-                    next_s,r,done,index=self.env(s,epsilon,p,lock,pool_lock)
-                    self.reward[p]+=r
-                    s=next_s
-                    if type(self.done_pool[p])==np.ndarray:
-                        self.train_(p,lock,g_lock)
-                        if self.stop_flag.value==True:
-                            break
-                    if done:
-                        if self.PO==1 or self.PO==2:
-                            lock[1].acquire()
-                        elif len(lock)==4:
-                            lock[3].acquire()
-                        self.reward_list.append(self.reward[p])
-                        if len(self.reward_list)>self.trial_count:
-                            del self.reward_list[0]
-                        self.reward[p]=0
-                        self.episode_counter.value+=1
-                        self.total_episode.value+=1
-                        self.loss_list.append(self.loss[p])
-                        if self.PO==1 or self.PO==2:
-                            lock[1].release()
-                        elif len(lock)==4:
-                            lock[3].release()
-                        break
-                    if l==self.episode_step-1:
-                        if self.PO==1 or self.PO==2:
-                            lock[1].acquire()
-                        elif len(lock)==4:
-                            lock[3].acquire()
-                        self.episode_counter.value+=1
-                        self.total_episode.value+=1
-                        self.loss_list.append(self.loss[p])
-                        if self.PO==1 or self.PO==2:
-                            lock[1].release()
-                        elif len(lock)==4:
-                            lock[3].release()
+                if done:
+                    if self.PO==1 or self.PO==2:
+                        lock[1].acquire()
+                    elif len(lock)==4:
+                        lock[3].acquire()
+                    self.reward_list.append(self.reward[p])
+                    if len(self.reward_list)>self.trial_count:
+                        del self.reward_list[0]
+                    self.reward[p]=0
+                    self.episode_counter.value+=1
+                    self.total_episode.value+=1
+                    self.loss_list.append(self.loss[p])
+                    if self.PO==1 or self.PO==2:
+                        lock[1].release()
+                    elif len(lock)==4:
+                        lock[3].release()
+                    break
             if self.PO==1 or self.PO==2:
                 lock[1].acquire()
             elif len(lock)==3 or len(lock)==4:
@@ -608,10 +564,6 @@ class kernel:
                 self.save_param_()
             else:
                 self.save_()
-            self.reward_list.append(self.reward[p])
-            if len(self.reward_list)>self.trial_count:
-                del self.reward_list[0]
-            self.reward[p]=0
             if self.PO==1 or self.PO==2:
                 lock[1].release()
             elif len(lock)==3 or len(lock)==4:
@@ -833,7 +785,6 @@ class kernel:
             self.nn.optimizer.convert_to_list()
             pickle.dump(self.nn,output_file)
             pickle.dump(self.epsilon,output_file)
-            pickle.dump(self.episode_step,output_file)
             pickle.dump(self.pool_size,output_file)
             pickle.dump(self.batch,output_file)
             pickle.dump(np.array(self.sc,dtype='int32'),output_file)
@@ -863,7 +814,6 @@ class kernel:
         self.nn.optimizer.convert_to_list()
         pickle.dump(self.nn,output_file)
         pickle.dump(self.epsilon,output_file)
-        pickle.dump(self.episode_step,output_file)
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(np.array(self.sc,dtype='int32'),output_file)
@@ -885,7 +835,6 @@ class kernel:
         self.bc=self.nn.bc
         self.param[7]=self.nn.param
         self.epsilon=pickle.load(input_file)
-        self.episode_step=pickle.load(input_file)
         self.pool_size=pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.sc=pickle.load(input_file)
