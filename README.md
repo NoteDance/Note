@@ -92,14 +92,6 @@ Its function is similar to torch.nn.parameter.Parameter.
 This class is used similarly to tf.keras.Sequential and torch.nn.Sequential.
 
 
-# The models that can be trained with TensorFlow:
-These models built with Note are compatible with TensorFlow and can be trained with TensorFlow. You can consider these models as examples using the Note. The documentation shows how to train, test, save, and restore models built with Note.
-
-https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
-
-**Documentation**: https://github.com/NoteDance/Note-documentation/tree/tf-7.0
-
-
 # Reinforcement learning：
 You just need to have your agent class inherit from the RL or RL_pytorch class, and you can easily train your agent built with Note, Keras or PyTorch. You can learn how to build an agent from the examples [here](https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/docs_example). The documentation shows how to train, save, and restore agent built with Note, Keras or PyTorch.
 
