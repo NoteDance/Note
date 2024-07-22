@@ -185,6 +185,29 @@ class RL:
         return
     
     
+    def _train_step(self, train_data, optimizer):
+        with tf.GradientTape() as tape:
+            loss = self.__call__(*train_data)
+            loss = self.compute_loss(loss)
+        gradients = tape.gradient(loss, self.param)
+        optimizer.apply_gradients(zip(gradients, self.param))
+        return loss 
+    
+    
+    @tf.function(jit_compile=True)
+    def distributed_train_step(self, dataset_inputs, optimizer, strategy):
+        per_replica_losses = strategy.run(self._train_step, args=(dataset_inputs, optimizer))
+        return strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses,
+                             axis=None)
+    
+    
+    @tf.function
+    def distributed_train_step_(self, dataset_inputs, optimizer, strategy):
+        per_replica_losses = strategy.run(self._train_step, args=(dataset_inputs, optimizer))
+        return strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses,
+                             axis=None)
+    
+    
     def train1(self, train_loss, optimizer):
         if len(self.state_pool)<self.batch:
             pass
@@ -208,19 +231,34 @@ class RL:
                         self.train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
                     self.batch_counter+=1
             else:
-                train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).shuffle(len(self.state_pool)).batch(self.batch)
-                for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
-                    if self.jit_compile==True:
-                        self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
-                    else:
-                        self.train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
-                    self.batch_counter+=1
+                if self.distributed_flag==True:
+                    total_loss = 0.0
+                    num_batches = 0
+                    train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).shuffle(len(self.state_pool)).batch(self.global_batch_size)
+                    for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
+                        if self.jit_compile==True:
+                            total_loss+=self.distributed_train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.trategy)
+                        else:
+                            total_loss+=self.distributed_train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.trategy)
+                        num_batches += 1
+                        self.batch_counter+=1
+                else:
+                    train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).shuffle(len(self.state_pool)).batch(self.batch)
+                    for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
+                        if self.jit_compile==True:
+                            self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
+                        else:
+                            self.train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
+                        self.batch_counter+=1
             if self.update_step!=None:
                 if self.step_counter%self.update_step==0:
                     self.update_param()
             else:
                 self.update_param()
-        return
+        if self.distributed_flag==True:
+            return (total_loss / num_batches).numpy()
+        else:
+            return
     
     
     def train2(self, train_loss, optimizer):
@@ -241,7 +279,10 @@ class RL:
                     TD=np.array(0)
                     self.pr.TD=np.append(TD,self.pr.TD[2:])
             self.reward=r+self.reward
-            self.train1(train_loss,optimizer)
+            if self.distributed_flag==True:
+                loss=self.train1(train_loss,optimizer)
+            else:
+                self.train1(train_loss,optimizer)
             self.step_counter+=1
             if done:
                 self.reward_list.append(self.reward)
@@ -249,7 +290,10 @@ class RL:
                     del self.reward_list[0]
                 return train_loss.result().numpy(),done
             s=next_s
-        return train_loss.result().numpy(),done
+        if self.distributed_flag==True:
+            return loss,done
+        else:
+            return train_loss.result().numpy(),done
     
     
     def fit(self, train_loss, optimizer, episodes=None, jit_compile=True, p=None):
@@ -266,6 +310,7 @@ class RL:
             p=int(p)
         if p==0:
             p=1
+        self.distributed_flag=False
         self.optimizer_=optimizer
         self.episodes=episodes
         self.jit_compile=jit_compile
@@ -315,6 +360,122 @@ class RL:
                 t1=time.time()
                 train_loss.reset_states()
                 loss,done=self.train2(train_loss,self.optimizer_)
+                self.loss=loss
+                self.loss_list.append(loss)
+                i+=1
+                self.total_episode+=1
+                if self.path!=None and i%self.save_freq==0:
+                    if self.save_param_only==False:
+                        self.save_param_(self.path)
+                    else:
+                        self.save_(self.path)
+                if self.trial_count!=None:
+                    if len(self.reward_list)>=self.trial_count:
+                        avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                        if self.criterion!=None and avg_reward>=self.criterion:
+                            t2=time.time()
+                            self.total_time+=(t2-t1)
+                            time_=self.total_time-int(self.total_time)
+                            if time_<0.5:
+                                self.total_time=int(self.total_time)
+                            else:
+                                self.total_time=int(self.total_time)+1
+                            print('episode:{0}'.format(self.total_episode))
+                            print('last loss:{0:.4f}'.format(loss))
+                            print('average reward:{0}'.format(avg_reward))
+                            print()
+                            print('time:{0}s'.format(self.total_time))
+                            return
+                if i%p==0:
+                    if len(self.state_pool)>=self.batch:
+                        print('episode:{0}   loss:{1:.4f}'.format(i+1,loss))
+                    if avg_reward!=None:
+                        print('episode:{0}   average reward:{1}'.format(i+1,avg_reward))
+                    else:
+                        print('episode:{0}   reward:{1}'.format(i+1,self.reward))
+                    print()
+                t2=time.time()
+                self.time+=(t2-t1)
+        time_=self.time-int(self.time)
+        if time_<0.5:
+            self.total_time=int(self.time)
+        else:
+            self.total_time=int(self.time)+1
+        self.total_time+=self.time
+        print('last loss:{0:.4f}'.format(loss))
+        print('last reward:{0}'.format(self.reward))
+        print()
+        print('time:{0}s'.format(self.time))
+        return
+    
+    
+    def distributed_fit(self, global_batch_size, optimizer, strategy, episodes=None, jit_compile=True, p=None):
+        avg_reward=None
+        if p==None:
+            self.p=9
+        else:
+            self.p=p-1
+        if episodes%10!=0:
+            p=episodes-episodes%self.p
+            p=int(p/self.p)
+        else:
+            p=episodes/(self.p+1)
+            p=int(p)
+        if p==0:
+            p=1
+        self.distributed_flag=True
+        self.global_batch_size=global_batch_size
+        self.optimizer_=optimizer
+        self.strategy=strategy
+        self.episodes=episodes
+        self.jit_compile=jit_compile
+        with strategy.scope():
+            def compute_loss(self, per_example_loss):
+                return tf.nn.compute_average_loss(per_example_loss, global_batch_size=global_batch_size)
+        if episodes!=None:
+            for i in range(episodes):
+                t1=time.time()
+                loss,done=self.train2(None,self.optimizer_)
+                self.loss=loss
+                self.loss_list.append(loss)
+                self.total_episode+=1
+                if self.path!=None and i%self.save_freq==0:
+                    if self.save_param_only==False:
+                        self.save_param_(self.path)
+                    else:
+                        self.save_(self.path)
+                if self.trial_count!=None:
+                    if len(self.reward_list)>=self.trial_count:
+                        avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                        if self.criterion!=None and avg_reward>=self.criterion:
+                            t2=time.time()
+                            self.total_time+=(t2-t1)
+                            time_=self.total_time-int(self.total_time)
+                            if time_<0.5:
+                                self.total_time=int(self.total_time)
+                            else:
+                                self.total_time=int(self.total_time)+1
+                            print('episode:{0}'.format(self.total_episode))
+                            print('last loss:{0:.4f}'.format(loss))
+                            print('average reward:{0}'.format(avg_reward))
+                            print()
+                            print('time:{0}s'.format(self.total_time))
+                            return
+                if i%p==0:
+                    if len(self.state_pool)>=self.batch:
+                        print('episode:{0}   loss:{1:.4f}'.format(i+1,loss))
+                    if avg_reward!=None:
+                        print('episode:{0}   average reward:{1}'.format(i+1,avg_reward))
+                    else:
+                        print('episode:{0}   reward:{1}'.format(i+1,self.reward))
+                    print()
+                t2=time.time()
+                self.time+=(t2-t1)
+        else:
+            i=0
+            while True:
+                t1=time.time()
+                loss,done=self.train2(None,self.optimizer_)
                 self.loss=loss
                 self.loss_list.append(loss)
                 i+=1
