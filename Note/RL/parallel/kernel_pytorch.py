@@ -78,7 +78,7 @@ class kernel:
     
     
     def action_vec(self):
-        self.action_one=np.ones(self.action_count,dtype=np.int8)
+        self.action_one=np.ones(self.genv.action_space.n,dtype=np.int8)
         return
     
     
