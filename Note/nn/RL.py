@@ -134,15 +134,19 @@ class RL:
     
     
     def data_func(self):
+        if self.distributed_flag==True:
+            batch=self.global_batch_size
+        else:
+            batch=self.batch
         if self.pr:
-            s,a,next_s,r,d=self.pr_.sample(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.epsilon_pr,self.alpha,self.batch)
+            s,a,next_s,r,d=self.pr_.sample(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.epsilon_pr,self.alpha,batch)
         elif self.HER:
             s = []
             a = []
             next_s = []
             r = []
             d = []
-            for _ in range(self.batch):
+            for _ in range(batch):
                 step_state = np.random.randint(0, len(self.state_pool)-1)
                 step_goal = np.random.randint(step_state+1, step_state+np.argmax(self.done_pool[step_state+1:])+2)
                 state = self.state_pool[step_state]
