@@ -134,19 +134,15 @@ class RL:
     
     
     def data_func(self):
-        if self.distributed_flag==True:
-            batch=self.global_batch_size
-        else:
-            batch=self.batch
         if self.pr:
-            s,a,next_s,r,d=self.pr_.sample(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.epsilon_pr,self.alpha,batch)
+            s,a,next_s,r,d=self.pr_.sample(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.epsilon_pr,self.alpha,self.batch)
         elif self.HER:
             s = []
             a = []
             next_s = []
             r = []
             d = []
-            for _ in range(batch):
+            for _ in range(self.batch):
                 step_state = np.random.randint(0, len(self.state_pool)-1)
                 step_goal = np.random.randint(step_state+1, step_state+np.argmax(self.done_pool[step_state+1:])+2)
                 state = self.state_pool[step_state]
@@ -220,20 +216,38 @@ class RL:
             if len(self.state_pool)%self.batch!=0:
                 batches+=1
             if self.pr==True or self.HER==True:
+                total_loss = 0.0
+                num_batches = 0
                 for j in range(batches):
                     state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.data_func()
-                    if self.jit_compile==True:
-                        self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
+                    if self.distributed_flag==True:
+                        if self.jit_compile==True:
+                            total_loss+=self.distributed_train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.trategy)
+                        else:
+                            total_loss+=self.distributed_train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.trategy)
+                        num_batches += 1
+                        self.batch_counter+=1
                     else:
-                        self.train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
-                    self.batch_counter+=1
+                        if self.jit_compile==True:
+                            self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
+                        else:
+                            self.train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
+                        self.batch_counter+=1
                 if len(self.state_pool)%self.batch!=0:
                     state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.data_func()
-                    if self.jit_compile==True:
-                        self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
+                    if self.distributed_flag==True:
+                        if self.jit_compile==True:
+                            total_loss+=self.distributed_train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.trategy)
+                        else:
+                            total_loss+=self.distributed_train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.trategy)
+                        num_batches += 1
+                        self.batch_counter+=1
                     else:
-                        self.train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
-                    self.batch_counter+=1
+                        if self.jit_compile==True:
+                            self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
+                        else:
+                            self.train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
+                        self.batch_counter+=1
             else:
                 if self.distributed_flag==True:
                     total_loss = 0.0
@@ -429,6 +443,7 @@ class RL:
             p=1
         self.distributed_flag=True
         self.global_batch_size=global_batch_size
+        self.batch=global_batch_size
         self.optimizer_=optimizer
         self.strategy=strategy
         self.episodes=episodes
