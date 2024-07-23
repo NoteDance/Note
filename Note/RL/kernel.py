@@ -185,7 +185,14 @@ class kernel:
     
     def pool(self,s,a,next_s,r,done):
         if type(self.state_pool)!=np.ndarray and self.state_pool==None:
-            self.state_pool=s
+            if type(s) in [int,float]:
+                s=np.array(s)
+                self.state_pool=np.expand_dims(s,axis=0)
+            elif type(s)==tuple:
+                s=np.array(s)
+                self.state_pool=s
+            else:
+                self.state_pool=s
             if type(a)==int:
                 a=np.array(a)
                 self.action_pool=np.expand_dims(a,axis=0)
