@@ -79,6 +79,7 @@ class RL:
                 self.state_pool=np.expand_dims(s,axis=0)
             elif type(s)==tuple:
                 s=np.array(s)
+                self.state_pool=s
             else:
                 self.state_pool=s
             if type(a)==int:
