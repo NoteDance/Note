@@ -1,5 +1,5 @@
 from torch.utils.data import DataLoader
-import Note.RL.rl.prioritized_replay as pr
+from Note.RL.rl.prioritized_replay import pr
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -19,7 +19,7 @@ class RL:
         self.epsilon=None
         self.reward_list=[]
         self.step_counter=0
-        self.pr=pr.pr()
+        self.prioritized_replay=pr()
         self.seed=7
         self.optimizer_=None
         self.path=None
@@ -55,7 +55,7 @@ class RL:
             self.trial_count=trial_count
         if criterion!=None:
             self.criterion=criterion
-        self.pr_=pr
+        self.pr=pr
         self.HER=HER
         if pr==True:
             self.epsilon_pr=epsilon
@@ -134,8 +134,8 @@ class RL:
     
     
     def data_func(self):
-        if self.pr_:
-            s,a,next_s,r,d=self.pr.sample(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.epsilon_pr,self.alpha,self.batch)
+        if self.pr:
+            s,a,next_s,r,d=self.prioritized_replay.sample(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.epsilon_pr,self.alpha,self.batch)
         elif self.HER:
             s = []
             a = []
@@ -181,7 +181,7 @@ class RL:
             batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
             if len(self.state_pool)%self.batch!=0:
                 batches+=1
-            if self.pr_==True  or self.HER==True:
+            if self.pr==True  or self.HER==True:
                 for j in range(batches):
                     state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.data_func()
                     loss+=self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer)
@@ -215,11 +215,11 @@ class RL:
             r=np.array(r)
             done=np.array(done)
             self.pool(s,a,next_s,r,done)
-            if self.pr_==True:
-                self.pr.TD=np.append(self.pr.TD,self.initial_TD)
+            if self.pr==True:
+                self.prioritized_replay.TD=np.append(self.prioritized_replay.TD,self.initial_TD)
                 if len(self.state_pool)>self.pool_size:
                     TD=np.array(0)
-                    self.pr.TD=np.append(TD,self.pr.TD[2:])
+                    self.prioritized_replay.TD=np.append(TD,self.prioritized_replay.TD[2:])
             self.reward=r+self.reward
             loss=self.train1(optimizer)
             self.step_counter+=1
