@@ -705,10 +705,7 @@ class RL:
     
     def save(self,path):
         output_file=open(path,'wb')
-        optimizer_config=tf.keras.optimizers.serialize(self.optimizer_)
-        self.optimizer_=None
         pickle.dump(self,output_file)
-        pickle.dump(optimizer_config,output_file)
         output_file.close()
         return
     
@@ -717,6 +714,5 @@ class RL:
         input_file=open(path,'rb')
         model=pickle.load(input_file)
         self.__dict__.update(model.__dict__)
-        self.optimizer_=tf.keras.optimizers.deserialize(pickle.load(input_file))
         input_file.close()
         return
