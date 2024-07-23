@@ -14,7 +14,7 @@ class kernel:
         self.nn.km=1
         if process!=None:
             self.reward=np.zeros(process,dtype=np.float32)
-            self.sc=np.zeros(process,dtype=np.int32)
+            self.step_counter=np.zeros(process,dtype=np.int32)
         self.device=device
         self.epsilon=None
         self.pool_size=None
@@ -42,7 +42,7 @@ class kernel:
         self.reward=Array('f',self.reward)
         self.loss=np.zeros(self.process,dtype=np.float32)
         self.loss=Array('f',self.loss)
-        self.sc=Array('i',self.sc)
+        self.step_counter=Array('i',self.step_counter)
         self.process_counter=Value('i',0)
         self.probability_list=manager.list([])
         self.running_flag_list=manager.list([])
@@ -137,7 +137,14 @@ class kernel:
         pool_lock[index].acquire()
         try:
             if type(self.state_pool[index])!=np.ndarray and self.state_pool[index]==None:
-                self.state_pool[index]=s
+                if type(s) in [int,float]:
+                    s=np.array(s)
+                    self.state_pool[index]=np.expand_dims(s,axis=0)
+                elif type(s)==tuple:
+                    s=np.array(s)
+                    self.state_pool[index]=s
+                else:
+                    self.state_pool[index]=s
                 if type(a)==int:
                     a=np.array(a)
                     self.action_pool[index]=np.expand_dims(a,axis=0)
@@ -350,12 +357,12 @@ class kernel:
                     opt_counter+=1
                     self.nn.opt_counter[0]=opt_counter
             if self.update_step!=None:
-                if self.sc[p]%self.update_step==0:
+                if self.step_counter[p]%self.update_step==0:
                     self.nn.update_param()
             else:
                 self.nn.update_param()
             self.loss[p]=self.loss[p]/batches
-        self.sc[p]+=1
+        self.step_counter[p]+=1
         self.nn.ec[0]=sum(self._epoch_counter)+self.ec
         _epoch_counter=self._epoch_counter[p]
         _epoch_counter+=1
@@ -596,7 +603,7 @@ class kernel:
             pickle.dump(self.epsilon,output_file)
             pickle.dump(self.pool_size,output_file)
             pickle.dump(self.batch,output_file)
-            pickle.dump(np.array(self.sc,dtype=np.int32),output_file)
+            pickle.dump(np.array(self.step_counter,dtype=np.int32),output_file)
             pickle.dump(self.update_step,output_file)
             pickle.dump(list(self.reward_list),output_file)
             pickle.dump(list(self.loss_list),output_file)
@@ -624,7 +631,7 @@ class kernel:
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
-        pickle.dump(np.array(self.sc,dtype=np.int32),output_file)
+        pickle.dump(np.array(self.step_counter,dtype=np.int32),output_file)
         pickle.dump(self.update_step,output_file)
         pickle.dump(list(self.reward_list),output_file)
         pickle.dump(list(self.loss_list),output_file)
@@ -644,8 +651,8 @@ class kernel:
         self.epsilon=pickle.load(input_file)
         self.pool_size=pickle.load(input_file)
         self.batch=pickle.load(input_file)
-        self.sc=pickle.load(input_file)
-        self.sc=Array('i',self.sc)
+        self.step_counter=pickle.load(input_file)
+        self.step_counter=Array('i',self.step_counter)
         self.update_step=pickle.load(input_file)
         self.reward_list[:]=pickle.load(input_file)
         self.loss_list[:]=pickle.load(input_file)
