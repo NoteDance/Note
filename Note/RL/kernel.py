@@ -74,7 +74,7 @@ class kernel:
         return
     
     
-    def set_up(self,epsilon=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None):
+    def set_up(self,epsilon=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None,HER=False):
         if epsilon!=None:
             self.epsilon=epsilon
         if pool_size!=None:
@@ -87,6 +87,7 @@ class kernel:
             self.trial_count=trial_count
         if criterion!=None:
             self.criterion=criterion
+        self.HER=HER
         self.action_vec()
         return
     
@@ -248,6 +249,38 @@ class kernel:
                     s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                     a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
         return a
+    
+    
+    def data_func(self):
+        if hasattr(self.nn,'pr'):
+            s,a,next_s,r,d=self.nn.data_func(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.batch)
+        elif self.HER:
+            s = []
+            a = []
+            next_s = []
+            r = []
+            d = []
+            for _ in range(self.batch):
+                step_state = np.random.randint(0, len(self.state_pool)-1)
+                step_goal = np.random.randint(step_state+1, step_state+np.argmax(self.done_pool[step_state+1:])+2)
+                state = self.state_pool[step_state]
+                next_state = self.next_state_pool[step_state]
+                action = self.action_pool[step_state]
+                goal = self.state_pool[step_goal]
+                reward, done = self.reward_done_func(next_state, goal)
+                state = np.hstack((state, goal))
+                next_state = np.hstack((next_state, goal))
+                s.append(state)
+                a.append(action)
+                next_s.append(next_state)
+                r.append(reward)
+                d.append(done)
+            s = np.array(s)
+            a = np.array(a)
+            next_s = np.array(next_s)
+            r = np.array(r)
+            d = np.array(d)
+        return s,a,next_s,r,d
         
     
     def _train(self):
@@ -258,10 +291,10 @@ class kernel:
             batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
             if len(self.state_pool)%self.batch!=0:
                 batches+=1
-            if hasattr(self.nn,'data_func'):
+            if hasattr(self.nn,'pr') or self.HER==True:
                 for j in range(batches):
                     self.suspend_func()
-                    state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.batch)
+                    state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.data_func()
                     batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
                     loss+=batch_loss
                     if hasattr(self.nn,'bc'):
@@ -271,7 +304,7 @@ class kernel:
                             self.nn.bc+=1
                 if len(self.state_pool)%self.batch!=0:
                     self.suspend_func()
-                    state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.batch)
+                    state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.data_func()
                     batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
                     loss+=batch_loss
                     if hasattr(self.nn,'bc'):
