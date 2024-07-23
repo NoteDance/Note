@@ -267,7 +267,7 @@ class kernel:
                 next_state = self.next_state_pool[step_state]
                 action = self.action_pool[step_state]
                 goal = self.state_pool[step_goal]
-                reward, done = self.reward_done_func(next_state, goal)
+                reward, done = self.nn.reward_done_func(next_state, goal)
                 state = np.hstack((state, goal))
                 next_state = np.hstack((next_state, goal))
                 s.append(state)
