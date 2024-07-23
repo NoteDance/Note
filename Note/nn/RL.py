@@ -20,7 +20,7 @@ class RL:
         self.epsilon=None
         self.reward_list=[]
         self.step_counter=0
-        self.pr_=pr.pr()
+        self.pr=pr.pr()
         self.seed=7
         self.optimizer_=None
         self.path=None
@@ -56,7 +56,7 @@ class RL:
             self.trial_count=trial_count
         if criterion!=None:
             self.criterion=criterion
-        self.pr=pr
+        self.pr_=pr
         self.HER=HER
         if pr==True:
             self.epsilon_pr=epsilon
@@ -134,8 +134,8 @@ class RL:
     
     
     def data_func(self):
-        if self.pr:
-            s,a,next_s,r,d=self.pr_.sample(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.epsilon_pr,self.alpha,self.batch)
+        if self.pr_:
+            s,a,next_s,r,d=self.pr.sample(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.epsilon_pr,self.alpha,self.batch)
         elif self.HER:
             s = []
             a = []
@@ -215,7 +215,7 @@ class RL:
             batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
             if len(self.state_pool)%self.batch!=0:
                 batches+=1
-            if self.pr==True or self.HER==True:
+            if self.pr_==True or self.HER==True:
                 total_loss = 0.0
                 num_batches = 0
                 for j in range(batches):
@@ -291,7 +291,7 @@ class RL:
             r=np.array(r)
             done=np.array(done)
             self.pool(s,a,next_s,r,done)
-            if self.pr==True:
+            if self.pr_==True:
                 self.pr.TD=np.append(self.pr.TD,self.initial_TD)
                 if len(self.state_pool)>self.pool_size:
                     TD=np.array(0)
