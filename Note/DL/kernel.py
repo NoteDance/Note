@@ -914,28 +914,7 @@ class kernel:
                 if len(self.path_list)>self.max_save_files:
                     os.remove(self.path_list[0])
                     del self.path_list[0]
-            try:
-                pickle.dump(self.nn,output_file)
-            except Exception as e:
-                first_exception=e
-                try:
-                    opt=self.nn.opt
-                    self.nn.opt=None
-                    pickle.dump(self.nn,output_file)
-                    self.nn.opt=opt
-                except Exception as e:
-                    raise e
-                    raise first_exception
-            try:
-                try:
-                    pickle.dump(self.platform.keras.optimizers.serialize(opt),output_file)
-                except Exception:
-                    try:
-                        pickle.dump(self.nn.serialize(),output_file)
-                    except Exception:
-                        pickle.dump(None,output_file)
-            except Exception as e:
-                raise e
+            pickle.dump(self.nn,output_file)
             pickle.dump(self.batch,output_file)
             pickle.dump(self.end_loss,output_file)
             pickle.dump(self.end_acc,output_file)
@@ -975,18 +954,7 @@ class kernel:
     
     def save(self,path):
         output_file=open(path,'wb')
-        try:
-            pickle.dump(self.nn,output_file)
-        except Exception as e:
-            first_exception=e
-            try:
-                opt=self.nn.opt
-                self.nn.opt=None
-                pickle.dump(self.nn,output_file)
-                self.nn.opt=opt
-            except Exception as e:
-                raise e
-                raise first_exception
+        pickle.dump(self.nn,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.end_loss,output_file)
         pickle.dump(self.end_acc,output_file)
