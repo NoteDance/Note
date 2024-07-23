@@ -606,27 +606,7 @@ class kernel:
                 if len(self.path_list)>self.max_save_files:
                     os.remove(self.path_list[0])
                     del self.path_list[0]
-            try:
-                if hasattr(self.platform,'DType'):
-                    try:
-                        pickle.dump(self.nn,output_file)
-                    except Exception:
-                        opt=self.nn.opt
-                        self.nn.opt=None
-                        pickle.dump(self.nn,output_file)
-                        self.nn.opt=opt
-            except Exception as e:
-                raise e
-            try:
-                try:
-                    pickle.dump(self.platform.keras.optimizers.serialize(opt),output_file)
-                except Exception:
-                    try:
-                        pickle.dump(self.nn.serialize(),output_file)
-                    except Exception:
-                        pickle.dump(None,output_file)
-            except Exception as e:
-                raise e
+            pickle.dump(self.nn,output_file)
             pickle.dump(self.epsilon,output_file)
             pickle.dump(self.pool_size,output_file)
             pickle.dump(self.batch,output_file)
@@ -650,27 +630,7 @@ class kernel:
     
     def save(self,path):
         output_file=open(path,'wb')
-        try:
-            if hasattr(self.platform,'DType'):
-                try:
-                    pickle.dump(self.nn,output_file)
-                except Exception:
-                    opt=self.nn.opt
-                    self.nn.opt=None
-                    pickle.dump(self.nn,output_file)
-                    self.nn.opt=opt
-        except Exception as e:
-            raise e
-        try:
-            try:
-                pickle.dump(self.platform.keras.optimizers.serialize(opt),output_file)
-            except Exception:
-                try:
-                    pickle.dump(self.nn.serialize(),output_file)
-                except Exception:
-                    pickle.dump(None,output_file)
-        except Exception as e:
-            raise e
+        pickle.dump(self.nn,output_file)
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
@@ -685,23 +645,11 @@ class kernel:
         return
     
     
-    def restore(self,s_path,e_path=None):
+    def restore(self,s_path):
         input_file=open(s_path,'rb')
-        if e_path!=None:
-            episode_file=open(e_path,'rb')
-            self.episode_set=pickle.load(episode_file)
-            episode_file.close()
         self.nn=pickle.load(input_file)
         if hasattr(self.nn,'km'):
             self.nn.km=1
-        opt_serialized=pickle.load(input_file)
-        try:
-            self.nn.opt=self.platform.keras.optimizers.deserialize(opt_serialized)
-        except Exception:
-            try:
-                self.nn.deserialize(opt_serialized)
-            except Exception:
-                pass
         self.epsilon=pickle.load(input_file)
         self.pool_size=pickle.load(input_file)
         self.batch=pickle.load(input_file)
