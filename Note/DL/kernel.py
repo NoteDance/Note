@@ -987,16 +987,6 @@ class kernel:
             except Exception as e:
                 raise e
                 raise first_exception
-        try:
-            try:
-                pickle.dump(self.platform.keras.optimizers.serialize(opt),output_file)
-            except Exception:
-                try:
-                    pickle.dump(self.nn.serialize(),output_file)
-                except Exception:
-                    pickle.dump(None,output_file)
-        except Exception as e:
-            raise e
         pickle.dump(self.batch,output_file)
         pickle.dump(self.end_loss,output_file)
         pickle.dump(self.end_acc,output_file)
@@ -1026,14 +1016,6 @@ class kernel:
         self.nn=pickle.load(input_file)
         if hasattr(self.nn,'km'):
             self.nn.km=1
-        opt_serialized=pickle.load(input_file)
-        try:
-            self.nn.opt=self.platform.keras.optimizers.deserialize(opt_serialized)
-        except Exception:
-            try:
-                self.nn.deserialize(opt_serialized)
-            except Exception:
-                pass
         self.batch=pickle.load(input_file)
         self.end_loss=pickle.load(input_file)
         self.end_acc=pickle.load(input_file)
