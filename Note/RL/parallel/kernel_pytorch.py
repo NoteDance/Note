@@ -82,7 +82,7 @@ class kernel:
         return
     
     
-    def set_up(self,epsilon=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None):
+    def set_up(self,epsilon=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None,HER=False):
         if epsilon!=None:
             self.epsilon=np.ones(self.process)*epsilon
             self.action_vec()
@@ -96,6 +96,7 @@ class kernel:
             self.trial_count=trial_count
         if criterion!=None:
             self.criterion=criterion
+        self.HER=HER
         return
     
     
@@ -222,6 +223,35 @@ class kernel:
         return next_s,r,done,index
     
     
+    def data_func(self,p):
+        s = []
+        a = []
+        next_s = []
+        r = []
+        d = []
+        for _ in range(self.batch):
+            step_state = np.random.randint(0, len(self.state_pool[p])-1)
+            step_goal = np.random.randint(step_state+1, step_state+np.argmax(self.done_pool[p][step_state+1:])+2)
+            state = self.state_pool[p][step_state]
+            next_state = self.next_state_pool[p][step_state]
+            action = self.action_pool[p][step_state]
+            goal = self.state_pool[p][step_goal]
+            reward, done = self.nn.reward_done_func(next_state, goal)
+            state = np.hstack((state, goal))
+            next_state = np.hstack((next_state, goal))
+            s.append(state)
+            a.append(action)
+            next_s.append(next_state)
+            r.append(reward)
+            d.append(done)
+        s = np.array(s)
+        a = np.array(a)
+        next_s = np.array(next_s)
+        r = np.array(r)
+        d = np.array(d)
+        return s,a,next_s,r,d
+    
+    
     def end(self):
         if self.trial_count!=None:
             if len(self.reward_list)>=self.trial_count:
@@ -251,13 +281,16 @@ class kernel:
     
     def _train(self,p,j,batches,length):
         if j==batches-1:
-            index1=batches*self.batch
-            index2=self.batch-(length-batches*self.batch)
-            state_batch=np.concatenate((self.state_pool[p][index1:length],self.state_pool[p][:index2]),0)
-            action_batch=np.concatenate((self.action_pool[p][index1:length],self.action_pool[p][:index2]),0)
-            next_state_batch=np.concatenate((self.next_state_pool[p][index1:length],self.next_state_pool[p][:index2]),0)
-            reward_batch=np.concatenate((self.reward_pool[p][index1:length],self.reward_pool[p][:index2]),0)
-            done_batch=np.concatenate((self.done_pool[p][index1:length],self.done_pool[p][:index2]),0)
+            if self.HER:
+                state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.data_func(p)
+            else:
+                index1=batches*self.batch
+                index2=self.batch-(length-batches*self.batch)
+                state_batch=np.concatenate((self.state_pool[p][index1:length],self.state_pool[p][:index2]),0)
+                action_batch=np.concatenate((self.action_pool[p][index1:length],self.action_pool[p][:index2]),0)
+                next_state_batch=np.concatenate((self.next_state_pool[p][index1:length],self.next_state_pool[p][:index2]),0)
+                reward_batch=np.concatenate((self.reward_pool[p][index1:length],self.reward_pool[p][:index2]),0)
+                done_batch=np.concatenate((self.done_pool[p][index1:length],self.done_pool[p][:index2]),0)
             loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,p)
             self.loss[p]+=loss
             self.nn.bc[0]=sum(self._batch_counter)+self.bc
@@ -265,13 +298,16 @@ class kernel:
             _batch_counter+=1
             self._batch_counter[p]=_batch_counter
         else:
-            index1=j*self.batch
-            index2=(j+1)*self.batch
-            state_batch=self.state_pool[p][index1:index2]
-            action_batch=self.action_pool[p][index1:index2]
-            next_state_batch=self.next_state_pool[p][index1:index2]
-            reward_batch=self.reward_pool[p][index1:index2]
-            done_batch=self.done_pool[p][index1:index2]
+            if self.HER:
+                state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.data_func(p)
+            else:
+                index1=j*self.batch
+                index2=(j+1)*self.batch
+                state_batch=self.state_pool[p][index1:index2]
+                action_batch=self.action_pool[p][index1:index2]
+                next_state_batch=self.next_state_pool[p][index1:index2]
+                reward_batch=self.reward_pool[p][index1:index2]
+                done_batch=self.done_pool[p][index1:index2]
             loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,p)
             self.loss[p]+=loss
             self.nn.bc[0]=sum(self._batch_counter)+self.bc
