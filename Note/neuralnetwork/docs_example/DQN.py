@@ -20,6 +20,7 @@ class DQN(nn.RL):
         self.q_net=Qnet(state_dim,hidden_dim,action_dim)
         self.q_net.detach()
         self.target_q_net=Qnet(state_dim,hidden_dim,action_dim)
+        self.target_q_net.detach()
         self.param=self.q_net.param
         self.env=gym.make('CartPole-v0')
     

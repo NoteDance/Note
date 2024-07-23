@@ -34,6 +34,7 @@ class PPO(nn.RL):
         self.actor_old.detach()
         nn.assign_param(self.actor_old.param,self.actor.param.copy())
         self.critic=critic(state_dim,hidden_dim)
+        self.critic.detach()
         self.clip_eps=clip_eps
         self.alpha=alpha
         self.param=[self.actor.param,self.critic.param]
