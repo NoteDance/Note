@@ -88,7 +88,7 @@ class kernel:
         return
     
     
-    def set_up(self,epsilon=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None,HER=False):
+    def set_up(self,epsilon=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None,PPO=False,HER=False):
         if epsilon!=None:
             self.epsilon=np.ones(self.process)*epsilon
             self.action_vec()
@@ -102,6 +102,7 @@ class kernel:
             self.trial_count=trial_count
         if criterion!=None:
             self.criterion=criterion
+        self.PPO=PPO
         self.HER=HER
         return
     
@@ -308,18 +309,10 @@ class kernel:
             if hasattr(self.nn,'gradient'):
                 gradient=self.nn.gradient(tape,loss)
             else:
-                if hasattr(self.nn,'nn'):
-                    gradient=tape.gradient(loss,self.nn.param)
-                else:
-                    actor_gradient=tape.gradient(loss[0],self.nn.param[0])
-                    critic_gradient=tape.gradient(loss[1],self.nn.param[1])
+                gradient=tape.gradient(loss,self.nn.param)
             try:
                 if hasattr(self.nn,'attenuate'):
-                    try:
-                        gradient=self.nn.attenuate(gradient,p)
-                    except Exception:
-                        actor_gradient=self.nn.attenuate(actor_gradient,p)
-                        critic_gradient=self.nn.attenuate(critic_gradient,p)
+                    gradient=self.nn.attenuate(gradient,p)
             except Exception as e:
                 raise e
             try:
@@ -337,11 +330,7 @@ class kernel:
             if hasattr(self.nn,'gradient'):
                 gradient=self.nn.gradient(tape,loss)
             else:
-                if hasattr(self.nn,'nn'):
-                    gradient=tape.gradient(loss,self.nn.param)
-                else:
-                    actor_gradient=tape.gradient(loss[0],self.nn.param[0])
-                    critic_gradient=tape.gradient(loss[1],self.nn.param[1])
+                gradient=tape.gradient(loss,self.nn.param)
             g_lock.release()
             if self.priority_flag==True and self.priority_p.value!=-1:
                 while True:
@@ -356,11 +345,7 @@ class kernel:
                 return None,None
             try:
                 if hasattr(self.nn,'attenuate'):
-                    try:
-                        gradient=self.nn.attenuate(gradient,p)
-                    except Exception:
-                        actor_gradient=self.nn.attenuate(actor_gradient,p)
-                        critic_gradient=self.nn.attenuate(critic_gradient,p)
+                    gradient=self.nn.attenuate(gradient,p)
             except Exception as e:
                 raise e
             try:
@@ -385,18 +370,10 @@ class kernel:
             if hasattr(self.nn,'gradient'):
                 gradient=self.nn.gradient(tape,loss)
             else:
-                if hasattr(self.nn,'nn'):
-                    gradient=tape.gradient(loss,self.nn.param)
-                else:
-                    actor_gradient=tape.gradient(loss[0],self.nn.param[0])
-                    critic_gradient=tape.gradient(loss[1],self.nn.param[1])
+                gradient=tape.gradient(loss,self.nn.param)
             try:
                 if hasattr(self.nn,'attenuate'):
-                    try:
-                        gradient=self.nn.attenuate(gradient,p)
-                    except Exception:
-                        actor_gradient=self.nn.attenuate(actor_gradient,p)
-                        critic_gradient=self.nn.attenuate(critic_gradient,p)
+                    gradient=self.nn.attenuate(gradient,p)
             except Exception as e:
                 raise e
             try:
@@ -531,6 +508,12 @@ class kernel:
             if self.update_step!=None:
                 if self.step_counter[p]%self.update_step==0:
                     self.nn.update_param()
+                    if self.PPO:
+                        self.state_pool[p]=None
+                        self.action_pool[p]=None
+                        self.next_state_pool[p]=None
+                        self.reward_pool[p]=None
+                        self.done_pool[p]=None
             else:
                 self.nn.update_param()
             if self.PO==1 or self.PO==2:
