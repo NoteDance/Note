@@ -43,7 +43,7 @@ class RL:
         return
     
     
-    def set_up(self,epsilon=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None,pr=False,HER=False,initial_TD=7,alpha=0.7):
+    def set_up(self,epsilon=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None,PPO=False,pr=False,HER=False,initial_TD=7,alpha=0.7):
         if pr==False and epsilon!=None:
             self.epsilon_=epsilon
         if pool_size!=None:
@@ -56,6 +56,7 @@ class RL:
             self.trial_count=trial_count
         if criterion!=None:
             self.criterion=criterion
+        self.PPO=PPO
         self.pr=pr
         self.HER=HER
         if pr==True:
@@ -211,7 +212,13 @@ class RL:
     
     def train1(self, train_loss, optimizer):
         if len(self.state_pool)<self.batch:
-            pass
+            if self.loss!=None:
+                return self.loss
+            else:
+                if self.distributed_flag==True:
+                    return np.array(0.)
+                else:
+                    return train_loss.result().numpy() 
         else:
             batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
             if len(self.state_pool)%self.batch!=0:
@@ -272,12 +279,18 @@ class RL:
             if self.update_step!=None:
                 if self.step_counter%self.update_step==0:
                     self.update_param()
+                    if self.PPO:
+                        self.state_pool=None
+                        self.action_pool=None
+                        self.next_state_pool=None
+                        self.reward_pool=None
+                        self.done_pool=None
             else:
                 self.update_param()
         if self.distributed_flag==True:
             return (total_loss / num_batches).numpy()
         else:
-            return
+            return train_loss.result().numpy()
     
     
     def train2(self, train_loss, optimizer):
@@ -298,21 +311,14 @@ class RL:
                     TD=np.array(0)
                     self.prioritized_replay.TD=np.append(TD,self.prioritized_replay.TD[2:])
             self.reward=r+self.reward
-            if self.distributed_flag==True:
-                loss=self.train1(train_loss,optimizer)
-            else:
-                self.train1(train_loss,optimizer)
+            loss=self.train1(train_loss,optimizer)
             self.step_counter+=1
             if done:
                 self.reward_list.append(self.reward)
                 if len(self.reward_list)>self.trial_count:
                     del self.reward_list[0]
-                return train_loss.result().numpy(),done
+                return loss,done
             s=next_s
-        if self.distributed_flag==True:
-            return loss,done
-        else:
-            return train_loss.result().numpy(),done
     
     
     def fit(self, train_loss, optimizer, episodes=None, jit_compile=True, p=None):
