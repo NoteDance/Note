@@ -42,7 +42,7 @@ class RL:
         return
     
     
-    def set_up(self,epsilon=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None,pr=False,HER=False,initial_TD=7,alpha=0.7):
+    def set_up(self,epsilon=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None,PPO=False,pr=False,HER=False,initial_TD=7,alpha=0.7):
         if pr==False and epsilon!=None:
             self.epsilon_=epsilon
         if pool_size!=None:
@@ -55,6 +55,7 @@ class RL:
             self.trial_count=trial_count
         if criterion!=None:
             self.criterion=criterion
+        self.PPO=PPO
         self.pr=pr
         self.HER=HER
         if pr==True:
@@ -175,7 +176,10 @@ class RL:
     
     def train1(self, optimizer):
         if len(self.state_pool)<self.batch:
-            return np.array(0.)
+            if self.loss!=None:
+                return self.loss
+            else:
+                return np.array(0.)
         else:
             loss=0
             batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
@@ -198,6 +202,12 @@ class RL:
             if self.update_step!=None:
                 if self.step_counter%self.update_step==0:
                     self.update_param()
+                    if self.PPO:
+                        self.state_pool=None
+                        self.action_pool=None
+                        self.next_state_pool=None
+                        self.reward_pool=None
+                        self.done_pool=None
             else:
                 self.update_param()
         return loss.detach().numpy()/batches
@@ -229,7 +239,6 @@ class RL:
                     del self.reward_list[0]
                 return loss,done
             s=next_s
-        return loss,done
     
     
     def fit(self, optimizer, episodes=None, p=None):
