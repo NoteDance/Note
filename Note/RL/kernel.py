@@ -20,7 +20,6 @@ class kernel:
         self.next_state_pool=None
         self.reward_pool=None
         self.done_pool=None
-        self.episode_set=[]
         self.epsilon=None
         self.pool_size=None
         self.batch=None
@@ -38,7 +37,7 @@ class kernel:
         self.path_list=[]
         self.loss=None
         self.loss_list=[]
-        self.sc=0
+        self.step_counter=0
         self.total_episode=0
         self.time=0
         self.total_time=0
@@ -67,14 +66,14 @@ class kernel:
         self.reward_list=[]
         self.loss=0
         self.loss_list=[]
-        self.sc=0
+        self.step_counter=0
         self.total_episode=0
         self.time=0
         self.total_time=0
         return
     
     
-    def set_up(self,epsilon=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None,HER=False):
+    def set_up(self,epsilon=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None,PPO=False,HER=False):
         if epsilon!=None:
             self.epsilon=epsilon
         if pool_size!=None:
@@ -87,6 +86,7 @@ class kernel:
             self.trial_count=trial_count
         if criterion!=None:
             self.criterion=criterion
+        self.PPO=PPO
         self.HER=HER
         self.action_vec()
         return
@@ -149,14 +149,8 @@ class kernel:
             else:
                 self.nn.opt(gradient)
         else:
-            if hasattr(self.nn,'nn'):
-                gradient=tape.gradient(loss,self.nn.param)
-                self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
-            else:
-                actor_gradient=tape.gradient(loss[0],self.nn.param[0])
-                critic_gradient=tape.gradient(loss[1],self.nn.param[1])
-                self.nn.opt.apply_gradients(zip(actor_gradient,self.nn.param[0]))
-                self.nn.opt.apply_gradients(zip(critic_gradient,self.nn.param[1]))
+            gradient=tape.gradient(loss,self.nn.param)
+            self.nn.opt.apply_gradients(zip(gradient,self.nn.param))
         return loss
     
     
@@ -224,7 +218,7 @@ class kernel:
         if hasattr(self.nn,'nn'):
             if hasattr(self.platform,'DType'):
                 if self.epsilon==None:
-                    self.epsilon=self.nn.epsilon(self.sc)
+                    self.epsilon=self.nn.epsilon(self.step_counter)
                 if self.epsilon==None and hasattr(self.nn,'epsilon')!=True:
                     action_prob=self.nn.nn.fp(s)
                 else:
@@ -232,7 +226,7 @@ class kernel:
                 a=np.random.choice(self.action_count,p=action_prob)
             else:
                 if self.epsilon==None:
-                    self.epsilon=self.nn.epsilon(self.sc)
+                    self.epsilon=self.nn.epsilon(self.step_counter)
                 if self.epsilon==None and hasattr(self.nn,'epsilon')!=True:
                     s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                     action_prob=self.nn.nn(s)
@@ -243,11 +237,11 @@ class kernel:
             if hasattr(self.nn,'action'):
                 if hasattr(self.platform,'DType'):
                     if self.epsilon==None:
-                        self.epsilon=self.nn.epsilon(self.sc)
+                        self.epsilon=self.nn.epsilon(self.step_counter)
                     a=self.nn.action(s).numpy()
                 else:
                     if self.epsilon==None:
-                        self.epsilon=self.nn.epsilon(self.sc)
+                        self.epsilon=self.nn.epsilon(self.step_counter)
                     a=self.nn.action(s).detach().numpy()
             else:
                 if hasattr(self.platform,'DType'):
@@ -292,7 +286,10 @@ class kernel:
     
     def _train(self):
         if len(self.state_pool)<self.batch:
-            return np.array(0.)
+            if self.loss!=None:
+                return self.loss
+            else:
+                return np.array(0.)
         else:
             loss=0
             batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
@@ -339,8 +336,14 @@ class kernel:
                         except Exception:
                             self.nn.bc+=1
             if self.update_step!=None:
-                if self.sc%self.update_step==0:
+                if self.step_counter%self.update_step==0:
                     self.nn.update_param()
+                    if self.PPO:
+                        self.state_pool=None
+                        self.action_pool=None
+                        self.next_state_pool=None
+                        self.reward_pool=None
+                        self.done_pool=None
             else:
                 self.nn.update_param()
         if hasattr(self.platform,'DType'):
@@ -364,10 +367,7 @@ class kernel:
                 next_s=np.array(next_s)
                 r=np.array(r)
                 done=np.array(done)
-            if hasattr(self.nn,'pool'):
-                self.nn.pool(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,[s,a,next_s,r,done])
-            else:
-                self.pool(s,a,next_s,r,done)
+            self.pool(s,a,next_s,r,done)
             if hasattr(self.nn,'pr'):
                 self.nn.pr.TD=np.append(self.nn.pr.TD,self.nn.initial_TD)
                 if len(self.state_pool)>self.pool_size:
@@ -375,14 +375,13 @@ class kernel:
                     self.nn.pr.TD=np.append(TD,self.nn.pr.TD[2:])
             self.reward=r+self.reward
             loss=self._train()
-            self.sc+=1
+            self.step_counter+=1
             if done:
                 self.reward_list.append(self.reward)
                 if len(self.reward_list)>self.trial_count:
                     del self.reward_list[0]
                 return loss,episode,done
             s=next_s
-        return loss,episode,done
     
     
     def train(self,episode_count,path=None,save_freq=1,max_save_files=None,p=None):
@@ -654,7 +653,7 @@ class kernel:
             pickle.dump(self.reward_list,output_file)
             pickle.dump(self.loss,output_file)
             pickle.dump(self.loss_list,output_file)
-            pickle.dump(self.sc,output_file)
+            pickle.dump(self.step_counter,output_file)
             pickle.dump(self.total_episode,output_file)
             pickle.dump(self.total_time,output_file)
             output_file.close()
@@ -678,7 +677,7 @@ class kernel:
         pickle.dump(self.reward_list,output_file)
         pickle.dump(self.loss,output_file)
         pickle.dump(self.loss_list,output_file)
-        pickle.dump(self.sc,output_file)
+        pickle.dump(self.step_counter,output_file)
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
         output_file.close()
@@ -697,7 +696,7 @@ class kernel:
         self.reward_list=pickle.load(input_file)
         self.loss=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
-        self.sc=pickle.load(input_file)
+        self.step_counter=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
         input_file.close()
