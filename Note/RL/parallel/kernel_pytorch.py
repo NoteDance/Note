@@ -82,7 +82,7 @@ class kernel:
         return
     
     
-    def set_up(self,epsilon=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None,HER=False):
+    def set_up(self,epsilon=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None,PPO=False,HER=False):
         if epsilon!=None:
             self.epsilon=np.ones(self.process)*epsilon
             self.action_vec()
@@ -96,6 +96,7 @@ class kernel:
             self.trial_count=trial_count
         if criterion!=None:
             self.criterion=criterion
+        self.PPO=PPO
         self.HER=HER
         return
     
@@ -359,6 +360,12 @@ class kernel:
             if self.update_step!=None:
                 if self.step_counter[p]%self.update_step==0:
                     self.nn.update_param()
+                    if self.PPO:
+                        self.state_pool[p]=None
+                        self.action_pool[p]=None
+                        self.next_state_pool[p]=None
+                        self.reward_pool[p]=None
+                        self.done_pool[p]=None
             else:
                 self.nn.update_param()
             self.loss[p]=self.loss[p]/batches
