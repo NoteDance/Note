@@ -99,7 +99,7 @@ You just need to have your agent class inherit from the RL or RL_pytorch class, 
 
 
 # Documentation:
-The document contains tutorials on how to build neural networks that can be trained on Note, how to train neural networks with Note, and kernel code as well as other code with comments that can help you understand.
+The document contains tutorials on how to build neural networks that can be trained on Note, how to train neural networks with Note.
 
 https://github.com/NoteDance/Note-documentation
 
