@@ -1,6 +1,7 @@
 import tensorflow as tf
 from Note import nn
 from Note.RL.rl.prioritized_replay import pr
+from multiprocessing import Array,Value
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -43,19 +44,15 @@ class RL:
         return
     
     
-    def set_up(self,epsilon=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None,PPO=False,pr=False,HER=False,initial_TD=7,alpha=0.7):
-        if pr==False and epsilon!=None:
+    def set_up(self,epsilon=None,pool_size=None,batch=None,update_batches=None,update_steps=None,trial_count=None,criterion=None,PPO=False,pr=False,HER=False,initial_TD=7,alpha=0.7):
+        if pr==False:
             self.epsilon_=epsilon
-        if pool_size!=None:
-            self.pool_size=pool_size
-        if batch!=None:
-            self.batch=batch
-        if update_step!=None:
-            self.update_step=update_step
-        if trial_count!=None:
-            self.trial_count=trial_count
-        if criterion!=None:
-            self.criterion=criterion
+        self.pool_size=pool_size
+        self.batch=batch
+        self.update_batches=update_batches
+        self.update_steps=update_steps
+        self.trial_count=trial_count
+        self.criterion=criterion
         self.PPO=PPO
         self.pr=pr
         self.HER=HER
@@ -75,39 +72,74 @@ class RL:
     
     
     def pool(self,s,a,next_s,r,done):
-        if type(self.state_pool)!=np.ndarray and self.state_pool==None:
-            if type(s) in [int,float]:
-                s=np.array(s)
-                self.state_pool=np.expand_dims(s,axis=0)
-            elif type(s)==tuple:
-                s=np.array(s)
-                self.state_pool=s
+        if self.mp_flag==True:
+            if type(self.state_pool[7])!=np.ndarray and self.state_pool[7]==None:
+                if type(s) in [int,float]:
+                    s=np.array(s)
+                    self.state_pool[7]=np.expand_dims(s,axis=0)
+                elif type(s)==tuple:
+                    s=np.array(s)
+                    self.state_pool[7]=s
+                else:
+                    self.state_pool[7]=s
+                if type(a)==int:
+                    a=np.array(a)
+                    self.action_pool[7]=np.expand_dims(a,axis=0)
+                else:
+                    self.action_pool[7]=a
+                self.next_state_pool[7]=np.expand_dims(next_s,axis=0)
+                self.reward_pool[7]=np.expand_dims(r,axis=0)
+                self.done_pool[7]=np.expand_dims(done,axis=0)
             else:
-                self.state_pool=s
-            if type(a)==int:
-                a=np.array(a)
-                self.action_pool=np.expand_dims(a,axis=0)
-            else:
-                self.action_pool=a
-            self.next_state_pool=np.expand_dims(next_s,axis=0)
-            self.reward_pool=np.expand_dims(r,axis=0)
-            self.done_pool=np.expand_dims(done,axis=0)
+                self.state_pool[7]=np.concatenate((self.state_pool[7],s),0)
+                if type(a)==int:
+                    a=np.array(a)
+                    self.action_pool[7]=np.concatenate((self.action_pool[7],np.expand_dims(a,axis=0)),0)
+                else:
+                    self.action_pool[7]=np.concatenate((self.action_pool[7],a),0)
+                self.next_state_pool[7]=np.concatenate((self.next_state_pool[7],np.expand_dims(next_s,axis=0)),0)
+                self.reward_pool[7]=np.concatenate((self.reward_pool[7],np.expand_dims(r,axis=0)),0)
+                self.done_pool[7]=np.concatenate((self.done_pool[7],np.expand_dims(done,axis=0)),0)
+            if len(self.state_pool[7])>self.pool_size:
+                self.state_pool[7]=self.state_pool[7][1:]
+                self.action_pool[7]=self.action_pool[7][1:]
+                self.next_state_pool[7]=self.next_state_pool[7][1:]
+                self.reward_pool[7]=self.reward_pool[7][1:]
+                self.done_pool[7]=self.done_pool[7][1:]
         else:
-            self.state_pool=np.concatenate((self.state_pool,s),0)
-            if type(a)==int:
-                a=np.array(a)
-                self.action_pool=np.concatenate((self.action_pool,np.expand_dims(a,axis=0)),0)
+            if type(self.state_pool)!=np.ndarray and self.state_pool==None:
+                if type(s) in [int,float]:
+                    s=np.array(s)
+                    self.state_pool=np.expand_dims(s,axis=0)
+                elif type(s)==tuple:
+                    s=np.array(s)
+                    self.state_pool=s
+                else:
+                    self.state_pool=s
+                if type(a)==int:
+                    a=np.array(a)
+                    self.action_pool=np.expand_dims(a,axis=0)
+                else:
+                    self.action_pool=a
+                self.next_state_pool=np.expand_dims(next_s,axis=0)
+                self.reward_pool=np.expand_dims(r,axis=0)
+                self.done_pool=np.expand_dims(done,axis=0)
             else:
-                self.action_pool=np.concatenate((self.action_pool,a),0)
-            self.next_state_pool=np.concatenate((self.next_state_pool,np.expand_dims(next_s,axis=0)),0)
-            self.reward_pool=np.concatenate((self.reward_pool,np.expand_dims(r,axis=0)),0)
-            self.done_pool=np.concatenate((self.done_pool,np.expand_dims(done,axis=0)),0)
-        if len(self.state_pool)>self.pool_size:
-            self.state_pool=self.state_pool[1:]
-            self.action_pool=self.action_pool[1:]
-            self.next_state_pool=self.next_state_pool[1:]
-            self.reward_pool=self.reward_pool[1:]
-            self.done_pool=self.done_pool[1:]
+                self.state_pool=np.concatenate((self.state_pool,s),0)
+                if type(a)==int:
+                    a=np.array(a)
+                    self.action_pool=np.concatenate((self.action_pool,np.expand_dims(a,axis=0)),0)
+                else:
+                    self.action_pool=np.concatenate((self.action_pool,a),0)
+                self.next_state_pool=np.concatenate((self.next_state_pool,np.expand_dims(next_s,axis=0)),0)
+                self.reward_pool=np.concatenate((self.reward_pool,np.expand_dims(r,axis=0)),0)
+                self.done_pool=np.concatenate((self.done_pool,np.expand_dims(done,axis=0)),0)
+            if len(self.state_pool)>self.pool_size:
+                self.state_pool=self.state_pool[1:]
+                self.action_pool=self.action_pool[1:]
+                self.next_state_pool=self.next_state_pool[1:]
+                self.reward_pool=self.reward_pool[1:]
+                self.done_pool=self.done_pool[1:]
         return
     
     
@@ -126,13 +158,21 @@ class RL:
         return a
     
     
-    def env_(self,a=None,initial=None):
+    def env_(self,a=None,initial=None,p=None):
         if initial==True:
-            state=self.env.reset(seed=self.seed)
-            return state
+            if self.mp_flag==True:
+                state=self.env[p].reset(seed=self.seed)
+                return state
+            else:
+                state=self.env.reset(seed=self.seed)
+                return state 
         else:
-            next_state,reward,done,_=self.env.step(a)
-            return next_state,reward,done
+            if self.mp_flag==True:
+                next_state,reward,done,_=self.env[p].step(a)
+                return next_state,reward,done
+            else:
+                next_state,reward,done,_=self.env.step(a)
+                return next_state,reward,done
     
     
     def data_func(self):
@@ -144,13 +184,24 @@ class RL:
             next_s = []
             r = []
             d = []
+            if self.mp_flag==True:
+                length=min(len(self.state_pool[7]),len(self.action_pool[7]),len(self.next_state_pool[7]),len(self.reward_pool[7]),len(self.done_pool[7]))
+                state_pool=self.state_pool[7][:length]
+                action_pool=self.action_pool[7][:length]
+                next_state_pool=self.next_state_pool[7][:length]
+                done_pool=self.done_pool[7][:length]
+            else:
+                state_pool=self.state_pool
+                action_pool=self.action_pool
+                next_state_pool=self.next_state_pool
+                done_pool=self.done_pool
             for _ in range(self.batch):
-                step_state = np.random.randint(0, len(self.state_pool)-1)
-                step_goal = np.random.randint(step_state+1, step_state+np.argmax(self.done_pool[step_state+1:])+2)
-                state = self.state_pool[step_state]
-                next_state = self.next_state_pool[step_state]
-                action = self.action_pool[step_state]
-                goal = self.state_pool[step_goal]
+                step_state = np.random.randint(0, len(state_pool)-1)
+                step_goal = np.random.randint(step_state+1, step_state+np.argmax(done_pool[step_state+1:])+2)
+                state = state_pool[step_state]
+                next_state = next_state_pool[step_state]
+                action = action_pool[step_state]
+                goal = state_pool[step_goal]
                 reward, done = self.reward_done_func(next_state, goal)
                 state = np.hstack((state, goal))
                 next_state = np.hstack((next_state, goal))
@@ -260,7 +311,14 @@ class RL:
                 if self.distributed_flag==True:
                     total_loss = 0.0
                     num_batches = 0
-                    train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).shuffle(len(self.state_pool)).batch(self.global_batch_size)
+                    if self.mp_flag==True:
+                        length=min(len(self.state_pool[7]),len(self.action_pool[7]),len(self.next_state_pool[7]),len(self.reward_pool[7]),len(self.done_pool[7]))
+                        if self.shuffle_flag!=True:
+                            train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool[7][:length],self.action_pool[7][:length],self.next_state_pool[7][:length],self.reward_pool[7][:length],self.done_pool[7][:length])).batch(self.global_batch_size)
+                        else:
+                            train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool[7][:length],self.action_pool[7][:length],self.next_state_pool[7][:length],self.reward_pool[7][:length],self.done_pool[7][:length])).shuffle(len(self.state_pool)).batch(self.global_batch_size)
+                    else:
+                        train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).shuffle(len(self.state_pool)).batch(self.batch)
                     for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
                         if self.jit_compile==True:
                             total_loss+=self.distributed_train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.trategy)
@@ -269,24 +327,47 @@ class RL:
                         num_batches += 1
                         self.batch_counter+=1
                 else:
-                    train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).shuffle(len(self.state_pool)).batch(self.batch)
+                    if self.mp_flag==True:
+                        length=min(len(self.state_pool[7]),len(self.action_pool[7]),len(self.next_state_pool[7]),len(self.reward_pool[7]),len(self.done_pool[7]))
+                        if self.shuffle_flag!=True:
+                            train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool[7][:length],self.action_pool[7][:length],self.next_state_pool[7][:length],self.reward_pool[7][:length],self.done_pool[7][:length])).batch(self.global_batch_size)
+                        else:
+                            train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool[7][:length],self.action_pool[7][:length],self.next_state_pool[7][:length],self.reward_pool[7][:length],self.done_pool[7][:length])).shuffle(len(self.state_pool)).batch(self.global_batch_size)
+                    else:
+                        train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).shuffle(len(self.state_pool)).batch(self.batch)
                     for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
                         if self.jit_compile==True:
                             self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
                         else:
                             self.train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
                         self.batch_counter+=1
-            if self.update_step!=None:
-                if self.step_counter%self.update_step==0:
-                    self.update_param()
-                    if self.PPO:
-                        self.state_pool=None
-                        self.action_pool=None
-                        self.next_state_pool=None
-                        self.reward_pool=None
-                        self.done_pool=None
+            if self.update_steps!=None:
+                if self.mp_flag==True:
+                    if self.batch_counter%self.update_batches==0:
+                        self.update_param()
+                        if self.PPO:
+                            self.state_pool=None
+                            self.action_pool=None
+                            self.next_state_pool=None
+                            self.reward_pool=None
+                            self.done_pool=None
+                else:
+                    if self.step_counter%self.update_steps==0:
+                        self.update_param()
+                        if self.PPO:
+                            self.state_pool=None
+                            self.action_pool=None
+                            self.next_state_pool=None
+                            self.reward_pool=None
+                            self.done_pool=None
             else:
                 self.update_param()
+                if self.PPO:
+                    self.state_pool=None
+                    self.action_pool=None
+                    self.next_state_pool=None
+                    self.reward_pool=None
+                    self.done_pool=None
         if self.distributed_flag==True:
             return (total_loss / num_batches).numpy()
         else:
@@ -317,11 +398,32 @@ class RL:
                 self.reward_list.append(self.reward)
                 if len(self.reward_list)>self.trial_count:
                     del self.reward_list[0]
-                return loss,done
+                return loss
             s=next_s
     
     
-    def fit(self, train_loss, optimizer, episodes=None, jit_compile=True, p=None):
+    def store_in_parallel(self,p):
+        self.reward[p]=0
+        s=self.env_(initial=True,p=p)
+        s=np.array(s)
+        while True:
+            s=np.expand_dims(s,axis=0)
+            a=self.choose_action(s)
+            next_s,r,done=self.env_(a,p=p)
+            next_s=np.array(next_s)
+            r=np.array(r)
+            done=np.array(done)
+            self.pool(s,a,next_s,r,done)
+            self.reward[p]=r+self.reward[p]
+            self.step_counter+=1
+            if done:
+                self.reward_list.append(self.reward[p])
+                if len(self.reward_list)>self.trial_count:
+                    del self.reward_list[0]
+            s=next_s
+    
+    
+    def fit(self, train_loss, optimizer, episodes=None, jit_compile=True, mp=None, manager=None, processes=None, shuffle_processes=None, p=None):
         avg_reward=None
         if p==None:
             self.p=9
@@ -335,6 +437,25 @@ class RL:
             p=int(p)
         if p==0:
             p=1
+        self.mp_flag=False
+        if mp!=None:
+            self.mp_flag=True
+            self.state_pool=manager.dict({})
+            self.action_pool=manager.dict({})
+            self.next_state_pool=manager.dict({})
+            self.reward_pool=manager.dict({})
+            self.done_pool=manager.dict({})
+            self.state_pool[7]=None
+            self.action_pool[7]=None
+            self.next_state_pool[7]=None
+            self.reward_pool[7]=None
+            self.done_pool[7]=None
+            self.reward=np.zeros(processes,dtype='float32')
+            self.reward=Array('f',self.reward)
+            self.reward_list=manager.list([])
+            self.step_counter=Value('i',0)
+            if shuffle_processes!=None and processes<shuffle_processes:
+                self.shuffle_flag=True
         self.distributed_flag=False
         self.optimizer_=optimizer
         self.episodes=episodes
@@ -343,7 +464,17 @@ class RL:
             for i in range(episodes):
                 t1=time.time()
                 train_loss.reset_states()
-                loss,done=self.train2(train_loss,self.optimizer_)
+                if self.mp_flag==True:
+                    process_list=[]
+                    for p in range(processes):
+                        process=mp.Process(target=self.store_in_parallel,args=(p,))
+                        process.start()
+                        process_list.append(process)
+                    for process in process_list:
+                        process.join()
+                    loss=self.train1(train_loss, self.optimizer_)
+                else:
+                    loss=self.train2(train_loss,self.optimizer_)
                 self.loss=loss
                 self.loss_list.append(loss)
                 self.total_episode+=1
@@ -384,7 +515,17 @@ class RL:
             while True:
                 t1=time.time()
                 train_loss.reset_states()
-                loss,done=self.train2(train_loss,self.optimizer_)
+                if self.mp_flag==True:
+                    process_list=[]
+                    for p in range(processes):
+                        process=mp.Process(target=self.store_in_parallel,args=(p,))
+                        process.start()
+                        process_list.append(process)
+                    for process in process_list:
+                        process.join()
+                    loss=self.train1(train_loss, self.optimizer_)
+                else:
+                    loss=self.train2(train_loss,self.optimizer_)
                 self.loss=loss
                 self.loss_list.append(loss)
                 i+=1
@@ -434,7 +575,7 @@ class RL:
         return
     
     
-    def distributed_fit(self, global_batch_size, optimizer, strategy, episodes=None, jit_compile=True, p=None):
+    def distributed_fit(self, global_batch_size, optimizer, strategy, episodes=None, jit_compile=True, mp=None, manager=None, processes=None, shuffle_processes=None, p=None):
         avg_reward=None
         if p==None:
             self.p=9
@@ -448,6 +589,25 @@ class RL:
             p=int(p)
         if p==0:
             p=1
+        self.mp_flag=False
+        if mp!=None:
+            self.mp_flag=True
+            self.state_pool=manager.dict({})
+            self.action_pool=manager.dict({})
+            self.next_state_pool=manager.dict({})
+            self.reward_pool=manager.dict({})
+            self.done_pool=manager.dict({})
+            self.state_pool[7]=None
+            self.action_pool[7]=None
+            self.next_state_pool[7]=None
+            self.reward_pool[7]=None
+            self.done_pool[7]=None
+            self.reward=np.zeros(processes,dtype='float32')
+            self.reward=Array('f',self.reward)
+            self.reward_list=manager.list([])
+            self.step_counter=Value('i',0)
+            if shuffle_processes!=None and processes<shuffle_processes:
+                self.shuffle_flag=True
         self.distributed_flag=True
         self.global_batch_size=global_batch_size
         self.batch=global_batch_size
@@ -461,7 +621,17 @@ class RL:
         if episodes!=None:
             for i in range(episodes):
                 t1=time.time()
-                loss,done=self.train2(None,self.optimizer_)
+                if self.mp_flag==True:
+                    process_list=[]
+                    for p in range(processes):
+                        process=mp.Process(target=self.store_in_parallel,args=(p,))
+                        process.start()
+                        process_list.append(process)
+                    for process in process_list:
+                        process.join()
+                    loss=self.train1(None, self.optimizer_)
+                else:
+                    loss=self.train2(None,self.optimizer_)
                 self.loss=loss
                 self.loss_list.append(loss)
                 self.total_episode+=1
@@ -501,7 +671,17 @@ class RL:
             i=0
             while True:
                 t1=time.time()
-                loss,done=self.train2(None,self.optimizer_)
+                if self.mp_flag==True:
+                    process_list=[]
+                    for p in range(processes):
+                        process=mp.Process(target=self.store_in_parallel,args=(p,))
+                        process.start()
+                        process_list.append(process)
+                    for process in process_list:
+                        process.join()
+                    loss=self.train1(None, self.optimizer_)
+                else:
+                    loss=self.train2(None,self.optimizer_)
                 self.loss=loss
                 self.loss_list.append(loss)
                 i+=1
