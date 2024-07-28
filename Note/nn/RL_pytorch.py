@@ -351,6 +351,7 @@ class RL:
         if p==0:
             p=1
         self.mp_flag=False
+        self.shuffle_flag=False
         if mp!=None:
             self.mp_flag=True
             self.state_pool=manager.dict({})
