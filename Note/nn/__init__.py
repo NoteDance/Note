@@ -111,6 +111,7 @@ from Note.nn.layer.self_attention_mask import self_attention_mask
 from Note.nn.layer.separable_conv1d import separable_conv1d
 from Note.nn.layer.separable_conv2d import separable_conv2d
 from Note.nn.layer.softmax import softmax
+from Note.nn.layer.space_to_depth import *
 from Note.nn.layer.spatial_dropout1d import spatial_dropout1d
 from Note.nn.layer.spatial_dropout2d import spatial_dropout2d
 from Note.nn.layer.spatial_dropout3d import spatial_dropout3d
