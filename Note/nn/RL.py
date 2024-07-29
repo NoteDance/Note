@@ -410,9 +410,9 @@ class RL:
             done=np.array(done)
             self.lock_list[index].acquire()
             self.pool(s,a,next_s,r,done,index)
+            self.step_counter+=1
             self.lock_list[index].release()
             self.reward[p]=r+self.reward[p]
-            self.step_counter+=1
             if done:
                 self.reward_list.append(self.reward[p])
                 if len(self.reward_list)>self.trial_count:
