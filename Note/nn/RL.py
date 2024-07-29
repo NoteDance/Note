@@ -313,7 +313,7 @@ class RL:
                     num_batches = 0
                     if self.mp_flag==True:
                         length=min(len(self.state_pool[7]),len(self.action_pool[7]),len(self.next_state_pool[7]),len(self.reward_pool[7]),len(self.done_pool[7]))
-                        if self.shuffle_flag!=True:
+                        if self.shuffle!=True:
                             train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool[7][:length],self.action_pool[7][:length],self.next_state_pool[7][:length],self.reward_pool[7][:length],self.done_pool[7][:length])).batch(self.global_batch_size)
                         else:
                             train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool[7][:length],self.action_pool[7][:length],self.next_state_pool[7][:length],self.reward_pool[7][:length],self.done_pool[7][:length])).shuffle(len(self.state_pool)).batch(self.global_batch_size)
@@ -329,7 +329,7 @@ class RL:
                 else:
                     if self.mp_flag==True:
                         length=min(len(self.state_pool[7]),len(self.action_pool[7]),len(self.next_state_pool[7]),len(self.reward_pool[7]),len(self.done_pool[7]))
-                        if self.shuffle_flag!=True:
+                        if self.shuffle!=True:
                             train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool[7][:length],self.action_pool[7][:length],self.next_state_pool[7][:length],self.reward_pool[7][:length],self.done_pool[7][:length])).batch(self.global_batch_size)
                         else:
                             train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool[7][:length],self.action_pool[7][:length],self.next_state_pool[7][:length],self.reward_pool[7][:length],self.done_pool[7][:length])).shuffle(len(self.state_pool)).batch(self.global_batch_size)
@@ -423,7 +423,7 @@ class RL:
             s=next_s
     
     
-    def fit(self, train_loss, optimizer, episodes=None, jit_compile=True, mp=None, manager=None, processes=None, shuffle_processes=None, p=None):
+    def fit(self, train_loss, optimizer, episodes=None, jit_compile=True, mp=None, manager=None, processes=None, shuffle=False, p=None):
         avg_reward=None
         if p==None:
             self.p=9
@@ -438,7 +438,7 @@ class RL:
         if p==0:
             p=1
         self.mp_flag=False
-        self.shuffle_flag=False
+        self.shuffle=shuffle
         if mp!=None:
             self.mp_flag=True
             self.state_pool=manager.dict({})
@@ -455,8 +455,6 @@ class RL:
             self.reward=Array('f',self.reward)
             self.reward_list=manager.list([])
             self.step_counter=Value('i',0)
-            if shuffle_processes!=None and processes<shuffle_processes:
-                self.shuffle_flag=True
         self.distributed_flag=False
         self.optimizer_=optimizer
         self.episodes=episodes
@@ -576,7 +574,7 @@ class RL:
         return
     
     
-    def distributed_fit(self, global_batch_size, optimizer, strategy, episodes=None, jit_compile=True, mp=None, manager=None, processes=None, shuffle_processes=None, p=None):
+    def distributed_fit(self, global_batch_size, optimizer, strategy, episodes=None, jit_compile=True, mp=None, manager=None, processes=None, shuffle=False, p=None):
         avg_reward=None
         if p==None:
             self.p=9
@@ -591,7 +589,7 @@ class RL:
         if p==0:
             p=1
         self.mp_flag=False
-        self.shuffle_flag=False
+        self.shuffle=shuffle
         if mp!=None:
             self.mp_flag=True
             self.state_pool=manager.dict({})
@@ -608,8 +606,6 @@ class RL:
             self.reward=Array('f',self.reward)
             self.reward_list=manager.list([])
             self.step_counter=Value('i',0)
-            if shuffle_processes!=None and processes<shuffle_processes:
-                self.shuffle_flag=True
         self.distributed_flag=True
         self.global_batch_size=global_batch_size
         self.batch=global_batch_size
