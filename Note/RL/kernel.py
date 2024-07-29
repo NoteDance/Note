@@ -23,7 +23,7 @@ class kernel:
         self.epsilon=None
         self.pool_size=None
         self.batch=None
-        self.update_step=None
+        self.update_steps=None
         self.trial_count=None
         self.criterion=None
         self.reward_list=[]
@@ -73,15 +73,15 @@ class kernel:
         return
     
     
-    def set_up(self,epsilon=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None,PPO=False,HER=False):
+    def set_up(self,epsilon=None,pool_size=None,batch=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False):
         if epsilon!=None:
             self.epsilon=epsilon
         if pool_size!=None:
             self.pool_size=pool_size
         if batch!=None:
             self.batch=batch
-        if update_step!=None:
-            self.update_step=update_step
+        if update_steps!=None:
+            self.update_steps=update_steps
         if trial_count!=None:
             self.trial_count=trial_count
         if criterion!=None:
@@ -335,8 +335,8 @@ class kernel:
                             self.nn.bc.assign_add(1)
                         except Exception:
                             self.nn.bc+=1
-            if self.update_step!=None:
-                if self.step_counter%self.update_step==0:
+            if self.update_steps!=None:
+                if self.step_counter%self.update_steps==0:
                     self.nn.update_param()
                     if self.PPO:
                         self.state_pool=None
@@ -346,6 +346,12 @@ class kernel:
                         self.done_pool=None
             else:
                 self.nn.update_param()
+                if self.PPO:
+                    self.state_pool=None
+                    self.action_pool=None
+                    self.next_state_pool=None
+                    self.reward_pool=None
+                    self.done_pool=None
         if hasattr(self.platform,'DType'):
             loss=loss.numpy()/batches
         else:
@@ -649,7 +655,7 @@ class kernel:
             pickle.dump(self.epsilon,output_file)
             pickle.dump(self.pool_size,output_file)
             pickle.dump(self.batch,output_file)
-            pickle.dump(self.update_step,output_file)
+            pickle.dump(self.update_steps,output_file)
             pickle.dump(self.reward_list,output_file)
             pickle.dump(self.loss,output_file)
             pickle.dump(self.loss_list,output_file)
@@ -673,7 +679,7 @@ class kernel:
         pickle.dump(self.epsilon,output_file)
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
-        pickle.dump(self.update_step,output_file)
+        pickle.dump(self.update_steps,output_file)
         pickle.dump(self.reward_list,output_file)
         pickle.dump(self.loss,output_file)
         pickle.dump(self.loss_list,output_file)
@@ -692,7 +698,7 @@ class kernel:
         self.epsilon=pickle.load(input_file)
         self.pool_size=pickle.load(input_file)
         self.batch=pickle.load(input_file)
-        self.update_step=pickle.load(input_file)
+        self.update_steps=pickle.load(input_file)
         self.reward_list=pickle.load(input_file)
         self.loss=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
