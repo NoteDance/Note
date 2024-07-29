@@ -4,6 +4,7 @@ from multiprocessing import Array,Value
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+import math
 import statistics
 import pickle
 import os
@@ -70,41 +71,41 @@ class RL:
         return action_prob
     
     
-    def pool(self,s,a,next_s,r,done):
+    def pool(self,s,a,next_s,r,done,index=None):
         if self.mp_flag==True:
-            if type(self.state_pool[7])!=np.ndarray and self.state_pool[7]==None:
+            if type(self.state_pool_list[index])!=np.ndarray and self.state_pool_list[index]==None:
                 if type(s) in [int,float]:
                     s=np.array(s)
-                    self.state_pool[7]=np.expand_dims(s,axis=0)
+                    self.state_pool_list[index]=np.expand_dims(s,axis=0)
                 elif type(s)==tuple:
                     s=np.array(s)
-                    self.state_pool[7]=s
+                    self.state_pool_list[index]=s
                 else:
-                    self.state_pool[7]=s
+                    self.state_pool_list[index]=s
                 if type(a)==int:
                     a=np.array(a)
-                    self.action_pool[7]=np.expand_dims(a,axis=0)
+                    self.action_pool_list[index]=np.expand_dims(a,axis=0)
                 else:
-                    self.action_pool[7]=a
-                self.next_state_pool[7]=np.expand_dims(next_s,axis=0)
-                self.reward_pool[7]=np.expand_dims(r,axis=0)
-                self.done_pool[7]=np.expand_dims(done,axis=0)
+                    self.action_pool_list[index]=a
+                self.next_state_pool_list[index]=np.expand_dims(next_s,axis=0)
+                self.reward_pool_list[index]=np.expand_dims(r,axis=0)
+                self.done_pool_list[index]=np.expand_dims(done,axis=0)
             else:
-                self.state_pool[7]=np.concatenate((self.state_pool[7],s),0)
+                self.state_pool_list[index]=np.concatenate((self.state_pool_list[index],s),0)
                 if type(a)==int:
                     a=np.array(a)
-                    self.action_pool[7]=np.concatenate((self.action_pool[7],np.expand_dims(a,axis=0)),0)
+                    self.action_pool_list[index]=np.concatenate((self.action_pool_list[index],np.expand_dims(a,axis=0)),0)
                 else:
-                    self.action_pool[7]=np.concatenate((self.action_pool[7],a),0)
-                self.next_state_pool[7]=np.concatenate((self.next_state_pool[7],np.expand_dims(next_s,axis=0)),0)
-                self.reward_pool[7]=np.concatenate((self.reward_pool[7],np.expand_dims(r,axis=0)),0)
-                self.done_pool[7]=np.concatenate((self.done_pool[7],np.expand_dims(done,axis=0)),0)
-            if len(self.state_pool[7])>self.pool_size:
-                self.state_pool[7]=self.state_pool[7][1:]
-                self.action_pool[7]=self.action_pool[7][1:]
-                self.next_state_pool[7]=self.next_state_pool[7][1:]
-                self.reward_pool[7]=self.reward_pool[7][1:]
-                self.done_pool[7]=self.done_pool[7][1:]
+                    self.action_pool_list[index]=np.concatenate((self.action_pool_list[index],a),0)
+                self.next_state_pool_list[index]=np.concatenate((self.next_state_pool_list[index],np.expand_dims(next_s,axis=0)),0)
+                self.reward_pool_list[index]=np.concatenate((self.reward_pool_list[index],np.expand_dims(r,axis=0)),0)
+                self.done_pool_list[index]=np.concatenate((self.done_pool[7],np.expand_dims(done,axis=0)),0)
+            if len(self.state_pool_list[index])>math.ceil(self.pool_size/self.processes):
+                self.state_pool_list[index]=self.state_pool_list[index][1:]
+                self.action_pool_list[index]=self.action_pool_list[index][1:]
+                self.next_state_pool_list[index]=self.next_state_pool_list[index][1:]
+                self.reward_pool_list[index]=self.reward_pool_list[index][1:]
+                self.done_pool_list[index]=self.done_pool_list[index][1:]
         else:
             if type(self.state_pool)!=np.ndarray and self.state_pool==None:
                 if type(s) in [int,float]:
@@ -320,13 +321,22 @@ class RL:
         s=self.env_(initial=True,p=p)
         s=np.array(s)
         while True:
+            if None not in self.state_pool_list:
+                inverse_len=[1/len(state_pool) for state_pool in self.state_pool_list]
+                total_inverse=sum(inverse_len)
+                prob=[inverse_len/total_inverse for inverse_len in inverse_len]
+                index=np.random.choice(self.processes,p=prob)
+            else:
+                index=np.random.choice(self.processes)
             s=np.expand_dims(s,axis=0)
             a=self.choose_action(s)
             next_s,r,done=self.env_(a,p=p)
             next_s=np.array(next_s)
             r=np.array(r)
             done=np.array(done)
-            self.pool(s,a,next_s,r,done)
+            self.lock_list[index].acquire()
+            self.pool(s,a,next_s,r,done,index)
+            self.lock_list[index].release()
             self.reward[p]=r+self.reward[p]
             self.step_counter+=1
             if done:
@@ -351,23 +361,26 @@ class RL:
         if p==0:
             p=1
         self.mp_flag=False
+        self.processes=processes
         self.shuffle=shuffle
         if mp!=None:
             self.mp_flag=True
-            self.state_pool=manager.dict({})
-            self.action_pool=manager.dict({})
-            self.next_state_pool=manager.dict({})
-            self.reward_pool=manager.dict({})
-            self.done_pool=manager.dict({})
-            self.state_pool[7]=None
-            self.action_pool[7]=None
-            self.next_state_pool[7]=None
-            self.reward_pool[7]=None
-            self.done_pool[7]=None
+            self.state_pool_list=manager.list()
+            self.action_pool_list=manager.list()
+            self.next_state_pool_list=manager.list()
+            self.reward_pool_list=manager.list()
+            self.done_pool_list=manager.list()
+            for _ in range(processes):
+                self.state_pool_list.append(None)
+                self.action_pool_list.append(None)
+                self.next_state_pool_list.append(None)
+                self.reward_pool_list.append(None)
+                self.done_pool_list.append(None)
             self.reward=np.zeros(processes,dtype='float32')
             self.reward=Array('f',self.reward)
             self.reward_list=manager.list([])
             self.step_counter=Value('i',0)
+            self.lock_list=[mp.Lock() for _ in range(processes)]
         self.optimizer_=optimizer
         if episodes!=None:
             for i in range(episodes):
@@ -380,6 +393,11 @@ class RL:
                         process_list.append(process)
                     for process in process_list:
                         process.join()
+                    self.state_pool=np.array(self.state_pool_list)
+                    self.action_pool=np.array(self.action_pool_list)
+                    self.next_state_pool=np.array(self.next_state_pool_list)
+                    self.reward_pool=np.array(self.reward_pool_list)
+                    self.done_pool=np.array(self.done_pool_list)
                     loss=self.train1(self.optimizer_)
                 else:
                     loss=self.train2(self.optimizer_)
@@ -430,6 +448,11 @@ class RL:
                         process_list.append(process)
                     for process in process_list:
                         process.join()
+                    self.state_pool=np.array(self.state_pool_list)
+                    self.action_pool=np.array(self.action_pool_list)
+                    self.next_state_pool=np.array(self.next_state_pool_list)
+                    self.reward_pool=np.array(self.reward_pool_list)
+                    self.done_pool=np.array(self.done_pool_list)
                     loss=self.train1(self.optimizer_)
                 else:
                     loss=self.train2(self.optimizer_)
