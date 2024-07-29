@@ -248,7 +248,7 @@ class RL:
             else:
                 if self.mp_flag==True:
                     length=min(len(self.state_pool[7]),len(self.action_pool[7]),len(self.next_state_pool[7]),len(self.reward_pool[7]),len(self.done_pool[7]))
-                    if self.shuffle_flag!=True:
+                    if self.shuffle!=True:
                         train_ds=DataLoader((self.state_pool[7][:length],self.action_pool[7][:length],self.next_state_pool[7][:length],self.reward_pool[7][:length],self.done_pool[7][:length]),batch_size=self.batch)
                     else:
                         train_ds=DataLoader((self.state_pool[7][:length],self.action_pool[7][:length],self.next_state_pool[7][:length],self.reward_pool[7][:length],self.done_pool[7][:length]),batch_size=self.batch,shuffle=True)
@@ -336,7 +336,7 @@ class RL:
             s=next_s
     
     
-    def fit(self, optimizer, episodes=None, mp=None, manager=None, processes=None, shuffle_processes=None, p=None):
+    def fit(self, optimizer, episodes=None, mp=None, manager=None, processes=None, shuffle=False, p=None):
         avg_reward=None
         if p==None:
             self.p=9
@@ -351,7 +351,7 @@ class RL:
         if p==0:
             p=1
         self.mp_flag=False
-        self.shuffle_flag=False
+        self.shuffle=shuffle
         if mp!=None:
             self.mp_flag=True
             self.state_pool=manager.dict({})
@@ -368,8 +368,6 @@ class RL:
             self.reward=Array('f',self.reward)
             self.reward_list=manager.list([])
             self.step_counter=Value('i',0)
-            if shuffle_processes!=None and processes<shuffle_processes:
-                self.shuffle_flag=True
         self.optimizer_=optimizer
         if episodes!=None:
             for i in range(episodes):
