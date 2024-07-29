@@ -185,24 +185,13 @@ class RL:
             next_s = []
             r = []
             d = []
-            if self.mp_flag==True:
-                length=min(len(self.state_pool[7]),len(self.action_pool[7]),len(self.next_state_pool[7]),len(self.reward_pool[7]),len(self.done_pool[7]))
-                state_pool=self.state_pool[7][:length]
-                action_pool=self.action_pool[7][:length]
-                next_state_pool=self.next_state_pool[7][:length]
-                done_pool=self.done_pool[7][:length]
-            else:
-                state_pool=self.state_pool
-                action_pool=self.action_pool
-                next_state_pool=self.next_state_pool
-                done_pool=self.done_pool
             for _ in range(self.batch):
-                step_state = np.random.randint(0, len(state_pool)-1)
-                step_goal = np.random.randint(step_state+1, step_state+np.argmax(done_pool[step_state+1:])+2)
-                state = state_pool[step_state]
-                next_state = next_state_pool[step_state]
-                action = action_pool[step_state]
-                goal = state_pool[step_goal]
+                step_state = np.random.randint(0, len(self.state_pool)-1)
+                step_goal = np.random.randint(step_state+1, step_state+np.argmax(self.done_pool[step_state+1:])+2)
+                state = self.state_pool[step_state]
+                next_state = self.next_state_pool[step_state]
+                action = self.action_pool[step_state]
+                goal = self.state_pool[step_goal]
                 reward, done = self.reward_done_func(next_state, goal)
                 state = np.hstack((state, goal))
                 next_state = np.hstack((next_state, goal))
@@ -313,11 +302,10 @@ class RL:
                     total_loss = 0.0
                     num_batches = 0
                     if self.mp_flag==True:
-                        length=min(len(self.state_pool[7]),len(self.action_pool[7]),len(self.next_state_pool[7]),len(self.reward_pool[7]),len(self.done_pool[7]))
                         if self.shuffle!=True:
-                            train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool[7][:length],self.action_pool[7][:length],self.next_state_pool[7][:length],self.reward_pool[7][:length],self.done_pool[7][:length])).batch(self.global_batch_size)
+                            train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).batch(self.global_batch_size)
                         else:
-                            train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool[7][:length],self.action_pool[7][:length],self.next_state_pool[7][:length],self.reward_pool[7][:length],self.done_pool[7][:length])).shuffle(len(self.state_pool)).batch(self.global_batch_size)
+                            train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).shuffle(len(self.state_pool)).batch(self.global_batch_size)
                     else:
                         train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).shuffle(len(self.state_pool)).batch(self.batch)
                     for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
@@ -329,11 +317,10 @@ class RL:
                         self.batch_counter+=1
                 else:
                     if self.mp_flag==True:
-                        length=min(len(self.state_pool[7]),len(self.action_pool[7]),len(self.next_state_pool[7]),len(self.reward_pool[7]),len(self.done_pool[7]))
                         if self.shuffle!=True:
-                            train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool[7][:length],self.action_pool[7][:length],self.next_state_pool[7][:length],self.reward_pool[7][:length],self.done_pool[7][:length])).batch(self.global_batch_size)
+                            train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).batch(self.global_batch_size)
                         else:
-                            train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool[7][:length],self.action_pool[7][:length],self.next_state_pool[7][:length],self.reward_pool[7][:length],self.done_pool[7][:length])).shuffle(len(self.state_pool)).batch(self.global_batch_size)
+                            train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).shuffle(len(self.state_pool)).batch(self.global_batch_size)
                     else:
                         train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).shuffle(len(self.state_pool)).batch(self.batch)
                     for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
