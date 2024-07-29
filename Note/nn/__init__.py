@@ -91,6 +91,7 @@ from Note.nn.layer.multihead_attention import multihead_attention
 from Note.nn.layer.multiheadrelative_attention import multiheadrelative_attention
 from Note.nn.layer.multiply import multiply
 from Note.nn.layer.norm import norm
+from Note.nn.layer.patch_dropout import PatchDropout
 from Note.nn.layer.perdimscale_attention import perdimscale_attention
 from Note.nn.layer.permute import permute
 from Note.nn.layer.pos_embed_sincos import *
