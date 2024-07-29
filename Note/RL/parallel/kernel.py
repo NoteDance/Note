@@ -20,7 +20,7 @@ class kernel:
         self.pool_size=None
         self.episode=None
         self.batch=None
-        self.update_step=None
+        self.update_steps=None
         self.trial_count=None
         self.process=process
         self.PO=3
@@ -88,7 +88,7 @@ class kernel:
         return
     
     
-    def set_up(self,epsilon=None,pool_size=None,batch=None,update_step=None,trial_count=None,criterion=None,PPO=False,HER=False):
+    def set_up(self,epsilon=None,pool_size=None,batch=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False):
         if epsilon!=None:
             self.epsilon=np.ones(self.process)*epsilon
             self.action_vec()
@@ -96,8 +96,8 @@ class kernel:
             self.pool_size=pool_size
         if batch!=None:
             self.batch=batch
-        if update_step!=None:
-            self.update_step=update_step
+        if update_steps!=None:
+            self.update_steps=update_steps
         if trial_count!=None:
             self.trial_count=trial_count
         if criterion!=None:
@@ -505,8 +505,8 @@ class kernel:
                     self.nn.opt_counter[0]=opt_counter
             if self.PO==1 or self.PO==2:
                 lock[1].acquire()
-            if self.update_step!=None:
-                if self.step_counter[p]%self.update_step==0:
+            if self.update_steps!=None:
+                if self.step_counter[p]%self.update_steps==0:
                     self.nn.update_param()
                     if self.PPO:
                         self.state_pool[p]=None
@@ -814,7 +814,7 @@ class kernel:
             pickle.dump(self.pool_size,output_file)
             pickle.dump(self.batch,output_file)
             pickle.dump(np.array(self.step_counter,dtype='int32'),output_file)
-            pickle.dump(self.update_step,output_file)
+            pickle.dump(self.update_steps,output_file)
             pickle.dump(list(self.reward_list),output_file)
             pickle.dump(list(self.loss_list),output_file)
             pickle.dump(self.total_episode.value,output_file)
@@ -843,7 +843,7 @@ class kernel:
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(np.array(self.step_counter,dtype='int32'),output_file)
-        pickle.dump(self.update_step,output_file)
+        pickle.dump(self.update_steps,output_file)
         pickle.dump(list(self.reward_list),output_file)
         pickle.dump(list(self.loss_list),output_file)
         pickle.dump(self.total_episode.value,output_file)
@@ -865,7 +865,7 @@ class kernel:
         self.batch=pickle.load(input_file)
         self.step_counter=pickle.load(input_file)
         self.step_counter=Array('i',self.step_counter)
-        self.update_step=pickle.load(input_file)
+        self.update_steps=pickle.load(input_file)
         self.reward_list[:]=pickle.load(input_file)
         self.loss_list[:]=pickle.load(input_file)
         self.total_episode.value=pickle.load(input_file)
