@@ -1,6 +1,5 @@
 import tensorflow as tf
 from Note import nn
-import numpy as np
 import gym
 
 
@@ -49,9 +48,6 @@ class DDPG(nn.RL):
         self.sigma=sigma
         self.gamma=gamma
         self.tau=tau
-    
-    def noise(self):
-        return np.random.normal(scale=self.sigma)
     
     def action(self,s):
         return self.actor(s)
