@@ -50,10 +50,9 @@ class RL:
         self.PPO=PPO
         self.HER=HER
         self.pr=pr
-        if pr==True:
-            self.epsilon=epsilon
-            self.initial_TD=initial_TD
-            self.alpha=alpha
+        self.epsilon=epsilon
+        self.initial_TD=initial_TD
+        self.alpha=alpha
         return
     
     
@@ -171,7 +170,7 @@ class RL:
     
     def data_func(self):
         if self.pr_:
-            s,a,next_s,r,d=self.prioritized_replay.sample(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.epsilon_pr,self.alpha,self.batch)
+            s,a,next_s,r,d=self.prioritized_replay.sample(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.epsilon,self.alpha,self.batch)
         elif self.HER:
             s = []
             a = []
