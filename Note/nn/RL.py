@@ -390,8 +390,9 @@ class RL:
         while True:
             if None not in self.state_pool_list:
                 inverse_len=[1/len(state_pool) for state_pool in self.state_pool_list]
-                total_inverse=sum(inverse_len)
-                prob=[inverse_len/total_inverse for inverse_len in inverse_len]
+                inverse_len=np.array(inverse_len)
+                total_inverse=np.sum(inverse_len)
+                prob=inverse_len/total_inverse
                 index=np.random.choice(self.processes,p=prob)
             else:
                 index=np.random.choice(self.processes)
