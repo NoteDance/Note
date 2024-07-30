@@ -1,5 +1,6 @@
 import tensorflow as tf
 from Note import nn
+from Note.RL import rl
 from Note.RL.rl.prioritized_replay import pr
 from multiprocessing import Array,Value
 import numpy as np
@@ -19,7 +20,6 @@ class RL:
         self.next_state_pool=None
         self.reward_pool=None
         self.done_pool=None
-        self.epsilon=None
         self.reward_list=[]
         self.step_counter=0
         self.prioritized_replay=pr()
@@ -39,15 +39,9 @@ class RL:
         self.total_time=0
     
     
-    def action_vec(self):
-        if self.epsilon_!=None:
-            self.action_one=np.ones(self.env.action_space.n,dtype=np.int8)
-        return
-    
-    
-    def set_up(self,epsilon=None,pool_size=None,batch=None,update_batches=None,update_steps=None,trial_count=None,criterion=None,PPO=False,pr=False,HER=False,initial_TD=7,alpha=0.7):
-        if pr==False:
-            self.epsilon_=epsilon
+    def set_up(self,policy=None,noise=None,pool_size=None,batch=None,update_batches=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False,pr=False,epsilon=None,initial_TD=7,alpha=0.7):
+        self.policy=policy
+        self.noise=noise
         self.pool_size=pool_size
         self.batch=batch
         self.update_batches=update_batches
@@ -55,21 +49,13 @@ class RL:
         self.trial_count=trial_count
         self.criterion=criterion
         self.PPO=PPO
-        self.pr=pr
         self.HER=HER
+        self.pr=pr
         if pr==True:
-            self.epsilon_pr=epsilon
+            self.epsilon=epsilon
             self.initial_TD=initial_TD
             self.alpha=alpha
-        self.action_vec()
         return
-    
-    
-    def epsilon_greedy_policy(self,s):
-        action_prob=self.action_one*self.epsilon_/len(self.action_one)
-        best_a=np.argmax(self.action(s))
-        action_prob[best_a]+=1-self.epsilon_
-        return action_prob
     
     
     def pool(self,s,a,next_s,r,done,index=None):
@@ -144,18 +130,26 @@ class RL:
         return
     
     
-    def choose_action(self,s):
-        if self.epsilon!=None:
-            self.epsilon_=self.epsilon(self.step_counter)
-        if self.epsilon_==None:
-            if hasattr(self, 'action'):
-                action_prob=self.action(s)
-                a=np.random.choice(self.action_count,p=action_prob)
-            elif hasattr(self, 'noise'):
-                a=(self.action(s)+self.noise()).numpy()
-        else:
-            action_prob=self.epsilon_greedy_policy(s)
-            a=np.random.choice(self.action_count,p=action_prob)
+    def select_action(self,s):
+        if self.policy!=None:
+            output=self.action(s).numpy()
+            if isinstance(self.policy, rl.SoftmaxPolicy):
+                a=self.policy.select_action(len(output), output)
+            elif isinstance(self.policy, rl.EpsGreedyQPolicy):
+                a=self.policy.select_action(output)
+            elif isinstance(self.policy, rl.GreedyQPolicy):
+                a=self.policy.select_action(output)
+            elif isinstance(self.policy, rl.BoltzmannQPolicy):
+                a=self.policy.select_action(output)
+            elif isinstance(self.policy, rl.MaxBoltzmannQPolicy):
+                a=self.policy.select_action(output)
+            elif isinstance(self.policy, rl.BoltzmannGumbelQPolicy):
+                if self.mp_flag==True:
+                    a=self.policy.select_action(output, self.step_counter.value)
+                else:
+                    a=self.policy.select_action(output, self.step_counter)
+        elif self.noise!=None:
+            a=(self.action(s)+self.noise.sample()).numpy()
         return a
     
     
@@ -178,7 +172,7 @@ class RL:
     
     def data_func(self):
         if self.pr_:
-            s,a,next_s,r,d=self.prioritized_replay.sample(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.epsilon_pr,self.alpha,self.batch)
+            s,a,next_s,r,d=self.prioritized_replay.sample(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.epsilon,self.alpha,self.batch)
         elif self.HER:
             s = []
             a = []
@@ -368,7 +362,7 @@ class RL:
         s=np.array(s)
         while True:
             s=np.expand_dims(s,axis=0)
-            a=self.choose_action(s)
+            a=self.select_action(s)
             next_s,r,done=self.env_(a)
             next_s=np.array(next_s)
             r=np.array(r)
@@ -403,14 +397,14 @@ class RL:
             else:
                 index=np.random.choice(self.processes)
             s=np.expand_dims(s,axis=0)
-            a=self.choose_action(s)
+            a=self.select_action(s)
             next_s,r,done=self.env_(a,p=p)
             next_s=np.array(next_s)
             r=np.array(r)
             done=np.array(done)
             self.lock_list[index].acquire()
             self.pool(s,a,next_s,r,done,index)
-            self.step_counter+=1
+            self.step_counter.value+=1
             self.lock_list[index].release()
             self.reward[p]=r+self.reward[p]
             if done:
@@ -762,7 +756,7 @@ class RL:
         else:
             state = self.env.reset(seed=seed)
         for step in range(max_steps):
-            if not hasattr(self, 'noise'):
+            if self.noise==None:
                 action = np.argmax(self.action(state))
             else:
                 action = self.action(state).numpy()
