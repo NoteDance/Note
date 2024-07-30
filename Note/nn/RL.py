@@ -51,10 +51,9 @@ class RL:
         self.PPO=PPO
         self.HER=HER
         self.pr=pr
-        if pr==True:
-            self.epsilon=epsilon
-            self.initial_TD=initial_TD
-            self.alpha=alpha
+        self.epsilon=epsilon
+        self.initial_TD=initial_TD
+        self.alpha=alpha
         return
     
     
