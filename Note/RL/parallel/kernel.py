@@ -1,4 +1,5 @@
 import tensorflow as tf
+from Note.RL import rl
 from tensorflow.python.ops import state_ops
 from tensorflow.python.util import nest
 from multiprocessing import Value,Array
@@ -16,7 +17,6 @@ class kernel:
         if process!=None:
             self.reward=np.zeros(process,dtype='float32')
             self.step_counter=np.zeros(process,dtype='int32')
-        self.epsilon=None
         self.pool_size=None
         self.episode=None
         self.batch=None
@@ -83,15 +83,9 @@ class kernel:
         return
     
     
-    def action_vec(self):
-        self.action_one=np.ones(self.genv.action_space.n,dtype=np.int8)
-        return
-    
-    
-    def set_up(self,epsilon=None,pool_size=None,batch=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False):
-        if epsilon!=None:
-            self.epsilon=np.ones(self.process)*epsilon
-            self.action_vec()
+    def set_up(self,policy=None,pool_size=None,batch=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False):
+        if policy!=None:
+            self.policy=policy
         if pool_size!=None:
             self.pool_size=pool_size
         if batch!=None:
@@ -105,13 +99,6 @@ class kernel:
         self.PPO=PPO
         self.HER=HER
         return
-    
-    
-    def epsilon_greedy_policy(self,s,epsilon):
-        action_prob=self.action_one*epsilon/len(self.action_one)
-        best_a=np.argmax(self.nn.nn.fp(s))
-        action_prob[best_a]+=1-epsilon
-        return action_prob
     
     
     def run_agent(self, max_steps, seed=None):
@@ -222,14 +209,22 @@ class kernel:
         return index
     
     
-    def env(self,s,epsilon,p,lock,pool_lock):
+    def env(self,s,p,lock,pool_lock):
         if hasattr(self.nn,'nn'):
             s=np.expand_dims(s,axis=0)
-            if epsilon==None:
-                action_prob=self.nn.nn.fp(s)
-            else:
-                action_prob=self.epsilon_greedy_policy(s,epsilon)
-            a=np.random.choice(self.action_count,p=action_prob)
+            output=self.nn.nn.fp(s)
+            if isinstance(self.policy, rl.SoftmaxPolicy):
+                a=self.policy.select_action(len(output), output)
+            elif isinstance(self.policy, rl.EpsGreedyQPolicy):
+                a=self.policy.select_action(output)
+            elif isinstance(self.policy, rl.GreedyQPolicy):
+                a=self.policy.select_action(output)
+            elif isinstance(self.policy, rl.BoltzmannQPolicy):
+                a=self.policy.select_action(output)
+            elif isinstance(self.policy, rl.MaxBoltzmannQPolicy):
+                a=self.policy.select_action(output)
+            elif isinstance(self.policy, rl.BoltzmannGumbelQPolicy):
+                a=self.policy.select_action(output, np.sum(self.step_counter))
         else:
             if hasattr(self.nn,'action'):
                 s=np.expand_dims(s,axis=0)
@@ -544,10 +539,6 @@ class kernel:
             lock[1].release()
         elif self.PO==3:
             lock[1].release()
-        try:
-            epsilon=self.epsilon[p]
-        except Exception:
-            epsilon=None
         while True:
             if self.stop_flag.value==True:
                 break
@@ -558,7 +549,7 @@ class kernel:
             while True:
                 if self.episode!=None and self.episode_counter.value>=self.episode:
                     break
-                next_s,r,done,index=self.env(s,epsilon,p,lock,pool_lock)
+                next_s,r,done,index=self.env(s,p,lock,pool_lock)
                 self.reward[p]+=r
                 s=next_s
                 if type(self.done_pool[p])==np.ndarray:
@@ -810,7 +801,6 @@ class kernel:
             self._batch_counter=list(self._batch_counter)
             self.nn.optimizer.convert_to_list()
             pickle.dump(self.nn,output_file)
-            pickle.dump(self.epsilon,output_file)
             pickle.dump(self.pool_size,output_file)
             pickle.dump(self.batch,output_file)
             pickle.dump(np.array(self.step_counter,dtype='int32'),output_file)
@@ -839,7 +829,6 @@ class kernel:
         self._batch_counter=list(self._batch_counter)
         self.nn.optimizer.convert_to_list()
         pickle.dump(self.nn,output_file)
-        pickle.dump(self.epsilon,output_file)
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(np.array(self.step_counter,dtype='int32'),output_file)
@@ -860,7 +849,6 @@ class kernel:
         self.ec=self.nn.ec
         self.bc=self.nn.bc
         self.param[7]=self.nn.param
-        self.epsilon=pickle.load(input_file)
         self.pool_size=pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.step_counter=pickle.load(input_file)
