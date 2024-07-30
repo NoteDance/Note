@@ -1,4 +1,5 @@
 import tensorflow as tf
+from Note.RL import rl
 from tensorflow.python.ops import state_ops
 from tensorflow.python.util import nest
 import numpy as np
@@ -20,7 +21,6 @@ class kernel:
         self.next_state_pool=None
         self.reward_pool=None
         self.done_pool=None
-        self.epsilon=None
         self.pool_size=None
         self.batch=None
         self.update_steps=None
@@ -41,12 +41,6 @@ class kernel:
         self.total_episode=0
         self.time=0
         self.total_time=0
-    
-    
-    def action_vec(self):
-        if self.epsilon!=None:
-            self.action_one=np.ones(self.genv.action_space.n,dtype=np.int8)
-        return
     
     
     def init(self):
@@ -73,9 +67,9 @@ class kernel:
         return
     
     
-    def set_up(self,epsilon=None,pool_size=None,batch=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False):
-        if epsilon!=None:
-            self.epsilon=epsilon
+    def set_up(self,policy=None,pool_size=None,batch=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False):
+        if policy!=None:
+            self.policy=policy
         if pool_size!=None:
             self.pool_size=pool_size
         if batch!=None:
@@ -88,23 +82,7 @@ class kernel:
             self.criterion=criterion
         self.PPO=PPO
         self.HER=HER
-        self.action_vec()
         return
-    
-    
-    def epsilon_greedy_policy(self,s):
-        action_prob=self.action_one*self.epsilon/len(self.action_one)
-        try:
-            if hasattr(self.platform,'DType'):
-                best_a=np.argmax(self.nn.nn.fp(s))
-                action_prob[best_a]+=1-self.epsilon
-            else:
-                s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                best_a=self.nn.nn(s).argmax()
-                action_prob[best_a.numpy()]+=1-self.epsilon 
-        except Exception as e:
-            raise e
-        return action_prob
     
     
     def run_agent(self, max_steps, seed=None):
@@ -214,34 +192,31 @@ class kernel:
         return
     
     
-    def choose_action(self,s):
+    def select_action(self,s):
         if hasattr(self.nn,'nn'):
             if hasattr(self.platform,'DType'):
-                if self.epsilon==None:
-                    self.epsilon=self.nn.epsilon(self.step_counter)
-                if self.epsilon==None and hasattr(self.nn,'epsilon')!=True:
-                    action_prob=self.nn.nn.fp(s)
-                else:
-                    action_prob=self.epsilon_greedy_policy(s)
-                a=np.random.choice(self.action_count,p=action_prob)
+                output=self.nn.nn.fp(s)
+                
             else:
-                if self.epsilon==None:
-                    self.epsilon=self.nn.epsilon(self.step_counter)
-                if self.epsilon==None and hasattr(self.nn,'epsilon')!=True:
-                    s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                    action_prob=self.nn.nn(s)
-                else:
-                    action_prob=self.epsilon_greedy_policy(s)
-                a=np.random.choice(self.action_count,p=action_prob)
+                s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                output=self.nn.nn(s)
+            if isinstance(self.policy, rl.SoftmaxPolicy):
+                a=self.policy.select_action(len(output), output)
+            elif isinstance(self.policy, rl.EpsGreedyQPolicy):
+                a=self.policy.select_action(output)
+            elif isinstance(self.policy, rl.GreedyQPolicy):
+                a=self.policy.select_action(output)
+            elif isinstance(self.policy, rl.BoltzmannQPolicy):
+                a=self.policy.select_action(output)
+            elif isinstance(self.policy, rl.MaxBoltzmannQPolicy):
+                a=self.policy.select_action(output)
+            elif isinstance(self.policy, rl.BoltzmannGumbelQPolicy):
+                a=self.policy.select_action(output, self.step_counter)
         else:
             if hasattr(self.nn,'action'):
                 if hasattr(self.platform,'DType'):
-                    if self.epsilon==None:
-                        self.epsilon=self.nn.epsilon(self.step_counter)
                     a=self.nn.action(s).numpy()
                 else:
-                    if self.epsilon==None:
-                        self.epsilon=self.nn.epsilon(self.step_counter)
                     a=self.nn.action(s).detach().numpy()
             else:
                 if hasattr(self.platform,'DType'):
@@ -361,7 +336,7 @@ class kernel:
             s=np.array(s)
         while True:
             s=np.expand_dims(s,axis=0)
-            a=self.choose_action(s)
+            a=self.select_action(s)
             next_s,r,done=self.nn.env(a)
             if hasattr(self.platform,'DType'):
                 next_s=np.array(next_s)
@@ -646,7 +621,6 @@ class kernel:
                     os.remove(self.path_list[0])
                     del self.path_list[0]
             pickle.dump(self.nn,output_file)
-            pickle.dump(self.epsilon,output_file)
             pickle.dump(self.pool_size,output_file)
             pickle.dump(self.batch,output_file)
             pickle.dump(self.update_steps,output_file)
@@ -670,7 +644,6 @@ class kernel:
     def save(self,path):
         output_file=open(path,'wb')
         pickle.dump(self.nn,output_file)
-        pickle.dump(self.epsilon,output_file)
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.update_steps,output_file)
@@ -689,7 +662,6 @@ class kernel:
         self.nn=pickle.load(input_file)
         if hasattr(self.nn,'km'):
             self.nn.km=1
-        self.epsilon=pickle.load(input_file)
         self.pool_size=pickle.load(input_file)
         self.batch=pickle.load(input_file)
         self.update_steps=pickle.load(input_file)
