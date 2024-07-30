@@ -77,9 +77,6 @@ class DDPG(nn.RL):
         self.gamma=gamma
         self.tau=tau
     
-    def noise(self):
-        return np.random.normal(scale=self.sigma)
-    
     def action(self,s):
         return self.actor(s)
     
