@@ -77,14 +77,12 @@ class kernel:
         return
     
     
-    def action_vec(self):
-        self.action_one=np.ones(self.genv.action_space.n,dtype=np.int8)
-        return
-    
-    
-    def set_up(self,policy=None,pool_size=None,batch=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False):
+    def set_up(self,policy=None,noise=None,pool_size=None,batch=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False):
         if policy!=None:
             self.policy=policy
+        if noise!=None:
+            self.noise=noise
+            self.nn.noise=True
         if pool_size!=None:
             self.pool_size=pool_size
         if batch!=None:
@@ -220,7 +218,7 @@ class kernel:
             else:
                 s=np.expand_dims(s,axis=0)
                 s=torch.tensor(s,dtype=torch.float).to(assign_device(p,self.device))
-                a=(self.nn.actor(s)+self.nn.noise()).numpy()
+                a=(self.nn.actor(s)+self.noise.sample()).numpy()
         next_s,r,done=self.nn.env(a,p)
         index=self.get_index(p,lock)
         next_s=np.array(next_s)
