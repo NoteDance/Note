@@ -502,9 +502,8 @@ class RL:
             self.reward=Array('f',self.reward)
             self.reward_list=manager.list([])
             self.step_counter=Value('i',0)
-            if self.HER!=True:
-                self.lock_list=[mp.Lock() for _ in range(processes)]
-            elif processes_her!=None:
+            self.lock_list=[mp.Lock() for _ in range(processes)]
+            if processes_her!=None:
                 self.state_list=manager.list()
                 self.action_list=manager.list()
                 self.next_state_list=manager.list()
@@ -681,9 +680,8 @@ class RL:
             self.reward=Array('f',self.reward)
             self.reward_list=manager.list([])
             self.step_counter=Value('i',0)
-            if self.HER!=True:
-                self.lock_list=[mp.Lock() for _ in range(processes)]
-            elif processes_her!=None:
+            self.lock_list=[mp.Lock() for _ in range(processes)]
+            if processes_her!=None:
                 self.state_list=manager.list()
                 self.action_list=manager.list()
                 self.next_state_list=manager.list()
