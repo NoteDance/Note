@@ -392,7 +392,9 @@ class RL:
         if p==0:
             p=1
         self.pool_network=False
+        self.mp=mp
         self.processes=processes
+        self.processes_her=processes_her
         self.shuffle=shuffle
         if mp!=None:
             self.pool_network=True
