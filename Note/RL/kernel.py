@@ -67,9 +67,12 @@ class kernel:
         return
     
     
-    def set_up(self,policy=None,pool_size=None,batch=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False):
+    def set_up(self,policy=None,noise=None,pool_size=None,batch=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False):
         if policy!=None:
             self.policy=policy
+        if noise!=None:
+            self.noise=noise
+            self.nn.noise=True
         if pool_size!=None:
             self.pool_size=pool_size
         if batch!=None:
@@ -196,7 +199,6 @@ class kernel:
         if hasattr(self.nn,'nn'):
             if hasattr(self.platform,'DType'):
                 output=self.nn.nn.fp(s)
-                
             else:
                 s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                 output=self.nn.nn(s)
@@ -220,10 +222,10 @@ class kernel:
                     a=self.nn.action(s).detach().numpy()
             else:
                 if hasattr(self.platform,'DType'):
-                    a=(self.nn.actor.fp(s)+self.nn.noise()).numpy()
+                    a=(self.nn.actor.fp(s)+self.noise.sample()).numpy()
                 else:
                     s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                    a=(self.nn.actor(s)+self.nn.noise()).detach().numpy()
+                    a=(self.nn.actor(s)+self.noise.sample()).detach().numpy()
         return a
     
     
