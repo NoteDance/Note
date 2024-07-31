@@ -57,7 +57,7 @@ class RL:
     
     
     def pool(self,s,a,next_s,r,done,index=None):
-        if self.mp_flag==True:
+        if self.pool_network==True:
             if type(self.state_pool_list[index])!=np.ndarray and self.state_pool_list[index]==None:
                 if type(s) in [int,float]:
                     s=np.array(s)
@@ -142,7 +142,7 @@ class RL:
             elif isinstance(self.policy, rl.MaxBoltzmannQPolicy):
                 a=self.policy.select_action(output)
             elif isinstance(self.policy, rl.BoltzmannGumbelQPolicy):
-                if self.mp_flag==True:
+                if self.pool_network==True:
                     a=self.policy.select_action(output, self.step_counter.value)
                 else:
                     a=self.policy.select_action(output, self.step_counter)
@@ -153,14 +153,14 @@ class RL:
     
     def env_(self,a=None,initial=None,p=None):
         if initial==True:
-            if self.mp_flag==True:
+            if self.pool_network==True:
                 state=self.env[p].reset(seed=self.seed)
                 return state
             else:
                 state=self.env.reset(seed=self.seed)
                 return state 
         else:
-            if self.mp_flag==True:
+            if self.pool_network==True:
                 next_state,reward,done,_=self.env[p].step(a)
                 return next_state,reward,done
             else:
@@ -229,7 +229,7 @@ class RL:
                     loss+=self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer)
                     self.batch_counter+=1
             else:
-                if self.mp_flag==True:
+                if self.pool_network==True:
                     if self.shuffle!=True:
                         train_ds=DataLoader((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool),batch_size=self.batch)
                     else:
@@ -240,7 +240,7 @@ class RL:
                     loss+=self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer)
                     self.batch_counter+=1
             if self.update_steps!=None:
-                if self.mp_flag==True:
+                if self.pool_network==True:
                     if self.batch_counter%self.update_batches==0:
                         self.update_param()
                         if self.PPO:
@@ -342,11 +342,11 @@ class RL:
             p=int(p)
         if p==0:
             p=1
-        self.mp_flag=False
+        self.pool_network=False
         self.processes=processes
         self.shuffle=shuffle
         if mp!=None:
-            self.mp_flag=True
+            self.pool_network=True
             self.state_pool_list=manager.list()
             self.action_pool_list=manager.list()
             self.next_state_pool_list=manager.list()
@@ -367,7 +367,7 @@ class RL:
         if episodes!=None:
             for i in range(episodes):
                 t1=time.time()
-                if self.mp_flag==True:
+                if self.pool_network==True:
                     process_list=[]
                     for p in range(processes):
                         process=mp.Process(target=self.store_in_parallel,args=(p,))
@@ -422,7 +422,7 @@ class RL:
             i=0
             while True:
                 t1=time.time()
-                if self.mp_flag==True:
+                if self.pool_network==True:
                     process_list=[]
                     for p in range(processes):
                         process=mp.Process(target=self.store_in_parallel,args=(p,))
