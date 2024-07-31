@@ -19,7 +19,7 @@ class SoftmaxPolicy:
             action
 
         """
-        action = np.random.choice(range(nb_actions), p=probs)
+        action = np.random.choice(nb_actions, p=probs)
         return action
 
 
