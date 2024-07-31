@@ -453,10 +453,14 @@ class RL:
             next_s=np.array(next_s)
             r=np.array(r)
             done=np.array(done)
-            self.lock_list[index].acquire()
-            self.pool(s,a,next_s,r,done,index)
-            self.step_counter.value+=1
-            self.lock_list[index].release()
+            if self.HER!=True:
+                self.lock_list[index].acquire()
+                self.pool(s,a,next_s,r,done,index)
+                self.step_counter.value+=1
+                self.lock_list[index].release()
+            else:
+                self.pool(s,a,next_s,r,done,index)
+                self.step_counter.value+=1
             self.reward[p]=r+self.reward[p]
             if done:
                 self.reward_list.append(self.reward[p])
@@ -502,7 +506,8 @@ class RL:
             self.reward=Array('f',self.reward)
             self.reward_list=manager.list([])
             self.step_counter=Value('i',0)
-            self.lock_list=[mp.Lock() for _ in range(processes)]
+            if self.HER!=True:
+                self.lock_list=[mp.Lock() for _ in range(processes)]
             if processes_her!=None:
                 self.state_list=manager.list()
                 self.action_list=manager.list()
@@ -680,7 +685,8 @@ class RL:
             self.reward=Array('f',self.reward)
             self.reward_list=manager.list([])
             self.step_counter=Value('i',0)
-            self.lock_list=[mp.Lock() for _ in range(processes)]
+            if self.HER!=True:
+                self.lock_list=[mp.Lock() for _ in range(processes)]
             if processes_her!=None:
                 self.state_list=manager.list()
                 self.action_list=manager.list()
