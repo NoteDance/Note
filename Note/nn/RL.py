@@ -404,12 +404,12 @@ class RL:
         r = []
         d = []
         for _ in range(int(self.batch/self.processes_her)):
-            step_state = np.random.randint(0, len(self.state_pool)-1)
-            step_goal = np.random.randint(step_state+1, step_state+np.argmax(self.done_pool[step_state+1:])+2)
-            state = self.state_pool[step_state]
-            next_state = self.next_state_pool[step_state]
-            action = self.action_pool[step_state]
-            goal = self.state_pool[step_goal]
+            step_state = np.random.randint(0, len(self.state_pool[7])-1)
+            step_goal = np.random.randint(step_state+1, step_state+np.argmax(self.done_pool[7][step_state+1:])+2)
+            state = self.state_pool[7][step_state]
+            next_state = self.next_state_pool[7][step_state]
+            action = self.action_pool[7][step_state]
+            goal = self.state_pool[7][step_goal]
             reward, done = self.reward_done_func(next_state, goal)
             state = np.hstack((state, goal))
             next_state = np.hstack((next_state, goal))
@@ -431,7 +431,7 @@ class RL:
         return
     
     
-    def store_in_parallel(self,p):
+    def store_in_parallel(self,p,lock_list):
         self.reward[p]=0
         s=self.env_(initial=True,p=p)
         s=np.array(s)
@@ -454,10 +454,10 @@ class RL:
             r=np.array(r)
             done=np.array(done)
             if self.HER!=True:
-                self.lock_list[index].acquire()
+                lock_list[index].acquire()
                 self.pool(s,a,next_s,r,done,index)
                 self.step_counter.value+=1
-                self.lock_list[index].release()
+                lock_list[index].release()
             else:
                 self.pool(s,a,next_s,r,done,index)
                 self.step_counter.value+=1
@@ -507,8 +507,15 @@ class RL:
             self.reward_list=manager.list([])
             self.step_counter=Value('i',0)
             if self.HER!=True:
-                self.lock_list=[mp.Lock() for _ in range(processes)]
+                lock_list=[mp.Lock() for _ in range(processes)]
+            else:
+                lock_list=None
             if processes_her!=None:
+                self.state_pool=manager.dict()
+                self.action_pool=manager.dict()
+                self.next_state_pool=manager.dict()
+                self.reward_pool=manager.dict()
+                self.done_pool=manager.dict()
                 self.state_list=manager.list()
                 self.action_list=manager.list()
                 self.next_state_list=manager.list()
@@ -531,16 +538,23 @@ class RL:
                 if self.pool_network==True:
                     process_list=[]
                     for p in range(processes):
-                        process=mp.Process(target=self.store_in_parallel,args=(p,))
+                        process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
                         process.start()
                         process_list.append(process)
                     for process in process_list:
                         process.join()
-                    self.state_pool=np.array(self.state_pool_list)
-                    self.action_pool=np.array(self.action_pool_list)
-                    self.next_state_pool=np.array(self.next_state_pool_list)
-                    self.reward_pool=np.array(self.reward_pool_list)
-                    self.done_pool=np.array(self.done_pool_list)
+                    if processes_her==None:
+                        self.state_pool=np.array(self.state_pool_list)
+                        self.action_pool=np.array(self.action_pool_list)
+                        self.next_state_pool=np.array(self.next_state_pool_list)
+                        self.reward_pool=np.array(self.reward_pool_list)
+                        self.done_pool=np.array(self.done_pool_list)
+                    else:
+                        self.state_pool[7]=np.array(self.state_pool_list)
+                        self.action_pool[7]=np.array(self.action_pool_list)
+                        self.next_state_pool[7]=np.array(self.next_state_pool_list)
+                        self.reward_pool[7]=np.array(self.reward_pool_list)
+                        self.done_pool[7]=np.array(self.done_pool_list)
                     loss=self.train1(train_loss, self.optimizer_)
                 else:
                     loss=self.train2(train_loss,self.optimizer_)
@@ -587,7 +601,7 @@ class RL:
                 if self.pool_network==True:
                     process_list=[]
                     for p in range(processes):
-                        process=mp.Process(target=self.store_in_parallel,args=(p,))
+                        process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
                         process.start()
                         process_list.append(process)
                     for process in process_list:
@@ -686,8 +700,15 @@ class RL:
             self.reward_list=manager.list([])
             self.step_counter=Value('i',0)
             if self.HER!=True:
-                self.lock_list=[mp.Lock() for _ in range(processes)]
+                lock_list=[mp.Lock() for _ in range(processes)]
+            else:
+                lock_list=None
             if processes_her!=None:
+                self.state_pool=manager.dict()
+                self.action_pool=manager.dict()
+                self.next_state_pool=manager.dict()
+                self.reward_pool=manager.dict()
+                self.done_pool=manager.dict()
                 self.state_list=manager.list()
                 self.action_list=manager.list()
                 self.next_state_list=manager.list()
@@ -715,16 +736,23 @@ class RL:
                 if self.pool_network==True:
                     process_list=[]
                     for p in range(processes):
-                        process=mp.Process(target=self.store_in_parallel,args=(p,))
+                        process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
                         process.start()
                         process_list.append(process)
                     for process in process_list:
                         process.join()
-                    self.state_pool=np.array(self.state_pool_list)
-                    self.action_pool=np.array(self.action_pool_list)
-                    self.next_state_pool=np.array(self.next_state_pool_list)
-                    self.reward_pool=np.array(self.reward_pool_list)
-                    self.done_pool=np.array(self.done_pool_list)
+                    if processes_her==None:
+                        self.state_pool=np.array(self.state_pool_list)
+                        self.action_pool=np.array(self.action_pool_list)
+                        self.next_state_pool=np.array(self.next_state_pool_list)
+                        self.reward_pool=np.array(self.reward_pool_list)
+                        self.done_pool=np.array(self.done_pool_list)
+                    else:
+                        self.state_pool[7]=np.array(self.state_pool_list)
+                        self.action_pool[7]=np.array(self.action_pool_list)
+                        self.next_state_pool[7]=np.array(self.next_state_pool_list)
+                        self.reward_pool[7]=np.array(self.reward_pool_list)
+                        self.done_pool[7]=np.array(self.done_pool_list)
                     loss=self.train1(None, self.optimizer_)
                 else:
                     loss=self.train2(None,self.optimizer_)
@@ -770,7 +798,7 @@ class RL:
                 if self.pool_network==True:
                     process_list=[]
                     for p in range(processes):
-                        process=mp.Process(target=self.store_in_parallel,args=(p,))
+                        process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
                         process.start()
                         process_list.append(process)
                     for process in process_list:
