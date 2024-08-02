@@ -201,7 +201,7 @@ class kernel:
                 output=self.nn.nn.fp(s)
             else:
                 s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                output=self.nn.nn(s)
+                output=self.nn.nn(s).detach().numpy()
             if isinstance(self.policy, rl.SoftmaxPolicy):
                 a=self.policy.select_action(len(output), output)
             elif isinstance(self.policy, rl.EpsGreedyQPolicy):
@@ -215,17 +215,11 @@ class kernel:
             elif isinstance(self.policy, rl.BoltzmannGumbelQPolicy):
                 a=self.policy.select_action(output, self.step_counter)
         else:
-            if hasattr(self.nn,'action'):
-                if hasattr(self.platform,'DType'):
-                    a=self.nn.action(s).numpy()
-                else:
-                    a=self.nn.action(s).detach().numpy()
+            if hasattr(self.platform,'DType'):
+                a=(self.nn.actor.fp(s)+self.noise.sample()).numpy()
             else:
-                if hasattr(self.platform,'DType'):
-                    a=(self.nn.actor.fp(s)+self.noise.sample()).numpy()
-                else:
-                    s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
-                    a=(self.nn.actor(s)+self.noise.sample()).detach().numpy()
+                s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
+                a=(self.nn.actor(s)+self.noise.sample()).detach().numpy()
         return a
     
     
