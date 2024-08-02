@@ -124,7 +124,8 @@ class kernel:
     
     
     def pool(self,s,a,next_s,r,done,pool_lock,index):
-        pool_lock[index].acquire()
+        if self.HER!=True:
+            pool_lock[index].acquire()
         try:
             if type(self.state_pool[index])!=np.ndarray and self.state_pool[index]==None:
                 if type(s) in [int,float]:
@@ -163,9 +164,11 @@ class kernel:
                 self.reward_pool[index]=self.reward_pool[index][1:]
                 self.done_pool[index]=self.done_pool[index][1:]
         except Exception:
-            pool_lock[index].release()
+            if self.HER!=True:
+                pool_lock[index].release()
             return
-        pool_lock[index].release()
+        if self.HER!=True:
+            pool_lock[index].release()
         return
     
     
@@ -198,7 +201,7 @@ class kernel:
         if hasattr(self.nn,'nn'):
             s=np.expand_dims(s,axis=0)
             s=torch.tensor(s,dtype=torch.float).to(assign_device(p,self.device))
-            output=self.nn.nn(s)
+            output=self.nn.nn(s).detach().numpy()
             if isinstance(self.policy, rl.SoftmaxPolicy):
                 a=self.policy.select_action(len(output), output)
             elif isinstance(self.policy, rl.EpsGreedyQPolicy):
@@ -212,15 +215,14 @@ class kernel:
             elif isinstance(self.policy, rl.BoltzmannGumbelQPolicy):
                 a=self.policy.select_action(output, np.sum(self.step_counter))
         else:
-            if hasattr(self.nn,'action'):
-                s=np.expand_dims(s,axis=0)
-                a=self.nn.action(s,p).numpy()
-            else:
-                s=np.expand_dims(s,axis=0)
-                s=torch.tensor(s,dtype=torch.float).to(assign_device(p,self.device))
-                a=(self.nn.actor(s)+self.noise.sample()).numpy()
+            s=np.expand_dims(s,axis=0)
+            s=torch.tensor(s,dtype=torch.float).to(assign_device(p,self.device))
+            a=(self.nn.actor(s)+self.noise.sample()).detach().numpy()
         next_s,r,done=self.nn.env(a,p)
-        index=self.get_index(p,lock)
+        if self.HER!=True:
+            index=self.get_index(p,lock)
+        else:
+            index=p
         next_s=np.array(next_s)
         r=np.array(r)
         done=np.array(done)
