@@ -43,8 +43,8 @@ class EpsGreedyQPolicy:
         # Returns
             Selection action
         """
-        assert q_values.ndim == 1
-        nb_actions = q_values.shape[0]
+        assert q_values.ndim == 2
+        nb_actions = q_values.shape[1]
 
         if np.random.uniform() < self.eps:
             action = np.random.randint(0, nb_actions)
@@ -67,7 +67,7 @@ class GreedyQPolicy:
         # Returns
             Selection action
         """
-        assert q_values.ndim == 1
+        assert q_values.ndim == 2
         action = np.argmax(q_values)
         return action
 
@@ -91,12 +91,13 @@ class BoltzmannQPolicy:
         # Returns
             Selection action
         """
-        assert q_values.ndim == 1
-        nb_actions = q_values.shape[0]
+        assert q_values.ndim == 2
+        nb_actions = q_values.shape[1]
 
         exp_values = np.exp(np.clip(q_values / self.tau, self.clip[0], self.clip[1]))
         probs = exp_values / np.sum(exp_values)
-        action = np.random.choice(range(nb_actions), p=probs)
+        probs = np.squeeze(probs, axis=0)
+        action = np.random.choice(nb_actions, p=probs)
         return action
 
 
@@ -125,13 +126,14 @@ class MaxBoltzmannQPolicy:
         # Returns
             Selection action
         """
-        assert q_values.ndim == 1
-        nb_actions = q_values.shape[0]
+        assert q_values.ndim == 2
+        nb_actions = q_values.shape[1]
 
         if np.random.uniform() < self.eps:
             exp_values = np.exp(np.clip(q_values / self.tau, self.clip[0], self.clip[1]))
             probs = exp_values / np.sum(exp_values)
-            action = np.random.choice(range(nb_actions), p=probs)
+            probs = np.squeeze(probs, axis=0)
+            action = np.random.choice(nb_actions, p=probs)
         else:
             action = np.argmax(q_values)
         return action
@@ -166,6 +168,8 @@ class BoltzmannGumbelQPolicy:
         # Returns
             Selection action
         """
+        
+        q_values = np.squeeze(q_values, axis=0)
 
         assert q_values.ndim == 1, q_values.ndim
 
