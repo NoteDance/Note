@@ -59,7 +59,7 @@ class kernel:
             self.opt_counter=Array('i',np.zeros(self.process,dtype='int32'))
         if self.nn is not None:
             self.nn.opt_counter=manager.list([tf.Variable(tf.zeros([self.process]))])  
-        self._epoch_counter=manager.list([tf.Variable(0) for _ in range(self.process)])
+        self._episode_counter=manager.list([tf.Variable(0) for _ in range(self.process)])
         self.nn.ec=manager.list([0])
         self.ec=self.nn.ec[0]
         self._batch_counter=manager.list([tf.Variable(0) for _ in range(self.process)])
@@ -218,7 +218,8 @@ class kernel:
     def env(self,s,p,lock,pool_lock):
         if hasattr(self.nn,'nn'):
             s=np.expand_dims(s,axis=0)
-            output=self.nn.nn.fp(s)
+            output=self.nn.nn.fp(s).numpy()
+            output=np.squeeze(output, axis=0)
             if isinstance(self.policy, rl.SoftmaxPolicy):
                 a=self.policy.select_action(len(output), output)
             elif isinstance(self.policy, rl.EpsGreedyQPolicy):
@@ -520,10 +521,10 @@ class kernel:
                 lock[1].release()
             self.loss[p]=self.loss[p]/batches
         self.step_counter[p]+=1
-        self.nn.ec[0]=sum(self._epoch_counter)+self.ec
-        _epoch_counter=self._epoch_counter[p]
-        _epoch_counter.assign_add(1)
-        self._epoch_counter[p]=_epoch_counter
+        self.nn.ec[0]=sum(self._episode_counter)+self.ec
+        _episode_counter=self._episode_counter[p]
+        _episode_counter.assign_add(1)
+        self._episode_counter[p]=_episode_counter
         return
     
     
@@ -802,7 +803,7 @@ class kernel:
             self.nn.opt_counter=None
             self.nn.ec=self.nn.ec[0]
             self.nn.bc=self.nn.bc[0]
-            self._epoch_counter=list(self._epoch_counter)
+            self._episode_counter=list(self._episode_counter)
             self._batch_counter=list(self._batch_counter)
             self.nn.optimizer.convert_to_list()
             pickle.dump(self.nn,output_file)
@@ -830,7 +831,7 @@ class kernel:
         self.nn.opt_counter=None
         self.nn.ec=self.nn.ec[0]
         self.nn.bc=self.nn.bc[0]
-        self._epoch_counter=list(self._epoch_counter)
+        self._episode_counter=list(self._episode_counter)
         self._batch_counter=list(self._batch_counter)
         self.nn.optimizer.convert_to_list()
         pickle.dump(self.nn,output_file)
