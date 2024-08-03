@@ -486,7 +486,6 @@ class RL:
                             else:
                                 self.total_time=int(self.total_time)+1
                             print('episode:{0}'.format(self.total_episode))
-                            print('last loss:{0:.4f}'.format(loss))
                             print('average reward:{0}'.format(avg_reward))
                             print()
                             print('time:{0}s'.format(self.total_time))
@@ -542,7 +541,6 @@ class RL:
                             else:
                                 self.total_time=int(self.total_time)+1
                             print('episode:{0}'.format(self.total_episode))
-                            print('last loss:{0:.4f}'.format(loss))
                             print('average reward:{0}'.format(avg_reward))
                             print()
                             print('time:{0}s'.format(self.total_time))
@@ -563,9 +561,6 @@ class RL:
         else:
             self.total_time=int(self.time)+1
         self.total_time+=self.time
-        print('last loss:{0:.4f}'.format(loss))
-        print('last reward:{0}'.format(self.reward))
-        print()
         print('time:{0}s'.format(self.time))
         return
     
