@@ -584,17 +584,6 @@ class Model:
         else:
             self.time=int(self.time)+1
         self.total_time+=self.time
-        if test_ds==None:
-            print('last loss:{0:.4f}'.format(self.train_loss))
-            if train_accuracy!=None:
-                print('last accuracy:{0:.4f}'.format(self.train_acc))
-        else:
-            print('last loss:{0:.4f},last test loss:{1:.4f}'.format(self.train_loss,self.test_loss))
-            if train_accuracy!=None and test_accuracy!=None:
-                print('last accuracy:{0:.4f},last test accuracy:{1:.4f}'.format(self.train_acc,self.test_acc))   
-            elif train_accuracy!=None:
-                print('last accuracy:{0:.4f}'.format(self.train_acc))
-        print()
         print('time:{0}s'.format(self.time))
         return
     
@@ -825,17 +814,6 @@ class Model:
         else:
             self.time=int(self.time)+1
         self.total_time+=self.time
-        if test_dist_dataset==None:
-            print('last loss:{0:.4f}'.format(self.train_loss))
-            if train_accuracy!=None:
-                print('last accuracy:{0:.4f}'.format(self.train_acc))
-        else:
-            print('last loss:{0:.4f},last test loss:{1:.4f}'.format(self.train_loss,self.test_loss))
-            if train_accuracy!=None and test_accuracy!=None:
-                print('last accuracy:{0:.4f},last test accuracy:{1:.4f}'.format(self.train_acc,self.test_acc))   
-            elif train_accuracy!=None:
-                print('last accuracy:{0:.4f}'.format(self.train_acc))
-        print()
         print('time:{0}s'.format(self.time))
         return
     
