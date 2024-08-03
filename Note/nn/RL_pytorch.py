@@ -131,6 +131,7 @@ class RL:
     def select_action(self,s):
         if self.policy!=None:
             output=self.action(s).detach().numpy()
+            output=np.squeeze(output, axis=0)
             if isinstance(self.policy, rl.SoftmaxPolicy):
                 a=self.policy.select_action(len(output), output)
             elif isinstance(self.policy, rl.EpsGreedyQPolicy):
