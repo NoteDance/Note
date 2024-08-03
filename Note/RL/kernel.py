@@ -198,10 +198,11 @@ class kernel:
     def select_action(self,s):
         if hasattr(self.nn,'nn'):
             if hasattr(self.platform,'DType'):
-                output=self.nn.nn.fp(s)
+                output=self.nn.nn.fp(s).numpy()
             else:
                 s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                 output=self.nn.nn(s).detach().numpy()
+            output=np.squeeze(output, axis=0)
             if isinstance(self.policy, rl.SoftmaxPolicy):
                 a=self.policy.select_action(len(output), output)
             elif isinstance(self.policy, rl.EpsGreedyQPolicy):
