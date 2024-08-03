@@ -43,7 +43,6 @@ class EpsGreedyQPolicy:
         # Returns
             Selection action
         """
-        q_values = np.squeeze(q_values, axis=0)
         assert q_values.ndim == 1
         nb_actions = q_values.shape[0]
 
@@ -68,7 +67,6 @@ class GreedyQPolicy:
         # Returns
             Selection action
         """
-        q_values = np.squeeze(q_values, axis=0)
         assert q_values.ndim == 1
         action = np.argmax(q_values)
         return action
@@ -93,7 +91,6 @@ class BoltzmannQPolicy:
         # Returns
             Selection action
         """
-        q_values = np.squeeze(q_values, axis=0)
         assert q_values.ndim == 1
         nb_actions = q_values.shape[0]
 
@@ -128,7 +125,6 @@ class MaxBoltzmannQPolicy:
         # Returns
             Selection action
         """
-        q_values = np.squeeze(q_values, axis=0)
         assert q_values.ndim == 1
         nb_actions = q_values.shape[0]
 
@@ -170,7 +166,6 @@ class BoltzmannGumbelQPolicy:
         # Returns
             Selection action
         """
-        q_values = np.squeeze(q_values, axis=0)
         assert q_values.ndim == 1, q_values.ndim
 
         # If we are starting training, we should reset the action_counts.
