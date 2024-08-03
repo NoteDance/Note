@@ -454,22 +454,6 @@ class kernel:
         else:
             self.time=int(self.time)+1
         self.total_time+=self.time
-        if self.test_flag==False:
-            print('last loss:{0:.6f}'.format(self.train_loss))
-        else:
-            print('last loss:{0:.6f},last test loss:{1:.6f}'.format(self.train_loss,self.test_loss))
-        if hasattr(self.nn,'accuracy'):
-            if self.acc_flag=='%':
-                if self.test_flag==False:
-                    print('last accuracy:{0:.1f}'.format(self.train_acc*100))
-                else:
-                    print('last accuracy:{0:.1f},last test accuracy:{1:.1f}'.format(self.train_acc*100,self.test_acc*100))
-            else:
-                if self.test_flag==False:
-                    print('last accuracy:{0:.6f}'.format(self.train_acc))
-                else:
-                    print('last accuracy:{0:.6f},last test accuracy:{1:.6f}'.format(self.train_acc,self.test_acc))   
-        print()
         print('time:{0}s'.format(self.time))
         self.training_flag=False
         return
