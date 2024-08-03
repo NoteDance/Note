@@ -129,9 +129,25 @@ class RL:
         return
     
     
+    @tf.function(jit_compile=True)
+    def forward(self,s):
+        output=self.action(s)
+        return output
+    
+    
+    @tf.function
+    def forward_(self,s):
+        output=self.action(s)
+        return output
+    
+    
     def select_action(self,s):
+        if self.jit_compile==True:
+            output=self.forward(s)
+        else:
+            output=self.forward_(s)
         if self.policy!=None:
-            output=self.action(s).numpy()
+            output=output.numpy()
             output=np.squeeze(output, axis=0)
             if isinstance(self.policy, rl.SoftmaxPolicy):
                 a=self.policy.select_action(len(output), output)
@@ -149,7 +165,7 @@ class RL:
                 else:
                     a=self.policy.select_action(output, self.step_counter)
         elif self.noise!=None:
-            a=(self.action(s)+self.noise.sample()).numpy()
+            a=(output+self.noise.sample()).numpy()
         return a
     
     
@@ -485,6 +501,7 @@ class RL:
             p=int(p)
         if p==0:
             p=1
+        self.jit_compile=jit_compile
         self.pool_network=False
         self.mp=mp
         self.processes=processes
@@ -579,7 +596,6 @@ class RL:
                             else:
                                 self.total_time=int(self.total_time)+1
                             print('episode:{0}'.format(self.total_episode))
-                            print('last loss:{0:.4f}'.format(loss))
                             print('average reward:{0}'.format(avg_reward))
                             print()
                             print('time:{0}s'.format(self.total_time))
@@ -636,7 +652,6 @@ class RL:
                             else:
                                 self.total_time=int(self.total_time)+1
                             print('episode:{0}'.format(self.total_episode))
-                            print('last loss:{0:.4f}'.format(loss))
                             print('average reward:{0}'.format(avg_reward))
                             print()
                             print('time:{0}s'.format(self.total_time))
@@ -657,9 +672,6 @@ class RL:
         else:
             self.total_time=int(self.time)+1
         self.total_time+=self.time
-        print('last loss:{0:.4f}'.format(loss))
-        print('last reward:{0}'.format(self.reward))
-        print()
         print('time:{0}s'.format(self.time))
         return
     
@@ -678,6 +690,7 @@ class RL:
             p=int(p)
         if p==0:
             p=1
+        self.jit_compile=jit_compile
         self.pool_network=False
         self.mp=mp
         self.processes=processes
@@ -777,7 +790,6 @@ class RL:
                             else:
                                 self.total_time=int(self.total_time)+1
                             print('episode:{0}'.format(self.total_episode))
-                            print('last loss:{0:.4f}'.format(loss))
                             print('average reward:{0}'.format(avg_reward))
                             print()
                             print('time:{0}s'.format(self.total_time))
@@ -833,7 +845,6 @@ class RL:
                             else:
                                 self.total_time=int(self.total_time)+1
                             print('episode:{0}'.format(self.total_episode))
-                            print('last loss:{0:.4f}'.format(loss))
                             print('average reward:{0}'.format(avg_reward))
                             print()
                             print('time:{0}s'.format(self.total_time))
@@ -854,9 +865,6 @@ class RL:
         else:
             self.total_time=int(self.time)+1
         self.total_time+=self.time
-        print('last loss:{0:.4f}'.format(loss))
-        print('last reward:{0}'.format(self.reward))
-        print()
         print('time:{0}s'.format(self.time))
         return
     
