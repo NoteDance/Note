@@ -57,7 +57,7 @@ class kernel:
             self.opt_counter=Array('i',np.zeros(self.process,dtype=np.int32))
         self.nn.opt_counter=manager.list([np.zeros([self.process])])  
         self.opt_counter_=manager.list()
-        self._epoch_counter=manager.list([0 for _ in range(self.process)])
+        self._episode_counter=manager.list([0 for _ in range(self.process)])
         self.nn.ec=manager.list([0])
         self.ec=self.nn.ec[0]
         self._batch_counter=manager.list([0 for _ in range(self.process)])
@@ -202,6 +202,7 @@ class kernel:
             s=np.expand_dims(s,axis=0)
             s=torch.tensor(s,dtype=torch.float).to(assign_device(p,self.device))
             output=self.nn.nn(s).detach().numpy()
+            output=np.squeeze(output, axis=0)
             if isinstance(self.policy, rl.SoftmaxPolicy):
                 a=self.policy.select_action(len(output), output)
             elif isinstance(self.policy, rl.EpsGreedyQPolicy):
@@ -369,10 +370,10 @@ class kernel:
                 self.nn.update_param()
             self.loss[p]=self.loss[p]/batches
         self.step_counter[p]+=1
-        self.nn.ec[0]=sum(self._epoch_counter)+self.ec
-        _epoch_counter=self._epoch_counter[p]
-        _epoch_counter+=1
-        self._epoch_counter[p]=_epoch_counter
+        self.nn.ec[0]=sum(self._episode_counter)+self.ec
+        _episode_counter=self._episode_counter[p]
+        _episode_counter+=1
+        self._episode_counter[p]=_episode_counter
         return
     
     
@@ -599,7 +600,7 @@ class kernel:
             self.nn.opt_counter=self.nn.opt_counter[0] 
             self.nn.ec=self.nn.ec[0]
             self.nn.bc=self.nn.bc[0]
-            self._epoch_counter=list(self._epoch_counter)
+            self._episode_counter=list(self._episode_counter)
             self._batch_counter=list(self._batch_counter)
             pickle.dump(self.nn,output_file)
             pickle.dump(self.pool_size,output_file)
@@ -626,7 +627,7 @@ class kernel:
         self.nn.opt_counter=self.nn.opt_counter[0] 
         self.nn.ec=self.nn.ec[0]
         self.nn.bc=self.nn.bc[0]
-        self._epoch_counter=list(self._epoch_counter)
+        self._episode_counter=list(self._episode_counter)
         self._batch_counter=list(self._batch_counter)
         pickle.dump(self.nn,output_file)
         pickle.dump(self.pool_size,output_file)
