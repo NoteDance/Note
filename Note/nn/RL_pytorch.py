@@ -3,6 +3,7 @@ from Note.RL import rl
 from Note.RL.rl.prioritized_replay import pr
 from multiprocessing import Array,Value
 import numpy as np
+import numpy.ctypeslib as npc
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import math
@@ -375,9 +376,6 @@ class RL:
                 self.step_counter.value+=1
             self.reward[p]=r+self.reward[p]
             if done:
-                self.reward_list.append(self.reward[p])
-                if len(self.reward_list)>self.trial_count:
-                    del self.reward_list[0]
                 return
             s=next_s
     
@@ -416,7 +414,6 @@ class RL:
                 self.done_pool_list.append(None)
             self.reward=np.zeros(processes,dtype='float32')
             self.reward=Array('f',self.reward)
-            self.reward_list=manager.list([])
             self.step_counter=Value('i',0)
             if self.HER!=True:
                 lock_list=[mp.Lock() for _ in range(processes)]
@@ -463,6 +460,9 @@ class RL:
                         self.next_state_pool[7]=np.array(self.next_state_pool_list)
                         self.reward_pool[7]=np.array(self.reward_pool_list)
                         self.done_pool[7]=np.array(self.done_pool_list)
+                    self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
+                    if len(self.reward_list)>self.trial_count:
+                        del self.reward_list[0]
                     loss=self.train1(self.optimizer_)
                 else:
                     loss=self.train2(self.optimizer_)
@@ -512,11 +512,21 @@ class RL:
                         process_list.append(process)
                     for process in process_list:
                         process.join()
-                    self.state_pool=np.array(self.state_pool_list)
-                    self.action_pool=np.array(self.action_pool_list)
-                    self.next_state_pool=np.array(self.next_state_pool_list)
-                    self.reward_pool=np.array(self.reward_pool_list)
-                    self.done_pool=np.array(self.done_pool_list)
+                    if processes_her==None:
+                        self.state_pool=np.array(self.state_pool_list)
+                        self.action_pool=np.array(self.action_pool_list)
+                        self.next_state_pool=np.array(self.next_state_pool_list)
+                        self.reward_pool=np.array(self.reward_pool_list)
+                        self.done_pool=np.array(self.done_pool_list)
+                    else:
+                        self.state_pool[7]=np.array(self.state_pool_list)
+                        self.action_pool[7]=np.array(self.action_pool_list)
+                        self.next_state_pool[7]=np.array(self.next_state_pool_list)
+                        self.reward_pool[7]=np.array(self.reward_pool_list)
+                        self.done_pool[7]=np.array(self.done_pool_list)
+                    self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
+                    if len(self.reward_list)>self.trial_count:
+                        del self.reward_list[0]
                     loss=self.train1(self.optimizer_)
                 else:
                     loss=self.train2(self.optimizer_)
