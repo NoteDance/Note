@@ -68,6 +68,12 @@ https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
 **Documentation**: https://github.com/NoteDance/Note-documentation/tree/tf-7.0
 
 
+# Reinforcement learning：
+You just need to have your agent class inherit from the RL or RL_pytorch class, and you can easily train your agent built with Note, Keras or PyTorch. You can learn how to build an agent from the examples [here](https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/docs_example/RL). The documentation shows how to train, save, and restore agent built with Note, Keras or PyTorch.
+
+**Documentation**: https://github.com/NoteDance/Note-documentation/tree/RL-7.0
+
+
 # Function modules:
 **Documentation**: https://github.com/NoteDance/Note-documentation/tree/function-7.0
 
@@ -90,12 +96,6 @@ Its function is similar to torch.nn.parameter.Parameter.
 
 # Note.nn.Sequential.Sequential:
 This class is used similarly to tf.keras.Sequential and torch.nn.Sequential.
-
-
-# Reinforcement learning：
-You just need to have your agent class inherit from the RL or RL_pytorch class, and you can easily train your agent built with Note, Keras or PyTorch. You can learn how to build an agent from the examples [here](https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/docs_example). The documentation shows how to train, save, and restore agent built with Note, Keras or PyTorch.
-
-**Documentation**: https://github.com/NoteDance/Note-documentation/tree/RL-7.0
 
 
 # Documentation:
