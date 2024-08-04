@@ -195,10 +195,19 @@ class kernel:
         return
     
     
+    @tf.function(jit_compile=True)
+    def forward(self,s):
+        if hasattr(self.nn,'nn'):
+            output=self.nn.nn.fp(s)
+        else:
+            output=self.nn.actor.fp(s)
+        return output
+    
+    
     def select_action(self,s):
         if hasattr(self.nn,'nn'):
             if hasattr(self.platform,'DType'):
-                output=self.nn.nn.fp(s).numpy()
+                output=self.forward(s).numpy()
             else:
                 s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                 output=self.nn.nn(s).detach().numpy()
@@ -217,7 +226,7 @@ class kernel:
                 a=self.policy.select_action(output, self.step_counter)
         else:
             if hasattr(self.platform,'DType'):
-                a=(self.nn.actor.fp(s)+self.noise.sample()).numpy()
+                a=(self.forward(s)+self.noise.sample()).numpy()
             else:
                 s=self.platform.tensor(s,dtype=self.platform.float).to(self.nn.device)
                 a=(self.nn.actor(s)+self.noise.sample()).detach().numpy()
@@ -395,7 +404,6 @@ class kernel:
                             else:
                                 self.total_time=int(self.total_time)+1
                             print('episode:{0}'.format(self.total_episode))
-                            print('last loss:{0:.6f}'.format(loss))
                             print('average reward:{0}'.format(avg_reward))
                             print()
                             print('time:{0}s'.format(self.total_time))
@@ -443,7 +451,6 @@ class kernel:
                             else:
                                 self.total_time=int(self.total_time)+1
                             print('episode:{0}'.format(self.total_episode))
-                            print('last loss:{0:.6f}'.format(loss))
                             print('average reward:{0}'.format(avg_reward))
                             print()
                             print('time:{0}s'.format(self.total_time))
@@ -469,9 +476,6 @@ class kernel:
         else:
             self.total_time=int(self.time)+1
         self.total_time+=self.time
-        print('last loss:{0:.6f}'.format(loss))
-        print('last reward:{0}'.format(self.reward))
-        print()
         print('time:{0}s'.format(self.time))
         return
     
