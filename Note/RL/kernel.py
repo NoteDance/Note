@@ -108,7 +108,7 @@ class kernel:
                     action = np.argmax(self.nn.nn.fp(state))
                 else:
                     action = self.nn.actor.fp(state).detach().numpy()
-            next_state, reward, done, _ = self.env.step(action)
+            next_state, reward, done, _ = self.nn.genv.step(action)
             state_history.append(state)
             steps+=1
             reward_+=reward
