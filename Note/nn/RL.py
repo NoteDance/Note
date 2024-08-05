@@ -375,12 +375,6 @@ class RL:
                             self.done_pool=None
             else:
                 self.update_param()
-                if self.PPO:
-                    self.state_pool=None
-                    self.action_pool=None
-                    self.next_state_pool=None
-                    self.reward_pool=None
-                    self.done_pool=None
         if self.distributed_flag==True:
             return (total_loss / num_batches).numpy()
         else:
