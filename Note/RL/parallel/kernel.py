@@ -118,7 +118,7 @@ class kernel:
                 action = np.argmax(self.nn.nn.fp(state))
             else:
                 action = self.nn.actor.fp(state).numpy()
-            next_state, reward, done, _ = self.env.step(action)
+            next_state, reward, done, _ = self.nn.genv.step(action)
             state_history.append(state)
             steps+=1
             reward_+=reward
@@ -215,10 +215,19 @@ class kernel:
         return index
     
     
-    def env(self,s,p,lock,pool_lock):
+    @tf.function(jit_compile=True)
+    def forward(self,s):
+        if hasattr(self.nn,'nn'):
+            output=self.nn.nn.fp(s)
+        else:
+            output=self.nn.actor.fp(s)
+        return output
+    
+    
+    def store(self,s,p,lock,pool_lock):
         if hasattr(self.nn,'nn'):
             s=np.expand_dims(s,axis=0)
-            output=self.nn.nn.fp(s).numpy()
+            output=self.forward(s).numpy()
             output=np.squeeze(output, axis=0)
             if isinstance(self.policy, rl.SoftmaxPolicy):
                 a=self.policy.select_action(len(output), output)
@@ -234,7 +243,7 @@ class kernel:
                 a=self.policy.select_action(output, np.sum(self.step_counter))
         else:
             s=np.expand_dims(s,axis=0)
-            a=(self.nn.actor.fp(s)+self.noise.sample()).numpy()
+            a=(self.forward(s)+self.noise.sample()).numpy()
         next_s,r,done=self.nn.env(a,p)
         if self.HER!=True:
             index=self.get_index(p,lock)
@@ -555,7 +564,7 @@ class kernel:
             while True:
                 if self.episode!=None and self.episode_counter.value>=self.episode:
                     break
-                next_s,r,done,index=self.env(s,p,lock,pool_lock)
+                next_s,r,done,index=self.store(s,p,lock,pool_lock)
                 self.reward[p]+=r
                 s=next_s
                 if type(self.done_pool[p])==np.ndarray:
