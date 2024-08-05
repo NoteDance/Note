@@ -276,12 +276,6 @@ class RL:
                             self.done_pool=None
             else:
                 self.update_param()
-                if self.PPO:
-                    self.state_pool=None
-                    self.action_pool=None
-                    self.next_state_pool=None
-                    self.reward_pool=None
-                    self.done_pool=None
         return loss.detach().numpy()/batches
     
     
