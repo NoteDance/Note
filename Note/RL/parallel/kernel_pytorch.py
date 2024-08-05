@@ -112,7 +112,7 @@ class kernel:
                 action = np.argmax(self.nn.nn.fp(state))
             else:
                 action = self.nn.actor.fp(state).detach().numpy()
-            next_state, reward, done, _ = self.env.step(action)
+            next_state, reward, done, _ = self.nn.genv.step(action)
             state_history.append(state)
             steps+=1
             reward_+=reward
@@ -197,7 +197,7 @@ class kernel:
         return index
     
     
-    def env(self,s,p,lock,pool_lock):
+    def store(self,s,p,lock,pool_lock):
         if hasattr(self.nn,'nn'):
             s=np.expand_dims(s,axis=0)
             s=torch.tensor(s,dtype=torch.float).to(assign_device(p,self.device))
@@ -398,7 +398,7 @@ class kernel:
             while True:
                 if self.episode!=None and self.episode_counter.value>=self.episode:
                     break
-                next_s,r,done,index=self.env(s,p,lock,pool_lock)
+                next_s,r,done,index=self.store(s,p,lock,pool_lock)
                 self.reward[p]+=r
                 s=next_s
                 if type(self.done_pool[p])==np.ndarray:
