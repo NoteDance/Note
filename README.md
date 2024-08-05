@@ -98,10 +98,10 @@ Its function is similar to torch.nn.parameter.Parameter.
 This class is used similarly to tf.keras.Sequential and torch.nn.Sequential.
 
 
-# Documentation:
-The document contains tutorials on how to build neural networks that can be trained on Note, how to train neural networks with Note.
+# Kernel:
+The document contains tutorials on how to build neural networks that can be trained on kernel, how to train neural networks with kernel.
 
-https://github.com/NoteDance/Note-documentation
+https://github.com/NoteDance/Note-documentation/tree/kernel-7.0
 
 
 # Patreon:
