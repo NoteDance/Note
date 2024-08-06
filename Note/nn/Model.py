@@ -424,7 +424,7 @@ class Model:
         return
     
     
-    def fit(self, train_ds, loss_object, train_loss, optimizer, epochs=None, train_accuracy=None, test_ds=None, test_loss=None, test_accuracy=None, processes=None, mp=None, jit_compile=True, p=None):
+    def train(self, train_ds, loss_object, train_loss, optimizer, epochs=None, train_accuracy=None, test_ds=None, test_loss=None, test_accuracy=None, processes=None, mp=None, jit_compile=True, p=None):
         if p==None:
             p_=9
         else:
@@ -588,7 +588,7 @@ class Model:
         return
     
     
-    def distributed_fit(self, train_dist_dataset, loss_object, global_batch_size, optimizer, strategy, epochs=None, train_accuracy=None, test_dist_dataset=None, test_loss=None, test_accuracy=None, jit_compile=True, p=None):
+    def distributed_training(self, train_dist_dataset, loss_object, global_batch_size, optimizer, strategy, epochs=None, train_accuracy=None, test_dist_dataset=None, test_loss=None, test_accuracy=None, jit_compile=True, p=None):
         if p==None:
             p_=9
         else:
