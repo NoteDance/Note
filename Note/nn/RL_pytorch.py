@@ -374,7 +374,7 @@ class RL:
             s=next_s
     
     
-    def fit(self, optimizer, episodes=None, mp=None, manager=None, processes=None, processes_her=None, shuffle=False, p=None):
+    def train(self, optimizer, episodes=None, mp=None, manager=None, processes=None, processes_her=None, shuffle=False, p=None):
         avg_reward=None
         if p==None:
             self.p=9
