@@ -61,15 +61,15 @@ class model(nn.Model):
         x=self.layer2(x)
         return x
 ```
-Note.neuralnetwork.tf package contains neural networks implemented with Note’s layer module that can be trained with TensorFlow. You can also consider these models as examples using the Note. The documentation shows how to train, test, save, and restore models built with Note.
+Note.models.tf package contains neural networks implemented with Note’s layer module that can be trained with TensorFlow. You can also consider these models as examples using the Note. The documentation shows how to train, test, save, and restore models built with Note.
 
-https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/tf
+https://github.com/NoteDance/Note/tree/Note-7.0/Note/models/tf
 
 **Documentation**: https://github.com/NoteDance/Note-documentation/tree/tf-7.0
 
 
 # Reinforcement learning：
-You just need to have your agent class inherit from the RL or RL_pytorch class, and you can easily train your agent built with Note, Keras or PyTorch. You can learn how to build an agent from the examples [here](https://github.com/NoteDance/Note/tree/Note-7.0/Note/neuralnetwork/docs_example/RL). The documentation shows how to train, save, and restore agent built with Note, Keras or PyTorch.
+You just need to have your agent class inherit from the RL or RL_pytorch class, and you can easily train your agent built with Note, Keras or PyTorch. You can learn how to build an agent from the examples [here](https://github.com/NoteDance/Note/tree/Note-7.0/Note/models/docs_example/RL). The documentation shows how to train, save, and restore agent built with Note, Keras or PyTorch.
 
 **Documentation**: https://github.com/NoteDance/Note-documentation/tree/RL-7.0
 
