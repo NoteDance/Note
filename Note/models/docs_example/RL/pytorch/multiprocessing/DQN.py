@@ -17,6 +17,7 @@ class Qnet(torch.nn.Module):
     
 class DQN(nn.RL_pytorch):
     def __init__(self,state_dim,hidden_dim,action_dim,processes):
+        super().__init__()
         if torch.cuda.is_available():
             self.device=torch.device('cuda')
         else:
