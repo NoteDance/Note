@@ -28,7 +28,7 @@ class RDNetClassifierHead:
         self.fc = nn.dense(num_classes, self.num_features) if num_classes > 0 else nn.identity()
 
     def __call__(self, x, pre_logits: bool = False):
-        x = tf.reduce_mean(x, axis=[-2, -1])
+        x = tf.reduce_mean(x, axis=[1, 2])
         x = self.norm(x)
         x = self.drop(x)
         if pre_logits:
