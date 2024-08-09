@@ -39,7 +39,7 @@ class RL:
         self.total_time=0
     
     
-    def set_up(self,policy=None,noise=None,pool_size=None,batch=None,update_batches=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False,pr=False,epsilon=None,initial_TD=7,alpha=0.7):
+    def set_up(self,policy=None,noise=None,pool_size=None,batch=None,update_batches=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False,MA=False,PR=False,epsilon=None,initial_TD=7,alpha=0.7):
         self.policy=policy
         self.noise=noise
         self.pool_size=pool_size
@@ -50,7 +50,8 @@ class RL:
         self.criterion=criterion
         self.PPO=PPO
         self.HER=HER
-        self.pr=pr
+        self.MA=MA
+        self.PR=PR
         self.epsilon=epsilon
         self.initial_TD=initial_TD
         self.alpha=alpha
@@ -235,7 +236,7 @@ class RL:
             batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
             if len(self.state_pool)%self.batch!=0:
                 batches+=1
-            if self.pr==True  or self.HER==True:
+            if self.PR==True or self.HER==True:
                 for j in range(batches):
                     state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.data_func()
                     loss+=self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer)
@@ -285,17 +286,26 @@ class RL:
         s=np.array(s)
         while True:
             s=np.expand_dims(s,axis=0)
-            a=self.select_action(s)
+            if self.MA!=True:
+                a=self.select_action(s)
+            else:
+                a=[]
+                for s in s[0]:
+                    s=np.expand_dims(s,axis=0)
+                    a.append(self.select_action(s))
+                a=np.array(a)
             next_s,r,done=self.env_(a)
             next_s=np.array(next_s)
             r=np.array(r)
             done=np.array(done)
             self.pool(s,a,next_s,r,done)
-            if self.pr==True:
+            if self.PR==True:
                 self.prioritized_replay.TD=np.append(self.prioritized_replay.TD,self.initial_TD)
                 if len(self.state_pool)>self.pool_size:
                     TD=np.array(0)
                     self.prioritized_replay.TD=np.append(TD,self.prioritized_replay.TD[2:])
+            if self.MA==True:
+                r,done=self.reward_done_func_ma(r,done)
             self.reward=r+self.reward
             loss=self.train1(optimizer)
             self.step_counter+=1
@@ -355,7 +365,14 @@ class RL:
             else:
                 index=np.random.choice(self.processes)
             s=np.expand_dims(s,axis=0)
-            a=self.select_action(s)
+            if self.MA!=True:
+                a=self.select_action(s)
+            else:
+                a=[]
+                for s in s[0]:
+                    s=np.expand_dims(s,axis=0)
+                    a.append(self.select_action(s))
+                a=np.array(a)
             next_s,r,done=self.env_(a,p=p)
             next_s=np.array(next_s)
             r=np.array(r)
@@ -368,6 +385,8 @@ class RL:
             else:
                 self.pool(s,a,next_s,r,done,index)
                 self.step_counter.value+=1
+            if self.MA==True:
+                r,done=self.reward_done_func_ma(r,done)
             self.reward[p]=r+self.reward[p]
             if done:
                 return
