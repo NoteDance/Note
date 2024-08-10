@@ -249,7 +249,7 @@ class RL:
             optimizer.apply_gradients(zip(gradients, self.param))
         else:
             for i in range(len(optimizer)):
-                gradients = tape.gradient(loss, self.param[i])
+                gradients = tape.gradient(loss[i], self.param[i])
                 optimizer[i].apply_gradients(zip(gradients, self.param[i]))
         train_loss(loss)
         return
@@ -264,7 +264,7 @@ class RL:
             optimizer.apply_gradients(zip(gradients, self.param))
         else:
             for i in range(len(optimizer)):
-                gradients = tape.gradient(loss, self.param[i])
+                gradients = tape.gradient(loss[i], self.param[i])
                 optimizer[i].apply_gradients(zip(gradients, self.param[i]))
         train_loss(loss)
         return
@@ -279,7 +279,7 @@ class RL:
             optimizer.apply_gradients(zip(gradients, self.param))
         else:
             for i in range(len(optimizer)):
-                gradients = tape.gradient(loss, self.param[i])
+                gradients = tape.gradient(loss[i], self.param[i])
                 optimizer[i].apply_gradients(zip(gradients, self.param[i]))
         return loss 
     
