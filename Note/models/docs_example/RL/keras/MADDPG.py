@@ -95,7 +95,7 @@ class DDPG(nn.RL):
         next_q_value=self.target_critic[i_agent](next_s,self.target_actor[i_agent](next_s))
         q_target=tf.cast(r,'float32')+self.gamma*next_q_value*(1-tf.cast(d,'float32'))
         actor_loss=-tf.reduce_mean(self.critic[i_agent](s[:,i_agent],self.actor[i_agent](s[:,i_agent])))
-        critic_loss=tf.reduce_mean(tf.reduce_mean((self.critic[i_agent](s,a)-q_target)**2))
+        critic_loss=tf.reduce_mean((self.critic[i_agent](s,a)-q_target)**2)
         return actor_loss+critic_loss
     
     def __call__(self,s,a,next_s,r,d):

@@ -103,7 +103,7 @@ class DDPG(nn.RL_pytorch):
         next_q_value=self.target_critic(next_s,self.target_actor(next_s))
         q_target=r+self.gamma*next_q_value*(1-d)
         actor_loss=-torch.mean(self.critic(s[:,i_agent],self.actor(s[:,i_agent])))
-        critic_loss=torch.mean(F.mse_loss(self.critic(s,a),q_target))
+        critic_loss=F.mse_loss(self.critic(s,a),q_target)
         return actor_loss+critic_loss
     
     def __call__(self,s,a,next_s,r,d):
