@@ -229,7 +229,7 @@ class RL:
         else:
             for i in range(len(optimizer)):
                 optimizer[i].zero_grad()
-                loss.backward()
+                loss[i].backward()
                 optimizer[i].step()
         return loss
     
