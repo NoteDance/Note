@@ -222,9 +222,15 @@ class RL:
     
     def train_step(self, train_data, optimizer):
         loss = self.__call__(*train_data)
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+        if type(optimizer)!=list:
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+        else:
+            for i in range(len(optimizer)):
+                optimizer[i].zero_grad()
+                loss.backward()
+                optimizer[i].step()
         return loss
     
     
