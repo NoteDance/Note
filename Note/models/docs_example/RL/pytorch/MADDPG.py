@@ -86,7 +86,7 @@ class DDPG(nn.RL_pytorch):
         self.sigma=sigma
         self.gamma=gamma
         self.tau=tau
-        self.param=[[self.actor[i].parameters(),self.critici[i].parameters()] for i in range(self.env.num_agents)]
+        self.param=[[self.actor[i].parameters() for i in range(self.env.num_agents)],[self.critici[i].parameters() for i in range(self.env.num_agents)]]
     
     def action(self,s,i):
         return self.actor[i](s)

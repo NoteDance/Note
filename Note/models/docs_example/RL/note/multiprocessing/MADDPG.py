@@ -82,7 +82,7 @@ class DDPG(nn.RL):
         [self.target_critic[i].detach() for i in range(self.env.num_agents)]
         [nn.assign_param(self.target_actor[i].param,self.actor[i].param) for i in range(self.env.num_agents)]
         [nn.assign_param(self.target_critic[i].param,self.critic[i].param) for i in range(self.env.num_agents)]
-        self.param=[[self.actor[i].param,self.critic[i].param] for i in range(self.env.num_agents)]
+        self.param=[[self.actor[i].param for i in range(self.env.num_agents)],[self.critic[i].param for i in range(self.env.num_agents)]]
         self.sigma=sigma
         self.gamma=gamma
         self.tau=tau

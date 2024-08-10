@@ -80,7 +80,7 @@ class DDPG(nn.RL):
         self.target_critic=[critic(state_dim,hidden_dim,action_dim) for _ in range(self.env.num_agents)]
         [nn.assign_param(self.target_actor[i].weights,self.actor[i].weights) for i in range(self.env.num_agents)]
         [nn.assign_param(self.target_critic[i].weights,self.critic[i].weights) for i in range(self.env.num_agents)]
-        self.param=[[self.actor[i].weights,self.critic[i].weights] for i in range(self.env.num_agents)]
+        self.param=[[self.actor[i].weights for i in range(self.env.num_agents)],[self.critic[i].weights for i in range(self.env.num_agents)]]
         self.sigma=sigma
         self.gamma=gamma
         self.tau=tau
