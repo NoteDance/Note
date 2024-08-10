@@ -244,8 +244,13 @@ class RL:
     def train_step(self, train_data, train_loss, optimizer):
         with tf.GradientTape() as tape:
             loss = self.__call__(*train_data)
-        gradients = tape.gradient(loss, self.param)
-        optimizer.apply_gradients(zip(gradients, self.param))
+        if type(optimizer)!=list:
+            gradients = tape.gradient(loss, self.param)
+            optimizer.apply_gradients(zip(gradients, self.param))
+        else:
+            for i in range(len(optimizer)):
+                gradients = tape.gradient(loss, self.param[i])
+                optimizer[i].apply_gradients(zip(gradients, self.param[i]))
         train_loss(loss)
         return
       
@@ -254,8 +259,13 @@ class RL:
     def train_step_(self, train_data, train_loss, optimizer):
         with tf.GradientTape() as tape:
             loss = self.__call__(*train_data)
-        gradients = tape.gradient(loss, self.param)
-        optimizer.apply_gradients(zip(gradients, self.param))
+        if type(optimizer)!=list:
+            gradients = tape.gradient(loss, self.param)
+            optimizer.apply_gradients(zip(gradients, self.param))
+        else:
+            for i in range(len(optimizer)):
+                gradients = tape.gradient(loss, self.param[i])
+                optimizer[i].apply_gradients(zip(gradients, self.param[i]))
         train_loss(loss)
         return
     
@@ -264,8 +274,13 @@ class RL:
         with tf.GradientTape() as tape:
             loss = self.__call__(*train_data)
             loss = self.compute_loss(loss)
-        gradients = tape.gradient(loss, self.param)
-        optimizer.apply_gradients(zip(gradients, self.param))
+        if type(optimizer)!=list:
+            gradients = tape.gradient(loss, self.param)
+            optimizer.apply_gradients(zip(gradients, self.param))
+        else:
+            for i in range(len(optimizer)):
+                gradients = tape.gradient(loss, self.param[i])
+                optimizer[i].apply_gradients(zip(gradients, self.param[i]))
         return loss 
     
     
