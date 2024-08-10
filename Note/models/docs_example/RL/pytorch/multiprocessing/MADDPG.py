@@ -20,7 +20,7 @@ class MultiAgentEnv(gym.Env):
 
         self.reset()
 
-    def reset(self):
+    def reset(self,seed):
         self.states = [np.random.rand(self.state_size) for _ in range(self.num_agents)]
         return self.states
 
