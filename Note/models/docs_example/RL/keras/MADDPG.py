@@ -48,7 +48,7 @@ class actor(Model):
     def __init__(self,state_dim,hidden_dim,action_dim,action_bound):
         super().__init__()
         self.dense1 = tf.keras.layers.Dense(hidden_dim, activation='relu')
-        self.dense2 = tf.keras.layers.Dense(action_dim, activation='tanh')
+        self.dense2 = tf.keras.layers.Dense(action_dim, activation='softmax')
         self.action_bound=action_bound
     
     def __call__(self,x):

@@ -52,7 +52,7 @@ class actor(torch.nn.Module):
     
     def forward(self,x):
         x=F.relu(self.fc1(x))
-        return torch.tanh(self.fc2(x))
+        return torch.softmax(self.fc2(x))
 
 
 class critic(torch.nn.Module):

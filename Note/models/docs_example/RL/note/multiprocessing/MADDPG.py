@@ -47,7 +47,7 @@ class actor(nn.Model):
     def __init__(self,state_dim,hidden_dim,action_dim):
         super().__init__()
         self.dense1 = nn.dense(hidden_dim, state_dim, activation='relu')
-        self.dense2 = nn.dense(action_dim, hidden_dim, activation='tanh')
+        self.dense2 = nn.dense(action_dim, hidden_dim, activation='softmax')
     
     def __call__(self,x):
         x = self.dense1(x)
