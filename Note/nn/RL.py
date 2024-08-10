@@ -132,22 +132,28 @@ class RL:
     
     
     @tf.function(jit_compile=True)
-    def forward(self,s):
-        output=self.action(s)
+    def forward(self,s,i):
+        if self.MA!=True:
+            output=self.action(s)
+        else:
+            output=self.action(s,i)
         return output
     
     
     @tf.function
-    def forward_(self,s):
-        output=self.action(s)
+    def forward_(self,s,i):
+        if self.MA!=True:
+            output=self.action(s)
+        else:
+            output=self.action(s,i)
         return output
     
     
-    def select_action(self,s):
+    def select_action(self,s,i=None):
         if self.jit_compile==True:
-            output=self.forward(s)
+            output=self.forward(s,i)
         else:
-            output=self.forward_(s)
+            output=self.forward_(s,i)
         if self.policy!=None:
             output=output.numpy()
             output=np.squeeze(output, axis=0)
@@ -392,9 +398,9 @@ class RL:
                 a=self.select_action(s)
             else:
                 a=[]
-                for s in s[0]:
-                    s=np.expand_dims(s,axis=0)
-                    a.append(self.select_action(s))
+                for i in len(s[0]):
+                    s=np.expand_dims(s[i],axis=0)
+                    a.append(self.select_action(s,i))
                 a=np.array(a)
             next_s,r,done=self.env_(a)
             next_s=np.array(next_s)
@@ -474,9 +480,9 @@ class RL:
                 a=self.select_action(s)
             else:
                 a=[]
-                for s in s[0]:
-                    s=np.expand_dims(s,axis=0)
-                    a.append(self.select_action(s))
+                for i in len(s[0]):
+                    s=np.expand_dims(s[i],axis=0)
+                    a.append(self.select_action(s,i))
                 a=np.array(a)
             next_s,r,done=self.env_(a,p=p)
             next_s=np.array(next_s)
