@@ -71,8 +71,8 @@ class DDPG(nn.RL):
         self.target_actor.detach()
         self.target_critic=critic(state_dim,hidden_dim,action_dim)
         self.target_critic.detach()
-        nn.assign_param(self.target_actor.param,self.actor_param)
-        nn.assign_param(self.target_critic.param,self.critic_param)
+        nn.assign_param(self.target_actor.param,self.actor.param)
+        nn.assign_param(self.target_critic.param,self.critic.param)
         self.param=[self.actor.param,self.critic.param]
         self.sigma=sigma
         self.gamma=gamma

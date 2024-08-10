@@ -1,9 +1,10 @@
 import tensorflow as tf
 from Note import nn
+from tensorflow.keras import Model
 import gym
 
 
-class actor(nn.Model):
+class actor(Model):
     def __init__(self,state_dim,hidden_dim,action_dim):
         super().__init__()
         self.dense1 = tf.keras.layers.Dense(hidden_dim, activation='relu')
@@ -14,7 +15,7 @@ class actor(nn.Model):
         return tf.nn.softmax(self.dense2(x))
 
 
-class critic(nn.Model):
+class critic(Model):
     def __init__(self,state_dim,hidden_dim):
         super().__init__()
         self.dense1 = tf.keras.layers.Dense(hidden_dim, activation='relu')
@@ -30,11 +31,11 @@ class PPO(nn.RL):
         super().__init__()
         self.actor=actor(state_dim,hidden_dim,action_dim)
         self.actor_old=actor(state_dim,hidden_dim,action_dim)
-        nn.assign_param(self.actor_old.param,self.actor.param.copy())
+        nn.assign_param(self.actor_old.weights,self.actor.weights)
         self.critic=critic(state_dim,hidden_dim)
         self.clip_eps=clip_eps
         self.alpha=alpha
-        self.param=[self.actor.param,self.critic.param]
+        self.param=[self.actor.weights,self.critic.weights]
         self.env=gym.make('CartPole-v0')
     
     def action(self,s):
@@ -56,5 +57,5 @@ class PPO(nn.RL):
         return tf.reduce_mean(clip_loss)+tf.reduce_mean((TD)**2)
     
     def update_param(self):
-        nn.assign_param(self.nn.param, self.actor.param)
+        nn.assign_param(self.actor.weights, self.actor.weights)
         return

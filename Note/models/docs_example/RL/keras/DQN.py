@@ -1,9 +1,10 @@
 import tensorflow as tf
 from Note import nn
+from tensorflow.keras import Model
 import gym
 
 
-class Qnet(tf.keras.layers.Layer):
+class Qnet(Model):
     def __init__(self,state_dim, hidden_dim, action_dim):
         super().__init__()
         self.dense1 = tf.keras.layers.Dense(hidden_dim, activation='relu')

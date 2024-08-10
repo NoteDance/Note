@@ -1,9 +1,10 @@
 import tensorflow as tf
 from Note import nn
+from tensorflow.keras import Model
 import gym
 
 
-class actor(nn.Model):
+class actor(Model):
     def __init__(self,state_dim,hidden_dim,action_dim,action_bound):
         super().__init__()
         self.dense1 = tf.keras.layers.Dense(hidden_dim, activation='relu')
@@ -15,7 +16,7 @@ class actor(nn.Model):
         return self.dense2(x)*self.action_bound
 
 
-class critic(nn.Model):
+class critic(Model):
     def __init__(self,state_dim,hidden_dim,action_dim):
         super().__init__()
         self.dense1 = tf.keras.layers.Dense(hidden_dim, activation='relu')
@@ -38,9 +39,9 @@ class DDPG(nn.RL):
         self.critic=critic(state_dim,hidden_dim,action_dim)
         self.target_actor=actor(state_dim,hidden_dim,action_dim,action_bound)
         self.target_critic=critic(state_dim,hidden_dim,action_dim)
-        nn.assign_param(self.target_actor.param,self.actor_param.copy())
-        nn.assign_param(self.target_critic.param,self.critic_param.copy())
-        self.param=[self.actor.param,self.critic.param]
+        nn.assign_param(self.target_actor.weights,self.actor.weights)
+        nn.assign_param(self.target_critic.weights,self.critic.weights)
+        self.param=[self.actor.weights,self.critic.weights]
         self.sigma=sigma
         self.gamma=gamma
         self.tau=tau
@@ -57,8 +58,8 @@ class DDPG(nn.RL):
         return actor_loss+critic_loss
     
     def update_param(self):
-        for target_param,param in zip(self.target_actor.param,self.actor.param):
+        for target_param,param in zip(self.target_actor.weights,self.actor.weights):
             target_param.assign(target_param*(1.0-self.tau)+param*self.tau)
-        for target_param,param in zip(self.target_critic.param,self.critic.param):
+        for target_param,param in zip(self.target_critic.weights,self.critic.weights):
             target_param.assign(target_param*(1.0-self.tau)+param*self.tau)
         return
