@@ -55,7 +55,7 @@ class DDPG(nn.RL):
         q_target=tf.cast(r,'float32')+self.gamma*next_q_value*(1-tf.cast(d,'float32'))
         actor_loss=-tf.reduce_mean(self.critic(s,self.actor(s)))
         critic_loss=tf.reduce_mean((self.critic(s,a)-q_target)**2)
-        return actor_loss+critic_loss
+        return [actor_loss,critic_loss]
     
     def update_param(self):
         for target_param,param in zip(self.target_actor.weights,self.actor.weights):

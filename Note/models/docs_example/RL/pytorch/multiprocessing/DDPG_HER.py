@@ -92,7 +92,7 @@ class DDPG(nn.RL_pytorch):
         q_target=r+self.gamma*next_q_value*(1-d)
         actor_loss=-torch.mean(self.critic(s,self.actor(s)))
         critic_loss=F.mse_loss(self.critic(s,a),q_target)
-        return actor_loss+critic_loss
+        return [actor_loss,critic_loss]
     
     def update_param(self):
         for target_param,param in zip(self.target_actor.parameters(),self.actor.parameters()):

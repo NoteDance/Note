@@ -54,7 +54,7 @@ class PPO(nn.RL):
         clip_loss=-tf.math.minimum(sur1,sur2)
         entropy=action_prob*tf.math.log(action_prob+1e-8)
         clip_loss=clip_loss-self.alpha*entropy
-        return tf.reduce_mean(clip_loss)+tf.reduce_mean((TD)**2)
+        return [tf.reduce_mean(clip_loss),tf.reduce_mean((TD)**2)]
     
     def update_param(self):
         nn.assign_param(self.actor.weights, self.actor.weights)
