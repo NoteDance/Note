@@ -130,9 +130,12 @@ class RL:
         return
     
     
-    def select_action(self,s):
-        if self.policy!=None:
+    def select_action(self,s,i=None):
+        if self.MA!=True:
             output=self.action(s).detach().numpy()
+        else:
+            output=self.action(s,i).detach().numpy()
+        if self.policy!=None:
             output=np.squeeze(output, axis=0)
             if isinstance(self.policy, rl.SoftmaxPolicy):
                 a=self.policy.select_action(len(output), output)
@@ -150,7 +153,7 @@ class RL:
                 else:
                     a=self.policy.select_action(output, self.step_counter)
         elif self.noise!=None:
-            a=(self.action(s)+self.noise.sample()).detach().numpy()
+            a=(output+self.noise.sample())
         return a
     
     
@@ -290,9 +293,9 @@ class RL:
                 a=self.select_action(s)
             else:
                 a=[]
-                for s in s[0]:
-                    s=np.expand_dims(s,axis=0)
-                    a.append(self.select_action(s))
+                for i in len(s[0]):
+                    s=np.expand_dims(s[i],axis=0)
+                    a.append(self.select_action(s,i))
                 a=np.array(a)
             next_s,r,done=self.env_(a)
             next_s=np.array(next_s)
@@ -369,9 +372,9 @@ class RL:
                 a=self.select_action(s)
             else:
                 a=[]
-                for s in s[0]:
-                    s=np.expand_dims(s,axis=0)
-                    a.append(self.select_action(s))
+                for i in len(s[0]):
+                    s=np.expand_dims(s[i],axis=0)
+                    a.append(self.select_action(s,i))
                 a=np.array(a)
             next_s,r,done=self.env_(a,p=p)
             next_s=np.array(next_s)
