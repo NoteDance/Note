@@ -159,6 +159,7 @@ from Note.nn.pos_embed import *
 from Note.nn.positional_encoding import positional_encoding
 from Note.nn.restore import *
 from Note.nn.RL import RL
+from Note.nn.RL_pytorch import RL_pytorch
 from Note.nn.scaled_dot_product_attention import scaled_dot_product_attention
 from Note.nn.Sequential import Sequential
 from Note.nn.init import *
