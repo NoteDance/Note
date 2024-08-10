@@ -294,7 +294,7 @@ class RL:
             else:
                 a=[]
                 for i in len(s[0]):
-                    s=np.expand_dims(s[i],axis=0)
+                    s=np.expand_dims(s[0][i],axis=0)
                     a.append(self.select_action(s,i))
                 a=np.array(a)
             next_s,r,done=self.env_(a)
@@ -373,7 +373,7 @@ class RL:
             else:
                 a=[]
                 for i in len(s[0]):
-                    s=np.expand_dims(s[i],axis=0)
+                    s=np.expand_dims(s[0][i],axis=0)
                     a.append(self.select_action(s,i))
                 a=np.array(a)
             next_s,r,done=self.env_(a,p=p)
