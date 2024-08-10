@@ -13,7 +13,7 @@ import os
 import time
 
 
-class RL:
+class RL_pytorch:
     def __init__(self):
         self.state_pool=None
         self.action_pool=None
