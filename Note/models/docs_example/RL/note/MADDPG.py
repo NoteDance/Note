@@ -61,7 +61,7 @@ class critic(nn.Model):
         self.dense2 = nn.dense(action_dim, hidden_dim)
     
     def __call__(self,x,a):
-        cat=tf.concat([x,a],axis=1)
+        cat=tf.concat([x,a],axis=-1)
         x=self.dense1(cat)
         return self.dense2(x)
 

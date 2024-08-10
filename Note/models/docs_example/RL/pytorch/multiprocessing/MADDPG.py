@@ -62,7 +62,7 @@ class critic(torch.nn.Module):
         self.fc2=torch.nn.Linear(hidden_dim,1)
     
     def forward(self,x,a):
-        cat=torch.cat([x,a],dim=1)
+        cat=torch.cat([x,a],dim=-1)
         x=F.relu(self.fc1(cat))
         return self.fc2(x)
 

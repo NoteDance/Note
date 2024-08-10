@@ -63,7 +63,7 @@ class critic(Model):
         self.dense2 = tf.keras.layers.Dense(action_dim)
     
     def __call__(self,x,a):
-        cat=tf.concat([x,a],axis=1)
+        cat=tf.concat([x,a],axis=-1)
         x=self.dense1(cat)
         return self.dense2(x)
 
