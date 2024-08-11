@@ -69,7 +69,7 @@ class RL_pytorch:
                     self.state_pool_list[index]=s
                 else:
                     self.state_pool_list[index]=s
-                if type(a)==int:
+                if type(a) in [int,np.int64]:
                     a=np.array(a)
                     self.action_pool_list[index]=np.expand_dims(a,axis=0)
                 else:
@@ -79,7 +79,7 @@ class RL_pytorch:
                 self.done_pool_list[index]=np.expand_dims(done,axis=0)
             else:
                 self.state_pool_list[index]=np.concatenate((self.state_pool_list[index],s),0)
-                if type(a)==int:
+                if type(a) in [int,np.int64]:
                     a=np.array(a)
                     self.action_pool_list[index]=np.concatenate((self.action_pool_list[index],np.expand_dims(a,axis=0)),0)
                 else:
@@ -103,7 +103,7 @@ class RL_pytorch:
                     self.state_pool=s
                 else:
                     self.state_pool=s
-                if type(a)==int:
+                if type(a) in [int,np.int64]:
                     a=np.array(a)
                     self.action_pool=np.expand_dims(a,axis=0)
                 else:
@@ -113,7 +113,7 @@ class RL_pytorch:
                 self.done_pool=np.expand_dims(done,axis=0)
             else:
                 self.state_pool=np.concatenate((self.state_pool,s),0)
-                if type(a)==int:
+                if type(a) in [int,np.int64]:
                     a=np.array(a)
                     self.action_pool=np.concatenate((self.action_pool,np.expand_dims(a,axis=0)),0)
                 else:
