@@ -478,6 +478,12 @@ class RL:
         self.reward[p]=0
         s=self.env_(initial=True,p=p)
         s=np.array(s)
+        if self.PPO==True:
+            self.state_pool_list[p]=None
+            self.action_pool_list[p]=None
+            self.next_state_pool_list[p]=None
+            self.reward_pool_list[p]=None
+            self.done_pool_list[p]=None
         while True:
             if self.HER!=True:
                 if None not in self.state_pool_list:
