@@ -477,17 +477,17 @@ class RL_pytorch:
                     for process in process_list:
                         process.join()
                     if processes_her==None:
-                        self.state_pool=np.array(self.state_pool_list)
-                        self.action_pool=np.array(self.action_pool_list)
-                        self.next_state_pool=np.array(self.next_state_pool_list)
-                        self.reward_pool=np.array(self.reward_pool_list)
-                        self.done_pool=np.array(self.done_pool_list)
+                        self.state_pool=np.concatenate(self.state_pool_list)
+                        self.action_pool=np.concatenate(self.action_pool_list)
+                        self.next_state_pool=np.concatenate(self.next_state_pool_list)
+                        self.reward_pool=np.concatenate(self.reward_pool_list)
+                        self.done_pool=np.concatenate(self.done_pool_list)
                     else:
-                        self.state_pool[7]=np.array(self.state_pool_list)
-                        self.action_pool[7]=np.array(self.action_pool_list)
-                        self.next_state_pool[7]=np.array(self.next_state_pool_list)
-                        self.reward_pool[7]=np.array(self.reward_pool_list)
-                        self.done_pool[7]=np.array(self.done_pool_list)
+                        self.state_pool[7]=np.concatenate(self.state_pool_list)
+                        self.action_pool[7]=np.concatenate(self.action_pool_list)
+                        self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
+                        self.reward_pool[7]=np.concatenate(self.reward_pool_list)
+                        self.done_pool[7]=np.concatenate(self.done_pool_list)
                     self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
                     if len(self.reward_list)>self.trial_count:
                         del self.reward_list[0]
@@ -541,17 +541,17 @@ class RL_pytorch:
                     for process in process_list:
                         process.join()
                     if processes_her==None:
-                        self.state_pool=np.array(self.state_pool_list)
-                        self.action_pool=np.array(self.action_pool_list)
-                        self.next_state_pool=np.array(self.next_state_pool_list)
-                        self.reward_pool=np.array(self.reward_pool_list)
-                        self.done_pool=np.array(self.done_pool_list)
+                        self.state_pool=np.concatenate(self.state_pool_list)
+                        self.action_pool=np.concatenate(self.action_pool_list)
+                        self.next_state_pool=np.concatenate(self.next_state_pool_list)
+                        self.reward_pool=np.concatenate(self.reward_pool_list)
+                        self.done_pool=np.concatenate(self.done_pool_list)
                     else:
-                        self.state_pool[7]=np.array(self.state_pool_list)
-                        self.action_pool[7]=np.array(self.action_pool_list)
-                        self.next_state_pool[7]=np.array(self.next_state_pool_list)
-                        self.reward_pool[7]=np.array(self.reward_pool_list)
-                        self.done_pool[7]=np.array(self.done_pool_list)
+                        self.state_pool[7]=np.concatenate(self.state_pool_list)
+                        self.action_pool[7]=np.concatenate(self.action_pool_list)
+                        self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
+                        self.reward_pool[7]=np.concatenate(self.reward_pool_list)
+                        self.done_pool[7]=np.concatenate(self.done_pool_list)
                     self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
                     if len(self.reward_list)>self.trial_count:
                         del self.reward_list[0]
