@@ -185,3 +185,32 @@ class BoltzmannGumbelQPolicy:
 
         self.action_counts[action] += 1
         return action
+
+
+class GumbelSoftmaxPolicy:
+    
+    def __init__(self, temperature=1.0, eps=0.01):
+        self.temperature = temperature
+        self.eps = eps
+        
+    def onehot_from_logits(self, logits):
+        argmax_acs = (logits == logits.max(axis=1, keepdims=True)).astype(float)
+        rand_acs = np.eye(logits.shape[1])[np.random.choice(range(logits.shape[1]), size=logits.shape[0])]
+        return np.array([
+            argmax_acs[i] if r > self.eps else rand_acs[i]
+            for i, r in enumerate(np.random.rand(logits.shape[0]))
+        ])
+
+    def sample_gumbel(self, shape, eps=1e-20):
+        U = np.random.uniform(0, 1, shape)
+        return -np.log(-np.log(U + eps) + eps)
+
+    def gumbel_softmax_sample(self,logits):
+        y = logits + self.sample_gumbel(logits.shape)
+        return np.exp(y / self.temperature) / np.sum(np.exp(y / self.temperature), axis=1, keepdims=True)
+
+    def gumbel_softmax(self, logits):
+        y = self.gumbel_softmax_sample(logits, self.temperature)
+        y_hard = self.onehot_from_logits(y)
+        y = (y_hard - y) + y
+        return y
