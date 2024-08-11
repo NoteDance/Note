@@ -74,7 +74,7 @@ class RL:
                     a=np.array(a)
                     self.action_pool_list[index]=np.expand_dims(a,axis=0)
                 else:
-                    self.action_pool_list[index]=a
+                    self.action_pool_list[index]=np.expand_dims(a,axis=0)
                 self.next_state_pool_list[index]=np.expand_dims(next_s,axis=0)
                 self.reward_pool_list[index]=np.expand_dims(r,axis=0)
                 self.done_pool_list[index]=np.expand_dims(done,axis=0)
@@ -84,7 +84,7 @@ class RL:
                     a=np.array(a)
                     self.action_pool_list[index]=np.concatenate((self.action_pool_list[index],np.expand_dims(a,axis=0)),0)
                 else:
-                    self.action_pool_list[index]=np.concatenate((self.action_pool_list[index],a),0)
+                    self.action_pool_list[index]=np.concatenate((self.action_pool_list[index],np.expand_dims(a,axis=0)),0)
                 self.next_state_pool_list[index]=np.concatenate((self.next_state_pool_list[index],np.expand_dims(next_s,axis=0)),0)
                 self.reward_pool_list[index]=np.concatenate((self.reward_pool_list[index],np.expand_dims(r,axis=0)),0)
                 self.done_pool_list[index]=np.concatenate((self.done_pool[7],np.expand_dims(done,axis=0)),0)
@@ -108,7 +108,7 @@ class RL:
                     a=np.array(a)
                     self.action_pool=np.expand_dims(a,axis=0)
                 else:
-                    self.action_pool=a
+                    self.action_pool=np.expand_dims(a,axis=0)
                 self.next_state_pool=np.expand_dims(next_s,axis=0)
                 self.reward_pool=np.expand_dims(r,axis=0)
                 self.done_pool=np.expand_dims(done,axis=0)
@@ -118,7 +118,7 @@ class RL:
                     a=np.array(a)
                     self.action_pool=np.concatenate((self.action_pool,np.expand_dims(a,axis=0)),0)
                 else:
-                    self.action_pool=np.concatenate((self.action_pool,a),0)
+                    self.action_pool=np.concatenate((self.action_pool,np.expand_dims(a,axis=0)),0)
                 self.next_state_pool=np.concatenate((self.next_state_pool,np.expand_dims(next_s,axis=0)),0)
                 self.reward_pool=np.concatenate((self.reward_pool,np.expand_dims(r,axis=0)),0)
                 self.done_pool=np.concatenate((self.done_pool,np.expand_dims(done,axis=0)),0)
