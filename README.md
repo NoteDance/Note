@@ -1,5 +1,5 @@
 # Introduction:
-Note is a machine learning library. Note makes the building and training of neural networks easy and flexible. Note.nn.layer package contains many layer modules, you can use them to build neural networks. Note’s layer modules are implemented based on TensorFlow, which means they are compatible with TensorFlow’s API. The layer modules allow you to build neural networks in the style of PyTorch or Keras. You can not only use the layer modules to build neural networks trained on Note but also use them to build neural networks trained with TensorFlow. Note can be used not only for deep learning but also for reinforcement learning, it allows you to easily train agents built with Note, Keras, or PyTorch using reinforcement learning.
+Note is a machine learning library. Note makes the building and training of neural networks easy and flexible. Note can be used not only for deep learning but also for reinforcement learning, it allows you to easily train agents built with Note, Keras, or PyTorch using reinforcement learning.
 
 
 # Installation:
@@ -22,8 +22,8 @@ einops>=0.8.0
 python>=3.10
 
 
-# Layer modules:
-To use the layer module, you first need to create a layer object, then input data to get the output, like using pytorch, or you can use the layer module like using keras. Neural networks created with the layer module are compatible with TensorFlow, which means you can train these neural networks with TensorFlow.
+# Deep learning:
+Note.nn.layer package contains many layer modules, you can use them to build neural networks. Note’s layer modules are implemented based on TensorFlow, which means they are compatible with TensorFlow’s API. The layer modules allow you to build neural networks in the style of PyTorch or Keras. You can use the layer modules to build neural networks trained with TensorFlow.
 
 https://github.com/NoteDance/Note/tree/Note-7.0/Note/nn/layer
 
