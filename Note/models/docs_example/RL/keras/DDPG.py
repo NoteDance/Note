@@ -1,31 +1,34 @@
 import tensorflow as tf
 from Note import nn
-from tensorflow.keras import Model
+from keras.models import Sequential
+from keras import Model
 import gym
 
 
 class actor(Model):
     def __init__(self,state_dim,hidden_dim,action_dim,action_bound):
         super().__init__()
-        self.dense1 = tf.keras.layers.Dense(hidden_dim, activation='relu')
-        self.dense2 = tf.keras.layers.Dense(action_dim, activation='tanh')
+        self.model = Sequential()
+        self.model.add(tf.keras.layers.Dense(hidden_dim, input_shape=(state_dim,), activation='relu'))
+        self.model.add(tf.keras.layers.Dense(action_dim, activation='tanh'))
         self.action_bound=action_bound
     
     def __call__(self,x):
-        x = self.dense1(x)
-        return self.dense2(x)*self.action_bound
+        x = self.model(x)
+        return x*self.action_bound
 
 
 class critic(Model):
     def __init__(self,state_dim,hidden_dim,action_dim):
         super().__init__()
-        self.dense1 = tf.keras.layers.Dense(hidden_dim, activation='relu')
-        self.dense2 = tf.keras.layers.Dense(action_dim)
+        self.model = Sequential()
+        self.model.add(tf.keras.layers.Dense(hidden_dim, input_shape=(state_dim+action_dim,), activation='relu'))
+        self.model.add(tf.keras.layers.Dense(action_dim))
     
     def __call__(self,x,a):
         cat=tf.concat([x,a],axis=1)
-        x=self.dense1(cat)
-        return self.dense2(x)
+        x=self.model(cat)
+        return x
 
 
 class DDPG(nn.RL):

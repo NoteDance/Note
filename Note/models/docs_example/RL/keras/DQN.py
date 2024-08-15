@@ -1,17 +1,19 @@
 import tensorflow as tf
 from Note import nn
-from tensorflow.keras import Model
+from keras.models import Sequential
+from keras import Model
 import gym
 
 
 class Qnet(Model):
     def __init__(self,state_dim, hidden_dim, action_dim):
         super().__init__()
-        self.dense1 = tf.keras.layers.Dense(hidden_dim, activation='relu')
-        self.dense2 = tf.keras.layers.Dense(action_dim)
+        self.model = Sequential()
+        self.model.add(tf.keras.layers.Dense(hidden_dim, input_shape=(state_dim,), activation='relu'))
+        self.model.add(tf.keras.layers.Dense(action_dim))
     
     def __call__(self,x):
-        x = self.dense2(self.dense1(x))
+        x = self.model(x)
         return x
     
     
@@ -31,7 +33,10 @@ class DQN(nn.RL):
         q_value=tf.gather(self.q_net(s),a,axis=1,batch_dims=1)
         next_q_value=tf.reduce_max(self.target_q_net(next_s),axis=1)
         target=tf.cast(r,'float32')+0.98*next_q_value*(1-tf.cast(d,'float32'))
-        return tf.reduce_mean((q_value-target)**2)
+        TD=(q_value-target)
+        if self.PR==True:
+            self.prioritized_replay.update_TD(TD)
+        return tf.reduce_mean(TD**2)
     
     def update_param(self):
         nn.assign_param(self.target_q_net.weights,self.param)
