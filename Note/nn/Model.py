@@ -39,6 +39,8 @@ class Model:
         self.head=None
         self.head_=None
         self.ft_flag=0
+        self.ctl_list=Model.ctl_list
+        self.ctsl_list=Model.ctsl_list
         self.optimizer_=None
         self.path=None
         self.save_freq=1
@@ -171,14 +173,14 @@ class Model:
         return
     
     
-    def convert_to_list():
-        for ctl in Model.ctl_list:
+    def convert_to_list(self):
+        for ctl in self.ctl_list:
             ctl()
         return
     
     
-    def convert_to_shared_list(manager):
-        for ctsl in Model.ctsl_list:
+    def convert_to_shared_list(self,manager):
+        for ctsl in self.ctsl_list:
             ctsl(manager)
         return
     
