@@ -4,7 +4,6 @@ from tensorflow.python.util import nest
 from multiprocessing import Process,Value,Array
 import numpy as np
 from Note.DL.dl.test import parallel_test
-from Note.nn.Module import Module
 import matplotlib.pyplot as plt
 import pickle
 import os
@@ -832,7 +831,7 @@ class kernel:
             self._epoch_counter=list(self._epoch_counter)
             self._batch_counter=list(self._batch_counter)
             self.nn.optimizer.convert_to_list()
-            Module.convert_to_list()
+            self.nn.convert_to_list()
             pickle.dump(self.nn,output_file)
             pickle.dump(self.batch,output_file)
             pickle.dump(self.end_loss,output_file)
@@ -878,7 +877,7 @@ class kernel:
         self._epoch_counter=list(self._epoch_counter)
         self._batch_counter=list(self._batch_counter)
         self.nn.optimizer.convert_to_list()
-        Module.convert_to_list()
+        self.nn.convert_to_list()
         pickle.dump(self.nn,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.end_loss,output_file)
@@ -906,7 +905,7 @@ class kernel:
         input_file=open(s_path,'rb')
         self.nn=pickle.load(input_file)
         self.convert_to_shared_list(manager)
-        Module.convert_to_shared_list(manager)
+        self.nn.convert_to_shared_list(manager)
         self.nn.km=1
         self.nn.opt_counter=manager.list([tf.Variable(tf.zeros([self.process]))])
         self.ec=self.nn.ec
