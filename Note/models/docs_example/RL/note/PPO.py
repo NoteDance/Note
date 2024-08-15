@@ -29,12 +29,9 @@ class PPO(nn.RL):
     def __init__(self,state_dim,hidden_dim,action_dim,clip_eps,alpha):
         super().__init__()
         self.actor=actor(state_dim,hidden_dim,action_dim)
-        self.actor.detach()
         self.actor_old=actor(state_dim,hidden_dim,action_dim)
-        self.actor_old.detach()
         nn.assign_param(self.actor_old.param,self.actor.param.copy())
         self.critic=critic(state_dim,hidden_dim)
-        self.critic.detach()
         self.clip_eps=clip_eps
         self.alpha=alpha
         self.param=[self.actor.param,self.critic.param]

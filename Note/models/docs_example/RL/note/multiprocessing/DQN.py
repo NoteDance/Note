@@ -18,9 +18,7 @@ class DQN(nn.RL):
     def __init__(self,state_dim,hidden_dim,action_dim,processes):
         super().__init__()
         self.q_net=Qnet(state_dim,hidden_dim,action_dim)
-        self.q_net.detach()
         self.target_q_net=Qnet(state_dim,hidden_dim,action_dim)
-        self.target_q_net.detach()
         self.param=self.q_net.param
         self.env=[gym.make('CartPole-v0') for _ in range(processes)]
     

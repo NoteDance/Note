@@ -73,13 +73,9 @@ class DDPG(nn.RL):
         state_dim=self.env.observation_space[0].shape[0]
         action_dim=self.env.action_space[0].n
         self.actor=[actor(state_dim,hidden_dim,action_dim) for _ in range(self.env.num_agents)]
-        [self.actor[i].detach() for i in range(self.env.num_agents)]
         self.critic=[critic(state_dim,hidden_dim,action_dim) for _ in range(self.env.num_agents)]
-        [self.critic[i].detach() for i in range(self.env.num_agents)]
         self.target_actor=[actor(state_dim,hidden_dim,action_dim) for _ in range(self.env.num_agents)]
-        [self.target_actor[i].detach() for i in range(self.env.num_agents)]
         self.target_critic=[critic(state_dim,hidden_dim,action_dim) for _ in range(self.env.num_agents)]
-        [self.target_critic[i].detach() for i in range(self.env.num_agents)]
         [nn.assign_param(self.target_actor[i].param,self.actor[i].param) for i in range(self.env.num_agents)]
         [nn.assign_param(self.target_critic[i].param,self.critic[i].param) for i in range(self.env.num_agents)]
         self.param=[[self.actor[i].param for i in range(self.env.num_agents)],[self.critic[i].param for i in range(self.env.num_agents)]]

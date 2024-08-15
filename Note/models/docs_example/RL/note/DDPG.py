@@ -35,13 +35,9 @@ class DDPG(nn.RL):
         action_dim=self.env.action_space.shape[0]
         action_bound=self.env.action_space.high[0]
         self.actor=actor(state_dim,hidden_dim,action_dim,action_bound)
-        self.actor.detach()
         self.critic=critic(state_dim,hidden_dim,action_dim)
-        self.critic.detach()
         self.target_actor=actor(state_dim,hidden_dim,action_dim,action_bound)
-        self.target_actor.detach()
         self.target_critic=critic(state_dim,hidden_dim,action_dim)
-        self.target_critic.detach()
         nn.assign_param(self.target_actor.param,self.actor.param)
         nn.assign_param(self.target_critic.param,self.critic.param)
         self.param=[self.actor.param,self.critic.param]
