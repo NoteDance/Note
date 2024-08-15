@@ -39,7 +39,6 @@ class Model:
         self.head=None
         self.head_=None
         self.ft_flag=0
-        self.detach_flag=False
         self.optimizer_=None
         self.path=None
         self.save_freq=1
@@ -88,19 +87,6 @@ class Model:
             Model.name_list.pop()
             if len(Model.name_list)==0:
                 Model.name=None
-        return
-    
-    
-    def detach(self):
-        if self.detach_flag:
-            return
-        self.param=Model.param.copy()
-        self.param_dict=Model.param_dict.copy()
-        self.layer_dict=Model.layer_dict.copy()
-        self.layer_param=Model.layer_param.copy()
-        self.layer_list=Model.layer_list.copy()
-        self.layer_eval=Model.layer_eval.copy()
-        self.detach_flag=True
         return
     
     
@@ -1010,19 +996,20 @@ class Model:
     
     
     def init():
-        Model.param.clear()
-        Model.param_dict['dense_weight'].clear()
-        Model.param_dict['dense_bias'].clear()
-        Model.param_dict['conv2d_weight'].clear()
-        Model.param_dict['conv2d_bias'].clear()
-        Model.layer_dict.clear()
-        Model.layer_param.clear()
-        Model.layer_list.clear()
-        Model.layer_eval.clear()
+        Model.param=[]
+        Model.param_dict=dict()
+        Model.param_dict['dense_weight']=[]
+        Model.param_dict['dense_bias']=[]
+        Model.param_dict['conv2d_weight']=[]
+        Model.param_dict['conv2d_bias']=[]
+        Model.layer_dict=dict()
+        Model.layer_param=dict()
+        Model.layer_list=[]
+        Model.layer_eval=dict()
         Model.counter=0
         Model.name_list=[]
-        Model.ctl_list.clear()
-        Model.ctsl_list.clear()
+        Model.ctl_list=[]
+        Model.ctsl_list=[]
         Model.name=None
         Model.name_=None
         Model.train_flag=True
