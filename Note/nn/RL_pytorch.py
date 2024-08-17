@@ -372,14 +372,14 @@ class RL_pytorch:
             self.done_pool_list[p]=None
         while True:
             if self.HER!=True:
-                if None not in self.state_pool_list:
-                    inverse_len=[1/len(state_pool) for state_pool in self.state_pool_list]
-                    inverse_len=np.array(inverse_len)
+                if self.state_pool_list[p]==None:
+                    index=p
+                else:
+                    self.inverse_len[p]=1/len(self.state_pool_list[p])
+                    inverse_len=np.array(self.inverse_len)
                     total_inverse=np.sum(inverse_len)
                     prob=inverse_len/total_inverse
                     index=np.random.choice(self.processes,p=prob)
-                else:
-                    index=np.random.choice(self.processes)
             else:
                 index=p
             s=np.expand_dims(s,axis=0)
@@ -437,6 +437,7 @@ class RL_pytorch:
             self.next_state_pool_list=manager.list()
             self.reward_pool_list=manager.list()
             self.done_pool_list=manager.list()
+            self.inverse_len=manager.list([1 for _ in range(processes)])
             for _ in range(processes):
                 self.state_pool_list.append(None)
                 self.action_pool_list.append(None)
