@@ -372,8 +372,11 @@ class RL_pytorch:
             self.done_pool_list[p]=None
         while True:
             if self.HER!=True:
-                index=self.index_list.pop(0)
-                self.index_list.append(p)
+                if type(self.state_pool_list[p])!=np.ndarray and self.state_pool_list[p]==None:
+                    index=p
+                else:
+                    index=self.index_list.pop(0)
+                    self.index_list.append(p)
             else:
                 index=p
             s=np.expand_dims(s,axis=0)
