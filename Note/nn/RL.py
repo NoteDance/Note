@@ -240,6 +240,14 @@ class RL:
         return s,a,next_s,r,d
     
     
+    def dataset_fn(self, dataset, global_batch_size, input_context):
+        batch_size = input_context.get_per_replica_batch_size(global_batch_size)
+        dataset = dataset.shard(input_context.num_input_pipelines,
+                                input_context.input_pipeline_id)
+        dataset = dataset.batch(batch_size)
+        return dataset
+    
+    
     @tf.function(jit_compile=True)
     def train_step(self, train_data, train_loss, optimizer):
         with tf.GradientTape() as tape:
@@ -296,6 +304,31 @@ class RL:
         per_replica_losses = strategy.run(self._train_step, args=(dataset_inputs, optimizer))
         return strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses,
                              axis=None)
+    
+    
+    def CTL_training(self, train_dist_dataset):
+        iterator = iter(train_dist_dataset)
+        total_loss = 0.0
+        num_batches = 0
+        
+        while self.step_in_epoch.numpy() < self.num_steps_per_epoch:
+          if self.jit_compile==True:
+              total_loss += self.distributed_train_step(next(iterator), self.optimizer_)
+          else:
+              total_loss += self.distributed_train_step_(next(iterator), self.optimizer_)
+          num_batches += 1
+          self.batch_counter+=1
+          self.step_in_epoch.assign_add(1)
+          if self.pool_network==True:
+              if self.batch_counter%self.update_batches==0:
+                  self.update_param()
+                  if self.PPO:
+                      self.state_pool=None
+                      self.action_pool=None
+                      self.next_state_pool=None
+                      self.reward_pool=None
+                      self.done_pool=None
+        return total_loss,num_batches
     
     
     def train1(self, train_loss, optimizer):
@@ -373,22 +406,28 @@ class RL:
                             train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).shuffle(len(self.state_pool)).batch(self.global_batch_size)
                     else:
                         train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).shuffle(len(self.state_pool)).batch(self.batch)
-                    for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
-                        if self.jit_compile==True:
-                            total_loss+=self.distributed_train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.strategy)
-                        else:
-                            total_loss+=self.distributed_train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.strategy)
-                        num_batches += 1
-                        self.batch_counter += 1
-                        if self.pool_network==True:
-                            if self.batch_counter%self.update_batches==0:
-                                self.update_param()
-                                if self.PPO:
-                                    self.state_pool=None
-                                    self.action_pool=None
-                                    self.next_state_pool=None
-                                    self.reward_pool=None
-                                    self.done_pool=None
+                    if isinstance(self.strategy,tf.distribute.MultiWorkerMirroredStrategy):
+                        with self.strategy.scope():
+                            multi_worker_dataset = self.strategy.distribute_datasets_from_function(
+                                lambda input_context: self.dataset_fn(self.global_batch_size, input_context))  
+                        total_loss,num_batches=self.CTL_training(multi_worker_dataset)
+                    else:
+                        for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
+                            if self.jit_compile==True:
+                                total_loss+=self.distributed_train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.strategy)
+                            else:
+                                total_loss+=self.distributed_train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.strategy)
+                            num_batches += 1
+                            self.batch_counter += 1
+                            if self.pool_network==True:
+                                if self.batch_counter%self.update_batches==0:
+                                    self.update_param()
+                                    if self.PPO:
+                                        self.state_pool=None
+                                        self.action_pool=None
+                                        self.next_state_pool=None
+                                        self.reward_pool=None
+                                        self.done_pool=None
                 else:
                     if self.pool_network==True:
                         if self.shuffle!=True:
@@ -397,22 +436,28 @@ class RL:
                             train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).shuffle(len(self.state_pool)).batch(self.global_batch_size)
                     else:
                         train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).shuffle(len(self.state_pool)).batch(self.batch)
-                    for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
-                        if self.jit_compile==True:
-                            self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
-                        else:
-                            self.train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
-                        num_batches += 1
-                        self.batch_counter += 1
-                        if self.pool_network==True:
-                            if self.batch_counter%self.update_batches==0:
-                                self.update_param()
-                                if self.PPO:
-                                    self.state_pool=None
-                                    self.action_pool=None
-                                    self.next_state_pool=None
-                                    self.reward_pool=None
-                                    self.done_pool=None
+                    if isinstance(self.strategy,tf.distribute.MultiWorkerMirroredStrategy):
+                        with self.strategy.scope():
+                            multi_worker_dataset = self.strategy.distribute_datasets_from_function(
+                                lambda input_context: self.dataset_fn(self.global_batch_size, input_context))  
+                        total_loss,num_batches=self.CTL_training(multi_worker_dataset)
+                    else:
+                        for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
+                            if self.jit_compile==True:
+                                self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
+                            else:
+                                self.train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
+                            num_batches += 1
+                            self.batch_counter += 1
+                            if self.pool_network==True:
+                                if self.batch_counter%self.update_batches==0:
+                                    self.update_param()
+                                    if self.PPO:
+                                        self.state_pool=None
+                                        self.action_pool=None
+                                        self.next_state_pool=None
+                                        self.reward_pool=None
+                                        self.done_pool=None
             if self.update_steps!=None:
                 if self.step_counter%self.update_steps==0:
                     self.update_param()
@@ -754,8 +799,10 @@ class RL:
         return
     
     
-    def distributed_training(self, global_batch_size, optimizer, strategy, episodes=None, jit_compile=True, mp=None, manager=None, processes=None, processes_her=None, shuffle=False, p=None):
+    def distributed_training(self, global_batch_size, optimizer, strategy, episodes=None, num_epochs=None, num_steps_per_epoch=None, checkpoint=None, checkpoint_dir=None, max_to_keep=1, jit_compile=True, mp=None, manager=None, processes=None, processes_her=None, shuffle=False, p=None):
         avg_reward=None
+        if num_epochs!=None:
+            episodes=num_epochs
         if p==None:
             self.p=9
         else:
@@ -822,8 +869,149 @@ class RL:
         with strategy.scope():
             def compute_loss(self, per_example_loss):
                 return tf.nn.compute_average_loss(per_example_loss, global_batch_size=global_batch_size)
-        if episodes!=None:
-            for i in range(episodes):
+        if isinstance(strategy,tf.distribute.MirroredStrategy):
+            if episodes!=None:
+                for i in range(episodes):
+                    t1=time.time()
+                    if self.pool_network==True:
+                        process_list=[]
+                        for p in range(processes):
+                            process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
+                            process.start()
+                            process_list.append(process)
+                        for process in process_list:
+                            process.join()
+                        if processes_her==None:
+                            self.state_pool=np.concatenate(self.state_pool_list)
+                            self.action_pool=np.concatenate(self.action_pool_list)
+                            self.next_state_pool=np.concatenate(self.next_state_pool_list)
+                            self.reward_pool=np.concatenate(self.reward_pool_list)
+                            self.done_pool=np.concatenate(self.done_pool_list)
+                        else:
+                            self.state_pool[7]=np.concatenate(self.state_pool_list)
+                            self.action_pool[7]=np.concatenate(self.action_pool_list)
+                            self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
+                            self.reward_pool[7]=np.concatenate(self.reward_pool_list)
+                            self.done_pool[7]=np.concatenate(self.done_pool_list)
+                        self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
+                        if len(self.reward_list)>self.trial_count:
+                            del self.reward_list[0]
+                        loss=self.train1(None, self.optimizer_)
+                    else:
+                        loss=self.train2(None,self.optimizer_)
+                    self.loss=loss
+                    self.loss_list.append(loss)
+                    self.total_episode+=1
+                    if self.path!=None and i%self.save_freq==0:
+                        if self.save_param_only==False:
+                            self.save_param_(self.path)
+                        else:
+                            self.save_(self.path)
+                    if self.trial_count!=None:
+                        if len(self.reward_list)>=self.trial_count:
+                            avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                            if self.criterion!=None and avg_reward>=self.criterion:
+                                t2=time.time()
+                                self.total_time+=(t2-t1)
+                                time_=self.total_time-int(self.total_time)
+                                if time_<0.5:
+                                    self.total_time=int(self.total_time)
+                                else:
+                                    self.total_time=int(self.total_time)+1
+                                print('episode:{0}'.format(self.total_episode))
+                                print('average reward:{0}'.format(avg_reward))
+                                print()
+                                print('time:{0}s'.format(self.total_time))
+                                return
+                    if i%p==0:
+                        if len(self.state_pool)>=self.batch:
+                            print('episode:{0}   loss:{1:.4f}'.format(i+1,loss))
+                        if avg_reward!=None:
+                            print('episode:{0}   average reward:{1}'.format(i+1,avg_reward))
+                        else:
+                            print('episode:{0}   reward:{1}'.format(i+1,self.reward))
+                        print()
+                    t2=time.time()
+                    self.time+=(t2-t1)
+            else:
+                i=0
+                while True:
+                    t1=time.time()
+                    if self.pool_network==True:
+                        process_list=[]
+                        for p in range(processes):
+                            process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
+                            process.start()
+                            process_list.append(process)
+                        for process in process_list:
+                            process.join()
+                        if processes_her==None:
+                            self.state_pool=np.concatenate(self.state_pool_list)
+                            self.action_pool=np.concatenate(self.action_pool_list)
+                            self.next_state_pool=np.concatenate(self.next_state_pool_list)
+                            self.reward_pool=np.concatenate(self.reward_pool_list)
+                            self.done_pool=np.concatenate(self.done_pool_list)
+                        else:
+                            self.state_pool[7]=np.concatenate(self.state_pool_list)
+                            self.action_pool[7]=np.concatenate(self.action_pool_list)
+                            self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
+                            self.reward_pool[7]=np.concatenate(self.reward_pool_list)
+                            self.done_pool[7]=np.concatenate(self.done_pool_list)
+                        self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
+                        if len(self.reward_list)>self.trial_count:
+                            del self.reward_list[0]
+                        loss=self.train1(None, self.optimizer_)
+                    else:
+                        loss=self.train2(None,self.optimizer_)
+                    self.loss=loss
+                    self.loss_list.append(loss)
+                    i+=1
+                    self.total_episode+=1
+                    if self.path!=None and i%self.save_freq==0:
+                        if self.save_param_only==False:
+                            self.save_param_(self.path)
+                        else:
+                            self.save_(self.path)
+                    if self.trial_count!=None:
+                        if len(self.reward_list)>=self.trial_count:
+                            avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                            if self.criterion!=None and avg_reward>=self.criterion:
+                                t2=time.time()
+                                self.total_time+=(t2-t1)
+                                time_=self.total_time-int(self.total_time)
+                                if time_<0.5:
+                                    self.total_time=int(self.total_time)
+                                else:
+                                    self.total_time=int(self.total_time)+1
+                                print('episode:{0}'.format(self.total_episode))
+                                print('average reward:{0}'.format(avg_reward))
+                                print()
+                                print('time:{0}s'.format(self.total_time))
+                                return
+                    if i%p==0:
+                        if len(self.state_pool)>=self.batch:
+                            print('episode:{0}   loss:{1:.4f}'.format(i+1,loss))
+                        if avg_reward!=None:
+                            print('episode:{0}   average reward:{1}'.format(i+1,avg_reward))
+                        else:
+                            print('episode:{0}   reward:{1}'.format(i+1,self.reward))
+                        print()
+                    t2=time.time()
+                    self.time+=(t2-t1)
+        elif isinstance(strategy,tf.distribute.MultiWorkerMirroredStrategy):
+            self.epoch = tf.Variable(
+                initial_value=tf.constant(0, dtype=tf.dtypes.int64), name='epoch')
+            self.step_in_epoch = tf.Variable(
+                initial_value=tf.constant(0, dtype=tf.dtypes.int64),
+                name='step_in_epoch')
+            task_type, task_id, cluster_spec = (strategy.cluster_resolver.task_type,
+                            strategy.cluster_resolver.task_id,
+                            strategy.cluster_resolver.cluster_spec())
+            write_checkpoint_dir = self.write_filepath(checkpoint_dir, task_type, task_id, cluster_spec)
+            checkpoint_manager = tf.train.CheckpointManager(
+                                checkpoint, 
+                                directory=write_checkpoint_dir, max_to_keep=max_to_keep)
+            while self.epoch.numpy() < num_epochs:
                 t1=time.time()
                 if self.pool_network==True:
                     process_list=[]
@@ -851,79 +1039,17 @@ class RL:
                     loss=self.train1(None, self.optimizer_)
                 else:
                     loss=self.train2(None,self.optimizer_)
+                    
+                checkpoint_manager.save()
+                if not self._is_chief(task_type, task_id, cluster_spec):
+                  tf.io.gfile.rmtree(write_checkpoint_dir)
+              
+                self.epoch.assign_add(1)
+                self.step_in_epoch.assign(0)
+                
                 self.loss=loss
                 self.loss_list.append(loss)
                 self.total_episode+=1
-                if self.path!=None and i%self.save_freq==0:
-                    if self.save_param_only==False:
-                        self.save_param_(self.path)
-                    else:
-                        self.save_(self.path)
-                if self.trial_count!=None:
-                    if len(self.reward_list)>=self.trial_count:
-                        avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
-                        if self.criterion!=None and avg_reward>=self.criterion:
-                            t2=time.time()
-                            self.total_time+=(t2-t1)
-                            time_=self.total_time-int(self.total_time)
-                            if time_<0.5:
-                                self.total_time=int(self.total_time)
-                            else:
-                                self.total_time=int(self.total_time)+1
-                            print('episode:{0}'.format(self.total_episode))
-                            print('average reward:{0}'.format(avg_reward))
-                            print()
-                            print('time:{0}s'.format(self.total_time))
-                            return
-                if i%p==0:
-                    if len(self.state_pool)>=self.batch:
-                        print('episode:{0}   loss:{1:.4f}'.format(i+1,loss))
-                    if avg_reward!=None:
-                        print('episode:{0}   average reward:{1}'.format(i+1,avg_reward))
-                    else:
-                        print('episode:{0}   reward:{1}'.format(i+1,self.reward))
-                    print()
-                t2=time.time()
-                self.time+=(t2-t1)
-        else:
-            i=0
-            while True:
-                t1=time.time()
-                if self.pool_network==True:
-                    process_list=[]
-                    for p in range(processes):
-                        process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
-                        process.start()
-                        process_list.append(process)
-                    for process in process_list:
-                        process.join()
-                    if processes_her==None:
-                        self.state_pool=np.concatenate(self.state_pool_list)
-                        self.action_pool=np.concatenate(self.action_pool_list)
-                        self.next_state_pool=np.concatenate(self.next_state_pool_list)
-                        self.reward_pool=np.concatenate(self.reward_pool_list)
-                        self.done_pool=np.concatenate(self.done_pool_list)
-                    else:
-                        self.state_pool[7]=np.concatenate(self.state_pool_list)
-                        self.action_pool[7]=np.concatenate(self.action_pool_list)
-                        self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
-                        self.reward_pool[7]=np.concatenate(self.reward_pool_list)
-                        self.done_pool[7]=np.concatenate(self.done_pool_list)
-                    self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
-                    if len(self.reward_list)>self.trial_count:
-                        del self.reward_list[0]
-                    loss=self.train1(None, self.optimizer_)
-                else:
-                    loss=self.train2(None,self.optimizer_)
-                self.loss=loss
-                self.loss_list.append(loss)
-                i+=1
-                self.total_episode+=1
-                if self.path!=None and i%self.save_freq==0:
-                    if self.save_param_only==False:
-                        self.save_param_(self.path)
-                    else:
-                        self.save_(self.path)
                 if self.trial_count!=None:
                     if len(self.reward_list)>=self.trial_count:
                         avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
@@ -956,8 +1082,31 @@ class RL:
         else:
             self.total_time=int(self.time)+1
         self.total_time+=self.time
-        print('time:{0}s'.format(self.time))
+        print('time:{0}s'.format(self.time))      
         return
+    
+    
+    def _is_chief(self, task_type, task_id, cluster_spec):
+        return (task_type is None
+                or task_type == 'chief'
+                or (task_type == 'worker'
+                    and task_id == 0
+                    and 'chief' not in cluster_spec.as_dict()))
+
+
+    def _get_temp_dir(self, dirpath, task_id):
+      base_dirpath = 'workertemp_' + str(task_id)
+      temp_dir = os.path.join(dirpath, base_dirpath)
+      tf.io.gfile.makedirs(temp_dir)
+      return temp_dir
+    
+    
+    def write_filepath(self, filepath, task_type, task_id, cluster_spec):
+      dirpath = os.path.dirname(filepath)
+      base = os.path.basename(filepath)
+      if not self._is_chief(task_type, task_id, cluster_spec):
+        dirpath = self._get_temp_dir(dirpath, task_id)
+      return os.path.join(dirpath, base)
     
     
     def run_agent(self, max_steps, seed=None):
