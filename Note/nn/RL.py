@@ -409,7 +409,7 @@ class RL:
                     if isinstance(self.strategy,tf.distribute.MultiWorkerMirroredStrategy):
                         with self.strategy.scope():
                             multi_worker_dataset = self.strategy.distribute_datasets_from_function(
-                                lambda input_context: self.dataset_fn(self.global_batch_size, input_context))  
+                                lambda input_context: self.dataset_fn(train_ds, self.global_batch_size, input_context))  
                         total_loss,num_batches=self.CTL_training(multi_worker_dataset)
                     else:
                         for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
@@ -439,7 +439,7 @@ class RL:
                     if isinstance(self.strategy,tf.distribute.MultiWorkerMirroredStrategy):
                         with self.strategy.scope():
                             multi_worker_dataset = self.strategy.distribute_datasets_from_function(
-                                lambda input_context: self.dataset_fn(self.global_batch_size, input_context))  
+                                lambda input_context: self.dataset_fn(train_ds, self.global_batch_size, input_context))  
                         total_loss,num_batches=self.CTL_training(multi_worker_dataset)
                     else:
                         for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
