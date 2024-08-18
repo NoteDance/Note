@@ -591,7 +591,7 @@ class Model:
         return
     
     
-    def distributed_training(self, train_dist_dataset, loss_object, global_batch_size, optimizer, strategy, epochs=None, num_epochs=None, num_steps_per_epoch=None, train_accuracy=None, test_dist_dataset=None, test_loss=None, test_accuracy=None, write_checkpoint_dir=None, checkpoint_manager=None, jit_compile=True, p=None):
+    def distributed_training(self, train_dist_dataset, loss_object, global_batch_size, optimizer, strategy, epochs=None, num_epochs=None, num_steps_per_epoch=None, train_accuracy=None, test_dist_dataset=None, test_loss=None, test_accuracy=None, checkpoint=None, checkpoint_dir=None, max_to_keep=1, jit_compile=True, p=None):
         if p==None:
             p_=9
         else:
@@ -825,7 +825,7 @@ class Model:
             self.step_in_epoch = tf.Variable(
                 initial_value=tf.constant(0, dtype=tf.dtypes.int64),
                 name='step_in_epoch')
-            self.CTL_training(train_dist_dataset, num_epochs, num_steps_per_epoch, train_accuracy, strategy, write_checkpoint_dir, checkpoint_manager, jit_compile)
+            self.CTL_training(train_dist_dataset, num_epochs, num_steps_per_epoch, train_accuracy, strategy, checkpoint, checkpoint_dir, max_to_keep, jit_compile)
         return
     
     
@@ -852,7 +852,15 @@ class Model:
       return os.path.join(dirpath, base)
     
     
-    def CTL_training(self, train_dist_dataset, num_epochs, num_steps_per_epoch, train_accuracy, strategy, write_checkpoint_dir, checkpoint_manager, jit_compile):
+    def CTL_training(self, train_dist_dataset, num_epochs, num_steps_per_epoch, train_accuracy, strategy, checkpoint, checkpoint_dir, max_to_keep, jit_compile):
+        task_type, task_id, cluster_spec = (strategy.cluster_resolver.task_type,
+                                    strategy.cluster_resolver.task_id,
+                                    strategy.cluster_resolver.cluster_spec())
+        write_checkpoint_dir = self.write_filepath(checkpoint_dir, task_type, task_id, cluster_spec)
+        checkpoint_manager = tf.train.CheckpointManager(
+                            checkpoint, 
+                            directory=write_checkpoint_dir, max_to_keep=1)
+            
         while self.epoch.numpy() < num_epochs:
           iterator = iter(train_dist_dataset)
           total_loss = 0.0
@@ -873,7 +881,7 @@ class Model:
           train_accuracy.reset_states()
         
           checkpoint_manager.save()
-          if not self._is_chief(strategy.cluster_resolver.task_type, strategy.cluster_resolver.task_id, strategy.cluster_resolver.cluster_spec()):
+          if not self._is_chief(task_type, task_id, cluster_spec):
             tf.io.gfile.rmtree(write_checkpoint_dir)
         
           self.epoch.assign_add(1)
