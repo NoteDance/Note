@@ -859,7 +859,7 @@ class Model:
         write_checkpoint_dir = self.write_filepath(checkpoint_dir, task_type, task_id, cluster_spec)
         checkpoint_manager = tf.train.CheckpointManager(
                             checkpoint, 
-                            directory=write_checkpoint_dir, max_to_keep=1)
+                            directory=write_checkpoint_dir, max_to_keep=max_to_keep)
             
         while self.epoch.numpy() < num_epochs:
           iterator = iter(train_dist_dataset)
