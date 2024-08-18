@@ -361,7 +361,7 @@ class RL:
                         else:
                             total_loss+=self.distributed_train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.strategy)
                         num_batches += 1
-                        self.batch_counter+=1
+                        self.batch_counter += 1
                 else:
                     if self.pool_network==True:
                         if self.shuffle!=True:
@@ -375,7 +375,8 @@ class RL:
                             self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
                         else:
                             self.train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
-                        self.batch_counter+=1
+                        num_batches += 1
+                        self.batch_counter += 1
             if self.update_steps!=None:
                 if self.pool_network==True:
                     if self.batch_counter%self.update_batches==0:
