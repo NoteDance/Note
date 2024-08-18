@@ -65,7 +65,7 @@ Note.models.tf package contains neural networks implemented with Note’s layer 
 
 https://github.com/NoteDance/Note/tree/Note-7.0/Note/models/tf
 
-**Documentation**: https://github.com/NoteDance/Note-documentation/tree/tf-7.0
+**Documentation**: https://github.com/NoteDance/Note-documentation/tree/Model-7.0
 
 
 # Reinforcement learning：
