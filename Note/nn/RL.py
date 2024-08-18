@@ -306,12 +306,12 @@ class RL:
                              axis=None)
     
     
-    def CTL_training(self, train_dist_dataset):
+    def CTL_training(self, train_dist_dataset, num_steps_per_epoch):
         iterator = iter(train_dist_dataset)
         total_loss = 0.0
         num_batches = 0
         
-        while self.step_in_epoch.numpy() < self.num_steps_per_epoch:
+        while self.step_in_epoch.numpy() < num_steps_per_epoch:
           if self.jit_compile==True:
               total_loss += self.distributed_train_step(next(iterator), self.optimizer_)
           else:
@@ -410,7 +410,7 @@ class RL:
                         with self.strategy.scope():
                             multi_worker_dataset = self.strategy.distribute_datasets_from_function(
                                 lambda input_context: self.dataset_fn(train_ds, self.global_batch_size, input_context))  
-                        total_loss,num_batches=self.CTL_training(multi_worker_dataset)
+                        total_loss,num_batches=self.CTL_training(multi_worker_dataset, int(len(self.state_pool)/self.global_batch_size)+1)
                     else:
                         for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
                             if self.jit_compile==True:
@@ -440,7 +440,7 @@ class RL:
                         with self.strategy.scope():
                             multi_worker_dataset = self.strategy.distribute_datasets_from_function(
                                 lambda input_context: self.dataset_fn(train_ds, self.global_batch_size, input_context))  
-                        total_loss,num_batches=self.CTL_training(multi_worker_dataset)
+                        total_loss,num_batches=self.CTL_training(multi_worker_dataset,int(len(self.state_pool)/self.global_batch_size)+1)
                     else:
                         for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
                             if self.jit_compile==True:
@@ -799,7 +799,7 @@ class RL:
         return
     
     
-    def distributed_training(self, global_batch_size, optimizer, strategy, episodes=None, num_epochs=None, num_steps_per_epoch=None, checkpoint=None, checkpoint_dir=None, max_to_keep=1, jit_compile=True, mp=None, manager=None, processes=None, processes_her=None, shuffle=False, p=None):
+    def distributed_training(self, global_batch_size, optimizer, strategy, episodes=None, num_epochs=None, checkpoint=None, checkpoint_dir=None, max_to_keep=1, jit_compile=True, mp=None, manager=None, processes=None, processes_her=None, shuffle=False, p=None):
         avg_reward=None
         if num_epochs!=None:
             episodes=num_epochs
