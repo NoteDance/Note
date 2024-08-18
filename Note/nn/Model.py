@@ -820,49 +820,64 @@ class Model:
             self.total_time+=self.time
             print('time:{0}s'.format(self.time))
         elif isinstance(strategy,tf.distribute.MultiWorkerMirroredStrategy):
+            self.epoch = tf.Variable(
+                initial_value=tf.constant(0, dtype=tf.dtypes.int64), name='epoch')
+            self.step_in_epoch = tf.Variable(
+                initial_value=tf.constant(0, dtype=tf.dtypes.int64),
+                name='step_in_epoch')
             self.CTL_training(train_dist_dataset, num_epochs, num_steps_per_epoch, train_accuracy, strategy, write_checkpoint_dir, checkpoint_manager, jit_compile)
         return
     
     
+    def _is_chief(self, task_type, task_id, cluster_spec):
+        return (task_type is None
+                or task_type == 'chief'
+                or (task_type == 'worker'
+                    and task_id == 0
+                    and 'chief' not in cluster_spec.as_dict()))
+    
+    
+    def _get_temp_dir(self, dirpath, task_id):
+      base_dirpath = 'workertemp_' + str(task_id)
+      temp_dir = os.path.join(dirpath, base_dirpath)
+      tf.io.gfile.makedirs(temp_dir)
+      return temp_dir
+    
+    
+    def write_filepath(self, filepath, task_type, task_id, cluster_spec):
+      dirpath = os.path.dirname(filepath)
+      base = os.path.basename(filepath)
+      if not self._is_chief(task_type, task_id, cluster_spec):
+        dirpath = self._get_temp_dir(dirpath, task_id)
+      return os.path.join(dirpath, base)
+    
+    
     def CTL_training(self, train_dist_dataset, num_epochs, num_steps_per_epoch, train_accuracy, strategy, write_checkpoint_dir, checkpoint_manager, jit_compile):
-        epoch = tf.Variable(
-            initial_value=tf.constant(0, dtype=tf.dtypes.int64), name='epoch')
-        step_in_epoch = tf.Variable(
-            initial_value=tf.constant(0, dtype=tf.dtypes.int64),
-            name='step_in_epoch')
-        
-        def _is_chief(task_type, task_id, cluster_spec):
-            return (task_type is None
-                    or task_type == 'chief'
-                    or (task_type == 'worker'
-                        and task_id == 0
-                        and 'chief' not in cluster_spec.as_dict()))
-        
-        while epoch.numpy() < num_epochs:
+        while self.epoch.numpy() < num_epochs:
           iterator = iter(train_dist_dataset)
           total_loss = 0.0
           num_batches = 0
         
-          while step_in_epoch.numpy() < num_steps_per_epoch:
+          while self.step_in_epoch.numpy() < num_steps_per_epoch:
             if jit_compile==True:
                 total_loss += self.distributed_train_step(next(iterator), self.optimizer_, train_accuracy, strategy)
             else:
                 total_loss += self.distributed_train_step_(next(iterator), self.optimizer_, train_accuracy, strategy)
             num_batches += 1
-            step_in_epoch.assign_add(1)
+            self.step_in_epoch.assign_add(1)
         
           train_loss = total_loss / num_batches
           print('Epoch: %d, accuracy: %f, train_loss: %f.'
-                        %(epoch.numpy(), train_accuracy.result(), train_loss))
+                        %(self.epoch.numpy(), train_accuracy.result(), train_loss))
         
           train_accuracy.reset_states()
         
           checkpoint_manager.save()
-          if not _is_chief(strategy.cluster_resolver.task_type, strategy.cluster_resolver.task_id, strategy.cluster_resolver.cluster_spec()):
+          if not self._is_chief(strategy.cluster_resolver.task_type, strategy.cluster_resolver.task_id, strategy.cluster_resolver.cluster_spec()):
             tf.io.gfile.rmtree(write_checkpoint_dir)
         
-          epoch.assign_add(1)
-          step_in_epoch.assign(0)
+          self.epoch.assign_add(1)
+          self.step_in_epoch.assign(0)
         return
     
     
