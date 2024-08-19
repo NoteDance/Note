@@ -367,8 +367,8 @@ class RL:
                 for j in range(batches):
                     state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.data_func()
                     train_ds=tf.data.Dataset.from_tensor_slices((state_batch,action_batch,next_state_batch,reward_batch,done_batch)).batch(self.global_batch_size)
-                    train_ds=self.strategy.experimental_distribute_dataset(train_ds)
                     if isinstance(self.strategy,tf.distribute.MirroredStrategy):
+                        train_ds=self.strategy.experimental_distribute_dataset(train_ds)
                         for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
                             if self.distributed_flag==True:
                                 if self.jit_compile==True:
@@ -401,8 +401,8 @@ class RL:
                 if len(self.state_pool)%self.batch!=0:
                     state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.data_func()
                     train_ds=tf.data.Dataset.from_tensor_slices((state_batch,action_batch,next_state_batch,reward_batch,done_batch)).batch(self.global_batch_size)
-                    train_ds=self.strategy.experimental_distribute_dataset(train_ds)
                     if isinstance(self.strategy,tf.distribute.MirroredStrategy):
+                        train_ds=self.strategy.experimental_distribute_dataset(train_ds)
                         for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
                             if self.distributed_flag==True:
                                 if self.jit_compile==True:
@@ -497,7 +497,6 @@ class RL:
                             multi_worker_dataset = self.strategy.distribute_datasets_from_function(
                                 lambda input_context: self.dataset_fn(train_ds, self.global_batch_size, input_context))  
                         total_loss,num_batches=self.CTL(multi_worker_dataset,int(len(self.state_pool)/self.global_batch_size)+1)
-
             if self.update_steps!=None:
                 if self.step_counter%self.update_steps==0:
                     self.update_param()
