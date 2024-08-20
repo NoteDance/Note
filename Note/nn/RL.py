@@ -306,8 +306,8 @@ class RL:
                              axis=None)
     
     
-    def CTL(self, train_dist_dataset, num_steps_per_episode=None):
-        iterator = iter(train_dist_dataset)
+    def CTL(self, multi_worker_dataset, num_steps_per_episode=None):
+        iterator = iter(multi_worker_dataset)
         total_loss = 0.0
         num_batches = 0
         
