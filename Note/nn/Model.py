@@ -815,13 +815,16 @@ class Model:
         elif isinstance(strategy,tf.distribute.MultiWorkerMirroredStrategy):
             epoch = 0
             self.step_in_epoch = 0
+            with strategy.scope():
+                multi_worker_dataset = strategy.distribute_datasets_from_function(
+                        lambda input_context: self.dataset_fn(train_dist_dataset, global_batch_size, input_context))
             while epoch < num_epochs:
                 t1=time.time()
                 
                 if self.steps_per_execution==None and self.end():
                     break
                 
-                train_loss=self.CTL(train_dist_dataset, num_epochs, num_steps_per_epoch, train_accuracy, strategy, jit_compile)
+                train_loss=self.CTL(multi_worker_dataset, num_epochs, num_steps_per_epoch, train_accuracy, strategy, jit_compile)
                 
                 self.train_loss=train_loss.numpy()
                 self.train_loss_list.append(self.train_loss)
@@ -870,8 +873,16 @@ class Model:
         return
     
     
-    def CTL(self, train_dist_dataset, num_epochs, num_steps_per_epoch, train_accuracy, strategy, jit_compile):
-        iterator = iter(train_dist_dataset)
+    def dataset_fn(self, dataset, global_batch_size, input_context):
+        batch_size = input_context.get_per_replica_batch_size(global_batch_size)
+        dataset = dataset.shard(input_context.num_input_pipelines,
+                                input_context.input_pipeline_id)
+        dataset = dataset.batch(batch_size)
+        return dataset
+    
+    
+    def CTL(self, multi_worker_dataset, num_epochs, num_steps_per_epoch, train_accuracy, strategy, jit_compile):
+        iterator = iter(multi_worker_dataset)
         total_loss = 0.0
         num_batches = 0
         
