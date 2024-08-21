@@ -591,7 +591,7 @@ class Model:
         return
     
     
-    def distributed_training(self, train_dist_dataset, loss_object, global_batch_size, optimizer, strategy, epochs=None, num_epochs=None, num_steps_per_epoch=None, train_accuracy=None, test_dist_dataset=None, test_loss=None, test_accuracy=None, jit_compile=True, p=None):
+    def distributed_training(self, train_dataset, loss_object, global_batch_size, optimizer, strategy, epochs=None, num_epochs=None, num_steps_per_epoch=None, train_accuracy=None, test_dataset=None, test_loss=None, test_accuracy=None, jit_compile=True, p=None):
         if num_epochs!=None:
             epochs=num_epochs
         if p==None:
@@ -612,6 +612,9 @@ class Model:
                 per_example_loss = loss_object(labels, output)
                 return tf.nn.compute_average_loss(per_example_loss, global_batch_size=global_batch_size)
         if isinstance(strategy,tf.distribute.MirroredStrategy):
+            train_dist_dataset=strategy.experimental_distribute_dataset(train_dataset)
+            if test_dataset!=None:
+                test_dist_dataset=strategy.experimental_distribute_dataset(test_dataset)        
             if epochs!=None:
                 for epoch in range(epochs):
                     t1=time.time()
