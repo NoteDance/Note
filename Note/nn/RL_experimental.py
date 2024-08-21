@@ -1,5 +1,6 @@
 import tensorflow as tf
 from Note import nn
+import multiprocessing
 from Note.RL import rl
 from Note.RL.rl.prioritized_replay import pr
 from multiprocessing import Array,Value
@@ -633,7 +634,7 @@ class RL:
             s=next_s
     
     
-    def train(self, train_loss, optimizer, episodes=None, jit_compile=True, mp=None, manager=None, processes=None, processes_her=None, shuffle=False, p=None):
+    def train(self, train_loss, optimizer, episodes=None, jit_compile=True, pool_network=True, processes=None, processes_her=None, shuffle=False, p=None):
         avg_reward=None
         if p==None:
             self.p=9
@@ -648,13 +649,14 @@ class RL:
         if p==0:
             p=1
         self.jit_compile=jit_compile
-        self.pool_network=False
-        self.mp=mp
+        self.pool_network=pool_network
         self.processes=processes
         self.processes_her=processes_her
         self.shuffle=shuffle
-        if mp!=None:
-            self.pool_network=True
+        if pool_network==True:
+            mp=multiprocessing
+            self.mp=mp
+            manager=multiprocessing.Manager()
             self.state_pool_list=manager.list()
             self.action_pool_list=manager.list()
             self.next_state_pool_list=manager.list()
@@ -700,7 +702,7 @@ class RL:
             for i in range(episodes):
                 t1=time.time()
                 train_loss.reset_states()
-                if self.pool_network==True:
+                if pool_network==True:
                     process_list=[]
                     for p in range(processes):
                         process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
@@ -765,7 +767,7 @@ class RL:
             while True:
                 t1=time.time()
                 train_loss.reset_states()
-                if self.pool_network==True:
+                if pool_network==True:
                     process_list=[]
                     for p in range(processes):
                         process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
@@ -836,7 +838,7 @@ class RL:
         return
     
     
-    def distributed_training(self, global_batch_size, optimizer, strategy, episodes=None, num_episodes=None, jit_compile=True, mp=None, manager=None, processes=None, processes_her=None, shuffle=False, p=None):
+    def distributed_training(self, global_batch_size, optimizer, strategy, episodes=None, num_episodes=None, jit_compile=True, pool_network=True, processes=None, processes_her=None, shuffle=False, p=None):
         avg_reward=None
         if num_episodes!=None:
             episodes=num_episodes
@@ -853,13 +855,14 @@ class RL:
         if p==0:
             p=1
         self.jit_compile=jit_compile
-        self.pool_network=False
-        self.mp=mp
+        self.pool_network=pool_network
         self.processes=processes
         self.processes_her=processes_her
         self.shuffle=shuffle
-        if mp!=None:
-            self.pool_network=True
+        if pool_network==True:
+            mp=multiprocessing
+            self.mp=mp
+            manager=multiprocessing.Manager()
             self.state_pool_list=manager.list()
             self.action_pool_list=manager.list()
             self.next_state_pool_list=manager.list()
@@ -911,7 +914,7 @@ class RL:
             if episodes!=None:
                 for i in range(episodes):
                     t1=time.time()
-                    if self.pool_network==True:
+                    if pool_network==True:
                         process_list=[]
                         for p in range(processes):
                             process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
@@ -975,7 +978,7 @@ class RL:
                 i=0
                 while True:
                     t1=time.time()
-                    if self.pool_network==True:
+                    if pool_network==True:
                         process_list=[]
                         for p in range(processes):
                             process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
@@ -1041,7 +1044,7 @@ class RL:
             self.step_in_episode = 0
             while episode < num_episodes:
                 t1=time.time()
-                if self.pool_network==True:
+                if pool_network==True:
                     process_list=[]
                     for p in range(processes):
                         process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
