@@ -1,5 +1,6 @@
 import tensorflow as tf
 from Note import nn
+import multiprocessing
 import numpy as np
 import numpy.ctypeslib as npc
 import matplotlib.pyplot as plt
@@ -427,7 +428,7 @@ class Model:
         return
     
     
-    def train(self, train_ds, loss_object, train_loss, optimizer, epochs=None, train_accuracy=None, test_ds=None, test_loss=None, test_accuracy=None, processes=None, mp=None, jit_compile=True, p=None):
+    def train(self, train_ds, loss_object, train_loss, optimizer, epochs=None, train_accuracy=None, test_ds=None, test_loss=None, test_accuracy=None, processes=None, parallel_test=None, jit_compile=True, p=None):
         if p==None:
             p_=9
         else:
@@ -440,6 +441,10 @@ class Model:
             p=int(p)
         if p==0:
             p=1
+        if parallel_test==True:
+            mp=multiprocessing
+        else:
+            mp=None
         self.optimizer_=optimizer
         if epochs!=None:
             for epoch in range(epochs):
