@@ -1041,75 +1041,146 @@ class RL:
                     t2=time.time()
                     self.time+=(t2-t1)
         elif isinstance(strategy,tf.distribute.MultiWorkerMirroredStrategy):
-            episode = 0
-            self.step_in_episode = 0
-            while episode < num_episodes:
-                t1=time.time()
-                if pool_network==True:
-                    process_list=[]
-                    for p in range(processes):
-                        process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
-                        process.start()
-                        process_list.append(process)
-                    for process in process_list:
-                        process.join()
-                    if processes_her==None:
-                        self.state_pool=np.concatenate(self.state_pool_list)
-                        self.action_pool=np.concatenate(self.action_pool_list)
-                        self.next_state_pool=np.concatenate(self.next_state_pool_list)
-                        self.reward_pool=np.concatenate(self.reward_pool_list)
-                        self.done_pool=np.concatenate(self.done_pool_list)
-                    else:
-                        self.state_pool[7]=np.concatenate(self.state_pool_list)
-                        self.action_pool[7]=np.concatenate(self.action_pool_list)
-                        self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
-                        self.reward_pool[7]=np.concatenate(self.reward_pool_list)
-                        self.done_pool[7]=np.concatenate(self.done_pool_list)
-                    self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
-                    if len(self.reward_list)>self.trial_count:
-                        del self.reward_list[0]
-                    loss=self.train1(None, self.optimizer_)
-                else:
-                    loss=self.train2(None,self.optimizer_)
-                    
-                if self.path!=None and episode%self.save_freq==0:
-                    if self.save_param_only==False:
-                        self.save_param_(self.path)
-                    else:
-                        self.save_(self.path)
-              
-                episode += 1
+            if num_episodes!=None:
+                episode = 0
                 self.step_in_episode = 0
-                
-                self.loss=loss
-                self.loss_list.append(loss)
-                self.total_episode+=1
-                if self.trial_count!=None:
-                    if len(self.reward_list)>=self.trial_count:
-                        avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
-                        if self.criterion!=None and avg_reward>=self.criterion:
-                            t2=time.time()
-                            self.total_time+=(t2-t1)
-                            time_=self.total_time-int(self.total_time)
-                            if time_<0.5:
-                                self.total_time=int(self.total_time)
-                            else:
-                                self.total_time=int(self.total_time)+1
-                            print('episode:{0}'.format(self.total_episode))
-                            print('average reward:{0}'.format(avg_reward))
-                            print()
-                            print('time:{0}s'.format(self.total_time))
-                            return
-                if episode%p==0:
-                    if len(self.state_pool)>=self.batch:
-                        print('episode:{0}   loss:{1:.4f}'.format(episode+1,loss))
-                    if avg_reward!=None:
-                        print('episode:{0}   average reward:{1}'.format(episode+1,avg_reward))
+                while episode < num_episodes:
+                    t1=time.time()
+                    if pool_network==True:
+                        process_list=[]
+                        for p in range(processes):
+                            process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
+                            process.start()
+                            process_list.append(process)
+                        for process in process_list:
+                            process.join()
+                        if processes_her==None:
+                            self.state_pool=np.concatenate(self.state_pool_list)
+                            self.action_pool=np.concatenate(self.action_pool_list)
+                            self.next_state_pool=np.concatenate(self.next_state_pool_list)
+                            self.reward_pool=np.concatenate(self.reward_pool_list)
+                            self.done_pool=np.concatenate(self.done_pool_list)
+                        else:
+                            self.state_pool[7]=np.concatenate(self.state_pool_list)
+                            self.action_pool[7]=np.concatenate(self.action_pool_list)
+                            self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
+                            self.reward_pool[7]=np.concatenate(self.reward_pool_list)
+                            self.done_pool[7]=np.concatenate(self.done_pool_list)
+                        self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
+                        if len(self.reward_list)>self.trial_count:
+                            del self.reward_list[0]
+                        loss=self.train1(None, self.optimizer_)
                     else:
-                        print('episode:{0}   reward:{1}'.format(episode+1,self.reward))
-                    print()
-                t2=time.time()
-                self.time+=(t2-t1)
+                        loss=self.train2(None,self.optimizer_)
+                        
+                    if self.path!=None and episode%self.save_freq==0:
+                        if self.save_param_only==False:
+                            self.save_param_(self.path)
+                        else:
+                            self.save_(self.path)
+                  
+                    episode += 1
+                    self.step_in_episode = 0
+                    
+                    self.loss=loss
+                    self.loss_list.append(loss)
+                    self.total_episode+=1
+                    if self.trial_count!=None:
+                        if len(self.reward_list)>=self.trial_count:
+                            avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                            if self.criterion!=None and avg_reward>=self.criterion:
+                                t2=time.time()
+                                self.total_time+=(t2-t1)
+                                time_=self.total_time-int(self.total_time)
+                                if time_<0.5:
+                                    self.total_time=int(self.total_time)
+                                else:
+                                    self.total_time=int(self.total_time)+1
+                                print('episode:{0}'.format(self.total_episode))
+                                print('average reward:{0}'.format(avg_reward))
+                                print()
+                                print('time:{0}s'.format(self.total_time))
+                                return
+                    if episode%p==0:
+                        if len(self.state_pool)>=self.batch:
+                            print('episode:{0}   loss:{1:.4f}'.format(episode+1,loss))
+                        if avg_reward!=None:
+                            print('episode:{0}   average reward:{1}'.format(episode+1,avg_reward))
+                        else:
+                            print('episode:{0}   reward:{1}'.format(episode+1,self.reward))
+                        print()
+                    t2=time.time()
+                    self.time+=(t2-t1)
+            else:
+                episode = 0
+                self.step_in_episode = 0
+                while True:
+                    t1=time.time()
+                    if pool_network==True:
+                        process_list=[]
+                        for p in range(processes):
+                            process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
+                            process.start()
+                            process_list.append(process)
+                        for process in process_list:
+                            process.join()
+                        if processes_her==None:
+                            self.state_pool=np.concatenate(self.state_pool_list)
+                            self.action_pool=np.concatenate(self.action_pool_list)
+                            self.next_state_pool=np.concatenate(self.next_state_pool_list)
+                            self.reward_pool=np.concatenate(self.reward_pool_list)
+                            self.done_pool=np.concatenate(self.done_pool_list)
+                        else:
+                            self.state_pool[7]=np.concatenate(self.state_pool_list)
+                            self.action_pool[7]=np.concatenate(self.action_pool_list)
+                            self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
+                            self.reward_pool[7]=np.concatenate(self.reward_pool_list)
+                            self.done_pool[7]=np.concatenate(self.done_pool_list)
+                        self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
+                        if len(self.reward_list)>self.trial_count:
+                            del self.reward_list[0]
+                        loss=self.train1(None, self.optimizer_)
+                    else:
+                        loss=self.train2(None,self.optimizer_)
+                        
+                    if self.path!=None and episode%self.save_freq==0:
+                        if self.save_param_only==False:
+                            self.save_param_(self.path)
+                        else:
+                            self.save_(self.path)
+                  
+                    episode += 1
+                    self.step_in_episode = 0
+                    
+                    self.loss=loss
+                    self.loss_list.append(loss)
+                    self.total_episode+=1
+                    if self.trial_count!=None:
+                        if len(self.reward_list)>=self.trial_count:
+                            avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                            if self.criterion!=None and avg_reward>=self.criterion:
+                                t2=time.time()
+                                self.total_time+=(t2-t1)
+                                time_=self.total_time-int(self.total_time)
+                                if time_<0.5:
+                                    self.total_time=int(self.total_time)
+                                else:
+                                    self.total_time=int(self.total_time)+1
+                                print('episode:{0}'.format(self.total_episode))
+                                print('average reward:{0}'.format(avg_reward))
+                                print()
+                                print('time:{0}s'.format(self.total_time))
+                                return
+                    if episode%p==0:
+                        if len(self.state_pool)>=self.batch:
+                            print('episode:{0}   loss:{1:.4f}'.format(episode+1,loss))
+                        if avg_reward!=None:
+                            print('episode:{0}   average reward:{1}'.format(episode+1,avg_reward))
+                        else:
+                            print('episode:{0}   reward:{1}'.format(episode+1,self.reward))
+                        print()
+                    t2=time.time()
+                    self.time+=(t2-t1)
         time_=self.time-int(self.time)
         if time_<0.5:
             self.total_time=int(self.time)
