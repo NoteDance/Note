@@ -3,6 +3,7 @@ from Note import nn
 import multiprocessing
 import numpy as np
 import numpy.ctypeslib as npc
+import math
 import matplotlib.pyplot as plt
 import pickle
 import os
@@ -841,7 +842,7 @@ class Model:
                     if test_dataset!=None:
                         self.training()
                         iterator = iter(multi_worker_test_dataset)
-                        for _ in int(len(test_dataset)/global_test_batch_size)+1:
+                        for _ in math.ceil(len(test_dataset)/global_test_batch_size):
                             if jit_compile==True:
                                 self.distributed_test_step(next(iterator), loss_object, test_loss, test_accuracy, strategy)
                             else:
@@ -914,7 +915,7 @@ class Model:
                     if test_dataset!=None:
                         self.training()
                         iterator = iter(multi_worker_test_dataset)
-                        for _ in int(len(test_dataset)/global_test_batch_size)+1:
+                        for _ in math.ceil(len(test_dataset)/global_test_batch_size):
                             if jit_compile==True:
                                 self.distributed_test_step(next(iterator), loss_object, test_loss, test_accuracy, strategy)
                             else:
