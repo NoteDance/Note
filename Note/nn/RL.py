@@ -466,7 +466,7 @@ class RL:
                         with self.strategy.scope():
                             multi_worker_dataset = self.strategy.distribute_datasets_from_function(
                                 lambda input_context: self.dataset_fn(train_ds, self.global_batch_size, input_context))  
-                        total_loss,num_batches=self.CTL(multi_worker_dataset,int(len(self.state_pool)/self.global_batch_size)+1)
+                        total_loss,num_batches=self.CTL(multi_worker_dataset,math.ceil(len(self.state_pool)/self.global_batch_size))
                 else:
                     if self.pool_network==True:
                         if self.shuffle!=True:
@@ -497,7 +497,7 @@ class RL:
                         with self.strategy.scope():
                             multi_worker_dataset = self.strategy.distribute_datasets_from_function(
                                 lambda input_context: self.dataset_fn(train_ds, self.global_batch_size, input_context))  
-                        total_loss,num_batches=self.CTL(multi_worker_dataset,int(len(self.state_pool)/self.global_batch_size)+1)
+                        total_loss,num_batches=self.CTL(multi_worker_dataset,math.ceil(len(self.state_pool)/self.global_batch_size))
             if self.update_steps!=None:
                 if self.step_counter%self.update_steps==0:
                     self.update_param()
