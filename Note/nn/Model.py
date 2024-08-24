@@ -596,7 +596,7 @@ class Model:
         return
     
     
-    def distributed_training(self, train_dataset, loss_object, global_batch_size, optimizer, strategy, epochs=None, num_epochs=None, num_steps_per_epoch=None, train_accuracy=None, test_dataset=None, test_loss=None, test_accuracy=None, jit_compile=True, p=None):
+    def distributed_training(self, train_dataset, loss_object, global_batch_size, optimizer, strategy, epochs=None, num_epochs=None, num_steps_per_epoch=None, train_accuracy=None, test_dataset=None, test_loss=None, test_accuracy=None, global_test_batch_size=None, jit_compile=True, p=None):
         if num_epochs!=None:
             epochs=num_epochs
         if p==None:
@@ -826,14 +826,32 @@ class Model:
                 self.step_in_epoch = 0
                 with strategy.scope():
                     multi_worker_dataset = strategy.distribute_datasets_from_function(
-                            lambda input_context: self.dataset_fn(train_dist_dataset, global_batch_size, input_context))
+                            lambda input_context: self.dataset_fn(train_dataset, global_batch_size, input_context))
+                if test_dataset!=None:
+                    with strategy.scope():
+                        multi_worker_test_dataset = strategy.distribute_datasets_from_function(
+                                lambda input_context: self.dataset_fn(test_dataset, global_test_batch_size, input_context))
                 while epoch < num_epochs:
                     t1=time.time()
                     
                     if self.steps_per_execution==None and self.end():
                         break
                     
-                    train_loss=self.CTL(multi_worker_dataset, num_epochs, num_steps_per_epoch, train_accuracy, strategy, jit_compile)
+                    train_loss=self.CTL(multi_worker_dataset, num_steps_per_epoch, train_accuracy, strategy, jit_compile)
+                    if test_dataset!=None:
+                        self.training()
+                        iterator = iter(multi_worker_test_dataset)
+                        for _ in int(len(test_dataset)/global_test_batch_size)+1:
+                            if jit_compile==True:
+                                self.distributed_test_step(next(iterator), loss_object, test_loss, test_accuracy, strategy)
+                            else:
+                                self.distributed_test_step_(next(iterator), loss_object, test_loss, test_accuracy, strategy)
+                        self.test_loss=test_loss.result().numpy()
+                        self.test_loss_list.append(self.test_loss)
+                        if test_accuracy!=None:
+                            self.test_acc=test_accuracy.result().numpy()
+                            self.test_acc_list.append(self.test_acc)
+                        self.training(True)
                     
                     self.train_loss=train_loss.numpy()
                     self.train_loss_list.append(self.train_loss)
@@ -865,7 +883,12 @@ class Model:
                             else:
                                 self.save_param_(self.path)
                     
-                    train_accuracy.reset_states()
+                    if train_accuracy!=None:
+                        train_accuracy.reset_states()
+                    if test_loss!=None:
+                        test_loss.reset_states()
+                    if test_accuracy!=None:
+                        test_accuracy.reset_states()
                     epoch += 1
                     self.step_in_epoch = 0
                                 
@@ -876,14 +899,32 @@ class Model:
                 self.step_in_epoch = 0
                 with strategy.scope():
                     multi_worker_dataset = strategy.distribute_datasets_from_function(
-                            lambda input_context: self.dataset_fn(train_dist_dataset, global_batch_size, input_context))
+                            lambda input_context: self.dataset_fn(train_dataset, global_batch_size, input_context))
+                if test_dataset!=None:
+                    with strategy.scope():
+                        multi_worker_test_dataset = strategy.distribute_datasets_from_function(
+                                lambda input_context: self.dataset_fn(test_dataset, global_test_batch_size, input_context))
                 while True:
                     t1=time.time()
                     
                     if self.steps_per_execution==None and self.end():
                         break
                     
-                    train_loss=self.CTL(multi_worker_dataset, num_epochs, num_steps_per_epoch, train_accuracy, strategy, jit_compile)
+                    train_loss=self.CTL(multi_worker_dataset, num_steps_per_epoch, train_accuracy, strategy, jit_compile)
+                    if test_dataset!=None:
+                        self.training()
+                        iterator = iter(multi_worker_test_dataset)
+                        for _ in int(len(test_dataset)/global_test_batch_size)+1:
+                            if jit_compile==True:
+                                self.distributed_test_step(next(iterator), loss_object, test_loss, test_accuracy, strategy)
+                            else:
+                                self.distributed_test_step_(next(iterator), loss_object, test_loss, test_accuracy, strategy)
+                        self.test_loss=test_loss.result().numpy()
+                        self.test_loss_list.append(self.test_loss)
+                        if test_accuracy!=None:
+                            self.test_acc=test_accuracy.result().numpy()
+                            self.test_acc_list.append(self.test_acc)
+                        self.training(True)
                     
                     self.train_loss=train_loss.numpy()
                     self.train_loss_list.append(self.train_loss)
@@ -915,7 +956,12 @@ class Model:
                             else:
                                 self.save_param_(self.path)
                     
-                    train_accuracy.reset_states()
+                    if train_accuracy!=None:
+                        train_accuracy.reset_states()
+                    if test_loss!=None:
+                        test_loss.reset_states()
+                    if test_accuracy!=None:
+                        test_accuracy.reset_states()
                     epoch += 1
                     self.step_in_epoch = 0
                                 
@@ -939,7 +985,7 @@ class Model:
         return dataset
     
     
-    def CTL(self, multi_worker_dataset, num_epochs, num_steps_per_epoch, train_accuracy, strategy, jit_compile):
+    def CTL(self, multi_worker_dataset, num_steps_per_epoch, train_accuracy, strategy, jit_compile):
         iterator = iter(multi_worker_dataset)
         total_loss = 0.0
         num_batches = 0
