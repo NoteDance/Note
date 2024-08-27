@@ -983,6 +983,7 @@ class Model:
                         break
                     
                     train_loss=self.CTL_param(coordinator, num_steps_per_epoch, train_accuracy, strategy, jit_compile)
+                    coordinator.join()
                     if eval_steps_per_epoch!=None:
                         self.training()
                         if jit_compile==True:
@@ -992,9 +993,10 @@ class Model:
                         per_worker_iterator = iter(per_worker_dataset)
                         for _ in eval_steps_per_epoch:
                             if jit_compile==True:
-                                coordinator.create_per_worker_dataset(self.distributed_test_step, args=(next(per_worker_iterator), loss_object, test_loss, test_accuracy, strategy))
+                                coordinator.schedule(self.distributed_test_step, args=(next(per_worker_iterator), loss_object, test_loss, test_accuracy, strategy))
                             else:
-                                coordinator.create_per_worker_dataset(self.distributed_test_step_, args=(next(per_worker_iterator), loss_object, test_loss, test_accuracy, strategy))
+                                coordinator.schedule(self.distributed_test_step_, args=(next(per_worker_iterator), loss_object, test_loss, test_accuracy, strategy))
+                        coordinator.join()
                         self.test_loss=test_loss.result().numpy()
                         self.test_loss_list.append(self.test_loss)
                         if test_accuracy!=None:
@@ -1058,6 +1060,7 @@ class Model:
                             break
                         
                         train_loss=self.CTL_param(coordinator, num_steps_per_epoch, train_accuracy, strategy, jit_compile)
+                        coordinator.join()
                         if eval_steps_per_epoch!=None:
                             self.training()
                             if jit_compile==True:
@@ -1067,9 +1070,10 @@ class Model:
                             per_worker_iterator = iter(per_worker_dataset)
                             for _ in eval_steps_per_epoch:
                                 if jit_compile==True:
-                                    coordinator.create_per_worker_dataset(self.distributed_test_step, args=(next(per_worker_iterator), loss_object, test_loss, test_accuracy, strategy))
+                                    coordinator.schedule(self.distributed_test_step, args=(next(per_worker_iterator), loss_object, test_loss, test_accuracy, strategy))
                                 else:
-                                    coordinator.create_per_worker_dataset(self.distributed_test_step_, args=(next(per_worker_iterator), loss_object, test_loss, test_accuracy, strategy))
+                                    coordinator.schedule(self.distributed_test_step_, args=(next(per_worker_iterator), loss_object, test_loss, test_accuracy, strategy))
+                            coordinator.join()
                             self.test_loss=test_loss.result().numpy()
                             self.test_loss_list.append(self.test_loss)
                             if test_accuracy!=None:
