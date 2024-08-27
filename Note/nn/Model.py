@@ -597,7 +597,7 @@ class Model:
         return
     
     
-    def distributed_training(self, train_dataset, loss_object, global_batch_size, optimizer, strategy, epochs=None, num_epochs=None, num_steps_per_epoch=None, train_accuracy=None, test_dataset=None, test_loss=None, test_accuracy=None, global_test_batch_size=None, jit_compile=True, p=None):
+    def distributed_training(self, train_dataset=None, loss_object=None, global_batch_size=None, optimizer=None, strategy=None, epochs=None, num_epochs=None, num_steps_per_epoch=None, train_accuracy=None, test_dataset=None, test_loss=None, test_accuracy=None, dataset_fn=None, test_dataset_fn=None, global_test_batch_size=None, eval_steps_per_epoch=None, jit_compile=True, p=None):
         if num_epochs!=None:
             epochs=num_epochs
         if p==None:
@@ -968,6 +968,156 @@ class Model:
                                 
                     t2=time.time()
                     self.time+=(t2-t1)
+        elif isinstance(strategy,tf.distribute.ParameterServerStrategy):
+            coordinator = tf.distribute.coordinator.ClusterCoordinator(strategy)
+            self.dataset_fn = dataset_fn
+            self.test_dataset_fn = test_dataset_fn
+            self.strategy = strategy
+            if num_epochs!=None:
+                epoch = 0
+                self.step_in_epoch = 0
+                while epoch < num_epochs:
+                    t1=time.time()
+                    
+                    if self.steps_per_execution==None and self.end():
+                        break
+                    
+                    train_loss=self.CTL_param(coordinator, num_steps_per_epoch, train_accuracy, strategy, jit_compile)
+                    if eval_steps_per_epoch!=None:
+                        self.training()
+                        if jit_compile==True:
+                            per_worker_dataset = coordinator.create_per_worker_dataset(self.per_worker_test_dataset_fn)
+                        else:
+                            per_worker_dataset = coordinator.create_per_worker_dataset(self.per_worker_test_dataset_fn_)
+                        per_worker_iterator = iter(per_worker_dataset)
+                        for _ in eval_steps_per_epoch:
+                            if jit_compile==True:
+                                coordinator.create_per_worker_dataset(self.distributed_test_step, args=(next(per_worker_iterator), loss_object, test_loss, test_accuracy, strategy))
+                            else:
+                                coordinator.create_per_worker_dataset(self.distributed_test_step_, args=(next(per_worker_iterator), loss_object, test_loss, test_accuracy, strategy))
+                        self.test_loss=test_loss.result().numpy()
+                        self.test_loss_list.append(self.test_loss)
+                        if test_accuracy!=None:
+                            self.test_acc=test_accuracy.result().numpy()
+                            self.test_acc_list.append(self.test_acc)
+                        self.training(True)
+                    
+                    self.train_loss=train_loss
+                    self.train_loss_list.append(self.train_loss)
+                    self.train_acc=train_accuracy.result().numpy()
+                    self.train_acc_list.append(self.train_acc)
+                        
+                    self.total_epoch+=1     
+                    if epoch%p==0:
+                        if self.test_ds==None:
+                            if train_accuracy!=None:
+                                print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
+                                print('epoch:{0}   accuracy:{1:.4f}'.format(epoch+1, self.train_acc))
+                                print()
+                            else:
+                                print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
+                                print()
+                        else:
+                            if test_accuracy!=None:
+                                print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
+                                print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(epoch+1,self.train_acc,self.test_acc))
+                                print()
+                            else:
+                                print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
+                                print()
+                    if self.save_freq_==None:
+                        if self.path!=None and epoch%self.save_freq==0:
+                            if self.save_param_only==False:
+                                self.save_(self.path)
+                            else:
+                                self.save_param_(self.path)
+                    
+                    if train_accuracy!=None:
+                        train_accuracy.reset_states()
+                    if test_loss!=None:
+                        test_loss.reset_states()
+                    if test_accuracy!=None:
+                        test_accuracy.reset_states()
+                    epoch += 1
+                    self.step_in_epoch = 0
+                                
+                    t2=time.time()
+                    self.time+=(t2-t1)
+            else:
+                coordinator = tf.distribute.coordinator.ClusterCoordinator(strategy)
+                self.dataset_fn = dataset_fn
+                self.test_dataset_fn = test_dataset_fn
+                self.strategy = strategy
+                if num_epochs!=None:
+                    epoch = 0
+                    self.step_in_epoch = 0
+                    while True:
+                        t1=time.time()
+                        
+                        if self.steps_per_execution==None and self.end():
+                            break
+                        
+                        train_loss=self.CTL_param(coordinator, num_steps_per_epoch, train_accuracy, strategy, jit_compile)
+                        if eval_steps_per_epoch!=None:
+                            self.training()
+                            if jit_compile==True:
+                                per_worker_dataset = coordinator.create_per_worker_dataset(self.per_worker_test_dataset_fn)
+                            else:
+                                per_worker_dataset = coordinator.create_per_worker_dataset(self.per_worker_test_dataset_fn_)
+                            per_worker_iterator = iter(per_worker_dataset)
+                            for _ in eval_steps_per_epoch:
+                                if jit_compile==True:
+                                    coordinator.create_per_worker_dataset(self.distributed_test_step, args=(next(per_worker_iterator), loss_object, test_loss, test_accuracy, strategy))
+                                else:
+                                    coordinator.create_per_worker_dataset(self.distributed_test_step_, args=(next(per_worker_iterator), loss_object, test_loss, test_accuracy, strategy))
+                            self.test_loss=test_loss.result().numpy()
+                            self.test_loss_list.append(self.test_loss)
+                            if test_accuracy!=None:
+                                self.test_acc=test_accuracy.result().numpy()
+                                self.test_acc_list.append(self.test_acc)
+                            self.training(True)
+                        
+                        self.train_loss=train_loss
+                        self.train_loss_list.append(self.train_loss)
+                        self.train_acc=train_accuracy.result().numpy()
+                        self.train_acc_list.append(self.train_acc)
+                            
+                        self.total_epoch+=1     
+                        if epoch%p==0:
+                            if self.test_ds==None:
+                                if train_accuracy!=None:
+                                    print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
+                                    print('epoch:{0}   accuracy:{1:.4f}'.format(epoch+1, self.train_acc))
+                                    print()
+                                else:
+                                    print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
+                                    print()
+                            else:
+                                if test_accuracy!=None:
+                                    print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
+                                    print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(epoch+1,self.train_acc,self.test_acc))
+                                    print()
+                                else:
+                                    print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
+                                    print()
+                        if self.save_freq_==None:
+                            if self.path!=None and epoch%self.save_freq==0:
+                                if self.save_param_only==False:
+                                    self.save_(self.path)
+                                else:
+                                    self.save_param_(self.path)
+                        
+                        if train_accuracy!=None:
+                            train_accuracy.reset_states()
+                        if test_loss!=None:
+                            test_loss.reset_states()
+                        if test_accuracy!=None:
+                            test_accuracy.reset_states()
+                        epoch += 1
+                        self.step_in_epoch = 0
+                                    
+                        t2=time.time()
+                        self.time+=(t2-t1)
         self._time=self.time-int(self.time)
         if self._time<0.5:
             self.time=int(self.time)
@@ -1000,7 +1150,7 @@ class Model:
             self.step_in_epoch += 1
             self.batch_counter += 1
             if self.steps_per_execution!=None and self.batch_counter%self.steps_per_execution==0:
-                self.train_loss=(total_loss / num_batches).numpy()
+                self.train_loss = total_loss / num_batches
                 if self.end():
                     if self.save_param_only==False:
                         self.save_(self.path)
@@ -1015,6 +1165,60 @@ class Model:
         train_loss = total_loss / num_batches
         return train_loss
     
+    
+    @tf.function(jit_compile=True)
+    def per_worker_dataset_fn(self):
+        return self.strategy.distribute_datasets_from_function(self.dataset_fn)
+  
+    
+    @tf.function
+    def per_worker_dataset_fn_(self):
+        return self.strategy.distribute_datasets_from_function(self.dataset_fn)
+    
+    
+    @tf.function(jit_compile=True)
+    def per_worker_test_dataset_fn(self):
+        return self.strategy.distribute_datasets_from_function(self.test_dataset_fn)
+  
+    
+    @tf.function
+    def per_worker_test_dataset_fn_(self):
+        return self.strategy.distribute_datasets_from_function(self.test_dataset_fn)
+    
+    
+    def CTL_param(self, coordinator, num_steps_per_epoch, train_accuracy, strategy, jit_compile):
+        if jit_compile==True:
+            per_worker_dataset = coordinator.create_per_worker_dataset(self.per_worker_dataset_fn)
+        else:
+            per_worker_dataset = coordinator.create_per_worker_dataset(self.per_worker_dataset_fn_)
+        per_worker_iterator = iter(per_worker_dataset)
+        total_loss = 0.0
+        num_batches = 0
+        
+        while self.step_in_epoch < num_steps_per_epoch:
+            if jit_compile==True:
+                total_loss += coordinator.schedule(self.distributed_train_step, args=(next(per_worker_iterator), self.optimizer_, train_accuracy, strategy))
+            else:
+                total_loss += coordinator.schedule(self.distributed_train_step_, args=(next(per_worker_iterator), self.optimizer_, train_accuracy, strategy))
+            num_batches += 1
+            self.step_in_epoch += 1
+            self.batch_counter += 1
+            if self.steps_per_execution!=None and self.batch_counter%self.steps_per_execution==0:
+                self.train_loss=total_loss.fetch() / num_batches
+                if self.end():
+                    if self.save_param_only==False:
+                        self.save_(self.path)
+                    else:
+                        self.save_param_(self.path)
+            if self.save_freq_!=None and self.path!=None and self.batch_counter%self.save_freq_==0:
+                if self.save_param_only==False:
+                    self.save_(self.path)
+                else:
+                    self.save_param_(self.path)
+      
+        train_loss = total_loss.fetch() / num_batches
+        return train_loss
+        
     
     def visualize_train(self):
         print()
