@@ -349,6 +349,64 @@ class RL:
             return total_loss,num_batches
     
     
+    @tf.function(jit_compile=True)
+    def per_worker_dataset_fn(self):
+        return self.strategy.distribute_datasets_from_function(self.dataset_fn)
+    
+    
+    @tf.function
+    def per_worker_dataset_fn_(self):
+        return self.strategy.distribute_datasets_from_function(self.dataset_fn)
+    
+    
+    def CTL_param(self, coordinator, num_steps_per_episode=None):
+        if self.jit_compile==True:
+            per_worker_dataset = coordinator.create_per_worker_dataset(self.per_worker_dataset_fn)
+        else:
+            per_worker_dataset = coordinator.create_per_worker_dataset(self.per_worker_dataset_fn_)
+        per_worker_iterator = iter(per_worker_dataset)
+        total_loss = 0.0
+        num_batches = 0
+        
+        if self.PR==True or self.HER==True:
+            if self.jit_compile==True:
+                total_loss = coordinator.schedule(self.distributed_train_step, args=(next(per_worker_iterator), self.optimizer_))
+            else:
+                total_loss = coordinator.schedule(self.distributed_train_step_, args=(next(per_worker_iterator), self.optimizer_))
+                
+            self.batch_counter += 1
+            if self.pool_network==True:
+                if self.batch_counter%self.update_batches==0:
+                    self.update_param()
+                    if self.PPO:
+                        self.state_pool=None
+                        self.action_pool=None
+                        self.next_state_pool=None
+                        self.reward_pool=None
+                        self.done_pool=None
+            return total_loss
+        else:
+            while self.step_in_epoch < num_steps_per_episode:
+              if self.jit_compile==True:
+                  total_loss += coordinator.schedule(self.distributed_train_step, args=(next(per_worker_iterator), self.optimizer_))
+              else:
+                  total_loss += coordinator.schedule(self.distributed_train_step_, args=(next(per_worker_iterator), self.optimizer_))
+              num_batches += 1
+              self.batch_counter += 1
+              self.step_in_episode += 1
+              if self.pool_network==True:
+                  if self.batch_counter%self.update_batches==0:
+                      self.update_param()
+                      if self.PPO:
+                          self.state_pool=None
+                          self.action_pool=None
+                          self.next_state_pool=None
+                          self.reward_pool=None
+                          self.done_pool=None
+            coordinator.join()
+            return total_loss,num_batches
+    
+    
     def train1(self, train_loss, optimizer):
         if len(self.state_pool)<self.batch:
             if self.loss!=None:
@@ -399,6 +457,9 @@ class RL:
                                 lambda input_context: self.dataset_fn(train_ds, self.global_batch_size, input_context))  
                         total_loss+=self.CTL(multi_worker_dataset)
                         num_batches += 1
+                    elif isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
+                        total_loss+=self.CTL_param(self.coordinator)
+                        num_batches += 1
                 if len(self.state_pool)%self.batch!=0:
                     state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.data_func()
                     train_ds=tf.data.Dataset.from_tensor_slices((state_batch,action_batch,next_state_batch,reward_batch,done_batch)).batch(self.global_batch_size)
@@ -433,6 +494,10 @@ class RL:
                                 lambda input_context: self.dataset_fn(train_ds, self.global_batch_size, input_context))  
                         total_loss+=self.CTL(multi_worker_dataset)
                         num_batches += 1
+                    elif isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
+                        total_loss+=self.CTL_param(self.coordinator)
+                        num_batches += 1
+                self.coordinator.join()
             else:
                 if self.distributed_flag==True:
                     total_loss = 0.0
@@ -467,6 +532,8 @@ class RL:
                             multi_worker_dataset = self.strategy.distribute_datasets_from_function(
                                 lambda input_context: self.dataset_fn(train_ds, self.global_batch_size, input_context))  
                         total_loss,num_batches=self.CTL(multi_worker_dataset,math.ceil(len(self.state_pool)/self.global_batch_size))
+                    elif isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
+                        total_loss,num_batches=self.CTL_param(self.coordinator,math.ceil(len(self.state_pool)/self.global_batch_size))
                 else:
                     if self.pool_network==True:
                         if self.shuffle!=True:
@@ -498,6 +565,8 @@ class RL:
                             multi_worker_dataset = self.strategy.distribute_datasets_from_function(
                                 lambda input_context: self.dataset_fn(train_ds, self.global_batch_size, input_context))  
                         total_loss,num_batches=self.CTL(multi_worker_dataset,math.ceil(len(self.state_pool)/self.global_batch_size))
+                    elif isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
+                        total_loss,num_batches=self.CTL_param(self.coordinator,math.ceil(len(self.state_pool)/self.global_batch_size))
             if self.update_steps!=None:
                 if self.step_counter%self.update_steps==0:
                     self.update_param()
@@ -510,7 +579,10 @@ class RL:
             else:
                 self.update_param()
         if self.distributed_flag==True:
-            return (total_loss / num_batches).numpy()
+            if isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
+                return total_loss.fetch() / num_batches
+            else:
+                return (total_loss / num_batches).numpy()
         else:
             return train_loss.result().numpy()
     
@@ -1041,6 +1113,148 @@ class RL:
                     t2=time.time()
                     self.time+=(t2-t1)
         elif isinstance(strategy,tf.distribute.MultiWorkerMirroredStrategy):
+            if num_episodes!=None:
+                episode = 0
+                self.step_in_episode = 0
+                while episode < num_episodes:
+                    t1=time.time()
+                    if pool_network==True:
+                        process_list=[]
+                        for p in range(processes):
+                            process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
+                            process.start()
+                            process_list.append(process)
+                        for process in process_list:
+                            process.join()
+                        if processes_her==None:
+                            self.state_pool=np.concatenate(self.state_pool_list)
+                            self.action_pool=np.concatenate(self.action_pool_list)
+                            self.next_state_pool=np.concatenate(self.next_state_pool_list)
+                            self.reward_pool=np.concatenate(self.reward_pool_list)
+                            self.done_pool=np.concatenate(self.done_pool_list)
+                        else:
+                            self.state_pool[7]=np.concatenate(self.state_pool_list)
+                            self.action_pool[7]=np.concatenate(self.action_pool_list)
+                            self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
+                            self.reward_pool[7]=np.concatenate(self.reward_pool_list)
+                            self.done_pool[7]=np.concatenate(self.done_pool_list)
+                        self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
+                        if len(self.reward_list)>self.trial_count:
+                            del self.reward_list[0]
+                        loss=self.train1(None, self.optimizer_)
+                    else:
+                        loss=self.train2(None,self.optimizer_)
+                        
+                    if self.path!=None and episode%self.save_freq==0:
+                        if self.save_param_only==False:
+                            self.save_param_(self.path)
+                        else:
+                            self.save_(self.path)
+                  
+                    episode += 1
+                    self.step_in_episode = 0
+                    
+                    self.loss=loss
+                    self.loss_list.append(loss)
+                    self.total_episode+=1
+                    if self.trial_count!=None:
+                        if len(self.reward_list)>=self.trial_count:
+                            avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                            if self.criterion!=None and avg_reward>=self.criterion:
+                                t2=time.time()
+                                self.total_time+=(t2-t1)
+                                time_=self.total_time-int(self.total_time)
+                                if time_<0.5:
+                                    self.total_time=int(self.total_time)
+                                else:
+                                    self.total_time=int(self.total_time)+1
+                                print('episode:{0}'.format(self.total_episode))
+                                print('average reward:{0}'.format(avg_reward))
+                                print()
+                                print('time:{0}s'.format(self.total_time))
+                                return
+                    if episode%p==0:
+                        if len(self.state_pool)>=self.batch:
+                            print('episode:{0}   loss:{1:.4f}'.format(episode+1,loss))
+                        if avg_reward!=None:
+                            print('episode:{0}   average reward:{1}'.format(episode+1,avg_reward))
+                        else:
+                            print('episode:{0}   reward:{1}'.format(episode+1,self.reward))
+                        print()
+                    t2=time.time()
+                    self.time+=(t2-t1)
+            else:
+                episode = 0
+                self.step_in_episode = 0
+                while True:
+                    t1=time.time()
+                    if pool_network==True:
+                        process_list=[]
+                        for p in range(processes):
+                            process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
+                            process.start()
+                            process_list.append(process)
+                        for process in process_list:
+                            process.join()
+                        if processes_her==None:
+                            self.state_pool=np.concatenate(self.state_pool_list)
+                            self.action_pool=np.concatenate(self.action_pool_list)
+                            self.next_state_pool=np.concatenate(self.next_state_pool_list)
+                            self.reward_pool=np.concatenate(self.reward_pool_list)
+                            self.done_pool=np.concatenate(self.done_pool_list)
+                        else:
+                            self.state_pool[7]=np.concatenate(self.state_pool_list)
+                            self.action_pool[7]=np.concatenate(self.action_pool_list)
+                            self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
+                            self.reward_pool[7]=np.concatenate(self.reward_pool_list)
+                            self.done_pool[7]=np.concatenate(self.done_pool_list)
+                        self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
+                        if len(self.reward_list)>self.trial_count:
+                            del self.reward_list[0]
+                        loss=self.train1(None, self.optimizer_)
+                    else:
+                        loss=self.train2(None,self.optimizer_)
+                        
+                    if self.path!=None and episode%self.save_freq==0:
+                        if self.save_param_only==False:
+                            self.save_param_(self.path)
+                        else:
+                            self.save_(self.path)
+                  
+                    episode += 1
+                    self.step_in_episode = 0
+                    
+                    self.loss=loss
+                    self.loss_list.append(loss)
+                    self.total_episode+=1
+                    if self.trial_count!=None:
+                        if len(self.reward_list)>=self.trial_count:
+                            avg_reward=statistics.mean(self.reward_list[-self.trial_count:])
+                            if self.criterion!=None and avg_reward>=self.criterion:
+                                t2=time.time()
+                                self.total_time+=(t2-t1)
+                                time_=self.total_time-int(self.total_time)
+                                if time_<0.5:
+                                    self.total_time=int(self.total_time)
+                                else:
+                                    self.total_time=int(self.total_time)+1
+                                print('episode:{0}'.format(self.total_episode))
+                                print('average reward:{0}'.format(avg_reward))
+                                print()
+                                print('time:{0}s'.format(self.total_time))
+                                return
+                    if episode%p==0:
+                        if len(self.state_pool)>=self.batch:
+                            print('episode:{0}   loss:{1:.4f}'.format(episode+1,loss))
+                        if avg_reward!=None:
+                            print('episode:{0}   average reward:{1}'.format(episode+1,avg_reward))
+                        else:
+                            print('episode:{0}   reward:{1}'.format(episode+1,self.reward))
+                        print()
+                    t2=time.time()
+                    self.time+=(t2-t1)
+        elif isinstance(strategy,tf.distribute.ParameterServerStrategy):
+            self.coordinator=tf.distribute.coordinator.ClusterCoordinator(strategy)
             if num_episodes!=None:
                 episode = 0
                 self.step_in_episode = 0
