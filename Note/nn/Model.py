@@ -983,7 +983,6 @@ class Model:
                         break
                     
                     train_loss=self.CTL_param(coordinator, num_steps_per_epoch, train_accuracy, strategy, jit_compile)
-                    coordinator.join()
                     if eval_steps_per_epoch!=None:
                         self.training()
                         if jit_compile==True:
@@ -1060,7 +1059,6 @@ class Model:
                             break
                         
                         train_loss=self.CTL_param(coordinator, num_steps_per_epoch, train_accuracy, strategy, jit_compile)
-                        coordinator.join()
                         if eval_steps_per_epoch!=None:
                             self.training()
                             if jit_compile==True:
@@ -1165,6 +1163,7 @@ class Model:
                     self.save_(self.path)
                 else:
                     self.save_param_(self.path)
+        coordinator.join()
       
         train_loss = total_loss / num_batches
         return train_loss
