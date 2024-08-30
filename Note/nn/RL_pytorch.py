@@ -1,3 +1,4 @@
+import torch
 from torch.utils.data import DataLoader
 import multiprocessing
 from Note.RL import rl
@@ -394,10 +395,10 @@ class RL_pytorch:
                     index=p
                 else:
                     self.inverse_len[p]=1/len(self.state_pool_list[p])
-                    inverse_len=np.array(self.inverse_len)
-                    total_inverse=np.sum(inverse_len)
+                    inverse_len=torch.tensor(self.inverse_len)
+                    total_inverse=torch.sum(inverse_len)
                     prob=inverse_len/total_inverse
-                    index=np.random.choice(self.processes,p=prob)
+                    index=np.random.choice(self.processes,p=prob.numpy())
             else:
                 index=p
             s=np.expand_dims(s,axis=0)
