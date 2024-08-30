@@ -75,7 +75,7 @@ class resizing:
     def __call__(self, data):
         # tf.image.resize will always output float32
         # and operate more efficiently on float32
-        # unless interpolation is nearest, in which case ouput type matches
+        # unless interpolation is nearest, in which case output type matches
         # input type.
         if self.interpolation == "nearest":
             input_dtype = data.dtype
