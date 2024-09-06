@@ -82,7 +82,7 @@ class Model:
     
     
     def apply(func):
-        for layer in Model.layer_dict[Model.name]:
+        for layer in Model.layer_dict[Model.name_]:
             if layer.input_size!=None:
                 func(layer)
             else:
@@ -90,7 +90,7 @@ class Model:
         if len(Model.name_list)>0:
             Model.name_list.pop()
             if len(Model.name_list)==0:
-                Model.name=None
+                Model.name_=None
         return
     
     
@@ -1163,7 +1163,6 @@ class Model:
                     self.save_(self.path)
                 else:
                     self.save_param_(self.path)
-        coordinator.join()
       
         train_loss = total_loss / num_batches
         return train_loss
@@ -1218,6 +1217,7 @@ class Model:
                     self.save_(self.path)
                 else:
                     self.save_param_(self.path)
+        coordinator.join()
       
         train_loss = total_loss.fetch() / num_batches
         return train_loss
