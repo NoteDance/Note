@@ -33,11 +33,11 @@ class gaussian_dropout:
         self.random_generator = tf.random.Generator.from_seed(self.seed)
         self.train_flag = True
         nn.Model.layer_list.append(self)
-        if nn.Model.name_!=None and nn.Model.name_ not in nn.Model.layer_eval:
-            nn.Model.layer_eval[nn.Model.name_]=[]
-            nn.Model.layer_eval[nn.Model.name_].append(self)
-        elif nn.Model.name_!=None:
-            nn.Model.layer_eval[nn.Model.name_].append(self)
+        if nn.Model.name!=None and nn.Model.name not in nn.Model.layer_eval:
+            nn.Model.layer_eval[nn.Model.name]=[]
+            nn.Model.layer_eval[nn.Model.name].append(self)
+        elif nn.Model.name!=None:
+            nn.Model.layer_eval[nn.Model.name].append(self)
 
     def __call__(self, data, training=None):
         if training==None:
