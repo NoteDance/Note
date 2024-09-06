@@ -607,13 +607,13 @@ class GCViT_detection(nn.Model):
         self.num_features = [int(dim * 2 ** i) for i in range(self.num_levels)]
         self.mlp_ratio = mlp_ratio
         self.pos_drop = nn.dropout(p=drop_rate)
-        nn.Model.name_ = 'patch_embed'
+        nn.Model.name = 'patch_embed'
         self.patch_embed = PatchEmbed(in_chans=in_chans, dim=dim)
-        nn.Model.name_ = None
+        nn.Model.name = None
         dpr = [x for x in tf.linspace(0., drop_path_rate, sum(depths))]
         self.levels = []
         for i in range(len(depths)):
-            nn.Model.name_ = f'level{i}'
+            nn.Model.name = f'level{i}'
             level = GCViTLayer(dim=int(dim * 2 ** i),
                                depth=depths[i],
                                num_heads=num_heads[i],
@@ -630,7 +630,7 @@ class GCViT_detection(nn.Model):
                                input_resolution=int(2 ** (-2 - i) * resolution),
                                image_resolution=resolution,
                                use_rel_pos_bias=use_rel_pos_bias)
-            nn.Model.name_ = None
+            nn.Model.name = None
             self.levels.append(level)
             
         # add a norm layer for each output
