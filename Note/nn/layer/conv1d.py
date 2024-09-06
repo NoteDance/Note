@@ -31,12 +31,12 @@ class conv1d: # define a class for 1D convolutional layer
         if not isinstance(padding,str):
             self.zeropadding1d=nn.zeropadding1d(padding=padding)
         if len(Model.name_list)>0:
-            Model.name=Model.name_list[-1]
-        if Model.name!=None and Model.name not in Model.layer_dict:
-            Model.layer_dict[Model.name]=[]
-            Model.layer_dict[Model.name].append(self)
-        elif Model.name!=None:
-            Model.layer_dict[Model.name].append(self)
+            Model.name_=Model.name_list[-1]
+        if Model.name_!=None and Model.name_ not in Model.layer_dict:
+            Model.layer_dict[Model.name_]=[]
+            Model.layer_dict[Model.name_].append(self)
+        elif Model.name_!=None:
+            Model.layer_dict[Model.name_].append(self)
         if input_size!=None:
             self.weight=nn.initializer([kernel_size,input_size//groups,filters],weight_initializer,dtype,trainable) # initialize the weight tensor
             if use_bias==True: # if use bias is True
