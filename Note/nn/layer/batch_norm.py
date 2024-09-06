@@ -40,11 +40,11 @@ class batch_norm:
             else:
                 self.gamma=None
         Model.layer_list.append(self)
-        if Model.name_!=None and Model.name_ not in Model.layer_eval:
-            Model.layer_eval[Model.name_]=[]
-            Model.layer_eval[Model.name_].append(self)
-        elif Model.name_!=None:
-            Model.layer_eval[Model.name_].append(self)
+        if Model.name!=None and Model.name not in Model.layer_eval:
+            Model.layer_eval[Model.name]=[]
+            Model.layer_eval[Model.name].append(self)
+        elif Model.name!=None:
+            Model.layer_eval[Model.name].append(self)
     
     
     def build(self):
@@ -209,11 +209,11 @@ class batch_norm_:
             else:
                 self.gamma=None
         Model.layer_list.append(self)
-        if Model.name_!=None and Model.name_ not in Model.layer_eval:
-            Model.layer_eval[Model.name_]=[]
-            Model.layer_eval[Model.name_].append(self)
-        elif Model.name_!=None:
-            Model.layer_eval[Model.name_].append(self)
+        if Model.name!=None and Model.name not in Model.layer_eval:
+            Model.layer_eval[Model.name]=[]
+            Model.layer_eval[Model.name].append(self)
+        elif Model.name!=None:
+            Model.layer_eval[Model.name].append(self)
     
     
     def build(self):
