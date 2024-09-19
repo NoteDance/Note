@@ -197,7 +197,21 @@ class RL:
     
     def data_func(self):
         if self.pr_:
-            s,a,next_s,r,d=self.prioritized_replay.sample(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.epsilon,self.alpha,self.batch)
+            if self.processes_pr!=None:
+                process_list=[]
+                for p in range(self.processes_pr):
+                    process=self.mp.Process(target=self.get_batch_in_parallel,args=(p,))
+                    process.start()
+                    process_list.append(process)
+                for process in process_list:
+                    process.join()
+                s = np.array(self.state_list)
+                a = np.array(self.action_list)
+                next_s = np.array(self.next_state_list)
+                r = np.array(self.reward_list)
+                d = np.array(self.done_list)
+            else:
+                s,a,next_s,r,d=self.prioritized_replay.sample(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.epsilon,self.alpha,self.batch)
         elif self.HER:
             if self.processes_her!=None:
                 process_list=[]
@@ -630,21 +644,30 @@ class RL:
         next_s = []
         r = []
         d = []
-        for _ in range(int(self.batch/self.processes_her)):
-            step_state = np.random.randint(0, len(self.state_pool[7])-1)
-            step_goal = np.random.randint(step_state+1, step_state+np.argmax(self.done_pool[7][step_state+1:])+2)
-            state = self.state_pool[7][step_state]
-            next_state = self.next_state_pool[7][step_state]
-            action = self.action_pool[7][step_state]
-            goal = self.state_pool[7][step_goal]
-            reward, done = self.reward_done_func(next_state, goal)
-            state = np.hstack((state, goal))
-            next_state = np.hstack((next_state, goal))
-            s.append(state)
-            a.append(action)
-            next_s.append(next_state)
-            r.append(reward)
-            d.append(done)
+        if self.HER==True:
+            for _ in range(int(self.batch/self.processes_her)):
+                step_state = np.random.randint(0, len(self.state_pool[7])-1)
+                step_goal = np.random.randint(step_state+1, step_state+np.argmax(self.done_pool[7][step_state+1:])+2)
+                state = self.state_pool[7][step_state]
+                next_state = self.next_state_pool[7][step_state]
+                action = self.action_pool[7][step_state]
+                goal = self.state_pool[7][step_goal]
+                reward, done = self.reward_done_func(next_state, goal)
+                state = np.hstack((state, goal))
+                next_state = np.hstack((next_state, goal))
+                s.append(state)
+                a.append(action)
+                next_s.append(next_state)
+                r.append(reward)
+                d.append(done)
+        elif self.PR==True:
+            for _ in range(int(self.batch/self.processes_pr)):
+                state,action,next_state,reward,done=self.prioritized_replay.sample(self.state_pool[7],self.action_pool[7],self.next_state_pool[7],self.reward_pool[7],self.done_pool[7],self.epsilon,self.alpha,int(self.batch/self.processes_pr))
+                s.append(state)
+                a.append(action)
+                next_s.append(next_state)
+                r.append(reward)
+                d.append(done)
         s = np.array(s)
         a = np.array(a)
         next_s = np.array(next_s)
@@ -709,7 +732,7 @@ class RL:
             s=next_s
     
     
-    def train(self, train_loss, optimizer, episodes=None, jit_compile=True, pool_network=True, processes=None, processes_her=None, shuffle=False, p=None):
+    def train(self, train_loss, optimizer, episodes=None, jit_compile=True, pool_network=True, processes=None, processes_her=None, processes_pr=None, shuffle=False, p=None):
         avg_reward=None
         if p==None:
             self.p=9
@@ -727,6 +750,7 @@ class RL:
         self.pool_network=pool_network
         self.processes=processes
         self.processes_her=processes_her
+        self.processes_pr=processes_pr
         self.shuffle=shuffle
         if pool_network==True:
             mp=multiprocessing
@@ -751,7 +775,7 @@ class RL:
                 lock_list=[mp.Lock() for _ in range(processes)]
             else:
                 lock_list=None
-            if processes_her!=None:
+            if processes_her!=None or processes_pr!=None:
                 self.state_pool=manager.dict()
                 self.action_pool=manager.dict()
                 self.next_state_pool=manager.dict()
@@ -762,12 +786,20 @@ class RL:
                 self.next_state_list=manager.list()
                 self.reward_list=manager.list()
                 self.done_list=manager.list()
-                for _ in range(processes_her):
-                    self.state_list.append(None)
-                    self.action_list.append(None)
-                    self.next_state_list.append(None)
-                    self.reward_list.append(None)
-                    self.done_list.append(None)
+                if processes_her!=None:
+                    for _ in range(processes_her):
+                        self.state_list.append(None)
+                        self.action_list.append(None)
+                        self.next_state_list.append(None)
+                        self.reward_list.append(None)
+                        self.done_list.append(None)
+                else:
+                    for _ in range(processes_pr):
+                        self.state_list.append(None)
+                        self.action_list.append(None)
+                        self.next_state_list.append(None)
+                        self.reward_list.append(None)
+                        self.done_list.append(None)
         self.distributed_flag=False
         self.optimizer_=optimizer
         self.episodes=episodes
@@ -912,7 +944,7 @@ class RL:
         return
     
     
-    def distributed_training(self, global_batch_size, optimizer, strategy, episodes=None, num_episodes=None, jit_compile=True, pool_network=True, processes=None, processes_her=None, shuffle=False, p=None):
+    def distributed_training(self, global_batch_size, optimizer, strategy, episodes=None, num_episodes=None, jit_compile=True, pool_network=True, processes=None, processes_her=None, processes_pr=None, shuffle=False, p=None):
         avg_reward=None
         if num_episodes!=None:
             episodes=num_episodes
@@ -932,6 +964,7 @@ class RL:
         self.pool_network=pool_network
         self.processes=processes
         self.processes_her=processes_her
+        self.processes_pr=processes_pr
         self.shuffle=shuffle
         if pool_network==True:
             mp=multiprocessing
@@ -956,7 +989,7 @@ class RL:
                 lock_list=[mp.Lock() for _ in range(processes)]
             else:
                 lock_list=None
-            if processes_her!=None:
+            if processes_her!=None or processes_pr!=None:
                 self.state_pool=manager.dict()
                 self.action_pool=manager.dict()
                 self.next_state_pool=manager.dict()
@@ -967,12 +1000,20 @@ class RL:
                 self.next_state_list=manager.list()
                 self.reward_list=manager.list()
                 self.done_list=manager.list()
-                for _ in range(processes_her):
-                    self.state_list.append(None)
-                    self.action_list.append(None)
-                    self.next_state_list.append(None)
-                    self.reward_list.append(None)
-                    self.done_list.append(None)
+                if processes_her!=None:
+                    for _ in range(processes_her):
+                        self.state_list.append(None)
+                        self.action_list.append(None)
+                        self.next_state_list.append(None)
+                        self.reward_list.append(None)
+                        self.done_list.append(None)
+                else:
+                    for _ in range(processes_pr):
+                        self.state_list.append(None)
+                        self.action_list.append(None)
+                        self.next_state_list.append(None)
+                        self.reward_list.append(None)
+                        self.done_list.append(None)
         self.distributed_flag=True
         self.global_batch_size=global_batch_size
         self.batch=global_batch_size
