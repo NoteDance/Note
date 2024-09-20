@@ -4,7 +4,7 @@ import numpy as np
 
 class pr:
     def __init__(self):
-        self.TD=tf.constant(7.)
+        self.TD=tf.Variable(7.)
         self.index=None
     
     
@@ -21,16 +21,16 @@ class pr:
     def update_TD(self,TD):
         if self.pool_network==True:
             for i in range(len(self.index)):
-                self.TD[7]=tf.tensor_scatter_nd_update(self.TD[7], [[self.index[i]]], [TD[i]])
+                self.TD[7].assign(tf.tensor_scatter_nd_update(self.TD[7], [[self.index[i]]], [TD[i]]))
         else:
             for i in range(len(self.index)):
-                self.TD=tf.tensor_scatter_nd_update(self.TD, [[self.index[i]]], [TD[i]])
+                self.TD.assign(tf.tensor_scatter_nd_update(self.TD, [[self.index[i]]], [TD[i]]))
         return
 
 
 class pr_:
     def __init__(self):
-        self.TD=tf.constant(7.)
+        self.TD=7.
         self.index=None
     
     
