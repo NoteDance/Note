@@ -1,9 +1,10 @@
+import tensorflow as tf
 import numpy as np
 
 
 class pr:
     def __init__(self):
-        self.TD=np.array(0)
+        self.TD=tf.constant(0.)
         self.index=None
     
     
@@ -15,7 +16,7 @@ class pr:
     
     def update_TD(self,TD):
         for i in range(len(self.index)):
-            self.TD[1:][self.index[i]]=TD[i]
+            self.TD=tf.tensor_scatter_nd_update(self.TD[1:], [[self.index[i]]], [TD[i]])
         return
 
 
