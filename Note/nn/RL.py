@@ -839,9 +839,9 @@ class RL:
                         self.reward_pool[7]=np.concatenate(self.reward_pool_list)
                         self.done_pool[7]=np.concatenate(self.done_pool_list)
                     if self.PR==True:
-                        self.prioritized_replay.TD[7]=tf.constant(self.prioritized_replay.TD[7])
+                        self.prioritized_replay.TD[7]=tf.Variable(self.prioritized_replay.TD[7])
                     else:
-                        self.prioritized_replay.TD=tf.constant(self.prioritized_replay.TD)
+                        self.prioritized_replay.TD=tf.Variable(self.prioritized_replay.TD)
                     self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
                     if len(self.reward_list)>self.trial_count:
                         del self.reward_list[0]
@@ -910,9 +910,9 @@ class RL:
                         self.reward_pool[7]=np.concatenate(self.reward_pool_list)
                         self.done_pool[7]=np.concatenate(self.done_pool_list)
                     if self.PR==True:
-                        self.prioritized_replay.TD[7]=tf.constant(self.prioritized_replay.TD[7])
+                        self.prioritized_replay.TD[7]=tf.Variable(self.prioritized_replay.TD[7])
                     else:
-                        self.prioritized_replay.TD=tf.constant(self.prioritized_replay.TD)
+                        self.prioritized_replay.TD=tf.Variable(self.prioritized_replay.TD)
                     self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
                     if len(self.reward_list)>self.trial_count:
                         del self.reward_list[0]
@@ -1074,9 +1074,9 @@ class RL:
                             self.reward_pool[7]=np.concatenate(self.reward_pool_list)
                             self.done_pool[7]=np.concatenate(self.done_pool_list)
                         if self.PR==True:
-                            self.prioritized_replay.TD[7]=tf.constant(self.prioritized_replay.TD[7])
+                            self.prioritized_replay.TD[7]=tf.Variable(self.prioritized_replay.TD[7])
                         else:
-                            self.prioritized_replay.TD=tf.constant(self.prioritized_replay.TD)
+                            self.prioritized_replay.TD=tf.Variable(self.prioritized_replay.TD)
                         self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
                         if len(self.reward_list)>self.trial_count:
                             del self.reward_list[0]
@@ -1144,9 +1144,9 @@ class RL:
                             self.reward_pool[7]=np.concatenate(self.reward_pool_list)
                             self.done_pool[7]=np.concatenate(self.done_pool_list)
                         if self.PR==True:
-                            self.prioritized_replay.TD[7]=tf.constant(self.prioritized_replay.TD[7])
+                            self.prioritized_replay.TD[7]=tf.Variable(self.prioritized_replay.TD[7])
                         else:
-                            self.prioritized_replay.TD=tf.constant(self.prioritized_replay.TD)
+                            self.prioritized_replay.TD=tf.Variable(self.prioritized_replay.TD)
                         self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
                         if len(self.reward_list)>self.trial_count:
                             del self.reward_list[0]
@@ -1217,9 +1217,9 @@ class RL:
                             self.reward_pool[7]=np.concatenate(self.reward_pool_list)
                             self.done_pool[7]=np.concatenate(self.done_pool_list)
                         if self.PR==True:
-                            self.prioritized_replay.TD[7]=tf.constant(self.prioritized_replay.TD[7])
+                            self.prioritized_replay.TD[7]=tf.Variable(self.prioritized_replay.TD[7])
                         else:
-                            self.prioritized_replay.TD=tf.constant(self.prioritized_replay.TD)
+                            self.prioritized_replay.TD=tf.Variable(self.prioritized_replay.TD)
                         self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
                         if len(self.reward_list)>self.trial_count:
                             del self.reward_list[0]
@@ -1293,9 +1293,9 @@ class RL:
                             self.reward_pool[7]=np.concatenate(self.reward_pool_list)
                             self.done_pool[7]=np.concatenate(self.done_pool_list)
                         if self.PR==True:
-                            self.prioritized_replay.TD[7]=tf.constant(self.prioritized_replay.TD[7])
+                            self.prioritized_replay.TD[7]=tf.Variable(self.prioritized_replay.TD[7])
                         else:
-                            self.prioritized_replay.TD=tf.constant(self.prioritized_replay.TD)
+                            self.prioritized_replay.TD=tf.Variable(self.prioritized_replay.TD)
                         self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
                         if len(self.reward_list)>self.trial_count:
                             del self.reward_list[0]
@@ -1371,9 +1371,9 @@ class RL:
                             self.reward_pool[7]=np.concatenate(self.reward_pool_list)
                             self.done_pool[7]=np.concatenate(self.done_pool_list)
                         if self.PR==True:
-                            self.prioritized_replay.TD[7]=tf.constant(self.prioritized_replay.TD[7])
+                            self.prioritized_replay.TD[7]=tf.Variable(self.prioritized_replay.TD[7])
                         else:
-                            self.prioritized_replay.TD=tf.constant(self.prioritized_replay.TD)
+                            self.prioritized_replay.TD=tf.Variable(self.prioritized_replay.TD)
                         self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
                         if len(self.reward_list)>self.trial_count:
                             del self.reward_list[0]
@@ -1447,9 +1447,9 @@ class RL:
                             self.reward_pool[7]=np.concatenate(self.reward_pool_list)
                             self.done_pool[7]=np.concatenate(self.done_pool_list)
                         if self.PR==True:
-                            self.prioritized_replay.TD[7]=tf.constant(self.prioritized_replay.TD[7])
+                            self.prioritized_replay.TD[7]=tf.Variable(self.prioritized_replay.TD[7])
                         else:
-                            self.prioritized_replay.TD=tf.constant(self.prioritized_replay.TD)
+                            self.prioritized_replay.TD=tf.Variable(self.prioritized_replay.TD)
                         self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
                         if len(self.reward_list)>self.trial_count:
                             del self.reward_list[0]
