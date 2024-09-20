@@ -20,10 +20,11 @@ class pr:
     
     def update_TD(self,TD):
         if self.pool_network==True:
+            self.TD[7]=tf.constant(self.TD[7])
             for i in range(len(self.index)):
-                self.TD[7]=tf.constant(self.TD[7])
                 self.TD[7]=tf.tensor_scatter_nd_update(self.TD[7], [[self.index[i]]], [TD[i]])
         else:
+            self.TD=tf.constant(self.TD)
             for i in range(len(self.index)):
                 self.TD=tf.tensor_scatter_nd_update(self.TD, [[self.index[i]]], [TD[i]])
         return
