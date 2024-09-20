@@ -10,7 +10,7 @@ class pr:
     
     def sample(self,state_pool,action_pool,next_state_pool,reward_pool,done_pool,epsilon,alpha,batch):
         if self.pool_network==True:
-            TD=tf.constant(self.TD[7])
+            TD=self.TD[7]
         else:
             TD=self.TD
         p=(TD+epsilon)**alpha/tf.reduce_sum((TD+epsilon)**alpha)
@@ -20,11 +20,9 @@ class pr:
     
     def update_TD(self,TD):
         if self.pool_network==True:
-            self.TD[7]=tf.constant(self.TD[7])
             for i in range(len(self.index)):
                 self.TD[7]=tf.tensor_scatter_nd_update(self.TD[7], [[self.index[i]]], [TD[i]])
         else:
-            self.TD=tf.constant(self.TD)
             for i in range(len(self.index)):
                 self.TD=tf.tensor_scatter_nd_update(self.TD, [[self.index[i]]], [TD[i]])
         return
