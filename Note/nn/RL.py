@@ -41,7 +41,7 @@ class RL:
         self.total_time=0
     
     
-    def set_up(self,policy=None,noise=None,pool_size=None,batch=None,update_batches=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False,MA=False,PR=False,epsilon=None,initial_TD=7,alpha=0.7):
+    def set_up(self,policy=None,noise=None,pool_size=None,batch=None,update_batches=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False,MA=False,PR=False,epsilon=None,initial_TD=7.,alpha=0.7):
         self.policy=policy
         self.noise=noise
         self.pool_size=pool_size
@@ -623,8 +623,9 @@ class RL:
             if self.PR==True:
                 self.prioritized_replay.TD=np.append(self.prioritized_replay.TD,self.initial_TD)
                 if len(self.state_pool)>self.pool_size:
-                    TD=np.array(0)
-                    self.prioritized_replay.TD=np.append(TD,self.prioritized_replay.TD[2:])
+                    TD=tf.constant(0.)
+                    self.prioritized_replay.TD=np.append([TD,self.prioritized_replay.TD[2:]])
+                self.prioritized_replay.TD=tf.constant(self.prioritized_replay.TD)
             if self.MA==True:
                 r,done=self.reward_done_func_ma(r,done)
             self.reward=r+self.reward
@@ -719,6 +720,12 @@ class RL:
             if self.HER!=True:
                 lock_list[index].acquire()
                 self.pool(s,a,next_s,r,done,index)
+                if self.PR==True:
+                    self.prioritized_replay.TD[7]=np.append(self.prioritized_replay.TD[7],self.initial_TD)
+                    if len(self.state_pool)>self.pool_size:
+                        TD=tf.constant(0.)
+                        self.prioritized_replay.TD[7]=np.append([TD,self.prioritized_replay.TD[7][2:]])
+                    self.prioritized_replay.TD[7]=tf.constant(self.prioritized_replay.TD[7])
                 self.step_counter.value+=1
                 lock_list[index].release()
             else:
@@ -775,6 +782,9 @@ class RL:
                 lock_list=[mp.Lock() for _ in range(processes)]
             else:
                 lock_list=None
+            if self.PR==True:
+                self.prioritized_replay.TD=manager.dict()
+                self.prioritized_replay.TD[7]=np.array(0)
             if processes_her!=None or processes_pr!=None:
                 self.state_pool=manager.dict()
                 self.action_pool=manager.dict()
@@ -816,7 +826,7 @@ class RL:
                         process_list.append(process)
                     for process in process_list:
                         process.join()
-                    if processes_her==None:
+                    if processes_her==None and processes_pr==None:
                         self.state_pool=np.concatenate(self.state_pool_list)
                         self.action_pool=np.concatenate(self.action_pool_list)
                         self.next_state_pool=np.concatenate(self.next_state_pool_list)
@@ -881,7 +891,7 @@ class RL:
                         process_list.append(process)
                     for process in process_list:
                         process.join()
-                    if processes_her==None:
+                    if processes_her==None and processes_pr==None:
                         self.state_pool=np.concatenate(self.state_pool_list)
                         self.action_pool=np.concatenate(self.action_pool_list)
                         self.next_state_pool=np.concatenate(self.next_state_pool_list)
@@ -989,6 +999,9 @@ class RL:
                 lock_list=[mp.Lock() for _ in range(processes)]
             else:
                 lock_list=None
+            if self.PR==True:
+                self.prioritized_replay.TD=manager.dict()
+                self.prioritized_replay.TD[7]=np.array(0)
             if processes_her!=None or processes_pr!=None:
                 self.state_pool=manager.dict()
                 self.action_pool=manager.dict()
@@ -1036,7 +1049,7 @@ class RL:
                             process_list.append(process)
                         for process in process_list:
                             process.join()
-                        if processes_her==None:
+                        if processes_her==None and processes_pr==None:
                             self.state_pool=np.concatenate(self.state_pool_list)
                             self.action_pool=np.concatenate(self.action_pool_list)
                             self.next_state_pool=np.concatenate(self.next_state_pool_list)
@@ -1100,7 +1113,7 @@ class RL:
                             process_list.append(process)
                         for process in process_list:
                             process.join()
-                        if processes_her==None:
+                        if processes_her==None and processes_pr==None:
                             self.state_pool=np.concatenate(self.state_pool_list)
                             self.action_pool=np.concatenate(self.action_pool_list)
                             self.next_state_pool=np.concatenate(self.next_state_pool_list)
@@ -1167,7 +1180,7 @@ class RL:
                             process_list.append(process)
                         for process in process_list:
                             process.join()
-                        if processes_her==None:
+                        if processes_her==None and processes_pr==None:
                             self.state_pool=np.concatenate(self.state_pool_list)
                             self.action_pool=np.concatenate(self.action_pool_list)
                             self.next_state_pool=np.concatenate(self.next_state_pool_list)
@@ -1237,7 +1250,7 @@ class RL:
                             process_list.append(process)
                         for process in process_list:
                             process.join()
-                        if processes_her==None:
+                        if processes_her==None and processes_pr==None:
                             self.state_pool=np.concatenate(self.state_pool_list)
                             self.action_pool=np.concatenate(self.action_pool_list)
                             self.next_state_pool=np.concatenate(self.next_state_pool_list)
@@ -1309,7 +1322,7 @@ class RL:
                             process_list.append(process)
                         for process in process_list:
                             process.join()
-                        if processes_her==None:
+                        if processes_her==None and processes_pr==None:
                             self.state_pool=np.concatenate(self.state_pool_list)
                             self.action_pool=np.concatenate(self.action_pool_list)
                             self.next_state_pool=np.concatenate(self.next_state_pool_list)
@@ -1379,7 +1392,7 @@ class RL:
                             process_list.append(process)
                         for process in process_list:
                             process.join()
-                        if processes_her==None:
+                        if processes_her==None and processes_pr==None:
                             self.state_pool=np.concatenate(self.state_pool_list)
                             self.action_pool=np.concatenate(self.action_pool_list)
                             self.next_state_pool=np.concatenate(self.next_state_pool_list)
