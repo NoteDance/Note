@@ -13,7 +13,7 @@ class pr:
             TD=self.TD[7]
         else:
             TD=self.TD
-        p=(TD+epsilon)**alpha/tf.reduce_sum((TD+epsilon)**alpha)
+        p=(TD[:len(state_pool)]+epsilon)**alpha/tf.reduce_sum((TD[:len(state_pool)]+epsilon)**alpha)
         self.index=np.random.choice(np.arange(len(state_pool)),size=[batch],p=p.numpy())
         return state_pool[self.index],action_pool[self.index],next_state_pool[self.index],reward_pool[self.index],done_pool[self.index]
     
@@ -39,7 +39,7 @@ class pr_:
             TD=self.TD[7]
         else:
             TD=self.TD
-        p=(TD+epsilon)**alpha/np.sum((TD+epsilon)**alpha)
+        p=(TD[:len(state_pool)]+epsilon)**alpha/np.sum((TD[:len(state_pool)]+epsilon)**alpha)
         self.index=np.random.choice(np.arange(len(state_pool)),size=[batch],p=p)
         return state_pool[self.index],action_pool[self.index],next_state_pool[self.index],reward_pool[self.index],done_pool[self.index]
     
