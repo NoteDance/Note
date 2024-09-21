@@ -177,7 +177,7 @@ class RL_pytorch:
     
     
     def data_func(self):
-        if self.pr_:
+        if self.PR:
             if self.processes_pr!=None:
                 process_list=[]
                 for p in range(self.processes_pr):
