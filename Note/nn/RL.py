@@ -782,7 +782,7 @@ class RL:
                 lock_list=None
             if self.PR==True:
                 self.prioritized_replay.TD=manager.dict()
-                self.prioritized_replay.TD[7]=np.ones([self.pool_size])*self.initial_TD
+                self.prioritized_replay.TD[7]=np.ones([self.pool_size])*tf.Variable(self.initial_TD)
             if processes_her!=None or processes_pr!=None:
                 self.state_pool=manager.dict()
                 self.action_pool=manager.dict()
@@ -1011,7 +1011,7 @@ class RL:
                 lock_list=None
             if self.PR==True:
                 self.prioritized_replay.TD=manager.dict()
-                self.prioritized_replay.TD[7]=np.ones([self.pool_size])*self.initial_TD
+                self.prioritized_replay.TD[7]=np.ones([self.pool_size])*tf.Variable(self.initial_TD)
             if processes_her!=None or processes_pr!=None:
                 self.state_pool=manager.dict()
                 self.action_pool=manager.dict()
