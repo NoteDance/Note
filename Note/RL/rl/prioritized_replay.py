@@ -10,10 +10,9 @@ class pr:
     
     def sample(self,state_pool,action_pool,next_state_pool,reward_pool,done_pool,epsilon,alpha,batch):
         if self.pool_network==True:
-            TD=self.TD[7]
+            p=(self.TD[7][:len(state_pool)]+epsilon)**alpha/tf.reduce_sum((self.TD[7][:len(state_pool)]+epsilon)**alpha)
         else:
-            TD=self.TD
-        p=(TD[:len(state_pool)]+epsilon)**alpha/tf.reduce_sum((TD[:len(state_pool)]+epsilon)**alpha)
+            p=(self.TD[:len(state_pool)]+epsilon)**alpha/tf.reduce_sum((self.TD[:len(state_pool)]+epsilon)**alpha)
         self.index=np.random.choice(np.arange(len(state_pool)),size=[batch],p=p.numpy())
         return state_pool[self.index],action_pool[self.index],next_state_pool[self.index],reward_pool[self.index],done_pool[self.index]
     
@@ -36,10 +35,9 @@ class pr_:
     
     def sample(self,state_pool,action_pool,next_state_pool,reward_pool,done_pool,epsilon,alpha,batch):
         if self.pool_network==True:
-            TD=self.TD[7]
+            p=(self.TD[7][:len(state_pool)]+epsilon)**alpha/tf.reduce_sum((self.TD[7][:len(state_pool)]+epsilon)**alpha)
         else:
-            TD=self.TD
-        p=(TD[:len(state_pool)]+epsilon)**alpha/np.sum((TD[:len(state_pool)]+epsilon)**alpha)
+            p=(self.TD[:len(state_pool)]+epsilon)**alpha/tf.reduce_sum((self.TD[:len(state_pool)]+epsilon)**alpha)
         self.index=np.random.choice(np.arange(len(state_pool)),size=[batch],p=p)
         return state_pool[self.index],action_pool[self.index],next_state_pool[self.index],reward_pool[self.index],done_pool[self.index]
     
