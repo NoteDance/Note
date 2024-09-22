@@ -406,6 +406,7 @@ class RL_pytorch:
         self.reward[p]=0
         s=self.env_(initial=True,p=p)
         s=np.array(s)
+        flag=False
         if self.PPO==True:
             self.state_pool_list[p]=None
             self.action_pool_list[p]=None
@@ -443,7 +444,7 @@ class RL_pytorch:
                 self.step_counter.value+=1
                 lock_list[index].release()
             else:
-                if self.PR==True:
+                if self.PR==True and flag==False:
                     if self.prioritized_replay.TD is not None:
                         if index==0:
                             self.TD_list[index]=self.prioritized_replay.TD[0:len(self.state_pool_list[index])]
@@ -454,6 +455,7 @@ class RL_pytorch:
                                 index1+=len(self.state_pool_list[i])
                             index2=index1+len(self.state_pool_list[index])
                             self.TD_list[index]=self.prioritized_replay.TD[index1-1:index2]
+                        flag=True
                 self.pool(s,a,next_s,r,done,index)
                 if self.PR==True:
                     if len(self.state_pool_list[index])>1:
