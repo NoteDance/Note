@@ -445,6 +445,11 @@ class RL_pytorch:
             else:
                 self.pool(s,a,next_s,r,done,index)
                 if self.PR==True:
+                    if self.prioritized_replay.TD is not None:
+                        if index==0:
+                            self.TD_list[index]=self.prioritized_replay.TD[0:len(self.state_pool_list[index])]
+                        else:
+                            self.TD_list[index]=self.prioritized_replay.TD[len(self.state_pool_list[index-1])-1:len(self.state_pool_list[index])]
                     if len(self.prioritized_replay.TD[index])>1:
                         self.TD_list[index]=np.append(self.TD_list[index],self.initial_TD)
                     if len(self.state_pool_list[index])>math.ceil(self.pool_size/self.processes):
@@ -504,6 +509,7 @@ class RL_pytorch:
                 self.TD_list=manager.list()
                 for _ in range(processes):
                     self.TD_list.append(self.initial_TD)
+                self.prioritized_replay.TD=None
             if processes_her!=None or processes_pr!=None:
                 self.state_pool=manager.dict()
                 self.action_pool=manager.dict()
