@@ -443,13 +443,19 @@ class RL_pytorch:
                 self.step_counter.value+=1
                 lock_list[index].release()
             else:
-                self.pool(s,a,next_s,r,done,index)
                 if self.PR==True:
                     if self.prioritized_replay.TD is not None:
                         if index==0:
                             self.TD_list[index]=self.prioritized_replay.TD[0:len(self.state_pool_list[index])]
                         else:
-                            self.TD_list[index]=self.prioritized_replay.TD[len(self.state_pool_list[index-1])-1:len(self.state_pool_list[index])]
+                            index1=0
+                            index2=0
+                            for i in range(index):
+                                index1+=len(self.state_pool_list[i])
+                            index2=index1+len(self.state_pool_list[index])
+                            self.TD_list[index]=self.prioritized_replay.TD[index1-1:index2]
+                self.pool(s,a,next_s,r,done,index)
+                if self.PR==True:
                     if len(self.state_pool_list[index])>1:
                         self.TD_list[index]=np.append(self.TD_list[index],self.initial_TD)
                     if len(self.state_pool_list[index])>math.ceil(self.pool_size/self.processes):
