@@ -624,7 +624,7 @@ class RL:
                 if len(self.state_pool)>1:
                     self.prioritized_replay.TD=np.append(self.prioritized_replay.TD,self.initial_TD)
                 if len(self.state_pool)>self.pool_size:
-                    self.prioritized_replay.TD=np.append(self.prioritized_replay.TD[1:],self.initial_TD)
+                    self.prioritized_replay.TD=self.prioritized_replay.TD[1:]
             if self.MA==True:
                 r,done=self.reward_done_func_ma(r,done)
             self.reward=r+self.reward
