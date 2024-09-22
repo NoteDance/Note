@@ -440,15 +440,15 @@ class RL_pytorch:
             if self.HER!=True:
                 lock_list[index].acquire()
                 self.pool(s,a,next_s,r,done,index)
-                if self.PR==True:
-                    index1=index*math.ceil(self.pool_size/self.processes)
-                    index2=(index+1)*math.ceil(self.pool_size/self.processes)
-                    if len(self.state_pool_list[index])>math.ceil(self.pool_size/self.processes):
-                        self.prioritized_replay.TD[7][index1:index2]=np.append([self.initial_TD,self.prioritized_replay.TD[7][index1:index2][1:]])
                 self.step_counter.value+=1
                 lock_list[index].release()
             else:
                 self.pool(s,a,next_s,r,done,index)
+                if self.PR==True:
+                    if len(self.prioritized_replay.TD[index])>1:
+                        self.TD_list[index]=np.append(self.TD_list[index],self.initial_TD)
+                    if len(self.state_pool_list[index])>math.ceil(self.pool_size/self.processes):
+                        self.TD_list[index]=np.append(self.TD_list[index][1:],self.initial_TD)
                 self.step_counter.value+=1
             if self.MA==True:
                 r,done=self.reward_done_func_ma(r,done)
@@ -501,8 +501,9 @@ class RL_pytorch:
             else:
                 lock_list=None
             if self.PR==True:
-                self.prioritized_replay.TD=manager.dict()
-                self.prioritized_replay.TD[7]=np.ones([self.pool_size])*self.initial_TD
+                self.TD_list=manager.list()
+                for _ in range(processes):
+                    self.TD_list.append(self.initial_TD)
             if processes_her!=None or processes_pr!=None:
                 self.state_pool=manager.dict()
                 self.action_pool=manager.dict()
@@ -552,6 +553,7 @@ class RL_pytorch:
                         self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
                         self.reward_pool[7]=np.concatenate(self.reward_pool_list)
                         self.done_pool[7]=np.concatenate(self.done_pool_list)
+                    self.prioritized_replay.TD=np.concatenate(self.TD_list)
                     self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
                     if len(self.reward_list)>self.trial_count:
                         del self.reward_list[0]
@@ -616,6 +618,7 @@ class RL_pytorch:
                         self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
                         self.reward_pool[7]=np.concatenate(self.reward_pool_list)
                         self.done_pool[7]=np.concatenate(self.done_pool_list)
+                    self.prioritized_replay.TD=np.concatenate(self.TD_list)
                     self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
                     if len(self.reward_list)>self.trial_count:
                         del self.reward_list[0]
