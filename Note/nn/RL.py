@@ -731,10 +731,10 @@ class RL:
                             self.TD_list[index]=self.prioritized_replay.TD[0:len(self.state_pool_list[index])]
                         else:
                             self.TD_list[index]=self.prioritized_replay.TD[len(self.state_pool_list[index-1])-1:len(self.state_pool_list[index])]
-                    if len(self.prioritized_replay.TD[index])>1:
+                    if len(self.state_pool_list[index])>1:
                         self.TD_list[index]=np.append(self.TD_list[index],self.initial_TD)
                     if len(self.state_pool_list[index])>math.ceil(self.pool_size/self.processes):
-                        self.TD_list[index]=np.append(self.TD_list[index][1:],self.initial_TD)
+                        self.TD_list[index]=self.TD_list[index][1:]
                 self.step_counter.value+=1
             if self.MA==True:
                 r,done=self.reward_done_func_ma(r,done)
