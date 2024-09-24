@@ -53,12 +53,12 @@ class pr_mt:
     
     
     def sample(self,state_pool,action_pool,next_state_pool,reward_pool,done_pool,epsilon,alpha,batch,t):
-        p=(self.TD[t][1:]+epsilon)**alpha/np.sum((self.TD[t][1:]+epsilon)**alpha)
+        p=(self.TD[t]+epsilon)**alpha/np.sum((self.TD[t]+epsilon)**alpha)
         self.index[t]=np.random.choice(np.arange(len(state_pool)),size=[batch],p=p)
         return state_pool[self.index[t]],action_pool[self.index[t]],next_state_pool[self.index[t]],reward_pool[self.index[t]],done_pool[self.index[t]]
     
     
     def update_TD(self,TD,t):
         for i in range(len(self.index[t])):
-            self.TD[t][1:][self.index[t][i]]=TD[i]
+            self.TD[t][self.index[t][i]]=TD[i]
         return
