@@ -44,11 +44,6 @@ class kernel:
     
     
     def init(self):
-        try:
-            if hasattr(self.nn,'pr'):
-                self.nn.pr.TD=np.array(0)
-        except Exception as e:
-            raise e
         self.suspend=False
         self.save_epi=None
         self.episode_set=[]
@@ -358,9 +353,10 @@ class kernel:
             if hasattr(self.nn,'pr'):
                 self.nn.pr.TD=np.append(self.nn.pr.TD,self.nn.initial_TD)
                 if len(self.state_pool)>self.pool_size:
-                    TD=np.array(0)
-                    self.nn.pr.TD=np.append(TD,self.nn.pr.TD[2:])
+                    self.nn.pr.TD=self.nn.pr.TD[1:]
             self.reward=r+self.reward
+            if hasattr(self.platform,'DType'):
+                self.nn.pr.TD=tf.Variable(self.nn.pr.TD)
             loss=self._train()
             self.step_counter+=1
             if done:
