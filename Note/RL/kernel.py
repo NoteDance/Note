@@ -15,6 +15,8 @@ class kernel:
         self.nn=nn
         if hasattr(self.nn,'km'):
             self.nn.km=1
+        if hasattr(self.nn,'pr'):
+            self.nn.pr.pool_network=False
         self.platform=None
         self.state_pool=None
         self.action_pool=None
