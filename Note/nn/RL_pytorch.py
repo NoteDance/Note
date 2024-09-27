@@ -418,7 +418,7 @@ class RL_pytorch:
                 if type(self.state_pool_list[p])!=np.ndarray and self.state_pool_list[p]==None:
                     index=p
                 else:
-                    self.inverse_len[index]=1/len(self.state_pool_list[index])
+                    self.inverse_len[p]=1/len(self.state_pool_list[p])
                     inverse_len=torch.tensor(self.inverse_len)
                     total_inverse=torch.sum(inverse_len)
                     prob=inverse_len/total_inverse
