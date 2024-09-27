@@ -703,7 +703,7 @@ class RL:
                     total_inverse=tf.reduce_sum(inverse_len)
                     prob=inverse_len/total_inverse
                     index=np.random.choice(self.processes,p=prob.numpy())
-                    self.inverse_len[index]=1/len(self.state_pool_list[index])
+                    self.inverse_len[index]=1/(len(self.state_pool_list[index])+1)
             else:
                 index=p
             s=np.expand_dims(s,axis=0)
