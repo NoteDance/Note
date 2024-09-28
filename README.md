@@ -81,6 +81,8 @@ You just need to have your agent class inherit from the RL or RL_pytorch class, 
 # Note.nn.Model.Model:
 Model class manages the parameters and layers of neural network.
 
+**Model's function documentation**: https://github.com/NoteDance/Note-documentation/tree/function-7.0
+
 
 # Note.nn.initializer.initializer:
 This function is used to initialize the parameters of the neural network, it returns a TensorFlow variable and stores the variable in trainable parameters list(Model.param).
