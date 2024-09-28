@@ -23,6 +23,7 @@ class Model:
     layer_eval=dict()
     counter=0
     name_list=[]
+    name_list_=[]
     ctl_list=[]
     ctsl_list=[]
     name=None
@@ -38,7 +39,7 @@ class Model:
         self.layer_param=Model.layer_param
         self.layer_list=Model.layer_list
         self.layer_eval=Model.layer_eval
-        self.name_list=[]
+        self.name_list=Model.name_list_
         self.head=None
         self.head_=None
         self.ft_flag=0
@@ -153,10 +154,10 @@ class Model:
         return
     
     
-    def name_func(self,name=None):
+    def namespace(name=None):
         Model.name=name
         if name!=None:
-            self.name_list.append(name)
+            Model.name_list_.append(name)
         return
     
     
@@ -1440,6 +1441,7 @@ class Model:
         Model.layer_eval=dict()
         Model.counter=0
         Model.name_list=[]
+        Model.name_list_=[]
         Model.ctl_list=[]
         Model.ctsl_list=[]
         Model.name=None
