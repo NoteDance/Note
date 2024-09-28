@@ -38,6 +38,7 @@ class Model:
         self.layer_param=Model.layer_param
         self.layer_list=Model.layer_list
         self.layer_eval=Model.layer_eval
+        self.name_list=[]
         self.head=None
         self.head_=None
         self.ft_flag=0
@@ -152,26 +153,53 @@ class Model:
         return
     
     
-    def freeze(self,name):
-        for param in self.layer_param[name]:
-            param._trainable=False
+    def name_func(self,name=None):
+        Model.name=name
+        if name!=None:
+            self.name_list.append(name)
         return
     
     
-    def unfreeze(self,name):
-        for param in self.layer_param[name]:
-            param._trainable=True
+    def freeze(self,name=None):
+        if name==None:
+            for name in self.name_list:
+                for param in self.layer_param[name]:
+                    param._trainable=False
+        else:
+            for param in self.layer_param[name]:
+                param._trainable=False
+        return
+    
+    
+    def unfreeze(self,name=None):
+        if name==None:
+            for name in self.name_list:
+                for param in self.layer_param[name]:
+                    param._trainable=True
+        else:
+            for param in self.layer_param[name]:
+                param._trainable=True
         return
     
     
     def eval(self,name=None,flag=True):
-        if flag:
-            for layer in self.layer_eval[name]:
-                layer.train_flag=False
+        if name==None:
+            for name in self.name_list:
+                if flag:
+                    for layer in self.layer_eval[name]:
+                        layer.train_flag=False
+                else:
+                    for name in self.layer_eval.keys():
+                        for layer in self.layer_eval[name]:
+                            layer.train_flag=True
         else:
-            for name in self.layer_eval.keys():
+            if flag:
                 for layer in self.layer_eval[name]:
-                    layer.train_flag=True
+                    layer.train_flag=False
+            else:
+                for name in self.layer_eval.keys():
+                    for layer in self.layer_eval[name]:
+                        layer.train_flag=True
         return
     
     
