@@ -30,7 +30,7 @@ class PPO(nn.RL):
         super().__init__()
         self.actor=actor(state_dim,hidden_dim,action_dim)
         self.actor_old=actor(state_dim,hidden_dim,action_dim)
-        nn.assign_param(self.actor_old.param,self.actor.param.copy())
+        nn.assign_param(self.actor_old.param,self.actor.param)
         self.critic=critic(state_dim,hidden_dim)
         self.clip_eps=clip_eps
         self.alpha=alpha
@@ -56,5 +56,5 @@ class PPO(nn.RL):
         return [tf.reduce_mean(clip_loss),tf.reduce_mean((TD)**2)]
     
     def update_param(self):
-        nn.assign_param(self.nn.param, self.actor.param)
+        nn.assign_param(self.actor_old.param, self.actor.param)
         return
