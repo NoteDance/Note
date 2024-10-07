@@ -31,8 +31,6 @@ class DQN(nn.RL):
         next_q_value=tf.reduce_max(self.target_q_net(next_s),axis=1)
         target=tf.cast(r,'float32')+0.98*next_q_value*(1-tf.cast(d,'float32'))
         TD=(q_value-target)
-        if self.PR==True:
-            self.prioritized_replay.update_TD(TD)
         return tf.reduce_mean(TD**2)
     
     def update_param(self):
