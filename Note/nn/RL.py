@@ -704,7 +704,7 @@ class RL:
             self.reward_pool_list[p]=None
             self.done_pool_list[p]=None
         while True:
-            if self.HER!=True:
+            if self.PR!=True and self.HER!=True:
                 if type(self.state_pool_list[p])!=np.ndarray and self.state_pool_list[p]==None:
                     index=p
                 else:
@@ -728,7 +728,7 @@ class RL:
             next_s=np.array(next_s)
             r=np.array(r)
             done=np.array(done)
-            if self.HER!=True:
+            if self.PR!=True and self.HER!=True:
                 lock_list[index].acquire()
                 self.pool(s,a,next_s,r,done,index)
                 self.step_counter.value+=1
