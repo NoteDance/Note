@@ -748,9 +748,9 @@ class RL:
                         flag=True
                 self.pool(s,a,next_s,r,done,index)
                 if self.PR==True:
-                    if len(self.state_pool_list[index])>1:
+                    if len(self.TD_list[index])>1:
                         self.TD_list[index]=np.append(self.TD_list[index],self.initial_TD)
-                    if len(self.state_pool_list[index])>math.ceil(self.pool_size/self.processes):
+                    if len(self.TD_list[index])>math.ceil(self.pool_size/self.processes):
                         self.TD_list[index]=self.TD_list[index][1:]
                 self.step_counter.value+=1
             if self.MA==True:
