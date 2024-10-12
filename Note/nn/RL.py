@@ -692,11 +692,26 @@ class RL:
         return
     
     
+    def modify_TD(self):
+        if self.PR==True:
+            for p in range(self.processes):
+                if self.prioritized_replay.TD is not None:
+                    if p==0:
+                        self.TD_list[p]=self.prioritized_replay.TD[0:len(self.TD_list[p])]
+                    else:
+                        index1=0
+                        index2=0
+                        for i in range(p):
+                            index1+=len(self.TD_list[i])
+                        index2=index1+len(self.TD_list[p])
+                        self.TD_list[p]=self.prioritized_replay.TD[index1-1:index2]
+        return
+    
+    
     def store_in_parallel(self,p,lock_list):
         self.reward[p]=0
         s=self.env_(initial=True,p=p)
         s=np.array(s)
-        flag=False
         if self.PPO==True:
             self.state_pool_list[p]=None
             self.action_pool_list[p]=None
@@ -734,18 +749,6 @@ class RL:
                 self.step_counter.value+=1
                 lock_list[index].release()
             else:
-                if self.PR==True and flag==False:
-                    if self.prioritized_replay.TD is not None:
-                        if index==0:
-                            self.TD_list[index]=self.prioritized_replay.TD[0:len(self.TD_list[index])]
-                        else:
-                            index1=0
-                            index2=0
-                            for i in range(index):
-                                index1+=len(self.TD_list[i])
-                            index2=index1+len(self.TD_list[index])
-                            self.TD_list[index]=self.prioritized_replay.TD[index1-1:index2]
-                        flag=True
                 self.pool(s,a,next_s,r,done,index)
                 if self.PR==True:
                     if len(self.state_pool_list[index])>1:
@@ -844,6 +847,7 @@ class RL:
                 train_loss.reset_states()
                 if pool_network==True:
                     process_list=[]
+                    self.modify_TD()
                     for p in range(processes):
                         process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
                         process.start()
@@ -911,6 +915,7 @@ class RL:
                 train_loss.reset_states()
                 if pool_network==True:
                     process_list=[]
+                    self.modify_TD()
                     for p in range(processes):
                         process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
                         process.start()
@@ -1073,6 +1078,7 @@ class RL:
                     t1=time.time()
                     if pool_network==True:
                         process_list=[]
+                        self.modify_TD()
                         for p in range(processes):
                             process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
                             process.start()
@@ -1139,6 +1145,7 @@ class RL:
                     t1=time.time()
                     if pool_network==True:
                         process_list=[]
+                        self.modify_TD()
                         for p in range(processes):
                             process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
                             process.start()
@@ -1208,6 +1215,7 @@ class RL:
                     t1=time.time()
                     if pool_network==True:
                         process_list=[]
+                        self.modify_TD()
                         for p in range(processes):
                             process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
                             process.start()
@@ -1280,6 +1288,7 @@ class RL:
                     t1=time.time()
                     if pool_network==True:
                         process_list=[]
+                        self.modify_TD()
                         for p in range(processes):
                             process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
                             process.start()
@@ -1354,6 +1363,7 @@ class RL:
                     t1=time.time()
                     if pool_network==True:
                         process_list=[]
+                        self.modify_TD()
                         for p in range(processes):
                             process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
                             process.start()
@@ -1426,6 +1436,7 @@ class RL:
                     t1=time.time()
                     if pool_network==True:
                         process_list=[]
+                        self.modify_TD()
                         for p in range(processes):
                             process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
                             process.start()
