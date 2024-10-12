@@ -400,6 +400,22 @@ class RL_pytorch:
         self.reward_list[p]=r
         self.done_list[p]=d
         return
+    
+    
+    def modify_TD(self):
+        if self.PR==True:
+            for p in range(self.processes):
+                if self.prioritized_replay.TD is not None:
+                    if p==0:
+                        self.TD_list[p]=self.prioritized_replay.TD[0:len(self.TD_list[p])]
+                    else:
+                        index1=0
+                        index2=0
+                        for i in range(p):
+                            index1+=len(self.TD_list[i])
+                        index2=index1+len(self.TD_list[p])
+                        self.TD_list[p]=self.prioritized_replay.TD[index1-1:index2]
+        return
             
             
     def store_in_parallel(self,p,lock_list):
@@ -549,6 +565,7 @@ class RL_pytorch:
                 t1=time.time()
                 if pool_network==True:
                     process_list=[]
+                    self.modify_TD()
                     for p in range(processes):
                         process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
                         process.start()
@@ -614,6 +631,7 @@ class RL_pytorch:
                 t1=time.time()
                 if pool_network==True:
                     process_list=[]
+                    self.modify_TD()
                     for p in range(processes):
                         process=mp.Process(target=self.store_in_parallel,args=(p,))
                         process.start()
