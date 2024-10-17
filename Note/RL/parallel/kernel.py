@@ -46,15 +46,13 @@ class kernel:
         self.loss=Array('f',self.loss)
         self.step_counter=Array('i',self.step_counter)
         self.process_counter=Value('i',0)
-        self.probability_list=manager.list([])
-        self.running_flag_list=manager.list([])
         self.finish_list=manager.list([])
-        self.running_flag=manager.list([0])
         self.reward_list=manager.list([])
         self.loss_list=manager.list([])
         self.episode_counter=Value('i',0)
         self.total_episode=Value('i',0)
         self.priority_p=Value('i',0)
+        self.inverse_len=manager.list([1 for _ in range(self.process)])
         if self.priority_flag==True:
             self.opt_counter=Array('i',np.zeros(self.process,dtype='int32'))
         if self.nn is not None:
@@ -179,35 +177,12 @@ class kernel:
     
     
     def get_index(self,p,lock):
-        while len(self.running_flag_list)<p:
-            pass
-        if len(self.running_flag_list)==p:
-            if self.PO==1 or self.PO==2:
-                lock[2].acquire()
-            elif self.PO==3:
-                lock[0].acquire()
-            self.running_flag_list.append(self.running_flag[1:].copy())
-            if self.PO==1 or self.PO==2:
-                lock[2].release()
-            elif self.PO==3:
-                lock[0].release()
-        if len(self.running_flag_list[p])<self.process_counter.value or np.sum(self.running_flag_list[p])>self.process_counter.value:
-            self.running_flag_list[p]=self.running_flag[1:].copy()
-        while len(self.probability_list)<p:
-            pass
-        if len(self.probability_list)==p:
-            if self.PO==1 or self.PO==2:
-                lock[2].acquire()
-            elif self.PO==3:
-                lock[0].acquire()
-            self.probability_list.append(np.array(self.running_flag_list[p],dtype=np.float16)/np.sum(self.running_flag_list[p]))
-            if self.PO==1 or self.PO==2:
-                lock[2].release()
-            elif self.PO==3:
-                lock[0].release()
-        self.probability_list[p]=np.array(self.running_flag_list[p],dtype=np.float16)/np.sum(self.running_flag_list[p])
+        inverse_len=tf.constant(self.inverse_len)
+        total_inverse=tf.reduce_sum(inverse_len)
+        prob=inverse_len/total_inverse
+        index=np.random.choice(self.processes,p=prob.numpy())
+        self.inverse_len[index]=1/(len(self.state_pool[index])+1)
         while True:
-            index=np.random.choice(len(self.probability_list[p]),p=self.probability_list[p])
             if index in self.finish_list:
                 continue
             else:
@@ -246,7 +221,10 @@ class kernel:
             a=(self.forward(s)+self.noise.sample()).numpy()
         next_s,r,done=self.nn.env(a,p)
         if self.HER!=True:
-            index=self.get_index(p,lock)
+            if type(self.state_pool[p])!=np.ndarray and self.state_pool[p]==None:
+                index=p
+            else:
+                index=self.get_index(p)
         else:
             index=p
         next_s=np.array(next_s)
@@ -571,7 +549,7 @@ class kernel:
         self.next_state_pool[p]=None
         self.reward_pool[p]=None
         self.done_pool[p]=None
-        self.running_flag.append(1)
+        self.inverse_len.append(1)
         self.process_counter.value+=1
         self.finish_list.append(None)
         if self.PO==1 or self.PO==2:
@@ -624,7 +602,7 @@ class kernel:
                 lock[1].release()
             elif len(lock)==3 or len(lock)==4:
                 lock[2].release()
-        self.running_flag[p+1]=0
+        self.inverse_len[p]=0
         if p not in self.finish_list:
             self.finish_list[p]=p
         if self.PO==1 or self.PO==2:
