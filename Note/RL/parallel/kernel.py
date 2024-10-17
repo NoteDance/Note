@@ -176,7 +176,7 @@ class kernel:
         return
     
     
-    def get_index(self,p,lock):
+    def get_index(self,p):
         inverse_len=tf.constant(self.inverse_len)
         total_inverse=tf.reduce_sum(inverse_len)
         prob=inverse_len/total_inverse
@@ -549,7 +549,6 @@ class kernel:
         self.next_state_pool[p]=None
         self.reward_pool[p]=None
         self.done_pool[p]=None
-        self.inverse_len.append(1)
         self.process_counter.value+=1
         self.finish_list.append(None)
         if self.PO==1 or self.PO==2:
