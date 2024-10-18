@@ -180,12 +180,14 @@ class kernel:
         inverse_len=tf.constant(self.inverse_len)
         total_inverse=tf.reduce_sum(inverse_len)
         prob=inverse_len/total_inverse
-        index=np.random.choice(self.processes,p=prob.numpy())
-        self.inverse_len[index]=1/(len(self.state_pool[index])+1)
         while True:
+            index=np.random.choice(self.processes,p=prob.numpy())
             if index in self.finish_list:
+                if self.inverse_len[index]!=0:
+                    self.inverse_len[index]=0
                 continue
             else:
+                self.inverse_len[index]=1/(len(self.state_pool[index])+1)
                 break
         return index
     
