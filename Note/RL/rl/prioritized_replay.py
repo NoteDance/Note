@@ -31,7 +31,7 @@ class pr_:
     
     
     def sample(self,state_pool,action_pool,next_state_pool,reward_pool,done_pool,epsilon,alpha,batch):
-        p=(self.TD+epsilon)**alpha/tf.reduce_sum((self.TD+epsilon)**alpha)
+        p=(self.TD+epsilon)**alpha/np.sum((self.TD+epsilon)**alpha)
         self.index=np.random.choice(np.arange(len(state_pool)),size=[batch],p=p)
         return state_pool[self.index],action_pool[self.index],next_state_pool[self.index],reward_pool[self.index],done_pool[self.index]
     
@@ -46,19 +46,19 @@ class pr_:
         return
 
 
-class pr_mt:
+class pr_mp:
     def __init__(self):
-        self.TD=[]
-        self.index=[]
+        self.TD=None
+        self.index=None
     
     
-    def sample(self,state_pool,action_pool,next_state_pool,reward_pool,done_pool,epsilon,alpha,batch,t):
-        p=(self.TD[t]+epsilon)**alpha/np.sum((self.TD[t]+epsilon)**alpha)
-        self.index[t]=np.random.choice(np.arange(len(state_pool)),size=[batch],p=p)
-        return state_pool[self.index[t]],action_pool[self.index[t]],next_state_pool[self.index[t]],reward_pool[self.index[t]],done_pool[self.index[t]]
+    def sample(self,state_pool,action_pool,next_state_pool,reward_pool,done_pool,epsilon,alpha,batch,p):
+        prob=(self.TD[p]+epsilon)**alpha/tf.reduce_sum((self.TD[p]+epsilon)**alpha)
+        self.index[p]=np.random.choice(np.arange(len(state_pool)),size=[batch],p=prob.numpy())
+        return state_pool[self.index[p]],action_pool[self.index[p]],next_state_pool[self.index[p]],reward_pool[self.index[p]],done_pool[self.index[p]]
     
     
-    def update_TD(self,TD,t):
-        for i in range(len(self.index[t])):
-            self.TD[t][self.index[t][i]]=TD[i]
+    def update_TD(self,TD,p):
+        for i in range(len(self.index[p])):
+            self.TD[p][self.index[p][i]].assign(TD[i])
         return
