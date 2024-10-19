@@ -64,7 +64,7 @@ class kernel:
         return
     
     
-    def set_up(self,policy=None,noise=None,pool_size=None,batch=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False):
+    def set(self,policy=None,noise=None,pool_size=None,batch=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False):
         if policy!=None:
             self.policy=policy
         if noise!=None:
