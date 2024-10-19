@@ -580,7 +580,6 @@ class kernel:
                     self.nn.pr.TD[p]=np.append(self.nn.pr.TD[p],self.nn.initial_TD)
                     if len(self.state_pool[p])>self.pool_size:
                         self.nn.pr.TD[p]=self.nn.pr.TD[p][1:]
-                if hasattr(self.nn,'pr'):
                     self.nn.pr.TD[p]=tf.Variable(self.nn.pr.TD[p])
                 if type(self.done_pool[p])==np.ndarray:
                     self.train_(p,lock,g_lock)
