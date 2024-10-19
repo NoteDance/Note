@@ -38,11 +38,9 @@ class pr_:
     
     def update_TD(self,TD):
         if self.pool_network==True:
-            for i in range(len(self.index)):
-                self.TD[7][self.index[i]]=TD[i]
+            self.TD[7][self.index]=TD
         else:
-            for i in range(len(self.index)):
-                self.TD[self.index[i]]=TD[i]
+            self.TD[self.index]=TD
         return
 
 
