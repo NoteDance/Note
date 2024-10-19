@@ -577,8 +577,8 @@ class kernel:
                 if done:
                     if self.PO==1 or self.PO==2:
                         lock[1].acquire()
-                    elif len(lock)==3:
-                        lock[2].acquire()
+                    elif len(lock)==2:
+                        lock[1].acquire()
                     self.reward_list.append(self.reward[p])
                     if len(self.reward_list)>self.trial_count:
                         del self.reward_list[0]
@@ -588,21 +588,21 @@ class kernel:
                     self.loss_list.append(self.loss[p])
                     if self.PO==1 or self.PO==2:
                         lock[1].release()
-                    elif len(lock)==3:
-                        lock[2].release()
+                    elif len(lock)==2:
+                        lock[1].release()
                     break
             if self.PO==1 or self.PO==2:
                 lock[1].acquire()
-            elif len(lock)==2 or len(lock)==3:
-                lock[1].acquire()
+            elif len(lock)==3:
+                lock[2].acquire()
             if self.save_param_only==False:
                 self.save_param_()
             else:
                 self.save_()
             if self.PO==1 or self.PO==2:
                 lock[1].release()
-            elif len(lock)==2 or len(lock)==3:
-                lock[1].release()
+            elif len(lock)==3:
+                lock[2].release()
         self.inverse_len[p]=0
         if p not in self.finish_list:
             self.finish_list[p]=p
