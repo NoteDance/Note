@@ -53,6 +53,8 @@ class kernel:
         self.total_episode=Value('i',0)
         self.priority_p=Value('i',0)
         self.inverse_len=manager.list([1 for _ in range(self.process)])
+        if hasattr(self.nn,'pr'):
+            self.nn.pr.TD=manager.list([[self.nn.initial_TD] for _ in range(self.process)])
         if self.priority_flag==True:
             self.opt_counter=Array('i',np.zeros(self.process,dtype='int32'))
         if self.nn is not None:
@@ -233,7 +235,7 @@ class kernel:
         r=np.array(r)
         done=np.array(done)
         self.pool(s,a,next_s,r,done,pool_lock,index)
-        return next_s,r,done,index
+        return next_s,r,done
     
     
     def data_func(self,p):
@@ -419,7 +421,9 @@ class kernel:
     
     def _train(self,p,j,batches,length,lock,g_lock):
         if j==batches-1:
-            if self.HER:
+            if hasattr(self.nn,'pr'):
+                state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool[p],self.action_pool[p],self.next_state_pool[p],self.reward_pool[p],self.done_pool[p],self.batch,p)
+            elif self.HER:
                 state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.data_func(p)
             else:
                 index1=batches*self.batch
@@ -450,7 +454,9 @@ class kernel:
             _batch_counter.assign_add(1)
             self._batch_counter[p]=_batch_counter
         else:
-            if self.HER:
+            if hasattr(self.nn,'pr'):
+                state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.nn.data_func(self.state_pool[p],self.action_pool[p],self.next_state_pool[p],self.reward_pool[p],self.done_pool[p],self.batch,p)
+            elif self.HER:
                 state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.data_func(p)
             else:
                 index1=j*self.batch
@@ -567,9 +573,15 @@ class kernel:
             while True:
                 if self.episode!=None and self.episode_counter.value>=self.episode:
                     break
-                next_s,r,done,index=self.store(s,p,lock,pool_lock)
+                next_s,r,done=self.store(s,p,lock,pool_lock)
                 self.reward[p]+=r
                 s=next_s
+                if hasattr(self.nn,'pr'):
+                    self.nn.pr.TD[p]=np.append(self.nn.pr.TD[p],self.nn.initial_TD)
+                    if len(self.state_pool[p])>self.pool_size:
+                        self.nn.pr.TD[p]=self.nn.pr.TD[p][1:]
+                if hasattr(self.nn,'pr'):
+                    self.nn.pr.TD[p]=tf.Variable(self.nn.pr.TD[p])
                 if type(self.done_pool[p])==np.ndarray:
                     self.train_(p,lock,g_lock)
                     if self.stop_flag.value==True:
