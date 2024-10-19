@@ -135,29 +135,20 @@ class kernel:
         try:
             if type(self.state_pool[index])!=np.ndarray and self.state_pool[index]==None:
                 if type(s) in [int,float]:
-                    s=np.array(s)
                     self.state_pool[index]=np.expand_dims(s,axis=0)
                 elif type(s)==tuple:
                     s=np.array(s)
                     self.state_pool[index]=s
                 else:
                     self.state_pool[index]=s
-                if type(a)==int:
-                    a=np.array(a)
-                    self.action_pool[index]=np.expand_dims(a,axis=0)
-                else:
-                    self.action_pool[index]=a
+                self.action_pool[index]=np.expand_dims(a,axis=0)
                 self.next_state_pool[index]=np.expand_dims(next_s,axis=0)
                 self.reward_pool[index]=np.expand_dims(r,axis=0)
                 self.done_pool[index]=np.expand_dims(done,axis=0)
             else:
                 try:
                     self.state_pool[index]=np.concatenate((self.state_pool[index],s),0)
-                    if type(a)==int:
-                        a=np.array(a)
-                        self.action_pool[index]=np.concatenate((self.action_pool[index],np.expand_dims(a,axis=0)),0)
-                    else:
-                        self.action_pool[index]=np.concatenate((self.action_pool[index],a),0)
+                    self.action_pool[index]=np.concatenate((self.action_pool[index],np.expand_dims(a,axis=0)),0)
                     self.next_state_pool[index]=np.concatenate((self.next_state_pool[index],np.expand_dims(next_s,axis=0)),0)
                     self.reward_pool[index]=np.concatenate((self.reward_pool[index],np.expand_dims(r,axis=0)),0)
                     self.done_pool[index]=np.concatenate((self.done_pool[index],np.expand_dims(done,axis=0)),0)
