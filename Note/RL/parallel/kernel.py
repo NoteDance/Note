@@ -130,7 +130,7 @@ class kernel:
     
     
     def pool(self,s,a,next_s,r,done,pool_lock,index):
-        if self.HER!=True:
+        if self.HER!=True or hasattr(self.nn,'pr')!=True:
             pool_lock[index].acquire()
         try:
             if type(self.state_pool[index])!=np.ndarray and self.state_pool[index]==None:
@@ -170,10 +170,10 @@ class kernel:
                 self.reward_pool[index]=self.reward_pool[index][1:]
                 self.done_pool[index]=self.done_pool[index][1:]
         except Exception:
-            if self.HER!=True:
+            if self.HER!=True or hasattr(self.nn,'pr')!=True:
                 pool_lock[index].release()
             return
-        if self.HER!=True:
+        if self.HER!=True or hasattr(self.nn,'pr')!=True:
             pool_lock[index].release()
         return
     
@@ -224,7 +224,7 @@ class kernel:
             s=np.expand_dims(s,axis=0)
             a=(self.forward(s)+self.noise.sample()).numpy()
         next_s,r,done=self.nn.env(a,p)
-        if self.HER!=True:
+        if self.HER!=True or hasattr(self.nn,'pr')!=True:
             if type(self.state_pool[p])!=np.ndarray and self.state_pool[p]==None:
                 index=p
             else:
