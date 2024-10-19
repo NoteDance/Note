@@ -369,7 +369,7 @@ class kernel:
     
     
     def train(self,p,lock,pool_lock):
-        lock[1].acquire()
+        lock[0].acquire()
         self.state_pool[p]=None
         self.action_pool[p]=None
         self.next_state_pool[p]=None
@@ -377,7 +377,7 @@ class kernel:
         self.done_pool[p]=None
         self.process_counter.value+=1
         self.finish_list.append(None)
-        lock[1].release()
+        lock[0].release()
         while True:
             if self.stop_flag.value==True:
                 break
@@ -396,8 +396,8 @@ class kernel:
                     if self.stop_flag.value==True:
                         break
                 if done:
-                    if len(lock)==4:
-                        lock[3].acquire()
+                    if len(lock)==3:
+                        lock[2].acquire()
                     self.reward_list.append(self.reward[p])
                     if len(self.reward_list)>self.trial_count:
                         del self.reward_list[0]
@@ -405,23 +405,23 @@ class kernel:
                     self.episode_counter.value+=1
                     self.total_episode.value+=1
                     self.loss_list.append(self.loss[p])
-                    if len(lock)==4:
-                        lock[3].release()
+                    if len(lock)==3:
+                        lock[2].release()
                     break
-            if len(lock)==3 or len(lock)==4:
-                lock[2].acquire()
+            if len(lock)==2 or len(lock)==3:
+                lock[1].acquire()
             if self.save_param_only==False:
                 self.save_param_()
             else:
                 self.save_()
-            if len(lock)==3 or len(lock)==4:
-                lock[2].release()
+            if len(lock)==2 or len(lock)==3:
+                lock[1].release()
         self.inverse_len[p]=0
         if p not in self.finish_list:
             self.finish_list[p]=p
-        lock[1].acquire()
+        lock[0].acquire()
         self.process_counter.value-=1
-        lock[1].release()
+        lock[0].release()
         del self.state_pool[p]
         del self.action_pool[p]
         del self.next_state_pool[p]
