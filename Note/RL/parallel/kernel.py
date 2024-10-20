@@ -134,13 +134,7 @@ class kernel:
             pool_lock[index].acquire()
         try:
             if type(self.state_pool[index])!=np.ndarray and self.state_pool[index]==None:
-                if type(s) in [int,float]:
-                    self.state_pool[index]=np.expand_dims(s,axis=0)
-                elif type(s)==tuple:
-                    s=np.array(s)
-                    self.state_pool[index]=s
-                else:
-                    self.state_pool[index]=s
+                self.state_pool[index]=s
                 self.action_pool[index]=np.expand_dims(a,axis=0)
                 self.next_state_pool[index]=np.expand_dims(next_s,axis=0)
                 self.reward_pool[index]=np.expand_dims(r,axis=0)
@@ -560,7 +554,6 @@ class kernel:
             if self.episode!=None and self.episode_counter.value>=self.episode:
                 break
             s=self.nn.env(p=p,initial=True)
-            s=np.array(s)
             while True:
                 if self.episode!=None and self.episode_counter.value>=self.episode:
                     break
