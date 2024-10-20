@@ -163,29 +163,14 @@ class kernel:
     
     def pool(self,s,a,next_s,r,done):
         if type(self.state_pool)!=np.ndarray and self.state_pool==None:
-            if type(s) in [int,float]:
-                s=np.array(s)
-                self.state_pool=np.expand_dims(s,axis=0)
-            elif type(s)==tuple:
-                s=np.array(s)
-                self.state_pool=s
-            else:
-                self.state_pool=s
-            if type(a)==int:
-                a=np.array(a)
-                self.action_pool=np.expand_dims(a,axis=0)
-            else:
-                self.action_pool=a
+            self.state_pool=s
+            self.action_pool=np.expand_dims(a,axis=0)
             self.next_state_pool=np.expand_dims(next_s,axis=0)
             self.reward_pool=np.expand_dims(r,axis=0)
             self.done_pool=np.expand_dims(done,axis=0)
         else:
             self.state_pool=np.concatenate((self.state_pool,s),0)
-            if type(a)==int:
-                a=np.array(a)
-                self.action_pool=np.concatenate((self.action_pool,np.expand_dims(a,axis=0)),0)
-            else:
-                self.action_pool=np.concatenate((self.action_pool,a),0)
+            self.action_pool=np.concatenate((self.action_pool,np.expand_dims(a,axis=0)),0)
             self.next_state_pool=np.concatenate((self.next_state_pool,np.expand_dims(next_s,axis=0)),0)
             self.reward_pool=np.concatenate((self.reward_pool,np.expand_dims(r,axis=0)),0)
             self.done_pool=np.concatenate((self.done_pool,np.expand_dims(done,axis=0)),0)
@@ -341,8 +326,6 @@ class kernel:
         episode=[]
         self.reward=0
         s=self.nn.env(initial=True)
-        if hasattr(self.platform,'DType'):
-            s=np.array(s)
         while True:
             s=np.expand_dims(s,axis=0)
             a=self.select_action(s)
