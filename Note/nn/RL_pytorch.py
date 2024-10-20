@@ -63,13 +63,7 @@ class RL_pytorch:
     def pool(self,s,a,next_s,r,done,index=None):
         if self.pool_network==True:
             if type(self.state_pool_list[index])!=np.ndarray and self.state_pool_list[index]==None:
-                if type(s) in [int,float]:
-                    self.state_pool_list[index]=np.expand_dims(s,axis=0)
-                elif type(s)==tuple:
-                    s=np.array(s)
-                    self.state_pool_list[index]=s
-                else:
-                    self.state_pool_list[index]=s
+                self.state_pool_list[index]=s
                 self.action_pool_list[index]=np.expand_dims(a,axis=0)
                 self.next_state_pool_list[index]=np.expand_dims(next_s,axis=0)
                 self.reward_pool_list[index]=np.expand_dims(r,axis=0)
@@ -88,13 +82,7 @@ class RL_pytorch:
                 self.done_pool_list[index]=self.done_pool_list[index][1:]
         else:
             if type(self.state_pool)!=np.ndarray and self.state_pool==None:
-                if type(s) in [int,float]:
-                    self.state_pool=np.expand_dims(s,axis=0)
-                elif type(s)==tuple:
-                    s=np.array(s)
-                    self.state_pool=s
-                else:
-                    self.state_pool=s
+                self.state_pool=s
                 self.action_pool=np.expand_dims(a,axis=0)
                 self.next_state_pool=np.expand_dims(next_s,axis=0)
                 self.reward_pool=np.expand_dims(r,axis=0)
@@ -307,7 +295,6 @@ class RL_pytorch:
     def train2(self, optimizer):
         self.reward=0
         s=self.env_(initial=True)
-        s=np.array(s)
         while True:
             s=np.expand_dims(s,axis=0)
             if self.MA!=True:
