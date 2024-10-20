@@ -401,6 +401,7 @@ class RL_pytorch:
             if self.PR!=True and self.HER!=True:
                 if type(self.state_pool_list[p])!=np.ndarray and self.state_pool_list[p]==None:
                     index=p
+                    self.inverse_len[index]=1
                 else:
                     inverse_len=torch.tensor(self.inverse_len)
                     total_inverse=torch.sum(inverse_len)
@@ -471,7 +472,7 @@ class RL_pytorch:
             self.next_state_pool_list=manager.list()
             self.reward_pool_list=manager.list()
             self.done_pool_list=manager.list()
-            self.inverse_len=manager.list([1 for _ in range(processes)])
+            self.inverse_len=manager.list([0 for _ in range(processes)])
             for _ in range(processes):
                 self.state_pool_list.append(None)
                 self.action_pool_list.append(None)
