@@ -52,7 +52,7 @@ class kernel:
         self.episode_counter=Value('i',0)
         self.total_episode=Value('i',0)
         self.priority_p=Value('i',0)
-        self.inverse_len=manager.list([1 for _ in range(self.process)])
+        self.inverse_len=manager.list([0 for _ in range(self.process)])
         if hasattr(self.nn,'pr'):
             self.nn.pr.TD=manager.list([[self.nn.initial_TD] for _ in range(self.process)])
         if self.priority_flag==True:
@@ -212,6 +212,7 @@ class kernel:
         if self.HER!=True or hasattr(self.nn,'pr')!=True:
             if type(self.state_pool[p])!=np.ndarray and self.state_pool[p]==None:
                 index=p
+                self.inverse_len[index]=1
             else:
                 index=self.get_index(p)
         else:
