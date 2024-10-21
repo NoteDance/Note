@@ -4,7 +4,7 @@ import numpy as np
 
 class pr:
     def __init__(self):
-        self.TD=tf.Variable(7.)
+        self.TD=None
         self.index=None
     
     
@@ -26,7 +26,7 @@ class pr:
 
 class pr_:
     def __init__(self):
-        self.TD=7.
+        self.TD=None
         self.index=None
     
     
