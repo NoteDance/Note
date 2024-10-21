@@ -56,6 +56,7 @@ class RL:
         self.PR=PR
         self.epsilon=epsilon
         self.initial_TD=initial_TD
+        self.prioritized_replay.TD=initial_TD
         self.alpha=alpha
         return
     
