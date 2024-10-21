@@ -75,7 +75,7 @@ class kernel:
         return
     
     
-    def set_up(self,policy=None,noise=None,pool_size=None,batch=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False):
+    def set(self,policy=None,noise=None,pool_size=None,batch=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False):
         if policy!=None:
             self.policy=policy
         if noise!=None:
@@ -126,30 +126,15 @@ class kernel:
             pool_lock[index].acquire()
         try:
             if type(self.state_pool[index])!=np.ndarray and self.state_pool[index]==None:
-                if type(s) in [int,float]:
-                    s=np.array(s)
-                    self.state_pool[index]=np.expand_dims(s,axis=0)
-                elif type(s)==tuple:
-                    s=np.array(s)
-                    self.state_pool[index]=s
-                else:
-                    self.state_pool[index]=s
-                if type(a)==int:
-                    a=np.array(a)
-                    self.action_pool[index]=np.expand_dims(a,axis=0)
-                else:
-                    self.action_pool[index]=a
+                self.state_pool[index]=s
+                self.action_pool[index]=np.expand_dims(a,axis=0)
                 self.next_state_pool[index]=np.expand_dims(next_s,axis=0)
                 self.reward_pool[index]=np.expand_dims(r,axis=0)
                 self.done_pool[index]=np.expand_dims(done,axis=0)
             else:
                 try:
                     self.state_pool[index]=np.concatenate((self.state_pool[index],s),0)
-                    if type(a)==int:
-                        a=np.array(a)
-                        self.action_pool[index]=np.concatenate((self.action_pool[index],np.expand_dims(a,axis=0)),0)
-                    else:
-                        self.action_pool[index]=np.concatenate((self.action_pool[index],a),0)
+                    self.action_pool[index]=np.concatenate((self.action_pool[index],np.expand_dims(a,axis=0)),0)
                     self.next_state_pool[index]=np.concatenate((self.next_state_pool[index],np.expand_dims(next_s,axis=0)),0)
                     self.reward_pool[index]=np.concatenate((self.reward_pool[index],np.expand_dims(r,axis=0)),0)
                     self.done_pool[index]=np.concatenate((self.done_pool[index],np.expand_dims(done,axis=0)),0)
@@ -219,7 +204,7 @@ class kernel:
         r=np.array(r)
         done=np.array(done)
         self.pool(s,a,next_s,r,done,pool_lock,index)
-        return next_s,r,done,index
+        return next_s,r,done
     
     
     def data_func(self,p):
@@ -388,7 +373,7 @@ class kernel:
             while True:
                 if self.episode!=None and self.episode_counter.value>=self.episode:
                     break
-                next_s,r,done,index=self.store(s,p,lock,pool_lock)
+                next_s,r,done=self.store(s,p,lock,pool_lock)
                 self.reward[p]+=r
                 s=next_s
                 if type(self.done_pool[p])==np.ndarray:
