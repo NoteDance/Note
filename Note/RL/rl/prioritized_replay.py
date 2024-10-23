@@ -60,3 +60,20 @@ class pr_mp:
         for i in range(len(self.index[p])):
             self.TD[p][self.index[p][i]].assign(TD[i])
         return
+
+
+class pr_mp_:
+    def __init__(self):
+        self.TD=None
+        self.index=None
+    
+    
+    def sample(self,state_pool,action_pool,next_state_pool,reward_pool,done_pool,epsilon,alpha,batch,p):
+        prob=(self.TD[p]+epsilon)**alpha/np.sum((self.TD[p]+epsilon)**alpha)
+        self.index[p]=np.random.choice(np.arange(len(state_pool)),size=[batch],p=prob)
+        return state_pool[self.index[p]],action_pool[self.index[p]],next_state_pool[self.index[p]],reward_pool[self.index[p]],done_pool[self.index[p]]
+    
+    
+    def update_TD(self,TD,p):
+        self.TD[p][self.index[p]].assign(TD)
+        return
