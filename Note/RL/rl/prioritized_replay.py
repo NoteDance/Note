@@ -17,10 +17,10 @@ class pr:
     def update_TD(self,TD):
         if self.pool_network==True:
             for i in range(len(self.index)):
-                self.TD[7][self.index[i]].assign(TD[i])
+                self.TD[7][self.index[i]].assign(tf.abs(TD[i]))
         else:
             for i in range(len(self.index)):
-                self.TD[self.index[i]].assign(TD[i])
+                self.TD[self.index[i]].assign(tf.abs(TD[i]))
         return
 
 
@@ -38,9 +38,9 @@ class pr_:
     
     def update_TD(self,TD):
         if self.pool_network==True:
-            self.TD[7][self.index]=TD
+            self.TD[7][self.index]=np.abs(TD)
         else:
-            self.TD[self.index]=TD
+            self.TD[self.index]=np.abs(TD)
         return
 
 
@@ -58,7 +58,7 @@ class pr_mp:
     
     def update_TD(self,TD,p):
         for i in range(len(self.index[p])):
-            self.TD[p][self.index[p][i]].assign(TD[i])
+            self.TD[p][self.index[p][i]].assign(tf.abs(TD[i]))
         return
 
 
@@ -75,5 +75,5 @@ class pr_mp_:
     
     
     def update_TD(self,TD,p):
-        self.TD[p][self.index[p]].assign(TD)
+        self.TD[p][self.index[p]]=np.abs(TD)
         return
