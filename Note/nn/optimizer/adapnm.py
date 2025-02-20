@@ -1,5 +1,5 @@
-""" AdaNorm
-https://arxiv.org/abs/2210.06364
+""" AdaPNM
+https://arxiv.org/abs/2103.17182
 
 Copyright 2025 NoteDance
 """
@@ -8,18 +8,20 @@ from keras.src.optimizers import optimizer
 import math
 
 
-class AdaNorm(optimizer.Optimizer):
+class AdaPNM(optimizer.Optimizer):
     def __init__(
         self,
         learning_rate=1e-3,
         beta1=0.9,
-        beta2=0.99,
+        beta2=0.999,
+        beta3=1.0,
         epsilon=1e-8,
         weight_decay=0.0,
-        r=0.95,
         weight_decouple=True,
         fixed_decay=False,
-        ams_bound=False,
+        ams_bound=True,
+        r=0.95,
+        adanorm=False,
         adam_debias=False,
         clipnorm=None,
         clipvalue=None,
@@ -29,7 +31,7 @@ class AdaNorm(optimizer.Optimizer):
         ema_overwrite_frequency=None,
         loss_scale_factor=None,
         gradient_accumulation_steps=None,
-        name="adanorm",
+        name="adapnm",
         **kwargs,
     ):
         super().__init__(
@@ -49,11 +51,13 @@ class AdaNorm(optimizer.Optimizer):
         self.weight_decay_ = weight_decay
         self.beta1 = beta1
         self.beta2 = beta2
+        self.beta3 = beta3
         self.epsilon = epsilon
-        self.r = r
         self.weight_decouple = weight_decouple
         self.fixed_decay = fixed_decay
         self.ams_bound = ams_bound
+        self.r = r
+        self.adanorm = adanorm
         self.adam_debias = adam_debias
     
     def reset(self):
@@ -63,26 +67,32 @@ class AdaNorm(optimizer.Optimizer):
             self.exp_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="exp_avg"
                                                     )
-            self.exp_avg_var[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=var, name="exp_avg_var"
+            self.exp_avg_sq[self._get_variable_index(var)] =  self.add_variable_from_reference(
+                                                        reference_variable=var, name="exp_avg_sq"
                                                     )
-            self.exp_grad_norm[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=tf.Variable(tf.zeros((1,), dtype=var.dtype)), name="exp_grad_norm"
+            self.neg_exp_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
+                                                        reference_variable=var, name="neg_exp_avg"
                                                     )
             if self.ams_bound:
-                self.max_exp_avg_var[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                            reference_variable=var, name="max_exp_avg_var"
+                self.max_exp_avg_sq[self._get_variable_index(var)] =  self.add_variable_from_reference(
+                                                            reference_variable=var, name="max_exp_avg_sq"
                                                         )
+            if self.adanorm:
+                self.exp_grad_norm[self._get_variable_index(var)] =  self.add_variable_from_reference(
+                                                            reference_variable=tf.Variable(tf.zeros((1,), dtype=var.dtype)), name="exp_grad_norm"
+                                                            )
 
     def build(self, var_list):
         if self.built:
             return
         super().build(var_list)
         self.exp_avg = []
-        self.exp_avg_var = []
-        self.exp_grad_norm = []
+        self.exp_avg_sq = []
+        self.neg_exp_avg = []
         if self.ams_bound:
-            self.max_exp_avg_var = []
+            self.max_exp_avg_sq = []
+        if self.adanorm:
+            self.exp_grad_norm = []
         self.step = []
         for var in var_list:
             self.exp_avg.append(
@@ -90,20 +100,26 @@ class AdaNorm(optimizer.Optimizer):
                     reference_variable=var, name="exp_avg"
                 )
             )
-            self.exp_avg_var.append(
+            self.exp_avg_sq.append(
                 self.add_variable_from_reference(
-                    reference_variable=var, name="exp_avg_var"
+                    reference_variable=var, name="exp_avg_sq"
                 )
             )
-            self.exp_grad_norm.append(
+            self.neg_exp_avg.append(
                 self.add_variable_from_reference(
-                    reference_variable=tf.Variable(tf.zeros((1,), dtype=var.dtype)), name="exp_grad_norm"
+                    reference_variable=var, name="neg_exp_avg"
                 )
             )
             if self.ams_bound:
-                self.max_exp_avg_var.append(
+                self.max_exp_avg_sq.append(
                     self.add_variable_from_reference(
-                        reference_variable=var, name="max_exp_avg_var"
+                        reference_variable=var, name="max_exp_avg_sq"
+                    )
+                )
+            if self.adanorm:
+                self.exp_grad_norm.append(
+                    self.add_variable_from_reference(
+                        reference_variable=tf.Variable(tf.zeros((1,), dtype=var.dtype)), name="exp_grad_norm"
                     )
                 )
             self.step.append(0)
@@ -113,31 +129,39 @@ class AdaNorm(optimizer.Optimizer):
         
         self.step[self._get_variable_index(variable)] += 1
         
+        noise_norm = math.sqrt((1 + self.beta3) ** 2 + self.beta3 ** 2)  # fmt: skip
+        
         bias_correction1 = 1 - self.beta1 ** self.step[self._get_variable_index(variable)]
         bias_correction2_sq = math.sqrt(1 - self.beta2 ** self.step[self._get_variable_index(variable)])
         
         if tf.keras.backend.is_sparse(gradient):
             raise RuntimeError(
-                'AdaNorm does not support sparse gradients')
+                'AdaPNM does not support sparse gradients')
         
         if self.weight_decouple:
             variable.assign(variable * (1.0 - self.weight_decay_ * (1.0 if self.fixed_decay else lr)))
         elif self.weight_decay_ > 0.0:
             gradient.assign_add(variable * self.weight_decay_)
         
-        grad_norm = tf.linalg.norm(gradient)
-        exp_grad_norm = self.exp_grad_norm[self._get_variable_index(variable)]
-        exp_grad_norm.assign(exp_grad_norm * self.r + grad_norm * (1.0 - self.r))
-        s_grad = gradient * exp_grad_norm / grad_norm if tf.get_static_value(exp_grad_norm > grad_norm) else gradient
+        if self.step[self._get_variable_index(variable)] % 2 == 1:
+            exp_avg = self.exp_avg[self._get_variable_index(variable)]
+            neg_exp_avg = self.neg_exp_avg[self._get_variable_index(variable)]
+        else:
+            exp_avg = self.neg_exp_avg[self._get_variable_index(variable)]
+            neg_exp_avg = self.exp_avg[self._get_variable_index(variable)]
         
-        exp_avg = self.exp_avg[self._get_variable_index(variable)]
-        exp_avg_var = self.exp_avg_var[self._get_variable_index(variable)]
-        exp_avg.assign(exp_avg * self.beta1 + s_grad * (1.0 - self.beta1))
-        exp_avg_var.assign(exp_avg_var * self.beta2 + (1 - self.beta2) * tf.square(gradient))
+        if self.adanorm:
+            grad_norm = tf.linalg.norm(gradient)
+            exp_grad_norm = self.exp_grad_norm[self._get_variable_index(variable)]
+            exp_grad_norm.assign(exp_grad_norm * self.r + grad_norm * (1.0 - self.r))
+            s_grad = gradient * exp_grad_norm / grad_norm if tf.get_static_value(exp_grad_norm > grad_norm) else gradient
         
-        exp_avg_sq = self.exp_avg_var[self._get_variable_index(variable)]
+        exp_avg_sq = self.exp_avg_sq[self._get_variable_index(variable)]
+        exp_avg.assign(exp_avg * self.beta1 ** 2 + s_grad * (1.0 - self.beta1 ** 2))  # fmt: skip
+        exp_avg_sq.assign(exp_avg_sq * self.beta2 + (1 - self.beta2) * tf.square(gradient))
+        
         if self.ams_bound:
-            max_exp_avg_sq = self.max_exp_avg_var[self._get_variable_index(variable)]
+            max_exp_avg_sq = self.max_exp_avg_sq[self._get_variable_index(variable)]
             max_exp_avg_sq.assign(tf.maximum(max_exp_avg_sq, exp_avg_sq))
             de_nom = max_exp_avg_sq + self.epsilon
         else:
@@ -147,7 +171,8 @@ class AdaNorm(optimizer.Optimizer):
         
         step_size = lr if self.adam_debias else lr / bias_correction1
         
-        variable.assign_add(-step_size * (exp_avg / de_nom))
+        pn_momentum = exp_avg * (1.0 + self.beta3) + neg_exp_avg * -self.beta3 * (1.0 / noise_norm)
+        variable.assign_add(-step_size * (pn_momentum / de_nom))
 
     def get_config(self):
         config = super().get_config()
@@ -156,11 +181,13 @@ class AdaNorm(optimizer.Optimizer):
                 "weight_decay": self.weight_decay_,
                 "beta1": self.beta1,
                 "beta2": self.beta2,
+                "beta3": self.beta3,
                 "epsilon": self.epsilon,
-                "r": self.r,
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,
                 "ams_bound": self.ams_bound,
+                "r": self.r,
+                "adanorm": self.adanorm,
                 "adam_debias": self.adam_debias,
             }
         )
