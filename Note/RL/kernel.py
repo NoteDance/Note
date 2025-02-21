@@ -104,14 +104,14 @@ class kernel:
         for step in range(max_steps):
             if hasattr(self.platform,'DType'):
                 if not hasattr(self, 'noise'):
-                    action = np.argmax(self.nn.nn.fp(state))
+                    action = np.argmax(self.nn.nn(state))
                 else:
-                    action = self.nn.actor.fp(state).numpy()
+                    action = self.nn.actor(state).numpy()
             else:
                 if not hasattr(self, 'noise'):
-                    action = np.argmax(self.nn.nn.fp(state))
+                    action = np.argmax(self.nn.nn(state))
                 else:
-                    action = self.nn.actor.fp(state).detach().numpy()
+                    action = self.nn.actor(state).detach().numpy()
             next_state, reward, done, _ = self.nn.genv.step(action)
             state_history.append(state)
             steps+=1
@@ -194,14 +194,14 @@ class kernel:
     def forward(self,s,i=None):
         if self.MARL!=True:
             if hasattr(self.nn,'nn'):
-                output=self.nn.nn.fp(s)
+                output=self.nn.nn(s)
             else:
-                output=self.nn.actor.fp(s)
+                output=self.nn.actor(s)
         else:
             if hasattr(self.nn,'nn'):
-                output=self.nn.nn.fp(s,i)
+                output=self.nn.nn(s,i)
             else:
-                output=self.nn.actor.fp(s,i)
+                output=self.nn.actor(s,i)
         return output
     
     
