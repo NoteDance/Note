@@ -173,7 +173,7 @@ class kernel:
             if self.steps_per_execution==None and self.stop_func_(lock[0]):
                 return None,None,None
             if hasattr(self.nn,'gradient'):
-                gradient=self.nn.gradient(tape,loss)
+                gradient=self.nn.gradient(tape,loss,self.param[7])
             else:
                 gradient=tape.gradient(loss,self.nn.param)
             if hasattr(self.nn,'attenuate'):
@@ -188,7 +188,7 @@ class kernel:
             if self.steps_per_execution==None and self.stop_func_(g_lock):
                 return None,None,None
             if hasattr(self.nn,'gradient'):
-                gradient=self.nn.gradient(tape,loss)
+                gradient=self.nn.gradient(tape,loss,self.param[7])
             else:
                 gradient=tape.gradient(loss,self.nn.param)
             g_lock.release()
@@ -222,7 +222,7 @@ class kernel:
             if self.steps_per_execution==None and self.stop_func_():
                 return None,None,None
             if hasattr(self.nn,'gradient'):
-                gradient=self.nn.gradient(tape,loss)
+                gradient=self.nn.gradient(tape,loss,self.param[7])
             else:
                 gradient=tape.gradient(loss,self.nn.param)
             if hasattr(self.nn,'attenuate'):
