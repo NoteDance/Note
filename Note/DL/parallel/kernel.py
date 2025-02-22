@@ -144,25 +144,22 @@ class kernel:
     
     @tf.function(jit_compile=True)
     def opt_p(self,data,labels,p,lock,g_lock=None):
-        try:
-            if hasattr(self.nn,'GradientTape'):
-                tape,output,loss=self.nn.GradientTape(data,labels,p)
-            else:
-                with tf.GradientTape(persistent=True) as tape:
+        if hasattr(self.nn,'GradientTape'):
+            tape,output,loss=self.nn.GradientTape(data,labels,p)
+        else:
+            with tf.GradientTape(persistent=True) as tape:
+                try:
                     try:
-                        try:
-                            output=self.nn.fp(data,p)
-                            loss=self.nn.loss(output,labels,p)
-                        except Exception:
-                            output,loss=self.nn.fp(data,labels,p)
+                        output=self.nn.fp(data,p)
+                        loss=self.nn.loss(output,labels,p)
                     except Exception:
-                        try:
-                            output=self.nn.fp(data)
-                            loss=self.nn.loss(output,labels)
-                        except Exception:
-                            output,loss=self.nn.fp(data,labels)
-        except Exception as e:
-            raise e
+                        output,loss=self.nn.fp(data,labels,p)
+                except Exception:
+                    try:
+                        output=self.nn.fp(data)
+                        loss=self.nn.loss(output,labels)
+                    except Exception:
+                        output,loss=self.nn.fp(data,labels)
         if self.PO==1:
             if self.priority_flag==True and self.priority_p.value!=-1:
                 while True:
@@ -175,40 +172,31 @@ class kernel:
             lock[0].acquire()
             if self.steps_per_execution==None and self.stop_func_(lock[0]):
                 return None,None,None
-            try:
-                if hasattr(self.nn,'gradient'):
-                    try:
-                        gradient=self.nn.gradient(tape,loss)
-                    except Exception:
-                        gradient=self.nn.gradient(tape,loss,self.param[7])
-                else:
-                    gradient=tape.gradient(loss,self.nn.param)
-            except Exception as e:
-                raise e
+            if hasattr(self.nn,'gradient'):
+                try:
+                    gradient=self.nn.gradient(tape,loss)
+                except Exception:
+                    gradient=self.nn.gradient(tape,loss,self.param[7])
+            else:
+                gradient=tape.gradient(loss,self.nn.param)
             if hasattr(self.nn,'attenuate'):
                 gradient=self.nn.attenuate(gradient,p)
             try:
-                try:
-                    param=self.nn.opt(gradient,p)
-                except Exception:
-                    param=self.nn.opt(gradient)
-            except Exception as e:
-                raise e
+                param=self.nn.opt(gradient,p)
+            except Exception:
+                param=self.nn.opt(gradient)
             lock[0].release()
         elif self.PO==2:
             g_lock.acquire()
             if self.steps_per_execution==None and self.stop_func_(g_lock):
                 return None,None,None
-            try:
-                if hasattr(self.nn,'gradient'):
-                    try:
-                        gradient=self.nn.gradient(tape,loss)
-                    except Exception:
-                        gradient=self.nn.gradient(tape,loss,self.param[7])
-                else:
-                    gradient=tape.gradient(loss,self.nn.param)
-            except Exception as e:
-                raise e
+            if hasattr(self.nn,'gradient'):
+                try:
+                    gradient=self.nn.gradient(tape,loss)
+                except Exception:
+                    gradient=self.nn.gradient(tape,loss,self.param[7])
+            else:
+                gradient=tape.gradient(loss,self.nn.param)
             g_lock.release()
             if self.priority_flag==True and self.priority_p.value!=-1:
                 while True:
@@ -224,12 +212,9 @@ class kernel:
             if hasattr(self.nn,'attenuate'):
                 gradient=self.nn.attenuate(gradient,p)
             try:
-                try:
-                    param=self.nn.opt(gradient,p)
-                except Exception:
-                    param=self.nn.opt(gradient)
-            except Exception as e:
-                raise e
+                param=self.nn.opt(gradient,p)
+            except Exception:
+                param=self.nn.opt(gradient)
             lock[0].release()
         elif self.PO==3:
             if self.priority_flag==True and self.priority_p.value!=-1:
@@ -242,25 +227,19 @@ class kernel:
                         continue
             if self.steps_per_execution==None and self.stop_func_():
                 return None,None,None
-            try:
-                if hasattr(self.nn,'gradient'):
-                    try:
-                        gradient=self.nn.gradient(tape,loss)
-                    except Exception:
-                        gradient=self.nn.gradient(tape,loss,self.param[7])
-                else:
-                    gradient=tape.gradient(loss,self.nn.param)
-            except Exception as e:
-                raise e
+            if hasattr(self.nn,'gradient'):
+                try:
+                    gradient=self.nn.gradient(tape,loss)
+                except Exception:
+                    gradient=self.nn.gradient(tape,loss,self.param[7])
+            else:
+                gradient=tape.gradient(loss,self.nn.param)
             if hasattr(self.nn,'attenuate'):
                 gradient=self.nn.attenuate(gradient,p)
             try:
-                try:
-                    param=self.nn.opt(gradient,p)
-                except Exception:
-                    param=self.nn.opt(gradient)
-            except Exception as e:
-                raise e
+                param=self.nn.opt(gradient,p)
+            except Exception:
+                param=self.nn.opt(gradient)
         return output,loss,param
     
     
@@ -329,14 +308,11 @@ class kernel:
                 _batch_counter=self._batch_counter[p]
                 _batch_counter.assign_add(1)
                 self._batch_counter[p]=_batch_counter
-                try:
-                    if hasattr(self.nn,'accuracy'):
-                        try:
-                            batch_acc=self.nn.accuracy(output,labels_batch,p)
-                        except Exception:
-                            batch_acc=self.nn.accuracy(output,labels_batch)
-                except Exception as e:
-                    raise e
+                if hasattr(self.nn,'accuracy'):
+                    try:
+                        batch_acc=self.nn.accuracy(output,labels_batch,p)
+                    except Exception:
+                        batch_acc=self.nn.accuracy(output,labels_batch)
                 if hasattr(self.nn,'accuracy'):
                     self.total_loss[p]+=batch_loss
                     self.total_acc[p]+=batch_acc
@@ -501,20 +477,14 @@ class kernel:
     @tf.function(jit_compile=True)
     def test_(self,data,labels):
         try:
-            try:
-                output=self.nn.fp(data)
-                loss=self.nn.loss(output,labels)
-            except Exception:
-                output,loss=self.nn.fp(data,labels)
-        except Exception as e:
-            raise e
-        try:
-            if hasattr(self.nn,'accuracy'):
-                acc=self.nn.accuracy(output,labels)
-            else:
-               acc=None 
-        except Exception as e:
-            raise e
+            output=self.nn.fp(data)
+            loss=self.nn.loss(output,labels)
+        except Exception:
+            output,loss=self.nn.fp(data,labels)
+        if hasattr(self.nn,'accuracy'):
+            acc=self.nn.accuracy(output,labels)
+        else:
+           acc=None 
         return loss,acc
     
     
@@ -530,13 +500,10 @@ class kernel:
                 processes.append(process)
             for process in processes:
                 process.join()
-            try:
-                if hasattr(self.nn,'accuracy'):
-                    test_loss,test_acc=parallel_test_.loss_acc()
-                else:
-                    test_loss=parallel_test_.loss_acc()
-            except Exception as e:
-                raise e
+            if hasattr(self.nn,'accuracy'):
+                test_loss,test_acc=parallel_test_.loss_acc()
+            else:
+                test_loss=parallel_test_.loss_acc()
         elif batch!=None:
             total_loss=0
             total_acc=0
