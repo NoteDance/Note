@@ -140,8 +140,8 @@ class kernel:
             else:
                 actor_gradient=tape.gradient(loss,self.nn.param[0])
                 critic_gradient=tape.gradient(loss,self.nn.param[1])
-                self.nn.opt.apply_gradients(zip(actor_gradient,self.nn.param[0]))
-                self.nn.opt.apply_gradients(zip(critic_gradient,self.nn.param[1]))
+                self.nn.opt[0].apply_gradients(zip(actor_gradient,self.nn.param[0]))
+                self.nn.opt[1].apply_gradients(zip(critic_gradient,self.nn.param[1]))
         return loss
     
     
