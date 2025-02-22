@@ -329,12 +329,14 @@ class kernel:
                 else:
                     actor_gradient=tape.gradient(loss,self.nn.param[0])
                     critic_gradient=tape.gradient(loss,self.nn.param[1])
+                    gradient=[actor_gradient,critic_gradient]
             if hasattr(self.nn,'attenuate'):
                 if hasattr(self.nn,'nn'):
                     gradient=self.nn.attenuate(gradient,p)
                 else:
                     actor_gradient=self.nn.attenuate(actor_gradient,p)
                     critic_gradient=self.nn.attenuate(critic_gradient,p)
+                    gradient=[actor_gradient,critic_gradient]
             try:
                 param=self.nn.opt(gradient,p)
             except Exception:
@@ -352,6 +354,7 @@ class kernel:
                 else:
                     actor_gradient=tape.gradient(loss,self.nn.param[0])
                     critic_gradient=tape.gradient(loss,self.nn.param[1])
+                    gradient=[actor_gradient,critic_gradient]
             g_lock.release()
             if self.priority_flag==True and self.priority_p.value!=-1:
                 while True:
@@ -370,6 +373,7 @@ class kernel:
                 else:
                     actor_gradient=self.nn.attenuate(actor_gradient,p)
                     critic_gradient=self.nn.attenuate(critic_gradient,p)
+                    gradient=[actor_gradient,critic_gradient]
             try:
                 param=self.nn.opt(gradient,p)
             except Exception:
@@ -394,12 +398,14 @@ class kernel:
                 else:
                     actor_gradient=tape.gradient(loss,self.nn.param[0])
                     critic_gradient=tape.gradient(loss,self.nn.param[1])
+                    gradient=[actor_gradient,critic_gradient]
             if hasattr(self.nn,'attenuate'):
                 if hasattr(self.nn,'nn'):
                     gradient=self.nn.attenuate(gradient,p)
                 else:
                     actor_gradient=self.nn.attenuate(actor_gradient,p)
                     critic_gradient=self.nn.attenuate(critic_gradient,p)
+                    gradient=[actor_gradient,critic_gradient]
             try:
                 param=self.nn.opt(gradient,p)
             except Exception:
