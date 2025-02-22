@@ -322,7 +322,7 @@ class kernel:
             if self.stop_func_(lock[0]):
                 return None,None
             if hasattr(self.nn,'gradient'):
-                gradient=self.nn.gradient(tape,loss)
+                gradient=self.nn.gradient(tape,loss,self.param[7])
             else:
                 if hasattr(self.nn,'nn'):
                     gradient=tape.gradient(loss,self.nn.param)
@@ -347,7 +347,7 @@ class kernel:
             if self.stop_func_(g_lock):
                 return None,None
             if hasattr(self.nn,'gradient'):
-                gradient=self.nn.gradient(tape,loss)
+                gradient=self.nn.gradient(tape,loss,self.param[7])
             else:
                 if hasattr(self.nn,'nn'):
                     gradient=tape.gradient(loss,self.nn.param)
@@ -391,7 +391,7 @@ class kernel:
             if self.stop_func_():
                 return None,None
             if hasattr(self.nn,'gradient'):
-                gradient=self.nn.gradient(tape,loss)
+                gradient=self.nn.gradient(tape,loss,self.param[7])
             else:
                 if hasattr(self.nn,'nn'):
                     gradient=tape.gradient(loss,self.nn.param)
