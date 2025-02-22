@@ -120,19 +120,16 @@ class kernel:
     def opt_p(self,data,labels,p):
         try:
             try:
-                try:
-                    output=self.nn.fp(data,p)
-                    loss=self.nn.loss(output,labels,p)
-                except Exception:
-                    output,loss=self.nn.fp(data,labels,p)
+                output=self.nn.fp(data,p)
+                loss=self.nn.loss(output,labels,p)
             except Exception:
-                try:
-                    output=self.nn.fp(data)
-                    loss=self.nn.loss(output,labels)
-                except Exception:
-                    output,loss=self.nn.fp(data,labels)
-        except Exception as e:
-            raise e
+                output,loss=self.nn.fp(data,labels,p)
+        except Exception:
+            try:
+                output=self.nn.fp(data)
+                loss=self.nn.loss(output,labels)
+            except Exception:
+                output,loss=self.nn.fp(data,labels)
         if self.priority_flag==True and self.priority_p.value!=-1:
             while True:
                 if self.stop_flag.value==True:
@@ -188,14 +185,11 @@ class kernel:
                 _batch_counter=self._batch_counter[p]
                 _batch_counter+=1
                 self._batch_counter[p]=_batch_counter
-                try:
-                    if hasattr(self.nn,'accuracy'):
-                        try:
-                            batch_acc=self.nn.accuracy(output,labels_batch,p)
-                        except Exception:
-                            batch_acc=self.nn.accuracy(output,labels_batch)
-                except Exception as e:
-                    raise e
+                if hasattr(self.nn,'accuracy'):
+                    try:
+                        batch_acc=self.nn.accuracy(output,labels_batch,p)
+                    except Exception:
+                        batch_acc=self.nn.accuracy(output,labels_batch)
                 if hasattr(self.nn,'accuracy'):
                     self.total_loss[p]+=batch_loss
                     self.total_acc[p]+=batch_acc
@@ -339,20 +333,14 @@ class kernel:
     
     def test_(self,data,labels):
         try:
-            try:
-                output=self.nn.fp(data)
-                loss=self.nn.loss(output,labels)
-            except Exception:
-                output,loss=self.nn.fp(data,labels)
-        except Exception as e:
-            raise e
-        try:
-            if hasattr(self.nn,'accuracy'):
-                acc=self.nn.accuracy(output,labels)
-            else:
-                acc=None
-        except Exception as e:
-            raise e
+            output=self.nn.fp(data)
+            loss=self.nn.loss(output,labels)
+        except Exception:
+            output,loss=self.nn.fp(data,labels)
+        if hasattr(self.nn,'accuracy'):
+            acc=self.nn.accuracy(output,labels)
+        else:
+            acc=None
         return loss,acc
     
     
