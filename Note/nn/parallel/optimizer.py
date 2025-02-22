@@ -159,7 +159,7 @@ class SGD:
                         parameter_flat[i].assign_add(m)
                 else:
                     parameter_flat[i].assign_add(-gradient_flat[i] * lr)
-        return
+        return parameter_flat
     
     
     def convert_to_list(self):
@@ -300,7 +300,7 @@ class Adagrad:
                 # Dense gradients.
                 accumulator.assign_add(gradient_flat[i] * gradient_flat[i])
                 parameter_flat[i].assign_sub(lr * gradient_flat[i] / tf.sqrt(accumulator + self.epsilon))
-        return
+        return parameter_flat
     
     
     def convert_to_list(self):
@@ -492,7 +492,7 @@ class Adafactor:
             u_t = tf.convert_to_tensor(gradient_flat[i]) * tf.math.rsqrt(v)
             u_t_hat = u_t / tf.maximum(one, (self._rms(u_t) / self.clip_threshold))
             parameter_flat[i].assign_add(-alpha_t * u_t_hat)
-        return
+        return parameter_flat
         
     
     def convert_to_list(self):
@@ -687,7 +687,7 @@ class RMSprop:
                     parameter_flat[i].assign_add(-momentum)
                 else:
                     parameter_flat[i].assign_add(-increment)
-        return
+        return parameter_flat
             
     
     def convert_to_list(self):
@@ -843,7 +843,7 @@ class Adadelta:
                     rho * self.accumulated_delta_var[i] + (1 - rho) * delta_var * delta_var
                 )
             parameter_flat[i].assign_add(lr * delta_var)
-        return
+        return parameter_flat
             
     
     def convert_to_list(self):
@@ -1033,7 +1033,7 @@ class Adam:
                     v_hat.assign(tf.maximum(v_hat, v))
                     v = v_hat
                 parameter_flat[i].assign_sub((m * alpha) / (tf.sqrt(v) + self.epsilon))
-        return
+        return parameter_flat
             
     
     def convert_to_list(self):
@@ -1206,7 +1206,7 @@ class Nadam:
                 v_hat = v / (1 - beta_2_power)
     
                 parameter_flat[i].assign_sub((m_hat * lr) / (tf.sqrt(v_hat) + self.epsilon))
-        return
+        return parameter_flat
                 
     
     def convert_to_list(self):
@@ -1371,7 +1371,7 @@ class Adamax:
                 parameter_flat[i].assign_sub(
                     (lr * m) / ((1 - beta_1_power) * (u + self.epsilon))
                 )
-        return
+        return parameter_flat
                     
     
     def convert_to_list(self):
@@ -1558,7 +1558,7 @@ class AdamW:
                     v_hat.assign(tf.maximum(v_hat, v))
                     v = v_hat
                 parameter_flat[i].assign_sub((m * alpha) / (tf.sqrt(v) + self.epsilon))
-        return
+        return parameter_flat
                         
     
     def convert_to_list(self):
@@ -1765,7 +1765,7 @@ class Ftrl:
             )
             parameter_flat[i].assign((linear_clipped - linear) / quadratic)
             accum.assign(new_accum)
-        return
+        return parameter_flat
                             
     
     def convert_to_list(self):
@@ -1908,7 +1908,7 @@ class Lion:
                     lr * tf.math.sign(m * beta_1 + gradient_flat[i] * (1.0 - beta_1))
                 )
                 m.assign(m * beta_2 + gradient_flat[i] * (1.0 - beta_2))
-        return
+        return parameter_flat
                                 
     
     def convert_to_list(self):
