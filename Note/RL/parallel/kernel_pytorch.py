@@ -32,11 +32,18 @@ class kernel:
     
     
     def init(self,manager):
-        self.state_pool=manager.dict({})
-        self.action_pool=manager.dict({})
-        self.next_state_pool=manager.dict({})
-        self.reward_pool=manager.dict({})
-        self.done_pool=manager.dict({})
+        if self.state_pool==None:
+            self.state_pool=manager.dict()
+            self.action_pool=manager.dict()
+            self.next_state_pool=manager.dict()
+            self.reward_pool=manager.dict()
+            self.done_pool=manager.dict()
+        else:
+            self.state_pool=manager.dict(self.state_pool)
+            self.action_pool=manager.dict(self.action_pool)
+            self.next_state_pool=manager.dict(self.next_state_pool)
+            self.reward_pool=manager.dict(self.reward_pool)
+            self.done_pool=manager.dict(self.done_pool)
         self.reward=Array('f',np.zeros(self.process,dtype='float32'))
         self.loss=np.zeros(self.process,dtype=np.float32)
         self.loss=Array('f',self.loss)
@@ -47,9 +54,9 @@ class kernel:
         else:
             self.step_counter=Array('i',self.step_counter)
         self.process_counter=Value('i',0)
-        self.finish_list=manager.list([])
-        self.reward_list=manager.list([])
-        self.loss_list=manager.list([])
+        self.finish_list=manager.list()
+        self.reward_list=manager.list()
+        self.loss_list=manager.list()
         self.episode_counter=Value('i',0)
         self.total_episode=Value('i',0)
         self.priority_p=Value('i',0)
@@ -69,7 +76,7 @@ class kernel:
         self.episode_=Value('i',self.total_episode.value)
         self.stop_flag=Value('b',False)
         self.save_flag=Value('b',False)
-        self.path_list=manager.list([])
+        self.path_list=manager.list()
         return
     
     
@@ -631,6 +638,11 @@ class kernel:
             self._episode_counter=list(self._episode_counter)
             self._batch_counter=list(self._batch_counter)
             pickle.dump(self.nn,output_file)
+            pickle.dump(self.state_pool,output_file)
+            pickle.dump(self.action_pool,output_file)
+            pickle.dump(self.next_state_pool,output_file)
+            pickle.dump(self.reward_pool,output_file)
+            pickle.dump(self.done_pool,output_file)
             pickle.dump(self.policy,output_file)
             pickle.dump(self.noise,output_file)
             pickle.dump(self.pool_size,output_file)
@@ -667,6 +679,11 @@ class kernel:
         self._episode_counter=list(self._episode_counter)
         self._batch_counter=list(self._batch_counter)
         pickle.dump(self.nn,output_file)
+        pickle.dump(self.state_pool,output_file)
+        pickle.dump(self.action_pool,output_file)
+        pickle.dump(self.next_state_pool,output_file)
+        pickle.dump(self.reward_pool,output_file)
+        pickle.dump(self.done_pool,output_file)
         pickle.dump(self.policy,output_file)
         pickle.dump(self.noise,output_file)
         pickle.dump(self.pool_size,output_file)
@@ -695,6 +712,11 @@ class kernel:
         self.bc=self.nn.bc
         self.nn.opt_counter=self.opt_counter_
         self.nn.opt_counter.append(self.nn.opt_counter)
+        self.state_pool=pickle.load(input_file)
+        self.action_pool=pickle.load(input_file)
+        self.next_state_pool=pickle.load(input_file)
+        self.reward_pool=pickle.load(input_file)
+        self.done_pool=pickle.load(input_file)
         self.policy=pickle.load(input_file)
         self.noise=pickle.load(input_file)
         self.pool_size=pickle.load(input_file)
