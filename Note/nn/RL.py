@@ -930,18 +930,27 @@ class RL:
             mp=multiprocessing
             self.mp=mp
             manager=multiprocessing.Manager()
+            state_pool_list=self.state_pool_list
+            action_pool_list=self.action_pool_list
+            next_state_pool_list=self.next_state_pool_list
+            reward_pool_list=self.reward_pool_list
+            done_pool_list=self.done_pool_list
             self.state_pool_list=manager.list()
             self.action_pool_list=manager.list()
             self.next_state_pool_list=manager.list()
             self.reward_pool_list=manager.list()
             self.done_pool_list=manager.list()
-            self.inverse_len=manager.list([0 for _ in range(processes)])
-            for _ in range(processes):
-                self.state_pool_list.append(None)
-                self.action_pool_list.append(None)
-                self.next_state_pool_list.append(None)
-                self.reward_pool_list.append(None)
-                self.done_pool_list.append(None)
+            for i in range(processes):
+                self.state_pool_list.append(state_pool_list[i])
+                self.action_pool_list.append(action_pool_list[i])
+                self.next_state_pool_list.append(next_state_pool_list[i])
+                self.reward_pool_list.append(reward_pool_list[i])
+                self.done_pool_list.append(done_pool_list[i])
+            del state_pool_list
+            del action_pool_list
+            del next_state_pool_list
+            del reward_pool_list
+            del done_pool_list
             self.reward=np.zeros(processes,dtype='float32')
             self.reward=Array('f',self.reward)
             if self.HER!=True:
@@ -1184,18 +1193,27 @@ class RL:
             mp=multiprocessing
             self.mp=mp
             manager=multiprocessing.Manager()
+            state_pool_list=self.state_pool_list
+            action_pool_list=self.action_pool_list
+            next_state_pool_list=self.next_state_pool_list
+            reward_pool_list=self.reward_pool_list
+            done_pool_list=self.done_pool_list
             self.state_pool_list=manager.list()
             self.action_pool_list=manager.list()
             self.next_state_pool_list=manager.list()
             self.reward_pool_list=manager.list()
             self.done_pool_list=manager.list()
-            self.inverse_len=manager.list([0 for _ in range(processes)])
-            for _ in range(processes):
-                self.state_pool_list.append(None)
-                self.action_pool_list.append(None)
-                self.next_state_pool_list.append(None)
-                self.reward_pool_list.append(None)
-                self.done_pool_list.append(None)
+            for i in range(processes):
+                self.state_pool_list.append(state_pool_list[i])
+                self.action_pool_list.append(action_pool_list[i])
+                self.next_state_pool_list.append(next_state_pool_list[i])
+                self.reward_pool_list.append(reward_pool_list[i])
+                self.done_pool_list.append(done_pool_list[i])
+            del state_pool_list
+            del action_pool_list
+            del next_state_pool_list
+            del reward_pool_list
+            del done_pool_list
             self.reward=np.zeros(processes,dtype='float32')
             self.reward=Array('f',self.reward)
             if self.HER!=True:
@@ -1908,34 +1926,6 @@ class RL:
     
     
     def save_(self,path):
-        state_pool_list=[]
-        action_pool_list=[]
-        next_state_pool_list=[]
-        reward_pool_list=[]
-        done_pool_list=[]
-        if self.processes_her==None and self.processes_pr==None:
-            self.state_pool=None
-            self.action_pool=None
-            self.next_state_pool=None
-            self.reward_pool=None
-            self.done_pool=None
-        else:
-            self.state_pool[7]=None
-            self.action_pool[7]=None
-            self.next_state_pool[7]=None
-            self.reward_pool[7]=None
-            self.done_pool[7]=None
-        for i in range(self.processes):
-            state_pool_list.append(state_pool_list[i])
-            action_pool_list.append(action_pool_list[i])
-            next_state_pool_list.append(next_state_pool_list[i])
-            reward_pool_list.append(reward_pool_list[i])
-            done_pool_list.append(done_pool_list[i])
-            self.state_pool_list[i]=None
-            self.action_pool_list[i]=None
-            self.next_state_pool_list[i]=None
-            self.reward_pool_list[i]=None
-            self.done_pool_list[i]=None
         if self.save_best_only==False:
             if self.max_save_files==None or self.max_save_files==1:
                 output_file=open(path,'wb')
@@ -1960,53 +1950,13 @@ class RL:
                     if self.avg_reward==None or avg_reward>self.avg_reward:
                         self.save(path)
                         self.avg_reward=avg_reward
-        for i in range(self.processes):
-            self.state_pool_list[i]=state_pool_list[i]
-            self.action_pool_list[i]=action_pool_list[i]
-            self.next_state_pool_list[i]=next_state_pool_list[i]
-            self.reward_pool_list[i]=reward_pool_list[i]
-            self.done_pool_list[i]=done_pool_list[i]
         return
     
     
     def save(self,path):
-        state_pool_list=[]
-        action_pool_list=[]
-        next_state_pool_list=[]
-        reward_pool_list=[]
-        done_pool_list=[]
-        if self.processes_her==None and self.processes_pr==None:
-            self.state_pool=None
-            self.action_pool=None
-            self.next_state_pool=None
-            self.reward_pool=None
-            self.done_pool=None
-        else:
-            self.state_pool[7]=None
-            self.action_pool[7]=None
-            self.next_state_pool[7]=None
-            self.reward_pool[7]=None
-            self.done_pool[7]=None
-        for i in range(self.processes):
-            state_pool_list.append(state_pool_list[i])
-            action_pool_list.append(action_pool_list[i])
-            next_state_pool_list.append(next_state_pool_list[i])
-            reward_pool_list.append(reward_pool_list[i])
-            done_pool_list.append(done_pool_list[i])
-            self.state_pool_list[i]=None
-            self.action_pool_list[i]=None
-            self.next_state_pool_list[i]=None
-            self.reward_pool_list[i]=None
-            self.done_pool_list[i]=None
         output_file=open(path,'wb')
         pickle.dump(self,output_file)
         output_file.close()
-        for i in range(self.processes):
-            self.state_pool_list[i]=state_pool_list[i]
-            self.action_pool_list[i]=action_pool_list[i]
-            self.next_state_pool_list[i]=next_state_pool_list[i]
-            self.reward_pool_list[i]=reward_pool_list[i]
-            self.done_pool_list[i]=done_pool_list[i]
         return
     
     
