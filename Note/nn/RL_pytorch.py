@@ -476,27 +476,11 @@ class RL_pytorch:
             mp=multiprocessing
             self.mp=mp
             manager=multiprocessing.Manager()
-            state_pool_list=self.state_pool_list
-            action_pool_list=self.action_pool_list
-            next_state_pool_list=self.next_state_pool_list
-            reward_pool_list=self.reward_pool_list
-            done_pool_list=self.done_pool_list
-            self.state_pool_list=manager.list()
-            self.action_pool_list=manager.list()
-            self.next_state_pool_list=manager.list()
-            self.reward_pool_list=manager.list()
-            self.done_pool_list=manager.list()
-            for i in range(processes):
-                self.state_pool_list.append(state_pool_list[i])
-                self.action_pool_list.append(action_pool_list[i])
-                self.next_state_pool_list.append(next_state_pool_list[i])
-                self.reward_pool_list.append(reward_pool_list[i])
-                self.done_pool_list.append(done_pool_list[i])
-            del state_pool_list
-            del action_pool_list
-            del next_state_pool_list
-            del reward_pool_list
-            del done_pool_list
+            self.state_pool_list=manager.list(self.state_pool_list)
+            self.action_pool_list=manager.list(self.state_pool_list)
+            self.next_state_pool_list=manager.list(self.state_pool_list)
+            self.reward_pool_list=manager.list(self.state_pool_list)
+            self.done_pool_list=manager.list(self.state_pool_list)
             self.reward=np.zeros(processes,dtype='float32')
             self.reward=Array('f',self.reward)
             if self.HER!=True:
