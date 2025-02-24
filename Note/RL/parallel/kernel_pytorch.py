@@ -25,6 +25,7 @@ class kernel:
         self.max_opt=None
         self.stop=False
         self.path=None
+        self.save_data=True
         self.save_freq=1
         self.max_save_files=None
         self.save_best_only=False
@@ -32,7 +33,7 @@ class kernel:
     
     
     def init(self,manager):
-        if self.state_pool==None:
+        if self.state_pool==None or not self.save_data:
             self.state_pool=manager.dict()
             self.action_pool=manager.dict()
             self.next_state_pool=manager.dict()
@@ -679,11 +680,12 @@ class kernel:
         self._episode_counter=list(self._episode_counter)
         self._batch_counter=list(self._batch_counter)
         pickle.dump(self.nn,output_file)
-        pickle.dump(self.state_pool,output_file)
-        pickle.dump(self.action_pool,output_file)
-        pickle.dump(self.next_state_pool,output_file)
-        pickle.dump(self.reward_pool,output_file)
-        pickle.dump(self.done_pool,output_file)
+        if self.save_data:
+            pickle.dump(self.state_pool,output_file)
+            pickle.dump(self.action_pool,output_file)
+            pickle.dump(self.next_state_pool,output_file)
+            pickle.dump(self.reward_pool,output_file)
+            pickle.dump(self.done_pool,output_file)
         pickle.dump(self.policy,output_file)
         pickle.dump(self.noise,output_file)
         pickle.dump(self.pool_size,output_file)
@@ -712,11 +714,12 @@ class kernel:
         self.bc=self.nn.bc
         self.nn.opt_counter=self.opt_counter_
         self.nn.opt_counter.append(self.nn.opt_counter)
-        self.state_pool=pickle.load(input_file)
-        self.action_pool=pickle.load(input_file)
-        self.next_state_pool=pickle.load(input_file)
-        self.reward_pool=pickle.load(input_file)
-        self.done_pool=pickle.load(input_file)
+        if self.save_data:
+            self.state_pool=pickle.load(input_file)
+            self.action_pool=pickle.load(input_file)
+            self.next_state_pool=pickle.load(input_file)
+            self.reward_pool=pickle.load(input_file)
+            self.done_pool=pickle.load(input_file)
         self.policy=pickle.load(input_file)
         self.noise=pickle.load(input_file)
         self.pool_size=pickle.load(input_file)
