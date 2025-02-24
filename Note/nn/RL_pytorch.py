@@ -805,7 +805,7 @@ class RL_pytorch:
     
     
     def save_(self,path):
-        if not self.save_data:
+        if self.pool_network and not self.save_data:
             state_pool_list=[]
             action_pool_list=[]
             next_state_pool_list=[]
@@ -858,7 +858,7 @@ class RL_pytorch:
                     if self.avg_reward==None or avg_reward>self.avg_reward:
                         self.save(path)
                         self.avg_reward=avg_reward
-        if not self.save_data:
+        if self.pool_network and not self.save_data:
             for i in range(self.processes):
                 self.state_pool_list[i]=state_pool_list[i]
                 self.action_pool_list[i]=action_pool_list[i]
@@ -869,7 +869,7 @@ class RL_pytorch:
     
     
     def save(self,path):
-        if not self.save_data:
+        if self.pool_network and not self.save_data:
             state_pool_list=[]
             action_pool_list=[]
             next_state_pool_list=[]
@@ -901,7 +901,7 @@ class RL_pytorch:
         output_file=open(path,'wb')
         pickle.dump(self,output_file)
         output_file.close()
-        if not self.save_data:
+        if self.pool_network and not self.save_data:
             for i in range(self.processes):
                 self.state_pool_list[i]=state_pool_list[i]
                 self.action_pool_list[i]=action_pool_list[i]
