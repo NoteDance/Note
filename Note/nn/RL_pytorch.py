@@ -453,7 +453,7 @@ class RL_pytorch:
             s=next_s
     
     
-    def train(self, optimizer, episodes=None, pool_network=True, processes=None, processes_her=None, processes_pr=None, shuffle=False, p=None):
+    def train(self, optimizer, episodes=None, pool_network=True, processes=None, processes_her=None, processes_pr=None, save_data=True, shuffle=False, p=None):
         avg_reward=None
         if p==None:
             self.p=9
@@ -471,16 +471,31 @@ class RL_pytorch:
         self.processes=processes
         self.processes_her=processes_her
         self.processes_pr=processes_pr
+        self.save_data=save_data
         self.shuffle=shuffle
         if pool_network==True:
             mp=multiprocessing
             self.mp=mp
             manager=multiprocessing.Manager()
-            self.state_pool_list=manager.list(self.state_pool_list)
-            self.action_pool_list=manager.list(self.state_pool_list)
-            self.next_state_pool_list=manager.list(self.state_pool_list)
-            self.reward_pool_list=manager.list(self.state_pool_list)
-            self.done_pool_list=manager.list(self.state_pool_list)
+            if save_data:
+                self.state_pool_list=manager.list(self.state_pool_list)
+                self.action_pool_list=manager.list(self.state_pool_list)
+                self.next_state_pool_list=manager.list(self.state_pool_list)
+                self.reward_pool_list=manager.list(self.state_pool_list)
+                self.done_pool_list=manager.list(self.state_pool_list)
+            else:
+                self.state_pool_list=manager.list()
+                self.action_pool_list=manager.list()
+                self.next_state_pool_list=manager.list()
+                self.reward_pool_list=manager.list()
+                self.done_pool_list=manager.list()
+                self.inverse_len=manager.list([0 for _ in range(processes)])
+                for _ in range(processes):
+                    self.state_pool_list.append(None)
+                    self.action_pool_list.append(None)
+                    self.next_state_pool_list.append(None)
+                    self.reward_pool_list.append(None)
+                    self.done_pool_list.append(None)
             self.reward=np.zeros(processes,dtype='float32')
             self.reward=Array('f',self.reward)
             if self.HER!=True:
@@ -790,6 +805,35 @@ class RL_pytorch:
     
     
     def save_(self,path):
+        if not self.save_data:
+            state_pool_list=[]
+            action_pool_list=[]
+            next_state_pool_list=[]
+            reward_pool_list=[]
+            done_pool_list=[]
+            if self.processes_her==None and self.processes_pr==None:
+                self.state_pool=None
+                self.action_pool=None
+                self.next_state_pool=None
+                self.reward_pool=None
+                self.done_pool=None
+            else:
+                self.state_pool[7]=None
+                self.action_pool[7]=None
+                self.next_state_pool[7]=None
+                self.reward_pool[7]=None
+                self.done_pool[7]=None
+            for i in range(self.processes):
+                state_pool_list.append(self.state_pool_list[i])
+                action_pool_list.append(self.action_pool_list[i])
+                next_state_pool_list.append(self.next_state_pool_list[i])
+                reward_pool_list.append(self.reward_pool_list[i])
+                done_pool_list.append(self.done_pool_list[i])
+                self.state_pool_list[i]=None
+                self.action_pool_list[i]=None
+                self.next_state_pool_list[i]=None
+                self.reward_pool_list[i]=None
+                self.done_pool_list[i]=None
         if self.save_best_only==False:
             if self.max_save_files==None or self.max_save_files==1:
                 output_file=open(path,'wb')
@@ -814,13 +858,56 @@ class RL_pytorch:
                     if self.avg_reward==None or avg_reward>self.avg_reward:
                         self.save(path)
                         self.avg_reward=avg_reward
+        if not self.save_data:
+            for i in range(self.processes):
+                self.state_pool_list[i]=state_pool_list[i]
+                self.action_pool_list[i]=action_pool_list[i]
+                self.next_state_pool_list[i]=next_state_pool_list[i]
+                self.reward_pool_list[i]=reward_pool_list[i]
+                self.done_pool_list[i]=done_pool_list[i]
         return
     
     
     def save(self,path):
+        if not self.save_data:
+            state_pool_list=[]
+            action_pool_list=[]
+            next_state_pool_list=[]
+            reward_pool_list=[]
+            done_pool_list=[]
+            if self.processes_her==None and self.processes_pr==None:
+                self.state_pool=None
+                self.action_pool=None
+                self.next_state_pool=None
+                self.reward_pool=None
+                self.done_pool=None
+            else:
+                self.state_pool[7]=None
+                self.action_pool[7]=None
+                self.next_state_pool[7]=None
+                self.reward_pool[7]=None
+                self.done_pool[7]=None
+            for i in range(self.processes):
+                state_pool_list.append(self.state_pool_list[i])
+                action_pool_list.append(self.action_pool_list[i])
+                next_state_pool_list.append(self.next_state_pool_list[i])
+                reward_pool_list.append(self.reward_pool_list[i])
+                done_pool_list.append(self.done_pool_list[i])
+                self.state_pool_list[i]=None
+                self.action_pool_list[i]=None
+                self.next_state_pool_list[i]=None
+                self.reward_pool_list[i]=None
+                self.done_pool_list[i]=None
         output_file=open(path,'wb')
         pickle.dump(self,output_file)
         output_file.close()
+        if not self.save_data:
+            for i in range(self.processes):
+                self.state_pool_list[i]=state_pool_list[i]
+                self.action_pool_list[i]=action_pool_list[i]
+                self.next_state_pool_list[i]=next_state_pool_list[i]
+                self.reward_pool_list[i]=reward_pool_list[i]
+                self.done_pool_list[i]=done_pool_list[i]
         return
     
     
