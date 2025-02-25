@@ -83,6 +83,7 @@ class RL:
                 self.info['processes']=self.processes
                 self.info['processes_her']=self.processes_her
                 self.info['processes_pr']=self.processes_pr
+                self.info['save_data']=self.save_data
                 self.info['shuffle']=self.shuffle
                 self.info['p']=self.p
             except Exception:
@@ -101,6 +102,7 @@ class RL:
                 self.info['processes']=self.processes
                 self.info['processes_her']=self.processes_her
                 self.info['processes_pr']=self.processes_pr
+                self.info['save_data']=self.save_data
                 self.info['shuffle']=self.shuffle
                 self.info['p']=self.p
             except Exception:
