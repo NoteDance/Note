@@ -84,18 +84,18 @@ class kernel:
         self.total_loss=Array('f',self.total_loss)
         self.total_epoch=Value('i',0)
         self.train_loss=Value('f',0)
-        self.train_loss_list=manager.list([])
+        self.train_loss_list=manager.list()
         self.priority_p=Value('i',0)
         if self.test_flag==True:
             self.test_loss=Value('f',0)
-            self.test_loss_list=manager.list([])
+            self.test_loss_list=manager.list()
         if hasattr(self.nn,'accuracy'):
             self.total_acc=Array('f',self.total_acc)
             self.train_acc=Value('f',0)
-            self.train_acc_list=manager.list([])
+            self.train_acc_list=manager.list()
             if self.test_flag==True:
                 self.test_acc=Value('f',0)
-                self.test_acc_list=manager.list([])
+                self.test_acc_list=manager.list()
         if self.priority_flag==True:
             self.opt_counter=Array('i',self.opt_counter)
         if self.nn is not None:
@@ -109,17 +109,17 @@ class kernel:
         self.epoch_=Value('i',0)
         self.stop_flag=Value('b',False)
         self.save_flag=Value('b',False)
-        self.path_list=manager.list([])
+        self.path_list=manager.list()
         self.param=manager.dict()
         self.param[7]=self.nn.param
         return
     
     
     def init_online(self,manager):
-        self.nn.train_loss_list=manager.list([])
-        self.nn.train_acc_list=manager.list([])
-        self.nn.counter=manager.list([])
-        self.nn.exception_list=manager.list([])
+        self.nn.train_loss_list=manager.list()
+        self.nn.train_acc_list=manager.list()
+        self.nn.counter=manager.list()
+        self.nn.exception_list=manager.list()
         self.param=manager.dict()
         self.param[7]=self.nn.param
         return
