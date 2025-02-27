@@ -169,7 +169,7 @@ class kernel:
     
     
     def pool(self,s,a,next_s,r,done):
-        if type(self.state_pool)!=np.ndarray and self.state_pool==None:
+        if self.state_pool is None:
             self.state_pool=s
             self.action_pool=np.expand_dims(a,axis=0)
             self.next_state_pool=np.expand_dims(next_s,axis=0)
