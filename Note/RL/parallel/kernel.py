@@ -190,8 +190,7 @@ class kernel:
         while True:
             index=np.random.choice(self.processes,p=prob.numpy())
             if index in self.finish_list:
-                if self.inverse_len[index]!=0:
-                    self.inverse_len[index]=0
+                self.inverse_len[index]=0
                 continue
             else:
                 self.inverse_len[index]=1/(len(self.state_pool[index])+1)
@@ -570,11 +569,12 @@ class kernel:
             lock[1].acquire()
         elif self.PO==3:
             lock[0].acquire()
-        self.state_pool[p]=None
-        self.action_pool[p]=None
-        self.next_state_pool[p]=None
-        self.reward_pool[p]=None
-        self.done_pool[p]=None
+        if not self.save_data:
+            self.state_pool[p]=None
+            self.action_pool[p]=None
+            self.next_state_pool[p]=None
+            self.reward_pool[p]=None
+            self.done_pool[p]=None
         self.process_counter.value+=1
         self.finish_list.append(None)
         if self.PO==1 or self.PO==2:
@@ -643,11 +643,12 @@ class kernel:
             lock[1].release()
         elif self.PO==3:
             lock[0].release()
-        del self.state_pool[p]
-        del self.action_pool[p]
-        del self.next_state_pool[p]
-        del self.reward_pool[p]
-        del self.done_pool[p]
+        if not self.save_data:
+            del self.state_pool[p]
+            del self.action_pool[p]
+            del self.next_state_pool[p]
+            del self.reward_pool[p]
+            del self.done_pool[p]
         return
     
     
