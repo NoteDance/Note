@@ -182,8 +182,7 @@ class kernel:
         while True:
             index=np.random.choice(self.processes,p=prob)
             if index in self.finish_list:
-                if self.inverse_len[index]!=0:
-                    self.inverse_len[index]=0
+                self.inverse_len[index]=0
                 continue
             else:
                 self.inverse_len[index]=1/(len(self.state_pool[index])+1)
@@ -417,11 +416,12 @@ class kernel:
     
     def train(self,p,lock,pool_lock):
         lock[0].acquire()
-        self.state_pool[p]=None
-        self.action_pool[p]=None
-        self.next_state_pool[p]=None
-        self.reward_pool[p]=None
-        self.done_pool[p]=None
+        if not self.save_data:
+            self.state_pool[p]=None
+            self.action_pool[p]=None
+            self.next_state_pool[p]=None
+            self.reward_pool[p]=None
+            self.done_pool[p]=None
         self.process_counter.value+=1
         self.finish_list.append(None)
         lock[0].release()
@@ -468,11 +468,12 @@ class kernel:
         lock[0].acquire()
         self.process_counter.value-=1
         lock[0].release()
-        del self.state_pool[p]
-        del self.action_pool[p]
-        del self.next_state_pool[p]
-        del self.reward_pool[p]
-        del self.done_pool[p]
+        if not self.save_data:
+            del self.state_pool[p]
+            del self.action_pool[p]
+            del self.next_state_pool[p]
+            del self.reward_pool[p]
+            del self.done_pool[p]
         return
     
     
