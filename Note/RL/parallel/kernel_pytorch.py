@@ -146,7 +146,7 @@ class kernel:
         if self.HER!=True or self.PR!=True:
             pool_lock[index].acquire()
         try:
-            if type(self.state_pool[index])!=np.ndarray and self.state_pool[index]==None:
+            if self.state_pool[index] is None:
                 self.state_pool[index]=s
                 self.action_pool[index]=np.expand_dims(a,axis=0)
                 self.next_state_pool[index]=np.expand_dims(next_s,axis=0)
