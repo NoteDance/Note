@@ -99,6 +99,12 @@ Its function is similar to torch.nn.parameter.Parameter.
 # Note.nn.Sequential.Sequential:
 This class is used similarly to tf.keras.Sequential and torch.nn.Sequential.
 
+# Kernel:
+You can use Note's kernel module, which is based on Python's multiprocessing module, to train models in parallel. The documentation for the kernel module is provided below.
+
+https://github.com/NoteDance/Note-documentation/tree/kernel-7.0
+
+https://github.com/NoteDance/Note-documentation/tree/kernel-other-7.0
 
 # Patreon:
 You can support this project on Patreon.
