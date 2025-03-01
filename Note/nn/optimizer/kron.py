@@ -211,8 +211,8 @@ class Kron(optimizer.Optimizer):
         )
         return config
 	
-	def _apply_weight_decay(self, variables):
-		pass
+    def _apply_weight_decay(self, variables):
+        pass
 
 
 def _init_Q_exprs(t, scale, max_size, min_ndim_triangular, memory_save_mode, dtype=None):
