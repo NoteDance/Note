@@ -47,7 +47,7 @@ class Shampoo(optimizer.Optimizer):
         super().__init__(
             learning_rate=learning_rate,
             name=name,
-            weight_decay=None,
+            weight_decay=weight_decay,
             clipnorm=clipnorm,
             clipvalue=clipvalue,
             global_clipnorm=global_clipnorm,
@@ -58,7 +58,6 @@ class Shampoo(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
-        self.weight_decay_ = weight_decay
         self.epsilon = epsilon
         self.momentum = momentum
         self.update_freq = update_freq
@@ -93,8 +92,8 @@ class Shampoo(optimizer.Optimizer):
         if self.momentum > 0:
             gradient.assign(gradient * (1 - self.momentum) + self.momentum_buffer[self._get_variable_index(variable)] * self.momentum)
 
-        if self.weight_decay_ > 0:
-            gradient.assign_add(variable * self.weight_decay_)
+        if self.weight_decay > 0:
+            gradient.assign_add(variable * self.weight_decay)
 
         # See Algorithm 2 for detail
         for dim_id, dim in enumerate(gradient.shape.as_list()):
@@ -133,10 +132,12 @@ class Shampoo(optimizer.Optimizer):
         config = super().get_config()
         config.update(
             {
-                "weight_decay": self.weight_decay_,
                 "epsilon": self.epsilon,
                 "momentum": self.momentum,
                 "update_freq": self.update_freq,
             }
         )
         return config
+	
+	def _apply_weight_decay(self, variables):
+		pass

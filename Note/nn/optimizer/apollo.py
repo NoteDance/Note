@@ -31,7 +31,7 @@ class Apollo(optimizer.Optimizer):
         super().__init__(
             learning_rate=learning_rate,
             name=name,
-            weight_decay=None,
+            weight_decay=weight_decay,
             clipnorm=clipnorm,
             clipvalue=clipvalue,
             global_clipnorm=global_clipnorm,
@@ -42,7 +42,6 @@ class Apollo(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
-        self.weight_decay_ = weight_decay
         self.beta = beta
         self.epsilon = epsilon
         self.rebound = rebound
@@ -92,8 +91,8 @@ class Apollo(optimizer.Optimizer):
             raise RuntimeError('Atom does not support sparse gradients.')
 
         # Perform step weight decay
-        if self.weight_decay_ != 0 and self.weight_decay_type == 'L2':
-            gradient = gradient + variable * self.weight_decay_
+        if self.weight_decay != 0 and self.weight_decay_type == 'L2':
+            gradient = gradient + variable * self.weight_decay
 
         exp_avg_grad = self.exp_avg_grad[self._get_variable_index(variable)]
         B = self.approx_hessian[self._get_variable_index(variable)]
@@ -132,11 +131,11 @@ class Apollo(optimizer.Optimizer):
         d_p.assign(exp_avg_grad / denom)
 
         # Perform step weight decay
-        if self.weight_decay_ != 0 and self.weight_decay_type != 'L2':
+        if self.weight_decay != 0 and self.weight_decay_type != 'L2':
             if self.weight_decay_type == 'stable':
-                weight_decay = self.weight_decay_ / tf.reduce_mean(denom)
+                weight_decay = self.weight_decay / tf.reduce_mean(denom)
             else:
-                weight_decay = self.weight_decay_
+                weight_decay = self.weight_decay
             d_p.assign_add(variable * weight_decay)
 
         variable.assign_add(d_p * -curr_lr)
@@ -145,7 +144,6 @@ class Apollo(optimizer.Optimizer):
         config = super().get_config()
         config.update(
             {
-                "weight_decay": self.weight_decay_,
                 "beta": self.beta,
                 "epsilon": self.epsilon,
                 "rebound": self.rebound,
@@ -155,3 +153,6 @@ class Apollo(optimizer.Optimizer):
             }
         )
         return config
+	
+	def _apply_weight_decay(self, variables):
+		pass

@@ -36,7 +36,7 @@ class MADGRAD(optimizer.Optimizer):
         super().__init__(
             learning_rate=learning_rate,
             name=name,
-            weight_decay=None,
+            weight_decay=weight_decay,
             clipnorm=clipnorm,
             clipvalue=clipvalue,
             global_clipnorm=global_clipnorm,
@@ -47,7 +47,6 @@ class MADGRAD(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
-        self.weight_decay_ = weight_decay
         self.momentum = momentum
         self.epsilon = epsilon
         self.decoupled_decay = decoupled_decay
@@ -92,13 +91,13 @@ class MADGRAD(optimizer.Optimizer):
         lamb = lr * math.sqrt(self.step[self._get_variable_index(variable)])
 
         # Apply weight decay
-        if self.weight_decay_ != 0:
+        if self.weight_decay != 0:
             if self.decoupled_decay:
-                variable.assign(variable * 1.0 - lr * self.weight_decay_)
+                variable.assign(variable * 1.0 - lr * self.weight_decay)
             else:
                 if isinstance(gradient, tf.SparseTensor):
                     raise RuntimeError("weight_decay option is not compatible with sparse gradients")
-                gradient.assign_add(self.weight_decay_ * variable)
+                gradient.assign_add(self.weight_decay * variable)
 
         if isinstance(gradient, tf.SparseTensor):
             # Coalesce sparse gradient for efficient operations
@@ -156,10 +155,12 @@ class MADGRAD(optimizer.Optimizer):
         config = super().get_config()
         config.update(
             {
-                "weight_decay": self.weight_decay_,
                 "momentum": self.momentum,
                 "epsilon": self.epsilon,
                 "decoupled_decay": self.decoupled_decay,
             }
         )
         return config
+	
+	def _apply_weight_decay(self, variables):
+		pass

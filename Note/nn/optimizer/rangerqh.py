@@ -35,7 +35,7 @@ class RangerQH(optimizer.Optimizer):
         super().__init__(
             learning_rate=learning_rate,
             name=name,
-            weight_decay=None,
+            weight_decay=weight_decay,
             clipnorm=clipnorm,
             clipvalue=clipvalue,
             global_clipnorm=global_clipnorm,
@@ -46,7 +46,6 @@ class RangerQH(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
-        self.weight_decay_ = weight_decay
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
@@ -87,11 +86,11 @@ class RangerQH(optimizer.Optimizer):
         if tf.keras.backend.is_sparse(gradient):
             raise RuntimeError("QHAdam does not support sparse gradients")
         
-        if self.weight_decay_ != 0:
+        if self.weight_decay != 0:
             if self.decouple_weight_decay:
-                variable.assign(variable * (1 - lr * self.weight_decay_))
+                variable.assign(variable * (1 - lr * self.weight_decay))
             else:
-                d_p.assign_add(self.weight_decay_ * variable)
+                d_p.assign_add(self.weight_decay * variable)
 
         d_p_sq = d_p * d_p
         
@@ -137,7 +136,6 @@ class RangerQH(optimizer.Optimizer):
         config = super().get_config()
         config.update(
             {
-                "weight_decay": self.weight_decay_,
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
@@ -148,3 +146,6 @@ class RangerQH(optimizer.Optimizer):
             }
         )
         return config
+	
+	def _apply_weight_decay(self, variables):
+		pass

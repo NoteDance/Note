@@ -48,7 +48,7 @@ class Ranger(optimizer.Optimizer):
         super().__init__(
             learning_rate=learning_rate,
             name=name,
-            weight_decay=None,
+            weight_decay=weight_decay,
             clipnorm=clipnorm,
             clipvalue=clipvalue,
             global_clipnorm=global_clipnorm,
@@ -59,7 +59,6 @@ class Ranger(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
-        self.weight_decay_ = weight_decay
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
@@ -149,8 +148,8 @@ class Ranger(optimizer.Optimizer):
                 step_size = 1.0 / (1 - self.beta1 ** self.step[self._get_variable_index(variable)])
             buffered[2] = step_size
 
-        # if self.weight_decay_ != 0:
-        #     variable_fp32.assign_sub(self.weight_decay_ * lr * variable_fp32)
+        # if self.weight_decay != 0:
+        #     variable_fp32.assign_sub(self.weight_decay * lr * variable_fp32)
 
         # apply lr
         if N_sma > self.N_sma_threshhold:
@@ -159,8 +158,8 @@ class Ranger(optimizer.Optimizer):
         else:
             G_grad = exp_avg
 
-        if self.weight_decay_ != 0:
-            G_grad += self.weight_decay_ * variable_fp32
+        if self.weight_decay != 0:
+            G_grad += self.weight_decay * variable_fp32
         # GC operation
         if self.gc_loc == False:
             G_grad = centralized_gradient(G_grad, use_gc=self.use_gc, gc_conv_only=self.gc_conv_only)
@@ -182,7 +181,6 @@ class Ranger(optimizer.Optimizer):
         config = super().get_config()
         config.update(
             {
-                "weight_decay": self.weight_decay_,
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
@@ -195,3 +193,6 @@ class Ranger(optimizer.Optimizer):
             }
         )
         return config
+	
+	def _apply_weight_decay(self, variables):
+		pass

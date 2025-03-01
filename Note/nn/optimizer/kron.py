@@ -66,7 +66,7 @@ class Kron(optimizer.Optimizer):
         super().__init__(
             learning_rate=learning_rate,
             name=name,
-            weight_decay=None,
+            weight_decay=weight_decay,
             clipnorm=clipnorm,
             clipvalue=clipvalue,
             global_clipnorm=global_clipnorm,
@@ -77,7 +77,6 @@ class Kron(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
-        self.weight_decay_ = weight_decay
         self.b1 = b1
         self.preconditioner_update_probability = preconditioner_update_probability
         self.max_size_triangular = max_size_triangular
@@ -190,15 +189,14 @@ class Kron(optimizer.Optimizer):
         pre_grad = _clip_update_rms(pre_grad)
 
         # apply weight decay and update parameters
-        if self.weight_decay_ != 0 and len(variable.shape) >= 2:
-            pre_grad += variable * self.weight_decay_
+        if self.weight_decay != 0 and len(variable.shape) >= 2:
+            pre_grad += variable * self.weight_decay
         variable.assign_add(tf.cast(pre_grad, variable.dtype) * -lr)
 
     def get_config(self):
         config = super().get_config()
         config.update(
             {
-                "weight_decay": self.weight_decay_,
                 "b1": self.b1,
                 "preconditioner_update_probability": self.preconditioner_update_probability,
                 "max_size_triangular": self.max_size_triangular,
@@ -212,6 +210,9 @@ class Kron(optimizer.Optimizer):
             }
         )
         return config
+	
+	def _apply_weight_decay(self, variables):
+		pass
 
 
 def _init_Q_exprs(t, scale, max_size, min_ndim_triangular, memory_save_mode, dtype=None):

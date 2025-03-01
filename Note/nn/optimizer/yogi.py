@@ -33,7 +33,7 @@ class Yogi(optimizer.Optimizer):
         super().__init__(
             learning_rate=learning_rate,
             name=name,
-            weight_decay=None,
+            weight_decay=weight_decay,
             clipnorm=clipnorm,
             clipvalue=clipvalue,
             global_clipnorm=global_clipnorm,
@@ -44,7 +44,6 @@ class Yogi(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
-        self.weight_decay_ = weight_decay
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
@@ -90,8 +89,8 @@ class Yogi(optimizer.Optimizer):
         bias_correction1 = 1 - self.beta1 ** self.step[self._get_variable_index(variable)]
         bias_correction2 = 1 - self.beta2 ** self.step[self._get_variable_index(variable)]
 
-        if self.weight_decay_ != 0:
-            gradient = gradient + variable * self.weight_decay_
+        if self.weight_decay != 0:
+            gradient = gradient + variable * self.weight_decay
         
         # Decay the first and second moment running average coefficient
         exp_avg.assign(exp_avg * self.beta1 + gradient * (1 - self.beta1))
@@ -110,7 +109,6 @@ class Yogi(optimizer.Optimizer):
         config = super().get_config()
         config.update(
             {
-                "weight_decay": self.weight_decay_,
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
@@ -118,3 +116,6 @@ class Yogi(optimizer.Optimizer):
             }
         )
         return config
+	
+	def _apply_weight_decay(self, variables):
+		pass

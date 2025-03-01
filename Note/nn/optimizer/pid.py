@@ -34,7 +34,7 @@ class PID(optimizer.Optimizer):
         super().__init__(
             learning_rate=learning_rate,
             name=name,
-            weight_decay=None,
+            weight_decay=weight_decay,
             clipnorm=clipnorm,
             clipvalue=clipvalue,
             global_clipnorm=global_clipnorm,
@@ -45,7 +45,6 @@ class PID(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
-        self.weight_decay_ = weight_decay
         self.momentum = momentum
         self.dampening = dampening
         self.nesterov = nesterov
@@ -86,8 +85,8 @@ class PID(optimizer.Optimizer):
         lr = tf.cast(learning_rate, variable.dtype)
         
         d_p = gradient
-        if self.weight_decay_ != 0:
-            d_p.assign_add(self.weight_decay_ * variable)
+        if self.weight_decay != 0:
+            d_p.assign_add(self.weight_decay * variable)
         if self.momentum != 0:
             if self.step[self._get_variable_index(variable)] == 0:
                 I_buf = self.I_buffer[self._get_variable_index(variable)]
@@ -117,7 +116,6 @@ class PID(optimizer.Optimizer):
         config = super().get_config()
         config.update(
             {
-                "weight_decay": self.weight_decay_,
                 "momentum": self.momentum,
                 "dampening": self.dampening,
                 "nesterov": self.nesterov,
@@ -126,3 +124,6 @@ class PID(optimizer.Optimizer):
             }
         )
         return config
+	
+	def _apply_weight_decay(self, variables):
+		pass

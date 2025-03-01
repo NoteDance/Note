@@ -28,7 +28,7 @@ class AdaMod(optimizer.Optimizer):
         super().__init__(
             learning_rate=learning_rate,
             name=name,
-            weight_decay=None,
+            weight_decay=weight_decay,
             clipnorm=clipnorm,
             clipvalue=clipvalue,
             global_clipnorm=global_clipnorm,
@@ -39,7 +39,6 @@ class AdaMod(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
-        self.weight_decay_ = weight_decay
         self.beta1 = beta1
         self.beta2 = beta2
         self.beta3 = beta3
@@ -94,8 +93,8 @@ class AdaMod(optimizer.Optimizer):
         bias_correction2 = 1 - self.beta2 ** self.step[self._get_variable_index(variable)]
         step_size = lr * tf.sqrt(bias_correction2) / bias_correction1
 
-        if self.weight_decay_ != 0:
-            variable.assign_add(-self.weight_decay_ * lr * variable)
+        if self.weight_decay != 0:
+            variable.assign_add(-self.weight_decay * lr * variable)
 
         # Applies momental bounds on actual learning rates
         step_size = tf.fill(denom.shape, step_size)
@@ -110,7 +109,6 @@ class AdaMod(optimizer.Optimizer):
         config = super().get_config()
         config.update(
             {
-                "weight_decay": self.weight_decay_,
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "beta3": self.beta3,
@@ -118,3 +116,6 @@ class AdaMod(optimizer.Optimizer):
             }
         )
         return config
+	
+	def _apply_weight_decay(self, variables):
+		pass

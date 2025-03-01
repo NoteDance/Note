@@ -25,7 +25,7 @@ class AggMo(optimizer.Optimizer):
         super().__init__(
             learning_rate=learning_rate,
             name=name,
-            weight_decay=None,
+            weight_decay=weight_decay,
             clipnorm=clipnorm,
             clipvalue=clipvalue,
             global_clipnorm=global_clipnorm,
@@ -36,7 +36,6 @@ class AggMo(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
-        self.weight_decay_ = weight_decay
         self.betas = betas
     
     @classmethod
@@ -70,8 +69,8 @@ class AggMo(optimizer.Optimizer):
         total_mom = float(len(self.betas))
         
         d_p = gradient
-        if self.weight_decay_ != 0:
-            d_p.assign_add(variable * self.weight_decay_)
+        if self.weight_decay != 0:
+            d_p.assign_add(variable * self.weight_decay)
         for beta in self.betas:
             buf = self.momentum_buffer[self._get_variable_index(variable)][beta]
             buf.assign(buf * beta + d_p)
@@ -81,8 +80,10 @@ class AggMo(optimizer.Optimizer):
         config = super().get_config()
         config.update(
             {
-                "weight_decay": self.weight_decay_,
                 "betas": self.betas,
             }
         )
         return config
+	
+	def _apply_weight_decay(self, variables):
+		pass

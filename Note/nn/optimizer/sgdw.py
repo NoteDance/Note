@@ -31,7 +31,7 @@ class SGDW(optimizer.Optimizer):
         super().__init__(
             learning_rate=learning_rate,
             name=name,
-            weight_decay=None,
+            weight_decay=weight_decay,
             clipnorm=clipnorm,
             clipvalue=clipvalue,
             global_clipnorm=global_clipnorm,
@@ -42,7 +42,6 @@ class SGDW(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
-        self.weight_decay_ = weight_decay
         self.momentum = momentum
         self.dampening = dampening
         self.nesterov = nesterov
@@ -91,7 +90,7 @@ class SGDW(optimizer.Optimizer):
             trainable_variables,
             grads,
             self.momentum_buffer_list,
-            weight_decay=self.weight_decay_,
+            weight_decay=self.weight_decay,
             momentum=self.momentum,
             lr=lr,
             dampening=self.dampening,
@@ -110,7 +109,6 @@ class SGDW(optimizer.Optimizer):
         config = super().get_config()
         config.update(
             {
-                "weight_decay": self.weight_decay_,
                 "momentum": self.momentum,
                 "dampening": self.dampening,
                 "nesterov": self.nesterov,
@@ -121,6 +119,9 @@ class SGDW(optimizer.Optimizer):
             }
         )
         return config
+	
+	def _apply_weight_decay(self, variables):
+		pass
     
     
 def sgdw(
@@ -149,7 +150,7 @@ def sgdw(
         params,
         grads,
         momentum_buffer_list,
-        weight_decay=None,
+        weight_decay=weight_decay,
         momentum=momentum,
         lr=lr,
         dampening=dampening,

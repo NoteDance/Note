@@ -35,7 +35,7 @@ class AdaNorm(optimizer.Optimizer):
         super().__init__(
             learning_rate=learning_rate,
             name=name,
-            weight_decay=None,
+            weight_decay=weight_decay,
             clipnorm=clipnorm,
             clipvalue=clipvalue,
             global_clipnorm=global_clipnorm,
@@ -46,7 +46,6 @@ class AdaNorm(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
-        self.weight_decay_ = weight_decay
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
@@ -121,9 +120,9 @@ class AdaNorm(optimizer.Optimizer):
                 'AdaNorm does not support sparse gradients')
         
         if self.weight_decouple:
-            variable.assign(variable * (1.0 - self.weight_decay_ * (1.0 if self.fixed_decay else lr)))
-        elif self.weight_decay_ > 0.0:
-            gradient.assign_add(variable * self.weight_decay_)
+            variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr)))
+        elif self.weight_decay > 0.0:
+            gradient.assign_add(variable * self.weight_decay)
         
         grad_norm = tf.linalg.norm(gradient)
         exp_grad_norm = self.exp_grad_norm[self._get_variable_index(variable)]
@@ -153,7 +152,6 @@ class AdaNorm(optimizer.Optimizer):
         config = super().get_config()
         config.update(
             {
-                "weight_decay": self.weight_decay_,
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
@@ -165,3 +163,6 @@ class AdaNorm(optimizer.Optimizer):
             }
         )
         return config
+	
+	def _apply_weight_decay(self, variables):
+		pass

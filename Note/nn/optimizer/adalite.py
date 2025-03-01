@@ -33,7 +33,7 @@ class Adalite(optimizer.Optimizer):
         super().__init__(
             learning_rate=learning_rate,
             name=name,
-            weight_decay=None,
+            weight_decay=weight_decay,
             clipnorm=clipnorm,
             clipvalue=clipvalue,
             global_clipnorm=global_clipnorm,
@@ -44,7 +44,6 @@ class Adalite(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
-        self.weight_decay_ = weight_decay
         self.beta1 = beta1
         self.beta2 = beta2
         self.weight_decouple = weight_decouple
@@ -205,7 +204,7 @@ class Adalite(optimizer.Optimizer):
         u = u / tf.sqrt(v_avg + self.eps1)
         
         u = tf.reshape(u, variable.shape)
-        u = u + self.weight_decay_ * variable
+        u = u + self.weight_decay * variable
         
         variable.assign_add(-lr * u)
 
@@ -213,7 +212,6 @@ class Adalite(optimizer.Optimizer):
         config = super().get_config()
         config.update(
             {
-                "weight_decay": self.weight_decay_,
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "weight_decouple": self.weight_decouple,
@@ -226,3 +224,6 @@ class Adalite(optimizer.Optimizer):
             }
         )
         return config
+	
+	def _apply_weight_decay(self, variables):
+		pass

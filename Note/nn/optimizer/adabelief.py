@@ -34,7 +34,7 @@ class AdaBelief(optimizer.Optimizer):
         super().__init__(
             learning_rate=learning_rate,
             name=name,
-            weight_decay=None,
+            weight_decay=weight_decay,
             clipnorm=clipnorm,
             clipvalue=clipvalue,
             global_clipnorm=global_clipnorm,
@@ -45,7 +45,6 @@ class AdaBelief(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
-        self.weight_decay_ = weight_decay
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
@@ -122,12 +121,12 @@ class AdaBelief(optimizer.Optimizer):
         # perform weight decay, check if decoupled weight decay
         if self.decoupled_decay:
             if not self.fixed_decay:
-                variable_fp32 = variable_fp32 * (1.0 - lr * self.weight_decay_)
+                variable_fp32 = variable_fp32 * (1.0 - lr * self.weight_decay)
             else:
-                variable_fp32 = variable_fp32 * (1.0 - self.weight_decay_)
+                variable_fp32 = variable_fp32 * (1.0 - self.weight_decay)
         else:
-            if self.weight_decay_ != 0:
-                gradient += self.weight_decay_ * variable_fp32
+            if self.weight_decay != 0:
+                gradient += self.weight_decay * variable_fp32
 
         # get current state variable
         exp_avg = self.exp_avg[self._get_variable_index(variable)]
@@ -195,7 +194,6 @@ class AdaBelief(optimizer.Optimizer):
         config = super().get_config()
         config.update(
             {
-                "weight_decay": self.weight_decay_,
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
@@ -207,3 +205,6 @@ class AdaBelief(optimizer.Optimizer):
             }
         )
         return config
+	
+	def _apply_weight_decay(self, variables):
+		pass

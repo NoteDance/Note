@@ -40,7 +40,7 @@ class Lars(optimizer.Optimizer):
         super().__init__(
             learning_rate=learning_rate,
             name=name,
-            weight_decay=None,
+            weight_decay=weight_decay,
             clipnorm=clipnorm,
             clipvalue=clipvalue,
             global_clipnorm=global_clipnorm,
@@ -51,7 +51,6 @@ class Lars(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
-        self.weight_decay_ = weight_decay
         self.momentum = momentum
         self.dampening = dampening
         self.epsilon = epsilon
@@ -72,10 +71,10 @@ class Lars(optimizer.Optimizer):
         lr = tf.cast(learning_rate, variable.dtype)
         # apply LARS LR adaptation, LARC clipping, weight decay
         # ref: https://github.com/NVIDIA/apex/blob/master/apex/parallel/LARC.py
-        if self.weight_decay_ != 0 or self.always_adapt:
+        if self.weight_decay != 0 or self.always_adapt:
             w_norm = tf.norm(variable, ord=2.0)
             g_norm = tf.norm(gradient, ord=2.0)
-            trust_ratio = self.trust_coeff * w_norm / (g_norm + w_norm * self.weight_decay_ + self.epsilon)
+            trust_ratio = self.trust_coeff * w_norm / (g_norm + w_norm * self.weight_decay + self.epsilon)
             # FIXME nested where required since logical and/or not working in PT XLA
             # Set the ratio to 1.0 (no change) if either weight norm or grad norm is zero
             trust_ratio = tf.where(
@@ -85,7 +84,7 @@ class Lars(optimizer.Optimizer):
             )
             if self.trust_clip:
                 trust_ratio = tf.clip_by_value(trust_ratio / lr, clip_value_min=-float('inf'), clip_value_max=1.0)
-            gradient.assign_add(self.weight_decay_ * variable)
+            gradient.assign_add(self.weight_decay * variable)
             gradient.assign(gradient * trust_ratio)
 
         # apply SGD update https://github.com/pytorch/pytorch/blob/1.7/torch/optim/sgd.py#L100
@@ -106,7 +105,6 @@ class Lars(optimizer.Optimizer):
         config = super().get_config()
         config.update(
             {
-                "weight_decay": self.weight_decay_,
                 "momentum": self.momentum,
                 "dampening": self.dampening,
                 "epsilon": self.epsilon,
@@ -117,3 +115,6 @@ class Lars(optimizer.Optimizer):
             }
         )
         return config
+	
+	def _apply_weight_decay(self, variables):
+		pass

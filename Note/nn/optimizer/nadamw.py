@@ -48,7 +48,7 @@ class NAdamW(optimizer.Optimizer):
         super().__init__(
             learning_rate=learning_rate,
             name=name,
-            weight_decay=None,
+            weight_decay=weight_decay,
             clipnorm=clipnorm,
             clipvalue=clipvalue,
             global_clipnorm=global_clipnorm,
@@ -59,7 +59,6 @@ class NAdamW(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
-        self.weight_decay_ = weight_decay
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
@@ -127,7 +126,7 @@ class NAdamW(optimizer.Optimizer):
             beta1=self.beta1,
             beta2=self.beta2,
             lr=lr,
-            weight_decay=self.weight_decay_,
+            weight_decay=self.weight_decay,
             eps=self.epsilon,
             caution=self.caution,
             maximize=self.maximize,
@@ -138,7 +137,6 @@ class NAdamW(optimizer.Optimizer):
         config = super().get_config()
         config.update(
             {
-                "weight_decay": self.weight_decay_,
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
@@ -149,6 +147,9 @@ class NAdamW(optimizer.Optimizer):
             }
         )
         return config
+	
+	def _apply_weight_decay(self, variables):
+		pass
 
 def nadamw(
         params,
@@ -193,7 +194,7 @@ def nadamw(
         beta1=beta1,
         beta2=beta2,
         lr=lr,
-        weight_decay=None,
+        weight_decay=weight_decay,
         eps=eps,
         caution=caution,
         maximize=maximize,

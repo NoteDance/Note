@@ -31,7 +31,7 @@ class AdaBound(optimizer.Optimizer):
         super().__init__(
             learning_rate=learning_rate,
             name=name,
-            weight_decay=None,
+            weight_decay=weight_decay,
             clipnorm=clipnorm,
             clipvalue=clipvalue,
             global_clipnorm=global_clipnorm,
@@ -42,7 +42,6 @@ class AdaBound(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
-        self.weight_decay_ = weight_decay
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
@@ -97,8 +96,8 @@ class AdaBound(optimizer.Optimizer):
         
         self.step[self._get_variable_index(variable)] += 1
 
-        if self.weight_decay_ != 0:
-            gradient = gradient + self.weight_decay_ * variable
+        if self.weight_decay != 0:
+            gradient = gradient + self.weight_decay * variable
 
         # Decay the first and second moment running average coefficient
         exp_avg.assign(self.beta1 * exp_avg + (1 - self.beta1) * gradient)
@@ -131,7 +130,6 @@ class AdaBound(optimizer.Optimizer):
         config = super().get_config()
         config.update(
             {
-                "weight_decay": self.weight_decay_,
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
@@ -141,3 +139,6 @@ class AdaBound(optimizer.Optimizer):
             }
         )
         return config
+	
+	def _apply_weight_decay(self, variables):
+		pass

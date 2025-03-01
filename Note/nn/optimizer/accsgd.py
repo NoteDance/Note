@@ -32,7 +32,7 @@ class AccSGD(optimizer.Optimizer):
         super().__init__(
             learning_rate=learning_rate,
             name=name,
-            weight_decay=None,
+            weight_decay=weight_decay,
             clipnorm=clipnorm,
             clipvalue=clipvalue,
             global_clipnorm=global_clipnorm,
@@ -43,7 +43,6 @@ class AccSGD(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
-        self.weight_decay_ = weight_decay
         self.kappa = kappa
         self.xi = xi
         self.smallConst = smallConst
@@ -64,8 +63,8 @@ class AccSGD(optimizer.Optimizer):
         Beta = 1.0 - Alpha
         zeta = self.smallConst/(self.smallConst+Beta)
         d_p = gradient
-        if self.weight_decay_ != 0:
-            d_p.assign_add_(self.weight_decay_, variable)
+        if self.weight_decay != 0:
+            d_p.assign_add_(self.weight_decay, variable)
         buf = self.momentum_buffer[self._get_variable_index(variable)]
         buf.assign(buf * (1.0/Beta)-1.0)
         buf.assign_add(-large_lr * d_p)
@@ -80,10 +79,12 @@ class AccSGD(optimizer.Optimizer):
         config = super().get_config()
         config.update(
             {
-                "weight_decay": self.weight_decay_,
                 "kappa": self.kappa,
                 "xi": self.xi,
                 "smallConst": self.smallConst,
             }
         )
         return config
+	
+	def _apply_weight_decay(self, variables):
+		pass

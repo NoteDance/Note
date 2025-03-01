@@ -35,7 +35,7 @@ class AdaiV2(optimizer.Optimizer):
         super().__init__(
             learning_rate=learning_rate,
             name=name,
-            weight_decay=None,
+            weight_decay=weight_decay,
             clipnorm=clipnorm,
             clipvalue=clipvalue,
             global_clipnorm=global_clipnorm,
@@ -46,7 +46,6 @@ class AdaiV2(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
-        self.weight_decay_ = weight_decay
         self.beta0 = beta0
         self.beta2 = beta2
         self.epsilon = epsilon
@@ -106,10 +105,10 @@ class AdaiV2(optimizer.Optimizer):
             
             bias_correction2 = 1 - self.beta2 ** self.step[self._get_variable_index(p)]
 
-            if self.weight_decay_ != 0 and self.decoupled == False:
-                g.assign_add(p * self.weight_decay_)
-            elif self.weight_decay_ != 0 and self.decoupled == True:
-                p.assign(p * (1 - lr * self.weight_decay_))
+            if self.weight_decay != 0 and self.decoupled == False:
+                g.assign_add(p * self.weight_decay)
+            elif self.weight_decay != 0 and self.decoupled == True:
+                p.assign(p * (1 - lr * self.weight_decay))
                 
             exp_avg_sq.assign(self.beta2 * exp_avg_sq + (1 - self.beta2) * tf.square(g))
             
@@ -143,7 +142,6 @@ class AdaiV2(optimizer.Optimizer):
         config = super().get_config()
         config.update(
             {
-                "weight_decay": self.weight_decay_,
                 "beta0": self.beta0,
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
@@ -152,3 +150,6 @@ class AdaiV2(optimizer.Optimizer):
             }
         )
         return config
+	
+	def _apply_weight_decay(self, variables):
+		pass	

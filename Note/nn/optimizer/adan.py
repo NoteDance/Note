@@ -65,7 +65,7 @@ class Adan(optimizer.Optimizer):
         super().__init__(
             learning_rate=learning_rate,
             name=name,
-            weight_decay=None,
+            weight_decay=weight_decay,
             clipnorm=clipnorm,
             clipvalue=clipvalue,
             global_clipnorm=global_clipnorm,
@@ -76,7 +76,6 @@ class Adan(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
-        self.weight_decay_ = weight_decay
         self.beta1 = beta1
         self.beta2 = beta2
         self.beta3 = beta2
@@ -182,7 +181,7 @@ class Adan(optimizer.Optimizer):
             bias_correction2=bias_correction2,
             bias_correction3_sqrt=math.sqrt(bias_correction3),
             lr=learning_rate,
-            weight_decay=self.weight_decay_,
+            weight_decay=self.weight_decay,
             eps=self.epsilon,
             no_prox=self.no_prox,
         )
@@ -196,7 +195,6 @@ class Adan(optimizer.Optimizer):
         config = super().get_config()
         config.update(
             {
-                "weight_decay": self.weight_decay_,
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "beta3": self.beta3,
@@ -206,6 +204,9 @@ class Adan(optimizer.Optimizer):
             }
         )
         return config
+	
+	def _apply_weight_decay(self, variables):
+		pass
 
 
 def _single_tensor_adan(
