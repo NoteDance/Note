@@ -1,0 +1,140 @@
+""" DAdaptSGD
+https://arxiv.org/abs/2301.07733
+
+Copyright 2025 NoteDance
+"""
+import tensorflow as tf
+from keras.src.optimizers import optimizer
+
+
+class DAdaptSGD(optimizer.Optimizer):
+    def __init__(
+        self,
+        learning_rate=1.0,
+        weight_decay=0.0,
+        momentum=0.9,
+        d0=1e-6,
+        growth_rate=float('inf'),
+        weight_decouple=True,
+        fixed_decay=False,
+        clipnorm=None,
+        clipvalue=None,
+        global_clipnorm=None,
+        use_ema=False,
+        ema_momentum=0.99,
+        ema_overwrite_frequency=None,
+        loss_scale_factor=None,
+        gradient_accumulation_steps=None,
+        name="dadaptsgd",
+        **kwargs,
+    ):
+        super().__init__(
+            learning_rate=learning_rate,
+            name=name,
+            weight_decay=weight_decay,
+            clipnorm=clipnorm,
+            clipvalue=clipvalue,
+            global_clipnorm=global_clipnorm,
+            use_ema=use_ema,
+            ema_momentum=ema_momentum,
+            ema_overwrite_frequency=ema_overwrite_frequency,
+            loss_scale_factor=loss_scale_factor,
+            gradient_accumulation_steps=gradient_accumulation_steps,
+            **kwargs,
+        )
+        self.momentum = momentum
+        self.d0 = d0
+        self.growth_rate = growth_rate
+        self.weight_decouple = weight_decouple
+        self.fixed_decay = fixed_decay
+    
+    def reset(self):
+        for var in self._trainable_variables:
+            self.step[self._get_variable_index(var)] = 0
+            
+            self.z[self._get_variable_index(var)] =  tf.Variable(var)
+            self.s[self._get_variable_index(var)] =  self.add_variable_from_reference(
+                                                        reference_variable=var, name="s"
+                                                    )
+            self.x0[self._get_variable_index(var)] =  tf.Variable(var)
+            
+    def build(self, var_list):
+        if self.built:
+            return
+        super().build(var_list)
+        self.z = []
+        self.s = []
+        self.x0 = []
+        self.step = 0
+        for var in var_list:
+            self.z.append(tf.Variable(var))
+            self.s.append(self.add_variable_from_reference(
+                                reference_variable=var, name="s"
+                                                    ))
+            self.x0.append(tf.Variable(var))
+        
+    def _backend_update_step(self, grads, trainable_variables, learning_rate):
+        """Collective update_step that can be overridden by the backend.
+    
+        It is overridden by torch for performance reasons, and
+        by TF to support tf.distribute.
+        """
+        self.update_step(grads, trainable_variables, learning_rate)
+
+    def update_step(self, grads, trainable_variables, learning_rate):
+        lr = learning_rate
+        
+        sk_sq = tf.Variable(tf.convert_to_tensor([0.0]))
+        if self.numerator_weighted == None:
+            self.numerator_weighted = tf.Variable(tf.convert_to_tensor([0.0]))
+        
+        global_grad_norm = tf.Variable(tf.zeros(1, dtype=tf.float32))
+        if self.step == 0:
+            for grad in grads:
+                global_grad_norm.assign_add(tf.pow(tf.norm(grad), 2))
+                self.g0_norm = tf.sqrt(global_grad_norm)
+        
+        d = self.d0
+        d_lr = d * lr / self.g0_norm
+        
+        for variable, grad in zip(trainable_variables, grads):
+            if tf.keras.backend.is_sparse(grad):
+                raise RuntimeError(
+                    'DAdaptSGD does not support sparse gradients')
+            
+            if self.weight_decouple:
+                variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr)))
+            
+            s = self.s[self._get_variable_index(variable)]
+            self.numerator_weighted.assign_add(tf.tensordot(tf.reshape(grad, [-1]), tf.reshape(s, [-1]) * d_lr))
+            
+            s.assign_add(grad * d_lr)
+            sk_sq.assign_add(tf.reduce_sum(tf.pow(s, 2)))
+        
+        if tf.get_static_value(lr) > 0.0:
+            d_hat = 2.0 * self.numerator_weighted / tf.sqrt(sk_sq)
+            d = max(self.d0, min(tf.get_static_value(d_hat), self.d0 * self.growth_rate))
+        
+        self.step += 1
+        
+        for variable, grad in zip(trainable_variables, grads):
+            z = self.z[self._get_variable_index(variable)]
+            z.assign(self.x0[self._get_variable_index(variable)] - self.s[self._get_variable_index(variable)])
+            
+            variable.assign(variable * self.momentum + z * (1.0 - self.momentum))
+
+    def get_config(self):
+        config = super().get_config()
+        config.update(
+            {
+                "momentum": self.momentum,
+                "d0": self.d0,
+                "growth_rate": self.growth_rate,
+                "weight_decouple": self.weight_decouple,
+                "fixed_decay": self.fixed_decay,
+            }
+        )
+        return config
+	
+    def _apply_weight_decay(self, variables):
+        pass
