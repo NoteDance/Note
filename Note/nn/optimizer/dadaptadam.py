@@ -118,7 +118,7 @@ class DAdaptAdam(optimizer.Optimizer):
         for variable, gradient in zip(trainable_variables, grads):
             if tf.keras.backend.is_sparse(gradient):
                 raise RuntimeError(
-                    'AvaGrad does not support sparse gradients')
+                    'DAdaptAdam does not support sparse gradients')
             
             exp_avg = self.exp_avg[self._get_variable_index(variable)]
             exp_avg_sq = self.exp_avg_sq[self._get_variable_index(variable)]
