@@ -220,7 +220,7 @@ class LRFinder_rl:
         self.factor = (end_lr / start_lr) ** (1.0 / N)
         self.window_size = window_size
         # Save weights into a file
-        initial_weights = [tf.Variable(param.read_value()) for param in nest.flatten(self.model.param)]
+        initial_weights = [tf.Variable(param.read_value()) for param in nest.flatten(self.agent.param)]
         self.smooth_f = smooth_f
         self.diverge_th = diverge_th
 
