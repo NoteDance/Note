@@ -166,6 +166,7 @@ from Note.nn.interpolate import interpolate
 from Note.nn.lambda_callback import LambdaCallback
 from Note.nn.lr_finder import LRFinder,LRFinder_rl
 from Note.nn.Model import Model
+from Note.nn.opt_finder import OptFinder,OptFinder_rl
 from Note.nn.parallel.optimizer import *
 from Note.nn.pairwise_distance import pairwise_distance
 from Note.nn.parameter import Parameter
