@@ -999,7 +999,7 @@ class RL:
                     return
                 for callback in self.callbacks:
                     if hasattr(callback, 'on_episode_begin'):
-                        callback.on_epoch_begin(i, logs={})
+                        callback.on_episode_begin(i, logs={})
                 train_loss.reset_states()
                 if pool_network==True:
                     process_list=[]
@@ -1034,7 +1034,7 @@ class RL:
                 episode_logs = {'reward': self.reward_list[-1]}
                 for callback in self.callbacks:
                     if hasattr(callback, 'on_episode_end'):
-                        callback.on_epoch_end(i, logs=episode_logs)
+                        callback.on_episode_end(i, logs=episode_logs)
                 self.loss=loss
                 self.loss_list.append(loss)
                 self.total_episode+=1
@@ -1077,7 +1077,7 @@ class RL:
                     return
                 for callback in self.callbacks:
                     if hasattr(callback, 'on_episode_begin'):
-                        callback.on_epoch_begin(i, logs={})
+                        callback.on_episode_begin(i, logs={})
                 train_loss.reset_states()
                 if pool_network==True:
                     process_list=[]
@@ -1112,7 +1112,7 @@ class RL:
                 episode_logs = {'reward': self.reward_list[-1]}
                 for callback in self.callbacks:
                     if hasattr(callback, 'on_episode_end'):
-                        callback.on_epoch_end(i, logs=episode_logs)
+                        callback.on_episode_end(i, logs=episode_logs)
                 self.loss=loss
                 self.loss_list.append(loss)
                 i+=1
@@ -1265,7 +1265,7 @@ class RL:
                         return
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_episode_begin'):
-                            callback.on_epoch_begin(i, logs={})
+                            callback.on_episode_begin(i, logs={})
                     if pool_network==True:
                         process_list=[]
                         self.modify_TD()
@@ -1299,7 +1299,7 @@ class RL:
                     episode_logs = {'reward': self.reward_list[-1]}
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_episode_end'):
-                            callback.on_epoch_end(i, logs=episode_logs)
+                            callback.on_episode_end(i, logs=episode_logs)
                     self.loss=loss
                     self.loss_list.append(loss)
                     self.total_episode+=1
@@ -1342,7 +1342,7 @@ class RL:
                         return
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_episode_begin'):
-                            callback.on_epoch_begin(i, logs={})
+                            callback.on_episode_begin(i, logs={})
                     if pool_network==True:
                         process_list=[]
                         self.modify_TD()
@@ -1376,7 +1376,7 @@ class RL:
                     episode_logs = {'reward': self.reward_list[-1]}
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_episode_end'):
-                            callback.on_epoch_end(i, logs=episode_logs)
+                            callback.on_episode_end(i, logs=episode_logs)
                     self.loss=loss
                     self.loss_list.append(loss)
                     i+=1
@@ -1422,7 +1422,7 @@ class RL:
                         return
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_episode_begin'):
-                            callback.on_epoch_begin(i, logs={})
+                            callback.on_episode_begin(i, logs={})
                     if pool_network==True:
                         process_list=[]
                         self.modify_TD()
@@ -1466,7 +1466,7 @@ class RL:
                     episode_logs = {'reward': self.reward_list[-1]}
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_episode_end'):
-                            callback.on_epoch_end(i, logs=episode_logs)
+                            callback.on_episode_end(i, logs=episode_logs)
                     self.loss=loss
                     self.loss_list.append(loss)
                     self.total_episode+=1
@@ -1505,7 +1505,7 @@ class RL:
                         return
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_episode_begin'):
-                            callback.on_epoch_begin(i, logs={})
+                            callback.on_episode_begin(i, logs={})
                     if pool_network==True:
                         process_list=[]
                         self.modify_TD()
@@ -1549,7 +1549,7 @@ class RL:
                     episode_logs = {'reward': self.reward_list[-1]}
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_episode_end'):
-                            callback.on_epoch_end(i, logs=episode_logs)
+                            callback.on_episode_end(i, logs=episode_logs)
                     self.loss=loss
                     self.loss_list.append(loss)
                     self.total_episode+=1
@@ -1590,7 +1590,7 @@ class RL:
                         return
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_episode_begin'):
-                            callback.on_epoch_begin(i, logs={})
+                            callback.on_episode_begin(i, logs={})
                     if pool_network==True:
                         process_list=[]
                         self.modify_TD()
@@ -1634,7 +1634,7 @@ class RL:
                     episode_logs = {'reward': self.reward_list[-1]}
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_episode_end'):
-                            callback.on_epoch_end(i, logs=episode_logs)
+                            callback.on_episode_end(i, logs=episode_logs)
                     self.loss=loss
                     self.loss_list.append(loss)
                     self.total_episode+=1
@@ -1673,7 +1673,7 @@ class RL:
                         return
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_episode_begin'):
-                            callback.on_epoch_begin(i, logs={})
+                            callback.on_episode_begin(i, logs={})
                     if pool_network==True:
                         process_list=[]
                         self.modify_TD()
@@ -1717,7 +1717,7 @@ class RL:
                     episode_logs = {'reward': self.reward_list[-1]}
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_episode_end'):
-                            callback.on_epoch_end(i, logs=episode_logs)
+                            callback.on_episode_end(i, logs=episode_logs)
                     self.loss=loss
                     self.loss_list.append(loss)
                     self.total_episode+=1
