@@ -61,7 +61,7 @@ class model(nn.Model):
         x=self.layer2(x)
         return x
 ```
-Note.models.tf package contains neural networks implemented with Note’s layer module that can be trained with TensorFlow. You can also consider these models as examples using the Note. The documentation shows how to train, test, save, and restore models built with Note.
+Note.models.tf package contains neural networks implemented with Note’s layer module that can be trained with TensorFlow. You can also consider these models as examples using the Note. The documentation shows how to train, test, find best lr, find best optimizer, save, and restore models built with Note.
 
 https://github.com/NoteDance/Note/tree/Note-7.0/Note/models/tf
 
