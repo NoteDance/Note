@@ -9,7 +9,7 @@ import numpy as np
 
 class LRFinder:
     """
-    Plots the change of the loss function of a Keras model when the learning rate is exponentially increasing.
+    Plots the change of the loss function of a Note model when the learning rate is exponentially increasing.
     See for details:
     https://towardsdatascience.com/estimating-optimal-learning-rate-for-a-deep-neural-network-ce32f2556ce0
     """
@@ -144,7 +144,7 @@ class LRFinder:
 
 class LRFinder_rl:
     """
-    Plots the change of the loss function of a Keras model when the learning rate is exponentially increasing.
+    Plots the change of the loss function of a Note agent when the learning rate is exponentially increasing.
     See for details:
     https://towardsdatascience.com/estimating-optimal-learning-rate-for-a-deep-neural-network-ce32f2556ce0
     """
@@ -183,9 +183,9 @@ class LRFinder_rl:
 
         lr = lr * self.factor
         if type(self.agent.optimizer)!=list:
-            K.set_value(self.model.optimizer.lr, lr)
+            K.set_value(self.agent.optimizer.lr, lr)
         else:
-            K.set_value(self.model.optimizer[-1].lr, lr)
+            K.set_value(self.agent.optimizer[-1].lr, lr)
     
     def on_batch_end(self, batch, logs):
         # Log the learning rate
@@ -212,9 +212,9 @@ class LRFinder_rl:
 
         lr = lr * self.factor
         if type(self.agent.optimizer)!=list:
-            K.set_value(self.model.optimizer.lr, lr)
+            K.set_value(self.agent.optimizer.lr, lr)
         else:
-            K.set_value(self.model.optimizer[-1].lr, lr)
+            K.set_value(self.agent.optimizer[-1].lr, lr)
 
     def find(self, train_loss=None, pool_network=True, processes=None, processes_her=None, processes_pr=None, strategy=None, N=None, window_size=None, start_lr=None, end_lr=None, episodes=1, metrics='reward', smooth_f=0.05, diverge_th=5, jit_compile=True):
         self.factor = (end_lr / start_lr) ** (1.0 / N)
@@ -242,7 +242,7 @@ class LRFinder_rl:
             callback = nn.LambdaCallback(on_batch_end=lambda batch, logs: self.on_batch_end(batch, logs))
 
         if strategy == None:
-            self.model.train(train_loss=train_loss, 
+            self.agent.train(train_loss=train_loss, 
                            episodes=episodes,
                            pool_network=pool_network,
                            processes=processes,
@@ -251,7 +251,7 @@ class LRFinder_rl:
                            callbacks=[callback],
                            jit_compile=jit_compile)
         else:
-            self.model.distributed_training(strategy=strategy,
+            self.agent.distributed_training(strategy=strategy,
                            episodes=episodes,
                            pool_network=pool_network,
                            processes=processes,
@@ -260,7 +260,7 @@ class LRFinder_rl:
                            callbacks=[callback],
                            jit_compile=jit_compile)
 
-        # Restore the weights to the state before model fitting
+        # Restore the weights to the state before agent fitting
         nn.assign_param(self.agent.param, initial_weights)
 
         # Restore the original learning rate
