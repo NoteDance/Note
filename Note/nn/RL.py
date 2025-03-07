@@ -1031,7 +1031,7 @@ class RL:
                 else:
                     loss=self.train2(train_loss,self.optimizer)
                 episode_logs = {'loss': loss}
-                episode_logs = {'reward': self.reward_list[-1]}
+                episode_logs['reward'] = self.reward_list[-1]
                 for callback in self.callbacks:
                     if hasattr(callback, 'on_episode_end'):
                         callback.on_episode_end(i, logs=episode_logs)
@@ -1109,7 +1109,7 @@ class RL:
                 else:
                     loss=self.train2(train_loss,self.optimizer)
                 episode_logs = {'loss': loss}
-                episode_logs = {'reward': self.reward_list[-1]}
+                episode_logs['reward'] = self.reward_list[-1]
                 for callback in self.callbacks:
                     if hasattr(callback, 'on_episode_end'):
                         callback.on_episode_end(i, logs=episode_logs)
@@ -1296,7 +1296,7 @@ class RL:
                     else:
                         loss=self.train2(None,self.optimizer)
                     episode_logs = {'loss': loss}
-                    episode_logs = {'reward': self.reward_list[-1]}
+                    episode_logs['reward'] = self.reward_list[-1]
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_episode_end'):
                             callback.on_episode_end(i, logs=episode_logs)
@@ -1373,7 +1373,7 @@ class RL:
                     else:
                         loss=self.train2(None,self.optimizer)
                     episode_logs = {'loss': loss}
-                    episode_logs = {'reward': self.reward_list[-1]}
+                    episode_logs['reward'] = self.reward_list[-1]
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_episode_end'):
                             callback.on_episode_end(i, logs=episode_logs)
@@ -1463,7 +1463,7 @@ class RL:
                     self.step_in_episode = 0
                     
                     episode_logs = {'loss': loss}
-                    episode_logs = {'reward': self.reward_list[-1]}
+                    episode_logs['reward'] = self.reward_list[-1]
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_episode_end'):
                             callback.on_episode_end(i, logs=episode_logs)
@@ -1546,7 +1546,7 @@ class RL:
                     self.step_in_episode = 0
                     
                     episode_logs = {'loss': loss}
-                    episode_logs = {'reward': self.reward_list[-1]}
+                    episode_logs['reward'] = self.reward_list[-1]
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_episode_end'):
                             callback.on_episode_end(i, logs=episode_logs)
@@ -1631,7 +1631,7 @@ class RL:
                     self.step_in_episode = 0
                     
                     episode_logs = {'loss': loss}
-                    episode_logs = {'reward': self.reward_list[-1]}
+                    episode_logs['reward'] = self.reward_list[-1]
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_episode_end'):
                             callback.on_episode_end(i, logs=episode_logs)
@@ -1714,7 +1714,7 @@ class RL:
                     self.step_in_episode = 0
                     
                     episode_logs = {'loss': loss}
-                    episode_logs = {'reward': self.reward_list[-1]}
+                    episode_logs['reward'] = self.reward_list[-1]
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_episode_end'):
                             callback.on_episode_end(i, logs=episode_logs)
