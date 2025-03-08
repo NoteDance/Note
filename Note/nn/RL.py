@@ -146,11 +146,18 @@ class RL:
                 self.reward_pool_list[index]=np.concatenate((self.reward_pool_list[index],np.expand_dims(r,axis=0)),0)
                 self.done_pool_list[index]=np.concatenate((self.done_pool[7],np.expand_dims(done,axis=0)),0)
             if len(self.state_pool_list[index])>math.ceil(self.pool_size/self.processes):
-                self.state_pool_list[index]=self.state_pool_list[index][1:]
-                self.action_pool_list[index]=self.action_pool_list[index][1:]
-                self.next_state_pool_list[index]=self.next_state_pool_list[index][1:]
-                self.reward_pool_list[index]=self.reward_pool_list[index][1:]
-                self.done_pool_list[index]=self.done_pool_list[index][1:]
+                if self.window_size==None:
+                    self.state_pool_list[index]=self.state_pool_list[index][1:]
+                    self.action_pool_list[index]=self.action_pool_list[index][1:]
+                    self.next_state_pool_list[index]=self.next_state_pool_list[index][1:]
+                    self.reward_pool_list[index]=self.reward_pool_list[index][1:]
+                    self.done_pool_list[index]=self.done_pool_list[index][1:]
+                else:
+                    self.state_pool_list[index]=self.state_pool_list[index][self.window_size:]
+                    self.action_pool_list[index]=self.action_pool_list[index][self.window_size:]
+                    self.next_state_pool_list[index]=self.next_state_pool_list[index][self.window_size:]
+                    self.reward_pool_list[index]=self.reward_pool_list[index][self.window_size:]
+                    self.done_pool_list[index]=self.done_pool_list[index][self.window_size:]
         else:
             if self.state_pool is None:
                 self.state_pool=s
@@ -165,11 +172,18 @@ class RL:
                 self.reward_pool=np.concatenate((self.reward_pool,np.expand_dims(r,axis=0)),0)
                 self.done_pool=np.concatenate((self.done_pool,np.expand_dims(done,axis=0)),0)
             if len(self.state_pool)>self.pool_size:
-                self.state_pool=self.state_pool[1:]
-                self.action_pool=self.action_pool[1:]
-                self.next_state_pool=self.next_state_pool[1:]
-                self.reward_pool=self.reward_pool[1:]
-                self.done_pool=self.done_pool[1:]
+                if self.window_size==None:
+                    self.state_pool=self.state_pool[1:]
+                    self.action_pool=self.action_pool[1:]
+                    self.next_state_pool=self.next_state_pool[1:]
+                    self.reward_pool=self.reward_pool[1:]
+                    self.done_pool=self.done_pool[1:]
+                else:
+                    self.state_pool=self.state_pool[self.window_size:]
+                    self.action_pool=self.action_pool[self.window_size:]
+                    self.next_state_pool=self.next_state_pool[self.window_size:]
+                    self.reward_pool=self.reward_pool[self.window_size:]
+                    self.done_pool=self.done_pool[self.window_size:]
         return
     
     
@@ -902,7 +916,7 @@ class RL:
             s=next_s
     
     
-    def train(self, train_loss, optimizer, episodes=None, jit_compile=True, pool_network=True, processes=None, processes_her=None, processes_pr=None, save_data=True, callbacks=None, shuffle=False, p=None):
+    def train(self, train_loss, optimizer, episodes=None, jit_compile=True, pool_network=True, processes=None, processes_her=None, processes_pr=None, window_size=None, save_data=True, callbacks=None, shuffle=False, p=None):
         avg_reward=None
         if p==None:
             self.p=9
@@ -925,6 +939,7 @@ class RL:
         self.processes=processes
         self.processes_her=processes_her
         self.processes_pr=processes_pr
+        self.window_size=window_size
         self.save_data=save_data
         self.shuffle=shuffle
         self.p=p
@@ -1161,7 +1176,7 @@ class RL:
         return
     
     
-    def distributed_training(self, optimizer, strategy, episodes=None, num_episodes=None, jit_compile=True, pool_network=True, processes=None, processes_her=None, processes_pr=None, save_data=True, callbacks=None, shuffle=False, p=None):
+    def distributed_training(self, optimizer, strategy, episodes=None, num_episodes=None, jit_compile=True, pool_network=True, processes=None, processes_her=None, processes_pr=None, window_size=None, save_data=True, callbacks=None, shuffle=False, p=None):
         avg_reward=None
         if num_episodes!=None:
             episodes=num_episodes
@@ -1187,6 +1202,7 @@ class RL:
         self.processes=processes
         self.processes_her=processes_her
         self.processes_pr=processes_pr
+        self.window_size=window_size
         self.save_data=save_data
         self.shuffle=shuffle
         self.p=p
