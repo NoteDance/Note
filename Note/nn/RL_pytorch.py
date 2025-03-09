@@ -109,11 +109,12 @@ class RL_pytorch:
                 self.reward_pool=np.concatenate((self.reward_pool,np.expand_dims(r,axis=0)),0)
                 self.done_pool=np.concatenate((self.done_pool,np.expand_dims(done,axis=0)),0)
             if self.clearing_freq!=None and self.total_episode+1%self.clearing_freq==0:
-                self.state_pool=self.state_pool[self.window_size_:]
-                self.action_pool=self.action_pool[self.window_size_:]
-                self.next_state_pool=self.next_state_pool[self.window_size_:]
-                self.reward_pool=self.reward_pool[self.window_size_:]
-                self.done_pool=self.done_pool[self.window_size_:]
+                if self.window_size_<len(self.state_pool):
+                    self.state_pool=self.state_pool[self.window_size_:]
+                    self.action_pool=self.action_pool[self.window_size_:]
+                    self.next_state_pool=self.next_state_pool[self.window_size_:]
+                    self.reward_pool=self.reward_pool[self.window_size_:]
+                    self.done_pool=self.done_pool[self.window_size_:]
             if len(self.state_pool)>self.pool_size:
                 if self.window_size==None:
                     self.state_pool=self.state_pool[1:]
