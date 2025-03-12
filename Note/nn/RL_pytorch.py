@@ -1,8 +1,8 @@
 import torch
 from torch.utils.data import DataLoader
 import multiprocessing
-import Note_rl.policy as Policy
-import Note_rl.prioritized_replay.pr_ as pr
+from Note.RL import rl
+from Note.RL.rl.prioritized_replay import pr_
 from multiprocessing import Array
 import numpy as np
 import numpy.ctypeslib as npc
@@ -26,7 +26,7 @@ class RL_pytorch:
         self.reward_list=[]
         self.step_counter=0
         self.store_counter=0
-        self.prioritized_replay=pr()
+        self.prioritized_replay=pr_()
         self.seed=7
         self.path=None
         self.save_freq=1
@@ -146,19 +146,19 @@ class RL_pytorch:
             else:
                 output=output[1].numpy()
             output=np.squeeze(output, axis=0)
-            if isinstance(self.policy, Policy.SoftmaxPolicy):
+            if isinstance(self.policy, rl.SoftmaxPolicy):
                 a=self.policy.select_action(len(output), output)
-            elif isinstance(self.policy, Policy.EpsGreedyQPolicy):
+            elif isinstance(self.policy, rl.EpsGreedyQPolicy):
                 a=self.policy.select_action(output)
-            elif isinstance(self.policy, Policy.AdaptiveEpsGreedyPolicy):
+            elif isinstance(self.policy, rl.AdaptiveEpsGreedyPolicy):
                 a=self.policy.select_action(output, self.step_counter)
-            elif isinstance(self.policy, Policy.GreedyQPolicy):
+            elif isinstance(self.policy, rl.GreedyQPolicy):
                 a=self.policy.select_action(output)
-            elif isinstance(self.policy, Policy.BoltzmannQPolicy):
+            elif isinstance(self.policy, rl.BoltzmannQPolicy):
                 a=self.policy.select_action(output)
-            elif isinstance(self.policy, Policy.MaxBoltzmannQPolicy):
+            elif isinstance(self.policy, rl.MaxBoltzmannQPolicy):
                 a=self.policy.select_action(output)
-            elif isinstance(self.policy, Policy.BoltzmannGumbelQPolicy):
+            elif isinstance(self.policy, rl.BoltzmannGumbelQPolicy):
                 a=self.policy.select_action(output, self.step_counter)
         elif self.noise!=None:
             if self.IRL!=True:
