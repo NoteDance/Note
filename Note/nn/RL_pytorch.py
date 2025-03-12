@@ -25,6 +25,7 @@ class RL_pytorch:
         self.state_pool_list=[]
         self.reward_list=[]
         self.step_counter=0
+        self.store_counter=0
         self.prioritized_replay=pr_()
         self.seed=7
         self.path=None
@@ -76,13 +77,14 @@ class RL_pytorch:
                 self.next_state_pool_list[index]=np.concatenate((self.next_state_pool_list[index],np.expand_dims(next_s,axis=0)),0)
                 self.reward_pool_list[index]=np.concatenate((self.reward_pool_list[index],np.expand_dims(r,axis=0)),0)
                 self.done_pool_list[index]=np.concatenate((self.done_pool[7],np.expand_dims(done,axis=0)),0)
-            if self.clearing_freq!=None and len(self.state_pool_list[index])>=self.clearing_freq[index]:
-                self.state_pool_list[index]=self.state_pool_list[index][self.window_size_:]
-                self.action_pool_list[index]=self.action_pool_list[index][self.window_size_:]
-                self.next_state_pool_list[index]=self.next_state_pool_list[index][self.window_size_:]
-                self.reward_pool_list[index]=self.reward_pool_list[index][self.window_size_:]
-                self.done_pool_list[index]=self.done_pool_list[index][self.window_size_:]
-                self.clearing_freq[index]+=self.clearing_freq[index]
+            if self.clearing_freq!=None:
+                if self.store_counter>=self.clearing_freq[index]:
+                    self.state_pool_list[index]=self.state_pool_list[index][self.window_size_:]
+                    self.action_pool_list[index]=self.action_pool_list[index][self.window_size_:]
+                    self.next_state_pool_list[index]=self.next_state_pool_list[index][self.window_size_:]
+                    self.reward_pool_list[index]=self.reward_pool_list[index][self.window_size_:]
+                    self.done_pool_list[index]=self.done_pool_list[index][self.window_size_:]
+                    self.clearing_freq[index]+=self.clearing_freq[index]
             if len(self.state_pool_list[index])>math.ceil(self.pool_size/self.processes):
                 if self.window_size==None:
                     self.state_pool_list[index]=self.state_pool_list[index][1:]
@@ -109,12 +111,14 @@ class RL_pytorch:
                 self.next_state_pool=np.concatenate((self.next_state_pool,np.expand_dims(next_s,axis=0)),0)
                 self.reward_pool=np.concatenate((self.reward_pool,np.expand_dims(r,axis=0)),0)
                 self.done_pool=np.concatenate((self.done_pool,np.expand_dims(done,axis=0)),0)
-            if self.clearing_freq!=None and len(self.state_pool)%self.clearing_freq==0:
-                self.state_pool=self.state_pool[self.window_size_:]
-                self.action_pool=self.action_pool[self.window_size_:]
-                self.next_state_pool=self.next_state_pool[self.window_size_:]
-                self.reward_pool=self.reward_pool[self.window_size_:]
-                self.done_pool=self.done_pool[self.window_size_:]
+            if self.clearing_freq!=None:
+                self.store_counter+=1
+                if self.store_counter%self.clearing_freq==0:
+                    self.state_pool=self.state_pool[self.window_size_:]
+                    self.action_pool=self.action_pool[self.window_size_:]
+                    self.next_state_pool=self.next_state_pool[self.window_size_:]
+                    self.reward_pool=self.reward_pool[self.window_size_:]
+                    self.done_pool=self.done_pool[self.window_size_:]
             if len(self.state_pool)>self.pool_size:
                 if self.window_size==None:
                     self.state_pool=self.state_pool[1:]
@@ -590,12 +594,16 @@ class RL_pytorch:
                         self.next_state_pool=np.concatenate(self.next_state_pool_list)
                         self.reward_pool=np.concatenate(self.reward_pool_list)
                         self.done_pool=np.concatenate(self.done_pool_list)
+                        if self.clearing_freq_!=None:
+                            self.store_counter+=len(self.state_pool)
                     else:
                         self.state_pool[7]=np.concatenate(self.state_pool_list)
                         self.action_pool[7]=np.concatenate(self.action_pool_list)
                         self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
                         self.reward_pool[7]=np.concatenate(self.reward_pool_list)
                         self.done_pool[7]=np.concatenate(self.done_pool_list)
+                        if self.clearing_freq_!=None:
+                            self.store_counter+=len(self.state_pool[7])
                     self.prioritized_replay.TD=np.concatenate(self.TD_list)
                     self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
                     if len(self.reward_list)>self.trial_count:
@@ -656,12 +664,16 @@ class RL_pytorch:
                         self.next_state_pool=np.concatenate(self.next_state_pool_list)
                         self.reward_pool=np.concatenate(self.reward_pool_list)
                         self.done_pool=np.concatenate(self.done_pool_list)
+                        if self.clearing_freq_!=None:
+                            self.store_counter+=len(self.state_pool)
                     else:
                         self.state_pool[7]=np.concatenate(self.state_pool_list)
                         self.action_pool[7]=np.concatenate(self.action_pool_list)
                         self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
                         self.reward_pool[7]=np.concatenate(self.reward_pool_list)
                         self.done_pool[7]=np.concatenate(self.done_pool_list)
+                        if self.clearing_freq_!=None:
+                            self.store_counter+=len(self.state_pool[7])
                     self.prioritized_replay.TD=np.concatenate(self.TD_list)
                     self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
                     if len(self.reward_list)>self.trial_count:
