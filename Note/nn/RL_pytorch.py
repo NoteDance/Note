@@ -77,13 +77,12 @@ class RL_pytorch:
                 self.reward_pool_list[index]=np.concatenate((self.reward_pool_list[index],np.expand_dims(r,axis=0)),0)
                 self.done_pool_list[index]=np.concatenate((self.done_pool[7],np.expand_dims(done,axis=0)),0)
             if self.clearing_freq!=None and len(self.state_pool_list[index])>=self.clearing_freq[index]:
-                if self.window_size_<len(self.state_pool_list[index]):
-                    self.state_pool_list[index]=self.state_pool_list[index][self.window_size_:]
-                    self.action_pool_list[index]=self.action_pool_list[index][self.window_size_:]
-                    self.next_state_pool_list[index]=self.next_state_pool_list[index][self.window_size_:]
-                    self.reward_pool_list[index]=self.reward_pool_list[index][self.window_size_:]
-                    self.done_pool_list[index]=self.done_pool_list[index][self.window_size_:]
-                    self.clearing_freq[index]+=self.clearing_freq[index]
+                self.state_pool_list[index]=self.state_pool_list[index][self.window_size_:]
+                self.action_pool_list[index]=self.action_pool_list[index][self.window_size_:]
+                self.next_state_pool_list[index]=self.next_state_pool_list[index][self.window_size_:]
+                self.reward_pool_list[index]=self.reward_pool_list[index][self.window_size_:]
+                self.done_pool_list[index]=self.done_pool_list[index][self.window_size_:]
+                self.clearing_freq[index]+=self.clearing_freq[index]
             if len(self.state_pool_list[index])>math.ceil(self.pool_size/self.processes):
                 if self.window_size==None:
                     self.state_pool_list[index]=self.state_pool_list[index][1:]
@@ -111,12 +110,11 @@ class RL_pytorch:
                 self.reward_pool=np.concatenate((self.reward_pool,np.expand_dims(r,axis=0)),0)
                 self.done_pool=np.concatenate((self.done_pool,np.expand_dims(done,axis=0)),0)
             if self.clearing_freq!=None and len(self.state_pool)%self.clearing_freq==0:
-                if self.window_size_<len(self.state_pool):
-                    self.state_pool=self.state_pool[self.window_size_:]
-                    self.action_pool=self.action_pool[self.window_size_:]
-                    self.next_state_pool=self.next_state_pool[self.window_size_:]
-                    self.reward_pool=self.reward_pool[self.window_size_:]
-                    self.done_pool=self.done_pool[self.window_size_:]
+                self.state_pool=self.state_pool[self.window_size_:]
+                self.action_pool=self.action_pool[self.window_size_:]
+                self.next_state_pool=self.next_state_pool[self.window_size_:]
+                self.reward_pool=self.reward_pool[self.window_size_:]
+                self.done_pool=self.done_pool[self.window_size_:]
             if len(self.state_pool)>self.pool_size:
                 if self.window_size==None:
                     self.state_pool=self.state_pool[1:]
