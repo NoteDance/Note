@@ -78,7 +78,6 @@ class RL_pytorch:
                 self.reward_pool_list[index]=np.concatenate((self.reward_pool_list[index],np.expand_dims(r,axis=0)),0)
                 self.done_pool_list[index]=np.concatenate((self.done_pool[7],np.expand_dims(done,axis=0)),0)
             if self.clearing_freq!=None:
-                self.store_counter[index]+=len(self.state_pool_list[index])
                 if self.store_counter[index]>=self.clearing_freq[index]:
                     self.state_pool_list[index]=self.state_pool_list[index][self.window_size_:]
                     self.action_pool_list[index]=self.action_pool_list[index][self.window_size_:]
@@ -469,9 +468,13 @@ class RL_pytorch:
             done=np.array(done)
             if self.PR!=True and self.HER!=True:
                 lock_list[index].acquire()
+                if self.clearing_freq_!=None:
+                    self.store_counter[index]+=1
                 self.pool(s,a,next_s,r,done,index)
                 lock_list[index].release()
             else:
+                if self.clearing_freq_!=None:
+                    self.store_counter[index]+=1
                 self.pool(s,a,next_s,r,done,index)
                 if self.PR==True:
                     if len(self.state_pool_list[index])>1:
