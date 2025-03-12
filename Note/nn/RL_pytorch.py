@@ -22,6 +22,7 @@ class RL_pytorch:
         self.next_state_pool=None
         self.reward_pool=None
         self.done_pool=None
+        self.state_pool_list=[]
         self.reward_list=[]
         self.step_counter=0
         self.prioritized_replay=pr_()
@@ -75,13 +76,14 @@ class RL_pytorch:
                 self.next_state_pool_list[index]=np.concatenate((self.next_state_pool_list[index],np.expand_dims(next_s,axis=0)),0)
                 self.reward_pool_list[index]=np.concatenate((self.reward_pool_list[index],np.expand_dims(r,axis=0)),0)
                 self.done_pool_list[index]=np.concatenate((self.done_pool[7],np.expand_dims(done,axis=0)),0)
-            if self.clearing_freq!=None and self.total_episode+1%self.clearing_freq==0:
+            if self.clearing_freq!=None and len(self.state_pool_list[index])>=self.clearing_freq[index]:
                 if self.window_size_<len(self.state_pool_list[index]):
                     self.state_pool_list[index]=self.state_pool_list[index][self.window_size_:]
                     self.action_pool_list[index]=self.action_pool_list[index][self.window_size_:]
                     self.next_state_pool_list[index]=self.next_state_pool_list[index][self.window_size_:]
                     self.reward_pool_list[index]=self.reward_pool_list[index][self.window_size_:]
                     self.done_pool_list[index]=self.done_pool_list[index][self.window_size_:]
+                    self.clearing_freq[index]+=self.clearing_freq[index]
             if len(self.state_pool_list[index])>math.ceil(self.pool_size/self.processes):
                 if self.window_size==None:
                     self.state_pool_list[index]=self.state_pool_list[index][1:]
@@ -108,7 +110,7 @@ class RL_pytorch:
                 self.next_state_pool=np.concatenate((self.next_state_pool,np.expand_dims(next_s,axis=0)),0)
                 self.reward_pool=np.concatenate((self.reward_pool,np.expand_dims(r,axis=0)),0)
                 self.done_pool=np.concatenate((self.done_pool,np.expand_dims(done,axis=0)),0)
-            if self.clearing_freq!=None and self.total_episode+1%self.clearing_freq==0:
+            if self.clearing_freq!=None and len(self.state_pool)%self.clearing_freq==0:
                 if self.window_size_<len(self.state_pool):
                     self.state_pool=self.state_pool[self.window_size_:]
                     self.action_pool=self.action_pool[self.window_size_:]
@@ -508,12 +510,15 @@ class RL_pytorch:
             mp=multiprocessing
             self.mp=mp
             manager=multiprocessing.Manager()
-            if save_data:
+            self.clearing_freq_=clearing_freq
+            if save_data and len(self.state_pool_list)!=0:
                 self.state_pool_list=manager.list(self.state_pool_list)
                 self.action_pool_list=manager.list(self.state_pool_list)
                 self.next_state_pool_list=manager.list(self.state_pool_list)
                 self.reward_pool_list=manager.list(self.state_pool_list)
                 self.done_pool_list=manager.list(self.state_pool_list)
+                if self.clearing_freq_!=None:
+                    self.clearing_freq=manager.list(self.clearing_freq)
             else:
                 self.state_pool_list=manager.list()
                 self.action_pool_list=manager.list()
@@ -521,12 +526,17 @@ class RL_pytorch:
                 self.reward_pool_list=manager.list()
                 self.done_pool_list=manager.list()
                 self.inverse_len=manager.list([0 for _ in range(processes)])
+                if self.clearing_freq_!=None:
+                    self.clearing_freq=manager.list()
+            if not save_data or len(self.state_pool_list)==0:
                 for _ in range(processes):
                     self.state_pool_list.append(None)
                     self.action_pool_list.append(None)
                     self.next_state_pool_list.append(None)
                     self.reward_pool_list.append(None)
                     self.done_pool_list.append(None)
+                    if self.clearing_freq_!=None:
+                        self.clearing_freq.append(self.clearing_freq_)
             self.reward=np.zeros(processes,dtype='float32')
             self.reward=Array('f',self.reward)
             if self.HER!=True:
