@@ -47,7 +47,7 @@ class kernel:
             self.reward_pool=manager.dict()
             self.done_pool=manager.dict()
             if self.clearing_freq!=None:
-                self.store_counter=manager.list()
+                self.store_counter=manager.list([0 for _ in range(self.process)])
         else:
             self.state_pool=manager.dict(self.state_pool)
             self.action_pool=manager.dict(self.action_pool)
@@ -59,8 +59,6 @@ class kernel:
         self.reward=Array('f',np.zeros(self.process,dtype='float32'))
         self.loss=np.zeros(self.process,dtype='float32')
         self.loss=Array('f',self.loss)
-        if self.clearing_freq!=None:
-            self.store_counter=manager.list([0 for _ in range(self.process)])
         if self.step_counter is None:
             self.step_counter=Array('i',np.zeros(self.process,dtype='int32'))
         else:
