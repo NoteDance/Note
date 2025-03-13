@@ -13,6 +13,7 @@ class kernel:
     def __init__(self,nn=None,process=None,device='GPU'):
         self.nn=nn
         self.nn.km=1
+        self.store_counter=None
         self.step_counter=None
         self.device=device
         self.pool_size=None
@@ -20,6 +21,9 @@ class kernel:
         self.batch=None
         self.update_steps=None
         self.trial_count=None
+        self.clearing_freq=None
+        self.window_size=None
+        self.window_size_=None
         self.process=process
         self.priority_flag=False
         self.max_opt=None
@@ -39,19 +43,23 @@ class kernel:
             self.next_state_pool=manager.dict()
             self.reward_pool=manager.dict()
             self.done_pool=manager.dict()
+            if self.clearing_freq!=None:
+                self.store_counter=manager.list()
         else:
             self.state_pool=manager.dict(self.state_pool)
             self.action_pool=manager.dict(self.action_pool)
             self.next_state_pool=manager.dict(self.next_state_pool)
             self.reward_pool=manager.dict(self.reward_pool)
             self.done_pool=manager.dict(self.done_pool)
+            if self.clearing_freq!=None:
+                self.store_counter=manager.list(self.store_counter)
         self.reward=Array('f',np.zeros(self.process,dtype='float32'))
         self.loss=np.zeros(self.process,dtype=np.float32)
         self.loss=Array('f',self.loss)
+        if self.clearing_freq!=None:
+            self.store_counter=manager.list([0 for _ in range(self.process)])
         if self.step_counter is None:
             self.step_counter=Array('i',np.zeros(self.process,dtype='int32'))
-        elif self.process>len(self.step_counter):
-            self.step_counter=Array('i',np.concatenate((self.step_counter,np.zeros(self.process-len(self.step_counter),dtype='int32'))))
         else:
             self.step_counter=Array('i',self.step_counter)
         self.process_counter=Value('i',0)
@@ -161,12 +169,27 @@ class kernel:
                     self.done_pool[index]=np.concatenate((self.done_pool[index],np.expand_dims(done,axis=0)),0)
                 except Exception:
                     pass
-            if type(self.state_pool[index])==np.ndarray and len(self.state_pool[index])>self.pool_size:
-                self.state_pool[index]=self.state_pool[index][1:]
-                self.action_pool[index]=self.action_pool[index][1:]
-                self.next_state_pool[index]=self.next_state_pool[index][1:]
-                self.reward_pool[index]=self.reward_pool[index][1:]
-                self.done_pool[index]=self.done_pool[index][1:]
+            if self.clearing_freq!=None:
+                self.store_counter[index]+=1
+                if self.store_counter[index]%self.clearing_freq==0:
+                    self.state_pool[index]=self.state_pool[index][self.window_size_:]
+                    self.action_pool[index]=self.action_pool[index][self.window_size_:]
+                    self.next_state_pool[index]=self.next_state_pool[index][self.window_size_:]
+                    self.reward_pool[index]=self.reward_pool[index][self.window_size_:]
+                    self.done_pool[index]=self.done_pool[index][self.window_size_:]
+            if len(self.state_pool[index])>self.pool_size:
+                if self.window_size!=None:
+                    self.state_pool[index]=self.state_pool[index][self.window_size:]
+                    self.action_pool[index]=self.action_pool[index][self.window_size:]
+                    self.next_state_pool[index]=self.next_state_pool[index][self.window_size:]
+                    self.reward_pool[index]=self.reward_pool[index][self.window_size:]
+                    self.done_pool[index]=self.done_pool[index][self.window_size:]
+                else:
+                    self.state_pool[index]=self.state_pool[index][1:]
+                    self.action_pool[index]=self.action_pool[index][1:]
+                    self.next_state_pool[index]=self.next_state_pool[index][1:]
+                    self.reward_pool[index]=self.reward_pool[index][1:]
+                    self.done_pool[index]=self.done_pool[index][1:]
         except Exception:
             if self.HER!=True or self.PR!=True:
                 pool_lock[index].release()
@@ -649,10 +672,14 @@ class kernel:
             pickle.dump(self.noise,output_file)
             pickle.dump(self.pool_size,output_file)
             pickle.dump(self.batch,output_file)
+            pickle.dump(self.store_counter,output_file)
             pickle.dump(np.array(self.step_counter,dtype=np.int32),output_file)
             pickle.dump(self.update_steps,output_file)
             pickle.dump(self.trial_count,output_file)
             pickle.dump(self.criterion,output_file)
+            pickle.dump(self.clearing_freq,output_file)
+            pickle.dump(self.window_size,output_file)
+            pickle.dump(self.window_size_,output_file)
             pickle.dump(self.PPO,output_file)
             pickle.dump(self.HER,output_file)
             pickle.dump(self.MARL,output_file)
@@ -691,10 +718,14 @@ class kernel:
         pickle.dump(self.noise,output_file)
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
+        pickle.dump(self.store_counter,output_file)
         pickle.dump(np.array(self.step_counter,dtype=np.int32),output_file)
         pickle.dump(self.update_steps,output_file)
         pickle.dump(self.trial_count,output_file)
         pickle.dump(self.criterion,output_file)
+        pickle.dump(self.clearing_freq,output_file)
+        pickle.dump(self.window_size,output_file)
+        pickle.dump(self.window_size_,output_file)
         pickle.dump(self.PPO,output_file)
         pickle.dump(self.HER,output_file)
         pickle.dump(self.MARL,output_file)
@@ -730,6 +761,9 @@ class kernel:
         self.update_steps=pickle.load(input_file)
         self.trial_count=pickle.load(input_file)
         self.criterion=pickle.load(input_file)
+        self.clearing_freq=pickle.load(input_file)
+        self.window_size=pickle.load(input_file)
+        self.window_size_=pickle.load(input_file)
         self.PPO=pickle.load(input_file)
         self.HER=pickle.load(input_file)
         self.MARL=pickle.load(input_file)
