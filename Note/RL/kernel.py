@@ -27,6 +27,9 @@ class kernel:
         self.trial_count=None
         self.criterion=None
         self.reward_list=[]
+        self.clearing_freq=None
+        self.window_size=None
+        self.window_size_=None
         self.suspend=False
         self.save_epi=None
         self.max_episode_count=None
@@ -37,6 +40,7 @@ class kernel:
         self.path_list=[]
         self.loss=None
         self.loss_list=[]
+        self.store_counter=0
         self.step_counter=0
         self.total_episode=0
         self.time=0
@@ -53,9 +57,13 @@ class kernel:
         self.reward_pool=None
         self.done_pool=None
         self.reward_list=[]
+        self.clearing_freq=None
+        self.window_size=None
+        self.window_size_=None
         self.loss=0
         self.loss_list=[]
         self.step_counter=0
+        self.store_counter=0
         self.total_episode=0
         self.time=0
         self.total_time=0
@@ -181,12 +189,27 @@ class kernel:
             self.next_state_pool=np.concatenate((self.next_state_pool,np.expand_dims(next_s,axis=0)),0)
             self.reward_pool=np.concatenate((self.reward_pool,np.expand_dims(r,axis=0)),0)
             self.done_pool=np.concatenate((self.done_pool,np.expand_dims(done,axis=0)),0)
+        if self.clearing_freq!=None:
+            self.store_counter+=1
+            if self.store_counter%self.clearing_freq==0:
+                self.state_pool=self.state_pool[self.window_size:]
+                self.action_pool=self.action_pool[self.window_size:]
+                self.next_state_pool=self.next_state_pool[self.window_size:]
+                self.reward_pool=self.reward_pool[self.window_size:]
+                self.done_pool=self.done_pool[self.window_size:]
         if len(self.state_pool)>self.pool_size:
-            self.state_pool=self.state_pool[1:]
-            self.action_pool=self.action_pool[1:]
-            self.next_state_pool=self.next_state_pool[1:]
-            self.reward_pool=self.reward_pool[1:]
-            self.done_pool=self.done_pool[1:]
+            if self.window_size!=None:
+                self.state_pool=self.state_pool[self.window_size:]
+                self.action_pool=self.action_pool[self.window_size:]
+                self.next_state_pool=self.next_state_pool[self.window_size:]
+                self.reward_pool=self.reward_pool[self.window_size:]
+                self.done_pool=self.done_pool[self.window_size:]
+            else:
+                self.state_pool=self.state_pool[1:]
+                self.action_pool=self.action_pool[1:]
+                self.next_state_pool=self.next_state_pool[1:]
+                self.reward_pool=self.reward_pool[1:]
+                self.done_pool=self.done_pool[1:]
         return
     
     
@@ -696,9 +719,13 @@ class kernel:
             pickle.dump(self.PR,output_file)
             pickle.dump(self.IRL,output_file)
             pickle.dump(self.reward_list,output_file)
+            pickle.dump(self.clearing_freq,output_file)
+            pickle.dump(self.window_size,output_file)
+            pickle.dump(self.window_size_,output_file)
             pickle.dump(self.loss,output_file)
             pickle.dump(self.loss_list,output_file)
             pickle.dump(self.step_counter,output_file)
+            pickle.dump(self.store_counter,output_file)
             pickle.dump(self.total_episode,output_file)
             pickle.dump(self.total_time,output_file)
             output_file.close()
@@ -722,6 +749,9 @@ class kernel:
         pickle.dump(self.update_steps,output_file)
         pickle.dump(self.trial_count,output_file)
         pickle.dump(self.criterion,output_file)
+        pickle.dump(self.clearing_freq,output_file)
+        pickle.dump(self.window_size,output_file)
+        pickle.dump(self.window_size_,output_file)
         pickle.dump(self.PPO,output_file)
         pickle.dump(self.HER,output_file)
         pickle.dump(self.MARL,output_file)
@@ -730,6 +760,7 @@ class kernel:
         pickle.dump(self.reward_list,output_file)
         pickle.dump(self.loss,output_file)
         pickle.dump(self.loss_list,output_file)
+        pickle.dump(self.store_counter,output_file)
         pickle.dump(self.step_counter,output_file)
         pickle.dump(self.total_episode,output_file)
         pickle.dump(self.total_time,output_file)
@@ -749,6 +780,9 @@ class kernel:
         self.update_steps=pickle.load(input_file)
         self.trial_count=pickle.load(input_file)
         self.criterion=pickle.load(input_file)
+        self.clearing_freq=pickle.load(input_file)
+        self.window_size=pickle.load(input_file)
+        self.window_size_=pickle.load(input_file)
         self.PPO=pickle.load(input_file)
         self.HER=pickle.load(input_file)
         self.MARL=pickle.load(input_file)
@@ -757,6 +791,7 @@ class kernel:
         self.reward_list=pickle.load(input_file)
         self.loss=pickle.load(input_file)
         self.loss_list=pickle.load(input_file)
+        self.store_counter=pickle.load(input_file)
         self.step_counter=pickle.load(input_file)
         self.total_episode=pickle.load(input_file)
         self.total_time=pickle.load(input_file)
