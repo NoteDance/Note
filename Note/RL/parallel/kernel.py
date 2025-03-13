@@ -48,6 +48,7 @@ class kernel:
             self.done_pool=manager.dict()
             if self.clearing_freq!=None:
                 self.store_counter=manager.list([0 for _ in range(self.process)])
+            self.step_counter=manager.list([0 for _ in range(self.process)])
         else:
             self.state_pool=manager.dict(self.state_pool)
             self.action_pool=manager.dict(self.action_pool)
@@ -56,13 +57,10 @@ class kernel:
             self.done_pool=manager.dict(self.done_pool)
             if self.clearing_freq!=None:
                 self.store_counter=manager.list(self.store_counter)
+            self.step_counter=manager.list(self.step_counter)
         self.reward=Array('f',np.zeros(self.process,dtype='float32'))
         self.loss=np.zeros(self.process,dtype='float32')
         self.loss=Array('f',self.loss)
-        if self.step_counter is None:
-            self.step_counter=Array('i',np.zeros(self.process,dtype='int32'))
-        else:
-            self.step_counter=Array('i',self.step_counter)
         self.process_counter=Value('i',0)
         self.finish_list=manager.list()
         self.reward_list=manager.list()
@@ -247,7 +245,7 @@ class kernel:
             elif isinstance(self.policy, rl.EpsGreedyQPolicy):
                 a=self.policy.select_action(output)
             elif isinstance(self.policy, rl.AdaptiveEpsGreedyPolicy):
-                a=self.policy.select_action(output, np.sum(self.step_counter))
+                a=self.policy.select_action(output, sum(self.step_counter))
             elif isinstance(self.policy, rl.GreedyQPolicy):
                 a=self.policy.select_action(output)
             elif isinstance(self.policy, rl.BoltzmannQPolicy):
@@ -255,7 +253,7 @@ class kernel:
             elif isinstance(self.policy, rl.MaxBoltzmannQPolicy):
                 a=self.policy.select_action(output)
             elif isinstance(self.policy, rl.BoltzmannGumbelQPolicy):
-                a=self.policy.select_action(output, np.sum(self.step_counter))
+                a=self.policy.select_action(output, sum(self.step_counter))
         else:
             if self.IRL!=True:
                 a=(output+self.noise.sample()).numpy()
@@ -879,7 +877,7 @@ class kernel:
             pickle.dump(self.pool_size,output_file)
             pickle.dump(self.batch,output_file)
             pickle.dump(self.store_counter,output_file)
-            pickle.dump(np.array(self.step_counter,dtype='int32'),output_file)
+            pickle.dump(self.step_counter,output_file)
             pickle.dump(self.update_steps,output_file)
             pickle.dump(self.trial_count,output_file)
             pickle.dump(self.criterion,output_file)
@@ -926,7 +924,7 @@ class kernel:
         pickle.dump(self.pool_size,output_file)
         pickle.dump(self.batch,output_file)
         pickle.dump(self.store_counter,output_file)
-        pickle.dump(np.array(self.step_counter,dtype='int32'),output_file)
+        pickle.dump(self.step_counter,output_file)
         pickle.dump(self.update_steps,output_file)
         pickle.dump(self.trial_count,output_file)
         pickle.dump(self.criterion,output_file)
@@ -964,8 +962,8 @@ class kernel:
         self.noise=pickle.load(input_file)
         self.pool_size=pickle.load(input_file)
         self.batch=pickle.load(input_file)
+        self.store_counter=pickle.load(input_file)
         self.step_counter=pickle.load(input_file)
-        self.step_counter=Array('i',self.step_counter)
         self.update_steps=pickle.load(input_file)
         self.trial_count=pickle.load(input_file)
         self.criterion=pickle.load(input_file)
