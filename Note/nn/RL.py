@@ -148,13 +148,12 @@ class RL:
                 self.reward_pool_list[index]=np.concatenate((self.reward_pool_list[index],np.expand_dims(r,axis=0)),0)
                 self.done_pool_list[index]=np.concatenate((self.done_pool[7],np.expand_dims(done,axis=0)),0)
             if self.clearing_freq!=None:
-                if self.store_counter[index]>=self.clearing_freq[index]:
+                if self.store_counter[index]%self.clearing_freq==0:
                     self.state_pool_list[index]=self.state_pool_list[index][self.window_size_:]
                     self.action_pool_list[index]=self.action_pool_list[index][self.window_size_:]
                     self.next_state_pool_list[index]=self.next_state_pool_list[index][self.window_size_:]
                     self.reward_pool_list[index]=self.reward_pool_list[index][self.window_size_:]
                     self.done_pool_list[index]=self.done_pool_list[index][self.window_size_:]
-                    self.clearing_freq[index]+=self.clearing_freq[index]
             if len(self.state_pool_list[index])>math.ceil(self.pool_size/self.processes):
                 if self.window_size==None:
                     self.state_pool_list[index]=self.state_pool_list[index][1:]
@@ -917,12 +916,12 @@ class RL:
             done=np.array(done)
             if self.PR!=True and self.HER!=True:
                 lock_list[index].acquire()
-                if self.clearing_freq_!=None:
+                if self.clearing_freq!=None:
                     self.store_counter[index]+=1
                 self.pool(s,a,next_s,r,done,index)
                 lock_list[index].release()
             else:
-                if self.clearing_freq_!=None:
+                if self.clearing_freq!=None:
                     self.store_counter[index]+=1
                 self.pool(s,a,next_s,r,done,index)
                 if self.PR==True:
@@ -972,15 +971,14 @@ class RL:
             mp=multiprocessing
             self.mp=mp
             manager=multiprocessing.Manager()
-            self.clearing_freq_=clearing_freq
             if save_data and len(self.state_pool_list)!=0:
                 self.state_pool_list=manager.list(self.state_pool_list)
                 self.action_pool_list=manager.list(self.state_pool_list)
                 self.next_state_pool_list=manager.list(self.state_pool_list)
                 self.reward_pool_list=manager.list(self.state_pool_list)
                 self.done_pool_list=manager.list(self.state_pool_list)
-                if self.clearing_freq_!=None:
-                    self.clearing_freq=manager.list(self.clearing_freq)
+                if self.clearing_freq!=None:
+                    self.store_counter=manager.list(self.store_counter)
             else:
                 self.state_pool_list=manager.list()
                 self.action_pool_list=manager.list()
@@ -988,8 +986,7 @@ class RL:
                 self.reward_pool_list=manager.list()
                 self.done_pool_list=manager.list()
                 self.inverse_len=manager.list([0 for _ in range(processes)])
-                if self.clearing_freq_!=None:
-                    self.clearing_freq=manager.list()
+                if self.clearing_freq!=None:
                     self.store_counter=manager.list()
             if not save_data or len(self.state_pool_list)==0:
                 for _ in range(processes):
@@ -998,8 +995,7 @@ class RL:
                     self.next_state_pool_list.append(None)
                     self.reward_pool_list.append(None)
                     self.done_pool_list.append(None)
-                    if self.clearing_freq_!=None:
-                        self.clearing_freq.append(self.clearing_freq_)
+                    if self.clearing_freq!=None:
                         self.store_counter.append(0)
             self.reward=np.zeros(processes,dtype='float32')
             self.reward=Array('f',self.reward)
@@ -1247,14 +1243,13 @@ class RL:
             mp=multiprocessing
             self.mp=mp
             manager=multiprocessing.Manager()
-            self.clearing_freq_=clearing_freq
             if save_data and len(self.state_pool_list)!=0:
                 self.state_pool_list=manager.list(self.state_pool_list)
                 self.action_pool_list=manager.list(self.state_pool_list)
                 self.next_state_pool_list=manager.list(self.state_pool_list)
                 self.reward_pool_list=manager.list(self.state_pool_list)
                 self.done_pool_list=manager.list(self.state_pool_list)
-                if self.clearing_freq_!=None:
+                if self.clearing_freq!=None:
                     self.clearing_freq=manager.list(self.clearing_freq)
             else:
                 self.state_pool_list=manager.list()
@@ -1263,8 +1258,7 @@ class RL:
                 self.reward_pool_list=manager.list()
                 self.done_pool_list=manager.list()
                 self.inverse_len=manager.list([0 for _ in range(processes)])
-                if self.clearing_freq_!=None:
-                    self.clearing_freq=manager.list()
+                if self.clearing_freq!=None:
                     self.store_counter=manager.list()
             if not save_data or len(self.state_pool_list)==0:
                 for _ in range(processes):
@@ -1273,8 +1267,7 @@ class RL:
                     self.next_state_pool_list.append(None)
                     self.reward_pool_list.append(None)
                     self.done_pool_list.append(None)
-                    if self.clearing_freq_!=None:
-                        self.clearing_freq.append(self.clearing_freq_)
+                    if self.clearing_freq!=None:
                         self.store_counter.append(0)
             self.reward=np.zeros(processes,dtype='float32')
             self.reward=Array('f',self.reward)
