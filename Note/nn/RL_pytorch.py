@@ -86,18 +86,18 @@ class RL_pytorch:
                     self.reward_pool_list[index]=self.reward_pool_list[index][self.window_size_:]
                     self.done_pool_list[index]=self.done_pool_list[index][self.window_size_:]
             if len(self.state_pool_list[index])>math.ceil(self.pool_size/self.processes):
-                if self.window_size==None:
-                    self.state_pool_list[index]=self.state_pool_list[index][1:]
-                    self.action_pool_list[index]=self.action_pool_list[index][1:]
-                    self.next_state_pool_list[index]=self.next_state_pool_list[index][1:]
-                    self.reward_pool_list[index]=self.reward_pool_list[index][1:]
-                    self.done_pool_list[index]=self.done_pool_list[index][1:]
-                else:
+                if self.window_size!=None:
                     self.state_pool_list[index]=self.state_pool_list[index][self.window_size:]
                     self.action_pool_list[index]=self.action_pool_list[index][self.window_size:]
                     self.next_state_pool_list[index]=self.next_state_pool_list[index][self.window_size:]
                     self.reward_pool_list[index]=self.reward_pool_list[index][self.window_size:]
                     self.done_pool_list[index]=self.done_pool_list[index][self.window_size:]
+                else:
+                    self.state_pool_list[index]=self.state_pool_list[index][1:]
+                    self.action_pool_list[index]=self.action_pool_list[index][1:]
+                    self.next_state_pool_list[index]=self.next_state_pool_list[index][1:]
+                    self.reward_pool_list[index]=self.reward_pool_list[index][1:]
+                    self.done_pool_list[index]=self.done_pool_list[index][1:]
         else:
             if self.state_pool is None:
                 self.state_pool=s
@@ -120,18 +120,18 @@ class RL_pytorch:
                     self.reward_pool=self.reward_pool[self.window_size_:]
                     self.done_pool=self.done_pool[self.window_size_:]
             if len(self.state_pool)>self.pool_size:
-                if self.window_size==None:
-                    self.state_pool=self.state_pool[1:]
-                    self.action_pool=self.action_pool[1:]
-                    self.next_state_pool=self.next_state_pool[1:]
-                    self.reward_pool=self.reward_pool[1:]
-                    self.done_pool=self.done_pool[1:]
-                else:
+                if self.window_size!=None:
                     self.state_pool=self.state_pool[self.window_size:]
                     self.action_pool=self.action_pool[self.window_size:]
                     self.next_state_pool=self.next_state_pool[self.window_size:]
                     self.reward_pool=self.reward_pool[self.window_size:]
                     self.done_pool=self.done_pool[self.window_size:]
+                else:
+                    self.state_pool=self.state_pool[1:]
+                    self.action_pool=self.action_pool[1:]
+                    self.next_state_pool=self.next_state_pool[1:]
+                    self.reward_pool=self.reward_pool[1:]
+                    self.done_pool=self.done_pool[1:]
         return
     
     
