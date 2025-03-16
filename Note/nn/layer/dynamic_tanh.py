@@ -3,7 +3,7 @@ from Note import nn
 
 
 class DynamicTanh:
-    def __init__(self, normalized_shape, channels_last, alpha_init_value=0.5):
+    def __init__(self, normalized_shape, alpha_init_value=0.5):
         self.normalized_shape = normalized_shape
         self.alpha_init_value = alpha_init_value
 
