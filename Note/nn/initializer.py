@@ -88,11 +88,11 @@ def initializer(shape,initializer,dtype='float32',trainable=True,name=None):
     if name!=None:
         param=tf.Variable(param,trainable=trainable,name=name)
     Model.param.append(param)
-    if Model.name_!=None and Model.name_ not in Model.layer_param:
-        Model.layer_param[Model.name_]=[]
-        Model.layer_param[Model.name_].append(param)
+    if Model.name!=None and Model.name not in Model.layer_param:
+        Model.layer_param[Model.name]=[]
+        Model.layer_param[Model.name].append(param)
     elif Model.name_!=None:
-        Model.layer_param[Model.name_].append(param)
+        Model.layer_param[Model.name].append(param)
     return param
 
 
