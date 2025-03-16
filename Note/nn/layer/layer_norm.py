@@ -31,21 +31,11 @@ class layer_norm:
             if center==True:
                 self.beta=initializer([input_size], beta_initializer, dtype)
                 self.param.append(self.beta)
-                if Model.name!=None and Model.name not in Model.layer_param:
-                    Model.layer_param[Model.name]=[]
-                    Model.layer_param[Model.name].append(self.beta)
-                elif Model.name!=None:
-                    Model.layer_param[Model.name].append(self.beta)
             else:
                 self.beta=None
             if scale==True:
                 self.gamma=initializer([input_size], gamma_initializer, dtype)
                 self.param.append(self.gamma)
-                if Model.name!=None and Model.name not in Model.layer_param:
-                    Model.layer_param[Model.name]=[]
-                    Model.layer_param[Model.name].append(self.gamma)
-                elif Model.name!=None:
-                    Model.layer_param[Model.name].append(self.gamma)
             else:
                 self.gamma=None
     

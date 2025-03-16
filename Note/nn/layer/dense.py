@@ -25,19 +25,9 @@ class dense: # define a class for dense (fully connected) layer
         if input_size!=None:
             self.weight=nn.initializer([input_size,output_size],weight_initializer,dtype,trainable) # initialize the weight matrix
             Model.param_dict['dense_weight'].append(self.weight)
-            if Model.name!=None and Model.name not in Model.layer_param:
-                Model.layer_param[Model.name]=[]
-                Model.layer_param[Model.name].append(self.weight)
-            elif Model.name!=None:
-                Model.layer_param[Model.name].append(self.weight)
             if use_bias==True: # if use bias is True
                 self.bias=nn.initializer([output_size],bias_initializer,dtype,trainable) # initialize the bias vector
                 Model.param_dict['dense_bias'].append(self.bias)
-                if Model.name!=None and Model.name not in Model.layer_param:
-                    Model.layer_param[Model.name]=[]
-                    Model.layer_param[Model.name].append(self.bias)
-                elif Model.name!=None:
-                    Model.layer_param[Model.name].append(self.bias)
             else: # if use bias is False
                 self.bias=None # set the bias to None
             if use_bias==True: # if use bias is True
@@ -56,21 +46,11 @@ class dense: # define a class for dense (fully connected) layer
         if self.name!=None:
             self.weight=tf.Variable(self.weight,trainable=self.trainable,name=self.name)
         Model.param_dict['dense_weight'].append(self.weight)
-        if Model.name!=None and Model.name not in Model.layer_param:
-            Model.layer_param[Model.name]=[]
-            Model.layer_param[Model.name].append(self.weight)
-        elif Model.name!=None:
-            Model.layer_param[Model.name].append(self.weight)
         if self.use_bias==True: # if use bias is True
             self.bias=nn.initializer([self.output_size],self.bias_initializer,self.dtype,self.trainable) # initialize the bias vector
             if self.name!=None:
                 self.bias=tf.Variable(self.bias,trainable=self.trainable,name=self.name)
             Model.param_dict['dense_bias'].append(self.bias)
-            if Model.name!=None and Model.name not in Model.layer_param:
-                Model.layer_param[Model.name]=[]
-                Model.layer_param[Model.name].append(self.bias)
-            elif Model.name!=None:
-                Model.layer_param[Model.name].append(self.bias)
             self.param=[self.weight,self.bias] # store the parameters in a list
         else: # if use bias is False
             self.param=[self.weight] # store only the weight in a list
