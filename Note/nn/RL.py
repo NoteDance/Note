@@ -1247,7 +1247,7 @@ class RL:
                 self.reward_pool_list=manager.list(self.state_pool_list)
                 self.done_pool_list=manager.list(self.state_pool_list)
                 if self.clearing_freq!=None:
-                    self.clearing_freq=manager.list(self.clearing_freq)
+                    self.store_counter=manager.list(self.store_counter)
             else:
                 self.state_pool_list=manager.list()
                 self.action_pool_list=manager.list()
