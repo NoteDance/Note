@@ -442,7 +442,7 @@ class RL_pytorch:
             self.done_pool_list[p]=None
         while True:
             if self.PR!=True and self.HER!=True:
-                if type(self.state_pool_list[p])!=np.ndarray and self.state_pool_list[p]==None:
+                if self.state_pool_list[p] is None:
                     index=p
                     self.inverse_len[index]=1
                 else:
