@@ -512,7 +512,7 @@ class RL_pytorch:
             mp=multiprocessing
             self.mp=mp
             manager=multiprocessing.Manager()
-            if save_data and len(self.state_pool_list)!=0:
+            if save_data and len(self.state_pool_list)!=0 and self.state_pool_list[0] is not None:
                 self.state_pool_list=manager.list(self.state_pool_list)
                 self.action_pool_list=manager.list(self.state_pool_list)
                 self.next_state_pool_list=manager.list(self.state_pool_list)
