@@ -277,7 +277,7 @@ class kernel:
             a=np.array(a)
         next_s,r,done=self.nn.env(a,p)
         if self.HER!=True or self.PR!=True:
-            if type(self.state_pool[p])!=np.ndarray and self.state_pool[p]==None:
+            if self.state_pool_list[p] is None:
                 index=p
                 self.inverse_len[index]=1
             else:
