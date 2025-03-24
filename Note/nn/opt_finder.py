@@ -38,14 +38,14 @@ class OptFinder:
                 self.model.train(train_ds=train_ds,
                                loss_object=loss_object, 
                                train_loss=train_loss, 
-                               epochs=1,
+                               epochs=epochs,
                                callbacks=[callback],
                                jit_compile=jit_compile)
             else:
                 self.model.distributed_training(train_dataset=train_ds,
                                loss_object=loss_object, 
                                global_batch_size=batch_size, 
-                               epochs=1,
+                               epochs=epochs,
                                strategy=strategy,
                                callbacks=[callback],
                                jit_compile=jit_compile)
