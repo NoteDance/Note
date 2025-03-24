@@ -155,6 +155,7 @@ from Note.nn.layer.zeropadding2d import zeropadding2d
 from Note.nn.layer.zeropadding3d import zeropadding3d
 from Note.nn.accuracy import *
 from Note.nn.activation import activation,activation_conv,activation_conv_transpose,activation_dict
+from Note.nn.agent_finder import AgentFinder
 from Note.nn.assign_param import assign_param
 from Note.nn.conv2d_func import conv2d_func
 from Note.nn.cosine_similarity import cosine_similarity
@@ -167,6 +168,7 @@ from Note.nn.interpolate import interpolate
 from Note.nn.lambda_callback import LambdaCallback
 from Note.nn.lr_finder import LRFinder,LRFinder_rl
 from Note.nn.Model import Model
+from Note.nn.model_finder import ModelFinder
 from Note.nn.opt_finder import OptFinder,OptFinder_rl
 from Note.nn.parallel.optimizer import *
 from Note.nn.pairwise_distance import pairwise_distance
