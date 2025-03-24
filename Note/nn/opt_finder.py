@@ -92,6 +92,7 @@ class OptFinder_rl:
         self.losses = []
         self.mean_rewards = []
         self.mean_losses = []
+        self.best_opt = None
         self.best_reward = -1e9
         self.best_loss = 1e9
             
