@@ -1,7 +1,7 @@
 import tensorflow as tf
 from Note import nn
 from tensorflow.python.util import nest
-import multiprocessing
+import multiprocessing as mp
 from Note.RL import rl
 from Note.RL.rl.prioritized_replay import pr
 from multiprocessing import Array
@@ -281,7 +281,7 @@ class RL:
             if self.processes_pr!=None:
                 process_list=[]
                 for p in range(self.processes_pr):
-                    process=self.mp.Process(target=self.get_batch_in_parallel,args=(p,))
+                    process=mp.Process(target=self.get_batch_in_parallel,args=(p,))
                     process.start()
                     process_list.append(process)
                 for process in process_list:
@@ -297,7 +297,7 @@ class RL:
             if self.processes_her!=None:
                 process_list=[]
                 for p in range(self.processes_her):
-                    process=self.mp.Process(target=self.get_batch_in_parallel,args=(p,))
+                    process=mp.Process(target=self.get_batch_in_parallel,args=(p,))
                     process.start()
                     process_list.append(process)
                 for process in process_list:
@@ -965,9 +965,7 @@ class RL:
         self.p=p
         self.info_flag=0
         if pool_network==True:
-            mp=multiprocessing
-            self.mp=mp
-            manager=multiprocessing.Manager()
+            manager=mp.Manager()
             if save_data and len(self.state_pool_list)!=0 and self.state_pool_list[0] is not None:
                 self.state_pool_list=manager.list(self.state_pool_list)
                 self.action_pool_list=manager.list(self.state_pool_list)
@@ -1237,9 +1235,7 @@ class RL:
         self.p=p
         self.info_flag=1
         if pool_network==True:
-            mp=multiprocessing
-            self.mp=mp
-            manager=multiprocessing.Manager()
+            manager=mp.Manager()
             if save_data and len(self.state_pool_list)!=0 and self.state_pool_list[0] is not None:
                 self.state_pool_list=manager.list(self.state_pool_list)
                 self.action_pool_list=manager.list(self.state_pool_list)
