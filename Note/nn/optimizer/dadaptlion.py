@@ -51,8 +51,6 @@ class DAdaptLion(optimizer.Optimizer):
     
     def reset(self):
         for var in self._trainable_variables:
-            self.step[self._get_variable_index(var)] = 0
-            
             self.exp_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="exp_avg"
                                                     )
@@ -66,7 +64,6 @@ class DAdaptLion(optimizer.Optimizer):
         super().build(var_list)
         self.exp_avg = []
         self.s = []
-        self.step = 0
         for var in var_list:
             self.exp_avg.append(self.add_variable_from_reference(
                                 reference_variable=var, name="exp_avg"
@@ -88,6 +85,7 @@ class DAdaptLion(optimizer.Optimizer):
         
         if self.numerator_weighted == None:
             self.numerator_weighted = tf.Variable(tf.convert_to_tensor([0.0]))
+            self._track_variable(self.numerator_weighted)
         
         sk_l1 = tf.Variable(tf.convert_to_tensor([0.0]))
         numerator_accumulator = tf.Variable(tf.convert_to_tensor([0.0]))
@@ -129,8 +127,6 @@ class DAdaptLion(optimizer.Optimizer):
         if tf.get_static_value(lr) > 0.0:
             d_hat = tf.get_static_value(self.numerator_weighted / ((1.0 - beta2_sq) * sk_l1))
             d = max(self.d0, d_hat)
-        
-        self.step += 1
         
         self.d0 = d
 

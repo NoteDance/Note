@@ -138,7 +138,6 @@ class Mars(optimizer.Optimizer):
         self.exp_avg = []
         self.last_grad = []
         self.exp_avg_sq = []
-        self.step = []
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -155,7 +154,6 @@ class Mars(optimizer.Optimizer):
                     reference_variable=var, name="exp_avg_sq"
                 )
             )
-            self.step.append(0)
     
     def __setstate__(self, state):
         self.__dict__.update(state)
@@ -164,8 +162,7 @@ class Mars(optimizer.Optimizer):
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
         
-        self.step[self._get_variable_index(variable)] += 1
-        step = self.step[self._get_variable_index(variable)]
+        step = tf.get_static_value(self.iterations + 1)
         exp_avg = self.exp_avg[self._get_variable_index(variable)]
         exp_avg_sq = self.exp_avg_sq[self._get_variable_index(variable)]
         last_grad = self.last_grad[self._get_variable_index(variable)]

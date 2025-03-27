@@ -104,6 +104,8 @@ class SGDW(optimizer.Optimizer):
         # update momentum_buffers in state
         for p, momentum_buffer in zip(trainable_variables, self.momentum_buffer_list):
             self.momentum_buffer[self._get_variable_index(p)] = momentum_buffer
+            if tf.get_static_value(self.iterations) == 0:
+                self._track_variable(momentum_buffer)
 
     def get_config(self):
         config = super().get_config()

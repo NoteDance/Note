@@ -63,7 +63,6 @@ class AdaiV2(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.beta1_prod = []
-        self.step = []
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -80,7 +79,6 @@ class AdaiV2(optimizer.Optimizer):
                     reference_variable=var, name="beta1_prod", initializer="ones"
                 )
             )
-            self.step.append(0)
     
     def _backend_update_step(self, grads, trainable_variables, learning_rate):
         """Collective update_step that can be overridden by the backend.
@@ -99,11 +97,11 @@ class AdaiV2(optimizer.Optimizer):
         for p, g in zip(trainable_variables, grads):
             param_size += tf.size(p)
             
-            self.step[self._get_variable_index(p)] += 1
+            step = tf.get_static_value(self.iterations + 1)
             
             exp_avg_sq = self.exp_avg_sq[self._get_variable_index(p)]
             
-            bias_correction2 = 1 - self.beta2 ** self.step[self._get_variable_index(p)]
+            bias_correction2 = 1 - self.beta2 ** step
 
             if self.weight_decay != 0 and self.decoupled == False:
                 g.assign_add(p * self.weight_decay)
@@ -122,7 +120,7 @@ class AdaiV2(optimizer.Optimizer):
             exp_avg_sq = self.exp_avg_sq[self._get_variable_index(p)]
             beta1_prod = self.beta1_prod[self._get_variable_index(p)]
             
-            bias_correction2 = 1 - self.beta2 ** self.step[self._get_variable_index(p)]
+            bias_correction2 = 1 - self.beta2 ** step
 
             exp_avg_sq_hat = exp_avg_sq / bias_correction2
             beta1 = tf.clip_by_value(1. - tf.pow(exp_avg_sq_hat / exp_avg_sq_hat_mean, 1.0 / (3 - 2 * self.dampening)) * self.beta0, 

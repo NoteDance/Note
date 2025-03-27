@@ -56,9 +56,16 @@ class DAdaptAdam(optimizer.Optimizer):
         self.bias_correction = bias_correction
     
     def reset(self):
+        iterations = tf.Variable(
+            0,
+            name="iteration",
+            dtype="int",
+            trainable=False,
+            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
+        )
+        self._track_variable(iterations)
+        self._iterations = iterations
         for var in self._trainable_variables:
-            self.step[self._get_variable_index(var)] = 0
-            
             self.s[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="s"
                                                     )
@@ -77,7 +84,6 @@ class DAdaptAdam(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.numerator_weighted = None
-        self.step = 0
         for var in var_list:
             self.s.append(self.add_variable_from_reference(
                                 reference_variable=var, name="s"
@@ -100,10 +106,12 @@ class DAdaptAdam(optimizer.Optimizer):
     def update_step(self, grads, trainable_variables, learning_rate):
         lr = learning_rate
         
+        step = tf.get_static_value(self.iterations)
+        
         beta2_sq = math.sqrt(self.beta2)
         
-        bias_correction1 = 1.0 - self.beta1 ** (self.step + 1)
-        bias_correction2_sq = math.sqrt(1.0 - self.beta2 ** (self.step + 1))
+        bias_correction1 = 1.0 - self.beta1 ** (step + 1)
+        bias_correction2_sq = math.sqrt(1.0 - self.beta2 ** (step + 1))
         bias_correction = bias_correction1 / bias_correction2_sq
         
         # it's not Adam Debias
@@ -114,6 +122,7 @@ class DAdaptAdam(optimizer.Optimizer):
         
         if self.numerator_weighted == None:
             self.numerator_weighted = tf.Variable(tf.convert_to_tensor([0.0]))
+            self._track_variable(self.numerator_weighted)
         
         for variable, gradient in zip(trainable_variables, grads):
             if tf.keras.backend.is_sparse(gradient):
@@ -159,8 +168,6 @@ class DAdaptAdam(optimizer.Optimizer):
                 variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr)))
             
             variable.assign_add(-1.0 * (exp_avg / de_nom))
-        
-        self.step += 1
 
     def get_config(self):
         config = super().get_config()

@@ -62,7 +62,6 @@ class PID(optimizer.Optimizer):
         self.I_buffer = []
         self.grad_buffer = []
         self.D_buffer = []
-        self.step = []
         for var in var_list:
             self.I_buffer.append(
                 self.add_variable_from_reference(
@@ -79,22 +78,23 @@ class PID(optimizer.Optimizer):
                     reference_variable=var, name="D_buffer"
                 )
             )
-            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
+        
+        step = tf.get_static_value(self.iterations)
         
         d_p = gradient
         if self.weight_decay != 0:
             d_p.assign_add(self.weight_decay * variable)
         if self.momentum != 0:
-            if self.step[self._get_variable_index(variable)] == 0:
+            if step == 0:
                 I_buf = self.I_buffer[self._get_variable_index(variable)]
                 I_buf.assign(I_buf * self.momentum + d_p)
             else:
                 I_buf = self.I_buffer[self._get_variable_index(variable)]
                 I_buf.assign(I_buf * self.momentum + (1 - self.dampening) * d_p)
-            if self.step[self._get_variable_index(variable)] == 0:
+            if step == 0:
                 g_buf = self.grad_buffer[self._get_variable_index(variable)]
                 g_buf = d_p   
                 
@@ -107,8 +107,6 @@ class PID(optimizer.Optimizer):
                 self.grad_buffer[self._get_variable_index(variable)] = tf.Variable(d_p)
                 
             d_p = d_p + self.I * I_buf + self.D * D_buf
-            
-        self.step[self._get_variable_index(variable)] += 1
         
         variable.assign_add(-lr * d_p)
 

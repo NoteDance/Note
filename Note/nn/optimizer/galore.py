@@ -56,7 +56,6 @@ class GaLore(optimizer.Optimizer):
     
     def reset(self):
         for var in self._trainable_variables:
-            self.step[self._get_variable_index(var)] = 0
             self.exp_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="exp_avg"
                                                     )
@@ -71,7 +70,6 @@ class GaLore(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.projector = []
-        self.step = []
         for var in var_list:
             self.exp_avg.append(self.add_variable_from_reference(
                                 reference_variable=var, name="exp_avg"
@@ -80,7 +78,6 @@ class GaLore(optimizer.Optimizer):
                                 reference_variable=var, name="exp_avg_sq"
                                                     ))
             self.projector.append(None)
-            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
@@ -135,6 +132,7 @@ class GaLore(optimizer.Optimizer):
                 "update_proj_gap": self.update_proj_gap,
                 "scale": self.scale,
                 "projection_type": self.projection_type,
+                "projector": self.projector,
             }
         )
         return config

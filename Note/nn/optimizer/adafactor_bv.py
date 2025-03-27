@@ -113,7 +113,6 @@ class AdafactorBigVision(optimizer.Optimizer):
         self.exp_avg_sq = []
         self.exp_avg_sq_r = []
         self.exp_avg_sq_c = []
-        self.step = []
         for var in var_list:
             # NOTE step on CPU, probably need some more though to make capturable
             self.step.append(tf.convert_to_tensor(0.0, dtype=_get_scalar_dtype()))
@@ -173,7 +172,7 @@ class AdafactorBigVision(optimizer.Optimizer):
         exp_avgs = []  # For momentum
         
         for p in trainable_variables:
-            state_steps.append(self.step[self._get_variable_index(p)])
+            state_steps.append(self.iterations)
             if len(self.exp_avg_sq_r) != 0:
                 exp_avg_sq_rs.append(self.exp_avg_sq_r[self._get_variable_index(p)])
                 exp_avg_sq_cs.append(self.exp_avg_sq_c[self._get_variable_index(p)])
@@ -264,7 +263,7 @@ def _single_tensor_adafactor(
 
         # Update step
         step_t += 1
-        beta2_t = min(beta2_cap, 1.0 - float(step_t) ** (-beta2_decay))
+        beta2_t = min(beta2_cap, 1.0 - float(tf.get_static_value(step_t)) ** (-beta2_decay))
         one_minus_beta2_t = 1 - beta2_t
 
         grad_sqr = tf.square(grad) + eps

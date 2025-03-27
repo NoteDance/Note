@@ -59,7 +59,6 @@ class NvNovoGrad(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.max_exp_avg_sq = []
-        self.step = []
         var_ = tf.zeros([])
         for var in var_list:
             self.exp_avg.append(
@@ -78,7 +77,6 @@ class NvNovoGrad(optimizer.Optimizer):
                         reference_variable=var_, name="exp_avg_sq"
                     )
                 )
-            self.step.append(0)
     
     def __setstate__(self, state):
         self.__dict__.update(state)
@@ -92,8 +90,6 @@ class NvNovoGrad(optimizer.Optimizer):
         if self.amsgrad:
             max_exp_avg_sq = self.max_exp_avg_sq[self._get_variable_index(variable)]
         beta1, beta2 = self.beta1, self.beta2
-        
-        self.step[self._get_variable_index(variable)] += 1
 
         norm = tf.reduce_sum(tf.square(gradient))
         

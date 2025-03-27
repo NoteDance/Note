@@ -52,7 +52,6 @@ class RAdam(optimizer.Optimizer):
         super().build(var_list)
         self.exp_avg = []
         self.exp_avg_sq = []
-        self.step = []
         self.buffer = [[None, None, None] for _ in range(10)]
         for var in var_list:
             var = tf.cast(var, 'float32')
@@ -66,7 +65,6 @@ class RAdam(optimizer.Optimizer):
                     reference_variable=var, name="exp_avg_sq"
                 )
             )
-            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         if variable.dtype != tf.float32:
@@ -82,15 +80,15 @@ class RAdam(optimizer.Optimizer):
         exp_avg_sq.assign(beta2 * exp_avg_sq + (1 - beta2) * tf.multiply(gradient, gradient))
         exp_avg.assign(beta1 * exp_avg + (1 - beta1) * gradient)
 
-        self.step[self._get_variable_index(variable)] += 1
-        buffered = self.buffer[int(self.step[self._get_variable_index(variable)] % 10)]
-        if self.step[self._get_variable_index(variable)] == buffered[0]:
+        step = tf.get_static_value(self.iterations + 1)
+        buffered = self.buffer[int(step % 10)]
+        if buffered[0] is not None and step == tf.get_static_value(buffered[0]):
             num_sma, step_size = buffered[1], buffered[2]
         else:
-            buffered[0] = self.step[self._get_variable_index(variable)]
-            beta2_t = beta2 ** self.step[self._get_variable_index(variable)]
+            buffered[0] = self.iterations + 1
+            beta2_t = beta2 ** step
             num_sma_max = 2 / (1 - beta2) - 1
-            num_sma = num_sma_max - 2 * self.step[self._get_variable_index(variable)] * beta2_t / (1 - beta2_t)
+            num_sma = num_sma_max - 2 * step * beta2_t / (1 - beta2_t)
             buffered[1] = num_sma
             
             # more conservative since it's an approximated value
@@ -99,9 +97,9 @@ class RAdam(optimizer.Optimizer):
                     (1 - beta2_t) *
                     (num_sma - 4) / (num_sma_max - 4) *
                     (num_sma - 2) / num_sma *
-                    num_sma_max / (num_sma_max - 2)) / (1 - beta1 ** self.step[self._get_variable_index(variable)])
+                    num_sma_max / (num_sma_max - 2)) / (1 - beta1 ** step)
             else:
-                step_size = lr / (1 - beta1 ** self.step[self._get_variable_index(variable)])
+                step_size = lr / (1 - beta1 ** step)
             buffered[2] = step_size
         
         if self.weight_decay != 0:

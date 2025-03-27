@@ -68,7 +68,6 @@ class SWATS(optimizer.Optimizer):
         if self.amsgrad:
             self.max_exp_avg_sq = []
         self.momentum_buffer = []
-        self.step = []
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -92,7 +91,6 @@ class SWATS(optimizer.Optimizer):
                     )
                 )
             self.momentum_buffer.append(None) 
-            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
@@ -106,7 +104,7 @@ class SWATS(optimizer.Optimizer):
         if self.amsgrad:
             max_exp_avg_sq = self.max_exp_avg_sq[self._get_variable_index(variable)]
         
-        self.step[self._get_variable_index(variable)] += 1
+        step = tf.get_static_value(self.iterations + 1)
 
         if self.weight_decay != 0:
             gradient.assign_add(variable * self.weight_decay)
@@ -115,6 +113,7 @@ class SWATS(optimizer.Optimizer):
         if self.phase == "SGD":
             if self.momentum_buffer[self._get_variable_index(variable)] == None:
                 buf = self.momentum_buffer[self._get_variable_index(variable)] = tf.Variable(gradient)
+                self._track_variable(buf)
             else:
                 buf = self.momentum_buffer[self._get_variable_index(variable)]
                 buf.assign(buf * self.beta1 + gradient)
@@ -139,8 +138,8 @@ class SWATS(optimizer.Optimizer):
         else:
             denom = tf.sqrt(exp_avg_sq) + self.epsilon
 
-        bias_correction1 = 1 - self.beta1 ** self.step[self._get_variable_index(variable)]
-        bias_correction2 = 1 - self.beta2 ** self.step[self._get_variable_index(variable)]
+        bias_correction1 = 1 - self.beta1 ** step
+        bias_correction2 = 1 - self.beta2 ** step
         step_size = (
             lr * (bias_correction2**0.5) / bias_correction1
         )
@@ -162,7 +161,7 @@ class SWATS(optimizer.Optimizer):
 
             # checking criteria of switching to SGD training
             if (
-                self.step[self._get_variable_index(variable)] > 1
+                step > 1
                 and tf.get_static_value(
                     tf.experimental.numpy.allclose(corrected_exp_avg, scaling, rtol=1e-6, atol=1e-8))
                 and corrected_exp_avg > 0

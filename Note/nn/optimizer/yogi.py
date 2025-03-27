@@ -55,7 +55,6 @@ class Yogi(optimizer.Optimizer):
         super().build(var_list)
         self.exp_avg = []
         self.exp_avg_sq = []
-        self.step = []
         for var in var_list:
             self.exp_avg.append(
                 tf.Variable(
@@ -63,13 +62,14 @@ class Yogi(optimizer.Optimizer):
                     dtype=var.dtype,
                 )
             )
+            self._track_variable(self.exp_avg[-1])
             self.exp_avg_sq.append(
                 tf.Variable(
                     tf.fill(tf.shape(var), self.initial_accumulator),
                     dtype=var.dtype,
                 )
             )
-            self.step.append(0)
+            self._track_variable(self.exp_avg_sq[-1])  
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
@@ -85,9 +85,9 @@ class Yogi(optimizer.Optimizer):
             self.exp_avg_sq[self._get_variable_index(variable)],
         )
         
-        self.step[self._get_variable_index(variable)] += 1
-        bias_correction1 = 1 - self.beta1 ** self.step[self._get_variable_index(variable)]
-        bias_correction2 = 1 - self.beta2 ** self.step[self._get_variable_index(variable)]
+        step = tf.get_static_value(self.iterations + 1)
+        bias_correction1 = 1 - self.beta1 ** step
+        bias_correction2 = 1 - self.beta2 ** step
 
         if self.weight_decay != 0:
             gradient = gradient + variable * self.weight_decay

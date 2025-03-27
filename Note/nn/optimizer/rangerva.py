@@ -98,7 +98,6 @@ class RangerVA(optimizer.Optimizer):
         if self.amsgrad:
             self.max_exp_avg_sq = []
         self.slow_buffer = []
-        self.step = []
         for var in var_list:
             var_fp32 = tf.Variable(tf.cast(var, 'float32'))
             self.exp_avg.append(
@@ -118,7 +117,7 @@ class RangerVA(optimizer.Optimizer):
                     )
                 )  
             self.slow_buffer.append(tf.Variable(var))
-            self.step.append(0)
+            self._track_variable(self.slow_buffer[-1])
 
     def update_step(self, gradient, variable, learning_rate):
         if gradient.dtype != tf.float32:
@@ -164,13 +163,13 @@ class RangerVA(optimizer.Optimizer):
             #pdb.set_trace()
             denomc = tf.sqrt(denomc)
         
-        self.step[self._get_variable_index(variable)] += 1
+        step = tf.get_static_value(self.iterations + 1)
         
         if self.weight_decay != 0:
             variable_fp32 += -self.weight_decay * lr * variable_fp32
         
-        bias_correction1 = 1 - self.beta1 ** self.step[self._get_variable_index(variable)]
-        bias_correction2 = 1 - self.beta2 ** self.step[self._get_variable_index(variable)]
+        bias_correction1 = 1 - self.beta1 ** step
+        bias_correction2 = 1 - self.beta2 ** step
         step_size = lr * math.sqrt(bias_correction2) / bias_correction1 
 
         # ...let's use calibrated alr 
@@ -186,7 +185,7 @@ class RangerVA(optimizer.Optimizer):
 
         # integrated look ahead...
         # we do it at the param level instead of group level
-        if self.step[self._get_variable_index(variable)] % self.k == 0:
+        if step % self.k == 0:
             # get access to slow param tensor
             slow_p = self.slow_buffer[self._get_variable_index(variable)]
             # (fast weights - slow weights) * alpha

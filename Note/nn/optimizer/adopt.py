@@ -118,7 +118,6 @@ class Adopt(optimizer.Optimizer):
         super().build(var_list)
         self.exp_avg = []
         self.exp_avg_sq = []
-        self.step = []
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -130,7 +129,6 @@ class Adopt(optimizer.Optimizer):
                     reference_variable=var, name="exp_avg_sq"
                 )
             )
-            self.step.append(tf.zeros((), dtype=_get_scalar_dtype()))
     
     def _backend_update_step(self, grads, trainable_variables, learning_rate):
         """Collective update_step that can be overridden by the backend.
@@ -148,13 +146,14 @@ class Adopt(optimizer.Optimizer):
             state_steps,
     ):
         has_complex = False
+        step = tf.get_static_value(self.iterations)
         for p in trainable_variables:
             has_complex |= p.dtype.is_complex
 
             exp_avgs.append(self.exp_avg[self._get_variable_index(p)])
             exp_avg_sqs.append(self.exp_avg_sq[self._get_variable_index(p)])
 
-            state_steps.append(self.step[self._get_variable_index(p)])
+            state_steps.append(step)
         return has_complex
 
     def update_step(self, grads, trainable_variables, learning_rate):

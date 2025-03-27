@@ -58,8 +58,6 @@ class CAME(optimizer.Optimizer):
     
     def reset(self):
         for var in self._trainable_variables:
-            self.step[self._get_variable_index(var)] = 0
-            
             grad_shape = var.shape
             factored = self.get_options(grad_shape)
 
@@ -131,7 +129,6 @@ class CAME(optimizer.Optimizer):
         self.exp_avg_res_col = []
         if self.ams_bound:
             self.exp_avg_sq_hat = []
-        self.step = []
         for var in var_list:
             grad_shape = var.shape
             factored = self.get_options(grad_shape)
@@ -141,7 +138,8 @@ class CAME(optimizer.Optimizer):
                                                     ))
             
             if factored:
-                self.exp_avg_sq.append(None)
+                self.exp_avg_sq.append(tf.Variable(0))
+                self._track_variable(self.exp_avg_sq[-1])
                 self.exp_avg_sq_row.append(self.add_variable_from_reference(
                                     reference_variable=tf.Variable(tf.zeros(grad_shape[:-1], dtype=var.dtype)), name="exp_avg_sq_row"
                                                         ))
@@ -155,10 +153,14 @@ class CAME(optimizer.Optimizer):
                                     reference_variable=tf.Variable(tf.zeros(grad_shape[:-2] + grad_shape[-1:], dtype=var.dtype)), name="exp_avg_res_col"
                                                         ))
             else:
-                self.exp_avg_sq_row.append(None)
-                self.exp_avg_sq_col.append(None)
-                self.exp_avg_res_row.append(None)
-                self.exp_avg_res_col.append(None)
+                self.exp_avg_sq_row.append(tf.Variable(0))
+                self.exp_avg_sq_col.append(tf.Variable(0))
+                self.exp_avg_res_row.append(tf.Variable(0))
+                self.exp_avg_res_col.append(tf.Variable(0))
+                self._track_variable(self.exp_avg_sq_row[-1])
+                self._track_variable(self.exp_avg_sq_col[-1])
+                self._track_variable(self.exp_avg_res_row[-1])
+                self._track_variable(self.exp_avg_res_col[-1])
                 self.exp_avg_sq.append(self.add_variable_from_reference(
                                     reference_variable=var, name="exp_avg_sq"
                                                         ))
@@ -169,12 +171,9 @@ class CAME(optimizer.Optimizer):
                                                         ))
             
             self.RMS = 0.0
-            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
-        
-        self.step[self._get_variable_index(variable)] += 1
         
         if tf.keras.backend.is_sparse(gradient):
             raise RuntimeError(

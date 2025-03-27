@@ -80,7 +80,6 @@ class NAdamW(optimizer.Optimizer):
         super().build(var_list)
         self.exp_avg = []
         self.exp_avg_sq = []
-        self.step = []
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -92,10 +91,6 @@ class NAdamW(optimizer.Optimizer):
                     reference_variable=var, name="exp_avg_sq"
                 )
             )
-            if self.capturable:
-                self.step.append(tf.convert_to_tensor(0.))
-            else:
-                self.step.append(0)
     
     def _backend_update_step(self, grads, trainable_variables, learning_rate):
         """Collective update_step that can be overridden by the backend.
@@ -115,7 +110,7 @@ class NAdamW(optimizer.Optimizer):
         for p in trainable_variables:
             exp_avgs.append(self.exp_avg[self._get_variable_index(p)])
             exp_avg_sqs.append(self.exp_avg_sq[self._get_variable_index(p)])
-            state_steps.append(self.step[self._get_variable_index(p)])
+            state_steps.append(tf.get_static_value(self.iterations))
 
         nadamw(
             trainable_variables,

@@ -68,8 +68,6 @@ class AliG(optimizer.Optimizer):
     
     def reset(self):
         for var in self._trainable_variables:
-            self.step[self._get_variable_index(var)] = 0
-            
             if self.momentum > 0.0:
                 self.momentum_buffer[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                             reference_variable=var, name="momentum_buffer"
@@ -88,7 +86,6 @@ class AliG(optimizer.Optimizer):
         super().build(var_list)
         if self.momentum > 0.0:
             self.momentum_buffer = []
-        self.step = []
         for var in var_list:
             if self.momentum > 0.0:
                 self.momentum_buffer.append(
@@ -96,7 +93,6 @@ class AliG(optimizer.Optimizer):
                         reference_variable=var, name="momentum_buffer"
                     )
                 )
-            self.step.append(0)
     
     def apply_gradients(self, grads_and_vars, loss):
         self.loss = loss
@@ -121,8 +117,6 @@ class AliG(optimizer.Optimizer):
         )
         
         for p, g in zip(trainable_variables, grads):
-            self.step[self._get_variable_index(p)] += 1
-            
             if tf.keras.backend.is_sparse(g):
                 raise RuntimeError(
                     'AliG does not support sparse gradients')

@@ -58,7 +58,6 @@ class AdEMAMix(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.exp_avg_slow = []
-        self.step = []
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -75,7 +74,6 @@ class AdEMAMix(optimizer.Optimizer):
                     reference_variable=var, name="exp_avg_slow"
                 )
             )
-            self.step.append(0)
     
     def _backend_update_step(self, grads, trainable_variables, learning_rate):
         """Collective update_step that can be overridden by the backend.
@@ -91,12 +89,13 @@ class AdEMAMix(optimizer.Optimizer):
         exp_avg_slow = []
         state_steps = []
         
+        step = tf.get_static_value(self.iterations + 1)
+        
         for p in trainable_variables:
             exp_avgs.append(self.exp_avg[self._get_variable_index(p)])
             exp_avg_sqs.append(self.exp_avg_sq[self._get_variable_index(p)])
             exp_avg_slow.append(self.exp_avg_slow[self._get_variable_index(p)])
-            self.step[self._get_variable_index(p)] += 1
-            state_steps.append(self.step[self._get_variable_index(p)])
+            state_steps.append(step)
         
         self._update_adamemix(
             trainable_variables,

@@ -53,7 +53,9 @@ class AccSGD(optimizer.Optimizer):
         super().build(var_list)
         self.momentum_buffer = []
         for var in var_list:
-            self.momentum_buffer.append(tf.Variable(var))
+            var = tf.Variable(var)
+            self.momentum_buffer.append(var)
+            self._track_variable(var)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)

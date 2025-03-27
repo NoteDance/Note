@@ -50,8 +50,6 @@ class AdaSmooth(optimizer.Optimizer):
     
     def reset(self):
         for var in self._trainable_variables:
-            self.step[self._get_variable_index(var)] = 0
-            
             self.prev_param[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="prev_param"
                                                     )
@@ -76,7 +74,6 @@ class AdaSmooth(optimizer.Optimizer):
         self.s = []
         self.n = []
         self.exp_avg_sq = []
-        self.step = []
         for var in var_list:
             self.prev_param.append(
                 self.add_variable_from_reference(
@@ -98,12 +95,9 @@ class AdaSmooth(optimizer.Optimizer):
                     reference_variable=var, name="exp_avg_sq"
                 )
             )
-            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
-        
-        self.step[self._get_variable_index(variable)] += 1
         
         if tf.keras.backend.is_sparse(gradient):
             raise RuntimeError(

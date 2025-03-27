@@ -102,7 +102,6 @@ class Kron(optimizer.Optimizer):
         self.momentum_buffer = []
         self.Q = []
         self.exprs = []
-        self.step = []
         if self.precond_dtype is None:
             self.precond_dtype = tf.float32
         for var in var_list:
@@ -120,8 +119,8 @@ class Kron(optimizer.Optimizer):
                 dtype=self.precond_dtype,
             )
             self.Q.append(Q)
+            self._track_variable(self.Q[-1])
             self.exprs.append(exprs)
-            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
@@ -157,7 +156,7 @@ class Kron(optimizer.Optimizer):
         total_precond_size += precond_size
         total_precond_mb += precond_mb
         
-        self.step[self._get_variable_index(variable)] += 1
+        step = tf.get_static_value(self.iterations + 1)
         
         momentum_buffer = self.momentum_buffer[self._get_variable_index(variable)]
         momentum_buffer.assign(momentum_buffer * self.b1 + gradient * (1 - self.b1))
@@ -165,7 +164,7 @@ class Kron(optimizer.Optimizer):
         if self.mu_dtype is not None:
             momentum_buffer = self.momentum_buffer[self._get_variable_index(variable)] = tf.Variable(
                 tf.cast(momentum_buffer, self.mu_dtype))
-        debiased_momentum = momentum_buffer / (1 - self.b1 ** self.step[self._get_variable_index(variable)])
+        debiased_momentum = momentum_buffer / (1 - self.b1 ** step)
         debiased_momentum = tf.cast(debiased_momentum, self.precond_dtype)
         
         # balance preconditioners about every 100 updates
@@ -207,6 +206,7 @@ class Kron(optimizer.Optimizer):
                 "precond_init_scale": self.precond_init_scale,
                 "mu_dtype": self.mu_dtype,
                 "precond_dtype": self.precond_dtype,
+                "exprs": self.exprs,
             }
         )
         return config

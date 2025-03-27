@@ -91,6 +91,7 @@ class Lars(optimizer.Optimizer):
         if self.momentum != 0:
             if 'momentum_buffer' not in self.param_state[self._get_variable_index(variable)]:
                 buf = self.param_state[self._get_variable_index(variable)]['momentum_buffer'] = tf.Variable(gradient)
+                self._track_variable(self.param_state[self._get_variable_index(variable)]['momentum_buffer'])
             else:
                 buf = self.param_state[self._get_variable_index(variable)]['momentum_buffer']
                 buf.assign(buf * self.momentum + gradient * (1. - self.dampening))

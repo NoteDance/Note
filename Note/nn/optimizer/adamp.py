@@ -89,7 +89,6 @@ class AdamP(optimizer.Optimizer):
         super().build(var_list)
         self.exp_avg = []
         self.exp_avg_sq = []
-        self.step = []
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -101,16 +100,15 @@ class AdamP(optimizer.Optimizer):
                     reference_variable=var, name="exp_avg_sq"
                 )
             )
-            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
         exp_avg, exp_avg_sq = self.exp_avg[self._get_variable_index(variable)], self.exp_avg_sq[self._get_variable_index(variable)]
         beta1, beta2 = self.beta1, self.beta2
 
-        self.step[self._get_variable_index(variable)] += 1
-        bias_correction1 = 1 - beta1 ** self.step[self._get_variable_index(variable)]
-        bias_correction2 = 1 - beta2 ** self.step[self._get_variable_index(variable)]
+        step = tf.get_static_value(self.iterations + 1)
+        bias_correction1 = 1 - beta1 ** step
+        bias_correction2 = 1 - beta2 ** step
 
         exp_avg.assign(exp_avg * beta1 + gradient * (1 - beta1))
         exp_avg_sq.assign(exp_avg_sq * beta2 + gradient * gradient * (1 - beta2))

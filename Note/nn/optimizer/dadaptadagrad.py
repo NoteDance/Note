@@ -59,14 +59,23 @@ class DAdaptAdaGrad(optimizer.Optimizer):
         self.bias_correction = bias_correction
     
     def reset(self):
+        iterations = tf.Variable(
+            0,
+            name="iteration",
+            dtype="int",
+            trainable=False,
+            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
+        )
+        self._track_variable(iterations)
+        self._iterations = iterations
         for var in self._trainable_variables:
-            self.step[self._get_variable_index(var)] = 0
-            
             self.alpha_k[self._get_variable_index(var)] =  tf.Variable(tf.ones_like(var) * 1e-6)
+            self._track_variable(self.alpha_k[self._get_variable_index(var)])
             self.sk[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="sk"
                                                     )
             self.x0[self._get_variable_index(var)] = tf.Variable(var)
+            self._track_variable(self.x0[self._get_variable_index(var)])
             if tf.keras.backend.is_sparse(var):
                 self.weighted_sk[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                             reference_variable=var, name="weighted_sk"
@@ -80,13 +89,14 @@ class DAdaptAdaGrad(optimizer.Optimizer):
         self.sk = []
         self.x0 = []
         self.weighted_sk = []
-        self.step = 0
         for var in var_list:
             self.alpha_k.append(tf.Variable(tf.ones_like(var) * 1e-6))
+            self._track_variable(self.alpha_k[-1])
             self.sk.append(self.add_variable_from_reference(
                                 reference_variable=var, name="sk"
                                                     ))
             self.x0.append(tf.Variable(var))
+            self._track_variable(self.x0[-1])
             if tf.keras.backend.is_sparse(var):
                 self.weighted_sk.append(self.add_variable_from_reference(
                                     reference_variable=var, name="weighted_sk"
@@ -111,10 +121,15 @@ class DAdaptAdaGrad(optimizer.Optimizer):
         sk_sq_weighted_change = tf.Variable(tf.convert_to_tensor([0.0]))
         sk_l1_change = tf.Variable(tf.convert_to_tensor([0.0]))
         
-        if self.step == 0:
+        step = tf.get_static_value(self.iterations)
+        
+        if step == 0:
             self.gsq_weighted = tf.Variable(tf.convert_to_tensor([0.0]))
             self.sk_sq_weighted = tf.Variable(tf.convert_to_tensor([0.0]))
             self.sk_l1 = tf.Variable(tf.convert_to_tensor([0.0]))
+            self._track_variable(self.gsq_weighted)
+            self._track_variable(self.sk_sq_weighted)
+            self._track_variable(self.sk_l1)
         
         for var, grad in zip(trainable_variables, grads):
             sk = self.sk[self._get_variable_index(var)]
@@ -224,8 +239,6 @@ class DAdaptAdaGrad(optimizer.Optimizer):
                     var.assign(var * self.momentum + z * (1.0 - self.momentum))
                 else:
                     var.assign(z)
-        
-        self.step+=1
 
     def get_config(self):
         config = super().get_config()

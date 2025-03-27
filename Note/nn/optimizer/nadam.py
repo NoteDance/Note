@@ -62,7 +62,6 @@ class NAdam(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.m_schedule = []
-        self.step = []
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -74,20 +73,19 @@ class NAdam(optimizer.Optimizer):
                     reference_variable=var, name="exp_avg_sq"
                 )
             )
-            self.m_schedule.append(1.)
-            self.step.append(0)
+            self.m_schedule.append(tf.Variable(1.))
+            self._track_variable(self.m_schedule[-1])
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
         
         # Warming momentum schedule
-        m_schedule = self.m_schedule[self._get_variable_index(variable)]
+        m_schedule = tf.get_static_value(self.m_schedule[self._get_variable_index(variable)])
         schedule_decay = self.schedule_decay
         exp_avg, exp_avg_sq = self.exp_avg[self._get_variable_index(variable)], self.exp_avg_sq[self._get_variable_index(variable)]
         beta1, beta2 = self.beta1, self.beta2
         eps = self.epsilon
-        self.step[self._get_variable_index(variable)] += 1
-        t= self.step[self._get_variable_index(variable)]
+        t= tf.get_static_value(self.iterations + 1)
         bias_correction2 = 1 - beta2 ** t
         
         if self.weight_decay != 0:
@@ -97,7 +95,7 @@ class NAdam(optimizer.Optimizer):
         momentum_cache_t_1 = beta1 * (1. - 0.5 * (0.96 ** ((t + 1) * schedule_decay)))
         m_schedule_new = m_schedule * momentum_cache_t
         m_schedule_next = m_schedule * momentum_cache_t * momentum_cache_t_1
-        self.m_schedule[self._get_variable_index(variable)] = m_schedule_new
+        self.m_schedule[self._get_variable_index(variable)].assign(tf.cast(m_schedule_new, dtype=self.m_schedule[self._get_variable_index(variable)].dtype))
     
         # Decay the first and second moment running average coefficient
         exp_avg.assign(beta1 * exp_avg + (1. - beta1) * gradient)

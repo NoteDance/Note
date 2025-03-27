@@ -49,14 +49,23 @@ class DAdaptSGD(optimizer.Optimizer):
         self.fixed_decay = fixed_decay
     
     def reset(self):
+        iterations = tf.Variable(
+            0,
+            name="iteration",
+            dtype="int",
+            trainable=False,
+            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
+        )
+        self._track_variable(iterations)
+        self._iterations = iterations
         for var in self._trainable_variables:
-            self.step[self._get_variable_index(var)] = 0
-            
             self.z[self._get_variable_index(var)] =  tf.Variable(var)
+            self._track_variable(self.z[self._get_variable_index(var)])
             self.s[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="s"
                                                     )
             self.x0[self._get_variable_index(var)] =  tf.Variable(var)
+            self._track_variable(self.x0[self._get_variable_index(var)])
             
     def build(self, var_list):
         if self.built:
@@ -65,13 +74,14 @@ class DAdaptSGD(optimizer.Optimizer):
         self.z = []
         self.s = []
         self.x0 = []
-        self.step = 0
         for var in var_list:
             self.z.append(tf.Variable(var))
+            self._track_variable(self.z[-1])
             self.s.append(self.add_variable_from_reference(
                                 reference_variable=var, name="s"
                                                     ))
             self.x0.append(tf.Variable(var))
+            self._track_variable(self.x0[-1])
         
     def _backend_update_step(self, grads, trainable_variables, learning_rate):
         """Collective update_step that can be overridden by the backend.
@@ -84,12 +94,15 @@ class DAdaptSGD(optimizer.Optimizer):
     def update_step(self, grads, trainable_variables, learning_rate):
         lr = learning_rate
         
+        step = tf.get_static_value(self.iterations)
+        
         sk_sq = tf.Variable(tf.convert_to_tensor([0.0]))
         if self.numerator_weighted == None:
             self.numerator_weighted = tf.Variable(tf.convert_to_tensor([0.0]))
+            self._track_variable(self.numerator_weighted)
         
         global_grad_norm = tf.Variable(tf.zeros(1, dtype=tf.float32))
-        if self.step == 0:
+        if step == 0:
             for grad in grads:
                 global_grad_norm.assign_add(tf.pow(tf.norm(grad), 2))
                 self.g0_norm = tf.sqrt(global_grad_norm)
@@ -116,8 +129,6 @@ class DAdaptSGD(optimizer.Optimizer):
         if tf.get_static_value(lr) > 0.0:
             d_hat = 2.0 * self.numerator_weighted / tf.sqrt(sk_sq)
             d = max(self.d0, min(tf.get_static_value(d_hat), self.d0 * self.growth_rate))
-        
-        self.step += 1
         
         for variable, grad in zip(trainable_variables, grads):
             z = self.z[self._get_variable_index(variable)]

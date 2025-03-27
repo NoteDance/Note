@@ -55,9 +55,16 @@ class DAdaptAdan(optimizer.Optimizer):
         self.fixed_decay = fixed_decay
     
     def reset(self):
+        iterations = tf.Variable(
+            0,
+            name="iteration",
+            dtype="int",
+            trainable=False,
+            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
+        )
+        self._track_variable(iterations)
+        self._iterations = iterations
         for var in self._trainable_variables:
-            self.step[self._get_variable_index(var)] = 0
-            
             self.s[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="s"
                                                     )
@@ -80,7 +87,6 @@ class DAdaptAdan(optimizer.Optimizer):
         self.exp_avg_sq = []
         self.exp_avg_diff = []
         self.previous_grad = []
-        self.step = 0
         for var in var_list:
             self.s.append(self.add_variable_from_reference(
                                 reference_variable=var, name="s"
@@ -107,22 +113,26 @@ class DAdaptAdan(optimizer.Optimizer):
     def update_step(self, grads, trainable_variables, learning_rate):
         lr = learning_rate
         
+        step = tf.get_static_value(self.iterations)
+        
         d_lr = float(self.d0 * lr)
         
         g_sq = tf.Variable(tf.convert_to_tensor([0.0]))
         sk_sq_weighted = tf.Variable(tf.convert_to_tensor([0.0]))
         sk_l1 = tf.Variable(tf.convert_to_tensor([0.0]))
         
-        if self.step == 0:
+        if step == 0:
             self.gsq_weighted = tf.Variable(tf.convert_to_tensor([0.0]))
+            self._track_variable(self.gsq_weighted)
             
         for var, grad in zip(trainable_variables, grads):
             if tf.keras.backend.is_sparse(grad):
                 raise RuntimeError(
                     'DAdaptAdan does not support sparse gradients')
             
-            if self.step == 0:
+            if step == 0:
                 self.previous_grad[self._get_variable_index(var)] = tf.Variable(grad)
+                self._track_variable(self.previous_grad[self._get_variable_index(var)])
                 
             grad_diff = self.previous_grad[self._get_variable_index(var)]
             grad_diff.assign_add(grad)
@@ -185,8 +195,6 @@ class DAdaptAdan(optimizer.Optimizer):
             
             if not self.weight_decouple:
                 var.assign(var / (1.0 + d_lr * self.weight_decay))
-        
-        self.step += 1
 
     def get_config(self):
         config = super().get_config()

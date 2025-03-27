@@ -62,7 +62,6 @@ class AdaBound(optimizer.Optimizer):
         if self.amsbound:
             self.max_exp_avg_sq = []
         self.base_lr = self._learning_rate
-        self.step = []
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -80,7 +79,6 @@ class AdaBound(optimizer.Optimizer):
                         reference_variable=var, name="max_exp_avg_sq"
                     )
                 )
-            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
@@ -94,7 +92,7 @@ class AdaBound(optimizer.Optimizer):
         if self.amsbound:
             max_exp_avg_sq = self.max_exp_avg_sq[self._get_variable_index(variable)]
         
-        self.step[self._get_variable_index(variable)] += 1
+        step = tf.get_static_value(self.iterations + 1)
 
         if self.weight_decay != 0:
             gradient = gradient + self.weight_decay * variable
@@ -110,15 +108,15 @@ class AdaBound(optimizer.Optimizer):
         else:
             denom = tf.sqrt(exp_avg_sq) + self.epsilon
         
-        bias_correction1 = 1 - self.beta1 ** self.step[self._get_variable_index(variable)]
-        bias_correction2 = 1 - self.beta2 ** self.step[self._get_variable_index(variable)]
+        bias_correction1 = 1 - self.beta1 ** step
+        bias_correction2 = 1 - self.beta2 ** step
         step_size = lr * math.sqrt(bias_correction2) / bias_correction1
         
         # Applies bounds on actual learning rate
         # lr_scheduler cannot affect final_lr, this is a workaround to apply lr decay
         final_lr = self.final_lr * lr / self.base_lr
-        lower_bound = final_lr * (1 - 1 / (self.gamma * self.step[self._get_variable_index(variable)] + 1))
-        upper_bound = final_lr * (1 + 1 / (self.gamma * self.step[self._get_variable_index(variable)]))
+        lower_bound = final_lr * (1 - 1 / (self.gamma * step + 1))
+        upper_bound = final_lr * (1 + 1 / (self.gamma * step))
         step_size = tf.fill(denom.shape, step_size)
         step_size = step_size / denom
         step_size = tf.clip_by_value(step_size, clip_value_min=lower_bound, clip_value_max=upper_bound)

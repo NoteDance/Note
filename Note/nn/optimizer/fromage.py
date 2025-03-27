@@ -43,7 +43,8 @@ class Fromage(optimizer.Optimizer):
     def reset(self):
         for var in self._trainable_variables:
             if self.p_bound is not None:
-                self.max[self._get_variable_index(var)] =  tf.norm(var) * self.p_bound
+                self.max[self._get_variable_index(var)] =  tf.Variable(tf.norm(var) * self.p_bound)
+                self._track_variable(self.max[self._get_variable_index(var)])
 
     def build(self, var_list):
         if self.built:
@@ -51,7 +52,8 @@ class Fromage(optimizer.Optimizer):
         super().build(var_list)
         self.max = []
         for var in var_list:
-            self.max.append(tf.norm(var) * self.p_bound)
+            self.max.append(tf.Variable(tf.norm(var) * self.p_bound))
+            self._track_variable(self.max[-1])
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
@@ -74,7 +76,7 @@ class Fromage(optimizer.Optimizer):
         
         if self.p_bound is not None:
             p_norm = tf.norm(variable) 
-            if tf.get_static_value(p_norm) > self.max[self._get_variable_index(variable)]:
+            if tf.get_static_value(p_norm) > tf.get_static_value(self.max[self._get_variable_index(variable)]):
                 variable.assign(variable * self.max[self._get_variable_index(variable)] / p_norm)
 
     def get_config(self):

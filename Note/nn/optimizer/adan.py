@@ -88,7 +88,15 @@ class Adan(optimizer.Optimizer):
         self.no_prox = False
     
     def restart_opt(self):
-        self.step = 0
+        iterations = tf.Variable(
+            0,
+            name="iteration",
+            dtype="int",
+            trainable=False,
+            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
+        )
+        self._track_variable(iterations)
+        self._iterations = iterations
         for v in self._trainable_variables:
             # State initialization
             
@@ -114,7 +122,6 @@ class Adan(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.exp_avg_diff = []
-        self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -149,17 +156,17 @@ class Adan(optimizer.Optimizer):
         neg_pre_grads = []
         neg_pre_grad = []
         
-        self.step += 1
+        step = tf.get_static_value(self.iterations + 1)
         
-        bias_correction1 = 1 - self.beta1 ** self.step
-        bias_correction2 = 1 - self.beta2 ** self.step
-        bias_correction3 = 1 - self.beta3 ** self.step
+        bias_correction1 = 1 - self.beta1 ** step
+        bias_correction2 = 1 - self.beta2 ** step
+        bias_correction3 = 1 - self.beta3 ** step
         
         for i in range(len(trainable_variables)):
             params_with_grad.append(trainable_variables[i])
             grads.append(grads[i])
             
-            if self.step == 1:
+            if step == 1:
                 neg_pre_grad = tf.Variable(-grads[i])
             
             exp_avgs.append(self.exp_avg[self._get_variable_index(trainable_variables[i])])

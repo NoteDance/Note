@@ -97,16 +97,15 @@ class Adalite(optimizer.Optimizer):
         self.m_avg_r = []
         self.m_avg_r = []
         self.m_avg_u = []
-        self.step = []
         for var in var_list:
-            self.m_avg.append(None)
-            self.v_avg.append(None)
-            self.v_avg_0.append(None)
-            self.v_avg_1.append(None)
-            self.m_avg_c.append(None)
-            self.m_avg_r.append(None)
-            self.m_avg_r.append(None)
-            self.m_avg_u.append(None)
+            self.m_avg.append(tf.Variable(0))
+            self.v_avg.append(tf.Variable(0))
+            self.v_avg_0.append(tf.Variable(0))
+            self.v_avg_1.append(tf.Variable(0))
+            self.m_avg_c.append(tf.Variable(0))
+            self.m_avg_r.append(tf.Variable(0))
+            self.m_avg_r.append(tf.Variable(0))
+            self.m_avg_u.append(tf.Variable(0))
             if len(var.shape) < 2:
                 self.m_avg[-1] = self.add_variable_from_reference(
                                     reference_variable=var, name="m_avg"
@@ -114,6 +113,12 @@ class Adalite(optimizer.Optimizer):
                 self.v_avg[-1] = self.add_variable_from_reference(
                                     reference_variable=var, name="v_avg"
                                                         )
+                self._track_variable(self.v_avg_0[-1])
+                self._track_variable(self.v_avg_1[-1])
+                self._track_variable(self.m_avg_c[-1])
+                self._track_variable(self.m_avg_r[-1])
+                self._track_variable(self.m_avg_r[-1])
+                self._track_variable(self.m_avg_u[-1])
             else:
                 self.v_avg_0[-1] = self.add_variable_from_reference(
                                     reference_variable=tf.Variable(tf.reduce_mean(var, axis=1)), name="v_avg_0"
@@ -133,12 +138,13 @@ class Adalite(optimizer.Optimizer):
                                     tf.expand_dims(tf.expand_dims(tf.reduce_mean(var), 0), 0)), 
                                     name="m_avg_u"
                                                         )
-            self.step.append(0)
+                self._track_variable(self.m_avg[-1])
+                self._track_variable(self.v_avg[-1])
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
         
-        self.step[self._get_variable_index(variable)] += 1
+        step = tf.get_static_value(self.iterations + 1)
         
         if tf.keras.backend.is_sparse(gradient):
             raise RuntimeError(
@@ -168,7 +174,7 @@ class Adalite(optimizer.Optimizer):
         m = m + (gradient - m) * (1.0 - self.beta1)
         v = v + (((gradient - m) ** 2) - v) * (1.0 - self.beta2)
 
-        v_avg = v / (1.0 - self.beta2 ** self.step[self._get_variable_index(variable)])
+        v_avg = v / (1.0 - self.beta2 ** step)
 
         if len(gradient.shape) == 2:
             imp_c = tf.nn.softmax(tf.reduce_mean(v, axis=1), axis=0)[:, None]

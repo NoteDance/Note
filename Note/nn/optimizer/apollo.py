@@ -57,7 +57,6 @@ class Apollo(optimizer.Optimizer):
         self.approx_hessian = []
         self.update = []
         self.base_lr = self._learning_rate
-        self.step = []
         for var in var_list:
             self.exp_avg_grad.append(
                 self.add_variable_from_reference(
@@ -74,14 +73,15 @@ class Apollo(optimizer.Optimizer):
                     reference_variable=var, name="update"
                 )
             )
-            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
         
+        step = tf.get_static_value(self.iterations + 1)
+        
         # Calculate current lr
-        if self.step[self._get_variable_index(variable)] < self.warmup:
-            curr_lr = (self.base_lr - self.init_lr) * self.step[self._get_variable_index(variable)] / self.warmup + self.init_lr
+        if step < self.warmup:
+            curr_lr = (self.base_lr - self.init_lr) * step / self.warmup + self.init_lr
             curr_lr = tf.cast(curr_lr, variable.dtype)
         else:
             curr_lr = lr
@@ -98,8 +98,7 @@ class Apollo(optimizer.Optimizer):
         B = self.approx_hessian[self._get_variable_index(variable)]
         d_p = self.update[self._get_variable_index(variable)]
 
-        self.step[self._get_variable_index(variable)] += 1
-        bias_correction = 1 - self.beta ** self.step[self._get_variable_index(variable)]
+        bias_correction = 1 - self.beta ** step
         alpha = (1 - self.beta) / bias_correction
 
         # calc the diff grad

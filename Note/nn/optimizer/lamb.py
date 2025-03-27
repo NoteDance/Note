@@ -132,7 +132,6 @@ class Lamb(optimizer.Optimizer):
         super().build(var_list)
         self.exp_avg = []
         self.exp_avg_sq = []
-        self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -167,11 +166,11 @@ class Lamb(optimizer.Optimizer):
         
         # assume same step across group now to simplify things
         # per parameter step can be easily support by making it tensor, or pass list into kernel
-        self.step += 1
+        step = tf.get_static_value(self.iterations + 1)
         
         if bias_correction:
-            bias_correction1 = 1 - beta1 ** self.step
-            bias_correction2 = 1 - beta2 ** self.step
+            bias_correction1 = 1 - beta1 ** step
+            bias_correction2 = 1 - beta2 ** step
         else:
             bias_correction1, bias_correction2 = 1.0, 1.0
         
