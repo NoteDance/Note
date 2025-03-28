@@ -89,7 +89,7 @@ class NAdam(optimizer.Optimizer):
         bias_correction2 = 1 - beta2 ** t
         
         if self.weight_decay != 0:
-            gradient = gradient.assign_add(self.weight_decay * variable)
+            gradient +=self.weight_decay * variable
 
         momentum_cache_t = beta1 * (1. - 0.5 * (0.96 ** (t * schedule_decay)))
         momentum_cache_t_1 = beta1 * (1. - 0.5 * (0.96 ** ((t + 1) * schedule_decay)))

@@ -104,11 +104,11 @@ class NvNovoGrad(optimizer.Optimizer):
         else:
             denom = tf.sqrt(exp_avg_sq) + self.epsilon
     
-        gradient.assign(gradient / denom)
+        gradient = gradient / denom
         if self.weight_decay != 0:
-            gradient.assign_add(self.weight_decay * variable)
+            gradient += self.weight_decay * variable
         if self.grad_averaging:
-            gradient.assign(gradient * (1 - beta1))
+            gradient = gradient * (1 - beta1)
         exp_avg.assign(beta1 * exp_avg + gradient)
         
         variable.assign_add(-lr * exp_avg)

@@ -68,7 +68,7 @@ class AggMo(optimizer.Optimizer):
         lr = tf.cast(learning_rate, variable.dtype)
         total_mom = float(len(self.betas))
         
-        d_p = gradient
+        d_p = tf.Variable(gradient)
         if self.weight_decay != 0:
             d_p.assign_add(variable * self.weight_decay)
         for beta in self.betas:

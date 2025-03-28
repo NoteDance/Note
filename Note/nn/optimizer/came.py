@@ -229,7 +229,7 @@ class CAME(optimizer.Optimizer):
         if self.weight_decouple:
             variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr)))
         elif self.weight_decay > 0.0:
-            gradient.assign_add(variable * self.weight_decay)
+            gradient += variable * self.weight_decay
 
         update.assign(update * lr)
 

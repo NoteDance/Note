@@ -93,10 +93,10 @@ class Shampoo(optimizer.Optimizer):
             self._track_variable(self.momentum_buffer[self._get_variable_index(variable)])
         
         if self.momentum > 0:
-            gradient.assign(gradient * (1 - self.momentum) + self.momentum_buffer[self._get_variable_index(variable)] * self.momentum)
+            gradient = gradient * (1 - self.momentum) + self.momentum_buffer[self._get_variable_index(variable)] * self.momentum
 
         if self.weight_decay > 0:
-            gradient.assign_add(variable * self.weight_decay)
+            gradient += variable * self.weight_decay
 
         # See Algorithm 2 for detail
         for dim_id, dim in enumerate(gradient.shape.as_list()):

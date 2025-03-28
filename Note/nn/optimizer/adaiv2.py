@@ -104,7 +104,7 @@ class AdaiV2(optimizer.Optimizer):
             bias_correction2 = 1 - self.beta2 ** step
 
             if self.weight_decay != 0 and self.decoupled == False:
-                g.assign_add(p * self.weight_decay)
+                grads[self._get_variable_index(p)] = g + p * self.weight_decay
             elif self.weight_decay != 0 and self.decoupled == True:
                 p.assign(p * (1 - lr * self.weight_decay))
                 

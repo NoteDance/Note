@@ -107,7 +107,7 @@ class SWATS(optimizer.Optimizer):
         step = tf.get_static_value(self.iterations + 1)
 
         if self.weight_decay != 0:
-            gradient.assign_add(variable * self.weight_decay)
+            gradient += variable * self.weight_decay
 
         # if its SGD phase, take an SGD update and continue
         if self.phase == "SGD":
@@ -119,9 +119,9 @@ class SWATS(optimizer.Optimizer):
                 buf.assign(buf * self.beta1 + gradient)
                 gradient = buf
 
-            gradient.assign(gradient * (1 - self.beta1))
+            gradient = gradient * (1 - self.beta1)
             if self.nesterov:
-                gradient.assign_add(buf * self.beta1)
+                gradient += buf * self.beta1
 
             variable.assign_add(gradient * -lr)
             return

@@ -78,7 +78,7 @@ class QHAdam(optimizer.Optimizer):
         lr = tf.cast(learning_rate, variable.dtype)
         nu1, nu2 = self.Nus2
         
-        d_p = gradient
+        d_p = tf.Variable(gradient)
         if tf.keras.backend.is_sparse(gradient):
             raise RuntimeError(
                 "QHAdam does not support sparse gradients, "

@@ -127,7 +127,7 @@ class AdaNorm(optimizer.Optimizer):
         if self.weight_decouple:
             variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr)))
         elif self.weight_decay > 0.0:
-            gradient.assign_add(variable * self.weight_decay)
+            gradient += variable * self.weight_decay
         
         grad_norm = tf.linalg.norm(gradient)
         exp_grad_norm = self.exp_grad_norm[self._get_variable_index(variable)]

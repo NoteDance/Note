@@ -84,7 +84,7 @@ class PID(optimizer.Optimizer):
         
         step = tf.get_static_value(self.iterations)
         
-        d_p = gradient
+        d_p = tf.Variable(gradient)
         if self.weight_decay != 0:
             d_p.assign_add(self.weight_decay * variable)
         if self.momentum != 0:

@@ -84,7 +84,7 @@ class DiffGrad(optimizer.Optimizer):
         step = tf.get_static_value(self.iterations + 1)
 
         if self.weight_decay != 0:
-            gradient.assign_add(self.weight_decay * variable)
+            gradient += variable * self.weight_decay
  
         # Decay the first and second moment running average coefficient
         exp_avg.assign(exp_avg * self.beta1 + gradient * (1 - self.beta1))

@@ -86,6 +86,7 @@ class AdaShift(optimizer.Optimizer):
         
         if step == 1:
             self.grad_deque.append(deque([tf.Variable(gradient)], maxlen=self.keep_num))
+            self._track_variable(self.grad_deque[self._get_variable_index(variable)][-1])
         
         grad_deque = self.grad_deque[self._get_variable_index(variable)]
         exp_avg = self.exp_avg[self._get_variable_index(variable)]
@@ -94,6 +95,7 @@ class AdaShift(optimizer.Optimizer):
         grad_apply = len(grad_deque) == self.keep_num
         offset_grad = grad_deque[0]
         grad_deque.append(tf.Variable(gradient))
+        self._track_variable(grad_deque[-1])
         if not grad_apply:
           return
       

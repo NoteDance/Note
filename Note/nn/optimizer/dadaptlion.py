@@ -102,7 +102,7 @@ class DAdaptLion(optimizer.Optimizer):
             if self.weight_decouple:
                 variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr)))
             elif self.weight_decay > 0.0:
-                grad.assign_add(variable * self.weight_decay)
+                grad += variable * self.weight_decay
             
             exp_avg = self.exp_avg[self._get_variable_index(variable)]
             s = self.s[self._get_variable_index(variable)]

@@ -176,7 +176,7 @@ class Lamb(optimizer.Optimizer):
         
         for p, grad in zip(trainable_variables, grads):
             if clip_grad_norm is not None:
-                grad.assign(grad / clip_grad_norm)
+                grads[self._get_variable_index(p)] = grad / clip_grad_norm
             
             exp_avg = self.exp_avg[self._get_variable_index(p)]
             exp_avg_sq = self.exp_avg_sq[self._get_variable_index(p)]

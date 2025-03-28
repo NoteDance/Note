@@ -182,7 +182,7 @@ class DAdaptAdaGrad(optimizer.Optimizer):
                 if self.weight_decouple:
                     var.assign(var * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr)))
                 elif self.weight_decay > 0.0:
-                    grad.assign_add(var * self.weight_decay)
+                    grad += var * self.weight_decay
                 
                 old_sk_sq_weighted_param = tf.reduce_sum(tf.pow(sk, 2) / (tf.sqrt(alpha_k) + self.epsilon))
                 old_sk_l1_param = tf.reduce_sum(tf.abs(sk))

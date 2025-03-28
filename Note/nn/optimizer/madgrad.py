@@ -94,11 +94,11 @@ class MADGRAD(optimizer.Optimizer):
             if self.decoupled_decay:
                 variable.assign(variable * 1.0 - lr * self.weight_decay)
             else:
-                if isinstance(gradient, tf.SparseTensor):
+                if tf.keras.backend.is_sparse(gradient):
                     raise RuntimeError("weight_decay option is not compatible with sparse gradients")
-                gradient.assign_add(self.weight_decay * variable)
+                gradient += self.weight_decay * variable
 
-        if isinstance(gradient, tf.SparseTensor):
+        if tf.keras.backend.is_sparse(gradient):
             # Coalesce sparse gradient for efficient operations
             grad = tf.sparse.reorder(gradient)
             grad_val = grad.values

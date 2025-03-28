@@ -102,7 +102,7 @@ class Grams(optimizer.Optimizer):
         if self.weight_decouple:
             variable.assign(variable * (1.0 - self.weight_decay * lr))
         elif self.weight_decay > 0.0:
-            gradient.assign_add(variable * self.weight_decay)
+            gradient += variable * self.weight_decay
         
         variable.assign_add(update * -lr)
 

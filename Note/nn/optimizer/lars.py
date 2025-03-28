@@ -84,8 +84,8 @@ class Lars(optimizer.Optimizer):
             )
             if self.trust_clip:
                 trust_ratio = tf.clip_by_value(trust_ratio / lr, clip_value_min=-float('inf'), clip_value_max=1.0)
-            gradient.assign_add(self.weight_decay * variable)
-            gradient.assign(gradient * trust_ratio)
+            gradient += variable * self.weight_decay
+            gradient = gradient * trust_ratio
 
         # apply SGD update https://github.com/pytorch/pytorch/blob/1.7/torch/optim/sgd.py#L100
         if self.momentum != 0:
