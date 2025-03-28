@@ -90,11 +90,10 @@ class Lars(optimizer.Optimizer):
         # apply SGD update https://github.com/pytorch/pytorch/blob/1.7/torch/optim/sgd.py#L100
         if self.momentum != 0:
             if 'momentum_buffer' not in self.param_state[self._get_variable_index(variable)]:
-                buf = self.param_state[self._get_variable_index(variable)]['momentum_buffer'] = tf.Variable(gradient)
-                self._track_variable(self.param_state[self._get_variable_index(variable)]['momentum_buffer'])
+                buf = self.param_state[self._get_variable_index(variable)]['momentum_buffer'] = gradient
             else:
                 buf = self.param_state[self._get_variable_index(variable)]['momentum_buffer']
-                buf.assign(buf * self.momentum + gradient * (1. - self.dampening))
+                self.param_state[self._get_variable_index(variable)]['momentum_buffer'] = buf * self.momentum + gradient * (1. - self.dampening)
             if self.nesterov:
                 gradient = gradient + buf * self.momentum
             else:
@@ -113,6 +112,7 @@ class Lars(optimizer.Optimizer):
                 "trust_coeff": self.trust_coeff,
                 "trust_clip": self.trust_clip,
                 "always_adapt": self.always_adapt,
+                "param_state": self.param_state,
             }
         )
         return config

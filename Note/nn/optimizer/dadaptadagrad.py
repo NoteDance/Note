@@ -117,19 +117,16 @@ class DAdaptAdaGrad(optimizer.Optimizer):
         
         d_lr = self.d0 * lr
         
-        g_sq = tf.Variable(tf.convert_to_tensor([0.0]))
-        sk_sq_weighted_change = tf.Variable(tf.convert_to_tensor([0.0]))
-        sk_l1_change = tf.Variable(tf.convert_to_tensor([0.0]))
+        g_sq = tf.convert_to_tensor([0.0])
+        sk_sq_weighted_change = tf.convert_to_tensor([0.0])
+        sk_l1_change = tf.convert_to_tensor([0.0])
         
         step = tf.get_static_value(self.iterations)
         
         if step == 0:
-            self.gsq_weighted = tf.Variable(tf.convert_to_tensor([0.0]))
-            self.sk_sq_weighted = tf.Variable(tf.convert_to_tensor([0.0]))
-            self.sk_l1 = tf.Variable(tf.convert_to_tensor([0.0]))
-            self._track_variable(self.gsq_weighted)
-            self._track_variable(self.sk_sq_weighted)
-            self._track_variable(self.sk_l1)
+            self.gsq_weighted = tf.convert_to_tensor([0.0])
+            self.sk_sq_weighted = tf.convert_to_tensor([0.0])
+            self.sk_l1 = tf.convert_to_tensor([0.0])
         
         for var, grad in zip(trainable_variables, grads):
             sk = self.sk[self._get_variable_index(var)]
@@ -164,11 +161,11 @@ class DAdaptAdaGrad(optimizer.Optimizer):
                 de_nom = tf.sqrt(alpha_k_p1_masked + self.epsilon)
                 
                 grad_sq = tf.reduce_sum(vk / de_nom)
-                g_sq.assign_add(grad_sq)
+                g_sq += grad_sq
                 
                 weighted_sk_p1_masked = tf.pow(sk_masked.values, 2) / de_nom
                 delta_weighted_sk = tf.reduce_sum(weighted_sk_p1_masked) - tf.reduce_sum(weighted_sk_masked.values)
-                sk_sq_weighted_change.assign_add(delta_weighted_sk)
+                sk_sq_weighted_change += delta_weighted_sk
                 
                 weighted_sk_p1_delta_masked = weighted_sk_p1_masked - weighted_sk_masked.values
                 weighted_sk_p1_delta = tf.sparse.SparseTensor(indices=grad.indices,
@@ -177,7 +174,7 @@ class DAdaptAdaGrad(optimizer.Optimizer):
                 weighted_sk = tf.sparse.add(weighted_sk, weighted_sk_p1_delta)
                 
                 sk_l1_masked = tf.reduce_sum(tf.abs(sk_masked.values))
-                sk_l1_change.assign_add(sk_l1_masked - old_sk_l1_masked)
+                sk_l1_change += sk_l1_masked - old_sk_l1_masked
             else:
                 if self.weight_decouple:
                     var.assign(var * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr)))
@@ -189,7 +186,7 @@ class DAdaptAdaGrad(optimizer.Optimizer):
                 
                 alpha_k.assign_add(tf.pow(grad, 2))
                 grad_sq = tf.reduce_sum(tf.pow(grad, 2) / (tf.sqrt(alpha_k) + self.epsilon))
-                g_sq.assign_add(grad_sq)
+                g_sq += grad_sq
                 
                 d_lr = tf.cast(d_lr, dtype=var.dtype)
                 
@@ -198,12 +195,12 @@ class DAdaptAdaGrad(optimizer.Optimizer):
                 sk_sq_weighted_param = tf.reduce_sum(tf.pow(sk, 2) / (tf.sqrt(alpha_k) + self.epsilon))
                 sk_l1_param = tf.reduce_sum(tf.abs(sk))
                 
-                sk_sq_weighted_change.assign_add(sk_sq_weighted_param - old_sk_sq_weighted_param)
-                sk_l1_change.assign_add(sk_l1_param - old_sk_l1_param)
+                sk_sq_weighted_change += sk_sq_weighted_param - old_sk_sq_weighted_param
+                sk_l1_change += sk_l1_param - old_sk_l1_param
             
-        self.sk_sq_weighted.assign_add(sk_sq_weighted_change)
-        self.gsq_weighted.assign_add(g_sq * d_lr ** 2)  # fmt: skip
-        self.sk_l1.assign_add(sk_l1_change)
+        self.sk_sq_weighted += sk_sq_weighted_change
+        self.gsq_weighted += g_sq * d_lr ** 2  # fmt: skip
+        self.sk_l1 += sk_l1_change
         
         if tf.get_static_value(self.sk_l1) == 0:
             return
@@ -251,6 +248,9 @@ class DAdaptAdaGrad(optimizer.Optimizer):
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,
                 "bias_correction": self.bias_correction,
+                "gsq_weighted": self.gsq_weighted,
+                "sk_sq_weighted": self.sk_sq_weighted,
+                "sk_l1": self.sk_l1,
             }
         )
         return config

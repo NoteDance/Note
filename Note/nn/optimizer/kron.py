@@ -159,11 +159,10 @@ class Kron(optimizer.Optimizer):
         step = tf.get_static_value(self.iterations + 1)
         
         momentum_buffer = self.momentum_buffer[self._get_variable_index(variable)]
-        momentum_buffer.assign(momentum_buffer * self.b1 + gradient * (1 - self.b1))
+        self.momentum_buffer[self._get_variable_index(variable)] = momentum_buffer * self.b1 + gradient * (1 - self.b1)
         # restore momentum dtype
         if self.mu_dtype is not None:
-            momentum_buffer = self.momentum_buffer[self._get_variable_index(variable)] = tf.Variable(
-                tf.cast(momentum_buffer, self.mu_dtype))
+            momentum_buffer = self.momentum_buffer[self._get_variable_index(variable)] = tf.cast(momentum_buffer, self.mu_dtype)
         debiased_momentum = momentum_buffer / (1 - self.b1 ** step)
         debiased_momentum = tf.cast(debiased_momentum, self.precond_dtype)
         

@@ -96,10 +96,9 @@ class DAdaptSGD(optimizer.Optimizer):
         
         step = tf.get_static_value(self.iterations)
         
-        sk_sq = tf.Variable(tf.convert_to_tensor([0.0]))
+        sk_sq = tf.convert_to_tensor([0.0])
         if self.numerator_weighted == None:
-            self.numerator_weighted = tf.Variable(tf.convert_to_tensor([0.0]))
-            self._track_variable(self.numerator_weighted)
+            self.numerator_weighted = tf.convert_to_tensor([0.0])
         
         global_grad_norm = tf.Variable(tf.zeros(1, dtype=tf.float32))
         if step == 0:
@@ -121,10 +120,10 @@ class DAdaptSGD(optimizer.Optimizer):
             d_lr = tf.cast(d_lr, variable.dtype)
             
             s = self.s[self._get_variable_index(variable)]
-            self.numerator_weighted.assign_add(tf.tensordot(tf.reshape(grad, [-1]), tf.reshape(s, [-1]) * d_lr))
+            self.numerator_weighted += tf.tensordot(tf.reshape(grad, [-1]), tf.reshape(s, [-1]) * d_lr)
             
             s.assign_add(grad * d_lr)
-            sk_sq.assign_add(tf.reduce_sum(tf.pow(s, 2)))
+            sk_sq += tf.reduce_sum(tf.pow(s, 2))
         
         if tf.get_static_value(lr) > 0.0:
             d_hat = 2.0 * self.numerator_weighted / tf.sqrt(sk_sq)
@@ -145,6 +144,7 @@ class DAdaptSGD(optimizer.Optimizer):
                 "growth_rate": self.growth_rate,
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,
+                "numerator_weighted": self.numerator_weighted,
             }
         )
         return config

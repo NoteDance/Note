@@ -95,10 +95,10 @@ class DiffGrad(optimizer.Optimizer):
         bias_correction2 = 1 - self.beta2 ** step
  
         # compute diffgrad coefficient (dfc)
-        diff = abs(previous_grad - gradient)
+        diff = tf.abs(previous_grad - gradient)
         dfc = 1. / (1. + tf.exp(-diff))
         #self.previous_grad[self._get_variable_index(variable)] = gradient %used in paper but has the bug that previous grad is overwritten with grad and diff becomes always zero. Fixed in the next line.
-        self.previous_grad[self._get_variable_index(variable)] = tf.Variable(gradient)
+        self.previous_grad[self._get_variable_index(variable)] = gradient
  			
  		# update momentum with dfc
         exp_avg1 = exp_avg * dfc

@@ -181,7 +181,7 @@ class CAME(optimizer.Optimizer):
         
         self.RMS = self.get_rms(variable)
         
-        update = tf.Variable(gradient * gradient + self.eps1)
+        update = gradient * gradient + self.eps1
         
         grad_shape = variable.shape
         factored = self.get_options(grad_shape)
@@ -197,16 +197,16 @@ class CAME(optimizer.Optimizer):
         else:
             exp_avg_sq = self.exp_avg_sq[self._get_variable_index(variable)]
             exp_avg_sq.assign(exp_avg_sq * self.beta2 + update * (1.0 - self.beta2))
-            update.assign(tf.math.rsqrt(exp_avg_sq))
+            update = tf.math.rsqrt(exp_avg_sq)
         
         if self.ams_bound:
             exp_avg_sq_hat = self.exp_avg_sq_hat[self._get_variable_index(variable)]
             exp_avg_sq_hat.assign(tf.maximum(exp_avg_sq_hat, 1.0 / update))
-            update.assign(tf.math.rsqrt(exp_avg_sq_hat / self.beta2))
+            update = tf.math.rsqrt(exp_avg_sq_hat / self.beta2)
         
-        update.assign(update * gradient)
+        update = update * gradient
         
-        update.assign(update / tf.maximum(self.get_rms(update) / self.clip_threshold, 1.0))
+        update = update / tf.maximum(self.get_rms(update) / self.clip_threshold, 1.0)
         
         exp_avg = self.exp_avg [self._get_variable_index(variable)]
         exp_avg.assign(exp_avg * self.beta1 + update * (1.0 - self.beta1))
@@ -222,7 +222,7 @@ class CAME(optimizer.Optimizer):
             exp_avg_res_col.assign(exp_avg_res_col * self.beta3 + tf.reduce_mean(res, axis=-2) * (1.0 - self.beta3))
 
             self.approximate_sq_grad(exp_avg_res_row, exp_avg_res_col, update)
-            update.assign(update * exp_avg)
+            update = update * exp_avg
         else:
             update = exp_avg
         
@@ -231,7 +231,7 @@ class CAME(optimizer.Optimizer):
         elif self.weight_decay > 0.0:
             gradient += variable * self.weight_decay
 
-        update.assign(update * lr)
+        update = update * lr
 
         variable.assign_add(-update)
 

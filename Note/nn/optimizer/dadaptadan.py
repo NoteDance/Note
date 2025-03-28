@@ -117,13 +117,12 @@ class DAdaptAdan(optimizer.Optimizer):
         
         d_lr = float(self.d0 * lr)
         
-        g_sq = tf.Variable(tf.convert_to_tensor([0.0]))
-        sk_sq_weighted = tf.Variable(tf.convert_to_tensor([0.0]))
-        sk_l1 = tf.Variable(tf.convert_to_tensor([0.0]))
+        g_sq = tf.convert_to_tensor([0.0])
+        sk_sq_weighted = tf.convert_to_tensor([0.0])
+        sk_l1 = tf.convert_to_tensor([0.0])
         
         if step == 0:
-            self.gsq_weighted = tf.Variable(tf.convert_to_tensor([0.0]))
-            self._track_variable(self.gsq_weighted)
+            self.gsq_weighted = tf.convert_to_tensor([0.0])
             
         for var, grad in zip(trainable_variables, grads):
             if tf.keras.backend.is_sparse(grad):
@@ -135,7 +134,7 @@ class DAdaptAdan(optimizer.Optimizer):
                 self._track_variable(self.previous_grad[self._get_variable_index(var)])
                 
             grad_diff = self.previous_grad[self._get_variable_index(var)]
-            grad_diff.assign_add(grad)
+            self.previous_grad[self._get_variable_index(var)] += grad
             
             exp_avg = self.exp_avg[self._get_variable_index(var)]
             exp_avg_sq = self.exp_avg_sq[self._get_variable_index(var)]
@@ -146,7 +145,7 @@ class DAdaptAdan(optimizer.Optimizer):
             exp_avg.assign(exp_avg * self.beta1 + grad * d_lr * (1.0 - self.beta1))
             exp_avg_diff.assign(exp_avg_diff * self.beta2 + grad_diff * d_lr * (1.0 - self.beta2))
             
-            grad_diff.assign(grad_diff * self.beta2 + grad)
+            self.previous_grad[self._get_variable_index(var)] = grad_diff * self.beta2 + grad
             x = grad_diff * tf.math.conj(grad_diff)
             grad_diff = tf.math.real(x) if x.dtype.is_complex else x
             exp_avg_sq.assign(exp_avg_sq * self.beta3 + grad_diff * grad_diff * (1.0 - self.beta3))
@@ -155,22 +154,22 @@ class DAdaptAdan(optimizer.Optimizer):
             grad_power = tf.math.real(x) if x.dtype.is_complex else x
             de_nom = tf.sqrt(exp_avg_sq) + self.epsilon
             
-            g_sq.assign_add(tf.reduce_sum(grad_power / de_nom))
+            g_sq += tf.reduce_sum(grad_power / de_nom)
             
             s = self.s[self._get_variable_index(var)]
             s.assign(s * self.beta3 + grad * d_lr * (1.0 - self.beta3))
             
             x = s * tf.math.conj(s)
             x = tf.math.real(x) if x.dtype.is_complex else x
-            sk_sq_weighted.assign_add(tf.reduce_sum(x / de_nom))
-            sk_l1.assign_add(tf.reduce_sum(tf.abs(s)))
+            sk_sq_weighted += tf.reduce_sum(x / de_nom)
+            sk_l1 += tf.reduce_sum(tf.abs(s))
             
-            self.previous_grad[self._get_variable_index(var)] = tf.Variable(-grad)
+            self.previous_grad[self._get_variable_index(var)] = -grad
         
         if tf.get_static_value(sk_l1) == 0:
             return
         
-        self.gsq_weighted.assign(self.gsq_weighted * self.beta3 + g_sq * (d_lr ** 2) * (1.0 - self.beta3))  # fmt: skip
+        self.gsq_weighted = self.gsq_weighted * self.beta3 + g_sq * (d_lr ** 2) * (1.0 - self.beta3)  # fmt: skip
         
         if tf.get_static_value(lr) > 0.0:
             d_hat = (sk_sq_weighted / (1.0 - self.beta3) - self.gsq_weighted) / sk_l1
@@ -208,6 +207,7 @@ class DAdaptAdan(optimizer.Optimizer):
                 "growth_rate": self.growth_rate,
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,
+                "gsq_weighted": self.gsq_weighted,
             }
         )
         return config

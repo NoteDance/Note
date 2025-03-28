@@ -18,10 +18,10 @@ def l2_projection(parameters, max_norm = 1e2):
 
 def get_global_gradient_norm(grads):
     r"""Get global gradient norm."""
-    global_grad_norm = tf.Variable(tf.zeros(1, dtype=tf.float32))
+    global_grad_norm = tf.zeros(1, dtype=tf.float32)
 
     for g in grads:
-        global_grad_norm.assign_add(tf.pow(tf.norm(g), 2))
+        global_grad_norm += tf.pow(tf.norm(g), 2)
 
     return global_grad_norm
 
@@ -76,7 +76,7 @@ class AliG(optimizer.Optimizer):
     def compute_step_size(self):
         r"""Compute step_size."""
         global_grad_norm = get_global_gradient_norm(self.param_groups)
-        global_grad_norm.assign_add(1e-6)
+        global_grad_norm += 1e-6
 
         return self.loss / global_grad_norm
 
@@ -110,7 +110,7 @@ class AliG(optimizer.Optimizer):
         self.update_step(grads, trainable_variables, learning_rate)
 
     def update_step(self, grads, trainable_variables, learning_rate):
-        un_clipped_step_size = self.compute_step_size()
+        un_clipped_step_size = tf.get_static_value(self.compute_step_size())
         
         step_size = (
             min(un_clipped_step_size, self.max_lr) if self.max_lr is not None else un_clipped_step_size

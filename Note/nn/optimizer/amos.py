@@ -133,10 +133,10 @@ class Amos(optimizer.Optimizer):
         
         gamma = decay_factor_c * (lr ** 2) * r_v_hat * g2
         
-        update = tf.Variable(variable)
-        update.assign(update * (gamma - self.extra_l2) / 2.0)
-        update.assign_add(tf.sqrt(r_v_hat) * gradient * init_lr)
-        update.assign(update * decay_factor_d)
+        update = variable
+        update = update * (gamma - self.extra_l2) / 2.0
+        update += tf.sqrt(r_v_hat) * gradient * init_lr
+        update = update * decay_factor_d
         
         b.assign(b * (1.0 + gamma) + gamma)
         

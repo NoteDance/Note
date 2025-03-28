@@ -121,8 +121,7 @@ class DAdaptAdam(optimizer.Optimizer):
         numerator_acc = tf.convert_to_tensor([0.0])
         
         if self.numerator_weighted == None:
-            self.numerator_weighted = tf.Variable(tf.convert_to_tensor([0.0]))
-            self._track_variable(self.numerator_weighted)
+            self.numerator_weighted = tf.convert_to_tensor([0.0])
         
         for variable, gradient in zip(trainable_variables, grads):
             if tf.keras.backend.is_sparse(gradient):
@@ -150,7 +149,7 @@ class DAdaptAdam(optimizer.Optimizer):
         if tf.get_static_value(sk_l1) == 0:
             return
         
-        self.numerator_weighted.assign(self.numerator_weighted * beta2_sq + numerator_acc * (1.0 - beta2_sq))  # fmt: skip
+        self.numerator_weighted = self.numerator_weighted * beta2_sq + numerator_acc * (1.0 - beta2_sq)  # fmt: skip
         
         if tf.get_static_value(lr) > 0.0:
             d_hat = self.numerator_weighted / (1.0 - beta2_sq) * sk_l1
@@ -181,6 +180,7 @@ class DAdaptAdam(optimizer.Optimizer):
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,
                 "bias_correction": self.bias_correction,
+                "numerator_weighted": self.numerator_weighted,
             }
         )
         return config

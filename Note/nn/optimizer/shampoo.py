@@ -89,8 +89,7 @@ class Shampoo(optimizer.Optimizer):
         original_size = gradient.shape.as_list()
         
         if self.momentum_buffer[self._get_variable_index(variable)] == None:
-            self.momentum_buffer[self._get_variable_index(variable)] = tf.Variable(gradient)
-            self._track_variable(self.momentum_buffer[self._get_variable_index(variable)])
+            self.momentum_buffer[self._get_variable_index(variable)] = gradient
         
         if self.momentum > 0:
             gradient = gradient * (1 - self.momentum) + self.momentum_buffer[self._get_variable_index(variable)] * self.momentum
@@ -127,7 +126,7 @@ class Shampoo(optimizer.Optimizer):
                 # grad (dim, -1)
                 gradient = tf.reshape(gradient, transposed_size)
 
-        self.momentum_buffer[self._get_variable_index(variable)].assign(gradient)
+        self.momentum_buffer[self._get_variable_index(variable)] = gradient
         variable.assign_add(gradient * -lr)
 
     def get_config(self):
@@ -137,6 +136,7 @@ class Shampoo(optimizer.Optimizer):
                 "epsilon": self.epsilon,
                 "momentum": self.momentum,
                 "update_freq": self.update_freq,
+                "momentum_buffer": self.momentum_buffer,
             }
         )
         return config

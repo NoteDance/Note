@@ -129,7 +129,7 @@ class AdaSmooth(optimizer.Optimizer):
 
         variable.assign_add(-step_size)
 
-        self.prev_param[self._get_variable_index(variable)] = tf.Variable(variable)
+        self.prev_param[self._get_variable_index(variable)] = variable
 
     def get_config(self):
         config = super().get_config()

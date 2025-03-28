@@ -84,11 +84,10 @@ class DAdaptLion(optimizer.Optimizer):
         lr = learning_rate
         
         if self.numerator_weighted == None:
-            self.numerator_weighted = tf.Variable(tf.convert_to_tensor([0.0]))
-            self._track_variable(self.numerator_weighted)
+            self.numerator_weighted = tf.convert_to_tensor([0.0])
         
-        sk_l1 = tf.Variable(tf.convert_to_tensor([0.0]))
-        numerator_accumulator = tf.Variable(tf.convert_to_tensor([0.0]))
+        sk_l1 = tf.convert_to_tensor([0.0])
+        numerator_accumulator = tf.convert_to_tensor([0.0])
         
         beta2_sq = math.sqrt(self.beta2)
         
@@ -114,12 +113,12 @@ class DAdaptLion(optimizer.Optimizer):
             
             exp_avg.assign(exp_avg * self.beta2 + grad * (1.0 - self.beta2) * d_lr)
             
-            numerator_accumulator.assign_add(tf.tensordot(tf.reshape(update, [-1]), tf.reshape(s, [-1])) * d_lr)
+            numerator_accumulator += tf.tensordot(tf.reshape(update, [-1]), tf.reshape(s, [-1])) * d_lr
             s.assign(s * beta2_sq + update * (1.0 - beta2_sq) * d_lr)
             
-            sk_l1.assign_add(tf.reduce_sum(tf.abs(s)))
+            sk_l1 += tf.reduce_sum(tf.abs(s))
         
-        self.numerator_weighted.assign(self.numerator_weighted * beta2_sq + numerator_accumulator * (1.0 - beta2_sq))
+        self.numerator_weighted = self.numerator_weighted * beta2_sq + numerator_accumulator * (1.0 - beta2_sq)
         
         if tf.get_static_value(sk_l1) == 0:
             return
@@ -139,6 +138,7 @@ class DAdaptLion(optimizer.Optimizer):
                 "d0": self.d0,
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,
+                "numerator_weighted": self.numerator_weighted,
             }
         )
         return config

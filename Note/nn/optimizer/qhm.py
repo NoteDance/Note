@@ -65,11 +65,11 @@ class QHM(optimizer.Optimizer):
         lr = tf.cast(learning_rate, variable.dtype)
         nu1, nu2 = self.Nus2
         
-        d_p = tf.Variable(gradient)
+        d_p = gradient
 
         if self.weight_decay != 0:
             if self.weight_decay_type == self.GRAD:
-                d_p.assign_add(variable * self.weight_decay)
+                d_p += variable * self.weight_decay
             else:
                 variable.assign(variable * (1.0 - lr * self.weight_decay))
 

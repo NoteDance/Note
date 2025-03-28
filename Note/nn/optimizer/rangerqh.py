@@ -80,7 +80,7 @@ class RangerQH(optimizer.Optimizer):
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
         nu1, nu2 = self.nus
-        d_p = tf.Variable(gradient)
+        d_p = gradient
         
         if tf.keras.backend.is_sparse(gradient):
             raise RuntimeError("QHAdam does not support sparse gradients")
@@ -89,7 +89,7 @@ class RangerQH(optimizer.Optimizer):
             if self.decouple_weight_decay:
                 variable.assign(variable * (1 - lr * self.weight_decay))
             else:
-                d_p.assign_add(self.weight_decay * variable)
+                d_p += self.weight_decay * variable
 
         d_p_sq = d_p * d_p
         

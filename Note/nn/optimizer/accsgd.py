@@ -66,7 +66,7 @@ class AccSGD(optimizer.Optimizer):
         zeta = self.smallConst/(self.smallConst+Beta)
         d_p = gradient
         if self.weight_decay != 0:
-            d_p.assign_add(self.weight_decay * variable)
+            d_p += self.weight_decay * variable
         buf = self.momentum_buffer[self._get_variable_index(variable)]
         buf.assign(buf * (1.0/Beta)-1.0)
         buf.assign_add(-large_lr * d_p)

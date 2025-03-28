@@ -167,7 +167,7 @@ class Adan(optimizer.Optimizer):
             grads.append(grads[i])
             
             if step == 1:
-                neg_pre_grad = tf.Variable(-grads[i])
+                neg_pre_grad = -grads[i]
             
             exp_avgs.append(self.exp_avg[self._get_variable_index(trainable_variables[i])])
             exp_avg_sqs.append(self.exp_avg_sq[self._get_variable_index(trainable_variables[i])])
@@ -229,12 +229,12 @@ def _single_tensor_adan(
         neg_grad_or_diff = neg_pre_grads[i]
 
         # for memory saving, we use `neg_grad_or_diff` to get some temp variable in an inplace way
-        neg_grad_or_diff.assign_add(grad)
+        neg_pre_grads[i] += grad
 
         exp_avg.assign(beta1 * exp_avg + (1 - beta1) * grad)  # m_t
         exp_avg_diff.assign(beta2 * exp_avg_diff + (1 - beta2) * neg_grad_or_diff)  # diff_t
 
-        neg_grad_or_diff.assign(beta2 * neg_grad_or_diff + grad)
+        neg_pre_grads[i] = beta2 * neg_grad_or_diff + grad
         exp_avg_sq.assign(beta3 * exp_avg_sq + (1 - beta3) * tf.square(neg_grad_or_diff))  # n_t
 
         denom = tf.sqrt(exp_avg_sq / bias_correction3_sqrt) + eps
@@ -256,7 +256,7 @@ def _single_tensor_adan(
             param.assign_add(-step_size_diff * exp_avg_diff / denom)
             param.assign(param / (1 + lr * weight_decay))
 
-        neg_grad_or_diff.assign(-1.0 * grad)
+        neg_pre_grads[i] = -1.0 * grad
 
 
 def _multi_tensor_adan(
@@ -267,7 +267,7 @@ def _multi_tensor_adan(
     if len(params) == 0:
         return
 
-    neg_pre_grads = [neg_pre_grad.assign(neg_pre_grad + grad) for neg_pre_grad, grad in zip(neg_pre_grads, grads)]
+    neg_pre_grads = [neg_pre_grad + grad for neg_pre_grad, grad in zip(neg_pre_grads, grads)]
 
     exp_avgs = [exp_avg.assign(beta1 * exp_avg + (1 - beta1) * grad) for exp_avg, grad in zip(exp_avgs, grads)]
 
@@ -276,7 +276,7 @@ def _multi_tensor_adan(
         for exp_avg_diff, neg_pre_grad in zip(exp_avg_diffs, neg_pre_grads)
     ]
 
-    neg_pre_grads = [neg_pre_grad.assign(beta2 * neg_pre_grad + grad) for neg_pre_grad, grad in zip(neg_pre_grads, grads)]
+    neg_pre_grads = [beta2 * neg_pre_grad + grad for neg_pre_grad, grad in zip(neg_pre_grads, grads)]
     exp_avg_sqs = [
         exp_avg_sq.assign(beta3 * exp_avg_sq + (1 - beta3) * tf.square(neg_pre_grad))
         for exp_avg_sq, neg_pre_grad in zip(exp_avg_sqs, neg_pre_grads)
@@ -307,6 +307,6 @@ def _multi_tensor_adan(
         ]
         params = [param.assign(param / (1 + lr * weight_decay)) for param in params]
 
-    neg_pre_grads = [neg_pre_grad.assign(-1.0 * grad) for neg_pre_grad, grad in zip(neg_pre_grads, grads)]
+    neg_pre_grads = [-1.0 * grad for neg_pre_grad, grad in zip(neg_pre_grads, grads)]
 
     return params, neg_pre_grads

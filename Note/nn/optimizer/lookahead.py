@@ -27,13 +27,13 @@ class Lookahead(optimizer.Optimizer):
         self._base_optimizer.lookahead_slow_buff = []
         for var in var_list:
             self._base_optimizer.lookahead_slow_buff.append(None)
-    
+
     def update_slow(self, trainable_variables):
         for fast_p in trainable_variables:
-            self._base_optimizer.lookahead_slow_buff[self._get_variable_index(fast_p)] = tf.Variable(tf.zeros_like(fast_p), trainable=False)
-            self._base_optimizer.lookahead_slow_buff[self._get_variable_index(fast_p)].assign(fast_p)
-            slow = self._base_optimizer.lookahead_slow_buff
-            slow.assign_add((fast_p - slow) * self.lookahead_alpha)
+            self._base_optimizer.lookahead_slow_buff[self._get_variable_index(fast_p)] = tf.zeros_like(fast_p)
+            self._base_optimizer.lookahead_slow_buff[self._get_variable_index(fast_p)] = fast_p
+            slow = self._base_optimizer.lookahead_slow_buff[self._get_variable_index(fast_p)]
+            self._base_optimizer.lookahead_slow_buff[self._get_variable_index(fast_p)] += (fast_p - slow) * self.lookahead_alpha
             fast_p.assign(slow)
 
     def sync_lookahead(self):

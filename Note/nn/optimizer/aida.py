@@ -180,8 +180,8 @@ class Aida(optimizer.Optimizer):
         exp_avg_var = self.exp_avg_var[self._get_variable_index(variable)]
         exp_avg.assign(exp_avg * self.beta1 + s_grad * (1.0 - self.beta1))
                        
-        proj_g = tf.Variable(gradient)
-        proj_m = tf.Variable(exp_avg)
+        proj_g = gradient
+        proj_m = exp_avg
         
         for _ in range(self.k):
             proj_sum_gm = tf.reduce_sum(proj_g * proj_m)
@@ -189,8 +189,8 @@ class Aida(optimizer.Optimizer):
             scalar_g = proj_sum_gm / (tf.reduce_sum(tf.pow(proj_g, 2)) + self.xi)
             scalar_m = proj_sum_gm / (tf.reduce_sum(tf.pow(proj_m, 2)) + self.xi)
 
-            proj_g.assign(proj_g * scalar_g)
-            proj_m.assign(proj_m * scalar_m)
+            proj_g = proj_g * scalar_g
+            proj_m = proj_m * scalar_m
       
         grad_residual = proj_m - proj_g
         exp_avg_var.assign(

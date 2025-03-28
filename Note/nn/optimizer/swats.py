@@ -112,11 +112,10 @@ class SWATS(optimizer.Optimizer):
         # if its SGD phase, take an SGD update and continue
         if self.phase == "SGD":
             if self.momentum_buffer[self._get_variable_index(variable)] == None:
-                buf = self.momentum_buffer[self._get_variable_index(variable)] = tf.Variable(gradient)
-                self._track_variable(buf)
+                buf = self.momentum_buffer[self._get_variable_index(variable)] = gradient
             else:
                 buf = self.momentum_buffer[self._get_variable_index(variable)]
-                buf.assign(buf * self.beta1 + gradient)
+                self.momentum_buffer[self._get_variable_index(variable)] = buf * self.beta1 + gradient
                 gradient = buf
 
             gradient = gradient * (1 - self.beta1)
@@ -178,6 +177,7 @@ class SWATS(optimizer.Optimizer):
                 "amsgrad": self.amsgrad,
                 "nesterov": self.nesterov,
                 "phase": self.phase,
+                "momentum_buffer": self.momentum_buffer,
             }
         )
         return config
