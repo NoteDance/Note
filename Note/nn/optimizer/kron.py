@@ -391,7 +391,7 @@ def _calc_A_and_conjB(exprA, G, Q):
     return A, conjB
 
 
-def _update_precond(Q, exprs, G, self.step, tiny):
+def _update_precond(Q, exprs, G, step, tiny):
     """Update Kronecker product preconditioner Q with pair (V, G)."""
     exprA, exprGs, _ = exprs
     A, conjB = _calc_A_and_conjB(exprA, G, Q)
@@ -399,7 +399,7 @@ def _update_precond(Q, exprs, G, self.step, tiny):
         term1 = tf.einsum(exprG, A, A)
         term2 = tf.einsum(exprG, conjB, conjB)
         term1, term2 = term1 - term2, term1 + term2
-        term1 *= self.step
+        term1 *= step
         norm = tf.norm(term2, ord=np.inf)
         if len(q.shape) < 2:
             term1 *= q / tf.maximum(norm, tiny)

@@ -277,8 +277,8 @@ def _single_tensor_adopt(
         if weight_decay != 0 and not decoupled:
             grad += weight_decay * param
 
-        self.step = step_t if capturable and differentiable else _get_value(step_t)
-        if self.step == 1:
+        step = step_t if capturable and differentiable else _get_value(step_t)
+        if step == 1:
             exp_avg_sq.assign_add(tf.math.conj(grad) * grad)
             continue
 
@@ -289,7 +289,7 @@ def _single_tensor_adopt(
         normed_grad = grad / denom
 
         if clip_exp is not None:
-            clip_val = (self.step - 1) ** clip_exp
+            clip_val = (step - 1) ** clip_exp
             normed_grad = tf.clip_by_value(normed_grad, -clip_val, clip_val)
 
         exp_avg.assign(beta1 * exp_avg + (1 - beta1) * normed_grad)
@@ -320,7 +320,7 @@ def _multi_tensor_adopt(
             
     # Helper functions
     def update_steps(state_steps):
-        return [self.step + 1 for self.step in state_steps]
+        return [step + 1 for step in state_steps]
     
     def update_grads(params, grads, weight_decay, decoupled):
         if weight_decay != 0:

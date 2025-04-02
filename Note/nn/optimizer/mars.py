@@ -14,7 +14,7 @@ def _mars_single_tensor_step(
         beta2,
         last_grad,
         eps,
-        self.step,
+        step,
         gamma,
         mars_type,
         is_grad_2d,
@@ -27,7 +27,7 @@ def _mars_single_tensor_step(
     if optimize_1d or is_grad_2d:
         one_minus_beta1 = 1. - beta1
         
-        if self.step == 1:
+        if step == 1:
             # this is a timm addition, making first self.step more consistent when no grad history, otherwise tests fail
             c_t = grad
         else:
@@ -45,8 +45,8 @@ def _mars_single_tensor_step(
 
         if mars_type == "adamw":
             exp_avg_sq.assign(beta2 * exp_avg_sq + (1. - beta2) * tf.square(c_t))
-            bias_correction1 = 1.0 - beta1 ** self.step
-            bias_correction2 = 1.0 - beta2 ** self.step
+            bias_correction1 = 1.0 - beta1 ** step
+            bias_correction2 = 1.0 - beta2 ** step
             denom = (tf.sqrt(exp_avg_sq) / math.sqrt(bias_correction2)) + eps
             update = p * weight_decay + (exp_avg / bias_correction1) / denom
         elif mars_type == "lion":
@@ -61,8 +61,8 @@ def _mars_single_tensor_step(
         exp_avg.assign(beta1_1d * exp_avg + (1. - beta1_1d) * grad)
         exp_avg_sq.assign(beta2_1d * exp_avg_sq + (1. - beta2_1d) * tf.square(grad))
         
-        bias_correction1 = 1.0 - beta1_1d ** self.step
-        bias_correction2 = 1.0 - beta2_1d ** self.step
+        bias_correction1 = 1.0 - beta1_1d ** step
+        bias_correction2 = 1.0 - beta2_1d ** step
         denom = (tf.sqrt(exp_avg_sq) / math.sqrt(bias_correction2)) + eps
 
         if caution:
