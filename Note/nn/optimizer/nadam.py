@@ -62,7 +62,7 @@ class NAdam(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.m_schedule = []
-        self.self.step = 0
+        self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -86,8 +86,8 @@ class NAdam(optimizer.Optimizer):
         exp_avg, exp_avg_sq = self.exp_avg[self._get_variable_index(variable)], self.exp_avg_sq[self._get_variable_index(variable)]
         beta1, beta2 = self.beta1, self.beta2
         eps = self.epsilon
-        self.self.step += 1
-        t= self.self.step
+        self.step += 1
+        t= self.step
         bias_correction2 = 1 - beta2 ** t
         
         if self.weight_decay != 0:
@@ -115,7 +115,7 @@ class NAdam(optimizer.Optimizer):
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
                 "schedule_decay": self.schedule_decay,
-                "self.step": self.self.step,
+                "step": self.step,
             }
         )
         return config

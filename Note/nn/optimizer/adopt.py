@@ -105,16 +105,16 @@ class Adopt(optimizer.Optimizer):
         self.clip_exp = None
         self.caution = False
         for p in self._trainable_variables:
-            if len(self.self.step) != 0 and not tf.is_tensor(self.self.step[self._get_variable_index(p)]):
-                step_val = float(self.self.step[self._get_variable_index(p)])
+            if len(self.step) != 0 and not tf.is_tensor(self.step[self._get_variable_index(p)]):
+                step_val = float(self.step[self._get_variable_index(p)])
                 if self.capturable:
                     with tf.device(p.device):
-                        self.self.step[self._get_variable_index(p)] = tf.convert_to_tensor(
+                        self.step[self._get_variable_index(p)] = tf.convert_to_tensor(
                                                     step_val,
                                                     dtype=_get_scalar_dtype(),
                                                 )
                 else:
-                    self.self.step[self._get_variable_index(p)] = tf.convert_to_tensor(
+                    self.step[self._get_variable_index(p)] = tf.convert_to_tensor(
                                                                 step_val,
                                                                 dtype=_get_scalar_dtype(),
                                                             )
@@ -125,7 +125,7 @@ class Adopt(optimizer.Optimizer):
         super().build(var_list)
         self.exp_avg = []
         self.exp_avg_sq = []
-        self.self.step = []
+        self.step = []
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -148,7 +148,7 @@ class Adopt(optimizer.Optimizer):
                                 float(0),
                                 dtype=_get_scalar_dtype(),
                             )
-            self.self.step.append(self.step)
+            self.step.append(self.step)
     
     def _backend_update_step(self, grads, trainable_variables, learning_rate):
         """Collective update_step that can be overridden by the backend.
@@ -172,7 +172,7 @@ class Adopt(optimizer.Optimizer):
             exp_avgs.append(self.exp_avg[self._get_variable_index(p)])
             exp_avg_sqs.append(self.exp_avg_sq[self._get_variable_index(p)])
 
-            state_steps.append(self.self.step[self._get_variable_index(p)])
+            state_steps.append(self.step[self._get_variable_index(p)])
         return has_complex
 
     def update_step(self, grads, trainable_variables, learning_rate):
@@ -226,7 +226,7 @@ class Adopt(optimizer.Optimizer):
                 "maximize": self.maximize,
                 "capturable": self.capturable,
                 "differentiable": self.differentiable,
-                "self.step": self.self.step,
+                "step": self.step,
             }
         )
         return config

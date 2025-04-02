@@ -40,7 +40,7 @@ class MSVAG(optimizer.Optimizer):
         self.beta = beta
     
     def reset(self):
-        self.self.step = 0
+        self.step = 0
         for var in self._trainable_variables:
             self.exp_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="exp_avg"
@@ -59,7 +59,7 @@ class MSVAG(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.s = []
-        self.self.step = 0
+        self.step = 0
         for var in var_list:
             self.exp_avg.append(self.add_variable_from_reference(
                                 reference_variable=var, name="exp_avg"
@@ -88,7 +88,7 @@ class MSVAG(optimizer.Optimizer):
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
         
-        self.self.step += 1
+        self.step += 1
         
         beta_power = self.beta ** self.step
         
@@ -120,7 +120,7 @@ class MSVAG(optimizer.Optimizer):
         config.update(
             {
                 "beta": self.beta,
-                "self.step": self.self.step,
+                "step": self.step,
             }
         )
         return config

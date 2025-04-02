@@ -63,7 +63,7 @@ class RangerQH(optimizer.Optimizer):
         self.slow_buffer = []
         self.beta1_weight = 0.0
         self.beta2_weight = 0.0
-        self.self.step = 0
+        self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -94,7 +94,7 @@ class RangerQH(optimizer.Optimizer):
 
         d_p_sq = d_p * d_p
         
-        self.self.step += 1
+        self.step += 1
         
         self.beta1_weight = 1.0 + self.beta1 * self.beta1_weight
         self.beta2_weight = 1.0 + self.beta2 * self.beta1_weight
@@ -143,7 +143,7 @@ class RangerQH(optimizer.Optimizer):
                 "k": self.k,
                 "alpha": self.alpha,
                 "decouple_weight_decay": self.decouple_weight_decay,
-                "self.step": self.self.step,
+                "step": self.step,
             }
         )
         return config

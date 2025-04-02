@@ -59,7 +59,7 @@ class AdaBelief(optimizer.Optimizer):
         self.amsgrad = False
     
     def reset(self):
-        self.self.step = 0
+        self.step = 0
         for i,v in enumerate(self._trainable_variables):
             self.exp_avg[i] = self.add_variable_from_reference(
                 reference_variable=v, name="exp_avg"
@@ -84,7 +84,7 @@ class AdaBelief(optimizer.Optimizer):
         if self.amsgrad:
             self.max_exp_avg_var = []
         self.buffer = [[None, None, None] for _ in range(10)]
-        self.self.step = 0
+        self.step = 0
         for var in var_list:
             var_fp32 = var
             if var.dtype in {tf.float16, tf.bfloat16}:
@@ -129,7 +129,7 @@ class AdaBelief(optimizer.Optimizer):
         exp_avg = self.exp_avg[self._get_variable_index(variable)]
         exp_avg_var = self.exp_avg_var[self._get_variable_index(variable)]
 
-        self.self.step += 1
+        self.step += 1
         bias_correction1 = 1 - self.beta1 ** self.step
         bias_correction2 = 1 - self.beta2 ** self.step
 
@@ -199,7 +199,7 @@ class AdaBelief(optimizer.Optimizer):
                 "fixed_decay": self.fixed_decay,
                 "rectify": self.rectify,
                 "degenerated_to_sgd": self.degenerated_to_sgd,
-                "self.step": self.self.step,
+                "step": self.step,
             }
         )
         return config

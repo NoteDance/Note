@@ -57,7 +57,7 @@ class AdaShift(optimizer.Optimizer):
         self.grad_deque = []
         self.exp_avg = []
         self.exp_avg_sq = []
-        self.self.step = 0
+        self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -73,7 +73,7 @@ class AdaShift(optimizer.Optimizer):
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
         
-        self.self.step += 1
+        self.step += 1
         
         exp_weight_sum = sum(self.beta1 ** i for i in range(self.keep_num))  # fmt: skip
         first_grad_weight = self.beta1 ** (self.keep_num - 1) / exp_weight_sum
@@ -126,7 +126,7 @@ class AdaShift(optimizer.Optimizer):
                 "keep_num": self.keep_num,
                 "cautious": self.cautious,
                 "grad_deque": self.grad_deque,
-                "self.step": self.self.step,
+                "step": self.step,
             }
         )
         return config

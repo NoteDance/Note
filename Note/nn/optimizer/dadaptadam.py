@@ -56,7 +56,7 @@ class DAdaptAdam(optimizer.Optimizer):
         self.bias_correction = bias_correction
     
     def reset(self):
-        self.self.step = 0
+        self.step = 0
         for var in self._trainable_variables:
             self.s[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="s"
@@ -76,7 +76,7 @@ class DAdaptAdam(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.numerator_weighted = None
-        self.self.step = 0
+        self.step = 0
         for var in var_list:
             self.s.append(self.add_variable_from_reference(
                                 reference_variable=var, name="s"
@@ -99,12 +99,12 @@ class DAdaptAdam(optimizer.Optimizer):
     def update_step(self, grads, trainable_variables, learning_rate):
         lr = learning_rate
         
-        self.self.step += 1
+        self.step += 1
         
         beta2_sq = math.sqrt(self.beta2)
         
-        bias_correction1 = 1.0 - self.beta1 ** (self.self.step)
-        bias_correction2_sq = math.sqrt(1.0 - self.beta2 ** (self.self.step))
+        bias_correction1 = 1.0 - self.beta1 ** (self.step)
+        bias_correction2_sq = math.sqrt(1.0 - self.beta2 ** (self.step))
         bias_correction = bias_correction1 / bias_correction2_sq
         
         # it's not Adam Debias
@@ -174,7 +174,7 @@ class DAdaptAdam(optimizer.Optimizer):
                 "fixed_decay": self.fixed_decay,
                 "bias_correction": self.bias_correction,
                 "numerator_weighted": self.numerator_weighted,
-                "self.step": self.self.step,
+                "step": self.step,
             }
         )
         return config

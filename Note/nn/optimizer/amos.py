@@ -51,7 +51,7 @@ class Amos(optimizer.Optimizer):
         self.d_coef = d_coef
     
     def reset(self):
-        self.self.step = 0
+        self.step = 0
         for var in self._trainable_variables:
             self.exp_avg_sq[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                         reference_variable=tf.Variable(tf.zeros((1,)), dtype=var.dtype), name="exp_avg_sq"
@@ -81,7 +81,7 @@ class Amos(optimizer.Optimizer):
         self.decay = []
         if self.momentum > 0.0:
             self.exp_avg = []
-        self.self.step = 0
+        self.step = 0
         for var in var_list:
             self.exp_avg_sq.append(
                 self.add_variable_from_reference(
@@ -103,7 +103,7 @@ class Amos(optimizer.Optimizer):
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
 
-        self.self.step += 1
+        self.step += 1
         
         lr_sq = math.sqrt(lr)
         bias_correction = 1 - self.beta ** self.step
@@ -151,7 +151,7 @@ class Amos(optimizer.Optimizer):
                 "extra_l2": self.extra_l2,
                 "c_coef": self.c_coef,
                 "d_coef": self.d_coef,
-                "self.step": self.self.step,
+                "step": self.step,
             }
         )
         return config

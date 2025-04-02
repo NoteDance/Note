@@ -53,7 +53,7 @@ class RAdam(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.buffer = [[None, None, None] for _ in range(10)]
-        self.self.step = 0
+        self.step = 0
         for var in var_list:
             var = tf.cast(var, 'float32')
             self.exp_avg.append(
@@ -81,7 +81,7 @@ class RAdam(optimizer.Optimizer):
         exp_avg_sq.assign(beta2 * exp_avg_sq + (1 - beta2) * tf.multiply(gradient, gradient))
         exp_avg.assign(beta1 * exp_avg + (1 - beta1) * gradient)
 
-        self.self.step += 1
+        self.step += 1
         buffered = self.buffer[int(self.step % 10)]
         if buffered[0] is not None and self.step == tf.get_static_value(buffered[0]):
             num_sma, step_size = buffered[1], buffered[2]
@@ -122,7 +122,7 @@ class RAdam(optimizer.Optimizer):
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
-                "self.step": self.self.step,
+                "step": self.step,
             }
         )
         return config

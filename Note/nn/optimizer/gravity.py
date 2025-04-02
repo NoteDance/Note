@@ -42,7 +42,7 @@ class Gravity(optimizer.Optimizer):
         self.beta = beta
     
     def reset(self):
-        self.self.step = 0
+        self.step = 0
         for var in self._trainable_variables:
             self.v[self._get_variable_index(var)] =  tf.Variable(tf.random.normal(shape=var.shape,
                                                        mean=0.0,
@@ -55,7 +55,7 @@ class Gravity(optimizer.Optimizer):
             return
         super().build(var_list)
         self.v = []
-        self.self.step = 0
+        self.step = 0
         for var in var_list:
             self.v.append(tf.Variable(tf.random.normal(shape=var.shape,
                                                        mean=0.0,
@@ -66,7 +66,7 @@ class Gravity(optimizer.Optimizer):
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
                 
-        self.self.step += 1
+        self.step += 1
         
         beta_t = (self.beta * self.step + 1) / (self.step + 2)
         
@@ -89,7 +89,7 @@ class Gravity(optimizer.Optimizer):
             {
                 "alpha": self.alpha,
                 "beta": self.beta,
-                "self.step": self.self.step,
+                "step": self.step,
             }
         )
         return config

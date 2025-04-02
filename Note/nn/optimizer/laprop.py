@@ -56,7 +56,7 @@ class LaProp(optimizer.Optimizer):
             self.exp_mean_avg_beta2 = []
         if self.amsgrad:
             self.max_exp_avg_sq = []
-        self.self.step = 0
+        self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -92,7 +92,7 @@ class LaProp(optimizer.Optimizer):
             max_exp_avg_sq = self.max_exp_avg_sq[self._get_variable_index(variable)]
         beta1, beta2 = self.beta1, self.beta2
 
-        self.self.step += 1
+        self.step += 1
 
         # Decay the first and second moment running average coefficient
         exp_avg_sq.assign(exp_avg_sq * beta2 + (1 - beta2) * gradient * gradient)
@@ -138,7 +138,7 @@ class LaProp(optimizer.Optimizer):
                 "amsgrad": self.amsgrad,
                 "centered": self.centered,
                 "steps_before_using_centered": self.steps_before_using_centered,
-                "self.step": self.self.step,
+                "step": self.step,
             }
         )
         return config

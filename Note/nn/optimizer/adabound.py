@@ -62,7 +62,7 @@ class AdaBound(optimizer.Optimizer):
         if self.amsbound:
             self.max_exp_avg_sq = []
         self.base_lr = self._learning_rate
-        self.self.step = 0
+        self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -93,7 +93,7 @@ class AdaBound(optimizer.Optimizer):
         if self.amsbound:
             max_exp_avg_sq = self.max_exp_avg_sq[self._get_variable_index(variable)]
         
-        self.self.step += 1
+        self.step += 1
 
         if self.weight_decay != 0:
             gradient = gradient + self.weight_decay * variable
@@ -135,7 +135,7 @@ class AdaBound(optimizer.Optimizer):
                 "final_lr": self.final_lr,
                 "gamma": self.gamma,
                 "amsbound": self.amsbound,
-                "self.step": self.self.step,
+                "step": self.step,
             }
         )
         return config

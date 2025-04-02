@@ -68,7 +68,7 @@ class Ranger(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.slow_buffer = []
-        self.self.step = 0
+        self.step = 0
         for var in var_list:
             var_fp32 = tf.Variable(tf.cast(var, 'float32'))
             self.exp_avg.append(
@@ -105,7 +105,7 @@ class Ranger(optimizer.Optimizer):
         if len(gradient.shape) > self.gc_gradient_threshold:
             gradient = gradient - tf.reduce_mean(gradient, axis=tuple(range(1, len(gradient.shape))), keepdims=True)
         
-        self.self.step += 1
+        self.step += 1
         
         # compute variance mov avg
         exp_avg_sq.assign(self.beta2 * exp_avg_sq + (1 - self.beta2) * gradient * gradient)
@@ -171,7 +171,7 @@ class Ranger(optimizer.Optimizer):
                 "N_sma_threshhold": self.N_sma_threshhold,
                 "use_gc": self.use_gc,
                 "gc_conv_only": self.gc_conv_only,
-                "self.step": self.self.step,
+                "step": self.step,
             }
         )
         return config

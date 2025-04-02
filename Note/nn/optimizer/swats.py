@@ -68,7 +68,7 @@ class SWATS(optimizer.Optimizer):
         if self.amsgrad:
             self.max_exp_avg_sq = []
         self.momentum_buffer = []
-        self.self.step = 0
+        self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -105,7 +105,7 @@ class SWATS(optimizer.Optimizer):
         if self.amsgrad:
             max_exp_avg_sq = self.max_exp_avg_sq[self._get_variable_index(variable)]
         
-        self.self.step += 1
+        self.step += 1
 
         if self.weight_decay != 0:
             gradient += variable * self.weight_decay
@@ -179,7 +179,7 @@ class SWATS(optimizer.Optimizer):
                 "nesterov": self.nesterov,
                 "phase": self.phase,
                 "momentum_buffer": self.momentum_buffer,
-                "self.step": self.self.step,
+                "step": self.step,
             }
         )
         return config

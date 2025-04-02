@@ -68,7 +68,7 @@ class Aida(optimizer.Optimizer):
         self.adam_debias = adam_debias
     
     def reset(self):
-        self.self.step = 0
+        self.step = 0
         for var in self._trainable_variables:
             self.exp_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="exp_avg"
@@ -98,7 +98,7 @@ class Aida(optimizer.Optimizer):
             self.exp_grad_norm = []
         if self.ams_bound:
             self.max_exp_avg_var = []
-        self.self.step = 0
+        self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -126,7 +126,7 @@ class Aida(optimizer.Optimizer):
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
         
-        self.self.step += 1
+        self.step += 1
         
         if tf.keras.backend.is_sparse(gradient):
             raise RuntimeError(
@@ -225,7 +225,7 @@ class Aida(optimizer.Optimizer):
                 "r": self.r,
                 "adanorm": self.adanorm,
                 "adam_debias": self.adam_debias,
-                "self.step": self.self.step,
+                "step": self.step,
             }
         )
         return config

@@ -54,7 +54,7 @@ class DiffGrad(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.previous_grad = []
-        self.self.step = 0
+        self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -82,7 +82,7 @@ class DiffGrad(optimizer.Optimizer):
         exp_avg_sq = self.exp_avg_sq[self._get_variable_index(variable)]
         previous_grad = self.previous_grad[self._get_variable_index(variable)]
         
-        self.self.step += 1
+        self.step += 1
 
         if self.weight_decay != 0:
             gradient += variable * self.weight_decay
@@ -115,7 +115,7 @@ class DiffGrad(optimizer.Optimizer):
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
-                "self.step": self.self.step,
+                "step": self.step,
             }
         )
         return config

@@ -99,7 +99,7 @@ class GrokFastAdamW(optimizer.Optimizer):
     
     def reset(self):
         self.grads = None
-        self.self.step = 0
+        self.step = 0
         for var in self._trainable_variables:
             self.exp_avg[self._get_variable_index(var)] = self.add_variable_from_reference(
                                                         reference_variable=var, name="exp_avg"
@@ -115,7 +115,7 @@ class GrokFastAdamW(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.grok_exp_avg = []
-        self.self.step = 0
+        self.step = 0
         for var in var_list:
             self.exp_avg.append(self.add_variable_from_reference(
                                 reference_variable=var, name="exp_avg"
@@ -141,7 +141,7 @@ class GrokFastAdamW(optimizer.Optimizer):
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
                 
-        self.self.step += 1
+        self.step += 1
         
         bias_correction1 = 1 - self.beta1 ** self.step
         bias_correction2_sq = math.sqrt(1 - self.beta2 ** self.step)
@@ -197,7 +197,7 @@ class GrokFastAdamW(optimizer.Optimizer):
                 "filter": self.filter,
                 "filter_params": self.filter_params,
                 "grads": self.grads,
-                "self.step": self.self.step,
+                "step": self.step,
             }
         )
         return config

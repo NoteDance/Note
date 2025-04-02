@@ -69,9 +69,9 @@ class NAdamW(optimizer.Optimizer):
     
     def __setstate__(self, state):
         self.__dict__.update(state)
-        if not tf.is_tensor(self.self.step[0]):
+        if not tf.is_tensor(self.step[0]):
             for p in self._trainable_variables:
-                self.self.step[self._get_variable_index(p)] = tf.convert_to_tensor(float(self.self.step[self._get_variable_index(p)]))
+                self.step[self._get_variable_index(p)] = tf.convert_to_tensor(float(self.step[self._get_variable_index(p)]))
         self.caution = False
 
     def build(self, var_list):
@@ -80,7 +80,7 @@ class NAdamW(optimizer.Optimizer):
         super().build(var_list)
         self.exp_avg = []
         self.exp_avg_sq = []
-        self.self.step = 0
+        self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -111,7 +111,7 @@ class NAdamW(optimizer.Optimizer):
         for p in trainable_variables:
             exp_avgs.append(self.exp_avg[self._get_variable_index(p)])
             exp_avg_sqs.append(self.exp_avg_sq[self._get_variable_index(p)])
-            state_steps.append(self.self.step)
+            state_steps.append(self.step)
 
         nadamw(
             trainable_variables,
@@ -140,7 +140,7 @@ class NAdamW(optimizer.Optimizer):
                 "maximize": self.maximize,
                 "foreach": self.foreach,
                 "capturable": self.capturable,
-                "self.step": self.self.step,
+                "step": self.step,
             }
         )
         return config

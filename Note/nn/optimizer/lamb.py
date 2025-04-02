@@ -132,7 +132,7 @@ class Lamb(optimizer.Optimizer):
         super().build(var_list)
         self.exp_avg = []
         self.exp_avg_sq = []
-        self.self.step = 0
+        self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -167,7 +167,7 @@ class Lamb(optimizer.Optimizer):
         
         # assume same self.step across group now to simplify things
         # per parameter self.step can be easily support by making it tensor, or pass list into kernel
-        self.self.step += 1
+        self.step += 1
         
         if bias_correction:
             bias_correction1 = 1 - beta1 ** self.step
@@ -232,7 +232,7 @@ class Lamb(optimizer.Optimizer):
                 "always_adapt": self.always_adapt,
                 "caution": self.caution,
                 "decoupled_decay": self.decoupled_decay,
-                "self.step": self.self.step,
+                "step": self.step,
             }
         )
         return config

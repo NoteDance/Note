@@ -109,7 +109,7 @@ class Muon(optimizer.Optimizer):
             self.use_muon[self._get_variable_index(p)] = False
     
     def reset(self):
-        self.self.step = 0
+        self.step = 0
         for var in self._trainable_variables:
             self.momentum_buffer[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="momentum_buffer"
@@ -130,7 +130,7 @@ class Muon(optimizer.Optimizer):
         self.moment1 = []
         self.moment2 = []
         self.use_muon = []
-        self.self.step = 0
+        self.step = 0
         for var in var_list:
             self.momentum_buffer.append(self.add_variable_from_reference(
                                 reference_variable=var, name="momentum_buffer"
@@ -160,7 +160,7 @@ class Muon(optimizer.Optimizer):
     def update_step(self, grads, trainable_variables, learning_rate):
         lr = learning_rate
         
-        self.self.step += 1
+        self.step += 1
         
         params = []
         for p, grad in zip(trainable_variables, grads):
@@ -252,7 +252,7 @@ class Muon(optimizer.Optimizer):
                 "adamw_eps": self.adamw_eps,
                 "world_size": self.world_size,
                 "rank": self.rank,
-                "self.step": self.self.step,
+                "step": self.step,
             }
         )
         return config

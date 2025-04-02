@@ -66,7 +66,7 @@ class MADGRAD(optimizer.Optimizer):
         self.grad_sum_sq = []
         self.s = []
         self.x0 = []
-        self.self.step = 0
+        self.step = 0
         for var in var_list:
             self.grad_sum_sq.append(
                 self.add_variable_from_reference(
@@ -86,7 +86,7 @@ class MADGRAD(optimizer.Optimizer):
         lr = tf.cast(learning_rate, variable.dtype) + self.epsilon
         ck = 1 - self.momentum
         
-        self.self.step += 1
+        self.step += 1
         grad_sum_sq, s = self.grad_sum_sq[self._get_variable_index(variable)], self.s[self._get_variable_index(variable)]
         lamb = lr * math.sqrt(self.step)
 
@@ -158,7 +158,7 @@ class MADGRAD(optimizer.Optimizer):
                 "momentum": self.momentum,
                 "epsilon": self.epsilon,
                 "decoupled_decay": self.decoupled_decay,
-                "self.step": self.self.step,
+                "step": self.step,
             }
         )
         return config

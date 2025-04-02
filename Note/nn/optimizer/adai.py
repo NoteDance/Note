@@ -60,7 +60,7 @@ class Adai(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.beta1_prod = []
-        self.self.step = 0
+        self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -95,7 +95,7 @@ class Adai(optimizer.Optimizer):
         for p, g in zip(trainable_variables, grads):
             param_size += tf.size(p)
             
-            self.self.step += 1
+            self.step += 1
             
             exp_avg_sq = self.exp_avg_sq[self._get_variable_index(p)]
             
@@ -141,7 +141,7 @@ class Adai(optimizer.Optimizer):
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
                 "decoupled": self.decoupled,
-                "self.step": self.self.step,
+                "step": self.step,
             }
         )
         return config

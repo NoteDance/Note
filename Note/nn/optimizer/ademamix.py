@@ -58,7 +58,7 @@ class AdEMAMix(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.exp_avg_slow = []
-        self.self.step = 0
+        self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -90,7 +90,7 @@ class AdEMAMix(optimizer.Optimizer):
         exp_avg_slow = []
         state_steps = []
         
-        self.self.step += 1
+        self.step += 1
         
         for p in trainable_variables:
             exp_avgs.append(self.exp_avg[self._get_variable_index(p)])
@@ -161,7 +161,7 @@ class AdEMAMix(optimizer.Optimizer):
                 "epsilon": self.epsilon,
                 "alpha": self.alpha,
                 "T_alpha_beta3": self.T_alpha_beta3,
-                "self.step": self.self.step,
+                "step": self.step,
             }
         )
         return config

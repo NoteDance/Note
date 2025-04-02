@@ -62,7 +62,7 @@ class PID(optimizer.Optimizer):
         self.I_buffer = []
         self.grad_buffer = []
         self.D_buffer = []
-        self.self.step = 0
+        self.step = 0
         for var in var_list:
             self.I_buffer.append(
                 self.add_variable_from_reference(
@@ -87,13 +87,13 @@ class PID(optimizer.Optimizer):
         if self.weight_decay != 0:
             d_p += self.weight_decay * variable
         if self.momentum != 0:
-            if self.self.step == 0:
+            if self.step == 0:
                 I_buf = self.I_buffer[self._get_variable_index(variable)]
                 I_buf.assign(I_buf * self.momentum + d_p)
             else:
                 I_buf = self.I_buffer[self._get_variable_index(variable)]
                 I_buf.assign(I_buf * self.momentum + (1 - self.dampening) * d_p)
-            if self.self.step == 0:
+            if self.step == 0:
                 g_buf = self.grad_buffer[self._get_variable_index(variable)]
                 g_buf = d_p   
                 
@@ -109,7 +109,7 @@ class PID(optimizer.Optimizer):
         
         variable.assign_add(-lr * d_p)
         
-        self.self.step += 1
+        self.step += 1
 
     def get_config(self):
         config = super().get_config()
@@ -120,7 +120,7 @@ class PID(optimizer.Optimizer):
                 "nesterov": self.nesterov,
                 "I": self.I,
                 "D": self.D,
-                "self.step": self.self.step,
+                "step": self.step,
             }
         )
         return config

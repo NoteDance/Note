@@ -51,7 +51,7 @@ class AdaMod(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.exp_avg_lr = []
-        self.self.step = 0
+        self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -80,7 +80,7 @@ class AdaMod(optimizer.Optimizer):
         exp_avg_sq = self.exp_avg_sq[self._get_variable_index(variable)]
         exp_avg_lr = self.exp_avg_lr[self._get_variable_index(variable)]
         
-        self.self.step += 1
+        self.step += 1
 
         # Decay the first and second moment running average coefficient
         exp_avg.assign(self.beta1 * exp_avg + (1 - self.beta1) * gradient)
@@ -112,7 +112,7 @@ class AdaMod(optimizer.Optimizer):
                 "beta2": self.beta2,
                 "beta3": self.beta3,
                 "epsilon": self.epsilon,
-                "self.step": self.self.step,
+                "step": self.step,
             }
         )
         return config

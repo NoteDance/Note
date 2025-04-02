@@ -98,7 +98,7 @@ class RangerVA(optimizer.Optimizer):
         if self.amsgrad:
             self.max_exp_avg_sq = []
         self.slow_buffer = []
-        self.self.step = 0
+        self.step = 0
         for var in var_list:
             var_fp32 = tf.Variable(tf.cast(var, 'float32'))
             self.exp_avg.append(
@@ -164,7 +164,7 @@ class RangerVA(optimizer.Optimizer):
             #pdb.set_trace()
             denomc = tf.sqrt(denomc)
         
-        self.self.step += 1
+        self.step += 1
         
         if self.weight_decay != 0:
             variable_fp32 += -self.weight_decay * lr * variable_fp32
@@ -208,7 +208,7 @@ class RangerVA(optimizer.Optimizer):
                 "transformer": self.transformer,
                 "smooth": self.smooth,
                 "grad_transformer": self.grad_transformer,
-                "self.step": self.self.step,
+                "step": self.step,
             }
         )
         return config

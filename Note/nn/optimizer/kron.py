@@ -104,7 +104,7 @@ class Kron(optimizer.Optimizer):
         self.exprs = []
         if self.precond_dtype is None:
             self.precond_dtype = tf.float32
-        self.self.step = 0
+        self.step = 0
         for var in var_list:
             self.momentum_buffer.append(
                 self.add_variable_from_reference(
@@ -157,7 +157,7 @@ class Kron(optimizer.Optimizer):
         total_precond_size += precond_size
         total_precond_mb += precond_mb
         
-        self.self.step += 1
+        self.step += 1
         
         momentum_buffer = self.momentum_buffer[self._get_variable_index(variable)]
         self.momentum_buffer[self._get_variable_index(variable)] = momentum_buffer * self.b1 + gradient * (1 - self.b1)
@@ -207,7 +207,7 @@ class Kron(optimizer.Optimizer):
                 "mu_dtype": self.mu_dtype,
                 "precond_dtype": self.precond_dtype,
                 "exprs": self.exprs,
-                "self.step": self.self.step,
+                "step": self.step,
             }
         )
         return config

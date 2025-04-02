@@ -89,7 +89,7 @@ class AdamP(optimizer.Optimizer):
         super().build(var_list)
         self.exp_avg = []
         self.exp_avg_sq = []
-        self.self.step = 0
+        self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -107,7 +107,7 @@ class AdamP(optimizer.Optimizer):
         exp_avg, exp_avg_sq = self.exp_avg[self._get_variable_index(variable)], self.exp_avg_sq[self._get_variable_index(variable)]
         beta1, beta2 = self.beta1, self.beta2
 
-        self.self.step += 1
+        self.step += 1
         bias_correction1 = 1 - beta1 ** self.step
         bias_correction2 = 1 - beta2 ** self.step
 
@@ -144,7 +144,7 @@ class AdamP(optimizer.Optimizer):
                 "delta": self.delta,
                 "wd_ratio": self.wd_ratio,
                 "nesterov": self.nesterov,
-                "self.step": self.self.step,
+                "step": self.step,
             }
         )
         return config

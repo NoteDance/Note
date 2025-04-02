@@ -55,7 +55,7 @@ class GaLore(optimizer.Optimizer):
         self.projection_type = projection_type
     
     def reset(self):
-        self.self.step = 0
+        self.step = 0
         for var in self._trainable_variables:
             self.exp_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="exp_avg"
@@ -71,7 +71,7 @@ class GaLore(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.projector = []
-        self.self.step = 0
+        self.step = 0
         for var in var_list:
             self.exp_avg.append(self.add_variable_from_reference(
                                 reference_variable=var, name="exp_avg"
@@ -84,10 +84,10 @@ class GaLore(optimizer.Optimizer):
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
                 
-        self.self.step += 1
+        self.step += 1
         
-        bias_correction1 = 1 - self.beta1 ** self.self.step
-        bias_correction2_sq = math.sqrt(1 - self.beta2 ** self.self.step)
+        bias_correction1 = 1 - self.beta1 ** self.step
+        bias_correction2_sq = math.sqrt(1 - self.beta2 ** self.step)
         
         step_size = lr * bias_correction2_sq / bias_correction1
         
@@ -104,7 +104,7 @@ class GaLore(optimizer.Optimizer):
                     projection_type=self.projection_type,
                 )
 
-            grad = self.projector[self._get_variable_index(variable)].project(gradient, self.self.step)
+            grad = self.projector[self._get_variable_index(variable)].project(gradient, self.step)
         
         if self.weight_decouple:
             variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr)))
@@ -135,7 +135,7 @@ class GaLore(optimizer.Optimizer):
                 "scale": self.scale,
                 "projection_type": self.projection_type,
                 "projector": self.projector,
-                "self.step": self.self.step,
+                "step": self.step,
             }
         )
         return config
