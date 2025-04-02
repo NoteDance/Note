@@ -63,6 +63,7 @@ class AdaiV2(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.beta1_prod = []
+        self.self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -97,11 +98,11 @@ class AdaiV2(optimizer.Optimizer):
         for p, g in zip(trainable_variables, grads):
             param_size += tf.size(p)
             
-            step = tf.get_static_value(self.iterations + 1)
+            self.self.step += 1
             
             exp_avg_sq = self.exp_avg_sq[self._get_variable_index(p)]
             
-            bias_correction2 = 1 - self.beta2 ** step
+            bias_correction2 = 1 - self.beta2 ** self.step
 
             if self.weight_decay != 0 and self.decoupled == False:
                 grads[self._get_variable_index(p)] = g + p * self.weight_decay
@@ -120,7 +121,7 @@ class AdaiV2(optimizer.Optimizer):
             exp_avg_sq = self.exp_avg_sq[self._get_variable_index(p)]
             beta1_prod = self.beta1_prod[self._get_variable_index(p)]
             
-            bias_correction2 = 1 - self.beta2 ** step
+            bias_correction2 = 1 - self.beta2 ** self.step
 
             exp_avg_sq_hat = exp_avg_sq / bias_correction2
             beta1 = tf.clip_by_value(1. - tf.pow(exp_avg_sq_hat / exp_avg_sq_hat_mean, 1.0 / (3 - 2 * self.dampening)) * self.beta0, 
@@ -145,6 +146,7 @@ class AdaiV2(optimizer.Optimizer):
                 "epsilon": self.epsilon,
                 "dampening": self.dampening,
                 "decoupled": self.decoupled,
+                "self.step": self.self.step,
             }
         )
         return config

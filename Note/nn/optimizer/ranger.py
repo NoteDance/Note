@@ -68,6 +68,7 @@ class Ranger(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.slow_buffer = []
+        self.self.step = 0
         for var in var_list:
             var_fp32 = tf.Variable(tf.cast(var, 'float32'))
             self.exp_avg.append(
@@ -104,22 +105,22 @@ class Ranger(optimizer.Optimizer):
         if len(gradient.shape) > self.gc_gradient_threshold:
             gradient = gradient - tf.reduce_mean(gradient, axis=tuple(range(1, len(gradient.shape))), keepdims=True)
         
-        step = tf.get_static_value(self.iterations + 1)
+        self.self.step += 1
         
         # compute variance mov avg
         exp_avg_sq.assign(self.beta2 * exp_avg_sq + (1 - self.beta2) * gradient * gradient)
         # compute mean moving avg
         exp_avg.assign(self.beta1 * exp_avg + (1 - self.beta1) * gradient)
         
-        buffered = self.radam_buffer[int(step % 10)]
+        buffered = self.radam_buffer[int(self.step % 10)]
         
-        if buffered[0] is not None and step == tf.get_static_value(buffered[0]):
+        if buffered[0] is not None and self.step == tf.get_static_value(buffered[0]):
             N_sma, step_size = buffered[1], buffered[2]
         else:
             buffered[0] = self.iterations + 1
-            beta2_t = self.beta2 ** step
+            beta2_t = self.beta2 ** self.step
             N_sma_max = 2 / (1 - self.beta2) - 1
-            N_sma = N_sma_max - 2 * step * beta2_t / (1 - beta2_t)
+            N_sma = N_sma_max - 2 * self.step * beta2_t / (1 - beta2_t)
             buffered[1] = N_sma
 
             if N_sma > self.N_sma_threshhold:
@@ -131,9 +132,9 @@ class Ranger(optimizer.Optimizer):
                     / N_sma
                     * N_sma_max
                     / (N_sma_max - 2)
-                ) / (1 - self.beta1 ** step)
+                ) / (1 - self.beta1 ** self.step)
             else:
-                step_size = 1.0 / (1 - self.beta1 ** step)
+                step_size = 1.0 / (1 - self.beta1 ** self.step)
             buffered[2] = step_size
             
         if self.weight_decay != 0:
@@ -150,7 +151,7 @@ class Ranger(optimizer.Optimizer):
 
         # integrated look ahead...
         # we do it at the param level instead of group level
-        if step % self.k == 0:
+        if self.step % self.k == 0:
             # get access to slow param tensor
             slow_p = self.slow_buffer[self._get_variable_index(variable)]
             # (fast weights - slow weights) * alpha
@@ -170,6 +171,7 @@ class Ranger(optimizer.Optimizer):
                 "N_sma_threshhold": self.N_sma_threshhold,
                 "use_gc": self.use_gc,
                 "gc_conv_only": self.gc_conv_only,
+                "self.step": self.self.step,
             }
         )
         return config

@@ -56,15 +56,7 @@ class AdaNorm(optimizer.Optimizer):
         self.adam_debias = adam_debias
     
     def reset(self):
-        iterations = tf.Variable(
-            0,
-            name="iteration",
-            dtype="int",
-            trainable=False,
-            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-        )
-        self._track_variable(iterations)
-        self._iterations = iterations
+        self.self.step = 0
         for var in self._trainable_variables:
             self.exp_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="exp_avg"
@@ -89,6 +81,7 @@ class AdaNorm(optimizer.Optimizer):
         self.exp_grad_norm = []
         if self.ams_bound:
             self.max_exp_avg_var = []
+        self.self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -115,10 +108,10 @@ class AdaNorm(optimizer.Optimizer):
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
         
-        step = tf.get_static_value(self.iterations + 1)
+        self.self.step += 1
         
-        bias_correction1 = 1 - self.beta1 ** step
-        bias_correction2_sq = math.sqrt(1 - self.beta2 ** step)
+        bias_correction1 = 1 - self.beta1 ** self.step
+        bias_correction2_sq = math.sqrt(1 - self.beta2 ** self.step)
         
         if tf.keras.backend.is_sparse(gradient):
             raise RuntimeError(
@@ -165,6 +158,7 @@ class AdaNorm(optimizer.Optimizer):
                 "fixed_decay": self.fixed_decay,
                 "ams_bound": self.ams_bound,
                 "adam_debias": self.adam_debias,
+                "self.step": self.self.step,
             }
         )
         return config

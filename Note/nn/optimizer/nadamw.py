@@ -69,9 +69,9 @@ class NAdamW(optimizer.Optimizer):
     
     def __setstate__(self, state):
         self.__dict__.update(state)
-        if not tf.is_tensor(self.step[0]):
+        if not tf.is_tensor(self.self.step[0]):
             for p in self._trainable_variables:
-                self.step[self._get_variable_index(p)] = tf.convert_to_tensor(float(self.step[self._get_variable_index(p)]))
+                self.self.step[self._get_variable_index(p)] = tf.convert_to_tensor(float(self.self.step[self._get_variable_index(p)]))
         self.caution = False
 
     def build(self, var_list):
@@ -80,6 +80,7 @@ class NAdamW(optimizer.Optimizer):
         super().build(var_list)
         self.exp_avg = []
         self.exp_avg_sq = []
+        self.self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -110,7 +111,7 @@ class NAdamW(optimizer.Optimizer):
         for p in trainable_variables:
             exp_avgs.append(self.exp_avg[self._get_variable_index(p)])
             exp_avg_sqs.append(self.exp_avg_sq[self._get_variable_index(p)])
-            state_steps.append(tf.get_static_value(self.iterations))
+            state_steps.append(self.self.step)
 
         nadamw(
             trainable_variables,
@@ -139,6 +140,7 @@ class NAdamW(optimizer.Optimizer):
                 "maximize": self.maximize,
                 "foreach": self.foreach,
                 "capturable": self.capturable,
+                "self.step": self.self.step,
             }
         )
         return config
@@ -206,8 +208,9 @@ def _single_tensor_nadamw(
         exp_avg_sq = exp_avg_sqs[i]
         step_t = state_steps[i]
 
-        # Update step.
+        # Update self.step.
         step_t += 1
+        state_steps[i] = step_t
 
         # Perform stepweight decay.
         param.assign(param * (1. - lr * weight_decay))
@@ -217,12 +220,12 @@ def _single_tensor_nadamw(
         exp_avg_sq.assign(beta2 * exp_avg_sq + (1 - beta2) * tf.square(grad))
 
         if capturable:
-            step = tf.cast(step_t, param.dtype)
+            self.step = tf.cast(step_t, param.dtype)
             
-            # 1 - beta1 ** step can't be captured in a CUDA graph, even if step is a CUDA tensor
+            # 1 - beta1 ** self.step can't be captured in a CUDA graph, even if self.step is a CUDA tensor
             # (incurs "RuntimeError: CUDA error: operation not permitted when stream is capturing")
-            bias_correction1 = 1 - tf.pow(beta1, step)
-            bias_correction2 = 1 - tf.pow(beta2, step)
+            bias_correction1 = 1 - tf.pow(beta1, self.step)
+            bias_correction2 = 1 - tf.pow(beta2, self.step)
 
             step_size = lr / bias_correction1
             step_size_neg = -step_size
@@ -244,9 +247,9 @@ def _single_tensor_nadamw(
 
             param.assign_add(exp_avg / denom)
         else:
-            step = step_t
-            bias_correction1 = 1 - beta1 ** step
-            bias_correction2 = 1 - beta2 ** step
+            self.step = step_t
+            bias_correction1 = 1 - beta1 ** self.step
+            bias_correction2 = 1 - beta2 ** self.step
             step_size = lr / bias_correction1
             bias_correction2_sqrt = math.sqrt(bias_correction2)
             
@@ -289,8 +292,8 @@ def _multi_tensor_nadamw(
         exp_avg_sqs[i].assign(exp_avg_sqs[i] * beta2 + tf.square(grads[i]) * (1 - beta2))
 
     if capturable:
-        bias_correction1 = [tf.pow(beta1, tf.cast(step, p.dtype)) for step, p in zip(state_steps, params)]
-        bias_correction2 = [tf.pow(beta2, tf.cast(step, p.dtype)) for step, p in zip(state_steps, params)]
+        bias_correction1 = [tf.pow(beta1, tf.cast(self.step, p.dtype)) for self.step, p in zip(state_steps, params)]
+        bias_correction2 = [tf.pow(beta2, tf.cast(self.step, p.dtype)) for self.step, p in zip(state_steps, params)]
 
         bias_correction1 = [1 - bc for bc in bias_correction1]
         bias_correction2 = [1 - bc for bc in bias_correction2]
@@ -319,8 +322,8 @@ def _multi_tensor_nadamw(
         for i in range(len(params)):
             params[i].assign_add(exp_avgs[i] / denom[i])
     else:
-        bias_correction1 = [1 - beta1 ** step for step in state_steps]
-        bias_correction2 = [1 - beta2 ** step for step in state_steps]
+        bias_correction1 = [1 - beta1 ** self.step for self.step in state_steps]
+        bias_correction2 = [1 - beta2 ** self.step for self.step in state_steps]
 
         step_size = [(lr / bc) * -1 for bc in bias_correction1]
         bias_correction2_sqrt = [math.sqrt(bc) for bc in bias_correction2]

@@ -53,15 +53,7 @@ class FAdam(optimizer.Optimizer):
         self.fim_dtype = fim_dtype
     
     def reset(self):
-        iterations = tf.Variable(
-            0,
-            name="iteration",
-            dtype="int",
-            trainable=False,
-            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-        )
-        self._track_variable(iterations)
-        self._iterations = iterations
+        self.self.step = 0
         for var in self._trainable_variables:
             self.momentum[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=tf.Variable(tf.cast(var, dtype=self.momentum_dtype)), name="momentum"
@@ -76,6 +68,7 @@ class FAdam(optimizer.Optimizer):
         super().build(var_list)
         self.momentum = []
         self.fim = []
+        self.self.step = 0
         for var in var_list:
             self.momentum.append(self.add_variable_from_reference(
                                 reference_variable=tf.Variable(tf.cast(var, dtype=self.momentum_dtype)), name="momentum"
@@ -87,9 +80,9 @@ class FAdam(optimizer.Optimizer):
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
         
-        step = tf.get_static_value(self.iterations + 1)
+        self.self.step += 1
         
-        curr_beta2 = 1 - self.beta2 ** step
+        curr_beta2 = 1 - self.beta2 ** self.step
         
         if tf.keras.backend.is_sparse(gradient):
             raise RuntimeError(
@@ -132,6 +125,7 @@ class FAdam(optimizer.Optimizer):
                 "p": self.p,
                 "momentum_dtype": self.momentum_dtype,
                 "fim_dtype": self.fim_dtype,
+                "self.step": self.self.step,
             }
         )
         return config

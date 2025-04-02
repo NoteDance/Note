@@ -60,6 +60,7 @@ class Adai(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.beta1_prod = []
+        self.self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -94,11 +95,11 @@ class Adai(optimizer.Optimizer):
         for p, g in zip(trainable_variables, grads):
             param_size += tf.size(p)
             
-            step = tf.get_static_value(self.iterations + 1)
+            self.self.step += 1
             
             exp_avg_sq = self.exp_avg_sq[self._get_variable_index(p)]
             
-            bias_correction2 = 1 - self.beta2 ** step
+            bias_correction2 = 1 - self.beta2 ** self.step
 
             if self.weight_decay != 0 and self.decoupled == False:
                 grads[self._get_variable_index(p)] = g + p * self.weight_decay
@@ -117,7 +118,7 @@ class Adai(optimizer.Optimizer):
             exp_avg_sq = self.exp_avg_sq[self._get_variable_index(p)]
             beta1_prod = self.beta1_prod[self._get_variable_index(p)]
             
-            bias_correction2 = 1 - self.beta2 ** step
+            bias_correction2 = 1 - self.beta2 ** self.step
 
             exp_avg_sq_hat = exp_avg_sq / bias_correction2
             beta1 = tf.clip_by_value(1.0 - self.beta0 * (exp_avg_sq_hat / exp_avg_sq_hat_mean),
@@ -140,6 +141,7 @@ class Adai(optimizer.Optimizer):
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
                 "decoupled": self.decoupled,
+                "self.step": self.self.step,
             }
         )
         return config

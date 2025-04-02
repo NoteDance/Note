@@ -48,15 +48,7 @@ class Grams(optimizer.Optimizer):
         self.weight_decouple = weight_decouple
     
     def reset(self):
-        iterations = tf.Variable(
-            0,
-            name="iteration",
-            dtype="int",
-            trainable=False,
-            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-        )
-        self._track_variable(iterations)
-        self._iterations = iterations
+        self.self.step = 0
         for var in self._trainable_variables:
             self.exp_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="exp_avg"
@@ -71,6 +63,7 @@ class Grams(optimizer.Optimizer):
         super().build(var_list)
         self.exp_avg = []
         self.exp_avg_sq = []
+        self.self.step = 0
         for var in var_list:
             self.exp_avg.append(self.add_variable_from_reference(
                                 reference_variable=var, name="exp_avg"
@@ -82,10 +75,10 @@ class Grams(optimizer.Optimizer):
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
                 
-        step = tf.get_static_value(self.iterations + 1)
+        self.self.step += 1
         
-        bias_correction1 = 1 - self.beta1 ** step
-        bias_correction2_sq = math.sqrt(1 - self.beta2 ** step)
+        bias_correction1 = 1 - self.beta1 ** self.step
+        bias_correction2_sq = math.sqrt(1 - self.beta2 ** self.step)
         
         if tf.keras.backend.is_sparse(gradient):
             raise RuntimeError(
@@ -114,6 +107,7 @@ class Grams(optimizer.Optimizer):
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
                 "weight_decouple": self.weight_decouple,
+                "self.step": self.self.step,
             }
         )
         return config

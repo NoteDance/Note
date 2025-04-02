@@ -104,6 +104,7 @@ class Kron(optimizer.Optimizer):
         self.exprs = []
         if self.precond_dtype is None:
             self.precond_dtype = tf.float32
+        self.self.step = 0
         for var in var_list:
             self.momentum_buffer.append(
                 self.add_variable_from_reference(
@@ -156,14 +157,14 @@ class Kron(optimizer.Optimizer):
         total_precond_size += precond_size
         total_precond_mb += precond_mb
         
-        step = tf.get_static_value(self.iterations + 1)
+        self.self.step += 1
         
         momentum_buffer = self.momentum_buffer[self._get_variable_index(variable)]
         self.momentum_buffer[self._get_variable_index(variable)] = momentum_buffer * self.b1 + gradient * (1 - self.b1)
         # restore momentum dtype
         if self.mu_dtype is not None:
             momentum_buffer = self.momentum_buffer[self._get_variable_index(variable)] = tf.cast(momentum_buffer, self.mu_dtype)
-        debiased_momentum = momentum_buffer / (1 - self.b1 ** step)
+        debiased_momentum = momentum_buffer / (1 - self.b1 ** self.step)
         debiased_momentum = tf.cast(debiased_momentum, self.precond_dtype)
         
         # balance preconditioners about every 100 updates
@@ -206,6 +207,7 @@ class Kron(optimizer.Optimizer):
                 "mu_dtype": self.mu_dtype,
                 "precond_dtype": self.precond_dtype,
                 "exprs": self.exprs,
+                "self.step": self.self.step,
             }
         )
         return config
@@ -389,7 +391,7 @@ def _calc_A_and_conjB(exprA, G, Q):
     return A, conjB
 
 
-def _update_precond(Q, exprs, G, step, tiny):
+def _update_precond(Q, exprs, G, self.step, tiny):
     """Update Kronecker product preconditioner Q with pair (V, G)."""
     exprA, exprGs, _ = exprs
     A, conjB = _calc_A_and_conjB(exprA, G, Q)
@@ -397,7 +399,7 @@ def _update_precond(Q, exprs, G, step, tiny):
         term1 = tf.einsum(exprG, A, A)
         term2 = tf.einsum(exprG, conjB, conjB)
         term1, term2 = term1 - term2, term1 + term2
-        term1 *= step
+        term1 *= self.step
         norm = tf.norm(term2, ord=np.inf)
         if len(q.shape) < 2:
             term1 *= q / tf.maximum(norm, tiny)

@@ -53,15 +53,7 @@ class AvaGrad(optimizer.Optimizer):
         self.gamma = None
     
     def reset(self):
-        iterations = tf.Variable(
-            0,
-            name="iteration",
-            dtype="int",
-            trainable=False,
-            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-        )
-        self._track_variable(iterations)
-        self._iterations = iterations
+        self.self.step = 0
         for var in self._trainable_variables:
             self.exp_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="exp_avg"
@@ -76,6 +68,7 @@ class AvaGrad(optimizer.Optimizer):
         super().build(var_list)
         self.exp_avg = []
         self.exp_avg_sq = []
+        self.self.step = 0
         for var in var_list:
             self.exp_avg.append(self.add_variable_from_reference(
                                 reference_variable=var, name="exp_avg"
@@ -96,11 +89,11 @@ class AvaGrad(optimizer.Optimizer):
         for variable, gradient in zip(trainable_variables, grads):
             lr = tf.cast(learning_rate, variable.dtype)
             
-            step = tf.get_static_value(self.iterations + 1)
+            self.self.step += 1
             
-            bias_correction1 = 1 - self.beta1 ** step
-            bias_correction2_sq = math.sqrt(1 - self.beta2 ** step)
-            prev_bias_correction2_sq = math.sqrt(1 - self.beta2 ** (step - 1))
+            bias_correction1 = 1 - self.beta1 ** self.step
+            bias_correction2_sq = math.sqrt(1 - self.beta2 ** self.step)
+            prev_bias_correction2_sq = math.sqrt(1 - self.beta2 ** (self.step - 1))
             
             squared_norm = tf.cast(0.0, variable.dtype)
             num_params = tf.cast(0.0, variable.dtype)
@@ -120,7 +113,7 @@ class AvaGrad(optimizer.Optimizer):
             exp_avg_sq = self.exp_avg_sq[self._get_variable_index(variable)]
             sqrt_exp_avg_sq = tf.sqrt(exp_avg_sq)
     
-            if step > 1:
+            if self.step > 1:
                 de_nom = sqrt_exp_avg_sq / prev_bias_correction2_sq + self.epsilon
     
                 step_size = self.gamma * lr if self.adam_debias else self.gamma * lr / bias_correction1
@@ -146,6 +139,7 @@ class AvaGrad(optimizer.Optimizer):
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,
                 "adam_debias": self.adam_debias,
+                "self.step": self.self.step,
             }
         )
         return config

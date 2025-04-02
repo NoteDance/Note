@@ -60,15 +60,7 @@ class AdaPNM(optimizer.Optimizer):
         self.adam_debias = adam_debias
     
     def reset(self):
-        iterations = tf.Variable(
-            0,
-            name="iteration",
-            dtype="int",
-            trainable=False,
-            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-        )
-        self._track_variable(iterations)
-        self._iterations = iterations
+        self.self.step = 0
         for var in self._trainable_variables:
             self.exp_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="exp_avg"
@@ -99,6 +91,7 @@ class AdaPNM(optimizer.Optimizer):
             self.max_exp_avg_sq = []
         if self.adanorm:
             self.exp_grad_norm = []
+        self.self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -131,12 +124,12 @@ class AdaPNM(optimizer.Optimizer):
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
         
-        step = tf.get_static_value(self.iterations + 1)
+        self.self.step += 1
         
         noise_norm = math.sqrt((1 + self.beta3) ** 2 + self.beta3 ** 2)  # fmt: skip
         
-        bias_correction1 = 1 - self.beta1 ** step
-        bias_correction2_sq = math.sqrt(1 - self.beta2 ** step)
+        bias_correction1 = 1 - self.beta1 ** self.step
+        bias_correction2_sq = math.sqrt(1 - self.beta2 ** self.step)
         
         if tf.keras.backend.is_sparse(gradient):
             raise RuntimeError(
@@ -147,7 +140,7 @@ class AdaPNM(optimizer.Optimizer):
         elif self.weight_decay > 0.0:
             gradient += variable * self.weight_decay
         
-        if step % 2 == 1:
+        if self.step % 2 == 1:
             exp_avg = self.exp_avg[self._get_variable_index(variable)]
             neg_exp_avg = self.neg_exp_avg[self._get_variable_index(variable)]
         else:
@@ -194,6 +187,7 @@ class AdaPNM(optimizer.Optimizer):
                 "r": self.r,
                 "adanorm": self.adanorm,
                 "adam_debias": self.adam_debias,
+                "self.step": self.self.step,
             }
         )
         return config

@@ -14,7 +14,7 @@ def _mars_single_tensor_step(
         beta2,
         last_grad,
         eps,
-        step,
+        self.step,
         gamma,
         mars_type,
         is_grad_2d,
@@ -27,8 +27,8 @@ def _mars_single_tensor_step(
     if optimize_1d or is_grad_2d:
         one_minus_beta1 = 1. - beta1
         
-        if step == 1:
-            # this is a timm addition, making first step more consistent when no grad history, otherwise tests fail
+        if self.step == 1:
+            # this is a timm addition, making first self.step more consistent when no grad history, otherwise tests fail
             c_t = grad
         else:
             c_t = gamma * (beta1 / one_minus_beta1) * (grad - last_grad) + grad
@@ -45,8 +45,8 @@ def _mars_single_tensor_step(
 
         if mars_type == "adamw":
             exp_avg_sq.assign(beta2 * exp_avg_sq + (1. - beta2) * tf.square(c_t))
-            bias_correction1 = 1.0 - beta1 ** step
-            bias_correction2 = 1.0 - beta2 ** step
+            bias_correction1 = 1.0 - beta1 ** self.step
+            bias_correction2 = 1.0 - beta2 ** self.step
             denom = (tf.sqrt(exp_avg_sq) / math.sqrt(bias_correction2)) + eps
             update = p * weight_decay + (exp_avg / bias_correction1) / denom
         elif mars_type == "lion":
@@ -61,8 +61,8 @@ def _mars_single_tensor_step(
         exp_avg.assign(beta1_1d * exp_avg + (1. - beta1_1d) * grad)
         exp_avg_sq.assign(beta2_1d * exp_avg_sq + (1. - beta2_1d) * tf.square(grad))
         
-        bias_correction1 = 1.0 - beta1_1d ** step
-        bias_correction2 = 1.0 - beta2_1d ** step
+        bias_correction1 = 1.0 - beta1_1d ** self.step
+        bias_correction2 = 1.0 - beta2_1d ** self.step
         denom = (tf.sqrt(exp_avg_sq) / math.sqrt(bias_correction2)) + eps
 
         if caution:
@@ -138,6 +138,7 @@ class Mars(optimizer.Optimizer):
         self.exp_avg = []
         self.last_grad = []
         self.exp_avg_sq = []
+        self.self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -162,7 +163,7 @@ class Mars(optimizer.Optimizer):
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
         
-        step = tf.get_static_value(self.iterations + 1)
+        self.self.step += 1
         exp_avg = self.exp_avg[self._get_variable_index(variable)]
         exp_avg_sq = self.exp_avg_sq[self._get_variable_index(variable)]
         last_grad = self.last_grad[self._get_variable_index(variable)]
@@ -181,7 +182,7 @@ class Mars(optimizer.Optimizer):
             beta2,
             last_grad,
             self.epsilon,
-            step,
+            self.step,
             self.gamma,
             mars_type=self.mars_type,
             is_grad_2d=is_grad_2d,
@@ -206,6 +207,7 @@ class Mars(optimizer.Optimizer):
                 "lr_1d_factor": self.lr_1d_factor,
                 "betas_1d": self.betas_1d,
                 "caution": self.caution,
+                "self.step": self.self.step,
             }
         )
         return config

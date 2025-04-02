@@ -54,6 +54,7 @@ class DiffGrad(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.previous_grad = []
+        self.self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -81,7 +82,7 @@ class DiffGrad(optimizer.Optimizer):
         exp_avg_sq = self.exp_avg_sq[self._get_variable_index(variable)]
         previous_grad = self.previous_grad[self._get_variable_index(variable)]
         
-        step = tf.get_static_value(self.iterations + 1)
+        self.self.step += 1
 
         if self.weight_decay != 0:
             gradient += variable * self.weight_decay
@@ -91,8 +92,8 @@ class DiffGrad(optimizer.Optimizer):
         exp_avg_sq.assign(exp_avg_sq * self.beta2 + (1 - self.beta2) * tf.square(gradient))
         denom = tf.sqrt(exp_avg_sq) + self.epsilon
  
-        bias_correction1 = 1 - self.beta1 ** step
-        bias_correction2 = 1 - self.beta2 ** step
+        bias_correction1 = 1 - self.beta1 ** self.step
+        bias_correction2 = 1 - self.beta2 ** self.step
  
         # compute diffgrad coefficient (dfc)
         diff = tf.abs(previous_grad - gradient)
@@ -114,6 +115,7 @@ class DiffGrad(optimizer.Optimizer):
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
+                "self.step": self.self.step,
             }
         )
         return config

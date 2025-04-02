@@ -49,15 +49,7 @@ class DAdaptSGD(optimizer.Optimizer):
         self.fixed_decay = fixed_decay
     
     def reset(self):
-        iterations = tf.Variable(
-            0,
-            name="iteration",
-            dtype="int",
-            trainable=False,
-            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-        )
-        self._track_variable(iterations)
-        self._iterations = iterations
+        self.self.step = 0
         for var in self._trainable_variables:
             self.z[self._get_variable_index(var)] =  tf.Variable(var)
             self._track_variable(self.z[self._get_variable_index(var)])
@@ -74,6 +66,7 @@ class DAdaptSGD(optimizer.Optimizer):
         self.z = []
         self.s = []
         self.x0 = []
+        self.self.step = 0
         for var in var_list:
             self.z.append(tf.Variable(var))
             self._track_variable(self.z[-1])
@@ -94,14 +87,12 @@ class DAdaptSGD(optimizer.Optimizer):
     def update_step(self, grads, trainable_variables, learning_rate):
         lr = learning_rate
         
-        step = tf.get_static_value(self.iterations)
-        
         sk_sq = tf.convert_to_tensor([0.0])
         if self.numerator_weighted == None:
             self.numerator_weighted = tf.convert_to_tensor([0.0])
         
         global_grad_norm = tf.Variable(tf.zeros(1, dtype=tf.float32))
-        if step == 0:
+        if self.self.step == 0:
             for grad in grads:
                 global_grad_norm.assign_add(tf.pow(tf.norm(grad), 2))
                 self.g0_norm = tf.sqrt(global_grad_norm)
@@ -134,6 +125,8 @@ class DAdaptSGD(optimizer.Optimizer):
             z.assign(self.x0[self._get_variable_index(variable)] - self.s[self._get_variable_index(variable)])
             
             variable.assign(variable * self.momentum + z * (1.0 - self.momentum))
+        
+        self.self.step += 1
 
     def get_config(self):
         config = super().get_config()
@@ -145,6 +138,7 @@ class DAdaptSGD(optimizer.Optimizer):
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,
                 "numerator_weighted": self.numerator_weighted,
+                "self.step": self.self.step,
             }
         )
         return config

@@ -57,6 +57,7 @@ class AdaShift(optimizer.Optimizer):
         self.grad_deque = []
         self.exp_avg = []
         self.exp_avg_sq = []
+        self.self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -72,19 +73,19 @@ class AdaShift(optimizer.Optimizer):
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
         
-        step = tf.get_static_value(self.iterations + 1)
+        self.self.step += 1
         
         exp_weight_sum = sum(self.beta1 ** i for i in range(self.keep_num))  # fmt: skip
         first_grad_weight = self.beta1 ** (self.keep_num - 1) / exp_weight_sum
         last_grad_weight = 1.0 / exp_weight_sum
         
-        bias_correction = 1 - self.beta1 ** (step - self.keep_num)
+        bias_correction = 1 - self.beta1 ** (self.step - self.keep_num)
         
         if tf.keras.backend.is_sparse(gradient):
             raise RuntimeError(
                 'AdaShift does not support sparse gradients')
         
-        if step == 1:
+        if self.step == 1:
             self.grad_deque.append(deque([gradient], maxlen=self.keep_num))
             self._track_variable(self.grad_deque[self._get_variable_index(variable)][-1])
         
@@ -125,6 +126,7 @@ class AdaShift(optimizer.Optimizer):
                 "keep_num": self.keep_num,
                 "cautious": self.cautious,
                 "grad_deque": self.grad_deque,
+                "self.step": self.self.step,
             }
         )
         return config

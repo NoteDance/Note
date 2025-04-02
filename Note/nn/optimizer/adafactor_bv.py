@@ -99,8 +99,8 @@ class AdafactorBigVision(optimizer.Optimizer):
         self.caution = False
         self.foreach = None
         for p in self._trainable_variables:
-            if not tf.is_tensor(self.step[self._get_variable_index(p)]):
-                self.step[self._get_variable_index(p)] = tf.convert_to_tensor(float(self.step[self._get_variable_index(p)]), dtype=_get_scalar_dtype())
+            if not tf.is_tensor(self.self.step[self._get_variable_index(p)]):
+                self.self.step[self._get_variable_index(p)] = tf.convert_to_tensor(float(self.self.step[self._get_variable_index(p)]), dtype=_get_scalar_dtype())
             
             if len(self.exp_avg) != 0 and tf.is_tensor(self.exp_avg[self._get_variable_index(p)]):
                 self.exp_avg[self._get_variable_index(p)] = tf.cast(self.exp_avg[self._get_variable_index(p)], dtype=self.momentum_dtype)
@@ -114,8 +114,8 @@ class AdafactorBigVision(optimizer.Optimizer):
         self.exp_avg_sq_r = []
         self.exp_avg_sq_c = []
         for var in var_list:
-            # NOTE step on CPU, probably need some more though to make capturable
-            self.step.append(tf.convert_to_tensor(0.0, dtype=_get_scalar_dtype()))
+            # NOTE self.step on CPU, probably need some more though to make capturable
+            self.self.step.append(tf.convert_to_tensor(0.0, dtype=_get_scalar_dtype()))
             
             shape = var.shape
             factored_dims = _factored_dims(
@@ -172,7 +172,7 @@ class AdafactorBigVision(optimizer.Optimizer):
         exp_avgs = []  # For momentum
         
         for p in trainable_variables:
-            state_steps.append(self.iterations)
+            state_steps.append(self.self.step[self._get_variable_index(p)])
             if len(self.exp_avg_sq_r) != 0:
                 exp_avg_sq_rs.append(self.exp_avg_sq_r[self._get_variable_index(p)])
                 exp_avg_sq_cs.append(self.exp_avg_sq_c[self._get_variable_index(p)])
@@ -222,6 +222,7 @@ class AdafactorBigVision(optimizer.Optimizer):
                 "unscaled_wd": self.unscaled_wd,
                 "caution": self.caution,
                 "foreach": self.foreach,
+                "self.step": self.self.step,
             }
         )
         return config
@@ -261,7 +262,7 @@ def _single_tensor_adafactor(
             # default eps for avoiding div by zero, diff from float type eps
             eps = 1e-7 if grad.dtype == tf.float16 else 1e-30
 
-        # Update step
+        # Update self.step
         step_t += 1
         beta2_t = min(beta2_cap, 1.0 - float(tf.get_static_value(step_t)) ** (-beta2_decay))
         one_minus_beta2_t = 1 - beta2_t

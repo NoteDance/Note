@@ -63,6 +63,7 @@ class RangerQH(optimizer.Optimizer):
         self.slow_buffer = []
         self.beta1_weight = 0.0
         self.beta2_weight = 0.0
+        self.self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -93,7 +94,7 @@ class RangerQH(optimizer.Optimizer):
 
         d_p_sq = d_p * d_p
         
-        step = tf.get_static_value(self.iterations + 1)
+        self.self.step += 1
         
         self.beta1_weight = 1.0 + self.beta1 * self.beta1_weight
         self.beta2_weight = 1.0 + self.beta2 * self.beta1_weight
@@ -123,7 +124,7 @@ class RangerQH(optimizer.Optimizer):
 
         # integrated look ahead...
         # we do it at the param level instead of group level
-        if step % self.k == 0:
+        if self.step % self.k == 0:
             # get access to slow param tensor
             slow_p = self.slow_buffer[self._get_variable_index(variable)]
             # (fast weights - slow weights) * alpha
@@ -142,6 +143,7 @@ class RangerQH(optimizer.Optimizer):
                 "k": self.k,
                 "alpha": self.alpha,
                 "decouple_weight_decay": self.decouple_weight_decay,
+                "self.step": self.self.step,
             }
         )
         return config

@@ -98,6 +98,7 @@ class RangerVA(optimizer.Optimizer):
         if self.amsgrad:
             self.max_exp_avg_sq = []
         self.slow_buffer = []
+        self.self.step = 0
         for var in var_list:
             var_fp32 = tf.Variable(tf.cast(var, 'float32'))
             self.exp_avg.append(
@@ -163,13 +164,13 @@ class RangerVA(optimizer.Optimizer):
             #pdb.set_trace()
             denomc = tf.sqrt(denomc)
         
-        step = tf.get_static_value(self.iterations + 1)
+        self.self.step += 1
         
         if self.weight_decay != 0:
             variable_fp32 += -self.weight_decay * lr * variable_fp32
         
-        bias_correction1 = 1 - self.beta1 ** step
-        bias_correction2 = 1 - self.beta2 ** step
+        bias_correction1 = 1 - self.beta1 ** self.step
+        bias_correction2 = 1 - self.beta2 ** self.step
         step_size = lr * math.sqrt(bias_correction2) / bias_correction1 
 
         # ...let's use calibrated alr 
@@ -185,7 +186,7 @@ class RangerVA(optimizer.Optimizer):
 
         # integrated look ahead...
         # we do it at the param level instead of group level
-        if step % self.k == 0:
+        if self.step % self.k == 0:
             # get access to slow param tensor
             slow_p = self.slow_buffer[self._get_variable_index(variable)]
             # (fast weights - slow weights) * alpha
@@ -207,6 +208,7 @@ class RangerVA(optimizer.Optimizer):
                 "transformer": self.transformer,
                 "smooth": self.smooth,
                 "grad_transformer": self.grad_transformer,
+                "self.step": self.self.step,
             }
         )
         return config

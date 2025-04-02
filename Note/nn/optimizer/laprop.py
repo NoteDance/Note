@@ -56,6 +56,7 @@ class LaProp(optimizer.Optimizer):
             self.exp_mean_avg_beta2 = []
         if self.amsgrad:
             self.max_exp_avg_sq = []
+        self.self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -91,7 +92,7 @@ class LaProp(optimizer.Optimizer):
             max_exp_avg_sq = self.max_exp_avg_sq[self._get_variable_index(variable)]
         beta1, beta2 = self.beta1, self.beta2
 
-        step = tf.get_static_value(self.iterations + 1)
+        self.self.step += 1
 
         # Decay the first and second moment running average coefficient
         exp_avg_sq.assign(exp_avg_sq * beta2 + (1 - beta2) * gradient * gradient)
@@ -99,7 +100,7 @@ class LaProp(optimizer.Optimizer):
         self.exp_avg_lr_1[self._get_variable_index(variable)] = self.exp_avg_lr_1[self._get_variable_index(variable)] * beta1 + (1 - beta1) * lr
         self.exp_avg_lr_2[self._get_variable_index(variable)] = self.exp_avg_lr_2[self._get_variable_index(variable)] * beta2 + (1 - beta2)
 
-        bias_correction1 = self.exp_avg_lr_1[self._get_variable_index(variable)] / lr if lr.numpy()!=0. else tf.cast(1., variable.dtype) #1 - beta1 ** step
+        bias_correction1 = self.exp_avg_lr_1[self._get_variable_index(variable)] / lr if lr.numpy()!=0. else tf.cast(1., variable.dtype) #1 - beta1 ** self.step
         step_size = 1 / bias_correction1
 
         bias_correction2 = self.exp_avg_lr_2[self._get_variable_index(variable)]
@@ -107,12 +108,12 @@ class LaProp(optimizer.Optimizer):
         denom = exp_avg_sq
         if self.centered:
             exp_mean_avg_beta2.assign(exp_mean_avg_beta2 * beta2 + (1 - beta2) * gradient)
-            if step > self.steps_before_using_centered:
+            if self.step > self.steps_before_using_centered:
                 mean = exp_mean_avg_beta2 ** 2
                 denom = denom - mean
 
         if self.amsgrad:
-            if not (self.centered and step <= self.steps_before_using_centered): 
+            if not (self.centered and self.step <= self.steps_before_using_centered): 
                 # Maintains the maximum of all (centered) 2nd moment running avg. till now
                 max_exp_avg_sq.assign(tf.maximum(max_exp_avg_sq, denom))
                 # Use the max. for normalizing running avg. of gradient
@@ -137,6 +138,7 @@ class LaProp(optimizer.Optimizer):
                 "amsgrad": self.amsgrad,
                 "centered": self.centered,
                 "steps_before_using_centered": self.steps_before_using_centered,
+                "self.step": self.self.step,
             }
         )
         return config

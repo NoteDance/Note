@@ -59,15 +59,7 @@ class DAdaptAdaGrad(optimizer.Optimizer):
         self.bias_correction = bias_correction
     
     def reset(self):
-        iterations = tf.Variable(
-            0,
-            name="iteration",
-            dtype="int",
-            trainable=False,
-            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-        )
-        self._track_variable(iterations)
-        self._iterations = iterations
+        self.self.step = 0
         for var in self._trainable_variables:
             self.alpha_k[self._get_variable_index(var)] =  tf.Variable(tf.ones_like(var) * 1e-6)
             self._track_variable(self.alpha_k[self._get_variable_index(var)])
@@ -89,6 +81,7 @@ class DAdaptAdaGrad(optimizer.Optimizer):
         self.sk = []
         self.x0 = []
         self.weighted_sk = []
+        self.self.step = 0
         for var in var_list:
             self.alpha_k.append(tf.Variable(tf.ones_like(var) * 1e-6))
             self._track_variable(self.alpha_k[-1])
@@ -121,9 +114,7 @@ class DAdaptAdaGrad(optimizer.Optimizer):
         sk_sq_weighted_change = tf.convert_to_tensor([0.0])
         sk_l1_change = tf.convert_to_tensor([0.0])
         
-        step = tf.get_static_value(self.iterations)
-        
-        if step == 0:
+        if self.self.step == 0:
             self.gsq_weighted = tf.convert_to_tensor([0.0])
             self.sk_sq_weighted = tf.convert_to_tensor([0.0])
             self.sk_l1 = tf.convert_to_tensor([0.0])
@@ -236,6 +227,8 @@ class DAdaptAdaGrad(optimizer.Optimizer):
                     var.assign(var * self.momentum + z * (1.0 - self.momentum))
                 else:
                     var.assign(z)
+        
+        self.self.step += 1
 
     def get_config(self):
         config = super().get_config()
@@ -251,6 +244,7 @@ class DAdaptAdaGrad(optimizer.Optimizer):
                 "gsq_weighted": self.gsq_weighted,
                 "sk_sq_weighted": self.sk_sq_weighted,
                 "sk_l1": self.sk_l1,
+                "self.step": self.self.step,
             }
         )
         return config

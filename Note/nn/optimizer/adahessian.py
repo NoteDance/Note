@@ -76,8 +76,7 @@ class Adahessian(optimizer.Optimizer):
                 )
             )
             var.hess = 0.0
-            self.hessian_step.append(tf.Variable(0, dtype=tf.int64))
-            self._track_variable(self.hessian_step[-1])
+            self.hessian_step.append(0)
     
     def apply_gradients(self, grads_and_vars, tape):
         self.tape = tape
@@ -104,7 +103,7 @@ class Adahessian(optimizer.Optimizer):
         """
 
         for i,p in enumerate(trainable_variables):
-            if not isinstance(p.hess, float) and tf.get_static_value(self.hessian_step[i]) % self.update_each == 0:
+            if not isinstance(p.hess, float) and self.hessian_step[i] % self.update_each == 0:
                 p.hess = tf.zeros(p.shape)
     
     def set_hessian(self, grads, trainable_variables):
@@ -114,7 +113,7 @@ class Adahessian(optimizer.Optimizer):
 
         params = []
         for i,p in enumerate(trainable_variables):
-            if tf.get_static_value(self.hessian_step[i]) % self.update_each == 0:  # compute the trace only each `update_each` step
+            if self.hessian_step[i] % self.update_each == 0:  # compute the trace only each `update_each` self.step
                 params.append(p)
             self.hessian_step[i] += 1
         
@@ -143,14 +142,14 @@ class Adahessian(optimizer.Optimizer):
             
             exp_avg = self.exp_avg[self._get_variable_index(p)]
             exp_hessian_diag_sq = self.exp_hessian_diag_sq[self._get_variable_index(p)]
-            step = tf.get_static_value(self.iterations + 1)
+            self.step = tf.get_static_value(self.iterations + 1)
             
             # Decay the first and second moment running average coefficient
             exp_avg.assign(self.beta1 * exp_avg + (1 - self.beta1) * grad)
             exp_hessian_diag_sq.assign(self.beta2 * exp_hessian_diag_sq + (1 - self.beta2) * tf.square(p.hess))
            
-            bias_correction1 = 1 - self.beta1 ** step
-            bias_correction2 = 1 - self.beta2 ** step
+            bias_correction1 = 1 - self.beta1 ** self.step
+            bias_correction2 = 1 - self.beta2 ** self.step
             
             k = self.hessian_power
             denom = tf.pow(exp_hessian_diag_sq / bias_correction2, k / 2) + self.epsilon
@@ -170,6 +169,7 @@ class Adahessian(optimizer.Optimizer):
                 "update_each": self.update_each,
                 "n_samples": self.n_samples,
                 "avg_conv_kernel": self.avg_conv_kernel,
+                "hessian_step": self.hessian_step,
             }
         )
         return config

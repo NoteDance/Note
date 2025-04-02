@@ -62,6 +62,7 @@ class PID(optimizer.Optimizer):
         self.I_buffer = []
         self.grad_buffer = []
         self.D_buffer = []
+        self.self.step = 0
         for var in var_list:
             self.I_buffer.append(
                 self.add_variable_from_reference(
@@ -82,19 +83,17 @@ class PID(optimizer.Optimizer):
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
         
-        step = tf.get_static_value(self.iterations)
-        
         d_p = gradient
         if self.weight_decay != 0:
             d_p += self.weight_decay * variable
         if self.momentum != 0:
-            if step == 0:
+            if self.self.step == 0:
                 I_buf = self.I_buffer[self._get_variable_index(variable)]
                 I_buf.assign(I_buf * self.momentum + d_p)
             else:
                 I_buf = self.I_buffer[self._get_variable_index(variable)]
                 I_buf.assign(I_buf * self.momentum + (1 - self.dampening) * d_p)
-            if step == 0:
+            if self.self.step == 0:
                 g_buf = self.grad_buffer[self._get_variable_index(variable)]
                 g_buf = d_p   
                 
@@ -109,6 +108,8 @@ class PID(optimizer.Optimizer):
             d_p = d_p + self.I * I_buf + self.D * D_buf
         
         variable.assign_add(-lr * d_p)
+        
+        self.self.step += 1
 
     def get_config(self):
         config = super().get_config()
@@ -119,6 +120,7 @@ class PID(optimizer.Optimizer):
                 "nesterov": self.nesterov,
                 "I": self.I,
                 "D": self.D,
+                "self.step": self.self.step,
             }
         )
         return config

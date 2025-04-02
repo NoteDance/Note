@@ -57,6 +57,7 @@ class Apollo(optimizer.Optimizer):
         self.approx_hessian = []
         self.update = []
         self.base_lr = self._learning_rate
+        self.self.step = 0
         for var in var_list:
             self.exp_avg_grad.append(
                 self.add_variable_from_reference(
@@ -77,20 +78,20 @@ class Apollo(optimizer.Optimizer):
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
         
-        step = tf.get_static_value(self.iterations + 1)
+        self.self.step += 1
         
         # Calculate current lr
-        if step < self.warmup:
-            curr_lr = (self.base_lr - self.init_lr) * step / self.warmup + self.init_lr
+        if self.step < self.warmup:
+            curr_lr = (self.base_lr - self.init_lr) * self.step / self.warmup + self.init_lr
             curr_lr = tf.cast(curr_lr, variable.dtype)
         else:
             curr_lr = lr
 
-        # Perform optimization step
+        # Perform optimization self.step
         if tf.keras.backend.is_sparse(gradient):
             raise RuntimeError('Atom does not support sparse gradients.')
 
-        # Perform step weight decay
+        # Perform self.step weight decay
         if self.weight_decay != 0 and self.weight_decay_type == 'L2':
             gradient = gradient + variable * self.weight_decay
 
@@ -98,7 +99,7 @@ class Apollo(optimizer.Optimizer):
         B = self.approx_hessian[self._get_variable_index(variable)]
         d_p = self.update[self._get_variable_index(variable)]
 
-        bias_correction = 1 - self.beta ** step
+        bias_correction = 1 - self.beta ** self.step
         alpha = (1 - self.beta) / bias_correction
 
         # calc the diff grad
@@ -129,7 +130,7 @@ class Apollo(optimizer.Optimizer):
 
         d_p.assign(exp_avg_grad / denom)
 
-        # Perform step weight decay
+        # Perform self.step weight decay
         if self.weight_decay != 0 and self.weight_decay_type != 'L2':
             if self.weight_decay_type == 'stable':
                 weight_decay = self.weight_decay / tf.reduce_mean(denom)
@@ -149,6 +150,7 @@ class Apollo(optimizer.Optimizer):
                 "warmup": self.warmup,
                 "init_lr": self.init_lr,
                 "weight_decay_type": self.weight_decay_type,
+                "self.step": self.self.step,
             }
         )
         return config

@@ -109,15 +109,7 @@ class Muon(optimizer.Optimizer):
             self.use_muon[self._get_variable_index(p)] = False
     
     def reset(self):
-        iterations = tf.Variable(
-            0,
-            name="iteration",
-            dtype="int",
-            trainable=False,
-            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-        )
-        self._track_variable(iterations)
-        self._iterations = iterations
+        self.self.step = 0
         for var in self._trainable_variables:
             self.momentum_buffer[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="momentum_buffer"
@@ -138,6 +130,7 @@ class Muon(optimizer.Optimizer):
         self.moment1 = []
         self.moment2 = []
         self.use_muon = []
+        self.self.step = 0
         for var in var_list:
             self.momentum_buffer.append(self.add_variable_from_reference(
                                 reference_variable=var, name="momentum_buffer"
@@ -167,7 +160,7 @@ class Muon(optimizer.Optimizer):
     def update_step(self, grads, trainable_variables, learning_rate):
         lr = learning_rate
         
-        step = tf.get_static_value(self.iterations + 1)
+        self.self.step += 1
         
         params = []
         for p, grad in zip(trainable_variables, grads):
@@ -221,8 +214,8 @@ class Muon(optimizer.Optimizer):
 
         lr = self.adamw_lr_ratio * lr
         
-        bias_correction1 = 1 - self.beta1 ** step
-        bias_correction2 = 1 - self.beta2 ** step
+        bias_correction1 = 1 - self.beta1 ** self.step
+        bias_correction2 = 1 - self.beta2 ** self.step
         scale = bias_correction1 / bias_correction2 ** 0.5  # fmt: skip
         step_size = lr / scale
         
@@ -259,6 +252,7 @@ class Muon(optimizer.Optimizer):
                 "adamw_eps": self.adamw_eps,
                 "world_size": self.world_size,
                 "rank": self.rank,
+                "self.step": self.self.step,
             }
         )
         return config

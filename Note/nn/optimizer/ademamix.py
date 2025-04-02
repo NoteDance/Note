@@ -58,6 +58,7 @@ class AdEMAMix(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.exp_avg_slow = []
+        self.self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -89,13 +90,13 @@ class AdEMAMix(optimizer.Optimizer):
         exp_avg_slow = []
         state_steps = []
         
-        step = tf.get_static_value(self.iterations + 1)
+        self.self.step += 1
         
         for p in trainable_variables:
             exp_avgs.append(self.exp_avg[self._get_variable_index(p)])
             exp_avg_sqs.append(self.exp_avg_sq[self._get_variable_index(p)])
             exp_avg_slow.append(self.exp_avg_slow[self._get_variable_index(p)])
-            state_steps.append(step)
+            state_steps.append(self.step)
         
         self._update_adamemix(
             trainable_variables,
@@ -122,16 +123,16 @@ class AdEMAMix(optimizer.Optimizer):
             exp_avg = exp_avgs[i]
             exp_avg_sq = exp_avg_sqs[i]
             exp_avg_slow_i = exp_avg_slow[i]
-            step = state_steps[i]
+            self.step = state_steps[i]
 
-            bias_correction1 = 1 - beta1 ** step
-            bias_correction2 = 1 - beta2 ** step
+            bias_correction1 = 1 - beta1 ** self.step
+            bias_correction2 = 1 - beta2 ** self.step
 
             if T_alpha_beta3 is not None:
-                alpha_t = min(step * alpha / T_alpha_beta3, alpha)
+                alpha_t = min(self.step * alpha / T_alpha_beta3, alpha)
                 beta3_t = min(math.exp(math.log(beta1) * math.log(beta3) / 
-                              ((1 - step / T_alpha_beta3) * math.log(beta3) + 
-                               (step / T_alpha_beta3) * math.log(beta1))), beta3)
+                              ((1 - self.step / T_alpha_beta3) * math.log(beta3) + 
+                               (self.step / T_alpha_beta3) * math.log(beta1))), beta3)
             else:
                 alpha_t = alpha
                 beta3_t = beta3
@@ -160,6 +161,7 @@ class AdEMAMix(optimizer.Optimizer):
                 "epsilon": self.epsilon,
                 "alpha": self.alpha,
                 "T_alpha_beta3": self.T_alpha_beta3,
+                "self.step": self.self.step,
             }
         )
         return config
