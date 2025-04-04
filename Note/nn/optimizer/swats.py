@@ -111,7 +111,7 @@ class SWATS(optimizer.Optimizer):
             gradient += variable * self.weight_decay
 
         # if its SGD phase, take an SGD update and continue
-        if self.phase == "SGD":
+        if tf.get_static_value(self.phase) == b"SGD":
             if self.momentum_buffer[self._get_variable_index(variable)] == None:
                 buf = self.momentum_buffer[self._get_variable_index(variable)] = gradient
             else:
@@ -150,23 +150,32 @@ class SWATS(optimizer.Optimizer):
         p_view = tf.reshape(p, [-1])
         gradient_view = tf.reshape(gradient, [-1])
         pg = tf.tensordot(p_view, gradient_view, axes=1)
-
-        if pg != 0:
+        
+        def true_fn():
             # the non-orthognal scaling estimate
             scaling = tf.tensordot(p_view, p_view, axes=1) / (-pg)
             exp_avg2.assign(self.beta2 * exp_avg2 + (1 - self.beta2) * scaling)
-
+        
             # bias corrected exponential average
             corrected_exp_avg = exp_avg2 / bias_correction2
-
-            # checking criteria of switching to SGD training
-            if (
-                self.step > 1
-                and tf.get_static_value(
-                    tf.experimental.numpy.allclose(corrected_exp_avg, scaling, rtol=1e-6, atol=1e-8))
-                and corrected_exp_avg > 0
-            ):
+            
+            def true_fn():
                 self.phase = "SGD"
+            
+            def false_fn():
+                tf.no_op()
+                
+            # checking criteria of switching to SGD training
+            tf.cond((
+                    tf.logical_and(tf.logical_and(tf.convert_to_tensor(self.step) > 1
+                    ,tf.experimental.numpy.allclose(corrected_exp_avg, scaling, rtol=1e-6, atol=1e-8))
+                    ,corrected_exp_avg > 0)
+                    ), true_fn, false_fn)
+            
+        def false_fn():
+            tf.no_op()
+            
+        tf.cond(pg != 0, true_fn, false_fn)
 
     def get_config(self):
         config = super().get_config()

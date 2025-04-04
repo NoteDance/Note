@@ -18,7 +18,7 @@ def l2_projection(parameters, max_norm = 1e2):
 
 def get_global_gradient_norm(grads):
     r"""Get global gradient norm."""
-    global_grad_norm = tf.zeros(1, dtype=tf.float32)
+    global_grad_norm = tf.zeros((), dtype=tf.float32)
 
     for g in grads:
         global_grad_norm += tf.pow(tf.norm(g), 2)
@@ -73,9 +73,9 @@ class AliG(optimizer.Optimizer):
                                                             reference_variable=var, name="momentum_buffer"
                                                         )
     
-    def compute_step_size(self):
+    def compute_step_size(self,grads):
         r"""Compute step_size."""
-        global_grad_norm = get_global_gradient_norm(self.param_groups)
+        global_grad_norm = get_global_gradient_norm(grads)
         global_grad_norm += 1e-6
 
         return self.loss / global_grad_norm
@@ -110,17 +110,19 @@ class AliG(optimizer.Optimizer):
         self.update_step(grads, trainable_variables, learning_rate)
 
     def update_step(self, grads, trainable_variables, learning_rate):
-        un_clipped_step_size = tf.get_static_value(self.compute_step_size())
-        
+        un_clipped_step_size = self.compute_step_size(grads)
+
         step_size = (
-            min(un_clipped_step_size, self.max_lr) if self.max_lr is not None else un_clipped_step_size
+            tf.minimum(un_clipped_step_size, self.max_lr) if self.max_lr is not None else un_clipped_step_size
         )
         
         for p, g in zip(trainable_variables, grads):
+            step_size = tf.cast(step_size, p.dtype)
+            
             if tf.keras.backend.is_sparse(g):
                 raise RuntimeError(
                     'AliG does not support sparse gradients')
-
+                
             p.assign_add(g * -step_size)
 
             if self.momentum > 0.0:

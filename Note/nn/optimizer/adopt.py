@@ -36,7 +36,7 @@ def _is_compiling():
 
 def _get_value(x):
     if tf.executing_eagerly():
-        return tf.get_static_value(x) if tf.is_tensor(x) else x
+        return x.numpy() if tf.is_tensor(x) else x
     else:
         return x
 
@@ -85,6 +85,7 @@ class Adopt(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
+        self.lr = learning_rate
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
@@ -104,20 +105,7 @@ class Adopt(optimizer.Optimizer):
         self.differentiable = False
         self.clip_exp = None
         self.caution = False
-        for p in self._trainable_variables:
-            if len(self.step) != 0 and not tf.is_tensor(self.step[self._get_variable_index(p)]):
-                step_val = float(self.step[self._get_variable_index(p)])
-                if self.capturable:
-                    with tf.device(p.device):
-                        self.step[self._get_variable_index(p)] = tf.convert_to_tensor(
-                                                    step_val,
-                                                    dtype=_get_scalar_dtype(),
-                                                )
-                else:
-                    self.step[self._get_variable_index(p)] = tf.convert_to_tensor(
-                                                                step_val,
-                                                                dtype=_get_scalar_dtype(),
-                                                            )
+        self.step = 0
 
     def build(self, var_list):
         if self.built:
@@ -125,7 +113,7 @@ class Adopt(optimizer.Optimizer):
         super().build(var_list)
         self.exp_avg = []
         self.exp_avg_sq = []
-        self.step = []
+        self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -137,18 +125,6 @@ class Adopt(optimizer.Optimizer):
                     reference_variable=var, name="exp_avg_sq"
                 )
             )
-            if self.capturable:
-                with tf.device(var.device):
-                    self.step = tf.convert_to_tensor(
-                                float(0),
-                                dtype=_get_scalar_dtype(),
-                            )
-            else:
-                self.step = tf.convert_to_tensor(
-                                float(0),
-                                dtype=_get_scalar_dtype(),
-                            )
-            self.step.append(self.step)
     
     def _backend_update_step(self, grads, trainable_variables, learning_rate):
         """Collective update_step that can be overridden by the backend.
@@ -172,12 +148,10 @@ class Adopt(optimizer.Optimizer):
             exp_avgs.append(self.exp_avg[self._get_variable_index(p)])
             exp_avg_sqs.append(self.exp_avg_sq[self._get_variable_index(p)])
 
-            state_steps.append(self.step[self._get_variable_index(p)])
+            state_steps.append(self.step)
         return has_complex
 
     def update_step(self, grads, trainable_variables, learning_rate):
-        lr = learning_rate
-        
         exp_avgs = []
         exp_avg_sqs = []
         state_steps = []
@@ -198,7 +172,7 @@ class Adopt(optimizer.Optimizer):
             has_complex=has_complex,
             beta1=self.beta1,
             beta2=self.beta2,
-            lr=lr,
+            lr=self.lr,
             weight_decay=self.weight_decay,
             clip_exp=self.clip_exp,
             decoupled=self.decoupled,
@@ -211,11 +185,14 @@ class Adopt(optimizer.Optimizer):
             grad_scale=getattr(self, "grad_scale", None),
             found_inf=getattr(self, "found_inf", None),
         )
+        
+        self.step += 1
 
     def get_config(self):
         config = super().get_config()
         config.update(
             {
+                "lr": self.lr, 
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
@@ -241,6 +218,8 @@ def _single_tensor_adopt(
     exp_avgs,
     exp_avg_sqs,
     state_steps,
+    grad_scale,
+    found_inf,
     *,
     has_complex,
     beta1,
@@ -265,8 +244,6 @@ def _single_tensor_adopt(
 
         # update self.step
         step_t += 1
-        state_steps[i] = step_t
-        step_t = tf.get_static_value(step_t)
 
         if param.dtype.is_complex:
             grad = tf.math.real(grad)
@@ -325,7 +302,8 @@ def _multi_tensor_adopt(
     def update_grads(params, grads, weight_decay, decoupled):
         if weight_decay != 0:
             if not decoupled:
-                [g.assign(g + weight_decay * p) for p, g in zip(params, grads)]
+                for i in range(len(params)):
+                    grads[i] = grads[i] + weight_decay * params[i]
 
     def update_params(params, grads, weight_decay, decoupled):
         if weight_decay != 0:
@@ -339,7 +317,8 @@ def _multi_tensor_adopt(
 
         if clip_exp is not None:
             clip_val = (state_steps[0] - 1) ** clip_exp
-            [g.assign(tf.clip_by_value(g, -clip_val, clip_val)) for g in normed_grad]
+            for i, g in enumerate(normed_grad):
+                normed_grad[i] = tf.clip_by_value(normed_grad[i], -clip_val, clip_val)
 
         return normed_grad
 
@@ -347,8 +326,10 @@ def _multi_tensor_adopt(
         if caution:
             masks = [tf.cast(avg.assign(avg * grad) > 0, grad.dtype) for avg, grad in zip(exp_avgs, grads)]
             mask_scale = [tf.reduce_mean(mask) for mask in masks]
-            [scale.assign(tf.maximum(mask_scale, 1e-3)) for scale in mask_scale]
-            [mask.assign(mask / scale) for mask, scale in zip(masks, mask_scale)]
+            for i in range(len(mask_scale)):
+                mask_scale[i] = tf.maximum(mask_scale, 1e-3)
+            for i in range(len(mask_scale)):
+                masks[i] = masks[i] / mask_scale[i]
             return [avg * mask for avg, mask in zip(exp_avgs, masks)]
         return exp_avgs
 
@@ -356,7 +337,7 @@ def _multi_tensor_adopt(
     state_steps = update_steps(state_steps)
     update_grads(params, grads, weight_decay, decoupled)
 
-    if tf.get_static_value(state_steps[0]) == 1:
+    if state_steps[0] == 1:
         [sq.assign_add(grad * grad) for sq, grad in zip(exp_avg_sqs, grads)]
     
     update_params(params, grads, weight_decay, decoupled)

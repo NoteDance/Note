@@ -81,6 +81,7 @@ class Muon(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
+        self.lr = learning_rate
         self.beta1 = beta1
         self.beta2 = beta2
         self.momentum = momentum
@@ -158,8 +159,6 @@ class Muon(optimizer.Optimizer):
         self.update_step(grads, trainable_variables, learning_rate)
 
     def update_step(self, grads, trainable_variables, learning_rate):
-        lr = learning_rate
-        
         self.step += 1
         
         params = []
@@ -201,11 +200,11 @@ class Muon(optimizer.Optimizer):
             g = tf.reshape(updates_flat[curr_idx:curr_idx + np.prod(p.shape.as_list())], p.shape)  # fmt: skip
 
             if self.weight_decouple:
-                p.assign(p * (1.0 - self.weight_decay * lr))
+                p.assign(p * (1.0 - self.weight_decay * self.lr))
             elif self.weight_decay > 0.0:
                 grads[self._get_variable_index(p)] += p * self.weight_decay
 
-            lr = self.adjust_lr_for_muon(lr, p.shape) if self.use_adjusted_lr else lr
+            lr = self.adjust_lr_for_muon(self.lr, p.shape) if self.use_adjusted_lr else self.lr
 
             p.assign_add(g * -lr * (max(1.0, p.shape[-2] / p.shape[-1]) ** 0.5))
             curr_idx += np.prod(p.shape.as_list())
@@ -240,6 +239,7 @@ class Muon(optimizer.Optimizer):
         config = super().get_config()
         config.update(
             {
+                "lr": self.lr,
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "momentum": self.momentum,

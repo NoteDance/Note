@@ -96,6 +96,7 @@ class Lamb(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
+        self.lr = learning_rate
         self.bias_correction = bias_correction
         self.beta1 = beta1
         self.beta2 = beta2
@@ -155,8 +156,6 @@ class Lamb(optimizer.Optimizer):
         self.update_step(grads, trainable_variables, learning_rate)
 
     def update_step(self, grads, trainable_variables, learning_rate):
-        lr = learning_rate
-        
         clip_grad_norm = self._get_clip_grad_norm() # None if disabled
         
         bias_correction = 1 if self.bias_correction else 0
@@ -197,7 +196,7 @@ class Lamb(optimizer.Optimizer):
     
             if self.weight_decay != 0:
                 if self.decoupled_decay:
-                    p.assign_add(-lr * self.weight_decay * p)
+                    p.assign_add(-self.lr * self.weight_decay * p)
                 else:
                     update += self.weight_decay * p
     
@@ -216,12 +215,13 @@ class Lamb(optimizer.Optimizer):
                 update *= trust_ratio
     
             # Update parameters
-            p.assign_add(-lr * update)
+            p.assign_add(-self.lr * update)
 
     def get_config(self):
         config = super().get_config()
         config.update(
             {
+                "lr": self.lr,
                 "bias_correction": self.bias_correction,
                 "beta1": self.beta1,
                 "beta2": self.beta2,

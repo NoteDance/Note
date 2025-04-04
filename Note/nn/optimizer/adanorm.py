@@ -125,7 +125,11 @@ class AdaNorm(optimizer.Optimizer):
         grad_norm = tf.linalg.norm(gradient)
         exp_grad_norm = self.exp_grad_norm[self._get_variable_index(variable)]
         exp_grad_norm.assign(exp_grad_norm * self.r + grad_norm * (1.0 - self.r))
-        s_grad = gradient * exp_grad_norm / grad_norm if tf.get_static_value(exp_grad_norm > grad_norm) else gradient
+        def true_fn():
+            return gradient * exp_grad_norm / grad_norm
+        def false_fn():
+            return gradient
+        s_grad = tf.cond(exp_grad_norm > grad_norm, true_fn, false_fn)
         
         exp_avg = self.exp_avg[self._get_variable_index(variable)]
         exp_avg_var = self.exp_avg_var[self._get_variable_index(variable)]

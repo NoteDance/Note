@@ -45,6 +45,7 @@ class Adahessian(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
+        self.lr = learning_rate
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
@@ -64,6 +65,7 @@ class Adahessian(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_hessian_diag_sq = []
         self.hessian_step = []
+        self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -128,7 +130,7 @@ class Adahessian(optimizer.Optimizer):
                 p.hess += h_z * z / self.n_samples  # approximate the expected values of z*(H@z)
 
     def update_step(self, grads, trainable_variables, learning_rate):
-        lr = learning_rate
+        self.step += 1
         
         self.zero_hessian(trainable_variables)
         self.set_hessian(grads, trainable_variables)
@@ -138,11 +140,10 @@ class Adahessian(optimizer.Optimizer):
                 p.hess = tf.broadcast_to(tf.reduce_mean(tf.abs(p.hess), axis=[1, 2], keepdims=True), p.hess.shape)
         
             # Perform correct stepweight decay as in AdamW
-            p.assign(p * (1 - lr * self.weight_decay))
+            p.assign(p * (1 - self.lr * self.weight_decay))
             
             exp_avg = self.exp_avg[self._get_variable_index(p)]
             exp_hessian_diag_sq = self.exp_hessian_diag_sq[self._get_variable_index(p)]
-            self.step = tf.get_static_value(self.iterations + 1)
             
             # Decay the first and second moment running average coefficient
             exp_avg.assign(self.beta1 * exp_avg + (1 - self.beta1) * grad)
@@ -155,13 +156,14 @@ class Adahessian(optimizer.Optimizer):
             denom = tf.pow(exp_hessian_diag_sq / bias_correction2, k / 2) + self.epsilon
             
             # Make update
-            step_size = lr / bias_correction1
+            step_size = self.lr / bias_correction1
             p.assign_add(-step_size * exp_avg / denom)
 
     def get_config(self):
         config = super().get_config()
         config.update(
             {
+                "lr": self.lr,
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
@@ -170,6 +172,7 @@ class Adahessian(optimizer.Optimizer):
                 "n_samples": self.n_samples,
                 "avg_conv_kernel": self.avg_conv_kernel,
                 "hessian_step": self.hessian_step,
+                "step": self.step,
             }
         )
         return config

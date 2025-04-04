@@ -93,13 +93,13 @@ class FAdam(optimizer.Optimizer):
         fim.assign(fim * curr_beta2 + gradient * gradient * (1.0 - curr_beta2))
         
         rms_grad = tf.sqrt(tf.reduce_mean(tf.pow(gradient, 2)))
-        curr_eps = min(tf.get_static_value(rms_grad), 1) * self.epsilon
+        curr_eps = tf.minimum(rms_grad, tf.cast(1, rms_grad.dtype)) * self.epsilon
         
         fim_base = tf.pow(fim, self.p) + curr_eps
         grad_nat = gradient / tf.cast(fim_base, dtype=variable.dtype)
         
         rms = tf.sqrt(tf.reduce_mean(tf.pow(grad_nat, 2)))
-        divisor = max(1, tf.get_static_value(rms)) / self.clip
+        divisor = tf.maximum(tf.cast(1, rms.dtype), rms) / self.clip
         grad_nat = grad_nat / divisor
         
         momentum.assign(momentum * self.beta1 + grad_nat * (1.0 - self.beta1))
@@ -107,7 +107,7 @@ class FAdam(optimizer.Optimizer):
         grad_weights = self.p / fim_base
 
         rms = tf.sqrt(tf.reduce_mean(tf.pow(grad_weights, 2)))
-        divisor = max(1, tf.get_static_value(rms)) / self.clip
+        divisor = tf.maximum(tf.cast(1, rms.dtype), rms) / self.clip
         grad_weights = grad_weights / divisor
 
         grad_weights = grad_weights * self.weight_decay + momentum

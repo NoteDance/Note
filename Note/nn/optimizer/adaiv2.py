@@ -46,6 +46,7 @@ class AdaiV2(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
+        self.lr = learning_rate
         self.beta0 = beta0
         self.beta2 = beta2
         self.epsilon = epsilon
@@ -90,8 +91,6 @@ class AdaiV2(optimizer.Optimizer):
         self.update_step(grads, trainable_variables, learning_rate)
 
     def update_step(self, grads, trainable_variables, learning_rate):
-        lr = learning_rate
-        
         param_size = 0
         exp_avg_sq_hat_sum = 0.
         
@@ -114,7 +113,7 @@ class AdaiV2(optimizer.Optimizer):
             exp_avg_sq_hat_sum += tf.reduce_sum(exp_avg_sq) / bias_correction2
         
         # Calculate the mean of all elements in exp_avg_sq_hat
-        exp_avg_sq_hat_mean = exp_avg_sq_hat_sum / tf.get_static_value(param_size)
+        exp_avg_sq_hat_mean = exp_avg_sq_hat_sum / tf.cast(param_size, exp_avg_sq_hat_sum.dtype)
         
         for p, g in zip(trainable_variables, grads):
             exp_avg = self.exp_avg[self._get_variable_index(p)]
@@ -135,12 +134,13 @@ class AdaiV2(optimizer.Optimizer):
             exp_avg.assign(exp_avg * beta1 + beta3 * g)
             exp_avg_hat = exp_avg / bias_correction1 * math.pow(self.beta0, 1. - self.dampening)
             
-            p.assign_add(exp_avg_hat * -lr)
+            p.assign_add(exp_avg_hat * -self.lr)
 
     def get_config(self):
         config = super().get_config()
         config.update(
             {
+                "lr": self.lr,
                 "beta0": self.beta0,
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,

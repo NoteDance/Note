@@ -50,7 +50,6 @@ class AvaGrad(optimizer.Optimizer):
         self.weight_decouple = weight_decouple
         self.fixed_decay = fixed_decay
         self.adam_debias = adam_debias
-        self.gamma = None
     
     def reset(self):
         self.step = 0
@@ -68,6 +67,7 @@ class AvaGrad(optimizer.Optimizer):
         super().build(var_list)
         self.exp_avg = []
         self.exp_avg_sq = []
+        self.gamma = tf.Variable(0.)
         self.step = 0
         for var in var_list:
             self.exp_avg.append(self.add_variable_from_reference(
@@ -115,8 +115,9 @@ class AvaGrad(optimizer.Optimizer):
     
             if self.step > 1:
                 de_nom = sqrt_exp_avg_sq / prev_bias_correction2_sq + self.epsilon
-    
-                step_size = self.gamma * lr if self.adam_debias else self.gamma * lr / bias_correction1
+                
+                gamma = tf.cast(self.gamma, variable.dtype)
+                step_size = gamma * lr if self.adam_debias else gamma * lr / bias_correction1
                 variable.assign_add(-step_size * (exp_avg / de_nom))
             
             exp_avg_sq.assign(exp_avg_sq * self.beta2 + gradient * gradient * (1.0 - self.beta2))
@@ -124,10 +125,19 @@ class AvaGrad(optimizer.Optimizer):
             param_wise_lr = sqrt_exp_avg_sq / bias_correction2_sq + self.epsilon
             sum_power = tf.reduce_sum(tf.pow(tf.abs(param_wise_lr), -2))
             squared_norm += tf.pow(sum_power, 1.0 / -2)
-            num_params += tf.size(param_wise_lr)
+            num_params += tf.size(param_wise_lr, num_params.dtype)
         
-        self.gamma = 0.0 if num_params == 0.0 else 1.0 / math.sqrt(tf.get_static_value(squared_norm / num_params))
-            
+        def true_fn():
+            return 0.0
+    
+        def false_fn():
+            return tf.sqrt(squared_norm / num_params)
+        
+        self.gamma.assign(tf.cast(tf.cond(
+            tf.equal(num_params, 0.0),
+            true_fn,
+            false_fn
+        ), self.gamma.dtype))
 
     def get_config(self):
         config = super().get_config()

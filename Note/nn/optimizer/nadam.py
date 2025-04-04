@@ -81,7 +81,7 @@ class NAdam(optimizer.Optimizer):
         lr = tf.cast(learning_rate, variable.dtype)
         
         # Warming momentum schedule
-        m_schedule = tf.get_static_value(self.m_schedule[self._get_variable_index(variable)])
+        m_schedule = self.m_schedule[self._get_variable_index(variable)]
         schedule_decay = self.schedule_decay
         exp_avg, exp_avg_sq = self.exp_avg[self._get_variable_index(variable)], self.exp_avg_sq[self._get_variable_index(variable)]
         beta1, beta2 = self.beta1, self.beta2

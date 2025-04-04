@@ -42,6 +42,7 @@ class SGDW(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
+        self.lr = learning_rate
         self.momentum = momentum
         self.dampening = dampening
         self.nesterov = nesterov
@@ -64,6 +65,7 @@ class SGDW(optimizer.Optimizer):
         super().build(var_list)
         self.momentum_buffer = dict()
         self.momentum_buffer_list = []
+        self.step=0
         for var in var_list:
             self.momentum_buffer[self._get_variable_index(var)] = None
             self.momentum_buffer_list.append(None)
@@ -77,8 +79,6 @@ class SGDW(optimizer.Optimizer):
         self.update_step(grads, trainable_variables, learning_rate)
 
     def update_step(self, grads, trainable_variables, learning_rate):
-        lr = learning_rate
-        
         has_sparse_grad = False
         for i,var in enumerate(trainable_variables):
             if tf.keras.backend.is_sparse(grads[i]):
@@ -92,7 +92,7 @@ class SGDW(optimizer.Optimizer):
             self.momentum_buffer_list,
             weight_decay=self.weight_decay,
             momentum=self.momentum,
-            lr=lr,
+            lr=self.lr,
             dampening=self.dampening,
             nesterov=self.nesterov,
             caution=self.caution,
@@ -104,13 +104,16 @@ class SGDW(optimizer.Optimizer):
         # update momentum_buffers in state
         for p, momentum_buffer in zip(trainable_variables, self.momentum_buffer_list):
             self.momentum_buffer[self._get_variable_index(p)] = momentum_buffer
-            if tf.get_static_value(self.iterations) == 0:
+            if self.step == 0:
                 self._track_variable(momentum_buffer)
+        
+        self.step += 1
 
     def get_config(self):
         config = super().get_config()
         config.update(
             {
+                "lr": self.lr,
                 "momentum": self.momentum,
                 "dampening": self.dampening,
                 "nesterov": self.nesterov,
@@ -118,6 +121,7 @@ class SGDW(optimizer.Optimizer):
                 "maximize": self.maximize,
                 "foreach": self.foreach,
                 "differentiable": self.differentiable,
+                "step": self.step,
             }
         )
         return config

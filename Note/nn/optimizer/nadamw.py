@@ -59,6 +59,7 @@ class NAdamW(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
+        self.lr = learning_rate
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
@@ -102,8 +103,6 @@ class NAdamW(optimizer.Optimizer):
         self.update_step(grads, trainable_variables, learning_rate)
 
     def update_step(self, grads, trainable_variables, learning_rate):
-        lr = learning_rate
-        
         exp_avgs = []
         exp_avg_sqs = []
         state_steps = []
@@ -121,7 +120,7 @@ class NAdamW(optimizer.Optimizer):
             state_steps,
             beta1=self.beta1,
             beta2=self.beta2,
-            lr=lr,
+            lr=self.lr,
             weight_decay=self.weight_decay,
             eps=self.epsilon,
             caution=self.caution,
@@ -133,6 +132,7 @@ class NAdamW(optimizer.Optimizer):
         config = super().get_config()
         config.update(
             {
+                "lr": self.lr,
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,

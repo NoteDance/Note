@@ -83,10 +83,10 @@ class RAdam(optimizer.Optimizer):
 
         self.step += 1
         buffered = self.buffer[int(self.step % 10)]
-        if buffered[0] is not None and self.step == tf.get_static_value(buffered[0]):
+        if self.step == buffered[0]:
             num_sma, step_size = buffered[1], buffered[2]
         else:
-            buffered[0] = self.iterations + 1
+            buffered[0] = self.step
             beta2_t = beta2 ** self.step
             num_sma_max = 2 / (1 - beta2) - 1
             num_sma = num_sma_max - 2 * self.step * beta2_t / (1 - beta2_t)

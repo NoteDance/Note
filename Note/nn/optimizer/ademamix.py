@@ -44,6 +44,7 @@ class AdEMAMix(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
+        self.lr = learning_rate
         self.beta1 = beta1
         self.beta2 = beta2
         self.beta3 = beta3
@@ -110,7 +111,7 @@ class AdEMAMix(optimizer.Optimizer):
             beta3=self.beta3,
             alpha=self.alpha,
             T_alpha_beta3=self.T_alpha_beta3,
-            lr=learning_rate,
+            lr=self.lr,
             weight_decay=self.weight_decay,
             eps=self.epsilon,
         )
@@ -155,6 +156,7 @@ class AdEMAMix(optimizer.Optimizer):
         config = super().get_config()
         config.update(
             {
+                "lr": self.lr,
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "beta3": self.beta3,

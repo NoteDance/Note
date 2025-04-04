@@ -82,6 +82,7 @@ class AdafactorBigVision(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
+        self.lr = learning_rate
         self.epsilon = epsilon
         self.min_dim_size_to_factor = min_dim_size_to_factor
         self.decay_rate = decay_rate
@@ -163,8 +164,6 @@ class AdafactorBigVision(optimizer.Optimizer):
         self.update_step(grads, trainable_variables, learning_rate)
 
     def update_step(self, grads, trainable_variables, learning_rate):
-        lr = learning_rate
-        
         exp_avg_sq_rs = []
         exp_avg_sq_cs = []
         exp_avg_sqs = []
@@ -198,7 +197,7 @@ class AdafactorBigVision(optimizer.Optimizer):
             beta2_cap=self.beta2_cap,
             min_dim_size_to_factor=self.min_dim_size_to_factor,
             eps=self.epsilon,
-            lr=lr,
+            lr=self.lr,
             weight_decay=self.weight_decay,
             momentum=self.momentum,
             momentum_dtype=self.momentum_dtype,
@@ -211,6 +210,7 @@ class AdafactorBigVision(optimizer.Optimizer):
         config = super().get_config()
         config.update(
             {
+                "lr": self.lr,
                 "epsilon": self.epsilon,
                 "min_dim_size_to_factor": self.min_dim_size_to_factor,
                 "decay_rate": self.decay_rate,
@@ -264,7 +264,7 @@ def _single_tensor_adafactor(
 
         # Update self.step
         step_t += 1
-        beta2_t = min(beta2_cap, 1.0 - float(tf.get_static_value(step_t)) ** (-beta2_decay))
+        beta2_t = min(beta2_cap, 1.0 - float(step_t) ** (-beta2_decay))
         one_minus_beta2_t = 1 - beta2_t
 
         grad_sqr = tf.square(grad) + eps

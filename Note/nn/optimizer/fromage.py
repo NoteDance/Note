@@ -38,6 +38,7 @@ class Fromage(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
+        self.lr = learning_rate
         self.p_bound = p_bound
     
     def reset(self):
@@ -52,13 +53,12 @@ class Fromage(optimizer.Optimizer):
         super().build(var_list)
         self.max = []
         for var in var_list:
-            self.max.append(tf.Variable(tf.norm(var) * self.p_bound))
-            self._track_variable(self.max[-1])
+            if self.p_bound is not None:
+                self.max.append(tf.Variable(tf.norm(var) * self.p_bound))
+                self._track_variable(self.max[-1])
 
     def update_step(self, gradient, variable, learning_rate):
-        lr = tf.cast(learning_rate, variable.dtype)
-                
-        pre_factor = math.sqrt(1 + lr ** 2)
+        pre_factor = math.sqrt(1 + self.lr ** 2)
         
         if tf.keras.backend.is_sparse(gradient):
             raise RuntimeError(
@@ -67,17 +67,24 @@ class Fromage(optimizer.Optimizer):
         p_norm = tf.norm(variable) 
         g_norm = tf.norm(gradient)
         
-        if tf.get_static_value(p_norm) > 0.0 and tf.get_static_value(g_norm) > 0.0:
-            variable.assign_add(gradient * (p_norm / g_norm) * -lr)
-        else:
-            variable.assign_add(gradient * -lr)
+        combined_condition = tf.logical_and(tf.greater(p_norm, 0.0), tf.greater(g_norm, 0.0))
+
+        def true_fn():
+            return variable + gradient * (p_norm / g_norm) * -self.lr
+        def false_fn():
+            return variable + gradient * -self.lr
+        
+        variable.assign(tf.cond(combined_condition, true_fn, false_fn))
         
         variable.assign(variable / pre_factor)
         
         if self.p_bound is not None:
-            p_norm = tf.norm(variable) 
-            if tf.get_static_value(p_norm) > tf.get_static_value(self.max[self._get_variable_index(variable)]):
+            p_norm = tf.norm(variable)
+            def true_fn():
                 variable.assign(variable * self.max[self._get_variable_index(variable)] / p_norm)
+            def false_fn():
+                tf.no_op()
+            tf.cond(p_norm > self.max[self._get_variable_index(variable)], true_fn, false_fn)
 
     def get_config(self):
         config = super().get_config()
