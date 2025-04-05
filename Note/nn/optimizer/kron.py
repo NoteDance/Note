@@ -412,7 +412,7 @@ def _calc_A_and_conjB(exprA, G, Q):
                 perm[i], perm[order - 1] = perm[order - 1], perm[i]
                 conjB = tf.transpose(conjB, perm=perm)
     else:
-        conjB = tf.identity(V) # For scalar, conjB is just V
+        conjB = V # For scalar, conjB is just V
     A = tf.einsum(exprA, *(Q + [G]))
     return A, conjB
 
