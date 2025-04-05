@@ -45,16 +45,27 @@ class DAdaptAdan(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
+        self.lr = learning_rate
         self.beta1 = beta1
         self.beta2 = beta2
         self.beta3 = beta3
         self.epsilon = epsilon
-        self.d0 = d0
+        self.d0_ = d0
         self.growth_rate = growth_rate
         self.weight_decouple = weight_decouple
         self.fixed_decay = fixed_decay
     
     def reset(self):
+        self.g_sq = tf.Variable(0.0)
+        self.sk_sq_weighted = tf.Variable(0.0)
+        self.sk_l1 = tf.Variable(0.0)
+        self.gsq_weighted = tf.Variable(0.0)
+        self.d0 = tf.Variable(self.d0_)
+        self._track_variable(self.g_sq)
+        self._track_variable(self.sk_sq_weighted)
+        self._track_variable(self.sk_l1)
+        self._track_variable(self.gsq_weighted)
+        self._track_variable(self.d0)
         self.step = 0
         for var in self._trainable_variables:
             self.s[self._get_variable_index(var)] =  self.add_variable_from_reference(
@@ -79,6 +90,16 @@ class DAdaptAdan(optimizer.Optimizer):
         self.exp_avg_sq = []
         self.exp_avg_diff = []
         self.previous_grad = []
+        self.g_sq = tf.Variable(0.0)
+        self.sk_sq_weighted = tf.Variable(0.0)
+        self.sk_l1 = tf.Variable(0.0)
+        self.gsq_weighted = tf.Variable(0.0)
+        self.d0 = tf.Variable(self.d0_)
+        self._track_variable(self.g_sq)
+        self._track_variable(self.sk_sq_weighted)
+        self._track_variable(self.sk_l1)
+        self._track_variable(self.gsq_weighted)
+        self._track_variable(self.d0)
         self.step = 0
         for var in var_list:
             self.s.append(self.add_variable_from_reference(
@@ -93,7 +114,7 @@ class DAdaptAdan(optimizer.Optimizer):
             self.exp_avg_diff.append(self.add_variable_from_reference(
                                 reference_variable=var, name="exp_avg_diff"
                                                     ))
-            self.previous_grad.append(None)
+            self.previous_grad.append(tf.Variable(var))
         
     def _backend_update_step(self, grads, trainable_variables, learning_rate):
         """Collective update_step that can be overridden by the backend.
@@ -104,16 +125,7 @@ class DAdaptAdan(optimizer.Optimizer):
         self.update_step(grads, trainable_variables, learning_rate)
 
     def update_step(self, grads, trainable_variables, learning_rate):
-        lr = learning_rate
-        
-        d_lr = float(self.d0 * lr)
-        
-        g_sq = tf.convert_to_tensor([0.0])
-        sk_sq_weighted = tf.convert_to_tensor([0.0])
-        sk_l1 = tf.convert_to_tensor([0.0])
-        
-        if self.step == 0:
-            self.gsq_weighted = tf.convert_to_tensor([0.0])
+        d_lr = self.d0 * self.lr
             
         for var, grad in zip(trainable_variables, grads):
             if tf.keras.backend.is_sparse(grad):
@@ -121,11 +133,10 @@ class DAdaptAdan(optimizer.Optimizer):
                     'DAdaptAdan does not support sparse gradients')
             
             if self.step == 0:
-                self.previous_grad[self._get_variable_index(var)] = tf.Variable(grad)
-                self._track_variable(self.previous_grad[self._get_variable_index(var)])
+                self.previous_grad[self._get_variable_index(var)].assign(-grad)
                 
             grad_diff = self.previous_grad[self._get_variable_index(var)]
-            self.previous_grad[self._get_variable_index(var)] += grad
+            self.previous_grad[self._get_variable_index(var)].assign_add(grad)
             
             exp_avg = self.exp_avg[self._get_variable_index(var)]
             exp_avg_sq = self.exp_avg_sq[self._get_variable_index(var)]
@@ -136,7 +147,7 @@ class DAdaptAdan(optimizer.Optimizer):
             exp_avg.assign(exp_avg * self.beta1 + grad * d_lr * (1.0 - self.beta1))
             exp_avg_diff.assign(exp_avg_diff * self.beta2 + grad_diff * d_lr * (1.0 - self.beta2))
             
-            self.previous_grad[self._get_variable_index(var)] = grad_diff * self.beta2 + grad
+            self.previous_grad[self._get_variable_index(var)].assign(grad_diff * self.beta2 + grad)
             x = grad_diff * tf.math.conj(grad_diff)
             grad_diff = tf.math.real(x) if x.dtype.is_complex else x
             exp_avg_sq.assign(exp_avg_sq * self.beta3 + grad_diff * grad_diff * (1.0 - self.beta3))
@@ -145,53 +156,56 @@ class DAdaptAdan(optimizer.Optimizer):
             grad_power = tf.math.real(x) if x.dtype.is_complex else x
             de_nom = tf.sqrt(exp_avg_sq) + self.epsilon
             
-            g_sq += tf.reduce_sum(grad_power / de_nom)
+            self.g_sq.assign_add(tf.reduce_sum(grad_power / de_nom))
             
             s = self.s[self._get_variable_index(var)]
             s.assign(s * self.beta3 + grad * d_lr * (1.0 - self.beta3))
             
             x = s * tf.math.conj(s)
             x = tf.math.real(x) if x.dtype.is_complex else x
-            sk_sq_weighted += tf.reduce_sum(x / de_nom)
-            sk_l1 += tf.reduce_sum(tf.abs(s))
+            self.sk_sq_weighted.assign_add(tf.reduce_sum(x / de_nom))
+            self.sk_l1.assign_add(tf.reduce_sum(tf.abs(s)))
             
-            self.previous_grad[self._get_variable_index(var)] = -grad
+            self.previous_grad[self._get_variable_index(var)].assign(-grad)
         
-        if tf.get_static_value(sk_l1) == 0:
-            return
-        
-        self.gsq_weighted = self.gsq_weighted * self.beta3 + g_sq * (d_lr ** 2) * (1.0 - self.beta3)  # fmt: skip
-        
-        if tf.get_static_value(lr) > 0.0:
-            d_hat = (sk_sq_weighted / (1.0 - self.beta3) - self.gsq_weighted) / sk_l1
-            d = max(self.d0, min(d_hat, self.d0 * self.growth_rate))
-        
-        self.d0 = d
-        
-        for var, grad in zip(trainable_variables, grads):
-            exp_avg = self.exp_avg[self._get_variable_index(var)]
-            exp_avg_sq = self.exp_avg_sq[self._get_variable_index(var)]
-            exp_avg_diff = self.exp_avg_diff[self._get_variable_index(var)]
+        def update_fn():
+            d_lr = self.d0 * self.lr
+            self.gsq_weighted.assign(self.gsq_weighted * self.beta3 + self.g_sq * (d_lr ** 2) * (1.0 - self.beta3))  # fmt: skip
             
-            de_nom = tf.sqrt(exp_avg_sq) + self.epsilon
+            if self.lr > 0.0:
+                d_hat = (self.sk_sq_weighted / (1.0 - self.beta3) - self.gsq_weighted) / self.sk_l1
+                d = tf.maximum(self.d0, tf.minimum(d_hat, self.d0 * self.growth_rate))
             
-            d_lr = tf.cast(d_lr, dtype=var.dtype)
+            self.d0.assign(d)
             
-            if self.weight_decouple:
-                var.assign(var * (1.0 - d_lr * self.weight_decay))
-            
-            var.assign_add(-1.0 * exp_avg / de_nom)
-            var.assign_add(-self.beta2 * exp_avg_diff / de_nom)
-            
-            if not self.weight_decouple:
-                var.assign(var / (1.0 + d_lr * self.weight_decay))
+            for var, grad in zip(trainable_variables, grads):
+                exp_avg = self.exp_avg[self._get_variable_index(var)]
+                exp_avg_sq = self.exp_avg_sq[self._get_variable_index(var)]
+                exp_avg_diff = self.exp_avg_diff[self._get_variable_index(var)]
+                
+                de_nom = tf.sqrt(exp_avg_sq) + self.epsilon
+                
+                d_lr = tf.cast(d_lr, dtype=var.dtype)
+                
+                if self.weight_decouple:
+                    var.assign(var * (1.0 - d_lr * self.weight_decay))
+                
+                var.assign_add(-1.0 * exp_avg / de_nom)
+                var.assign_add(-self.beta2 * exp_avg_diff / de_nom)
+                
+                if not self.weight_decouple:
+                    var.assign(var / (1.0 + d_lr * self.weight_decay))
         
-        self.step += 1
-
+        def no_update_fn():
+            pass
+        
+        tf.cond(self.sk_l1 == 0, no_update_fn, update_fn)
+        
     def get_config(self):
         config = super().get_config()
         config.update(
             {
+                "lr": self.lr,
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "beta3": self.beta3,
@@ -200,8 +214,7 @@ class DAdaptAdan(optimizer.Optimizer):
                 "growth_rate": self.growth_rate,
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,
-                "gsq_weighted": self.gsq_weighted,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

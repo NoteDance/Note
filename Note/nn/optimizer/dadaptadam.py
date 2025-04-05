@@ -46,16 +46,25 @@ class DAdaptAdam(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
+        self.lr = learning_rate
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
-        self.d0 = d0
+        self.d0_ = d0
         self.growth_rate = growth_rate
         self.weight_decouple = weight_decouple
         self.fixed_decay = fixed_decay
         self.bias_correction = bias_correction
     
     def reset(self):
+        self.sk_l1 = tf.Variable(0.0)
+        self.numerator_acc = tf.Variable(0.0)
+        self.numerator_weighted = tf.Variable(0.0)
+        self.d0 = tf.Variable(self.d0_)
+        self._track_variable(self.sk_l1)
+        self._track_variable(self.numerator_acc)
+        self._track_variable(self.numerator_weighted)
+        self._track_variable(self.d0)
         self.step = 0
         for var in self._trainable_variables:
             self.s[self._get_variable_index(var)] =  self.add_variable_from_reference(
@@ -75,7 +84,14 @@ class DAdaptAdam(optimizer.Optimizer):
         self.s = []
         self.exp_avg = []
         self.exp_avg_sq = []
-        self.numerator_weighted = None
+        self.sk_l1 = tf.Variable(0.0)
+        self.numerator_acc = tf.Variable(0.0)
+        self.numerator_weighted = tf.Variable(0.0)
+        self.d0 = tf.Variable(self.d0_)
+        self._track_variable(self.sk_l1)
+        self._track_variable(self.numerator_acc)
+        self._track_variable(self.numerator_weighted)
+        self._track_variable(self.d0)
         self.step = 0
         for var in var_list:
             self.s.append(self.add_variable_from_reference(
@@ -97,8 +113,6 @@ class DAdaptAdam(optimizer.Optimizer):
         self.update_step(grads, trainable_variables, learning_rate)
 
     def update_step(self, grads, trainable_variables, learning_rate):
-        lr = learning_rate
-        
         self.step += 1
         
         beta2_sq = math.sqrt(self.beta2)
@@ -108,13 +122,7 @@ class DAdaptAdam(optimizer.Optimizer):
         bias_correction = bias_correction1 / bias_correction2_sq
         
         # it's not Adam Debias
-        d_lr = self.d0 * lr if not self.bias_correction else self.d0 * lr / bias_correction
-        
-        sk_l1 = tf.convert_to_tensor([0.0])
-        numerator_acc = tf.convert_to_tensor([0.0])
-        
-        if self.numerator_weighted == None:
-            self.numerator_weighted = tf.convert_to_tensor([0.0])
+        d_lr = self.d0 * self.lr if not self.bias_correction else self.d0 * self.lr / bias_correction
         
         for variable, gradient in zip(trainable_variables, grads):
             if tf.keras.backend.is_sparse(gradient):
@@ -129,7 +137,7 @@ class DAdaptAdam(optimizer.Optimizer):
             flat_grad = tf.reshape(gradient, [-1])
             flat_div = tf.reshape(tf.divide(s, de_nom), [-1])
             dot_val = tf.tensordot(flat_grad, flat_div, axes=1)
-            numerator_acc = d_lr * dot_val
+            self.numerator_acc.assign_add(d_lr * dot_val)
             
             d_lr = tf.cast(d_lr, dtype=variable.dtype)
             exp_avg.assign(exp_avg * self.beta1 + gradient * d_lr * (1.0 - self.beta1))
@@ -137,44 +145,46 @@ class DAdaptAdam(optimizer.Optimizer):
             
             s.assign(s * beta2_sq + gradient * d_lr * (1.0 - beta2_sq))
             
-            sk_l1.assign_add(tf.reduce_sum(tf.abs(s)))
+            self.sk_l1.assign_add(tf.reduce_sum(tf.abs(s)))
         
-        if tf.get_static_value(sk_l1) == 0:
-            return
-        
-        self.numerator_weighted = self.numerator_weighted * beta2_sq + numerator_acc * (1.0 - beta2_sq)  # fmt: skip
-        
-        if tf.get_static_value(lr) > 0.0:
-            d_hat = self.numerator_weighted / (1.0 - beta2_sq) * sk_l1
-            d = max(self.d0, min(tf.get_static_value(d_hat), self.d0 * self.growth_rate))
-        
-        self.d0 = d
-        
-        for variable, gradient in zip(trainable_variables, grads):
-            exp_avg = self.exp_avg[self._get_variable_index(variable)]
-            exp_avg_sq = self.exp_avg_sq[self._get_variable_index(variable)]
+        def update_fn():
+            self.numerator_weighted.assign(self.numerator_weighted * beta2_sq + self.numerator_acc * (1.0 - beta2_sq))  # fmt: skip
             
-            de_nom = tf.sqrt(exp_avg_sq) + self.epsilon
+            if self.lr > 0.0:
+                d_hat = self.numerator_weighted / (1.0 - beta2_sq) * self.sk_l1
+                d = tf.maximum(self.d0, tf.minimum(d_hat, self.d0 * self.growth_rate))
             
-            if self.weight_decouple:
-                variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr)))
+            self.d0.assign(d)
             
-            variable.assign_add(-1.0 * (exp_avg / de_nom))
+            for variable, gradient in zip(trainable_variables, grads):
+                exp_avg = self.exp_avg[self._get_variable_index(variable)]
+                exp_avg_sq = self.exp_avg_sq[self._get_variable_index(variable)]
+                
+                de_nom = tf.sqrt(exp_avg_sq) + self.epsilon
+                
+                if self.weight_decouple:
+                    variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else self.lr)))
+                
+                variable.assign_add(-1.0 * (exp_avg / de_nom))
+        
+        def no_update_fn():
+            pass
+        
+        tf.cond(self.sk_l1 == 0, no_update_fn, update_fn)
 
     def get_config(self):
         config = super().get_config()
         config.update(
             {
+                "lr": self.lr,
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
-                "d0": self.d0,
                 "growth_rate": self.growth_rate,
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,
                 "bias_correction": self.bias_correction,
-                "numerator_weighted": self.numerator_weighted,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

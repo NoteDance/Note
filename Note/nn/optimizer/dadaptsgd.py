@@ -42,13 +42,23 @@ class DAdaptSGD(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
+        self.lr = learning_rate
         self.momentum = momentum
-        self.d0 = d0
+        self.d0_ = d0
         self.growth_rate = growth_rate
         self.weight_decouple = weight_decouple
         self.fixed_decay = fixed_decay
     
     def reset(self):
+        self.sk_sq = tf.Variable(0.0)
+        self.numerator_weighted = tf.Variable(0.0)
+        self.global_grad_norm = tf.Variable(tf.zeros(1, dtype=tf.float32))
+        self.g0_norm = tf.Variable(0.0)
+        self.d0 = tf.Variable(self.d0_)
+        self._track_variable(self.numerator_weighted)
+        self._track_variable(self.global_grad_norm)
+        self._track_variable(self.g0_norm)
+        self._track_variable(self.d0)
         self.step = 0
         for var in self._trainable_variables:
             self.z[self._get_variable_index(var)] =  tf.Variable(var)
@@ -66,6 +76,15 @@ class DAdaptSGD(optimizer.Optimizer):
         self.z = []
         self.s = []
         self.x0 = []
+        self.sk_sq = tf.Variable(0.0)
+        self.numerator_weighted = tf.Variable(0.0)
+        self.global_grad_norm = tf.Variable(tf.zeros((), dtype=tf.float32))
+        self.g0_norm = tf.Variable(0.0)
+        self.d0 = tf.Variable(self.d0_)
+        self._track_variable(self.numerator_weighted)
+        self._track_variable(self.global_grad_norm)
+        self._track_variable(self.g0_norm)
+        self._track_variable(self.d0)
         self.step = 0
         for var in var_list:
             self.z.append(tf.Variable(var))
@@ -85,46 +104,45 @@ class DAdaptSGD(optimizer.Optimizer):
         self.update_step(grads, trainable_variables, learning_rate)
 
     def update_step(self, grads, trainable_variables, learning_rate):
-        lr = learning_rate
-        
-        sk_sq = tf.convert_to_tensor([0.0])
-        if self.numerator_weighted == None:
-            self.numerator_weighted = tf.convert_to_tensor([0.0])
-        
-        global_grad_norm = tf.Variable(tf.zeros(1, dtype=tf.float32))
         if self.step == 0:
             for grad in grads:
-                global_grad_norm.assign_add(tf.pow(tf.norm(grad), 2))
-                self.g0_norm = tf.sqrt(global_grad_norm)
+                self.global_grad_norm.assign_add(tf.pow(tf.norm(grad), 2))
+            self.g0_norm.assign(tf.sqrt(self.global_grad_norm))
         
-        d = self.d0
-        d_lr = d * lr / self.g0_norm
+        def update_fn():
+            d = self.d0
+            d_lr = d * self.lr / self.g0_norm
+            
+            for variable, grad in zip(trainable_variables, grads):
+                if tf.keras.backend.is_sparse(grad):
+                    raise RuntimeError(
+                        'DAdaptSGD does not support sparse gradients')
+                
+                if self.weight_decouple:
+                    variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else self.lr)))
+                
+                d_lr = tf.cast(d_lr, variable.dtype)
+                
+                s = self.s[self._get_variable_index(variable)]
+                self.numerator_weighted.assign_add(tf.tensordot(tf.reshape(grad, [-1]), tf.reshape(s, [-1]), axes=1) * d_lr)
+                
+                s.assign_add(grad * d_lr)
+                self.sk_sq.assign_add(tf.reduce_sum(tf.pow(s, 2)))
+            
+            if self.lr > 0.0:
+                d_hat = 2.0 * self.numerator_weighted / tf.sqrt(self.sk_sq)
+                d = tf.maximum(self.d0, tf.minimum(d_hat, self.d0 * self.growth_rate))
+            
+            for variable, grad in zip(trainable_variables, grads):
+                z = self.z[self._get_variable_index(variable)]
+                z.assign(self.x0[self._get_variable_index(variable)] - self.s[self._get_variable_index(variable)])
+                
+                variable.assign(variable * self.momentum + z * (1.0 - self.momentum))
+            
+        def no_update_fn():
+            pass
         
-        for variable, grad in zip(trainable_variables, grads):
-            if tf.keras.backend.is_sparse(grad):
-                raise RuntimeError(
-                    'DAdaptSGD does not support sparse gradients')
-            
-            if self.weight_decouple:
-                variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr)))
-            
-            d_lr = tf.cast(d_lr, variable.dtype)
-            
-            s = self.s[self._get_variable_index(variable)]
-            self.numerator_weighted += tf.tensordot(tf.reshape(grad, [-1]), tf.reshape(s, [-1]) * d_lr)
-            
-            s.assign_add(grad * d_lr)
-            sk_sq += tf.reduce_sum(tf.pow(s, 2))
-        
-        if tf.get_static_value(lr) > 0.0:
-            d_hat = 2.0 * self.numerator_weighted / tf.sqrt(sk_sq)
-            d = max(self.d0, min(tf.get_static_value(d_hat), self.d0 * self.growth_rate))
-        
-        for variable, grad in zip(trainable_variables, grads):
-            z = self.z[self._get_variable_index(variable)]
-            z.assign(self.x0[self._get_variable_index(variable)] - self.s[self._get_variable_index(variable)])
-            
-            variable.assign(variable * self.momentum + z * (1.0 - self.momentum))
+        tf.cond(self.g0_norm == 0, no_update_fn, update_fn)
         
         self.step += 1
 
@@ -132,13 +150,12 @@ class DAdaptSGD(optimizer.Optimizer):
         config = super().get_config()
         config.update(
             {
+                "lr": self.lr,
                 "momentum": self.momentum,
-                "d0": self.d0,
                 "growth_rate": self.growth_rate,
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,
-                "numerator_weighted": self.numerator_weighted,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config
