@@ -5,7 +5,7 @@ Copyright 2025 NoteDance
 """
 import tensorflow as tf
 from keras.src.optimizers import optimizer
-from Note.nn.optimizer.galore_projector import GaLoreProjector
+from optimizers.galore_projector import GaLoreProjector
 import math
 
 

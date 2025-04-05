@@ -158,14 +158,14 @@ class SWATS(optimizer.Optimizer):
         
             # bias corrected exponential average
             corrected_exp_avg = exp_avg2 / bias_correction2
-            
+                
+            # checking criteria of switching to SGD training
             def true_fn():
                 self.phase = "SGD"
             
             def false_fn():
-                tf.no_op()
-                
-            # checking criteria of switching to SGD training
+                pass
+            
             tf.cond((
                     tf.logical_and(tf.logical_and(tf.convert_to_tensor(self.step) > 1
                     ,tf.experimental.numpy.allclose(corrected_exp_avg, scaling, rtol=1e-6, atol=1e-8))
@@ -173,7 +173,7 @@ class SWATS(optimizer.Optimizer):
                     ), true_fn, false_fn)
             
         def false_fn():
-            tf.no_op()
+            pass
             
         tf.cond(pg != 0, true_fn, false_fn)
 

@@ -83,7 +83,7 @@ class Fromage(optimizer.Optimizer):
             def true_fn():
                 variable.assign(variable * self.max[self._get_variable_index(variable)] / p_norm)
             def false_fn():
-                tf.no_op()
+                pass
             tf.cond(p_norm > self.max[self._get_variable_index(variable)], true_fn, false_fn)
 
     def get_config(self):
