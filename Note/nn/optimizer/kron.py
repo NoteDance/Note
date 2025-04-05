@@ -227,7 +227,7 @@ class Kron(optimizer.Optimizer):
                 "mu_dtype": self.mu_dtype,
                 "precond_dtype": self.precond_dtype,
                 "exprs": self.exprs,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config
