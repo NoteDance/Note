@@ -114,7 +114,7 @@ class Yogi(optimizer.Optimizer):
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
                 "initial_accumulator": self.initial_accumulator,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

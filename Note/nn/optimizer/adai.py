@@ -141,7 +141,7 @@ class Adai(optimizer.Optimizer):
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
                 "decoupled": self.decoupled,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

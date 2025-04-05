@@ -138,7 +138,7 @@ class Shampoo(optimizer.Optimizer):
                 "momentum": self.momentum,
                 "update_freq": self.update_freq,
                 "momentum_buffer": self.momentum_buffer,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

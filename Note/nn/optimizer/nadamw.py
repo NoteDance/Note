@@ -140,7 +140,7 @@ class NAdamW(optimizer.Optimizer):
                 "maximize": self.maximize,
                 "foreach": self.foreach,
                 "capturable": self.capturable,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

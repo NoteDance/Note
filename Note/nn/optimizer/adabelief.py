@@ -199,7 +199,7 @@ class AdaBelief(optimizer.Optimizer):
                 "fixed_decay": self.fixed_decay,
                 "rectify": self.rectify,
                 "degenerated_to_sgd": self.degenerated_to_sgd,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

@@ -252,7 +252,7 @@ class Muon(optimizer.Optimizer):
                 "adamw_eps": self.adamw_eps,
                 "world_size": self.world_size,
                 "rank": self.rank,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

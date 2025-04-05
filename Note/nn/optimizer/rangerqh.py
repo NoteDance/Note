@@ -143,7 +143,7 @@ class RangerQH(optimizer.Optimizer):
                 "k": self.k,
                 "alpha": self.alpha,
                 "decouple_weight_decay": self.decouple_weight_decay,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

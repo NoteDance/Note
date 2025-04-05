@@ -115,7 +115,7 @@ class NAdam(optimizer.Optimizer):
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
                 "schedule_decay": self.schedule_decay,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

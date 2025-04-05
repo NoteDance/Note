@@ -191,7 +191,7 @@ class AdaPNM(optimizer.Optimizer):
                 "r": self.r,
                 "adanorm": self.adanorm,
                 "adam_debias": self.adam_debias,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

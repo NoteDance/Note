@@ -124,7 +124,7 @@ class EXAdam(optimizer.Optimizer):
                 "epsilon": self.epsilon,
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

@@ -144,7 +144,7 @@ class AdamP(optimizer.Optimizer):
                 "delta": self.delta,
                 "wd_ratio": self.wd_ratio,
                 "nesterov": self.nesterov,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

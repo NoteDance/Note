@@ -188,7 +188,7 @@ class SWATS(optimizer.Optimizer):
                 "nesterov": self.nesterov,
                 "phase": self.phase,
                 "momentum_buffer": self.momentum_buffer,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

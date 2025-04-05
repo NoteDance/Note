@@ -120,7 +120,7 @@ class MSVAG(optimizer.Optimizer):
         config.update(
             {
                 "beta": self.beta,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

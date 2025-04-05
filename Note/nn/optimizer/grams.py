@@ -107,7 +107,7 @@ class Grams(optimizer.Optimizer):
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
                 "weight_decouple": self.weight_decouple,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

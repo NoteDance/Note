@@ -227,7 +227,7 @@ class Adalite(optimizer.Optimizer):
                 "tau": self.tau,
                 "eps1": self.eps1,
                 "eps2": self.eps2,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

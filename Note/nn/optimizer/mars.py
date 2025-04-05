@@ -207,7 +207,7 @@ class Mars(optimizer.Optimizer):
                 "lr_1d_factor": self.lr_1d_factor,
                 "betas_1d": self.betas_1d,
                 "caution": self.caution,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

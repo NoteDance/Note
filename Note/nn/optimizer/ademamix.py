@@ -163,7 +163,7 @@ class AdEMAMix(optimizer.Optimizer):
                 "epsilon": self.epsilon,
                 "alpha": self.alpha,
                 "T_alpha_beta3": self.T_alpha_beta3,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

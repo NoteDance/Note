@@ -190,7 +190,7 @@ class Ranger(optimizer.Optimizer):
                 "use_gc": self.use_gc,
                 "gc_conv_only": self.gc_conv_only,
                 "gc_loc": self.gc_loc,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

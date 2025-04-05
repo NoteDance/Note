@@ -120,7 +120,7 @@ class PID(optimizer.Optimizer):
                 "nesterov": self.nesterov,
                 "I": self.I,
                 "D": self.D,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

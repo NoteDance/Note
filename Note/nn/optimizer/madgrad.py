@@ -158,7 +158,7 @@ class MADGRAD(optimizer.Optimizer):
                 "momentum": self.momentum,
                 "epsilon": self.epsilon,
                 "decoupled_decay": self.decoupled_decay,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

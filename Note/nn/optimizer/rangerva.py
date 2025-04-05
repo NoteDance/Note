@@ -208,7 +208,7 @@ class RangerVA(optimizer.Optimizer):
                 "transformer": self.transformer,
                 "smooth": self.smooth,
                 "grad_transformer": self.grad_transformer,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

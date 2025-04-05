@@ -149,7 +149,7 @@ class AvaGrad(optimizer.Optimizer):
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,
                 "adam_debias": self.adam_debias,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

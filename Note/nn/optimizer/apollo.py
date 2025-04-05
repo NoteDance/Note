@@ -150,7 +150,7 @@ class Apollo(optimizer.Optimizer):
                 "warmup": self.warmup,
                 "init_lr": self.init_lr,
                 "weight_decay_type": self.weight_decay_type,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

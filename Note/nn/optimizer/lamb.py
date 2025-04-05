@@ -232,7 +232,7 @@ class Lamb(optimizer.Optimizer):
                 "always_adapt": self.always_adapt,
                 "caution": self.caution,
                 "decoupled_decay": self.decoupled_decay,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

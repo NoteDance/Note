@@ -203,7 +203,7 @@ class Adopt(optimizer.Optimizer):
                 "maximize": self.maximize,
                 "capturable": self.capturable,
                 "differentiable": self.differentiable,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

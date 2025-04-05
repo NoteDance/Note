@@ -203,7 +203,7 @@ class Adan(optimizer.Optimizer):
                 "epsilon": self.epsilon,
                 "no_prox": self.no_prox,
                 "foreach": self.foreach,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

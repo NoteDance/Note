@@ -171,7 +171,7 @@ class Ranger(optimizer.Optimizer):
                 "N_sma_threshhold": self.N_sma_threshhold,
                 "use_gc": self.use_gc,
                 "gc_conv_only": self.gc_conv_only,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

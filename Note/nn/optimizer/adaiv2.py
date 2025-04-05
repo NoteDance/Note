@@ -146,7 +146,7 @@ class AdaiV2(optimizer.Optimizer):
                 "epsilon": self.epsilon,
                 "dampening": self.dampening,
                 "decoupled": self.decoupled,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

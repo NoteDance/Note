@@ -126,7 +126,7 @@ class AdaShift(optimizer.Optimizer):
                 "keep_num": self.keep_num,
                 "cautious": self.cautious,
                 "grad_deque": self.grad_deque,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

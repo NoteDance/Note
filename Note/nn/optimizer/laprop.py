@@ -138,7 +138,7 @@ class LaProp(optimizer.Optimizer):
                 "amsgrad": self.amsgrad,
                 "centered": self.centered,
                 "steps_before_using_centered": self.steps_before_using_centered,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

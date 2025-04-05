@@ -125,7 +125,7 @@ class FAdam(optimizer.Optimizer):
                 "p": self.p,
                 "momentum_dtype": self.momentum_dtype,
                 "fim_dtype": self.fim_dtype,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

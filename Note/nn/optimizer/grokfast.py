@@ -197,7 +197,7 @@ class GrokFastAdamW(optimizer.Optimizer):
                 "filter": self.filter,
                 "filter_params": self.filter_params,
                 "grads": self.grads,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

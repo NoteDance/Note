@@ -172,7 +172,7 @@ class Adahessian(optimizer.Optimizer):
                 "n_samples": self.n_samples,
                 "avg_conv_kernel": self.avg_conv_kernel,
                 "hessian_step": self.hessian_step,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

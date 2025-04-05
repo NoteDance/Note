@@ -151,7 +151,7 @@ class Amos(optimizer.Optimizer):
                 "extra_l2": self.extra_l2,
                 "c_coef": self.c_coef,
                 "d_coef": self.d_coef,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

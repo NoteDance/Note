@@ -121,7 +121,7 @@ class SGDW(optimizer.Optimizer):
                 "maximize": self.maximize,
                 "foreach": self.foreach,
                 "differentiable": self.differentiable,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

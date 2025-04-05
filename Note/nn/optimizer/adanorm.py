@@ -162,7 +162,7 @@ class AdaNorm(optimizer.Optimizer):
                 "fixed_decay": self.fixed_decay,
                 "ams_bound": self.ams_bound,
                 "adam_debias": self.adam_debias,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

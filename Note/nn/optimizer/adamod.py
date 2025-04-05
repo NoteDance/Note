@@ -112,7 +112,7 @@ class AdaMod(optimizer.Optimizer):
                 "beta2": self.beta2,
                 "beta3": self.beta3,
                 "epsilon": self.epsilon,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

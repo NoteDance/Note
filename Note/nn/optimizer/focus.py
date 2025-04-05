@@ -103,7 +103,7 @@ class FOCUS(optimizer.Optimizer):
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "gamma": self.gamma,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

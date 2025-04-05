@@ -222,7 +222,7 @@ class AdafactorBigVision(optimizer.Optimizer):
                 "unscaled_wd": self.unscaled_wd,
                 "caution": self.caution,
                 "foreach": self.foreach,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config

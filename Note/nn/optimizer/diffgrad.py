@@ -115,7 +115,7 @@ class DiffGrad(optimizer.Optimizer):
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
-                "step": self.step,
+                "step": self.iterations.numpy(),
             }
         )
         return config
