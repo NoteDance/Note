@@ -1,4 +1,4 @@
-""" RangerVA
+""" RangerQH
 Implements the QHAdam optimization algorithm `(Ma and Yarats, 2019)`_.
 Along with Hinton/Zhang Lookahead.
 https://arxiv.org/abs/1810.06801

@@ -88,8 +88,6 @@ class Kron(optimizer.Optimizer):
         self.mu_dtype = mu_dtype
         self.precond_dtype = precond_dtype
         
-        self._prob_step = tf.convert_to_tensor(0, dtype=tf.int32)
-        self._update_counter = tf.convert_to_tensor(0, dtype=tf.int32)
         self.rng = tf.random.Generator.from_seed(42)
         
         if preconditioner_update_probability is None:
@@ -104,6 +102,10 @@ class Kron(optimizer.Optimizer):
         self.exprs = []
         if self.precond_dtype is None:
             self.precond_dtype = tf.float32
+        self._prob_step = tf.Variable(0, dtype=tf.int32, trainable=False)
+        self._update_counter = tf.Variable(0, dtype=tf.int32, trainable=False)
+        self._track_variable(self._prob_step)
+        self._track_variable(self._update_counter)
         self.step = 0
         for var in var_list:
             self.momentum_buffer.append(
@@ -132,23 +134,31 @@ class Kron(optimizer.Optimizer):
         total_precond_mb = 0
         
         # update preconditioners all together deterministically
-        update_prob = self.param_groups[0]["preconditioner_update_probability"]
+        update_prob = self.preconditioner_update_probability
         if callable(update_prob):
             update_prob = update_prob(tf.cast(self._prob_step, tf.float32))
-        self._update_counter += 1
-        do_update = self._update_counter >= 1 / update_prob
-        if do_update:
-            self._update_counter = tf.convert_to_tensor(0, dtype=tf.int32)
-        self._prob_step += 1
+        self._update_counter.assign_add(1)
+        
+        do_update = tf.cast(self._update_counter, update_prob.dtype) >= tf.cast(1, update_prob.dtype) / update_prob
+        self._update_counter.assign(
+            tf.cond(
+                do_update,
+                lambda: tf.constant(0, dtype=tf.int32),
+                lambda: self._update_counter
+            )
+        )
+        self._prob_step.assign_add(1)
         
         # balance preconditioners roughly every 100 updates
-        balance = tf.get_static_value(self.rng.uniform(shape=[], minval=0.0, maxval=1.0)) < 0.01 and do_update
+        balance = tf.logical_and(self.rng.uniform(shape=[], minval=0.0, maxval=1.0) < 0.01, do_update)
         
         if self.precond_dtype is None:
             self.precond_dtype = tf.float32
         
-        momentum_size = tf.get_static_value(tf.size(self.momentum_buffer[self._get_variable_index(variable)]))
-        momentum_mb = momentum_size * self.momentum_buffer[self._get_variable_index(variable)].dtype.size / (2**20)
+        momentum_size = tf.size(self.momentum_buffer[self._get_variable_index(variable)])
+        dtype = self.momentum_buffer[self._get_variable_index(variable)].dtype
+        itemsize = np.dtype(dtype if isinstance(dtype, str) else dtype.as_numpy_dtype).itemsize
+        momentum_mb = momentum_size * itemsize / (2**20)
         total_momentum_size += momentum_size
         total_momentum_mb += momentum_mb
 
@@ -160,7 +170,7 @@ class Kron(optimizer.Optimizer):
         self.step += 1
         
         momentum_buffer = self.momentum_buffer[self._get_variable_index(variable)]
-        self.momentum_buffer[self._get_variable_index(variable)] = momentum_buffer * self.b1 + gradient * (1 - self.b1)
+        momentum_buffer.assign(momentum_buffer * self.b1 + gradient * (1 - self.b1))
         # restore momentum dtype
         if self.mu_dtype is not None:
             momentum_buffer = self.momentum_buffer[self._get_variable_index(variable)] = tf.cast(momentum_buffer, self.mu_dtype)
@@ -168,18 +178,28 @@ class Kron(optimizer.Optimizer):
         debiased_momentum = tf.cast(debiased_momentum, self.precond_dtype)
         
         # balance preconditioners about every 100 updates
-        if len(gradient.shape) > 1 and balance:
+        def true_fn():
             _balance_Q(self.Q[self._get_variable_index(variable)])
+
+        def false_fn():
+            pass
+        
+        tf.cond(tf.logical_and(len(gradient.shape) > 1, balance), true_fn, false_fn)
         
         # update preconditioner
-        if do_update:
+        def true_fn():
             _update_precond(
                 self.Q[self._get_variable_index(variable)],
                 self.exprs[self._get_variable_index(variable)],
                 debiased_momentum if self.momentum_into_precond_update else tf.cast(gradient, self.precond_dtype),
                 tf.convert_to_tensor(self.precond_lr, dtype=self.precond_dtype),
                 tf.convert_to_tensor(tf.experimental.numpy.finfo(self.precond_dtype).tiny, dtype=self.precond_dtype),
-            )
+                )
+            
+        def false_fn():
+            pass
+        
+        tf.cond(do_update, true_fn, false_fn)
         
         # precondition gradients
         pre_grad = _precond_grad(self.Q[self._get_variable_index(variable)], self.exprs[self._get_variable_index(variable)], debiased_momentum)
@@ -225,7 +245,7 @@ def _init_Q_exprs(t, scale, max_size, min_ndim_triangular, memory_save_mode, dty
     dtype = dtype if dtype is not None else t.dtype
     shape = t.shape
     if len(shape) == 0:  # scalar
-        Q = [scale * tf.ones_like(t, dtype=dtype)]
+        Q = [tf.Variable(scale * tf.ones_like(t, dtype=dtype))]
         exprA = ",->"
         exprGs = [",->"]
         exprP = ",,->"
@@ -377,16 +397,22 @@ def _solve_triangular_right(X, A):
 def _calc_A_and_conjB(exprA, G, Q):
     """Calculate A and conjB."""
     order = G.shape.ndims
-    V = tf.random.normal(G.shape, dtype=G.dtype)
+    V = tf.random.normal(tf.shape(G), dtype=G.dtype)
     eps = tf.convert_to_tensor(tf.experimental.numpy.finfo(tf.float32).eps, dtype=G.dtype)
     G += tf.sqrt(eps) * tf.reduce_mean(tf.abs(G)) * V
-    conjB = tf.transpose(V, perm=list(range(1, order)) + [0])
-    for i, q in enumerate(Q):
-        conjB = conjB / q if len(q.shape) < 2 else _solve_triangular_right(conjB, q)
-        if i < order - 1:
-            perm = list(range(order))
-            perm[i], perm[-1] = perm[-1], perm[i]
-            conjB = tf.transpose(conjB, perm=perm)
+    if order > 0:
+        conjB = tf.transpose(V, perm=tf.concat([tf.range(1, order), [0]], axis=0))
+        for i, q in enumerate(Q):
+            if tf.rank(q) < 2:
+                conjB = tf.divide(conjB, q)
+            else:
+                conjB = _solve_triangular_right(conjB, q)
+            if i < order - 1:
+                perm = list(range(order))
+                perm[i], perm[order - 1] = perm[order - 1], perm[i]
+                conjB = tf.transpose(conjB, perm=perm)
+    else:
+        conjB = tf.identity(V) # For scalar, conjB is just V
     A = tf.einsum(exprA, *(Q + [G]))
     return A, conjB
 
@@ -395,7 +421,7 @@ def _update_precond(Q, exprs, G, step, tiny):
     """Update Kronecker product preconditioner Q with pair (V, G)."""
     exprA, exprGs, _ = exprs
     A, conjB = _calc_A_and_conjB(exprA, G, Q)
-    for q, exprG in zip(Q, exprGs):
+    for i, (q, exprG) in enumerate(zip(Q, exprGs)):
         term1 = tf.einsum(exprG, A, A)
         term2 = tf.einsum(exprG, conjB, conjB)
         term1, term2 = term1 - term2, term1 + term2
@@ -407,7 +433,7 @@ def _update_precond(Q, exprs, G, step, tiny):
             term1 = tf.linalg.band_part(term1, 0, -1)
             term1 /= tf.maximum(tf.where(norm > 0, _lb(term2, norm), norm), tiny)
             term1 = tf.matmul(term1, q)
-        q.assign_sub(term1)
+        q.assign(q - term1)
 
 
 def _precond_grad(Q, exprs, G):
