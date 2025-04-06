@@ -185,7 +185,8 @@ class PPCGrad:
                 axis=0),
             tf.bool)
 
-        def project_conflicting_gradient(g_i, grads):
+        def project_conflicting_gradient(pc_grad, grads, i):
+            g_i = pc_grad[i]
             random.shuffle(grads)
             for g_j in grads:
                 g_i_flat = tf.reshape(g_i, [-1])
@@ -198,10 +199,9 @@ class PPCGrad:
                     
         pc_grad = self.manager.list([g for g in grads])
         grads = self.manager.list(grads)
-        process_list=[]
+        process_list = []
         for i in range(len(pc_grad)):
-            g_i = pc_grad[i]
-            process=mp.Process(target=project_conflicting_gradient,args=(g_i,grads))
+            process = mp.Process(target=project_conflicting_gradient, args=(pc_grad, grads, i))
             process.start()
             process_list.append(process)
         for process in process_list:
