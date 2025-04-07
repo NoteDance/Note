@@ -1810,10 +1810,7 @@ class Model:
                 if len(self.path_list)>self.max_save_files:
                     os.remove(self.path_list[0])
                     del self.path_list[0]
-            optimizer_config=tf.keras.optimizers.serialize(self.optimizer)
-            self.optimizer=None
             pickle.dump(self,output_file)
-            pickle.dump(optimizer_config,output_file)
             output_file.close()
         else:
             if self.monitor=='val_loss':
