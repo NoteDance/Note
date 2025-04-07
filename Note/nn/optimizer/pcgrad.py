@@ -132,7 +132,6 @@ class PPCGrad:
         if reduction not in ['mean', 'sum']:
             raise ValueError("Reduction must be 'mean' or 'sum'")
         self.reduction = reduction
-        self.manager = mp.Manager()
 
     def pack_grad(self, tape, losses, variables):
         """
@@ -196,8 +195,9 @@ class PPCGrad:
                 tf.stack([tf.cast(h, tf.int32) for h in has_grads]),
                 axis=0),
             tf.bool)
-        pc_grad = self.manager.list([g for g in grads])
-        grads = self.manager.list(grads)
+        manager = mp.Manager()
+        pc_grad = manager.list([g for g in grads])
+        grads = manager.list(grads)
         process_list = []
         for i in range(len(pc_grad)):
             process = mp.Process(target=self.project_conflicting_gradient, args=(pc_grad, grads, i))
