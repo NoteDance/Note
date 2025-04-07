@@ -166,6 +166,18 @@ class PPCGrad:
             grads_list.append(flatten_grad(grads_list_))
             has_grads_list.append(flatten_grad(has_grads_list_))
         return grads_list, shapes, has_grads_list
+    
+    def project_conflicting_gradient(self, pc_grad, grads, i):
+        g_i = pc_grad[i]
+        random.shuffle(grads)
+        for g_j in grads:
+            g_i_flat = tf.reshape(g_i, [-1])
+            g_j_flat = tf.reshape(g_j, [-1])
+            dot = tf.tensordot(g_i_flat, g_j_flat, axes=1)
+            if dot < 0:
+                norm_sq = tf.reduce_sum(tf.square(g_j_flat))
+                proj = dot * g_j / norm_sq
+                pc_grad[i] = pc_grad[i] - proj
 
     def project_conflicting(self, grads, has_grads):
         """
@@ -184,24 +196,11 @@ class PPCGrad:
                 tf.stack([tf.cast(h, tf.int32) for h in has_grads]),
                 axis=0),
             tf.bool)
-
-        def project_conflicting_gradient(pc_grad, grads, i):
-            g_i = pc_grad[i]
-            random.shuffle(grads)
-            for g_j in grads:
-                g_i_flat = tf.reshape(g_i, [-1])
-                g_j_flat = tf.reshape(g_j, [-1])
-                dot = tf.tensordot(g_i_flat, g_j_flat, axes=1)
-                if dot < 0:
-                    norm_sq = tf.reduce_sum(tf.square(g_j_flat))
-                    proj = dot * g_j / norm_sq
-                    pc_grad[i] = pc_grad[i] - proj
-                    
         pc_grad = self.manager.list([g for g in grads])
         grads = self.manager.list(grads)
         process_list = []
         for i in range(len(pc_grad)):
-            process = mp.Process(target=project_conflicting_gradient, args=(pc_grad, grads, i))
+            process = mp.Process(target=self.project_conflicting_gradient, args=(pc_grad, grads, i))
             process.start()
             process_list.append(process)
         for process in process_list:
