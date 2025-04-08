@@ -67,6 +67,7 @@ class Adahessian(optimizer.Optimizer):
         self.hessian_step = 0
         self.hessian_step_ = tf.Variable(0)
         self.step = 0
+        self._track_variable(self.hessian_step_)
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
