@@ -64,7 +64,8 @@ class Adahessian(optimizer.Optimizer):
         super().build(var_list)
         self.exp_avg = []
         self.exp_hessian_diag_sq = []
-        self.hessian_step = []
+        self.hessian_step = 0
+        self.hessian_step_ = tf.Variable(0)
         self.step = 0
         for var in var_list:
             self.exp_avg.append(
@@ -78,7 +79,6 @@ class Adahessian(optimizer.Optimizer):
                 )
             )
             var.hess = 0.0
-            self.hessian_step.append(0)
     
     def apply_gradients(self, grads_and_vars, tape):
         self.tape = tape
@@ -104,8 +104,8 @@ class Adahessian(optimizer.Optimizer):
         Zeros out the accumalated hessian traces.
         """
 
-        for i,p in enumerate(trainable_variables):
-            if not isinstance(p.hess, float) and self.hessian_step[i] % self.update_each == 0:
+        for p in trainable_variables:
+            if not isinstance(p.hess, float) and self.hessian_step % self.update_each == 0:
                 p.hess = tf.zeros(p.shape)
     
     def set_hessian(self, grads, trainable_variables):
@@ -115,9 +115,10 @@ class Adahessian(optimizer.Optimizer):
 
         params = []
         for i,p in enumerate(trainable_variables):
-            if self.hessian_step[i] % self.update_each == 0:  # compute the trace only each `update_each` self.step
+            if self.hessian_step % self.update_each == 0:  # compute the trace only each `update_each` self.step
                 params.append(p)
-            self.hessian_step[i] += 1
+            self.hessian_step += 1
+            self.hessian_step_.assign_add(1)
         
         if len(params) == 0:
             return
@@ -171,7 +172,7 @@ class Adahessian(optimizer.Optimizer):
                 "update_each": self.update_each,
                 "n_samples": self.n_samples,
                 "avg_conv_kernel": self.avg_conv_kernel,
-                "hessian_step": self.hessian_step,
+                "hessian_step": self.hessian_step_.numpy(),
                 "step": self.iterations.numpy(),
             }
         )
