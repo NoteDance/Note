@@ -29,7 +29,7 @@ class Model(nn.Model):
         with tf.GradientTape() as tape:
             output = self.__call__(train_data)
             losses = loss_object(labels, output)
-        gradients = self.pcgrad(tape, losses, self.param)
+        gradients = self.pcgrad.pc_backward(tape, losses, self.param)
         optimizer.apply_gradients(zip(gradients, self.param), tape)
         loss = train_loss(losses)
         if train_accuracy!=None:
