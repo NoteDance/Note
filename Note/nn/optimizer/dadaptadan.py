@@ -210,7 +210,6 @@ class DAdaptAdan(optimizer.Optimizer):
                 "beta2": self.beta2,
                 "beta3": self.beta3,
                 "epsilon": self.epsilon,
-                "d0": self.d0,
                 "growth_rate": self.growth_rate,
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,
