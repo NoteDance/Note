@@ -64,10 +64,13 @@ class Lookahead(optimizer.Optimizer):
             self.update_slow(trainable_variables)
 
     def state_dict(self):
-        return tf.keras.optimizers.serialize(self._base_optimizer)
+        state_dict1 = dict()
+        state_dict2 = dict()
+        return self.save_own_variables(state_dict1), self._base_optimizer.save_own_variables(state_dict2)
 
     def load_state_dict(self, state_dict):
-        self._base_optimizer=tf.keras.optimizers.deserialize(state_dict)
+        self.load_own_variables(state_dict[0])
+        self._base_optimizer.load_own_variables(state_dict[1])
     
     def get_config(self):
         config = super().get_config()
