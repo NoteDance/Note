@@ -106,7 +106,7 @@ class DAdaptSGD(optimizer.Optimizer):
     def update_step(self, grads, trainable_variables, learning_rate):
         if self.step == 0:
             for grad in grads:
-                self.global_grad_norm.assign_add(tf.pow(tf.norm(grad), 2))
+                self.global_grad_norm.assign_add(tf.cast(tf.pow(tf.norm(grad), 2), tf.float32))
             self.g0_norm.assign(tf.sqrt(self.global_grad_norm))
         
         def update_fn():
@@ -124,10 +124,10 @@ class DAdaptSGD(optimizer.Optimizer):
                 d_lr = tf.cast(d_lr, variable.dtype)
                 
                 s = self.s[self._get_variable_index(variable)]
-                self.numerator_weighted.assign_add(tf.tensordot(tf.reshape(grad, [-1]), tf.reshape(s, [-1]), axes=1) * d_lr)
+                self.numerator_weighted.assign_add(tf.cast(tf.tensordot(tf.reshape(grad, [-1]), tf.reshape(s, [-1]), axes=1) * d_lr, tf.float32))
                 
                 s.assign_add(grad * d_lr)
-                self.sk_sq.assign_add(tf.reduce_sum(tf.pow(s, 2)))
+                self.sk_sq.assign_add(tf.cast(tf.reduce_sum(tf.pow(s, 2)), tf.float32))
             
             if self.lr > 0.0:
                 d_hat = 2.0 * self.numerator_weighted / tf.sqrt(self.sk_sq)
@@ -152,6 +152,7 @@ class DAdaptSGD(optimizer.Optimizer):
             {
                 "lr": self.lr,
                 "momentum": self.momentum,
+                "d0_": self.d0_,
                 "growth_rate": self.growth_rate,
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,

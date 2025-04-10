@@ -156,19 +156,20 @@ class DAdaptAdan(optimizer.Optimizer):
             grad_power = tf.math.real(x) if x.dtype.is_complex else x
             de_nom = tf.sqrt(exp_avg_sq) + self.epsilon
             
-            self.g_sq.assign_add(tf.reduce_sum(grad_power / de_nom))
+            self.g_sq.assign_add(tf.cast(tf.reduce_sum(grad_power / de_nom), tf.float32))
             
             s = self.s[self._get_variable_index(var)]
             s.assign(s * self.beta3 + grad * d_lr * (1.0 - self.beta3))
             
             x = s * tf.math.conj(s)
             x = tf.math.real(x) if x.dtype.is_complex else x
-            self.sk_sq_weighted.assign_add(tf.reduce_sum(x / de_nom))
-            self.sk_l1.assign_add(tf.reduce_sum(tf.abs(s)))
+            self.sk_sq_weighted.assign_add(tf.cast(tf.reduce_sum(x / de_nom), tf.float32))
+            self.sk_l1.assign_add(tf.cast(tf.reduce_sum(tf.abs(s)), tf.float32))
             
             self.previous_grad[self._get_variable_index(var)].assign(-grad)
         
         def update_fn():
+            d = self.d0
             d_lr = self.d0 * self.lr
             self.gsq_weighted.assign(self.gsq_weighted * self.beta3 + self.g_sq * (d_lr ** 2) * (1.0 - self.beta3))  # fmt: skip
             
@@ -210,6 +211,7 @@ class DAdaptAdan(optimizer.Optimizer):
                 "beta2": self.beta2,
                 "beta3": self.beta3,
                 "epsilon": self.epsilon,
+                "d0_": self.d0_,
                 "growth_rate": self.growth_rate,
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,

@@ -170,11 +170,11 @@ class DAdaptAdaGrad(optimizer.Optimizer):
                 de_nom = tf.sqrt(alpha_k_p1_masked + self.epsilon)
                 
                 grad_sq = tf.reduce_sum(vk / de_nom)
-                self.g_sq.assign_add(grad_sq)
+                self.g_sq.assign_add(tf.cast(grad_sq, tf.float32))
                 
                 weighted_sk_p1_masked = tf.pow(sk_masked.values, 2) / de_nom
                 delta_weighted_sk = tf.reduce_sum(weighted_sk_p1_masked) - tf.reduce_sum(weighted_sk_masked.values)
-                self.sk_sq_weighted_change.assign_add(delta_weighted_sk)
+                self.sk_sq_weighted_change.assign_add(tf.cast(delta_weighted_sk, tf.float32))
                 
                 weighted_sk_p1_delta_masked = weighted_sk_p1_masked - weighted_sk_masked.values
                 weighted_sk_p1_delta = tf.sparse.SparseTensor(indices=grad.indices,
@@ -183,7 +183,7 @@ class DAdaptAdaGrad(optimizer.Optimizer):
                 weighted_sk = tf.sparse.add(weighted_sk, weighted_sk_p1_delta)
                 
                 sk_l1_masked = tf.reduce_sum(tf.abs(sk_masked.values))
-                self.sk_l1_change.assign_add(sk_l1_masked - old_sk_l1_masked)
+                self.sk_l1_change.assign_add(tf.cast(sk_l1_masked - old_sk_l1_masked, tf.float32))
             else:
                 if self.weight_decouple:
                     var.assign(var * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else self.lr)))
@@ -195,7 +195,7 @@ class DAdaptAdaGrad(optimizer.Optimizer):
                 
                 alpha_k.assign_add(tf.pow(grad, 2))
                 grad_sq = tf.reduce_sum(tf.pow(grad, 2) / (tf.sqrt(alpha_k) + self.epsilon))
-                self.g_sq.assign_add(grad_sq)
+                self.g_sq.assign_add(tf.cast(grad_sq, tf.float32))
                 
                 d_lr = tf.cast(d_lr, dtype=var.dtype)
                 
@@ -204,14 +204,15 @@ class DAdaptAdaGrad(optimizer.Optimizer):
                 sk_sq_weighted_param = tf.reduce_sum(tf.pow(sk, 2) / (tf.sqrt(alpha_k) + self.epsilon))
                 sk_l1_param = tf.reduce_sum(tf.abs(sk))
                 
-                self.sk_sq_weighted_change.assign_add(sk_sq_weighted_param - old_sk_sq_weighted_param)
-                self.sk_l1_change.assign_add(sk_l1_param - old_sk_l1_param)
+                self.sk_sq_weighted_change.assign_add(tf.cast(sk_sq_weighted_param - old_sk_sq_weighted_param, tf.float32))
+                self.sk_l1_change.assign_add(tf.cast(sk_l1_param - old_sk_l1_param, tf.float32))
             
         self.sk_sq_weighted.assign_add(self.sk_sq_weighted_change)
         self.gsq_weighted.assign_add(self.g_sq * d_lr ** 2)  # fmt: skip
         self.sk_l1.assign_add(self.sk_l1_change)
         
         def update_fn():
+            d = self.d0
             if self.lr > 0.0:
                 d_hat = (self.sk_sq_weighted - self.gsq_weighted) / self.sk_l1
                 d = tf.maximum(self.d0, tf.minimum(d_hat, self.d0 * self.growth_rate))
@@ -256,6 +257,7 @@ class DAdaptAdaGrad(optimizer.Optimizer):
                 "lr": self.lr,
                 "epsilon": self.epsilon,
                 "momentum": self.momentum,
+                "d0_": self.d0_,
                 "growth_rate": self.growth_rate,
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,

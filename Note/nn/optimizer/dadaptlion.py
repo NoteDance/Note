@@ -122,14 +122,15 @@ class DAdaptLion(optimizer.Optimizer):
             
             exp_avg.assign(exp_avg * self.beta2 + grad * (1.0 - self.beta2) * d_lr)
             
-            self.numerator_accumulator.assign_add(tf.tensordot(tf.reshape(update, [-1]), tf.reshape(s, [-1]), axes=1) * d_lr)
+            self.numerator_accumulator.assign_add(tf.cast(tf.tensordot(tf.reshape(update, [-1]), tf.reshape(s, [-1]), axes=1) * d_lr, tf.float32))
             s.assign(s * beta2_sq + update * (1.0 - beta2_sq) * d_lr)
             
-            self.sk_l1.assign_add(tf.reduce_sum(tf.abs(s)))
+            self.sk_l1.assign_add(tf.cast(tf.reduce_sum(tf.abs(s)), tf.float32))
         
         self.numerator_weighted.assign(self.numerator_weighted * beta2_sq + self.numerator_accumulator * (1.0 - beta2_sq))
         
         def update_fn():
+            d = self.d0
             if self.lr > 0.0:
                 d_hat = self.numerator_weighted / ((1.0 - beta2_sq) * self.sk_l1)
                 d = tf.maximum(self.d0, d_hat)
@@ -148,6 +149,7 @@ class DAdaptLion(optimizer.Optimizer):
                 "lr": self.lr,
                 "beta1": self.beta1,
                 "beta2": self.beta2,
+                "d0_": self.d0_,
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,
             }

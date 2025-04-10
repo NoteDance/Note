@@ -137,7 +137,7 @@ class DAdaptAdam(optimizer.Optimizer):
             flat_grad = tf.reshape(gradient, [-1])
             flat_div = tf.reshape(tf.divide(s, de_nom), [-1])
             dot_val = tf.tensordot(flat_grad, flat_div, axes=1)
-            self.numerator_acc.assign_add(d_lr * dot_val)
+            self.numerator_acc.assign_add(tf.cast(d_lr * dot_val, tf.float32))
             
             d_lr = tf.cast(d_lr, dtype=variable.dtype)
             exp_avg.assign(exp_avg * self.beta1 + gradient * d_lr * (1.0 - self.beta1))
@@ -145,9 +145,10 @@ class DAdaptAdam(optimizer.Optimizer):
             
             s.assign(s * beta2_sq + gradient * d_lr * (1.0 - beta2_sq))
             
-            self.sk_l1.assign_add(tf.reduce_sum(tf.abs(s)))
+            self.sk_l1.assign_add(tf.cast(tf.reduce_sum(tf.abs(s)), tf.float32))
         
         def update_fn():
+            d = self.d0
             self.numerator_weighted.assign(self.numerator_weighted * beta2_sq + self.numerator_acc * (1.0 - beta2_sq))  # fmt: skip
             
             if self.lr > 0.0:
@@ -180,6 +181,7 @@ class DAdaptAdam(optimizer.Optimizer):
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
+                "d0_": self.d0_,
                 "growth_rate": self.growth_rate,
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,
