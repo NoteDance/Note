@@ -16,6 +16,7 @@ class Lookahead(optimizer.Optimizer):
         if not 1 <= k:
             raise ValueError(f'Invalid lookahead steps: {k}')
         self._base_optimizer = base_optimizer
+        self.base_optimizer = tf.keras.optimizers.serialize(self._base_optimizer)
         self.lookahead_alpha = alpha
         self.lookahead_k = k
         self.lookahead_step = 0
