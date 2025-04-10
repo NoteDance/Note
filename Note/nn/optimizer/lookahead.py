@@ -15,8 +15,8 @@ class Lookahead(optimizer.Optimizer):
             raise ValueError(f'Invalid slow update rate: {alpha}')
         if not 1 <= k:
             raise ValueError(f'Invalid lookahead steps: {k}')
-        self._base_optimizer = base_optimizer
-        self.base_optimizer = tf.keras.optimizers.serialize(self._base_optimizer)
+        self.base_optimizer = base_optimizer
+        self.base_optimizer_ = tf.keras.optimizers.serialize(self.base_optimizer)
         self.lookahead_alpha = alpha
         self.lookahead_k = k
         self.lookahead_step = 0
@@ -25,16 +25,16 @@ class Lookahead(optimizer.Optimizer):
         if self.built:
             return
         super().build(var_list)
-        self._base_optimizer.lookahead_slow_buff = []
+        self.base_optimizer.lookahead_slow_buff = []
         for var in var_list:
-            self._base_optimizer.lookahead_slow_buff.append(None)
+            self.base_optimizer.lookahead_slow_buff.append(None)
 
     def update_slow(self, trainable_variables):
         for fast_p in trainable_variables:
-            self._base_optimizer.lookahead_slow_buff[self._get_variable_index(fast_p)] = tf.zeros_like(fast_p)
-            self._base_optimizer.lookahead_slow_buff[self._get_variable_index(fast_p)] = fast_p
-            slow = self._base_optimizer.lookahead_slow_buff[self._get_variable_index(fast_p)]
-            self._base_optimizer.lookahead_slow_buff[self._get_variable_index(fast_p)] += (fast_p - slow) * self.lookahead_alpha
+            self.base_optimizer.lookahead_slow_buff[self._get_variable_index(fast_p)] = tf.zeros_like(fast_p)
+            self.base_optimizer.lookahead_slow_buff[self._get_variable_index(fast_p)] = fast_p
+            slow = self.base_optimizer.lookahead_slow_buff[self._get_variable_index(fast_p)]
+            self.base_optimizer.lookahead_slow_buff[self._get_variable_index(fast_p)] += (fast_p - slow) * self.lookahead_alpha
             fast_p.assign(slow)
 
     def sync_lookahead(self):
@@ -57,9 +57,9 @@ class Lookahead(optimizer.Optimizer):
 
     def update_step(self, grads, trainable_variables, learning_rate):
         if self.tape is None:
-            self._base_optimizer.apply_gradients(zip(grads, trainable_variables))
+            self.base_optimizer.apply_gradients(zip(grads, trainable_variables))
         else:
-            self._base_optimizer.apply_gradients(zip(grads, trainable_variables), self.tape)
+            self.base_optimizer.apply_gradients(zip(grads, trainable_variables), self.tape)
         self.lookahead_step += 1
         if self.lookahead_step % self.lookahead_k == 0:
             self.update_slow(trainable_variables)
@@ -67,11 +67,11 @@ class Lookahead(optimizer.Optimizer):
     def state_dict(self):
         state_dict1 = dict()
         state_dict2 = dict()
-        return self.save_own_variables(state_dict1), self._base_optimizer.save_own_variables(state_dict2)
+        return self.save_own_variables(state_dict1), self.base_optimizer.save_own_variables(state_dict2)
 
     def load_state_dict(self, state_dict):
         self.load_own_variables(state_dict[0])
-        self._base_optimizer.load_own_variables(state_dict[1])
+        self.base_optimizer.load_own_variables(state_dict[1])
     
     def get_config(self):
         config = super().get_config()
@@ -80,7 +80,7 @@ class Lookahead(optimizer.Optimizer):
                 "lookahead_alpha": self.lookahead_alpha,
                 "lookahead_k": self.lookahead_k,
                 "lookahead_step": self.lookahead_step,
-                "base_optimizer": tf.keras.optimizers.serialize(self._base_optimizer),
+                "base_optimizer_": tf.keras.optimizers.serialize(self.base_optimizer),
             }
         )
         return config
