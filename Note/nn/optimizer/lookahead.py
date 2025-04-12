@@ -48,18 +48,21 @@ class Lookahead(optimizer.Optimizer):
         """
         self.update_step(grads, trainable_variables, learning_rate)
     
-    def apply_gradients(self, grads_and_vars, tape=None):
+    def apply_gradients(self, grads_and_vars, tape=None, loss=None):
         self.tape = tape
+        self.loss = loss
         grads, trainable_variables = zip(*grads_and_vars)
         self.apply(grads, trainable_variables)
         # Return iterations for compat with tf.keras.
         return self._iterations
 
     def update_step(self, grads, trainable_variables, learning_rate):
-        if self.tape is None:
+        if self.tape is None and self.loss is None:
             self.base_optimizer.apply_gradients(zip(grads, trainable_variables))
-        else:
+        elif self.tape is not None:
             self.base_optimizer.apply_gradients(zip(grads, trainable_variables), self.tape)
+        else:
+            self.base_optimizer.apply_gradients(zip(grads, trainable_variables), self.loss)
         self.lookahead_step += 1
         if self.lookahead_step % self.lookahead_k == 0:
             self.update_slow(trainable_variables)
