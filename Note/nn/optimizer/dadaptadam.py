@@ -66,6 +66,15 @@ class DAdaptAdam(optimizer.Optimizer):
         self._track_variable(self.numerator_weighted)
         self._track_variable(self.d0)
         self.step = 0
+        iterations = tf.Variable(
+                0,
+                name="iteration",
+                dtype=tf.int64,
+                trainable=False,
+                aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
+            )
+        self._track_variable(iterations)
+        self._iterations = iterations
         for var in self._trainable_variables:
             self.s[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="s"

@@ -57,6 +57,15 @@ class CAME(optimizer.Optimizer):
         self.eps2 = eps2
     
     def reset(self):
+        iterations = tf.Variable(
+                0,
+                name="iteration",
+                dtype=tf.int64,
+                trainable=False,
+                aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
+            )
+        self._track_variable(iterations)
+        self._iterations = iterations
         for var in self._trainable_variables:
             grad_shape = var.shape
             factored = self.get_options(grad_shape)

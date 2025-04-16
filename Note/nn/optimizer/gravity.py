@@ -43,6 +43,15 @@ class Gravity(optimizer.Optimizer):
     
     def reset(self):
         self.step = 0
+        iterations = tf.Variable(
+                0,
+                name="iteration",
+                dtype=tf.int64,
+                trainable=False,
+                aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
+            )
+        self._track_variable(iterations)
+        self._iterations = iterations
         for var in self._trainable_variables:
             self.v[self._get_variable_index(var)] =  tf.Variable(tf.random.normal(shape=var.shape,
                                                        mean=0.0,

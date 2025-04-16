@@ -73,6 +73,15 @@ class Nero(optimizer.Optimizer):
                     
     def reset(self):
         self.step = 0
+        iterations = tf.Variable(
+                0,
+                name="iteration",
+                dtype=tf.int64,
+                trainable=False,
+                aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
+            )
+        self._track_variable(iterations)
+        self._iterations = iterations
         for var in self._trainable_variables:
             if self.constraints and len(var.shape) > 1:
                 var.assign_sub(neuron_mean(var))

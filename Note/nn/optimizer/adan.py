@@ -90,6 +90,15 @@ class Adan(optimizer.Optimizer):
     
     def restart_opt(self):
         self.step = 0
+        iterations = tf.Variable(
+                0,
+                name="iteration",
+                dtype=tf.int64,
+                trainable=False,
+                aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
+            )
+        self._track_variable(iterations)
+        self._iterations = iterations
         for v in self._trainable_variables:
             # State initialization
             

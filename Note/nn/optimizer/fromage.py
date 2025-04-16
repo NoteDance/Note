@@ -42,6 +42,15 @@ class Fromage(optimizer.Optimizer):
         self.p_bound = p_bound
     
     def reset(self):
+        iterations = tf.Variable(
+                0,
+                name="iteration",
+                dtype=tf.int64,
+                trainable=False,
+                aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
+            )
+        self._track_variable(iterations)
+        self._iterations = iterations
         for var in self._trainable_variables:
             if self.p_bound is not None:
                 self.max[self._get_variable_index(var)] =  tf.Variable(tf.norm(var) * self.p_bound)
