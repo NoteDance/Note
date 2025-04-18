@@ -86,7 +86,7 @@ class AdaBoundW(optimizer.Optimizer):
         
         if tf.keras.backend.is_sparse(gradient):
             raise RuntimeError(
-                'Adam does not support sparse gradients, please consider SparseAdam instead')
+                'AdaBoundW does not support sparse gradients, please consider SparseAdam instead')
         
         exp_avg = self.exp_avg[self._get_variable_index(variable)]
         exp_avg_sq = self.exp_avg_sq[self._get_variable_index(variable)]
