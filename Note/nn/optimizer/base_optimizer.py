@@ -379,10 +379,9 @@ class BaseOptimizer(KerasSaveable):
         else:
             trainable_variables = list(trainable_variables)
             # Optionally build optimizer.
-            if not self.built:
-                with backend.name_scope(self.name, caller=self):
-                    self.build(trainable_variables)
-                self.built = True
+            with backend.name_scope(self.name, caller=self):
+                self.build(trainable_variables)
+            self.built = True
             self._check_variables_are_known(trainable_variables)
 
         with backend.name_scope(self.name, caller=self):
