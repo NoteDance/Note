@@ -103,7 +103,6 @@ class Adalite(optimizer.Optimizer):
         self.v_avg_1 = []
         self.m_avg_c = []
         self.m_avg_r = []
-        self.m_avg_r = []
         self.m_avg_u = []
         self.step = 0
         for var in var_list:
@@ -112,7 +111,6 @@ class Adalite(optimizer.Optimizer):
             self.v_avg_0.append(tf.Variable(0))
             self.v_avg_1.append(tf.Variable(0))
             self.m_avg_c.append(tf.Variable(0))
-            self.m_avg_r.append(tf.Variable(0))
             self.m_avg_r.append(tf.Variable(0))
             self.m_avg_u.append(tf.Variable(0))
             if len(var.shape) < 2:
@@ -125,7 +123,6 @@ class Adalite(optimizer.Optimizer):
                 self._track_variable(self.v_avg_0[-1])
                 self._track_variable(self.v_avg_1[-1])
                 self._track_variable(self.m_avg_c[-1])
-                self._track_variable(self.m_avg_r[-1])
                 self._track_variable(self.m_avg_r[-1])
                 self._track_variable(self.m_avg_u[-1])
             else:
