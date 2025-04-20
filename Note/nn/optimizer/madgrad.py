@@ -66,7 +66,7 @@ class MADGRAD(optimizer.Optimizer):
         self.grad_sum_sq = []
         self.s = []
         self.x0 = []
-        self.step = 0
+        self.step = []
         for var in var_list:
             self.grad_sum_sq.append(
                 self.add_variable_from_reference(
@@ -81,14 +81,15 @@ class MADGRAD(optimizer.Optimizer):
             if self.momentum != 0:
                 self.x0.append(tf.Variable(var))
                 self._track_variable(self.x0[-1])
+            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype) + self.epsilon
         ck = 1 - self.momentum
         
-        self.step += 1
+        self.step[self._get_variable_index(variable)] += 1
         grad_sum_sq, s = self.grad_sum_sq[self._get_variable_index(variable)], self.s[self._get_variable_index(variable)]
-        lamb = lr * math.sqrt(self.step)
+        lamb = lr * math.sqrt(self.step[self._get_variable_index(variable)])
 
         # Apply weight decay
         if self.weight_decay != 0:
@@ -158,7 +159,7 @@ class MADGRAD(optimizer.Optimizer):
                 "momentum": self.momentum,
                 "epsilon": self.epsilon,
                 "decoupled_decay": self.decoupled_decay,
-                "step": self.iterations.numpy(),
+                "step": [self.iterations.numpy() for _ in range(len(self.step))],
             }
         )
         return config

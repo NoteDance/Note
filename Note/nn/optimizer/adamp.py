@@ -9,9 +9,32 @@ Apache-2.0 license
 """
 
 import tensorflow as tf
-from Note import nn
+import numpy as np
 from keras.src.optimizers import optimizer
 import math
+
+
+def clip(x, min):
+    x_dtype = x.dtype
+    if x_dtype == tf.int32:
+        max = np.iinfo(np.int32).max - 2**7
+    elif x_dtype == tf.int64:
+        max = np.iinfo(np.int64).max - 2**39
+    elif x_dtype == tf.float16:
+        max = float(np.finfo(np.float16).max)
+    else:
+        max = float(np.finfo(np.float32).max)
+
+    return tf.clip_by_value(x, min, max)
+
+
+def cosine_similarity(x1, x2, axis=1, eps=1e-8):
+    w12 = tf.reduce_sum(tf.multiply(x1, x2), axis=axis)
+    w1 = tf.reduce_sum(tf.multiply(x1, x1), axis=axis)
+    w2 = tf.reduce_sum(tf.multiply(x2, x2), axis=axis)
+    n12 = tf.sqrt(clip(w1 * w2, eps * eps))
+    cos_sim = w12 / n12
+    return cos_sim
 
 
 def _channel_view(x):
@@ -28,7 +51,7 @@ def projection(p, grad, perturb, delta: float, wd_ratio: float, eps: float):
     for view_func in [_channel_view, _layer_view]:
         param_view = view_func(p)
         grad_view = view_func(grad)
-        cosine_sim = tf.abs(nn.cosine_similarity(grad_view, param_view, axis=1, eps=eps))
+        cosine_sim = tf.abs(cosine_similarity(grad_view, param_view, axis=1, eps=eps))
 
         # FIXME this is a problem for PyTorch XLA
         if tf.reduce_max(cosine_sim) < delta / math.sqrt(param_view.shape[1]):
@@ -89,7 +112,7 @@ class AdamP(optimizer.Optimizer):
         super().build(var_list)
         self.exp_avg = []
         self.exp_avg_sq = []
-        self.step = 0
+        self.step = []
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -101,15 +124,16 @@ class AdamP(optimizer.Optimizer):
                     reference_variable=var, name="exp_avg_sq"
                 )
             )
+            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
         exp_avg, exp_avg_sq = self.exp_avg[self._get_variable_index(variable)], self.exp_avg_sq[self._get_variable_index(variable)]
         beta1, beta2 = self.beta1, self.beta2
 
-        self.step += 1
-        bias_correction1 = 1 - beta1 ** self.step
-        bias_correction2 = 1 - beta2 ** self.step
+        self.step[self._get_variable_index(variable)] += 1
+        bias_correction1 = 1 - beta1 ** self.step[self._get_variable_index(variable)]
+        bias_correction2 = 1 - beta2 ** self.step[self._get_variable_index(variable)]
 
         exp_avg.assign(exp_avg * beta1 + gradient * (1 - beta1))
         exp_avg_sq.assign(exp_avg_sq * beta2 + gradient * gradient * (1 - beta2))
@@ -144,7 +168,7 @@ class AdamP(optimizer.Optimizer):
                 "delta": self.delta,
                 "wd_ratio": self.wd_ratio,
                 "nesterov": self.nesterov,
-                "step": self.iterations.numpy(),
+                "step": [self.iterations.numpy() for _ in range(len(self.step))],
             }
         )
         return config

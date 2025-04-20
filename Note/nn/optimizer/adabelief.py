@@ -68,7 +68,6 @@ class AdaBelief(optimizer.Optimizer):
             )
         self._track_variable(iterations)
         self._iterations = iterations
-        self.step = 0
         for i,v in enumerate(self._trainable_variables):
             self.exp_avg[i] = self.add_variable_from_reference(
                 reference_variable=v, name="exp_avg"
@@ -83,6 +82,7 @@ class AdaBelief(optimizer.Optimizer):
                 self.max_exp_avg_var[i] = self.add_variable_from_reference(
                     reference_variable=v, name="max_exp_avg_var"
                 )
+            self.step[i] = 0
 
     def build(self, var_list):
         if self.built:
@@ -93,7 +93,7 @@ class AdaBelief(optimizer.Optimizer):
         if self.amsgrad:
             self.max_exp_avg_var = []
         self.buffer = [[None, None, None] for _ in range(10)]
-        self.step = 0
+        self.step = []
         for var in var_list:
             var_fp32 = var
             if var.dtype in {tf.float16, tf.bfloat16}:
@@ -114,6 +114,7 @@ class AdaBelief(optimizer.Optimizer):
                         reference_variable=var_fp32, name="max_exp_avg_var"
                     )
                 )
+            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
@@ -138,9 +139,9 @@ class AdaBelief(optimizer.Optimizer):
         exp_avg = self.exp_avg[self._get_variable_index(variable)]
         exp_avg_var = self.exp_avg_var[self._get_variable_index(variable)]
 
-        self.step += 1
-        bias_correction1 = 1 - self.beta1 ** self.step
-        bias_correction2 = 1 - self.beta2 ** self.step
+        self.step[self._get_variable_index(variable)] += 1
+        bias_correction1 = 1 - self.beta1 ** self.step[self._get_variable_index(variable)]
+        bias_correction2 = 1 - self.beta2 ** self.step[self._get_variable_index(variable)]
 
         # Update first and second moment running average
         exp_avg.assign(exp_avg * self.beta1 + (1 - self.beta1) * gradient)
@@ -164,14 +165,14 @@ class AdaBelief(optimizer.Optimizer):
             variable_fp32 += -step_size * exp_avg / denom
         else:
             # Rectified update, forked from RAdam
-            buffered = self.buffer[int(self.step % 10)]
-            if buffered[0] is not None and self.step == buffered[0]:
+            buffered = self.buffer[int(self.step[self._get_variable_index(variable)] % 10)]
+            if buffered[0] is not None and self.step[self._get_variable_index(variable)] == buffered[0]:
                 num_sma, step_size = buffered[1], buffered[2]
             else:
-                buffered[0] = self.step
-                beta2_t = self.beta2 ** self.step
+                buffered[0] = self.step[self._get_variable_index(variable)]
+                beta2_t = self.beta2 ** self.step[self._get_variable_index(variable)]
                 num_sma_max = 2 / (1 - self.beta2) - 1
-                num_sma = num_sma_max - 2 * self.step * beta2_t / (1 - beta2_t)
+                num_sma = num_sma_max - 2 * self.step[self._get_variable_index(variable)] * beta2_t / (1 - beta2_t)
                 buffered[1] = num_sma
 
                 # more conservative since it's an approximated value
@@ -180,9 +181,9 @@ class AdaBelief(optimizer.Optimizer):
                         (1 - beta2_t) *
                         (num_sma - 4) / (num_sma_max - 4) *
                         (num_sma - 2) / num_sma *
-                        num_sma_max / (num_sma_max - 2)) / (1 - self.beta1 ** self.step)
+                        num_sma_max / (num_sma_max - 2)) / (1 - self.beta1 ** self.step[self._get_variable_index(variable)])
                 elif self.degenerated_to_sgd:
-                    step_size = 1.0 / (1 - self.beta1 ** self.step)
+                    step_size = 1.0 / (1 - self.beta1 ** self.step[self._get_variable_index(variable)])
                 else:
                     step_size = -1
                 buffered[2] = step_size
@@ -208,7 +209,7 @@ class AdaBelief(optimizer.Optimizer):
                 "fixed_decay": self.fixed_decay,
                 "rectify": self.rectify,
                 "degenerated_to_sgd": self.degenerated_to_sgd,
-                "step": self.iterations.numpy(),
+                "step": [self.iterations.numpy() for _ in range(len(self.step))],
             }
         )
         return config

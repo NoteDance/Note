@@ -761,6 +761,9 @@ class LookSAM(optimizer.Optimizer):
         step = self.get_step()
 
         for p, g in zip(trainable_variables, grads):
+            if type(step) == list:
+                step = step[self._get_variable_index(p)]
+                
             grad_norm = tf.norm(g, ord=2)
 
             if step % self.k == 0:

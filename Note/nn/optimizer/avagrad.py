@@ -95,10 +95,10 @@ class AvaGrad(optimizer.Optimizer):
         self.update_step(grads, trainable_variables, learning_rate)
 
     def update_step(self, grads, trainable_variables, learning_rate):
+        self.step += 1
+        
         for variable, gradient in zip(trainable_variables, grads):
             lr = tf.cast(learning_rate, variable.dtype)
-            
-            self.step += 1
             
             bias_correction1 = 1 - self.beta1 ** self.step
             bias_correction2_sq = math.sqrt(1 - self.beta2 ** self.step)

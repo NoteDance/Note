@@ -62,7 +62,7 @@ class NAdam(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.m_schedule = []
-        self.step = 0
+        self.step = []
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -76,6 +76,7 @@ class NAdam(optimizer.Optimizer):
             )
             self.m_schedule.append(tf.Variable(1.))
             self._track_variable(self.m_schedule[-1])
+            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
@@ -86,8 +87,8 @@ class NAdam(optimizer.Optimizer):
         exp_avg, exp_avg_sq = self.exp_avg[self._get_variable_index(variable)], self.exp_avg_sq[self._get_variable_index(variable)]
         beta1, beta2 = self.beta1, self.beta2
         eps = self.epsilon
-        self.step += 1
-        t= self.step
+        self.step[self._get_variable_index(variable)] += 1
+        t= self.step[self._get_variable_index(variable)]
         bias_correction2 = 1 - beta2 ** t
         
         if self.weight_decay != 0:
@@ -115,7 +116,7 @@ class NAdam(optimizer.Optimizer):
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
                 "schedule_decay": self.schedule_decay,
-                "step": self.iterations.numpy(),
+                "step": [self.iterations.numpy() for _ in range(len(self.step))],
             }
         )
         return config

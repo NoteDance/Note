@@ -53,7 +53,6 @@ class FAdam(optimizer.Optimizer):
         self.fim_dtype = fim_dtype
     
     def reset(self):
-        self.step = 0
         iterations = tf.Variable(
                 0,
                 name="iteration",
@@ -70,6 +69,7 @@ class FAdam(optimizer.Optimizer):
             self.fim[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=tf.Variable(tf.cast(var, dtype=self.fim_dtype)), name="fim"
                                                     )
+            self.step[self._get_variable_index(var)] = 0
 
     def build(self, var_list):
         if self.built:
@@ -77,7 +77,7 @@ class FAdam(optimizer.Optimizer):
         super().build(var_list)
         self.momentum = []
         self.fim = []
-        self.step = 0
+        self.step = []
         for var in var_list:
             self.momentum.append(self.add_variable_from_reference(
                                 reference_variable=tf.Variable(tf.cast(var, dtype=self.momentum_dtype)), name="momentum"
@@ -85,13 +85,14 @@ class FAdam(optimizer.Optimizer):
             self.fim.append(self.add_variable_from_reference(
                                 reference_variable=tf.Variable(tf.cast(var, dtype=self.fim_dtype)), name="fim"
                                                     ))
+            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
         
-        self.step += 1
+        self.step[self._get_variable_index(variable)] += 1
         
-        curr_beta2 = 1 - self.beta2 ** self.step
+        curr_beta2 = 1 - self.beta2 ** self.step[self._get_variable_index(variable)]
         
         if tf.keras.backend.is_sparse(gradient):
             raise RuntimeError(
@@ -134,7 +135,7 @@ class FAdam(optimizer.Optimizer):
                 "p": self.p,
                 "momentum_dtype": self.momentum_dtype,
                 "fim_dtype": self.fim_dtype,
-                "step": self.iterations.numpy(),
+                "step": [self.iterations.numpy() for _ in range(len(self.step))],
             }
         )
         return config

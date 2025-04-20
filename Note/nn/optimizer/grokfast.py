@@ -99,7 +99,6 @@ class GrokFastAdamW(optimizer.Optimizer):
     
     def reset(self):
         self.grads = None
-        self.step = 0
         iterations = tf.Variable(
                 0,
                 name="iteration",
@@ -116,6 +115,7 @@ class GrokFastAdamW(optimizer.Optimizer):
             self.exp_avg_sq[self._get_variable_index(var)] = self.add_variable_from_reference(
                                                         reference_variable=var, name="exp_avg_sq"
                                                     )
+            self.step[self._get_variable_index(var)] = 0
 
     def build(self, var_list):
         if self.built:
@@ -124,7 +124,7 @@ class GrokFastAdamW(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.grok_exp_avg = []
-        self.step = 0
+        self.step = []
         for var in var_list:
             self.exp_avg.append(self.add_variable_from_reference(
                                 reference_variable=var, name="exp_avg"
@@ -133,6 +133,7 @@ class GrokFastAdamW(optimizer.Optimizer):
                                 reference_variable=var, name="exp_avg_sq"
                                                     ))
             self.grok_exp_avg.append(None)
+            self.step.append(0)
     
     def _backend_update_step(self, grads, trainable_variables, learning_rate):
         """Collective update_step that can be overridden by the backend.
@@ -150,16 +151,16 @@ class GrokFastAdamW(optimizer.Optimizer):
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
                 
-        self.step += 1
+        self.step[self._get_variable_index(variable)] += 1
         
-        bias_correction1 = 1 - self.beta1 ** self.step
-        bias_correction2_sq = math.sqrt(1 - self.beta2 ** self.step)
+        bias_correction1 = 1 - self.beta1 ** self.step[self._get_variable_index(variable)]
+        bias_correction2_sq = math.sqrt(1 - self.beta2 ** self.step[self._get_variable_index(variable)])
         
         should_grokfast: bool = (
-            self.grokfast and self.step > self.grokfast_after_step and self.grokfast_lamb > 0.0
+            self.grokfast and self.step[self._get_variable_index(variable)] > self.grokfast_after_step and self.grokfast_lamb > 0.0
         )
         
-        if self.step == 1:
+        if self.step[self._get_variable_index(variable)] == 1:
             self.grok_exp_avg[self._get_variable_index(variable)] = gradient
             self._track_variable(self.grok_exp_avg[self._get_variable_index(variable)])
         
@@ -206,7 +207,7 @@ class GrokFastAdamW(optimizer.Optimizer):
                 "filter": self.filter,
                 "filter_params": self.filter_params,
                 "grads": self.grads,
-                "step": self.iterations.numpy(),
+                "step": [self.iterations.numpy() for _ in range(len(self.step))],
             }
         )
         return config

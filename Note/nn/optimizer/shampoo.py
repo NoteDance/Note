@@ -69,7 +69,7 @@ class Shampoo(optimizer.Optimizer):
         self.precond = []
         self.inv_precond = []
         self.momentum_buffer = []
-        self.step = 0
+        self.step = []
         for var in var_list:
             shape = var.shape.as_list()
             self.precond.append(dict())
@@ -80,6 +80,7 @@ class Shampoo(optimizer.Optimizer):
                 self.inv_precond[-1]["inv_precond_{}".format(dim_id)] =  tf.Variable(tf.zeros((dim, dim), dtype=var.dtype))
                 self._track_variable(self.inv_precond[-1]["inv_precond_{}".format(dim_id)])
             self.momentum_buffer.append(None)
+            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
@@ -111,7 +112,7 @@ class Shampoo(optimizer.Optimizer):
 
             gradient_t = tf.transpose(gradient)
             precond.assign_add(tf.matmul(gradient, gradient_t))
-            if self.step % self.update_freq == 0:
+            if self.step[self._get_variable_index(variable)] % self.update_freq == 0:
                 inv_precond.assign(matrix_power(precond, -1.0 / order))
 
             if dim_id == order - 1:
@@ -128,7 +129,7 @@ class Shampoo(optimizer.Optimizer):
         self.momentum_buffer[self._get_variable_index(variable)] = gradient
         variable.assign_add(gradient * -lr)
         
-        self.step += 1
+        self.step[self._get_variable_index(variable)] += 1
 
     def get_config(self):
         config = super().get_config()
@@ -138,7 +139,7 @@ class Shampoo(optimizer.Optimizer):
                 "momentum": self.momentum,
                 "update_freq": self.update_freq,
                 "momentum_buffer": self.momentum_buffer,
-                "step": self.iterations.numpy(),
+                "step": [self.iterations.numpy() for _ in range(len(self.step))],
             }
         )
         return config

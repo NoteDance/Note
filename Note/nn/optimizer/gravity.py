@@ -42,7 +42,6 @@ class Gravity(optimizer.Optimizer):
         self.beta = beta
     
     def reset(self):
-        self.step = 0
         iterations = tf.Variable(
                 0,
                 name="iteration",
@@ -58,26 +57,28 @@ class Gravity(optimizer.Optimizer):
                                                        stddev=self.alpha / self._learning_rate,
                                                        dtype=var.dtype))
             self._track_variable(self.v[self._get_variable_index(var)])
+            self.step[self._get_variable_index(var)] = 0
 
     def build(self, var_list):
         if self.built:
             return
         super().build(var_list)
         self.v = []
-        self.step = 0
+        self.step = []
         for var in var_list:
             self.v.append(tf.Variable(tf.random.normal(shape=var.shape,
                                                        mean=0.0,
                                                        stddev=self.alpha / self._learning_rate,
                                                        dtype=var.dtype)))
             self._track_variable(self.v[-1])
+            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
                 
-        self.step += 1
+        self.step[self._get_variable_index(variable)] += 1
         
-        beta_t = (self.beta * self.step + 1) / (self.step + 2)
+        beta_t = (self.beta * self.step[self._get_variable_index(variable)] + 1) / (self.step[self._get_variable_index(variable)] + 2)
         
         if tf.keras.backend.is_sparse(gradient):
             raise RuntimeError(
@@ -98,7 +99,7 @@ class Gravity(optimizer.Optimizer):
             {
                 "alpha": self.alpha,
                 "beta": self.beta,
-                "step": self.iterations.numpy(),
+                "step": [self.iterations.numpy() for _ in range(len(self.step))],
             }
         )
         return config

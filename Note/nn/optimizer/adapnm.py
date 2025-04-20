@@ -60,7 +60,6 @@ class AdaPNM(optimizer.Optimizer):
         self.adam_debias = adam_debias
     
     def reset(self):
-        self.step = 0
         iterations = tf.Variable(
                 0,
                 name="iteration",
@@ -88,6 +87,7 @@ class AdaPNM(optimizer.Optimizer):
                 self.exp_grad_norm[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                             reference_variable=tf.Variable(tf.zeros((1,), dtype=var.dtype)), name="exp_grad_norm"
                                                             )
+            self.step[self._get_variable_index(var)] = 0
 
     def build(self, var_list):
         if self.built:
@@ -100,7 +100,7 @@ class AdaPNM(optimizer.Optimizer):
             self.max_exp_avg_sq = []
         if self.adanorm:
             self.exp_grad_norm = []
-        self.step = 0
+        self.step = []
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -129,16 +129,17 @@ class AdaPNM(optimizer.Optimizer):
                         reference_variable=tf.Variable(tf.zeros((1,), dtype=var.dtype)), name="exp_grad_norm"
                     )
                 )
+            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
         
-        self.step += 1
+        self.step[self._get_variable_index(variable)] += 1
         
         noise_norm = math.sqrt((1 + self.beta3) ** 2 + self.beta3 ** 2)  # fmt: skip
         
-        bias_correction1 = 1 - self.beta1 ** self.step
-        bias_correction2_sq = math.sqrt(1 - self.beta2 ** self.step)
+        bias_correction1 = 1 - self.beta1 ** self.step[self._get_variable_index(variable)]
+        bias_correction2_sq = math.sqrt(1 - self.beta2 ** self.step[self._get_variable_index(variable)])
         
         if tf.keras.backend.is_sparse(gradient):
             raise RuntimeError(
@@ -149,7 +150,7 @@ class AdaPNM(optimizer.Optimizer):
         elif self.weight_decay > 0.0:
             gradient += variable * self.weight_decay
         
-        if self.step % 2 == 1:
+        if self.step[self._get_variable_index(variable)] % 2 == 1:
             exp_avg = self.exp_avg[self._get_variable_index(variable)]
             neg_exp_avg = self.neg_exp_avg[self._get_variable_index(variable)]
         else:
@@ -200,7 +201,7 @@ class AdaPNM(optimizer.Optimizer):
                 "r": self.r,
                 "adanorm": self.adanorm,
                 "adam_debias": self.adam_debias,
-                "step": self.iterations.numpy(),
+                "step": [self.iterations.numpy() for _ in range(len(self.step))],
             }
         )
         return config

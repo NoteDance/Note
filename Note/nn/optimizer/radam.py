@@ -53,7 +53,7 @@ class RAdam(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.buffer = [[None, None, None] for _ in range(10)]
-        self.step = 0
+        self.step = []
         for var in var_list:
             var = tf.cast(var, 'float32')
             self.exp_avg.append(
@@ -66,6 +66,7 @@ class RAdam(optimizer.Optimizer):
                     reference_variable=var, name="exp_avg_sq"
                 )
             )
+            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         if variable.dtype != tf.float32:
@@ -81,15 +82,15 @@ class RAdam(optimizer.Optimizer):
         exp_avg_sq.assign(beta2 * exp_avg_sq + (1 - beta2) * tf.multiply(gradient, gradient))
         exp_avg.assign(beta1 * exp_avg + (1 - beta1) * gradient)
 
-        self.step += 1
-        buffered = self.buffer[int(self.step % 10)]
-        if self.step == buffered[0]:
+        self.step[self._get_variable_index(variable)] += 1
+        buffered = self.buffer[int(self.step[self._get_variable_index(variable)] % 10)]
+        if self.step[self._get_variable_index(variable)] == buffered[0]:
             num_sma, step_size = buffered[1], buffered[2]
         else:
-            buffered[0] = self.step
-            beta2_t = beta2 ** self.step
+            buffered[0] = self.step[self._get_variable_index(variable)]
+            beta2_t = beta2 ** self.step[self._get_variable_index(variable)]
             num_sma_max = 2 / (1 - beta2) - 1
-            num_sma = num_sma_max - 2 * self.step * beta2_t / (1 - beta2_t)
+            num_sma = num_sma_max - 2 * self.step[self._get_variable_index(variable)] * beta2_t / (1 - beta2_t)
             buffered[1] = num_sma
             
             # more conservative since it's an approximated value
@@ -98,9 +99,9 @@ class RAdam(optimizer.Optimizer):
                     (1 - beta2_t) *
                     (num_sma - 4) / (num_sma_max - 4) *
                     (num_sma - 2) / num_sma *
-                    num_sma_max / (num_sma_max - 2)) / (1 - beta1 ** self.step)
+                    num_sma_max / (num_sma_max - 2)) / (1 - beta1 ** self.step[self._get_variable_index(variable)])
             else:
-                step_size = lr / (1 - beta1 ** self.step)
+                step_size = lr / (1 - beta1 ** self.step[self._get_variable_index(variable)])
             buffered[2] = step_size
         
         if self.weight_decay != 0:
@@ -122,7 +123,7 @@ class RAdam(optimizer.Optimizer):
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
-                "step": self.iterations.numpy(),
+                "step": [self.iterations.numpy() for _ in range(len(self.step))],
             }
         )
         return config

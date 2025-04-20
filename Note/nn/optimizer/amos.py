@@ -51,7 +51,6 @@ class Amos(optimizer.Optimizer):
         self.d_coef = d_coef
     
     def reset(self):
-        self.step = 0
         iterations = tf.Variable(
                 0,
                 name="iteration",
@@ -72,6 +71,7 @@ class Amos(optimizer.Optimizer):
                 self.exp_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                             reference_variable=var, name="exp_avg"
                                         )
+            self.step[self._get_variable_index(var)] = 0
     
     @staticmethod
     def get_scale(p):
@@ -90,7 +90,7 @@ class Amos(optimizer.Optimizer):
         self.decay = []
         if self.momentum > 0.0:
             self.exp_avg = []
-        self.step = 0
+        self.step = []
         for var in var_list:
             self.exp_avg_sq.append(
                 self.add_variable_from_reference(
@@ -108,14 +108,15 @@ class Amos(optimizer.Optimizer):
                         reference_variable=var, name="exp_avg"
                     )
                 )
+            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
 
-        self.step += 1
+        self.step[self._get_variable_index(variable)] += 1
         
         lr_sq = math.sqrt(lr)
-        bias_correction = 1 - self.beta ** self.step
+        bias_correction = 1 - self.beta ** self.step[self._get_variable_index(variable)]
         
         if tf.keras.backend.is_sparse(gradient):
             raise RuntimeError(
@@ -160,7 +161,7 @@ class Amos(optimizer.Optimizer):
                 "extra_l2": self.extra_l2,
                 "c_coef": self.c_coef,
                 "d_coef": self.d_coef,
-                "step": self.iterations.numpy(),
+                "step": [self.iterations.numpy() for _ in range(len(self.step))],
             }
         )
         return config

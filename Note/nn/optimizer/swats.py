@@ -68,7 +68,7 @@ class SWATS(optimizer.Optimizer):
         if self.amsgrad:
             self.max_exp_avg_sq = []
         self.momentum_buffer = []
-        self.step = 0
+        self.step = []
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -92,6 +92,7 @@ class SWATS(optimizer.Optimizer):
                     )
                 )
             self.momentum_buffer.append(None) 
+            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
@@ -105,7 +106,7 @@ class SWATS(optimizer.Optimizer):
         if self.amsgrad:
             max_exp_avg_sq = self.max_exp_avg_sq[self._get_variable_index(variable)]
         
-        self.step += 1
+        self.step[self._get_variable_index(variable)] += 1
 
         if self.weight_decay != 0:
             gradient += variable * self.weight_decay
@@ -138,8 +139,8 @@ class SWATS(optimizer.Optimizer):
         else:
             denom = tf.sqrt(exp_avg_sq) + self.epsilon
 
-        bias_correction1 = 1 - self.beta1 ** self.step
-        bias_correction2 = 1 - self.beta2 ** self.step
+        bias_correction1 = 1 - self.beta1 ** self.step[self._get_variable_index(variable)]
+        bias_correction2 = 1 - self.beta2 ** self.step[self._get_variable_index(variable)]
         step_size = (
             lr * (bias_correction2**0.5) / bias_correction1
         )
@@ -167,7 +168,7 @@ class SWATS(optimizer.Optimizer):
                 pass
             
             tf.cond((
-                    tf.logical_and(tf.logical_and(tf.convert_to_tensor(self.step) > 1
+                    tf.logical_and(tf.logical_and(tf.convert_to_tensor(self.step[self._get_variable_index(variable)]) > 1
                     ,tf.experimental.numpy.allclose(corrected_exp_avg, scaling, rtol=1e-6, atol=1e-8))
                     ,corrected_exp_avg > 0)
                     ), true_fn, false_fn)
@@ -188,7 +189,7 @@ class SWATS(optimizer.Optimizer):
                 "nesterov": self.nesterov,
                 "phase": self.phase,
                 "momentum_buffer": self.momentum_buffer,
-                "step": self.iterations.numpy(),
+                "step": [self.iterations.numpy() for _ in range(len(self.step))],
             }
         )
         return config

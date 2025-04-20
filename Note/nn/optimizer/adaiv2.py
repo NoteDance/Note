@@ -92,13 +92,12 @@ class AdaiV2(optimizer.Optimizer):
     def update_step(self, grads, trainable_variables, learning_rate):
         param_size = 0
         exp_avg_sq_hat_sum = 0.
+        self.step += 1
         
         for p, g in zip(trainable_variables, grads):
             lr = tf.cast(learning_rate, p.dtype)
             
             param_size += tf.size(p)
-            
-            self.step += 1
             
             exp_avg_sq = self.exp_avg_sq[self._get_variable_index(p)]
             

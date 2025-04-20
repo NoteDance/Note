@@ -72,7 +72,6 @@ class Nero(optimizer.Optimizer):
         self.constraints = constraints
                     
     def reset(self):
-        self.step = 0
         iterations = tf.Variable(
                 0,
                 name="iteration",
@@ -95,6 +94,8 @@ class Nero(optimizer.Optimizer):
             
             if self.scale[self._get_variable_index(var)].numpy() == 0.0:
                 self.scale[self._get_variable_index(var)] = 0.01
+            
+            self.step[self._get_variable_index(var)] = 0
 
     def build(self, var_list):
         if self.built:
@@ -102,7 +103,7 @@ class Nero(optimizer.Optimizer):
         super().build(var_list)
         self.exp_avg_sq = []
         self.scale = []
-        self.step = 0
+        self.step = []
         for var in var_list:
             self.exp_avg_sq.append(self.add_variable_from_reference(
                                 reference_variable=tf.Variable(neuron_norm(var)), name="exp_avg_sq"
@@ -114,18 +115,19 @@ class Nero(optimizer.Optimizer):
             def false_fn():
                 pass
             tf.cond(self.scale[self._get_variable_index(var)] == 0.0, true_fn, false_fn)
+            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
         
-        self.step += 1
+        self.step[self._get_variable_index(variable)] += 1
         
         grad_norm = neuron_norm(gradient)
         
         exp_avg_sq = self.exp_avg_sq[self._get_variable_index(variable)]
         exp_avg_sq.assign(exp_avg_sq * self.beta + grad_norm * grad_norm * (1.0 - self.beta))
 
-        bias_correction = 1.0 - self.beta ** self.step
+        bias_correction = 1.0 - self.beta ** self.step[self._get_variable_index(variable)]
 
         grad_normed = gradient / (tf.sqrt((exp_avg_sq / bias_correction)) + self.epsilon)
         grad_normed = nan_to_num(grad_normed, nan=0.0)
@@ -143,7 +145,7 @@ class Nero(optimizer.Optimizer):
                 "beta": self.beta,
                 "epsilon": self.epsilon,
                 "constraints": self.constraints,
-                "step": self.iterations.numpy(),
+                "step": [self.iterations.numpy() for _ in range(len(self.step))],
             }
         )
         return config

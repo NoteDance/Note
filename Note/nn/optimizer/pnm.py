@@ -50,7 +50,6 @@ class PNM(optimizer.Optimizer):
         self.fixed_decay = fixed_decay
     
     def reset(self):
-        self.step = 0
         iterations = tf.Variable(
                 0,
                 name="iteration",
@@ -67,6 +66,7 @@ class PNM(optimizer.Optimizer):
             self.neg_momentum[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="neg_momentum"
                                                     )
+            self.step[self._get_variable_index(var)] = 0
 
     def build(self, var_list):
         if self.built:
@@ -74,7 +74,7 @@ class PNM(optimizer.Optimizer):
         super().build(var_list)
         self.pos_momentum = []
         self.neg_momentum = []
-        self.step = 0
+        self.step = []
         for var in var_list:
             self.pos_momentum.append(
                 self.add_variable_from_reference(
@@ -86,11 +86,12 @@ class PNM(optimizer.Optimizer):
                     reference_variable=var, name="neg_momentum"
                 )
             )
+            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
         
-        self.step += 1
+        self.step[self._get_variable_index(variable)] += 1
         
         noise_norm = math.sqrt((1 + self.beta2) ** 2 + self.beta2 ** 2)  # fmt: skip
         
@@ -103,7 +104,7 @@ class PNM(optimizer.Optimizer):
         elif self.weight_decay > 0.0:
             gradient += variable * self.weight_decay
         
-        if self.step % 2 == 1:
+        if self.step[self._get_variable_index(variable)] % 2 == 1:
             pos_momentum = self.pos_momentum[self._get_variable_index(variable)]
             neg_momentum = self.neg_momentum[self._get_variable_index(variable)]
         else:
@@ -124,7 +125,7 @@ class PNM(optimizer.Optimizer):
                 "epsilon": self.epsilon,
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,
-                "step": self.iterations.numpy(),
+                "step": [self.iterations.numpy() for _ in range(len(self.step))],
             }
         )
         return config
