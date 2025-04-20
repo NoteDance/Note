@@ -152,6 +152,20 @@ class BaseOptimizer(KerasSaveable):
         )
         self._trainable_variables_indices = {}
 
+        # Create iteration variable
+        # Note: dtype="int" will resolve to int32 in JAX
+        # (since int64 is disallowed in JAX) and to int64 in TF.
+        with backend.name_scope(self.name, caller=self):
+            iterations = backend.Variable(
+                0,
+                name="iteration",
+                dtype="int",
+                trainable=False,
+                aggregation="only_first_replica",
+            )
+        self._track_variable(iterations)
+        self._iterations = iterations
+
         # Create learning rate (schedule or variable)
         if isinstance(
             learning_rate, learning_rate_schedule.LearningRateSchedule
@@ -183,29 +197,16 @@ class BaseOptimizer(KerasSaveable):
     def iterations(self):
         if self.gradient_accumulation_steps:
             return ops.floor_divide(
-                self._iterations[0], self.gradient_accumulation_steps
+                self._iterations, self.gradient_accumulation_steps
             )
 
-        return self._iterations[0]
+        return self._iterations
 
     def _track_variable(self, variable):
         self._tracker.add_to_store("variables", variable)
 
     @tracking.no_automatic_dependency_tracking
     def build(self, variables):
-        # Create iteration variable
-        # Note: dtype="int" will resolve to int32 in JAX
-        # (since int64 is disallowed in JAX) and to int64 in TF.
-        with backend.name_scope(self.name, caller=self):
-            iterations = backend.Variable(
-                0,
-                name="iteration",
-                dtype="int",
-                trainable=False,
-                aggregation="only_first_replica",
-            )
-        self._track_variable(iterations)
-        self._iterations = self.manager.list([iterations])
         if self.use_ema:
             self._model_variables_moving_average = []
         if self.gradient_accumulation_steps:
@@ -343,7 +344,7 @@ class BaseOptimizer(KerasSaveable):
         grads, trainable_variables = zip(*grads_and_vars)
         self.apply(grads, trainable_variables)
         # Return iterations for compat with tf.keras.
-        return self._iterations[0]
+        return self._iterations
 
     def apply(self, grads, trainable_variables=None):
         """Update traininable variables according to provided gradient values.
@@ -429,7 +430,7 @@ class BaseOptimizer(KerasSaveable):
         """
         if self.gradient_accumulation_steps:
             is_update_step = (
-                self._iterations[0] + 1
+                self._iterations + 1
             ) % self.gradient_accumulation_steps == 0
             # `trainable_variables` might have been filtered in previous
             # processing steps, so we need to ensure the correct mapping between
@@ -490,7 +491,7 @@ class BaseOptimizer(KerasSaveable):
                     lambda: None,
                 )
         # Update iteration counter.
-        self._iterations[0].assign_add(1)
+        self._iterations.assign_add(1)
     
     def update_step_(self, grads, trainable_variables, learning_rate, i):
         self.update_step(grads[i], trainable_variables[i], learning_rate)
@@ -663,7 +664,7 @@ class BaseOptimizer(KerasSaveable):
         if isinstance(
             self._learning_rate, learning_rate_schedule.LearningRateSchedule
         ):
-            return self._learning_rate(self._iterations[0])
+            return self._learning_rate(self._iterations)
         elif callable(self._learning_rate):
             return self._learning_rate()
         return self._learning_rate
@@ -696,7 +697,7 @@ class BaseOptimizer(KerasSaveable):
                 if self.gradient_accumulation_steps:
                     # Utilize a stateless manner for JAX compatibility
                     steps = self.gradient_accumulation_steps
-                    is_update_step = (self._iterations[0] + 1) % steps == 0
+                    is_update_step = (self._iterations + 1) % steps == 0
                     acc_g = self._accumulated_gradients[
                         self._get_variable_index(v)
                     ]
