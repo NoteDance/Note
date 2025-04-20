@@ -48,14 +48,17 @@ class RAdam(optimizer.Optimizer):
         self.epsilon = epsilon
 
     def build(self, var_list):
+        self.manager = mp.Manager()
         if self.built:
-            self.manager = mp.Manager()
             self.exp_avg = self.manager.list(self.exp_avg)
             self.exp_avg_sq = self.manager.list(self.exp_avg_sq)
             self.buffer = self.manager.list(self.buffer)
+            if isinstance(self.step, mp.managers.ListProxy):
+                self.step = self.manager.list(self.step)
+            else:
+                self.step = self.manager.list([self.step])
             return
         super().build(var_list)
-        self.manager = mp.Manager()
         self.exp_avg = self.manager.list()
         self.exp_avg_sq = self.manager.list()
         self.buffer = self.manager.list([[None, None, None] for _ in range(10)])
@@ -122,14 +125,13 @@ class RAdam(optimizer.Optimizer):
         variable.assign(tf.cast(variable_fp32, variable.dtype))
 
     def get_config(self):
-        self.manager_ = mp.Manager()
         config = super().get_config()
         config.update(
             {
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
-                "step": self.manager_.list([self.iterations.numpy()]),
+                "step": self.iterations[0].numpy(),
             }
         )
         return config

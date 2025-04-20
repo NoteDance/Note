@@ -60,6 +60,15 @@ class AdaBelief(optimizer.Optimizer):
         self.amsgrad = False
 
     def reset(self):
+        iterations = tf.Variable(
+                0,
+                name="iteration",
+                dtype=tf.int64,
+                trainable=False,
+                aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
+            )
+        self._track_variable(iterations)
+        self._iterations[0] = iterations
         self.step[0] = 0
         for i,v in enumerate(self._trainable_variables):
             self.exp_avg[i] = self.add_variable_from_reference(
@@ -77,16 +86,19 @@ class AdaBelief(optimizer.Optimizer):
                 )
 
     def build(self, var_list):
+        self.manager = mp.Manager()
         if self.built:
-            self.manager = mp.Manager()
             self.exp_avg = self.manager.list(self.exp_avg)
             self.exp_avg_sq = self.manager.list(self.exp_avg_sq)
             if self.amsgrad:
                 self.max_exp_avg_var = self.manager.list(self.max_exp_avg_var)
             self.buffer = self.manager.list(self.buffer)
+            if isinstance(self.step, mp.managers.ListProxy):
+                self.step = self.manager.list(self.step)
+            else:
+                self.step = self.manager.list([self.step])
             return
         super().build(var_list)
-        self.manager = mp.Manager()
         self.exp_avg = self.manager.list()
         self.exp_avg_var = self.manager.list()
         if self.amsgrad:
@@ -196,7 +208,6 @@ class AdaBelief(optimizer.Optimizer):
             variable.assign(variable_fp32)
 
     def get_config(self):
-        self.manager_ = mp.Manager()
         config = super().get_config()
         config.update(
             {
@@ -208,7 +219,7 @@ class AdaBelief(optimizer.Optimizer):
                 "fixed_decay": self.fixed_decay,
                 "rectify": self.rectify,
                 "degenerated_to_sgd": self.degenerated_to_sgd,
-                "step": self.manager_.list([self.iterations.numpy()]),
+                "step": self.iterations[0].numpy(),
             }
         )
         return config

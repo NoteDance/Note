@@ -59,6 +59,15 @@ class AdaBelief(optimizer.Optimizer):
         self.amsgrad = False
 
     def reset(self):
+        iterations = tf.Variable(
+                0,
+                name="iteration",
+                dtype=tf.int64,
+                trainable=False,
+                aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
+            )
+        self._track_variable(iterations)
+        self._iterations = iterations
         self.step = 0
         for i,v in enumerate(self._trainable_variables):
             self.exp_avg[i] = self.add_variable_from_reference(
