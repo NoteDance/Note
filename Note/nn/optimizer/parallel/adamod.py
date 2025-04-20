@@ -51,16 +51,12 @@ class AdaMod(optimizer.Optimizer):
             self.exp_avg = self.manager.list(self.exp_avg)
             self.exp_avg_sq = self.manager.list(self.exp_avg_sq)
             self.exp_avg_lr = self.manager.list(self.exp_avg_lr)
-            if isinstance(self.step, mp.managers.ListProxy):
-                self.step = self.manager.list(self.step)
-            else:
-                self.step = self.manager.list([self.step])
             return
         super().build(var_list)
         self.exp_avg = self.manager.list()
         self.exp_avg_sq = self.manager.list()
         self.exp_avg_lr = self.manager.list()
-        self.step = self.manager.list([0])
+        self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -89,7 +85,7 @@ class AdaMod(optimizer.Optimizer):
         exp_avg_sq = self.exp_avg_sq[self._get_variable_index(variable)]
         exp_avg_lr = self.exp_avg_lr[self._get_variable_index(variable)]
         
-        self.step[0] += 1
+        self.step += 1
 
         # Decay the first and second moment running average coefficient
         exp_avg.assign(self.beta1 * exp_avg + (1 - self.beta1) * gradient)
@@ -97,8 +93,8 @@ class AdaMod(optimizer.Optimizer):
 
         denom = tf.sqrt(exp_avg_sq) + self.epsilon
 
-        bias_correction1 = 1 - self.beta1 ** self.step[0]
-        bias_correction2 = 1 - self.beta2 ** self.step[0]
+        bias_correction1 = 1 - self.beta1 ** self.step
+        bias_correction2 = 1 - self.beta2 ** self.step
         step_size = lr * tf.sqrt(bias_correction2) / bias_correction1
 
         if self.weight_decay != 0:

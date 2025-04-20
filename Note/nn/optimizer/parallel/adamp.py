@@ -112,15 +112,11 @@ class AdamP(optimizer.Optimizer):
         if self.built:
             self.exp_avg = self.manager.list(self.exp_avg)
             self.exp_avg_sq = self.manager.list(self.exp_avg_sq)
-            if isinstance(self.step, mp.managers.ListProxy):
-                self.step = self.manager.list(self.step)
-            else:
-                self.step = self.manager.list([self.step])
             return
         super().build(var_list)
         self.exp_avg = self.manager.list()
         self.exp_avg_sq = self.manager.list()
-        self.step = self.manager.list([0])
+        self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -138,9 +134,9 @@ class AdamP(optimizer.Optimizer):
         exp_avg, exp_avg_sq = self.exp_avg[self._get_variable_index(variable)], self.exp_avg_sq[self._get_variable_index(variable)]
         beta1, beta2 = self.beta1, self.beta2
 
-        self.step[0] += 1
-        bias_correction1 = 1 - beta1 ** self.step[0]
-        bias_correction2 = 1 - beta2 ** self.step[0]
+        self.step += 1
+        bias_correction1 = 1 - beta1 ** self.step
+        bias_correction2 = 1 - beta2 ** self.step
 
         exp_avg.assign(exp_avg * beta1 + gradient * (1 - beta1))
         exp_avg_sq.assign(exp_avg_sq * beta2 + gradient * gradient * (1 - beta2))

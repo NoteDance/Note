@@ -69,7 +69,7 @@ class AdaBelief(optimizer.Optimizer):
             )
         self._track_variable(iterations)
         self._iterations = iterations
-        self.step[0] = 0
+        self.step = 0
         for i,v in enumerate(self._trainable_variables):
             self.exp_avg[i] = self.add_variable_from_reference(
                 reference_variable=v, name="exp_avg"
@@ -93,10 +93,6 @@ class AdaBelief(optimizer.Optimizer):
             if self.amsgrad:
                 self.max_exp_avg_var = self.manager.list(self.max_exp_avg_var)
             self.buffer = self.manager.list(self.buffer)
-            if isinstance(self.step, mp.managers.ListProxy):
-                self.step = self.manager.list(self.step)
-            else:
-                self.step = self.manager.list([self.step])
             return
         super().build(var_list)
         self.exp_avg = self.manager.list()
@@ -104,7 +100,7 @@ class AdaBelief(optimizer.Optimizer):
         if self.amsgrad:
             self.max_exp_avg_var = self.manager.list()
         self.buffer = self.manager.list([[None, None, None] for _ in range(10)])
-        self.step = self.manager.list([0])
+        self.step = 0
         for var in var_list:
             var_fp32 = var
             if var.dtype in {tf.float16, tf.bfloat16}:
@@ -149,9 +145,9 @@ class AdaBelief(optimizer.Optimizer):
         exp_avg = self.exp_avg[self._get_variable_index(variable)]
         exp_avg_var = self.exp_avg_var[self._get_variable_index(variable)]
 
-        self.step[0] += 1
-        bias_correction1 = 1 - self.beta1 ** self.step[0]
-        bias_correction2 = 1 - self.beta2 ** self.step[0]
+        self.step += 1
+        bias_correction1 = 1 - self.beta1 ** self.step
+        bias_correction2 = 1 - self.beta2 ** self.step
 
         # Update first and second moment running average
         exp_avg.assign(exp_avg * self.beta1 + (1 - self.beta1) * gradient)
@@ -175,14 +171,14 @@ class AdaBelief(optimizer.Optimizer):
             variable_fp32 += -step_size * exp_avg / denom
         else:
             # Rectified update, forked from RAdam
-            buffered = self.buffer[int(self.step[0] % 10)]
-            if buffered[0] is not None and self.step[0] == buffered[0]:
+            buffered = self.buffer[int(self.step % 10)]
+            if buffered[0] is not None and self.step == buffered[0]:
                 num_sma, step_size = buffered[1], buffered[2]
             else:
-                buffered[0] = self.step[0]
-                beta2_t = self.beta2 ** self.step[0]
+                buffered[0] = self.step
+                beta2_t = self.beta2 ** self.step
                 num_sma_max = 2 / (1 - self.beta2) - 1
-                num_sma = num_sma_max - 2 * self.step[0] * beta2_t / (1 - beta2_t)
+                num_sma = num_sma_max - 2 * self.step * beta2_t / (1 - beta2_t)
                 buffered[1] = num_sma
 
                 # more conservative since it's an approximated value
@@ -191,9 +187,9 @@ class AdaBelief(optimizer.Optimizer):
                         (1 - beta2_t) *
                         (num_sma - 4) / (num_sma_max - 4) *
                         (num_sma - 2) / num_sma *
-                        num_sma_max / (num_sma_max - 2)) / (1 - self.beta1 ** self.step[0])
+                        num_sma_max / (num_sma_max - 2)) / (1 - self.beta1 ** self.step)
                 elif self.degenerated_to_sgd:
-                    step_size = 1.0 / (1 - self.beta1 ** self.step[0])
+                    step_size = 1.0 / (1 - self.beta1 ** self.step)
                 else:
                     step_size = -1
                 buffered[2] = step_size
