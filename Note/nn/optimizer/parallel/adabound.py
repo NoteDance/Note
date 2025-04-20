@@ -145,7 +145,7 @@ class AdaBound(optimizer.Optimizer):
                 "final_lr": self.final_lr,
                 "gamma": self.gamma,
                 "amsbound": self.amsbound,
-                "step": self.iterations[0].numpy(),
+                "step": self.iterations.numpy(),
             }
         )
         return config

@@ -68,7 +68,7 @@ class AdaBelief(optimizer.Optimizer):
                 aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
             )
         self._track_variable(iterations)
-        self._iterations[0] = iterations
+        self._iterations = iterations
         self.step[0] = 0
         for i,v in enumerate(self._trainable_variables):
             self.exp_avg[i] = self.add_variable_from_reference(
@@ -219,7 +219,7 @@ class AdaBelief(optimizer.Optimizer):
                 "fixed_decay": self.fixed_decay,
                 "rectify": self.rectify,
                 "degenerated_to_sgd": self.degenerated_to_sgd,
-                "step": self.iterations[0].numpy(),
+                "step": self.iterations.numpy(),
             }
         )
         return config

@@ -131,7 +131,7 @@ class RAdam(optimizer.Optimizer):
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
-                "step": self.iterations[0].numpy(),
+                "step": self.iterations.numpy(),
             }
         )
         return config

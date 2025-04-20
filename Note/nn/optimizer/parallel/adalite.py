@@ -65,7 +65,7 @@ class Adalite(optimizer.Optimizer):
                 aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
             )
         self._track_variable(iterations)
-        self._iterations[0] = iterations
+        self._iterations = iterations
         for var in self._trainable_variables:
             if len(var.shape) < 2:
                 self.m_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
@@ -246,7 +246,7 @@ class Adalite(optimizer.Optimizer):
                 "tau": self.tau,
                 "eps1": self.eps1,
                 "eps2": self.eps2,
-                "step": self.iterations[0].numpy(),
+                "step": self.iterations.numpy(),
             }
         )
         return config
