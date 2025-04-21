@@ -145,6 +145,10 @@ class AdaBound(optimizer.Optimizer):
             }
         )
         return config
+    
+    def _update_step(self):
+        if hasattr(self, 'step'):
+            self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass

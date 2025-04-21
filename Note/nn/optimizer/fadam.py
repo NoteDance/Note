@@ -139,6 +139,13 @@ class FAdam(optimizer.Optimizer):
             }
         )
         return config
+    
+    def _update_step(self):
+        if hasattr(self, 'step'):
+            if type(self.step) == list:
+                self.step = [self.iterations.numpy() for _ in range(len(self.step))]
+            else:
+                self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass
