@@ -40,15 +40,7 @@ class MSVAG(optimizer.Optimizer):
         self.beta = beta
     
     def reset(self):
-        iterations = tf.Variable(
-                0,
-                name="iteration",
-                dtype=tf.int64,
-                trainable=False,
-                aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            )
-        self._track_variable(iterations)
-        self._iterations = iterations
+        self._iterations.assign(0)
         for var in self._trainable_variables:
             self.exp_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="exp_avg"
@@ -59,7 +51,6 @@ class MSVAG(optimizer.Optimizer):
             self.s[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="s"
                                                     )
-            self.step[self._get_variable_index(var)] = 0
 
     def build(self, var_list):
         if self.built:
@@ -68,7 +59,6 @@ class MSVAG(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.s = []
-        self.step = []
         for var in var_list:
             self.exp_avg.append(self.add_variable_from_reference(
                                 reference_variable=var, name="exp_avg"
@@ -79,7 +69,6 @@ class MSVAG(optimizer.Optimizer):
             self.s.append(self.add_variable_from_reference(
                                 reference_variable=var, name="s"
                                                     ))
-            self.step.append(0)
     
     @staticmethod
     def get_rho(beta_power: float, beta: float) -> float:
@@ -98,9 +87,9 @@ class MSVAG(optimizer.Optimizer):
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
         
-        self.step[self._get_variable_index(variable)] += 1
+        step = tf.cast(self.iterations + 1, variable.dtype)
         
-        beta_power = self.beta ** self.step[self._get_variable_index(variable)]
+        beta_power = self.beta ** step
         
         if tf.keras.backend.is_sparse(gradient):
             raise RuntimeError(
@@ -130,17 +119,9 @@ class MSVAG(optimizer.Optimizer):
         config.update(
             {
                 "beta": self.beta,
-                "step": [self.iterations.numpy() for _ in range(len(self.step))],
             }
         )
         return config
-    
-    def _update_step(self):
-        if hasattr(self, 'step'):
-            if type(self.step) == list:
-                self.step = [self.iterations.numpy() for _ in range(len(self.step))]
-            else:
-                self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass

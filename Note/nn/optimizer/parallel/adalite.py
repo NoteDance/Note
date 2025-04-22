@@ -56,16 +56,7 @@ class Adalite(optimizer.Optimizer):
         self.eps2 = eps2
     
     def reset(self):
-        self.step = 0
-        iterations = tf.Variable(
-                0,
-                name="iteration",
-                dtype=tf.int64,
-                trainable=False,
-                aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            )
-        self._track_variable(iterations)
-        self._iterations = iterations
+        self._iterations.assign(0)
         for var in self._trainable_variables:
             if len(var.shape) < 2:
                 self.m_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
@@ -113,7 +104,6 @@ class Adalite(optimizer.Optimizer):
         self.m_avg_c = self.manager.list()
         self.m_avg_r = self.manager.list()
         self.m_avg_u = self.manager.list()
-        self.step = 0
         for var in var_list:
             self.m_avg.append(tf.Variable(0))
             self.v_avg.append(tf.Variable(0))
@@ -159,7 +149,7 @@ class Adalite(optimizer.Optimizer):
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
         
-        self.step += 1
+        step = tf.cast(self.iterations + 1, variable.dtype)
         
         if tf.keras.backend.is_sparse(gradient):
             raise RuntimeError(
@@ -189,7 +179,7 @@ class Adalite(optimizer.Optimizer):
         m = m + (gradient - m) * (1.0 - self.beta1)
         v = v + (((gradient - m) ** 2) - v) * (1.0 - self.beta2)
 
-        v_avg = v / (1.0 - self.beta2 ** self.step)
+        v_avg = v / (1.0 - self.beta2 ** step)
 
         if len(gradient.shape) == 2:
             imp_c = tf.nn.softmax(tf.reduce_mean(v, axis=1), axis=0)[:, None]
@@ -230,6 +220,7 @@ class Adalite(optimizer.Optimizer):
         variable.assign_add(-lr * u)
 
     def get_config(self):
+        self.manager_ = mp.Manager()
         config = super().get_config()
         config.update(
             {
@@ -242,14 +233,9 @@ class Adalite(optimizer.Optimizer):
                 "tau": self.tau,
                 "eps1": self.eps1,
                 "eps2": self.eps2,
-                "step": self.iterations.numpy(),
             }
         )
         return config
-    
-    def _update_step(self):
-        if hasattr(self, 'step'):
-            self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass

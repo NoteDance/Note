@@ -4,7 +4,6 @@ Copyright 2025 NoteDance
 import tensorflow as tf
 from Note.nn.optimizer import optimizer
 import multiprocessing as mp
-import math
 
 
 class AdaBound(optimizer.Optimizer):
@@ -68,7 +67,6 @@ class AdaBound(optimizer.Optimizer):
         if self.amsbound:
             self.max_exp_avg_sq = self.manager.list()
         self.base_lr = self._learning_rate
-        self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -99,7 +97,7 @@ class AdaBound(optimizer.Optimizer):
         if self.amsbound:
             max_exp_avg_sq = self.max_exp_avg_sq[self._get_variable_index(variable)]
         
-        self.step += 1
+        step = tf.cast(self.iterations + 1, variable.dtype)
 
         if self.weight_decay != 0:
             gradient = gradient + self.weight_decay * variable
@@ -115,15 +113,15 @@ class AdaBound(optimizer.Optimizer):
         else:
             denom = tf.sqrt(exp_avg_sq) + self.epsilon
         
-        bias_correction1 = 1 - self.beta1 ** self.step
-        bias_correction2 = 1 - self.beta2 ** self.step
-        step_size = lr * math.sqrt(bias_correction2) / bias_correction1
+        bias_correction1 = 1 - self.beta1 ** step
+        bias_correction2 = 1 - self.beta2 ** step
+        step_size = lr * tf.sqrt(bias_correction2) / bias_correction1
         
         # Applies bounds on actual learning rate
         # lr_scheduler cannot affect final_lr, this is a workaround to apply lr decay
         final_lr = self.final_lr * lr / self.base_lr
-        lower_bound = final_lr * (1 - 1 / (self.gamma * self.step + 1))
-        upper_bound = final_lr * (1 + 1 / (self.gamma * self.step))
+        lower_bound = final_lr * (1 - 1 / (self.gamma * step + 1))
+        upper_bound = final_lr * (1 + 1 / (self.gamma * step))
         step_size = tf.fill(denom.shape, step_size)
         step_size = step_size / denom
         step_size = tf.clip_by_value(step_size, clip_value_min=lower_bound, clip_value_max=upper_bound)
@@ -132,6 +130,7 @@ class AdaBound(optimizer.Optimizer):
         variable.assign_add(-step_size)
 
     def get_config(self):
+        self.manager_ = mp.Manager()
         config = super().get_config()
         config.update(
             {
@@ -141,14 +140,9 @@ class AdaBound(optimizer.Optimizer):
                 "final_lr": self.final_lr,
                 "gamma": self.gamma,
                 "amsbound": self.amsbound,
-                "step": self.iterations.numpy(),
             }
         )
         return config
-    
-    def _update_step(self):
-        if hasattr(self, 'step'):
-            self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass

@@ -55,15 +55,7 @@ class Adalite(optimizer.Optimizer):
         self.eps2 = eps2
     
     def reset(self):
-        iterations = tf.Variable(
-                0,
-                name="iteration",
-                dtype=tf.int64,
-                trainable=False,
-                aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            )
-        self._track_variable(iterations)
-        self._iterations = iterations
+        self._iterations.assign(0)
         for var in self._trainable_variables:
             if len(var.shape) < 2:
                 self.m_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
@@ -91,7 +83,6 @@ class Adalite(optimizer.Optimizer):
                                                             tf.expand_dims(tf.expand_dims(tf.reduce_mean(var), 0), 0)), 
                                                             name="m_avg_u"
                                                         )
-            self.step[self._get_variable_index(var)] = 0
 
     def build(self, var_list):
         if self.built:
@@ -104,7 +95,6 @@ class Adalite(optimizer.Optimizer):
         self.m_avg_c = []
         self.m_avg_r = []
         self.m_avg_u = []
-        self.step = []
         for var in var_list:
             self.m_avg.append(tf.Variable(0))
             self.v_avg.append(tf.Variable(0))
@@ -146,12 +136,11 @@ class Adalite(optimizer.Optimizer):
                                                         )
                 self._track_variable(self.m_avg[-1])
                 self._track_variable(self.v_avg[-1])
-            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
         
-        self.step[self._get_variable_index(variable)] += 1
+        step = tf.cast(self.iterations + 1, variable.dtype)
         
         if tf.keras.backend.is_sparse(gradient):
             raise RuntimeError(
@@ -181,7 +170,7 @@ class Adalite(optimizer.Optimizer):
         m = m + (gradient - m) * (1.0 - self.beta1)
         v = v + (((gradient - m) ** 2) - v) * (1.0 - self.beta2)
 
-        v_avg = v / (1.0 - self.beta2 ** self.step[self._get_variable_index(variable)])
+        v_avg = v / (1.0 - self.beta2 ** step)
 
         if len(gradient.shape) == 2:
             imp_c = tf.nn.softmax(tf.reduce_mean(v, axis=1), axis=0)[:, None]
@@ -234,17 +223,9 @@ class Adalite(optimizer.Optimizer):
                 "tau": self.tau,
                 "eps1": self.eps1,
                 "eps2": self.eps2,
-                "step": [self.iterations.numpy() for _ in range(len(self.step))],
             }
         )
         return config
-    
-    def _update_step(self):
-        if hasattr(self, 'step'):
-            if type(self.step) == list:
-                self.step = [self.iterations.numpy() for _ in range(len(self.step))]
-            else:
-                self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass

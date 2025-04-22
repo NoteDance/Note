@@ -64,10 +64,8 @@ class Adahessian(optimizer.Optimizer):
         super().build(var_list)
         self.exp_avg = []
         self.exp_hessian_diag_sq = []
-        self.hessian_step = 0
-        self.hessian_step_ = tf.Variable(0)
-        self.step = 0
-        self._track_variable(self.hessian_step_)
+        self.hessian_step = tf.Variable(0)
+        self._track_variable(self.hessian_step)
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -79,7 +77,7 @@ class Adahessian(optimizer.Optimizer):
                     reference_variable=var, name="exp_hessian_diag_sq"
                 )
             )
-            var.hess = 0.0
+            var.hess = tf.Variable(tf.zeros_like(var))
     
     def apply_gradients(self, grads_and_vars, tape):
         self.tape = tape
@@ -106,8 +104,13 @@ class Adahessian(optimizer.Optimizer):
         """
 
         for p in trainable_variables:
-            if not isinstance(p.hess, float) and self.hessian_step % self.update_each == 0:
-                p.hess = tf.zeros(p.shape)
+            def true_fn():
+                p.hess.assign(tf.zeros_like(p))
+                
+            def false_fn():
+                pass
+            
+            tf.cond(self.hessian_step % self.update_each == 0, true_fn, false_fn)
     
     def set_hessian(self, grads, trainable_variables):
         """
@@ -116,10 +119,14 @@ class Adahessian(optimizer.Optimizer):
 
         params = []
         for i,p in enumerate(trainable_variables):
-            if self.hessian_step % self.update_each == 0:  # compute the trace only each `update_each` self.step
+            def true_fn():
                 params.append(p)
-            self.hessian_step += 1
-            self.hessian_step_.assign_add(1)
+                
+            def false_fn():
+                pass
+            
+            tf.cond(self.hessian_step % self.update_each == 0, true_fn, false_fn)  # compute the trace only each `update_each` self.step
+            self.hessian_step.assign_add(1)
         
         if len(params) == 0:
             return
@@ -129,17 +136,17 @@ class Adahessian(optimizer.Optimizer):
             zs = [tf.cast(self.generator.uniform(shape=p.shape, minval=0, maxval=2, dtype=tf.int32), p.dtype) * 2.0 - 1.0 for p in params]
             h_zs = self.tape.gradient(grads, params, output_gradients=zs)
             for h_z, z, p in zip(h_zs, zs, params):
-                p.hess += h_z * z / self.n_samples  # approximate the expected values of z*(H@z)
+                p.hess.assign_add(h_z * z / self.n_samples)  # approximate the expected values of z*(H@z)
 
     def update_step(self, grads, trainable_variables, learning_rate):
-        self.step += 1
-        
         self.zero_hessian(trainable_variables)
         self.set_hessian(grads, trainable_variables)
         
         for p, grad in zip(trainable_variables, grads):
+            step = tf.cast(self.iterations + 1, p.dtype)
+            
             if self.avg_conv_kernel and len(p.shape) == 4:
-                p.hess = tf.broadcast_to(tf.reduce_mean(tf.abs(p.hess), axis=[1, 2], keepdims=True), p.hess.shape)
+                p.hess.assign(tf.broadcast_to(tf.reduce_mean(tf.abs(p.hess), axis=[1, 2], keepdims=True), p.hess.shape))
         
             # Perform correct stepweight decay as in AdamW
             p.assign(p * (1 - self.lr * self.weight_decay))
@@ -151,8 +158,8 @@ class Adahessian(optimizer.Optimizer):
             exp_avg.assign(self.beta1 * exp_avg + (1 - self.beta1) * grad)
             exp_hessian_diag_sq.assign(self.beta2 * exp_hessian_diag_sq + (1 - self.beta2) * tf.square(p.hess))
            
-            bias_correction1 = 1 - self.beta1 ** self.step
-            bias_correction2 = 1 - self.beta2 ** self.step
+            bias_correction1 = 1 - self.beta1 ** step
+            bias_correction2 = 1 - self.beta2 ** step
             
             k = self.hessian_power
             denom = tf.pow(exp_hessian_diag_sq / bias_correction2, k / 2) + self.epsilon
@@ -173,18 +180,9 @@ class Adahessian(optimizer.Optimizer):
                 "update_each": self.update_each,
                 "n_samples": self.n_samples,
                 "avg_conv_kernel": self.avg_conv_kernel,
-                "hessian_step": self.hessian_step_.numpy(),
-                "step": self.iterations.numpy(),
             }
         )
         return config
-    
-    def _update_step(self):
-        if hasattr(self, 'step'):
-            if type(self.step) == list:
-                self.step = [self.iterations.numpy() for _ in range(len(self.step))]
-            else:
-                self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass	

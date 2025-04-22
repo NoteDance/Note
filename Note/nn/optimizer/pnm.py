@@ -50,15 +50,7 @@ class PNM(optimizer.Optimizer):
         self.fixed_decay = fixed_decay
     
     def reset(self):
-        iterations = tf.Variable(
-                0,
-                name="iteration",
-                dtype=tf.int64,
-                trainable=False,
-                aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            )
-        self._track_variable(iterations)
-        self._iterations = iterations
+        self._iterations.assign(0)
         for var in self._trainable_variables:
             self.pos_momentum[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="pos_momentum"
@@ -66,7 +58,6 @@ class PNM(optimizer.Optimizer):
             self.neg_momentum[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="neg_momentum"
                                                     )
-            self.step[self._get_variable_index(var)] = 0
 
     def build(self, var_list):
         if self.built:
@@ -74,7 +65,6 @@ class PNM(optimizer.Optimizer):
         super().build(var_list)
         self.pos_momentum = []
         self.neg_momentum = []
-        self.step = []
         for var in var_list:
             self.pos_momentum.append(
                 self.add_variable_from_reference(
@@ -86,12 +76,11 @@ class PNM(optimizer.Optimizer):
                     reference_variable=var, name="neg_momentum"
                 )
             )
-            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
         
-        self.step[self._get_variable_index(variable)] += 1
+        step = tf.cast(self.iterations + 1, variable.dtype)
         
         noise_norm = math.sqrt((1 + self.beta2) ** 2 + self.beta2 ** 2)  # fmt: skip
         
@@ -104,12 +93,11 @@ class PNM(optimizer.Optimizer):
         elif self.weight_decay > 0.0:
             gradient += variable * self.weight_decay
         
-        if self.step[self._get_variable_index(variable)] % 2 == 1:
-            pos_momentum = self.pos_momentum[self._get_variable_index(variable)]
-            neg_momentum = self.neg_momentum[self._get_variable_index(variable)]
-        else:
-            neg_momentum = self.pos_momentum[self._get_variable_index(variable)]
-            pos_momentum = self.neg_momentum[self._get_variable_index(variable)]
+        def true_fn():
+            return self.pos_momentum[self._get_variable_index(variable)], self.neg_momentum[self._get_variable_index(variable)]
+        def false_fn():
+            return self.neg_momentum[self._get_variable_index(variable)], self.pos_momentum[self._get_variable_index(variable)]
+        pos_momentum, neg_momentum = tf.cond(step % 2 == 1, true_fn, false_fn)
         
         pos_momentum.assign(pos_momentum * self.beta1 ** 2 + gradient * (1.0 - self.beta1 ** 2))  # fmt: skip
 
@@ -125,17 +113,9 @@ class PNM(optimizer.Optimizer):
                 "epsilon": self.epsilon,
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,
-                "step": [self.iterations.numpy() for _ in range(len(self.step))],
             }
         )
         return config
-    
-    def _update_step(self):
-        if hasattr(self, 'step'):
-            if type(self.step) == list:
-                self.step = [self.iterations.numpy() for _ in range(len(self.step))]
-            else:
-                self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass

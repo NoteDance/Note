@@ -51,69 +51,109 @@ class GaLoreProjector:
         b = vh[:rank, :]
         return ((a, b) if is_float else (tf.cast(a, dtype=original_type), tf.cast(b, dtype=original_type)))
 
-    def get_low_rank_grad_std(self, grad, steps: int, from_random_matrix: bool):
+    def get_low_rank_grad_std(self, grad, steps, from_random_matrix: bool):
         if grad.shape[0] >= grad.shape[1]:
-            if self.ortho_matrix is None or steps % self.update_proj_gap == 0:
+            def true_fn():
                 self.ortho_matrix = self.get_orthogonal_matrix(
                     grad, self.rank, projection_type='right', from_random_matrix=from_random_matrix
                 )
+            
+            def false_fn():
+                pass
+            
+            tf.cond(tf.logical_or(self.ortho_matrix is None, steps % self.update_proj_gap == 0), true_fn, false_fn)
             return tf.matmul(grad, tf.transpose(self.ortho_matrix))
         
-        if self.ortho_matrix is None or steps % self.update_proj_gap == 0:
+        def true_fn():
             self.ortho_matrix = self.get_orthogonal_matrix(
                 grad, self.rank, projection_type='left', from_random_matrix=from_random_matrix
             )
+        
+        def false_fn():
+            pass
+        
+        tf.cond(tf.logical_or(self.ortho_matrix is None, steps % self.update_proj_gap == 0), true_fn, false_fn)
         return tf.matmul(tf.transpose(self.ortho_matrix), grad)
 
     def get_low_rank_grad_reverse_std(self, grad, steps: int, from_random_matrix: bool):
         if grad.shape[0] >= grad.shape[1]:
-            if self.ortho_matrix is None or steps % self.update_proj_gap == 0:
+            def true_fn():
                 self.ortho_matrix = self.get_orthogonal_matrix(
                     grad, self.rank, projection_type='left', from_random_matrix=from_random_matrix
                 )
+            
+            def false_fn():
+                pass
+            
+            tf.cond(tf.logical_or(self.ortho_matrix is None, steps % self.update_proj_gap == 0), true_fn, false_fn)
             return tf.matmul(tf.transpose(self.ortho_matrix), grad)
         
-        if self.ortho_matrix is None or steps % self.update_proj_gap == 0:
+        def true_fn():
             self.ortho_matrix = self.get_orthogonal_matrix(
                 grad, self.rank, projection_type='right', from_random_matrix=from_random_matrix
             )
+        
+        def false_fn():
+            pass
+        
+        tf.cond(tf.logical_or(self.ortho_matrix is None, steps % self.update_proj_gap == 0), true_fn, false_fn)
         return tf.matmul(grad, tf.transpose(self.ortho_matrix))
 
     def get_low_rank_grad_right(self, grad, steps: int, from_random_matrix: bool):
-        if self.ortho_matrix is None or steps % self.update_proj_gap == 0:
+        def true_fn():
             self.ortho_matrix = self.get_orthogonal_matrix(
                 grad, self.rank, projection_type='right', from_random_matrix=from_random_matrix
             )
+        
+        def false_fn():
+            pass
+        
+        tf.cond(tf.logical_or(self.ortho_matrix is None, steps % self.update_proj_gap == 0), true_fn, false_fn)
         return tf.matmul(grad, tf.transpose(self.ortho_matrix))
 
     def get_low_rank_grad_left(self, grad, steps: int, from_random_matrix: bool):
-        if self.ortho_matrix is None or steps % self.update_proj_gap == 0:
+        def true_fn():
             self.ortho_matrix = self.get_orthogonal_matrix(
                 grad, self.rank, projection_type='left', from_random_matrix=from_random_matrix
             )
+        
+        def false_fn():
+            pass
+        
+        tf.cond(tf.logical_or(self.ortho_matrix is None, steps % self.update_proj_gap == 0), true_fn, false_fn)
         return tf.matmul(tf.transpose(self.ortho_matrix), grad)
 
     def get_low_rank_grad_full(self, grad, steps: int, from_random_matrix: bool):
-        if self.ortho_matrix is None or steps % self.update_proj_gap == 0:
+        def true_fn():
             self.ortho_matrix = self.get_orthogonal_matrix(
                 grad, self.rank, projection_type='full', from_random_matrix=from_random_matrix
             )
+        
+        def false_fn():
+            pass
+        
+        tf.cond(tf.logical_or(self.ortho_matrix is None, steps % self.update_proj_gap == 0), true_fn, false_fn)
         a, b = self.ortho_matrix
         return tf.matmul(tf.matmul(tf.transpose(a), grad), tf.transpose(b))
 
     def get_low_rank_grad_random(self, grad, steps: int, from_random_matrix: bool):
         is_right = grad.shape[0] >= grad.shape[1]
         proj_type = 'right' if is_right else 'left'
-        if self.ortho_matrix is None or steps % self.update_proj_gap == 0:
+        def true_fn():
             self.ortho_matrix = self.get_orthogonal_matrix(
                 grad, self.rank, projection_type=proj_type, from_random_matrix=from_random_matrix
             )
+        
+        def false_fn():
+            pass
+        
+        tf.cond(tf.logical_or(self.ortho_matrix is None, steps % self.update_proj_gap == 0), true_fn, false_fn)
         if is_right:
             return tf.matmul(grad, tf.transpose(self.ortho_matrix))
         else:
             return tf.matmul(tf.transpose(self.ortho_matrix), grad)
 
-    def project(self, full_rank_grad, steps: int, from_random_matrix: bool = False):
+    def project(self, full_rank_grad, steps, from_random_matrix: bool = False):
         if self.projection_type == 'std':
             return self.get_low_rank_grad_std(full_rank_grad, steps, from_random_matrix)
         elif self.projection_type == 'reverse_std':

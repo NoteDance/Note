@@ -59,7 +59,6 @@ class AdEMAMix(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.exp_avg_slow = []
-        self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -91,13 +90,12 @@ class AdEMAMix(optimizer.Optimizer):
         exp_avg_slow = []
         state_steps = []
         
-        self.step += 1
-        
         for p in trainable_variables:
+            step = tf.cast(self.iterations + 1, p.dtype)
             exp_avgs.append(self.exp_avg[self._get_variable_index(p)])
             exp_avg_sqs.append(self.exp_avg_sq[self._get_variable_index(p)])
             exp_avg_slow.append(self.exp_avg_slow[self._get_variable_index(p)])
-            state_steps.append(self.step)
+            state_steps.append(step)
         
         self._update_adamemix(
             trainable_variables,
@@ -124,16 +122,16 @@ class AdEMAMix(optimizer.Optimizer):
             exp_avg = exp_avgs[i]
             exp_avg_sq = exp_avg_sqs[i]
             exp_avg_slow_i = exp_avg_slow[i]
-            self.step = state_steps[i]
+            step = state_steps[i]
 
-            bias_correction1 = 1 - beta1 ** self.step
-            bias_correction2 = 1 - beta2 ** self.step
+            bias_correction1 = 1 - beta1 ** step
+            bias_correction2 = 1 - beta2 ** step
 
             if T_alpha_beta3 is not None:
-                alpha_t = min(self.step * alpha / T_alpha_beta3, alpha)
-                beta3_t = min(math.exp(math.log(beta1) * math.log(beta3) / 
-                              ((1 - self.step / T_alpha_beta3) * math.log(beta3) + 
-                               (self.step / T_alpha_beta3) * math.log(beta1))), beta3)
+                alpha_t = tf.minimum(step * alpha / T_alpha_beta3, alpha)
+                beta3_t = tf.minimum(math.exp(math.log(beta1) * math.log(beta3) / 
+                              ((1 - step / T_alpha_beta3) * math.log(beta3) + 
+                               (step / T_alpha_beta3) * math.log(beta1))), beta3)
             else:
                 alpha_t = alpha
                 beta3_t = beta3
@@ -143,7 +141,7 @@ class AdEMAMix(optimizer.Optimizer):
             exp_avg_sq.assign(exp_avg_sq * beta2 + grad * grad * (1 - beta2))
             exp_avg_slow_i.assign(exp_avg_slow_i * beta3_t + grad * (1 - beta3_t))
 
-            denom = tf.sqrt(exp_avg_sq) / math.sqrt(bias_correction2) + eps
+            denom = tf.sqrt(exp_avg_sq) / tf.sqrt(bias_correction2) + eps
 
             step_size = lr / bias_correction1
 
@@ -163,17 +161,9 @@ class AdEMAMix(optimizer.Optimizer):
                 "epsilon": self.epsilon,
                 "alpha": self.alpha,
                 "T_alpha_beta3": self.T_alpha_beta3,
-                "step": self.iterations.numpy(),
             }
         )
         return config
-    
-    def _update_step(self):
-        if hasattr(self, 'step'):
-            if type(self.step) == list:
-                self.step = [self.iterations.numpy() for _ in range(len(self.step))]
-            else:
-                self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass

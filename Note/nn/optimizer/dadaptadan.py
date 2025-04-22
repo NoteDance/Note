@@ -66,16 +66,7 @@ class DAdaptAdan(optimizer.Optimizer):
         self._track_variable(self.sk_l1)
         self._track_variable(self.gsq_weighted)
         self._track_variable(self.d0)
-        self.step = 0
-        iterations = tf.Variable(
-                0,
-                name="iteration",
-                dtype=tf.int64,
-                trainable=False,
-                aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            )
-        self._track_variable(iterations)
-        self._iterations = iterations
+        self._iterations.assign(0)
         for var in self._trainable_variables:
             self.s[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="s"
@@ -109,7 +100,6 @@ class DAdaptAdan(optimizer.Optimizer):
         self._track_variable(self.sk_l1)
         self._track_variable(self.gsq_weighted)
         self._track_variable(self.d0)
-        self.step = 0
         for var in var_list:
             self.s.append(self.add_variable_from_reference(
                                 reference_variable=var, name="s"
@@ -141,8 +131,13 @@ class DAdaptAdan(optimizer.Optimizer):
                 raise RuntimeError(
                     'DAdaptAdan does not support sparse gradients')
             
-            if self.step == 0:
+            def true_fn():
                 self.previous_grad[self._get_variable_index(var)].assign(-grad)
+            
+            def false_fn():
+                pass
+            
+            tf.cond(self.iterations == 0, true_fn, false_fn)
                 
             grad_diff = self.previous_grad[self._get_variable_index(var)]
             self.previous_grad[self._get_variable_index(var)].assign_add(grad)
@@ -224,17 +219,9 @@ class DAdaptAdan(optimizer.Optimizer):
                 "growth_rate": self.growth_rate,
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,
-                "step": self.iterations.numpy(),
             }
         )
         return config
-    
-    def _update_step(self):
-        if hasattr(self, 'step'):
-            if type(self.step) == list:
-                self.step = [self.iterations.numpy() for _ in range(len(self.step))]
-            else:
-                self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass

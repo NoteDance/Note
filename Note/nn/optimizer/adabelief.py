@@ -4,7 +4,6 @@ Apache-2.0 license
 """
 import tensorflow as tf
 from keras.src.optimizers import optimizer
-import math
 
 
 class AdaBelief(optimizer.Optimizer):
@@ -59,15 +58,7 @@ class AdaBelief(optimizer.Optimizer):
         self.amsgrad = False
 
     def reset(self):
-        iterations = tf.Variable(
-                0,
-                name="iteration",
-                dtype=tf.int64,
-                trainable=False,
-                aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            )
-        self._track_variable(iterations)
-        self._iterations = iterations
+        self._iterations.assign(0)
         for i,v in enumerate(self._trainable_variables):
             self.exp_avg[i] = self.add_variable_from_reference(
                 reference_variable=v, name="exp_avg"
@@ -82,7 +73,6 @@ class AdaBelief(optimizer.Optimizer):
                 self.max_exp_avg_var[i] = self.add_variable_from_reference(
                     reference_variable=v, name="max_exp_avg_var"
                 )
-            self.step[i] = 0
 
     def build(self, var_list):
         if self.built:
@@ -92,8 +82,6 @@ class AdaBelief(optimizer.Optimizer):
         self.exp_avg_var = []
         if self.amsgrad:
             self.max_exp_avg_var = []
-        self.buffer = [[None, None, None] for _ in range(10)]
-        self.step = []
         for var in var_list:
             var_fp32 = var
             if var.dtype in {tf.float16, tf.bfloat16}:
@@ -114,7 +102,6 @@ class AdaBelief(optimizer.Optimizer):
                         reference_variable=var_fp32, name="max_exp_avg_var"
                     )
                 )
-            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
@@ -139,9 +126,9 @@ class AdaBelief(optimizer.Optimizer):
         exp_avg = self.exp_avg[self._get_variable_index(variable)]
         exp_avg_var = self.exp_avg_var[self._get_variable_index(variable)]
 
-        self.step[self._get_variable_index(variable)] += 1
-        bias_correction1 = 1 - self.beta1 ** self.step[self._get_variable_index(variable)]
-        bias_correction2 = 1 - self.beta2 ** self.step[self._get_variable_index(variable)]
+        step = tf.cast(self.iterations + 1, variable_fp32.dtype)
+        bias_correction1 = 1 - self.beta1 ** step
+        bias_correction2 = 1 - self.beta2 ** step
 
         # Update first and second moment running average
         exp_avg.assign(exp_avg * self.beta1 + (1 - self.beta1) * gradient)
@@ -154,9 +141,9 @@ class AdaBelief(optimizer.Optimizer):
             max_exp_avg_var.assign(tf.maximum(max_exp_avg_var, exp_avg_var + self.epsilon))
 
             # Use the max. for normalizing running avg. of gradient
-            denom = (tf.sqrt(max_exp_avg_var) / math.sqrt(bias_correction2)) + self.epsilon
+            denom = (tf.sqrt(max_exp_avg_var) / tf.sqrt(bias_correction2)) + self.epsilon
         else:
-            denom = (tf.sqrt(exp_avg_var + self.epsilon) / math.sqrt(bias_correction2)) + self.epsilon
+            denom = (tf.sqrt(exp_avg_var + self.epsilon) / tf.sqrt(bias_correction2)) + self.epsilon
         
         # update
         if not self.rectify:
@@ -165,34 +152,41 @@ class AdaBelief(optimizer.Optimizer):
             variable_fp32 += -step_size * exp_avg / denom
         else:
             # Rectified update, forked from RAdam
-            buffered = self.buffer[int(self.step[self._get_variable_index(variable)] % 10)]
-            if buffered[0] is not None and self.step[self._get_variable_index(variable)] == buffered[0]:
-                num_sma, step_size = buffered[1], buffered[2]
-            else:
-                buffered[0] = self.step[self._get_variable_index(variable)]
-                beta2_t = self.beta2 ** self.step[self._get_variable_index(variable)]
-                num_sma_max = 2 / (1 - self.beta2) - 1
-                num_sma = num_sma_max - 2 * self.step[self._get_variable_index(variable)] * beta2_t / (1 - beta2_t)
-                buffered[1] = num_sma
-
-                # more conservative since it's an approximated value
-                if num_sma >= 5:
-                    step_size = math.sqrt(
-                        (1 - beta2_t) *
-                        (num_sma - 4) / (num_sma_max - 4) *
-                        (num_sma - 2) / num_sma *
-                        num_sma_max / (num_sma_max - 2)) / (1 - self.beta1 ** self.step[self._get_variable_index(variable)])
-                elif self.degenerated_to_sgd:
-                    step_size = 1.0 / (1 - self.beta1 ** self.step[self._get_variable_index(variable)])
+            beta2_t = self.beta2 ** step
+            num_sma_max = 2 / (1 - self.beta2) - 1
+            num_sma = num_sma_max - 2 * step * beta2_t / (1 - beta2_t)
+            
+            def true_fn():
+                denom = tf.sqrt(exp_avg_var) + self.epsilon
+                
+                step_size = tf.sqrt(
+                    (1 - beta2_t) *
+                    (num_sma - 4) / (num_sma_max - 4) *
+                    (num_sma - 2) / num_sma *
+                    num_sma_max / (num_sma_max - 2)) / (1 - self.beta1 ** step)
+                
+                update = -step_size * lr * exp_avg / denom
+                return update
+                
+            def false_fn():
+                if self.degenerated_to_sgd:
+                    step_size = 1.0 / (1 - self.beta1 ** step)
                 else:
                     step_size = -1
-                buffered[2] = step_size
-
-            if num_sma >= 5:
-                denom = tf.sqrt(exp_avg_var) + self.epsilon
-                variable_fp32 += -step_size * lr * exp_avg / denom
-            elif step_size > 0:
-                variable_fp32 += -step_size * lr * exp_avg
+            
+                def true_fn():
+                    update = -step_size * lr * exp_avg
+                    return update
+                
+                def false_fn():
+                    return tf.zeros_like(exp_avg)
+                
+                update = tf.cond(step_size > 0, true_fn, false_fn)
+                return update
+            
+            update = tf.cond(num_sma >= 5.0, true_fn, false_fn)
+            
+        variable_fp32 += update
         
         if variable.dtype in {tf.float16, tf.bfloat16}:
             variable.assign(variable_fp32)
@@ -209,17 +203,9 @@ class AdaBelief(optimizer.Optimizer):
                 "fixed_decay": self.fixed_decay,
                 "rectify": self.rectify,
                 "degenerated_to_sgd": self.degenerated_to_sgd,
-                "step": [self.iterations.numpy() for _ in range(len(self.step))],
             }
         )
         return config
-    
-    def _update_step(self):
-        if hasattr(self, 'step'):
-            if type(self.step) == list:
-                self.step = [self.iterations.numpy() for _ in range(len(self.step))]
-            else:
-                self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass

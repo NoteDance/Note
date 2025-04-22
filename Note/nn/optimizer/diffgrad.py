@@ -7,7 +7,6 @@ Copyright 2025 NoteDance
 """
 import tensorflow as tf
 from keras.src.optimizers import optimizer
-import math
 
 
 class DiffGrad(optimizer.Optimizer):
@@ -54,7 +53,6 @@ class DiffGrad(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.previous_grad = []
-        self.step = []
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -71,7 +69,6 @@ class DiffGrad(optimizer.Optimizer):
                     reference_variable=var, name="previous_grad"
                 )
             )
-            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
@@ -83,7 +80,7 @@ class DiffGrad(optimizer.Optimizer):
         exp_avg_sq = self.exp_avg_sq[self._get_variable_index(variable)]
         previous_grad = self.previous_grad[self._get_variable_index(variable)]
         
-        self.step[self._get_variable_index(variable)] += 1
+        step = tf.cast(self.iterations + 1, variable.dtype)
 
         if self.weight_decay != 0:
             gradient += variable * self.weight_decay
@@ -93,8 +90,8 @@ class DiffGrad(optimizer.Optimizer):
         exp_avg_sq.assign(exp_avg_sq * self.beta2 + (1 - self.beta2) * tf.square(gradient))
         denom = tf.sqrt(exp_avg_sq) + self.epsilon
  
-        bias_correction1 = 1 - self.beta1 ** self.step[self._get_variable_index(variable)]
-        bias_correction2 = 1 - self.beta2 ** self.step[self._get_variable_index(variable)]
+        bias_correction1 = 1 - self.beta1 ** step
+        bias_correction2 = 1 - self.beta2 ** step
  
         # compute diffgrad coefficient (dfc)
         diff = tf.abs(previous_grad - gradient)
@@ -105,7 +102,7 @@ class DiffGrad(optimizer.Optimizer):
  		# update momentum with dfc
         exp_avg1 = exp_avg * dfc
  
-        step_size = lr * math.sqrt(bias_correction2) / bias_correction1
+        step_size = lr * tf.sqrt(bias_correction2) / bias_correction1
  
         variable.assign_add(-step_size * (exp_avg1 / denom))
 
@@ -116,17 +113,9 @@ class DiffGrad(optimizer.Optimizer):
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
-                "step": [self.iterations.numpy() for _ in range(len(self.step))],
             }
         )
         return config
-    
-    def _update_step(self):
-        if hasattr(self, 'step'):
-            if type(self.step) == list:
-                self.step = [self.iterations.numpy() for _ in range(len(self.step))]
-            else:
-                self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass

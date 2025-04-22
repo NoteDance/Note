@@ -74,15 +74,7 @@ class DAdaptAdaGrad(optimizer.Optimizer):
         self._track_variable(self.sk_sq_weighted_change)
         self._track_variable(self.sk_l1_change)
         self._track_variable(self.d0)
-        iterations = tf.Variable(
-                0,
-                name="iteration",
-                dtype=tf.int64,
-                trainable=False,
-                aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            )
-        self._track_variable(iterations)
-        self._iterations = iterations
+        self._iterations.assign(0)
         for var in self._trainable_variables:
             self.alpha_k[self._get_variable_index(var)] =  tf.Variable(tf.ones_like(var) * 1e-6)
             self._track_variable(self.alpha_k[self._get_variable_index(var)])

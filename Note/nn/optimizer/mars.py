@@ -1,6 +1,5 @@
 import tensorflow as tf
 from keras.src.optimizers import optimizer
-import math
 
 
 def _mars_single_tensor_step(
@@ -27,14 +26,16 @@ def _mars_single_tensor_step(
     if optimize_1d or is_grad_2d:
         one_minus_beta1 = 1. - beta1
         
-        if step == 1:
-            # this is a timm addition, making first self.step more consistent when no grad history, otherwise tests fail
-            c_t = grad
-        else:
+        def true_fn():
+            # this is a timm addition, making first step more consistent when no grad history, otherwise tests fail
+            return grad
+        def false_fn():
             c_t = gamma * (beta1 / one_minus_beta1) * (grad - last_grad) + grad
             c_t_norm = tf.norm(c_t)
             if c_t_norm > 1.0:
                 c_t = c_t / c_t_norm
+            return c_t
+        c_t = tf.cond(step == 1, true_fn, false_fn)
 
         exp_avg.assign(beta1 * exp_avg + one_minus_beta1 * c_t)
 
@@ -47,7 +48,7 @@ def _mars_single_tensor_step(
             exp_avg_sq.assign(beta2 * exp_avg_sq + (1. - beta2) * tf.square(c_t))
             bias_correction1 = 1.0 - beta1 ** step
             bias_correction2 = 1.0 - beta2 ** step
-            denom = (tf.sqrt(exp_avg_sq) / math.sqrt(bias_correction2)) + eps
+            denom = (tf.sqrt(exp_avg_sq) / tf.sqrt(bias_correction2)) + eps
             update = p * weight_decay + (exp_avg / bias_correction1) / denom
         elif mars_type == "lion":
             update = p * weight_decay + tf.sign(exp_avg)
@@ -63,7 +64,7 @@ def _mars_single_tensor_step(
         
         bias_correction1 = 1.0 - beta1_1d ** step
         bias_correction2 = 1.0 - beta2_1d ** step
-        denom = (tf.sqrt(exp_avg_sq) / math.sqrt(bias_correction2)) + eps
+        denom = (tf.sqrt(exp_avg_sq) / tf.sqrt(bias_correction2)) + eps
 
         if caution:
             mask = tf.cast(exp_avg * grad > 0, grad.dtype)
@@ -138,7 +139,6 @@ class Mars(optimizer.Optimizer):
         self.exp_avg = []
         self.last_grad = []
         self.exp_avg_sq = []
-        self.step = []
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -155,7 +155,6 @@ class Mars(optimizer.Optimizer):
                     reference_variable=var, name="exp_avg_sq"
                 )
             )
-            self.step.append(0)
     
     def __setstate__(self, state):
         self.__dict__.update(state)
@@ -164,7 +163,7 @@ class Mars(optimizer.Optimizer):
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
         
-        self.step[self._get_variable_index(variable)] += 1
+        step = tf.cast(self.iterations + 1, variable.dtype)
         exp_avg = self.exp_avg[self._get_variable_index(variable)]
         exp_avg_sq = self.exp_avg_sq[self._get_variable_index(variable)]
         last_grad = self.last_grad[self._get_variable_index(variable)]
@@ -183,7 +182,7 @@ class Mars(optimizer.Optimizer):
             beta2,
             last_grad,
             self.epsilon,
-            self.step[self._get_variable_index(variable)],
+            step,
             self.gamma,
             mars_type=self.mars_type,
             is_grad_2d=is_grad_2d,
@@ -208,17 +207,9 @@ class Mars(optimizer.Optimizer):
                 "lr_1d_factor": self.lr_1d_factor,
                 "betas_1d": self.betas_1d,
                 "caution": self.caution,
-                "step": [self.iterations.numpy() for _ in range(len(self.step))],
             }
         )
         return config
-    
-    def _update_step(self):
-        if hasattr(self, 'step'):
-            if type(self.step) == list:
-                self.step = [self.iterations.numpy() for _ in range(len(self.step))]
-            else:
-                self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass

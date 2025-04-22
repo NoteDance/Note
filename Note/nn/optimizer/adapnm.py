@@ -60,15 +60,7 @@ class AdaPNM(optimizer.Optimizer):
         self.adam_debias = adam_debias
     
     def reset(self):
-        iterations = tf.Variable(
-                0,
-                name="iteration",
-                dtype=tf.int64,
-                trainable=False,
-                aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            )
-        self._track_variable(iterations)
-        self._iterations = iterations
+        self._iterations.assign(0)
         for var in self._trainable_variables:
             self.exp_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="exp_avg"
@@ -87,7 +79,6 @@ class AdaPNM(optimizer.Optimizer):
                 self.exp_grad_norm[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                             reference_variable=tf.Variable(tf.zeros((1,), dtype=var.dtype)), name="exp_grad_norm"
                                                             )
-            self.step[self._get_variable_index(var)] = 0
 
     def build(self, var_list):
         if self.built:
@@ -100,7 +91,6 @@ class AdaPNM(optimizer.Optimizer):
             self.max_exp_avg_sq = []
         if self.adanorm:
             self.exp_grad_norm = []
-        self.step = []
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -129,17 +119,16 @@ class AdaPNM(optimizer.Optimizer):
                         reference_variable=tf.Variable(tf.zeros((1,), dtype=var.dtype)), name="exp_grad_norm"
                     )
                 )
-            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
         
-        self.step[self._get_variable_index(variable)] += 1
+        step = tf.cast(self.iterations + 1, variable.dtype)
         
         noise_norm = math.sqrt((1 + self.beta3) ** 2 + self.beta3 ** 2)  # fmt: skip
         
-        bias_correction1 = 1 - self.beta1 ** self.step[self._get_variable_index(variable)]
-        bias_correction2_sq = math.sqrt(1 - self.beta2 ** self.step[self._get_variable_index(variable)])
+        bias_correction1 = 1 - self.beta1 ** step
+        bias_correction2_sq = tf.sqrt(1 - self.beta2 ** step)
         
         if tf.keras.backend.is_sparse(gradient):
             raise RuntimeError(
@@ -150,12 +139,13 @@ class AdaPNM(optimizer.Optimizer):
         elif self.weight_decay > 0.0:
             gradient += variable * self.weight_decay
         
-        if self.step[self._get_variable_index(variable)] % 2 == 1:
-            exp_avg = self.exp_avg[self._get_variable_index(variable)]
-            neg_exp_avg = self.neg_exp_avg[self._get_variable_index(variable)]
-        else:
-            exp_avg = self.neg_exp_avg[self._get_variable_index(variable)]
-            neg_exp_avg = self.exp_avg[self._get_variable_index(variable)]
+        def true_fn():
+            return self.exp_avg[self._get_variable_index(variable)], self.neg_exp_avg[self._get_variable_index(variable)]
+        
+        def false_fn():
+            return self.neg_exp_avg[self._get_variable_index(variable)], self.exp_avg[self._get_variable_index(variable)]
+        
+        exp_avg, neg_exp_avg = tf.cond(step % 2 == 1, true_fn, false_fn)
         
         if self.adanorm:
             grad_norm = tf.linalg.norm(gradient)
@@ -201,17 +191,9 @@ class AdaPNM(optimizer.Optimizer):
                 "r": self.r,
                 "adanorm": self.adanorm,
                 "adam_debias": self.adam_debias,
-                "step": [self.iterations.numpy() for _ in range(len(self.step))],
             }
         )
         return config
-    
-    def _update_step(self):
-        if hasattr(self, 'step'):
-            if type(self.step) == list:
-                self.step = [self.iterations.numpy() for _ in range(len(self.step))]
-            else:
-                self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass

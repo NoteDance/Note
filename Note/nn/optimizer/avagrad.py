@@ -5,7 +5,6 @@ Copyright 2025 NoteDance
 """
 import tensorflow as tf
 from keras.src.optimizers import optimizer
-import math
 
 
 class AvaGrad(optimizer.Optimizer):
@@ -52,16 +51,7 @@ class AvaGrad(optimizer.Optimizer):
         self.adam_debias = adam_debias
     
     def reset(self):
-        self.step = 0
-        iterations = tf.Variable(
-                0,
-                name="iteration",
-                dtype=tf.int64,
-                trainable=False,
-                aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            )
-        self._track_variable(iterations)
-        self._iterations = iterations
+        self._iterations.assign(0)
         for var in self._trainable_variables:
             self.exp_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="exp_avg"
@@ -77,7 +67,6 @@ class AvaGrad(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.gamma = tf.Variable(0.)
-        self.step = 0
         for var in var_list:
             self.exp_avg.append(self.add_variable_from_reference(
                                 reference_variable=var, name="exp_avg"
@@ -95,14 +84,14 @@ class AvaGrad(optimizer.Optimizer):
         self.update_step(grads, trainable_variables, learning_rate)
 
     def update_step(self, grads, trainable_variables, learning_rate):
-        self.step += 1
-        
         for variable, gradient in zip(trainable_variables, grads):
+            step = tf.cast(self.iterations + 1, variable.dtype)
+            
             lr = tf.cast(learning_rate, variable.dtype)
             
-            bias_correction1 = 1 - self.beta1 ** self.step
-            bias_correction2_sq = math.sqrt(1 - self.beta2 ** self.step)
-            prev_bias_correction2_sq = math.sqrt(1 - self.beta2 ** (self.step - 1))
+            bias_correction1 = 1 - self.beta1 ** step
+            bias_correction2_sq = tf.sqrt(1 - self.beta2 ** step)
+            prev_bias_correction2_sq = tf.sqrt(1 - self.beta2 ** (step - 1))
             
             squared_norm = tf.cast(0.0, variable.dtype)
             num_params = tf.cast(0.0, variable.dtype)
@@ -121,13 +110,18 @@ class AvaGrad(optimizer.Optimizer):
     
             exp_avg_sq = self.exp_avg_sq[self._get_variable_index(variable)]
             sqrt_exp_avg_sq = tf.sqrt(exp_avg_sq)
-    
-            if self.step > 1:
+            
+            def true_fn():
                 de_nom = sqrt_exp_avg_sq / prev_bias_correction2_sq + self.epsilon
                 
                 gamma = tf.cast(self.gamma, variable.dtype)
                 step_size = gamma * lr if self.adam_debias else gamma * lr / bias_correction1
                 variable.assign_add(-step_size * (exp_avg / de_nom))
+            
+            def false_fn():
+                pass
+            
+            tf.cond(step > 1, true_fn, false_fn)
             
             exp_avg_sq.assign(exp_avg_sq * self.beta2 + gradient * gradient * (1.0 - self.beta2))
             
@@ -158,17 +152,9 @@ class AvaGrad(optimizer.Optimizer):
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,
                 "adam_debias": self.adam_debias,
-                "step": self.iterations.numpy(),
             }
         )
         return config
-    
-    def _update_step(self):
-        if hasattr(self, 'step'):
-            if type(self.step) == list:
-                self.step = [self.iterations.numpy() for _ in range(len(self.step))]
-            else:
-                self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass

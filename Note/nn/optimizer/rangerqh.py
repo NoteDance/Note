@@ -63,7 +63,6 @@ class RangerQH(optimizer.Optimizer):
         self.slow_buffer = []
         self.beta1_weight = 0.0
         self.beta2_weight = 0.0
-        self.step = []
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -77,7 +76,6 @@ class RangerQH(optimizer.Optimizer):
             )
             self.slow_buffer.append(tf.Variable(var))
             self._track_variable(self.slow_buffer[-1])
-            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
@@ -95,7 +93,7 @@ class RangerQH(optimizer.Optimizer):
 
         d_p_sq = d_p * d_p
         
-        self.step[self._get_variable_index(variable)] += 1
+        step = tf.cast(self.iterations + 1, variable.dtype)
         
         self.beta1_weight = 1.0 + self.beta1 * self.beta1_weight
         self.beta2_weight = 1.0 + self.beta2 * self.beta1_weight
@@ -125,13 +123,18 @@ class RangerQH(optimizer.Optimizer):
 
         # integrated look ahead...
         # we do it at the param level instead of group level
-        if self.step[self._get_variable_index(variable)] % self.k == 0:
+        def true_fn():
             # get access to slow param tensor
             slow_p = self.slow_buffer[self._get_variable_index(variable)]
             # (fast weights - slow weights) * alpha
-            slow_p.assign_add(self.alpha * (variable - slow_p))
+            slow_p.assign_add(self.alpha * (variable- slow_p))
             # copy interpolated weights to RAdam param tensor
             variable.assign(slow_p)
+        
+        def false_fn():
+            pass
+        
+        tf.cond(step % self.k == 0, true_fn, false_fn)
 
     def get_config(self):
         config = super().get_config()
@@ -144,17 +147,9 @@ class RangerQH(optimizer.Optimizer):
                 "k": self.k,
                 "alpha": self.alpha,
                 "decouple_weight_decay": self.decouple_weight_decay,
-                "step": [self.iterations.numpy() for _ in range(len(self.step))],
             }
         )
         return config
-    
-    def _update_step(self):
-        if hasattr(self, 'step'):
-            if type(self.step) == list:
-                self.step = [self.iterations.numpy() for _ in range(len(self.step))]
-            else:
-                self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass

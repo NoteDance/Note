@@ -6,7 +6,6 @@ Copyright 2025 NoteDance
 import tensorflow as tf
 from keras.src.optimizers import optimizer
 from collections import deque
-import math
 
 
 class GrokFastAdamW(optimizer.Optimizer):
@@ -99,15 +98,7 @@ class GrokFastAdamW(optimizer.Optimizer):
     
     def reset(self):
         self.grads = None
-        iterations = tf.Variable(
-                0,
-                name="iteration",
-                dtype=tf.int64,
-                trainable=False,
-                aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            )
-        self._track_variable(iterations)
-        self._iterations = iterations
+        self._iterations.assign(0)
         for var in self._trainable_variables:
             self.exp_avg[self._get_variable_index(var)] = self.add_variable_from_reference(
                                                         reference_variable=var, name="exp_avg"
@@ -115,7 +106,8 @@ class GrokFastAdamW(optimizer.Optimizer):
             self.exp_avg_sq[self._get_variable_index(var)] = self.add_variable_from_reference(
                                                         reference_variable=var, name="exp_avg_sq"
                                                     )
-            self.step[self._get_variable_index(var)] = 0
+            self.grok_exp_avg[self._get_variable_index(var)] = tf.Variable(var)
+            self._track_variable(self.grok_exp_avg[self._get_variable_index(var)])
 
     def build(self, var_list):
         if self.built:
@@ -124,7 +116,6 @@ class GrokFastAdamW(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.grok_exp_avg = []
-        self.step = []
         for var in var_list:
             self.exp_avg.append(self.add_variable_from_reference(
                                 reference_variable=var, name="exp_avg"
@@ -132,8 +123,8 @@ class GrokFastAdamW(optimizer.Optimizer):
             self.exp_avg_sq.append(self.add_variable_from_reference(
                                 reference_variable=var, name="exp_avg_sq"
                                                     ))
-            self.grok_exp_avg.append(None)
-            self.step.append(0)
+            self.grok_exp_avg.append(tf.Variable(var))
+            self._track_variable(self.grok_exp_avg[-1])
     
     def _backend_update_step(self, grads, trainable_variables, learning_rate):
         """Collective update_step that can be overridden by the backend.
@@ -151,18 +142,18 @@ class GrokFastAdamW(optimizer.Optimizer):
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
                 
-        self.step[self._get_variable_index(variable)] += 1
+        step = tf.cast(self.iterations + 1, variable.dtype)
         
-        bias_correction1 = 1 - self.beta1 ** self.step[self._get_variable_index(variable)]
-        bias_correction2_sq = math.sqrt(1 - self.beta2 ** self.step[self._get_variable_index(variable)])
+        bias_correction1 = 1 - self.beta1 ** step
+        bias_correction2_sq = tf.sqrt(1 - self.beta2 ** step)
         
-        should_grokfast: bool = (
-            self.grokfast and self.step[self._get_variable_index(variable)] > self.grokfast_after_step and self.grokfast_lamb > 0.0
-        )
+        should_grokfast = tf.logical_and(tf.logical_and(self.grokfast, step > self.grokfast_after_step), self.grokfast_lamb > 0.0)
         
-        if self.step[self._get_variable_index(variable)] == 1:
-            self.grok_exp_avg[self._get_variable_index(variable)] = gradient
-            self._track_variable(self.grok_exp_avg[self._get_variable_index(variable)])
+        def true_fn():
+            self.grok_exp_avg[self._get_variable_index(variable)].assign(gradient)
+        def false_fn():
+            pass
+        tf.cond(step == 1, true_fn, false_fn)
         
         if tf.keras.backend.is_sparse(gradient):
             raise RuntimeError(
@@ -173,11 +164,14 @@ class GrokFastAdamW(optimizer.Optimizer):
         elif self.weight_decay > 0.0:
             gradient += variable * self.weight_decay
 
-        if should_grokfast:
+        def true_fn():
             grok_exp_avg = self.grok_exp_avg[self._get_variable_index(variable)]
             grok_exp_avg = grok_exp_avg * self.grokfast_alpha + gradient * (1.0 - self.grokfast_alpha)
             
-            gradient += grok_exp_avg * self.grokfast_lamb
+            return grok_exp_avg * self.grokfast_lamb
+        def false_fn():
+            pass
+        gradient += tf.cond(should_grokfast, true_fn, false_fn)
         
         exp_avg = self.exp_avg[self._get_variable_index(variable)]
         exp_avg_sq = self.exp_avg_sq[self._get_variable_index(variable)]
@@ -207,17 +201,9 @@ class GrokFastAdamW(optimizer.Optimizer):
                 "filter": self.filter,
                 "filter_params": self.filter_params,
                 "grads": self.grads,
-                "step": [self.iterations.numpy() for _ in range(len(self.step))],
             }
         )
         return config
-    
-    def _update_step(self):
-        if hasattr(self, 'step'):
-            if type(self.step) == list:
-                self.step = [self.iterations.numpy() for _ in range(len(self.step))]
-            else:
-                self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass

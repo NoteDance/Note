@@ -65,16 +65,7 @@ class DAdaptAdam(optimizer.Optimizer):
         self._track_variable(self.numerator_acc)
         self._track_variable(self.numerator_weighted)
         self._track_variable(self.d0)
-        self.step = 0
-        iterations = tf.Variable(
-                0,
-                name="iteration",
-                dtype=tf.int64,
-                trainable=False,
-                aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            )
-        self._track_variable(iterations)
-        self._iterations = iterations
+        self._iterations.assign(0)
         for var in self._trainable_variables:
             self.s[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="s"
@@ -101,7 +92,6 @@ class DAdaptAdam(optimizer.Optimizer):
         self._track_variable(self.numerator_acc)
         self._track_variable(self.numerator_weighted)
         self._track_variable(self.d0)
-        self.step = 0
         for var in var_list:
             self.s.append(self.add_variable_from_reference(
                                 reference_variable=var, name="s"
@@ -122,21 +112,21 @@ class DAdaptAdam(optimizer.Optimizer):
         self.update_step(grads, trainable_variables, learning_rate)
 
     def update_step(self, grads, trainable_variables, learning_rate):
-        self.step += 1
-        
-        beta2_sq = math.sqrt(self.beta2)
-        
-        bias_correction1 = 1.0 - self.beta1 ** (self.step)
-        bias_correction2_sq = math.sqrt(1.0 - self.beta2 ** (self.step))
-        bias_correction = bias_correction1 / bias_correction2_sq
-        
-        # it's not Adam Debias
-        d_lr = self.d0 * self.lr if not self.bias_correction else self.d0 * self.lr / bias_correction
-        
         for variable, gradient in zip(trainable_variables, grads):
             if tf.keras.backend.is_sparse(gradient):
                 raise RuntimeError(
                     'DAdaptAdam does not support sparse gradients')
+            
+            step = tf.cast(self.iterations + 1, variable.dtype)
+            
+            beta2_sq = math.sqrt(self.beta2)
+            
+            bias_correction1 = 1.0 - self.beta1 ** (step)
+            bias_correction2_sq = tf.sqrt(1.0 - self.beta2 ** (step))
+            bias_correction = bias_correction1 / bias_correction2_sq
+            
+            # it's not Adam Debias
+            d_lr = self.d0 * self.lr if not self.bias_correction else self.d0 * self.lr / bias_correction
             
             exp_avg = self.exp_avg[self._get_variable_index(variable)]
             exp_avg_sq = self.exp_avg_sq[self._get_variable_index(variable)]
@@ -195,17 +185,9 @@ class DAdaptAdam(optimizer.Optimizer):
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,
                 "bias_correction": self.bias_correction,
-                "step": self.iterations.numpy(),
             }
         )
         return config
-    
-    def _update_step(self):
-        if hasattr(self, 'step'):
-            if type(self.step) == list:
-                self.step = [self.iterations.numpy() for _ in range(len(self.step))]
-            else:
-                self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass

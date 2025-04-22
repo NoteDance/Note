@@ -53,7 +53,6 @@ Modifications Copyright 2024 NoteDance
 # SOFTWARE.
 import tensorflow as tf
 from keras.src.optimizers import optimizer
-import math
     
 
 class Lamb(optimizer.Optimizer):
@@ -133,7 +132,6 @@ class Lamb(optimizer.Optimizer):
         super().build(var_list)
         self.exp_avg = []
         self.exp_avg_sq = []
-        self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -164,17 +162,17 @@ class Lamb(optimizer.Optimizer):
         grad_averaging = 1 if self.grad_averaging else 0
         beta3 = 1 - beta1 if grad_averaging else 1.0
         
-        # assume same self.step across group now to simplify things
-        # per parameter self.step can be easily support by making it tensor, or pass list into kernel
-        self.step += 1
-        
-        if bias_correction:
-            bias_correction1 = 1 - beta1 ** self.step
-            bias_correction2 = 1 - beta2 ** self.step
-        else:
-            bias_correction1, bias_correction2 = 1.0, 1.0
-        
         for p, grad in zip(trainable_variables, grads):
+            # assume same step across group now to simplify things
+            # per parameter step can be easily support by making it tensor, or pass list into kernel
+            step = tf.cast(self.iterations + 1, p.dtype)
+            
+            if bias_correction:
+                bias_correction1 = 1 - beta1 ** step
+                bias_correction2 = 1 - beta2 ** step
+            else:
+                bias_correction1, bias_correction2 = 1.0, 1.0
+                
             if clip_grad_norm is not None:
                 grads[self._get_variable_index(p)] = grad / clip_grad_norm
             
@@ -185,7 +183,7 @@ class Lamb(optimizer.Optimizer):
             exp_avg.assign(beta1 * exp_avg + beta3 * grad)  # m_t
             exp_avg_sq.assign(beta2 * exp_avg_sq + (1 - beta2) * tf.square(grad))  # v_t
     
-            denom = (tf.sqrt(exp_avg_sq) / math.sqrt(bias_correction2)) + self.epsilon
+            denom = (tf.sqrt(exp_avg_sq) / tf.sqrt(bias_correction2)) + self.epsilon
             update = (exp_avg / bias_correction1) / denom
     
             if self.caution:
@@ -232,17 +230,9 @@ class Lamb(optimizer.Optimizer):
                 "always_adapt": self.always_adapt,
                 "caution": self.caution,
                 "decoupled_decay": self.decoupled_decay,
-                "step": self.iterations.numpy(),
             }
         )
         return config
-    
-    def _update_step(self):
-        if hasattr(self, 'step'):
-            if type(self.step) == list:
-                self.step = [self.iterations.numpy() for _ in range(len(self.step))]
-            else:
-                self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass

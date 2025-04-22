@@ -68,7 +68,6 @@ class SWATS(optimizer.Optimizer):
         if self.amsgrad:
             self.max_exp_avg_sq = []
         self.momentum_buffer = []
-        self.step = []
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -91,8 +90,7 @@ class SWATS(optimizer.Optimizer):
                         reference_variable=var, name="max_exp_avg_sq"
                     )
                 )
-            self.momentum_buffer.append(None) 
-            self.step.append(0)
+            self.momentum_buffer.append(tf.Variable(var)) 
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
@@ -106,19 +104,23 @@ class SWATS(optimizer.Optimizer):
         if self.amsgrad:
             max_exp_avg_sq = self.max_exp_avg_sq[self._get_variable_index(variable)]
         
-        self.step[self._get_variable_index(variable)] += 1
+        step = tf.cast(self.iterations + 1, variable.dtype)
 
         if self.weight_decay != 0:
             gradient += variable * self.weight_decay
 
         # if its SGD phase, take an SGD update and continue
         if tf.get_static_value(self.phase) == b"SGD":
-            if self.momentum_buffer[self._get_variable_index(variable)] == None:
-                buf = self.momentum_buffer[self._get_variable_index(variable)] = gradient
-            else:
+            def true_fn(gradient = gradient):
+                self.momentum_buffer[self._get_variable_index(variable)].assign(gradient)
                 buf = self.momentum_buffer[self._get_variable_index(variable)]
-                self.momentum_buffer[self._get_variable_index(variable)] = buf * self.beta1 + gradient
+                return buf, gradient
+            def false_fn(gradient = gradient):
+                buf = self.momentum_buffer[self._get_variable_index(variable)]
+                self.momentum_buffer[self._get_variable_index(variable)].assign(buf * self.beta1 + gradient)
                 gradient = buf
+                return buf, gradient
+            buf, gradient = tf.cond(step == 1, true_fn, false_fn)
 
             gradient = gradient * (1 - self.beta1)
             if self.nesterov:
@@ -139,8 +141,8 @@ class SWATS(optimizer.Optimizer):
         else:
             denom = tf.sqrt(exp_avg_sq) + self.epsilon
 
-        bias_correction1 = 1 - self.beta1 ** self.step[self._get_variable_index(variable)]
-        bias_correction2 = 1 - self.beta2 ** self.step[self._get_variable_index(variable)]
+        bias_correction1 = 1 - self.beta1 ** step
+        bias_correction2 = 1 - self.beta2 ** step
         step_size = (
             lr * (bias_correction2**0.5) / bias_correction1
         )
@@ -168,7 +170,7 @@ class SWATS(optimizer.Optimizer):
                 pass
             
             tf.cond((
-                    tf.logical_and(tf.logical_and(tf.convert_to_tensor(self.step[self._get_variable_index(variable)]) > 1
+                    tf.logical_and(tf.logical_and(step > 1
                     ,tf.experimental.numpy.allclose(corrected_exp_avg, scaling, rtol=1e-6, atol=1e-8))
                     ,corrected_exp_avg > 0)
                     ), true_fn, false_fn)
@@ -189,17 +191,9 @@ class SWATS(optimizer.Optimizer):
                 "nesterov": self.nesterov,
                 "phase": self.phase,
                 "momentum_buffer": self.momentum_buffer,
-                "step": [self.iterations.numpy() for _ in range(len(self.step))],
             }
         )
         return config
-    
-    def _update_step(self):
-        if hasattr(self, 'step'):
-            if type(self.step) == list:
-                self.step = [self.iterations.numpy() for _ in range(len(self.step))]
-            else:
-                self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass

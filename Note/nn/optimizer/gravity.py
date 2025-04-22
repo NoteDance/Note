@@ -42,43 +42,32 @@ class Gravity(optimizer.Optimizer):
         self.beta = beta
     
     def reset(self):
-        iterations = tf.Variable(
-                0,
-                name="iteration",
-                dtype=tf.int64,
-                trainable=False,
-                aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            )
-        self._track_variable(iterations)
-        self._iterations = iterations
+        self._iterations.assign(0)
         for var in self._trainable_variables:
             self.v[self._get_variable_index(var)] =  tf.Variable(tf.random.normal(shape=var.shape,
                                                        mean=0.0,
                                                        stddev=self.alpha / self._learning_rate,
                                                        dtype=var.dtype))
             self._track_variable(self.v[self._get_variable_index(var)])
-            self.step[self._get_variable_index(var)] = 0
 
     def build(self, var_list):
         if self.built:
             return
         super().build(var_list)
         self.v = []
-        self.step = []
         for var in var_list:
             self.v.append(tf.Variable(tf.random.normal(shape=var.shape,
                                                        mean=0.0,
                                                        stddev=self.alpha / self._learning_rate,
                                                        dtype=var.dtype)))
             self._track_variable(self.v[-1])
-            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
                 
-        self.step[self._get_variable_index(variable)] += 1
+        step = tf.cast(self.iterations + 1, variable.dtype)
         
-        beta_t = (self.beta * self.step[self._get_variable_index(variable)] + 1) / (self.step[self._get_variable_index(variable)] + 2)
+        beta_t = (self.beta * step + 1) / (step + 2)
         
         if tf.keras.backend.is_sparse(gradient):
             raise RuntimeError(
@@ -99,17 +88,9 @@ class Gravity(optimizer.Optimizer):
             {
                 "alpha": self.alpha,
                 "beta": self.beta,
-                "step": [self.iterations.numpy() for _ in range(len(self.step))],
             }
         )
         return config
-    
-    def _update_step(self):
-        if hasattr(self, 'step'):
-            if type(self.step) == list:
-                self.step = [self.iterations.numpy() for _ in range(len(self.step))]
-            else:
-                self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass

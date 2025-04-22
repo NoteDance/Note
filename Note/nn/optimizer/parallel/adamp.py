@@ -116,7 +116,6 @@ class AdamP(optimizer.Optimizer):
         super().build(var_list)
         self.exp_avg = self.manager.list()
         self.exp_avg_sq = self.manager.list()
-        self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -134,9 +133,9 @@ class AdamP(optimizer.Optimizer):
         exp_avg, exp_avg_sq = self.exp_avg[self._get_variable_index(variable)], self.exp_avg_sq[self._get_variable_index(variable)]
         beta1, beta2 = self.beta1, self.beta2
 
-        self.step += 1
-        bias_correction1 = 1 - beta1 ** self.step
-        bias_correction2 = 1 - beta2 ** self.step
+        step = tf.cast(self.iterations + 1, variable.dtype)
+        bias_correction1 = 1 - beta1 ** step
+        bias_correction2 = 1 - beta2 ** step
 
         exp_avg.assign(exp_avg * beta1 + gradient * (1 - beta1))
         exp_avg_sq.assign(exp_avg_sq * beta2 + gradient * gradient * (1 - beta2))
@@ -162,6 +161,7 @@ class AdamP(optimizer.Optimizer):
         variable.assign(variable + (perturb * -step_size))
 
     def get_config(self):
+        self.manager_ = mp.Manager()
         config = super().get_config()
         config.update(
             {
@@ -171,14 +171,9 @@ class AdamP(optimizer.Optimizer):
                 "delta": self.delta,
                 "wd_ratio": self.wd_ratio,
                 "nesterov": self.nesterov,
-                "step": self.iterations.numpy(),
             }
         )
         return config
-    
-    def _update_step(self):
-        if hasattr(self, 'step'):
-            self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass

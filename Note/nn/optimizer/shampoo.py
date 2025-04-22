@@ -69,7 +69,6 @@ class Shampoo(optimizer.Optimizer):
         self.precond = []
         self.inv_precond = []
         self.momentum_buffer = []
-        self.step = []
         for var in var_list:
             shape = var.shape.as_list()
             self.precond.append(dict())
@@ -79,8 +78,7 @@ class Shampoo(optimizer.Optimizer):
                 self._track_variable(self.precond[-1]["precond_{}".format(dim_id)])
                 self.inv_precond[-1]["inv_precond_{}".format(dim_id)] =  tf.Variable(tf.zeros((dim, dim), dtype=var.dtype))
                 self._track_variable(self.inv_precond[-1]["inv_precond_{}".format(dim_id)])
-            self.momentum_buffer.append(None)
-            self.step.append(0)
+            self.momentum_buffer.append(tf.Variable(var))
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
@@ -88,8 +86,11 @@ class Shampoo(optimizer.Optimizer):
         order = len(gradient.shape)
         original_size = gradient.shape.as_list()
         
-        if self.momentum_buffer[self._get_variable_index(variable)] == None:
-            self.momentum_buffer[self._get_variable_index(variable)] = gradient
+        def true_fn():
+            self.momentum_buffer[self._get_variable_index(variable)].assign(gradient)
+        def false_fn():
+            pass
+        tf.cond(self.iterations == 0, true_fn, false_fn)
         
         if self.momentum > 0:
             gradient = gradient * (1 - self.momentum) + self.momentum_buffer[self._get_variable_index(variable)] * self.momentum
@@ -112,8 +113,11 @@ class Shampoo(optimizer.Optimizer):
 
             gradient_t = tf.transpose(gradient)
             precond.assign_add(tf.matmul(gradient, gradient_t))
-            if self.step[self._get_variable_index(variable)] % self.update_freq == 0:
+            def true_fn():
                 inv_precond.assign(matrix_power(precond, -1.0 / order))
+            def false_fn():
+                pass
+            tf.cond(self.iterations % self.update_freq == 0, true_fn, false_fn)
 
             if dim_id == order - 1:
                 # finally
@@ -126,10 +130,8 @@ class Shampoo(optimizer.Optimizer):
                 # grad (dim, -1)
                 gradient = tf.reshape(gradient, transposed_size)
 
-        self.momentum_buffer[self._get_variable_index(variable)] = gradient
+        self.momentum_buffer[self._get_variable_index(variable)].assign(gradient)
         variable.assign_add(gradient * -lr)
-        
-        self.step[self._get_variable_index(variable)] += 1
 
     def get_config(self):
         config = super().get_config()
@@ -139,17 +141,9 @@ class Shampoo(optimizer.Optimizer):
                 "momentum": self.momentum,
                 "update_freq": self.update_freq,
                 "momentum_buffer": self.momentum_buffer,
-                "step": [self.iterations.numpy() for _ in range(len(self.step))],
             }
         )
         return config
-    
-    def _update_step(self):
-        if hasattr(self, 'step'):
-            if type(self.step) == list:
-                self.step = [self.iterations.numpy() for _ in range(len(self.step))]
-            else:
-                self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass

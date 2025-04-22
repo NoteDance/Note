@@ -51,7 +51,6 @@ class AdaMod(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.exp_avg_lr = []
-        self.step = []
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -68,7 +67,6 @@ class AdaMod(optimizer.Optimizer):
                     reference_variable=var, name="exp_avg_lr"
                 )
             )
-            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
@@ -81,7 +79,7 @@ class AdaMod(optimizer.Optimizer):
         exp_avg_sq = self.exp_avg_sq[self._get_variable_index(variable)]
         exp_avg_lr = self.exp_avg_lr[self._get_variable_index(variable)]
         
-        self.step[self._get_variable_index(variable)] += 1
+        step = tf.cast(self.iterations + 1, variable.dtype)
 
         # Decay the first and second moment running average coefficient
         exp_avg.assign(self.beta1 * exp_avg + (1 - self.beta1) * gradient)
@@ -89,8 +87,8 @@ class AdaMod(optimizer.Optimizer):
 
         denom = tf.sqrt(exp_avg_sq) + self.epsilon
 
-        bias_correction1 = 1 - self.beta1 ** self.step[self._get_variable_index(variable)]
-        bias_correction2 = 1 - self.beta2 ** self.step[self._get_variable_index(variable)]
+        bias_correction1 = 1 - self.beta1 ** step
+        bias_correction2 = 1 - self.beta2 ** step
         step_size = lr * tf.sqrt(bias_correction2) / bias_correction1
 
         if self.weight_decay != 0:
@@ -113,17 +111,9 @@ class AdaMod(optimizer.Optimizer):
                 "beta2": self.beta2,
                 "beta3": self.beta3,
                 "epsilon": self.epsilon,
-                "step": [self.iterations.numpy() for _ in range(len(self.step))],
             }
         )
         return config
-    
-    def _update_step(self):
-        if hasattr(self, 'step'):
-            if type(self.step) == list:
-                self.step = [self.iterations.numpy() for _ in range(len(self.step))]
-            else:
-                self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass

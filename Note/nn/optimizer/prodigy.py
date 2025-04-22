@@ -77,16 +77,7 @@ class Prodigy(optimizer.Optimizer):
         self._track_variable(self.d_hat)
         self._track_variable(self.d_de_nom)
         self._track_variable(self.d_numerator)
-        self.step = 0
-        iterations = tf.Variable(
-                0,
-                name="iteration",
-                dtype=tf.int64,
-                trainable=False,
-                aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            )
-        self._track_variable(iterations)
-        self._iterations = iterations
+        self._iterations.assign(0)
         for var in self._trainable_variables:
             self.s[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="s"
@@ -120,7 +111,6 @@ class Prodigy(optimizer.Optimizer):
         self._track_variable(self.d_hat)
         self._track_variable(self.d_de_nom)
         self._track_variable(self.d_numerator)
-        self.step = 0
         for var in var_list:
             self.p0.append(tf.Variable(var))
             self._track_variable(self.p0[-1])
@@ -149,20 +139,18 @@ class Prodigy(optimizer.Optimizer):
         self.update_step(grads, trainable_variables, learning_rate)
 
     def update_step(self, grads, trainable_variables, learning_rate):
-        self.step += 1
-        
         beta3 = self.beta3 if self.beta3 is not None else math.sqrt(self.beta2)
-        
-        bias_correction1 = 1 - self.beta1 ** self.step
-        bias_correction2_sq = math.sqrt(1 - self.beta2 ** self.step)
-        bias_correction = (bias_correction1 / bias_correction2_sq) if self.bias_correction else 1.0
-        
-        d_lr = self.d * self.lr / bias_correction
         
         self.d_numerator.assign(self.d_numerator * beta3)
         
         for variable, gradient in zip(trainable_variables, grads):
-            d_lr = tf.cast(d_lr, variable.dtype)
+            step = tf.cast(self.iterations + 1, variable.dtype)
+            
+            bias_correction1 = 1 - self.beta1 ** step
+            bias_correction2_sq = math.sqrt(1 - self.beta2 ** step)
+            bias_correction = (bias_correction1 / bias_correction2_sq) if self.bias_correction else 1.0
+            
+            d_lr = self.d * self.lr / bias_correction
             
             if tf.keras.backend.is_sparse(gradient):
                 raise RuntimeError(
@@ -199,6 +187,14 @@ class Prodigy(optimizer.Optimizer):
             self.d_hat.assign(d_hat)
             
             for variable, gradient in zip(trainable_variables, grads):
+                step = tf.cast(self.iterations + 1, variable.dtype)
+            
+                bias_correction1 = 1 - self.beta1 ** step
+                bias_correction2_sq = math.sqrt(1 - self.beta2 ** step)
+                bias_correction = (bias_correction1 / bias_correction2_sq) if self.bias_correction else 1.0
+                
+                d_lr = self.d * self.lr / bias_correction
+                
                 exp_avg = self.exp_avg[self._get_variable_index(variable)]
                 exp_avg_sq = self.exp_avg_sq[self._get_variable_index(variable)]
                 
@@ -239,17 +235,9 @@ class Prodigy(optimizer.Optimizer):
                 "fixed_decay": self.fixed_decay,
                 "bias_correction": self.bias_correction,
                 "safeguard_warmup": self.safeguard_warmup,
-                "step": self.iterations.numpy(),
             }
         )
         return config
-    
-    def _update_step(self):
-        if hasattr(self, 'step'):
-            if type(self.step) == list:
-                self.step = [self.iterations.numpy() for _ in range(len(self.step))]
-            else:
-                self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass

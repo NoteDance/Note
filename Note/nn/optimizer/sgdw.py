@@ -65,7 +65,6 @@ class SGDW(optimizer.Optimizer):
         super().build(var_list)
         self.momentum_buffer = dict()
         self.momentum_buffer_list = []
-        self.step=0
         for var in var_list:
             self.momentum_buffer[self._get_variable_index(var)] = None
             self.momentum_buffer_list.append(None)
@@ -104,10 +103,11 @@ class SGDW(optimizer.Optimizer):
         # update momentum_buffers in state
         for p, momentum_buffer in zip(trainable_variables, self.momentum_buffer_list):
             self.momentum_buffer[self._get_variable_index(p)] = momentum_buffer
-            if self.step == 0:
+            def true_fn():
                 self._track_variable(momentum_buffer)
-        
-        self.step += 1
+            def false_fn():
+                pass
+            tf.cond(self.iterations == 0, true_fn, false_fn)
 
     def get_config(self):
         config = super().get_config()
@@ -121,17 +121,9 @@ class SGDW(optimizer.Optimizer):
                 "maximize": self.maximize,
                 "foreach": self.foreach,
                 "differentiable": self.differentiable,
-                "step": self.iterations.numpy(),
             }
         )
         return config
-    
-    def _update_step(self):
-        if hasattr(self, 'step'):
-            if type(self.step) == list:
-                self.step = [self.iterations.numpy() for _ in range(len(self.step))]
-            else:
-                self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass

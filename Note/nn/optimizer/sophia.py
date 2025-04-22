@@ -57,16 +57,7 @@ class SophiaH(optimizer.Optimizer):
         self.distribution = hessian_distribution
     
     def reset(self):
-        iterations = tf.Variable(
-                0,
-                name="iteration",
-                dtype=tf.int64,
-                trainable=False,
-                aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            )
-        self._track_variable(iterations)
-        self._iterations = iterations
-        self.step = 0
+        self._iterations.assign(0)
         for var in self._trainable_variables:
             self.momentum[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="momentum"
@@ -85,7 +76,6 @@ class SophiaH(optimizer.Optimizer):
         self.momentum = []
         self.hessian_moment = []
         self.hessian = []
-        self.step = 0
         for var in var_list:
             self.momentum.append(self.add_variable_from_reference(
                                 reference_variable=var, name="momentum"
@@ -143,21 +133,24 @@ class SophiaH(optimizer.Optimizer):
                 self.hessian[self._get_variable_index(p)].assign_add(h_z * z * alpha / num_samples)
 
     def update_step(self, grads, trainable_variables, learning_rate):
-        if self.step % self.update_period == 0:
+        def true_fn1():
             self.compute_hutchinson_hessian(
                 grads,
                 num_samples=self.num_samples,
                 distribution=self.distribution,
             )
-        
-        self.step += 1
+        def false_fn1():
+            pass
+        tf.cond(self.iterations % self.update_period == 0, true_fn1, false_fn1)
         
         for p, g in zip(trainable_variables, grads):
-            lr = tf.cast(learning_rate, p.dtype)
-            
             if tf.keras.backend.is_sparse(g):
                 raise RuntimeError(
                     'SophiaH does not support sparse gradients')
+            
+            lr = tf.cast(learning_rate, p.dtype)
+            
+            step = tf.cast(self.iterations + 1, p.dtype)
 
             if self.weight_decouple:
                 p.assign(p * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr)))
@@ -167,9 +160,12 @@ class SophiaH(optimizer.Optimizer):
             momentum = self.momentum[self._get_variable_index(p)]
             hessian_moment = self.hessian_moment[self._get_variable_index(p)]
             momentum.assign(momentum * self.beta1 + g * (1.0 - self.beta1))
-
-            if self.step % self.update_period == 0:
+            
+            def true_fn2():
                 hessian_moment.assign(hessian_moment * self.beta2 + self.hessian[self._get_variable_index(p)] * (1.0 - self.beta2))
+            def false_fn2():
+                pass
+            tf.cond(step % self.update_period == 0, true_fn2, false_fn2)
 
             update = tf.clip_by_value(momentum / tf.maximum(hessian_moment, self.epsilon), clip_value_min=-p, clip_value_max=p)
             p.assign_add(update * -lr)       
@@ -187,17 +183,9 @@ class SophiaH(optimizer.Optimizer):
                 "update_period": self.update_period,
                 "num_samples": self.num_samples,
                 "distribution": self.distribution,
-                "step": self.iterations.numpy(),
             }
         )
         return config
-    
-    def _update_step(self):
-        if hasattr(self, 'step'):
-            if type(self.step) == list:
-                self.step = [self.iterations.numpy() for _ in range(len(self.step))]
-            else:
-                self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass

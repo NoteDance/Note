@@ -56,7 +56,6 @@ class LaProp(optimizer.Optimizer):
             self.exp_mean_avg_beta2 = []
         if self.amsgrad:
             self.max_exp_avg_sq = []
-        self.step = []
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -82,7 +81,6 @@ class LaProp(optimizer.Optimizer):
                         reference_variable=var, name="max_exp_avg_sq"
                     )
                 )
-            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
@@ -93,7 +91,7 @@ class LaProp(optimizer.Optimizer):
             max_exp_avg_sq = self.max_exp_avg_sq[self._get_variable_index(variable)]
         beta1, beta2 = self.beta1, self.beta2
 
-        self.step[self._get_variable_index(variable)] += 1
+        step = tf.cast(self.iterations + 1, variable.dtype)
 
         # Decay the first and second moment running average coefficient
         exp_avg_sq.assign(exp_avg_sq * beta2 + (1 - beta2) * gradient * gradient)
@@ -106,19 +104,27 @@ class LaProp(optimizer.Optimizer):
 
         bias_correction2 = self.exp_avg_lr_2[self._get_variable_index(variable)]
         
-        denom = exp_avg_sq
         if self.centered:
             exp_mean_avg_beta2.assign(exp_mean_avg_beta2 * beta2 + (1 - beta2) * gradient)
-            if self.step[self._get_variable_index(variable)] > self.steps_before_using_centered:
+            def true_fn():
+                denom = exp_avg_sq
                 mean = exp_mean_avg_beta2 ** 2
                 denom = denom - mean
+                return denom
+            def false_fn():
+                return exp_avg_sq
+            denom = tf.cond(step > self.steps_before_using_centered, true_fn, false_fn)
 
         if self.amsgrad:
-            if not (self.centered and self.step[self._get_variable_index(variable)] <= self.steps_before_using_centered): 
+            def true_fn(denom = denom):
                 # Maintains the maximum of all (centered) 2nd moment running avg. till now
                 max_exp_avg_sq.assign(tf.maximum(max_exp_avg_sq, denom))
                 # Use the max. for normalizing running avg. of gradient
                 denom = max_exp_avg_sq
+                return denom
+            def false_fn(denom = denom):
+                return denom
+            denom = tf.cond(not tf.logical_and((self.centered, step <= self.steps_before_using_centered), true_fn, false_fn))
 
         denom = tf.sqrt(denom / bias_correction2) + self.epsilon
         step_of_this_grad = gradient / denom
@@ -139,17 +145,9 @@ class LaProp(optimizer.Optimizer):
                 "amsgrad": self.amsgrad,
                 "centered": self.centered,
                 "steps_before_using_centered": self.steps_before_using_centered,
-                "step": [self.iterations.numpy() for _ in range(len(self.step))],
             }
         )
         return config
-    
-    def _update_step(self):
-        if hasattr(self, 'step'):
-            if type(self.step) == list:
-                self.step = [self.iterations.numpy() for _ in range(len(self.step))]
-            else:
-                self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass

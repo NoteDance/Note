@@ -1,6 +1,5 @@
 import tensorflow as tf
 from keras.src.optimizers import optimizer
-import math
 
 
 class NAdam(optimizer.Optimizer):
@@ -62,7 +61,6 @@ class NAdam(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.m_schedule = []
-        self.step = []
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -76,7 +74,6 @@ class NAdam(optimizer.Optimizer):
             )
             self.m_schedule.append(tf.Variable(1.))
             self._track_variable(self.m_schedule[-1])
-            self.step.append(0)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
@@ -87,8 +84,8 @@ class NAdam(optimizer.Optimizer):
         exp_avg, exp_avg_sq = self.exp_avg[self._get_variable_index(variable)], self.exp_avg_sq[self._get_variable_index(variable)]
         beta1, beta2 = self.beta1, self.beta2
         eps = self.epsilon
-        self.step[self._get_variable_index(variable)] += 1
-        t= self.step[self._get_variable_index(variable)]
+        step = tf.cast(self.iterations + 1, variable.dtype)
+        t= step
         bias_correction2 = 1 - beta2 ** t
         
         if self.weight_decay != 0:
@@ -104,7 +101,7 @@ class NAdam(optimizer.Optimizer):
         exp_avg.assign(beta1 * exp_avg + (1. - beta1) * gradient)
         exp_avg_sq.assign(beta2 * exp_avg_sq + (1. - beta2) * tf.square(gradient))
     
-        denom = (tf.sqrt(exp_avg_sq) / math.sqrt(bias_correction2)) + eps
+        denom = (tf.sqrt(exp_avg_sq) / tf.sqrt(bias_correction2)) + eps
         variable.assign_add(-lr * (1. - momentum_cache_t) / (1. - m_schedule_new) * gradient / denom)
         variable.assign_add(-lr * momentum_cache_t_1 / (1. - m_schedule_next) * exp_avg / denom)
 
@@ -116,17 +113,9 @@ class NAdam(optimizer.Optimizer):
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
                 "schedule_decay": self.schedule_decay,
-                "step": [self.iterations.numpy() for _ in range(len(self.step))],
             }
         )
         return config
-    
-    def _update_step(self):
-        if hasattr(self, 'step'):
-            if type(self.step) == list:
-                self.step = [self.iterations.numpy() for _ in range(len(self.step))]
-            else:
-                self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass

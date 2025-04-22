@@ -67,15 +67,7 @@ class AliG(optimizer.Optimizer):
             self.projection_fn()
     
     def reset(self):
-        iterations = tf.Variable(
-                0,
-                name="iteration",
-                dtype=tf.int64,
-                trainable=False,
-                aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            )
-        self._track_variable(iterations)
-        self._iterations = iterations
+        self._iterations.assign(0)
         for var in self._trainable_variables:
             if self.momentum > 0.0:
                 self.momentum_buffer[self._get_variable_index(var)] =  self.add_variable_from_reference(

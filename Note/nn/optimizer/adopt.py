@@ -105,7 +105,7 @@ class Adopt(optimizer.Optimizer):
         self.differentiable = False
         self.clip_exp = None
         self.caution = False
-        self.step = 0
+        self._iterations.assign(0)
 
     def build(self, var_list):
         if self.built:
@@ -113,7 +113,6 @@ class Adopt(optimizer.Optimizer):
         super().build(var_list)
         self.exp_avg = []
         self.exp_avg_sq = []
-        self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -143,12 +142,14 @@ class Adopt(optimizer.Optimizer):
     ):
         has_complex = False
         for p in trainable_variables:
+            step = tf.cast(self.iterations + 1, p.dtype)
+            
             has_complex |= p.dtype.is_complex
 
             exp_avgs.append(self.exp_avg[self._get_variable_index(p)])
             exp_avg_sqs.append(self.exp_avg_sq[self._get_variable_index(p)])
 
-            state_steps.append(self.step)
+            state_steps.append(step)
         return has_complex
 
     def update_step(self, grads, trainable_variables, learning_rate):
@@ -185,8 +186,6 @@ class Adopt(optimizer.Optimizer):
             grad_scale=getattr(self, "grad_scale", None),
             found_inf=getattr(self, "found_inf", None),
         )
-        
-        self.step += 1
 
     def get_config(self):
         config = super().get_config()
@@ -249,9 +248,6 @@ def _single_tensor_adopt(
         exp_avg_sq = exp_avg_sqs[i]
         step_t = state_steps[i]
 
-        # update self.step
-        step_t += 1
-
         if param.dtype.is_complex:
             grad = tf.math.real(grad)
             param = tf.math.real(param)
@@ -262,31 +258,34 @@ def _single_tensor_adopt(
             grad += weight_decay * param
 
         step = step_t if capturable and differentiable else _get_value(step_t)
-        if step == 1:
+        
+        def true_fn():
             exp_avg_sq.assign_add(tf.math.conj(grad) * grad)
-            continue
-
-        if weight_decay != 0 and decoupled:
-            param.assign_add(-lr * weight_decay * param)
-
-        denom = tf.maximum(tf.sqrt(exp_avg_sq), eps)
-        normed_grad = grad / denom
-
-        if clip_exp is not None:
-            clip_val = (step - 1) ** clip_exp
-            normed_grad = tf.clip_by_value(normed_grad, -clip_val, clip_val)
-
-        exp_avg.assign(beta1 * exp_avg + (1 - beta1) * normed_grad)
-
-        if caution:
-            # Apply caution as per 'Cautious Optimizers' - https://arxiv.org/abs/2411.16085
-            mask = tf.cast(exp_avg * grad > 0, grad.dtype)
-            mask /= tf.maximum(tf.reduce_mean(mask), 1e-3)
-            exp_avg *= mask
-
-        param.assign_add(-lr * exp_avg)
-
-        exp_avg_sq.assign(beta2 * exp_avg_sq + (1 - beta2) * tf.math.conj(grad) * grad)
+            
+        def false_fn(exp_avg = exp_avg):
+            if weight_decay != 0 and decoupled:
+                param.assign_add(-lr * weight_decay * param)
+    
+            denom = tf.maximum(tf.sqrt(exp_avg_sq), eps)
+            normed_grad = grad / denom
+    
+            if clip_exp is not None:
+                clip_val = (step - 1) ** clip_exp
+                normed_grad = tf.clip_by_value(normed_grad, -clip_val, clip_val)
+    
+            exp_avg.assign(beta1 * exp_avg + (1 - beta1) * normed_grad)
+    
+            if caution:
+                # Apply caution as per 'Cautious Optimizers' - https://arxiv.org/abs/2411.16085
+                mask = tf.cast(exp_avg * grad > 0, grad.dtype)
+                mask /= tf.maximum(tf.reduce_mean(mask), 1e-3)
+                exp_avg *= mask
+    
+            param.assign_add(-lr * exp_avg)
+    
+            exp_avg_sq.assign(beta2 * exp_avg_sq + (1 - beta2) * tf.math.conj(grad) * grad)
+            
+        tf.cond(step == 1, true_fn, false_fn)
 
 
 def _multi_tensor_adopt(

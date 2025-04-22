@@ -21,7 +21,6 @@ Implementation adapted from https://github.com/sail-sg/Adan
 
 import tensorflow as tf
 from keras.src.optimizers import optimizer
-import math
 
 
 class MultiTensorApply(object):
@@ -89,16 +88,7 @@ class Adan(optimizer.Optimizer):
         self.no_prox = False
     
     def restart_opt(self):
-        self.step = 0
-        iterations = tf.Variable(
-                0,
-                name="iteration",
-                dtype=tf.int64,
-                trainable=False,
-                aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            )
-        self._track_variable(iterations)
-        self._iterations = iterations
+        self._iterations.assign(0)
         for v in self._trainable_variables:
             # State initialization
             
@@ -124,7 +114,6 @@ class Adan(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.exp_avg_diff = []
-        self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -157,25 +146,15 @@ class Adan(optimizer.Optimizer):
         exp_avg_sqs = []
         exp_avg_diffs = []
         neg_pre_grads = []
-        neg_pre_grad = []
-        
-        self.step += 1
-        
-        bias_correction1 = 1 - self.beta1 ** self.step
-        bias_correction2 = 1 - self.beta2 ** self.step
-        bias_correction3 = 1 - self.beta3 ** self.step
         
         for i in range(len(trainable_variables)):
             params_with_grad.append(trainable_variables[i])
             grads.append(grads[i])
             
-            if self.step == 1:
-                neg_pre_grad = -grads[i]
-            
             exp_avgs.append(self.exp_avg[self._get_variable_index(trainable_variables[i])])
             exp_avg_sqs.append(self.exp_avg_sq[self._get_variable_index(trainable_variables[i])])
             exp_avg_diffs.append(self.exp_avg_diff[self._get_variable_index(trainable_variables[i])])
-            neg_pre_grads.append(neg_pre_grad)
+            neg_pre_grads.append(-grads[i])
         
         kwargs = dict(
             params=params_with_grad,
@@ -187,9 +166,7 @@ class Adan(optimizer.Optimizer):
             beta1=self.beta1,
             beta2=self.beta2,
             beta3=self.beta3,
-            bias_correction1=bias_correction1,
-            bias_correction2=bias_correction2,
-            bias_correction3_sqrt=math.sqrt(bias_correction3),
+            step=self.iterations + 1,
             lr=self.lr,
             weight_decay=self.weight_decay,
             eps=self.epsilon,
@@ -230,10 +207,16 @@ class Adan(optimizer.Optimizer):
 
 def _single_tensor_adan(
     params, grads, exp_avgs, exp_avg_sqs, exp_avg_diffs, neg_pre_grads,
-    beta1, beta2, beta3, bias_correction1, bias_correction2,
-    bias_correction3_sqrt, lr, weight_decay, eps, no_prox, caution,
+    beta1, beta2, beta3, step, lr, weight_decay, eps, no_prox, caution,
 ):
     for i, param in enumerate(params):
+        step = tf.cast(step, param.dtype)
+        
+        bias_correction1 = 1 - beta1 ** step
+        bias_correction2 = 1 - beta2 ** step
+        bias_correction3 = 1 - beta3 ** step
+        bias_correction3_sqrt=tf.sqrt(bias_correction3)
+        
         grad = grads[i]
         exp_avg = exp_avgs[i]
         exp_avg_sq = exp_avg_sqs[i]
@@ -273,8 +256,7 @@ def _single_tensor_adan(
 
 def _multi_tensor_adan(
     params, grads, exp_avgs, exp_avg_sqs, exp_avg_diffs, neg_pre_grads,
-    beta1, beta2, beta3, bias_correction1, bias_correction2,
-    bias_correction3_sqrt, lr, weight_decay, eps, no_prox, caution,
+    beta1, beta2, beta3, step, lr, weight_decay, eps, no_prox, caution,
 ):
     if len(params) == 0:
         return
@@ -293,10 +275,20 @@ def _multi_tensor_adan(
         exp_avg_sq.assign(beta3 * exp_avg_sq + (1 - beta3) * tf.square(neg_pre_grad))
         for exp_avg_sq, neg_pre_grad in zip(exp_avg_sqs, neg_pre_grads)
     ]
-
-    denom = [tf.sqrt(exp_avg_sq / bias_correction3_sqrt) + eps for exp_avg_sq in exp_avg_sqs]
-    step_size_diff = lr * beta2 / bias_correction2
-    step_size = lr / bias_correction1
+    
+    denom = []
+    step_size_diffs = []
+    step_size_list = []
+    for i, param in enumerate(params):
+        step = tf.cast(step, param.dtype)
+        
+        bias_correction1 = 1 - beta1 ** step
+        bias_correction2 = 1 - beta2 ** step
+        bias_correction3 = 1 - beta3 ** step
+        bias_correction3_sqrt=tf.sqrt(bias_correction3)
+        denom.append(tf.sqrt(exp_avg_sqs[i] / bias_correction3_sqrt) + eps)
+        step_size_diffs.append(lr * beta2 / bias_correction2)
+        step_size_list.append(lr / bias_correction1)
     
     if caution:
         # Apply caution as per 'Cautious Optimizers' - https://arxiv.org/abs/2411.16085
@@ -310,12 +302,12 @@ def _multi_tensor_adan(
     if no_prox:
         params = [
             param.assign(param * (1 - lr * weight_decay) - step_size * exp_avg / d - step_size_diff * exp_avg_diff / d)
-            for param, exp_avg, exp_avg_diff, d in zip(params, exp_avgs, exp_avg_diffs, denom)
+            for param, exp_avg, exp_avg_diff, d, step_size_diff, step_size in zip(params, exp_avgs, exp_avg_diffs, denom, step_size_diffs, step_size_list)
         ]
     else:
         params = [
             param.assign(param - step_size * exp_avg / d - step_size_diff * exp_avg_diff / d)
-            for param, exp_avg, exp_avg_diff, d in zip(params, exp_avgs, exp_avg_diffs, denom)
+            for param, exp_avg, exp_avg_diff, d, step_size_diff, step_size in zip(params, exp_avgs, exp_avg_diffs, denom, step_size_diffs, step_size_list)
         ]
         params = [param.assign(param / (1 + lr * weight_decay)) for param in params]
 

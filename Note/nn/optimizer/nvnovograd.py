@@ -93,10 +93,11 @@ class NvNovoGrad(optimizer.Optimizer):
 
         norm = tf.reduce_sum(tf.square(gradient))
         
-        if exp_avg_sq == 0:
+        def true_fn():
             exp_avg_sq.assign(norm)
-        else:
+        def false_fn():
             exp_avg_sq.assign(beta2 * exp_avg_sq + (1 - beta2) * norm)
+        tf.cond(exp_avg_sq == 0, true_fn, false_fn)
             
         if self.amsgrad:
             max_exp_avg_sq.assign(tf.maximum(max_exp_avg_sq, exp_avg_sq))

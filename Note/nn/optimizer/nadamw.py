@@ -7,7 +7,6 @@ Copyright 2025 NoteDance
 """
 import tensorflow as tf
 from keras.src.optimizers import optimizer
-import math
 
 
 # Modified from github.com/pytorch/pytorch/blob/v1.12.1/torch/optim/adamw.py.
@@ -81,7 +80,6 @@ class NAdamW(optimizer.Optimizer):
         super().build(var_list)
         self.exp_avg = []
         self.exp_avg_sq = []
-        self.step = 0
         for var in var_list:
             self.exp_avg.append(
                 self.add_variable_from_reference(
@@ -110,7 +108,7 @@ class NAdamW(optimizer.Optimizer):
         for p in trainable_variables:
             exp_avgs.append(self.exp_avg[self._get_variable_index(p)])
             exp_avg_sqs.append(self.exp_avg_sq[self._get_variable_index(p)])
-            state_steps.append(self.step)
+            state_steps.append(tf.cast(self.iterations + 1, p.dtype))
 
         nadamw(
             trainable_variables,
@@ -140,17 +138,9 @@ class NAdamW(optimizer.Optimizer):
                 "maximize": self.maximize,
                 "foreach": self.foreach,
                 "capturable": self.capturable,
-                "step": self.iterations.numpy(),
             }
         )
         return config
-    
-    def _update_step(self):
-        if hasattr(self, 'step'):
-            if type(self.step) == list:
-                self.step = [self.iterations.numpy() for _ in range(len(self.step))]
-            else:
-                self.step = self.iterations.numpy()
 	
     def _apply_weight_decay(self, variables):
         pass
@@ -215,10 +205,6 @@ def _single_tensor_nadamw(
         exp_avg_sq = exp_avg_sqs[i]
         step_t = state_steps[i]
 
-        # Update self.step.
-        step_t += 1
-        state_steps[i] = step_t
-
         # Perform stepweight decay.
         param.assign(param * (1. - lr * weight_decay))
 
@@ -258,7 +244,7 @@ def _single_tensor_nadamw(
             bias_correction1 = 1 - beta1 ** step
             bias_correction2 = 1 - beta2 ** step
             step_size = lr / bias_correction1
-            bias_correction2_sqrt = math.sqrt(bias_correction2)
+            bias_correction2_sqrt = tf.sqrt(bias_correction2)
             
             # Apply Nesterov. Only difference between NAdamW and AdamW in this implementation.
             # The official PyTorch implementation of NAdam uses a different algorithm.
@@ -285,10 +271,6 @@ def _multi_tensor_nadamw(
     exp_avg_sqs = [tf.math.real(x) if x.dtype.is_complex else x for x in exp_avg_sqs]
     params = [tf.math.real(x) if x.dtype.is_complex else x for x in params]
 
-    # update steps
-    for i in range(len(state_steps)):
-        state_steps[i] += 1
-
     # Perform stepweight decay
     for i in range(len(params)):
         params[i].assign(params[i] * (1 - lr * weight_decay))
@@ -299,14 +281,14 @@ def _multi_tensor_nadamw(
         exp_avg_sqs[i].assign(exp_avg_sqs[i] * beta2 + tf.square(grads[i]) * (1 - beta2))
 
     if capturable:
-        bias_correction1 = [tf.pow(beta1, tf.cast(step, p.dtype)) for step, p in zip(state_steps, params)]
-        bias_correction2 = [tf.pow(beta2, tf.cast(step, p.dtype)) for step, p in zip(state_steps, params)]
+        bias_correction1 = [tf.pow(beta1, step) for step, p in zip(state_steps, params)]
+        bias_correction2 = [tf.pow(beta2, step) for step, p in zip(state_steps, params)]
 
         bias_correction1 = [1 - bc for bc in bias_correction1]
         bias_correction2 = [1 - bc for bc in bias_correction2]
 
         step_size = [(lr / bc) * -1 for bc in bias_correction1]
-        bias_correction2_sqrt = [math.sqrt(bc) for bc in bias_correction2]
+        bias_correction2_sqrt = [tf.sqrt(bc) for bc in bias_correction2]
 
         # Only difference between NAdamW and AdamW in this implementation.
         # The official PyTorch implementation of NAdam uses a different algorithm.
@@ -333,7 +315,7 @@ def _multi_tensor_nadamw(
         bias_correction2 = [1 - beta2 ** step for step in state_steps]
 
         step_size = [(lr / bc) * -1 for bc in bias_correction1]
-        bias_correction2_sqrt = [math.sqrt(bc) for bc in bias_correction2]
+        bias_correction2_sqrt = [tf.sqrt(bc) for bc in bias_correction2]
 
         # Apply Nesterov. Only difference between NAdamW and AdamW in this implementation.
         # The official PyTorch implementation of NAdam uses a different algorithm.
