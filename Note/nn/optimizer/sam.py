@@ -30,15 +30,7 @@ class SAM(optimizer.Optimizer):
     
     def reset(self):
         self.old_p = []
-        iterations = tf.Variable(
-                0,
-                name="iteration",
-                dtype=tf.int64,
-                trainable=False,
-                aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            )
-        self._track_variable(iterations)
-        self._iterations = iterations
+        self._iterations.assign(0)
         for var in self._trainable_variables:
             self.old_p[self._get_variable_index(var)] = tf.Variable(var)
             self._track_variable(self.old_p[self._get_variable_index(var)])
@@ -168,15 +160,7 @@ class GSAM(optimizer.Optimizer):
         self.old_g = []
         self.e_w = []
         self.sharpness = []
-        iterations = tf.Variable(
-                0,
-                name="iteration",
-                dtype=tf.int64,
-                trainable=False,
-                aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            )
-        self._track_variable(iterations)
-        self._iterations = iterations
+        self._iterations.assign(0)
         for var in self._trainable_variables:
             self.old_g[self._get_variable_index(var)] = tf.Variable(var)
             self._track_variable(self.old_g[self._get_variable_index(var)])
@@ -374,15 +358,7 @@ class WSAM(optimizer.Optimizer):
         self.e_w = []
         self.grad = []
         self.sharpness = []
-        iterations = tf.Variable(
-                0,
-                name="iteration",
-                dtype=tf.int64,
-                trainable=False,
-                aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            )
-        self._track_variable(iterations)
-        self._iterations = iterations
+        self._iterations.assign(0)
         for var in self._trainable_variables:
             self.e_w[self._get_variable_index(var)] = tf.Variable(var)
             self._track_variable(self.e_w[self._get_variable_index(var)])
@@ -566,15 +542,7 @@ class BSAM(optimizer.Optimizer):
         self.damping = damping
     
     def reset(self):
-        iterations = tf.Variable(
-                0,
-                name="iteration",
-                dtype=tf.int64,
-                trainable=False,
-                aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            )
-        self._track_variable(iterations)
-        self._iterations = iterations
+        self._iterations.assign(0)
         for var in self._trainable_variables:
             self.s[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, initializer="ones", name="s"
@@ -689,6 +657,7 @@ class LookSAM(optimizer.Optimizer):
         adaptive=False,
         use_gc=False,
         perturb_eps=1e-12,
+        step=True,
         name="looksam",
         **kwargs,
     ):
@@ -701,17 +670,10 @@ class LookSAM(optimizer.Optimizer):
         self.adaptive = adaptive
         self.use_gc = use_gc
         self.perturb_eps = perturb_eps
+        self.step = step
     
     def reset(self):
-        iterations = tf.Variable(
-                0,
-                name="iteration",
-                dtype=tf.int64,
-                trainable=False,
-                aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            )
-        self._track_variable(iterations)
-        self._iterations = iterations
+        self._iterations.assign(0)
         for var in self._trainable_variables:
             self.old_p[self._get_variable_index(var)] = tf.Variable(var)
             self._track_variable(self.old_p[self._get_variable_index(var)])
@@ -736,7 +698,7 @@ class LookSAM(optimizer.Optimizer):
             self._track_variable(self.gv[-1])
     
     def get_step(self):
-        return self.base_optimizer.iterations if hasattr(self.base_optimizer, 'step') else 0
+        return self.base_optimizer.iterations if self.step else 0
     
     def first_step(self, grads, trainable_variables):
         def true_fn():
@@ -839,6 +801,7 @@ class LookSAM(optimizer.Optimizer):
                 "adaptive": self.adaptive,
                 "use_gc": self.use_gc,
                 "perturb_eps": self.perturb_eps,
+                "step": self.step,
             }
         )
         return config
