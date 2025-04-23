@@ -5,8 +5,6 @@ Copyright 2025 NoteDance
 """
 import numpy as np
 import tensorflow as tf
-import multiprocessing as mp
-import random
 
 
 def flatten_grad(grads):
@@ -85,10 +83,10 @@ class PCGrad:
                 tf.stack([tf.cast(h, tf.int32) for h in has_grads]),
                 axis=0),
             tf.bool)
-        pc_grad = [g for g in grads]
+        pc_grad = grads
         for i in range(len(pc_grad)):
             g_i = pc_grad[i]
-            random.shuffle(grads)
+            grads = tf.random.shuffle(grads)
             for g_j in grads:
                 g_i_flat = tf.reshape(g_i, [-1])
                 g_j_flat = tf.reshape(g_j, [-1])
@@ -166,17 +164,15 @@ class PPCGrad:
             has_grads_list.append(flatten_grad(has_grads_list_))
         return grads_list, shapes, has_grads_list
     
-    def project_conflicting_gradient(self, pc_grad, grads, i):
-        g_i = pc_grad[i]
-        random.shuffle(grads)
-        for g_j in grads:
-            g_i_flat = tf.reshape(g_i, [-1])
-            g_j_flat = tf.reshape(g_j, [-1])
-            dot = tf.tensordot(g_i_flat, g_j_flat, axes=1)
-            if dot < 0:
-                norm_sq = tf.reduce_sum(tf.square(g_j_flat))
-                proj = dot * g_j / norm_sq
-                pc_grad[i] = pc_grad[i] - proj
+    def project_conflicting_gradient(self, arg):
+        pc_grad, grads = arg
+        grads = tf.random.shuffle(grads)
+        dots = tf.tensordot(grads, pc_grad, axes=1)
+        neg = dots < 0
+        norm_sq = tf.reduce_sum(grads * grads, axis=1)
+        coeffs = tf.where(neg, dots / norm_sq, tf.zeros_like(dots))
+        proj = tf.reduce_sum(tf.expand_dims(coeffs, 1) * grads, axis=0)
+        return pc_grad - proj
 
     def project_conflicting(self, grads, has_grads):
         """
@@ -195,17 +191,11 @@ class PPCGrad:
                 tf.stack([tf.cast(h, tf.int32) for h in has_grads]),
                 axis=0),
             tf.bool)
-        manager = mp.Manager()
-        pc_grad = manager.list([g for g in grads])
-        grads = manager.list(grads)
-        process_list = []
-        for i in range(len(pc_grad)):
-            process = mp.Process(target=self.project_conflicting_gradient, args=(pc_grad, grads, i))
-            process.start()
-            process_list.append(process)
-        for process in process_list:
-            process.join()
-        stacked_pc_grad = tf.stack(pc_grad)
+        pc_grad = grads
+        grads_tensor = tf.stack(grads, axis=0)
+        pc_grad_tensor = tf.stack(pc_grad, axis=0)
+        grads_tensor = tf.repeat(tf.expand_dims(grads_tensor,0), grads_tensor.shape[0], axis=0)
+        stacked_pc_grad = tf.vectorized_map(self.project_conflicting_gradient, (pc_grad_tensor, grads_tensor))
         mask = tf.cast(shared, stacked_pc_grad.dtype)
         shared_grads = stacked_pc_grad * mask
         non_shared_grads   = stacked_pc_grad * (1. - mask)
