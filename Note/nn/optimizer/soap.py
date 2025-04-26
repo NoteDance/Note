@@ -317,7 +317,7 @@ class SOAP(optimizer.Optimizer):
         def false_fn2():
             pass
         
-        tf.cond(tf.logical_and(self.iterations > 0, self.iterations % self.precondition_frequency == 0), true_fn2, false_fn2)
+        tf.cond(tf.logical_and(self.iterations + 1 > 0, (self.iterations + 1) % self.precondition_frequency == 0), true_fn2, false_fn2)
     
     def _backend_update_step(self, grads, trainable_variables, learning_rate):
         """Collective update_step that can be overridden by the backend.
@@ -388,7 +388,8 @@ class SOAP(optimizer.Optimizer):
 
             p.assign_add(norm_grad * -step_size)
             
-            p.assign(p * (1.0 - self.weight_decay * lr))
+            if self.weight_decay > 0.0:
+                p.assign(p * (1.0 - self.weight_decay * lr))
 
             self.update_pre_conditioner(
                 p,
