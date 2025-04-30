@@ -140,15 +140,20 @@ class Aida(optimizer.Optimizer):
             n_sma_max = 2.0 / (1.0 - self.beta2) - 1.0
             beta2_t = self.beta2 ** step  # fmt: skip
             n_sma = n_sma_max - 2 * step * beta2_t / (1.0 - beta2_t)
-        
-            if n_sma >= self.n_sma_threshold:
-                rt = tf.sqrt(
+            
+            def true_fn():
+                return tf.sqrt(
                     (1.0 - beta2_t) * (n_sma - 4) / (n_sma_max - 4) * (n_sma - 2) / n_sma * n_sma_max / (n_sma_max - 2)
                 )
-            elif self.degenerated_to_sgd:
-                rt = 1.0
-            else:
-                rt = -1.0
+                
+            def false_fn():
+                if self.degenerated_to_sgd:
+                    rt = 1.0
+                else:
+                    rt = -1.0
+                return rt
+            
+            rt = tf.cond(n_sma >= self.n_sma_threshold, true_fn, false_fn)
         
             step_size *= rt
         
@@ -203,11 +208,16 @@ class Aida(optimizer.Optimizer):
         if not self.rectify:
             de_nom /= bias_correction2_sq
             variable.assign_add(-step_size * (exp_avg / de_nom))
-            
-        if n_sma >= self.n_sma_threshold:
+        
+        def true_fn():
             variable.assign_add(-step_size * (exp_avg / de_nom))
-        elif step_size > 0:
-            variable.assign_add(-step_size * exp_avg)
+        def false_fn():
+            def true_fn():
+                variable.assign_add(-step_size * exp_avg)
+            def false_fn():
+                pass
+            tf.cond(step_size > 0, true_fn, false_fn)
+        tf.cond(n_sma >= self.n_sma_threshold, true_fn, false_fn)
 
     def get_config(self):
         config = super().get_config()
