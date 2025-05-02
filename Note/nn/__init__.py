@@ -182,5 +182,6 @@ from Note.nn.RL import RL
 from Note.nn.RL_pytorch import RL_pytorch
 from Note.nn.scaled_dot_product_attention import scaled_dot_product_attention
 from Note.nn.Sequential import Sequential
+from Note.nn.softplus import softplus
 from Note.nn.solve_triangular import solve_triangular
 from Note.nn.sparse_mask import sparse_mask
