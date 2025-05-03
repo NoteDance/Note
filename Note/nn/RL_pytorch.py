@@ -304,10 +304,7 @@ class RL_pytorch:
                                 self.done_pool=None
             else:
                 if self.pool_network==True:
-                    if self.shuffle!=True:
-                        train_ds=DataLoader((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool),batch_size=self.batch)
-                    else:
-                        train_ds=DataLoader((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool),batch_size=self.batch,shuffle=True)
+                    train_ds=DataLoader((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool),batch_size=self.batch)
                 else:
                     train_ds=DataLoader((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool),batch_size=self.batch,shuffle=True)
                 for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
@@ -485,7 +482,7 @@ class RL_pytorch:
             s=next_s
     
     
-    def train(self, optimizer, episodes=None, pool_network=True, processes=None, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, save_data=True, shuffle=False, p=None):
+    def train(self, optimizer, episodes=None, pool_network=True, processes=None, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, save_data=True, p=None):
         avg_reward=None
         if p==None:
             self.p=9
@@ -507,7 +504,6 @@ class RL_pytorch:
         self.clearing_freq=clearing_freq
         self.window_size_=window_size_
         self.save_data=save_data
-        self.shuffle=shuffle
         if pool_network==True:
             manager=mp.Manager()
             if save_data and len(self.state_pool_list)!=0 and self.state_pool_list[0] is not None:
