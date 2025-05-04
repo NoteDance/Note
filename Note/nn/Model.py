@@ -1842,7 +1842,20 @@ class Model:
     
     def save(self,path):
         output_file=open(path,'wb')
+        param=self.param
+        self.param=None
         pickle.dump(self,output_file)
+        pickle.dump(param,output_file)
+        if type(self.optimizer)==list:
+            state_dict=[]
+            for i in range(len(self.optimizer)):
+                state_dict.append(dict())
+                self.optimizer[i].save_own_variables(state_dict[-1])
+            pickle.dump(state_dict,output_file)
+        else:
+            state_dict=dict()
+            self.optimizer.save_own_variables(state_dict)
+            pickle.dump(state_dict,output_file)
         output_file.close()
         return
     
@@ -1850,7 +1863,17 @@ class Model:
     def restore(self,path):
         input_file=open(path,'rb')
         model=pickle.load(input_file)
+        model.param=self.param
         self.__dict__.update(model.__dict__)
+        param=pickle.load(input_file)
+        nn.assign_param(self.param,param)
+        if type(self.optimizer)==list:
+            state_dict=pickle.load(input_file)
+            for i in range(len(self.optimizer)):
+                self.optimizer[i].load_own_variables(state_dict[i])
+        else:
+            state_dict=pickle.load(input_file)
+            self.optimizer.load_own_variables(state_dict)
         input_file.close()
         return
     
