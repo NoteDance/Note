@@ -61,7 +61,7 @@ class AdaGC(optimizer.Optimizer):
                                                         reference_variable=var, name="exp_avg"
                                                     )
             self.exp_avg_sq[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=var, name="exp_avg"
+                                                        reference_variable=var, name="exp_avg_sq"
                                                     )
             self.gamma[self._get_variable_index(var)].assign(0)
 
