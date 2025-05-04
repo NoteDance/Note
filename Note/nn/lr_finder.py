@@ -79,7 +79,8 @@ class LRFinder:
                            train_loss=train_loss, 
                            epochs=epochs,
                            callbacks=[callback],
-                           jit_compile=jit_compile)
+                           jit_compile=jit_compile,
+                           p=0)
         else:
             self.model.distributed_training(train_dataset=train_ds,
                            loss_object=loss_object, 
@@ -87,7 +88,8 @@ class LRFinder:
                            epochs=epochs,
                            strategy=strategy,
                            callbacks=[callback],
-                           jit_compile=jit_compile)
+                           jit_compile=jit_compile,
+                           p=0)
 
         # Restore the weights to the state before model fitting
         nn.assign_param(self.model.param, initial_weights)
@@ -249,7 +251,8 @@ class LRFinder_rl:
                            processes_her=processes_her,
                            processes_pr=processes_her,
                            callbacks=[callback],
-                           jit_compile=jit_compile)
+                           jit_compile=jit_compile,
+                           p=0)
         else:
             self.agent.distributed_training(strategy=strategy,
                            episodes=episodes,
@@ -258,7 +261,8 @@ class LRFinder_rl:
                            processes_her=processes_her,
                            processes_pr=processes_her,
                            callbacks=[callback],
-                           jit_compile=jit_compile)
+                           jit_compile=jit_compile,
+                           p=0)
 
         # Restore the weights to the state before agent fitting
         nn.assign_param(self.agent.param, initial_weights)
