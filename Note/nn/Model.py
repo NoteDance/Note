@@ -1846,6 +1846,7 @@ class Model:
         self.param=None
         pickle.dump(self,output_file)
         pickle.dump(param,output_file)
+        self.param=param
         if type(self.optimizer)==list:
             state_dict=[]
             trainable_variables=[]
@@ -1873,8 +1874,11 @@ class Model:
     def restore(self,path):
         input_file=open(path,'rb')
         model=pickle.load(input_file)
-        model.param=self.param
+        param=self.param
+        strategy=self.strategy
         self.__dict__.update(model.__dict__)
+        self.param=param
+        self.strategy=strategy
         param=pickle.load(input_file)
         nn.assign_param(self.param,param)
         if type(self.optimizer)==list:
