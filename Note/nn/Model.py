@@ -566,18 +566,19 @@ class Model:
     
     
     def train(self, train_ds, loss_object, train_loss, optimizer=None, epochs=None, train_accuracy=None, test_ds=None, test_loss=None, test_accuracy=None, processes=None, parallel_test=None, jit_compile=True, callbacks=None, p=None):
-        if p==None:
-            p_=9
-        else:
-            p_=p-1
-        if epochs%10!=0:
-            p=epochs-epochs%p_
-            p=int(p/p_)
-        else:
-            p=epochs/(p_+1)
-            p=int(p)
-        if p==0:
-            p=1
+        if p!=0:
+            if p==None:
+                p_=9
+            else:
+                p_=p-1
+            if epochs%10!=0:
+                p=epochs-epochs%p_
+                p=int(p/p_)
+            else:
+                p=epochs/(p_+1)
+                p=int(p)
+            if p==0:
+                p=1
         if parallel_test==True:
             mp=multiprocessing
         else:
@@ -685,23 +686,24 @@ class Model:
                     if hasattr(callback, 'on_test_end'):
                         callback.on_test_end(epoch, logs=epoch_logs)
                 self.total_epoch+=1   
-                if epoch%p==0:
-                    if self.test_ds==None:
-                        if train_accuracy!=None:
-                            print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
-                            print('epoch:{0}   accuracy:{1:.4f}'.format(epoch+1, self.train_acc))
-                            print()
+                if p!=0:
+                    if epoch%p==0:
+                        if self.test_ds==None:
+                            if train_accuracy!=None:
+                                print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
+                                print('epoch:{0}   accuracy:{1:.4f}'.format(epoch+1, self.train_acc))
+                                print()
+                            else:
+                                print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
+                                print()
                         else:
-                            print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
-                            print()
-                    else:
-                        if test_accuracy!=None:
-                            print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
-                            print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(epoch+1,self.train_acc,self.test_acc))
-                            print()
-                        else:
-                            print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
-                            print()
+                            if test_accuracy!=None:
+                                print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
+                                print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(epoch+1,self.train_acc,self.test_acc))
+                                print()
+                            else:
+                                print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
+                                print()
                 if self.save_freq_==None:
                     if self.path!=None and epoch%self.save_freq==0:
                         if self.save_param_only==False:
@@ -791,23 +793,24 @@ class Model:
                         callback.on_test_end(i, logs=epoch_logs)
                 i+=1
                 self.total_epoch+=1
-                if i%p==0:
-                    if self.test_ds==None:
-                        if train_accuracy!=None:
-                            print('epoch:{0}   loss:{1:.4f}'.format(i+1, self.train_loss))
-                            print('epoch:{0}   accuracy:{1:.4f}'.format(i+1, self.train_acc))
-                            print()
+                if p!=0:
+                    if i%p==0:
+                        if self.test_ds==None:
+                            if train_accuracy!=None:
+                                print('epoch:{0}   loss:{1:.4f}'.format(i+1, self.train_loss))
+                                print('epoch:{0}   accuracy:{1:.4f}'.format(i+1, self.train_acc))
+                                print()
+                            else:
+                                print('epoch:{0}   loss:{1:.4f}'.format(i+1, self.train_loss))
+                                print()
                         else:
-                            print('epoch:{0}   loss:{1:.4f}'.format(i+1, self.train_loss))
-                            print()
-                    else:
-                        if test_accuracy!=None:
-                            print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
-                            print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(i+1,self.train_acc,self.test_acc))
-                            print()
-                        else:
-                            print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
-                            print()
+                            if test_accuracy!=None:
+                                print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
+                                print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(i+1,self.train_acc,self.test_acc))
+                                print()
+                            else:
+                                print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
+                                print()
                 if self.save_freq_==None:
                     if self.path!=None and i%self.save_freq==0:
                         if self.save_param_only==False:
@@ -824,7 +827,8 @@ class Model:
         else:
             self.time=int(self.time)+1
         self.total_time+=self.time
-        print('time:{0}s'.format(self.time))
+        if p!=0:
+            print('time:{0}s'.format(self.time))
         for callback in self.callbacks:
             if hasattr(callback, 'on_train_end'):
                 callback.on_train_end(logs={})
@@ -834,18 +838,19 @@ class Model:
     def distributed_training(self, train_dataset=None, loss_object=None, global_batch_size=None, optimizer=None, strategy=None, epochs=None, num_epochs=None, num_steps_per_epoch=None, train_accuracy=None, test_dataset=None, test_loss=None, test_accuracy=None, dataset_fn=None, test_dataset_fn=None, global_test_batch_size=None, eval_steps_per_epoch=None, jit_compile=True, callbacks=None, p=None):
         if num_epochs!=None:
             epochs=num_epochs
-        if p==None:
-            p_=9
-        else:
-            p_=p-1
-        if epochs%10!=0:
-            p=epochs-epochs%p_
-            p=int(p/p_)
-        else:
-            p=epochs/(p_+1)
-            p=int(p)
-        if p==0:
-            p=1
+        if p!=0:
+            if p==None:
+                p_=9
+            else:
+                p_=p-1
+            if epochs%10!=0:
+                p=epochs-epochs%p_
+                p=int(p/p_)
+            else:
+                p=epochs/(p_+1)
+                p=int(p)
+            if p==0:
+                p=1
         self.loss_object=loss_object
         self.global_batch_size=global_batch_size
         if self.optimizer==None:
@@ -982,23 +987,24 @@ class Model:
                         if hasattr(callback, 'on_test_end'):
                             callback.on_test_end(epoch, logs=epoch_logs)
                     self.total_epoch+=1     
-                    if epoch%p==0:
-                        if self.test_ds==None:
-                            if train_accuracy!=None:
-                                print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
-                                print('epoch:{0}   accuracy:{1:.4f}'.format(epoch+1, self.train_acc))
-                                print()
+                    if p!=0:
+                        if epoch%p==0:
+                            if self.test_ds==None:
+                                if train_accuracy!=None:
+                                    print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
+                                    print('epoch:{0}   accuracy:{1:.4f}'.format(epoch+1, self.train_acc))
+                                    print()
+                                else:
+                                    print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
+                                    print()
                             else:
-                                print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
-                                print()
-                        else:
-                            if test_accuracy!=None:
-                                print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
-                                print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(epoch+1,self.train_acc,self.test_acc))
-                                print()
-                            else:
-                                print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
-                                print()
+                                if test_accuracy!=None:
+                                    print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
+                                    print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(epoch+1,self.train_acc,self.test_acc))
+                                    print()
+                                else:
+                                    print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
+                                    print()
                     if self.save_freq_==None:
                         if self.path!=None and epoch%self.save_freq==0:
                             if self.save_param_only==False:
@@ -1119,23 +1125,24 @@ class Model:
                             callback.on_test_end(i, logs=epoch_logs)
                     i+=1
                     self.total_epoch+=1
-                    if i%p==0:
-                        if self.test_ds==None:
-                            if train_accuracy!=None:
-                                print('epoch:{0}   loss:{1:.4f}'.format(i+1, self.train_loss))
-                                print('epoch:{0}   accuracy:{1:.4f}'.format(i+1, self.train_acc))
-                                print()
+                    if p!=0:
+                        if i%p==0:
+                            if self.test_ds==None:
+                                if train_accuracy!=None:
+                                    print('epoch:{0}   loss:{1:.4f}'.format(i+1, self.train_loss))
+                                    print('epoch:{0}   accuracy:{1:.4f}'.format(i+1, self.train_acc))
+                                    print()
+                                else:
+                                    print('epoch:{0}   loss:{1:.4f}'.format(i+1, self.train_loss))
+                                    print()
                             else:
-                                print('epoch:{0}   loss:{1:.4f}'.format(i+1, self.train_loss))
-                                print()
-                        else:
-                            if test_accuracy!=None:
-                                print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
-                                print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(i+1,self.train_acc,self.test_acc))
-                                print()
-                            else:
-                                print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
-                                print()
+                                if test_accuracy!=None:
+                                    print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
+                                    print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(i+1,self.train_acc,self.test_acc))
+                                    print()
+                                else:
+                                    print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(i+1,self.train_loss,self.test_loss))
+                                    print()
                     if self.save_freq_==None:
                         if self.path!=None and i%self.save_freq==0:
                             if self.save_param_only==False:
@@ -1206,23 +1213,24 @@ class Model:
                         if hasattr(callback, 'on_test_end'):
                             callback.on_test_end(epoch, logs=epoch_logs)
                     self.total_epoch+=1     
-                    if epoch%p==0:
-                        if self.test_ds==None:
-                            if train_accuracy!=None:
-                                print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
-                                print('epoch:{0}   accuracy:{1:.4f}'.format(epoch+1, self.train_acc))
-                                print()
+                    if p!=0:
+                        if epoch%p==0:
+                            if self.test_ds==None:
+                                if train_accuracy!=None:
+                                    print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
+                                    print('epoch:{0}   accuracy:{1:.4f}'.format(epoch+1, self.train_acc))
+                                    print()
+                                else:
+                                    print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
+                                    print()
                             else:
-                                print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
-                                print()
-                        else:
-                            if test_accuracy!=None:
-                                print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
-                                print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(epoch+1,self.train_acc,self.test_acc))
-                                print()
-                            else:
-                                print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
-                                print()
+                                if test_accuracy!=None:
+                                    print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
+                                    print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(epoch+1,self.train_acc,self.test_acc))
+                                    print()
+                                else:
+                                    print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
+                                    print()
                     if self.save_freq_==None:
                         if self.path!=None and epoch%self.save_freq==0:
                             if self.save_param_only==False:
@@ -1302,23 +1310,24 @@ class Model:
                         if hasattr(callback, 'on_test_end'):
                             callback.on_test_end(epoch, logs=epoch_logs)
                     self.total_epoch+=1     
-                    if epoch%p==0:
-                        if self.test_ds==None:
-                            if train_accuracy!=None:
-                                print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
-                                print('epoch:{0}   accuracy:{1:.4f}'.format(epoch+1, self.train_acc))
-                                print()
+                    if p!=0:
+                        if epoch%p==0:
+                            if self.test_ds==None:
+                                if train_accuracy!=None:
+                                    print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
+                                    print('epoch:{0}   accuracy:{1:.4f}'.format(epoch+1, self.train_acc))
+                                    print()
+                                else:
+                                    print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
+                                    print()
                             else:
-                                print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
-                                print()
-                        else:
-                            if test_accuracy!=None:
-                                print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
-                                print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(epoch+1,self.train_acc,self.test_acc))
-                                print()
-                            else:
-                                print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
-                                print()
+                                if test_accuracy!=None:
+                                    print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
+                                    print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(epoch+1,self.train_acc,self.test_acc))
+                                    print()
+                                else:
+                                    print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
+                                    print()
                     if self.save_freq_==None:
                         if self.path!=None and epoch%self.save_freq==0:
                             if self.save_param_only==False:
@@ -1401,23 +1410,24 @@ class Model:
                         if hasattr(callback, 'on_test_end'):
                             callback.on_test_end(epoch, logs=epoch_logs)
                     self.total_epoch+=1     
-                    if epoch%p==0:
-                        if self.test_ds==None:
-                            if train_accuracy!=None:
-                                print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
-                                print('epoch:{0}   accuracy:{1:.4f}'.format(epoch+1, self.train_acc))
-                                print()
+                    if p!=0:
+                        if epoch%p==0:
+                            if self.test_ds==None:
+                                if train_accuracy!=None:
+                                    print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
+                                    print('epoch:{0}   accuracy:{1:.4f}'.format(epoch+1, self.train_acc))
+                                    print()
+                                else:
+                                    print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
+                                    print()
                             else:
-                                print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
-                                print()
-                        else:
-                            if test_accuracy!=None:
-                                print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
-                                print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(epoch+1,self.train_acc,self.test_acc))
-                                print()
-                            else:
-                                print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
-                                print()
+                                if test_accuracy!=None:
+                                    print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
+                                    print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(epoch+1,self.train_acc,self.test_acc))
+                                    print()
+                                else:
+                                    print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
+                                    print()
                     if self.save_freq_==None:
                         if self.path!=None and epoch%self.save_freq==0:
                             if self.save_param_only==False:
@@ -1500,23 +1510,24 @@ class Model:
                             if hasattr(callback, 'on_test_end'):
                                 callback.on_test_end(epoch, logs=epoch_logs)
                         self.total_epoch+=1     
-                        if epoch%p==0:
-                            if self.test_ds==None:
-                                if train_accuracy!=None:
-                                    print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
-                                    print('epoch:{0}   accuracy:{1:.4f}'.format(epoch+1, self.train_acc))
-                                    print()
+                        if p!=0:
+                            if epoch%p==0:
+                                if self.test_ds==None:
+                                    if train_accuracy!=None:
+                                        print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
+                                        print('epoch:{0}   accuracy:{1:.4f}'.format(epoch+1, self.train_acc))
+                                        print()
+                                    else:
+                                        print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
+                                        print()
                                 else:
-                                    print('epoch:{0}   loss:{1:.4f}'.format(epoch+1, self.train_loss))
-                                    print()
-                            else:
-                                if test_accuracy!=None:
-                                    print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
-                                    print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(epoch+1,self.train_acc,self.test_acc))
-                                    print()
-                                else:
-                                    print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
-                                    print()
+                                    if test_accuracy!=None:
+                                        print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
+                                        print('epoch:{0}   accuracy:{1:.4f},test accuracy:{2:.4f}'.format(epoch+1,self.train_acc,self.test_acc))
+                                        print()
+                                    else:
+                                        print('epoch:{0}   loss:{1:.4f},test loss:{2:.4f}'.format(epoch+1,self.train_loss,self.test_loss))
+                                        print()
                         if self.save_freq_==None:
                             if self.path!=None and epoch%self.save_freq==0:
                                 if self.save_param_only==False:
@@ -1541,7 +1552,8 @@ class Model:
         else:
             self.time=int(self.time)+1
         self.total_time+=self.time
-        print('time:{0}s'.format(self.time))
+        if p!=0:
+            print('time:{0}s'.format(self.time))
         for callback in self.callbacks:
             if hasattr(callback, 'on_train_end'):
                 callback.on_train_end(logs={})
