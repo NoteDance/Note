@@ -1883,7 +1883,6 @@ class Model:
             serialized_optimizer=pickle.load(input_file)
             for i in range(len(self.optimizer)):
                 self.optimizer[i]=tf.keras.optimizers.deserialize(serialized_optimizer[i])
-                self.optimizer[i].built=False
                 self.optimizer[i].build(trainable_variables[i])
                 self.optimizer[i].load_own_variables(state_dict[i])
         else:
@@ -1891,7 +1890,6 @@ class Model:
             trainable_variables=pickle.load(input_file)
             serialized_optimizer=pickle.load(input_file)
             self.optimizer=tf.keras.optimizers.serialize(serialized_optimizer)
-            self.optimizer.built=False
             self.optimizer.build(trainable_variables)
             self.optimizer.load_own_variables(state_dict)
         input_file.close()
