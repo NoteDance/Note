@@ -1848,14 +1848,24 @@ class Model:
         pickle.dump(param,output_file)
         if type(self.optimizer)==list:
             state_dict=[]
+            trainable_variables=[]
+            serialized_optimizer=[]
             for i in range(len(self.optimizer)):
                 state_dict.append(dict())
                 self.optimizer[i].save_own_variables(state_dict[-1])
+                trainable_variables.append(self.optimizer[i]._trainable_variables)
+                serialized_optimizer.append(tf.keras.optimizers.serialize(self.optimizer[i]))
             pickle.dump(state_dict,output_file)
+            pickle.dump(trainable_variables,output_file)
+            pickle.dump(serialized_optimizer,output_file)
         else:
             state_dict=dict()
             self.optimizer.save_own_variables(state_dict)
+            trainable_variables=self.optimizer._trainable_variables
+            serialized_optimizer=tf.keras.optimizers.serialize(self.optimizer)
             pickle.dump(state_dict,output_file)
+            pickle.dump(trainable_variables,output_file)
+            pickle.dump(serialized_optimizer,output_file)
         output_file.close()
         return
     
@@ -1869,10 +1879,20 @@ class Model:
         nn.assign_param(self.param,param)
         if type(self.optimizer)==list:
             state_dict=pickle.load(input_file)
+            trainable_variables=pickle.load(input_file)
+            serialized_optimizer=pickle.load(input_file)
             for i in range(len(self.optimizer)):
+                self.optimizer[i]=tf.keras.optimizers.deserialize(serialized_optimizer[i])
+                self.optimizer[i].built=False
+                self.optimizer[i].build(trainable_variables[i])
                 self.optimizer[i].load_own_variables(state_dict[i])
         else:
             state_dict=pickle.load(input_file)
+            trainable_variables=pickle.load(input_file)
+            serialized_optimizer=pickle.load(input_file)
+            self.optimizer=tf.keras.optimizers.serialize(serialized_optimizer)
+            self.optimizer.built=False
+            self.optimizer.build(trainable_variables)
             self.optimizer.load_own_variables(state_dict)
         input_file.close()
         return
