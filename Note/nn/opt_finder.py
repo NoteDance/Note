@@ -40,7 +40,8 @@ class OptFinder:
                                train_loss=train_loss, 
                                epochs=epochs,
                                callbacks=[callback],
-                               jit_compile=jit_compile)
+                               jit_compile=jit_compile,
+                               p=0)
             else:
                 self.model.distributed_training(train_dataset=train_ds,
                                loss_object=loss_object, 
@@ -48,7 +49,8 @@ class OptFinder:
                                epochs=epochs,
                                strategy=strategy,
                                callbacks=[callback],
-                               jit_compile=jit_compile)
+                               jit_compile=jit_compile,
+                               p=0)
             
             nn.assign_param(self.model.param, initial_weights)
 
@@ -140,7 +142,8 @@ class OptFinder_rl:
                                processes_her=processes_her,
                                processes_pr=processes_her,
                                callbacks=[callback],
-                               jit_compile=jit_compile)
+                               jit_compile=jit_compile,
+                               p=0)
             else:
                 self.agent.distributed_training(strategy=strategy,
                                episodes=episodes,
@@ -149,7 +152,8 @@ class OptFinder_rl:
                                processes_her=processes_her,
                                processes_pr=processes_her,
                                callbacks=[callback],
-                               jit_compile=jit_compile)
+                               jit_compile=jit_compile,
+                               p=0)
             
             if pool_network==True:
                 for i in range(processes):
