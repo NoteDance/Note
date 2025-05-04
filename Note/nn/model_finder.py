@@ -46,7 +46,8 @@ class ModelFinder:
                                                         'train_loss': train_loss,
                                                         'epochs': epochs,
                                                         'callbacks': [callback],
-                                                        'jit_compile': jit_compile
+                                                        'jit_compile': jit_compile,
+                                                        'p': 0
                                                     })
                 process.start()
                 process_list.append(process)
@@ -60,7 +61,8 @@ class ModelFinder:
                                                         'epochs': epochs,
                                                         'strategy': strategy,
                                                         'callbacks': [callback],
-                                                        'jit_compile': jit_compile
+                                                        'jit_compile': jit_compile,
+                                                        'p': 0
                                                     })
                 process.start()
                 process_list.append(process)
