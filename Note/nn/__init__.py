@@ -171,6 +171,7 @@ from Note.nn.lr_finder import LRFinder,LRFinder_rl
 from Note.nn.Model import Model
 from Note.nn.model_finder import ModelFinder
 from Note.nn.nan_to_num import nan_to_num
+from Note.nn.narrow import narrow
 from Note.nn.opt_finder import OptFinder,OptFinder_rl
 from Note.nn.parallel.optimizer import *
 from Note.nn.pairwise_distance import pairwise_distance
