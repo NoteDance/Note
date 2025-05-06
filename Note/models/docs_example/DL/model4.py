@@ -26,7 +26,7 @@ class Model(nn.Model):
 
     @tf.function(jit_compile=True)
     def train_step(self, train_data, labels, loss_object, train_loss, train_accuracy, optimizer):
-        with tf.GradientTape() as tape:
+        with tf.GradientTape(persistent=True) as tape:
             output = self.__call__(train_data)
             losses = loss_object(labels, output)
         gradients = self.pcgrad.pc_backward(tape, losses, self.param)
