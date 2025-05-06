@@ -10,8 +10,9 @@ import os
 
 
 class LOMO(optimizer.Optimizer):
-    def __init__(self, lr=1e-3, clip_grad_norm=None, clip_grad_value=None, zero3_enabled=True, name="lomo"):
+    def __init__(self, model, lr=1e-3, clip_grad_norm=None, clip_grad_value=None, zero3_enabled=True, name="lomo"):
         super().__init__(learning_rate=1.,name=name)
+        self.param = model.param
         self.lr = lr
         self.clip_grad_norm = clip_grad_norm
         self.clip_grad_value = clip_grad_value
@@ -203,6 +204,7 @@ def approximate_sq_grad(
 
 class AdaLOMO(optimizer.Optimizer):
     def __init__(self, 
+                 model,
                  lr=1e-3, 
                  weight_decay: float = 0.0,
                  loss_scale: float = 2.0 ** 10,
@@ -215,6 +217,7 @@ class AdaLOMO(optimizer.Optimizer):
                  zero3_enabled=True,
                  name="adalomo"):
         super().__init__(learning_rate=1.,name=name)
+        self.param = model.param
         self.lr = lr
         self.weight_decay = weight_decay
         self.loss_scale = loss_scale
