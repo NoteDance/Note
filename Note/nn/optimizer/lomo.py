@@ -408,16 +408,11 @@ class AdaLOMO(optimizer.Optimizer):
         self.gather_norm = True
 
         if self.loss_scaler:
-            self.loss_scaler.has_overflow_serial = False
-            loss = loss * self.loss_scaler.loss_scale
+            loss = loss * self.loss_scaler
 
         grads = tape.gradient(loss, variables)
 
         self.grad_func(grads)
-
-        if self.loss_scaler and self.loss_scaler.has_overflow_serial:
-            self.loss_scaler.update_scale(overflow=True)
-            return
 
         self.grad_norms = tf.stack(self.grad_norms)
 
