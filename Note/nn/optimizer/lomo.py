@@ -19,10 +19,6 @@ class LOMO(optimizer.Optimizer):
         self.local_rank: int = int(os.environ.get('LOCAL_RANK', '0'))
 
         self.gather_norm: bool = False
-        self.grad_norms = []
-        for p in self.param:
-            self.grad_norms.append(tf.Variable(p))
-            self._track_variable(self.grad_norms[-1])
         self.clip_coef = None
 
         p0 = next(iter(self.param))
@@ -39,6 +35,15 @@ class LOMO(optimizer.Optimizer):
                 )
 
             self.loss_scaler = DynamicLossScaler(init_scale=2 ** 16)
+    
+    def build(self, var_list):
+        if self.built:
+            return
+        super().build(var_list)
+        self.grad_norms = []
+        for var in self.param:
+            self.grad_norms.append(tf.Variable(var))
+            self._track_variable(self.grad_norms[-1])
 
     def fuse_update(self):
         def func(grads):
@@ -226,21 +231,11 @@ class AdaLOMO(optimizer.Optimizer):
 
         self.num_steps: int = 0
         self.gather_norm: bool = False
-        self.grad_norms = []
-        for p in self.param:
-            self.grad_norms.append(tf.Variable(p))
-            self._track_variable(self.grad_norms[-1])
         self.clip_coef = None
 
         self.grad_func = (
             self.fuse_update_zero3() if zero3_enabled else self.fuse_update()
         )
-        
-        self.exp_avg_sq = {}
-        self.exp_avg_sq_row = {}
-        self.exp_avg_sq_col = {}
-
-        self.initialize_states()
     
     def initialize_states(self) -> None:
         for i, p in enumerate(self.param):
@@ -262,6 +257,20 @@ class AdaLOMO(optimizer.Optimizer):
                     self.exp_avg_sq_col[i] = tf.Variable(tf.zeros(p.shape[1], dtype=tf.float32))
                     self._track_variable(self.exp_avg_sq_row[i])
                     self._track_variable(self.exp_avg_sq_col[i])
+    
+    def build(self, var_list):
+        if self.built:
+            return
+        super().build(var_list)
+        self.exp_avg_sq = {}
+        self.exp_avg_sq_row = {}
+        self.exp_avg_sq_col = {}
+        
+        self.initialize_states()
+        self.grad_norms = []
+        for var in self.param:
+            self.grad_norms.append(tf.Variable(var))
+            self._track_variable(self.grad_norms[-1])
 
     def fuse_update(self):
         def func(grads):
