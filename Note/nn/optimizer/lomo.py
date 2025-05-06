@@ -42,6 +42,9 @@ class LOMO(optimizer.Optimizer):
     def build(self, var_list):
         self.grad_norms = []
         for var in var_list:
+            if not var.trainable:
+                self.grad_norms.append(tf.zeros_like(var))
+                continue
             self.grad_norms.append(tf.Variable(var))
             self._track_variable(self.grad_norms[-1])
 
@@ -243,6 +246,8 @@ class AdaLOMO(optimizer.Optimizer):
     
     def initialize_states(self) -> None:
         for i, p in enumerate(self.param):
+            if not p.trainable:
+                continue
             with tf.device(p.device):
                 if self.zero3_enabled:  # pragma: no cover
                     if len(p.shape) == 1:
@@ -270,6 +275,9 @@ class AdaLOMO(optimizer.Optimizer):
         self.initialize_states()
         self.grad_norms = []
         for var in var_list:
+            if not var.trainable:
+                self.grad_norms.append(tf.zeros_like(var))
+                continue
             self.grad_norms.append(tf.Variable(var))
             self._track_variable(self.grad_norms[-1])
 
