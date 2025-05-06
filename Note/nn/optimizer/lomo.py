@@ -436,7 +436,6 @@ class AdaLOMO(optimizer.Optimizer):
                 "eps2": self.eps2,
                 "local_rank": self.local_rank,
                 "zero3_enabled": self.zero3_enabled,
-                "num_steps": self.num_steps,
                 "gather_norm": self.gather_norm,
                 "clip_coef": self.clip_coef,
                 "grad_func": self.grad_func,
