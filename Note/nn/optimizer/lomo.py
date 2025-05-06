@@ -405,7 +405,8 @@ class AdaLOMO(optimizer.Optimizer):
         if self.loss_scaler:
             loss = loss * self.loss_scaler.loss_scale
         
-        self.num_steps = tf.cast(self.iterations + 1, tf.float32)
+        self.iterations.assign_add(1)
+        self.num_steps = tf.cast(self.iterations, tf.float32)
 
         grads = tape.gradient(loss, variables)
 
