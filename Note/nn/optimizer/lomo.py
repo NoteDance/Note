@@ -13,7 +13,6 @@ class LOMO(optimizer.Optimizer):
     def __init__(self, model, lr=1e-3, clip_grad_norm=None, clip_grad_value=None, zero3_enabled=True, name="lomo"):
         super().__init__(learning_rate=1.,name=name)
         self.param = model.param
-        self._trainable_variables = model.param
         self.lr = lr
         self.clip_grad_norm = clip_grad_norm
         self.clip_grad_value = clip_grad_value
@@ -42,17 +41,20 @@ class LOMO(optimizer.Optimizer):
     
     def build(self, var_list):
         self.grad_norms = []
+        self._trainable_variables = []
         for var in var_list:
             if not var.trainable:
-                self.grad_norms.append(tf.zeros_like(var))
                 continue
+            else:
+                self._trainable_variables.append(var)
+        for var in self._trainable_variables:
             self.grad_norms.append(tf.Variable(var))
             self._track_variable(self.grad_norms[-1])
 
     def fuse_update(self):
         def func(grads):
             for i, p in enumerate(self.param):
-                if not p.trainable or grads[i] is None:
+                if grads[i] is None:
                     continue
                 
                 def true_fn():
@@ -247,9 +249,7 @@ class AdaLOMO(optimizer.Optimizer):
         self.build(self.param)
     
     def initialize_states(self) -> None:
-        for i, p in enumerate(self.param):
-            if not p.trainable:
-                continue
+        for i, p in enumerate(self._trainable_variables):
             with tf.device(p.device):
                 if self.zero3_enabled:  # pragma: no cover
                     if len(p.shape) == 1:
@@ -274,19 +274,22 @@ class AdaLOMO(optimizer.Optimizer):
         self.exp_avg_sq_row = {}
         self.exp_avg_sq_col = {}
         
-        self.initialize_states()
         self.grad_norms = []
+        self._trainable_variables = []
         for var in var_list:
             if not var.trainable:
-                self.grad_norms.append(tf.zeros_like(var))
                 continue
+            else:
+                self._trainable_variables.append(var)
+        for var in self._trainable_variables:
             self.grad_norms.append(tf.Variable(var))
             self._track_variable(self.grad_norms[-1])
+        self.initialize_states()
 
     def fuse_update(self):
         def func(grads):
             for i, p in enumerate(self.param):
-                if not p.trainable or grads[i] is None:
+                if grads[i] is None:
                     continue
                 
                 grad_fp32 = tf.cast(grads[i], tf.float32)
