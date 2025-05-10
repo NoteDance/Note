@@ -14,6 +14,7 @@ class ModelFinder:
         manager = multiprocessing.Manager()
         self.logs = manager.dict()
         self.logs['best_loss'] = 1e9
+        self.logs['best_time'] = 1e9
         self.lock = multiprocessing.Lock()
 
     def on_epoch_end(self, epoch, logs, model=None, lock=None):
@@ -22,8 +23,13 @@ class ModelFinder:
         
         if epoch+1 == self.epochs:
             if loss < self.logs['best_loss']:
-                self.logs['best_opt'] = model.optimizer
+                self.logs['best_loss_model'] = model
                 self.logs['best_loss'] = loss
+                self.logs['time'] = model.time
+            if model.time < self.logs['best_time']:
+                self.logs['best_time_model'] = model
+                self.logs['best_time'] = model.time
+                self.logs['loss'] = model.train_loss
         lock.release()
 
     def find(self, train_ds=None, loss_object=None, train_loss=None, strategy=None, batch_size=64, epochs=1, jit_compile=True):
