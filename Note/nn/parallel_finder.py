@@ -7,7 +7,7 @@ def epoch_end_callback(epoch, logs, model, lock, callback_func):
     callback_func(epoch, logs, model, lock)
     
 
-class ModelFinder:
+class ParallelFinder:
     def __init__(self, models, optimizers):
         self.models = models
         self.optimizers = optimizers
