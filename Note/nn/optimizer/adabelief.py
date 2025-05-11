@@ -185,11 +185,15 @@ class AdaBelief(optimizer.Optimizer):
                 return update
             
             update = tf.cond(num_sma >= 5.0, true_fn, false_fn)
-            
-        variable_fp32 += update
         
         if variable.dtype in {tf.float16, tf.bfloat16}:
+            if variable.dtype == tf.float16:
+                variable_fp32 = tf.cast(variable_fp32, tf.float16)
+            else:
+                variable_fp32 = tf.cast(variable_fp32, tf.bfloat16)
             variable.assign(variable_fp32)
+        else:
+            variable.assign_add(update)
 
     def get_config(self):
         config = super().get_config()
