@@ -8,7 +8,7 @@ def episode_end_callback(epoch, logs, model, lock, callback_func):
     callback_func(epoch, logs, model, lock)
     
 
-class AgentFinder:
+class ParallelFinder:
     def __init__(self, agents, optimizers):
         self.agents = agents
         self.optimizers = optimizers
