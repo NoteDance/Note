@@ -18,6 +18,10 @@ class ParallelFinder_rl:
         self.logs = manager.dict()
         self.logs['best_reward'] = -1e9
         self.logs['best_loss'] = 1e9
+        self.logs['best_time'] = 1e9
+        self.reward = manager.list()
+        self.loss = manager.list()
+        self.time = manager.list()
         self.lock = multiprocessing.Lock()
             
     def on_episode_end(self, episode, logs, agent=None, lock=None):
@@ -27,9 +31,16 @@ class ParallelFinder_rl:
         
         if episode+1 == self.episode:
             mean_reward = np.mean(self.rewards[agent])
+            self.reward.append(mean_reward)
+            self.time.append(agent.time)
             if mean_reward > self.logs['best_reward']:
-                self.logs['best_opt'] = agent.optimizer
+                self.logs['best_reward_agent'] = agent
                 self.logs['best_reward'] = mean_reward
+                self.logs['time'] = agent.time
+            if agent.time < self.logs['best_time']:
+                self.logs['best_time_agent'] = agent
+                self.logs['best_time'] = agent.time
+                self.logs['reward'] = mean_reward
         lock.release()
     
     def on_episode_end_(self, episode, logs, agent=None, lock=None):
@@ -39,9 +50,16 @@ class ParallelFinder_rl:
         
         if episode+1 == self.episode:
             mean_loss = np.mean(self.losses[agent])
+            self.loss.append(mean_loss)
+            self.time.append(agent.time)
             if mean_loss < self.logs['best_loss']:
-                self.logs['best_opt'] = agent.optimizer
+                self.logs['best_loss_agent'] = agent
                 self.logs['best_loss'] = mean_loss
+                self.logs['time'] = agent.time
+            if agent.time < self.logs['best_time']:
+                self.logs['best_time_agent'] = agent
+                self.logs['best_time'] = agent.time
+                self.logs['loss'] = mean_loss
         lock.release()
 
     def find(self, train_loss=None, pool_network=True, processes=None, processes_her=None, processes_pr=None, strategy=None, episodes=1, metrics='reward', jit_compile=True):
