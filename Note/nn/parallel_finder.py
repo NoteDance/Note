@@ -15,6 +15,8 @@ class ParallelFinder:
         self.logs = manager.dict()
         self.logs['best_loss'] = 1e9
         self.logs['best_time'] = 1e9
+        self.loss = manager.list()
+        self.time = manager.list()
         self.lock = multiprocessing.Lock()
 
     def on_epoch_end(self, epoch, logs, model=None, lock=None):
@@ -22,6 +24,8 @@ class ParallelFinder:
         loss = logs['loss']
         
         if epoch+1 == self.epochs:
+            self.loss.append(loss)
+            self.time.append(model.time)
             if loss < self.logs['best_loss']:
                 self.logs['best_loss_model'] = model
                 self.logs['best_loss'] = loss
@@ -29,7 +33,7 @@ class ParallelFinder:
             if model.time < self.logs['best_time']:
                 self.logs['best_time_model'] = model
                 self.logs['best_time'] = model.time
-                self.logs['loss'] = model.train_loss
+                self.logs['loss'] = loss
         lock.release()
 
     def find(self, train_ds=None, loss_object=None, train_loss=None, strategy=None, batch_size=64, epochs=1, jit_compile=True):
