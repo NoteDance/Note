@@ -155,7 +155,6 @@ from Note.nn.layer.zeropadding2d import zeropadding2d
 from Note.nn.layer.zeropadding3d import zeropadding3d
 from Note.nn.accuracy import *
 from Note.nn.activation import activation,activation_conv,activation_conv_transpose,activation_dict
-from Note.nn.parallel_finder_rl import ParallelFinder_rl
 from Note.nn.assign_param import assign_param
 from Note.nn.coalesce_sparse import coalesce_sparse
 from Note.nn.conv2d_func import conv2d_func
@@ -170,6 +169,7 @@ from Note.nn.lambda_callback import LambdaCallback
 from Note.nn.lr_finder import LRFinder,LRFinder_rl
 from Note.nn.Model import Model
 from Note.nn.parallel_finder import ParallelFinder
+from Note.nn.parallel_finder_rl import ParallelFinder_rl
 from Note.nn.nan_to_num import nan_to_num
 from Note.nn.narrow import narrow
 from Note.nn.opt_finder import OptFinder,OptFinder_rl
