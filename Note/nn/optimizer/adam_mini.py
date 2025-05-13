@@ -172,7 +172,10 @@ class AdamMini(optimizer.Optimizer):
 
         h = (tf.sqrt(v) / bias_correction2_sq) + eps
 
-        p.assign_add(-lr / bias_correction1 * m / h)
+        if p.dtype != tf.float32:
+            p.assign_add(tf.cast(-lr / bias_correction1 * m / h, p.dtype))
+        else:
+            p.assign_add(-lr / bias_correction1 * m / h)
     
     def step_attn_proj(
         self,
@@ -206,7 +209,10 @@ class AdamMini(optimizer.Optimizer):
         else:
             update = tf.reshape(update, (-1))
 
-        p.assign_add(update * -lr)
+        if p.dtype != tf.float32:
+            p.assign_add(tf.cast(update * -lr, p.dtype))
+        else:
+            p.assign_add(update * -lr)
     
     def step_attn(
         self,
@@ -240,7 +246,10 @@ class AdamMini(optimizer.Optimizer):
         else:
             update = tf.reshape(update, (-1))
 
-        p.assign_add(update * -lr)
+        if p.dtype != tf.float32:
+            p.assign_add(tf.cast(update * -lr, p.dtype))
+        else:
+            p.assign_add(update * -lr)
     
     def step_lefts(
         self,
@@ -276,7 +285,10 @@ class AdamMini(optimizer.Optimizer):
 
         update = m * stepsize
 
-        p.assign_add(update * -lr)
+        if p.dtype != tf.float32:
+            p.assign_add(tf.cast(update * -lr, p.dtype))
+        else:
+            p.assign_add(update * -lr)
 
     def update_step(self, gradient, variable, learning_rate):
         if tf.keras.backend.is_sparse(gradient):
