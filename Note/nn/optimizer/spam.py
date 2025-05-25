@@ -215,11 +215,11 @@ class SPAM(optimizer.Optimizer):
     def update_step(self, gradient, variable, learning_rate):
         if tf.keras.backend.is_sparse(gradient):
             raise RuntimeError(
-                'RACS does not support sparse gradient.')
+                'SPAM does not support sparse gradient.')
         
         if variable.dtype.is_complex:
             raise RuntimeError(
-                'RACS does not support complex parameter.')
+                'SPAM does not support complex parameter.')
         
         scale_factor = tf.cast(1.0 - self.warmup.get_death_rate(self.current_step), variable.dtype)
         
@@ -304,6 +304,202 @@ class SPAM(optimizer.Optimizer):
                 "warmup_epoch": self.warmup_epoch,
                 "threshold": self.threshold,
                 "grad_accu_steps": self.grad_accu_steps,
+                "update_proj_gap": self.update_proj_gap,
+                "maximize": self.maximize,
+                "warmup": self.warmup,
+            }
+        )
+        return config
+	
+    def _apply_weight_decay(self, variables):
+        pass
+
+
+class StableSPAM(optimizer.Optimizer):
+    def __init__(
+        self,
+        learning_rate=1e-3,
+        betas=(0.9, 0.999),
+        epsilon=1e-8,
+        weight_decay=0.0,
+        gamma1=0.7,
+        gamma2=0.9,
+        theta=0.999,
+        t_max=None,
+        eta_min=0.5,
+        update_proj_gap=1000,
+        maximize=False,
+        clipnorm=None,
+        clipvalue=None,
+        global_clipnorm=None,
+        use_ema=False,
+        ema_momentum=0.99,
+        ema_overwrite_frequency=None,
+        loss_scale_factor=None,
+        gradient_accumulation_steps=None,
+        name="stablespam",
+        **kwargs,
+    ):
+        super().__init__(
+            learning_rate=learning_rate,
+            name=name,
+            weight_decay=weight_decay,
+            clipnorm=clipnorm,
+            clipvalue=clipvalue,
+            global_clipnorm=global_clipnorm,
+            use_ema=use_ema,
+            ema_momentum=ema_momentum,
+            ema_overwrite_frequency=ema_overwrite_frequency,
+            loss_scale_factor=loss_scale_factor,
+            gradient_accumulation_steps=gradient_accumulation_steps,
+            **kwargs,
+        )
+        self.betas = betas
+        self.epsilon = epsilon
+        self.gamma1 = gamma1
+        self.gamma2 = gamma2
+        self.theta = theta
+        self.t_max = t_max
+        self.eta_min = eta_min
+        self.update_proj_gap = update_proj_gap
+        self.maximize = maximize
+        
+        self.warmup = CosineDecay(1.0, t_max, eta_min=eta_min) if t_max is not None else None
+    
+    def reset(self):
+        self._iterations.assign(0)
+        self.total_step.assign(0)
+        for var in self._trainable_variables:
+            self.exp_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
+                                                        reference_variable=var, name="exp_avg"
+                                                    )
+            self.exp_avg_sq[self._get_variable_index(var)] =  self.add_variable_from_reference(
+                                                        reference_variable=var, name="exp_avg_sq"
+                                                    )
+            self.m_norm_t.assign(0)
+            self.v_norm_t.assign(0)
+            self.m_max_t.assign(0)
+
+    def build(self, var_list):
+        if self.built:
+            return
+        super().build(var_list)
+        self.exp_avg = []
+        self.exp_avg_sq = []
+        self.m_norm_t = []
+        self.v_norm_t = []
+        self.m_max_t = []
+        self.total_step = tf.Variable(0)
+        self._track_variable(self.total_step)
+        for var in var_list:
+            self.exp_avg.append(
+                self.add_variable_from_reference(
+                    reference_variable=var, name="exp_avg"
+                )
+            )
+            self.exp_avg_sq.append(
+                self.add_variable_from_reference(
+                    reference_variable=var, name="exp_avg_sq"
+                )
+            )
+            self.m_norm_t.append(tf.Variable(tf.zeros((), dtype=var.dtype)))
+            self.v_norm_t.append(tf.Variable(tf.zeros((), dtype=var.dtype)))
+            self.m_max_t.append(tf.Variable(tf.zeros((), dtype=var.dtype)))
+            self._track_variable(self.m_norm_t[-1])
+            self._track_variable(self.v_norm_t[-1])
+            self._track_variable(self.m_max_t[-1])
+
+    def update_step(self, gradient, variable, learning_rate):
+        if tf.keras.backend.is_sparse(gradient):
+            raise RuntimeError(
+                'StableSPAM does not support sparse gradient.')
+        
+        if variable.dtype.is_complex:
+            raise RuntimeError(
+                'StableSPAM does not support complex parameter.')
+        
+        self.total_step.assign_add(1)
+        
+        scale = tf.cast(self.warmup.get_death_rate(self.total_step), variable.dtype) if self.warmup is not None else 1.0
+        
+        lr = tf.cast(learning_rate, variable.dtype)
+        
+        step = tf.cast(self.iterations + 1, variable.dtype)
+        
+        beta1, beta2 = self.betas
+        
+        bias_correction1 = 1 - self.beta1 ** step
+        bias_correction2_sq = tf.sqrt(1 - self.beta2 ** step)
+        
+        step_size = lr / bias_correction1
+        
+        theta_t = 1.0 - self.theta ** step
+        
+        if self.maximize:
+            gradient = -gradient
+            
+        variable.assign(variable * (1.0 - self.weight_decay * lr))
+        
+        max_grad = tf.reduce_max(tf.abs(gradient))
+        
+        exp_avg = self.exp_avg[self._get_variable_index(variable)]
+        exp_avg_sq = self.exp_avg_sq[self._get_variable_index(variable)]
+        m_max_t = self.m_max_t[self._get_variable_index(variable)]
+        
+        m_max_t.assign(m_max_t + (max_grad - m_max_t) * (1.0 - self.theta))
+        
+        m_max_hat = m_max_t / theta_t
+        
+        mask = tf.abs(gradient) > m_max_hat
+        def true_fn(gradient = gradient):
+            indices = tf.where(mask)
+            gradient = tf.tensor_scatter_nd_update(gradient, indices, gradient[mask] / max_grad * m_max_hat)
+            return gradient
+        def false_fn():
+            return gradient
+        gradient = tf.cond(tf.reduce_sum(tf.cast(mask, tf.float32)) > 0, true_fn, false_fn)
+        
+        grad_norm = tf.norm(gradient)
+        
+        m_norm_t = self.m_norm_t[self._get_variable_index(variable)]
+        v_norm_t = self.v_norm_t[self._get_variable_index(variable)]
+        m_norm_t.assign(m_norm_t + (grad_norm - m_norm_t) * (1.0 - self.gamma1 * scale))
+        v_norm_t.assign(v_norm_t + (tf.square(grad_norm) - v_norm_t) * (1.0 - self.gamma2))
+        
+        m_norm_hat = m_norm_t / (1.0 - (self.gamma1 * scale) ** step)
+        v_norm_hat = v_norm_t / (1.0 - self.gamma2 ** step)
+        
+        c_norm_t = m_norm_hat / (tf.sqrt(v_norm_hat) + self.epsilon)
+        
+        gradient = gradient / grad_norm * c_norm_t
+        
+        def true_fn():
+            exp_avg.assign(tf.zeros_like(gradient))
+            exp_avg_sq.assign(tf.zeros_like(gradient))
+            self.iterations.assign(1)
+        def false_fn():
+            pass
+        tf.cond(tf.logical_and(tf.cast(self.update_proj_gap > 0, tf.bool), self.total_step % self.update_proj_gap == 0), 
+                true_fn, false_fn)
+        
+        exp_avg.assign(exp_avg * beta1 + gradient * (1.0 - beta1))
+        exp_avg_sq.assign(exp_avg_sq * beta2 + gradient * gradient * (1.0 - beta2))
+        
+        de_nom = tf.sqrt(exp_avg_sq) / bias_correction2_sq + self.epsilon
+        
+        variable.assign_add(-step_size * exp_avg / de_nom)
+
+    def get_config(self):
+        config = super().get_config()
+        config.update(
+            {
+                "betas": self.betas,
+                "epsilon": self.epsilon,
+                "gamma1": self.gamma1,
+                "gamma2": self.gamma2,
+                "theta": self.theta,
+                "t_max": self.t_max,
+                "eta_min": self.eta_min,
                 "update_proj_gap": self.update_proj_gap,
                 "maximize": self.maximize,
                 "warmup": self.warmup,
