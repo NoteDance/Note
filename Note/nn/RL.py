@@ -415,11 +415,12 @@ class RL:
                 if self.batch_counter%self.update_batches==0:
                     self.update_param()
                     if self.PPO:
-                        self.state_pool=None
-                        self.action_pool=None
-                        self.next_state_pool=None
-                        self.reward_pool=None
-                        self.done_pool=None
+                        for p in range(self.processes):
+                            self.state_pool_list[p]=None
+                            self.action_pool_list[p]=None
+                            self.next_state_pool_list[p]=None
+                            self.reward_pool_list[p]=None
+                            self.done_pool_list[p]=None
             return total_loss
         else:
             batch = 0
@@ -444,11 +445,12 @@ class RL:
                     if self.batch_counter%self.update_batches==0:
                         self.update_param()
                         if self.PPO:
-                            self.state_pool=None
-                            self.action_pool=None
-                            self.next_state_pool=None
-                            self.reward_pool=None
-                            self.done_pool=None
+                            for p in range(self.processes):
+                                self.state_pool_list[p]=None
+                                self.action_pool_list[p]=None
+                                self.next_state_pool_list[p]=None
+                                self.reward_pool_list[p]=None
+                                self.done_pool_list[p]=None
                 if self.stop_training==True:
                     return total_loss,num_batches
             return total_loss,num_batches
@@ -484,11 +486,12 @@ class RL:
                 if self.batch_counter%self.update_batches==0:
                     self.update_param()
                     if self.PPO:
-                        self.state_pool=None
-                        self.action_pool=None
-                        self.next_state_pool=None
-                        self.reward_pool=None
-                        self.done_pool=None
+                        for p in range(self.processes):
+                            self.state_pool_list[p]=None
+                            self.action_pool_list[p]=None
+                            self.next_state_pool_list[p]=None
+                            self.reward_pool_list[p]=None
+                            self.done_pool_list[p]=None
             return total_loss
         else:
             batch = 0
@@ -513,11 +516,12 @@ class RL:
                     if self.batch_counter%self.update_batches==0:
                         self.update_param()
                         if self.PPO:
-                            self.state_pool=None
-                            self.action_pool=None
-                            self.next_state_pool=None
-                            self.reward_pool=None
-                            self.done_pool=None
+                            for p in range(self.processes):
+                                self.state_pool_list[p]=None
+                                self.action_pool_list[p]=None
+                                self.next_state_pool_list[p]=None
+                                self.reward_pool_list[p]=None
+                                self.done_pool_list[p]=None
                 if self.stop_training==True:
                     coordinator.join()
                     return total_loss,num_batches
@@ -570,11 +574,12 @@ class RL:
                                 if self.batch_counter%self.update_batches==0:
                                     self.update_param()
                                     if self.PPO:
-                                        self.state_pool=None
-                                        self.action_pool=None
-                                        self.next_state_pool=None
-                                        self.reward_pool=None
-                                        self.done_pool=None
+                                        for p in range(self.processes):
+                                            self.state_pool_list[p]=None
+                                            self.action_pool_list[p]=None
+                                            self.next_state_pool_list[p]=None
+                                            self.reward_pool_list[p]=None
+                                            self.done_pool_list[p]=None
                     elif isinstance(self.strategy,tf.distribute.MultiWorkerMirroredStrategy):
                         with self.strategy.scope():
                             multi_worker_dataset = self.strategy.distribute_datasets_from_function(
@@ -597,11 +602,12 @@ class RL:
                                 if self.batch_counter%self.update_batches==0:
                                     self.update_param()
                                     if self.PPO:
-                                        self.state_pool=None
-                                        self.action_pool=None
-                                        self.next_state_pool=None
-                                        self.reward_pool=None
-                                        self.done_pool=None
+                                        for p in range(self.processes):
+                                            self.state_pool_list[p]=None
+                                            self.action_pool_list[p]=None
+                                            self.next_state_pool_list[p]=None
+                                            self.reward_pool_list[p]=None
+                                            self.done_pool_list[p]=None
                     batch_logs = {'loss': loss.numpy()}
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_batch_end'):
@@ -634,11 +640,12 @@ class RL:
                                 if self.batch_counter%self.update_batches==0:
                                     self.update_param()
                                     if self.PPO:
-                                        self.state_pool=None
-                                        self.action_pool=None
-                                        self.next_state_pool=None
-                                        self.reward_pool=None
-                                        self.done_pool=None
+                                        for p in range(self.processes):
+                                            self.state_pool_list[p]=None
+                                            self.action_pool_list[p]=None
+                                            self.next_state_pool_list[p]=None
+                                            self.reward_pool_list[p]=None
+                                            self.done_pool_list[p]=None
                     elif isinstance(self.strategy,tf.distribute.MultiWorkerMirroredStrategy):
                         with self.strategy.scope():
                             multi_worker_dataset = self.strategy.distribute_datasets_from_function(
@@ -660,11 +667,12 @@ class RL:
                             if self.batch_counter%self.update_batches==0:
                                 self.update_param()
                                 if self.PPO:
-                                    self.state_pool=None
-                                    self.action_pool=None
-                                    self.next_state_pool=None
-                                    self.reward_pool=None
-                                    self.done_pool=None
+                                    for p in range(self.processes):
+                                        self.state_pool_list[p]=None
+                                        self.action_pool_list[p]=None
+                                        self.next_state_pool_list[p]=None
+                                        self.reward_pool_list[p]=None
+                                        self.done_pool_list[p]=None
                     if not isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
                         batch_logs = {'loss': loss.numpy()}
                     else:
@@ -712,11 +720,12 @@ class RL:
                                 if self.batch_counter%self.update_batches==0:
                                     self.update_param()
                                     if self.PPO:
-                                        self.state_pool=None
-                                        self.action_pool=None
-                                        self.next_state_pool=None
-                                        self.reward_pool=None
-                                        self.done_pool=None
+                                        for p in range(self.processes):
+                                            self.state_pool_list[p]=None
+                                            self.action_pool_list[p]=None
+                                            self.next_state_pool_list[p]=None
+                                            self.reward_pool_list[p]=None
+                                            self.done_pool_list[p]=None
                     elif isinstance(self.strategy,tf.distribute.MultiWorkerMirroredStrategy):
                         with self.strategy.scope():
                             multi_worker_dataset = self.strategy.distribute_datasets_from_function(
@@ -750,11 +759,12 @@ class RL:
                             if self.batch_counter%self.update_batches==0:
                                 self.update_param()
                                 if self.PPO:
-                                    self.state_pool=None
-                                    self.action_pool=None
-                                    self.next_state_pool=None
-                                    self.reward_pool=None
-                                    self.done_pool=None
+                                    for p in range(self.processes):
+                                        self.state_pool_list[p]=None
+                                        self.action_pool_list[p]=None
+                                        self.next_state_pool_list[p]=None
+                                        self.reward_pool_list[p]=None
+                                        self.done_pool_list[p]=None
             if self.update_steps!=None:
                 if self.step_counter%self.update_steps==0:
                     self.update_param()
@@ -875,12 +885,6 @@ class RL:
         self.reward[p]=0
         s=self.env_(initial=True,p=p)
         s=np.array(s)
-        if self.PPO==True:
-            self.state_pool_list[p]=None
-            self.action_pool_list[p]=None
-            self.next_state_pool_list[p]=None
-            self.reward_pool_list[p]=None
-            self.done_pool_list[p]=None
         while True:
             if self.PR!=True and self.HER!=True:
                 if self.state_pool_list[p] is None:
@@ -960,10 +964,10 @@ class RL:
             manager=mp.Manager()
             if save_data and len(self.state_pool_list)!=0 and self.state_pool_list[0] is not None:
                 self.state_pool_list=manager.list(self.state_pool_list)
-                self.action_pool_list=manager.list(self.state_pool_list)
-                self.next_state_pool_list=manager.list(self.state_pool_list)
-                self.reward_pool_list=manager.list(self.state_pool_list)
-                self.done_pool_list=manager.list(self.state_pool_list)
+                self.action_pool_list=manager.list(self.action_pool_list)
+                self.next_state_pool_list=manager.list(self.next_state_pool_list)
+                self.reward_pool_list=manager.list(self.reward_pool_list)
+                self.done_pool_list=manager.list(self.done_pool_list)
                 if self.clearing_freq!=None:
                     self.store_counter=manager.list(self.store_counter)
             else:
@@ -1235,10 +1239,10 @@ class RL:
             manager=mp.Manager()
             if save_data and len(self.state_pool_list)!=0 and self.state_pool_list[0] is not None:
                 self.state_pool_list=manager.list(self.state_pool_list)
-                self.action_pool_list=manager.list(self.state_pool_list)
-                self.next_state_pool_list=manager.list(self.state_pool_list)
-                self.reward_pool_list=manager.list(self.state_pool_list)
-                self.done_pool_list=manager.list(self.state_pool_list)
+                self.action_pool_list=manager.list(self.action_pool_list)
+                self.next_state_pool_list=manager.list(self.next_state_pool_list)
+                self.reward_pool_list=manager.list(self.reward_pool_list)
+                self.done_pool_list=manager.list(self.done_pool_list)
                 if self.clearing_freq!=None:
                     self.store_counter=manager.list(self.store_counter)
             else:
