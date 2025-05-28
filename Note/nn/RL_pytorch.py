@@ -284,11 +284,12 @@ class RL_pytorch:
                         if self.batch_counter%self.update_batches==0:
                             self.update_param()
                             if self.PPO:
-                                self.state_pool=None
-                                self.action_pool=None
-                                self.next_state_pool=None
-                                self.reward_pool=None
-                                self.done_pool=None
+                                for p in range(self.processes):
+                                    self.state_pool_list[p]=None
+                                    self.action_pool_list[p]=None
+                                    self.next_state_pool_list[p]=None
+                                    self.reward_pool_list[p]=None
+                                    self.done_pool_list[p]=None
                 if len(self.state_pool)%self.batch!=0:
                     state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.data_func()
                     loss+=self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer)
@@ -297,11 +298,12 @@ class RL_pytorch:
                         if self.batch_counter%self.update_batches==0:
                             self.update_param()
                             if self.PPO:
-                                self.state_pool=None
-                                self.action_pool=None
-                                self.next_state_pool=None
-                                self.reward_pool=None
-                                self.done_pool=None
+                                for p in range(self.processes):
+                                    self.state_pool_list[p]=None
+                                    self.action_pool_list[p]=None
+                                    self.next_state_pool_list[p]=None
+                                    self.reward_pool_list[p]=None
+                                    self.done_pool_list[p]=None
             else:
                 if self.pool_network==True:
                     train_ds=DataLoader((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool),batch_size=self.batch)
@@ -314,11 +316,12 @@ class RL_pytorch:
                         if self.batch_counter%self.update_batches==0:
                             self.update_param()
                             if self.PPO:
-                                self.state_pool=None
-                                self.action_pool=None
-                                self.next_state_pool=None
-                                self.reward_pool=None
-                                self.done_pool=None
+                                for p in range(self.processes):
+                                    self.state_pool_list[p]=None
+                                    self.action_pool_list[p]=None
+                                    self.next_state_pool_list[p]=None
+                                    self.reward_pool_list[p]=None
+                                    self.done_pool_list[p]=None
             if self.update_steps!=None:
                 if self.step_counter%self.update_steps==0:
                     self.update_param()
@@ -431,12 +434,6 @@ class RL_pytorch:
         self.reward[p]=0
         s=self.env_(initial=True,p=p)
         s=np.array(s)
-        if self.PPO==True:
-            self.state_pool_list[p]=None
-            self.action_pool_list[p]=None
-            self.next_state_pool_list[p]=None
-            self.reward_pool_list[p]=None
-            self.done_pool_list[p]=None
         while True:
             if self.PR!=True and self.HER!=True:
                 if self.state_pool_list[p] is None:
@@ -508,10 +505,10 @@ class RL_pytorch:
             manager=mp.Manager()
             if save_data and len(self.state_pool_list)!=0 and self.state_pool_list[0] is not None:
                 self.state_pool_list=manager.list(self.state_pool_list)
-                self.action_pool_list=manager.list(self.state_pool_list)
-                self.next_state_pool_list=manager.list(self.state_pool_list)
-                self.reward_pool_list=manager.list(self.state_pool_list)
-                self.done_pool_list=manager.list(self.state_pool_list)
+                self.action_pool_list=manager.list(self.action_pool_list)
+                self.next_state_pool_list=manager.list(self.next_state_pool_list)
+                self.reward_pool_list=manager.list(self.reward_pool_list)
+                self.done_pool_list=manager.list(self.done_pool_list)
                 if self.clearing_freq!=None:
                     self.store_counter=manager.list(self.store_counter)
             else:
