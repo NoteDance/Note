@@ -50,37 +50,30 @@ class ASGD(optimizer.Optimizer):
     
     def reset(self):
         self._iterations.assign(0)
-        for var in self._trainable_variables:
-            self.prev_param_norm[self._get_variable_index(var)].assign(0)
-            self.prev_grad_norm[self._get_variable_index(var)].assign(0)
-            self.curr_param_norm[self._get_variable_index(var)].assign(0)
-            self.curr_grad_norm[self._get_variable_index(var)].assign(0)
-            self.lr_[self._get_variable_index(var)].assign(self.lr)
-            self.theta_[self._get_variable_index(var)].assign(self.theta)
+        self.prev_param_norm.assign(0)
+        self.prev_grad_norm.assign(0)
+        self.curr_param_norm.assign(0)
+        self.curr_grad_norm.assign(0)
+        self.lr_.assign(self.lr)
+        self.theta_.assign(self.theta)
 
     def build(self, var_list):
         if self.built:
             return
         super().build(var_list)
-        self.prev_param_norm = []
-        self.prev_grad_norm = []
-        self.curr_param_norm = []
-        self.curr_grad_norm = []
-        self.lr_ = []
-        self.theta_ = []
-        for var in var_list:
-            self.prev_param_norm.append(tf.Variable(tf.zeros((), dtype=var.dtype)))
-            self.prev_grad_norm.append(tf.Variable(tf.zeros((), dtype=var.dtype)))
-            self.curr_param_norm.append(tf.Variable(tf.zeros((), dtype=var.dtype)))
-            self.curr_grad_norm.append(tf.Variable(tf.zeros((), dtype=var.dtype)))
-            self.lr_.append(tf.Variable(tf.cast(self.lr_, var.dtype)))
-            self.theta_.append(tf.Variable(tf.cast(self.theta, var.dtype)))
-            self._track_variable(self.prev_param_norm[-1])
-            self._track_variable(self.prev_grad_norm[-1])
-            self._track_variable(self.curr_param_norm[-1])
-            self._track_variable(self.curr_grad_norm[-1])
-            self._track_variable(self.lr_[-1])
-            self._track_variable(self.theta_[-1])
+        self.prev_param_norm = tf.Variable(tf.zeros((), dtype=tf.float32))
+        self.prev_grad_norm = tf.Variable(tf.zeros((), dtype=tf.float32))
+        self.curr_param_norm = tf.Variable(tf.zeros((), dtype=tf.float32))
+        self.curr_grad_norm = tf.Variable(tf.zeros((), dtype=tf.float32))
+        self.lr_ = tf.Variable(tf.cast(self.lr_, tf.float32))
+        self.theta_ = tf.Variable(tf.cast(self.theta, tf.float32))
+        self._track_variable(self.prev_param_norm)
+        self._track_variable(self.prev_grad_norm)
+        self._track_variable(self.curr_param_norm)
+        self._track_variable(self.curr_grad_norm)
+        self._track_variable(self.lr_)
+        self._track_variable(self.theta_)
+
     
     @staticmethod
     def get_norms_by_group(params, grads):
@@ -106,50 +99,46 @@ class ASGD(optimizer.Optimizer):
         self.update_step(grads, trainable_variables, learning_rate)
 
     def update_step(self, grads, trainable_variables, learning_rate):
+        lr = self.lr_
+        theta = self.theta_
+        
+        p_norm, g_norm = self.get_norms_by_group(trainable_variables, grads)
+        
+        def true_fn():
+            self.prev_param_norm.assign(p_norm)
+            self.prev_grad_norm.assign(g_norm)
+        def false_fn():
+            pass
+        tf.cond(self.iterations == 0, true_fn, false_fn)
+        self.curr_param_norm.assign(p_norm)
+        self.curr_grad_norm.assign(g_norm)
+        
+        param_diff_norm = self.curr_param_norm - self.prev_param_norm
+        grad_diff_norm = self.curr_grad_norm - self.prev_grad_norm
+        
+        new_lr = lr * tf.sqrt(1 + self.amplifier * theta)
+        def true_fn():
+            return tf.minimum(new_lr, param_diff_norm / (self.dampening * grad_diff_norm)) + self.epsilon
+        def false_fn():
+            return new_lr
+        new_lr = tf.cond(param_diff_norm > 0 and grad_diff_norm > 0, true_fn, false_fn)
+        
+        theta.assign(new_lr / lr)
+        lr.assign(new_lr)
+        
+        self.prev_param_norm.assign(self.curr_param_norm)
+        self.prev_grad_norm.assign(self.curr_grad_norm)
         for variable, gradient in zip(trainable_variables, grads):
             if tf.keras.backend.is_sparse(gradient):
                 raise RuntimeError(
                     'ASGD does not support sparse gradient.')
-                
-            lr = self.lr_[self._get_variable_index(variable)]
-            theta = self.theta_[self._get_variable_index(variable)]
-            
-            prev_param_norm = self.prev_param_norm[self._get_variable_index(variable)]
-            prev_grad_norm = self.prev_grad_norm[self._get_variable_index(variable)]
-            curr_param_norm = self.curr_param_norm[self._get_variable_index(variable)]
-            curr_grad_norm = self.curr_grad_norm[self._get_variable_index(variable)]
-            p_norm, g_norm = self.get_norms_by_group(trainable_variables, grads)
-            def true_fn():
-                prev_param_norm.assign(p_norm)
-                prev_grad_norm.assign(g_norm)
-            def false_fn():
-                pass
-            tf.cond(self.iterations == 0, true_fn, false_fn)
-            curr_param_norm.assign(p_norm)
-            curr_grad_norm.assign(g_norm)
-            
-            param_diff_norm = curr_param_norm - prev_param_norm
-            grad_diff_norm = curr_grad_norm - prev_grad_norm
-            
-            new_lr = lr * tf.sqrt(1 + self.amplifier * theta)
-            def true_fn():
-                return tf.minimum(new_lr, param_diff_norm / (self.dampening * grad_diff_norm)) + self.epsilon
-            def false_fn():
-                return new_lr
-            new_lr = tf.cond(param_diff_norm > 0 and grad_diff_norm > 0, true_fn, false_fn)
-            
-            theta.assign(new_lr / lr)
-            lr.assign(new_lr)
-            
-            prev_param_norm.assign(curr_param_norm)
-            prev_grad_norm.assign(curr_grad_norm)
             
             if self.weight_decouple:
                 variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr)))
             elif self.weight_decay > 0.0:
                 gradient += variable * self.weight_decay
                 
-            variable.assign_add(gradient * -new_lr)
+            variable.assign_add(gradient * tf.cast(-new_lr, variable.dtype))
 
     def get_config(self):
         config = super().get_config()
