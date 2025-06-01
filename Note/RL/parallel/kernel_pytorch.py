@@ -37,6 +37,7 @@ class kernel:
     
     
     def init(self,manager):
+        self.nn.genv=manager.list(self.nn.genv)
         if self.state_pool==None or not self.save_data:
             self.state_pool=manager.dict()
             self.action_pool=manager.dict()
