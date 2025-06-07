@@ -1096,8 +1096,8 @@ class RL:
                         self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
                         self.reward_pool[7]=np.concatenate(self.reward_pool_list)
                         self.done_pool[7]=np.concatenate(self.done_pool_list)
-                        if pool_size_!=None and len(self.state_pool)>=pool_size_:
-                            idx=np.random.choice(self.state_pool.shape[0], size=pool_size_, replace=False)
+                        if pool_size_!=None and len(self.state_pool[7])>=pool_size_:
+                            idx=np.random.choice(self.state_pool[7].shape[0], size=pool_size_, replace=False)
                             self.state_pool[7]=self.state_pool[7][idx]
                             self.action_pool[7]=self.action_pool[7][idx]
                             self.next_state_pool[7]=self.next_state_pool[7][idx]
@@ -1190,8 +1190,8 @@ class RL:
                         self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
                         self.reward_pool[7]=np.concatenate(self.reward_pool_list)
                         self.done_pool[7]=np.concatenate(self.done_pool_list)
-                        if pool_size_!=None and len(self.state_pool)>=pool_size_:
-                            idx=np.random.choice(self.state_pool.shape[0], size=self.pool_size_, replace=False)
+                        if pool_size_!=None and len(self.state_pool[7])>=pool_size_:
+                            idx=np.random.choice(self.state_pool[7].shape[0], size=self.pool_size_, replace=False)
                             self.state_pool[7]=self.state_pool[7][idx]
                             self.action_pool[7]=self.action_pool[7][idx]
                             self.next_state_pool[7]=self.next_state_pool[7][idx]
@@ -1405,8 +1405,8 @@ class RL:
                             self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
                             self.reward_pool[7]=np.concatenate(self.reward_pool_list)
                             self.done_pool[7]=np.concatenate(self.done_pool_list)
-                            if pool_size_!=None and len(self.state_pool)>=pool_size_:
-                                idx=np.random.choice(self.state_pool.shape[0], size=pool_size_, replace=False)
+                            if pool_size_!=None and len(self.state_pool[7])>=pool_size_:
+                                idx=np.random.choice(self.state_pool[7].shape[0], size=pool_size_, replace=False)
                                 self.state_pool[7]=self.state_pool[7][idx]
                                 self.action_pool[7]=self.action_pool[7][idx]
                                 self.next_state_pool[7]=self.next_state_pool[7][idx]
@@ -1498,8 +1498,8 @@ class RL:
                             self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
                             self.reward_pool[7]=np.concatenate(self.reward_pool_list)
                             self.done_pool[7]=np.concatenate(self.done_pool_list)
-                            if pool_size_!=None and len(self.state_pool)>=pool_size_:
-                                idx=np.random.choice(self.state_pool.shape[0], size=pool_size_, replace=False)
+                            if pool_size_!=None and len(self.state_pool[7])>=pool_size_:
+                                idx=np.random.choice(self.state_pool[7].shape[0], size=pool_size_, replace=False)
                                 self.state_pool[7]=self.state_pool[7][idx]
                                 self.action_pool[7]=self.action_pool[7][idx]
                                 self.next_state_pool[7]=self.next_state_pool[7][idx]
@@ -1594,8 +1594,8 @@ class RL:
                             self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
                             self.reward_pool[7]=np.concatenate(self.reward_pool_list)
                             self.done_pool[7]=np.concatenate(self.done_pool_list)
-                            if pool_size_!=None and len(self.state_pool)>=pool_size_:
-                                idx=np.random.choice(self.state_pool.shape[0], size=pool_size_, replace=False)
+                            if pool_size_!=None and len(self.state_pool[7])>=pool_size_:
+                                idx=np.random.choice(self.state_pool[7].shape[0], size=pool_size_, replace=False)
                                 self.state_pool[7]=self.state_pool[7][idx]
                                 self.action_pool[7]=self.action_pool[7][idx]
                                 self.next_state_pool[7]=self.next_state_pool[7][idx]
@@ -1693,8 +1693,8 @@ class RL:
                             self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
                             self.reward_pool[7]=np.concatenate(self.reward_pool_list)
                             self.done_pool[7]=np.concatenate(self.done_pool_list)
-                            if pool_size_!=None and len(self.state_pool)>=pool_size_:
-                                idx=np.random.choice(self.state_pool.shape[0], size=pool_size_, replace=False)
+                            if pool_size_!=None and len(self.state_pool[7])>=pool_size_:
+                                idx=np.random.choice(self.state_pool[7].shape[0], size=pool_size_, replace=False)
                                 self.state_pool[7]=self.state_pool[7][idx]
                                 self.action_pool[7]=self.action_pool[7][idx]
                                 self.next_state_pool[7]=self.next_state_pool[7][idx]
@@ -1794,8 +1794,8 @@ class RL:
                             self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
                             self.reward_pool[7]=np.concatenate(self.reward_pool_list)
                             self.done_pool[7]=np.concatenate(self.done_pool_list)
-                            if pool_size_!=None and len(self.state_pool)>=pool_size_:
-                                idx=np.random.choice(self.state_pool.shape[0], size=pool_size_, replace=False)
+                            if pool_size_!=None and len(self.state_pool[7])>=pool_size_:
+                                idx=np.random.choice(self.state_pool[7].shape[0], size=pool_size_, replace=False)
                                 self.state_pool[7]=self.state_pool[7][idx]
                                 self.action_pool[7]=self.action_pool[7][idx]
                                 self.next_state_pool[7]=self.next_state_pool[7][idx]
@@ -1893,8 +1893,8 @@ class RL:
                             self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
                             self.reward_pool[7]=np.concatenate(self.reward_pool_list)
                             self.done_pool[7]=np.concatenate(self.done_pool_list)
-                            if pool_size_!=None and len(self.state_pool)>=pool_size_:
-                                idx=np.random.choice(self.state_pool.shape[0], size=pool_size_, replace=False)
+                            if pool_size_!=None and len(self.state_pool[7])>=pool_size_:
+                                idx=np.random.choice(self.state_pool[7].shape[0], size=pool_size_, replace=False)
                                 self.state_pool[7]=self.state_pool[7][idx]
                                 self.action_pool[7]=self.action_pool[7][idx]
                                 self.next_state_pool[7]=self.next_state_pool[7][idx]
