@@ -120,7 +120,7 @@ class OptFinder_rl:
                 self.best_opt = self.agent.optimizer
                 self.best_loss = mean_loss
 
-    def find(self, train_loss=None, pool_network=True, processes=None, processes_her=None, processes_pr=None, strategy=None, episodes=1, metrics='reward', jit_compile=True):
+    def find(self, train_loss=None, pool_network=True, processes=None, processes_her=None, processes_pr=None, strategy=None, random=True, num_updates=None, episodes=1, metrics='reward', jit_compile=True):
         # Save weights into a file
         initial_weights = [tf.Variable(param.read_value()) for param in nest.flatten(self.agent.param)]
         
@@ -140,7 +140,9 @@ class OptFinder_rl:
                                pool_network=pool_network,
                                processes=processes,
                                processes_her=processes_her,
-                               processes_pr=processes_her,
+                               processes_pr=processes_pr,
+                               random=random,
+                               num_updates=num_updates,
                                callbacks=[callback],
                                jit_compile=jit_compile,
                                p=0)
@@ -150,7 +152,9 @@ class OptFinder_rl:
                                pool_network=pool_network,
                                processes=processes,
                                processes_her=processes_her,
-                               processes_pr=processes_her,
+                               processes_pr=processes_pr,
+                               random=random,
+                               num_updates=num_updates,
                                callbacks=[callback],
                                jit_compile=jit_compile,
                                p=0)
