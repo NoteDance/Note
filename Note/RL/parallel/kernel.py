@@ -101,31 +101,20 @@ class kernel:
     
     
     def set_up(self,policy=None,noise=None,pool_size=None,batch=None,update_steps=None,trial_count=None,criterion=None,PPO=None,HER=None,MARL=None,PR=None,IRL=None):
-        if policy!=None:
-            self.policy=policy
+        self.policy=policy
+        self.noise=noise
         if noise!=None:
-            self.noise=noise
             self.nn.noise=True
-        if pool_size!=None:
-            self.pool_size=pool_size
-        if batch!=None:
-            self.batch=batch
-        if update_steps!=None:
-            self.update_steps=update_steps
-        if trial_count!=None:
-            self.trial_count=trial_count
-        if criterion!=None:
-            self.criterion=criterion
-        if self.PPO!=None:
-            self.PPO=PPO
-        if self.HER!=None:
-            self.HER=HER
-        if self.MARL!=None:
-            self.MARL=MARL
-        if self.PR!=None:
-            self.PR=PR
-        if self.IRL!=None:
-            self.IRL=IRL
+        self.pool_size=pool_size
+        self.batch=batch
+        self.update_steps=update_steps
+        self.trial_count=trial_count
+        self.criterion=criterion
+        self.PPO=PPO
+        self.HER=HER
+        self.MARL=MARL
+        self.PR=PR
+        self.IRL=IRL
         return
     
     
