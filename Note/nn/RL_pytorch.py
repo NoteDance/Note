@@ -42,11 +42,12 @@ class RL_pytorch:
         self.total_time=0
     
     
-    def set(self,policy=None,noise=None,pool_size=None,batch=None,update_batches=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False,MARL=False,PR=False,IRL=False,epsilon=None,initial_TD=7,alpha=0.7):
+    def set(self,policy=None,noise=None,pool_size=None,batch=None,num_updates=None,update_batches=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False,MARL=False,PR=False,IRL=False,epsilon=None,initial_TD=7,alpha=0.7):
         self.policy=policy
         self.noise=noise
         self.pool_size=pool_size
         self.batch=batch
+        self.num_updates=num_updates
         self.update_batches=update_batches
         self.update_steps=update_steps
         self.trial_count=trial_count
@@ -497,7 +498,7 @@ class RL_pytorch:
             s=next_s
     
     
-    def train(self, optimizer, episodes=None, pool_network=True, processes=None, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, random=True, num_updates=None, save_data=True, p=None):
+    def train(self, optimizer, episodes=None, pool_network=True, processes=None, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, random=True, save_data=True, p=None):
         avg_reward=None
         if p==None:
             self.p=9
@@ -519,8 +520,8 @@ class RL_pytorch:
         self.clearing_freq=clearing_freq
         self.window_size_=window_size_
         self.random=random
-        self.num_updates=num_updates
-        self.pool_size_=num_updates*self.batch
+        if self.num_updates!=None:
+            self.pool_size_=self.num_updates*self.batch
         self.save_data=save_data
         if pool_network==True:
             manager=mp.Manager()
