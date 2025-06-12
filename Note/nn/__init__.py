@@ -168,8 +168,7 @@ from Note.nn.interpolate import interpolate
 from Note.nn.lambda_callback import LambdaCallback
 from Note.nn.lr_finder import LRFinder,LRFinder_rl
 from Note.nn.Model import Model
-from Note.nn.parallel_finder import ParallelFinder
-from Note.nn.parallel_finder_rl import ParallelFinder_rl
+from Note.nn.parallel_finder import *
 from Note.nn.nan_to_num import nan_to_num
 from Note.nn.narrow import narrow
 from Note.nn.opt_finder import OptFinder,OptFinder_rl
