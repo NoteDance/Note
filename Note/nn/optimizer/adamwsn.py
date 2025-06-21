@@ -18,20 +18,26 @@ def closest_smaller_divisor_of_n_to_k(n, k):
         def false_fn():
             pass
         tf.cond(tf.logical_or(n <= 1, k <= 1), true_fn, false_fn)
-        closest_smaller_divisor = -2
+        closest_smaller_divisor = -7
         for i in tf.range(k, 0, -1):
             def true_fn():
                 def true_fn():
                     return i
                 def false_fn():
-                    return closest_smaller_divisor
-                return tf.cond(closest_smaller_divisor == -2, true_fn, false_fn)
+                    return -7
+                return tf.cond(closest_smaller_divisor == -7, true_fn, false_fn)
             def false_fn():
-                return -1  # pragma: no cover
+                return -7  # pragma: no cover
             closest_smaller_divisor = tf.cond(n % i == 0, true_fn, false_fn)
         return closest_smaller_divisor
     
     closest_smaller_divisor = tf.cond(n % k == 0, true_fn, false_fn)
+    
+    def true_fn():
+        return -1
+    def false_fn():
+        return closest_smaller_divisor
+    closest_smaller_divisor = tf.cond(closest_smaller_divisor == -7, true_fn, false_fn)
     
     return closest_smaller_divisor
 
