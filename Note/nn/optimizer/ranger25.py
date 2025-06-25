@@ -254,7 +254,7 @@ class Ranger25(optimizer.Optimizer):
             bias_correction1 = 1 - beta1 ** step
             bias_correction2_sq = tf.sqrt(1 - beta2 ** step)
             
-            step_size = lr / bias_correction1
+            step_size = lr * bias_correction2_sq / bias_correction1
             clip = tf.pow(step, 0.25)
             
             alpha_t = self.schedule_alpha(self.t_alpha_beta3, step, self.alpha)
@@ -273,12 +273,20 @@ class Ranger25(optimizer.Optimizer):
             exp_avg_sq = self.exp_avg_sq[self._get_variable_index(p)]
             exp_avg_slow = self.exp_avg_slow[self._get_variable_index(p)]
             
-            de_nom = tf.sqrt(exp_avg_sq) / bias_correction2_sq
+            if self.sn:
+                reshaped_grad = tf.reshape(g, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                second_moment_update = tf.reduce_sum(reshaped_grad ** 2, axis=1, keepdims=True)
+            else:
+                second_moment_update = tf.pow(g, 2)
+            
+            exp_avg_sq.assign(exp_avg_sq * beta2 + second_moment_update * (1.0 - beta2))
+            
+            de_nom = tf.sqrt(exp_avg_sq) + self.epsilon
             
             if self.sn:
                 exp_avg.assign(exp_avg * self.beta1 + g * (1.0 - self.beta1))
                 numerator = tf.reshape(exp_avg, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                normed_grad = tf.reshape((numerator), p.shape)
+                normed_grad = tf.reshape((numerator / de_nom), p.shape)
                 update = normed_grad
             else:
                 normed_grad = tf.clip_by_value(
@@ -288,14 +296,7 @@ class Ranger25(optimizer.Optimizer):
                 )
                 exp_avg.assign(exp_avg * beta1 + normed_grad * (1.0 - beta1))
                 update = exp_avg
-            
-            if self.sn:
-                reshaped_grad = tf.reshape(g, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                second_moment_update = tf.reduce_sum(reshaped_grad ** 2, axis=1, keepdims=True)
-            else:
-                second_moment_update = tf.pow(g, 2)
-            
-            exp_avg_sq.assign(exp_avg_sq * beta2 + second_moment_update * (1.0 - beta2))
+
             exp_avg_slow.assign(exp_avg_slow * beta3_t + normed_grad * (1.0 - beta3_t))
             
             if self.cautious:
@@ -315,7 +316,10 @@ class Ranger25(optimizer.Optimizer):
             update += exp_avg_slow * alpha_t
             
             if self.epsilon is not None:
-                p.assign_add(-step_size * update / (de_nom + self.epsilon))
+                if self.sn:
+                    p.assign_add(-step_size * update)
+                else:
+                    p.assign_add(-step_size * update / de_nom)
             else:
                 p.assign_add(tf.atan2(update, de_nom) * -step_size)
             
