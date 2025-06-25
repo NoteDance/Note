@@ -16,7 +16,6 @@ Copyright 2025 NoteDance
 """
 import tensorflow as tf
 from keras.src.optimizers import optimizer
-import math
 
 
 def unit_norm(x, ord = 2.0):
@@ -185,7 +184,7 @@ class Ranger25(optimizer.Optimizer):
                 ))
 
                 reshaped_grad = tf.reshape(var, (size // self.subset_size_[-1], self.subset_size_[-1]))
-                second_moment_update = tf.reduce_sum(reshaped_grad ** 2, axis=1, keepdims=True)  # fmt: skip
+                second_moment_update = tf.reduce_sum(reshaped_grad ** 2, axis=1, keepdims=True)
                 second_moment_update = tf.Variable(second_moment_update)
                 self.exp_avg_sq.append(self.add_variable_from_reference(
                         reference_variable=second_moment_update, name="exp_avg_sq"
@@ -204,7 +203,7 @@ class Ranger25(optimizer.Optimizer):
         if t_alpha_beta3 is None:
             return beta3
 
-        log_beta1, log_beta3 = math.log(beta1), math.log(beta3)
+        log_beta1, log_beta3 = tf.math.log(beta1), tf.math.log(beta3)
 
         return tf.minimum(
             tf.exp(
