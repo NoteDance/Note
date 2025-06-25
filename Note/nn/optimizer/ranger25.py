@@ -247,6 +247,10 @@ class Ranger25(optimizer.Optimizer):
                 raise RuntimeError(
                     'Ranger25 does not support sparse gradients')
             
+            beta1 = tf.cast(beta1, p.dtype)
+            beta2 = tf.cast(beta2, p.dtype)
+            beta3 = tf.cast(beta3, p.dtype)
+            
             lr = tf.cast(learning_rate, p.dtype)
             
             step = tf.cast(self.iterations + 1, p.dtype)
