@@ -10,6 +10,7 @@ Mixin' every fancy optimizer hacks.
         * OrthoGrad
         * Adaptive gradient clipping
         * Lookahead
+        * Subset-based second-moment estimation (subset normalization)
 
 Copyright 2025 NoteDance
 """
@@ -48,6 +49,41 @@ def agc(
     return tf.where(g_norm > max_norm, clipped_grad, grad)
 
 
+def closest_smaller_divisor_of_n_to_k(n, k):
+    r"""Get closest smaller divisor of n to k."""
+    def true_fn():
+        return k
+    
+    def false_fn():
+        def true_fn():
+            raise ValueError
+        def false_fn():
+            pass
+        tf.cond(tf.logical_or(n <= 1, k <= 1), true_fn, false_fn)
+        closest_smaller_divisor = -7
+        for i in tf.range(k, 0, -1):
+            def true_fn():
+                def true_fn():
+                    return i
+                def false_fn():
+                    return -7
+                return tf.cond(closest_smaller_divisor == -7, true_fn, false_fn)
+            def false_fn():
+                return -7  # pragma: no cover
+            closest_smaller_divisor = tf.cond(n % i == 0, true_fn, false_fn)
+        return closest_smaller_divisor
+    
+    closest_smaller_divisor = tf.cond(n % k == 0, true_fn, false_fn)
+    
+    def true_fn():
+        return -1
+    def false_fn():
+        return closest_smaller_divisor
+    closest_smaller_divisor = tf.cond(closest_smaller_divisor == -7, true_fn, false_fn)
+    
+    return closest_smaller_divisor
+
+
 class Ranger25(optimizer.Optimizer):
     def __init__(
         self,
@@ -64,6 +100,8 @@ class Ranger25(optimizer.Optimizer):
         orthograd=True,
         weight_decouple=True,
         fixed_decay=False,
+        subset_size=-1,
+        sn=True,
         clipnorm=None,
         clipvalue=None,
         global_clipnorm=None,
@@ -100,6 +138,8 @@ class Ranger25(optimizer.Optimizer):
         self.orthograd = orthograd
         self.weight_decouple = weight_decouple
         self.fixed_decay = fixed_decay
+        self.subset_size = subset_size
+        self.sn = sn
     
     def reset(self):
         self._iterations.assign(0)
@@ -127,14 +167,33 @@ class Ranger25(optimizer.Optimizer):
             self.exp_avg.append(self.add_variable_from_reference(
                                 reference_variable=var, name="exp_avg"
                                                     ))
-            self.exp_avg_sq.append(self.add_variable_from_reference(
-                                reference_variable=var, name="exp_avg_sq"
-                                                    ))
             self.exp_avg_slow.append(self.add_variable_from_reference(
                                 reference_variable=var, name="exp_avg_slow"
                                                     ))
             self.slow_momentum.append(tf.Variable(var))
             self._track_variable(self.slow_momentum[-1])
+            if self.sn:
+                size = tf.size(var)
+                
+                def true_fn():
+                    return self.subset_size
+                def false_fn():
+                    return tf.cast(tf.sqrt(size) / tf.abs(tf.cast(self.subset_size, tf.int32)), tf.int32)
+                self.subset_size_.append(closest_smaller_divisor_of_n_to_k(
+                    size,
+                    tf.cond(self.subset_size > 0, true_fn, false_fn)
+                ))
+
+                reshaped_grad = tf.reshape(var, (size // self.subset_size_[-1], self.subset_size_[-1]))
+                second_moment_update = tf.reduce_sum(reshaped_grad ** 2, axis=1, keepdims=True)  # fmt: skip
+                second_moment_update = tf.Variable(second_moment_update)
+                self.exp_avg_sq.append(self.add_variable_from_reference(
+                        reference_variable=second_moment_update, name="exp_avg_sq"
+                    ))
+            else:
+                self.exp_avg_sq.append(self.add_variable_from_reference(
+                        reference_variable=var, name="exp_avg_sq"
+                    ))
     
     @staticmethod
     def schedule_alpha(t_alpha_beta3, step, alpha):
@@ -186,7 +245,7 @@ class Ranger25(optimizer.Optimizer):
         for p, g in zip(trainable_variables, grads):
             if tf.keras.backend.is_sparse(g):
                 raise RuntimeError(
-                    'AdaGC does not support sparse gradients')
+                    'Ranger25 does not support sparse gradients')
             
             lr = tf.cast(learning_rate, p.dtype)
             
@@ -201,6 +260,8 @@ class Ranger25(optimizer.Optimizer):
             alpha_t = self.schedule_alpha(self.t_alpha_beta3, step, self.alpha)
             beta3_t = self.schedule_beta3(self.t_alpha_beta3, step, beta1, beta3)
             
+            size = tf.size(g)
+            
             if self.weight_decouple:
                 p.assign(p * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr)))
             elif self.weight_decay > 0.0:
@@ -211,18 +272,32 @@ class Ranger25(optimizer.Optimizer):
             exp_avg = self.exp_avg[self._get_variable_index(p)]
             exp_avg_sq = self.exp_avg_sq[self._get_variable_index(p)]
             exp_avg_slow = self.exp_avg_slow[self._get_variable_index(p)]
-                
-            normed_grad = tf.clip_by_value(
-                g / tf.maximum(tf.sqrt(exp_avg_sq), self.epsilon if self.epsilon is not None else 1e-8),
-                clip_value_min=-clip,
-                clip_value_max= clip,
-            )
             
-            exp_avg.assign(exp_avg * beta1 + normed_grad * (1.0 - beta1))
-            exp_avg_sq.assign(exp_avg_sq * beta2 + g * g * (1.0 - beta2))
+            de_nom = tf.sqrt(exp_avg_sq) / bias_correction2_sq
+            
+            if self.sn:
+                exp_avg.assign(exp_avg * self.beta1 + g * (1.0 - self.beta1))
+                numerator = tf.reshape(exp_avg, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                normed_grad = tf.reshape((numerator), p.shape)
+                update = normed_grad
+            else:
+                normed_grad = tf.clip_by_value(
+                    g / tf.maximum(tf.sqrt(exp_avg_sq), self.epsilon if self.epsilon is not None else 1e-8),
+                    clip_value_min=-clip,
+                    clip_value_max= clip,
+                )
+                exp_avg.assign(exp_avg * beta1 + normed_grad * (1.0 - beta1))
+                update = exp_avg
+            
+            if self.sn:
+                reshaped_grad = tf.reshape(g, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                second_moment_update = tf.reduce_sum(reshaped_grad ** 2, axis=1, keepdims=True)
+            else:
+                second_moment_update = tf.pow(g, 2)
+            
+            exp_avg_sq.assign(exp_avg_sq * beta2 + second_moment_update * (1.0 - beta2))
             exp_avg_slow.assign(exp_avg_slow * beta3_t + normed_grad * (1.0 - beta3_t))
             
-            update = exp_avg
             if self.cautious:
                 mask = tf.cast(tf.math.greater(update * g, 0), g.dtype)
                 numel = tf.cast(tf.size(mask), g.dtype)
@@ -239,10 +314,8 @@ class Ranger25(optimizer.Optimizer):
                 
             update += exp_avg_slow * alpha_t
             
-            de_nom = tf.sqrt(exp_avg_sq) / bias_correction2_sq
-            
             if self.epsilon is not None:
-                p.assign_add(-step_size * update / de_nom + self.epsilon)
+                p.assign_add(-step_size * update / (de_nom + self.epsilon))
             else:
                 p.assign_add(tf.atan2(update, de_nom) * -step_size)
             
@@ -266,6 +339,9 @@ class Ranger25(optimizer.Optimizer):
                 "orthograd": self.orthograd,
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,
+                "subset_size": self.subset_size,
+                "sn": self.sn,
+                "subset_size_": self.subset_size_,
             }
         )
         return config
