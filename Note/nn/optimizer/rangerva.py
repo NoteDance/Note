@@ -118,6 +118,10 @@ class RangerVA(optimizer.Optimizer):
             self._track_variable(self.slow_buffer[-1])
 
     def update_step(self, gradient, variable, learning_rate):
+        if tf.keras.backend.is_sparse(gradient):
+            raise RuntimeError(
+                'RangerVA optimizer does not support sparse gradients')
+            
         if gradient.dtype != tf.float32:
             gradient = tf.cast(gradient, 'float32')
         if variable.dtype != tf.float32:
@@ -125,10 +129,6 @@ class RangerVA(optimizer.Optimizer):
         else:
             variable_fp32 = tf.convert_to_tensor(variable)
         lr = tf.cast(learning_rate, variable_fp32.dtype)
-        
-        if tf.keras.backend.is_sparse(gradient):
-            raise RuntimeError(
-                'Ranger optimizer does not support sparse gradients')
         
         # begin computations
         exp_avg = self.exp_avg[self._get_variable_index(variable)]
