@@ -48,6 +48,7 @@ from Note.nn.layer.dynamic_tanh import DynamicTanh
 from Note.nn.layer.eca import *
 from Note.nn.layer.einsum_dense import einsum_dense
 from Note.nn.layer.embedding import embedding
+from Note.nn.layer.evo_norm import *
 from Note.nn.layer.FAVOR_attention import FAVOR_attention
 from Note.nn.layer.feed_forward_experts import feed_forward_experts
 from Note.nn.layer.filter_response_norm import filter_response_norm
