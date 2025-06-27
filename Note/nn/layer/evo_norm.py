@@ -134,6 +134,11 @@ class EvoNorm2dB0:
         self.running_var = tf.Variable(tf.ones(num_features))
         self.training = True
         Model.layer_list.append(self)
+        if nn.Model.name!=None and nn.Model.name not in nn.Model.layer_eval:
+            nn.Model.layer_eval[nn.Model.name]=[]
+            nn.Model.layer_eval[nn.Model.name].append(self)
+        elif nn.Model.name!=None:
+            nn.Model.layer_eval[nn.Model.name].append(self)
 
     def __call__(self, x):
         assert len(x.shape) == 4, 'expected 4D input'
@@ -176,6 +181,11 @@ class EvoNorm2dB1:
         self.running_var = tf.Variable(tf.ones(num_features))
         self.training = True
         Model.layer_list.append(self)
+        if nn.Model.name!=None and nn.Model.name not in nn.Model.layer_eval:
+            nn.Model.layer_eval[nn.Model.name]=[]
+            nn.Model.layer_eval[nn.Model.name].append(self)
+        elif nn.Model.name!=None:
+            nn.Model.layer_eval[nn.Model.name].append(self)
 
     def __call__(self, x):
         assert len(x.shape) == 4, 'expected 4D input'
@@ -211,6 +221,11 @@ class EvoNorm2dB2:
         self.running_var = tf.Variable(tf.ones(num_features))
         self.training = True
         Model.layer_list.append(self)
+        if nn.Model.name!=None and nn.Model.name not in nn.Model.layer_eval:
+            nn.Model.layer_eval[nn.Model.name]=[]
+            nn.Model.layer_eval[nn.Model.name].append(self)
+        elif nn.Model.name!=None:
+            nn.Model.layer_eval[nn.Model.name].append(self)
 
     def __call__(self, x):
         assert len(x.shape) == 4, 'expected 4D input'
@@ -250,6 +265,11 @@ class EvoNorm2dS0:
         self.v = nn.Parameter(tf.ones(num_features)) if apply_act else None
         self.training = True
         Model.layer_list.append(self)
+        if nn.Model.name!=None and nn.Model.name not in nn.Model.layer_eval:
+            nn.Model.layer_eval[nn.Model.name]=[]
+            nn.Model.layer_eval[nn.Model.name].append(self)
+        elif nn.Model.name!=None:
+            nn.Model.layer_eval[nn.Model.name].append(self)
 
     def __call__(self, x):
         assert len(x.shape) == 4, 'expected 4D input'
