@@ -103,10 +103,6 @@ class Model:
                 self.info['batch_size']=self.batch_size
                 self.info['loss_object']=self.loss_object
                 self.info['train_loss']=self.train_loss
-                if type(self.optimizer)==list:
-                    self.info['optimizer']=[tf.keras.optimizers.serialize(optimizer) for optimizer in self.optimzer]
-                else:
-                    self.info['optimizer']=tf.keras.optimizers.serialize(self.optimizer)
                 self.info['epochs']=self.epochs
                 self.info['train_accuracy']=self.train_accuracy
                 self.info['test_loss']=self.test_loss
@@ -116,16 +112,16 @@ class Model:
                 self.info['parallel_test']=self.parallel_test_
                 self.info['jit_compile']=self.jit_compile
                 self.info['p']=self.p
+                if type(self.optimizer)==list:
+                    self.info['optimizer']=[tf.keras.optimizers.serialize(optimizer) for optimizer in self.optimzer]
+                else:
+                    self.info['optimizer']=tf.keras.optimizers.serialize(self.optimizer)
             except Exception:
                 pass
         else:
             try:
                 self.info['loss_object']=self.loss_object
                 self.info['global_batch_size']=self.global_batch_size
-                if type(self.optimizer)==list:
-                    self.info['optimizer']=[tf.keras.optimizers.serialize(optimizer) for optimizer in self.optimzer]
-                else:
-                    self.info['optimizer']=tf.keras.optimizers.serialize(self.optimizer)
                 self.info['strategy']=self.strategy
                 self.info['epochs']=self.epochs
                 self.info['num_epochs']=self.num_epochs
@@ -137,6 +133,10 @@ class Model:
                 self.info['eval_steps_per_epoch']=self.eval_steps_per_epoch
                 self.info['jit_compile']=self.jit_compile
                 self.info['p']=self.p
+                if type(self.optimizer)==list:
+                    self.info['optimizer']=[tf.keras.optimizers.serialize(optimizer) for optimizer in self.optimzer]
+                else:
+                    self.info['optimizer']=tf.keras.optimizers.serialize(self.optimizer)
             except Exception:
                 pass
         return self.info
@@ -257,19 +257,31 @@ class Model:
             for name in self.name_list:
                 if flag:
                     for layer in self.layer_eval[name]:
-                        layer.train_flag=False
+                        if hasattr(layer,'train_flag'):
+                            layer.train_flag=False
+                        else:
+                            layer.training=False
                 else:
                     for name in self.layer_eval.keys():
                         for layer in self.layer_eval[name]:
-                            layer.train_flag=True
+                            if hasattr(layer,'train_flag'):
+                                layer.train_flag=True
+                            else:
+                                layer.training=True
         else:
             if flag:
                 for layer in self.layer_eval[name]:
-                    layer.train_flag=False
+                    if hasattr(layer,'train_flag'):
+                        layer.train_flag=False
+                    else:
+                        layer.training=False
             else:
                 for name in self.layer_eval.keys():
                     for layer in self.layer_eval[name]:
-                        layer.train_flag=True
+                        if hasattr(layer,'train_flag'):
+                            layer.train_flag=True
+                        else:
+                            layer.training=True
         return
     
     
