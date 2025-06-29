@@ -223,6 +223,16 @@ class Model:
         return
     
     
+    def register(layer):
+        layer.training = True
+        Model.layer_list.append(layer)
+        if Model.name!=None and Model.name not in Model.layer_eval:
+            Model.layer_eval[Model.name]=[]
+            Model.layer_eval[Model.name].append(layer)
+        elif Model.name!=None:
+            Model.layer_eval[Model.name].append(layer)
+    
+    
     def namespace(name=None):
         Model.name=name
         if name!=None:
