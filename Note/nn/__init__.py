@@ -103,6 +103,7 @@ from Note.nn.layer.multiply import multiply
 from Note.nn.layer.non_local_attn import *
 from Note.nn.layer.norm import norm
 from Note.nn.layer.patch_dropout import PatchDropout
+from Note.nn.layer.patch_embed import PatchEmbed,PatchEmbedWithSize
 from Note.nn.layer.perdimscale_attention import perdimscale_attention
 from Note.nn.layer.permute import permute
 from Note.nn.layer.pos_embed import *
@@ -130,6 +131,7 @@ from Note.nn.layer.spatial_dropout2d import spatial_dropout2d
 from Note.nn.layer.spatial_dropout3d import spatial_dropout3d
 from Note.nn.layer.spectral_norm import spectral_norm
 from Note.nn.layer.split_attn import SplitAttn
+from Note.nn.layer.split_batchnorm import *
 from Note.nn.layer.squeeze_excite import *
 from Note.nn.layer.stochastic_depth import stochastic_depth
 from Note.nn.layer.subtract import subtract
@@ -161,6 +163,7 @@ from Note.nn.coalesce_sparse import coalesce_sparse
 from Note.nn.conv2d_func import conv2d_func
 from Note.nn.cosine_similarity import cosine_similarity
 from Note.nn.create_additive_causal_mask import create_additive_causal_mask
+from Note.nn.format import *
 from Note.nn.gather_mm import gather_mm
 from Note.nn.helpers import *
 from Note.nn.init import *
