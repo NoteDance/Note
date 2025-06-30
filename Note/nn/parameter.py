@@ -9,6 +9,6 @@ def Parameter(data,trainable=True,name=None):
     if Model.name!=None and Model.name not in Model.layer_param:
         Model.layer_param[Model.name]=[]
         Model.layer_param[Model.name].append(param)
-    elif Model.name_!=None:
+    elif Model.name!=None:
         Model.layer_param[Model.name].append(param)
     return param
