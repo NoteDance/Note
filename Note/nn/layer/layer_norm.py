@@ -1,6 +1,5 @@
 import tensorflow as tf
 from Note.nn.initializer import initializer
-from Note.nn.Model import Model
 
 
 class layer_norm:
@@ -51,21 +50,11 @@ class layer_norm:
         if self.center==True:
             self.beta=initializer(shape, self.beta_initializer, self.dtype)
             self.param.append(self.beta)
-            if Model.name!=None and Model.name not in Model.layer_param:
-                Model.layer_param[Model.name]=[]
-                Model.layer_param[Model.name].append(self.beta)
-            elif Model.name!=None:
-                Model.layer_param[Model.name].append(self.beta)
         else:
             self.beta=None
         if self.scale==True:
             self.gamma=initializer(shape, self.gamma_initializer, self.dtype)
             self.param.append(self.gamma)
-            if Model.name!=None and Model.name not in Model.layer_param:
-                Model.layer_param[Model.name]=[]
-                Model.layer_param[Model.name].append(self.gamma)
-            elif Model.name!=None:
-                Model.layer_param[Model.name].append(self.gamma)
         else:
             self.gamma=None
         return
