@@ -1,7 +1,7 @@
 import tensorflow as tf
 from keras import backend
 from keras import ops
-from Note.nn.initializer import initializer
+from Note.nn.initializer import initializer,initializer_
 from multiprocessing import Manager
 from Note.nn.Model import Model
 
@@ -24,19 +24,17 @@ class batch_norm:
         self.output_size=input_size
         self.train_flag=True
         if input_size!=None:
-            self.moving_mean=initializer([input_size], moving_mean_initializer, dtype)
-            self.moving_variance=initializer([input_size], moving_variance_initializer, dtype)
+            self.moving_mean=initializer_([input_size], moving_mean_initializer, dtype)
+            self.moving_variance=initializer_([input_size], moving_variance_initializer, dtype)
             self.param=[]
             if center==True:
-                self.beta=initializer([input_size], beta_initializer, dtype)
-                if trainable==True:
-                    self.param.append(self.beta)
+                self.beta=initializer([input_size], beta_initializer, dtype, trainable)
+                self.param.append(self.beta)
             else:
                 self.beta=None
             if scale==True:
-                self.gamma=initializer([input_size], gamma_initializer, dtype)
-                if trainable==True:
-                    self.param.append(self.gamma)
+                self.gamma=initializer([input_size], gamma_initializer, dtype, trainable)
+                self.param.append(self.gamma)
             else:
                 self.gamma=None
         Model.layer_list.append(self)
@@ -49,19 +47,17 @@ class batch_norm:
     
     def build(self):
         self.output_size=self.input_size
-        self.moving_mean=initializer([self.input_size], self.moving_mean_initializer, self.dtype)
-        self.moving_variance=initializer([self.input_size], self.moving_variance_initializer, self.dtype)
+        self.moving_mean=initializer_([self.input_size], self.moving_mean_initializer, self.dtype)
+        self.moving_variance=initializer_([self.input_size], self.moving_variance_initializer, self.dtype)
         self.param=[]
         if self.center==True:
-            self.beta=initializer([self.input_size], self.beta_initializer, self.dtype)
-            if self.trainable==True:
-                self.param.append(self.beta)
+            self.beta=initializer([self.input_size], self.beta_initializer, self.dtype, self.trainable)
+            self.param.append(self.beta)
         else:
             self.beta=None
         if self.scale==True:
-            self.gamma=initializer([self.input_size], self.gamma_initializer, self.dtype)
-            if self.trainable==True:
-                self.param.append(self.gamma)
+            self.gamma=initializer([self.input_size], self.gamma_initializer, self.dtype, self.trainable)
+            self.param.append(self.gamma)
         else:
             self.gamma=None
         return
@@ -187,8 +183,8 @@ class batch_norm_:
         self.output_size=input_size
         self.train_flag=True
         if input_size!=None:
-            self.moving_mean=initializer([input_size], moving_mean_initializer, dtype)
-            self.moving_variance=initializer([input_size], moving_variance_initializer, dtype)
+            self.moving_mean=initializer_([input_size], moving_mean_initializer, dtype)
+            self.moving_variance=initializer_([input_size], moving_variance_initializer, dtype)
             if parallel:
                 manager=Manager()
                 self.moving_mean=manager.list([self.moving_mean])
@@ -197,15 +193,13 @@ class batch_norm_:
                 Model.ctsl_list.append(self.convert_to_shared_list)
             self.param=[]
             if center==True:
-                self.beta=initializer([input_size], beta_initializer, dtype)
-                if trainable==True:
-                    self.param.append(self.beta)
+                self.beta=initializer([input_size], beta_initializer, dtype, trainable)
+                self.param.append(self.beta)
             else:
                 self.beta=None
             if scale==True:
-                self.gamma=initializer([input_size], gamma_initializer, dtype)
-                if trainable==True:
-                    self.param.append(self.gamma)
+                self.gamma=initializer([input_size], gamma_initializer, dtype, trainable)
+                self.param.append(self.gamma)
             else:
                 self.gamma=None
         Model.layer_list.append(self)
@@ -218,8 +212,8 @@ class batch_norm_:
     
     def build(self):
         self.output_size=self.input_size
-        self.moving_mean=initializer([self.input_size], self.moving_mean_initializer, self.dtype)
-        self.moving_variance=initializer([self.input_size], self.moving_variance_initializer, self.dtype)
+        self.moving_mean=initializer_([self.input_size], self.moving_mean_initializer, self.dtype)
+        self.moving_variance=initializer_([self.input_size], self.moving_variance_initializer, self.dtype)
         if self.parallel:
             manager=Manager()
             self.moving_mean=manager.list([self.moving_mean])
@@ -228,15 +222,13 @@ class batch_norm_:
             Model.ctsl_list.append(self.convert_to_shared_list)
         self.param=[]
         if self.center==True:
-            self.beta=initializer([self.input_size], self.beta_initializer, self.dtype)
-            if self.trainable==True:
-                self.param.append(self.beta)
+            self.beta=initializer([self.input_size], self.beta_initializer, self.dtype, self.trainable)
+            self.param.append(self.beta)
         else:
             self.beta=None
         if self.scale==True:
-            self.gamma=initializer([self.input_size], self.gamma_initializer, self.dtype)
-            if self.trainable==True:
-                self.param.append(self.gamma)
+            self.gamma=initializer([self.input_size], self.gamma_initializer, self.dtype, self.trainable)
+            self.param.append(self.gamma)
         else:
             self.gamma=None
         return
