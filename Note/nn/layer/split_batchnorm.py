@@ -27,19 +27,19 @@ class SplitBatchNorm(nn.batch_norm):
             self.aux_bn.append(nn.batch_norm(num_features, epsilon=eps, momentum=momentum, center=center, scale=scale))
         nn.Model.register(self)
 
-    def __call__(self, input, training=None):
+    def __call__(self, input, training=None, mask=None):
         if training!=None:
             self.training=training
         if self.training:  # aux BN only relevant while training
             split_size = input.shape[0] // self.num_splits
             assert input.shape[0] == split_size * self.num_splits, "batch size must be evenly divisible by num_splits"
             split_input = tf.split(input, split_size)
-            x = [super().__call__(split_input[0])]
+            x = [super().__call__(split_input[0], training, mask)]
             for i, a in enumerate(self.aux_bn):
-                x.append(a(split_input[i + 1]))
+                x.append(a(split_input[i + 1], training, mask))
             return tf.concat(x, axis=0)
         else:
-            return super().__call__(input)
+            return super().__call__(input, training, mask)
 
 
 def convert_splitbn_model(module, num_splits=2):
