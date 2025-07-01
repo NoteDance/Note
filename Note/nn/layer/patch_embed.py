@@ -241,3 +241,251 @@ def resample_patch_embed(
         patch_embed, pinv_matrix, new_size_tuple, orig_dtype, DTYPE_INTERMEDIATE
     )
     return resampled_patch_embed
+
+
+class PatchEmbedResamplerFixedOrigSize:
+    """
+    Resample patch embedding weights from a fixed original size,
+    caching the pseudoinverse matrix based on the target size.
+    """
+    def __init__(
+        self,
+        orig_size: Tuple[int, int],
+        interpolation: str = 'bicubic',
+        antialias: bool = True
+    ):
+        """
+        Args:
+            orig_size (Tuple[int, int]): The expected original (height, width) of input patch_embed tensors.
+            interpolation (str): Interpolation mode.
+            antialias (bool): Use anti-aliasing filter in resize.
+        """
+        assert isinstance(orig_size, tuple) and len(orig_size) == 2, \
+            "`orig_size` must be a tuple of (height, width)"
+        self.orig_size = orig_size # expected original size
+        self.interpolation = interpolation
+        self.antialias = antialias
+        # Cache map key is the target new_size tuple
+        self._pinv_cache_map: Dict[Tuple[int, int], str] = {}
+
+    def _get_or_create_pinv_matrix(
+        self,
+        new_size: Tuple[int, int],
+        dtype = DTYPE_INTERMEDIATE
+    ):
+        """Retrieves the cached pinv matrix or computes and caches it for the given new_size."""
+        cache_key = new_size
+        buffer_name = self._pinv_cache_map.get(cache_key)
+
+        if buffer_name and hasattr(self, buffer_name):
+            pinv_matrix = getattr(self, buffer_name)
+            if pinv_matrix.dtype == dtype:
+                 return pinv_matrix
+
+        # Calculate the matrix if not cached or needs update
+        resize_mat = _compute_resize_matrix(
+            self.orig_size, new_size, self.interpolation, self.antialias, dtype
+        )
+        pinv_matrix = tf.linalg.pinv(resize_mat)  # Calculates the pseudoinverse matrix used for resampling
+
+        # Cache using register_buffer
+        buffer_name = f"pinv_{new_size[0]}x{new_size[1]}"
+        if hasattr(self, buffer_name):
+             delattr(self, buffer_name)
+        self.register_buffer(buffer_name, pinv_matrix)
+        self._pinv_cache_map[cache_key] = buffer_name # Map new_size key to buffer name
+
+        return pinv_matrix
+
+    def __call__(self, patch_embed, new_size: List[int]):
+        """ Resamples the patch embedding weights to new_size.
+
+        Args:
+            patch_embed (torch.Tensor): Original weights (H_orig, W_orig, in_ch, out_ch).
+            new_size (List[int]): Target [height, width].
+
+        Returns:
+            tf.Tensor: Resampled weights.
+        """
+        assert len(patch_embed.shape) == 4
+        assert len(new_size) == 2
+
+        # Input Validation
+        input_size = tuple(patch_embed.shape[1:3])
+        assert input_size == self.orig_size, \
+            f"Input patch_embed spatial size {input_size} does not match " \
+            f"module's expected original size {self.orig_size}"
+
+        new_size_tuple: Tuple[int, int] = tuple(new_size)
+
+        # Check no-op case against self.orig_size
+        if self.orig_size == new_size_tuple:
+            return patch_embed
+
+        orig_dtype = patch_embed.dtype
+
+        # Get or compute the required pseudoinverse matrix
+        pinv_matrix = self._get_or_create_pinv_matrix(new_size_tuple)
+
+        # Apply the resampling
+        resampled_patch_embed = _apply_resampling(patch_embed, pinv_matrix, new_size_tuple, orig_dtype)
+
+        return resampled_patch_embed
+
+
+class PatchEmbedInterpolator:
+    """Dynamically interpolates patch embedding weights for variable patch sizes.
+
+    This module wraps patch embedding weight resampling functionality to support
+    on-the-fly patch size variation during training. It handles both Conv2d and
+    Linear patch embeddings.
+
+    Args:
+        base_patch_size: The original patch size the model was initialized with
+        in_chans: Number of input channels
+        embed_dim: Embedding dimension
+        interpolation: Interpolation mode for resampling
+        antialias: Whether to use antialiasing during interpolation
+    """
+
+    def __init__(
+        self,
+        base_patch_size: Tuple[int, int],
+        in_chans: int = 3,
+        embed_dim: int = 768,
+        interpolation: str = 'bicubic',
+        antialias: bool = True,
+    ):
+        self.base_patch_size = base_patch_size
+        self.in_chans = in_chans
+        self.embed_dim = embed_dim
+        self.interpolation = interpolation
+        self.antialias = antialias
+
+    def resample_linear_weight(
+        self,
+        weight,
+        target_patch_size: Tuple[int, int],
+    ):
+        """Resample linear patch embedding weights for a new patch size.
+
+        Args:
+            weight: Linear weight tensor of shape [patch_h * patch_w * in_chans, embed_dim]
+            target_patch_size: Target (patch_h, patch_w) to resample to
+
+        Returns:
+            Resampled weight tensor
+        """
+        if target_patch_size == self.base_patch_size:
+            return weight
+
+        embed_dim = weight.shape[-1]
+        base_ph, base_pw = self.base_patch_size
+        target_ph, target_pw = target_patch_size
+
+        # Reshape linear weight to conv2d format
+        # [ph*pw*C, embed_dim] -> [ph, pw, C, embed_dim]
+        weight_conv = tf.reshape(weight, (base_ph, base_pw, self.in_chans, embed_dim))
+
+        # Resample using existing function
+        weight_conv_resampled = resample_patch_embed(
+            weight_conv,
+            new_size=[target_ph, target_pw],
+            interpolation=self.interpolation,
+            antialias=self.antialias,
+            verbose=False,
+        )
+
+        # Reshape back to linear format
+        # [ph, pw, C, embed_dim] -> [ph*pw*C, embed_dim]
+        weight_resampled = tf.reshape(weight_conv_resampled, (-1, embed_dim))
+
+        return weight_resampled
+
+    def resample_conv_weight(
+        self,
+        weight,
+        target_patch_size: Tuple[int, int],
+    ):
+        """Resample conv2d patch embedding weights for a new patch size.
+
+        Args:
+            weight: Conv2d weight tensor of shape [patch_h, patch_w, in_chans, embed_dim]
+            target_patch_size: Target (patch_h, patch_w) to resample to
+
+        Returns:
+            Resampled weight tensor
+        """
+        if target_patch_size == self.base_patch_size:
+            return weight
+
+        # Resample using existing function
+        weight_resampled = resample_patch_embed(
+            weight,
+            new_size=list(target_patch_size),
+            interpolation=self.interpolation,
+            antialias=self.antialias,
+            verbose=False,
+        )
+
+        return weight_resampled
+
+    def __call__(
+        self,
+        patches,
+        proj_weight,
+        proj_bias = None,
+        patch_size: Optional[Tuple[int, int]] = None,
+        is_linear: bool = True,
+    ):
+        """Apply patch embedding with dynamic weight resampling.
+
+        Args:
+            patches: Input patches
+                - For linear mode with resampling: [B, N, Ph, Pw, C]
+                - For linear mode without resampling: [B, N, Ph*Pw*C]
+                - For conv mode: [B, C, H, W]
+            proj_weight: Original projection weight
+            proj_bias: Optional projection bias
+            patch_size: Current patch size (if None, uses base_patch_size)
+            is_linear: Whether using linear (True) or conv2d (False) projection
+
+        Returns:
+            Embedded patches
+        """
+        if patch_size is None:
+            patch_size = self.base_patch_size
+
+        if is_linear:
+            if patch_size != self.base_patch_size:
+                # Need to resample - expects unflattened patches
+                assert len(patches.shape) == 5, "Patches must be [B, N, Ph, Pw, C] for resampling"
+                B, N, Ph, Pw, C = patches.shape
+
+                # Resample the weight
+                weight_resampled = self.resample_linear_weight(proj_weight, patch_size)
+
+                # Flatten patches and apply linear projection
+                patches_flat = tf.reshape(patches, (B, N, -1))
+                output = tf.matmul(patches_flat, weight_resampled, transpose_b=True) + proj_bias
+            else:
+                # No resampling needed, patches can be pre-flattened
+                if len(patches.shape) == 5:
+                    B, N, Ph, Pw, C = patches.shape
+                    patches = tf.reshape(patches, (B, N, -1))
+                output = tf.matmul(patches, proj_weight, transpose_b=True) + proj_bias
+        else:
+            # Conv mode
+            if patch_size != self.base_patch_size:
+                weight_resampled = self.resample_conv_weight(proj_weight, patch_size)
+                output = nn.conv2d_func(
+                    patches, weight_resampled, proj_bias,
+                    strides=patch_size, padding=0
+                )
+            else:
+                output = nn.conv2d_func(
+                    patches, proj_weight, proj_bias,
+                    strides=patch_size, padding=0
+                )
+
+        return output
