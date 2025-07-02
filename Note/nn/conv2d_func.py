@@ -7,7 +7,7 @@ def conv2d_func(input, weight, bias=None, strides=1, padding=0, dilations=1, gro
         x = nn.zeropadding2d(padding=padding)(input)
         padding = 'VALID'
     if groups == 1:
-        if bias:
+        if bias is not None:
             x = tf.nn.conv2d(x, weight, strides, padding, dilations=dilations) + bias
         else:
             x = tf.nn.conv2d(x, weight, strides, padding, dilations=dilations)
@@ -19,6 +19,6 @@ def conv2d_func(input, weight, bias=None, strides=1, padding=0, dilations=1, gro
             x = tf.nn.conv2d(input_groups[i], weight_groups[i], strides, padding, dilations=dilations)
             output_groups.append(x)
         x = tf.concat(output_groups, axis=-1)
-        if bias:
+        if bias is not None:
             x = x + bias
     return x
