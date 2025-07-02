@@ -24,6 +24,7 @@ class Model:
     counter=0
     name_list=[]
     name_list_=[]
+    layer_name_list=[]
     ctl_list=[]
     ctsl_list=[]
     name=None
@@ -40,6 +41,7 @@ class Model:
         self.layer_list=Model.layer_list
         self.layer_eval=Model.layer_eval
         self.name_list=Model.name_list_
+        self.layer_name_list=Model.layer_name_list
         self.head=None
         self.head_=None
         self.ft_flag=0
@@ -235,8 +237,9 @@ class Model:
     
     def namespace(name=None):
         Model.name=name
-        if name!=None:
-            Model.name_list_.append(name)
+        assert Model.name not in Model.name_list_, 'Name already exists.'
+        if name==None:
+            Model.name_list_.append(Model.name)
         return
     
     
@@ -1920,6 +1923,7 @@ class Model:
         Model.counter=0
         Model.name_list=[]
         Model.name_list_=[]
+        Model.layer_name_list=[]
         Model.ctl_list=[]
         Model.ctsl_list=[]
         Model.name=None
