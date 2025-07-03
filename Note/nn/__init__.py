@@ -29,6 +29,7 @@ from Note.nn.layer.capsule import capsule
 from Note.nn.layer.cbam import *
 from Note.nn.layer.classifier import *
 from Note.nn.layer.concat import concat
+from Note.nn.layer.cond_conv2d import CondConv2d
 from Note.nn.layer.conv_bn_act import ConvNormAct
 from Note.nn.layer.conv1d import conv1d
 from Note.nn.layer.conv1d_transpose import conv1d_transpose
@@ -75,6 +76,7 @@ from Note.nn.layer.identity import identity
 from Note.nn.layer.interpolate import RegularGridInterpolator
 from Note.nn.layer.kernel_attention import kernel_attention
 from Note.nn.layer.lambda_layer import LambdaLayer
+from Note.nn.layer.layer import Layer
 from Note.nn.layer.layer_norm import layer_norm
 from Note.nn.layer.layer_scale import *
 from Note.nn.layer.Linformer_self_attention import Linformer_self_attention
