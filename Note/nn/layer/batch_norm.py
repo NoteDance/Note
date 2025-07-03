@@ -1,4 +1,5 @@
 import tensorflow as tf
+from Note import nn
 from keras import backend
 from keras import ops
 from Note.nn.initializer import initializer,initializer_
@@ -6,8 +7,9 @@ from multiprocessing import Manager
 from Note.nn.Model import Model
 
 
-class batch_norm:
+class batch_norm(nn.Layer):
     def __init__(self, input_size=None, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, beta_initializer='zeros', gamma_initializer='ones', moving_mean_initializer='zeros', moving_variance_initializer='ones', synchronized=False, trainable=True, dtype='float32'):
+        super().__init__()
         self.input_size=input_size
         self.axis=axis
         self.momentum=momentum
@@ -26,15 +28,12 @@ class batch_norm:
         if input_size!=None:
             self.moving_mean=initializer_([input_size], moving_mean_initializer, dtype)
             self.moving_variance=initializer_([input_size], moving_variance_initializer, dtype)
-            self.param=[]
             if center==True:
                 self.beta=initializer([input_size], beta_initializer, dtype, trainable)
-                self.param.append(self.beta)
             else:
                 self.beta=None
             if scale==True:
                 self.gamma=initializer([input_size], gamma_initializer, dtype, trainable)
-                self.param.append(self.gamma)
             else:
                 self.gamma=None
         Model.layer_list.append(self)
@@ -52,12 +51,10 @@ class batch_norm:
         self.param=[]
         if self.center==True:
             self.beta=initializer([self.input_size], self.beta_initializer, self.dtype, self.trainable)
-            self.param.append(self.beta)
         else:
             self.beta=None
         if self.scale==True:
             self.gamma=initializer([self.input_size], self.gamma_initializer, self.dtype, self.trainable)
-            self.param.append(self.gamma)
         else:
             self.gamma=None
         return
@@ -164,8 +161,9 @@ class batch_norm:
         return ops.squeeze(mean), ops.squeeze(variance)
 
 
-class batch_norm_:
+class batch_norm_(nn.Layer):
     def __init__(self, input_size=None, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, beta_initializer='zeros', gamma_initializer='ones', moving_mean_initializer='zeros', moving_variance_initializer='ones', keepdims=True, trainable=True, parallel=True, dtype='float32'):
+        super().__init__()
         self.input_size=input_size
         self.axis=axis
         self.momentum=momentum
@@ -191,15 +189,12 @@ class batch_norm_:
                 self.moving_var=manager.list([self.moving_var])
                 Model.ctl_list.append(self.convert_to_list)
                 Model.ctsl_list.append(self.convert_to_shared_list)
-            self.param=[]
             if center==True:
                 self.beta=initializer([input_size], beta_initializer, dtype, trainable)
-                self.param.append(self.beta)
             else:
                 self.beta=None
             if scale==True:
                 self.gamma=initializer([input_size], gamma_initializer, dtype, trainable)
-                self.param.append(self.gamma)
             else:
                 self.gamma=None
         Model.layer_list.append(self)
@@ -220,15 +215,12 @@ class batch_norm_:
             self.moving_var=manager.list([self.moving_var])
             Model.ctl_list.append(self.convert_to_list)
             Model.ctsl_list.append(self.convert_to_shared_list)
-        self.param=[]
         if self.center==True:
             self.beta=initializer([self.input_size], self.beta_initializer, self.dtype, self.trainable)
-            self.param.append(self.beta)
         else:
             self.beta=None
         if self.scale==True:
             self.gamma=initializer([self.input_size], self.gamma_initializer, self.dtype, self.trainable)
-            self.param.append(self.gamma)
         else:
             self.gamma=None
         return

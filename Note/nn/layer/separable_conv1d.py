@@ -3,8 +3,9 @@ from Note import nn
 from Note.nn.activation import activation_dict
 
 
-class separable_conv1d: # define a class for separable convolutional layer
+class separable_conv1d(nn.Layer): # define a class for separable convolutional layer
     def __init__(self,filters,kernel_size,depth_multiplier,input_size=None,strides=[1],padding='VALID',data_format='NHWC',dilations=None,weight_initializer='Xavier',bias_initializer='zeros',activation=None,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
+        super().__init__()
         self.kernel_size=kernel_size
         self.depth_multiplier=depth_multiplier
         self.input_size=input_size
@@ -25,9 +26,6 @@ class separable_conv1d: # define a class for separable convolutional layer
             self.pointwise_kernel=nn.initializer([1,depthwise_filter[-1]*depthwise_filter[-2],filters],weight_initializer,dtype,trainable) # initialize the weight matrix for pointwise convolution
             if use_bias==True: # if use bias is True
                 self.bias=nn.initializer([filters],bias_initializer,dtype,trainable) # initialize the bias vector
-                self.param=[self.depthwise_kernel,self.pointwise_kernel,self.bias] # store the parameters in a list
-            else: # if use bias is False
-                self.param=[self.depthwise_kernel,self.pointwise_kernel] # store only the weight matrices in a list
     
     
     def build(self):
@@ -36,9 +34,6 @@ class separable_conv1d: # define a class for separable convolutional layer
         self.pointwise_kernel=nn.initializer([1,depthwise_filter[-1]*depthwise_filter[-2],self.output_size],self.weight_initializer,self.dtype,self.trainable) # initialize the weight matrix for pointwise convolution
         if self.use_bias==True: # if use bias is True
             self.bias=nn.initializer([self.output_size],self.bias_initializer,self.dtype,self.trainable) # initialize the bias vector
-            self.param=[self.depthwise_kernel,self.pointwise_kernel,self.bias] # store the parameters in a list
-        else: # if use bias is False
-            self.param=[self.depthwise_kernel,self.pointwise_kernel] # store only the weight matrices in a list
         return
     
     

@@ -7,8 +7,9 @@ import collections
 _CHR_IDX = string.ascii_lowercase
 
 
-class talking_heads_attention:
+class talking_heads_attention(nn.Layer):
     def __init__(self,attention_axes=None,dropout_rate=0.0,initializer='Xavier',dtype='float32'):
+        super().__init__()
         if attention_axes is not None and not isinstance(
             attention_axes, collections.abc.Sized
         ):
@@ -35,7 +36,6 @@ class talking_heads_attention:
     
         self._pre_softmax_weight = nn.initializer((self._num_heads, self._num_heads), initializer, dtype)
         self._post_softmax_weight = nn.initializer((self._num_heads, self._num_heads), initializer, dtype)
-        self.param=[self._pre_softmax_weight, self._post_softmax_weight]
 
 
     def __call__(self,

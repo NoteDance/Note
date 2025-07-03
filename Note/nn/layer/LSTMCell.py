@@ -2,17 +2,14 @@ import tensorflow as tf # import the TensorFlow library
 from Note import nn
 
 
-class LSTMCell: # define a class for long short-term memory (LSTM) cell
+class LSTMCell(nn.Layer): # define a class for long short-term memory (LSTM) cell
     def __init__(self,weight_shape,weight_initializer='Xavier',bias_initializer='zeros',use_bias=True,trainable=True,dtype='float32'): # define the constructor method
+        super().__init__()
         self.weight=nn.initializer([weight_shape[0]+weight_shape[1],4*weight_shape[1]],weight_initializer,dtype,trainable) # initialize the weight matrix for all gates and candidate cell state
         if use_bias==True: # if use bias is True
             self.bias=nn.initializer([4*weight_shape[1]],bias_initializer,dtype,trainable) # initialize the bias vector for all gates and candidate cell state
         self.use_bias=use_bias # set the use bias flag
         self.output_size=weight_shape[-1]
-        if use_bias==True: # if use bias is True
-            self.param=[self.weight,self.bias] # store the parameters in a list
-        else: # if use bias is False
-            self.param=[self.weight] # store only the weight matrix in a list
     
     
     def __call__(self,data,state): # define the output method

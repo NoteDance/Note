@@ -1,4 +1,5 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.layer.dense import dense
 import dataclasses
 from typing import Tuple
@@ -23,7 +24,7 @@ class RouterMask:
 RouterOutput = RouterMask
 
 
-class router:
+class router(nn.Layer):
   """Abstract base router class, defining router API and inner workings.
 
   Computations are performed in float32 for stability, and returned after
@@ -64,7 +65,7 @@ class router:
         running into training instability (esp. with dtype 'bfloat16' or lower).
       export_metrics: Whether to export metrics using Keras add_metric API.
     """
-
+    super().__init__()
     self.num_experts = num_experts  # Used to check consistency with
                                     # FeedForwardExperts.
     self.jitter_noise = jitter_noise

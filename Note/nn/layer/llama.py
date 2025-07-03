@@ -1,11 +1,13 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.layer.dense import dense
 from Note.nn.activation import activation_dict
 from Note.nn.initializer import initializer
 
 
-class LlamaAttention:
+class LlamaAttention(nn.Layer):
     def __init__(self, dims: int, num_heads: int, dtype='float32'):
+        super().__init__()
         self.num_heads = num_heads
         self.rope = RoPE(dims // num_heads, True)
         self.query_proj = dense(dims, dims, use_bias=False, dtype=dtype)
@@ -13,7 +15,6 @@ class LlamaAttention:
         self.value_proj = dense(dims, dims, use_bias=False, dtype=dtype)
         self.out_proj = dense(dims, dims, use_bias=False, dtype=dtype)
         self.output_size = self.out_proj.output_size
-        self.param = [self.query_proj.param, self.key_proj.param, self.value_proj.param, self.out_proj.param]
 
     def __call__(self, queries, keys, values, mask=None, cache=None):
         queries = self.query_proj(queries)
@@ -51,8 +52,9 @@ class LlamaAttention:
         return self.out_proj(values_hat), (keys, values)
 
 
-class LlamaEncoderLayer:
+class LlamaEncoderLayer(nn.Layer):
     def __init__(self, dims: int, mlp_dims: int, num_heads: int, dtype='float32'):
+        super().__init__()
         self.attention = LlamaAttention(dims, num_heads, dtype)
 
         self.norm1 = RMSNorm(dims, dtype=dtype)
@@ -63,8 +65,6 @@ class LlamaEncoderLayer:
         self.linear3 = dense(dims, mlp_dims, use_bias=False, dtype=dtype)
         
         self.output_size = self.linear3.output_size
-        self.param = [self.attention.param, self.norm1.param, self.norm2.param, self.linear1.param,
-                      self.linear2.param, self.linear3.param]
 
     def __call__(self, x, mask=None, cache=None):
         y = self.norm1(x)
@@ -150,11 +150,11 @@ class RoPE:
         return costheta, sintheta
 
 
-class RMSNorm:
+class RMSNorm(nn.Layer):
     def __init__(self, dims: int, eps: float = 1e-6, dtype='float32'):
+        super().__init__()
         self.gamma = initializer((dims,), 'ones', dtype)
         self.eps = eps
-        self.param = [self.gamma]
 
     def __call__(self, x):
         n = tf.math.rsqrt(tf.math.reduce_mean(tf.math.square(x), axis=-1, keepdims=True) + self.eps)

@@ -16,7 +16,7 @@ def get_padding(kernel_size: int, stride: int = 1, dilation: int = 1, **_) -> in
     return padding
 
 
-class NonLocalAttn:
+class NonLocalAttn(nn.Layer):
     """Spatial NL block for image classification.
 
     This was adapted from https://github.com/BA-Transform/BAT-Image-Classification
@@ -24,6 +24,7 @@ class NonLocalAttn:
     """
 
     def __init__(self, in_channels, use_scale=True,  rd_ratio=1/8, rd_channels=None, rd_divisor=8, **kwargs):
+        super().__init__()
         nn.Model.add()
         if rd_channels is None:
             rd_channels = nn.make_divisible(in_channels * rd_ratio, divisor=rd_divisor)
@@ -66,9 +67,10 @@ class NonLocalAttn:
             l.gamma.assign(nn.constant_(l.gamma, 0))
 
 
-class BilinearAttnTransform:
+class BilinearAttnTransform(nn.Layer):
 
     def __init__(self, in_channels, block_size, groups, act_layer=tf.nn.relu, norm_layer=nn.batch_norm):
+        super().__init__()
         padding = get_padding(kernel_size=1, stride=1, dilation=1)
         self.conv1 = nn.conv2d(groups, 1, in_channels, strides=1, padding=padding, groups=1, dilations=1)
         self.norm_layer1 = norm_layer(groups)
@@ -130,7 +132,7 @@ class BilinearAttnTransform:
         return y
 
 
-class BatNonLocalAttn:
+class BatNonLocalAttn(nn.Layer):
     """ BAT
     Adapted from: https://github.com/BA-Transform/BAT-Image-Classification
     """
@@ -138,6 +140,7 @@ class BatNonLocalAttn:
     def __init__(
             self, in_channels, block_size=7, groups=2, rd_ratio=0.25, rd_channels=None, rd_divisor=8,
             drop_rate=0.2, act_layer=tf.nn.relu, norm_layer=nn.batch_norm, **_):
+        super().__init__()
         if rd_channels is None:
             rd_channels = nn.make_divisible(in_channels * rd_ratio, divisor=rd_divisor)
         padding = get_padding(kernel_size=1, stride=1, dilation=1)

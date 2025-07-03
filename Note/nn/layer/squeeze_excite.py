@@ -15,7 +15,7 @@ from Note import nn
 from Note.nn.activation import activation_dict
 
 
-class SEModule:
+class SEModule(nn.Layer):
     """ SE Module as defined in original SE-Nets with a few additions
     Additions include:
         * divisor can be specified to keep channels % div == 0 (default: 8)
@@ -27,6 +27,7 @@ class SEModule:
     def __init__(
             self, channels, rd_ratio=1. / 16, rd_channels=None, rd_divisor=8, add_maxpool=False,
             bias=True, act_layer=tf.nn.relu, norm_layer=None, gate_layer=tf.nn.sigmoid):
+        super().__init__()
         self.add_maxpool = add_maxpool
         if not rd_channels:
             rd_channels = nn.make_divisible(channels * rd_ratio, rd_divisor, round_limit=0.)
@@ -50,11 +51,12 @@ class SEModule:
 SqueezeExcite = SEModule  # alias
 
 
-class EffectiveSEModule:
+class EffectiveSEModule(nn.Layer):
     """ 'Effective Squeeze-Excitation
     From `CenterMask : Real-Time Anchor-Free Instance Segmentation` - https://arxiv.org/abs/1911.06667
     """
     def __init__(self, channels, add_maxpool=False, gate_layer=activation_dict['hard_sigmoid'], **_):
+        super().__init__()
         self.add_maxpool = add_maxpool
         self.zeropadding2d = nn.zeropadding2d(padding=0)
         self.fc = nn.conv2d(channels, 1, channels)
@@ -73,7 +75,7 @@ class EffectiveSEModule:
 EffectiveSqueezeExcite = EffectiveSEModule  # alias
 
 
-class SqueezeExciteCl:
+class SqueezeExciteCl(nn.Layer):
     """ SE Module as defined in original SE-Nets with a few additions
     Additions include:
         * divisor can be specified to keep channels % div == 0 (default: 8)
@@ -85,6 +87,7 @@ class SqueezeExciteCl:
     def __init__(
             self, channels, rd_ratio=1. / 16, rd_channels=None, rd_divisor=8,
             bias=True, act_layer=tf.nn.relu, gate_layer=tf.nn.sigmoid):
+        super().__init__()
         if not rd_channels:
             rd_channels = nn.make_divisible(channels * rd_ratio, rd_divisor, round_limit=0.)
         self.fc1 = nn.dense(rd_channels, channels, use_bias=bias)

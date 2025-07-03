@@ -3,8 +3,9 @@ from Note import nn
 from Note.nn.activation import activation_dict
 
 
-class depthwise_conv1d: # define a class for depthwise convolutional layer
+class depthwise_conv1d(nn.Layer): # define a class for depthwise convolutional layer
     def __init__(self,kernel_size,depth_multiplier=1,input_size=None,strides=1,padding='VALID',weight_initializer='Xavier',bias_initializer='zeros',activation=None,data_format='NHWC',dilations=None,use_bias=True,trainable=True,dtype='float32',): # define the constructor method
+        super().__init__()
         strides = (1,) + tuple([strides]) * 2 + (1,)
         self.kernel_size=kernel_size
         self.depth_multiplier=depth_multiplier
@@ -24,20 +25,12 @@ class depthwise_conv1d: # define a class for depthwise convolutional layer
             self.depthwise_kernel=nn.initializer([kernel_size,input_size,depth_multiplier],weight_initializer,dtype,trainable) # initialize the weight tensor
             if use_bias==True: # if use bias is True
                 self.bias=nn.initializer([depth_multiplier*input_size],bias_initializer,dtype,trainable) # initialize the bias vector
-            if use_bias==True: # if use bias is True
-                self.param=[self.depthwise_kernel,self.bias] # store the parameters in a list
-            else: # if use bias is False
-                self.param=[self.depthwise_kernel] # store only the weight in a list
     
     
     def build(self):
         self.depthwise_kernel=nn.initializer([self.kernel_size,self.input_size,self.depth_multiplier],self.weight_initializer,self.dtype,self.trainable) # initialize the weight tensor
         if self.use_bias==True: # if use bias is True
             self.bias=nn.initializer([self.depth_multiplier*self.input_size],self.bias_initializer,self.dtype,self.trainable) # initialize the bias vector
-        if self.use_bias==True: # if use bias is True
-            self.param=[self.depthwise_kernel,self.bias] # store the parameters in a list
-        else: # if use bias is False
-            self.param=[self.depthwise_kernel] # store only the weight in a list
         return
     
     

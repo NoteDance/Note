@@ -13,7 +13,7 @@ import tensorflow as tf
 from Note import nn
 
 
-class RotAttentionPool2d:
+class RotAttentionPool2d(nn.Layer):
     """ Attention based 2D feature pooling w/ rotary (relative) pos embedding.
     This is a multi-head attention based replacement for (spatial) average pooling in NN architectures.
 
@@ -39,6 +39,7 @@ class RotAttentionPool2d:
             use_fused_attn = True
     ):
         assert pool_type in ('', 'token')
+        super().__init__()
         self.embed_dim = embed_dim = embed_dim or in_features
         self.in_features = in_features
         self.out_features = out_features or in_features

@@ -1,8 +1,9 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.layer.dense import dense
 from Note.nn.layer.dropout import dropout
 
-class multi_cls_heads:
+class multi_cls_heads(nn.Layer):
   """Pooling heads sharing the same pooling stem."""
 
   def __init__(self,
@@ -27,6 +28,7 @@ class multi_cls_heads:
       dropout_rate: Dropout probability.
       initializer: Initializer for dense layer kernels.
     """
+    super().__init__()
     self.dropout_rate = dropout_rate
     self.inner_dim = inner_dim
     self.cls_list = cls_list

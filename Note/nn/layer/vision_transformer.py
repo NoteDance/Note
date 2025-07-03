@@ -3,7 +3,7 @@ from Note import nn
 from typing import Optional
 
 
-class PatchEmbed:
+class PatchEmbed(nn.Layer):
     """ 2D Image to Patch Embedding
     """
     def __init__(
@@ -15,6 +15,7 @@ class PatchEmbed:
             flatten: bool = True,
             bias: bool = True,
     ):
+        super().__init__()
         self.patch_size = nn.to_2tuple(patch_size)
         if img_size is not None:
             self.img_size = nn.to_2tuple(img_size)
@@ -38,9 +39,10 @@ class PatchEmbed:
         return x
 
 
-class Attention:
+class Attention(nn.Layer):
     def __init__(self, dim, num_heads=8, qkv_bias=False, qk_norm=False, attn_drop=0., proj_drop=0., norm_layer=nn.layer_norm, use_fused_attn=True):
         assert dim % num_heads == 0, 'dim should be divisible by num_heads'
+        super().__init__()
         self.num_heads = num_heads
         self.head_dim = dim // num_heads
         self.scale = self.head_dim ** -0.5
@@ -77,22 +79,24 @@ class Attention:
         return x
 
 
-class LayerScale:
+class LayerScale(nn.Layer):
     def __init__(
             self,
             dim: int,
             init_values: float = 1e-5,
     ):
-        self.gamma = nn.variable(init_values * tf.ones(dim))
+        super().__init__()
+        self.gamma = nn.Parameter(init_values * tf.ones(dim))
 
     def __call__(self, x):
         return x * self.gamma
     
     
-class Block:
+class Block(nn.Layer):
     def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, qk_norm=False, proj_drop=0., attn_drop=0., init_values=None,
                  drop_path=0., act_layer=tf.nn.gelu, norm_layer=nn.layer_norm, mlp_layer=nn.Mlp
                  ):
+        super().__init__()
         self.norm1 = norm_layer(dim)
         self.attn = Attention(
             dim,

@@ -1,8 +1,9 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.initializer import initializer
 
 
-class PReLU:
+class PReLU(nn.Layer):
     """Parametric Rectified Linear Unit.
 
     It follows:
@@ -41,6 +42,7 @@ class PReLU:
         shared_axes=None,
         dtype='float32'
     ):
+        super().__init__()
         self.alpha_initializer = alpha_initializer
         if shared_axes is None:
             self.shared_axes = None
@@ -60,7 +62,6 @@ class PReLU:
                 initializer=alpha_initializer,
                 dtype=dtype
             )
-            self.param=[self.alpha]
 
 
     def __call__(self, data):

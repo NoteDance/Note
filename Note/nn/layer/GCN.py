@@ -1,10 +1,12 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.layer.dense import dense
 from Note.nn.layer.dropout import dropout
 
 
-class GCNLayer:
+class GCNLayer(nn.Layer):
     def __init__(self, in_features, out_features, bias=True):
+        super().__init__()
         self.linear = dense(out_features, in_features, use_bias=bias)
 
     def __call__(self, x, adj):
@@ -12,8 +14,9 @@ class GCNLayer:
         return tf.matmul(adj, x)
 
 
-class GCN:
+class GCN(nn.Layer):
     def __init__(self, x_dim, h_dim, out_dim, nb_layers=2, dropout_rate=0.5, bias=True):
+        super().__init__()
         layer_sizes = [x_dim] + [h_dim] * nb_layers + [out_dim]
         self.gcn_layers = [
             GCNLayer(in_dim, out_dim, bias)

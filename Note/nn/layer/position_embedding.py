@@ -2,7 +2,7 @@ import tensorflow as tf
 from Note import nn
 
 
-class position_embedding:
+class position_embedding(nn.Layer):
   """Creates a positional embedding.
 
   Args:
@@ -28,6 +28,7 @@ class position_embedding:
       raise ValueError(
           "`max_length` must be an Integer, not `None`."
       )
+    super().__init__()
     self.max_length = max_length
     self.input_size = input_size
     self.initializer = initializer
@@ -35,12 +36,10 @@ class position_embedding:
     self.dtype = dtype
     if input_size is not None:
         self._position_embeddings = nn.initializer([max_length, input_size], initializer, dtype)
-        self.param=[self._position_embeddings]
 
   
   def build(self):
       self._position_embeddings = nn.initializer([self.max_length, self.input_size], self.initializer, self.dtype)
-      self.param=[self._position_embeddings]
       return
 
 

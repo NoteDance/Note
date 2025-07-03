@@ -1,4 +1,5 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.layer.dense import dense
 import numpy as np
 
@@ -6,7 +7,7 @@ import numpy as np
 MAX_SEQ_LEN = 4096
 
 
-class BigBird_attention:
+class BigBird_attention(nn.Layer):
   """BigBird, a sparse attention mechanism.
 
   This layer follows the paper "Big Bird: Transformers for Longer Sequences"
@@ -31,6 +32,7 @@ class BigBird_attention:
                seed=None,
                dtype='float32'
                ):
+    super().__init__()
     self.n_head=n_head
     self.key_dim=key_dim
     self.input_size=input_size

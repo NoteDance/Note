@@ -1,19 +1,18 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.initializer import initializer
 
 
-class attention: # define a class for attention mechanism
+class attention(nn.Layer): # define a class for attention mechanism
     def __init__(self, use_scale=False, score_mode="dot", dtype='float32'):
+        super().__init__()
         self.use_scale = use_scale
         self.score_mode = score_mode
         self.dtype=dtype
-        self.param=[]
         if use_scale:
             self.scale = initializer((),'ones',dtype)
-            self.param.append(self.scale)
         if score_mode == "concat":
             self.concat_score_weight = initializer((),'ones',dtype)
-            self.param.append(self.concat_score_weight)
     
     
     def __call__(self, query, value, key=None): # define the output method

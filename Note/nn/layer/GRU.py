@@ -2,8 +2,9 @@ import tensorflow as tf # import the TensorFlow library
 from Note import nn
 
 
-class GRU: # define a class for gated recurrent unit (GRU) layer
+class GRU(nn.Layer): # define a class for gated recurrent unit (GRU) layer
     def __init__(self,output_size,input_size=None,weight_initializer='Xavier',bias_initializer='zeros',return_sequence=False,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
+        super().__init__()
         self.input_size=input_size
         self.weight_initializer=weight_initializer
         self.bias_initializer=bias_initializer
@@ -26,10 +27,6 @@ class GRU: # define a class for gated recurrent unit (GRU) layer
                 self.bias_r=nn.initializer([output_size],bias_initializer,dtype,trainable) # initialize the bias vector for reset gate
                 self.bias_z=nn.initializer([output_size],bias_initializer,dtype,trainable) # initialize the bias vector for update gate
                 self.bias_h=nn.initializer([output_size],bias_initializer,dtype,trainable) # initialize the bias vector for candidate hidden state
-            if use_bias==True: # if use bias is True
-                self.param=[self.weight_r1,self.weight_z1,self.weight_h1,self.weight_r2,self.weight_z2,self.weight_h2,self.bias_r,self.bias_z,self.bias_h] # store the parameters in a list
-            else: # if use bias is False
-                self.param=[self.weight_r1,self.weight_z1,self.weight_h1,self.weight_r2,self.weight_z2,self.weight_h2] # store only the weight matrices in a list
     
     
     def build(self):
@@ -43,10 +40,6 @@ class GRU: # define a class for gated recurrent unit (GRU) layer
             self.bias_r=nn.initializer([self.output_size],self.bias_initializer,self.dtype,self.trainable) # initialize the bias vector for reset gate
             self.bias_z=nn.initializer([self.output_size],self.bias_initializer,self.dtype,self.trainable) # initialize the bias vector for update gate
             self.bias_h=nn.initializer([self.output_size],self.bias_initializer,self.dtype,self.trainable) # initialize the bias vector for candidate hidden state
-        if self.use_bias==True: # if use bias is True
-            self.param=[self.weight_r1,self.weight_z1,self.weight_h1,self.weight_r2,self.weight_z2,self.weight_h2,self.bias_r,self.bias_z,self.bias_h] # store the parameters in a list
-        else: # if use bias is False
-            self.param=[self.weight_r1,self.weight_z1,self.weight_h1,self.weight_r2,self.weight_z2,self.weight_h2] # store only the weight matrices in a list
         return
     
     

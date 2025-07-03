@@ -3,8 +3,9 @@ from Note import nn
 from Note.nn.activation import activation_dict # import the activation function dictionary from Note.nn package
 
 
-class RNN: # define a class for recurrent neural network (RNN) layer
+class RNN(nn.Layer): # define a class for recurrent neural network (RNN) layer
     def __init__(self,output_size,input_size=None,weight_initializer='Xavier',bias_initializer='zeros',activation=None,return_sequence=False,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
+        super().__init__()
         self.input_size=input_size
         self.weight_initializer=weight_initializer
         self.bias_initializer=bias_initializer
@@ -21,10 +22,6 @@ class RNN: # define a class for recurrent neural network (RNN) layer
             self.weight_s=nn.initializer([output_size,output_size],weight_initializer,dtype,trainable) # initialize the weight matrix for previous state
             if use_bias==True: # if use bias is True
                 self.bias=nn.initializer([output_size],bias_initializer,dtype,trainable) # initialize the bias vector
-            if use_bias==True: # if use bias is True
-                self.param=[self.weight_i,self.weight_s,self.bias] # store the parameters in a list
-            else: # if use bias is False
-                self.param=[self.weight_i,self.weight_s] # store only the weight matrices in a list
     
     
     def build(self):
@@ -32,10 +29,6 @@ class RNN: # define a class for recurrent neural network (RNN) layer
         self.weight_s=nn.initializer([self.output_size,self.output_size],self.weight_initializer,self.dtype,self.trainable) # initialize the weight matrix for previous state
         if self.use_bias==True: # if use bias is True
             self.bias=nn.initializer([self.output_size],self.bias_initializer,self.dtype,self.trainable) # initialize the bias vector
-        if self.use_bias==True: # if use bias is True
-            self.param=[self.weight_i,self.weight_s,self.bias] # store the parameters in a list
-        else: # if use bias is False
-            self.param=[self.weight_i,self.weight_s] # store only the weight matrices in a list
         return
     
     

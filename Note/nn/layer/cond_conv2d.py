@@ -25,7 +25,7 @@ def get_condconv_initializer(initializer, num_experts, expert_shape):
     return condconv_initializer
 
 
-class CondConv2d:
+class CondConv2d(nn.Layer):
     """ Conditionally Parameterized Convolution
     Inspired by: https://github.com/tensorflow/tpu/blob/master/models/official/efficientnet/condconv/condconv_layers.py
 
@@ -34,6 +34,7 @@ class CondConv2d:
     """
     
     def __init__(self, filters, kernel_size=3, input_size=None, strides=1, padding='', dilations=1, groups=1, use_bias=False, num_experts=4):
+        super().__init__()
         self.output_size = filters
         self.kernel_size = nn.to_2tuple(kernel_size)
         self.input_size = input_size

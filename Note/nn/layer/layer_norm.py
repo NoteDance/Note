@@ -1,9 +1,11 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.initializer import initializer
 
 
-class layer_norm:
+class layer_norm(nn.Layer):
     def __init__(self, input_size=None, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, rms_scaling=False, beta_initializer='zeros', gamma_initializer='ones', dtype='float32'):
+        super().__init__()
         self.input_size=input_size
         if isinstance(axis, (list, tuple)):
             self.axis = list(axis)
@@ -26,15 +28,12 @@ class layer_norm:
         self.input_shape=None
         if input_size!=None:
             self.output_size=input_size
-            self.param=[]
             if center==True:
                 self.beta=initializer([input_size], beta_initializer, dtype)
-                self.param.append(self.beta)
             else:
                 self.beta=None
             if scale==True:
                 self.gamma=initializer([input_size], gamma_initializer, dtype)
-                self.param.append(self.gamma)
             else:
                 self.gamma=None
     
@@ -46,15 +45,12 @@ class layer_norm:
         else:
             shape = (self.input_shape[self.axis],)
             self.axis = [self.axis]
-        self.param=[]
         if self.center==True:
             self.beta=initializer(shape, self.beta_initializer, self.dtype)
-            self.param.append(self.beta)
         else:
             self.beta=None
         if self.scale==True:
             self.gamma=initializer(shape, self.gamma_initializer, self.dtype)
-            self.param.append(self.gamma)
         else:
             self.gamma=None
         return

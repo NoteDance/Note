@@ -1,7 +1,8 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.initializer import initializer
 
-class vector_quantizer:
+class vector_quantizer(nn.Layer):
   def __init__(
       self,
       embedding_dim: int,
@@ -9,6 +10,7 @@ class vector_quantizer:
       commitment_cost: float,
       dtype = 'float32',
   ):
+    super().__init__()
     self.embedding_dim = embedding_dim
     self.num_embeddings = num_embeddings
     self.commitment_cost = commitment_cost

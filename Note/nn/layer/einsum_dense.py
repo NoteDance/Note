@@ -1,10 +1,11 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.initializer import initializer
 from Note.nn.activation import activation_dict
 import re
 
 
-class einsum_dense:
+class einsum_dense(nn.Layer):
     """A layer that uses `tf.einsum` as the backing computation.
 
     This layer can perform einsum calculations of arbitrary dimensionality.
@@ -40,6 +41,7 @@ class einsum_dense:
         trainable=True,
         dtype='float32'
     ):
+        super().__init__()
         self.equation = equation
         if isinstance(output_shape, int):
             self.partial_output_shape = [output_shape]
@@ -63,14 +65,12 @@ class einsum_dense:
                 self.partial_output_shape,
             )
             kernel_shape, bias_shape, self.full_output_shape = shape_data
-            self.param=[]
             self.weight = initializer(
                 shape=kernel_shape,
                 initializer=self.weight_initializer,
                 trainable=trainable,
                 dtype=dtype,
             )
-            self.param.append(self.weight)
             
             if bias_shape is not None:
                 self.bias = initializer(
@@ -79,7 +79,6 @@ class einsum_dense:
                     trainable=trainable,
                     dtype=dtype,
                 )
-                self.param.append(self.bias)
             else:
                 self.bias = None
 

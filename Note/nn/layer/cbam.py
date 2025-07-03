@@ -11,12 +11,13 @@ import tensorflow as tf
 from Note import nn
 
 
-class ChannelAttn:
+class ChannelAttn(nn.Layer):
     """ Original CBAM channel attention module, currently avg + max pool variant only.
     """
     def __init__(
             self, channels, rd_ratio=1./16, rd_channels=None, rd_divisor=1,
             act_layer=tf.nn.relu, gate_layer=tf.nn.sigmoid, mlp_bias=False):
+        super().__init__()
         if not rd_channels:
             rd_channels = nn.make_divisible(channels * rd_ratio, rd_divisor, round_limit=0.)
         self.fc1 = nn.conv2d(rd_channels, 1, channels, use_bias=mlp_bias)
@@ -45,10 +46,11 @@ class LightChannelAttn(ChannelAttn):
         return x * tf.nn.sigmoid(x_attn)
 
 
-class SpatialAttn:
+class SpatialAttn(nn.Layer):
     """ Original CBAM spatial attention module
     """
     def __init__(self, kernel_size=7, gate_layer=tf.nn.sigmoid):
+        super().__init__()
         self.conv = nn.conv2d(1, kernel_size, 2)
         self.norm_layer = nn.batch_norm(2)
         self.act_layer = tf.nn.relu
@@ -62,10 +64,11 @@ class SpatialAttn:
         return x * self.gate(x_attn)
 
 
-class LightSpatialAttn:
+class LightSpatialAttn(nn.Layer):
     """An experimental 'lightweight' variant that sums avg_pool and max_pool results.
     """
     def __init__(self, kernel_size=7, gate_layer=tf.nn.sigmoid):
+        super().__init__()
         self.conv = nn.conv2d(1, kernel_size, 1)
         self.norm_layer = nn.batch_norm(1)
         self.act_layer = tf.nn.relu
@@ -79,10 +82,11 @@ class LightSpatialAttn:
         return x * self.gate(x_attn)
 
 
-class CbamModule:
+class CbamModule(nn.Layer):
     def __init__(
             self, channels, rd_ratio=1./16, rd_channels=None, rd_divisor=1,
             spatial_kernel_size=7, act_layer=tf.nn.relu, gate_layer=tf.nn.sigmoid, mlp_bias=False):
+        super().__init__()
         self.channel = ChannelAttn(
             channels, rd_ratio=rd_ratio, rd_channels=rd_channels,
             rd_divisor=rd_divisor, act_layer=act_layer, gate_layer=gate_layer, mlp_bias=mlp_bias)
@@ -94,10 +98,11 @@ class CbamModule:
         return x
 
 
-class LightCbamModule:
+class LightCbamModule(nn.Layer):
     def __init__(
             self, channels, rd_ratio=1./16, rd_channels=None, rd_divisor=1,
             spatial_kernel_size=7, act_layer=tf.nn.relu, gate_layer=tf.nn.sigmoid, mlp_bias=False):
+        super().__init__()
         self.channel = LightChannelAttn(
             channels, rd_ratio=rd_ratio, rd_channels=rd_channels,
             rd_divisor=rd_divisor, act_layer=act_layer, gate_layer=gate_layer, mlp_bias=mlp_bias)

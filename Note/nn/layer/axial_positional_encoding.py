@@ -2,7 +2,7 @@ import tensorflow as tf
 from Note import nn
 
 
-class axial_positional_encoding:
+class axial_positional_encoding(nn.Layer):
   """A class for generating axial positional encoding for Reformer models."""
 
   def __init__(self, d_model, axial_shape, initializer='Xavier', trainable=True, dtype='float32'):
@@ -12,6 +12,7 @@ class axial_positional_encoding:
       d_model: int, the dimension of the model embeddings.
       axial_shape: tuple of int, the shape of the input sequence, such as (batch_size, seq_length).
     """
+    super().__init__()
     self.d_model = d_model
     self.axial_shape = axial_shape
     self.num_axial_pos_embs = len(axial_shape)
@@ -24,14 +25,9 @@ class axial_positional_encoding:
     
     self.dtype=dtype
     
-    # Create a list to store the parameters
-    self.param = []
-    
-    if trainable==True:
-        for i, dim in enumerate(axial_shape):
-          weight = nn.initializer((dim, self.d_axial_pos_embs), initializer, dtype)
-          self.weights.append(weight)
-          self.param.append(weight)
+    for i, dim in enumerate(axial_shape):
+      weight = nn.initializer((dim, self.d_axial_pos_embs), initializer, dtype, trainable=trainable)
+      self.weights.append(weight)
     
 
   def __call__(self, data):

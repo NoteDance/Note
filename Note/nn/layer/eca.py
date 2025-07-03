@@ -38,7 +38,7 @@ from Note import nn
 import math
 
 
-class EcaModule:
+class EcaModule(nn.Layer):
     """Constructs an ECA module.
 
     Args:
@@ -60,6 +60,7 @@ class EcaModule:
             t = int(abs(math.log(channels, 2) + beta) / gamma)
             kernel_size = max(t if t % 2 else t + 1, 3)
         assert kernel_size % 2 == 1
+        super().__init__()
         padding = (kernel_size - 1) // 2
         if use_mlp:
             # NOTE 'mlp' mode is a timm experiment, not in paper
@@ -89,7 +90,7 @@ class EcaModule:
 EfficientChannelAttn = EcaModule  # alias
 
 
-class CecaModule:
+class CecaModule(nn.Layer):
     """Constructs a circular ECA module.
 
     ECA module where the conv uses circular padding rather than zero padding.
@@ -119,6 +120,7 @@ class CecaModule:
             kernel_size = max(t if t % 2 else t + 1, 3)
         has_act = act_layer is not None
         assert kernel_size % 2 == 1
+        super().__init__()
 
         # PyTorch circular padding mode is buggy as of pytorch 1.4
         # see https://github.com/pytorch/pytorch/pull/17240

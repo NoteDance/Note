@@ -28,9 +28,10 @@ def add_ml_decoder_head(model):
     return model
 
 
-class TransformerDecoderLayerOptimal:
+class TransformerDecoderLayerOptimal(nn.Layer):
     def __init__(self, d_model, nhead=8, dim_feedforward=2048, dropout=0.1, activation=tf.nn.relu,
                  layer_norm_eps=1e-5) -> None:
+        super().__init__()
         self.norm1 = nn.layer_norm(d_model, epsilon=layer_norm_eps)
         self.dropout = nn.dropout(dropout)
         self.dropout1 = nn.dropout(dropout)
@@ -77,8 +78,10 @@ class TransformerDecoderLayerOptimal:
 #         out = tf.reshape(out, (h.shape[0], self.group_size * self.num_queries))
 #         return out
 
-class MLDecoder:
+
+class MLDecoder(nn.Layer):
     def __init__(self, num_classes, num_of_groups=-1, decoder_embedding=768, initial_num_features=2048):
+        super().__init__()
         embed_len_decoder = 100 if num_of_groups < 0 else num_of_groups
         if embed_len_decoder > num_classes:
             embed_len_decoder = num_classes

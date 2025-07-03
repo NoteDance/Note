@@ -1,8 +1,9 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.layer.einsum_dense import einsum_dense
 from Note.nn.layer.dropout import dropout
 
-class feed_forward_experts:
+class feed_forward_experts(nn.Layer):
   """Feed-forward layer with multiple experts.
 
   Note that call() takes inputs with shape
@@ -39,6 +40,7 @@ class feed_forward_experts:
       kernel_initializer: Initialization scheme for kernel.
       bias_initializer: Initialization scheme for bias.
     """
+    super().__init__()
     self.num_experts = num_experts
     self.d_ff = d_ff
     self.input_shape = input_shape

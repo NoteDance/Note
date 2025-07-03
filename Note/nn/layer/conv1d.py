@@ -3,8 +3,9 @@ from Note import nn
 from Note.nn.Model import Model
 
 
-class conv1d: # define a class for 1D convolutional layer
+class conv1d(nn.Layer): # define a class for 1D convolutional layer
     def __init__(self,filters,kernel_size,input_size=None,strides=[1],padding='VALID',weight_initializer='Xavier',bias_initializer='zeros',activation=None,data_format='NWC',dilations=None,groups=1,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
+        super().__init__()
         if isinstance(kernel_size,int):
             kernel_size=kernel_size
         elif len(kernel_size)==1:
@@ -41,18 +42,12 @@ class conv1d: # define a class for 1D convolutional layer
             self.weight=nn.initializer([kernel_size,input_size//groups,filters],weight_initializer,dtype,trainable) # initialize the weight tensor
             if use_bias==True: # if use bias is True
                 self.bias=nn.initializer([filters],bias_initializer,dtype,trainable) # initialize the bias vector
-                self.param=[self.weight,self.bias] # store the parameters in a list
-            else: # if use bias is False
-                self.param=[self.weight] # store only the weight in a list
     
     
     def build(self):
         self.weight=nn.initializer([self.kernel_size,self.input_size//self.groups,self.output_size],self.weight_initializer,self.dtype,self.trainable) # initialize the weight tensor
         if self.use_bias==True: # if use bias is True
             self.bias=nn.initializer([self.output_size],self.bias_initializer,self.dtype,self.trainable) # initialize the bias vector
-            self.param=[self.weight,self.bias] # store the parameters in a list
-        else: # if use bias is False
-            self.param=[self.weight] # store only the weight in a list
         if self.init_weights!=None:
             self.init_weights(self)
         return

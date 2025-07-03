@@ -4,7 +4,7 @@ import tensorflow as tf
 from Note import nn
 
 
-class MultiQueryAttentionV2:
+class MultiQueryAttentionV2(nn.Layer):
     """Multi Query Attention.
 
     Fast Transformer Decoding: One Write-Head is All You Need
@@ -29,6 +29,7 @@ class MultiQueryAttentionV2:
             proj_drop: float = 0.,
     ):
         """Initializer."""
+        super().__init__()
         dim_out = dim_out or dim
         self.num_heads = num_heads
         self.key_dim = key_dim
@@ -72,7 +73,7 @@ class MultiQueryAttentionV2:
         return tf.reshape(result, s)
 
 
-class Attention2d:
+class Attention2d(nn.Layer):
 
     """ multi-head attention for 2D NHWC tensors"""
     def __init__(
@@ -87,6 +88,7 @@ class Attention2d:
             proj_drop: float = 0.,
             use_fused_attn = True
     ):
+        super().__init__()
         dim_out = dim_out or dim
         dim_attn = dim_out if expand_first else dim
         self.num_heads = num_heads

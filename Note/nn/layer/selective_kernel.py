@@ -22,13 +22,14 @@ def get_padding(kernel_size: int, stride: int = 1, dilation: int = 1, **_) -> in
     return padding
 
 
-class SelectiveKernelAttn:
+class SelectiveKernelAttn(nn.Layer):
     def __init__(self, channels, num_paths=2, attn_channels=32, act_layer=tf.nn.relu, norm_layer=nn.batch_norm):
         """ Selective Kernel Attention Module
 
         Selective Kernel attention mechanism factored out into its own module.
 
         """
+        super().__init__()
         self.num_paths = num_paths
         self.fc_reduce = nn.conv2d(attn_channels, 1, channels, use_bias=False)
         self.bn = norm_layer(attn_channels)
@@ -47,7 +48,7 @@ class SelectiveKernelAttn:
         return x
 
 
-class SelectiveKernel:
+class SelectiveKernel(nn.Layer):
 
     def __init__(self, in_channels, out_channels=None, kernel_size=None, stride=1, dilation=1, groups=1,
                  rd_ratio=1./16, rd_channels=None, rd_divisor=8, keep_3x3=True, split_input=True,
@@ -62,6 +63,7 @@ class SelectiveKernel:
         a noteworthy increase in performance over similar param count models without this attention layer. -Ross W
         
         """
+        super().__init__()
         out_channels = out_channels or in_channels
         kernel_size = kernel_size or [3, 5]  # default to one 3x3 and one 5x5 branch. 5x5 -> 3x3 + dilation
         _kernel_valid(kernel_size)

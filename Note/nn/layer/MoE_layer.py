@@ -1,9 +1,10 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.layer.feed_forward_experts import feed_forward_experts
 from Note.nn.layer.router import MaskedRouter
 
 
-class MoE_layer:
+class MoE_layer(nn.Layer):
   """Sparse MoE layer with per-token routing.
 
   Attributes:
@@ -51,6 +52,7 @@ class MoE_layer:
         recommend choosing a group size on the order of 4096 tokens, although
         this number will vary based on model configuration and size.
     """
+    super().__init__()
     self._experts = experts
     self._router = router
 

@@ -1,7 +1,8 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.layer.dense import dense
 
-class LoRALinear:
+class LoRALinear(nn.Layer):
     @staticmethod
     def from_linear(linear, rank: int = 8):
         # TODO remove when input_dims and output_dims are attributes
@@ -38,6 +39,7 @@ class LoRALinear:
         bias: bool = False,
         scale: float = 20.0,
     ):
+        super().__init__()
         # Regular linear layer weights
         self.linear = dense(output_dims, input_dims, bias=bias)
 

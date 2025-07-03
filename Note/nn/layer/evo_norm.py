@@ -122,8 +122,9 @@ def group_rms(x, groups: int = 32, eps: float = 1e-5):
     return tf.reshape(tf.broadcast_to(rms, x.shape), (B, H, W, C))
 
 
-class EvoNorm2dB0:
+class EvoNorm2dB0(nn.Layer):
     def __init__(self, num_features, apply_act=True, momentum=0.1, eps=1e-3, **_):
+        super().__init__()
         self.apply_act = apply_act  # apply activation (non-linearity)
         self.momentum = momentum
         self.eps = eps
@@ -170,8 +171,9 @@ class EvoNorm2dB0:
         return x * tf.reshape(tf.cast(self.weight, x_dtype), v_shape) + tf.reshape(tf.cast(self.bias, x_dtype), v_shape)
 
 
-class EvoNorm2dB1:
+class EvoNorm2dB1(nn.Layer):
     def __init__(self, num_features, apply_act=True, momentum=0.1, eps=1e-5, **_):
+        super().__init__()
         self.apply_act = apply_act  # apply activation (non-linearity)
         self.momentum = momentum
         self.eps = eps
@@ -210,8 +212,9 @@ class EvoNorm2dB1:
         return x * tf.cast(tf.reshape(self.weight, v_shape), x_dtype) + tf.cast(tf.reshape(self.bias, v_shape), x_dtype)
 
 
-class EvoNorm2dB2:
+class EvoNorm2dB2(nn.Layer):
     def __init__(self, num_features, apply_act=True, momentum=0.1, eps=1e-5, **_):
+        super().__init__()
         self.apply_act = apply_act  # apply activation (non-linearity)
         self.momentum = momentum
         self.eps = eps
@@ -250,8 +253,9 @@ class EvoNorm2dB2:
         return x * tf.cast(tf.reshape(self.weight, v_shape), x_dtype) + tf.cast(tf.reshape(self.bias, v_shape), x_dtype)
 
 
-class EvoNorm2dS0:
+class EvoNorm2dS0(nn.Layer):
     def __init__(self, num_features, groups=32, group_size=None, apply_act=True, eps=1e-5, **_):
+        super().__init__()
         self.apply_act = apply_act  # apply activation (non-linearity)
         if group_size:
             assert num_features % group_size == 0
@@ -297,10 +301,11 @@ class EvoNorm2dS0a(EvoNorm2dS0):
         return x * tf.cast(tf.reshape(self.weight, v_shape), x_dtype) + tf.cast(tf.reshape(self.bias, v_shape), x_dtype)
 
 
-class EvoNorm2dS1:
+class EvoNorm2dS1(nn.Layer):
     def __init__(
             self, num_features, groups=32, group_size=None,
             apply_act=True, act_layer=None, eps=1e-5, **_):
+        super().__init__()
         act_layer = act_layer or tf.nn.silu
         self.apply_act = apply_act  # apply activation (non-linearity)
         if act_layer is not None and apply_act:
@@ -341,10 +346,11 @@ class EvoNorm2dS1a(EvoNorm2dS1):
         return x * tf.cast(tf.reshape(self.weight, v_shape), x_dtype) + tf.cast(tf.reshape(self.bias, v_shape), x_dtype)
 
 
-class EvoNorm2dS2:
+class EvoNorm2dS2(nn.Layer):
     def __init__(
             self, num_features, groups=32, group_size=None,
             apply_act=True, act_layer=None, eps=1e-5, **_):
+        super().__init__()
         act_layer = act_layer or tf.nn.silu
         self.apply_act = apply_act  # apply activation (non-linearity)
         if act_layer is not None and apply_act:

@@ -1,9 +1,10 @@
 import tensorflow as tf
+from Note import nn
 import numpy as np
 from Note.nn.initializer import initializer
 
 
-class norm:
+class norm(nn.Layer):
     """A preprocessing layer which normalizes continuous features.
 
     This layer will shift and scale inputs into a distribution centered around
@@ -46,6 +47,7 @@ class norm:
     """
 
     def __init__(self, input_shape=None, axis=-1, mean=None, variance=None, invert=False, dtype='float32'):
+        super().__init__()
         self.input_shape = input_shape
         # Standardize `axis` to a tuple.
         if axis is None:

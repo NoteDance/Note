@@ -1,10 +1,11 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.layer.einsum_dense import einsum_dense
 from Note.nn.layer.dropout import dropout
 from Note.nn.layer.softmax import softmax
 
 
-class grouped_query_attention:
+class grouped_query_attention(nn.Layer):
     """Grouped Query Attention layer.
 
     This is an implementation of grouped-query attention introduced by
@@ -80,6 +81,7 @@ class grouped_query_attention:
         weight_initializer="Xavier",
         bias_initializer="zeros",
     ):
+        super().__init__()
         self.head_dim = head_dim
         self.num_query_heads = num_query_heads
         self.num_key_value_heads = num_key_value_heads

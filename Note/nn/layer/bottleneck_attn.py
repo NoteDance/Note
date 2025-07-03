@@ -50,12 +50,13 @@ def rel_logits_1d(q, rel_k, permute_mask: List[int]):
     return tf.transpose(x, permute_mask)
 
 
-class PosEmbedRel:
+class PosEmbedRel(nn.Layer):
     """ Relative Position Embedding
     As per: https://gist.github.com/aravindsrinivas/56359b79f0ce4449bcb04ab4b56a57a2
     Originally from: `Attention Augmented Convolutional Networks` - https://arxiv.org/abs/1904.09925
     """
     def __init__(self, feat_size, dim_head, scale):
+        super().__init__()
         self.height, self.width = nn.to_2tuple(feat_size)
         self.dim_head = dim_head
         self.height_rel = nn.Parameter(tf.random.normal((self.height * 2 - 1, dim_head)) * scale)
@@ -77,7 +78,7 @@ class PosEmbedRel:
         return rel_logits
 
 
-class BottleneckAttn:
+class BottleneckAttn(nn.Layer):
     """ Bottleneck Attention
     Paper: `Bottleneck Transformers for Visual Recognition` - https://arxiv.org/abs/2101.11605
 
@@ -105,6 +106,7 @@ class BottleneckAttn:
         assert feat_size is not None, 'A concrete feature size matching expected input (H, W) is required'
         dim_out = dim_out or dim
         assert dim_out % num_heads == 0
+        super().__init__()
         self.num_heads = num_heads
         self.dim_head_qk = dim_head or nn.make_divisible(dim_out * qk_ratio, divisor=8) // num_heads
         self.dim_head_v = dim_out // self.num_heads

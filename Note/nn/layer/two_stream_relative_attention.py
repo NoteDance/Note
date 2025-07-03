@@ -1,4 +1,5 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.layer.dense import dense
 from Note.nn.layer.softmax import softmax
 import numpy as np
@@ -9,7 +10,7 @@ import string
 _CHR_IDX = string.ascii_lowercase
 
 
-class two_stream_relative_attention:
+class two_stream_relative_attention(nn.Layer):
     """Two-stream relative self-attention for XLNet.
     
     In XLNet, each token has two associated vectors at each self-attention layer,
@@ -53,6 +54,7 @@ class two_stream_relative_attention:
         prevents attention to certain position for query attention computation.
     """
     def __init__(self, n_head, key_dim, input_size=None, attention_axes=None, dropout_rate=0.0, weight_initializer='Xavier', bias_initializer='zeros', use_bias=True, dtype='float32'):
+        super().__init__()
         self.n_head=n_head
         self.key_dim=key_dim
         self.input_size=input_size
@@ -90,7 +92,6 @@ class two_stream_relative_attention:
             self.value_dense=dense(n_head*key_dim,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
             self.output_dense=dense(input_size,n_head*key_dim,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
             self.encoding_dense=dense(n_head*key_dim,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
-            self.param=[self.query_dense.param,self.key_dense.param,self.value_dense.param,self.output_dense.param,self.encoding_dense.param]
     
     
     def build(self):
@@ -99,7 +100,6 @@ class two_stream_relative_attention:
         self.value_dense=dense(self.n_head*self.key_dim,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
         self.output_dense=dense(self.input_size,self.n_head*self.key_dim,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
         self.encoding_dense=dense(self.n_head*self.key_dim,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
-        self.param=[self.query_dense.param,self.key_dense.param,self.value_dense.param,self.output_dense.param,self.encoding_dense.param]
         return
     
     

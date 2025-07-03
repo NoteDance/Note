@@ -53,7 +53,7 @@ def rel_pos_indices(size):
     return rel_pos  # 2, H * W, H * W
 
 
-class LambdaLayer:
+class LambdaLayer(nn.Layer):
     """Lambda Layer
 
     Paper: `LambdaNetworks: Modeling Long-Range Interactions Without Attention`
@@ -85,6 +85,7 @@ class LambdaLayer:
             qk_ratio=1.0, qkv_bias=False):
         dim_out = dim_out or dim
         assert dim_out % num_heads == 0, ' should be divided by num_heads'
+        super().__init__()
         self.dim_qk = dim_head or nn.make_divisible(dim_out * qk_ratio, divisor=8) // num_heads
         self.num_heads = num_heads
         self.dim_v = dim_out // num_heads

@@ -15,10 +15,11 @@ import tensorflow as tf
 from Note import nn
 
 
-class GlobalResponseNorm:
+class GlobalResponseNorm(nn.Layer):
     """ Global Response Normalization layer
     """
     def __init__(self, dim, eps=1e-6, channels_last=True):
+        super().__init__()
         self.eps = eps
         if channels_last:
             self.spatial_dim = (1, 2)

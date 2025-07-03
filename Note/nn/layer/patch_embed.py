@@ -18,7 +18,7 @@ from Note import nn
 _logger = logging.getLogger(__name__)
 
 
-class PatchEmbed:
+class PatchEmbed(nn.Layer):
     """ 2D Image to Patch Embedding
     """
 
@@ -35,6 +35,7 @@ class PatchEmbed:
             strict_img_size: bool = True,
             dynamic_img_pad: bool = False,
     ):
+        super().__init__()
         self.patch_size = nn.to_2tuple(patch_size)
         self.img_size, self.grid_size, self.num_patches = self._init_img_size(img_size)
 

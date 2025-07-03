@@ -1,4 +1,5 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.layer.TransformerEncoder import TransformerEncoder
 from Note.nn.layer.TransformerDecoder import TransformerDecoder
 from Note.nn.layer.TransformerEncoderLayer import TransformerEncoderLayer
@@ -6,13 +7,14 @@ from Note.nn.layer.TransformerDecoderLayer import TransformerDecoderLayer
 from Note.nn.layer.layer_norm import layer_norm
 
 
-class Transformer:
+class Transformer(nn.Layer):
     def __init__(self, d_model: int = 512, nhead: int = 8, num_encoder_layers: int = 6,
                  num_decoder_layers: int = 6, dim_feedforward: int = 2048, dropout: float = 0.1,
                  activation = tf.nn.relu,
                  custom_encoder = None, custom_decoder = None,
                  layer_norm_eps: float = 1e-5, norm_first: bool = False,
                  bias: bool = True, dtype='float32'):
+        super().__init__()
         if custom_encoder is not None:
             self.encoder = custom_encoder
         else:

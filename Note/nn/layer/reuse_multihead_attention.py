@@ -1,10 +1,11 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.layer.dense import dense
 from Note.nn.initializer import initializer
 import collections
 
 
-class reuse_multihead_attention:
+class reuse_multihead_attention(nn.Layer):
     """MultiHeadAttention layer.
     
     This is an implementation of multi-headed attention as described in the paper
@@ -91,6 +92,7 @@ class reuse_multihead_attention:
                  bias_initializer="zeros",
                  dtype='float32'
                  ):
+      super().__init__()
       self._num_heads = n_head
       self._key_dim = key_dim
       self._value_dim = value_dim if value_dim else key_dim
@@ -121,52 +123,40 @@ class reuse_multihead_attention:
       if input_size!=None:
           self.query_dense=dense(n_head*key_dim,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
           self.key_dense=dense(n_head*key_dim,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
-          self.param=[self.query_dense.param,self.key_dense.param]
           self.value_dense = []
           if self._reuse_heads > 0:
               self.value_dense.append(dense(self._reuse_heads*value_dim,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype))
-              self.param.append(self.value_dense[0].param)
           if self._reuse_heads < self._num_heads:
               self.value_dense.append(dense((self.num_heads-self._reuse_heads)*value_dim,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype))
-              self.param.append(self.value_dense[1].param)
           self.output_dense = []
           if self._reuse_heads > 0:
               self.output_dense.append(dense(input_size,n_head*value_dim,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype))
-              self.param.append(self.output_dense[0].param)
           if self._reuse_heads < self._num_heads:
               self.output_dense.append(dense(input_size,n_head*value_dim,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=self._reuse_heads==0,dtype=dtype))
-              self.param.append(self.output_dense[1].param)
           # Use relative PE only if reuse_heads < num_heads.
           if self._use_relative_pe and self._reuse_heads < self._num_heads:
               self._position_embeddings = initializer([
                          1, self._num_heads - self._reuse_heads, 2 * self.
                          _pe_max_seq_length - 1],['truncated_normal',0.2],dtype)
-              self.param.append(self._position_embeddings)
     
     def build(self):
         self.query_dense=dense(self._num_heads*self._key_dim,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
         self.key_dense=dense(self._num_heads*self._key_dim,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
-        self.param=[self.query_dense.param,self.key_dense.param]
         self.value_dense = []
         if self._reuse_heads > 0:
             self.value_dense.append(dense(self._reuse_heads*self._value_dim,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype))
-            self.param.append(self.value_dense[0].param)
         if self._reuse_heads < self._num_heads:
             self.value_dense.append(dense((self.num_heads-self._reuse_heads)*self._value_dim,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype))
-            self.param.append(self.value_dense[1].param)
         self.output_dense = []
         if self._reuse_heads > 0:
             self.output_dense.append(dense(self.input_size,self._num_heads*self._value_dim,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype))
-            self.param.append(self.output_dense[0].param)
         if self._reuse_heads < self._num_heads:
             self.output_dense.append(dense(self.input_size,self._num_heads*self._value_dim,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self._reuse_heads==0,dtype=self.dtype))
-            self.param.append(self.output_dense[1].param)
         # Use relative PE only if reuse_heads < num_heads.
         if self._use_relative_pe and self._reuse_heads < self._num_heads:
             self._position_embeddings = initializer([
                        1, self._num_heads - self._reuse_heads, 2 * self.
                        _pe_max_seq_length - 1],['truncated_normal',0.2],self.dtype)
-            self.param.append(self._position_embeddings)
         return    
     
     def _compute_relative_position(self, query_seq_length, key_seq_length):

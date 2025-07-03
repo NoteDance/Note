@@ -1,4 +1,5 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.layer.dense import dense
 import functools
 import collections
@@ -9,7 +10,7 @@ _CHR_IDX = string.ascii_lowercase
 _NUMERIC_STABLER = 1e-6
 
 
-class kernel_attention:
+class kernel_attention(nn.Layer):
     """A variant of efficient transformers which replaces softmax with kernels.
     
     This module combines ideas from the two following papers:
@@ -107,6 +108,7 @@ class kernel_attention:
       if num_random_features <= 0 and redraw:
         raise ValueError(
             "There is nothing to redraw when num_random_features <= 0.")
+      super().__init__()
       self.n_head=n_head
       self.key_dim=key_dim
       self.value_dim=value_dim if value_dim else key_dim
@@ -158,20 +160,16 @@ class kernel_attention:
           self.key_dense=dense(n_head*key_dim,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
           self.value_dense=dense(n_head*value_dim,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
           self.output_dense=dense(input_size,n_head*value_dim,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
-          self.param=[self.query_dense.param,self.key_dense.param,self.value_dense.param,self.output_dense.param]
           if begin_kernel > 0:
               self.output_dense_softmax=dense(input_size,n_head*value_dim,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
-              self.param.append(self.output_dense_softmax.param)
     
     def build(self):
         self.query_dense=dense(self.n_head*self.key_dim,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
         self.key_dense=dense(self.n_head*self.key_dim,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
         self.value_dense=dense(self.n_head*self.value_dim,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
         self.output_dense=dense(self.input_size,self.n_head*self.value_dim,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
-        self.param=[self.query_dense.param,self.key_dense.param,self.value_dense.param,self.output_dense.param]
         if self._begin_kernel > 0:
             self.output_dense_softmax=dense(self.input_size,self.n_head*self.value_dim,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
-            self.param.append(self.output_dense_softmax.param)
         return
     
     def _compute_attention(self,

@@ -1,4 +1,5 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.layer.multihead_attention import multihead_attention
 from Note.nn.layer.dense import dense
 from Note.nn.layer.layer_norm import layer_norm
@@ -6,11 +7,12 @@ from Note.nn.layer.dropout import dropout
 from Note.nn.activation import activation_dict
 
 
-class TransformerDecoderLayer:
+class TransformerDecoderLayer(nn.Layer):
     def __init__(self, d_model: int, nhead: int, dim_feedforward: int = 2048, dropout_rate: float = 0.1,
                  activation = tf.nn.relu,
                  layer_norm_eps: float = 1e-5, norm_first: bool = False,
                  bias: bool = True, dtype='float32'):
+        super().__init__()
         self.self_attn = multihead_attention(nhead, input_size=d_model, use_bias=bias, dtype=dtype)
         self.multihead_attn = multihead_attention(nhead, input_size=d_model, use_bias=bias, dtype=dtype)
         # Implementation of Feedforward model

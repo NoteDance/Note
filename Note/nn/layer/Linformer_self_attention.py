@@ -1,4 +1,5 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.layer.dense import dense
 import math
 
@@ -14,9 +15,10 @@ def init_(tensor):
     return tensor
 
 
-class Linformer_self_attention:
+class Linformer_self_attention(nn.Layer):
     def __init__(self, dim, seq_len, k = 256, heads = 8, dim_head = None, one_kv_head = False, share_kv = False, dropout = 0., dtype='float32'):
         assert (dim % heads) == 0, 'dimension must be divisible by the number of heads'
+        super().__init__()
 
         self.seq_len = seq_len
         self.k = k

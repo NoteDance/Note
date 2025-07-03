@@ -11,10 +11,11 @@ import tensorflow as tf
 from Note import nn
 
 
-class GlobalContext:
+class GlobalContext(nn.Layer):
 
     def __init__(self, channels, use_attn=True, fuse_add=False, fuse_scale=True, init_last_zero=False,
                  rd_ratio=1./8, rd_channels=None, rd_divisor=1, act_layer=tf.nn.relu, gate_layer=tf.nn.sigmoid):
+        super().__init__()
         self.conv_attn = nn.conv2d(1, kernel_size=1, input_size=channels, use_bias=True) if use_attn else None
 
         if rd_channels is None:

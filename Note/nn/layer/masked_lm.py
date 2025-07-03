@@ -1,9 +1,10 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.layer.dense import dense
 from Note.nn.layer.layer_norm import layer_norm
 from Note.nn.initializer import initializer
 
-class masked_lm:
+class masked_lm(nn.Layer):
   """Masked language model network head for BERT modeling.
 
   This layer implements a masked language model based on the provided
@@ -33,6 +34,7 @@ class masked_lm:
                output='logits',
                dtype='float32'
                ):
+    super().__init__()
     self.activation = activation
     self.initializer = initializer
 

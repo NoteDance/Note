@@ -2,8 +2,9 @@ import tensorflow as tf # import the TensorFlow library
 from Note import nn
 
 
-class LSTM: # define a class for long short-term memory (LSTM) layer
+class LSTM(nn.Layer): # define a class for long short-term memory (LSTM) layer
     def __init__(self,output_size,input_size=None,weight_initializer='Xavier',bias_initializer='zeros',return_sequence=False,use_bias=True,trainable=True,dtype='float32'): # define the constructor method
+        super().__init__()
         self.input_size=input_size
         self.weight_initializer=weight_initializer
         self.bias_initializer=bias_initializer
@@ -29,10 +30,6 @@ class LSTM: # define a class for long short-term memory (LSTM) layer
                 self.bias_f=nn.initializer([output_size],bias_initializer,dtype,trainable) # initialize the bias vector for forget gate
                 self.bias_o=nn.initializer([output_size],bias_initializer,dtype,trainable) # initialize the bias vector for output gate
                 self.bias_c=nn.initializer([output_size],bias_initializer,dtype,trainable) # initialize the bias vector for candidate cell state
-            if use_bias==True: # if use bias is True
-                self.param=[self.weight_i1,self.weight_f1,self.weight_o1,self.weight_c1,self.weight_i2,self.weight_f2,self.weight_o2,self.weight_c2,self.bias_i,self.bias_f,self.bias_o,self.bias_c] # store the parameters in a list
-            else: # if use bias is False
-                self.param=[self.weight_i1,self.weight_f1,self.weight_o1,self.weight_c1,self.weight_i2,self.weight_f2,self.weight_o2,self.weight_c2] # store only the weight matrices in a list
     
     
     def build(self):
@@ -49,10 +46,6 @@ class LSTM: # define a class for long short-term memory (LSTM) layer
             self.bias_f=nn.initializer([self.output_size],self.bias_initializer,self.dtype,self.trainable) # initialize the bias vector for forget gate
             self.bias_o=nn.initializer([self.output_size],self.bias_initializer,self.dtype,self.trainable) # initialize the bias vector for output gate
             self.bias_c=nn.initializer([self.output_size],self.bias_initializer,self.dtype,self.trainable) # initialize the bias vector for candidate cell state
-        if self.use_bias==True: # if use bias is True
-            self.param=[self.weight_i1,self.weight_f1,self.weight_o1,self.weight_c1,self.weight_i2,self.weight_f2,self.weight_o2,self.weight_c2,self.bias_i,self.bias_f,self.bias_o,self.bias_c] # store the parameters in a list
-        else: # if use bias is False
-            self.param=[self.weight_i1,self.weight_f1,self.weight_o1,self.weight_c1,self.weight_i2,self.weight_f2,self.weight_o2,self.weight_c2] # store only the weight matrices in a list
         return
     
     

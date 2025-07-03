@@ -1,4 +1,5 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.layer.dense import dense
 from Note.nn.initializer import initializer
 from Note.nn.layer.softmax import softmax
@@ -8,13 +9,14 @@ import string
 
 _CHR_IDX = string.ascii_lowercase
 
-class perdimscale_attention:
+class perdimscale_attention(nn.Layer):
   """Learn scales for individual dims.
 
      It can improve quality but might hurt training stability.
   """
 
   def __init__(self, n_head, key_dim, value_dim=None, input_size=None, attention_axes=None, dropout_rate=0.0, weight_initializer='Xavier', bias_initializer='zeros', use_bias=True, dtype='float32'):
+    super().__init__()
     self.key_dim=key_dim
     self.value_dim=value_dim if value_dim else key_dim
     self.input_size=input_size
@@ -53,7 +55,6 @@ class perdimscale_attention:
       self.value_dense=dense(n_head*value_dim,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
       self.output_dense=dense(input_size,n_head*value_dim,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
       self.per_dim_scale = initializer((self._scale_dim,),'zeros',dtype)
-      self.param=[self.query_dense.param,self.key_dense.param,self.value_dense.param,self.output_dense.param,self.per_dim_scale]
     
   def build(self):
       self.query_dense=dense(self.n_head*self.key_dim,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
@@ -61,7 +62,6 @@ class perdimscale_attention:
       self.value_dense=dense(self.n_head*self.value_dim,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
       self.output_dense=dense(self.input_size,self.n_head*self.value_dim,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
       self.per_dim_scale = initializer((self._scale_dim,),'zeros',self.dtype)
-      self.param=[self.query_dense.param,self.key_dense.param,self.value_dense.param,self.output_dense.param,self.per_dim_scale]
       return
   
   def _masked_softmax(self, attention_scores, attention_mask=None):

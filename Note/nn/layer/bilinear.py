@@ -1,8 +1,9 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.initializer import initializer
 from typing import Tuple
 
-class bilinear:
+class bilinear(nn.Layer):
   def __init__(self, embedding_dim: int, output_dim: int, dtype='float32'):
     """Initializer.
 
@@ -11,6 +12,7 @@ class bilinear:
         interacting vectors.
       output_dim: An integer that indicates the output dimension of the layer.
     """
+    super().__init__()
     self._embedding_dim = embedding_dim
     self._output_dim = output_dim
     self.dtype = dtype

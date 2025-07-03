@@ -1,10 +1,11 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.layer.conv2d import conv2d
 from Note.nn.initializer import initializer
 
 epsilon = 1e-9
 
-class capsule:
+class capsule(nn.Layer):
     ''' Capsule layer.
     Args:
         input: A 4-D tensor.
@@ -19,6 +20,7 @@ class capsule:
         A 4-D tensor.
     '''
     def __init__(self, num_outputs, vec_len, input_shape=None, kernel_size=None, stride=None, with_routing=True, layer_type='FC', iter_routing=3, steddev=0.01):
+        super().__init__()
         self.num_outputs = num_outputs
         self.vec_len = vec_len
         self.input_shape = input_shape

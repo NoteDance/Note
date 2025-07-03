@@ -1,4 +1,5 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.layer.dense import dense
 from Note.nn.layer.softmax import softmax
 import numpy as np
@@ -9,11 +10,12 @@ import string
 _CHR_IDX = string.ascii_lowercase
 
 
-class cached_attention:
+class cached_attention(nn.Layer):
   """
   Attention layer with cache used for autoregressive decoding.
   """
   def __init__(self,n_head,key_dim,value_dim=None,input_size=None,attention_axes=None,dropout_rate=0.0,weight_initializer="Xavier",bias_initializer="zeros",use_bias=True,dtype='float32'):
+      super().__init__()
       self.n_head=n_head
       self.key_dim=key_dim
       self.value_dim=value_dim if value_dim else key_dim

@@ -2,8 +2,9 @@ import tensorflow as tf
 from Note import nn
 
 
-class multihead_attention:
+class multihead_attention(nn.Layer):
     def __init__(self, n_head: int, input_size=None, kdim=None, vdim=None, dropout=0.0, weight_initializer='Xavier', bias_initializer='zeros', use_bias=True, dtype='float32'):
+        super().__init__()
         self.n_head = n_head
         self.input_size = input_size
         self.kdim = kdim if kdim is not None else input_size
@@ -19,7 +20,6 @@ class multihead_attention:
             self.key = nn.dense(input_size,self.kdim,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
             self.value = nn.dense(input_size,self.vdim,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
             self.out = nn.dense(input_size,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
-            self.param = [self.query.param,self.key.param,self.value.param,self.out.param]
     
     
     def build(self):
@@ -27,7 +27,6 @@ class multihead_attention:
         self.key = nn.dense(self.input_size,self.kdim,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
         self.value = nn.dense(self.input_size,self.vdim,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
         self.out = nn.dense(self.input_size,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
-        self.param = [self.query.param,self.key.param,self.value.param,self.out.param]
         return
     
     

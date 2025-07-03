@@ -2,8 +2,9 @@ import tensorflow as tf
 from Note import nn
 
 
-class embedding:
+class embedding(nn.Layer):
     def __init__(self,output_size,input_size=None,initializer='normal',sparse=False,use_one_hot_matmul=False,trainable=True,dtype='float32'):
+        super().__init__()
         self.input_size=input_size
         self.initializer=initializer
         self.sparse=sparse
@@ -13,12 +14,10 @@ class embedding:
         self.output_size=output_size
         if input_size!=None:
             self.embeddings=nn.initializer([input_size,output_size],initializer,dtype,trainable)
-            self.param=[self.embeddings]
     
     
     def build(self):
         self.embeddings=nn.initializer([self.input_size,self.output_size],self.initializer,self.dtype,self.trainable)
-        self.param=[self.embeddings]
         return
     
     

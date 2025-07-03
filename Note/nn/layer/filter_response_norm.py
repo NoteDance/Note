@@ -1,8 +1,9 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.initializer import initializer
 
 
-class filter_response_norm:
+class filter_response_norm(nn.Layer):
     """Filter response normalization layer.
 
     Filter Response Normalization (FRN), a normalization
@@ -47,6 +48,7 @@ class filter_response_norm:
         learned_epsilon: bool = False,
         dtype = 'float32'
     ):
+        super().__init__()
         self.epsilon = epsilon
         self.axis = axis
         self.beta_initializer = beta_initializer

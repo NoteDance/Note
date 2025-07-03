@@ -1,8 +1,9 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.layer.dense import dense
 
 
-class voting_attention:
+class voting_attention(nn.Layer):
   """Voting Attention layer.
 
   Args:
@@ -21,6 +22,7 @@ class voting_attention:
                use_bias=True,
                dtype='float32'
                ):
+    super().__init__()
     self._num_heads = n_head
     self._head_size = head_size
     self.input_size = input_size
@@ -31,12 +33,10 @@ class voting_attention:
     if input_size!=None:
         self._query_dense=dense(n_head*head_size,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
         self._key_dense=dense(n_head*head_size,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
-        self.param=[self._query_dense.param,self._key_dense.param]
         
   def build(self):
         self._query_dense=dense(self._num_heads*self._head_size,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
         self._key_dense=dense(self._num_heads*self._head_size,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
-        self.param=[self._query_dense.param,self._key_dense.param]
 
   def __call__(self, encoder_outputs, doc_attention_mask):
     if encoder_outputs.dtype!=self.dtype:

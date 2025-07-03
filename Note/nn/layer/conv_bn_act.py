@@ -42,7 +42,7 @@ def create_aa(
         return aa_layer(stride)
 
 
-class ConvNormAct:
+class ConvNormAct(nn.Layer):
     def __init__(
             self,
             in_channels: int,
@@ -60,6 +60,7 @@ class ConvNormAct:
             drop_layer = None,
             drop_rate = 0.,
     ):
+        super().__init__()
         use_aa = aa_layer is not None and stride > 1
         padding = get_padding(kernel_size, stride=1 if aa_layer else stride, dilation=dilation)
 

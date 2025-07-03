@@ -1,8 +1,9 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.initializer import initializer
 
 
-class TLU:
+class TLU(nn.Layer):
     r"""Thresholded Linear Unit.
 
     An activation function which is similar to ReLU
@@ -30,6 +31,7 @@ class TLU:
         alpha_initializer = "zeros",
         dtype='float32'
     ):
+        super().__init__()
         self.affine = affine
         self.tau_initializer = tau_initializer
         if self.affine:

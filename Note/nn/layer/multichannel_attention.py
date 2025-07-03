@@ -1,9 +1,10 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.layer.dense import dense
 from Note.nn.layer.masked_softmax import masked_softmax
 
 
-class multichannel_attention:
+class multichannel_attention(nn.Layer):
     """Multi-channel Attention layer.
     
     Introduced in, [Generating Representative Headlines for News Stories
@@ -23,6 +24,7 @@ class multichannel_attention:
     """
     
     def __init__(self, n_head, key_dim, value_dim=None, input_size=None, dropout_rate=0.0, weight_initializer='Xavier', bias_initializer='zeros', use_bias=True, dtype='float32'):
+      super().__init__()
       self.n_head=n_head
       self.key_dim=key_dim
       self.value_dim=value_dim if value_dim else key_dim
@@ -38,7 +40,6 @@ class multichannel_attention:
           self.key_dense=dense(n_head*key_dim,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
           self.value_dense=dense(n_head*value_dim,input_size,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
           self.output_dense=dense(input_size,n_head*value_dim,weight_initializer=weight_initializer,bias_initializer=bias_initializer,use_bias=use_bias,dtype=dtype)
-          self.param=[self.query_dense.param,self.key_dense.param,self.value_dense.param,self.output_dense.param]
     
     
     def build(self):
@@ -46,7 +47,6 @@ class multichannel_attention:
         self.key_dense=dense(self.n_head*self.key_dim,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
         self.value_dense=dense(self.n_head*self.value_dim,self.input_size,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
         self.output_dense=dense(self.input_size,self.n_head*self.value_dim,weight_initializer=self.weight_initializer,bias_initializer=self.bias_initializer,use_bias=self.use_bias,dtype=self.dtype)
-        self.param=[self.query_dense.param,self.key_dense.param,self.value_dense.param,self.output_dense.param]
         return
 
     

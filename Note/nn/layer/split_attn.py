@@ -26,12 +26,13 @@ class RadixSoftmax:
         return x
 
 
-class SplitAttn:
+class SplitAttn(nn.Layer):
     """Split-Attention (aka Splat)
     """
     def __init__(self, in_channels, out_channels=None, kernel_size=3, stride=1, padding=None,
                  dilation=1, groups=1, bias=False, radix=2, rd_ratio=0.25, rd_channels=None, rd_divisor=8,
                  act_layer=tf.nn.relu, norm_layer=None, drop_layer=None, **kwargs):
+        super().__init__()
         out_channels = out_channels or in_channels
         self.radix = radix
         mid_chs = out_channels * radix

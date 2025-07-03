@@ -17,13 +17,14 @@ import tensorflow as tf
 from Note import nn
 
 
-class GatherExcite:
+class GatherExcite(nn.Layer):
     """ Gather-Excite Attention Module
     """
     def __init__(
             self, channels, feat_size=None, extra_params=False, extent=0, use_mlp=True,
             rd_ratio=1./16, rd_channels=None,  rd_divisor=1, add_maxpool=False,
             act_layer=tf.nn.relu, norm_layer=nn.batch_norm, gate_layer=tf.nn.sigmoid):
+        super().__init__()
         self.add_maxpool = add_maxpool
         act_layer = act_layer
         self.extent = extent

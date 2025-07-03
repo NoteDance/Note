@@ -69,7 +69,7 @@ def create_classifier(
     return global_pool, fc
 
 
-class ClassifierHead:
+class ClassifierHead(nn.Layer):
     """Classifier head w/ configurable global pooling and dropout."""
 
     def __init__(
@@ -88,6 +88,7 @@ class ClassifierHead:
             pool_type: Global pooling type, pooling disabled if empty string ('').
             drop_rate: Pre-classifier dropout rate.
         """
+        super().__init__()
         self.in_features = in_features
         self.use_conv = use_conv
         self.input_fmt = input_fmt
@@ -131,7 +132,7 @@ class ClassifierHead:
         return self.flatten(x)
 
 
-class NormMlpClassifierHead:
+class NormMlpClassifierHead(nn.Layer):
 
     def __init__(
             self,
@@ -153,6 +154,7 @@ class NormMlpClassifierHead:
             norm_layer: Normalization layer type.
             act_layer: MLP activation layer type (only used if hidden_size is not None).
         """
+        super().__init__()
         self.in_features = in_features
         self.hidden_size = hidden_size
         self.num_features = in_features

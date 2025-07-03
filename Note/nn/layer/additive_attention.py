@@ -1,20 +1,20 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.initializer import initializer
 
 
-class additive_attention:
+class additive_attention(nn.Layer):
     def __init__(self,input_size=None, use_scale=True, dtype='float32'):
+        super().__init__()
         self.use_scale = use_scale
         self.dtype=dtype
         if input_size!=None and use_scale:
             self.scale = initializer([input_size], 'Xavier', dtype)
-            self.param=[self.scale]
     
     def build(self):
         self.output_size=self.input_size
         if self.input_size!=None and self.use_scale:
             self.scale = initializer([self.input_size], 'Xavier', self.dtype)
-            self.param=[self.scale]
         return
 
     def __call__(self, query, key):

@@ -4,7 +4,7 @@ import tensorflow as tf
 from Note import nn
 
 
-class AttentionPoolLatent:
+class AttentionPoolLatent(nn.Layer):
     """ Attention pooling w/ latent query
     """
 
@@ -26,6 +26,7 @@ class AttentionPoolLatent:
             drop: float = 0.0,
             use_fused_attn = True
     ):
+        super().__init__()
         embed_dim = embed_dim or in_features
         out_features = out_features or in_features
         assert embed_dim % num_heads == 0

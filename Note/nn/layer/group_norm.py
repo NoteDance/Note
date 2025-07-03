@@ -1,8 +1,9 @@
 import tensorflow as tf
+from Note import nn
 from Note.nn.initializer import initializer
 
 
-class group_norm:
+class group_norm(nn.Layer):
     """Group normalization layer.
 
     Group Normalization divides the channels into groups and computes
@@ -63,6 +64,7 @@ class group_norm:
         mask=None,
         dtype='float32'
     ):
+        super().__init__()
         self.input_size=input_size
         self.groups = groups
         self.axis = axis

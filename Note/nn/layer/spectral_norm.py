@@ -2,7 +2,7 @@ import tensorflow as tf
 from Note import nn
 
 
-class spectral_norm:
+class spectral_norm(nn.Layer):
     """Performs spectral normalization on the weights of a target layer.
 
     This wrapper controls the Lipschitz constant of the weights of a layer by
@@ -20,6 +20,7 @@ class spectral_norm:
     """
 
     def __init__(self, layer, power_iterations=1):
+        super().__init__()
         self.layer=layer
         if power_iterations <= 0:
             raise ValueError(

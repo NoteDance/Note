@@ -3,7 +3,7 @@ from Note import nn
 from functools import partial
 
 
-class Mlp:
+class Mlp(nn.Layer):
     """ MLP as used in Vision Transformer, MLP-Mixer and related networks
     """
     def __init__(
@@ -17,6 +17,7 @@ class Mlp:
             drop=0.,
             use_conv=False,
     ):
+        super().__init__()
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
         bias = nn.to_2tuple(bias)
@@ -40,7 +41,7 @@ class Mlp:
         return x
 
 
-class GluMlp:
+class GluMlp(nn.Layer):
     """ MLP w/ GLU style gating
     See: https://arxiv.org/abs/1612.08083, https://arxiv.org/abs/2002.05202
     """
@@ -56,6 +57,7 @@ class GluMlp:
             use_conv=False,
             gate_last=True,
     ):
+        super().__init__()
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
         assert hidden_features % 2 == 0
@@ -86,7 +88,7 @@ class GluMlp:
 SwiGLUPacked = partial(GluMlp, act_layer=tf.nn.silu, gate_last=False)
 
 
-class SwiGLU:
+class SwiGLU(nn.Layer):
     """ SwiGLU
     NOTE: GluMLP above can implement SwiGLU, but this impl has split fc1 and
     better matches some other common impl which makes mapping checkpoints simpler.
@@ -101,6 +103,7 @@ class SwiGLU:
             bias=True,
             drop=0.,
     ):
+        super().__init__()
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
         bias = nn.to_2tuple(bias)
@@ -125,7 +128,7 @@ class SwiGLU:
         return x
     
     
-class GatedMlp:
+class GatedMlp(nn.Layer):
     """ MLP as used in gMLP
     """
     def __init__(
@@ -139,6 +142,7 @@ class GatedMlp:
             bias=True,
             drop=0.,
     ):
+        super().__init__()
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
         bias = nn.to_2tuple(bias)
@@ -168,7 +172,7 @@ class GatedMlp:
         return x
 
 
-class ConvMlp:
+class ConvMlp(nn.Layer):
     """ MLP using 1x1 convs that keeps spatial dims
     """
     def __init__(
@@ -181,6 +185,7 @@ class ConvMlp:
             bias=True,
             drop=0.,
     ):
+        super().__init__()
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
         bias = nn.to_2tuple(bias)
@@ -200,7 +205,7 @@ class ConvMlp:
         return x
 
 
-class GlobalResponseNormMlp:
+class GlobalResponseNormMlp(nn.Layer):
     """ MLP w/ Global Response Norm (see grn.py), nn.Linear or 1x1 Conv2d
     """
     def __init__(
@@ -213,6 +218,7 @@ class GlobalResponseNormMlp:
             drop=0.,
             use_conv=False,
     ):
+        super().__init__()
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
         bias = nn.to_2tuple(bias)
@@ -236,10 +242,11 @@ class GlobalResponseNormMlp:
         return x
 
 
-class GlobalResponseNorm:
+class GlobalResponseNorm(nn.Layer):
     """ Global Response Normalization layer
     """
     def __init__(self, dim, eps=1e-6, channels_last=True):
+        super().__init__()
         self.eps = eps
         if channels_last:
             self.spatial_dim = (1, 2)
@@ -250,8 +257,8 @@ class GlobalResponseNorm:
             self.channel_dim = 1
             self.wb_shape = (1, -1, 1, 1)
 
-        self.weight = nn.variable(tf.zeros(dim))
-        self.bias = nn.variable(tf.zeros(dim))
+        self.weight = nn.Parameter(tf.zeros(dim))
+        self.bias = nn.Parameter(tf.zeros(dim))
 
     def __call__(self, x):
         x_g = tf.norm(x, ord=2, axis=self.spatial_dim, keepdims=True)

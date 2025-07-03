@@ -2,22 +2,21 @@ import tensorflow as tf
 from Note import nn
 import math
 
-class SwitchLinear:
+class SwitchLinear(nn.Layer):
     def __init__(
         self, input_dims: int, output_dims: int, num_experts: int, bias: bool = True
     ):
+        super().__init__()
         scale = math.sqrt(1 / input_dims)
-        self.weight = tf.Variable(tf.random.uniform(
+        self.weight = nn.Parameter(tf.random.uniform(
             minval=-scale,
             maxval=scale,
             shape=(num_experts, input_dims, output_dims),
         ))
-        nn.Model.param.append(self.weight)
 
         self.use_bias=bias
         if bias:
-            self.bias = tf.Variable(tf.zeros((num_experts, output_dims)))
-            nn.Model.param.append(self.bias)
+            self.bias = nn.Parameter(tf.zeros((num_experts, output_dims)))
 
     @property
     def input_dims(self):
@@ -37,7 +36,7 @@ class SwitchLinear:
             x = x + tf.expand_dims(tf.gather(self.bias, indices), -2)
         return x
 
-class SwitchGLU:
+class SwitchGLU(nn.Layer):
     def __init__(
         self,
         input_dims: int,
@@ -46,7 +45,7 @@ class SwitchGLU:
         activation=tf.nn.silu,
         bias: bool = False,
     ):
-
+        super().__init__()
         self.gate_proj = SwitchLinear(input_dims, hidden_dims, num_experts, bias=bias)
         self.up_proj = SwitchLinear(input_dims, hidden_dims, num_experts, bias=bias)
         self.down_proj = SwitchLinear(hidden_dims, input_dims, num_experts, bias=bias)
