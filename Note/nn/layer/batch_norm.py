@@ -26,8 +26,10 @@ class batch_norm(nn.Layer):
         self.output_size=input_size
         self.train_flag=True
         if input_size!=None:
-            self.moving_mean=initializer_([input_size], moving_mean_initializer, dtype)
-            self.moving_variance=initializer_([input_size], moving_variance_initializer, dtype)
+            self.moving_mean=initializer_([input_size], moving_mean_initializer, dtype, trainable=False)
+            self.moving_variance=initializer_([input_size], moving_variance_initializer, dtype, trainable=False)
+            Model.param.append(self.moving_mean)
+            Model.param.append(self.moving_variance)
             if center==True:
                 self.beta=initializer([input_size], beta_initializer, dtype, trainable)
             else:
@@ -46,9 +48,10 @@ class batch_norm(nn.Layer):
     
     def build(self):
         self.output_size=self.input_size
-        self.moving_mean=initializer_([self.input_size], self.moving_mean_initializer, self.dtype)
-        self.moving_variance=initializer_([self.input_size], self.moving_variance_initializer, self.dtype)
-        self.param=[]
+        self.moving_mean=initializer_([self.input_size], self.moving_mean_initializer, self.dtype, trainable=False)
+        self.moving_variance=initializer_([self.input_size], self.moving_variance_initializer, self.dtype, trainable=False)
+        Model.param.append(self.moving_mean)
+        Model.param.append(self.moving_variance)
         if self.center==True:
             self.beta=initializer([self.input_size], self.beta_initializer, self.dtype, self.trainable)
         else:
@@ -181,8 +184,10 @@ class batch_norm_(nn.Layer):
         self.output_size=input_size
         self.train_flag=True
         if input_size!=None:
-            self.moving_mean=initializer_([input_size], moving_mean_initializer, dtype)
-            self.moving_variance=initializer_([input_size], moving_variance_initializer, dtype)
+            self.moving_mean=initializer_([input_size], moving_mean_initializer, dtype, trainable=False)
+            self.moving_variance=initializer_([input_size], moving_variance_initializer, dtype, trainable=False)
+            Model.param.append(self.moving_mean)
+            Model.param.append(self.moving_variance)
             if parallel:
                 manager=Manager()
                 self.moving_mean=manager.list([self.moving_mean])
@@ -207,8 +212,10 @@ class batch_norm_(nn.Layer):
     
     def build(self):
         self.output_size=self.input_size
-        self.moving_mean=initializer_([self.input_size], self.moving_mean_initializer, self.dtype)
-        self.moving_variance=initializer_([self.input_size], self.moving_variance_initializer, self.dtype)
+        self.moving_mean=initializer_([self.input_size], self.moving_mean_initializer, self.dtype, trainable=False)
+        self.moving_variance=initializer_([self.input_size], self.moving_variance_initializer, self.dtype, trainable=False)
+        Model.param.append(self.moving_mean)
+        Model.param.append(self.moving_variance)
         if self.parallel:
             manager=Manager()
             self.moving_mean=manager.list([self.moving_mean])
