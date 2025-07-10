@@ -59,6 +59,7 @@ from Note.nn.layer.gather_excite import GatherExcite
 from Note.nn.layer.gaussian_dropout import gaussian_dropout
 from Note.nn.layer.gaussian_noise import gaussian_noise
 from Note.nn.layer.GCN import GCN
+from Note.nn.layer.ghost_batchnorm import GhostBatchNorm
 from Note.nn.layer.global_avg_pool1d import global_avg_pool1d
 from Note.nn.layer.global_avg_pool2d import global_avg_pool2d
 from Note.nn.layer.global_avg_pool3d import global_avg_pool3d
@@ -116,7 +117,7 @@ from Note.nn.layer.repeat_vector import repeat_vector
 from Note.nn.layer.reshape import reshape
 from Note.nn.layer.reuse_multihead_attention import reuse_multihead_attention
 from Note.nn.layer.reversible_residual import reversible_residual
-from Note.nn.layer.RMSNorm import RMSNorm
+from Note.nn.layer.rmsnorm import RMSNorm
 from Note.nn.layer.RNN import RNN
 from Note.nn.layer.RNNCell import RNNCell
 from Note.nn.layer.RoPE import RoPE
