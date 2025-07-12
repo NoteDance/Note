@@ -20,6 +20,7 @@ class Model:
     layer_dict=dict()
     layer_param=dict()
     layer_list=[]
+    layer_list_=[]
     layer_eval=dict()
     counter=0
     name_list=[]
@@ -39,6 +40,7 @@ class Model:
         self.layer_dict=Model.layer_dict
         self.layer_param=Model.layer_param
         self.layer_list=Model.layer_list
+        self.layer_list_=Model.layer_list_
         self.layer_eval=Model.layer_eval
         self.name_list=Model.name_list_
         self.layer_name_list=Model.layer_name_list
@@ -80,6 +82,12 @@ class Model:
         self.total_epoch=0
         self.time=0
         self.total_time=0
+    
+    
+    def __setattr__(self, name, value):
+        object.__setattr__(self, name, value)
+        if isinstance(value, nn.Layer):
+            object.__setattr__(value, 'name', name)
     
     
     def get_info(self):
@@ -165,7 +173,7 @@ class Model:
     
     def training(self,flag=False):
         Model.train_flag=flag
-        for layer in self.layer_list:
+        for layer in self.layer_list_:
             if hasattr(layer,'train_flag'):
                 layer.train_flag=flag
             else:
@@ -227,7 +235,7 @@ class Model:
     
     def register(layer):
         layer.training = True
-        Model.layer_list.append(layer)
+        Model.layer_list_.append(layer)
         if Model.name!=None and Model.name not in Model.layer_eval:
             Model.layer_eval[Model.name]=[]
             Model.layer_eval[Model.name].append(layer)
@@ -1919,6 +1927,7 @@ class Model:
         Model.layer_dict=dict()
         Model.layer_param=dict()
         Model.layer_list=[]
+        Model.layer_list_=[]
         Model.layer_eval=dict()
         Model.counter=0
         Model.name_list=[]
