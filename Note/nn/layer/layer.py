@@ -1,3 +1,6 @@
+from Note import nn
+
+
 class LayerMeta(type):
     def __call__(cls, *args, **kwargs):
         # Create the instance
@@ -15,6 +18,10 @@ class Layer(metaclass=LayerMeta):
         self._sub_layers = []
         
         self._param_assignments = []
+        
+        self.name_ = self.__class__.__name__
+        
+        nn.Model.layer_list.append(self)
     
     def _finalize_parameters(self):
         # Process any parameter assignments that were deferred
@@ -34,6 +41,7 @@ class Layer(metaclass=LayerMeta):
         if isinstance(value, Layer):
             # add to our children list
             object.__getattribute__(self, "_sub_layers").append(value)
+            object.__setattr__(value, 'name', name)
         object.__setattr__(self, name, value)
     
     @property
