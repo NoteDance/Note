@@ -22,15 +22,19 @@ class depthwise_conv1d(nn.Layer): # define a class for depthwise convolutional l
         self.dtype=dtype
         if input_size!=None:
             self.output_size=depth_multiplier*input_size
-            self.depthwise_kernel=nn.initializer([kernel_size,input_size,depth_multiplier],weight_initializer,dtype,trainable) # initialize the weight tensor
+            self.weight=nn.initializer([kernel_size,input_size,depth_multiplier],weight_initializer,dtype,trainable) # initialize the weight tensor
+            self.weight.name_='weight'
             if use_bias==True: # if use bias is True
                 self.bias=nn.initializer([depth_multiplier*input_size],bias_initializer,dtype,trainable) # initialize the bias vector
+                self.bias.name_='bias'
     
     
     def build(self):
-        self.depthwise_kernel=nn.initializer([self.kernel_size,self.input_size,self.depth_multiplier],self.weight_initializer,self.dtype,self.trainable) # initialize the weight tensor
+        self.weight=nn.initializer([self.kernel_size,self.input_size,self.depth_multiplier],self.weight_initializer,self.dtype,self.trainable) # initialize the weight tensor
+        self.weight.name_='weight'
         if self.use_bias==True: # if use bias is True
             self.bias=nn.initializer([self.depth_multiplier*self.input_size],self.bias_initializer,self.dtype,self.trainable) # initialize the bias vector
+            self.bias.name_='bias'
         return
     
     

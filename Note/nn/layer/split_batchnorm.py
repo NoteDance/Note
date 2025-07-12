@@ -43,9 +43,9 @@ class SplitBatchNorm(nn.batch_norm):
 
 
 def convert_splitbn_model(module, num_splits=2):
-    for layer in module.layer_list:
+    for layer in module.layer_list_:
         if isinstance(layer, nn.batch_norm):
-            module.layer_list.remove(layer)
+            module.layer_list_.remove(layer)
             dict_ = dict(layer.__dict__)
             if dict_['scale']:
                 module.param.remove(dict_['gamma'])

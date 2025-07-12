@@ -27,7 +27,7 @@ class spatial_dropout2d:
         self.rate = rate
         self.seed = seed
         self.train_flag = True
-        nn.Model.layer_list.append(self)
+        nn.Model.layer_list_.append(self)
         if nn.Model.name!=None and nn.Model.name not in nn.Model.layer_eval:
             nn.Model.layer_eval[nn.Model.name]=[]
             nn.Model.layer_eval[nn.Model.name].append(self)

@@ -133,7 +133,7 @@ class EvoNorm2dB0(nn.Layer):
         self.v = nn.Parameter(tf.ones(num_features)) if apply_act else None
         self.running_var = tf.Variable(tf.ones(num_features))
         self.training = True
-        nn.Model.layer_list.append(self)
+        nn.Model.layer_list_.append(self)
         if nn.Model.name!=None and nn.Model.name not in nn.Model.layer_eval:
             nn.Model.layer_eval[nn.Model.name]=[]
             nn.Model.layer_eval[nn.Model.name].append(self)
@@ -181,7 +181,7 @@ class EvoNorm2dB1(nn.Layer):
         self.bias = nn.Parameter(tf.zeros(num_features))
         self.running_var = tf.Variable(tf.ones(num_features))
         self.training = True
-        nn.Model.layer_list.append(self)
+        nn.Model.layer_list_.append(self)
         if nn.Model.name!=None and nn.Model.name not in nn.Model.layer_eval:
             nn.Model.layer_eval[nn.Model.name]=[]
             nn.Model.layer_eval[nn.Model.name].append(self)
@@ -222,7 +222,7 @@ class EvoNorm2dB2(nn.Layer):
         self.bias = nn.Parameter(tf.zeros(num_features))
         self.running_var = tf.Variable(tf.ones(num_features))
         self.training = True
-        nn.Model.layer_list.append(self)
+        nn.Model.layer_list_.append(self)
         if nn.Model.name!=None and nn.Model.name not in nn.Model.layer_eval:
             nn.Model.layer_eval[nn.Model.name]=[]
             nn.Model.layer_eval[nn.Model.name].append(self)
@@ -267,7 +267,7 @@ class EvoNorm2dS0(nn.Layer):
         self.bias = nn.Parameter(tf.zeros(num_features))
         self.v = nn.Parameter(tf.ones(num_features)) if apply_act else None
         self.training = True
-        nn.Model.layer_list.append(self)
+        nn.Model.layer_list_.append(self)
         if nn.Model.name!=None and nn.Model.name not in nn.Model.layer_eval:
             nn.Model.layer_eval[nn.Model.name]=[]
             nn.Model.layer_eval[nn.Model.name].append(self)

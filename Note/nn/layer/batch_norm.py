@@ -38,7 +38,7 @@ class batch_norm(nn.Layer):
                 self.gamma=initializer([input_size], gamma_initializer, dtype, trainable)
             else:
                 self.gamma=None
-        Model.layer_list.append(self)
+        Model.layer_list_.append(self)
         if Model.name!=None and Model.name not in Model.layer_eval:
             Model.layer_eval[Model.name]=[]
             Model.layer_eval[Model.name].append(self)
@@ -202,7 +202,7 @@ class batch_norm_(nn.Layer):
                 self.gamma=initializer([input_size], gamma_initializer, dtype, trainable)
             else:
                 self.gamma=None
-        Model.layer_list.append(self)
+        Model.layer_list_.append(self)
         if Model.name!=None and Model.name not in Model.layer_eval:
             Model.layer_eval[Model.name]=[]
             Model.layer_eval[Model.name].append(self)

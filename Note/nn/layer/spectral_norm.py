@@ -48,7 +48,7 @@ class spectral_norm(nn.Layer):
         
         self.train_flag=True
         self.output_size=layer.output_size
-        nn.Model.layer_list.append(self)
+        nn.Model.layer_list_.append(self)
         if nn.Model.name!=None and nn.Model.name not in nn.Model.layer_eval:
             nn.Model.layer_eval[nn.Model.name]=[]
             nn.Model.layer_eval[nn.Model.name].append(self)
