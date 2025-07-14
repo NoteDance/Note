@@ -6,7 +6,7 @@ __all__ = ["BatchRenorm1d", "BatchRenorm2d", "BatchRenorm3d"]
 
 
 class BatchRenorm(nn.Layer):
-    def __init__(self, input_size, epsilon=1e-3, momentum=0.99, affine=True, beta_initializer='zeros', gamma_initializer='ones', moving_mean_initializer='zeros', moving_variance_initializer='ones', dtype='float32'):
+    def __init__(self, input_size=None, epsilon=1e-3, momentum=0.99, affine=True, beta_initializer='zeros', gamma_initializer='ones', moving_mean_initializer='zeros', moving_variance_initializer='ones', dtype='float32'):
         super().__init__()
         self.input_size = input_size
         self.epsilon = epsilon
@@ -18,16 +18,18 @@ class BatchRenorm(nn.Layer):
         self.moving_variance_initializer = moving_variance_initializer
         self.dtype = dtype
         
-        self.gamma = nn.Parameter(tf.ones(input_size, dtype=dtype))
-        self.gamma.name_ = 'weight'
+        if input_size!=None:
+            self.gamma = nn.Parameter(tf.ones(input_size, dtype=dtype))
+            self.gamma.name_ = 'weight'
         
-        self.beta = nn.Parameter(tf.zeros(input_size, dtype=dtype))
-        self.beta.name_ = 'bias'
+            self.beta = nn.Parameter(tf.zeros(input_size, dtype=dtype))
+            self.beta.name_ = 'bias'
         
-        self.moving_mean = nn.initializer_([input_size], moving_mean_initializer, dtype, trainable=False)
-        self.moving_variance = nn.initializer_([input_size], moving_variance_initializer, dtype, trainable=False)
-        nn.Model.param.append(self.moving_mean)
-        nn.Model.param.append(self.moving_variance)
+            self.moving_mean = nn.initializer_([input_size], moving_mean_initializer, dtype, trainable=False)
+            self.moving_variance = nn.initializer_([input_size], moving_variance_initializer, dtype, trainable=False)
+            nn.Model.param.append(self.moving_mean)
+            nn.Model.param.append(self.moving_variance)
+            
         nn.Model.register(self)
         
         self.num_batches_tracked = tf.Variable(tf.zeros((), dtype=tf.int64))
