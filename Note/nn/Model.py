@@ -82,6 +82,8 @@ class Model:
         self.total_epoch=0
         self.time=0
         self.total_time=0
+        if hasattr(self, 'init_weights'):
+            Model.add()
     
     
     def __setattr__(self, name, value):
