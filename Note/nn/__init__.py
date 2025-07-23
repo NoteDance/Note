@@ -18,6 +18,7 @@ from Note.nn.layer.avg_pool2d import avg_pool2d
 from Note.nn.layer.avg_pool3d import avg_pool3d
 from Note.nn.layer.axial_positional_encoding import axial_positional_encoding
 from Note.nn.layer.batch_norm import batch_norm,batch_norm_
+from Note.nn.layer.batchrenorm import *
 from Note.nn.layer.BigBird_attention import BigBird_attention
 from Note.nn.layer.BigBird_masks import BigBird_masks
 from Note.nn.layer.bilinear import bilinear
@@ -138,6 +139,7 @@ from Note.nn.layer.split_batchnorm import *
 from Note.nn.layer.squeeze_excite import *
 from Note.nn.layer.stochastic_depth import stochastic_depth
 from Note.nn.layer.subtract import subtract
+from Note.nn.layer.switchable_norm import *
 from Note.nn.layer.SwitchGLU import SwitchGLU
 from Note.nn.layer.talking_heads_attention import talking_heads_attention
 from Note.nn.layer.thresholded_relu import thresholded_relu
