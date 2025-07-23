@@ -22,6 +22,9 @@ class Layer(metaclass=LayerMeta):
         self.name_ = self.__class__.__name__
         
         nn.Model.layer_list.append(self)
+        
+        if hasattr(self, 'init_weights'):
+            nn.Model.add()
     
     def _finalize_parameters(self):
         # Process any parameter assignments that were deferred
