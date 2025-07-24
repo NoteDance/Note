@@ -19,7 +19,6 @@ class Model:
     param_dict['conv2d_bias']=[]
     layer_dict=dict()
     layer_param=dict()
-    layer_list=[]
     layer_list_=[]
     layer_eval=dict()
     counter=0
@@ -39,7 +38,7 @@ class Model:
         self.param_dict=Model.param_dict
         self.layer_dict=Model.layer_dict
         self.layer_param=Model.layer_param
-        self.layer_list=Model.layer_list
+        self.layer_list=[]
         self.layer_list_=Model.layer_list_
         self.layer_eval=Model.layer_eval
         self.name_list=Model.name_list_
@@ -90,6 +89,7 @@ class Model:
         object.__setattr__(self, name, value)
         if isinstance(value, nn.Layer):
             object.__setattr__(value, 'name', name)
+            self.layer_list.append(value)
     
     
     def get_info(self):
@@ -1928,7 +1928,6 @@ class Model:
         Model.param_dict['conv2d_bias']=[]
         Model.layer_dict=dict()
         Model.layer_param=dict()
-        Model.layer_list=[]
         Model.layer_list_=[]
         Model.layer_eval=dict()
         Model.counter=0
