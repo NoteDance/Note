@@ -21,7 +21,7 @@ class Layer(metaclass=LayerMeta):
         
         self.name_ = self.__class__.__name__
         
-        nn.Model.layer_list.append(self)
+        self.layer_list = []
         
         if hasattr(self, 'init_weights'):
             nn.Model.add()
@@ -45,6 +45,7 @@ class Layer(metaclass=LayerMeta):
             # add to our children list
             object.__getattribute__(self, "_sub_layers").append(value)
             object.__setattr__(value, 'name', name)
+            self.layer_list.append(value)
         object.__setattr__(self, name, value)
     
     @property
