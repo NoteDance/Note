@@ -18,6 +18,11 @@ def apply_rot_embed(x, sin_emb, cos_emb):
     return x * cos_emb + rot(x) * sin_emb
 
 
+def apply_rot_embed_cat(x, emb):
+    sin_emb, cos_emb = tf.split(emb, num_or_size_splits=2, axis=-1)
+    return x * cos_emb + rot(x) * sin_emb
+
+
 def pixel_freq_bands(
         num_bands: int,
         max_freq: float = 224.,
