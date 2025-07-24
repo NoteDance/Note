@@ -8,7 +8,7 @@ from Note.nn.layer.adaptive_max_pooling3d import adaptive_max_pooling3d
 from Note.nn.layer.add import add
 from Note.nn.layer.additive_attention import additive_attention
 from Note.nn.layer.alpha_dropout import alpha_dropout
-from Note.nn.layer.attention import attention
+from Note.nn.layer.attention import Attention,AttentionRope
 from Note.nn.layer.attention_pool import AttentionPoolLatent
 from Note.nn.layer.attention_pool2d import *
 from Note.nn.layer.attention2d import *
