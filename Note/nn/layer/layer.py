@@ -25,13 +25,13 @@ class Layer(metaclass=LayerMeta):
         
         if hasattr(self, 'init_weights'):
             nn.Model.add()
-            if len(nn.Model.name_list)>0:
-                nn.Model.name_=nn.Model.name_list[-1]
-            if nn.Model.name_ != None and nn.Model.name_ not in nn.Model.layer_dict:
-                nn.Model.layer_dict[nn.Model.name_] = []
-                nn.Model.layer_dict[nn.Model.name_].append(self)
-            elif nn.Model.name_ != None:
-                   nn.Model.layer_dict[nn.Model.name_].append(self)
+        if len(nn.Model.name_list)>0:
+            nn.Model.name_=nn.Model.name_list[-1]
+        if nn.Model.name_ != None and nn.Model.name_ not in nn.Model.layer_dict:
+            nn.Model.layer_dict[nn.Model.name_] = []
+            nn.Model.layer_dict[nn.Model.name_].append(self)
+        elif nn.Model.name_ != None:
+               nn.Model.layer_dict[nn.Model.name_].append(self)
     
     def _finalize_parameters(self):
         # Process any parameter assignments that were deferred
