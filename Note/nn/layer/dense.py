@@ -16,13 +16,6 @@ class dense(nn.Layer): # define a class for dense (fully connected) layer
         self.output_size=output_size
         self.name=name
         self.init_weights=None
-        if len(Model.name_list)>0:
-            Model.name_=Model.name_list[-1]
-        if Model.name_!=None and Model.name_ not in Model.layer_dict:
-            Model.layer_dict[Model.name_]=[]
-            Model.layer_dict[Model.name_].append(self)
-        elif Model.name_!=None:
-               Model.layer_dict[Model.name_].append(self)
         if input_size!=None:
             if name==None:
                 self.weight=nn.initializer([input_size,output_size],weight_initializer,dtype,trainable) # initialize the weight matrix

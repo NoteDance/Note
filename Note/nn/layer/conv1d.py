@@ -1,6 +1,5 @@
 import tensorflow as tf # import the TensorFlow library
 from Note import nn
-from Note.nn.Model import Model
 
 
 class conv1d(nn.Layer): # define a class for 1D convolutional layer
@@ -31,13 +30,6 @@ class conv1d(nn.Layer): # define a class for 1D convolutional layer
         self.init_weights=None
         if not isinstance(padding,str):
             self.zeropadding1d=nn.zeropadding1d(padding=padding)
-        if len(Model.name_list)>0:
-            Model.name_=Model.name_list[-1]
-        if Model.name_!=None and Model.name_ not in Model.layer_dict:
-            Model.layer_dict[Model.name_]=[]
-            Model.layer_dict[Model.name_].append(self)
-        elif Model.name_!=None:
-            Model.layer_dict[Model.name_].append(self)
         if input_size!=None:
             self.weight=nn.initializer([kernel_size,input_size//groups,filters],weight_initializer,dtype,trainable) # initialize the weight tensor
             self.weight.name_='weight'

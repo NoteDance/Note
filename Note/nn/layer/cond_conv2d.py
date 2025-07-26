@@ -66,14 +66,6 @@ class CondConv2d(nn.Layer):
             nn.Model.param_dict['conv2d_weight'].append(self.weight)
             if use_bias==True:
                 nn.Model.param_dict['conv2d_bias'].append(self.bias)
-        
-        if len(nn.Model.name_list)>0:
-            nn.Model.name_=nn.Model.name_list[-1]
-        if nn.Model.name_!=None and nn.Model.name_ not in nn.Model.layer_dict:
-            nn.Model.layer_dict[nn.Model.name_]=[]
-            nn.Model.layer_dict[nn.Model.name_].append(self)
-        elif nn.Model.name_!=None:
-            nn.Model.layer_dict[nn.Model.name_].append(self)
     
     def reset_parameters(self):
         init_weight = get_condconv_initializer(
