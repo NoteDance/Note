@@ -1,3 +1,4 @@
+from Note.nn.layer.adanorm import AdaNorm
 from Note.nn.layer.adaptive_avg_pooling1d import adaptive_avg_pooling1d
 from Note.nn.layer.adaptive_avg_pooling2d import adaptive_avg_pooling2d
 from Note.nn.layer.adaptive_avg_pooling3d import adaptive_avg_pooling3d
