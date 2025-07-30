@@ -139,10 +139,12 @@ class Muon(optimizer.Optimizer):
     def set_muon_state(self, params, adamw_params):
         r"""Set use_muon flag."""
         for p in params:
-            self.use_muon[self._get_variable_index(p)] = len(p.shape) >= 2
+            if p.trainable:
+                self.use_muon[self._get_variable_index(p)] = len(p.shape) >= 2
 
         for p in adamw_params:
-            self.use_muon[self._get_variable_index(p)] = False
+            if p.trainable:
+                self.use_muon[self._get_variable_index(p)] = False
     
     def reset(self):
         self._iterations.assign(0)
@@ -359,10 +361,12 @@ class AdaMuon(optimizer.Optimizer):
     def set_muon_state(self, params, adamw_params):
         r"""Set use_muon flag."""
         for p in params:
-            self.use_muon[self._get_variable_index(p)] = len(p.shape) >= 2
+            if p.trainable:
+                self.use_muon[self._get_variable_index(p)] = len(p.shape) >= 2
 
         for p in adamw_params:
-            self.use_muon[self._get_variable_index(p)] = False
+            if p.trainable:
+                self.use_muon[self._get_variable_index(p)] = False
     
     def reset(self):
         self._iterations.assign(0)
@@ -620,10 +624,12 @@ class Muon_sn(optimizer.Optimizer):
     def set_muon_state(self, params, adamw_params):
         r"""Set use_muon flag."""
         for p in params:
-            self.use_muon[self._get_variable_index(p)] = len(p.shape) >= 2
+            if p.trainable:
+                self.use_muon[self._get_variable_index(p)] = len(p.shape) >= 2
 
         for p in adamw_params:
-            self.use_muon[self._get_variable_index(p)] = False
+            if p.trainable:
+                self.use_muon[self._get_variable_index(p)] = False
     
     def reset(self):
         self._iterations.assign(0)
@@ -893,10 +899,12 @@ class AdaMuon_sn(optimizer.Optimizer):
     def set_muon_state(self, params, adamw_params):
         r"""Set use_muon flag."""
         for p in params:
-            self.use_muon[self._get_variable_index(p)] = len(p.shape) >= 2
+            if p.trainable:
+                self.use_muon[self._get_variable_index(p)] = len(p.shape) >= 2
 
         for p in adamw_params:
-            self.use_muon[self._get_variable_index(p)] = False
+            if p.trainable:
+                self.use_muon[self._get_variable_index(p)] = False
     
     def reset(self):
         self._iterations.assign(0)
