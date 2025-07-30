@@ -79,13 +79,11 @@ class group_norm(nn.Layer):
         if input_size!=None:
             if self.scale:
                 self.gamma = initializer(input_size,gamma_initializer,dtype)
-                self.gamma.name_ = 'weight'
             else:
                 self.gamma = None
     
             if self.center:
                 self.beta = initializer(input_size,beta_initializer,dtype)
-                self.beta.name_ = 'bias'
             else:
                 self.beta = None
             self.output_size = input_size
@@ -93,13 +91,11 @@ class group_norm(nn.Layer):
     def build(self):
         if self.scale:
             self.gamma = initializer(self.input_size,self.gamma_initializer,self.dtype)
-            self.gamma.name_ = 'weight'
         else:
             self.gamma = None
 
         if self.center:
             self.beta = initializer(self.input_size,self.beta_initializer,self.dtype)
-            self.beta.name_ = 'bias'
         else:
             self.beta = None
         return

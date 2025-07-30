@@ -19,14 +19,12 @@ class dense(nn.Layer): # define a class for dense (fully connected) layer
         if input_size!=None:
             if name==None:
                 self.weight=nn.initializer([input_size,output_size],weight_initializer,dtype,trainable) # initialize the weight matrix
-                self.weight.name_='weight'
             else:
                 self.weight=nn.initializer([input_size,output_size],weight_initializer,dtype,trainable,name=name)
             Model.param_dict['dense_weight'].append(self.weight)
             if use_bias==True: # if use bias is True
                 if name==None:
                     self.bias=nn.initializer([output_size],bias_initializer,dtype,trainable) # initialize the bias vector
-                    self.bias.name_='bias'
                 else:
                     self.bias=nn.initializer([output_size],bias_initializer,dtype,trainable,name=name)
                 Model.param_dict['dense_bias'].append(self.bias)
@@ -37,14 +35,12 @@ class dense(nn.Layer): # define a class for dense (fully connected) layer
     def build(self):
         if self.name==None:
             self.weight=nn.initializer([self.input_size,self.output_size],self.weight_initializer,self.dtype,self.trainable) # initialize the weight matrix
-            self.weight.name_='weight'
         else:
             self.weight=nn.initializer([self.input_size,self.output_size],self.weight_initializer,self.dtype,self.trainable,name=self.name)
         Model.param_dict['dense_weight'].append(self.weight)
         if self.use_bias==True: # if use bias is True
             if self.name==None:
                 self.bias=nn.initializer([self.output_size],self.bias_initializer,self.dtype,self.trainable) # initialize the bias vector
-                self.bias.name_='bias'
             else:
                 self.bias=nn.initializer([self.output_size],self.bias_initializer,self.dtype,self.trainable,name=self.name)
             Model.param_dict['dense_bias'].append(self.bias)

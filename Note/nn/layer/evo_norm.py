@@ -129,9 +129,7 @@ class EvoNorm2dB0(nn.Layer):
         self.momentum = momentum
         self.eps = eps
         self.weight = nn.Parameter(tf.ones(num_features))
-        self.weight.name_ = 'weight'
         self.bias = nn.Parameter(tf.zeros(num_features))
-        self.bias.name_ = 'bias'
         self.v = nn.Parameter(tf.ones(num_features)) if apply_act else None
         self.running_var = nn.initializer_([num_features], 'ones', trainable=False)
         nn.Model.param.append(self.running_var)
@@ -181,9 +179,7 @@ class EvoNorm2dB1(nn.Layer):
         self.momentum = momentum
         self.eps = eps
         self.weight = nn.Parameter(tf.ones(num_features))
-        self.weight.name_ = 'weight'
         self.bias = nn.Parameter(tf.zeros(num_features))
-        self.bias.name_ = 'bias'
         self.running_var = nn.initializer_([num_features], 'ones', trainable=False)
         nn.Model.param.append(self.running_var)
         self.training = True
@@ -225,9 +221,7 @@ class EvoNorm2dB2(nn.Layer):
         self.momentum = momentum
         self.eps = eps
         self.weight = nn.Parameter(tf.ones(num_features))
-        self.weight.name_ = 'weight'
         self.bias = nn.Parameter(tf.zeros(num_features))
-        self.bias.name_ = 'bias'
         self.running_var = nn.initializer_([num_features], 'ones', trainable=False)
         nn.Model.param.append(self.running_var)
         self.training = True
@@ -273,9 +267,7 @@ class EvoNorm2dS0(nn.Layer):
             self.groups = groups
         self.eps = eps
         self.weight = nn.Parameter(tf.ones(num_features))
-        self.weight.name_ = 'weight'
         self.bias = nn.Parameter(tf.zeros(num_features))
-        self.bias.name_ = 'bias'
         self.v = nn.Parameter(tf.ones(num_features)) if apply_act else None
         self.training = True
         nn.Model.layer_list_.append(self)
@@ -331,9 +323,7 @@ class EvoNorm2dS1(nn.Layer):
         self.eps = eps
         self.pre_act_norm = False
         self.weight = nn.Parameter(tf.ones(num_features))
-        self.weight.name_ = 'weight'
         self.bias = nn.Parameter(tf.zeros(num_features))
-        self.bias.name_ = 'bias'
 
     def __call__(self, x):
         assert len(x.shape) == 4, 'expected 4D input'
@@ -377,9 +367,7 @@ class EvoNorm2dS2(nn.Layer):
             self.groups = groups
         self.eps = eps
         self.weight = nn.Parameter(tf.ones(num_features))
-        self.weight.name_ = 'weight'
         self.bias = nn.Parameter(tf.zeros(num_features))
-        self.bias.name_ = 'bias'
 
     def __call__(self, x):
         assert len(x.shape) == 4, 'expected 4D input'

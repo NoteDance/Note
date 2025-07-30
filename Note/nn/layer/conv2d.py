@@ -29,10 +29,8 @@ class conv2d(nn.Layer): # define a class for 2D convolutional layer
             self.zeropadding2d=nn.zeropadding2d(padding=padding)
         if input_size!=None:
             self.weight=nn.initializer([kernel_size[0],kernel_size[1],input_size//groups,filters],weight_initializer,dtype,trainable) # initialize the weight tensor
-            self.weight.name_='weight'
             if use_bias==True: # if use bias is True
                 self.bias=nn.initializer([filters],bias_initializer,dtype,trainable) # initialize the bias vector
-                self.bias.name_='bias'
             Model.param_dict['conv2d_weight'].append(self.weight)
             if use_bias==True:
                 Model.param_dict['conv2d_bias'].append(self.bias)
@@ -40,10 +38,8 @@ class conv2d(nn.Layer): # define a class for 2D convolutional layer
     
     def build(self):
         self.weight=nn.initializer([self.kernel_size[0],self.kernel_size[1],self.input_size//self.groups,self.output_size],self.weight_initializer,self.dtype,self.trainable) # initialize the weight tensor
-        self.weight.name_='weight'
         if self.use_bias==True: # if use bias is True
             self.bias=nn.initializer([self.output_size],self.bias_initializer,self.dtype,self.trainable) # initialize the bias vector
-            self.bias.name_='bias'
         Model.param_dict['conv2d_weight'].append(self.weight)
         if self.use_bias==True:
             Model.param_dict['conv2d_bias'].append(self.bias)

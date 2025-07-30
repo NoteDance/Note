@@ -20,10 +20,8 @@ class BatchRenorm(nn.Layer):
         
         if input_size!=None:
             self.gamma = nn.Parameter(tf.ones(input_size, dtype=dtype))
-            self.gamma.name_ = 'weight'
         
             self.beta = nn.Parameter(tf.zeros(input_size, dtype=dtype))
-            self.beta.name_ = 'bias'
         
             self.moving_mean = nn.initializer_([input_size], moving_mean_initializer, dtype, trainable=False)
             self.moving_variance = nn.initializer_([input_size], moving_variance_initializer, dtype, trainable=False)
@@ -40,9 +38,7 @@ class BatchRenorm(nn.Layer):
         nn.Model.param.append(self.moving_mean)
         nn.Model.param.append(self.moving_variance)
         self.gamma = nn.Parameter(tf.ones(self.input_size, dtype=self.dtype))
-        self.gamma.name_ = 'weight'
         self.beta = nn.Parameter(tf.zeros(self.input_size, dtype=self.dtype))
-        self.beta.name_ = 'bias'
         self.num_batches_tracked = tf.Variable(tf.zeros((), dtype=tf.int64))
         return
     

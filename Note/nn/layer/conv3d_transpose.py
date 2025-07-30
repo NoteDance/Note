@@ -27,18 +27,14 @@ class conv3d_transpose(nn.Layer): # define a class for 3D transposed convolution
         self.output_size=filters
         if input_size!=None:
             self.weight=nn.initializer([kernel_size[0],kernel_size[1],kernel_size[2],filters,input_size],weight_initializer,dtype,trainable) # initialize the weight tensor with reversed input and output channels
-            self.weight.name_='weight'
             if use_bias==True: # if use bias is True
                 self.bias=nn.initializer([filters],bias_initializer,dtype,trainable) # initialize the bias vector
-                self.bias.name_='bias'
     
     
     def build(self):
         self.weight=nn.initializer([self.kernel_size[0],self.kernel_size[1],self.kernel_size[2],self.filters,self.input_size],self.weight_initializer,self.dtype,self.trainable) # initialize the weight tensor with reversed input and output channels
-        self.weight.name_='weight'
         if self.use_bias==True: # if use bias is True
             self.bias=nn.initializer([self.filters],self.bias_initializer,self.dtype,self.trainable) # initialize the bias vector
-            self.bias.name_='bias'
         return
     
     

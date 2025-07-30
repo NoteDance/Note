@@ -30,12 +30,10 @@ class layer_norm(nn.Layer):
             self.output_size=input_size
             if center==True:
                 self.beta=initializer([input_size], beta_initializer, dtype)
-                self.beta.name_='bias'
             else:
                 self.beta=None
             if scale==True:
                 self.gamma=initializer([input_size], gamma_initializer, dtype)
-                self.gamma.name_='weight'
             else:
                 self.gamma=None
     
@@ -49,12 +47,10 @@ class layer_norm(nn.Layer):
             self.axis = [self.axis]
         if self.center==True:
             self.beta=initializer(shape, self.beta_initializer, self.dtype)
-            self.beta.name_='bias'
         else:
             self.beta=None
         if self.scale==True:
             self.gamma=initializer(shape, self.gamma_initializer, self.dtype)
-            self.gamma.name_='weight'
         else:
             self.gamma=None
         return

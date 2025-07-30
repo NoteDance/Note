@@ -12,9 +12,7 @@ class SwitchNorm1d(nn.Layer):
         self.dtype = dtype
         if input_size!=None:
             self.gamma = nn.Parameter(tf.ones((1, input_size), dtype))
-            self.gamma.name_ = 'weight'
             self.beta = nn.Parameter(tf.zeros((1, input_size), dtype))
-            self.beta.name_ = 'bias'
             self.mean_weight = nn.Parameter(tf.ones(2))
             self.var_weight = nn.Parameter(tf.ones(2))
             self.moving_mean = nn.initializer_([1, input_size], 'zeros', dtype, trainable=False)
@@ -29,9 +27,7 @@ class SwitchNorm1d(nn.Layer):
         nn.Model.param.append(self.moving_mean)
         nn.Model.param.append(self.moving_variance)
         self.gamma = nn.Parameter(tf.ones((1, self.input_size), self.dtype))
-        self.gamma.name_ = 'weight'
         self.beta = nn.Parameter(tf.zeros((1, self.input_size), self.dtype))
-        self.beta.name_ = 'bias'
         self.mean_weight = nn.Parameter(tf.ones(2))
         self.var_weight = nn.Parameter(tf.ones(2))
 

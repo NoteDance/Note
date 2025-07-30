@@ -32,12 +32,10 @@ class batch_norm(nn.Layer):
             Model.param.append(self.moving_variance)
             if center==True:
                 self.beta=initializer([input_size], beta_initializer, dtype, trainable)
-                self.beta.name_='bias'
             else:
                 self.beta=None
             if scale==True:
                 self.gamma=initializer([input_size], gamma_initializer, dtype, trainable)
-                self.gamma.name_='weight'
             else:
                 self.gamma=None
         Model.layer_list_.append(self)
