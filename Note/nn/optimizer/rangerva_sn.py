@@ -135,6 +135,7 @@ class RangerVA_sn(optimizer.Optimizer):
         if self.amsgrad:
             self.max_exp_avg_sq = []
         self.slow_buffer = []
+        self.subset_size_ = []
         for var in var_list:
             var_fp32 = tf.Variable(tf.cast(var, 'float32'))
             self.exp_avg.append(

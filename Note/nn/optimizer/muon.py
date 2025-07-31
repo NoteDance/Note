@@ -574,6 +574,7 @@ class Muon_sn(optimizer.Optimizer):
         adamw_lr=3e-4,
         adamw_wd=0.0,
         adamw_eps=1e-8,
+        subset_size=-1,
         sn=True,
         clipnorm=None,
         clipvalue=None,
@@ -612,6 +613,7 @@ class Muon_sn(optimizer.Optimizer):
         self.adamw_lr = adamw_lr
         self.adamw_wd = adamw_wd
         self.adamw_eps = adamw_eps
+        self.subset_size = subset_size
         self.sn = sn
         
         if adamw_params is not None:
@@ -640,6 +642,7 @@ class Muon_sn(optimizer.Optimizer):
             self.moment1[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="moment1"
                                                     )
+            self.subset_size_ = []
             if self.sn:
                 size = tf.size(var)
                 
@@ -672,6 +675,7 @@ class Muon_sn(optimizer.Optimizer):
         self.moment1 = []
         self.moment2 = []
         self.use_muon = []
+        self.subset_size_ = []
         for var in var_list:
             self.momentum_buffer.append(self.add_variable_from_reference(
                                 reference_variable=var, name="momentum_buffer"
@@ -824,6 +828,7 @@ class Muon_sn(optimizer.Optimizer):
                 "sn": self.sn,
                 "world_size": self.world_size,
                 "rank": self.rank,
+                "subset_size_": self.subset_size_,
             }
         )
         return config
@@ -849,6 +854,7 @@ class AdaMuon_sn(optimizer.Optimizer):
         adamw_betas = (0.9, 0.999),
         adamw_lr: float = 3e-4,
         adamw_wd: float = 0.0,
+        subset_size=-1,
         sn=True,
         clipnorm=None,
         clipvalue=None,
@@ -887,6 +893,7 @@ class AdaMuon_sn(optimizer.Optimizer):
         self.adamw_betas = adamw_betas
         self.adamw_lr = adamw_lr
         self.adamw_wd = adamw_wd
+        self.subset_size = subset_size
         self.sn = sn
         
         if adamw_params is not None:
@@ -922,6 +929,7 @@ class AdaMuon_sn(optimizer.Optimizer):
             self.exp_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="exp_avg"
                                                     )
+            self.subset_size_ = []
             if self.sn:
                 size = tf.size(var)
                 
@@ -956,6 +964,7 @@ class AdaMuon_sn(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.use_muon = []
+        self.subset_size_ = []
         for var in var_list:
             self.momentum_buffer.append(self.add_variable_from_reference(
                                 reference_variable=var, name="momentum_buffer"
@@ -1138,6 +1147,7 @@ class AdaMuon_sn(optimizer.Optimizer):
                 "sn": self.sn,
                 "world_size": self.world_size,
                 "rank": self.rank,
+                "subset_size_": self.subset_size_,
             }
         )
         return config

@@ -153,6 +153,29 @@ class Ranger25(optimizer.Optimizer):
                                                         reference_variable=var, name="exp_avg_slow"
                                                     )
             self.slow_momentum[self._get_variable_index(var)].assign(var)
+            self.subset_size_ = []
+            if self.sn:
+                size = tf.size(var)
+                
+                def true_fn():
+                    return self.subset_size
+                def false_fn():
+                    return tf.cast(tf.sqrt(size) / tf.abs(tf.cast(self.subset_size, tf.int32)), tf.int32)
+                self.subset_size_.append(closest_smaller_divisor_of_n_to_k(
+                    size,
+                    tf.cond(self.subset_size > 0, true_fn, false_fn)
+                ))
+
+                reshaped_grad = tf.reshape(var, (size // self.subset_size_[-1], self.subset_size_[-1]))
+                second_moment_update = tf.reduce_sum(reshaped_grad ** 2, axis=1, keepdims=True)
+                second_moment_update = tf.Variable(second_moment_update)
+                self.exp_avg_sq.append(self.add_variable_from_reference(
+                        reference_variable=second_moment_update, name="exp_avg_sq"
+                    ))
+            else:
+                self.exp_avg_sq.append(self.add_variable_from_reference(
+                        reference_variable=var, name="exp_avg_sq"
+                    ))
 
     def build(self, var_list):
         if self.built:
@@ -162,6 +185,7 @@ class Ranger25(optimizer.Optimizer):
         self.exp_avg_sq = []
         self.exp_avg_slow = []
         self.slow_momentum = []
+        self.subset_size_ = []
         for var in var_list:
             self.exp_avg.append(self.add_variable_from_reference(
                                 reference_variable=var, name="exp_avg"

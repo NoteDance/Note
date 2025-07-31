@@ -100,6 +100,7 @@ class RangerQH_sn(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.slow_buffer = []
+        self.subset_size_ = []
         self.beta1_weight = 0.0
         self.beta2_weight = 0.0
         for var in var_list:

@@ -224,6 +224,7 @@ class EmoNavi_sn(optimizer.Optimizer):
         weight_decouple: bool = True,
         fixed_decay: bool = False,
         shadow_weight: float = 0.05,
+        subset_size = -1,
         sn = True,
         maximize: bool = False,
         clipnorm=None,
@@ -257,6 +258,8 @@ class EmoNavi_sn(optimizer.Optimizer):
         self.weight_decouple = weight_decouple
         self.fixed_decay = fixed_decay
         self.shadow_weight = shadow_weight
+        self.subset_size = subset_size
+        self.sn = sn
         self.maximize = maximize
         self.ema = {}
     
@@ -267,6 +270,7 @@ class EmoNavi_sn(optimizer.Optimizer):
         self.shadow = []
         self.exp_avg = []
         self.exp_avg_sq = []
+        self.subset_size_ = []
         for var in var_list:
             self.shadow.append(
                 self.add_variable_from_reference(
@@ -376,6 +380,7 @@ class EmoNavi_sn(optimizer.Optimizer):
                 "sn": self.sn,
                 "maximize": self.maximize,
                 "ema": self.ema,
+                "subset_size_": self.subset_size_,
             }
         )
         return config
