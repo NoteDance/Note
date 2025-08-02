@@ -85,6 +85,7 @@ class RL:
                 self.info['window_size']=self.window_size
                 self.info['clearing_freq']=self.clearing_freq
                 self.info['window_size_']=self.window_size_
+                self.info['window_size_ppo']=self.window_size_ppo
                 self.info['random']=self.random
                 self.info['num_updates']=self.num_updates
                 self.info['save_data']=self.save_data
@@ -108,6 +109,7 @@ class RL:
                 self.info['window_size']=self.window_size
                 self.info['clearing_freq']=self.clearing_freq
                 self.info['window_size_']=self.window_size_
+                self.info['window_size_ppo']=self.window_size_ppo
                 self.info['random']=self.random
                 self.info['num_updates']=self.num_updates
                 self.info['save_data']=self.save_data
