@@ -2108,7 +2108,7 @@ class RL:
                             self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
                             self.reward_pool[7]=np.concatenate(self.reward_pool_list)
                             self.done_pool[7]=np.concatenate(self.done_pool_list)
-                            if self.num_updates!=None and len(self.state_pool[7])>=self.pool_size_:
+                            if not self.PR and self.num_updates!=None and len(self.state_pool[7])>=self.pool_size_:
                                 idx=np.random.choice(self.state_pool[7].shape[0], size=self.pool_size_, replace=False)
                                 self.state_pool[7]=self.state_pool[7][idx]
                                 self.action_pool[7]=self.action_pool[7][idx]
