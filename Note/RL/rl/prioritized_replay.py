@@ -50,7 +50,7 @@ class pr_:
     def sample(self,state_pool,action_pool,next_state_pool,reward_pool,done_pool,epsilon,alpha,batch):
         if self.PPO:
             prios=(self.ratio+epsilon)**alpha
-            p=prios/tf.reduce_sum(prios)
+            p=prios/np.sum(prios)
         else:
             prios=(self.TD+epsilon)**alpha
             p=prios/np.sum(prios)
