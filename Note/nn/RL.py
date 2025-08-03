@@ -172,6 +172,11 @@ class RL:
                     self.next_state_pool_list[index]=self.next_state_pool_list[index][self.window_size_:]
                     self.reward_pool_list[index]=self.reward_pool_list[index][self.window_size_:]
                     self.done_pool_list[index]=self.done_pool_list[index][self.window_size_:]
+                    if self.PR:
+                        if self.PPO:
+                            self.ratio_list[index]=self.ratio_list[index][self.window_size_:]
+                        else:
+                            self.TD_list[index]=self.TD_list[index][self.window_size_:]
             if len(self.state_pool_list[index])>math.ceil(self.pool_size/self.processes):
                 if self.window_size!=None:
                     self.state_pool_list[index]=self.state_pool_list[index][self.window_size:]
@@ -179,12 +184,22 @@ class RL:
                     self.next_state_pool_list[index]=self.next_state_pool_list[index][self.window_size:]
                     self.reward_pool_list[index]=self.reward_pool_list[index][self.window_size:]
                     self.done_pool_list[index]=self.done_pool_list[index][self.window_size:]
+                    if self.PR:
+                        if self.PPO:
+                            self.ratio_list[index]=self.ratio_list[index][self.window_size:]
+                        else:
+                            self.TD_list[index]=self.TD_list[index][self.window_size:]
                 else:
                     self.state_pool_list[index]=self.state_pool_list[index][1:]
                     self.action_pool_list[index]=self.action_pool_list[index][1:]
                     self.next_state_pool_list[index]=self.next_state_pool_list[index][1:]
                     self.reward_pool_list[index]=self.reward_pool_list[index][1:]
                     self.done_pool_list[index]=self.done_pool_list[index][1:]
+                    if self.PR:
+                        if self.PPO:
+                            self.ratio_list[index]=self.ratio_list[index][1:]
+                        else:
+                            self.TD_list[index]=self.TD_list[index][1:]
         else:
             if self.state_pool is None:
                 self.state_pool=s
@@ -206,6 +221,11 @@ class RL:
                     self.next_state_pool=self.next_state_pool[self.window_size_:]
                     self.reward_pool=self.reward_pool[self.window_size_:]
                     self.done_pool=self.done_pool[self.window_size_:]
+                    if self.PR:
+                        if self.PPO:
+                            self.prioritized_replay.ratio=self.prioritized_replay.ratio[self.window_size_:]
+                        else:
+                            self.prioritized_replay.TD=self.prioritized_replay.TD[self.window_size_:]
             if len(self.state_pool)>self.pool_size:
                 if self.window_size!=None:
                     self.state_pool=self.state_pool[self.window_size:]
@@ -213,12 +233,22 @@ class RL:
                     self.next_state_pool=self.next_state_pool[self.window_size:]
                     self.reward_pool=self.reward_pool[self.window_size:]
                     self.done_pool=self.done_pool[self.window_size:]
+                    if self.PR:
+                        if self.PPO:
+                            self.prioritized_replay.ratio=self.prioritized_replay.ratio[self.window_size:]
+                        else:
+                            self.prioritized_replay.TD=self.prioritized_replay.TD[self.window_size:]
                 else:
                     self.state_pool=self.state_pool[1:]
                     self.action_pool=self.action_pool[1:]
                     self.next_state_pool=self.next_state_pool[1:]
                     self.reward_pool=self.reward_pool[1:]
                     self.done_pool=self.done_pool[1:]
+                    if self.PR:
+                        if self.PPO:
+                            self.prioritized_replay.ratio=self.prioritized_replay.ratio[1:]
+                        else:
+                            self.prioritized_replay.TD=self.prioritized_replay.TD[1:]
         return
     
     
@@ -442,6 +472,7 @@ class RL:
                                     self.next_state_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                     self.reward_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                     self.done_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
+                                    self.ratio_list[p]=self.ratio_list[p][self.window_size_ppo:]
                         else:
                             for p in range(self.processes):
                                 self.state_pool_list[p]=None
@@ -483,6 +514,7 @@ class RL:
                                         self.next_state_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                         self.reward_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                         self.done_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
+                                        self.ratio_list[p]=self.ratio_list[p][self.window_size_ppo:]
                             else:
                                 for p in range(self.processes):
                                     self.state_pool_list[p]=None
@@ -533,6 +565,7 @@ class RL:
                                     self.next_state_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                     self.reward_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                     self.done_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
+                                    self.ratio_list[p]=self.ratio_list[p][self.window_size_ppo:]
                         else:
                             for p in range(self.processes):
                                 self.state_pool_list[p]=None
@@ -574,6 +607,7 @@ class RL:
                                         self.next_state_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                         self.reward_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                         self.done_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
+                                        self.ratio_list[p]=self.ratio_list[p][self.window_size_ppo:]
                             else:
                                 for p in range(self.processes):
                                     self.state_pool_list[p]=None
@@ -643,6 +677,8 @@ class RL:
                                                     self.next_state_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                                     self.reward_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                                     self.done_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
+                                                    self.ratio_list[p]=self.ratio_list[p][self.window_size_ppo:]
+                                                    
                                         else:
                                             for p in range(self.processes):
                                                 self.state_pool_list[p]=None
@@ -682,6 +718,7 @@ class RL:
                                                     self.next_state_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                                     self.reward_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                                     self.done_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
+                                                    self.ratio_list[p]=self.ratio_list[p][self.window_size_ppo:]
                                         else:
                                             for p in range(self.processes):
                                                 self.state_pool_list[p]=None
@@ -739,6 +776,7 @@ class RL:
                                                     self.next_state_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                                     self.reward_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                                     self.done_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
+                                                    self.ratio_list[p]=self.ratio_list[p][self.window_size_ppo:]
                                         else:
                                             for p in range(self.processes):
                                                 self.state_pool_list[p]=None
@@ -775,6 +813,7 @@ class RL:
                                                 self.next_state_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                                 self.reward_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                                 self.done_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
+                                                self.ratio_list[p]=self.ratio_list[p][self.window_size_ppo:]
                                     else:
                                         for p in range(self.processes):
                                             self.state_pool_list[p]=None
@@ -839,6 +878,7 @@ class RL:
                                                     self.next_state_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                                     self.reward_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                                     self.done_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
+                                                    self.ratio_list[p]=self.ratio_list[p][self.window_size_ppo:]
                                         else:
                                             for p in range(self.processes):
                                                 self.state_pool_list[p]=None
@@ -889,6 +929,7 @@ class RL:
                                                 self.next_state_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                                 self.reward_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                                 self.done_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
+                                                self.ratio_list[p]=self.ratio_list[p][self.window_size_ppo:]
                                     else:
                                         for p in range(self.processes):
                                             self.state_pool_list[p]=None
@@ -901,13 +942,13 @@ class RL:
                     self.update_param()
                     if self.PPO:
                         if self.PR:
-                            for p in range(self.processes):
-                                if len(self.state_pool)>self.window_size_ppo:
-                                    self.state_pool=self.state_pool[self.window_size_ppo:]
-                                    self.action_pool=self.action_pool[self.window_size_ppo:]
-                                    self.next_state_pool=self.action_pool[self.window_size_ppo:]
-                                    self.reward_pool=self.action_pool[self.window_size_ppo:]
-                                    self.done_pool=self.action_pool[self.window_size_ppo:]
+                            if len(self.state_pool)>self.window_size_ppo:
+                                self.state_pool=self.state_pool[self.window_size_ppo:]
+                                self.action_pool=self.action_pool[self.window_size_ppo:]
+                                self.next_state_pool=self.action_pool[self.window_size_ppo:]
+                                self.reward_pool=self.action_pool[self.window_size_ppo:]
+                                self.done_pool=self.action_pool[self.window_size_ppo:]
+                                self.prioritized_replay.ratio=self.prioritized_replay.ratio[self.window_size_ppo:]
                         else:
                             self.state_pool=None
                             self.action_pool=None
@@ -944,10 +985,16 @@ class RL:
             done=np.array(done)
             self.pool(s,a,next_s,r,done)
             if self.PR==True:
-                if len(self.state_pool)>1:
-                    self.prioritized_replay.TD=np.append(self.prioritized_replay.TD,self.initial_TD)
-                if len(self.state_pool)>self.pool_size:
-                    self.prioritized_replay.TD=self.prioritized_replay.TD[1:]
+                if self.PPO:
+                    if len(self.state_pool)>1:
+                        self.prioritized_replay.ratio=np.append(self.prioritized_replay.ratio,self.initial_ratio)
+                    if len(self.state_pool)>self.pool_size:
+                        self.prioritized_replay.ratio=self.prioritized_replay.ratio[1:]
+                else:
+                    if len(self.state_pool)>1:
+                        self.prioritized_replay.TD=np.append(self.prioritized_replay.ratio,self.initial_TD)
+                    if len(self.state_pool)>self.pool_size:
+                        self.prioritized_replay.TD=self.prioritized_replay.TD[1:]
             if self.MARL==True:
                 r,done=self.reward_done_func_ma(r,done)
             self.reward=r+self.reward
