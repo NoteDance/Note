@@ -524,7 +524,7 @@ class RL_pytorch:
         return
     
     
-    def modify_ratio(self):
+    def modify_ratio_TD(self):
         if self.PR==True:
             for p in range(self.processes):
                 if self.prioritized_replay.ratio is not None:
@@ -731,7 +731,7 @@ class RL_pytorch:
                 if pool_network==True:
                     process_list=[]
                     if self.PPO:
-                        self.modify_ratio()
+                        self.modify_ratio_TD()
                     else:
                         self.modify_TD()
                     for p in range(processes):
@@ -819,7 +819,7 @@ class RL_pytorch:
                 if pool_network==True:
                     process_list=[]
                     if self.PPO:
-                        self.modify_ratio()
+                        self.modify_ratio_TD()
                     else:
                         self.modify_TD()
                     for p in range(processes):
