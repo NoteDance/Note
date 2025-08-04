@@ -63,6 +63,7 @@ class RL:
         self.info['epsilon']=self.epsilon
         self.info['initial_ratio']=self.initial_ratio
         self.info['initial_TD']=self.initial_TD
+        self.info['lambda_']=self.lambda_
         self.info['alpha']=self.alpha
         self.info['path']=self.path
         self.info['save_freq']=self.save_freq
@@ -123,7 +124,7 @@ class RL:
         return self.info
     
     
-    def set(self,policy=None,noise=None,pool_size=None,batch=None,num_updates=None,update_batches=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False,MARL=False,PR=False,IRL=False,epsilon=None,initial_ratio=1.0,initial_TD=7.,alpha=0.7):
+    def set(self,policy=None,noise=None,pool_size=None,batch=None,num_updates=None,update_batches=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False,MARL=False,PR=False,IRL=False,epsilon=None,initial_ratio=1.0,initial_TD=7.,lambda_=0.5,alpha=0.7):
         self.policy=policy
         self.noise=noise
         self.pool_size=pool_size
@@ -142,10 +143,13 @@ class RL:
         if PPO:
             self.prioritized_replay.PPO=PPO
             self.initial_ratio=initial_ratio
+            self.initial_TD=initial_TD
             self.prioritized_replay.ratio=initial_ratio
+            self.prioritized_replay.TD=initial_TD
         else:
             self.initial_TD=initial_TD
             self.prioritized_replay.TD=initial_TD
+        self.lambda_=lambda_
         self.alpha=alpha
         return
     
@@ -175,6 +179,7 @@ class RL:
                     if self.PR:
                         if self.PPO:
                             self.ratio_list[index]=self.ratio_list[index][self.window_size_:]
+                            self.TD_list[index]=self.TD_list[index][self.window_size_:]
                         else:
                             self.TD_list[index]=self.TD_list[index][self.window_size_:]
             if len(self.state_pool_list[index])>math.ceil(self.pool_size/self.processes):
@@ -187,6 +192,7 @@ class RL:
                     if self.PR:
                         if self.PPO:
                             self.ratio_list[index]=self.ratio_list[index][self.window_size:]
+                            self.TD_list[index]=self.TD_list[index][self.window_size:]
                         else:
                             self.TD_list[index]=self.TD_list[index][self.window_size:]
                 else:
@@ -219,6 +225,7 @@ class RL:
                     if self.PR:
                         if self.PPO:
                             self.prioritized_replay.ratio=self.prioritized_replay.ratio[self.window_size_:]
+                            self.prioritized_replay.TD=self.prioritized_replay.TD[self.window_size_:]
                         else:
                             self.prioritized_replay.TD=self.prioritized_replay.TD[self.window_size_:]
             if len(self.state_pool)>self.pool_size:
@@ -231,6 +238,7 @@ class RL:
                     if self.PR:
                         if self.PPO:
                             self.prioritized_replay.ratio=self.prioritized_replay.ratio[self.window_size:]
+                            self.prioritized_replay.TD=self.prioritized_replay.TD[self.window_size:]
                         else:
                             self.prioritized_replay.TD=self.prioritized_replay.TD[self.window_size:]
                 else:
@@ -329,7 +337,7 @@ class RL:
                 r = np.array(self.reward_list)
                 d = np.array(self.done_list)
             else:
-                s,a,next_s,r,d=self.prioritized_replay.sample(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.epsilon,self.alpha,self.batch)
+                s,a,next_s,r,d=self.prioritized_replay.sample(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.epsilon,self.lambda_,self.alpha,self.batch)
         elif self.HER:
             if self.processes_her!=None:
                 process_list=[]
@@ -463,6 +471,7 @@ class RL:
                                     self.reward_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                     self.done_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                     self.ratio_list[p]=self.ratio_list[p][self.window_size_ppo:]
+                                    self.TD_list[p]=self.TD_list[p][self.window_size_ppo:]
                         else:
                             for p in range(self.processes):
                                 self.state_pool_list[p]=None
@@ -505,6 +514,7 @@ class RL:
                                         self.reward_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                         self.done_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                         self.ratio_list[p]=self.ratio_list[p][self.window_size_ppo:]
+                                        self.TD_list[p]=self.TD_list[p][self.window_size_ppo:]
                             else:
                                 for p in range(self.processes):
                                     self.state_pool_list[p]=None
@@ -556,6 +566,7 @@ class RL:
                                     self.reward_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                     self.done_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                     self.ratio_list[p]=self.ratio_list[p][self.window_size_ppo:]
+                                    self.TD_list[p]=self.TD_list[p][self.window_size_ppo:]
                         else:
                             for p in range(self.processes):
                                 self.state_pool_list[p]=None
@@ -598,6 +609,7 @@ class RL:
                                         self.reward_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                         self.done_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                         self.ratio_list[p]=self.ratio_list[p][self.window_size_ppo:]
+                                        self.TD_list[p]=self.TD_list[p][self.window_size_ppo:]
                             else:
                                 for p in range(self.processes):
                                     self.state_pool_list[p]=None
@@ -667,7 +679,7 @@ class RL:
                                                 self.reward_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                                 self.done_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                                 self.ratio_list[p]=self.ratio_list[p][self.window_size_ppo:]
-                                                
+                                                self.TD_list[p]=self.TD_list[p][self.window_size_ppo:]
                                     else:
                                         for p in range(self.processes):
                                             self.state_pool_list[p]=None
@@ -759,6 +771,7 @@ class RL:
                                                 self.reward_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                                 self.done_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                                 self.ratio_list[p]=self.ratio_list[p][self.window_size_ppo:]
+                                                self.TD_list[p]=self.TD_list[p][self.window_size_ppo:]
                                     else:
                                         for p in range(self.processes):
                                             self.state_pool_list[p]=None
@@ -817,6 +830,7 @@ class RL:
                                                     self.reward_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                                     self.done_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                                     self.ratio_list[p]=self.ratio_list[p][self.window_size_ppo:]
+                                                    self.TD_list[p]=self.TD_list[p][self.window_size_ppo:]
                                         else:
                                             for p in range(self.processes):
                                                 self.state_pool_list[p]=None
@@ -854,6 +868,7 @@ class RL:
                                                 self.reward_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                                 self.done_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                                 self.ratio_list[p]=self.ratio_list[p][self.window_size_ppo:]
+                                                self.TD_list[p]=self.TD_list[p][self.window_size_ppo:]
                                     else:
                                         for p in range(self.processes):
                                             self.state_pool_list[p]=None
@@ -919,6 +934,7 @@ class RL:
                                                     self.reward_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                                     self.done_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                                     self.ratio_list[p]=self.ratio_list[p][self.window_size_ppo:]
+                                                    self.TD_list[p]=self.TD_list[p][self.window_size_ppo:]
                                         else:
                                             for p in range(self.processes):
                                                 self.state_pool_list[p]=None
@@ -970,6 +986,7 @@ class RL:
                                                 self.reward_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                                 self.done_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                                 self.ratio_list[p]=self.ratio_list[p][self.window_size_ppo:]
+                                                self.TD_list[p]=self.TD_list[p][self.window_size_ppo:]
                                     else:
                                         for p in range(self.processes):
                                             self.state_pool_list[p]=None
@@ -989,6 +1006,7 @@ class RL:
                                 self.reward_pool=self.action_pool[self.window_size_ppo:]
                                 self.done_pool=self.action_pool[self.window_size_ppo:]
                                 self.prioritized_replay.ratio=self.prioritized_replay.ratio[self.window_size_ppo:]
+                                self.prioritized_replay.TD=self.prioritized_replay.TD[self.window_size_ppo:]
                         else:
                             self.state_pool=None
                             self.action_pool=None
@@ -1030,6 +1048,10 @@ class RL:
                         self.prioritized_replay.ratio=np.append(self.prioritized_replay.ratio,self.initial_ratio)
                     if len(self.state_pool)>self.pool_size:
                         self.prioritized_replay.ratio=self.prioritized_replay.ratio[1:]
+                    if len(self.state_pool)>1:
+                        self.prioritized_replay.TD=np.append(self.prioritized_replay.ratio,self.initial_TD)
+                    if len(self.state_pool)>self.pool_size:
+                        self.prioritized_replay.TD=self.prioritized_replay.TD[1:]
                 else:
                     if len(self.state_pool)>1:
                         self.prioritized_replay.TD=np.append(self.prioritized_replay.ratio,self.initial_TD)
@@ -1041,6 +1063,7 @@ class RL:
             if self.PR==True:
                 if self.PPO:
                     self.prioritized_replay.ratio=tf.Variable(self.prioritized_replay.ratio)
+                    self.prioritized_replay.TD=tf.Variable(self.prioritized_replay.TD)
                 else:
                     self.prioritized_replay.TD=tf.Variable(self.prioritized_replay.TD)
             if not self.PR and self.num_updates!=None and len(self.state_pool)>=self.pool_size_:
@@ -1094,7 +1117,7 @@ class RL:
                 d.append(done)
         elif self.PR==True:
             for _ in range(int(self.batch/self.processes_pr)):
-                state,action,next_state,reward,done=self.prioritized_replay.sample(self.state_pool[7],self.action_pool[7],self.next_state_pool[7],self.reward_pool[7],self.done_pool[7],self.epsilon,self.alpha,int(self.batch/self.processes_pr))
+                state,action,next_state,reward,done=self.prioritized_replay.sample(self.state_pool[7],self.action_pool[7],self.next_state_pool[7],self.reward_pool[7],self.done_pool[7],self.epsilon,self.lambda_,self.alpha,int(self.batch/self.processes_pr))
                 s.append(state)
                 a.append(action)
                 next_s.append(next_state)
@@ -1113,7 +1136,7 @@ class RL:
         return
     
     
-    def modify_ratio(self):
+    def modify_ratio_TD(self):
         if self.PR==True:
             for p in range(self.processes):
                 if self.prioritized_replay.ratio is not None:
@@ -1126,6 +1149,16 @@ class RL:
                             index1+=len(self.ratio_list[i])
                         index2=index1+len(self.ratio_list[p])
                         self.ratio_list[p]=self.prioritized_replay.ratio[index1-1:index2]
+                if self.prioritized_replay.TD is not None:
+                    if p==0:
+                        self.TD_list[p]=self.prioritized_replay.TD[0:len(self.TD_list[p])]
+                    else:
+                        index1=0
+                        index2=0
+                        for i in range(p):
+                            index1+=len(self.TD_list[i])
+                        index2=index1+len(self.TD_list[p])
+                        self.TD_list[p]=self.prioritized_replay.TD[index1-1:index2]
         return
     
     
@@ -1187,6 +1220,10 @@ class RL:
                             self.ratio_list[index]=np.append(self.ratio_list[index],self.initial_ratio)
                         if len(self.ratio_list[index])>math.ceil(self.pool_size/self.processes):
                             self.ratio_list[index]=self.ratio_list[index][1:]
+                        if len(self.state_pool_list[index])>1:
+                            self.TD_list[index]=np.append(self.TD_list[index],self.initial_TD)
+                        if len(self.TD_list[index])>math.ceil(self.pool_size/self.processes):
+                            self.TD_list[index]=self.TD_list[index][1:]
                     else:
                         if len(self.state_pool_list[index])>1:
                             self.TD_list[index]=np.append(self.TD_list[index],self.initial_TD)
@@ -1272,9 +1309,12 @@ class RL:
             if self.PR==True:
                 if self.PPO:
                     self.ratio_list=manager.list()
+                    self.TD_list=manager.list()
                     for _ in range(processes):
                         self.ratio_list.append(tf.Variable(self.initial_ratio))
+                        self.TD_list.append(tf.Variable(self.initial_TD))
                     self.prioritized_replay.ratio=None
+                    self.prioritized_replay.TD=None
                 else:
                     self.TD_list=manager.list()
                     for _ in range(processes):
@@ -1321,7 +1361,7 @@ class RL:
                 if pool_network==True:
                     process_list=[]
                     if self.PPO:
-                        self.modify_ratio()
+                        self.modify_ratio_TD()
                     else:
                         self.modify_TD()
                     for p in range(processes):
@@ -1359,6 +1399,7 @@ class RL:
                     if self.PR==True:
                         if self.PPO:
                             self.prioritized_replay.ratio=tf.Variable(tf.concat(self.ratio_list, axis=0))
+                            self.prioritized_replay.TD=tf.Variable(tf.concat(self.TD_list, axis=0))
                         else:
                             self.prioritized_replay.TD=tf.Variable(tf.concat(self.TD_list, axis=0))
                     self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
@@ -1421,7 +1462,7 @@ class RL:
                 if pool_network==True:
                     process_list=[]
                     if self.PPO:
-                        self.modify_ratio()
+                        self.modify_ratio_TD()
                     else:
                         self.modify_TD()
                     for p in range(processes):
@@ -1459,6 +1500,7 @@ class RL:
                     if self.PR==True:
                         if self.PPO:
                             self.prioritized_replay.ratio=tf.Variable(tf.concat(self.ratio_list, axis=0))
+                            self.prioritized_replay.TD=tf.Variable(tf.concat(self.TD_list, axis=0))
                         else:
                             self.prioritized_replay.TD=tf.Variable(tf.concat(self.TD_list, axis=0))
                     self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
@@ -1598,9 +1640,12 @@ class RL:
             if self.PR==True:
                 if self.PPO:
                     self.ratio_list=manager.list()
+                    self.TD_list=manager.list()
                     for _ in range(processes):
                         self.ratio_list.append(tf.Variable(self.initial_ratio))
+                        self.TD_list.append(tf.Variable(self.initial_TD))
                     self.prioritized_replay.ratio=None
+                    self.prioritized_replay.TD=None
                 else:
                     self.TD_list=manager.list()
                     for _ in range(processes):
@@ -1650,7 +1695,7 @@ class RL:
                     if pool_network==True:
                         process_list=[]
                         if self.PPO:
-                            self.modify_ratio()
+                            self.modify_ratio_TD()
                         else:
                             self.modify_TD()
                         for p in range(processes):
@@ -1688,6 +1733,7 @@ class RL:
                         if self.PR==True:
                             if self.PPO:
                                 self.prioritized_replay.ratio=tf.Variable(tf.concat(self.ratio_list, axis=0))
+                                self.prioritized_replay.TD=tf.Variable(tf.concat(self.TD_list, axis=0))
                             else:
                                 self.prioritized_replay.TD=tf.Variable(tf.concat(self.TD_list, axis=0))
                         self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
@@ -1749,7 +1795,7 @@ class RL:
                     if pool_network==True:
                         process_list=[]
                         if self.PPO:
-                            self.modify_ratio()
+                            self.modify_ratio_TD()
                         else:
                             self.modify_TD()
                         for p in range(processes):
@@ -1787,6 +1833,7 @@ class RL:
                         if self.PR==True:
                             if self.PPO:
                                 self.prioritized_replay.ratio=tf.Variable(tf.concat(self.ratio_list, axis=0))
+                                self.prioritized_replay.TD=tf.Variable(tf.concat(self.TD_list, axis=0))
                             else:
                                 self.prioritized_replay.TD=tf.Variable(tf.concat(self.TD_list, axis=0))
                         self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
@@ -1851,7 +1898,7 @@ class RL:
                     if pool_network==True:
                         process_list=[]
                         if self.PPO:
-                            self.modify_ratio()
+                            self.modify_ratio_TD()
                         else:
                             self.modify_TD()
                         for p in range(processes):
@@ -1889,6 +1936,7 @@ class RL:
                         if self.PR==True:
                             if self.PPO:
                                 self.prioritized_replay.ratio=tf.Variable(tf.concat(self.ratio_list, axis=0))
+                                self.prioritized_replay.TD=tf.Variable(tf.concat(self.TD_list, axis=0))
                             else:
                                 self.prioritized_replay.TD=tf.Variable(tf.concat(self.TD_list, axis=0))
                         self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
@@ -1956,7 +2004,7 @@ class RL:
                     if pool_network==True:
                         process_list=[]
                         if self.PPO:
-                            self.modify_ratio()
+                            self.modify_ratio_TD()
                         else:
                             self.modify_TD()
                         for p in range(processes):
@@ -1994,6 +2042,7 @@ class RL:
                         if self.PR==True:
                             if self.PPO:
                                 self.prioritized_replay.ratio=tf.Variable(tf.concat(self.ratio_list, axis=0))
+                                self.prioritized_replay.TD=tf.Variable(tf.concat(self.TD_list, axis=0))
                             else:
                                 self.prioritized_replay.TD=tf.Variable(tf.concat(self.TD_list, axis=0))
                         self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
@@ -2063,7 +2112,7 @@ class RL:
                     if pool_network==True:
                         process_list=[]
                         if self.PPO:
-                            self.modify_ratio()
+                            self.modify_ratio_TD()
                         else:
                             self.modify_TD()
                         for p in range(processes):
@@ -2101,6 +2150,7 @@ class RL:
                         if self.PR==True:
                             if self.PPO:
                                 self.prioritized_replay.ratio=tf.Variable(tf.concat(self.ratio_list, axis=0))
+                                self.prioritized_replay.TD=tf.Variable(tf.concat(self.TD_list, axis=0))
                             else:
                                 self.prioritized_replay.TD=tf.Variable(tf.concat(self.TD_list, axis=0))
                         self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
@@ -2168,7 +2218,7 @@ class RL:
                     if pool_network==True:
                         process_list=[]
                         if self.PPO:
-                            self.modify_ratio()
+                            self.modify_ratio_TD()
                         else:
                             self.modify_TD()
                         for p in range(processes):
@@ -2206,6 +2256,7 @@ class RL:
                         if self.PR==True:
                             if self.PPO:
                                 self.prioritized_replay.ratio=tf.Variable(tf.concat(self.ratio_list, axis=0))
+                                self.prioritized_replay.TD=tf.Variable(tf.concat(self.TD_list, axis=0))
                             else:
                                 self.prioritized_replay.TD=tf.Variable(tf.concat(self.TD_list, axis=0))
                         self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
