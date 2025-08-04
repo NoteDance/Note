@@ -182,11 +182,13 @@ class kernel:
         if self.clearing_freq!=None:
             self.store_counter+=1
             if self.store_counter%self.clearing_freq==0:
-                self.state_pool=self.state_pool[self.window_size:]
-                self.action_pool=self.action_pool[self.window_size:]
-                self.next_state_pool=self.next_state_pool[self.window_size:]
-                self.reward_pool=self.reward_pool[self.window_size:]
-                self.done_pool=self.done_pool[self.window_size:]
+                self.state_pool=self.state_pool[self.window_size_:]
+                self.action_pool=self.action_pool[self.window_size_:]
+                self.next_state_pool=self.next_state_pool[self.window_size_:]
+                self.reward_pool=self.reward_pool[self.window_size_:]
+                self.done_pool=self.done_pool[self.window_size_:]
+                if self.PR:
+                    self.nn.pr.TD=self.nn.pr.TD[self.window_size_:]
         if len(self.state_pool)>self.pool_size:
             if self.window_size!=None:
                 self.state_pool=self.state_pool[self.window_size:]
@@ -194,6 +196,8 @@ class kernel:
                 self.next_state_pool=self.next_state_pool[self.window_size:]
                 self.reward_pool=self.reward_pool[self.window_size:]
                 self.done_pool=self.done_pool[self.window_size:]
+                if self.PR:
+                    self.nn.pr.TD=self.nn.pr.TD[self.window_size:]
             else:
                 self.state_pool=self.state_pool[1:]
                 self.action_pool=self.action_pool[1:]
