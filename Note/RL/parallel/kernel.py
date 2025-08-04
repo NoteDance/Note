@@ -170,6 +170,8 @@ class kernel:
                     self.next_state_pool[index]=self.next_state_pool[index][self.window_size_:]
                     self.reward_pool[index]=self.reward_pool[index][self.window_size_:]
                     self.done_pool[index]=self.done_pool[index][self.window_size_:]
+                    if self.PR:
+                        self.nn.pr.TD[index]=self.nn.pr.TD[index][self.window_size_:]
             if len(self.state_pool[index])>self.pool_size:
                 if self.window_size!=None:
                     self.state_pool[index]=self.state_pool[index][self.window_size:]
@@ -177,6 +179,8 @@ class kernel:
                     self.next_state_pool[index]=self.next_state_pool[index][self.window_size:]
                     self.reward_pool[index]=self.reward_pool[index][self.window_size:]
                     self.done_pool[index]=self.done_pool[index][self.window_size:]
+                    if self.PR:
+                        self.nn.pr.TD[index]=self.nn.pr.TD[index][self.window_size:]
                 else:
                     self.state_pool[index]=self.state_pool[index][1:]
                     self.action_pool[index]=self.action_pool[index][1:]
