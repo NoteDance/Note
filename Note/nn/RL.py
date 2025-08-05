@@ -642,148 +642,96 @@ class RL:
                 total_loss = 0.0
                 num_batches = 0
                 batch = 0
-                if isinstance(self.strategy,tf.distribute.MirroredStrategy):
+                for j in range(batches):
+                    if self.stop_training==True:
+                        if self.distributed_flag==True:
+                            if isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
+                                self.coordinator.join()
+                            return np.array(0.)
+                        else:
+                            return train_loss.result().numpy()
+                    if self.PR and self.batch_counter%self.num_updates==0:
+                        break
+                    for callback in self.callbacks:
+                        if hasattr(callback, 'on_batch_begin'):
+                            callback.on_batch_begin(batch, logs={})
                     state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.data_func()
                     train_ds=tf.data.Dataset.from_tensor_slices((state_batch,action_batch,next_state_batch,reward_batch,done_batch)).batch(self.global_batch_size)
-                    train_ds=self.strategy.experimental_distribute_dataset(train_ds)
-                    for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
-                        if self.stop_training==True:
-                            if self.distributed_flag==True:
-                                if isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
-                                    self.coordinator.join()
-                                return np.array(0.)
+                    if isinstance(self.strategy,tf.distribute.MirroredStrategy):
+                        train_ds=self.strategy.experimental_distribute_dataset(train_ds)
+                        for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
+                            if self.jit_compile==True:
+                                loss=self.distributed_train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.strategy)
                             else:
-                                return train_loss.result().numpy()
-                        if self.PR and self.batch_counter%self.num_updates==0:
-                            break
-                        for callback in self.callbacks:
-                            if hasattr(callback, 'on_batch_begin'):
-                                callback.on_batch_begin(batch, logs={})
-                        if self.jit_compile==True:
-                            loss=self.distributed_train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.strategy)
-                        else:
-                            loss=self.distributed_train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.strategy)
-                        total_loss+=loss
-                        num_batches += 1
-                        self.batch_counter+=1
-                        if self.pool_network==True:
-                            if self.batch_counter%self.update_batches==0:
-                                self.update_param()
-                                if self.PPO:
-                                    if self.PR:
-                                        for p in range(self.processes):
-                                            if len(self.state_pool_list[p])>=self.window_size_ppo:
-                                                self.state_pool_list[p]=self.state_pool_list[p][self.window_size_ppo:]
-                                                self.action_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
-                                                self.next_state_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
-                                                self.reward_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
-                                                self.done_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
-                                                self.ratio_list[p]=self.ratio_list[p][self.window_size_ppo:]
-                                                self.TD_list[p]=self.TD_list[p][self.window_size_ppo:]
-                                    else:
-                                        for p in range(self.processes):
-                                            self.state_pool_list[p]=None
-                                            self.action_pool_list[p]=None
-                                            self.next_state_pool_list[p]=None
-                                            self.reward_pool_list[p]=None
-                                            self.done_pool_list[p]=None
-                        batch_logs = {'loss': loss.numpy()}
-                        for callback in self.callbacks:
-                            if hasattr(callback, 'on_batch_end'):
-                                callback.on_batch_end(batch, logs=batch_logs)
-                        batch += 1
-                elif isinstance(self.strategy,tf.distribute.MultiWorkerMirroredStrategy):
-                    for _ in range(batches):
-                        if self.stop_training==True:
-                            if self.distributed_flag==True:
-                                if isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
-                                    self.coordinator.join()
-                                return np.array(0.)
-                            else:
-                                return train_loss.result().numpy()
-                        if self.PR and self.batch_counter%self.num_updates==0:
-                            break
-                        for callback in self.callbacks:
-                            if hasattr(callback, 'on_batch_begin'):
-                                callback.on_batch_begin(batch, logs={})
+                                loss=self.distributed_train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.strategy)
+                            total_loss+=loss
+                            num_batches += 1
+                            self.batch_counter+=1
+                            if self.pool_network==True:
+                                if self.batch_counter%self.update_batches==0:
+                                    self.update_param()
+                                    if self.PPO:
+                                        if self.PR:
+                                            for p in range(self.processes):
+                                                if len(self.state_pool_list[p])>self.window_size_ppo:
+                                                    self.state_pool_list[p]=self.state_pool_list[p][self.window_size_ppo:]
+                                                    self.action_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
+                                                    self.next_state_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
+                                                    self.reward_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
+                                                    self.done_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
+                                                    self.ratio_list[p]=self.ratio_list[p][self.window_size_ppo:]
+                                                    self.TD_list[p]=self.TD_list[p][self.window_size_ppo:]
+                                        else:
+                                            for p in range(self.processes):
+                                                self.state_pool_list[p]=None
+                                                self.action_pool_list[p]=None
+                                                self.next_state_pool_list[p]=None
+                                                self.reward_pool_list[p]=None
+                                                self.done_pool_list[p]=None
+                    elif isinstance(self.strategy,tf.distribute.MultiWorkerMirroredStrategy):
                         with self.strategy.scope():
                             multi_worker_dataset = self.strategy.distribute_datasets_from_function(
                                 lambda input_context: self.dataset_fn(train_ds, self.global_batch_size, input_context))  
                         loss=self.CTL(multi_worker_dataset)
                         total_loss+=loss
                         num_batches += 1
-                        batch_logs = {'loss': loss.numpy()}
-                        for callback in self.callbacks:
-                            if hasattr(callback, 'on_batch_end'):
-                                callback.on_batch_end(batch, logs=batch_logs)
-                        batch += 1
-                elif isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
-                    for _ in range(batches):
-                        if self.stop_training==True:
-                            if self.distributed_flag==True:
-                                if isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
-                                    self.coordinator.join()
-                                return np.array(0.)
-                            else:
-                                return train_loss.result().numpy()
-                        if self.PR and self.batch_counter%self.num_updates==0:
-                            break
-                        for callback in self.callbacks:
-                            if hasattr(callback, 'on_batch_begin'):
-                                callback.on_batch_begin(batch, logs={})
+                    elif isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
                         loss=self.CTL_param(self.coordinator)
                         total_loss+=loss
                         num_batches += 1
-                        batch_logs = {'loss': loss.numpy()}
-                        for callback in self.callbacks:
-                            if hasattr(callback, 'on_batch_end'):
-                                callback.on_batch_end(batch, logs=batch_logs)
-                        batch += 1
-                elif self.distributed_flag!=True:
-                    for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
-                        if self.stop_training==True:
-                            if self.distributed_flag==True:
-                                if isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
-                                    self.coordinator.join()
-                                return np.array(0.)
+                    elif self.distributed_flag!=True:
+                        for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
+                            if self.jit_compile==True:
+                                loss=self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
                             else:
-                                return train_loss.result().numpy()
-                        if self.PR and self.batch_counter%self.num_updates==0:
-                            break
-                        for callback in self.callbacks:
-                            if hasattr(callback, 'on_batch_begin'):
-                                callback.on_batch_begin(batch, logs={})
-                        if self.jit_compile==True:
-                            loss=self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
-                        else:
-                            loss=self.train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
-                        self.batch_counter+=1
-                        if self.pool_network==True:
-                            if self.batch_counter%self.update_batches==0:
-                                self.update_param()
-                                if self.PPO:
-                                    if self.PR:
-                                        for p in range(self.processes):
-                                            if len(self.state_pool_list[p])>=self.window_size_ppo:
-                                                self.state_pool_list[p]=self.state_pool_list[p][self.window_size_ppo:]
-                                                self.action_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
-                                                self.next_state_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
-                                                self.reward_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
-                                                self.done_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
-                                                self.ratio_list[p]=self.ratio_list[p][self.window_size_ppo:]
-                                                self.TD_list[p]=self.TD_list[p][self.window_size_ppo:]
-                                    else:
-                                        for p in range(self.processes):
-                                            self.state_pool_list[p]=None
-                                            self.action_pool_list[p]=None
-                                            self.next_state_pool_list[p]=None
-                                            self.reward_pool_list[p]=None
-                                            self.done_pool_list[p]=None
-                        batch_logs = {'loss': loss.numpy()}
-                        for callback in self.callbacks:
-                            if hasattr(callback, 'on_batch_end'):
-                                callback.on_batch_end(batch, logs=batch_logs)
-                        batch += 1
+                                loss=self.train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
+                            self.batch_counter+=1
+                            if self.pool_network==True:
+                                if self.batch_counter%self.update_batches==0:
+                                    self.update_param()
+                                    if self.PPO:
+                                        if self.PR:
+                                            for p in range(self.processes):
+                                                if len(self.state_pool_list[p])>self.window_size_ppo:
+                                                    self.state_pool_list[p]=self.state_pool_list[p][self.window_size_ppo:]
+                                                    self.action_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
+                                                    self.next_state_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
+                                                    self.reward_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
+                                                    self.done_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
+                                                    self.ratio_list[p]=self.ratio_list[p][self.window_size_ppo:]
+                                                    self.TD_list[p]=self.TD_list[p][self.window_size_ppo:]
+                                        else:
+                                            for p in range(self.processes):
+                                                self.state_pool_list[p]=None
+                                                self.action_pool_list[p]=None
+                                                self.next_state_pool_list[p]=None
+                                                self.reward_pool_list[p]=None
+                                                self.done_pool_list[p]=None
+                    batch_logs = {'loss': loss.numpy()}
+                    for callback in self.callbacks:
+                        if hasattr(callback, 'on_batch_end'):
+                            callback.on_batch_end(batch, logs=batch_logs)
+                    batch += 1
                 if len(self.state_pool)%self.batch!=0:
                     if self.stop_training==True:
                         if self.distributed_flag==True:
