@@ -204,6 +204,8 @@ class kernel:
                 self.next_state_pool=self.next_state_pool[1:]
                 self.reward_pool=self.reward_pool[1:]
                 self.done_pool=self.done_pool[1:]
+                if self.PR:
+                    self.nn.pr.TD=self.nn.pr.TD[1:]
         return
     
     
@@ -429,8 +431,6 @@ class kernel:
             self.pool(s,a,next_s,r,done)
             if self.PR:
                 self.nn.pr.TD=np.append(self.nn.pr.TD,self.nn.initial_TD)
-                if len(self.state_pool)>self.pool_size:
-                    self.nn.pr.TD=self.nn.pr.TD[1:]
             self.reward=r+self.reward
             if hasattr(self.platform,'DType'):
                 self.nn.pr.TD=tf.Variable(self.nn.pr.TD)
