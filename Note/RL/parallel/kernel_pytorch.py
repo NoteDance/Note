@@ -180,6 +180,8 @@ class kernel:
                     self.next_state_pool[index]=self.next_state_pool[index][1:]
                     self.reward_pool[index]=self.reward_pool[index][1:]
                     self.done_pool[index]=self.done_pool[index][1:]
+                    if self.PR:
+                        self.nn.pr.TD[index]=self.nn.pr.TD[index][1:]
         except Exception:
             if self.HER!=True or self.PR!=True:
                 pool_lock[index].release()
@@ -452,8 +454,6 @@ class kernel:
                 s=next_s
                 if self.PR:
                     self.nn.pr.TD[p]=np.append(self.nn.pr.TD[p],self.nn.initial_TD)
-                    if len(self.state_pool[p])>self.pool_size:
-                        self.nn.pr.TD[p]=self.nn.pr.TD[p][1:]
                 if type(self.done_pool[p])==np.ndarray:
                     self.train_(p)
                     if self.stop_flag.value==True:
