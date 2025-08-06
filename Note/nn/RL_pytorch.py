@@ -119,6 +119,12 @@ class RL_pytorch:
                     self.next_state_pool_list[index]=self.next_state_pool_list[index][1:]
                     self.reward_pool_list[index]=self.reward_pool_list[index][1:]
                     self.done_pool_list[index]=self.done_pool_list[index][1:]
+                    if self.PR:
+                        if self.PPO:
+                            self.ratio_list[index]=self.ratio_list[index][1:]
+                            self.TD_list[index]=self.TD_list[index][1:]
+                        else:
+                            self.TD_list[index]=self.TD_list[index][1:]
         else:
             if self.state_pool is None:
                 self.state_pool=s
@@ -165,6 +171,12 @@ class RL_pytorch:
                     self.next_state_pool=self.next_state_pool[1:]
                     self.reward_pool=self.reward_pool[1:]
                     self.done_pool=self.done_pool[1:]
+                    if self.PR:
+                        if self.PPO:
+                            self.prioritized_replay.ratio=self.prioritized_replay.ratio[1:]
+                            self.prioritized_replay.TD=self.prioritized_replay.TD[1:]
+                        else:
+                            self.prioritized_replay.TD=self.prioritized_replay.TD[1:]
         return
     
     
@@ -321,7 +333,7 @@ class RL_pytorch:
                             if self.PPO:
                                 if self.PR:
                                     for p in range(self.processes):
-                                        if len(self.state_pool_list[p])>=self.window_size_ppo:
+                                        if self.window_size_ppo!=None and len(self.state_pool_list[p])>self.window_size_ppo:
                                             self.state_pool_list[p]=self.state_pool_list[p][self.window_size_ppo:]
                                             self.action_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                             self.next_state_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
@@ -348,7 +360,7 @@ class RL_pytorch:
                             if self.PPO:
                                 if self.PR:
                                     for p in range(self.processes):
-                                        if len(self.state_pool_list[p])>=self.window_size_ppo:
+                                        if self.window_size_ppo!=None and len(self.state_pool_list[p])>self.window_size_ppo:
                                             self.state_pool_list[p]=self.state_pool_list[p][self.window_size_ppo:]
                                             self.action_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                             self.next_state_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
@@ -379,7 +391,7 @@ class RL_pytorch:
                             if self.PPO:
                                 if self.PR:
                                     for p in range(self.processes):
-                                        if len(self.state_pool_list[p])>=self.window_size_ppo:
+                                        if self.window_size_ppo!=None and len(self.state_pool_list[p])>self.window_size_ppo:
                                             self.state_pool_list[p]=self.state_pool_list[p][self.window_size_ppo:]
                                             self.action_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
                                             self.next_state_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
@@ -399,7 +411,7 @@ class RL_pytorch:
                     self.update_param()
                     if self.PPO:
                         if self.PR:
-                            if len(self.state_pool)>=self.window_size_ppo:
+                            if self.window_size_ppo!=None and len(self.state_pool)>self.window_size_ppo:
                                 self.state_pool=self.state_pool[self.window_size_ppo:]
                                 self.action_pool=self.action_pool[self.window_size_ppo:]
                                 self.next_state_pool=self.action_pool[self.window_size_ppo:]
@@ -440,17 +452,11 @@ class RL_pytorch:
                 if self.PPO:
                     if len(self.state_pool)>1:
                         self.prioritized_replay.ratio=np.append(self.prioritized_replay.ratio,self.initial_ratio)
-                    if len(self.state_pool)>self.pool_size:
-                        self.prioritized_replay.ratio=self.prioritized_replay.ratio[1:]
                     if len(self.state_pool)>1:
                         self.prioritized_replay.TD=np.append(self.prioritized_replay.ratio,self.initial_TD)
-                    if len(self.state_pool)>self.pool_size:
-                        self.prioritized_replay.TD=self.prioritized_replay.TD[1:]
                 else:
                     if len(self.state_pool)>1:
                         self.prioritized_replay.TD=np.append(self.prioritized_replay.ratio,self.initial_TD)
-                    if len(self.state_pool)>self.pool_size:
-                        self.prioritized_replay.TD=self.prioritized_replay.TD[1:]
             if self.MARL==True:
                 r,done=self.reward_done_func_ma(r,done)
             self.reward=r+self.reward
@@ -605,17 +611,11 @@ class RL_pytorch:
                 if self.PPO:
                     if len(self.state_pool_list[index])>1:
                         self.ratio_list[index]=np.append(self.ratio_list[index],self.initial_ratio)
-                    if len(self.ratio_list[index])>math.ceil(self.pool_size/self.processes):
-                        self.ratio_list[index]=self.ratio_list[index][1:]
                     if len(self.state_pool_list[index])>1:
                         self.TD_list[index]=np.append(self.TD_list[index],self.initial_TD)
-                    if len(self.TD_list[index])>math.ceil(self.pool_size/self.processes):
-                        self.TD_list[index]=self.TD_list[index][1:]
                 else:
                     if len(self.state_pool_list[index])>1:
                         self.TD_list[index]=np.append(self.TD_list[index],self.initial_TD)
-                    if len(self.TD_list[index])>math.ceil(self.pool_size/self.processes):
-                        self.TD_list[index]=self.TD_list[index][1:]
             if self.MARL==True:
                 r,done=self.reward_done_func_ma(r,done)
             self.reward[p]=r+self.reward[p]
