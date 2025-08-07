@@ -332,15 +332,19 @@ class RL_pytorch:
                             self.update_param()
                             if self.PPO:
                                 if self.PR:
+                                    if hasattr(self,'window_size_fn'):
+                                        window_size_ppo=int(self.window_size_fn())
+                                    else:
+                                        window_size_ppo=self.window_size_ppo
                                     for p in range(self.processes):
-                                        if self.window_size_ppo!=None and len(self.state_pool_list[p])>self.window_size_ppo:
-                                            self.state_pool_list[p]=self.state_pool_list[p][self.window_size_ppo:]
-                                            self.action_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
-                                            self.next_state_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
-                                            self.reward_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
-                                            self.done_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
-                                            self.ratio_list[p]=self.ratio_list[p][self.window_size_ppo:]
-                                            self.TD_list[p]=self.ratio_list[p][self.window_size_ppo:]
+                                        if window_size_ppo!=None and len(self.state_pool_list[p])>window_size_ppo:
+                                            self.state_pool_list[p]=self.state_pool_list[p][window_size_ppo:]
+                                            self.action_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
+                                            self.next_state_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
+                                            self.reward_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
+                                            self.done_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
+                                            self.ratio_list[p]=self.ratio_list[p][window_size_ppo:]
+                                            self.TD_list[p]=self.TD_list[p][window_size_ppo:]
                                 else:
                                     for p in range(self.processes):
                                         self.state_pool_list[p]=None
@@ -359,15 +363,19 @@ class RL_pytorch:
                             self.update_param()
                             if self.PPO:
                                 if self.PR:
+                                    if hasattr(self,'window_size_fn'):
+                                        window_size_ppo=int(self.window_size_fn())
+                                    else:
+                                        window_size_ppo=self.window_size_ppo
                                     for p in range(self.processes):
-                                        if self.window_size_ppo!=None and len(self.state_pool_list[p])>self.window_size_ppo:
-                                            self.state_pool_list[p]=self.state_pool_list[p][self.window_size_ppo:]
-                                            self.action_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
-                                            self.next_state_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
-                                            self.reward_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
-                                            self.done_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
-                                            self.ratio_list[p]=self.ratio_list[p][self.window_size_ppo:]
-                                            self.TD_list[p]=self.ratio_list[p][self.window_size_ppo:]
+                                        if window_size_ppo!=None and len(self.state_pool_list[p])>window_size_ppo:
+                                            self.state_pool_list[p]=self.state_pool_list[p][window_size_ppo:]
+                                            self.action_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
+                                            self.next_state_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
+                                            self.reward_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
+                                            self.done_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
+                                            self.ratio_list[p]=self.ratio_list[p][window_size_ppo:]
+                                            self.TD_list[p]=self.TD_list[p][window_size_ppo:]
                                 else:
                                     for p in range(self.processes):
                                         self.state_pool_list[p]=None
@@ -390,15 +398,19 @@ class RL_pytorch:
                             self.update_param()
                             if self.PPO:
                                 if self.PR:
+                                    if hasattr(self,'window_size_fn'):
+                                        window_size_ppo=int(self.window_size_fn())
+                                    else:
+                                        window_size_ppo=self.window_size_ppo
                                     for p in range(self.processes):
-                                        if self.window_size_ppo!=None and len(self.state_pool_list[p])>self.window_size_ppo:
-                                            self.state_pool_list[p]=self.state_pool_list[p][self.window_size_ppo:]
-                                            self.action_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
-                                            self.next_state_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
-                                            self.reward_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
-                                            self.done_pool_list[p]=self.action_pool_list[p][self.window_size_ppo:]
-                                            self.ratio_list[p]=self.ratio_list[p][self.window_size_ppo:]
-                                            self.TD_list[p]=self.ratio_list[p][self.window_size_ppo:]
+                                        if window_size_ppo!=None and len(self.state_pool_list[p])>window_size_ppo:
+                                            self.state_pool_list[p]=self.state_pool_list[p][window_size_ppo:]
+                                            self.action_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
+                                            self.next_state_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
+                                            self.reward_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
+                                            self.done_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
+                                            self.ratio_list[p]=self.ratio_list[p][window_size_ppo:]
+                                            self.TD_list[p]=self.TD_list[p][window_size_ppo:]
                                 else:
                                     for p in range(self.processes):
                                         self.state_pool_list[p]=None
@@ -411,14 +423,18 @@ class RL_pytorch:
                     self.update_param()
                     if self.PPO:
                         if self.PR:
-                            if self.window_size_ppo!=None and len(self.state_pool)>self.window_size_ppo:
-                                self.state_pool=self.state_pool[self.window_size_ppo:]
-                                self.action_pool=self.action_pool[self.window_size_ppo:]
-                                self.next_state_pool=self.action_pool[self.window_size_ppo:]
-                                self.reward_pool=self.action_pool[self.window_size_ppo:]
-                                self.done_pool=self.action_pool[self.window_size_ppo:]
-                                self.prioritized_replay.ratio=self.prioritized_replay.ratio[self.window_size_ppo:]
-                                self.prioritized_replay.TD=self.prioritized_replay.TD[self.window_size_ppo:]
+                            if hasattr(self,'window_size_fn'):
+                                window_size_ppo=int(self.window_size_fn())
+                            else:
+                                window_size_ppo=self.window_size_ppo
+                            if window_size_ppo!=None and len(self.state_pool)>window_size_ppo:
+                                self.state_pool=self.state_pool[window_size_ppo:]
+                                self.action_pool=self.action_pool[window_size_ppo:]
+                                self.next_state_pool=self.action_pool[window_size_ppo:]
+                                self.reward_pool=self.action_pool[window_size_ppo:]
+                                self.done_pool=self.action_pool[window_size_ppo:]
+                                self.prioritized_replay.ratio=self.prioritized_replay.ratio[window_size_ppo:]
+                                self.prioritized_replay.TD=self.prioritized_replay.TD[window_size_ppo:]
                         else:
                             self.state_pool=None
                             self.action_pool=None
