@@ -542,6 +542,169 @@ class EmoFact(optimizer.Optimizer):
         pass
 
 
+class EmoNeco(optimizer.Optimizer):
+    r"""EmoNeco optimizer.
+
+    EmoNeco was developed with inspiration from Lion, Tiger, Cautious, softsign, and EmoLynx which we deeply respect
+    for their lightweight and intelligent design.
+
+    :param lr: float. learning rate.
+    :param betas: BETAS. coefficients used for computing running averages of gradient and the squared hessian trace.
+    :param shadow_weight: float. the weight of the shadow.
+    :param weight_decay: float. weight decay (L2 penalty).
+    :param weight_decouple: bool. the optimizer uses decoupled weight decay as in AdamW.
+    :param fixed_decay: bool. fix weight decay.
+    :param eps: float. term added to the denominator to improve numerical stability.
+    :param maximize: bool. maximize the objective with respect to the params, instead of minimizing.
+    """
+
+    def __init__(
+        self,
+        learning_rate = 1e-3,
+        betas = (0.9, 0.99),
+        epsilon = 1e-8,
+        weight_decay: float = 1e-2,
+        weight_decouple: bool = True,
+        fixed_decay: bool = False,
+        shadow_weight: float = 0.05,
+        maximize: bool = False,
+        clipnorm=None,
+        clipvalue=None,
+        global_clipnorm=None,
+        use_ema=False,
+        ema_momentum=0.99,
+        ema_overwrite_frequency=None,
+        loss_scale_factor=None,
+        gradient_accumulation_steps=None,
+        name = "emoneco",
+        **kwargs,
+    ):
+        super().__init__(
+            learning_rate=learning_rate,
+            name=name,
+            weight_decay=weight_decay,
+            clipnorm=clipnorm,
+            clipvalue=clipvalue,
+            global_clipnorm=global_clipnorm,
+            use_ema=use_ema,
+            ema_momentum=ema_momentum,
+            ema_overwrite_frequency=ema_overwrite_frequency,
+            loss_scale_factor=loss_scale_factor,
+            gradient_accumulation_steps=gradient_accumulation_steps,
+            **kwargs,
+        )
+        self.betas = betas
+        self.epsilon = epsilon
+        self.weight_decay = weight_decay
+        self.weight_decouple = weight_decouple
+        self.fixed_decay = fixed_decay
+        self.shadow_weight = shadow_weight
+        self.maximize = maximize
+        self.ema = {}
+    
+    def build(self, var_list):
+        if self.built:
+            return
+        super().build(var_list)
+        self.shadow = []
+        self.exp_avg = []
+        for var in var_list:
+            self.shadow.append(
+                self.add_variable_from_reference(
+                    reference_variable=var, name="shadow"
+                )
+            )
+            self.shadow[-1].assign(var)
+            self.exp_avg.append(
+                self.add_variable_from_reference(
+                    reference_variable=var, name="exp_avg"
+                )
+            )
+    
+    def apply_gradients(self, grads_and_vars, loss):
+        self.loss = loss
+        grads, trainable_variables = zip(*grads_and_vars)
+        self.apply(grads, trainable_variables)
+        # Return iterations for compat with tf.keras.
+        return self._iterations
+
+    def update_step(self, gradient, variable, learning_rate):
+        if tf.keras.backend.is_sparse(gradient):
+            raise RuntimeError(
+                'EmoNeco does not support sparse gradients')
+        
+        lr = tf.cast(learning_rate, variable.dtype)
+        
+        beta1, beta2 = self.betas
+
+        if self.maximize:
+            gradient = -gradient
+
+        update_ema(self.ema, self.loss)
+        scalar = compute_scalar(self.ema)
+        ratio = get_scalar_ratio(scalar)
+        ratio = tf.cast(ratio, variable.dtype)
+        
+        if self.weight_decouple:
+            variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr)))
+        elif self.weight_decay > 0.0:
+            gradient += variable * self.weight_decay
+
+        shadow = self.shadow[self._get_variable_index(variable)]
+        exp_avg = self.exp_avg[self._get_variable_index(variable)]
+        
+        def true_fn():
+            variable.assign(variable + ratio * (shadow - variable))
+            shadow.assign(shadow + self.shadow_weight * (variable - shadow))
+        
+        def false_fn():
+            pass
+        
+        tf.cond(ratio > 0.0, true_fn, false_fn)
+        
+        blended_grad = gradient * (1.0 - beta1) + beta1 * exp_avg
+        grad_norm = tf.norm(gradient) + self.epsilon
+        
+        exp_avg.assign(exp_avg * beta2 + gradient * (1.0 - beta2))
+        
+        def true_fn():
+            return tf.nn.softsign(blended_grad) * grad_norm
+        def false_fn():
+            def true_fn():
+                return tf.nn.softsign(blended_grad)
+            def false_fn():
+                direction = tf.sign(blended_grad)
+
+                update = direction
+                cond = tf.not_equal(direction, tf.sign(gradient))
+                return tf.where(cond, tf.zeros_like(update), update)
+            
+            return tf.cond(scalar < -0.3, true_fn, false_fn)
+        
+        update = tf.cond(0.3 < scalar <= 0.5, true_fn, false_fn)
+
+        variable.assign_add(update * -lr)
+        
+    def get_config(self):
+        config = super().get_config()
+        config.update(
+            {
+                "betas": self.betas,
+                "epsilon": self.epsilon,
+                "weight_decay": self.weight_decay,
+                "weight_decouple": self.weight_decouple,
+                "fixed_decay": self.fixed_decay,
+                "shadow_weight": self.shadow_weight,
+                "maximize": self.maximize,
+                "ema": self.ema,
+            }
+        )
+        return config
+	
+    def _apply_weight_decay(self, variables):
+        pass
+
+
 class EmoNavi_sn(optimizer.Optimizer):
     def __init__(
         self,
