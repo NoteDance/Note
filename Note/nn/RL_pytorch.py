@@ -233,6 +233,46 @@ class RL_pytorch:
                 return next_state,reward,done
     
     
+    def compute_ess_from_weights(self, weights):
+        w = np.array(weights, dtype=float)
+        w = np.maximum(w, 1e-8)
+        p = w / (w.sum() + 1e-8)
+        ess = 1.0 / (np.sum(p * p) + 1e-8)
+        return float(ess)
+
+
+    def adjust_window_size(self, p, scale=1.0, smooth_alpha=0.2):
+        if self.pool_network==True:
+            self.ema_ess = [None] * self.processes
+        
+            weights = np.array(self.ratio_list[p])
+    
+            ess = self.compute_ess_from_weights(weights)
+    
+            if self.ema_ess[p] is None:
+                ema = ess
+            else:
+                ema = smooth_alpha * ess + (1.0 - smooth_alpha) * self.ema_ess[p]
+            self.ema_ess[p] = ema
+        else:
+            self.ema_ess = None
+            
+            weights = np.array(self.prioritized_replay.ratio)
+            
+            ess = self.compute_ess_from_weights(weights)
+            
+            if self.ema_ess is None:
+                ema = ess
+            else:
+                ema = smooth_alpha * ess + (1.0 - smooth_alpha) * self.ema_ess
+            self.ema_ess = ema
+            
+        desired_keep = np.clip(int(ema * scale), 1, len(weights) - 1)
+        
+        window_size = len(weights) - desired_keep
+        return window_size
+    
+    
     def data_func(self):
         if self.PR:
             if self.processes_pr!=None:
@@ -332,11 +372,11 @@ class RL_pytorch:
                             self.update_param()
                             if self.PPO:
                                 if self.PR:
-                                    if hasattr(self,'window_size_fn'):
-                                        window_size_ppo=int(self.window_size_fn())
-                                    else:
+                                    if not hasattr(self,'window_size_fn'):
                                         window_size_ppo=self.window_size_ppo
                                     for p in range(self.processes):
+                                        if hasattr(self,'window_size_fn'):
+                                            window_size_ppo=int(self.window_size_fn(p))
                                         if window_size_ppo!=None and len(self.state_pool_list[p])>window_size_ppo:
                                             self.state_pool_list[p]=self.state_pool_list[p][window_size_ppo:]
                                             self.action_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
@@ -363,11 +403,11 @@ class RL_pytorch:
                             self.update_param()
                             if self.PPO:
                                 if self.PR:
-                                    if hasattr(self,'window_size_fn'):
-                                        window_size_ppo=int(self.window_size_fn())
-                                    else:
+                                    if not hasattr(self,'window_size_fn'):
                                         window_size_ppo=self.window_size_ppo
                                     for p in range(self.processes):
+                                        if hasattr(self,'window_size_fn'):
+                                            window_size_ppo=int(self.window_size_fn(p))
                                         if window_size_ppo!=None and len(self.state_pool_list[p])>window_size_ppo:
                                             self.state_pool_list[p]=self.state_pool_list[p][window_size_ppo:]
                                             self.action_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
@@ -398,11 +438,11 @@ class RL_pytorch:
                             self.update_param()
                             if self.PPO:
                                 if self.PR:
-                                    if hasattr(self,'window_size_fn'):
-                                        window_size_ppo=int(self.window_size_fn())
-                                    else:
+                                    if not hasattr(self,'window_size_fn'):
                                         window_size_ppo=self.window_size_ppo
                                     for p in range(self.processes):
+                                        if hasattr(self,'window_size_fn'):
+                                            window_size_ppo=int(self.window_size_fn(p))
                                         if window_size_ppo!=None and len(self.state_pool_list[p])>window_size_ppo:
                                             self.state_pool_list[p]=self.state_pool_list[p][window_size_ppo:]
                                             self.action_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
