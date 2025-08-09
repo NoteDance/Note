@@ -343,7 +343,8 @@ class RL:
 
     def adjust_window_size(self, p, scale=1.0, smooth_alpha=0.2):
         if self.pool_network==True:
-            self.ema_ess = [None] * self.processes
+            if not hasattr(self, 'ema_ess'):
+                self.ema_ess = [None] * self.processes
         
             weights = np.array(self.ratio_list[p])
     
@@ -355,7 +356,8 @@ class RL:
                 ema = smooth_alpha * ess + (1.0 - smooth_alpha) * self.ema_ess[p]
             self.ema_ess[p] = ema
         else:
-            self.ema_ess = None
+            if not hasattr(self, 'ema_ess'):
+                self.ema_ess = None
             
             weights = np.array(self.prioritized_replay.ratio)
             
