@@ -682,7 +682,7 @@ class RL_pytorch:
             s=next_s
     
     
-    def train(self, optimizer, episodes=None, pool_network=True, processes=None, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, random=True, save_data=True, p=None):
+    def train(self, optimizer, episodes=None, pool_network=True, processes=None, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, random=False, save_data=True, p=None):
         avg_reward=None
         if p==None:
             self.p=9
