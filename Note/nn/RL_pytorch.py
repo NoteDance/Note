@@ -509,12 +509,12 @@ class RL_pytorch:
             if self.PR==True:
                 if self.PPO:
                     if len(self.state_pool)>1:
-                        self.prioritized_replay.ratio=np.append(self.prioritized_replay.ratio,self.initial_ratio)
+                        self.prioritized_replay.ratio=np.append(self.prioritized_replay.ratio,np.max(self.prioritized_replay.ratio)).astype('float32')
                     if len(self.state_pool)>1:
-                        self.prioritized_replay.TD=np.append(self.prioritized_replay.ratio,self.initial_TD)
+                        self.prioritized_replay.TD=np.append(self.prioritized_replay.ratio,np.max(self.prioritized_replay.TD)).astype('float32')
                 else:
                     if len(self.state_pool)>1:
-                        self.prioritized_replay.TD=np.append(self.prioritized_replay.ratio,self.initial_TD)
+                        self.prioritized_replay.TD=np.append(self.prioritized_replay.ratio,np.max(self.prioritized_replay.TD)).astype('float32')
             if self.MARL==True:
                 r,done=self.reward_done_func_ma(r,done)
             self.reward=r+self.reward
@@ -666,14 +666,15 @@ class RL_pytorch:
                 lock_list[index].release()
             else:
                 self.pool(s,a,next_s,r,done,index)
-                if self.PPO:
-                    if len(self.state_pool_list[index])>1:
-                        self.ratio_list[index]=np.append(self.ratio_list[index],self.initial_ratio)
-                    if len(self.state_pool_list[index])>1:
-                        self.TD_list[index]=np.append(self.TD_list[index],self.initial_TD)
-                else:
-                    if len(self.state_pool_list[index])>1:
-                        self.TD_list[index]=np.append(self.TD_list[index],self.initial_TD)
+                if self.PR==True:
+                    if self.PPO:
+                        if len(self.state_pool_list[index])>1:
+                            self.ratio_list[index]=np.append(self.ratio_list[index],np.max(self.prioritized_replay.ratio)).astype('float32')
+                        if len(self.state_pool_list[index])>1:
+                            self.TD_list[index]=np.append(self.TD_list[index],np.max(self.prioritized_replay.TD)).astype('float32')
+                    else:
+                        if len(self.state_pool_list[index])>1:
+                            self.TD_list[index]=np.append(self.TD_list[index],np.max(self.prioritized_replay.TD)).astype('float32')
             if self.MARL==True:
                 r,done=self.reward_done_func_ma(r,done)
             self.reward[p]=r+self.reward[p]
