@@ -1,3 +1,4 @@
+from Note.nn.layer.layer import Layer
 from Note.nn.layer.adanorm import AdaNorm
 from Note.nn.layer.adaptive_avg_pooling1d import adaptive_avg_pooling1d
 from Note.nn.layer.adaptive_avg_pooling2d import adaptive_avg_pooling2d
@@ -79,7 +80,6 @@ from Note.nn.layer.identity import identity
 from Note.nn.layer.interpolate import RegularGridInterpolator
 from Note.nn.layer.kernel_attention import kernel_attention
 from Note.nn.layer.lambda_layer import LambdaLayer
-from Note.nn.layer.layer import Layer
 from Note.nn.layer.layer_norm import layer_norm
 from Note.nn.layer.layer_scale import *
 from Note.nn.layer.Linformer_self_attention import Linformer_self_attention
@@ -95,6 +95,7 @@ from Note.nn.layer.max_pool1d import max_pool1d
 from Note.nn.layer.max_pool2d import max_pool2d
 from Note.nn.layer.max_pool3d import max_pool3d
 from Note.nn.layer.maximum import maximum
+from Note.nn.layer.median_pool import MedianPool2d
 from Note.nn.layer.maxout import maxout
 from Note.nn.layer.minimum import minimum
 from Note.nn.layer.ml_decoder import MLDecoder
@@ -151,7 +152,6 @@ from Note.nn.layer.TransformerDecoderLayer import TransformerDecoderLayer
 from Note.nn.layer.TransformerEncoder import TransformerEncoder
 from Note.nn.layer.TransformerEncoderLayer import TransformerEncoderLayer
 from Note.nn.layer.two_stream_relative_attention import two_stream_relative_attention
-from Note.nn.layer.unfold import unfold
 from Note.nn.layer.unit_norm import unit_norm
 from Note.nn.layer.up_sampling1d import up_sampling1d
 from Note.nn.layer.up_sampling2d import up_sampling2d
@@ -177,6 +177,7 @@ from Note.nn.initializer import initializer,initializer_
 from Note.nn.interpolate import interpolate
 from Note.nn.lambda_callback import LambdaCallback
 from Note.nn.lr_finder import LRFinder,LRFinder_rl
+from Note.nn.median import median
 from Note.nn.Model import Model
 from Note.nn.parallel_finder import *
 from Note.nn.nan_to_num import nan_to_num
@@ -195,3 +196,4 @@ from Note.nn.Sequential import Sequential
 from Note.nn.softplus import softplus
 from Note.nn.solve_triangular import solve_triangular
 from Note.nn.sparse_mask import sparse_mask
+from Note.nn.unfold import unfold
