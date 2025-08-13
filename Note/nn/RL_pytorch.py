@@ -101,18 +101,22 @@ class RL_pytorch:
                         else:
                             self.TD_list[index]=self.TD_list[index][self.window_size_:]
             if len(self.state_pool_list[index])>math.ceil(self.pool_size/self.processes):
-                if self.window_size!=None:
-                    self.state_pool_list[index]=self.state_pool_list[index][self.window_size:]
-                    self.action_pool_list[index]=self.action_pool_list[index][self.window_size:]
-                    self.next_state_pool_list[index]=self.next_state_pool_list[index][self.window_size:]
-                    self.reward_pool_list[index]=self.reward_pool_list[index][self.window_size:]
-                    self.done_pool_list[index]=self.done_pool_list[index][self.window_size:]
+                if type(self.window_size)!=int:
+                    window_size=self.window_size(index)
+                else:
+                    window_size=self.window_size
+                if window_size!=None:
+                    self.state_pool_list[index]=self.state_pool_list[index][window_size:]
+                    self.action_pool_list[index]=self.action_pool_list[index][window_size:]
+                    self.next_state_pool_list[index]=self.next_state_pool_list[index][window_size:]
+                    self.reward_pool_list[index]=self.reward_pool_list[index][window_size:]
+                    self.done_pool_list[index]=self.done_pool_list[index][window_size:]
                     if self.PR:
                         if self.PPO:
-                            self.ratio_list[index]=self.ratio_list[index][self.window_size:]
-                            self.TD_list[index]=self.TD_list[index][self.window_size:]
+                            self.ratio_list[index]=self.ratio_list[index][window_size:]
+                            self.TD_list[index]=self.TD_list[index][window_size:]
                         else:
-                            self.TD_list[index]=self.TD_list[index][self.window_size:]
+                            self.TD_list[index]=self.TD_list[index][window_size:]
                 else:
                     self.state_pool_list[index]=self.state_pool_list[index][1:]
                     self.action_pool_list[index]=self.action_pool_list[index][1:]
@@ -153,18 +157,22 @@ class RL_pytorch:
                         else:
                             self.prioritized_replay.TD=self.prioritized_replay.TD[self.window_size_:]
             if len(self.state_pool)>self.pool_size:
-                if self.window_size!=None:
-                    self.state_pool=self.state_pool[self.window_size:]
-                    self.action_pool=self.action_pool[self.window_size:]
-                    self.next_state_pool=self.next_state_pool[self.window_size:]
-                    self.reward_pool=self.reward_pool[self.window_size:]
-                    self.done_pool=self.done_pool[self.window_size:]
+                if type(self.window_size)!=int:
+                    window_size=self.window_size(index)
+                else:
+                    window_size=self.window_size
+                if window_size!=None:
+                    self.state_pool=self.state_pool[window_size:]
+                    self.action_pool=self.action_pool[window_size:]
+                    self.next_state_pool=self.next_state_pool[window_size:]
+                    self.reward_pool=self.reward_pool[window_size:]
+                    self.done_pool=self.done_pool[window_size:]
                     if self.PR:
                         if self.PPO:
-                            self.prioritized_replay.ratio=self.prioritized_replay.ratio[self.window_size:]
-                            self.prioritized_replay.TD=self.prioritized_replay.TD[self.window_size:]
+                            self.prioritized_replay.ratio=self.prioritized_replay.ratio[window_size:]
+                            self.prioritized_replay.TD=self.prioritized_replay.TD[window_size:]
                         else:
-                            self.prioritized_replay.TD=self.prioritized_replay.TD[self.window_size:]
+                            self.prioritized_replay.TD=self.prioritized_replay.TD[window_size:]
                 else:
                     self.state_pool=self.state_pool[1:]
                     self.action_pool=self.action_pool[1:]
@@ -245,8 +253,11 @@ class RL_pytorch:
         if self.pool_network==True:
             if not hasattr(self, 'ema_ess'):
                 self.ema_ess = [None] * self.processes
-        
-            weights = np.array(self.ratio_list[p])
+            
+            if self.PPO:
+                weights = np.array(self.ratio_list[p])
+            else:
+                weights = np.array(self.TD_list[p])
     
             ess = self.compute_ess_from_weights(weights)
     
@@ -259,7 +270,10 @@ class RL_pytorch:
             if not hasattr(self, 'ema_ess'):
                 self.ema_ess = None
             
-            weights = np.array(self.prioritized_replay.ratio)
+            if self.PPO:
+                weights = np.array(self.prioritized_replay.ratio)
+            else:
+                weights = np.array(self.prioritized_replay.TD)
             
             ess = self.compute_ess_from_weights(weights)
             
