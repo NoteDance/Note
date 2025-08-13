@@ -240,7 +240,7 @@ class RL:
                             self.prioritized_replay.TD=self.prioritized_replay.TD[self.window_size_:]
             if len(self.state_pool)>self.pool_size:
                 if type(self.window_size)!=int:
-                    window_size=self.window_size(index)
+                    window_size=self.window_size()
                 else:
                     window_size=self.window_size
                 if window_size!=None:
@@ -349,7 +349,7 @@ class RL:
         return float(ess)
 
 
-    def adjust_window_size(self, p, scale=1.0, smooth_alpha=0.2):
+    def adjust_window_size(self, p=None, scale=1.0, smooth_alpha=0.2):
         if self.pool_network==True:
             if not hasattr(self, 'ema_ess'):
                 self.ema_ess = [None] * self.processes
