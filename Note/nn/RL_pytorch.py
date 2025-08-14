@@ -242,10 +242,8 @@ class RL_pytorch:
     
     
     def compute_ess_from_weights(self, weights):
-        w = np.array(weights, dtype=float)
-        w = np.maximum(w, 1e-8)
-        p = w / (w.sum() + 1e-8)
-        ess = 1.0 / (np.sum(p * p) + 1e-8)
+        p = weights / (weights.sum())
+        ess = 1.0 / (np.sum(p * p))
         return float(ess)
 
 
@@ -255,9 +253,10 @@ class RL_pytorch:
                 self.ema_ess = [None] * self.processes
             
             if self.PPO:
-                weights = np.array(self.ratio_list[p])
+                scores = self.lambda_ * self.TD_list[p] + (1.0-self.lambda_) * np.abs(self.ratio_list[p] - 1.0)
+                weights = np.pow(scores + 1e-7, self.alpha)
             else:
-                weights = np.array(self.TD_list[p])
+                weights = np.pow(self.TD_list[p] + 1e-7, self.alpha)
     
             ess = self.compute_ess_from_weights(weights)
     
@@ -271,9 +270,10 @@ class RL_pytorch:
                 self.ema_ess = None
             
             if self.PPO:
-                weights = np.array(self.prioritized_replay.ratio)
+                scores = self.lambda_ * self.prioritized_replay.TD + (1.0-self.lambda_) * np.abs(self.prioritized_replay.ratio - 1.0)
+                weights = np.pow(scores + 1e-7, self.alpha)
             else:
-                weights = np.array(self.prioritized_replay.TD)
+                weights = np.pow(self.prioritized_replay.TD + 1e-7, self.alpha)
             
             ess = self.compute_ess_from_weights(weights)
             
