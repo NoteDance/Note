@@ -98,6 +98,7 @@ from Note.nn.layer.maximum import maximum
 from Note.nn.layer.median_pool import MedianPool2d
 from Note.nn.layer.maxout import maxout
 from Note.nn.layer.minimum import minimum
+from Note.nn.layer.mixed_conv2d import MixedConv2d
 from Note.nn.layer.ml_decoder import MLDecoder
 from Note.nn.layer.mlp import *
 from Note.nn.layer.MoE_layer import MoE_layer
@@ -171,6 +172,7 @@ from Note.nn.cosine_similarity import cosine_similarity
 from Note.nn.create_additive_causal_mask import create_additive_causal_mask
 from Note.nn.format import *
 from Note.nn.gather_mm import gather_mm
+from Note.nn.get_padding import get_padding
 from Note.nn.helpers import *
 from Note.nn.init import *
 from Note.nn.initializer import initializer,initializer_
