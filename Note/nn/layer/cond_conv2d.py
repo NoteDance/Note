@@ -39,7 +39,8 @@ class CondConv2d(nn.Layer):
         self.kernel_size = nn.to_2tuple(kernel_size)
         self.input_size = input_size
         self.strides = nn.to_2tuple(strides)
-        padding = ((strides - 1) + dilations * (kernel_size - 1)) // 2
+        if padding not in ('SAME', 'VALID'):
+            padding = nn.get_padding(kernel_size, strides, dilations)
         self.padding = nn.to_2tuple(padding)
         self.dilations = nn.to_2tuple(dilations)
         self.groups = groups
