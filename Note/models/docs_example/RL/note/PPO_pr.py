@@ -78,7 +78,7 @@ class PPO(nn.RL):
         entropy=action_prob*tf.math.log(action_prob+1e-8)
         clip_loss=clip_loss-self.alpha*entropy
         self.controller.max_w = len(self.prioritized_replay.ratio)
-        score = tf.reduce_sum(tf.abs(self.prioritized_replay.ratio-1.0))
+        score = tf.reduce_sum(tf.abs(self.prioritized_replay.ratio-1.0)) + tf.reduce_sum(self.prioritized_replay.TD)
         ess = tf.reduce_sum(self.prioritized_replay.ratio)**2 / tf.reduce_sum(tf.square(self.prioritized_replay.ratio))
         features = tf.reshape([score, ess], (1,2))
         features = (features - tf.reduce_min(features)) / (tf.reduce_max(features) - tf.reduce_min(features) + 1e-8)
