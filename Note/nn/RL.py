@@ -51,6 +51,8 @@ class RL:
         self.info['noise']=self.noise
         self.info['pool_size']=self.pool_size
         self.info['batch']=self.batch
+        self.info['num_updates']=self.num_updates
+        self.info['num_steps']=self.num_steps
         self.info['update_batches']=self.update_batches
         self.info['update_steps']=self.update_steps
         self.info['trial_count']=self.trial_count
@@ -124,12 +126,13 @@ class RL:
         return self.info
     
     
-    def set(self,policy=None,noise=None,pool_size=None,batch=None,num_updates=None,update_batches=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False,MARL=False,PR=False,IRL=False,epsilon=None,initial_ratio=1.0,initial_TD=7.,lambda_=0.5,alpha=0.7):
+    def set(self,policy=None,noise=None,pool_size=None,batch=None,num_updates=None,num_steps=None,update_batches=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False,MARL=False,PR=False,IRL=False,epsilon=None,initial_ratio=1.0,initial_TD=7.,lambda_=0.5,alpha=0.7):
         self.policy=policy
         self.noise=noise
         self.pool_size=pool_size
         self.batch=batch
         self.num_updates=num_updates
+        self.num_steps=num_steps
         self.update_batches=update_batches
         self.update_steps=update_steps
         self.trial_count=trial_count
@@ -976,6 +979,8 @@ class RL:
     def train2(self, train_loss, optimizer):
         self.reward=0
         s=self.env_(initial=True)
+        reward=0
+        counter=0
         while True:
             s=np.expand_dims(s,axis=0)
             if self.MARL!=True:
@@ -990,7 +995,6 @@ class RL:
             next_s=np.array(next_s)
             r=np.array(r)
             done=np.array(done)
-            self.pool(s,a,next_s,r,done)
             if self.PR==True:
                 if self.PPO:
                     if len(self.state_pool)>1:
@@ -1003,6 +1007,14 @@ class RL:
             if self.MARL==True:
                 r,done=self.reward_done_func_ma(r,done)
             self.reward=r+self.reward
+            if self.num_steps!=None:
+                counter+=1
+                reward=r+reward
+                if counter%self.num_steps==0:
+                    self.pool(s,a,next_s,reward,done)
+                    reward=0
+            else:
+                self.pool(s,a,next_s,r,done)
             if not self.PR and self.num_updates!=None and len(self.state_pool)>=self.pool_size_:
                 state_pool=self.state_pool
                 action_pool=self.action_pool
@@ -1023,6 +1035,8 @@ class RL:
                 self.reward_pool=reward_pool
                 self.done_pool=done_pool
             if done:
+                if self.num_steps!=None and counter%self.num_steps!=0:
+                    self.pool(s,a,next_s,reward,done)
                 self.reward_list.append(self.reward)
                 if len(self.reward_list)>self.trial_count:
                     del self.reward_list[0]
@@ -1119,6 +1133,8 @@ class RL:
         self.reward[p]=0
         s=self.env_(initial=True,p=p)
         s=np.array(s)
+        reward=0
+        counter=0
         while True:
             if self.random or (self.PR!=True and self.HER!=True):
                 if self.state_pool_list[p] is None:
@@ -1147,10 +1163,24 @@ class RL:
             done=np.array(done)
             if self.random or (self.PR!=True and self.HER!=True):
                 lock_list[index].acquire()
-                self.pool(s,a,next_s,r,done,index)
+                if self.num_steps!=None:
+                    counter+=1
+                    reward=r+reward
+                    if counter%self.num_steps==0:
+                        self.pool(s,a,next_s,reward,done,index)
+                        reward=0
+                else:
+                    self.pool(s,a,next_s,r,done,index)
                 lock_list[index].release()
             else:
-                self.pool(s,a,next_s,r,done,index)
+                if self.num_steps!=None:
+                    counter+=1
+                    reward=r+reward
+                    if counter%self.num_steps==0:
+                        self.pool(s,a,next_s,reward,done,index)
+                        reward=0
+                else:
+                    self.pool(s,a,next_s,r,done,index)
                 if self.PR==True:
                     if self.PPO:
                         if len(self.state_pool_list[index])>1:
@@ -1164,6 +1194,8 @@ class RL:
                 r,done=self.reward_done_func_ma(r,done)
             self.reward[p]=r+self.reward[p]
             if done:
+                if self.num_steps!=None and counter%self.num_steps!=0:
+                    self.pool(s,a,next_s,reward,done,index)
                 return
             s=next_s
     
