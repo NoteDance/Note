@@ -62,9 +62,13 @@ class PPO(nn.RL):
         return self.actor_old(s)
     
     def window_size_fn(self):
-        score = tf.reduce_sum(tf.abs(self.prioritized_replay.ratio-1.0))
-        ess = tf.reduce_sum(self.prioritized_replay.ratio)**2 / tf.reduce_sum(tf.square(self.prioritized_replay.ratio))
-        features = tf.reshape([score, ess], (1,2))
+        ratio_score = tf.reduce_sum(tf.abs(self.prioritized_replay.ratio-1.0))
+        td_score = tf.reduce_sum(self.prioritized_replay.TD)
+        scores = self.lambda_ * self.prioritized_replay.TD + (1.0-self.lambda_) * tf.abs(self.prioritized_replay.ratio - 1.0)
+        weights = tf.pow(scores + 1e-7, self.alpha)
+        p = weights / (tf.reduce_sum(weights))
+        ess = 1.0 / (tf.reduce_sum(p * p))
+        features = tf.reshape([ratio_score, td_score, ess], (1,3))
         features = (features - tf.reduce_min(features)) / (tf.reduce_max(features) - tf.reduce_min(features) + 1e-8)
         return self.controller(features)
     
@@ -82,12 +86,14 @@ class PPO(nn.RL):
         entropy=action_prob*tf.math.log(action_prob+1e-8)
         clip_loss=clip_loss-self.alpha*entropy
         self.controller.max_w = len(self.prioritized_replay.ratio)
-        score = tf.reduce_sum(tf.abs(self.prioritized_replay.ratio-1.0)) + tf.reduce_sum(self.prioritized_replay.TD)
+        ratio_score = tf.reduce_sum(tf.abs(self.prioritized_replay.ratio-1.0))
+        td_score = tf.reduce_sum(self.prioritized_replay.TD)
+        score = ratio_score + td_score
         scores = self.lambda_ * self.prioritized_replay.TD + (1.0-self.lambda_) * tf.abs(self.prioritized_replay.ratio - 1.0)
         weights = tf.pow(scores + 1e-7, self.alpha)
         p = weights / (tf.reduce_sum(weights))
         ess = 1.0 / (tf.reduce_sum(p * p))
-        features = tf.reshape([score, ess], (1,2))
+        features = tf.reshape([ratio_score, td_score, ess], (1,3))
         features = (features - tf.reduce_min(features)) / (tf.reduce_max(features) - tf.reduce_min(features) + 1e-8)
         w = self.controller(features)
         idx = tf.cast(tf.range(len(self.prioritized_replay.ratio), w.dtype))
