@@ -504,11 +504,14 @@ class RL_pytorch:
                 r,done=self.reward_done_func_ma(r,done)
             self.reward=r+self.reward
             if self.num_steps!=None:
+                if counter==0:
+                    next_s_=next_s
                 counter+=1
                 reward=r+reward
                 if counter%self.num_steps==0:
                     self.pool(s,a,next_s,reward,done)
                     reward=0
+                    s=next_s_
             else:
                 self.pool(s,a,next_s,r,done)
             if not self.PR and self.num_updates!=None and len(self.state_pool)>=self.pool_size_:
@@ -537,7 +540,8 @@ class RL_pytorch:
                 if len(self.reward_list)>self.trial_count:
                     del self.reward_list[0]
                 return loss
-            s=next_s
+            if self.num_steps==None:
+                s=next_s
     
     
     def get_batch_in_parallel(self,p):
@@ -660,21 +664,27 @@ class RL_pytorch:
             if self.random or (self.PR!=True and self.HER!=True):
                 lock_list[index].acquire()
                 if self.num_steps!=None:
+                    if counter==0:
+                        next_s_=next_s
                     counter+=1
                     reward=r+reward
                     if counter%self.num_steps==0:
                         self.pool(s,a,next_s,reward,done,index)
                         reward=0
+                        s=next_s_
                 else:
                     self.pool(s,a,next_s,r,done,index)
                 lock_list[index].release()
             else:
                 if self.num_steps!=None:
+                    if counter==0:
+                        next_s_=next_s
                     counter+=1
                     reward=r+reward
                     if counter%self.num_steps==0:
                         self.pool(s,a,next_s,reward,done,index)
                         reward=0
+                        s=next_s_
                 else:
                     self.pool(s,a,next_s,r,done,index)
                 if self.PR==True:
@@ -693,7 +703,8 @@ class RL_pytorch:
                 if self.num_steps!=None and counter%self.num_steps!=0:
                     self.pool(s,a,next_s,reward,done,index)
                 return
-            s=next_s
+            if self.num_steps==None:
+                s=next_s
     
     
     def train(self, optimizer, episodes=None, pool_network=True, processes=None, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, random=False, save_data=True, p=None):
