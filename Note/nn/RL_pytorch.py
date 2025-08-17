@@ -103,7 +103,7 @@ class RL_pytorch:
                             self.TD_list[index]=self.TD_list[index][self.window_size_:]
             if len(self.state_pool_list[index])>math.ceil(self.pool_size/self.processes):
                 if type(self.window_size)!=int:
-                    window_size=self.window_size(index)
+                    window_size=int(self.window_size(index))
                 else:
                     window_size=self.window_size
                 if window_size!=None:
