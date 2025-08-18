@@ -506,12 +506,12 @@ class RL_pytorch:
             if self.num_steps!=None:
                 if counter==0:
                     next_s_=next_s
+                    done_=done
                 counter+=1
                 reward=r+reward
-                if counter%self.num_steps==0:
+                if counter%self.num_steps==0 or done:
                     self.pool(s,a,next_s,reward,done)
                     reward=0
-                    s=next_s_
             else:
                 self.pool(s,a,next_s,r,done)
             if not self.PR and self.num_updates!=None and len(self.state_pool)>=self.pool_size_:
@@ -533,15 +533,15 @@ class RL_pytorch:
                 self.next_state_pool=next_state_pool
                 self.reward_pool=reward_pool
                 self.done_pool=done_pool
-            if done:
-                if self.num_steps!=None and counter%self.num_steps!=0:
-                    self.pool(s,a,next_s,reward,done)
+            if (self.num_steps==None and done) or (self.num_steps!=None and done_):
                 self.reward_list.append(self.reward)
                 if len(self.reward_list)>self.trial_count:
                     del self.reward_list[0]
                 return loss
             if self.num_steps==None:
                 s=next_s
+            elif counter%self.num_steps==0 or (self.num_steps!=None and done):
+                s=next_s_
     
     
     def get_batch_in_parallel(self,p):
@@ -666,12 +666,12 @@ class RL_pytorch:
                 if self.num_steps!=None:
                     if counter==0:
                         next_s_=next_s
+                        done_=done
                     counter+=1
                     reward=r+reward
-                    if counter%self.num_steps==0:
+                    if counter%self.num_steps==0 or done:
                         self.pool(s,a,next_s,reward,done,index)
                         reward=0
-                        s=next_s_
                 else:
                     self.pool(s,a,next_s,r,done,index)
                 lock_list[index].release()
@@ -679,12 +679,12 @@ class RL_pytorch:
                 if self.num_steps!=None:
                     if counter==0:
                         next_s_=next_s
+                        done_=done
                     counter+=1
                     reward=r+reward
-                    if counter%self.num_steps==0:
+                    if counter%self.num_steps==0 or done:
                         self.pool(s,a,next_s,reward,done,index)
                         reward=0
-                        s=next_s_
                 else:
                     self.pool(s,a,next_s,r,done,index)
                 if self.PR==True:
@@ -699,12 +699,12 @@ class RL_pytorch:
             if self.MARL==True:
                 r,done=self.reward_done_func_ma(r,done)
             self.reward[p]=r+self.reward[p]
-            if done:
-                if self.num_steps!=None and counter%self.num_steps!=0:
-                    self.pool(s,a,next_s,reward,done,index)
+            if (self.num_steps==None and done) or (self.num_steps!=None and done_):
                 return
             if self.num_steps==None:
                 s=next_s
+            elif counter%self.num_steps==0 or (self.num_steps!=None and done):
+                s=next_s_
     
     
     def train(self, optimizer, episodes=None, pool_network=True, processes=None, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, random=False, save_data=True, p=None):
