@@ -538,9 +538,8 @@ class RL_pytorch:
                 if len(self.reward_list)>self.trial_count:
                     del self.reward_list[0]
                 return loss
-            if self.num_steps==None:
-                s=next_s
-            elif counter%self.num_steps==0 or (self.num_steps!=None and done):
+            s=next_s
+            if (self.num_steps!=None and counter%self.num_steps==0) or (self.num_steps!=None and done):
                 s=next_s_
     
     
@@ -701,9 +700,8 @@ class RL_pytorch:
             self.reward[p]=r+self.reward[p]
             if (self.num_steps==None and done) or (self.num_steps!=None and done_):
                 return
-            if self.num_steps==None:
-                s=next_s
-            elif counter%self.num_steps==0 or (self.num_steps!=None and done):
+            s=next_s
+            if (self.num_steps!=None and counter%self.num_steps==0) or (self.num_steps!=None and done):
                 s=next_s_
     
     
