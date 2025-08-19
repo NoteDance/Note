@@ -89,6 +89,7 @@ class RL:
                 self.info['clearing_freq']=self.clearing_freq
                 self.info['window_size_']=self.window_size_
                 self.info['window_size_ppo']=self.window_size_ppo
+                self.info['window_size_pr']=self.window_size_pr
                 self.info['random']=self.random
                 self.info['num_updates']=self.num_updates
                 self.info['save_data']=self.save_data
@@ -113,6 +114,7 @@ class RL:
                 self.info['clearing_freq']=self.clearing_freq
                 self.info['window_size_']=self.window_size_
                 self.info['window_size_ppo']=self.window_size_ppo
+                self.info['window_size_pr']=self.window_size_pr
                 self.info['random']=self.random
                 self.info['num_updates']=self.num_updates
                 self.info['save_data']=self.save_data
@@ -533,20 +535,23 @@ class RL:
             if self.pool_network==True:
                 if self.batch_counter%self.update_batches==0:
                     self.update_param()
-                    if self.PPO:
-                        if not hasattr(self,'window_size_fn'):
-                            window_size_ppo=self.window_size_ppo
-                        for p in range(self.processes):
-                            if hasattr(self,'window_size_fn'):
-                                window_size_ppo=int(self.window_size_fn(p))
-                            if window_size_ppo!=None and len(self.state_pool_list[p])>window_size_ppo:
-                                self.state_pool_list[p]=self.state_pool_list[p][window_size_ppo:]
-                                self.action_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
-                                self.next_state_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
-                                self.reward_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
-                                self.done_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
-                                self.ratio_list[p]=self.ratio_list[p][window_size_ppo:]
-                                self.TD_list[p]=self.TD_list[p][window_size_ppo:]
+                    if not hasattr(self,'window_size_fn'):
+                        if self.PPO:
+                            window_size=self.window_size_ppo
+                        else:
+                            window_size=self.window_size_pr
+                    for p in range(self.processes):
+                        if hasattr(self,'window_size_fn'):
+                            window_size=int(self.window_size_fn(p))
+                        if window_size!=None and len(self.state_pool_list[p])>window_size:
+                            self.state_pool_list[p]=self.state_pool_list[p][window_size:]
+                            self.action_pool_list[p]=self.action_pool_list[p][window_size:]
+                            self.next_state_pool_list[p]=self.action_pool_list[p][window_size:]
+                            self.reward_pool_list[p]=self.action_pool_list[p][window_size:]
+                            self.done_pool_list[p]=self.action_pool_list[p][window_size:]
+                            if self.PPO:
+                                self.ratio_list[p]=self.ratio_list[p][window_size:]
+                            self.TD_list[p]=self.TD_list[p][window_size:]
             return total_loss
         else:
             batch = 0
@@ -611,20 +616,23 @@ class RL:
             if self.pool_network==True:
                 if self.batch_counter%self.update_batches==0:
                     self.update_param()
-                    if self.PPO:
-                        if not hasattr(self,'window_size_fn'):
-                            window_size_ppo=self.window_size_ppo
-                        for p in range(self.processes):
-                            if hasattr(self,'window_size_fn'):
-                                window_size_ppo=int(self.window_size_fn(p))
-                            if window_size_ppo!=None and len(self.state_pool_list[p])>window_size_ppo:
-                                self.state_pool_list[p]=self.state_pool_list[p][window_size_ppo:]
-                                self.action_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
-                                self.next_state_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
-                                self.reward_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
-                                self.done_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
-                                self.ratio_list[p]=self.ratio_list[p][window_size_ppo:]
-                                self.TD_list[p]=self.TD_list[p][window_size_ppo:]
+                    if not hasattr(self,'window_size_fn'):
+                        if self.PPO:
+                            window_size=self.window_size_ppo
+                        else:
+                            window_size=self.window_size_pr
+                    for p in range(self.processes):
+                        if hasattr(self,'window_size_fn'):
+                            window_size=int(self.window_size_fn(p))
+                        if window_size!=None and len(self.state_pool_list[p])>window_size:
+                            self.state_pool_list[p]=self.state_pool_list[p][window_size:]
+                            self.action_pool_list[p]=self.action_pool_list[p][window_size:]
+                            self.next_state_pool_list[p]=self.action_pool_list[p][window_size:]
+                            self.reward_pool_list[p]=self.action_pool_list[p][window_size:]
+                            self.done_pool_list[p]=self.action_pool_list[p][window_size:]
+                            if self.PPO:
+                                self.ratio_list[p]=self.ratio_list[p][window_size:]
+                            self.TD_list[p]=self.TD_list[p][window_size:]
             return total_loss
         else:
             batch = 0
@@ -709,20 +717,23 @@ class RL:
                             if self.pool_network==True:
                                 if self.batch_counter%self.update_batches==0:
                                     self.update_param()
-                                    if self.PPO:
-                                        if not hasattr(self,'window_size_fn'):
-                                            window_size_ppo=self.window_size_ppo
-                                        for p in range(self.processes):
-                                            if hasattr(self,'window_size_fn'):
-                                                window_size_ppo=int(self.window_size_fn(p))
-                                            if window_size_ppo!=None and len(self.state_pool_list[p])>window_size_ppo:
-                                                self.state_pool_list[p]=self.state_pool_list[p][window_size_ppo:]
-                                                self.action_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
-                                                self.next_state_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
-                                                self.reward_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
-                                                self.done_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
-                                                self.ratio_list[p]=self.ratio_list[p][window_size_ppo:]
-                                                self.TD_list[p]=self.TD_list[p][window_size_ppo:]
+                                    if not hasattr(self,'window_size_fn'):
+                                        if self.PPO:
+                                            window_size=self.window_size_ppo
+                                        else:
+                                            window_size=self.window_size_pr
+                                    for p in range(self.processes):
+                                        if hasattr(self,'window_size_fn'):
+                                            window_size=int(self.window_size_fn(p))
+                                        if window_size!=None and len(self.state_pool_list[p])>window_size:
+                                            self.state_pool_list[p]=self.state_pool_list[p][window_size:]
+                                            self.action_pool_list[p]=self.action_pool_list[p][window_size:]
+                                            self.next_state_pool_list[p]=self.action_pool_list[p][window_size:]
+                                            self.reward_pool_list[p]=self.action_pool_list[p][window_size:]
+                                            self.done_pool_list[p]=self.action_pool_list[p][window_size:]
+                                            if self.PPO:
+                                                self.ratio_list[p]=self.ratio_list[p][window_size:]
+                                            self.TD_list[p]=self.TD_list[p][window_size:]
                     elif isinstance(self.strategy,tf.distribute.MultiWorkerMirroredStrategy):
                         with self.strategy.scope():
                             multi_worker_dataset = self.strategy.distribute_datasets_from_function(
@@ -745,20 +756,23 @@ class RL:
                             if self.pool_network==True:
                                 if self.batch_counter%self.update_batches==0:
                                     self.update_param()
-                                    if self.PPO:
-                                        if not hasattr(self,'window_size_fn'):
-                                            window_size_ppo=self.window_size_ppo
-                                        for p in range(self.processes):
-                                            if hasattr(self,'window_size_fn'):
-                                                window_size_ppo=int(self.window_size_fn(p))
-                                            if window_size_ppo!=None and len(self.state_pool_list[p])>window_size_ppo:
-                                                self.state_pool_list[p]=self.state_pool_list[p][window_size_ppo:]
-                                                self.action_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
-                                                self.next_state_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
-                                                self.reward_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
-                                                self.done_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
-                                                self.ratio_list[p]=self.ratio_list[p][window_size_ppo:]
-                                                self.TD_list[p]=self.TD_list[p][window_size_ppo:]
+                                    if not hasattr(self,'window_size_fn'):
+                                        if self.PPO:
+                                            window_size=self.window_size_ppo
+                                        else:
+                                            window_size=self.window_size_pr
+                                    for p in range(self.processes):
+                                        if hasattr(self,'window_size_fn'):
+                                            window_size=int(self.window_size_fn(p))
+                                        if window_size!=None and len(self.state_pool_list[p])>window_size:
+                                            self.state_pool_list[p]=self.state_pool_list[p][window_size:]
+                                            self.action_pool_list[p]=self.action_pool_list[p][window_size:]
+                                            self.next_state_pool_list[p]=self.action_pool_list[p][window_size:]
+                                            self.reward_pool_list[p]=self.action_pool_list[p][window_size:]
+                                            self.done_pool_list[p]=self.action_pool_list[p][window_size:]
+                                            if self.PPO:
+                                                self.ratio_list[p]=self.ratio_list[p][window_size:]
+                                            self.TD_list[p]=self.TD_list[p][window_size:]
                     batch_logs = {'loss': loss.numpy()}
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_batch_end'):
@@ -801,20 +815,23 @@ class RL:
                             if self.pool_network==True:
                                 if self.batch_counter%self.update_batches==0:
                                     self.update_param()
-                                    if self.PPO:
-                                        if not hasattr(self,'window_size_fn'):
-                                            window_size_ppo=self.window_size_ppo
-                                        for p in range(self.processes):
-                                            if hasattr(self,'window_size_fn'):
-                                                window_size_ppo=int(self.window_size_fn(p))
-                                            if window_size_ppo!=None and len(self.state_pool_list[p])>window_size_ppo:
-                                                self.state_pool_list[p]=self.state_pool_list[p][window_size_ppo:]
-                                                self.action_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
-                                                self.next_state_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
-                                                self.reward_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
-                                                self.done_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
-                                                self.ratio_list[p]=self.ratio_list[p][window_size_ppo:]
-                                                self.TD_list[p]=self.TD_list[p][window_size_ppo:]
+                                    if not hasattr(self,'window_size_fn'):
+                                        if self.PPO:
+                                            window_size=self.window_size_ppo
+                                        else:
+                                            window_size=self.window_size_pr
+                                    for p in range(self.processes):
+                                        if hasattr(self,'window_size_fn'):
+                                            window_size=int(self.window_size_fn(p))
+                                        if window_size!=None and len(self.state_pool_list[p])>window_size:
+                                            self.state_pool_list[p]=self.state_pool_list[p][window_size:]
+                                            self.action_pool_list[p]=self.action_pool_list[p][window_size:]
+                                            self.next_state_pool_list[p]=self.action_pool_list[p][window_size:]
+                                            self.reward_pool_list[p]=self.action_pool_list[p][window_size:]
+                                            self.done_pool_list[p]=self.action_pool_list[p][window_size:]
+                                            if self.PPO:
+                                                self.ratio_list[p]=self.ratio_list[p][window_size:]
+                                            self.TD_list[p]=self.TD_list[p][window_size:]
                     elif isinstance(self.strategy,tf.distribute.MultiWorkerMirroredStrategy):
                         with self.strategy.scope():
                             multi_worker_dataset = self.strategy.distribute_datasets_from_function(
@@ -836,20 +853,23 @@ class RL:
                         if self.pool_network==True:
                             if self.batch_counter%self.update_batches==0:
                                 self.update_param()
-                                if self.PPO:
-                                    if not hasattr(self,'window_size_fn'):
-                                        window_size_ppo=self.window_size_ppo
-                                    for p in range(self.processes):
-                                        if hasattr(self,'window_size_fn'):
-                                            window_size_ppo=int(self.window_size_fn(p))
-                                        if window_size_ppo!=None and len(self.state_pool_list[p])>window_size_ppo:
-                                            self.state_pool_list[p]=self.state_pool_list[p][window_size_ppo:]
-                                            self.action_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
-                                            self.next_state_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
-                                            self.reward_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
-                                            self.done_pool_list[p]=self.action_pool_list[p][window_size_ppo:]
-                                            self.ratio_list[p]=self.ratio_list[p][window_size_ppo:]
-                                            self.TD_list[p]=self.TD_list[p][window_size_ppo:]
+                                if not hasattr(self,'window_size_fn'):
+                                    if self.PPO:
+                                        window_size=self.window_size_ppo
+                                    else:
+                                        window_size=self.window_size_pr
+                                for p in range(self.processes):
+                                    if hasattr(self,'window_size_fn'):
+                                        window_size=int(self.window_size_fn(p))
+                                    if window_size!=None and len(self.state_pool_list[p])>window_size:
+                                        self.state_pool_list[p]=self.state_pool_list[p][window_size:]
+                                        self.action_pool_list[p]=self.action_pool_list[p][window_size:]
+                                        self.next_state_pool_list[p]=self.action_pool_list[p][window_size:]
+                                        self.reward_pool_list[p]=self.action_pool_list[p][window_size:]
+                                        self.done_pool_list[p]=self.action_pool_list[p][window_size:]
+                                        if self.PPO:
+                                            self.ratio_list[p]=self.ratio_list[p][window_size:]
+                                        self.TD_list[p]=self.TD_list[p][window_size:]
                     if not isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
                         batch_logs = {'loss': loss.numpy()}
                     else:
@@ -945,26 +965,29 @@ class RL:
             if self.update_steps!=None:
                 if self.step_counter%self.update_steps==0:
                     self.update_param()
-                    if self.PPO:
-                        if self.PR:
-                            if hasattr(self,'window_size_fn'):
-                                window_size_ppo=int(self.window_size_fn())
+                    if self.PR:
+                        if not hasattr(self,'window_size_fn'):
+                            if self.PPO:
+                                window_size=self.window_size_ppo
                             else:
-                                window_size_ppo=self.window_size_ppo
-                            if window_size_ppo!=None and len(self.state_pool)>window_size_ppo:
-                                self.state_pool=self.state_pool[window_size_ppo:]
-                                self.action_pool=self.action_pool[window_size_ppo:]
-                                self.next_state_pool=self.action_pool[window_size_ppo:]
-                                self.reward_pool=self.action_pool[window_size_ppo:]
-                                self.done_pool=self.action_pool[window_size_ppo:]
-                                self.prioritized_replay.ratio=self.prioritized_replay.ratio[window_size_ppo:]
-                                self.prioritized_replay.TD=self.prioritized_replay.TD[window_size_ppo:]
-                        else:
-                            self.state_pool=None
-                            self.action_pool=None
-                            self.next_state_pool=None
-                            self.reward_pool=None
-                            self.done_pool=None
+                                window_size=self.window_size_pr
+                        if hasattr(self,'window_size_fn'):
+                            window_size=int(self.window_size_fn())
+                        if window_size!=None and len(self.state_pool_list[p])>window_size:
+                            self.state_pool_list[p]=self.state_pool_list[p][window_size:]
+                            self.action_pool_list[p]=self.action_pool_list[p][window_size:]
+                            self.next_state_pool_list[p]=self.action_pool_list[p][window_size:]
+                            self.reward_pool_list[p]=self.action_pool_list[p][window_size:]
+                            self.done_pool_list[p]=self.action_pool_list[p][window_size:]
+                            if self.PPO:
+                                self.prioritized_replay.ratio=self.prioritized_replay.ratio[window_size:]
+                            self.prioritized_replay.TD=self.prioritized_replay.TD[window_size:]
+                    else:
+                        self.state_pool=None
+                        self.action_pool=None
+                        self.next_state_pool=None
+                        self.reward_pool=None
+                        self.done_pool=None
             else:
                 self.update_param()
         if self.distributed_flag==True:
@@ -1209,7 +1232,7 @@ class RL:
                 s=next_s_
     
     
-    def train(self, train_loss, optimizer, episodes=None, jit_compile=True, pool_network=True, processes=None, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, random=False, save_data=True, callbacks=None, p=None):
+    def train(self, train_loss, optimizer, episodes=None, jit_compile=True, pool_network=True, processes=None, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, random=False, save_data=True, callbacks=None, p=None):
         avg_reward=None
         if p!=0:
             if p==None:
@@ -1237,6 +1260,7 @@ class RL:
         self.clearing_freq=clearing_freq
         self.window_size_=window_size_
         self.window_size_ppo=window_size_ppo
+        self.window_size_pr=window_size_pr
         self.random=random
         if self.num_updates!=None:
             self.pool_size_=self.num_updates*self.batch
@@ -1537,7 +1561,7 @@ class RL:
         return
     
     
-    def distributed_training(self, optimizer, strategy, episodes=None, num_episodes=None, jit_compile=True, pool_network=True, processes=None, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, random=False, save_data=True, callbacks=None, p=None):
+    def distributed_training(self, optimizer, strategy, episodes=None, num_episodes=None, jit_compile=True, pool_network=True, processes=None, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, random=False, save_data=True, callbacks=None, p=None):
         avg_reward=None
         if num_episodes!=None:
             episodes=num_episodes
@@ -1568,6 +1592,7 @@ class RL:
         self.clearing_freq=clearing_freq
         self.window_size_=window_size_
         self.window_size_ppo=window_size_ppo
+        self.window_size_pr=window_size_pr
         self.random=random
         if self.num_updates!=None:
             self.pool_size_=self.num_updates*self.batch
