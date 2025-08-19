@@ -30,7 +30,7 @@ class DQN(nn.RL):
         q_value=tf.gather(self.q_net(s),a,axis=1,batch_dims=1)
         next_q_value=tf.reduce_max(self.target_q_net(next_s),axis=1)
         target=tf.cast(r,'float32')+0.98*next_q_value*(1-tf.cast(d,'float32'))
-        self.prioritized_replay.update_TD(target)
+        self.prioritized_replay.update(target)
         return tf.reduce_mean((q_value-target)**2)
     
     def update_param(self):
@@ -57,7 +57,7 @@ class DQN_(nn.RL):
         q_value=tf.gather(self.q_net(s),a,axis=1,batch_dims=1)
         next_q_value=tf.reduce_max(self.target_q_net(next_s),axis=1)
         target=tf.cast(r,'float32')+0.98*next_q_value*(1-tf.cast(d,'float32'))
-        self.prioritized_replay.update_TD(target)
+        self.prioritized_replay.update(target)
         return tf.reduce_mean((q_value-target)**2)
     
     def update_param(self):
