@@ -80,7 +80,7 @@ class PPO(nn.RL):
 
 
 class PPO_(nn.RL):
-    def __init__(self,state_dim,hidden_dim,action_dim,clip_eps,alpha,temp=10.0,processes):
+    def __init__(self,state_dim,hidden_dim,action_dim,clip_eps,alpha,processes,temp=10.0):
         super().__init__()
         self.actor=actor(state_dim,hidden_dim,action_dim)
         self.actor_old=actor(state_dim,hidden_dim,action_dim)
