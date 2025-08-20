@@ -29,11 +29,11 @@ class critic(Model):
         return x
 
 
-class Controller(nn.Model):
+class Controller(Model):
     def __init__(self, hidden=32, temp=10.0):
         super().__init__()
-        self.fc1 = nn.dense(hidden, 2, activation='relu')
-        self.fc2 = nn.dense(2, 1, activation='sigmoid')
+        self.fc1 = tf.keras.layers.Dense(hidden, activation='relu')
+        self.fc2 = tf.keras.layers.Dense(1, activation='sigmoid')
         self.max_w = None
         self.temp = temp
 
@@ -84,7 +84,7 @@ class PPO(nn.RL):
 
 
 class PPO_(nn.RL):
-    def __init__(self,state_dim,hidden_dim,action_dim,clip_eps,alpha,processes):
+    def __init__(self,state_dim,hidden_dim,action_dim,clip_eps,alpha,processes,temp=10.0):
         super().__init__()
         self.actor=actor(state_dim,hidden_dim,action_dim)
         self.actor_old=actor(state_dim,hidden_dim,action_dim)
@@ -92,7 +92,8 @@ class PPO_(nn.RL):
         self.critic=critic(state_dim,hidden_dim)
         self.clip_eps=clip_eps
         self.alpha=alpha
-        self.param=[self.actor.weights,self.critic.weights]
+        self.temp = temp
+        self.param=[self.actor.weights,self.critic.weights,self.controller.weights]
         self.env=[gym.make('CartPole-v0') for _ in range(processes)]
     
     def action(self,s):
