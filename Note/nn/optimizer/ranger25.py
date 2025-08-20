@@ -142,18 +142,16 @@ class Ranger25(optimizer.Optimizer):
     
     def reset(self):
         self._iterations.assign(0)
+        self.exp_avg_sq = []
+        self.subset_size_ = []
         for var in self._trainable_variables:
             self.exp_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="exp_avg"
-                                                    )
-            self.exp_avg_sq[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=var, name="exp_avg_sq"
                                                     )
             self.exp_avg_slow[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="exp_avg_slow"
                                                     )
             self.slow_momentum[self._get_variable_index(var)].assign(var)
-            self.subset_size_ = []
             if self.sn:
                 size = tf.size(var)
                 
