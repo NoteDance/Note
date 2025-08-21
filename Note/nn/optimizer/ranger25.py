@@ -11,11 +11,13 @@ Mixin' every fancy optimizer hacks.
         * Adaptive gradient clipping
         * Lookahead
         * Subset-based second-moment estimation (subset normalization)
+        * D-Adaptation
 
 Copyright 2025 NoteDance
 """
 import tensorflow as tf
 from keras.src.optimizers import optimizer
+import math
 
 
 def unit_norm(x, ord = 2.0):
@@ -83,7 +85,7 @@ def closest_smaller_divisor_of_n_to_k(n, k):
     return closest_smaller_divisor
 
 
-class Ranger25(optimizer.Optimizer):
+class Ranger25_e(optimizer.Optimizer):
     def __init__(
         self,
         learning_rate=1e-3,
@@ -101,6 +103,9 @@ class Ranger25(optimizer.Optimizer):
         fixed_decay=False,
         subset_size=-1,
         sn=True,
+        d0=1e-6,
+        growth_rate=float('inf'),
+        DAdapt=True,
         clipnorm=None,
         clipvalue=None,
         global_clipnorm=None,
@@ -109,7 +114,7 @@ class Ranger25(optimizer.Optimizer):
         ema_overwrite_frequency=None,
         loss_scale_factor=None,
         gradient_accumulation_steps=None,
-        name="ranger25",
+        name="ranger25_e",
         **kwargs,
     ):
         super().__init__(
@@ -126,6 +131,7 @@ class Ranger25(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
+        self.lr = learning_rate
         self.betas = betas
         self.epsilon = epsilon
         self.alpha = alpha
@@ -139,11 +145,24 @@ class Ranger25(optimizer.Optimizer):
         self.fixed_decay = fixed_decay
         self.subset_size = subset_size
         self.sn = sn
+        self.d0 = d0
+        self.growth_rate = growth_rate
+        self.DAdapt = DAdapt
     
     def reset(self):
         self._iterations.assign(0)
         self.exp_avg_sq = []
         self.subset_size_ = []
+        if self.DAdapt:
+            self.s = []
+            self.sk_l1 = tf.Variable(0.0)
+            self.numerator_acc = tf.Variable(0.0)
+            self.numerator_weighted = tf.Variable(0.0)
+            self.d0_ = tf.Variable(self.d0)
+            self._track_variable(self.sk_l1)
+            self._track_variable(self.numerator_acc)
+            self._track_variable(self.numerator_weighted)
+            self._track_variable(self.d0_)
         for var in self._trainable_variables:
             self.exp_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="exp_avg"
@@ -174,6 +193,10 @@ class Ranger25(optimizer.Optimizer):
                 self.exp_avg_sq.append(self.add_variable_from_reference(
                         reference_variable=var, name="exp_avg_sq"
                     ))
+            if self.DAdapt:
+                self.s.append(self.add_variable_from_reference(
+                                    reference_variable=var, name="s"
+                                                        ))
 
     def build(self, var_list):
         if self.built:
@@ -184,6 +207,16 @@ class Ranger25(optimizer.Optimizer):
         self.exp_avg_slow = []
         self.slow_momentum = []
         self.subset_size_ = []
+        if self.DAdapt:
+            self.s = []
+            self.sk_l1 = tf.Variable(0.0)
+            self.numerator_acc = tf.Variable(0.0)
+            self.numerator_weighted = tf.Variable(0.0)
+            self.d0_ = tf.Variable(self.d0)
+            self._track_variable(self.sk_l1)
+            self._track_variable(self.numerator_acc)
+            self._track_variable(self.numerator_weighted)
+            self._track_variable(self.d0_)
         for var in var_list:
             self.exp_avg.append(self.add_variable_from_reference(
                                 reference_variable=var, name="exp_avg"
@@ -215,6 +248,10 @@ class Ranger25(optimizer.Optimizer):
                 self.exp_avg_sq.append(self.add_variable_from_reference(
                         reference_variable=var, name="exp_avg_sq"
                     ))
+            if self.DAdapt:
+                self.s.append(self.add_variable_from_reference(
+                                    reference_variable=var, name="s"
+                                                            ))
     
     @staticmethod
     def schedule_alpha(t_alpha_beta3, step, alpha):
@@ -263,6 +300,8 @@ class Ranger25(optimizer.Optimizer):
         if self.orthograd:
             self.apply_orthogonal_gradients(trainable_variables, grads)
         beta1, beta2, beta3 = self.betas
+        if self.DAdapt:
+            d_lr = self.d0 * self.lr
         for p, g in zip(trainable_variables, grads):
             if tf.keras.backend.is_sparse(g):
                 raise RuntimeError(
@@ -272,7 +311,10 @@ class Ranger25(optimizer.Optimizer):
             beta2 = tf.cast(beta2, p.dtype)
             beta3 = tf.cast(beta3, p.dtype)
             
-            lr = tf.cast(learning_rate, p.dtype)
+            if self.DAdapt:
+                lr = tf.cast(d_lr, p.dtype)
+            else:
+                lr = tf.cast(learning_rate, p.dtype)
             
             step = tf.cast(self.iterations + 1, p.dtype)
             
@@ -288,7 +330,7 @@ class Ranger25(optimizer.Optimizer):
             size = tf.size(g)
             
             if self.weight_decouple:
-                p.assign(p * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr)))
+                p.assign(p * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else self.lr)))
             elif self.weight_decay > 0.0:
                 g += p * self.weight_decay
                 
@@ -308,8 +350,22 @@ class Ranger25(optimizer.Optimizer):
             
             de_nom = tf.sqrt(exp_avg_sq) + self.epsilon
             
+            if self.DAdapt:
+                s = self.s[self._get_variable_index(p)]
+            
+                flat_grad = tf.reshape(g, [-1])
+                flat_div = tf.reshape(tf.divide(s, de_nom), [-1])
+                dot_val = tf.tensordot(flat_grad, flat_div, axes=1)
+                self.numerator_acc.assign_add(tf.cast(lr * dot_val, tf.float32))
+            
             if self.sn:
-                exp_avg.assign(exp_avg * self.beta1 + g * (1.0 - self.beta1))
+                if self.DAdapt:
+                    beta2_sq = math.sqrt(beta2)
+                    exp_avg.assign(exp_avg * self.beta1 + g * lr * (1.0 - self.beta1))
+                    s.assign(s * beta2_sq + g * lr * (1.0 - beta2_sq))
+                    self.sk_l1.assign_add(tf.cast(tf.reduce_sum(tf.abs(s)), tf.float32))
+                else:
+                    exp_avg.assign(exp_avg * self.beta1 + g * (1.0 - self.beta1))
                 numerator = tf.reshape(exp_avg, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
                 normed_grad = tf.reshape((numerator / de_nom), p.shape)
                 update = normed_grad
@@ -322,41 +378,118 @@ class Ranger25(optimizer.Optimizer):
                 exp_avg.assign(exp_avg * beta1 + normed_grad * (1.0 - beta1))
                 update = exp_avg
 
-            exp_avg_slow.assign(exp_avg_slow * beta3_t + normed_grad * (1.0 - beta3_t))
-            
-            if self.cautious:
-                mask = tf.cast(tf.math.greater(update * g, 0), g.dtype)
-                numel = tf.cast(tf.size(mask), g.dtype)
-                factor = numel / (tf.reduce_sum(mask) + 1)
-                mask = mask * factor
-                update = update * mask
-            
-            if self.stable_adamw:
-                step_size /= tf.clip_by_value(
-                                tf.sqrt(tf.reduce_mean(tf.pow(g, 2) / tf.maximum(exp_avg_sq, self.epsilon))),
-                                clip_value_min=1.0,
-                                clip_value_max=tf.float64.max
-                                )
+            if not self.DAdapt:
+                exp_avg_slow.assign(exp_avg_slow * beta3_t + normed_grad * (1.0 - beta3_t))
                 
-            update += exp_avg_slow * alpha_t
-            
-            if self.epsilon is not None:
-                if self.sn:
-                    p.assign_add(-step_size * update)
+                if self.cautious:
+                    mask = tf.cast(tf.math.greater(update * g, 0), g.dtype)
+                    numel = tf.cast(tf.size(mask), g.dtype)
+                    factor = numel / (tf.reduce_sum(mask) + 1)
+                    mask = mask * factor
+                    update = update * mask
+                
+                if self.stable_adamw:
+                    step_size /= tf.clip_by_value(
+                                    tf.sqrt(tf.reduce_mean(tf.pow(g, 2) / tf.maximum(exp_avg_sq, self.epsilon))),
+                                    clip_value_min=1.0,
+                                    clip_value_max=tf.float64.max
+                                    )
+                    
+                update += exp_avg_slow * alpha_t
+                
+                if self.epsilon is not None:
+                    if self.sn:
+                        p.assign_add(-step_size * update)
+                    else:
+                        p.assign_add(-step_size * update / de_nom)
                 else:
-                    p.assign_add(-step_size * update / de_nom)
-            else:
-                p.assign_add(tf.atan2(update, de_nom) * -step_size)
-            
-            def true_fn():
-                slow_p = self.slow_momentum[self._get_variable_index(p)]
-                slow_p.assign(slow_p + self.lookahead_blending_alpha * (p - slow_p))
-                p.assign(slow_p)
+                    p.assign_add(tf.atan2(update, de_nom) * -step_size)
+                
+                def true_fn():
+                    slow_p = self.slow_momentum[self._get_variable_index(p)]
+                    slow_p.assign(slow_p + self.lookahead_blending_alpha * (p - slow_p))
+                    p.assign(slow_p)
+                
+                def false_fn():
+                    pass
+                
+                tf.cond(step % self.lookahead_merge_time == 0, true_fn, false_fn)
+        
+        if self.DAdapt:
+            def update_fn():
+                d_lr = self.d0 * self.lr
+                
+                beta2_sq = math.sqrt(self.beta2)
+                
+                d = self.d0_
+                self.numerator_weighted.assign(self.numerator_weighted * beta2_sq + self.numerator_acc * (1.0 - beta2_sq))  # fmt: skip
+                
+                if self.lr > 0.0:
+                    d_hat = self.numerator_weighted / (1.0 - beta2_sq) * self.sk_l1
+                    d = tf.maximum(self.d0_, tf.minimum(d_hat, self.d0_ * self.growth_rate))
+                
+                self.d0_.assign(d)
+                
+                for p in zip(trainable_variables):
+                    d_lr = tf.cast(d_lr, p.dtype)
+                    
+                    alpha_t = self.schedule_alpha(self.t_alpha_beta3, step, self.alpha)
+                    beta3_t = self.schedule_beta3(self.t_alpha_beta3, step, beta1, beta3)
+                    
+                    exp_avg = self.exp_avg[self._get_variable_index(p)]
+                    exp_avg_sq = self.exp_avg_sq[self._get_variable_index(p)]
+                    exp_avg_slow = self.exp_avg_slow[self._get_variable_index(p)]
+                    
+                    if self.sn:
+                        numerator = tf.reshape(exp_avg, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                        normed_grad = tf.reshape((numerator / de_nom), p.shape)
+                        update = normed_grad
+                    else:
+                        update = exp_avg
+                    
+                    exp_avg_slow.assign(exp_avg_slow * beta3_t + normed_grad * (1.0 - beta3_t))
+                    
+                    if self.cautious:
+                        mask = tf.cast(tf.math.greater(update * g, 0), g.dtype)
+                        numel = tf.cast(tf.size(mask), g.dtype)
+                        factor = numel / (tf.reduce_sum(mask) + 1)
+                        mask = mask * factor
+                        update = update * mask
+                    
+                    step_size = d_lr * bias_correction2_sq / bias_correction1
+                    
+                    if self.stable_adamw:
+                        step_size /= tf.clip_by_value(
+                                        tf.sqrt(tf.reduce_mean(tf.pow(g, 2) / tf.maximum(exp_avg_sq, self.epsilon))),
+                                        clip_value_min=1.0,
+                                        clip_value_max=tf.float64.max
+                                        )
+                        
+                    update += exp_avg_slow * alpha_t
+                    
+                    if self.epsilon is not None:
+                        if self.sn:
+                            p.assign_add(-step_size * update)
+                        else:
+                            p.assign_add(-step_size * update / de_nom)
+                    else:
+                        p.assign_add(tf.atan2(update, de_nom) * -step_size)
+                    
+                    def true_fn():
+                        slow_p = self.slow_momentum[self._get_variable_index(p)]
+                        slow_p.assign(slow_p + self.lookahead_blending_alpha * (p - slow_p))
+                        p.assign(slow_p)
+                    
+                    def false_fn():
+                        pass
+                    
+                    tf.cond(step % self.lookahead_merge_time == 0, true_fn, false_fn)
 
     def get_config(self):
         config = super().get_config()
         config.update(
             {
+                "lr": self.lr,
                 "betas": self.betas,
                 "epsilon": self.epsilon,
                 "alpha": self.alpha,
@@ -370,6 +503,9 @@ class Ranger25(optimizer.Optimizer):
                 "fixed_decay": self.fixed_decay,
                 "subset_size": self.subset_size,
                 "sn": self.sn,
+                "d0": self.d0,
+                "growth_rate": self.growth_rate,
+                "DAdapt": self.DAdapt,
                 "subset_size_": self.subset_size_,
             }
         )
