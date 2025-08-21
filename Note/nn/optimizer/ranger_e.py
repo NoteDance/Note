@@ -1,4 +1,4 @@
-""" Ranger_
+""" Ranger_e
 Copyright 2025 NoteDance
 """
 import tensorflow as tf
@@ -41,7 +41,7 @@ def closest_smaller_divisor_of_n_to_k(n, k):
     return closest_smaller_divisor
 
 
-class Ranger_(optimizer.Optimizer):
+class Ranger_e(optimizer.Optimizer):
     def __init__(
         self,
         learning_rate=1e-3,
@@ -67,7 +67,7 @@ class Ranger_(optimizer.Optimizer):
         ema_overwrite_frequency=None,
         loss_scale_factor=None,
         gradient_accumulation_steps=None,
-        name="ranger_",
+        name="ranger_e",
         **kwargs,
     ):
         super().__init__(
@@ -169,10 +169,12 @@ class Ranger_(optimizer.Optimizer):
         self.update_step(grads, trainable_variables, learning_rate)
 
     def update_step(self, grads, trainable_variables, learning_rate):
+        if self.DAdapt:
+            d_lr = self.d0_ * self.lr
         for variable, gradient in zip(trainable_variables, grads):
             if tf.keras.backend.is_sparse(gradient):
                 raise RuntimeError(
-                    'Ranger_ optimizer does not support sparse gradients')
+                    'Ranger_e optimizer does not support sparse gradients')
                 
             if gradient.dtype != tf.float32:
                 gradient = tf.cast(gradient, 'float32')
@@ -182,12 +184,6 @@ class Ranger_(optimizer.Optimizer):
                 variable_fp32 = tf.convert_to_tensor(variable)
                 
             lr = tf.cast(learning_rate, variable_fp32.dtype)
-            
-            beta2_sq = math.sqrt(self.beta2)
-            
-            if self.DAdapt:
-                # it's not Adam Debias
-                d_lr = self.d0_ * self.lr
             
             size = tf.size(gradient)
             
@@ -221,17 +217,18 @@ class Ranger_(optimizer.Optimizer):
             exp_avg_sq.assign(self.beta2 * exp_avg_sq + (1 - self.beta2) * second_moment_update)
             # compute mean moving avg
             if self.DAdapt:
+                beta2_sq = math.sqrt(self.beta2)
                 exp_avg.assign(self.beta1 * exp_avg + d_lr * (1 - self.beta1) * gradient)
                 s.assign(s * beta2_sq + gradient * d_lr * (1.0 - beta2_sq))
                 self.sk_l1.assign_add(tf.cast(tf.reduce_sum(tf.abs(s)), tf.float32))
             else:
                 exp_avg.assign(self.beta1 * exp_avg + (1 - self.beta1) * gradient)
-        
-            beta2_t = self.beta2 ** step
-            N_sma_max = 2 / (1 - self.beta2) - 1
-            N_sma = N_sma_max - 2 * step * beta2_t / (1 - beta2_t)
             
             if not self.DAdapt:
+                beta2_t = self.beta2 ** step
+                N_sma_max = 2 / (1 - self.beta2) - 1
+                N_sma = N_sma_max - 2 * step * beta2_t / (1 - beta2_t)
+            
                 def true_fn():
                     denom = tf.sqrt(exp_avg_sq) + self.epsilon
                     
@@ -285,6 +282,10 @@ class Ranger_(optimizer.Optimizer):
                 
         if self.DAdapt:
             def update_fn():
+                d_lr = self.d0_ * self.lr
+                
+                beta2_sq = math.sqrt(self.beta2)
+                
                 d = self.d0_
                 self.numerator_weighted.assign(self.numerator_weighted * beta2_sq + self.numerator_acc * (1.0 - beta2_sq))  # fmt: skip
                 
@@ -295,12 +296,21 @@ class Ranger_(optimizer.Optimizer):
                 self.d0_.assign(d)
                 
                 for variable in zip(trainable_variables):
+                    d_lr = tf.cast(d_lr, variable.dtype)
+                    
                     if variable.dtype != tf.float32:
                         variable_fp32 = tf.cast(variable, 'float32')
                     else:
                         variable_fp32 = tf.convert_to_tensor(variable)
                         
-                    step = tf.cast(self.iterations + 1, variable_fp32.dtype)
+                    step = tf.cast(self.iterations + 1, variable.dtype)
+                    
+                    beta2_t = self.beta2 ** step
+                    N_sma_max = 2 / (1 - self.beta2) - 1
+                    N_sma = N_sma_max - 2 * step * beta2_t / (1 - beta2_t)
+                    
+                    exp_avg = self.exp_avg[self._get_variable_index(variable)]
+                    exp_avg_sq = self.exp_avg_sq[self._get_variable_index(variable)]
                     
                     def true_fn():
                         denom = tf.sqrt(exp_avg_sq) + self.epsilon
@@ -318,20 +328,20 @@ class Ranger_(optimizer.Optimizer):
                         if self.sn:
                             numerator = tf.reshape(exp_avg, (size // self.subset_size_[self._get_variable_index(variable)], self.subset_size_[self._get_variable_index(variable)]))
                             normed_grad = tf.reshape((numerator / denom), variable.shape)
-                            update = lr * step_size * normed_grad
+                            update = d_lr * step_size * normed_grad
                         else:
-                            update = lr * step_size * exp_avg / denom
+                            update = d_lr * step_size * exp_avg / denom
                         return update
                     
                     def false_fn():
                         step_size = 1.0 / (1 - self.beta1 ** step)
-                        update = lr * step_size * exp_avg
+                        update = d_lr * step_size * exp_avg
                         return update
                 
                     update = tf.cond(N_sma > self.N_sma_threshhold, true_fn, false_fn)
                     
                     if self.weight_decay != 0:
-                        variable_fp32 -= self.weight_decay * lr * variable_fp32
+                        variable_fp32 -= self.weight_decay * self.lr * variable_fp32
             
                     # apply lr
                     variable_fp32 -= update
@@ -362,6 +372,7 @@ class Ranger_(optimizer.Optimizer):
         config = super().get_config()
         config.update(
             {
+                "lr": self.lr,
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
