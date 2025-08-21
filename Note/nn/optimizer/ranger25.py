@@ -85,7 +85,7 @@ def closest_smaller_divisor_of_n_to_k(n, k):
     return closest_smaller_divisor
 
 
-class Ranger25_e(optimizer.Optimizer):
+class Ranger25(optimizer.Optimizer):
     def __init__(
         self,
         learning_rate=1e-3,
@@ -114,7 +114,7 @@ class Ranger25_e(optimizer.Optimizer):
         ema_overwrite_frequency=None,
         loss_scale_factor=None,
         gradient_accumulation_steps=None,
-        name="ranger25_e",
+        name="ranger25",
         **kwargs,
     ):
         super().__init__(
@@ -300,8 +300,6 @@ class Ranger25_e(optimizer.Optimizer):
         if self.orthograd:
             self.apply_orthogonal_gradients(trainable_variables, grads)
         beta1, beta2, beta3 = self.betas
-        if self.DAdapt:
-            d_lr = self.d0 * self.lr
         for p, g in zip(trainable_variables, grads):
             if tf.keras.backend.is_sparse(g):
                 raise RuntimeError(
@@ -312,7 +310,7 @@ class Ranger25_e(optimizer.Optimizer):
             beta3 = tf.cast(beta3, p.dtype)
             
             if self.DAdapt:
-                lr = tf.cast(d_lr, p.dtype)
+                lr = tf.cast(self.lr, p.dtype)
             else:
                 lr = tf.cast(learning_rate, p.dtype)
             
@@ -324,13 +322,17 @@ class Ranger25_e(optimizer.Optimizer):
             step_size = lr * bias_correction2_sq / bias_correction1
             clip = tf.pow(step, 0.25)
             
+            if self.DAdapt:
+                # it's not Adam Debias
+                d_lr = self.d0 * self.lr * bias_correction2_sq / bias_correction1
+            
             alpha_t = self.schedule_alpha(self.t_alpha_beta3, step, self.alpha)
             beta3_t = self.schedule_beta3(self.t_alpha_beta3, step, beta1, beta3)
             
             size = tf.size(g)
             
             if self.weight_decouple:
-                p.assign(p * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else self.lr)))
+                p.assign(p * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr)))
             elif self.weight_decay > 0.0:
                 g += p * self.weight_decay
                 
@@ -356,13 +358,15 @@ class Ranger25_e(optimizer.Optimizer):
                 flat_grad = tf.reshape(g, [-1])
                 flat_div = tf.reshape(tf.divide(s, de_nom), [-1])
                 dot_val = tf.tensordot(flat_grad, flat_div, axes=1)
-                self.numerator_acc.assign_add(tf.cast(lr * dot_val, tf.float32))
+                self.numerator_acc.assign_add(tf.cast(d_lr * dot_val, tf.float32))
+                
+                d_lr = tf.cast(d_lr, dtype=p.dtype)
             
             if self.sn:
                 if self.DAdapt:
                     beta2_sq = math.sqrt(beta2)
-                    exp_avg.assign(exp_avg * self.beta1 + g * lr * (1.0 - self.beta1))
-                    s.assign(s * beta2_sq + g * lr * (1.0 - beta2_sq))
+                    exp_avg.assign(exp_avg * self.beta1 + g * d_lr * (1.0 - self.beta1))
+                    s.assign(s * beta2_sq + g * d_lr * (1.0 - beta2_sq))
                     self.sk_l1.assign_add(tf.cast(tf.reduce_sum(tf.abs(s)), tf.float32))
                 else:
                     exp_avg.assign(exp_avg * self.beta1 + g * (1.0 - self.beta1))
@@ -417,8 +421,6 @@ class Ranger25_e(optimizer.Optimizer):
         
         if self.DAdapt:
             def update_fn():
-                d_lr = self.d0 * self.lr
-                
                 beta2_sq = math.sqrt(self.beta2)
                 
                 d = self.d0_
@@ -431,7 +433,7 @@ class Ranger25_e(optimizer.Optimizer):
                 self.d0_.assign(d)
                 
                 for p in zip(trainable_variables):
-                    d_lr = tf.cast(d_lr, p.dtype)
+                    lr = tf.cast(self.lr, p.dtype)
                     
                     alpha_t = self.schedule_alpha(self.t_alpha_beta3, step, self.alpha)
                     beta3_t = self.schedule_beta3(self.t_alpha_beta3, step, beta1, beta3)
@@ -456,7 +458,7 @@ class Ranger25_e(optimizer.Optimizer):
                         mask = mask * factor
                         update = update * mask
                     
-                    step_size = d_lr * bias_correction2_sq / bias_correction1
+                    step_size = lr * bias_correction2_sq / bias_correction1
                     
                     if self.stable_adamw:
                         step_size /= tf.clip_by_value(
