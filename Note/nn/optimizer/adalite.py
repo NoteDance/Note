@@ -180,13 +180,13 @@ class Adalite(optimizer.Optimizer):
         u = m + (gradient - m) * (1.0 - self.beta1)
 
         if len(gradient.shape) < 2:
-            self.m_avg[self._get_variable_index(variable)] = m
-            self.v_avg[self._get_variable_index(variable)] = v
+            self.m_avg[self._get_variable_index(variable)].assign(m)
+            self.v_avg[self._get_variable_index(variable)].assign(v)
         else:
-            self.v_avg_0[self._get_variable_index(variable)] = tf.reduce_sum(v, axis=1)
+            self.v_avg_0[self._get_variable_index(variable)].assign(tf.reduce_sum(v, axis=1))
             v_sum = tf.reduce_sum(v)
             v_sum = tf.maximum(v_sum, self.eps2)
-            self.v_avg_1[self._get_variable_index(variable)] = tf.reduce_sum(v, axis=0) / v_sum
+            self.v_avg_1[self._get_variable_index(variable)].assign(tf.reduce_sum(v, axis=0) / v_sum)
     
             imp_c = tf.nn.softmax(tf.reduce_mean(v, axis=1) / self.tau, axis=-1)[:, None]
             imp_r = tf.nn.softmax(tf.reduce_mean(v, axis=0) / self.tau, axis=-1)[None, :]
@@ -199,9 +199,9 @@ class Adalite(optimizer.Optimizer):
             s_den = tf.maximum(s_den, self.eps2)
             s = s_num / s_den
     
-            self.m_avg_c[self._get_variable_index(variable)] = c
-            self.m_avg_r[self._get_variable_index(variable)] = r
-            self.m_avg_u[self._get_variable_index(variable)] = s
+            self.m_avg_c[self._get_variable_index(variable)].assign(c)
+            self.m_avg_r[self._get_variable_index(variable)].assign(r)
+            self.m_avg_u[self._get_variable_index(variable)].assign(s)
         
         u = u / tf.sqrt(v_avg + self.eps1)
         
