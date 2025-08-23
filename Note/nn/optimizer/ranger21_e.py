@@ -1,4 +1,4 @@
-""" Ranger21
+""" Ranger21_e
 Integrating the latest deep learning components into a single optimizer.
 
 Here's the components
