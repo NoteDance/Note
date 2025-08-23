@@ -1,4 +1,4 @@
-""" SophiaH
+""" Sophia
 https://arxiv.org/abs/2305.14342
 
 Copyright 2025 NoteDance
@@ -41,6 +41,36 @@ def closest_smaller_divisor_of_n_to_k(n, k):
     closest_smaller_divisor = tf.cond(closest_smaller_divisor == -7, true_fn, false_fn)
     
     return closest_smaller_divisor
+
+
+def unit_norm(x, ord = 2.0):
+    r"""Get norm of unit."""
+    keepdims = True
+    axis = None
+
+    x_len = len(x.shape)
+    if x_len <= 1:
+        keepdims = False
+    elif x_len in (2, 3):
+        axis = 1
+    elif x_len == 4:
+        axis = (1, 2, 3)
+    else:
+        axis = tuple(range(1, x_len))
+
+    return tf.norm(x, ord=ord, axis=axis, keepdims=keepdims)
+
+
+def agc(
+    p, grad, agc_eps = 1e-3, agc_clip_val = 1e-2, eps = 1e-6
+):
+    r"""Clip gradient values in excess of the unit wise norm."""
+    max_norm = tf.maximum(unit_norm(p), agc_eps) * agc_clip_val
+    g_norm = tf.maximum(unit_norm(grad), eps)
+
+    clipped_grad = grad * (max_norm / g_norm)
+
+    return tf.where(g_norm > max_norm, clipped_grad, grad)
 
 
 class SophiaH(optimizer.Optimizer):
@@ -123,21 +153,6 @@ class SophiaH(optimizer.Optimizer):
                                 reference_variable=var, name="hessian"
                                                     ))
     
-    def apply_gradients(self, grads_and_vars, tape):
-        self.tape = tape
-        grads, trainable_variables = zip(*grads_and_vars)
-        self.apply(grads, trainable_variables)
-        # Return iterations for compat with tf.keras.
-        return self._iterations
-    
-    def _backend_update_step(self, grads, trainable_variables, learning_rate):
-        """Collective update_step that can be overridden by the backend.
-    
-        It is overridden by torch for performance reasons, and
-        by TF to support tf.distribute.
-        """
-        self.update_step(grads, trainable_variables, learning_rate)
-    
     def compute_hutchinson_hessian(
         self,
         grads,
@@ -167,6 +182,21 @@ class SophiaH(optimizer.Optimizer):
 
             for h_z, z, p in zip(h_zs, zs, params):
                 self.hessian[self._get_variable_index(p)].assign_add(h_z * z * alpha / num_samples)
+    
+    def apply_gradients(self, grads_and_vars, tape):
+        self.tape = tape
+        grads, trainable_variables = zip(*grads_and_vars)
+        self.apply(grads, trainable_variables)
+        # Return iterations for compat with tf.keras.
+        return self._iterations
+    
+    def _backend_update_step(self, grads, trainable_variables, learning_rate):
+        """Collective update_step that can be overridden by the backend.
+    
+        It is overridden by torch for performance reasons, and
+        by TF to support tf.distribute.
+        """
+        self.update_step(grads, trainable_variables, learning_rate)
 
     def update_step(self, grads, trainable_variables, learning_rate):
         def true_fn1():
@@ -233,6 +263,7 @@ class SophiaH_e(optimizer.Optimizer):
         learning_rate=6e-2,
         beta1=0.96,
         beta2=0.99,
+        beta3=0.9999,
         epsilon=1e-12,
         weight_decay=0.0,
         weight_decouple=True,
@@ -248,6 +279,11 @@ class SophiaH_e(optimizer.Optimizer):
         pnm=True,
         subset_size=-1,
         sn=True,
+        agc=True,
+        cautious=True,
+        aem=True,
+        alpha=5.0,
+        t_alpha_beta3=None,
         clipnorm=None,
         clipvalue=None,
         global_clipnorm=None,
@@ -275,6 +311,7 @@ class SophiaH_e(optimizer.Optimizer):
         )
         self.beta1 = beta1
         self.beta2 = beta2
+        self.beta3 = beta3
         self.epsilon = epsilon
         self.weight_decouple = weight_decouple
         self.fixed_decay = fixed_decay
@@ -289,10 +326,16 @@ class SophiaH_e(optimizer.Optimizer):
         self.pnm = pnm
         self.subset_size = subset_size
         self.sn = sn
+        self.agc = agc
+        self.cautious = cautious
+        self.aem = aem
+        self.alpha = alpha
+        self.t_alpha_beta3 = t_alpha_beta3
     
     def reset(self):
         self._iterations.assign(0)
         self.momentum = []
+        self.momentum_slow = []
         self.slow_momentum = []
         self.pos_momentum = []
         self.neg_momentum = []
@@ -341,12 +384,17 @@ class SophiaH_e(optimizer.Optimizer):
                 self.hessian[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                             reference_variable=var, name="hessian"
                                                         )
+            if self.aem:
+                self.momentum_slow.append(self.add_variable_from_reference(
+                    reference_variable=var, name="momentum_slow"
+                                        ))
 
     def build(self, var_list):
         if self.built:
             return
         super().build(var_list)
         self.momentum = []
+        self.momentum_slow = []
         self.hessian_moment = []
         self.hessian = []
         self.slow_momentum = []
@@ -400,21 +448,28 @@ class SophiaH_e(optimizer.Optimizer):
                 self.hessian_moment.append(self.add_variable_from_reference(
                     reference_variable=var, name="hessian_moment"
                                         ))
+            if self.aem:
+                self.momentum_slow.append(self.add_variable_from_reference(
+                    reference_variable=var, name="momentum_slow"
+                                        ))
     
-    def apply_gradients(self, grads_and_vars, tape):
-        self.tape = tape
-        grads, trainable_variables = zip(*grads_and_vars)
-        self.apply(grads, trainable_variables)
-        # Return iterations for compat with tf.keras.
-        return self._iterations
+    @staticmethod
+    def schedule_alpha(t_alpha_beta3, step, alpha):
+        return alpha if t_alpha_beta3 is None else tf.minimum(step * alpha / t_alpha_beta3, alpha)
     
-    def _backend_update_step(self, grads, trainable_variables, learning_rate):
-        """Collective update_step that can be overridden by the backend.
+    @staticmethod
+    def schedule_beta3(t_alpha_beta3, step, beta1, beta3):
+        if t_alpha_beta3 is None:
+            return beta3
     
-        It is overridden by torch for performance reasons, and
-        by TF to support tf.distribute.
-        """
-        self.update_step(grads, trainable_variables, learning_rate)
+        log_beta1, log_beta3 = tf.math.log(beta1), tf.math.log(beta3)
+    
+        return tf.minimum(
+            tf.exp(
+                log_beta1 * log_beta3 / ((1.0 - step / t_alpha_beta3) * log_beta3 + (step / t_alpha_beta3) * log_beta1)
+            ),
+            beta3,
+        )
     
     def apply_orthogonal_gradients(self, params, grads, eps = 1e-16):
         for p, g in zip(params, grads):
@@ -469,6 +524,21 @@ class SophiaH_e(optimizer.Optimizer):
                 else:
                     hessian_update = h_z * z
                 self.hessian[self._get_variable_index(p)].assign_add(hessian_update * alpha / num_samples)
+    
+    def apply_gradients(self, grads_and_vars, tape):
+        self.tape = tape
+        grads, trainable_variables = zip(*grads_and_vars)
+        self.apply(grads, trainable_variables)
+        # Return iterations for compat with tf.keras.
+        return self._iterations
+    
+    def _backend_update_step(self, grads, trainable_variables, learning_rate):
+        """Collective update_step that can be overridden by the backend.
+    
+        It is overridden by torch for performance reasons, and
+        by TF to support tf.distribute.
+        """
+        self.update_step(grads, trainable_variables, learning_rate)
 
     def update_step(self, grads, trainable_variables, learning_rate):
         if self.orthograd:
@@ -493,13 +563,25 @@ class SophiaH_e(optimizer.Optimizer):
             step = tf.cast(self.iterations + 1, p.dtype)
             
             size = tf.size(p)
+            
+            if self.aem:
+                beta1 = tf.cast(self.beta1, p.dtype)
+                beta3 = tf.cast(self.beta3, p.dtype)
+                
+                alpha_t = self.schedule_alpha(self.t_alpha_beta3, step, self.alpha)
+                beta3_t = self.schedule_beta3(self.t_alpha_beta3, step, beta1, beta3)
 
             if self.weight_decouple:
                 p.assign(p * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr)))
             elif self.weight_decay > 0.0:
                 g += p * self.weight_decay
+                         
+            if self.agc:
+                grads[self._get_variable_index(p)] = agc(p, g)   
 
             momentum = self.momentum[self._get_variable_index(p)]
+            if self.aem:
+                momentum_slow = self.momentum_slow[self._get_variable_index(p)]
             hessian_moment = self.hessian_moment[self._get_variable_index(p)]
             if not self.pnm:
                 momentum.assign(momentum * self.beta1 + g * (1.0 - self.beta1))
@@ -511,7 +593,7 @@ class SophiaH_e(optimizer.Optimizer):
                     return self.neg_momentum[self._get_variable_index(p)], self.pos_momentum[self._get_variable_index(p)]
                 pos_momentum, neg_momentum = tf.cond(step % 2 == 1, true_fn, false_fn)
                 pos_momentum.assign(pos_momentum * self.beta1 ** 2 + g * (1.0 - self.beta1 ** 2))
-                momentum = pos_momentum * (1 + self.beta2) + neg_momentum * -self.beta2 * (1.0 / noise_norm)
+                momentum = (pos_momentum  * 2.0 + neg_momentum * -1.0) * (1.0 / noise_norm)
             
             def true_fn2():
                 hessian_moment.assign(hessian_moment * self.beta2 + self.hessian[self._get_variable_index(p)] * (1.0 - self.beta2))
@@ -524,7 +606,19 @@ class SophiaH_e(optimizer.Optimizer):
                 norm_grad = tf.reshape((numerator / tf.maximum(hessian_moment, self.epsilon)), p.shape)
                 update = tf.clip_by_value(norm_grad, clip_value_min=-p, clip_value_max=p)
             else:
-                update = tf.clip_by_value(momentum / tf.maximum(hessian_moment, self.epsilon), clip_value_min=-p, clip_value_max=p)
+                norm_grad = momentum / tf.maximum(hessian_moment, self.epsilon)
+                update = tf.clip_by_value(norm_grad, clip_value_min=-p, clip_value_max=p)
+                
+            if self.cautious:
+                mask = tf.cast(tf.math.greater(update * g, 0), g.dtype)
+                numel = tf.cast(tf.size(mask), g.dtype)
+                factor = numel / (tf.reduce_sum(mask) + 1)
+                mask = mask * factor
+                update = update * mask
+                
+            if self.aem:
+                momentum_slow.assign(momentum_slow * beta3_t + norm_grad * (1.0 - beta3_t))
+                update += momentum_slow * alpha_t
 
             p.assign_add(update * -lr) 
             
@@ -545,6 +639,7 @@ class SophiaH_e(optimizer.Optimizer):
             {
                 "beta1": self.beta1,
                 "beta2": self.beta2,
+                "beta3": self.beta3,
                 "epsilon": self.epsilon,
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,
@@ -559,6 +654,11 @@ class SophiaH_e(optimizer.Optimizer):
                 "pnm": self.pnm,
                 "subset_size": self.subset_size,
                 "sn": self.sn,
+                "agc": self.agc,
+                "cautious": self.cautious,
+                "aem": self.aem,
+                "alpha": self.alpha,
+                "t_alpha_beta3": self.t_alpha_beta3,
                 "subset_size_": self.subset_size_,
             }
         )
