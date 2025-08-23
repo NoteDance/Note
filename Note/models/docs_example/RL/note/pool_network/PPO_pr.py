@@ -103,7 +103,7 @@ class PPO_(nn.RL):
         weights = tf.pow(scores + 1e-7, self.alpha)
         p = weights / (tf.reduce_sum(weights))
         ess = 1.0 / (tf.reduce_sum(p * p))
-        features = tf.reshape([ratio_score, td_score, ess], (1,3))
+        features = tf.reshape([ratio_score, td_score, ess, len(self.prioritized_replay.ratio)], (1,4))
         features = (features - tf.reduce_min(features)) / (tf.reduce_max(features) - tf.reduce_min(features) + 1e-8)
         return self.controller(features)
     
@@ -128,7 +128,7 @@ class PPO_(nn.RL):
         weights = tf.pow(scores + 1e-7, self.alpha)
         p = weights / (tf.reduce_sum(weights))
         ess = 1.0 / (tf.reduce_sum(p * p))
-        features = tf.reshape([ratio_score, td_score, ess], (1,3))
+        features = tf.reshape([ratio_score, td_score, ess, len(self.prioritized_replay.ratio)], (1,4))
         features = (features - tf.reduce_min(features)) / (tf.reduce_max(features) - tf.reduce_min(features) + 1e-8)
         w = self.controller(features)
         idx = tf.cast(tf.range(len(self.prioritized_replay.ratio), w.dtype))
