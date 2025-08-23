@@ -410,36 +410,36 @@ class Ranger21_e(optimizer.Optimizer):
         
         # Phase 2 - Apply weight decay and step
         for p, g in zip(trainable_variables, grads):
-            if self.DAdapt:
-                lr = tf.cast(self.lr, p.dtype)
-            else:
-                lr = tf.cast(learning_rate, p.dtype)
+            lr = tf.cast(learning_rate, p.dtype)
             
             step = tf.cast(self.iterations + 1, p.dtype)
             
             bias_correction1 = 1 - beta2 ** step
             bias_correction2_sq = tf.sqrt(1 - beta2 ** step)
             
-            if self.DAdapt:
-                # it's not Adam Debias
-                d_lr = self.d0 * self.lr if not self.adam_debias else self.d0 * self.lr / bias_correction1
+            d_lr = self.d0_ * self.lr if self.adam_debias else self.d0_ * self.lr / bias_correction1
+            d_lr = tf.cast(d_lr, p.dtype)
     
             noise_norm = math.sqrt((1.0 + beta2) ** 2 + beta2 ** 2)  # fmt: skip
     
-            # warm up & down
-            if self.disable_lr_scheduler:
-                lr = lr
-            else:
-                lr = self.warm_up_dampening(lr, step)
-                lr = self.warm_down(lr, step)
+            if not self.DAdapt:
+                # warm up & down
+                if self.disable_lr_scheduler:
+                    lr = lr
+                else:
+                    lr = self.warm_up_dampening(lr, step)
+                    lr = self.warm_down(lr, step)
 
             # stable weight decay
             if self.weight_decouple:
-                p.assign(p * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr) * 1.0 / variance_normalized))
+                p.assign(p * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else self.lr) * 1.0 / variance_normalized))
 
             # norm loss
             correction = 2.0 * self.norm_loss_factor * (1.0 - 1.0 / unit_norm(p) + self.epsilon)
-            p.assign(p * (1.0 - lr * correction))
+            if not self.DAdapt:
+                p.assign(p * (1.0 - lr * correction))
+            else:
+                p.assign(p * (1.0 - d_lr * correction))
 
             def true_fn():
                 return self.grad_ma[self._get_variable_index(p)], self.neg_grad_ma[self._get_variable_index(p)]
@@ -461,9 +461,7 @@ class Ranger21_e(optimizer.Optimizer):
                 flat_grad = tf.reshape(g, [-1])
                 flat_div = tf.reshape(tf.divide(s, de_nom), [-1])
                 dot_val = tf.tensordot(flat_grad, flat_div, axes=1)
-                self.numerator_acc.assign_add(tf.cast(d_lr * dot_val, tf.float32))
-                
-                d_lr = tf.cast(d_lr, dtype=p.dtype)
+                self.numerator_acc.assign_add(tf.cast(lr * dot_val, tf.float32))
 
             size = len(g.shape)
             if size > 1:
@@ -502,6 +500,8 @@ class Ranger21_e(optimizer.Optimizer):
         
         if self.DAdapt:
             def update_fn():
+                d_lr = self.d0_ * self.lr
+                
                 beta2_sq = math.sqrt(self.beta2)
                 
                 d = self.d0_
@@ -514,8 +514,9 @@ class Ranger21_e(optimizer.Optimizer):
                 self.d0_.assign(d)
                 
                 for p in zip(trainable_variables):
-                    lr = tf.cast(self.lr, p.dtype)
-                    step_size = lr if self.adam_debias else lr / bias_correction1
+                    d_lr = tf.cast(d_lr, p.dtype)
+                        
+                    step_size = d_lr if self.adam_debias else d_lr / bias_correction1
                     
                     def true_fn():
                         return self.grad_ma[self._get_variable_index(p)], self.neg_grad_ma[self._get_variable_index(p)]
