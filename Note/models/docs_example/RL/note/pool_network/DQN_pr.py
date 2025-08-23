@@ -100,7 +100,7 @@ class _DQN(nn.RL):
         weights = tf.pow(td_score + 1e-7, self.alpha)
         p = weights / (tf.reduce_sum(weights))
         ess = 1.0 / (tf.reduce_sum(p * p))
-        features = tf.reshape([td_score, ess], (1,2))
+        features = tf.reshape([td_score, ess, len(self.prioritized_replay.TD)], (1,3))
         features = (features - tf.reduce_min(features)) / (tf.reduce_max(features) - tf.reduce_min(features) + 1e-8)
         return self.controller(features)
     
