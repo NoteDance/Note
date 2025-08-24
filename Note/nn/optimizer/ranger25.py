@@ -148,55 +148,6 @@ class Ranger25(optimizer.Optimizer):
         self.d0 = d0
         self.growth_rate = growth_rate
         self.DAdapt = DAdapt
-    
-    def reset(self):
-        self._iterations.assign(0)
-        self.exp_avg_sq = []
-        self.subset_size_ = []
-        if self.DAdapt:
-            self.s = []
-            self.sk_l1 = tf.Variable(0.0)
-            self.numerator_acc = tf.Variable(0.0)
-            self.numerator_weighted = tf.Variable(0.0)
-            self.d0_ = tf.Variable(self.d0)
-            self._track_variable(self.sk_l1)
-            self._track_variable(self.numerator_acc)
-            self._track_variable(self.numerator_weighted)
-            self._track_variable(self.d0_)
-        for var in self._trainable_variables:
-            self.exp_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=var, name="exp_avg"
-                                                    )
-            self.exp_avg_slow[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=var, name="exp_avg_slow"
-                                                    )
-            self.slow_momentum[self._get_variable_index(var)].assign(var)
-            if self.sn:
-                size = tf.size(var)
-                
-                def true_fn():
-                    return self.subset_size
-                def false_fn():
-                    return tf.cast(tf.sqrt(size) / tf.abs(tf.cast(self.subset_size, tf.int32)), tf.int32)
-                self.subset_size_.append(closest_smaller_divisor_of_n_to_k(
-                    size,
-                    tf.cond(self.subset_size > 0, true_fn, false_fn)
-                ))
-
-                reshaped_grad = tf.reshape(var, (size // self.subset_size_[-1], self.subset_size_[-1]))
-                second_moment_update = tf.reduce_sum(reshaped_grad ** 2, axis=1, keepdims=True)
-                second_moment_update = tf.Variable(second_moment_update)
-                self.exp_avg_sq.append(self.add_variable_from_reference(
-                        reference_variable=second_moment_update, name="exp_avg_sq"
-                    ))
-            else:
-                self.exp_avg_sq.append(self.add_variable_from_reference(
-                        reference_variable=var, name="exp_avg_sq"
-                    ))
-            if self.DAdapt:
-                self.s.append(self.add_variable_from_reference(
-                                    reference_variable=var, name="s"
-                                                        ))
 
     def build(self, var_list):
         if self.built:

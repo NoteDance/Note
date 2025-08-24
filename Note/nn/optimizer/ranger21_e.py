@@ -198,58 +198,6 @@ class Ranger21_e(optimizer.Optimizer):
         self.start_warm_down: int = num_iterations - self.num_warm_down_iterations
         self.warm_down_lr_delta: float = self.starting_lr - self.min_lr
     
-    def reset(self):
-        self._iterations.assign(0)
-        self.lookahead_step.assign(0)
-        self.subset_size_ = []
-        if self.DAdapt:
-            self.s = []
-            self.sk_l1 = tf.Variable(0.0)
-            self.numerator_acc = tf.Variable(0.0)
-            self.numerator_weighted = tf.Variable(0.0)
-            self.d0_ = tf.Variable(self.d0)
-            self._track_variable(self.sk_l1)
-            self._track_variable(self.numerator_acc)
-            self._track_variable(self.numerator_weighted)
-            self._track_variable(self.d0_)
-        for var in self._trainable_variables:
-            self.grad_ma[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=var, name="grad_ma"
-                                                    )
-            if self.sn:
-                size = tf.size(var)
-                
-                def true_fn():
-                    return self.subset_size
-                def false_fn():
-                    return tf.cast(tf.sqrt(size) / tf.abs(tf.cast(self.subset_size, tf.int32)), tf.int32)
-                self.subset_size_.append(closest_smaller_divisor_of_n_to_k(
-                    size,
-                    tf.cond(self.subset_size > 0, true_fn, false_fn)
-                ))
-            
-                reshaped_grad = tf.reshape(var, (size // self.subset_size_[-1], self.subset_size_[-1]))
-                second_moment_update = tf.reduce_sum(reshaped_grad ** 2, axis=1, keepdims=True)
-                second_moment_update = tf.Variable(second_moment_update)
-                self.variance_ma.append(self.add_variable_from_reference(
-                        reference_variable=second_moment_update, name="variance_ma"
-                    ))
-            else:
-                self.variance_ma.append(self.add_variable_from_reference(
-                        reference_variable=var, name="variance_ma"
-                    ))
-            self.lookahead_params[self._get_variable_index(var)].assign(var)
-            self.neg_grad_ma[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=var, name="neg_grad_ma"
-                                                    )
-            self.max_variance_ma[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=var, name="max_variance_ma"
-                                                    )
-            if self.DAdapt:
-                self.s.append(self.add_variable_from_reference(
-                                    reference_variable=var, name="s"
-                                                        ))
-    
     @staticmethod
     def build_warm_up_iterations(total_iterations, beta2, warm_up_pct = 0.22):
         warm_up_iterations = math.ceil(2.0 / (1.0 - beta2))  # default un-tuned linear warmup

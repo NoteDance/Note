@@ -145,20 +145,6 @@ class Muon(optimizer.Optimizer):
         for p in adamw_params:
             if p.trainable:
                 self.use_muon[self._get_variable_index(p)] = False
-    
-    def reset(self):
-        self._iterations.assign(0)
-        for var in self._trainable_variables:
-            self.momentum_buffer[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=var, name="momentum_buffer"
-                                                    )
-            self.moment1[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=var, name="moment1"
-                                                    )
-            self.moment2[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=var, name="moment2"
-                                                    )
-            self.use_muon[self._get_variable_index(var)] = None
 
     def build(self, var_list):
         if self.built:
@@ -583,27 +569,6 @@ class AdaMuon(optimizer.Optimizer):
         for p in adamw_params:
             if p.trainable:
                 self.use_muon[self._get_variable_index(p)] = False
-    
-    def reset(self):
-        self._iterations.assign(0)
-        for var in self._trainable_variables:
-            self.momentum_buffer[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=var, name="momentum_buffer"
-                                                    )
-            self.m[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=var, name="m"
-                                                    )
-            reshaped_var = tf.Variable(tf.reshape(var, (-1)))
-            self.v[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=reshaped_var, name="v"
-                                                    )
-            self.exp_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=var, name="exp_avg"
-                                                    )
-            self.exp_avg_sq[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=var, name="exp_avg_sq"
-                                                    )
-            self.use_muon[self._get_variable_index(var)] = None
 
     def build(self, var_list):
         if self.built:
@@ -848,40 +813,6 @@ class Muon_sn(optimizer.Optimizer):
         for p in adamw_params:
             if p.trainable:
                 self.use_muon[self._get_variable_index(p)] = False
-    
-    def reset(self):
-        self._iterations.assign(0)
-        for var in self._trainable_variables:
-            self.momentum_buffer[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=var, name="momentum_buffer"
-                                                    )
-            self.moment1[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=var, name="moment1"
-                                                    )
-            self.subset_size_ = []
-            if self.sn:
-                size = tf.size(var)
-                
-                def true_fn():
-                    return self.subset_size
-                def false_fn():
-                    return tf.cast(tf.sqrt(size) / tf.abs(tf.cast(self.subset_size, tf.int32)), tf.int32)
-                self.subset_size_.append(closest_smaller_divisor_of_n_to_k(
-                    size,
-                    tf.cond(self.subset_size > 0, true_fn, false_fn)
-                ))
-            
-                reshaped_grad = tf.reshape(var, (size // self.subset_size_[-1], self.subset_size_[-1]))
-                second_moment_update = tf.reduce_sum(reshaped_grad ** 2, axis=1, keepdims=True)
-                second_moment_update = tf.Variable(second_moment_update)
-                self.moment2 = self.add_variable_from_reference(
-                        reference_variable=second_moment_update, name="moment2"
-                    )
-            else:
-                self.moment2 = self.add_variable_from_reference(
-                                    reference_variable=var, name="moment2"
-                                                        )
-            self.use_muon[self._get_variable_index(var)] = None
 
     def build(self, var_list):
         if self.built:
@@ -1386,47 +1317,6 @@ class AdaMuon_sn(optimizer.Optimizer):
         for p in adamw_params:
             if p.trainable:
                 self.use_muon[self._get_variable_index(p)] = False
-    
-    def reset(self):
-        self._iterations.assign(0)
-        for var in self._trainable_variables:
-            self.momentum_buffer[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=var, name="momentum_buffer"
-                                                    )
-            self.m[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=var, name="m"
-                                                    )
-            reshaped_var = tf.Variable(tf.reshape(var, (-1)))
-            self.v[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=reshaped_var, name="v"
-                                                    )
-            self.exp_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=var, name="exp_avg"
-                                                    )
-            self.subset_size_ = []
-            if self.sn:
-                size = tf.size(var)
-                
-                def true_fn():
-                    return self.subset_size
-                def false_fn():
-                    return tf.cast(tf.sqrt(size) / tf.abs(tf.cast(self.subset_size, tf.int32)), tf.int32)
-                self.subset_size_.append(closest_smaller_divisor_of_n_to_k(
-                    size,
-                    tf.cond(self.subset_size > 0, true_fn, false_fn)
-                ))
-            
-                reshaped_grad = tf.reshape(var, (size // self.subset_size_[-1], self.subset_size_[-1]))
-                second_moment_update = tf.reduce_sum(reshaped_grad ** 2, axis=1, keepdims=True)
-                second_moment_update = tf.Variable(second_moment_update)
-                self.exp_avg_sq = self.add_variable_from_reference(
-                        reference_variable=second_moment_update, name="exp_avg_sq"
-                    )
-            else:
-                self.exp_avg_sq = self.add_variable_from_reference(
-                                    reference_variable=var, name="exp_avg_sq"
-                                                        )
-            self.use_muon[self._get_variable_index(var)] = None
 
     def build(self, var_list):
         if self.built:

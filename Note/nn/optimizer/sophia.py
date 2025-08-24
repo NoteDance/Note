@@ -121,19 +121,6 @@ class SophiaH(optimizer.Optimizer):
         self.update_period = update_period
         self.num_samples = num_samples
         self.distribution = hessian_distribution
-    
-    def reset(self):
-        self._iterations.assign(0)
-        for var in self._trainable_variables:
-            self.momentum[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=var, name="momentum"
-                                                    )
-            self.hessian_moment[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=var, name="hessian_moment"
-                                                    )
-            self.hessian[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=var, name="hessian"
-                                                    )
 
     def build(self, var_list):
         if self.built:
@@ -331,63 +318,6 @@ class SophiaH_e(optimizer.Optimizer):
         self.aem = aem
         self.alpha = alpha
         self.t_alpha_beta3 = t_alpha_beta3
-    
-    def reset(self):
-        self._iterations.assign(0)
-        self.momentum = []
-        self.momentum_slow = []
-        self.slow_momentum = []
-        self.pos_momentum = []
-        self.neg_momentum = []
-        self.subset_size_ = []
-        for var in self._trainable_variables:
-            if self.lookahead:
-                self.slow_momentum.append(tf.Variable(var))
-                self._track_variable(self.slow_momentum[-1])
-            if self.pnm:
-                self.pos_momentum.append(
-                    self.add_variable_from_reference(
-                        reference_variable=var, name="pos_momentum"
-                    )
-                )
-                self.neg_momentum.append(
-                    self.add_variable_from_reference(
-                        reference_variable=var, name="neg_momentum"
-                    )
-                )
-            else:
-                self.momentum.append(self.add_variable_from_reference(
-                                    reference_variable=var, name="momentum"
-                                                        ))
-            self.hessian_moment[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=var, name="hessian_moment"
-                                                    )
-            if self.sn:
-                size = tf.size(var)
-                
-                def true_fn():
-                    return self.subset_size
-                def false_fn():
-                    return tf.cast(tf.sqrt(size) / tf.abs(tf.cast(self.subset_size, tf.int32)), tf.int32)
-                self.subset_size_.append(closest_smaller_divisor_of_n_to_k(
-                    size,
-                    tf.cond(self.subset_size > 0, true_fn, false_fn)
-                ))
-            
-                reshaped_grad = tf.reshape(var, (size // self.subset_size_[-1], self.subset_size_[-1]))
-                second_moment_update = tf.reduce_sum(reshaped_grad ** 2, axis=1, keepdims=True)
-                second_moment_update = tf.Variable(second_moment_update)
-                self.hessian[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                            reference_variable=second_moment_update, name="hessian"
-                                                        )
-            else:
-                self.hessian[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                            reference_variable=var, name="hessian"
-                                                        )
-            if self.aem:
-                self.momentum_slow.append(self.add_variable_from_reference(
-                    reference_variable=var, name="momentum_slow"
-                                        ))
 
     def build(self, var_list):
         if self.built:
