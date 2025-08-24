@@ -140,6 +140,7 @@ from Note.nn.layer.spectral_norm import spectral_norm
 from Note.nn.layer.split_attn import SplitAttn
 from Note.nn.layer.split_batchnorm import *
 from Note.nn.layer.squeeze_excite import *
+from Note.nn.layer.std_conv import *
 from Note.nn.layer.stochastic_depth import stochastic_depth
 from Note.nn.layer.subtract import subtract
 from Note.nn.layer.switchable_norm import *
