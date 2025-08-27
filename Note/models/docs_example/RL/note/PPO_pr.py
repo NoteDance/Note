@@ -29,7 +29,7 @@ class Controller(nn.Model):
     def __init__(self, hidden=32, temp=10.0):
         super().__init__()
         self.fc1 = nn.dense(hidden, 4, activation='relu')
-        self.fc2 = nn.dense(4, 1, activation='sigmoid')
+        self.fc2 = nn.dense(hidden, 1, activation='sigmoid')
         self.max_w = None
         self.temp = temp
 
