@@ -316,11 +316,11 @@ class Ranger25(optimizer.Optimizer):
             if self.sn:
                 if self.DAdapt:
                     beta2_sq = math.sqrt(beta2)
-                    exp_avg.assign(exp_avg * self.beta1 + g * d_lr * (1.0 - self.beta1))
+                    exp_avg.assign(exp_avg * beta1 + g * d_lr * (1.0 - beta1))
                     s.assign(s * beta2_sq + g * d_lr * (1.0 - beta2_sq))
                     self.sk_l1.assign_add(tf.cast(tf.reduce_sum(tf.abs(s)), tf.float32))
                 else:
-                    exp_avg.assign(exp_avg * self.beta1 + g * (1.0 - self.beta1))
+                    exp_avg.assign(exp_avg * beta1 + g * (1.0 - beta1))
                 numerator = tf.reshape(exp_avg, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
                 normed_grad = tf.reshape((numerator / de_nom), p.shape)
                 update = normed_grad
@@ -330,7 +330,13 @@ class Ranger25(optimizer.Optimizer):
                     clip_value_min=-clip,
                     clip_value_max= clip,
                 )
-                exp_avg.assign(exp_avg * beta1 + normed_grad * (1.0 - beta1))
+                if self.DAdapt:
+                    beta2_sq = math.sqrt(beta2)
+                    exp_avg.assign(exp_avg * beta1 + normed_grad * d_lr * (1.0 - beta1))
+                    s.assign(s * beta2_sq + g * d_lr * (1.0 - beta2_sq))
+                    self.sk_l1.assign_add(tf.cast(tf.reduce_sum(tf.abs(s)), tf.float32))
+                else:
+                    exp_avg.assign(exp_avg * beta1 + normed_grad * (1.0 - beta1))
                 update = exp_avg
 
             if not self.DAdapt:
@@ -372,6 +378,8 @@ class Ranger25(optimizer.Optimizer):
         
         if self.DAdapt:
             def update_fn():
+                d_lr = self.d0 * self.lr * bias_correction2_sq / bias_correction1
+                
                 beta2_sq = math.sqrt(self.beta2)
                 
                 d = self.d0_
@@ -384,7 +392,9 @@ class Ranger25(optimizer.Optimizer):
                 self.d0_.assign(d)
                 
                 for p in zip(trainable_variables):
-                    lr = tf.cast(self.lr, p.dtype)
+                    d_lr = tf.cast(d_lr, p.dtype)
+                    
+                    step = tf.cast(self.iterations + 1, p.dtype)
                     
                     alpha_t = self.schedule_alpha(self.t_alpha_beta3, step, self.alpha)
                     beta3_t = self.schedule_beta3(self.t_alpha_beta3, step, beta1, beta3)
@@ -393,23 +403,11 @@ class Ranger25(optimizer.Optimizer):
                     exp_avg_sq = self.exp_avg_sq[self._get_variable_index(p)]
                     exp_avg_slow = self.exp_avg_slow[self._get_variable_index(p)]
                     
-                    if self.sn:
-                        numerator = tf.reshape(exp_avg, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                        normed_grad = tf.reshape((numerator / de_nom), p.shape)
-                        update = normed_grad
-                    else:
-                        update = exp_avg
+                    update = exp_avg
                     
                     exp_avg_slow.assign(exp_avg_slow * beta3_t + normed_grad * (1.0 - beta3_t))
                     
-                    if self.cautious:
-                        mask = tf.cast(tf.math.greater(update * g, 0), g.dtype)
-                        numel = tf.cast(tf.size(mask), g.dtype)
-                        factor = numel / (tf.reduce_sum(mask) + 1)
-                        mask = mask * factor
-                        update = update * mask
-                    
-                    step_size = lr * bias_correction2_sq / bias_correction1
+                    step_size = d_lr
                     
                     if self.stable_adamw:
                         step_size /= tf.clip_by_value(
@@ -419,6 +417,13 @@ class Ranger25(optimizer.Optimizer):
                                         )
                         
                     update += exp_avg_slow * alpha_t
+                    
+                    if self.cautious:
+                        mask = tf.cast(tf.math.greater(update * g, 0), g.dtype)
+                        numel = tf.cast(tf.size(mask), g.dtype)
+                        factor = numel / (tf.reduce_sum(mask) + 1)
+                        mask = mask * factor
+                        update = update * mask
                     
                     if self.epsilon is not None:
                         if self.sn:
@@ -437,6 +442,11 @@ class Ranger25(optimizer.Optimizer):
                         pass
                     
                     tf.cond(step % self.lookahead_merge_time == 0, true_fn, false_fn)
+            
+            def no_update_fn():
+                pass
+        
+            tf.cond(self.sk_l1 == 0, no_update_fn, update_fn)
 
     def get_config(self):
         config = super().get_config()
