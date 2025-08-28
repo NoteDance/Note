@@ -313,23 +313,24 @@ class Ranger25(optimizer.Optimizer):
                 
                 d_lr = tf.cast(d_lr, dtype=p.dtype)
             
-            if self.sn:
-                if self.DAdapt:
-                    beta2_sq = math.sqrt(beta2)
-                    exp_avg.assign(exp_avg * beta1 + g * d_lr * (1.0 - beta1))
-                    s.assign(s * beta2_sq + g * d_lr * (1.0 - beta2_sq))
-                    self.sk_l1.assign_add(tf.cast(tf.reduce_sum(tf.abs(s)), tf.float32))
-                else:
-                    exp_avg.assign(exp_avg * beta1 + g * (1.0 - beta1))
-                numerator = tf.reshape(exp_avg, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                normed_grad = tf.reshape((numerator / de_nom), p.shape)
-                update = normed_grad
-            else:
-                normed_grad = tf.clip_by_value(
+            normed_grad = tf.clip_by_value(
                     g / tf.maximum(tf.sqrt(exp_avg_sq), self.epsilon if self.epsilon is not None else 1e-8),
                     clip_value_min=-clip,
                     clip_value_max= clip,
                 )
+            
+            if self.sn:
+                if self.DAdapt:
+                    beta2_sq = math.sqrt(beta2)
+                    exp_avg.assign(exp_avg * beta1 + normed_grad * d_lr * (1.0 - beta1))
+                    s.assign(s * beta2_sq + g * d_lr * (1.0 - beta2_sq))
+                    self.sk_l1.assign_add(tf.cast(tf.reduce_sum(tf.abs(s)), tf.float32))
+                else:
+                    exp_avg.assign(exp_avg * beta1 + normed_grad * (1.0 - beta1))
+                numerator = tf.reshape(exp_avg, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                normed_grad = tf.reshape((numerator / de_nom), p.shape)
+                update = normed_grad
+            else:
                 if self.DAdapt:
                     beta2_sq = math.sqrt(beta2)
                     exp_avg.assign(exp_avg * beta1 + normed_grad * d_lr * (1.0 - beta1))
@@ -338,10 +339,10 @@ class Ranger25(optimizer.Optimizer):
                 else:
                     exp_avg.assign(exp_avg * beta1 + normed_grad * (1.0 - beta1))
                 update = exp_avg
+            
+            exp_avg_slow.assign(exp_avg_slow * beta3_t + normed_grad * (1.0 - beta3_t))
 
             if not self.DAdapt:
-                exp_avg_slow.assign(exp_avg_slow * beta3_t + normed_grad * (1.0 - beta3_t))
-                
                 if self.cautious:
                     mask = tf.cast(tf.math.greater(update * g, 0), g.dtype)
                     numel = tf.cast(tf.size(mask), g.dtype)
@@ -355,7 +356,7 @@ class Ranger25(optimizer.Optimizer):
                                     clip_value_min=1.0,
                                     clip_value_max=tf.float64.max
                                     )
-                    
+                
                 update += exp_avg_slow * alpha_t
                 
                 if self.epsilon is not None:
@@ -396,16 +397,11 @@ class Ranger25(optimizer.Optimizer):
                     
                     step = tf.cast(self.iterations + 1, p.dtype)
                     
-                    alpha_t = self.schedule_alpha(self.t_alpha_beta3, step, self.alpha)
-                    beta3_t = self.schedule_beta3(self.t_alpha_beta3, step, beta1, beta3)
-                    
                     exp_avg = self.exp_avg[self._get_variable_index(p)]
                     exp_avg_sq = self.exp_avg_sq[self._get_variable_index(p)]
                     exp_avg_slow = self.exp_avg_slow[self._get_variable_index(p)]
                     
                     update = exp_avg
-                    
-                    exp_avg_slow.assign(exp_avg_slow * beta3_t + normed_grad * (1.0 - beta3_t))
                     
                     step_size = d_lr
                     
