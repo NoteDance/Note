@@ -74,6 +74,36 @@ def closest_smaller_divisor_of_n_to_k(n, k):
     return closest_smaller_divisor
 
 
+def unit_norm(x, ord = 2.0):
+    r"""Get norm of unit."""
+    keepdims = True
+    axis = None
+
+    x_len = len(x.shape)
+    if x_len <= 1:
+        keepdims = False
+    elif x_len in (2, 3):
+        axis = 1
+    elif x_len == 4:
+        axis = (1, 2, 3)
+    else:
+        axis = tuple(range(1, x_len))
+
+    return tf.norm(x, ord=ord, axis=axis, keepdims=keepdims)
+
+
+def agc(
+    p, grad, agc_eps = 1e-3, agc_clip_val = 1e-2, eps = 1e-6
+):
+    r"""Clip gradient values in excess of the unit wise norm."""
+    max_norm = tf.maximum(unit_norm(p), agc_eps) * agc_clip_val
+    g_norm = tf.maximum(unit_norm(grad), eps)
+
+    clipped_grad = grad * (max_norm / g_norm)
+
+    return tf.where(g_norm > max_norm, clipped_grad, grad)
+
+
 class Muon(optimizer.Optimizer):
     def __init__(
         self,
@@ -154,6 +184,7 @@ class Muon(optimizer.Optimizer):
         self.moment1 = []
         self.moment2 = []
         self.use_muon = []
+        params = []
         for var in var_list:
             self.momentum_buffer.append(self.add_variable_from_reference(
                                 reference_variable=var, name="momentum_buffer"
@@ -165,7 +196,13 @@ class Muon(optimizer.Optimizer):
                                 reference_variable=var, name="moment2"
                                                     ))
             self.use_muon.append(None)
+            if var.trainable and len(var.shape) >= 2:
+                params.append(var)
         self.set_muon_state(self.params, self.adamw_params)
+        total_params = sum(np.prod(p.shape.as_list()) for p in params)
+        self.updates_flat = tf.Variable(tf.zeros(total_params, dtype=tf.bfloat16))
+        self._track_variable(self.updates_flat)
+        
     
     @staticmethod
     def adjust_lr_for_muon(lr, param_shape):
@@ -189,8 +226,6 @@ class Muon(optimizer.Optimizer):
                         'Muon does not support sparse gradients')
                 params.append(p)
         
-        total_params = sum(np.prod(p.shape.as_list()) for p in params)
-        updates_flat = tf.zeros(total_params, dtype=tf.bfloat16)
         curr_idx = 0
         
         for i, p in enumerate(params):
@@ -209,15 +244,15 @@ class Muon(optimizer.Optimizer):
 
             grad = tf.reshape(zero_power_via_newton_schulz_5(grad, num_steps=self.ns_steps), [-1])
 
-            updates_flat[curr_idx:curr_idx + np.prod(p.shape.as_list())] = grad  # fmt: skip
+            self.updates_flat[curr_idx:curr_idx + np.prod(p.shape.as_list())].assign(grad)  # fmt: skip
         
         if self.world_size > 1:  # pragma: no cover
             strategy = tf.distribute.get_strategy()
-            updates_flat = strategy.reduce(tf.distribute.ReduceOp.SUM, updates_flat, axis=None)
+            self.updates_flat.assign(strategy.reduce(tf.distribute.ReduceOp.SUM, self.updates_flat, axis=None))
         
         curr_idx: int = 0
         for p in params:
-            g = tf.reshape(updates_flat[curr_idx:curr_idx + np.prod(p.shape.as_list())], p.shape)  # fmt: skip
+            g = tf.reshape(self.updates_flat[curr_idx:curr_idx + np.prod(p.shape.as_list())], p.shape)  # fmt: skip
 
             if self.weight_decouple:
                 p.assign(p * (1.0 - self.weight_decay * self.lr))
@@ -248,7 +283,7 @@ class Muon(optimizer.Optimizer):
             buf1.assign(buf1 + (1.0 - self.beta1) * (grad - buf1))
             buf2.assign(buf2 + (1.0 - self.beta2) * (tf.square(grad) - buf2))
 
-            update = buf1 / tf.sqrt(buf2) + self.adamw_eps
+            update = buf1 / (tf.sqrt(buf2) + self.adamw_eps)
 
             if self.weight_decouple:
                 p.assign(p * (1.0 - self.adamw_wd * lr))
@@ -580,6 +615,7 @@ class AdaMuon(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.use_muon = []
+        params = []
         for var in var_list:
             self.momentum_buffer.append(self.add_variable_from_reference(
                                 reference_variable=var, name="momentum_buffer"
@@ -598,7 +634,12 @@ class AdaMuon(optimizer.Optimizer):
                                 reference_variable=var, name="exp_avg_sq"
                                                     ))
             self.use_muon.append(None)
+            if var.trainable and len(var.shape) >= 2:
+                params.append(var)
         self.set_muon_state(self.params, self.adamw_params)
+        total_params = sum(np.prod(p.shape.as_list()) for p in params)
+        self.updates_flat = tf.Variable(tf.zeros(total_params, dtype=tf.bfloat16))
+        self._track_variable(self.updates_flat)
     
     @staticmethod
     def get_adjusted_lr(lr: float, param_shape, use_adjusted_lr: bool = False) -> float:
@@ -628,11 +669,9 @@ class AdaMuon(optimizer.Optimizer):
             if self.use_muon[self._get_variable_index(p)]:
                 if tf.keras.backend.is_sparse(grad):
                     raise RuntimeError(
-                        'Muon does not support sparse gradients')
+                        ' AdaMuon does not support sparse gradients')
                 params.append(p)
         
-        total_params = sum(np.prod(p.shape.as_list()) for p in params)
-        updates_flat = tf.zeros(total_params, dtype=tf.bfloat16)
         curr_idx = 0
         
         for i, p in enumerate(params):
@@ -651,18 +690,18 @@ class AdaMuon(optimizer.Optimizer):
 
             grad = tf.reshape(zero_power_via_newton_schulz_5(grad, num_steps=self.ns_steps), [-1])
 
-            updates_flat[curr_idx:curr_idx + np.prod(p.shape.as_list())] = grad  # fmt: skip
+            self.updates_flat[curr_idx:curr_idx + np.prod(p.shape.as_list())].assign(grad)  # fmt: skip
         
         if self.world_size > 1:  # pragma: no cover
             strategy = tf.distribute.get_strategy()
-            updates_flat = strategy.reduce(tf.distribute.ReduceOp.SUM, updates_flat, axis=None)
+            self.updates_flat.assign(strategy.reduce(tf.distribute.ReduceOp.SUM, self.updates_flat, axis=None))
         
         curr_idx: int = 0
         for i, p in enumerate(params):
             if i % self.world_size != self.rank:
                 continue
             
-            g = updates_flat[curr_idx:curr_idx + np.prod(p.shape.as_list())]  # fmt: skip
+            g = self.updates_flat[curr_idx:curr_idx + np.prod(p.shape.as_list())]  # fmt: skip
             
             v = self.v[self._get_variable_index(p)]
             v.assign(v * self.beta2 + g * g * (1.0 - self.beta2))
@@ -706,7 +745,7 @@ class AdaMuon(optimizer.Optimizer):
             buf1.assign(buf1 + (1.0 - self.beta1) * (grad - buf1))
             buf2.assign(buf2 + (1.0 - self.beta2) * (tf.square(grad) - buf2))
 
-            update = buf1 / tf.sqrt(buf2) + self.epsilon
+            update = buf1 / (tf.sqrt(buf2) + self.epsilon)
 
             if self.weight_decouple:
                 p.assign(p * (1.0 - self.adamw_wd * lr))
@@ -738,13 +777,14 @@ class AdaMuon(optimizer.Optimizer):
         pass
 
 
-class Muon_sn(optimizer.Optimizer):
+class Muon_e(optimizer.Optimizer):
     def __init__(
         self,
         params,
         learning_rate=2e-2,
         beta1=0.9,
         beta2=0.95,
+        beta3=0.9999,
         weight_decay=1e-2,
         momentum=0.95,
         weight_decouple=True,
@@ -757,6 +797,15 @@ class Muon_sn(optimizer.Optimizer):
         adamw_eps=1e-8,
         subset_size=-1,
         sn=True,
+        lookahead_merge_time=5,
+        lookahead_blending_alpha=0.5,
+        lookahead=True,
+        pnm=True,
+        agc=True,
+        cautious=True,
+        aem=True,
+        alpha=5.0,
+        t_alpha_beta3=None,
         clipnorm=None,
         clipvalue=None,
         global_clipnorm=None,
@@ -765,7 +814,7 @@ class Muon_sn(optimizer.Optimizer):
         ema_overwrite_frequency=None,
         loss_scale_factor=None,
         gradient_accumulation_steps=None,
-        name="muon_sn",
+        name="muon_e",
         **kwargs,
     ):
         super().__init__(
@@ -785,6 +834,7 @@ class Muon_sn(optimizer.Optimizer):
         self.lr = learning_rate
         self.beta1 = beta1
         self.beta2 = beta2
+        self.beta3 = beta3
         self.momentum = momentum
         self.weight_decouple = weight_decouple
         self.nesterov = nesterov
@@ -796,6 +846,15 @@ class Muon_sn(optimizer.Optimizer):
         self.adamw_eps = adamw_eps
         self.subset_size = subset_size
         self.sn = sn
+        self.lookahead_merge_time = lookahead_merge_time
+        self.lookahead_blending_alpha = lookahead_blending_alpha
+        self.lookahead = lookahead
+        self.pnm = pnm
+        self.agc = agc
+        self.cautious = cautious
+        self.aem = aem
+        self.alpha = alpha
+        self.t_alpha_beta3 = t_alpha_beta3
         
         if adamw_params is not None:
             params.extend(adamw_params)
@@ -820,16 +879,36 @@ class Muon_sn(optimizer.Optimizer):
         super().build(var_list)
         self.momentum_buffer = []
         self.moment1 = []
+        self.moment1_slow = []
         self.moment2 = []
         self.use_muon = []
+        self.slow_momentum = []
+        self.pos_momentum = []
+        self.neg_momentum = []
         self.subset_size_ = []
+        params = []
         for var in var_list:
+            if self.lookahead:
+                self.slow_momentum.append(tf.Variable(var))
+                self._track_variable(self.slow_momentum[-1])
             self.momentum_buffer.append(self.add_variable_from_reference(
                                 reference_variable=var, name="momentum_buffer"
                                                     ))
-            self.moment1.append(self.add_variable_from_reference(
-                                reference_variable=var, name="moment1"
-                                                    ))
+            if self.pnm:
+                self.pos_momentum.append(
+                    self.add_variable_from_reference(
+                        reference_variable=var, name="pos_momentum"
+                    )
+                )
+                self.neg_momentum.append(
+                    self.add_variable_from_reference(
+                        reference_variable=var, name="neg_momentum"
+                    )
+                )
+            else:
+                self.moment1.append(self.add_variable_from_reference(
+                                    reference_variable=var, name="moment1"
+                                                        ))
             if self.sn:
                 size = tf.size(var)
                 
@@ -853,12 +932,39 @@ class Muon_sn(optimizer.Optimizer):
                                     reference_variable=var, name="moment2"
                                                         ))
             self.use_muon.append(None)
+            if var.trainable and len(var.shape) >= 2:
+                params.append(var)
+            if self.aem:
+                self.exp_avg_slow.append(self.add_variable_from_reference(
+                    reference_variable=var, name="moment1_slow"
+                                        ))
         self.set_muon_state(self.params, self.adamw_params)
+        total_params = sum(np.prod(p.shape.as_list()) for p in params)
+        self.updates_flat = tf.Variable(tf.zeros(total_params, dtype=tf.bfloat16))
+        self._track_variable(self.updates_flat)
     
     @staticmethod
     def adjust_lr_for_muon(lr, param_shape):
         adjusted_ratio = 0.2 * math.sqrt(max(param_shape[0], param_shape[1]))
         return lr * adjusted_ratio
+    
+    @staticmethod
+    def schedule_alpha(t_alpha_beta3, step, alpha):
+        return alpha if t_alpha_beta3 is None else tf.minimum(step * alpha / t_alpha_beta3, alpha)
+    
+    @staticmethod
+    def schedule_beta3(t_alpha_beta3, step, beta1, beta3):
+        if t_alpha_beta3 is None:
+            return beta3
+    
+        log_beta1, log_beta3 = tf.math.log(beta1), tf.math.log(beta3)
+    
+        return tf.minimum(
+            tf.exp(
+                log_beta1 * log_beta3 / ((1.0 - step / t_alpha_beta3) * log_beta3 + (step / t_alpha_beta3) * log_beta1)
+            ),
+            beta3,
+        )
     
     def _backend_update_step(self, grads, trainable_variables, learning_rate):
         """Collective update_step that can be overridden by the backend.
@@ -874,14 +980,17 @@ class Muon_sn(optimizer.Optimizer):
             if self.use_muon[self._get_variable_index(p)]:
                 if tf.keras.backend.is_sparse(grad):
                     raise RuntimeError(
-                        'Muon does not support sparse gradients')
+                        'Muon_e does not support sparse gradients')
                 params.append(p)
+                
+            if self.agc:
+                grads[self._get_variable_index(p)] = agc(p, grad) 
         
-        total_params = sum(np.prod(p.shape.as_list()) for p in params)
-        updates_flat = tf.zeros(total_params, dtype=tf.bfloat16)
         curr_idx = 0
         
         for i, p in enumerate(params):
+            step = tf.cast(self.iterations + 1, p.dtype)
+            
             if i % self.world_size != self.rank:
                 curr_idx += np.prod(p.shape.as_list())
                 continue
@@ -891,21 +1000,33 @@ class Muon_sn(optimizer.Optimizer):
                 grad = tf.reshape(grad, (grad.shape[0], -1))
 
             buf = self.momentum_buffer[self._get_variable_index(p)]
-            buf.assign(buf * self.momentum + (1.0 - self.momentum) * grad)
+            if not self.pnm:
+                buf.assign(buf * self.momentum + (1.0 - self.momentum) * grad)
+            else:
+                noise_norm = math.sqrt((1 + self.beta2) ** 2 + self.beta2 ** 2)
+                def true_fn():
+                    return self.pos_momentum[self._get_variable_index(p)], self.neg_momentum[self._get_variable_index(p)]
+                def false_fn():
+                    return self.neg_momentum[self._get_variable_index(p)], self.pos_momentum[self._get_variable_index(p)]
+                pos_momentum, neg_momentum = tf.cond(step % 2 == 1, true_fn, false_fn)
+                pos_momentum.assign(pos_momentum * self.beta1 ** 2 + grad * (1.0 - self.beta1 ** 2))
+                buf = (pos_momentum  * 2.0 + neg_momentum * -1.0) * (1.0 / noise_norm)
 
             grad = grad + self.momentum * (buf - grad) if self.nesterov else buf
 
             grad = tf.reshape(zero_power_via_newton_schulz_5(grad, num_steps=self.ns_steps), [-1])
 
-            updates_flat[curr_idx:curr_idx + np.prod(p.shape.as_list())] = grad  # fmt: skip
+            self.updates_flat[curr_idx:curr_idx + np.prod(p.shape.as_list())].assign(grad)  # fmt: skip
         
         if self.world_size > 1:  # pragma: no cover
             strategy = tf.distribute.get_strategy()
-            updates_flat = strategy.reduce(tf.distribute.ReduceOp.SUM, updates_flat, axis=None)
+            self.updates_flat.assign(strategy.reduce(tf.distribute.ReduceOp.SUM, self.updates_flat, axis=None))
         
         curr_idx: int = 0
         for p in params:
-            g = tf.reshape(updates_flat[curr_idx:curr_idx + np.prod(p.shape.as_list())], p.shape)  # fmt: skip
+            step = tf.cast(self.iterations + 1, p.dtype)
+            
+            g = tf.reshape(self.updates_flat[curr_idx:curr_idx + np.prod(p.shape.as_list())], p.shape)  # fmt: skip
 
             if self.weight_decouple:
                 p.assign(p * (1.0 - self.weight_decay * self.lr))
@@ -916,6 +1037,17 @@ class Muon_sn(optimizer.Optimizer):
 
             p.assign_add(g * -lr * (max(1.0, p.shape[-2] / p.shape[-1]) ** 0.5))
             curr_idx += np.prod(p.shape.as_list())
+            
+            if self.lookahead:
+                def true_fn():
+                    slow_p = self.slow_momentum[self._get_variable_index(p)]
+                    slow_p.assign(slow_p + self.lookahead_blending_alpha * (p - slow_p))
+                    p.assign(slow_p)
+                
+                def false_fn():
+                    pass
+            
+                tf.cond(step % self.lookahead_merge_time == 0, true_fn, false_fn)
 
         params = [p for p in trainable_variables if not self.use_muon[self._get_variable_index(p)]]
 
@@ -923,6 +1055,17 @@ class Muon_sn(optimizer.Optimizer):
         
         for p in params:
             step = tf.cast(self.iterations + 1, p.dtype)
+            
+            if self.aem:
+                beta1 = tf.cast(self.beta1, p.dtype)
+                beta3 = tf.cast(self.beta3, p.dtype)
+                
+                alpha_t = self.schedule_alpha(self.t_alpha_beta3, step, self.alpha)
+                beta3_t = self.schedule_beta3(self.t_alpha_beta3, step, beta1, beta3)
+                
+                moment1_slow = self.moment1_slow[self._get_variable_index(p)]
+                
+                clip = tf.pow(step, 0.25)
             
             bias_correction1 = 1 - self.beta1 ** step
             bias_correction2 = 1 - self.beta2 ** step
@@ -932,22 +1075,53 @@ class Muon_sn(optimizer.Optimizer):
             grad = grads[self._get_variable_index(p)]
             size = tf.size(grad)
 
-            buf1 = self.moment1[self._get_variable_index(p)]
+            if not self.pnm:
+                buf1 = self.moment1[self._get_variable_index(p)]
             buf2 = self.moment2[self._get_variable_index(p)]
+            if not self.aem:
+                normed_grad = grad
+            else:
+                normed_grad = tf.clip_by_value(
+                    grad / tf.maximum(tf.sqrt(buf2), self.adamw_eps if self.adamw_eps is not None else 1e-8),
+                    clip_value_min=-clip,
+                    clip_value_max= clip,
+                )
             if self.sn:
                 reshaped_grad = tf.reshape(grad, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
                 second_moment_update = tf.reduce_sum(reshaped_grad ** 2, axis=1, keepdims=True)
             else:
                 second_moment_update = tf.pow(grad, 2)
-            buf1.assign(buf1 + (1.0 - self.beta1) * (grad - buf1))
+            if not self.pnm:
+                buf1.assign(buf1 + (1.0 - self.beta1) * (normed_grad - buf1))
+            else:
+                noise_norm = math.sqrt((1 + self.beta2) ** 2 + self.beta2 ** 2)
+                def true_fn():
+                    return self.pos_momentum[self._get_variable_index(p)], self.neg_momentum[self._get_variable_index(p)]
+                def false_fn():
+                    return self.neg_momentum[self._get_variable_index(p)], self.pos_momentum[self._get_variable_index(p)]
+                pos_momentum, neg_momentum = tf.cond(step % 2 == 1, true_fn, false_fn)
+                pos_momentum.assign(pos_momentum * (1.0 - self.beta1**2) * (normed_grad - buf1))
+                buf1 = (pos_momentum  * 2.0 + neg_momentum * -1.0) * (1.0 / noise_norm)
             buf2.assign(buf2 + (1.0 - self.beta2) * (second_moment_update - buf2))
+            
+            if self.aem:
+                moment1_slow.assign(moment1_slow * beta3_t + normed_grad * (1.0 - beta3_t))
+                buf1 += moment1_slow * alpha_t
 
             if self.sn:
                 numerator = tf.reshape(buf1, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                normed_grad = tf.reshape((numerator / tf.sqrt(buf2) + self.adamw_eps), p.shape)
+                normed_grad = tf.reshape(numerator / (tf.sqrt(buf2) + self.adamw_eps), p.shape)
                 update = normed_grad
             else:
-                update = buf1 / tf.sqrt(buf2) + self.adamw_eps
+                normed_grad = buf1 / (tf.sqrt(buf2) + self.adamw_eps)
+                update = normed_grad
+            
+            if self.cautious:
+                mask = tf.cast(tf.math.greater(update * g, 0), g.dtype)
+                numel = tf.cast(tf.size(mask), g.dtype)
+                factor = numel / (tf.reduce_sum(mask) + 1)
+                mask = mask * factor
+                update = update * mask
 
             if self.weight_decouple:
                 p.assign(p * (1.0 - self.adamw_wd * lr))
@@ -955,6 +1129,17 @@ class Muon_sn(optimizer.Optimizer):
                 grads[self._get_variable_index(p)] += p * self.adamw_wd
 
             p.assign_add(update * -step_size)
+            
+            if self.lookahead:
+                def true_fn():
+                    slow_p = self.slow_momentum[self._get_variable_index(p)]
+                    slow_p.assign(slow_p + self.lookahead_blending_alpha * (p - slow_p))
+                    p.assign(slow_p)
+                
+                def false_fn():
+                    pass
+            
+                tf.cond(step % self.lookahead_merge_time == 0, true_fn, false_fn)
 
     def get_config(self):
         config = super().get_config()
@@ -975,6 +1160,15 @@ class Muon_sn(optimizer.Optimizer):
                 "sn": self.sn,
                 "world_size": self.world_size,
                 "rank": self.rank,
+                "lookahead_merge_time": self.lookahead_merge_time,
+                "lookahead_blending_alpha": self.lookahead_blending_alpha,
+                "lookahead": self.lookahead,
+                "pnm": self.pnm,
+                "agc": self.agc,
+                "cautious": self.cautious,
+                "aem": self.aem,
+                "alpha": self.alpha,
+                "t_alpha_beta3": self.t_alpha_beta3,
                 "subset_size_": self.subset_size_,
             }
         )
@@ -1207,7 +1401,7 @@ class DistributedMuon_sn(optimizer.Optimizer):
                                       
                     if self.sn:
                         numerator = tf.reshape(exp_avg, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                        normed_grad = tf.reshape((numerator / de_nom), p.shape)
+                        normed_grad = tf.reshape(numerator / de_nom, p.shape)
                         p.assign_add(normed_grad * -step_size)
                     else:
                         p.assign_add(-step_size * exp_avg / de_nom)
@@ -1329,6 +1523,7 @@ class AdaMuon_sn(optimizer.Optimizer):
         self.exp_avg_sq = []
         self.use_muon = []
         self.subset_size_ = []
+        params = []
         for var in var_list:
             self.momentum_buffer.append(self.add_variable_from_reference(
                                 reference_variable=var, name="momentum_buffer"
@@ -1366,7 +1561,12 @@ class AdaMuon_sn(optimizer.Optimizer):
                                     reference_variable=var, name="exp_avg_sq"
                                                         ))
             self.use_muon.append(None)
+            if var.trainable and len(var.shape) >= 2:
+                params.append(var)
         self.set_muon_state(self.params, self.adamw_params)
+        total_params = sum(np.prod(p.shape.as_list()) for p in params)
+        self.updates_flat = tf.Variable(tf.zeros(total_params, dtype=tf.bfloat16))
+        self._track_variable(self.updates_flat)
     
     @staticmethod
     def get_adjusted_lr(lr: float, param_shape, use_adjusted_lr: bool = False) -> float:
@@ -1399,8 +1599,6 @@ class AdaMuon_sn(optimizer.Optimizer):
                         'Muon does not support sparse gradients')
                 params.append(p)
         
-        total_params = sum(np.prod(p.shape.as_list()) for p in params)
-        updates_flat = tf.zeros(total_params, dtype=tf.bfloat16)
         curr_idx = 0
         
         for i, p in enumerate(params):
@@ -1419,18 +1617,18 @@ class AdaMuon_sn(optimizer.Optimizer):
 
             grad = tf.reshape(zero_power_via_newton_schulz_5(grad, num_steps=self.ns_steps), [-1])
 
-            updates_flat[curr_idx:curr_idx + np.prod(p.shape.as_list())] = grad  # fmt: skip
+            self.updates_flat[curr_idx:curr_idx + np.prod(p.shape.as_list())].assign(grad)  # fmt: skip
         
         if self.world_size > 1:  # pragma: no cover
             strategy = tf.distribute.get_strategy()
-            updates_flat = strategy.reduce(tf.distribute.ReduceOp.SUM, updates_flat, axis=None)
+            self.updates_flat.assign(strategy.reduce(tf.distribute.ReduceOp.SUM, self.updates_flat, axis=None))
         
         curr_idx: int = 0
         for i, p in enumerate(params):
             if i % self.world_size != self.rank:
                 continue
             
-            g = updates_flat[curr_idx:curr_idx + np.prod(p.shape.as_list())]  # fmt: skip
+            g = self.updates_flat[curr_idx:curr_idx + np.prod(p.shape.as_list())]  # fmt: skip
             
             v = self.v[self._get_variable_index(p)]
             v.assign(v * self.beta2 + g * g * (1.0 - self.beta2))
@@ -1482,10 +1680,10 @@ class AdaMuon_sn(optimizer.Optimizer):
 
             if self.sn:
                 numerator = tf.reshape(buf1, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                normed_grad = tf.reshape((numerator / tf.sqrt(buf2) + self.epsilon), p.shape)
-                update = normed_grad
+                normed_grad = tf.reshape(numerator / tf.sqrt(buf2), p.shape)
+                update = normed_grad + self.epsilon
             else:
-                update = buf1 / tf.sqrt(buf2) + self.epsilon
+                update = buf1 / (tf.sqrt(buf2) + self.epsilon)
 
             if self.weight_decouple:
                 p.assign(p * (1.0 - self.adamw_wd * lr))
