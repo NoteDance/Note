@@ -335,7 +335,8 @@ class DAdaptLion_e(optimizer.Optimizer):
             if self.agc:
                 grads[self._get_variable_index(variable)] = agc(variable, grad)  
             
-            exp_avg = self.exp_avg[self._get_variable_index(variable)]
+            if not self.pnm:
+                exp_avg = self.exp_avg[self._get_variable_index(variable)]
             s = self.s[self._get_variable_index(variable)]
             
             if not self.pnm:
