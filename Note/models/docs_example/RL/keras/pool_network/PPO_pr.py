@@ -59,6 +59,9 @@ class PPO(nn.RL):
     def action(self,s):
         return self.actor_old(s)
     
+    def window_size(self,p):
+        return self.adjust_window_size(p)
+    
     def window_size_fn(self,p):
         return self.adjust_window_size(p)
     
@@ -98,6 +101,17 @@ class PPO_(nn.RL):
     
     def action(self,s):
         return self.actor_old(s)
+    
+    def window_size(self,p):
+        ratio_score = tf.reduce_sum(tf.abs(self.prioritized_replay.ratio_list[p]-1.0))
+        td_score = tf.reduce_sum(self.prioritized_replay.TD_list[p])
+        scores = self.lambda_ * self.prioritized_replay.TD_list[p] + (1.0-self.lambda_) * tf.abs(self.prioritized_replay.ratio_list[p] - 1.0)
+        weights = tf.pow(scores + 1e-7, self.alpha)
+        p = weights / (tf.reduce_sum(weights))
+        ess = 1.0 / (tf.reduce_sum(p * p))
+        features = tf.reshape([ratio_score, td_score, ess, len(self.prioritized_replay.ratio)], (1,4))
+        features = (features - tf.reduce_min(features)) / (tf.reduce_max(features) - tf.reduce_min(features) + 1e-8)
+        return self.controller(features)
     
     def window_size_fn(self,p):
         ratio_score = tf.reduce_sum(tf.abs(self.prioritized_replay.ratio_list[p]-1.0))
