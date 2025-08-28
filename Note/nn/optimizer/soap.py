@@ -450,7 +450,7 @@ class SOAP(optimizer.Optimizer):
             )
 
             if self.normalize_gradient:
-                norm_grad = tf.sqrt(norm_grad / tf.reduce_mean(tf.square(norm_grad))) + self.epsilon
+                norm_grad = norm_grad / (tf.sqrt((tf.reduce_mean(tf.square(norm_grad)))) + self.epsilon)
 
             p.assign_add(norm_grad * -step_size)
             
@@ -517,6 +517,9 @@ class SOAP_e(optimizer.Optimizer):
         aem=True,
         alpha=5.0,
         t_alpha_beta3=None,
+        d0=1e-6,
+        growth_rate=float('inf'),
+        DAdapt=True,
         clipnorm=None,
         clipvalue=None,
         global_clipnorm=None,
@@ -542,6 +545,7 @@ class SOAP_e(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
+        self.lr = learning_rate
         self.beta1 = beta1
         self.beta2 = beta2
         self.beta3 = beta3
@@ -565,6 +569,9 @@ class SOAP_e(optimizer.Optimizer):
         self.aem = aem
         self.alpha = alpha
         self.t_alpha_beta3 = t_alpha_beta3
+        self.d0 = d0
+        self.growth_rate = growth_rate
+        self.DAdapt = DAdapt
 
     def build(self, var_list):
         if self.built:
@@ -580,6 +587,16 @@ class SOAP_e(optimizer.Optimizer):
         self.pos_momentum = []
         self.neg_momentum = []
         self.subset_size_ = []
+        if self.DAdapt:
+            self.s = []
+            self.sk_l1 = tf.Variable(0.0)
+            self.numerator_acc = tf.Variable(0.0)
+            self.numerator_weighted = tf.Variable(0.0)
+            self.d0_ = tf.Variable(self.d0)
+            self._track_variable(self.sk_l1)
+            self._track_variable(self.numerator_acc)
+            self._track_variable(self.numerator_weighted)
+            self._track_variable(self.d0_)
         for var in var_list:
             self.GG.append([])
             self.Q.append([])
@@ -630,6 +647,10 @@ class SOAP_e(optimizer.Optimizer):
                 self.exp_avg_slow.append(self.add_variable_from_reference(
                     reference_variable=var, name="exp_avg_slow"
                                         ))
+            if self.DAdapt:
+                self.s.append(self.add_variable_from_reference(
+                                    reference_variable=var, name="s"
+                                                            ))
     
     def project(
         self,
@@ -869,6 +890,8 @@ class SOAP_e(optimizer.Optimizer):
                 
                 alpha_t = self.schedule_alpha(self.t_alpha_beta3, step, self.alpha)
                 beta3_t = self.schedule_beta3(self.t_alpha_beta3, step, beta1, beta3)
+                
+                clip = tf.pow(step, 0.25)
             
             if self.agc:
                 grads[self._get_variable_index(p)] = agc(p, g) 
@@ -891,14 +914,55 @@ class SOAP_e(optimizer.Optimizer):
             grad_projected = self.project(
                 p, g, merge_dims=self.merge_dims, max_precondition_dim=self.max_precondition_dim
             )
-
-            exp_avg = self.exp_avg[self._get_variable_index(p)]
-            exp_avg_sq = self.exp_avg_sq[self._get_variable_index(p)]
-            if self.aem:
-                exp_avg_slow = self.momentum_slow[self._get_variable_index(p)]
             
             if not self.pnm:
-                exp_avg.assign(exp_avg * self.beta1 + g * (1.0 - self.beta1))
+                exp_avg = self.exp_avg[self._get_variable_index(p)]
+            exp_avg_sq = self.exp_avg_sq[self._get_variable_index(p)]
+            if self.aem:
+                exp_avg_slow = self.exp_avg_slow[self._get_variable_index(p)]
+            
+            step_size = lr
+            if self.correct_bias:
+                bias_correction1 = 1 - self.beta1 ** step
+                bias_correction2_sq = tf.sqrt(1 - self.beta2 ** step)
+
+                step_size *= bias_correction2_sq / bias_correction1
+                
+                if self.DAdapt:
+                    d_lr = self.d0 * self.lr * bias_correction2_sq / bias_correction1
+            else:
+                if self.DAdapt:
+                    d_lr = self.d0 * self.lr
+            
+            de_nom = tf.sqrt(exp_avg_sq) + self.epsilon
+            
+            if self.DAdapt:
+                s = self.s[self._get_variable_index(p)]
+            
+                flat_grad = tf.reshape(g, [-1])
+                flat_div = tf.reshape(tf.divide(s, de_nom), [-1])
+                dot_val = tf.tensordot(flat_grad, flat_div, axes=1)
+                self.numerator_acc.assign_add(tf.cast(d_lr * dot_val, tf.float32))
+                
+                d_lr = tf.cast(d_lr, dtype=p.dtype)
+            
+            if not self.aem:
+                normed_grad = g
+            else:
+                normed_grad = tf.clip_by_value(
+                    g / tf.maximum(tf.sqrt(exp_avg_sq), self.epsilon if self.epsilon is not None else 1e-8),
+                    clip_value_min=-clip,
+                    clip_value_max= clip,
+                )
+            
+            if not self.pnm:
+                if self.DAdapt:
+                    beta2_sq = math.sqrt(self.beta2)
+                    exp_avg.assign(exp_avg * self.beta1 + normed_grad * d_lr * (1.0 - self.beta1))
+                    s.assign(s * beta2_sq + g * d_lr * (1.0 - beta2_sq))
+                    self.sk_l1.assign_add(tf.cast(tf.reduce_sum(tf.abs(s)), tf.float32))
+                else:
+                    exp_avg.assign(exp_avg * self.beta1 + normed_grad * (1.0 - self.beta1))
             else:
                 noise_norm = math.sqrt((1 + self.beta2) ** 2 + self.beta2 ** 2)
                 def true_fn():
@@ -906,87 +970,194 @@ class SOAP_e(optimizer.Optimizer):
                 def false_fn():
                     return self.neg_momentum[self._get_variable_index(p)], self.pos_momentum[self._get_variable_index(p)]
                 pos_momentum, neg_momentum = tf.cond(step % 2 == 1, true_fn, false_fn)
-                pos_momentum.assign(pos_momentum * self.beta1 ** 2 + g * (1.0 - self.beta1 ** 2))
+                if self.DAdapt:
+                    beta2_sq = math.sqrt(self.beta2)
+                    pos_momentum.assign(pos_momentum * self.beta1 ** 2 + normed_grad * d_lr * (1.0 - self.beta1 ** 2))
+                    s.assign(s * beta2_sq + g * d_lr * (1.0 - beta2_sq))
+                    self.sk_l1.assign_add(tf.cast(tf.reduce_sum(tf.abs(s)), tf.float32))
+                else:
+                    pos_momentum.assign(pos_momentum * self.beta1 ** 2 + normed_grad * (1.0 - self.beta1 ** 2))
                 exp_avg = (pos_momentum  * 2.0 + neg_momentum * -1.0) * (1.0 / noise_norm)
             
-            if self.sn:
-                reshaped_grad = tf.reshape(grad_projected, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                second_moment_update = tf.reduce_sum(reshaped_grad ** 2, axis=1, keepdims=True)
-            else:
-                second_moment_update = tf.pow(grad_projected, 2)
-
-            exp_avg_sq.assign(exp_avg_sq * self.beta2 + second_moment_update * (1.0 - self.beta2))
-
-            de_nom = tf.sqrt(exp_avg_sq) + self.epsilon
-
-            exp_avg_projected = self.project(
-                p, exp_avg, merge_dims=self.merge_dims, max_precondition_dim=self.max_precondition_dim
-            )
-
-            step_size = lr
+            if self.aem:
+                exp_avg_slow.assign(exp_avg_slow * beta3_t + normed_grad * (1.0 - beta3_t))
+                
+            if not self.DAdapt:
+                if self.aem:
+                    exp_avg += exp_avg_slow * alpha_t
+                    
+                if self.sn:
+                    reshaped_grad = tf.reshape(grad_projected, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                    second_moment_update = tf.reduce_sum(reshaped_grad ** 2, axis=1, keepdims=True)
+                else:
+                    second_moment_update = tf.pow(grad_projected, 2)
+    
+                exp_avg_sq.assign(exp_avg_sq * self.beta2 + second_moment_update * (1.0 - self.beta2))
+    
+                exp_avg_projected = self.project(
+                    p, exp_avg, merge_dims=self.merge_dims, max_precondition_dim=self.max_precondition_dim
+                )
+                
+                if self.sn:
+                    numerator = tf.reshape(exp_avg_projected, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                    norm_grad = tf.reshape(numerator / de_nom, p.shape)
+                else:
+                    norm_grad = exp_avg_projected / de_nom
+    
+                norm_grad = self.project(
+                    p,
+                    norm_grad,
+                    merge_dims=self.merge_dims,
+                    max_precondition_dim=self.max_precondition_dim,
+                    project_type='backward',
+                )
+    
+                if self.normalize_gradient:
+                    update = tf.sqrt(norm_grad / tf.reduce_mean(tf.square(norm_grad))) + self.epsilon
+                else:
+                    update = norm_grad
+                
+                if self.cautious:
+                    mask = tf.cast(tf.math.greater(update * g, 0), g.dtype)
+                    numel = tf.cast(tf.size(mask), g.dtype)
+                    factor = numel / (tf.reduce_sum(mask) + 1)
+                    mask = mask * factor
+                    update = update * mask
+    
+                p.assign_add(update * -step_size)
+                
+                if self.lookahead:
+                    def true_fn():
+                        slow_p = self.slow_momentum[self._get_variable_index(p)]
+                        slow_p.assign(slow_p + self.lookahead_blending_alpha * (p - slow_p))
+                        p.assign(slow_p)
+                    
+                    def false_fn():
+                        pass
+                
+                    tf.cond(step % self.lookahead_merge_time == 0, true_fn, false_fn)
+                
+                if self.weight_decay > 0.0:
+                    p.assign(p * (1.0 - self.weight_decay * lr))
+    
+                self.update_pre_conditioner(
+                    p,
+                    g,
+                    step=step,
+                    max_precondition_dim=self.max_precondition_dim,
+                    merge_dims=self.merge_dims,
+                    precondition_1d=self.precondition_1d,
+                )
+        
+        def update_fn():
             if self.correct_bias:
+                step = self.iterations + 1
                 bias_correction1 = 1 - self.beta1 ** step
                 bias_correction2_sq = tf.sqrt(1 - self.beta2 ** step)
-
-                step_size *= bias_correction2_sq / bias_correction1
-            
-            if self.sn:
-                numerator = tf.reshape(exp_avg_projected, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                norm_grad = tf.reshape(numerator / de_nom, p.shape)
+                d_lr = self.d0 * self.lr * bias_correction2_sq / bias_correction1
             else:
-                norm_grad = exp_avg_projected / de_nom
-
-            norm_grad = self.project(
-                p,
-                norm_grad,
-                merge_dims=self.merge_dims,
-                max_precondition_dim=self.max_precondition_dim,
-                project_type='backward',
-            )
-
-            if self.normalize_gradient:
-                update = tf.sqrt(norm_grad / tf.reduce_mean(tf.square(norm_grad))) + self.epsilon
+                d_lr = self.d0 * self.lr
             
-            if self.cautious:
-                mask = tf.cast(tf.math.greater(update * g, 0), g.dtype)
-                numel = tf.cast(tf.size(mask), g.dtype)
-                factor = numel / (tf.reduce_sum(mask) + 1)
-                mask = mask * factor
-                update = update * mask
+            beta2_sq = math.sqrt(self.beta2)
+            
+            d = self.d0
+            self.numerator_weighted.assign(self.numerator_weighted * beta2_sq + self.numerator_acc * (1.0 - beta2_sq))  # fmt: skip
+            
+            if self.lr > 0.0:
+                d_hat = self.numerator_weighted / (1.0 - beta2_sq) * self.sk_l1
+                d = tf.maximum(self.d0, tf.minimum(d_hat, self.d0 * self.growth_rate))
+            
+            self.d0.assign(d)
+            
+            for p, g in zip(trainable_variables, grads):
+                if not self.pnm:
+                    exp_avg = self.exp_avg[self._get_variable_index(p)]
+                exp_avg_sq = self.exp_avg_sq[self._get_variable_index(p)]
+                if self.aem:
+                    exp_avg_slow = self.momentum_slow[self._get_variable_index(p)]
+                    alpha_t = self.schedule_alpha(self.t_alpha_beta3, step, self.alpha)
                 
-            if self.aem:
-                exp_avg_slow.assign(exp_avg_slow * beta3_t + norm_grad * (1.0 - beta3_t))
-                update += exp_avg_slow * alpha_t
-
-            p.assign_add(norm_grad * -step_size)
-            
-            if self.lookahead:
-                def true_fn():
-                    slow_p = self.slow_momentum[self._get_variable_index(p)]
-                    slow_p.assign(slow_p + self.lookahead_blending_alpha * (p - slow_p))
-                    p.assign(slow_p)
+                if self.pnm:
+                    noise_norm = math.sqrt((1 + self.beta2) ** 2 + self.beta2 ** 2)
+                    def true_fn():
+                        return self.pos_momentum[self._get_variable_index(p)], self.neg_momentum[self._get_variable_index(p)]
+                    def false_fn():
+                        return self.neg_momentum[self._get_variable_index(p)], self.pos_momentum[self._get_variable_index(p)]
+                    pos_momentum, neg_momentum = tf.cond(step % 2 == 1, true_fn, false_fn)
+                    exp_avg = (pos_momentum  * 2.0 + neg_momentum * -1.0) * (1.0 / noise_norm)
                 
-                def false_fn():
-                    pass
-            
-                tf.cond(step % self.lookahead_merge_time == 0, true_fn, false_fn)
-            
-            if self.weight_decay > 0.0:
-                p.assign(p * (1.0 - self.weight_decay * lr))
+                if self.aem:
+                    exp_avg += exp_avg_slow * alpha_t
+                
+                step_size = tf.cast(d_lr, p.dtype)
+                
+                de_nom = tf.sqrt(exp_avg_sq) + self.epsilon
+    
+                exp_avg_projected = self.project(
+                    p, exp_avg, merge_dims=self.merge_dims, max_precondition_dim=self.max_precondition_dim
+                )
+                
+                if self.sn:
+                    numerator = tf.reshape(exp_avg_projected, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                    norm_grad = tf.reshape(numerator / de_nom, p.shape)
+                else:
+                    norm_grad = exp_avg_projected / de_nom
+    
+                norm_grad = self.project(
+                    p,
+                    norm_grad,
+                    merge_dims=self.merge_dims,
+                    max_precondition_dim=self.max_precondition_dim,
+                    project_type='backward',
+                )
+    
+                if self.normalize_gradient:
+                    update = norm_grad / (tf.sqrt((tf.reduce_mean(tf.square(norm_grad)))) + self.epsilon)
+                else:
+                    update = norm_grad
+                
+                if self.cautious:
+                    mask = tf.cast(tf.math.greater(update * g, 0), g.dtype)
+                    numel = tf.cast(tf.size(mask), g.dtype)
+                    factor = numel / (tf.reduce_sum(mask) + 1)
+                    mask = mask * factor
+                    update = update * mask
+    
+                p.assign_add(update * -step_size)
+                
+                if self.lookahead:
+                    def true_fn():
+                        slow_p = self.slow_momentum[self._get_variable_index(p)]
+                        slow_p.assign(slow_p + self.lookahead_blending_alpha * (p - slow_p))
+                        p.assign(slow_p)
+                    
+                    def false_fn():
+                        pass
+                
+                    tf.cond(step % self.lookahead_merge_time == 0, true_fn, false_fn)
+                
+                if self.weight_decay > 0.0:
+                    p.assign(p * (1.0 - self.weight_decay * self.lr))
+    
+                self.update_pre_conditioner(
+                    p,
+                    g,
+                    step=step,
+                    max_precondition_dim=self.max_precondition_dim,
+                    merge_dims=self.merge_dims,
+                    precondition_1d=self.precondition_1d,
+                )
+        
+        def no_update_fn():
+            pass
 
-            self.update_pre_conditioner(
-                p,
-                g,
-                step=step,
-                max_precondition_dim=self.max_precondition_dim,
-                merge_dims=self.merge_dims,
-                precondition_1d=self.precondition_1d,
-            )    
+        tf.cond(self.sk_l1 == 0, no_update_fn, update_fn)
 
     def get_config(self):
         config = super().get_config()
         config.update(
             {
+                "lr": self.lr,
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "beta3": self.beta3,
@@ -1010,6 +1181,9 @@ class SOAP_e(optimizer.Optimizer):
                 "aem": self.aem,
                 "alpha": self.alpha,
                 "t_alpha_beta3": self.t_alpha_beta3,
+                "d0": self.d0,
+                "growth_rate": self.growth_rate,
+                "DAdapt": self.DAdapt,
                 "subset_size_": self.subset_size_,
             }
         )
