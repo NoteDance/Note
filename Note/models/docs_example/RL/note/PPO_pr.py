@@ -28,8 +28,8 @@ class critic(nn.Model):
 class Controller(nn.Model):
     def __init__(self, hidden=32, temp=10.0):
         super().__init__()
-        self.fc1 = nn.dense(hidden, 4, activation='relu')
-        self.fc2 = nn.dense(1, hidden, activation='sigmoid')
+        self.fc1 = nn.dense(hidden, 2, activation='relu')
+        self.fc2 = nn.dense(2, 1, activation='sigmoid')
         self.max_w = None
         self.temp = temp
 
@@ -56,6 +56,17 @@ class PPO(nn.RL):
     
     def action(self,s):
         return self.actor_old(s)
+    
+    def window_size(self):
+        ratio_score = tf.reduce_sum(tf.abs(self.prioritized_replay.ratio-1.0))
+        td_score = tf.reduce_sum(self.prioritized_replay.TD)
+        scores = self.lambda_ * self.prioritized_replay.TD + (1.0-self.lambda_) * tf.abs(self.prioritized_replay.ratio - 1.0)
+        weights = tf.pow(scores + 1e-7, self.alpha)
+        p = weights / (tf.reduce_sum(weights))
+        ess = 1.0 / (tf.reduce_sum(p * p))
+        features = tf.reshape([ratio_score, td_score, ess, len(self.prioritized_replay.ratio)], (1,4))
+        features = (features - tf.reduce_min(features)) / (tf.reduce_max(features) - tf.reduce_min(features) + 1e-8)
+        return self.controller(features)
     
     def window_size_fn(self):
         ratio_score = tf.reduce_sum(tf.abs(self.prioritized_replay.ratio-1.0))
@@ -117,6 +128,9 @@ class PPO_(nn.RL):
     
     def action(self,s):
         return self.actor_old(s)
+    
+    def window_size(self):
+        return self.adjust_window_size()
     
     def window_size_fn(self):
         return self.adjust_window_size()
