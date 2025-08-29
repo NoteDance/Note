@@ -1060,14 +1060,14 @@ class SOAP_e(optimizer.Optimizer):
             
             beta2_sq = math.sqrt(self.beta2)
             
-            d = self.d0
+            d = self.d0_
             self.numerator_weighted.assign(self.numerator_weighted * beta2_sq + self.numerator_acc * (1.0 - beta2_sq))  # fmt: skip
             
             if self.lr > 0.0:
                 d_hat = self.numerator_weighted / (1.0 - beta2_sq) * self.sk_l1
-                d = tf.maximum(self.d0, tf.minimum(d_hat, self.d0 * self.growth_rate))
+                d = tf.maximum(self.d0_, tf.minimum(d_hat, self.d0_ * self.growth_rate))
             
-            self.d0.assign(d)
+            self.d0_.assign(d)
             
             for p, g in zip(trainable_variables, grads):
                 if not self.pnm:
