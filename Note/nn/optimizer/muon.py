@@ -806,6 +806,11 @@ class Muon_e(optimizer.Optimizer):
         aem=True,
         alpha=5.0,
         t_alpha_beta3=None,
+        sophia=True,
+        p=1e-2,
+        update_period=10,
+        num_samples=1,
+        hessian_distribution='gaussian',
         clipnorm=None,
         clipvalue=None,
         global_clipnorm=None,
@@ -855,6 +860,11 @@ class Muon_e(optimizer.Optimizer):
         self.aem = aem
         self.alpha = alpha
         self.t_alpha_beta3 = t_alpha_beta3
+        self.sophia = sophia
+        self.p = p
+        self.update_period = update_period
+        self.num_samples = num_samples
+        self.distribution = hessian_distribution
         
         if adamw_params is not None:
             params.extend(adamw_params)
@@ -886,6 +896,8 @@ class Muon_e(optimizer.Optimizer):
         self.pos_momentum = []
         self.neg_momentum = []
         self.subset_size_ = []
+        self.hessian_moment = []
+        self.hessian = []
         params = []
         for var in var_list:
             if self.lookahead:
@@ -938,6 +950,13 @@ class Muon_e(optimizer.Optimizer):
                 self.exp_avg_slow.append(self.add_variable_from_reference(
                     reference_variable=var, name="moment1_slow"
                                         ))
+            if self.sophia:
+                self.hessian_moment.append(self.add_variable_from_reference(
+                    reference_variable=var, name="hessian_moment"
+                                        ))
+                self.hessian.append(self.add_variable_from_reference(
+                                    reference_variable=var, name="hessian"
+                                                        ))
         self.set_muon_state(self.params, self.adamw_params)
         total_params = sum(np.prod(p.shape.as_list()) for p in params)
         self.updates_flat = tf.Variable(tf.zeros(total_params, dtype=tf.bfloat16))
@@ -965,6 +984,44 @@ class Muon_e(optimizer.Optimizer):
             ),
             beta3,
         )
+    
+    def compute_hutchinson_hessian(
+        self,
+        params,
+        grads,
+        num_samples: int = 1,
+        alpha: float = 1.0,
+        distribution: str = 'gaussian',
+    ) -> None:
+        if distribution not in ('gaussian', 'rademacher'):
+            raise NotImplementedError(f'hessian with distribution {distribution} is not implemented.')
+
+        params = [p for p in params if not tf.keras.backend.is_sparse(p)]
+        if len(params) == 0:
+            return
+        
+        grads = [grads[self._get_variable_index(p)] for p in params if not tf.keras.backend.is_sparse(grads[self._get_variable_index(p)])]
+
+        for i in range(num_samples):
+            if distribution == 'rademacher':
+                zs = [
+                    tf.cast(tf.random.uniform(tf.shape(p), 0, 2, dtype=tf.int32)*2 - 1, p.dtype)
+                    for p in params
+                ]
+            else:
+                zs = [tf.random.normal(tf.shape(p), dtype=p.dtype) for p in params]
+
+            h_zs = self.tape.gradient(grads, params, zs)
+
+            for h_z, z, p in zip(h_zs, zs, params):
+                self.hessian[self._get_variable_index(p)].assign_add(h_z * z * alpha / num_samples)
+    
+    def apply_gradients(self, grads_and_vars, tape=None):
+        self.tape = tape
+        grads, trainable_variables = zip(*grads_and_vars)
+        self.apply(grads, trainable_variables)
+        # Return iterations for compat with tf.keras.
+        return self._iterations
     
     def _backend_update_step(self, grads, trainable_variables, learning_rate):
         """Collective update_step that can be overridden by the backend.
@@ -1053,6 +1110,17 @@ class Muon_e(optimizer.Optimizer):
 
         lr = self.adamw_lr_ratio * lr
         
+        if self.sophia:
+            def true_fn1():
+                self.compute_hutchinson_hessian(
+                    grads,
+                    num_samples=self.num_samples,
+                    distribution=self.distribution,
+                )
+            def false_fn1():
+                pass
+            tf.cond(self.iterations % self.update_period == 0, true_fn1, false_fn1)
+        
         for p in params:
             step = tf.cast(self.iterations + 1, p.dtype)
             
@@ -1077,7 +1145,10 @@ class Muon_e(optimizer.Optimizer):
 
             if not self.pnm:
                 buf1 = self.moment1[self._get_variable_index(p)]
-            buf2 = self.moment2[self._get_variable_index(p)]
+            if self.sophia:
+                hessian_moment = self.hessian_moment[self._get_variable_index(p)]
+            else:
+                buf2 = self.moment2[self._get_variable_index(p)]
             if not self.aem:
                 normed_grad = grad
             else:
@@ -1102,20 +1173,35 @@ class Muon_e(optimizer.Optimizer):
                 pos_momentum, neg_momentum = tf.cond(step % 2 == 1, true_fn, false_fn)
                 pos_momentum.assign(pos_momentum * (1.0 - self.beta1**2) * (normed_grad - buf1))
                 buf1 = (pos_momentum  * 2.0 + neg_momentum * -1.0) * (1.0 / noise_norm)
-            buf2.assign(buf2 + (1.0 - self.beta2) * (second_moment_update - buf2))
+            if self.sophia:
+                def true_fn2():
+                    hessian_moment.assign(hessian_moment * self.beta2 + self.hessian[self._get_variable_index(p)] * (1.0 - self.beta2))
+                def false_fn2():
+                    pass
+                tf.cond(step % self.update_period == 0, true_fn2, false_fn2)
+            else:
+                buf2.assign(buf2 + (1.0 - self.beta2) * (second_moment_update - buf2))
             
             if self.aem:
                 moment1_slow.assign(moment1_slow * beta3_t + normed_grad * (1.0 - beta3_t))
                 buf1 += moment1_slow * alpha_t
+                
+            if self.sophia:
+                de_nom = tf.maximum(hessian_moment, self.adamw_eps)
+            else:
+                de_nom = tf.sqrt(buf2) + self.adamw_eps
 
             if self.sn:
                 numerator = tf.reshape(buf1, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                normed_grad = tf.reshape(numerator / (tf.sqrt(buf2) + self.adamw_eps), p.shape)
+                normed_grad = tf.reshape(numerator / de_nom, p.shape)
                 update = normed_grad
+                if self.sophia:
+                    tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
             else:
-                normed_grad = buf1 / (tf.sqrt(buf2) + self.adamw_eps)
+                normed_grad = buf1 / de_nom
                 update = normed_grad
-            
+                if self.sophia:
+                    tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
             if self.cautious:
                 mask = tf.cast(tf.math.greater(update * g, 0), g.dtype)
                 numel = tf.cast(tf.size(mask), g.dtype)
@@ -1169,6 +1255,11 @@ class Muon_e(optimizer.Optimizer):
                 "aem": self.aem,
                 "alpha": self.alpha,
                 "t_alpha_beta3": self.t_alpha_beta3,
+                "sophia": self.sophia,
+                "p": self.p,
+                "update_period": self.update_period,
+                "num_samples": self.num_samples,
+                "distribution": self.distribution,
                 "subset_size_": self.subset_size_,
             }
         )
