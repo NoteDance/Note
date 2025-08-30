@@ -971,11 +971,6 @@ class Muon_e(optimizer.Optimizer):
             self.use_muon.append(None)
             if var.trainable and len(var.shape) >= 2:
                 params.append(var)
-            elif var.trainable:
-                if self.DAdapt:
-                    self.s.append(self.add_variable_from_reference(
-                        reference_variable=var, name="s"
-                                            ))
             if self.aem:
                 self.exp_avg_slow.append(self.add_variable_from_reference(
                     reference_variable=var, name="moment1_slow"
@@ -987,6 +982,10 @@ class Muon_e(optimizer.Optimizer):
                 self.hessian.append(self.add_variable_from_reference(
                                     reference_variable=var, name="hessian"
                                                         ))
+            if self.DAdapt:
+                self.s.append(self.add_variable_from_reference(
+                    reference_variable=var, name="s"
+                                        ))
         self.set_muon_state(self.params, self.adamw_params)
         total_params = sum(np.prod(p.shape.as_list()) for p in params)
         self.updates_flat = tf.Variable(tf.zeros(total_params, dtype=tf.bfloat16))
