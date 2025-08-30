@@ -186,12 +186,12 @@ class Muon(optimizer.Optimizer):
         self.use_muon = []
         params = []
         for var in var_list:
-            self.momentum_buffer.append(self.add_variable_from_reference(
-                                reference_variable=var, name="momentum_buffer"
-                                                    ))
             self.use_muon.append(None)
             if var.trainable and len(var.shape) >= 2:
                 params.append(var)
+                self.momentum_buffer.append(self.add_variable_from_reference(
+                    reference_variable=var, name="momentum_buffer"
+                                        ))
                 self.moment1.append(None)
                 self.moment2.append(None)
             else:
@@ -201,6 +201,7 @@ class Muon(optimizer.Optimizer):
                 self.moment2.append(self.add_variable_from_reference(
                                     reference_variable=var, name="moment2"
                                                         ))
+                self.momentum_buffer.append(None)
         self.set_muon_state(self.params, self.adamw_params)
         total_params = sum(np.prod(p.shape.as_list()) for p in params)
         self.updates_flat = tf.Variable(tf.zeros(total_params, dtype=tf.bfloat16))
@@ -397,10 +398,10 @@ class DistributedMuon(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         for var in var_list:
-            self.momentum_buffer.append(self.add_variable_from_reference(
-                                reference_variable=var, name="momentum_buffer"
-                                                    ))
             if var.trainable and len(var.shape) >= 2:
+                self.momentum_buffer.append(self.add_variable_from_reference(
+                    reference_variable=var, name="momentum_buffer"
+                                        ))
                 self.exp_avg.append(None)
                 self.exp_avg_sq.append(None)
             else:
@@ -410,6 +411,7 @@ class DistributedMuon(optimizer.Optimizer):
                 self.exp_avg_sq.append(self.add_variable_from_reference(
                                     reference_variable=var, name="exp_avg_sq"
                                                         ))
+                self.momentum_buffer.append(None)
         if self.use_muon:
             self.padded_params = var_list + [self.add_variable_from_reference(
                                 reference_variable=var_list[-1])] * (
@@ -632,17 +634,17 @@ class AdaMuon(optimizer.Optimizer):
         self.use_muon = []
         params = []
         for var in var_list:
-            self.momentum_buffer.append(self.add_variable_from_reference(
-                                reference_variable=var, name="momentum_buffer"
-                                                    ))
-            self.m.append(self.add_variable_from_reference(
-                                reference_variable=var, name="m"
-                                                    ))
-            reshaped_var = tf.Variable(tf.reshape(var, (-1)))
-            self.v.append(self.add_variable_from_reference(
-                                reference_variable=reshaped_var, name="v"
-                                                    ))
             if var.trainable and len(var.shape) >= 2:
+                self.momentum_buffer.append(self.add_variable_from_reference(
+                    reference_variable=var, name="momentum_buffer"
+                                        ))
+                self.m.append(self.add_variable_from_reference(
+                                    reference_variable=var, name="m"
+                                                        ))
+                reshaped_var = tf.Variable(tf.reshape(var, (-1)))
+                self.v.append(self.add_variable_from_reference(
+                                    reference_variable=reshaped_var, name="v"
+                                                        ))
                 self.exp_avg.append(None)
                 self.exp_avg_sq.append(None)
             else:
@@ -652,6 +654,9 @@ class AdaMuon(optimizer.Optimizer):
                 self.exp_avg_sq.append(self.add_variable_from_reference(
                                     reference_variable=var, name="exp_avg_sq"
                                                         ))
+                self.momentum_buffer.append(None)
+                self.m.append(None)
+                self.v.append(None)
             self.use_muon.append(None)
             if var.trainable and len(var.shape) >= 2:
                 params.append(var)
@@ -938,12 +943,12 @@ class Muon_e(optimizer.Optimizer):
             if self.lookahead:
                 self.slow_momentum.append(tf.Variable(var))
                 self._track_variable(self.slow_momentum[-1])
-            self.momentum_buffer.append(self.add_variable_from_reference(
-                                reference_variable=var, name="momentum_buffer"
-                                                    ))
             self.use_muon.append(None)
             if var.trainable and len(var.shape) >= 2:
                 params.append(var)
+                self.momentum_buffer.append(self.add_variable_from_reference(
+                    reference_variable=var, name="momentum_buffer"
+                                        ))
                 if self.pnm:
                     self.pos_momentum.append(None)
                     self.neg_momentum.append(None)
@@ -1009,6 +1014,8 @@ class Muon_e(optimizer.Optimizer):
                         self.s.append(self.add_variable_from_reference(
                             reference_variable=var, name="s"
                                                 ))
+                    
+                    self.momentum_buffer.append(None)
         self.set_muon_state(self.params, self.adamw_params)
         total_params = sum(np.prod(p.shape.as_list()) for p in params)
         self.updates_flat = tf.Variable(tf.zeros(total_params, dtype=tf.bfloat16))
@@ -1517,10 +1524,10 @@ class DistributedMuon_sn(optimizer.Optimizer):
         self.exp_avg_sq = []
         self.subset_size_ = []
         for var in var_list:
-            self.momentum_buffer.append(self.add_variable_from_reference(
-                                reference_variable=var, name="momentum_buffer"
-                                                    ))
             if var.trainable and len(var.shape) >= 2:
+                self.momentum_buffer.append(self.add_variable_from_reference(
+                    reference_variable=var, name="momentum_buffer"
+                                        ))
                 self.exp_avg.append(None)
                 self.exp_avg_sq.append(None)
             else:
@@ -1549,6 +1556,7 @@ class DistributedMuon_sn(optimizer.Optimizer):
                     self.exp_avg_sq.append(self.add_variable_from_reference(
                                         reference_variable=var, name="exp_avg_sq"
                                                             ))
+                self.momentum_buffer.append(None)
           
         if self.use_muon:
             self.padded_params = var_list + [self.add_variable_from_reference(
@@ -1795,17 +1803,17 @@ class AdaMuon_sn(optimizer.Optimizer):
         self.subset_size_ = []
         params = []
         for var in var_list:
-            self.momentum_buffer.append(self.add_variable_from_reference(
-                                reference_variable=var, name="momentum_buffer"
-                                                    ))
-            self.m.append(self.add_variable_from_reference(
-                                reference_variable=var, name="m"
-                                                    ))
-            reshaped_var = tf.Variable(tf.reshape(var, (-1)))
-            self.v.append(self.add_variable_from_reference(
-                                reference_variable=reshaped_var, name="v"
-                                                    ))
             if var.trainable and len(var.shape) >= 2:
+                self.momentum_buffer.append(self.add_variable_from_reference(
+                    reference_variable=var, name="momentum_buffer"
+                                        ))
+                self.m.append(self.add_variable_from_reference(
+                                    reference_variable=var, name="m"
+                                                        ))
+                reshaped_var = tf.Variable(tf.reshape(var, (-1)))
+                self.v.append(self.add_variable_from_reference(
+                                    reference_variable=reshaped_var, name="v"
+                                                        ))
                 self.exp_avg.append(None)
                 self.exp_avg_sq.append(None)
             else:
@@ -1834,6 +1842,9 @@ class AdaMuon_sn(optimizer.Optimizer):
                     self.exp_avg_sq.append(self.add_variable_from_reference(
                                         reference_variable=var, name="exp_avg_sq"
                                                             ))
+                self.momentum_buffer.append(None)
+                self.m.append(None)
+                self.v.append(None)
             self.use_muon.append(None)
             if var.trainable and len(var.shape) >= 2:
                 params.append(var)
