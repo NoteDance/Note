@@ -205,9 +205,18 @@ class Muon(optimizer.Optimizer):
         
     
     @staticmethod
-    def adjust_lr_for_muon(lr, param_shape):
-        adjusted_ratio = 0.2 * math.sqrt(max(param_shape[0], param_shape[1]))
-        return lr * adjusted_ratio
+    def get_adjusted_lr(lr: float, param_shape, use_adjusted_lr: bool = False) -> float:
+        r"""Get the adjust learning rate."""
+        output_shape, *input_shape = param_shape
+        input_shape = math.prod(input_shape)
+
+        ratio: float = (
+            math.pow(max(1.0, output_shape / input_shape), 0.5)
+            if use_adjusted_lr
+            else 0.2 * math.sqrt(max(output_shape, input_shape))
+        )
+
+        return lr * ratio
     
     def _backend_update_step(self, grads, trainable_variables, learning_rate):
         """Collective update_step that can be overridden by the backend.
@@ -259,16 +268,17 @@ class Muon(optimizer.Optimizer):
             elif self.weight_decay > 0.0:
                 grads[self._get_variable_index(p)] += p * self.weight_decay
 
-            lr = self.adjust_lr_for_muon(self.lr, p.shape) if self.use_adjusted_lr else self.lr
+            lr = self.get_adjusted_lr(self.lr, p.shape, self.use_adjusted_lr)
+            lr = tf.cast(lr, p.dtype)
 
             p.assign_add(g * -lr * (max(1.0, p.shape[-2] / p.shape[-1]) ** 0.5))
             curr_idx += np.prod(p.shape.as_list())
 
         params = [p for p in trainable_variables if not self.use_muon[self._get_variable_index(p)]]
-
-        lr = self.adamw_lr_ratio * lr
         
         for p in params:
+            lr = tf.cast(self.adamw_lr, p.dtype)
+            
             step = tf.cast(self.iterations + 1, p.dtype)
             
             bias_correction1 = 1 - self.beta1 ** step
@@ -451,8 +461,6 @@ class DistributedMuon(optimizer.Optimizer):
             
             if self.use_muon:
                 for i in range(len(trainable_variables))[:: self.world_size]:
-                    lr = tf.cast(learning_rate, trainable_variables[i].dtype)
-                    
                     if i + self.rank < len(trainable_variables):
                         p = trainable_variables[i + self.rank]
 
@@ -460,7 +468,7 @@ class DistributedMuon(optimizer.Optimizer):
                             gradient = -grads[self._get_variable_index(trainable_variables[i])]
 
                         if self.weight_decouple:
-                            trainable_variables[i].assign(trainable_variables[i] * (1.0 - self.weight_decay * lr))
+                            trainable_variables[i].assign(trainable_variables[i] * (1.0 - self.weight_decay * self.lr))
                         elif self.weight_decay > 0.0:
                             gradient += trainable_variables[i] * self.weight_decay
 
@@ -479,13 +487,14 @@ class DistributedMuon(optimizer.Optimizer):
                             update *= mask
 
                         lr = self.get_adjusted_lr(self.lr, p.shape, use_adjusted_lr=self.use_adjusted_lr)
+                        lr = tf.cast(lr, p.dtype)
 
                         trainable_variables[i].assign_add(tf.reshape(update, (p.shape)) * -lr)
 
                     self.distributed_step(self.padded_params)
             else:
                 for p in trainable_variables:
-                    lr = tf.cast(learning_rate, p.dtype)
+                    lr = tf.cast(self.adamw_lr, p.dtype)
                     
                     step = tf.cast(self.iterations + 1, p.dtype)
                     
@@ -727,10 +736,10 @@ class AdaMuon(optimizer.Optimizer):
             curr_idx += np.prod(p.shape.as_list())
 
         params = [p for p in trainable_variables if not self.use_muon[self._get_variable_index(p)]]
-
-        lr = self.adamw_lr_ratio * lr
         
         for p in params:
+            lr = tf.cast(self.adamw_lr, p.dtype)
+            
             step = tf.cast(self.iterations + 1, p.dtype)
             
             bias_correction1 = 1 - self.beta1 ** step
@@ -811,6 +820,9 @@ class Muon_e(optimizer.Optimizer):
         update_period=10,
         num_samples=1,
         hessian_distribution='gaussian',
+        d0=1e-6,
+        growth_rate=float('inf'),
+        DAdapt=True,
         clipnorm=None,
         clipvalue=None,
         global_clipnorm=None,
@@ -865,6 +877,9 @@ class Muon_e(optimizer.Optimizer):
         self.update_period = update_period
         self.num_samples = num_samples
         self.distribution = hessian_distribution
+        self.d0 = d0
+        self.growth_rate = growth_rate
+        self.DAdapt = DAdapt
         
         if adamw_params is not None:
             params.extend(adamw_params)
@@ -898,6 +913,16 @@ class Muon_e(optimizer.Optimizer):
         self.subset_size_ = []
         self.hessian_moment = []
         self.hessian = []
+        if self.DAdapt:
+            self.s = []
+            self.sk_l1 = tf.Variable(0.0)
+            self.numerator_acc = tf.Variable(0.0)
+            self.numerator_weighted = tf.Variable(0.0)
+            self.d0_ = tf.Variable(self.d0)
+            self._track_variable(self.sk_l1)
+            self._track_variable(self.numerator_acc)
+            self._track_variable(self.numerator_weighted)
+            self._track_variable(self.d0_)
         params = []
         for var in var_list:
             if self.lookahead:
@@ -963,9 +988,18 @@ class Muon_e(optimizer.Optimizer):
         self._track_variable(self.updates_flat)
     
     @staticmethod
-    def adjust_lr_for_muon(lr, param_shape):
-        adjusted_ratio = 0.2 * math.sqrt(max(param_shape[0], param_shape[1]))
-        return lr * adjusted_ratio
+    def get_adjusted_lr(lr: float, param_shape, use_adjusted_lr: bool = False) -> float:
+        r"""Get the adjust learning rate."""
+        output_shape, *input_shape = param_shape
+        input_shape = math.prod(input_shape)
+
+        ratio: float = (
+            math.pow(max(1.0, output_shape / input_shape), 0.5)
+            if use_adjusted_lr
+            else 0.2 * math.sqrt(max(output_shape, input_shape))
+        )
+
+        return lr * ratio
     
     @staticmethod
     def schedule_alpha(t_alpha_beta3, step, alpha):
@@ -1090,7 +1124,8 @@ class Muon_e(optimizer.Optimizer):
             elif self.weight_decay > 0.0:
                 grads[self._get_variable_index(p)] += p * self.weight_decay
 
-            lr = self.adjust_lr_for_muon(self.lr, p.shape) if self.use_adjusted_lr else self.lr
+            lr = self.get_adjusted_lr(self.lr, p.shape, self.use_adjusted_lr)
+            lr = tf.cast(lr, p.dtype)
 
             p.assign_add(g * -lr * (max(1.0, p.shape[-2] / p.shape[-1]) ** 0.5))
             curr_idx += np.prod(p.shape.as_list())
@@ -1107,8 +1142,6 @@ class Muon_e(optimizer.Optimizer):
                 tf.cond(step % self.lookahead_merge_time == 0, true_fn, false_fn)
 
         params = [p for p in trainable_variables if not self.use_muon[self._get_variable_index(p)]]
-
-        lr = self.adamw_lr_ratio * lr
         
         if self.sophia:
             def true_fn1():
@@ -1122,6 +1155,12 @@ class Muon_e(optimizer.Optimizer):
             tf.cond(self.iterations % self.update_period == 0, true_fn1, false_fn1)
         
         for p in params:
+            lr = tf.cast(self.adamw_lr, p.dtype)
+            if self.DAdapt:
+                d_lr = self.d0 * self.adamw_lr
+                d_lr = tf.cast(d_lr, p.dtype)
+                s = self.s[self._get_variable_index(p)]
+            
             step = tf.cast(self.iterations + 1, p.dtype)
             
             if self.aem:
@@ -1163,7 +1202,13 @@ class Muon_e(optimizer.Optimizer):
             else:
                 second_moment_update = tf.pow(grad, 2)
             if not self.pnm:
-                buf1.assign(buf1 + (1.0 - self.beta1) * (normed_grad - buf1))
+                if self.DAdapt:
+                    beta2_sq = math.sqrt(self.beta2)
+                    buf1.assign(buf1 + (1.0 - self.beta1) * (normed_grad * d_lr - buf1))
+                    s.assign(s * beta2_sq + g * d_lr * (1.0 - beta2_sq))
+                    self.sk_l1.assign_add(tf.cast(tf.reduce_sum(tf.abs(s)), tf.float32))
+                else:
+                    buf1.assign(buf1 + (1.0 - self.beta1) * (normed_grad - buf1))
             else:
                 noise_norm = math.sqrt((1 + self.beta2) ** 2 + self.beta2 ** 2)
                 def true_fn():
@@ -1171,7 +1216,13 @@ class Muon_e(optimizer.Optimizer):
                 def false_fn():
                     return self.neg_momentum[self._get_variable_index(p)], self.pos_momentum[self._get_variable_index(p)]
                 pos_momentum, neg_momentum = tf.cond(step % 2 == 1, true_fn, false_fn)
-                pos_momentum.assign(pos_momentum * (1.0 - self.beta1**2) * (normed_grad - buf1))
+                if self.DAdapt:
+                    beta2_sq = math.sqrt(self.beta2)
+                    buf1.assign(buf1 + (1.0 - self.beta1) * (normed_grad * d_lr - buf1))
+                    pos_momentum.assign(pos_momentum * (1.0 - self.beta1**2) * (normed_grad * d_lr - buf1))
+                    self.sk_l1.assign_add(tf.cast(tf.reduce_sum(tf.abs(s)), tf.float32))
+                else:
+                    pos_momentum.assign(pos_momentum * (1.0 - self.beta1**2) * (normed_grad - buf1))
                 buf1 = (pos_momentum  * 2.0 + neg_momentum * -1.0) * (1.0 / noise_norm)
             if self.sophia:
                 def true_fn2():
@@ -1184,48 +1235,143 @@ class Muon_e(optimizer.Optimizer):
             
             if self.aem:
                 moment1_slow.assign(moment1_slow * beta3_t + normed_grad * (1.0 - beta3_t))
-                buf1 += moment1_slow * alpha_t
                 
             if self.sophia:
                 de_nom = tf.maximum(hessian_moment, self.adamw_eps)
             else:
                 de_nom = tf.sqrt(buf2) + self.adamw_eps
-
-            if self.sn:
-                numerator = tf.reshape(buf1, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                normed_grad = tf.reshape(numerator / de_nom, p.shape)
-                update = normed_grad
-                if self.sophia:
-                    tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
-            else:
-                normed_grad = buf1 / de_nom
-                update = normed_grad
-                if self.sophia:
-                    tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
-            if self.cautious:
-                mask = tf.cast(tf.math.greater(update * g, 0), g.dtype)
-                numel = tf.cast(tf.size(mask), g.dtype)
-                factor = numel / (tf.reduce_sum(mask) + 1)
-                mask = mask * factor
-                update = update * mask
-
-            if self.weight_decouple:
-                p.assign(p * (1.0 - self.adamw_wd * lr))
-            elif self.adamw_wd > 0.0:
-                grads[self._get_variable_index(p)] += p * self.adamw_wd
-
-            p.assign_add(update * -step_size)
             
-            if self.lookahead:
-                def true_fn():
-                    slow_p = self.slow_momentum[self._get_variable_index(p)]
-                    slow_p.assign(slow_p + self.lookahead_blending_alpha * (p - slow_p))
-                    p.assign(slow_p)
+            if self.DAdapt:
+                flat_grad = tf.reshape(g, [-1])
+                flat_div = tf.reshape(tf.divide(s, de_nom), [-1])
+                dot_val = tf.tensordot(flat_grad, flat_div, axes=1)
+                self.numerator_acc.assign_add(tf.cast(d_lr * dot_val, tf.float32))
+
+            if not self.DAdapt:
+                if self.aem:
+                    buf1 += moment1_slow * alpha_t
+                if self.sn:
+                    numerator = tf.reshape(buf1, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                    normed_grad = tf.reshape(numerator / de_nom, p.shape)
+                    update = normed_grad
+                    if self.sophia:
+                        tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
+                else:
+                    normed_grad = buf1 / de_nom
+                    update = normed_grad
+                    if self.sophia:
+                        tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
+                if self.cautious:
+                    mask = tf.cast(tf.math.greater(update * g, 0), g.dtype)
+                    numel = tf.cast(tf.size(mask), g.dtype)
+                    factor = numel / (tf.reduce_sum(mask) + 1)
+                    mask = mask * factor
+                    update = update * mask
+    
+                if self.weight_decouple:
+                    p.assign(p * (1.0 - self.adamw_wd * lr))
+                elif self.adamw_wd > 0.0:
+                    grads[self._get_variable_index(p)] += p * self.adamw_wd
+    
+                p.assign_add(update * -step_size)
                 
-                def false_fn():
-                    pass
-            
-                tf.cond(step % self.lookahead_merge_time == 0, true_fn, false_fn)
+                if self.lookahead:
+                    def true_fn():
+                        slow_p = self.slow_momentum[self._get_variable_index(p)]
+                        slow_p.assign(slow_p + self.lookahead_blending_alpha * (p - slow_p))
+                        p.assign(slow_p)
+                    
+                    def false_fn():
+                        pass
+                
+                    tf.cond(step % self.lookahead_merge_time == 0, true_fn, false_fn)
+        
+        if self.DAdapt:
+            def update_fn():
+                d_lr = self.d0 * self.adamw_lr
+                
+                beta2_sq = math.sqrt(self.beta2)
+                
+                d = self.d0_
+                self.numerator_weighted.assign(self.numerator_weighted * beta2_sq + self.numerator_acc * (1.0 - beta2_sq))  # fmt: skip
+                
+                if self.lr > 0.0:
+                    d_hat = self.numerator_weighted / (1.0 - beta2_sq) * self.sk_l1
+                    d = tf.maximum(self.d0_, tf.minimum(d_hat, self.d0_ * self.growth_rate))
+                
+                self.d0_.assign(d)
+                
+                for p in params:
+                    lr = tf.cast(self.adamw_lr, p.dtype)
+                    d_lr = tf.cast(d_lr, p.dtype)
+                    
+                    step = tf.cast(self.iterations + 1, p.dtype)
+                    
+                    if not self.pnm:
+                        buf1 = self.moment1[self._get_variable_index(p)]
+                    else:
+                        noise_norm = math.sqrt((1 + self.beta2) ** 2 + self.beta2 ** 2)
+                        def true_fn():
+                            return self.pos_momentum[self._get_variable_index(p)], self.neg_momentum[self._get_variable_index(p)]
+                        def false_fn():
+                            return self.neg_momentum[self._get_variable_index(p)], self.pos_momentum[self._get_variable_index(p)]
+                        pos_momentum, neg_momentum = tf.cond(step % 2 == 1, true_fn, false_fn)
+                        buf1 = (pos_momentum  * 2.0 + neg_momentum * -1.0) * (1.0 / noise_norm)
+                    
+                    if self.sophia:
+                        hessian_moment = self.hessian_moment[self._get_variable_index(p)]
+                    else:
+                        buf2 = self.moment2[self._get_variable_index(p)]
+                    
+                    if self.aem:
+                        moment1_slow = self.moment1_slow[self._get_variable_index(p)]
+                        buf1 += moment1_slow * alpha_t
+                    
+                    if self.sophia:
+                        de_nom = tf.maximum(hessian_moment, self.adamw_eps)
+                    else:
+                        de_nom = tf.sqrt(buf2) + self.adamw_eps
+                        
+                    if self.sn:
+                        numerator = tf.reshape(buf1, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                        normed_grad = tf.reshape(numerator / de_nom, p.shape)
+                        update = normed_grad
+                        if self.sophia:
+                            tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
+                    else:
+                        normed_grad = buf1 / de_nom
+                        update = normed_grad
+                        if self.sophia:
+                            tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
+                    if self.cautious:
+                        mask = tf.cast(tf.math.greater(update * g, 0), g.dtype)
+                        numel = tf.cast(tf.size(mask), g.dtype)
+                        factor = numel / (tf.reduce_sum(mask) + 1)
+                        mask = mask * factor
+                        update = update * mask
+        
+                    if self.weight_decouple:
+                        p.assign(p * (1.0 - self.adamw_wd * lr))
+                    elif self.adamw_wd > 0.0:
+                        grads[self._get_variable_index(p)] += p * self.adamw_wd
+                    
+                    bias_correction1 = 1 - self.beta1 ** step
+                    bias_correction2 = 1 - self.beta2 ** step
+                    scale = bias_correction1 / bias_correction2 ** 0.5  # fmt: skip
+                    step_size = d_lr / scale
+        
+                    p.assign_add(update * -step_size)
+                    
+                    if self.lookahead:
+                        def true_fn():
+                            slow_p = self.slow_momentum[self._get_variable_index(p)]
+                            slow_p.assign(slow_p + self.lookahead_blending_alpha * (p - slow_p))
+                            p.assign(slow_p)
+                        
+                        def false_fn():
+                            pass
+                    
+                        tf.cond(step % self.lookahead_merge_time == 0, true_fn, false_fn)
 
     def get_config(self):
         config = super().get_config()
@@ -1260,6 +1406,9 @@ class Muon_e(optimizer.Optimizer):
                 "update_period": self.update_period,
                 "num_samples": self.num_samples,
                 "distribution": self.distribution,
+                "d0": self.d0,
+                "growth_rate": self.growth_rate,
+                "DAdapt": self.DAdapt,
                 "subset_size_": self.subset_size_,
             }
         )
@@ -1427,8 +1576,6 @@ class DistributedMuon_sn(optimizer.Optimizer):
             
             if self.use_muon:
                 for i in range(len(trainable_variables))[:: self.world_size]:
-                    lr = tf.cast(learning_rate, trainable_variables[i].dtype)
-                    
                     if i + self.rank < len(trainable_variables):
                         p = trainable_variables[i + self.rank]
 
@@ -1436,7 +1583,7 @@ class DistributedMuon_sn(optimizer.Optimizer):
                             gradient = -grads[self._get_variable_index(trainable_variables[i])]
 
                         if self.weight_decouple:
-                            trainable_variables[i].assign(trainable_variables[i] * (1.0 - self.weight_decay * lr))
+                            trainable_variables[i].assign(trainable_variables[i] * (1.0 - self.weight_decay * self.lr))
                         elif self.weight_decay > 0.0:
                             gradient += trainable_variables[i] * self.weight_decay
 
@@ -1455,13 +1602,14 @@ class DistributedMuon_sn(optimizer.Optimizer):
                             update *= mask
 
                         lr = self.get_adjusted_lr(self.lr, p.shape, use_adjusted_lr=self.use_adjusted_lr)
+                        lr = tf.cast(lr, p.dtype)
 
                         trainable_variables[i].assign_add(tf.reshape(update, (p.shape)) * -lr)
 
                     self.distributed_step(self.padded_params)
             else:
                 for p in trainable_variables:
-                    lr = tf.cast(learning_rate, p.dtype)
+                    lr = tf.cast(self.adamw_lr, p.dtype)
                     
                     step = tf.cast(self.iterations + 1, p.dtype)
                     
@@ -1745,10 +1893,10 @@ class AdaMuon_sn(optimizer.Optimizer):
             curr_idx += np.prod(p.shape.as_list())
 
         params = [p for p in trainable_variables if not self.use_muon[self._get_variable_index(p)]]
-
-        lr = self.adamw_lr_ratio * lr
         
         for p in params:
+            lr = tf.cast(self.adamw_lr, p.dtype)
+            
             step = tf.cast(self.iterations + 1, p.dtype)
             
             bias_correction1 = 1 - self.beta1 ** step
