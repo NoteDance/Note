@@ -971,6 +971,11 @@ class Muon_e(optimizer.Optimizer):
             self.use_muon.append(None)
             if var.trainable and len(var.shape) >= 2:
                 params.append(var)
+            elif var.trainable:
+                if self.DAdapt:
+                    self.s.append(self.add_variable_from_reference(
+                        reference_variable=var, name="s"
+                                            ))
             if self.aem:
                 self.exp_avg_slow.append(self.add_variable_from_reference(
                     reference_variable=var, name="moment1_slow"

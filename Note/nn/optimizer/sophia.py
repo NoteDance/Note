@@ -386,6 +386,10 @@ class SophiaH_e(optimizer.Optimizer):
                 self.hessian_moment.append(self.add_variable_from_reference(
                     reference_variable=var, name="hessian_moment"
                                         ))
+            if self.DAdapt:
+                self.s.append(self.add_variable_from_reference(
+                    reference_variable=var, name="s"
+                                        ))
     
     def apply_orthogonal_gradients(self, params, grads, eps = 1e-16):
         for p, g in zip(params, grads):
@@ -912,6 +916,10 @@ class SophiaG_e(optimizer.Optimizer):
                 self.hessian.append(self.add_variable_from_reference(
                                     reference_variable=var, name="hessian"
                                                         ))
+            if self.DAdapt:
+                self.s.append(self.add_variable_from_reference(
+                    reference_variable=var, name="s"
+                                        ))
     
     def apply_orthogonal_gradients(self, params, grads, eps = 1e-16):
         for p, g in zip(params, grads):
