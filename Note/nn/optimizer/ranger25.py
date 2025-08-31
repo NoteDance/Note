@@ -321,9 +321,9 @@ class Ranger25(optimizer.Optimizer):
             
             if self.sn:
                 if self.DAdapt:
-                    beta2_sq = math.sqrt(beta2)
+                    beta2_sq = tf.sqrt(beta2)
                     exp_avg.assign(exp_avg * beta1 + normed_grad * d_lr * (1.0 - beta1))
-                    s.assign(s * beta2_sq + g * d_lr * (1.0 - beta2_sq))
+                    s.assign(s * beta2_sq + normed_grad * d_lr * (1.0 - beta2_sq))
                     self.sk_l1.assign_add(tf.cast(tf.reduce_sum(tf.abs(s)), tf.float32))
                 else:
                     exp_avg.assign(exp_avg * beta1 + normed_grad * (1.0 - beta1))
@@ -332,9 +332,9 @@ class Ranger25(optimizer.Optimizer):
                 update = normed_grad
             else:
                 if self.DAdapt:
-                    beta2_sq = math.sqrt(beta2)
+                    beta2_sq = tf.sqrt(beta2)
                     exp_avg.assign(exp_avg * beta1 + normed_grad * d_lr * (1.0 - beta1))
-                    s.assign(s * beta2_sq + g * d_lr * (1.0 - beta2_sq))
+                    s.assign(s * beta2_sq + normed_grad * d_lr * (1.0 - beta2_sq))
                     self.sk_l1.assign_add(tf.cast(tf.reduce_sum(tf.abs(s)), tf.float32))
                 else:
                     exp_avg.assign(exp_avg * beta1 + normed_grad * (1.0 - beta1))
