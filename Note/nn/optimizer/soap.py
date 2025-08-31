@@ -520,6 +520,8 @@ class SOAP_e(optimizer.Optimizer):
         d0=1e-6,
         growth_rate=float('inf'),
         DAdapt=True,
+        trust_ratio=False,
+        trust_clip=False,
         clipnorm=None,
         clipvalue=None,
         global_clipnorm=None,
@@ -572,6 +574,8 @@ class SOAP_e(optimizer.Optimizer):
         self.d0 = d0
         self.growth_rate = growth_rate
         self.DAdapt = DAdapt
+        self.trust_ratio = trust_ratio
+        self.trust_clip = trust_clip
 
     def build(self, var_list):
         if self.built:
@@ -1023,6 +1027,20 @@ class SOAP_e(optimizer.Optimizer):
                     factor = numel / (tf.reduce_sum(mask) + 1)
                     mask = mask * factor
                     update = update * mask
+                
+                if self.trust_ratio:
+                    # Layer-wise LR adaptation
+                    w_norm = tf.norm(p, ord=2)
+                    g_norm = tf.norm(update, ord=2)
+                    trust_ratio = w_norm / g_norm
+                    trust_ratio = tf.where(
+                        w_norm > 0,
+                        tf.where(g_norm > 0, trust_ratio, 1.0),
+                        1.0,
+                    )
+                    if self.trust_clip:
+                        trust_ratio = tf.minimum(trust_ratio, 1.0)
+                    update *= trust_ratio
     
                 p.assign_add(update * -step_size)
                 
@@ -1122,6 +1140,20 @@ class SOAP_e(optimizer.Optimizer):
                     factor = numel / (tf.reduce_sum(mask) + 1)
                     mask = mask * factor
                     update = update * mask
+                
+                if self.trust_ratio:
+                    # Layer-wise LR adaptation
+                    w_norm = tf.norm(p, ord=2)
+                    g_norm = tf.norm(update, ord=2)
+                    trust_ratio = w_norm / g_norm
+                    trust_ratio = tf.where(
+                        w_norm > 0,
+                        tf.where(g_norm > 0, trust_ratio, 1.0),
+                        1.0,
+                    )
+                    if self.trust_clip:
+                        trust_ratio = tf.minimum(trust_ratio, 1.0)
+                    update *= trust_ratio
     
                 p.assign_add(update * -step_size)
                 
@@ -1184,6 +1216,8 @@ class SOAP_e(optimizer.Optimizer):
                 "d0": self.d0,
                 "growth_rate": self.growth_rate,
                 "DAdapt": self.DAdapt,
+                "trust_ratio": self.trust_ratio,
+                "trust_clip": self.trust_clip,
                 "subset_size_": self.subset_size_,
             }
         )
