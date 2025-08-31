@@ -270,6 +270,8 @@ class SophiaH_e(optimizer.Optimizer):
         d0=1e-6,
         growth_rate=float('inf'),
         DAdapt=True,
+        trust_ratio=False,
+        trust_clip=False,
         clipnorm=None,
         clipvalue=None,
         global_clipnorm=None,
@@ -317,6 +319,8 @@ class SophiaH_e(optimizer.Optimizer):
         self.d0 = d0
         self.growth_rate = growth_rate
         self.DAdapt = DAdapt
+        self.trust_ratio = trust_ratio
+        self.trust_clip = trust_clip
 
     def build(self, var_list):
         if self.built:
@@ -552,6 +556,20 @@ class SophiaH_e(optimizer.Optimizer):
                     factor = numel / (tf.reduce_sum(mask) + 1)
                     mask = mask * factor
                     update = update * mask
+                
+                if self.trust_ratio:
+                    # Layer-wise LR adaptation
+                    w_norm = tf.norm(p, ord=2)
+                    g_norm = tf.norm(update, ord=2)
+                    trust_ratio = w_norm / g_norm
+                    trust_ratio = tf.where(
+                        w_norm > 0,
+                        tf.where(g_norm > 0, trust_ratio, 1.0),
+                        1.0,
+                    )
+                    if self.trust_clip:
+                        trust_ratio = tf.minimum(trust_ratio, 1.0)
+                    update *= trust_ratio
     
                 p.assign_add(update * -lr) 
                 
@@ -612,6 +630,20 @@ class SophiaH_e(optimizer.Optimizer):
                         factor = numel / (tf.reduce_sum(mask) + 1)
                         mask = mask * factor
                         update = update * mask
+                    
+                    if self.trust_ratio:
+                        # Layer-wise LR adaptation
+                        w_norm = tf.norm(p, ord=2)
+                        g_norm = tf.norm(update, ord=2)
+                        trust_ratio = w_norm / g_norm
+                        trust_ratio = tf.where(
+                            w_norm > 0,
+                            tf.where(g_norm > 0, trust_ratio, 1.0),
+                            1.0,
+                        )
+                        if self.trust_clip:
+                            trust_ratio = tf.minimum(trust_ratio, 1.0)
+                        update *= trust_ratio
         
                     p.assign_add(update * -d_lr) 
                     
@@ -657,6 +689,8 @@ class SophiaH_e(optimizer.Optimizer):
                 "d0": self.d0,
                 "growth_rate": self.growth_rate,
                 "DAdapt": self.DAdapt,
+                "trust_ratio": self.trust_ratio,
+                "trust_clip": self.trust_clip,
                 "subset_size_": self.subset_size_,
             }
         )
@@ -810,6 +844,8 @@ class SophiaG_e(optimizer.Optimizer):
         d0=1e-6,
         growth_rate=float('inf'),
         DAdapt=True,
+        trust_ratio=False,
+        trust_clip=False,
         clipnorm=None,
         clipvalue=None,
         global_clipnorm=None,
@@ -853,6 +889,8 @@ class SophiaG_e(optimizer.Optimizer):
         self.d0 = d0
         self.growth_rate = growth_rate
         self.DAdapt = DAdapt
+        self.trust_ratio = trust_ratio
+        self.trust_clip = trust_clip
 
     def build(self, var_list):
         if self.built:
@@ -1002,6 +1040,8 @@ class SophiaG_e(optimizer.Optimizer):
               self.d0,
               self.growth_rate,
               self.DAdapt,
+              self.trust_ratio,
+              self.trust_clip,
               self.s,
               self.sk_l1,
               self.numerator_acc,
@@ -1037,6 +1077,8 @@ class SophiaG_e(optimizer.Optimizer):
                 "d0": self.d0,
                 "growth_rate": self.growth_rate,
                 "DAdapt": self.DAdapt,
+                "trust_ratio": self.trust_ratio,
+                "trust_clip": self.trust_clip,
                 "subset_size_": self.subset_size_,
             }
         )
@@ -1065,6 +1107,8 @@ def sophiag(params,
           d0,
           growth_rate,
           DAdapt,
+          trust_ratio,
+          trust_clip,
           s,
           sk_l1,
           numerator_acc,
@@ -1098,6 +1142,8 @@ def sophiag(params,
          d0,
          growth_rate,
          DAdapt,
+         trust_ratio,
+         trust_clip,
          s,
          sk_l1,
          numerator_acc,
@@ -1130,6 +1176,8 @@ def _single_tensor_sophiag(params,
                          d0,
                          growth_rate,
                          DAdapt,
+                         trust_ratio,
+                         trust_clip,
                          s,
                          sk_l1,
                          numerator_acc,
@@ -1224,6 +1272,20 @@ def _single_tensor_sophiag(params,
                 factor = numel / (tf.reduce_sum(mask) + 1)
                 mask = mask * factor
                 ratio = ratio * mask
+            
+            if trust_ratio:
+                # Layer-wise LR adaptation
+                w_norm = tf.norm(param, ord=2)
+                g_norm = tf.norm(ratio, ord=2)
+                trust_ratio = w_norm / g_norm
+                trust_ratio = tf.where(
+                    w_norm > 0,
+                    tf.where(g_norm > 0, trust_ratio, 1.0),
+                    1.0,
+                )
+                if trust_clip:
+                    trust_ratio = tf.minimum(trust_ratio, 1.0)
+                ratio *= trust_ratio
                 
             param.assign_add(step_size_neg * tf.sign(exp_avg) * ratio)
             
