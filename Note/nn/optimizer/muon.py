@@ -734,6 +734,8 @@ class Muon_e(optimizer.Optimizer):
         d0=1e-6,
         growth_rate=float('inf'),
         DAdapt=True,
+        trust_ratio=False,
+        trust_clip=False,
         clipnorm=None,
         clipvalue=None,
         global_clipnorm=None,
@@ -791,6 +793,8 @@ class Muon_e(optimizer.Optimizer):
         self.d0 = d0
         self.growth_rate = growth_rate
         self.DAdapt = DAdapt
+        self.trust_ratio = trust_ratio
+        self.trust_clip = trust_clip
 
     def build(self, var_list):
         if self.built:
@@ -836,6 +840,17 @@ class Muon_e(optimizer.Optimizer):
                     self.momentum_buffer.append(self.add_variable_from_reference(
                         reference_variable=var, name="momentum_buffer"
                                             ))
+                if self.trust_ratio and self.sn:
+                    size = tf.size(var)
+                    
+                    def true_fn():
+                        return self.subset_size
+                    def false_fn():
+                        return tf.cast(tf.sqrt(size) / tf.abs(tf.cast(self.subset_size, tf.int32)), tf.int32)
+                    self.subset_size_.append(closest_smaller_divisor_of_n_to_k(
+                        size,
+                        tf.cond(self.subset_size > 0, true_fn, false_fn)
+                    ))
             else:
                 if not self.pnm:
                     self.moment1.append(self.add_variable_from_reference(
@@ -1004,6 +1019,24 @@ class Muon_e(optimizer.Optimizer):
                     factor = numel / (tf.reduce_sum(mask) + 1)
                     mask = mask * factor
                     update = update * mask
+                
+                if self.trust_ratio:
+                    # Layer-wise LR adaptation
+                    if self.sn:
+                        size = tf.size(p)
+                        w_norm = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                        g_norm = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                    w_norm = tf.norm(p, ord=2)
+                    g_norm = tf.norm(update, ord=2)
+                    trust_ratio = w_norm / g_norm
+                    trust_ratio = tf.where(
+                        w_norm > 0,
+                        tf.where(g_norm > 0, trust_ratio, 1.0),
+                        1.0,
+                    )
+                    if self.trust_clip:
+                        trust_ratio = tf.minimum(trust_ratio, 1.0)
+                    update *= trust_ratio
     
                 p.assign_add(tf.reshape(update, p.shape) * -lr)
                 
@@ -1149,6 +1182,23 @@ class Muon_e(optimizer.Optimizer):
                         factor = numel / (tf.reduce_sum(mask) + 1)
                         mask = mask * factor
                         update = update * mask
+                    
+                    if self.trust_ratio:
+                        # Layer-wise LR adaptation
+                        if self.sn:
+                            w_norm = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                            g_norm = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                        w_norm = tf.norm(p, ord=2)
+                        g_norm = tf.norm(update, ord=2)
+                        trust_ratio = w_norm / g_norm
+                        trust_ratio = tf.where(
+                            w_norm > 0,
+                            tf.where(g_norm > 0, trust_ratio, 1.0),
+                            1.0,
+                        )
+                        if self.trust_clip:
+                            trust_ratio = tf.minimum(trust_ratio, 1.0)
+                        update *= trust_ratio
         
                     if self.weight_decouple:
                         p.assign(p * (1.0 - self.adamw_wd * lr))
@@ -1244,6 +1294,23 @@ class Muon_e(optimizer.Optimizer):
                             mask = mask * factor
                             update = update * mask
                         
+                        if self.trust_ratio:
+                            # Layer-wise LR adaptation
+                            if self.sn:
+                                w_norm = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                                g_norm = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                            w_norm = tf.norm(p, ord=2)
+                            g_norm = tf.norm(update, ord=2)
+                            trust_ratio = w_norm / g_norm
+                            trust_ratio = tf.where(
+                                w_norm > 0,
+                                tf.where(g_norm > 0, trust_ratio, 1.0),
+                                1.0,
+                            )
+                            if self.trust_clip:
+                                trust_ratio = tf.minimum(trust_ratio, 1.0)
+                            update *= trust_ratio
+                        
                         bias_correction1 = 1 - self.beta1 ** step
                         bias_correction2 = 1 - self.beta2 ** step
                         scale = bias_correction1 / bias_correction2 ** 0.5  # fmt: skip
@@ -1297,6 +1364,8 @@ class Muon_e(optimizer.Optimizer):
                 "d0": self.d0,
                 "growth_rate": self.growth_rate,
                 "DAdapt": self.DAdapt,
+                "trust_ratio": self.trust_ratio,
+                "trust_clip": self.trust_clip,
                 "subset_size_": self.subset_size_,
             }
         )
@@ -1340,6 +1409,8 @@ class DistributedMuon_e(optimizer.Optimizer):
         d0=1e-6,
         growth_rate=float('inf'),
         DAdapt=True,
+        trust_ratio=False,
+        trust_clip=False,
         maximize: bool = False,
         clipnorm=None,
         clipvalue=None,
@@ -1397,6 +1468,8 @@ class DistributedMuon_e(optimizer.Optimizer):
         self.d0 = d0
         self.growth_rate = growth_rate
         self.DAdapt = DAdapt
+        self.trust_ratio = trust_ratio
+        self.trust_clip = trust_clip
         self.maximize = maximize
             
         self.world_size = tf.distribute.get_strategy().num_replicas_in_sync
@@ -1465,6 +1538,17 @@ class DistributedMuon_e(optimizer.Optimizer):
                     self.hessian.append(None)
                 if self.DAdapt:
                     self.s.append(None)
+                if self.trust_ratio and self.sn:
+                    size = tf.size(var)
+                    
+                    def true_fn():
+                        return self.subset_size
+                    def false_fn():
+                        return tf.cast(tf.sqrt(size) / tf.abs(tf.cast(self.subset_size, tf.int32)), tf.int32)
+                    self.subset_size_.append(closest_smaller_divisor_of_n_to_k(
+                        size,
+                        tf.cond(self.subset_size > 0, true_fn, false_fn)
+                    ))
             else:
                 if not self.pnm:
                     self.exp_avg.append(self.add_variable_from_reference(
@@ -1660,6 +1744,24 @@ class DistributedMuon_e(optimizer.Optimizer):
                         mask = tf.cast(update * grad > 0, grad.dtype)
                         mask /= tf.maximum(tf.reduce_mean(mask), 1e-3)
                         update *= mask
+                    
+                    if self.trust_ratio:
+                        # Layer-wise LR adaptation
+                        if self.sn:
+                            size = tf.size(p)
+                            w_norm = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                            g_norm = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                        w_norm = tf.norm(p, ord=2)
+                        g_norm = tf.norm(update, ord=2)
+                        trust_ratio = w_norm / g_norm
+                        trust_ratio = tf.where(
+                            w_norm > 0,
+                            tf.where(g_norm > 0, trust_ratio, 1.0),
+                            1.0,
+                        )
+                        if self.trust_clip:
+                            trust_ratio = tf.minimum(trust_ratio, 1.0)
+                        update *= trust_ratio
 
                     lr = self.get_adjusted_lr(self.lr, p.shape, use_adjusted_lr=self.use_adjusted_lr)
                     lr = tf.cast(lr, p.dtype)
@@ -1806,6 +1908,22 @@ class DistributedMuon_e(optimizer.Optimizer):
                             factor = numel / (tf.reduce_sum(mask) + 1)
                             mask = mask * factor
                             update = update * mask
+                        if self.trust_ratio:
+                            # Layer-wise LR adaptation
+                            if self.sn:
+                                w_norm = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                                g_norm = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                            w_norm = tf.norm(p, ord=2)
+                            g_norm = tf.norm(update, ord=2)
+                            trust_ratio = w_norm / g_norm
+                            trust_ratio = tf.where(
+                                w_norm > 0,
+                                tf.where(g_norm > 0, trust_ratio, 1.0),
+                                1.0,
+                            )
+                            if self.trust_clip:
+                                trust_ratio = tf.minimum(trust_ratio, 1.0)
+                            update *= trust_ratio
                         p.assign_add(update * -step_size)
                     else:
                         normed_grad = exp_avg / de_nom
@@ -1817,6 +1935,22 @@ class DistributedMuon_e(optimizer.Optimizer):
                             factor = numel / (tf.reduce_sum(mask) + 1)
                             mask = mask * factor
                             update = update * mask
+                        if self.trust_ratio:
+                            # Layer-wise LR adaptation
+                            if self.sn:
+                                w_norm = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                                g_norm = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                            w_norm = tf.norm(p, ord=2)
+                            g_norm = tf.norm(update, ord=2)
+                            trust_ratio = w_norm / g_norm
+                            trust_ratio = tf.where(
+                                w_norm > 0,
+                                tf.where(g_norm > 0, trust_ratio, 1.0),
+                                1.0,
+                            )
+                            if self.trust_clip:
+                                trust_ratio = tf.minimum(trust_ratio, 1.0)
+                            update *= trust_ratio
                         p.assign_add(-step_size * update)
                     
                 if self.lookahead:
@@ -1890,6 +2024,19 @@ class DistributedMuon_e(optimizer.Optimizer):
                                 factor = numel / (tf.reduce_sum(mask) + 1)
                                 mask = mask * factor
                                 update = update * mask
+                            if self.trust_ratio:
+                                # Layer-wise LR adaptation
+                                w_norm = tf.norm(p, ord=2)
+                                g_norm = tf.norm(update, ord=2)
+                                trust_ratio = w_norm / g_norm
+                                trust_ratio = tf.where(
+                                    w_norm > 0,
+                                    tf.where(g_norm > 0, trust_ratio, 1.0),
+                                    1.0,
+                                )
+                                if self.trust_clip:
+                                    trust_ratio = tf.minimum(trust_ratio, 1.0)
+                                update *= trust_ratio
                             p.assign_add(update * -step_size)
                         else:
                             normed_grad = exp_avg / de_nom
@@ -1901,6 +2048,19 @@ class DistributedMuon_e(optimizer.Optimizer):
                                 factor = numel / (tf.reduce_sum(mask) + 1)
                                 mask = mask * factor
                                 update = update * mask
+                            if self.trust_ratio:
+                                # Layer-wise LR adaptation
+                                w_norm = tf.norm(p, ord=2)
+                                g_norm = tf.norm(update, ord=2)
+                                trust_ratio = w_norm / g_norm
+                                trust_ratio = tf.where(
+                                    w_norm > 0,
+                                    tf.where(g_norm > 0, trust_ratio, 1.0),
+                                    1.0,
+                                )
+                                if self.trust_clip:
+                                    trust_ratio = tf.minimum(trust_ratio, 1.0)
+                                update *= trust_ratio
                             p.assign_add(-step_size * update)
                         
                         if self.lookahead:
@@ -1932,6 +2092,24 @@ class DistributedMuon_e(optimizer.Optimizer):
                 "cautious": self.cautious,
                 "subset_size": self.subset_size,
                 "sn": self.sn,
+                "lookahead_merge_time": self.lookahead_merge_time,
+                "lookahead_blending_alpha": self.lookahead_blending_alpha,
+                "lookahead": self.lookahead,
+                "pnm": self.pnm,
+                "agc": self.agc,
+                "aem": self.aem,
+                "alpha": self.alpha,
+                "t_alpha_beta3": self.t_alpha_beta3,
+                "sophia": self.sophia,
+                "p": self.p,
+                "update_period": self.update_period,
+                "num_samples": self.num_samples,
+                "distribution": self.distribution,
+                "d0": self.d0,
+                "growth_rate": self.growth_rate,
+                "DAdapt": self.DAdapt,
+                "trust_ratio": self.trust_ratio,
+                "trust_clip": self.trust_clip,
                 "maximize": self.maximize,
                 "world_size": self.world_size,
                 "rank": self.rank,
