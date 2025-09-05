@@ -559,6 +559,9 @@ class SophiaH_e(optimizer.Optimizer):
                 
                 if self.trust_ratio:
                     # Layer-wise LR adaptation
+                    if self.sn:
+                        w_norm = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                        g_norm = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
                     w_norm = tf.norm(p, ord=2)
                     g_norm = tf.norm(update, ord=2)
                     trust_ratio = w_norm / g_norm
@@ -633,6 +636,9 @@ class SophiaH_e(optimizer.Optimizer):
                     
                     if self.trust_ratio:
                         # Layer-wise LR adaptation
+                        if self.sn:
+                            w_norm = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                            g_norm = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
                         w_norm = tf.norm(p, ord=2)
                         g_norm = tf.norm(update, ord=2)
                         trust_ratio = w_norm / g_norm
@@ -1275,6 +1281,9 @@ def _single_tensor_sophiag(params,
             
             if trust_ratio:
                 # Layer-wise LR adaptation
+                if sn:
+                    w_norm = tf.reshape(param, (size // subset_size_[i], subset_size_[i]))
+                    g_norm = tf.reshape(ratio, (size // subset_size_[i], subset_size_[i]))
                 w_norm = tf.norm(param, ord=2)
                 g_norm = tf.norm(ratio, ord=2)
                 trust_ratio = w_norm / g_norm
@@ -1303,7 +1312,7 @@ def _single_tensor_sophiag(params,
                 tf.cond(step % lookahead_merge_time == 0, true_fn, false_fn)
     
     if DAdapt:
-        def update_fn():
+        def update_fn(trust_ratio = trust_ratio):
             d_lr = d0 * lr
                 
             beta2_sq = math.sqrt(beta2)
@@ -1356,6 +1365,23 @@ def _single_tensor_sophiag(params,
                     factor = numel / (tf.reduce_sum(mask) + 1)
                     mask = mask * factor
                     ratio = ratio * mask
+                
+                if trust_ratio:
+                    # Layer-wise LR adaptation
+                    if sn:
+                        w_norm = tf.reshape(param, (size // subset_size_[i], subset_size_[i]))
+                        g_norm = tf.reshape(ratio, (size // subset_size_[i], subset_size_[i]))
+                    w_norm = tf.norm(param, ord=2)
+                    g_norm = tf.norm(ratio, ord=2)
+                    trust_ratio = w_norm / g_norm
+                    trust_ratio = tf.where(
+                        w_norm > 0,
+                        tf.where(g_norm > 0, trust_ratio, 1.0),
+                        1.0,
+                    )
+                    if trust_clip:
+                        trust_ratio = tf.minimum(trust_ratio, 1.0)
+                    ratio *= trust_ratio
                 
                 step_size = d_lr
                 step_size_neg = -step_size
