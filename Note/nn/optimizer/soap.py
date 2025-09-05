@@ -1030,6 +1030,9 @@ class SOAP_e(optimizer.Optimizer):
                 
                 if self.trust_ratio:
                     # Layer-wise LR adaptation
+                    if self.sn:
+                        w_norm = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                        g_norm = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
                     w_norm = tf.norm(p, ord=2)
                     g_norm = tf.norm(update, ord=2)
                     trust_ratio = w_norm / g_norm
@@ -1143,6 +1146,9 @@ class SOAP_e(optimizer.Optimizer):
                 
                 if self.trust_ratio:
                     # Layer-wise LR adaptation
+                    if self.sn:
+                        w_norm = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                        g_norm = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
                     w_norm = tf.norm(p, ord=2)
                     g_norm = tf.norm(update, ord=2)
                     trust_ratio = w_norm / g_norm
