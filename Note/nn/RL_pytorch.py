@@ -606,13 +606,16 @@ class RL_pytorch:
                     reward=0
             else:
                 self.pool(s,a,next_s,r,done)
-            if not self.PR and self.num_updates!=None and len(self.state_pool)>=self.pool_size_:
+            if not self.PR and self.num_updates!=None:
                 state_pool=self.state_pool
                 action_pool=self.action_pool
                 next_state_pool=self.next_state_pool
                 reward_pool=self.reward_pool
                 done_pool=self.done_pool
-                idx=np.random.choice(self.state_pool.shape[0], size=self.pool_size_, replace=False)
+                if len(self.state_pool)>=self.pool_size_:
+                    idx=np.random.choice(self.state_pool.shape[0], size=self.pool_size_, replace=False)
+                else:
+                    idx=np.random.choice(self.state_pool.shape[0], size=self.state_pool.shape[0], replace=False)
                 self.state_pool=self.state_pool[idx]
                 self.action_pool=self.action_pool[idx]
                 self.next_state_pool=self.action_pool[idx]
@@ -815,8 +818,11 @@ class RL_pytorch:
             self.next_state_pool=np.concatenate(self.next_state_pool_list)
             self.reward_pool=np.concatenate(self.reward_pool_list)
             self.done_pool=np.concatenate(self.done_pool_list)
-            if self.num_updates!=None and len(self.state_pool)>=self.pool_size_:
-                idx=np.random.choice(self.state_pool.shape[0], size=self.pool_size_, replace=False)
+            if not self.PR and self.num_updates!=None:
+                if len(self.state_pool)>=self.pool_size_:
+                    idx=np.random.choice(self.state_pool.shape[0], size=self.pool_size_, replace=False)
+                else:
+                    idx=np.random.choice(self.state_pool.shape[0], size=self.state_pool.shape[0], replace=False)
                 self.state_pool=self.state_pool[idx]
                 self.action_pool=self.action_pool[idx]
                 self.next_state_pool=self.next_state_pool[idx]
@@ -828,8 +834,11 @@ class RL_pytorch:
             self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
             self.reward_pool[7]=np.concatenate(self.reward_pool_list)
             self.done_pool[7]=np.concatenate(self.done_pool_list)
-            if not self.PR and self.num_updates!=None and len(self.state_pool[7])>=self.pool_size_:
-                idx=np.random.choice(self.state_pool[7].shape[0], size=self.pool_size_, replace=False)
+            if not self.PR and self.num_updates!=None:
+                if len(self.state_pool)>=self.pool_size_:
+                    idx=np.random.choice(self.state_pool[7].shape[0], size=self.pool_size_, replace=False)
+                else:
+                    idx=np.random.choice(self.state_pool[7].shape[0], size=self.state_pool[7].shape[0], replace=False)
                 self.state_pool[7]=self.state_pool[7][idx]
                 self.action_pool[7]=self.action_pool[7][idx]
                 self.next_state_pool[7]=self.next_state_pool[7][idx]
