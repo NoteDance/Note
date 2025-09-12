@@ -71,6 +71,14 @@ class DQN_(nn.RL):
     def window_size(self,p):
         return self.adjust_window_size(p)
     
+    def window_size_fn(self,p):
+        return self.adjust_window_size(p)
+    
+    def batch_size_fn(self):
+        if self.batch_counter%777:
+            return self.adjust_batch_size()
+        return self.adjust_batch_size()
+    
     def __call__(self,s,a,next_s,r,d):
         a=tf.expand_dims(a,axis=1)
         q_value=tf.gather(self.q_net(s),a,axis=1,batch_dims=1)
@@ -115,6 +123,11 @@ class _DQN(nn.RL):
         features = tf.reshape([td_score, ess, len(self.prioritized_replay.TD)], (1,3))
         features = (features - tf.reduce_min(features)) / (tf.reduce_max(features) - tf.reduce_min(features) + 1e-8)
         return self.controller(features)
+    
+    def batch_size_fn(self):
+        if self.batch_counter%777:
+            return self.adjust_batch_size()
+        return self.adjust_batch_size()
     
     def __call__(self,s,a,next_s,r,d):
         a=tf.expand_dims(a,axis=1)
