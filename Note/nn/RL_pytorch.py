@@ -600,6 +600,10 @@ class RL_pytorch:
                     reward=0
             else:
                 self.pool(s,a,next_s,r,done)
+            if (self.num_steps==None and done) or (self.num_steps!=None and done_):
+                if len(self.state_pool)<self.batch:
+                    s=self.env_(initial=True)
+                    continue
             if not self.PR and self.num_updates!=None:
                 state_pool=self.state_pool
                 action_pool=self.action_pool
@@ -615,10 +619,6 @@ class RL_pytorch:
                 self.next_state_pool=self.action_pool[idx]
                 self.reward_pool=self.action_pool[idx]
                 self.done_pool=self.action_pool[idx]
-            if (self.num_steps==None and done) or (self.num_steps!=None and done_):
-                if len(self.state_pool)<self.batch:
-                    s=self.env_(initial=True)
-                    continue
             loss=self.train1(optimizer)
             if not self.PR and self.num_updates!=None:
                 self.state_pool=state_pool
