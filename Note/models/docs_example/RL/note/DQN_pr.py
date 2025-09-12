@@ -17,8 +17,8 @@ class Qnet(nn.Model):
 class Controller(nn.Model):
     def __init__(self, hidden=32, temp=10.0):
         super().__init__()
-        self.fc1 = nn.dense(hidden, 3, activation='relu')
-        self.fc2 = nn.dense(1, hidden, activation='sigmoid')
+        self.fc1 = nn.dense(hidden, 2, activation='relu')
+        self.fc2 = nn.dense(2, 1, activation='sigmoid')
         self.max_w = None
         self.temp = temp
 
@@ -71,6 +71,11 @@ class DQN_(nn.RL):
     def window_size_fn(self):
         return self.adjust_window_size()
     
+#    def batch_size_fn(self):
+#        if self.step_counter%777:
+#            return self.adjust_batch_size()
+#        return self.adjust_batch_size()
+    
     def __call__(self,s,a,next_s,r,d):
         a=tf.expand_dims(a,axis=1)
         q_value=tf.gather(self.q_net(s),a,axis=1,batch_dims=1)
@@ -113,6 +118,11 @@ class _DQN(nn.RL):
         features = tf.reshape([td_score, ess, len(self.prioritized_replay.TD)], (1,3))
         features = (features - tf.reduce_min(features)) / (tf.reduce_max(features) - tf.reduce_min(features) + 1e-8)
         return self.controller(features)
+    
+#    def batch_size_fn(self):
+#        if self.step_counter%777:
+#            return self.adjust_batch_size()
+#        return self.adjust_batch_size()
     
     def __call__(self,s,a,next_s,r,d):
         a=tf.expand_dims(a,axis=1)
