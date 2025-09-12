@@ -28,8 +28,8 @@ class critic(nn.Model):
 class Controller(nn.Model):
     def __init__(self, hidden=32, temp=10.0):
         super().__init__()
-        self.fc1 = nn.dense(hidden, 2, activation='relu')
-        self.fc2 = nn.dense(2, 1, activation='sigmoid')
+        self.fc1 = nn.dense(hidden, 4, activation='relu')
+        self.fc2 = nn.dense(1, hidden, activation='sigmoid')
         self.max_w = None
         self.temp = temp
 
@@ -60,6 +60,11 @@ class PPO(nn.RL):
     
     def window_size_fn(self,p):
         return self.adjust_window_size(p)
+    
+#    def batch_size_fn(self):
+#        if self.batch_counter%777:
+#            return self.adjust_batch_size()
+#        return self.adjust_batch_size()
     
     def __call__(self,s,a,next_s,r,d):
         a=tf.expand_dims(a,axis=1)
@@ -120,6 +125,11 @@ class PPO_(nn.RL):
         features = tf.reshape([ratio_score, td_score, ess, len(self.prioritized_replay.ratio)], (1,4))
         features = (features - tf.reduce_min(features)) / (tf.reduce_max(features) - tf.reduce_min(features) + 1e-8)
         return self.controller(features)
+    
+#    def batch_size_fn(self):
+#        if self.batch_counter%777:
+#            return self.adjust_batch_size()
+#        return self.adjust_batch_size()
     
     def __call__(self,s,a,next_s,r,d):
         a=tf.expand_dims(a,axis=1)
