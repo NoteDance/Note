@@ -1199,6 +1199,10 @@ class RL:
                     reward=0
             else:
                 self.pool(s,a,next_s,r,done)
+            if (self.num_steps==None and done) or (self.num_steps!=None and done_):
+                if len(self.state_pool)<self.batch:
+                    s=self.env_(initial=True)
+                    continue
             if not self.PR and self.num_updates!=None:
                 state_pool=self.state_pool
                 action_pool=self.action_pool
@@ -1225,9 +1229,6 @@ class RL:
                 self.reward_list.append(self.reward)
                 if len(self.reward_list)>self.trial_count:
                     del self.reward_list[0]
-                if len(self.state_pool)<self.batch:
-                    s=self.env_(initial=True)
-                    continue
                 return loss
             s=next_s
             if (self.num_steps!=None and counter%self.num_steps==0) or (self.num_steps!=None and done):
