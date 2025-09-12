@@ -697,6 +697,205 @@ class AdaMuon(optimizer.Optimizer):
     def _apply_weight_decay(self, variables):
         pass
 
+    
+class AdaGO(optimizer.Optimizer):
+    def __init__(
+        self,
+        learning_rate=5e-2,
+        epsilon=5e-4,
+        weight_decay=0.0,
+        momentum=0.95,
+        weight_decouple=True,
+        gamma=10.0,
+        v=1e-6,
+        nesterov=True,
+        ns_steps=5,
+        use_adjusted_lr=False,
+        adamw_lr=3e-4,
+        adamw_betas=(0.9,0.95),
+        adamw_wd=0.0,
+        adamw_eps=1e-10,
+        maximize=False,
+        cautious=False,
+        use_muon=True,
+        clipnorm=None,
+        clipvalue=None,
+        global_clipnorm=None,
+        use_ema=False,
+        ema_momentum=0.99,
+        ema_overwrite_frequency=None,
+        loss_scale_factor=None,
+        gradient_accumulation_steps=None,
+        name="adago",
+        **kwargs,
+    ):
+        super().__init__(
+            learning_rate=learning_rate,
+            name=name,
+            weight_decay=weight_decay,
+            clipnorm=clipnorm,
+            clipvalue=clipvalue,
+            global_clipnorm=global_clipnorm,
+            use_ema=use_ema,
+            ema_momentum=ema_momentum,
+            ema_overwrite_frequency=ema_overwrite_frequency,
+            loss_scale_factor=loss_scale_factor,
+            gradient_accumulation_steps=gradient_accumulation_steps,
+            **kwargs,
+        )
+        self.lr = learning_rate
+        self.epsilon = epsilon
+        self.momentum = momentum
+        self.weight_decouple = weight_decouple
+        self.gamma = gamma
+        self.v = v
+        self.nesterov = nesterov
+        self.ns_steps = ns_steps
+        self.use_adjusted_lr = use_adjusted_lr
+        self.adamw_lr = adamw_lr
+        self.adamw_betas = adamw_betas
+        self.adamw_wd = adamw_wd
+        self.adamw_eps = adamw_eps
+        self.cautious = cautious
+        self.maximize = maximize
+        self.use_muon = use_muon
+
+    def build(self, var_list):
+        if self.built:
+            return
+        super().build(var_list)
+        self.momentum_buffer = []
+        self.v_ = []
+        self.exp_avg = []
+        self.exp_avg_sq = []
+        for var in var_list:
+            if self.use_muon:
+                self.momentum_buffer.append(self.add_variable_from_reference(
+                    reference_variable=var, name="momentum_buffer"
+                                        ))
+                self.v_.append(tf.Variable(self.v, dtype=var.dtype))
+                self._track_variable(self.v_[-1])
+            else:
+                self.exp_avg.append(self.add_variable_from_reference(
+                    reference_variable=var, name="exp_avg"
+                                        ))
+                self.exp_avg_sq.append(self.add_variable_from_reference(
+                                    reference_variable=var, name="exp_avg_sq"
+                                                        ))
+    
+    @staticmethod
+    def get_adjusted_lr(lr: float, param_shape, use_adjusted_lr: bool = False) -> float:
+        r"""Get the adjust learning rate."""
+        output_shape, *input_shape = param_shape
+        input_shape = math.prod(input_shape)
+
+        ratio: float = (
+            math.pow(max(1.0, output_shape / input_shape), 0.5)
+            if use_adjusted_lr
+            else 0.2 * math.sqrt(max(output_shape, input_shape))
+        )
+
+        return lr * ratio
+    
+    def _backend_update_step(self, grads, trainable_variables, learning_rate):
+        """Collective update_step that can be overridden by the backend.
+    
+        It is overridden by torch for performance reasons, and
+        by TF to support tf.distribute.
+        """
+        self.update_step(grads, trainable_variables, learning_rate)
+
+    def update_step(self, grads, trainable_variables, learning_rate):
+        if self.use_muon:
+            for p in trainable_variables:
+                grad = grads[self._get_variable_index(p)]
+                if tf.keras.backend.is_sparse(grad):
+                    raise RuntimeError(
+                        'AdaGO does not support sparse gradients')
+                
+                if self.maximize:
+                    grad = -grad
+                
+                if self.weight_decouple:
+                    p.assign(p * (1.0 - self.weight_decay * self.lr))
+                elif self.weight_decay > 0.0:
+                    grad += p * self.weight_decay
+                
+                buf = self.momentum_buffer[self._get_variable_index(p)]
+                v = self.v_[self._get_variable_index(p)]
+                buf.assign(buf * self.momentum + (1.0 - self.momentum) * grad)
+                
+                v.assign_add(tf.minimum(tf.pow(tf.norm(grad, ord=2.0), 2), self.gamma ** 2))
+                
+                update = grad + self.momentum * (buf - grad) if self.nesterov else buf
+                
+                if len(update.shape) > 2:
+                    update = tf.reshape(update, (len(update), -1))
+                
+                update = zero_power_via_newton_schulz_5(update, num_steps=self.ns_steps)
+    
+                lr = self.get_adjusted_lr(self.lr, p.shape, self.use_adjusted_lr)
+                lr = tf.cast(lr, p.dtype)
+    
+                p.assign_add(tf.reshape(update, p.shape) * -tf.maximum(self.epsilon, lr * tf.minimum(tf.norm(grad, ord=2), self.gamma) / v))
+        else:
+            for p in trainable_variables:
+                grad = grads[self._get_variable_index(p)]
+                if tf.keras.backend.is_sparse(grad):
+                    raise RuntimeError(
+                        'AdaGO does not support sparse gradients')
+                
+                if self.weight_decouple:
+                    p.assign(p * (1.0 - self.adamw_wd * lr))
+                elif self.adamw_wd > 0.0:
+                    grads[self._get_variable_index(p)] += p * self.adamw_wd
+                    
+                lr = tf.cast(self.adamw_lr, p.dtype)
+                
+                step = tf.cast(self.iterations + 1, p.dtype)
+                
+                beta1, beta2 = self.adamw_betas
+                
+                bias_correction1 = 1 - beta1 ** step
+                bias_correction2 = 1 - beta2 ** step
+                bias_correction2_sq = tf.sqrt(bias_correction2)
+    
+                exp_avg = self.exp_avg[self._get_variable_index(p)]
+                exp_avg_sq = self.exp_avg_sq[self._get_variable_index(p)]
+                exp_avg.assign(exp_avg * beta1 + (1.0 - beta1) * grad)
+                exp_avg_sq.assign(exp_avg_sq * beta2 + (1.0 - beta2) * tf.square(grad))
+                
+                de_nom = (tf.sqrt(exp_avg_sq) + self.adamw_eps) / bias_correction2_sq
+    
+                p.assign_add(-lr * (exp_avg / bias_correction1) / de_nom)
+
+    def get_config(self):
+        config = super().get_config()
+        config.update(
+            {
+                "lr": self.lr,
+                "epsilon": self.epsilon,
+                "momentum": self.momentum,
+                "weight_decouple": self.weight_decouple,
+                "gamma": self.gamma,
+                "v": self.v,
+                "nesterov": self.nesterov,
+                "ns_steps": self.ns_steps,
+                "use_adjusted_lr": self.use_adjusted_lr,
+                "adamw_lr": self.adamw_lr,
+                "adamw_betas": self.adamw_betas,
+                "adamw_wd": self.adamw_wd,
+                "adamw_eps": self.adamw_eps,
+                "cautious": self.cautious,
+                "maximize": self.maximize,
+                "use_muon": self.use_muon,
+            }
+        )
+        return config
+	
+    def _apply_weight_decay(self, variables):
+        pass
+
 
 class Muon_e(optimizer.Optimizer):
     def __init__(
