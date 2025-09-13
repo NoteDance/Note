@@ -416,8 +416,6 @@ class RL_pytorch:
                 loss+=self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer)
                 self.prioritized_replay.update()
                 self.batch_counter+=1
-                if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
-                    self.batch = self.batch_size_fn()
                 if self.pool_network==True:
                     if self.batch_counter%self.update_batches==0:
                         self.update_param()
@@ -455,8 +453,8 @@ class RL_pytorch:
                             self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
                         else:
                             self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
-                        if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
-                            self.batch = self.batch_size_fn()
+                    if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
+                        self.batch = self.batch_size_fn()
             if len(self.state_pool)%self.batch!=0:
                 if self.batch_counter%self.num_updates==0:
                     return loss.detach().numpy()/batches
@@ -464,8 +462,6 @@ class RL_pytorch:
                 loss+=self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer)
                 self.prioritized_replay.update()
                 self.batch_counter+=1
-                if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
-                    self.batch = self.batch_size_fn()
                 if self.pool_network==True:
                     if self.batch_counter%self.update_batches==0:
                         self.update_param()
@@ -503,8 +499,8 @@ class RL_pytorch:
                             self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
                         else:
                             self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
-                        if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
-                            self.batch = self.batch_size_fn()
+                    if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
+                        self.batch = self.batch_size_fn()
         else:
             if self.pool_network==True:
                 train_ds=DataLoader((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool),batch_size=self.batch)
@@ -524,8 +520,6 @@ class RL_pytorch:
                                 self.reward_pool_list[p]=None
                                 self.done_pool_list[p]=None
         if self.update_steps!=None:
-            if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
-                self.batch = self.batch_size_fn()
             if self.step_counter%self.update_steps==0:
                 self.update_param()
                 if self.PR:
@@ -545,14 +539,14 @@ class RL_pytorch:
                         if self.PPO:
                             self.prioritized_replay.ratio=self.prioritized_replay.ratio[window_size:]
                         self.prioritized_replay.TD=self.prioritized_replay.TD[window_size:]
-                    if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
-                        self.batch = self.batch_size_fn()
                 else:
                     self.state_pool=None
                     self.action_pool=None
                     self.next_state_pool=None
                     self.reward_pool=None
                     self.done_pool=None
+            if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
+                self.batch = self.batch_size_fn()
         else:
             self.update_param()
         return loss.detach().numpy()/batches
@@ -860,7 +854,9 @@ class RL_pytorch:
             else:
                 self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
             if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
+                self.prepare_flag=True
                 self.batch = self.batch_size_fn()
+                self.prepare_flag=False
         self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
         if len(self.reward_list)>self.trial_count:
             del self.reward_list[0]
