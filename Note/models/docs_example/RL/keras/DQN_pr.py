@@ -144,7 +144,7 @@ class _DQN(nn.RL):
         w = self.controller(features)
         idx = tf.cast(tf.range(len(self.prioritized_replay.ratio), w.dtype))
         m = tf.sigmoid((idx - w) / self.temp)
-        controller_loss = tf.reduce_mean(m * td_score)
+        controller_loss = -tf.reduce_mean(m * td_score)
         self.prioritized_replay.update(TD)
         return tf.reduce_mean(TD**2)+controller_loss
     
