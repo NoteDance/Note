@@ -569,8 +569,6 @@ class RL:
                 total_loss = self.distributed_train_step_(next(iterator), self.optimizer)
             self.prioritized_replay.update()
             self.batch_counter += 1
-            if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
-                self.batch = self.batch_size_fn()
             if self.pool_network==True:
                 if self.batch_counter%self.update_batches==0:
                     self.update_param()
@@ -608,8 +606,8 @@ class RL:
                         self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
                     else:
                         self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
-                    if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
-                        self.batch = self.batch_size_fn()
+                if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
+                    self.batch = self.batch_size_fn()
             return total_loss
         else:
             batch = 0
@@ -671,8 +669,6 @@ class RL:
                 total_loss = coordinator.schedule(self.distributed_train_step_, args=(next(per_worker_iterator), self.optimizer))
             self.prioritized_replay.update()
             self.batch_counter += 1
-            if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
-                self.batch = self.batch_size_fn()
             if self.pool_network==True:
                 if self.batch_counter%self.update_batches==0:
                     self.update_param()
@@ -710,8 +706,8 @@ class RL:
                         self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
                     else:
                         self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
-                    if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
-                        self.batch = self.batch_size_fn()
+                if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
+                    self.batch = self.batch_size_fn()
             return total_loss
         else:
             batch = 0
@@ -784,8 +780,6 @@ class RL:
                         total_loss+=loss
                         num_batches += 1
                         self.batch_counter+=1
-                        if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
-                            self.batch = self.batch_size_fn()
                         if self.pool_network==True:
                             if self.batch_counter%self.update_batches==0:
                                 self.update_param()
@@ -823,8 +817,8 @@ class RL:
                                     self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
                                 else:
                                     self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
-                                if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
-                                    self.batch = self.batch_size_fn()
+                            if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
+                                self.batch = self.batch_size_fn()
                 elif isinstance(self.strategy,tf.distribute.MultiWorkerMirroredStrategy):
                     with self.strategy.scope():
                         multi_worker_dataset = self.strategy.distribute_datasets_from_function(
@@ -844,8 +838,6 @@ class RL:
                             loss=self.train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
                         self.prioritized_replay.update()
                         self.batch_counter+=1
-                        if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
-                            self.batch = self.batch_size_fn()
                         if self.pool_network==True:
                             if self.batch_counter%self.update_batches==0:
                                 self.update_param()
@@ -883,8 +875,8 @@ class RL:
                                     self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
                                 else:
                                     self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
-                                if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
-                                    self.batch = self.batch_size_fn()
+                            if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
+                                self.batch = self.batch_size_fn()
                 batch_logs = {'loss': loss.numpy()}
                 for callback in self.callbacks:
                     if hasattr(callback, 'on_batch_end'):
@@ -924,8 +916,6 @@ class RL:
                         total_loss+=loss
                         num_batches += 1
                         self.batch_counter+=1
-                        if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
-                            self.batch = self.batch_size_fn()
                         if self.pool_network==True:
                             if self.batch_counter%self.update_batches==0:
                                 self.update_param()
@@ -963,8 +953,8 @@ class RL:
                                     self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
                                 else:
                                     self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
-                                if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
-                                    self.batch = self.batch_size_fn()
+                            if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
+                                self.batch = self.batch_size_fn()
                 elif isinstance(self.strategy,tf.distribute.MultiWorkerMirroredStrategy):
                     with self.strategy.scope():
                         multi_worker_dataset = self.strategy.distribute_datasets_from_function(
@@ -983,8 +973,6 @@ class RL:
                         loss=self.train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
                     self.prioritized_replay.update()
                     self.batch_counter+=1
-                    if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
-                        self.batch = self.batch_size_fn()
                     if self.pool_network==True:
                         if self.batch_counter%self.update_batches==0:
                             self.update_param()
@@ -1022,8 +1010,8 @@ class RL:
                                 self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
                             else:
                                 self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)  
-                            if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
-                                self.batch = self.batch_size_fn()
+                        if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
+                            self.batch = self.batch_size_fn()
                 if not isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
                     batch_logs = {'loss': loss.numpy()}
                 else:
@@ -1117,8 +1105,6 @@ class RL:
                                     self.reward_pool_list[p]=None
                                     self.done_pool_list[p]=None
         if self.update_steps!=None:
-            if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
-                self.batch = self.batch_size_fn()
             if self.step_counter%self.update_steps==0:
                 self.update_param()
                 if self.PR:
@@ -1138,14 +1124,14 @@ class RL:
                         if self.PPO:
                             self.prioritized_replay.ratio=self.prioritized_replay.ratio[window_size:]
                         self.prioritized_replay.TD=self.prioritized_replay.TD[window_size:]
-                    if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
-                        self.batch = self.batch_size_fn()
                 else:
                     self.state_pool=None
                     self.action_pool=None
                     self.next_state_pool=None
                     self.reward_pool=None
                     self.done_pool=None
+            if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
+                self.batch = self.batch_size_fn()
         else:
             self.update_param()
         if self.distributed_flag==True:
@@ -1459,7 +1445,9 @@ class RL:
             else:
                 self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
             if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
+                self.prepare_flag=True
                 self.batch = self.batch_size_fn()
+                self.prepare_flag=False
         self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
         if len(self.reward_list)>self.trial_count:
             del self.reward_list[0]
