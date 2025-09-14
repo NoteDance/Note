@@ -79,6 +79,12 @@ class DQN_(nn.RL):
             return self.adjust_batch_size()
         return self.adjust_batch_size()
     
+#    def batch_size_fn(self):
+#        if self.batch_counter%self.update_batches==0:
+#            return self.adabatch(32,7)
+#        if self.prepare_flag==True:
+#            return self.batch
+    
     def __call__(self,s,a,next_s,r,d):
         a=tf.expand_dims(a,axis=1)
         q_value=tf.gather(self.q_net(s),a,axis=1,batch_dims=1)
@@ -128,6 +134,12 @@ class _DQN(nn.RL):
         if self.batch_counter%777 or self.batch_counter%self.update_batches==0:
             return self.adjust_batch_size()
         return self.adjust_batch_size()
+    
+#    def batch_size_fn(self):
+#        if self.batch_counter%self.update_batches==0:
+#            return self.adabatch(32,7)
+#        if self.prepare_flag==True:
+#            return self.batch
     
     def __call__(self,s,a,next_s,r,d):
         a=tf.expand_dims(a,axis=1)
