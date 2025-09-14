@@ -327,6 +327,69 @@ class RL_pytorch:
         return int(new_batch)
     
     
+    def estimate_gradient_variance(self, batch_size, num_samples):
+        grads = []
+        optimizer = torch.optim.SGD(self.param, lr=0.01)
+        idx = np.random.choice(self.state_pool.shape[0], size=batch_size, replace=False)
+        if self.processes_her==None and self.processes_pr==None:
+            s=self.state_pool[idx]
+            a=self.action_pool[idx]
+            next_s=self.next_state_pool[idx]
+            r=self.reward_pool[idx]
+            d=self.done_pool[idx]
+        else:
+            s=self.state_pool[7][idx]
+            a=self.action_pool[7][idx]
+            next_s=self.next_state_pool[7][idx]
+            r=self.reward_pool[7][idx]
+            d=self.done_pool[7][idx]
+    
+        for _ in range(num_samples):
+            optimizer.zero_grad()
+            loss = self.__call__(s, a, next_s, r, d)
+            loss.backward()
+            grad_flat = torch.cat([p.grad.flatten() for p in self.param if p.grad is not None])
+            grads.append(grad_flat.clone())
+            optimizer.zero_grad()
+    
+        grads = torch.stack(grads)
+        mean_grad = grads.mean(dim=0)
+        variance = ((grads - mean_grad) ** 2).mean().item()
+        return variance
+    
+    
+    def adabatch(self, batch_size, num_samples, target_noise=1e-3, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, align=None):
+        single_var = self.estimate_gradient_variance(batch_size, num_samples)
+        
+        estimated_noise = single_var / self.batch
+        
+        if self.ema_noise is None:
+            ema_noise = estimated_noise
+        else:
+            ema_noise = smooth_alpha * estimated_noise + (1 - smooth_alpha) * self.ema_noise
+        self.ema_noise = ema_noise
+        
+        base_new_batch = int(round(self.batch * (target_noise / ema_noise) * scale))
+        new_batch = int(np.clip(base_new_batch, min_batch, max_batch))
+        
+        if self.processes_her==None and self.processes_pr==None:
+            buf_len = len(self.state_pool)
+        else:
+            buf_len = len(self.state_pool[7])
+        if min_batch is None:
+            cur_batch = self.batch
+            min_batch = max(1, cur_batch // 2)
+        if max_batch is None:
+            max_batch = max(1, buf_len)
+        
+        if align is None:
+            align = self.batch
+        new_batch = new_batch - (new_batch % align)
+        new_batch = max(1, min(new_batch, max_batch))
+        
+        return new_batch
+    
+    
     def data_func(self):
         if self.PR:
             if self.processes_pr!=None:
@@ -410,7 +473,7 @@ class RL_pytorch:
             batches+=1
         if self.PR==True or self.HER==True:
             for j in range(batches):
-                if self.batch_counter%self.num_updates==0:
+                if self.num_updates!=None and self.batch_counter%self.num_updates==0:
                     break
                 state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.data_func()
                 loss+=self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer)
@@ -456,7 +519,7 @@ class RL_pytorch:
                     if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
                         self.batch = self.batch_size_fn()
             if len(self.state_pool)%self.batch!=0:
-                if self.batch_counter%self.num_updates==0:
+                if self.num_updates!=None and self.batch_counter%self.num_updates==0:
                     return loss.detach().numpy()/batches
                 state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.data_func()
                 loss+=self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer)
@@ -505,7 +568,10 @@ class RL_pytorch:
             if self.pool_network==True:
                 train_ds=DataLoader((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool),batch_size=self.batch)
             else:
-                train_ds=DataLoader((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool),batch_size=self.batch,shuffle=True)
+                if self.num_updates!=None:
+                    train_ds=DataLoader((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool),batch_size=self.batch)
+                else:
+                    train_ds=DataLoader((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool),batch_size=self.batch,shuffle=True)
             for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
                 loss+=self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer)
                 self.batch_counter+=1
@@ -519,6 +585,34 @@ class RL_pytorch:
                                 self.next_state_pool_list[p]=None
                                 self.reward_pool_list[p]=None
                                 self.done_pool_list[p]=None
+                    if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
+                        self.batch = self.batch_size_fn()
+                        if self.num_updates!=None and self.batch_counter%self.update_batches==0:
+                            if self.processes_her==None and self.processes_pr==None:
+                                self.state_pool=np.concatenate(self.state_pool_list)
+                                self.action_pool=np.concatenate(self.action_pool_list)
+                                self.next_state_pool=np.concatenate(self.next_state_pool_list)
+                                self.reward_pool=np.concatenate(self.reward_pool_list)
+                                self.done_pool=np.concatenate(self.done_pool_list)
+                                idx=np.random.choice(self.state_pool.shape[0], size=self.num_updates*self.batch, replace=False)
+                                self.state_pool=self.state_pool[idx]
+                                self.action_pool=self.action_pool[idx]
+                                self.next_state_pool=self.next_state_pool[idx]
+                                self.reward_pool=self.reward_pool[idx]
+                                self.done_pool=self.done_pool[idx]
+                                train_ds=DataLoader((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool),batch_size=self.batch)
+                            else:
+                                self.state_pool[7]=np.concatenate(self.state_pool_list)
+                                self.action_pool[7]=np.concatenate(self.action_pool_list)
+                                self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
+                                self.reward_pool[7]=np.concatenate(self.reward_pool_list)
+                                self.done_pool[7]=np.concatenate(self.done_pool_list)
+                                idx=np.random.choice(self.state_pool.shape[0], size=self.num_updates*self.batch, replace=False)
+                                self.state_pool[7]=self.state_pool[7][idx]
+                                self.action_pool[7]=self.action_pool[7][idx]
+                                self.next_state_pool[7]=self.next_state_pool[7][idx]
+                                self.reward_pool[7]=self.reward_pool[7][idx]
+                                self.done_pool[7]=self.done_pool[7][idx]
         if self.update_steps!=None:
             if self.step_counter%self.update_steps==0:
                 self.update_param()
@@ -547,6 +641,11 @@ class RL_pytorch:
                     self.done_pool=None
             if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
                 self.batch = self.batch_size_fn()
+                if self.step_counter%self.update_steps==0:
+                    if self.num_updates!=None:
+                        train_ds=DataLoader((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool),batch_size=self.batch)
+                    else:
+                        train_ds=DataLoader((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool),batch_size=self.batch,shuffle=True)
         else:
             self.update_param()
         return loss.detach().numpy()/batches
