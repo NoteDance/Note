@@ -88,6 +88,10 @@ class PPO(nn.RL):
             return self.adjust_batch_size()
         return self.adjust_batch_size()
     
+#    def batch_size_fn(self):
+#        if self.step_counter%self.update_steps==0:
+#            return self.adabatch(32,7)
+    
     def __call__(self,s,a,next_s,r,d):
         a=tf.expand_dims(a,axis=1)
         action_prob=tf.gather(self.actor(s),a,axis=1,batch_dims=1)
@@ -149,6 +153,10 @@ class PPO_(nn.RL):
         if self.step_counter%777 or self.step_counter%self.update_steps==0:
             return self.adjust_batch_size()
         return self.adjust_batch_size()
+    
+#    def batch_size_fn(self):
+#        if self.step_counter%self.update_steps==0:
+#            return self.adabatch(32,7)
     
     def __call__(self,s,a,next_s,r,d):
         a=tf.expand_dims(a,axis=1)
