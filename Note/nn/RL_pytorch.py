@@ -348,7 +348,8 @@ class RL_pytorch:
             optimizer.zero_grad()
             loss = self.__call__(s, a, next_s, r, d)
             loss.backward()
-            grad_flat = torch.cat([p.grad.flatten() for p in self.param if p.grad is not None])
+            grads_ = [p.grad.view(-1) for group in self.param for p in group if p.grad is not None]
+            grad_flat = torch.cat(grads_)
             grads.append(grad_flat.clone())
             optimizer.zero_grad()
     
