@@ -432,7 +432,22 @@ class RL:
     
     
     @tf.function(jit_compile=True)
-    def estimate_gradient_variance(self, batch_size, num_samples):
+    def backward(self, s, a, next_s, r, d):
+        with tf.GradientTape() as tape:
+            loss = self.__call__(s, a, next_s, r, d)
+        gradients = tape.gradient(loss, self.param)
+        return gradients
+    
+    
+    @tf.function
+    def backward_(self, s, a, next_s, r, d):
+        with tf.GradientTape() as tape:
+            loss = self.__call__(s, a, next_s, r, d)
+        gradients = tape.gradient(loss, self.param)
+        return gradients
+    
+    
+    def estimate_gradient_variance(self, batch_size, num_samples, jit_compile=True):
         grads = []
         idx = np.random.choice(self.state_pool.shape[0], size=batch_size, replace=False)
         if self.processes_her==None and self.processes_pr==None:
@@ -449,9 +464,10 @@ class RL:
             d=self.done_pool[7][idx]
     
         for _ in range(num_samples):
-            with tf.GradientTape() as tape:
-                loss = self.__call__(s, a, next_s, r, d)
-            gradients = tape.gradient(loss, self.param)
+            if jit_compile==True:
+                gradients = self.backward(s, a, next_s, r, d)
+            else:
+                gradients = self.backward_(s, a, next_s, r, d)
             grad_flat = tf.concat([tf.reshape(grad, [-1]) for grad in gradients], axis=0)
             grads.append(grad_flat)
     
@@ -461,8 +477,8 @@ class RL:
         return variance
     
     
-    def adabatch(self, batch_size, num_samples, target_noise=1e-3, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, align=None):
-        single_var = self.estimate_gradient_variance(batch_size, num_samples)
+    def adabatch(self, batch_size, num_samples, target_noise=1e-3, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, align=None, jit_compile=True):
+        single_var = self.estimate_gradient_variance(batch_size, num_samples, jit_compile)
         
         estimated_noise = single_var / self.batch
         
