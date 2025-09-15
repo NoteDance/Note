@@ -1580,7 +1580,7 @@ class DistributedMuon_e(optimizer.Optimizer):
         ns_steps=5,
         use_adjusted_lr=False,
         adamw_lr=3e-4,
-        adamw_betas = (0.9, 0.95),
+        adamw_betas = (0.9, 0.95, 0.9999),
         adamw_wd: float = 0.0,
         adamw_eps: float = 1e-10,
         use_muon = True,
@@ -1993,9 +1993,11 @@ class DistributedMuon_e(optimizer.Optimizer):
                     d_lr = tf.cast(d_lr, p.dtype)
                     s = self.s[self._get_variable_index(p)]
                 
+                beta1, beta2, beta3 = self.adamw_betas
+                
                 if self.aem:
-                    beta1 = tf.cast(self.beta1, p.dtype)
-                    beta3 = tf.cast(self.beta3, p.dtype)
+                    beta1 = tf.cast(beta1, p.dtype)
+                    beta3 = tf.cast(beta3, p.dtype)
                     
                     alpha_t = self.schedule_alpha(self.t_alpha_beta3, step, self.alpha)
                     beta3_t = self.schedule_beta3(self.t_alpha_beta3, step, beta1, beta3)
@@ -2029,8 +2031,6 @@ class DistributedMuon_e(optimizer.Optimizer):
                         clip_value_min=-clip,
                         clip_value_max= clip,
                     )
-
-                beta1, beta2 = self.adamw_betas
                 
                 if not self.pnm:
                     if self.DAdapt:
@@ -2041,14 +2041,14 @@ class DistributedMuon_e(optimizer.Optimizer):
                     else:
                         exp_avg.assign(beta1 * exp_avg + (1.0 - beta1) * normed_grad)
                 else:
-                    noise_norm = math.sqrt((1 + self.beta2) ** 2 + self.beta2 ** 2)
+                    noise_norm = math.sqrt((1 + beta2) ** 2 + beta2 ** 2)
                     def true_fn():
                         return self.pos_momentum[self._get_variable_index(p)], self.neg_momentum[self._get_variable_index(p)]
                     def false_fn():
                         return self.neg_momentum[self._get_variable_index(p)], self.pos_momentum[self._get_variable_index(p)]
                     pos_momentum, neg_momentum = tf.cond(step % 2 == 1, true_fn, false_fn)
                     if self.DAdapt:
-                        beta2_sq = math.sqrt(self.beta2)
+                        beta2_sq = math.sqrt(beta2)
                         pos_momentum.assign(beta1**2 * pos_momentum + (1.0 - beta1**2) * normed_grad * d_lr)
                         s.assign(s * beta2_sq + normed_grad * d_lr * (1.0 - beta2_sq))
                         self.sk_l1.assign_add(tf.cast(tf.reduce_sum(tf.abs(s)), tf.float32))
@@ -2057,7 +2057,7 @@ class DistributedMuon_e(optimizer.Optimizer):
                     exp_avg = (pos_momentum  * 2.0 + neg_momentum * -1.0) * (1.0 / noise_norm)
                 if self.sophia:
                     def true_fn2():
-                        hessian_moment.assign(hessian_moment * self.beta2 + self.hessian[self._get_variable_index(p)] * (1.0 - self.beta2))
+                        hessian_moment.assign(hessian_moment * beta2 + self.hessian[self._get_variable_index(p)] * (1.0 - beta2))
                     def false_fn2():
                         pass
                     tf.cond(step % self.update_period == 0, true_fn2, false_fn2)
@@ -2150,13 +2150,14 @@ class DistributedMuon_e(optimizer.Optimizer):
             
             if self.DAdapt:
                 def update_fn():
+                    beta1, beta2, beta3 = self.adamw_betas
                     step = self.iterations + 1
-                    bias_correction1 = 1 - self.beta1 ** step
-                    bias_correction2_sq = tf.sqrt(1 - self.beta2 ** step)
+                    bias_correction1 = 1 - beta1 ** step
+                    bias_correction2_sq = tf.sqrt(1 - beta2 ** step)
                     d_lr = self.d0 * self.adamw_lr
                     d_lr = d_lr * bias_correction2_sq / bias_correction1
                     
-                    beta2_sq = math.sqrt(self.beta2)
+                    beta2_sq = math.sqrt(beta2)
                     
                     d = self.d0_
                     self.numerator_weighted.assign(self.numerator_weighted * beta2_sq + self.numerator_acc * (1.0 - beta2_sq))  # fmt: skip
@@ -2175,7 +2176,7 @@ class DistributedMuon_e(optimizer.Optimizer):
                         if not self.pnm:
                             exp_avg = self.exp_avg[self._get_variable_index(p)]
                         else:
-                            noise_norm = math.sqrt((1 + self.beta2) ** 2 + self.beta2 ** 2)
+                            noise_norm = math.sqrt((1 + beta2) ** 2 + beta2 ** 2)
                             def true_fn():
                                 return self.pos_momentum[self._get_variable_index(p)], self.neg_momentum[self._get_variable_index(p)]
                             def false_fn():
@@ -2312,13 +2313,13 @@ class AdaMuon_e(optimizer.Optimizer):
         learning_rate=1e-3,
         beta1=0.9,
         beta2=0.999,
+        beta3=0.9999,
         epsilon: float = 1e-8,
         weight_decay=1e-2,
         weight_decouple: bool = True,
         nesterov: bool = True,
         ns_steps: int = 5,
         use_adjusted_lr: bool = False,
-        adamw_betas = (0.9, 0.999),
         adamw_lr: float = 3e-4,
         adamw_wd: float = 0.0,
         use_muon: bool = True,
@@ -2371,12 +2372,12 @@ class AdaMuon_e(optimizer.Optimizer):
         self.lr = learning_rate
         self.beta1 = beta1
         self.beta2 = beta2
+        self.beta3 = beta3
         self.epsilon = epsilon
         self.weight_decouple = weight_decouple
         self.nesterov = nesterov
         self.ns_steps = ns_steps
         self.use_adjusted_lr = use_adjusted_lr
-        self.adamw_betas = adamw_betas
         self.adamw_lr = adamw_lr
         self.adamw_wd = adamw_wd
         self.use_muon = use_muon
@@ -2948,12 +2949,12 @@ class AdaMuon_e(optimizer.Optimizer):
                 "lr": self.lr,
                 "beta1": self.beta1,
                 "beta2": self.beta2,
+                "beta3": self.beta3,
                 "epsilon": self.epsilon,
                 "weight_decouple": self.weight_decouple,
                 "nesterov": self.nesterov,
                 "ns_steps": self.ns_steps,
                 "use_adjusted_lr": self.use_adjusted_lr,
-                "adamw_betas": self.adamw_betas,
                 "adamw_lr": self.adamw_lr,
                 "adamw_wd": self.adamw_wd,
                 "use_muon": self.use_muon,
@@ -3001,7 +3002,7 @@ class AdaGO_e(optimizer.Optimizer):
         ns_steps=5,
         use_adjusted_lr=False,
         adamw_lr=3e-4,
-        adamw_betas=(0.9,0.95),
+        adamw_betas=(0.9,0.95,0.9999),
         adamw_wd=0.0,
         adamw_eps=1e-10,
         maximize=False,
@@ -3279,7 +3280,7 @@ class AdaGO_e(optimizer.Optimizer):
                 
                 step = tf.cast(self.iterations + 1, p.dtype)
                 
-                beta1, beta2 = self.adamw_betas
+                beta1, beta2, _ = self.adamw_betas
                 
                 if self.maximize:
                     grad = -grad
@@ -3384,6 +3385,8 @@ class AdaGO_e(optimizer.Optimizer):
                 elif self.adamw_wd > 0.0:
                     grads[self._get_variable_index(p)] += p * self.adamw_wd
                     
+                beta1, beta2, beta3 = self.adamw_betas
+                    
                 bias_correction1 = 1 - beta1 ** step
                 bias_correction2 = 1 - beta2 ** step
                 bias_correction2_sq = tf.sqrt(bias_correction2)
@@ -3397,11 +3400,9 @@ class AdaGO_e(optimizer.Optimizer):
                     s = self.s[self._get_variable_index(p)]
                 step = tf.cast(self.iterations + 1, p.dtype)
                 
-                beta1, beta2 = self.adamw_betas
-                
                 if self.aem:
-                    beta1 = tf.cast(self.beta1, p.dtype)
-                    beta3 = tf.cast(self.beta3, p.dtype)
+                    beta1 = tf.cast(beta1, p.dtype)
+                    beta3 = tf.cast(beta3, p.dtype)
                     
                     alpha_t = self.schedule_alpha(self.t_alpha_beta3, step, self.alpha)
                     beta3_t = self.schedule_beta3(self.t_alpha_beta3, step, beta1, beta3)
@@ -3440,14 +3441,14 @@ class AdaGO_e(optimizer.Optimizer):
                     else:
                         exp_avg.assign(exp_avg * beta1 + (1.0 - beta1) * normed_grad * d_lr)
                 else:
-                    noise_norm = math.sqrt((1 + self.beta2) ** 2 + self.beta2 ** 2)
+                    noise_norm = math.sqrt((1 + beta2) ** 2 + beta2 ** 2)
                     def true_fn():
                         return self.pos_momentum[self._get_variable_index(p)], self.neg_momentum[self._get_variable_index(p)]
                     def false_fn():
                         return self.neg_momentum[self._get_variable_index(p)], self.pos_momentum[self._get_variable_index(p)]
                     pos_momentum, neg_momentum = tf.cond(step % 2 == 1, true_fn, false_fn)
                     if self.DAdapt:
-                        beta2_sq = math.sqrt(self.beta2)
+                        beta2_sq = math.sqrt(beta2)
                         pos_momentum * beta1 + (1.0 - beta1) * normed_grad * d_lr
                         pos_momentum.assign(pos_momentum * (1.0 - beta1**2) * (normed_grad * d_lr - pos_momentum))
                         s.assign(s * beta2_sq + normed_grad * d_lr * (1.0 - beta2_sq))
@@ -3531,13 +3532,14 @@ class AdaGO_e(optimizer.Optimizer):
                     
             if self.DAdapt:
                 def update_fn():
+                    beta1, beta2, _ = self.adamw_betas
                     step = self.iterations + 1
-                    bias_correction1 = 1 - self.beta1 ** step
-                    bias_correction2 = 1 - self.beta2 ** step
+                    bias_correction1 = 1 - beta1 ** step
+                    bias_correction2 = 1 - beta2 ** step
                     bias_correction2_sq = tf.sqrt(bias_correction2)
                     d_lr = self.d0 * self.adamw_lr
                     
-                    beta2_sq = math.sqrt(self.beta2)
+                    beta2_sq = math.sqrt(beta2)
                     
                     d = self.d0_
                     self.numerator_weighted.assign(self.numerator_weighted * beta2_sq + self.numerator_acc * (1.0 - beta2_sq))  # fmt: skip
@@ -3553,8 +3555,6 @@ class AdaGO_e(optimizer.Optimizer):
                         d_lr = tf.cast(d_lr, p.dtype)
                         
                         step = tf.cast(self.iterations + 1, p.dtype)
-                        
-                        beta1, beta2 = self.adamw_betas
                         
                         grad = grads[self._get_variable_index(p)]
                         
