@@ -394,7 +394,7 @@ class RL:
         return window_size
     
     
-    def adjust_batch_size(self, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, align=None):
+    def adjust_batch_size(self, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, target_ess=None, align=None):
         if not hasattr(self, 'ema_ess'):
             self.ema_ess = None
         
@@ -418,13 +418,16 @@ class RL:
             min_batch = max(1, cur_batch // 2)
         if max_batch is None:
             max_batch = max(1, buf_len)
-        
-        batch = int(max(1, round(ema * float(scale))))
+            
+        if target_ess != None:
+            batch = int(max(1, round(self.batch * ema / target_ess * float(scale))))
+        else:
+            batch = int(max(1, round(ema * float(scale))))
         batch = int(np.clip(batch, min_batch, max_batch))
         
         if align is None:
             align = self.batch
-        new_batch = batch - (batch % align)
+        new_batch = align * (batch // align)
         new_batch = max(1, new_batch)
     
         new_batch = int(min(new_batch, buf_len))
@@ -480,7 +483,7 @@ class RL:
     def adabatch(self, batch_size, num_samples, target_noise=1e-3, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, align=None, jit_compile=True):
         single_var = self.estimate_gradient_variance(batch_size, num_samples, jit_compile)
         
-        estimated_noise = single_var / self.batch
+        estimated_noise = single_var
         
         if self.ema_noise is None:
             ema_noise = estimated_noise
@@ -488,7 +491,7 @@ class RL:
             ema_noise = smooth_alpha * estimated_noise + (1 - smooth_alpha) * self.ema_noise
         self.ema_noise = ema_noise
         
-        base_new_batch = int(round(self.batch * (target_noise / ema_noise) * scale))
+        base_new_batch = int(round(self.batch * (ema_noise / target_noise) * scale))
         new_batch = int(np.clip(base_new_batch, min_batch, max_batch))
         
         if self.processes_her==None and self.processes_pr==None:
@@ -503,7 +506,7 @@ class RL:
         
         if align is None:
             align = self.batch
-        new_batch = new_batch - (new_batch % align)
+        new_batch = align * (new_batch // align)
         new_batch = max(1, min(new_batch, max_batch))
         
         return new_batch
