@@ -394,7 +394,7 @@ class RL:
         return window_size
     
     
-    def adjust_batch_size(self, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, target_ess=None, align=None):
+    def adjust_batch_size(self, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, target_ess=None, align=None, alpha_min=None, alpha_max=None, alpha_lr=None):
         if not hasattr(self, 'ema_ess'):
             self.ema_ess = None
         
@@ -429,8 +429,14 @@ class RL:
             align = self.batch
         new_batch = align * (batch // align)
         new_batch = max(1, new_batch)
+        
+        if alpha_lr != None:
+            target_alpha = self.alpha + alpha_lr * (target_ess - ema) / target_ess
+            target_alpha = np.clip(target_alpha, alpha_min, alpha_max)
+            self.alpha = 0.9 * self.alpha + 0.1 * target_alpha
     
         new_batch = int(min(new_batch, buf_len))
+        
         return int(new_batch)
     
     
@@ -480,7 +486,7 @@ class RL:
         return variance
     
     
-    def adabatch(self, batch_size, num_samples, target_noise=1e-3, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, align=None, jit_compile=True):
+    def adabatch(self, batch_size, num_samples, target_noise=1e-3, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, align=None, jit_compile=True, alpha_min=None, alpha_max=None, alpha_lr=None):
         single_var = self.estimate_gradient_variance(batch_size, num_samples, jit_compile)
         
         estimated_noise = single_var
@@ -508,6 +514,11 @@ class RL:
             align = self.batch
         new_batch = align * (new_batch // align)
         new_batch = max(1, min(new_batch, max_batch))
+        
+        if alpha_lr != None:
+            target_alpha = self.alpha + alpha_lr * (target_noise - ema_noise) / target_noise
+            target_alpha = np.clip(target_alpha, alpha_min, alpha_max)
+            self.alpha = 0.9 * self.alpha + 0.1 * target_alpha
         
         return new_batch
     
