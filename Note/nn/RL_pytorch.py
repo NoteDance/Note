@@ -330,6 +330,7 @@ class RL_pytorch:
             target_alpha = self.alpha + alpha_lr * (target_ess - ema) / target_ess
             target_alpha = np.clip(target_alpha, alpha_min, alpha_max)
             self.alpha = 0.9 * self.alpha + 0.1 * target_alpha
+            self.alpha = float(self.alpha)
     
         new_batch = int(min(new_batch, buf_len))
         
@@ -401,6 +402,7 @@ class RL_pytorch:
             target_alpha = self.alpha + alpha_lr * (target_noise - ema_noise) / target_noise
             target_alpha = np.clip(target_alpha, alpha_min, alpha_max)
             self.alpha = 0.9 * self.alpha + 0.1 * target_alpha
+            self.alpha = float(self.alpha)
         
         return new_batch
     
