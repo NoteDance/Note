@@ -491,9 +491,6 @@ class RL:
             ema_noise = smooth_alpha * estimated_noise + (1 - smooth_alpha) * self.ema_noise
         self.ema_noise = ema_noise
         
-        base_new_batch = int(round(self.batch * (ema_noise / target_noise) * scale))
-        new_batch = int(np.clip(base_new_batch, min_batch, max_batch))
-        
         if self.processes_her==None and self.processes_pr==None:
             buf_len = len(self.state_pool)
         else:
@@ -503,6 +500,9 @@ class RL:
             min_batch = max(1, cur_batch // 2)
         if max_batch is None:
             max_batch = max(1, buf_len)
+        
+        base_new_batch = int(round(self.batch * (ema_noise / target_noise) * scale))
+        new_batch = int(np.clip(base_new_batch, min_batch, max_batch))
         
         if align is None:
             align = self.batch
