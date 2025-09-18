@@ -290,7 +290,7 @@ class RL_pytorch:
         return window_size
     
     
-    def adjust_batch_size(self, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, target_ess=None, align=None, alpha_min=None, alpha_max=None, alpha_lr=None):
+    def adjust_batch_size(self, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, target_ess=None, align=None, alpha_lr=None, alpha_min=None, alpha_max=None, smooth_beta=0.2):
         if not hasattr(self, 'ema_ess'):
             self.ema_ess = None
         
@@ -329,7 +329,7 @@ class RL_pytorch:
         if alpha_lr != None:
             target_alpha = self.alpha + alpha_lr * (target_ess - ema) / target_ess
             target_alpha = np.clip(target_alpha, alpha_min, alpha_max)
-            self.alpha = 0.9 * self.alpha + 0.1 * target_alpha
+            self.alpha = smooth_beta * self.alpha + (1.0 - smooth_beta) * target_alpha
             self.alpha = float(self.alpha)
     
         new_batch = int(min(new_batch, buf_len))
@@ -369,8 +369,8 @@ class RL_pytorch:
         return variance
     
     
-    def adabatch(self, batch_size, num_samples, target_noise=1e-3, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, align=None, alpha_min=None, alpha_max=None, alpha_lr=None):
-        single_var = self.estimate_gradient_variance(batch_size, num_samples)
+    def adabatch(self, num_samples, target_noise=1e-3, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, align=None, jit_compile=True, alpha_min=None, alpha_max=None, alpha_lr=None):
+        single_var = self.estimate_gradient_variance(self.batch, num_samples, jit_compile)
         
         estimated_noise = single_var
         
@@ -389,8 +389,8 @@ class RL_pytorch:
             min_batch = max(1, cur_batch // 2)
         if max_batch is None:
             max_batch = max(1, buf_len)
-            
-        base_new_batch = int(round(self.batch * ema_noise / target_noise * scale))
+        
+        base_new_batch = int(round(self.batch * (ema_noise / target_noise) * scale))
         new_batch = int(np.clip(base_new_batch, min_batch, max_batch))
         
         if align is None:
