@@ -81,7 +81,7 @@ class DQN_(nn.RL):
     
 #    def batch_size_fn(self):
 #        if self.step_counter%self.update_steps==0:
-#            return self.adabatch(32,7)
+#            return self.adabatch(7)
     
     def __call__(self,s,a,next_s,r,d):
         a=tf.expand_dims(a,axis=1)
@@ -134,7 +134,7 @@ class _DQN(nn.RL):
     
 #    def batch_size_fn(self):
 #        if self.step_counter%self.update_steps==0:
-#            return self.adabatch(32,7)
+#            return self.adabatch(7)
     
     def __call__(self,s,a,next_s,r,d):
         a=tf.expand_dims(a,axis=1)
