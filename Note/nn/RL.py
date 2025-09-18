@@ -293,36 +293,44 @@ class RL:
         return output
     
     
-    def select_action(self,s,i=None):
+    def select_action(self,s,i=None,p=None):
         if self.jit_compile==True:
             output=self.forward(s,i)
         else:
             output=self.forward_(s,i)
-        if self.policy!=None:
+        if type(self.policy)==list:
+            policy=self.policy[p]
+        else:
+            policy=self.policy
+        if type(self.noise)==list:
+            noise=self.noise[p]
+        else:
+            noise=self.noise
+        if policy!=None:
             if self.IRL!=True:
                 output=output.numpy()
             else:
                 output=output[1].numpy()
             output=np.squeeze(output, axis=0)
-            if isinstance(self.policy, rl.SoftmaxPolicy):
-                a=self.policy.select_action(len(output), output)
-            elif isinstance(self.policy, rl.EpsGreedyQPolicy):
+            if isinstance(policy, rl.SoftmaxPolicy):
+                a=policy.select_action(len(output), output)
+            elif isinstance(policy, rl.EpsGreedyQPolicy):
                 a=self.policy.select_action(output)
-            elif isinstance(self.policy, rl.AdaptiveEpsGreedyPolicy):
+            elif isinstance(policy, rl.AdaptiveEpsGreedyPolicy):
                 a=self.policy.select_action(output, self.step_counter)
-            elif isinstance(self.policy, rl.GreedyQPolicy):
+            elif isinstance(policy, rl.GreedyQPolicy):
                 a=self.policy.select_action(output)
-            elif isinstance(self.policy, rl.BoltzmannQPolicy):
+            elif isinstance(policy, rl.BoltzmannQPolicy):
                 a=self.policy.select_action(output)
-            elif isinstance(self.policy, rl.MaxBoltzmannQPolicy):
+            elif isinstance(policy, rl.MaxBoltzmannQPolicy):
                 a=self.policy.select_action(output)
-            elif isinstance(self.policy, rl.BoltzmannGumbelQPolicy):
+            elif isinstance(policy, rl.BoltzmannGumbelQPolicy):
                 a=self.policy.select_action(output, self.step_counter)
-        elif self.noise!=None:
+        elif noise!=None:
             if self.IRL!=True:
-                a=(output+self.noise.sample()).numpy()
+                a=(output+noise.sample()).numpy()
             else:
-                a=(output[1]+self.noise.sample()).numpy()
+                a=(output[1]+noise.sample()).numpy()
         if self.IRL!=True:
             return a
         else:
@@ -487,7 +495,7 @@ class RL:
         return variance
     
     
-    def adabatch(self, num_samples, target_noise=1e-3, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, align=None, jit_compile=True, alpha_min=None, alpha_max=None, alpha_lr=None):
+    def adabatch(self, num_samples, target_noise=1e-3, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, align=None, jit_compile=True, alpha_lr=None, alpha_min=None, alpha_max=None, smooth_beta=0.2):
         single_var = self.estimate_gradient_variance(self.batch, num_samples, jit_compile)
         
         estimated_noise = single_var
@@ -519,7 +527,7 @@ class RL:
         if alpha_lr != None:
             target_alpha = self.alpha + alpha_lr * (target_noise - ema_noise) / target_noise
             target_alpha = np.clip(target_alpha, alpha_min, alpha_max)
-            self.alpha = 0.9 * self.alpha + 0.1 * target_alpha
+            self.alpha = smooth_beta * self.alpha + (1.0 - smooth_beta) * target_alpha
             self.alpha = float(self.alpha)
         
         return new_batch
@@ -1417,12 +1425,12 @@ class RL:
                 index=p
             s=np.expand_dims(s,axis=0)
             if self.MARL!=True:
-                a=self.select_action(s)
+                a=self.select_action(s,p=p)
             else:
                 a=[]
                 for i in len(s[0]):
                     s=np.expand_dims(s[0][i],axis=0)
-                    a.append([self.select_action(s,i)])
+                    a.append([self.select_action(s,i,p)])
                 a=np.array(a)
             next_s,r,done=self.env_(a,p=p)
             next_s=np.array(next_s)
