@@ -102,12 +102,16 @@ class SwiGLU(nn.Layer):
             norm_layer=None,
             bias=True,
             drop=0.,
+            align_to=0,
     ):
         super().__init__()
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
         bias = nn.to_2tuple(bias)
         drop_probs = nn.to_2tuple(drop)
+        
+        if align_to:
+            hidden_features = hidden_features + (-hidden_features % align_to)
 
         self.fc1_g = nn.dense(hidden_features, in_features, use_bias=bias[0])
         self.fc1_x = nn.dense(hidden_features, in_features, use_bias=bias[0])
