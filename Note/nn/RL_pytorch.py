@@ -42,7 +42,7 @@ class RL_pytorch:
         self.total_time=0
     
     
-    def set(self,policy=None,noise=None,pool_size=None,batch=None,num_updates=None,num_steps=None,update_batches=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False,MARL=False,PR=False,IRL=False,epsilon=None,initial_ratio=1.0,initial_TD=7,lambda_=0.5,alpha=0.7):
+    def set(self,policy=None,noise=None,pool_size=None,batch=None,num_updates=None,num_steps=None,update_batches=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False,MARL=False,PR=False,IRL=False,initial_ratio=1.0,initial_TD=7,lambda_=0.5,alpha=0.7):
         self.policy=policy
         self.noise=noise
         self.pool_size=pool_size
@@ -58,7 +58,6 @@ class RL_pytorch:
         self.MARL=MARL
         self.PR=PR
         self.IRL=IRL
-        self.epsilon=epsilon
         if PPO:
             self.prioritized_replay.PPO=PPO
             self.initial_ratio=initial_ratio
@@ -298,7 +297,7 @@ class RL_pytorch:
         return window_size
     
     
-    def adjust_batch_size(self, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, target_ess=None, align=None, alpha_lr=None, alpha_min=None, alpha_max=None, smooth_beta=0.2):
+    def adjust_batch_size(self, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, target_ess=None, align=None, alpha_lr=None, alpha_min=None, alpha_max=None, smooth_beta=0.2, lr_params=None, eps_params=None):
         if not hasattr(self, 'ema_ess'):
             self.ema_ess = None
         
@@ -334,12 +333,44 @@ class RL_pytorch:
         new_batch = align * (batch // align)
         new_batch = max(1, new_batch)
         
-        if alpha_lr != None:
+        if alpha_lr is not None and target_ess is not None:
             target_alpha = self.alpha + alpha_lr * (target_ess - ema) / target_ess
             target_alpha = np.clip(target_alpha, alpha_min, alpha_max)
             self.alpha = smooth_beta * self.alpha + (1.0 - smooth_beta) * target_alpha
             self.alpha = float(self.alpha)
+            
+        if lr_params is not None and target_ess is not None:
+            if type(self.optimizer) == list:
+                for lr in self.optimizer.learning_rate:
+                    target_lr = lr + lr_params['lr_rate'] * (ema / target_ess - 1.0)
+                    target_lr = np.clip(target_lr, lr_params['min'], lr_params['max'])
+                    smooth = lr_params.get('smooth', 0.2)
+                    lr = smooth * lr + (1.0 - smooth) * target_lr
+                    self.optimizer.learning_rate.assign(lr)
+            else:
+                lr = self.optimizer.learning_rate
+                target_lr = lr + lr_params['lr_rate'] * (ema / target_ess - 1.0)
+                target_lr = np.clip(target_lr, lr_params['min'], lr_params['max'])
+                smooth = lr_params.get('smooth', 0.2)
+                lr = smooth * lr + (1.0 - smooth) * target_lr
+                self.optimizer.learning_rate.assign(lr)
     
+        if eps_params is not None and target_ess is not None:
+            if type(self.policy) == list:
+                for epsilon in self.policy.eps:
+                    target_eps = epsilon + eps_params['eps_rate'] * (target_ess - ema) / target_ess
+                    target_eps = np.clip(target_eps, eps_params['min'], eps_params['max'])
+                    smooth = eps_params.get('smooth', 0.2)
+                    epsilon = smooth * epsilon + (1.0 - smooth) * target_eps
+                    self.policy.eps = epsilon
+            else:
+                epsilon = self.policy.eps
+                target_eps = epsilon + eps_params['eps_rate'] * (target_ess - ema) / target_ess
+                target_eps = np.clip(target_eps, eps_params['min'], eps_params['max'])
+                smooth = eps_params.get('smooth', 0.2)
+                epsilon = smooth * epsilon + (1.0 - smooth) * target_eps
+                self.policy.eps = epsilon
+                
         new_batch = int(min(new_batch, buf_len))
         
         return int(new_batch)
@@ -377,8 +408,8 @@ class RL_pytorch:
         return variance
     
     
-    def adabatch(self, num_samples, target_noise=1e-3, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, align=None, jit_compile=True, alpha_lr=None, alpha_min=None, alpha_max=None, smooth_beta=0.2):
-        single_var = self.estimate_gradient_variance(self.batch, num_samples, jit_compile)
+    def adabatch(self, num_samples, target_noise=1e-3, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, align=None, alpha_lr=None, alpha_min=None, alpha_max=None, smooth_beta=0.2, lr_params=None, eps_params=None):
+        single_var = self.estimate_gradient_variance(self.batch, num_samples)
         
         estimated_noise = single_var
         
@@ -406,11 +437,43 @@ class RL_pytorch:
         new_batch = align * (new_batch // align)
         new_batch = max(1, min(new_batch, max_batch))
         
-        if alpha_lr != None:
+        if alpha_lr is not None and target_noise is not None:
             target_alpha = self.alpha + alpha_lr * (target_noise - ema_noise) / target_noise
             target_alpha = np.clip(target_alpha, alpha_min, alpha_max)
             self.alpha = smooth_beta * self.alpha + (1.0 - smooth_beta) * target_alpha
             self.alpha = float(self.alpha)
+            
+        if lr_params is not None and target_noise is not None:
+            if type(self.optimizer) == list:
+                for lr in self.optimizer.learning_rate:
+                    target_lr = lr + lr_params['lr_rate'] * (ema_noise / target_noise - 1.0)
+                    target_lr = np.clip(target_lr, lr_params['min'], lr_params['max'])
+                    smooth = lr_params.get('smooth', 0.2)
+                    lr = smooth * lr + (1.0 - smooth) * target_lr
+                    self.optimizer.learning_rate.assign(lr)
+            else:
+                lr = self.optimizer.learning_rate
+                target_lr = lr + lr_params['lr_rate'] * (ema_noise / target_noise - 1.0)
+                target_lr = np.clip(target_lr, lr_params['min'], lr_params['max'])
+                smooth = lr_params.get('smooth', 0.2)
+                lr = smooth * lr + (1.0 - smooth) * target_lr
+                self.optimizer.learning_rate.assign(lr)
+    
+        if eps_params is not None and target_noise is not None:
+            if type(self.policy) == list:
+                for epsilon in self.policy.eps:
+                    target_eps = epsilon + eps_params['eps_rate'] * (target_noise - ema_noise) / target_noise
+                    target_eps = np.clip(target_eps, eps_params['min'], eps_params['max'])
+                    smooth = eps_params.get('smooth', 0.2)
+                    epsilon = smooth * epsilon + (1.0 - smooth) * target_eps
+                    self.policy.eps = epsilon
+            else:
+                epsilon = self.policy.eps
+                target_eps = epsilon + eps_params['eps_rate'] * (target_noise - ema_noise) / target_noise
+                target_eps = np.clip(target_eps, eps_params['min'], eps_params['max'])
+                smooth = eps_params.get('smooth', 0.2)
+                epsilon = smooth * epsilon + (1.0 - smooth) * target_eps
+                self.policy.eps = epsilon
         
         return new_batch
     
@@ -431,7 +494,7 @@ class RL_pytorch:
                 r = np.array(self.reward_list)
                 d = np.array(self.done_list)
             else:
-                s,a,next_s,r,d=self.prioritized_replay.sample(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.epsilon,self.lambda_,self.alpha,self.batch)
+                s,a,next_s,r,d=self.prioritized_replay.sample(self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool,self.lambda_,self.alpha,self.batch)
         elif self.HER:
             if self.processes_her!=None:
                 process_list=[]
@@ -786,7 +849,7 @@ class RL_pytorch:
                 d.append(done)
         elif self.PR==True:
             for _ in range(int(self.batch/self.processes_pr)):
-                state,action,next_state,reward,done=self.prioritized_replay.sample(self.state_pool[7],self.action_pool[7],self.next_state_pool[7],self.reward_pool[7],self.done_pool[7],self.epsilon,self.lambda_,self.alpha,int(self.batch/self.processes_pr))
+                state,action,next_state,reward,done=self.prioritized_replay.sample(self.state_pool[7],self.action_pool[7],self.next_state_pool[7],self.reward_pool[7],self.done_pool[7],self.lambda_,self.alpha,int(self.batch/self.processes_pr))
                 s.append(state)
                 a.append(action)
                 next_s.append(next_state)
