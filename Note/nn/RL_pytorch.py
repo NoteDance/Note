@@ -297,6 +297,22 @@ class RL_pytorch:
         return window_size
     
     
+    def adjust_lr(self, lr_params, lr, ema, target):      
+        target_lr = lr + lr_params['lr_rate'] * (ema / target - 1.0)
+        target_lr = np.clip(target_lr, lr_params['min'], lr_params['max'])
+        smooth = lr_params.get('smooth', 0.2)
+        lr = smooth * lr + (1.0 - smooth) * target_lr
+        return lr
+    
+    
+    def adjust_eps(self, eps_params, eps, ema, target):      
+        target_eps = eps + eps_params['eps_rate'] * (target - ema) / target
+        target_eps = np.clip(target_eps, eps_params['min'], eps_params['max'])
+        smooth = eps_params.get('smooth', 0.2)
+        eps = smooth * eps + (1.0 - smooth) * target_eps
+        return eps
+    
+    
     def adjust_batch_size(self, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, target_ess=None, align=None, alpha_lr=None, alpha_min=None, alpha_max=None, smooth_beta=0.2, lr_params=None, eps_params=None):
         if not hasattr(self, 'ema_ess'):
             self.ema_ess = None
@@ -341,35 +357,21 @@ class RL_pytorch:
             
         if lr_params is not None and target_ess is not None:
             if type(self.optimizer) == list:
-                for lr in self.optimizer.learning_rate:
-                    target_lr = lr + lr_params['lr_rate'] * (ema / target_ess - 1.0)
-                    target_lr = np.clip(target_lr, lr_params['min'], lr_params['max'])
-                    smooth = lr_params.get('smooth', 0.2)
-                    lr = smooth * lr + (1.0 - smooth) * target_lr
-                    self.optimizer.learning_rate.assign(lr)
+                for optimizer in self.optimizer:
+                    optimizer.learning_rate.assign(self.adjust_lr(lr_params, optimizer.learning_rate, ema, target_ess))
+                    if hasattr(optimizer, 'adamw_lr'):
+                        optimizer.adamw_lr.assign(self.adjust_lr(lr_params, optimizer.adamw_lr, ema, target_ess))
             else:
-                lr = self.optimizer.learning_rate
-                target_lr = lr + lr_params['lr_rate'] * (ema / target_ess - 1.0)
-                target_lr = np.clip(target_lr, lr_params['min'], lr_params['max'])
-                smooth = lr_params.get('smooth', 0.2)
-                lr = smooth * lr + (1.0 - smooth) * target_lr
-                self.optimizer.learning_rate.assign(lr)
+                self.optimizer.learning_rate.assign(self.adjust_lr(lr_params, self.optimizer.learning_rate, ema, target_ess))
+                if hasattr(optimizer, 'adamw_lr'):
+                    self.optimizer.adamw_lr.assign(self.adjust_lr(lr_params, self.optimizer.adamw_lr, ema, target_ess))
     
         if eps_params is not None and target_ess is not None:
             if type(self.policy) == list:
-                for epsilon in self.policy.eps:
-                    target_eps = epsilon + eps_params['eps_rate'] * (target_ess - ema) / target_ess
-                    target_eps = np.clip(target_eps, eps_params['min'], eps_params['max'])
-                    smooth = eps_params.get('smooth', 0.2)
-                    epsilon = smooth * epsilon + (1.0 - smooth) * target_eps
-                    self.policy.eps = epsilon
+                for policy in self.policy:
+                    self.policy.eps = self.adjust_eps(eps_params, self.policy.eps, ema, target_ess)
             else:
-                epsilon = self.policy.eps
-                target_eps = epsilon + eps_params['eps_rate'] * (target_ess - ema) / target_ess
-                target_eps = np.clip(target_eps, eps_params['min'], eps_params['max'])
-                smooth = eps_params.get('smooth', 0.2)
-                epsilon = smooth * epsilon + (1.0 - smooth) * target_eps
-                self.policy.eps = epsilon
+                self.policy.eps = self.adjust_eps(eps_params, self.policy.eps, ema, target_ess)
                 
         new_batch = int(min(new_batch, buf_len))
         
@@ -445,35 +447,21 @@ class RL_pytorch:
             
         if lr_params is not None and target_noise is not None:
             if type(self.optimizer) == list:
-                for lr in self.optimizer.learning_rate:
-                    target_lr = lr + lr_params['lr_rate'] * (ema_noise / target_noise - 1.0)
-                    target_lr = np.clip(target_lr, lr_params['min'], lr_params['max'])
-                    smooth = lr_params.get('smooth', 0.2)
-                    lr = smooth * lr + (1.0 - smooth) * target_lr
-                    self.optimizer.learning_rate.assign(lr)
+                for optimizer in self.optimizer:
+                    optimizer.learning_rate.assign(self.adjust_lr(lr_params, optimizer.learning_rate, ema_noise, target_noise))
+                    if hasattr(optimizer, 'adamw_lr'):
+                        optimizer.adamw_lr.assign(self.adjust_lr(lr_params, optimizer.adamw_lr, ema_noise, target_noise))
             else:
-                lr = self.optimizer.learning_rate
-                target_lr = lr + lr_params['lr_rate'] * (ema_noise / target_noise - 1.0)
-                target_lr = np.clip(target_lr, lr_params['min'], lr_params['max'])
-                smooth = lr_params.get('smooth', 0.2)
-                lr = smooth * lr + (1.0 - smooth) * target_lr
-                self.optimizer.learning_rate.assign(lr)
+                self.optimizer.learning_rate.assign(self.adjust_lr(lr_params, self.optimizer.learning_rate, ema_noise, target_noise))
+                if hasattr(optimizer, 'adamw_lr'):
+                    self.optimizer.adamw_lr.assign(self.adjust_lr(lr_params, self.optimizer.adamw_lr, ema_noise, target_noise))
     
         if eps_params is not None and target_noise is not None:
             if type(self.policy) == list:
-                for epsilon in self.policy.eps:
-                    target_eps = epsilon + eps_params['eps_rate'] * (target_noise - ema_noise) / target_noise
-                    target_eps = np.clip(target_eps, eps_params['min'], eps_params['max'])
-                    smooth = eps_params.get('smooth', 0.2)
-                    epsilon = smooth * epsilon + (1.0 - smooth) * target_eps
-                    self.policy.eps = epsilon
+                for policy in self.policy:
+                    self.policy.eps = self.adjust_eps(eps_params, self.policy.eps, ema_noise, target_noise)
             else:
-                epsilon = self.policy.eps
-                target_eps = epsilon + eps_params['eps_rate'] * (target_noise - ema_noise) / target_noise
-                target_eps = np.clip(target_eps, eps_params['min'], eps_params['max'])
-                smooth = eps_params.get('smooth', 0.2)
-                epsilon = smooth * epsilon + (1.0 - smooth) * target_eps
-                self.policy.eps = epsilon
+                self.policy.eps = self.adjust_eps(eps_params, self.policy.eps, ema_noise, target_noise)
         
         return new_batch
     
