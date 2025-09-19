@@ -369,7 +369,7 @@ class RL_pytorch:
         if eps_params is not None and target_ess is not None:
             if type(self.policy) == list:
                 for policy in self.policy:
-                    self.policy.eps = self.adjust_eps(eps_params, self.policy.eps, ema, target_ess)
+                    policy.eps = self.adjust_eps(eps_params, self.policy.eps, ema, target_ess)
             else:
                 self.policy.eps = self.adjust_eps(eps_params, self.policy.eps, ema, target_ess)
                 
