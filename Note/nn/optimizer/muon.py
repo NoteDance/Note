@@ -144,7 +144,6 @@ class Muon(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
-        self.lr = learning_rate
         self.beta1 = beta1
         self.beta2 = beta2
         self.momentum = momentum
@@ -176,17 +175,19 @@ class Muon(optimizer.Optimizer):
                 self.moment2.append(self.add_variable_from_reference(
                                     reference_variable=var, name="moment2"
                                                         ))
+        self.adamw_lr = tf.Variable(self.adamw_lr)
+        self._track_variable(self.adamw_lr)
     
     @staticmethod
-    def get_adjusted_lr(lr: float, param_shape, use_adjusted_lr: bool = False) -> float:
+    def get_adjusted_lr(lr, param_shape, use_adjusted_lr = False):
         r"""Get the adjust learning rate."""
         output_shape, *input_shape = param_shape
-        input_shape = math.prod(input_shape)
+        input_shape = tf.reduce_prod(input_shape)
 
-        ratio: float = (
-            math.pow(max(1.0, output_shape / input_shape), 0.5)
+        ratio = (
+            tf.pow(tf.maximum(1.0, output_shape / input_shape), 0.5)
             if use_adjusted_lr
-            else 0.2 * math.sqrt(max(output_shape, input_shape))
+            else 0.2 * tf.sqrt(tf.maximum(output_shape, input_shape))
         )
 
         return lr * ratio
@@ -207,8 +208,10 @@ class Muon(optimizer.Optimizer):
                     raise RuntimeError(
                         'Muon does not support sparse gradients')
                 
+                lr = tf.cast(learning_rate, p.dtype)
+                
                 if self.weight_decouple:
-                    p.assign(p * (1.0 - self.weight_decay * self.lr))
+                    p.assign(p * (1.0 - self.weight_decay * lr))
                 elif self.weight_decay > 0.0:
                     grad += p * self.weight_decay
                 
@@ -222,8 +225,7 @@ class Muon(optimizer.Optimizer):
                 
                 update = zero_power_via_newton_schulz_5(update, num_steps=self.ns_steps)
     
-                lr = self.get_adjusted_lr(self.lr, p.shape, self.use_adjusted_lr)
-                lr = tf.cast(lr, p.dtype)
+                lr = self.get_adjusted_lr(lr, p.shape, self.use_adjusted_lr)
     
                 p.assign_add(tf.reshape(update, p.shape) * -lr)
         else:
@@ -260,7 +262,6 @@ class Muon(optimizer.Optimizer):
         config = super().get_config()
         config.update(
             {
-                "lr": self.lr,
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "momentum": self.momentum,
@@ -322,7 +323,6 @@ class DistributedMuon(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
-        self.lr = learning_rate
         self.momentum = momentum
         self.weight_decouple = weight_decouple
         self.nesterov = nesterov
@@ -366,17 +366,19 @@ class DistributedMuon(optimizer.Optimizer):
                                 reference_variable=var_list[-1])] * (
                 self.world_size - len(var_list) % self.world_size
             )
+        self.adamw_lr = tf.Variable(self.adamw_lr)
+        self._track_variable(self.adamw_lr)
     
     @staticmethod
-    def get_adjusted_lr(lr: float, param_shape, use_adjusted_lr: bool = False) -> float:
+    def get_adjusted_lr(lr, param_shape, use_adjusted_lr = False):
         r"""Get the adjust learning rate."""
         output_shape, *input_shape = param_shape
-        input_shape = math.prod(input_shape)
+        input_shape = tf.reduce_prod(input_shape)
 
-        ratio: float = (
-            math.pow(max(1.0, output_shape / input_shape), 0.5)
+        ratio = (
+            tf.pow(tf.maximum(1.0, output_shape / input_shape), 0.5)
             if use_adjusted_lr
-            else 0.2 * math.sqrt(max(output_shape, input_shape))
+            else 0.2 * tf.sqrt(tf.maximum(output_shape, input_shape))
         )
 
         return lr * ratio
@@ -419,12 +421,14 @@ class DistributedMuon(optimizer.Optimizer):
                         'DistributedMuon does not support sparse gradients')
                 if i + self.rank < len(trainable_variables):
                     p = trainable_variables[i + self.rank]
+                    
+                    lr = tf.cast(learning_rate, p.dtype)
     
                     if self.maximize:
                         grad = -grad
     
                     if self.weight_decouple:
-                        trainable_variables[i].assign(trainable_variables[i] * (1.0 - self.weight_decay * self.lr))
+                        trainable_variables[i].assign(trainable_variables[i] * (1.0 - self.weight_decay * lr))
                     elif self.weight_decay > 0.0:
                         grad += trainable_variables[i] * self.weight_decay
     
@@ -442,8 +446,7 @@ class DistributedMuon(optimizer.Optimizer):
                         mask /= tf.maximum(tf.reduce_mean(mask), 1e-3)
                         update *= mask
     
-                    lr = self.get_adjusted_lr(self.lr, p.shape, use_adjusted_lr=self.use_adjusted_lr)
-                    lr = tf.cast(lr, p.dtype)
+                    lr = self.get_adjusted_lr(lr, p.shape, use_adjusted_lr=self.use_adjusted_lr)
     
                     trainable_variables[i].assign_add(tf.reshape(update, (p.shape)) * -lr)
     
@@ -479,7 +482,6 @@ class DistributedMuon(optimizer.Optimizer):
         config = super().get_config()
         config.update(
             {
-                "lr": self.lr,
                 "momentum": self.momentum,
                 "weight_decouple": self.weight_decouple,
                 "nesterov": self.nesterov,
@@ -543,7 +545,6 @@ class AdaMuon(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
-        self.lr = learning_rate
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
@@ -584,17 +585,19 @@ class AdaMuon(optimizer.Optimizer):
                 self.exp_avg_sq.append(self.add_variable_from_reference(
                                     reference_variable=var, name="exp_avg_sq"
                                                         ))
+        self.adamw_lr = tf.Variable(self.adamw_lr)
+        self._track_variable(self.adamw_lr)
     
     @staticmethod
-    def get_adjusted_lr(lr: float, param_shape, use_adjusted_lr: bool = False) -> float:
+    def get_adjusted_lr(lr, param_shape, use_adjusted_lr = False):
         r"""Get the adjust learning rate."""
         output_shape, *input_shape = param_shape
-        input_shape = math.prod(input_shape)
+        input_shape = tf.reduce_prod(input_shape)
 
-        ratio: float = (
-            math.pow(max(1.0, output_shape / input_shape), 0.5)
+        ratio = (
+            tf.pow(tf.maximum(1.0, output_shape / input_shape), 0.5)
             if use_adjusted_lr
-            else 0.2 * math.sqrt(max(output_shape, input_shape))
+            else 0.2 * tf.sqrt(tf.maximum(output_shape, input_shape))
         )
 
         return lr * ratio
@@ -614,9 +617,11 @@ class AdaMuon(optimizer.Optimizer):
                 if tf.keras.backend.is_sparse(grad):
                     raise RuntimeError(
                         ' AdaMuon does not support sparse gradients')
+                
+                lr = tf.cast(learning_rate, p.dtype)
                     
                 if self.weight_decouple:
-                    p.assign(p * (1.0 - self.weight_decay * self.lr))
+                    p.assign(p * (1.0 - self.weight_decay * lr))
                 elif self.weight_decay > 0.0:
                     grad += p * self.weight_decay
                 
@@ -641,9 +646,8 @@ class AdaMuon(optimizer.Optimizer):
                 
                 update = update * 0.2 * math.sqrt(np.prod(p.shape.as_list())) / tf.norm(update) + self.epsilon
     
-                lr = self.get_adjusted_lr(self.lr, p.shape, self.use_adjusted_lr)
+                lr = self.get_adjusted_lr(lr, p.shape, self.use_adjusted_lr)
                 
-                lr = tf.cast(lr, p.dtype)
                 p.assign_add(-lr * update)
         else:
             for p in trainable_variables:
@@ -678,7 +682,6 @@ class AdaMuon(optimizer.Optimizer):
         config = super().get_config()
         config.update(
             {
-                "lr": self.lr,
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
@@ -743,7 +746,6 @@ class AdaGO(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
-        self.lr = learning_rate
         self.epsilon = epsilon
         self.momentum = momentum
         self.weight_decouple = weight_decouple
@@ -782,17 +784,19 @@ class AdaGO(optimizer.Optimizer):
                 self.exp_avg_sq.append(self.add_variable_from_reference(
                                     reference_variable=var, name="exp_avg_sq"
                                                         ))
+        self.adamw_lr = tf.Variable(self.adamw_lr)
+        self._track_variable(self.adamw_lr)
     
     @staticmethod
-    def get_adjusted_lr(lr: float, param_shape, use_adjusted_lr: bool = False) -> float:
+    def get_adjusted_lr(lr, param_shape, use_adjusted_lr = False):
         r"""Get the adjust learning rate."""
         output_shape, *input_shape = param_shape
-        input_shape = math.prod(input_shape)
+        input_shape = tf.reduce_prod(input_shape)
 
-        ratio: float = (
-            math.pow(max(1.0, output_shape / input_shape), 0.5)
+        ratio = (
+            tf.pow(tf.maximum(1.0, output_shape / input_shape), 0.5)
             if use_adjusted_lr
-            else 0.2 * math.sqrt(max(output_shape, input_shape))
+            else 0.2 * tf.sqrt(tf.maximum(output_shape, input_shape))
         )
 
         return lr * ratio
@@ -813,11 +817,13 @@ class AdaGO(optimizer.Optimizer):
                     raise RuntimeError(
                         'AdaGO does not support sparse gradients')
                 
+                lr = tf.cast(learning_rate, p.dtype)
+                
                 if self.maximize:
                     grad = -grad
                 
                 if self.weight_decouple:
-                    p.assign(p * (1.0 - self.weight_decay * self.lr))
+                    p.assign(p * (1.0 - self.weight_decay * lr))
                 elif self.weight_decay > 0.0:
                     grad += p * self.weight_decay
                 
@@ -834,8 +840,7 @@ class AdaGO(optimizer.Optimizer):
                 
                 update = zero_power_via_newton_schulz_5(update, num_steps=self.ns_steps)
     
-                lr = self.get_adjusted_lr(self.lr, p.shape, self.use_adjusted_lr)
-                lr = tf.cast(lr, p.dtype)
+                lr = self.get_adjusted_lr(lr, p.shape, self.use_adjusted_lr)
     
                 p.assign_add(tf.reshape(update, p.shape) * -tf.maximum(self.epsilon, lr * tf.minimum(tf.norm(grad, ord=2), self.gamma) / v))
         else:
@@ -873,7 +878,6 @@ class AdaGO(optimizer.Optimizer):
         config = super().get_config()
         config.update(
             {
-                "lr": self.lr,
                 "epsilon": self.epsilon,
                 "momentum": self.momentum,
                 "weight_decouple": self.weight_decouple,
@@ -1092,17 +1096,19 @@ class Muon_e(optimizer.Optimizer):
                     self.s.append(self.add_variable_from_reference(
                         reference_variable=var, name="s"
                                             ))
+        self.adamw_lr = tf.Variable(self.adamw_lr)
+        self._track_variable(self.adamw_lr)
     
     @staticmethod
-    def get_adjusted_lr(lr: float, param_shape, use_adjusted_lr: bool = False) -> float:
+    def get_adjusted_lr(lr, param_shape, use_adjusted_lr = False):
         r"""Get the adjust learning rate."""
         output_shape, *input_shape = param_shape
-        input_shape = math.prod(input_shape)
+        input_shape = tf.reduce_prod(input_shape)
 
-        ratio: float = (
-            math.pow(max(1.0, output_shape / input_shape), 0.5)
+        ratio = (
+            tf.pow(tf.maximum(1.0, output_shape / input_shape), 0.5)
             if use_adjusted_lr
-            else 0.2 * math.sqrt(max(output_shape, input_shape))
+            else 0.2 * tf.sqrt(tf.maximum(output_shape, input_shape))
         )
 
         return lr * ratio
@@ -1179,8 +1185,10 @@ class Muon_e(optimizer.Optimizer):
                     raise RuntimeError(
                         'Muon_e does not support sparse gradients')
                 
+                lr = tf.cast(learning_rate, p.dtype)
+                
                 if self.weight_decouple:
-                    p.assign(p * (1.0 - self.weight_decay * self.lr))
+                    p.assign(p * (1.0 - self.weight_decay * lr))
                 elif self.weight_decay > 0.0:
                     grad += p * self.weight_decay
                 
@@ -1209,8 +1217,7 @@ class Muon_e(optimizer.Optimizer):
     
                 update = zero_power_via_newton_schulz_5(update, num_steps=self.ns_steps)
     
-                lr = self.get_adjusted_lr(self.lr, p.shape, self.use_adjusted_lr)
-                lr = tf.cast(lr, p.dtype)
+                lr = self.get_adjusted_lr(lr, p.shape, self.use_adjusted_lr)
                 
                 if self.cautious:
                     mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
@@ -1436,7 +1443,6 @@ class Muon_e(optimizer.Optimizer):
                     self.d0_.assign(d)
                     
                     for p in trainable_variables:
-                        lr = tf.cast(self.adamw_lr, p.dtype)
                         d_lr = tf.cast(d_lr, p.dtype)
                         
                         step = tf.cast(self.iterations + 1, p.dtype)
@@ -1444,7 +1450,7 @@ class Muon_e(optimizer.Optimizer):
                         grad = grads[self._get_variable_index(p)]
                         
                         if self.weight_decouple:
-                            p.assign(p * (1.0 - self.adamw_wd * lr))
+                            p.assign(p * (1.0 - self.adamw_wd * d_lr))
                         elif self.adamw_wd > 0.0:
                             grad += p * self.adamw_wd
                         
@@ -1782,17 +1788,19 @@ class DistributedMuon_e(optimizer.Optimizer):
                                 reference_variable=var_list[-1])] * (
                 self.world_size - len(var_list) % self.world_size
             )
+        self.adamw_lr = tf.Variable(self.adamw_lr)
+        self._track_variable(self.adamw_lr)
     
     @staticmethod
-    def get_adjusted_lr(lr: float, param_shape, use_adjusted_lr: bool = False) -> float:
+    def get_adjusted_lr(lr, param_shape, use_adjusted_lr = False):
         r"""Get the adjust learning rate."""
         output_shape, *input_shape = param_shape
-        input_shape = math.prod(input_shape)
+        input_shape = tf.reduce_prod(input_shape)
 
-        ratio: float = (
-            math.pow(max(1.0, output_shape / input_shape), 0.5)
+        ratio = (
+            tf.pow(tf.maximum(1.0, output_shape / input_shape), 0.5)
             if use_adjusted_lr
-            else 0.2 * math.sqrt(max(output_shape, input_shape))
+            else 0.2 * tf.sqrt(tf.maximum(output_shape, input_shape))
         )
 
         return lr * ratio
@@ -1896,12 +1904,19 @@ class DistributedMuon_e(optimizer.Optimizer):
                 step = tf.cast(self.iterations + 1, trainable_variables[i].dtype)
                 if i + self.rank < len(trainable_variables):
                     p = trainable_variables[i + self.rank]
+                    
+                    lr = tf.cast(learning_rate, p.dtype)
+                    
+                    if self.weight_decouple:
+                        trainable_variables[i].assign(trainable_variables[i] * (1.0 - self.weight_decay * lr))
+                    elif self.weight_decay > 0.0:
+                        grad += trainable_variables[i] * self.weight_decay
 
                     if self.maximize:
                         gradient = -grads[self._get_variable_index(trainable_variables[i])]
 
                     if self.weight_decouple:
-                        trainable_variables[i].assign(trainable_variables[i] * (1.0 - self.weight_decay * self.lr))
+                        trainable_variables[i].assign(trainable_variables[i] * (1.0 - self.weight_decay * lr))
                     elif self.weight_decay > 0.0:
                         gradient += trainable_variables[i] * self.weight_decay
                     
@@ -1947,7 +1962,7 @@ class DistributedMuon_e(optimizer.Optimizer):
                             trust_ratio = tf.minimum(trust_ratio, 1.0)
                         update *= trust_ratio
 
-                    lr = self.get_adjusted_lr(self.lr, p.shape, use_adjusted_lr=self.use_adjusted_lr)
+                    lr = self.get_adjusted_lr(lr, p.shape, use_adjusted_lr=self.use_adjusted_lr)
                     lr = tf.cast(lr, p.dtype)
 
                     trainable_variables[i].assign_add(tf.reshape(update, (p.shape)) * -lr)
@@ -2509,17 +2524,19 @@ class AdaMuon_e(optimizer.Optimizer):
                     self.s.append(self.add_variable_from_reference(
                         reference_variable=var, name="s"
                                             ))
+        self.adamw_lr = tf.Variable(self.adamw_lr)
+        self._track_variable(self.adamw_lr)
     
     @staticmethod
-    def get_adjusted_lr(lr: float, param_shape, use_adjusted_lr: bool = False) -> float:
+    def get_adjusted_lr(lr, param_shape, use_adjusted_lr = False):
         r"""Get the adjust learning rate."""
         output_shape, *input_shape = param_shape
-        input_shape = math.prod(input_shape)
+        input_shape = tf.reduce_prod(input_shape)
 
-        ratio: float = (
-            math.pow(max(1.0, output_shape / input_shape), 0.5)
+        ratio = (
+            tf.pow(tf.maximum(1.0, output_shape / input_shape), 0.5)
             if use_adjusted_lr
-            else 0.2 * math.sqrt(max(output_shape, input_shape))
+            else 0.2 * tf.sqrt(tf.maximum(output_shape, input_shape))
         )
 
         return lr * ratio
@@ -2595,9 +2612,11 @@ class AdaMuon_e(optimizer.Optimizer):
                 if tf.keras.backend.is_sparse(grad):
                     raise RuntimeError(
                         ' AdaMuon_e does not support sparse gradients')
+                
+                lr = tf.cast(learning_rate, p.dtype)
                     
                 if self.weight_decouple:
-                    p.assign(p * (1.0 - self.weight_decay * self.lr))
+                    p.assign(p * (1.0 - self.weight_decay * lr))
                 elif self.weight_decay > 0.0:
                     grad += p * self.weight_decay
                 
@@ -2637,7 +2656,7 @@ class AdaMuon_e(optimizer.Optimizer):
                 
                 update = update * 0.2 * math.sqrt(np.prod(p.shape.as_list())) / tf.norm(update) + self.epsilon
     
-                lr = self.get_adjusted_lr(self.lr, p.shape, self.use_adjusted_lr)
+                lr = self.get_adjusted_lr(lr, p.shape, self.use_adjusted_lr)
     
                 if self.cautious:
                     mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
@@ -2664,7 +2683,6 @@ class AdaMuon_e(optimizer.Optimizer):
                         trust_ratio = tf.minimum(trust_ratio, 1.0)
                     update *= trust_ratio
                 
-                lr = tf.cast(lr, p.dtype)
                 p.assign_add(-lr * update)
                 
                 if self.lookahead:
@@ -2694,11 +2712,6 @@ class AdaMuon_e(optimizer.Optimizer):
                 if tf.keras.backend.is_sparse(grad):
                     raise RuntimeError(
                         ' AdaMuon_e does not support sparse gradients')
-                
-                if self.weight_decouple:
-                    p.assign(p * (1.0 - self.weight_decay * self.lr))
-                elif self.weight_decay > 0.0:
-                    grad += p * self.weight_decay
                 
                 if self.agc:
                     grads[self._get_variable_index(p)] = agc(p, grad) 
@@ -2796,6 +2809,10 @@ class AdaMuon_e(optimizer.Optimizer):
                     self.numerator_acc.assign_add(tf.cast(d_lr * dot_val, tf.float32))
     
                 if not self.DAdapt:
+                    if self.weight_decouple:
+                        p.assign(p * (1.0 - self.weight_decay * lr))
+                    elif self.weight_decay > 0.0:
+                        grad += p * self.weight_decay
                     if self.aem:
                         buf1 += exp_avg_slow * alpha_t
                     if self.sn:
@@ -2855,7 +2872,6 @@ class AdaMuon_e(optimizer.Optimizer):
                     self.d0_.assign(d)
                     
                     for p in trainable_variables:
-                        lr = tf.cast(self.adamw_lr, p.dtype)
                         d_lr = tf.cast(d_lr, p.dtype)
                         
                         step = tf.cast(self.iterations + 1, p.dtype)
@@ -2863,7 +2879,7 @@ class AdaMuon_e(optimizer.Optimizer):
                         grad = grads[self._get_variable_index(p)]
                         
                         if self.weight_decouple:
-                            p.assign(p * (1.0 - self.adamw_wd * lr))
+                            p.assign(p * (1.0 - self.adamw_wd * d_lr))
                         elif self.adamw_wd > 0.0:
                             grad += p * self.adamw_wd
                         
@@ -3191,17 +3207,19 @@ class AdaGO_e(optimizer.Optimizer):
                     self.s.append(self.add_variable_from_reference(
                         reference_variable=var, name="s"
                                             ))
+        self.adamw_lr = tf.Variable(self.adamw_lr)
+        self._track_variable(self.adamw_lr)
     
     @staticmethod
-    def get_adjusted_lr(lr: float, param_shape, use_adjusted_lr: bool = False) -> float:
+    def get_adjusted_lr(lr, param_shape, use_adjusted_lr = False):
         r"""Get the adjust learning rate."""
         output_shape, *input_shape = param_shape
-        input_shape = math.prod(input_shape)
+        input_shape = tf.reduce_prod(input_shape)
 
-        ratio: float = (
-            math.pow(max(1.0, output_shape / input_shape), 0.5)
+        ratio = (
+            tf.pow(tf.maximum(1.0, output_shape / input_shape), 0.5)
             if use_adjusted_lr
-            else 0.2 * math.sqrt(max(output_shape, input_shape))
+            else 0.2 * tf.sqrt(tf.maximum(output_shape, input_shape))
         )
 
         return lr * ratio
@@ -3278,6 +3296,8 @@ class AdaGO_e(optimizer.Optimizer):
                     raise RuntimeError(
                         'AdaGO_e does not support sparse gradients')
                 
+                lr = tf.cast(learning_rate, p.dtype)
+                
                 step = tf.cast(self.iterations + 1, p.dtype)
                 
                 beta1, beta2, _ = self.adamw_betas
@@ -3286,7 +3306,7 @@ class AdaGO_e(optimizer.Optimizer):
                     grad = -grad
                 
                 if self.weight_decouple:
-                    p.assign(p * (1.0 - self.weight_decay * self.lr))
+                    p.assign(p * (1.0 - self.weight_decay * lr))
                 elif self.weight_decay > 0.0:
                     grad += p * self.weight_decay
                     
@@ -3319,8 +3339,7 @@ class AdaGO_e(optimizer.Optimizer):
                 
                 update = zero_power_via_newton_schulz_5(update, num_steps=self.ns_steps)
     
-                lr = self.get_adjusted_lr(self.lr, p.shape, self.use_adjusted_lr)
-                lr = tf.cast(lr, p.dtype)
+                lr = self.get_adjusted_lr(lr, p.shape, self.use_adjusted_lr)
                 
                 if self.cautious:
                     mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
@@ -3379,11 +3398,6 @@ class AdaGO_e(optimizer.Optimizer):
                     
                 if self.agc:
                     grads[self._get_variable_index(p)] = agc(p, grad) 
-                
-                if self.weight_decouple:
-                    p.assign(p * (1.0 - self.adamw_wd * lr))
-                elif self.adamw_wd > 0.0:
-                    grads[self._get_variable_index(p)] += p * self.adamw_wd
                     
                 beta1, beta2, beta3 = self.adamw_betas
                     
@@ -3480,6 +3494,10 @@ class AdaGO_e(optimizer.Optimizer):
                     self.numerator_acc.assign_add(tf.cast(d_lr * dot_val, tf.float32))
                 
                 if not self.DAdapt:
+                    if self.weight_decouple:
+                        p.assign(p * (1.0 - self.adamw_wd * lr))
+                    elif self.adamw_wd > 0.0:
+                        grads[self._get_variable_index(p)] += p * self.adamw_wd
                     if self.aem:
                         exp_avg += exp_avg_slow * alpha_t
                     if self.sn:
@@ -3551,7 +3569,6 @@ class AdaGO_e(optimizer.Optimizer):
                     self.d0_.assign(d)
                     
                     for p in trainable_variables:
-                        lr = tf.cast(self.adamw_lr, p.dtype)
                         d_lr = tf.cast(d_lr, p.dtype)
                         
                         step = tf.cast(self.iterations + 1, p.dtype)
@@ -3559,7 +3576,7 @@ class AdaGO_e(optimizer.Optimizer):
                         grad = grads[self._get_variable_index(p)]
                         
                         if self.weight_decouple:
-                            p.assign(p * (1.0 - self.adamw_wd * lr))
+                            p.assign(p * (1.0 - self.adamw_wd * d_lr))
                         elif self.adamw_wd > 0.0:
                             grad += p * self.adamw_wd
                         
