@@ -933,10 +933,10 @@ class SOAP_e(optimizer.Optimizer):
                 step_size *= bias_correction2_sq / bias_correction1
                 
                 if self.DAdapt:
-                    d_lr = self.d0 * self.lr * bias_correction2_sq / bias_correction1
+                    d_lr = self.d0 * lr * bias_correction2_sq / bias_correction1
             else:
                 if self.DAdapt:
-                    d_lr = self.d0 * self.lr
+                    d_lr = self.d0 * lr
             
             de_nom = tf.sqrt(exp_avg_sq) + self.epsilon
             
@@ -1071,13 +1071,14 @@ class SOAP_e(optimizer.Optimizer):
                 )
         
         def update_fn():
+            lr = learning_rate
             if self.correct_bias:
                 step = self.iterations + 1
                 bias_correction1 = 1 - self.beta1 ** step
                 bias_correction2_sq = tf.sqrt(1 - self.beta2 ** step)
-                d_lr = self.d0 * self.lr * bias_correction2_sq / bias_correction1
+                d_lr = self.d0 * lr * bias_correction2_sq / bias_correction1
             else:
-                d_lr = self.d0 * self.lr
+                d_lr = self.d0 * lr
             
             beta2_sq = math.sqrt(self.beta2)
             
@@ -1175,7 +1176,7 @@ class SOAP_e(optimizer.Optimizer):
                     tf.cond(step % self.lookahead_merge_time == 0, true_fn, false_fn)
                 
                 if self.weight_decay > 0.0:
-                    p.assign(p * (1.0 - self.weight_decay * self.lr))
+                    p.assign(p * (1.0 - self.weight_decay * d_lr))
     
                 self.update_pre_conditioner(
                     p,
