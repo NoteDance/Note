@@ -39,7 +39,6 @@ class ASGD(optimizer.Optimizer):
             gradient_accumulation_steps=gradient_accumulation_steps,
             **kwargs,
         )
-        self.lr = learning_rate
         self.epsilon = epsilon
         self.amplifier = amplifier
         self.theta = theta
@@ -54,7 +53,6 @@ class ASGD(optimizer.Optimizer):
         self.prev_grad_norm.assign(0)
         self.curr_param_norm.assign(0)
         self.curr_grad_norm.assign(0)
-        self.lr_.assign(self.lr)
         self.theta_.assign(self.theta)
 
     def build(self, var_list):
@@ -65,13 +63,11 @@ class ASGD(optimizer.Optimizer):
         self.prev_grad_norm = tf.Variable(tf.zeros((), dtype=tf.float32))
         self.curr_param_norm = tf.Variable(tf.zeros((), dtype=tf.float32))
         self.curr_grad_norm = tf.Variable(tf.zeros((), dtype=tf.float32))
-        self.lr_ = tf.Variable(tf.cast(self.lr_, tf.float32))
         self.theta_ = tf.Variable(tf.cast(self.theta, tf.float32))
         self._track_variable(self.prev_param_norm)
         self._track_variable(self.prev_grad_norm)
         self._track_variable(self.curr_param_norm)
         self._track_variable(self.curr_grad_norm)
-        self._track_variable(self.lr_)
         self._track_variable(self.theta_)
 
     
@@ -99,8 +95,9 @@ class ASGD(optimizer.Optimizer):
         self.update_step(grads, trainable_variables, learning_rate)
 
     def update_step(self, grads, trainable_variables, learning_rate):
-        lr = self.lr_
         theta = self.theta_
+        
+        lr = tf.cast(learning_rate, tf.float32)
         
         p_norm, g_norm = self.get_norms_by_group(trainable_variables, grads)
         
@@ -124,7 +121,7 @@ class ASGD(optimizer.Optimizer):
         new_lr = tf.cond(param_diff_norm > 0 and grad_diff_norm > 0, true_fn, false_fn)
         
         theta.assign(new_lr / lr)
-        lr.assign(new_lr)
+        learning_rate.assign(new_lr)
         
         self.prev_param_norm.assign(self.curr_param_norm)
         self.prev_grad_norm.assign(self.curr_grad_norm)
@@ -137,14 +134,15 @@ class ASGD(optimizer.Optimizer):
                 variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr)))
             elif self.weight_decay > 0.0:
                 gradient += variable * self.weight_decay
-                
+            
+            new_lr = tf.cast(new_lr, variable.dtype)
+            
             variable.assign_add(gradient * tf.cast(-new_lr, variable.dtype))
 
     def get_config(self):
         config = super().get_config()
         config.update(
             {
-                "lr": self.lr,
                 "epsilon": self.epsilon,
                 "amplifier": self.amplifier,
                 "theta": self.theta,
