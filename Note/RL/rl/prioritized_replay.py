@@ -9,13 +9,13 @@ class pr:
         self.PPO=False
     
     
-    def sample(self,state_pool,action_pool,next_state_pool,reward_pool,done_pool,epsilon,lambda_,alpha,batch):
+    def sample(self,state_pool,action_pool,next_state_pool,reward_pool,done_pool,lambda_,alpha,batch):
         if self.PPO:
             scores=self.lambda_*self.TD+(1.0-self.lambda_)*np.abs(self.ratio-1.0)
-            prios=np.pow(scores+epsilon,alpha)
+            prios=np.pow(scores+1e-7,alpha)
             p=prios/np.sum(prios)
         else:
-            prios=(self.TD+epsilon)**alpha
+            prios=(self.TD+1e-7)**alpha
             p=prios/np.sum(prios)
         self.index=np.random.choice(np.arange(len(state_pool)),size=[batch],p=p,replace=False)
         return state_pool[self.index],action_pool[self.index],next_state_pool[self.index],reward_pool[self.index],done_pool[self.index]
@@ -46,13 +46,13 @@ class pr_mp:
         self.PPO=False
     
     
-    def sample(self,state_pool,action_pool,next_state_pool,reward_pool,done_pool,epsilon,alpha,batch,p):
+    def sample(self,state_pool,action_pool,next_state_pool,reward_pool,done_pool,alpha,batch,p):
         if self.PPO:
             scores=self.lambda_*self.TD[p]+(1.0-self.lambda_)*np.abs(self.ratio[p]-1.0)
-            prios=np.pow(scores+epsilon,alpha)
+            prios=np.pow(scores+1e-7,alpha)
             prob=prios/np.sum(prios)
         else:
-            prios=(self.TD[p]+epsilon)**alpha
+            prios=(self.TD[p]+1e-7)**alpha
             prob=prios/np.sum(prios)
         self.index[p]=np.random.choice(np.arange(len(state_pool)),size=[batch],p=prob,replace=False)
         return state_pool[self.index[p]],action_pool[self.index[p]],next_state_pool[self.index[p]],reward_pool[self.index[p]],done_pool[self.index[p]]
