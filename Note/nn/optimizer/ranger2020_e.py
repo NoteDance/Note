@@ -184,8 +184,6 @@ class Ranger_e(optimizer.Optimizer):
         self.update_step(grads, trainable_variables, learning_rate)
 
     def update_step(self, grads, trainable_variables, learning_rate):
-        if self.DAdapt:
-            d_lr = self.d0_ * self.lr
         for variable, gradient in zip(trainable_variables, grads):
             if tf.keras.backend.is_sparse(gradient):
                 raise RuntimeError(
@@ -200,6 +198,10 @@ class Ranger_e(optimizer.Optimizer):
             lr = tf.cast(learning_rate, variable_fp32.dtype)
             
             size = tf.size(gradient)
+            
+            if self.DAdapt:
+                # it's not Adam Debias
+                d_lr = self.d0_ * lr
             
             # begin computations
             exp_avg = self.exp_avg[self._get_variable_index(variable)]
@@ -301,6 +303,8 @@ class Ranger_e(optimizer.Optimizer):
             
             if self.DAdapt:
                 def update_fn():
+                    d_lr = self.d0_ * learning_rate
+                    
                     beta2_sq = math.sqrt(self.beta2)
                     
                     d = self.d0_
@@ -317,6 +321,8 @@ class Ranger_e(optimizer.Optimizer):
                             variable_fp32 = tf.cast(variable, 'float32')
                         else:
                             variable_fp32 = tf.convert_to_tensor(variable)
+                        
+                        lr = tf.cast(d_lr, variable_fp32.dtype)
                             
                         step = tf.cast(self.iterations + 1, variable_fp32.dtype)
                         
@@ -363,7 +369,7 @@ class Ranger_e(optimizer.Optimizer):
                         if self.gc_loc == False:
                             G_grad = centralized_gradient(G_grad, use_gc=self.use_gc, gc_conv_only=self.gc_conv_only)
                 
-                        variable_fp32 += -step_size * self.lr * G_grad
+                        variable_fp32 += -step_size * lr * G_grad
                         variable.assign(tf.cast(variable_fp32, variable.dtype))
                 
                         # integrated look ahead...

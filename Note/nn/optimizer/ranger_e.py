@@ -169,8 +169,6 @@ class Ranger_e(optimizer.Optimizer):
         self.update_step(grads, trainable_variables, learning_rate)
 
     def update_step(self, grads, trainable_variables, learning_rate):
-        if self.DAdapt:
-            d_lr = self.d0_ * self.lr
         for variable, gradient in zip(trainable_variables, grads):
             if tf.keras.backend.is_sparse(gradient):
                 raise RuntimeError(
@@ -184,6 +182,10 @@ class Ranger_e(optimizer.Optimizer):
                 variable_fp32 = tf.convert_to_tensor(variable)
                 
             lr = tf.cast(learning_rate, variable_fp32.dtype)
+            
+            if self.DAdapt:
+                # it's not Adam Debias
+                d_lr = self.d0_ * lr
             
             size = tf.size(gradient)
             
@@ -282,7 +284,7 @@ class Ranger_e(optimizer.Optimizer):
                 
         if self.DAdapt:
             def update_fn():
-                d_lr = self.d0_ * self.lr
+                d_lr = self.d0_ * learning_rate
                 
                 beta2_sq = math.sqrt(self.beta2)
                 
@@ -296,8 +298,6 @@ class Ranger_e(optimizer.Optimizer):
                 self.d0_.assign(d)
                 
                 for variable in zip(trainable_variables):
-                    d_lr = tf.cast(d_lr, variable.dtype)
-                    
                     if variable.dtype != tf.float32:
                         variable_fp32 = tf.cast(variable, 'float32')
                     else:
@@ -313,6 +313,8 @@ class Ranger_e(optimizer.Optimizer):
                     exp_avg_sq = self.exp_avg_sq[self._get_variable_index(variable)]
                     
                     def true_fn():
+                        lr = tf.cast(d_lr, variable.dtype)
+                        
                         denom = tf.sqrt(exp_avg_sq) + self.epsilon
                         
                         step_size = tf.sqrt(
@@ -328,20 +330,22 @@ class Ranger_e(optimizer.Optimizer):
                         if self.sn:
                             numerator = tf.reshape(exp_avg, (size // self.subset_size_[self._get_variable_index(variable)], self.subset_size_[self._get_variable_index(variable)]))
                             normed_grad = tf.reshape((numerator / denom), variable.shape)
-                            update = d_lr * step_size * normed_grad
+                            update = lr * step_size * normed_grad
                         else:
-                            update = d_lr * step_size * exp_avg / denom
+                            update = lr * step_size * exp_avg / denom
                         return update
                     
                     def false_fn():
+                        lr = tf.cast(d_lr, variable.dtype)
                         step_size = 1.0 / (1 - self.beta1 ** step)
-                        update = d_lr * step_size * exp_avg
+                        update = lr * step_size * exp_avg
                         return update
                 
                     update = tf.cond(N_sma > self.N_sma_threshhold, true_fn, false_fn)
                     
                     if self.weight_decay != 0:
-                        variable_fp32 -= self.weight_decay * self.lr * variable_fp32
+                        lr = tf.cast(d_lr, variable_fp32.dtype)
+                        variable_fp32 -= self.weight_decay * lr * variable_fp32
             
                     # apply lr
                     variable_fp32 -= update

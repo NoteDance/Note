@@ -44,7 +44,7 @@ class DAdaptSGD(optimizer.Optimizer):
         )
         self.lr = learning_rate
         self.momentum = momentum
-        self.d0_ = d0
+        self.d0 = d0
         self.growth_rate = growth_rate
         self.weight_decouple = weight_decouple
         self.fixed_decay = fixed_decay
@@ -54,11 +54,11 @@ class DAdaptSGD(optimizer.Optimizer):
         self.numerator_weighted = tf.Variable(0.0)
         self.global_grad_norm = tf.Variable(tf.zeros(1, dtype=tf.float32))
         self.g0_norm = tf.Variable(0.0)
-        self.d0 = tf.Variable(self.d0_)
+        self.d0_ = tf.Variable(self.d0)
         self._track_variable(self.numerator_weighted)
         self._track_variable(self.global_grad_norm)
         self._track_variable(self.g0_norm)
-        self._track_variable(self.d0)
+        self._track_variable(self.d0_)
         self._iterations.assign(0)
         for var in self._trainable_variables:
             self.z[self._get_variable_index(var)] =  tf.Variable(var)
@@ -80,11 +80,11 @@ class DAdaptSGD(optimizer.Optimizer):
         self.numerator_weighted = tf.Variable(0.0)
         self.global_grad_norm = tf.Variable(tf.zeros((), dtype=tf.float32))
         self.g0_norm = tf.Variable(0.0)
-        self.d0 = tf.Variable(self.d0_)
+        self.d0_ = tf.Variable(self.d0)
         self._track_variable(self.numerator_weighted)
         self._track_variable(self.global_grad_norm)
         self._track_variable(self.g0_norm)
-        self._track_variable(self.d0)
+        self._track_variable(self.d0_)
         for var in var_list:
             self.z.append(tf.Variable(var))
             self._track_variable(self.z[-1])
@@ -114,8 +114,8 @@ class DAdaptSGD(optimizer.Optimizer):
         tf.cond(self.iterations == 0, true_fn, false_fn)
         
         def update_fn():
-            d = self.d0
-            d_lr = d * self.lr / self.g0_norm
+            d = self.d0_
+            d_lr = d * learning_rate / self.g0_norm
             
             for variable, grad in zip(trainable_variables, grads):
                 if tf.keras.backend.is_sparse(grad):
@@ -123,7 +123,7 @@ class DAdaptSGD(optimizer.Optimizer):
                         'DAdaptSGD does not support sparse gradients')
                 
                 if self.weight_decouple:
-                    variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else self.lr)))
+                    variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else d_lr)))
                 
                 d_lr = tf.cast(d_lr, variable.dtype)
                 
@@ -135,7 +135,7 @@ class DAdaptSGD(optimizer.Optimizer):
             
             if self.lr > 0.0:
                 d_hat = 2.0 * self.numerator_weighted / tf.sqrt(self.sk_sq)
-                d = tf.maximum(self.d0, tf.minimum(d_hat, self.d0 * self.growth_rate))
+                d = tf.maximum(self.d0_, tf.minimum(d_hat, self.d0_ * self.growth_rate))
             
             for variable, grad in zip(trainable_variables, grads):
                 z = self.z[self._get_variable_index(variable)]
@@ -154,7 +154,7 @@ class DAdaptSGD(optimizer.Optimizer):
             {
                 "lr": self.lr,
                 "momentum": self.momentum,
-                "d0_": self.d0_,
+                "d0": self.d0,
                 "growth_rate": self.growth_rate,
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,

@@ -365,7 +365,7 @@ class Ranger21_e(optimizer.Optimizer):
             bias_correction1 = 1 - beta2 ** step
             bias_correction2_sq = tf.sqrt(1 - beta2 ** step)
             
-            d_lr = self.d0_ * self.lr if self.adam_debias else self.d0_ * self.lr / bias_correction1
+            d_lr = self.d0_ * lr if self.adam_debias else self.d0_ * lr / bias_correction1
             d_lr = tf.cast(d_lr, p.dtype)
     
             noise_norm = math.sqrt((1.0 + beta2) ** 2 + beta2 ** 2)  # fmt: skip
@@ -448,7 +448,7 @@ class Ranger21_e(optimizer.Optimizer):
         
         if self.DAdapt:
             def update_fn():
-                d_lr = self.d0_ * self.lr
+                d_lr = self.d0_ * learning_rate
                 
                 beta2_sq = math.sqrt(self.beta2)
                 

@@ -53,7 +53,7 @@ class DAdaptAdaGrad(optimizer.Optimizer):
         self.lr = learning_rate
         self.epsilon = epsilon
         self.momentum = momentum
-        self.d0_ = d0
+        self.d0 = d0
         self.growth_rate = growth_rate
         self.weight_decouple = weight_decouple
         self.fixed_decay = fixed_decay
@@ -66,14 +66,14 @@ class DAdaptAdaGrad(optimizer.Optimizer):
         self.g_sq = tf.Variable(0.0)
         self.sk_sq_weighted_change = tf.Variable(0.0)
         self.sk_l1_change = tf.Variable(0.0)
-        self.d0 = tf.Variable(self.d0_)
+        self.d0_ = tf.Variable(self.d0)
         self._track_variable(self.gsq_weighted)
         self._track_variable(self.sk_sq_weighted)
         self._track_variable(self.sk_l1)
         self._track_variable(self.g_sq)
         self._track_variable(self.sk_sq_weighted_change)
         self._track_variable(self.sk_l1_change)
-        self._track_variable(self.d0)
+        self._track_variable(self.d0_)
         self._iterations.assign(0)
         for var in self._trainable_variables:
             self.alpha_k[self._get_variable_index(var)] =  tf.Variable(tf.ones_like(var) * 1e-6)
@@ -104,14 +104,14 @@ class DAdaptAdaGrad(optimizer.Optimizer):
         self.g_sq = tf.Variable(0.0)
         self.sk_sq_weighted_change = tf.Variable(0.0)
         self.sk_l1_change = tf.Variable(0.0)
-        self.d0 = tf.Variable(self.d0_)
+        self.d0_ = tf.Variable(self.d0)
         self._track_variable(self.gsq_weighted)
         self._track_variable(self.sk_sq_weighted)
         self._track_variable(self.sk_l1)
         self._track_variable(self.g_sq)
         self._track_variable(self.sk_sq_weighted_change)
         self._track_variable(self.sk_l1_change)
-        self._track_variable(self.d0)
+        self._track_variable(self.d0_)
         for var in var_list:
             self.alpha_k.append(tf.Variable(tf.ones_like(var) * 1e-6))
             self._track_variable(self.alpha_k[-1])
@@ -136,7 +136,7 @@ class DAdaptAdaGrad(optimizer.Optimizer):
         self.update_step(grads, trainable_variables, learning_rate)
 
     def update_step(self, grads, trainable_variables, learning_rate):
-        d_lr = self.d0 * self.lr
+        d_lr = self.d0_ * learning_rate
         
         for var, grad in zip(trainable_variables, grads):
             sk = self.sk[self._get_variable_index(var)]
@@ -186,8 +186,10 @@ class DAdaptAdaGrad(optimizer.Optimizer):
                 sk_l1_masked = tf.reduce_sum(tf.abs(sk_masked.values))
                 self.sk_l1_change.assign_add(tf.cast(sk_l1_masked - old_sk_l1_masked, tf.float32))
             else:
+                d_lr = tf.cast(d_lr, dtype=var.dtype)
+                
                 if self.weight_decouple:
-                    var.assign(var * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else self.lr)))
+                    var.assign(var * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else d_lr)))
                 elif self.weight_decay > 0.0:
                     grad += var * self.weight_decay
                 
@@ -197,8 +199,6 @@ class DAdaptAdaGrad(optimizer.Optimizer):
                 alpha_k.assign_add(tf.pow(grad, 2))
                 grad_sq = tf.reduce_sum(tf.pow(grad, 2) / (tf.sqrt(alpha_k) + self.epsilon))
                 self.g_sq.assign_add(tf.cast(grad_sq, tf.float32))
-                
-                d_lr = tf.cast(d_lr, dtype=var.dtype)
                 
                 sk.assign_add(grad * d_lr)
                 
@@ -213,12 +213,12 @@ class DAdaptAdaGrad(optimizer.Optimizer):
         self.sk_l1.assign_add(self.sk_l1_change)
         
         def update_fn():
-            d = self.d0
+            d = self.d0_
             if self.lr > 0.0:
                 d_hat = (self.sk_sq_weighted - self.gsq_weighted) / self.sk_l1
-                d = tf.maximum(self.d0, tf.minimum(d_hat, self.d0 * self.growth_rate))
+                d = tf.maximum(self.d0_, tf.minimum(d_hat, self.d0_ * self.growth_rate))
             
-            self.d0.assign(d)
+            self.d0_.assign(d)
             for var, grad in zip(trainable_variables, grads):
                 alpha_k = self.alpha_k[self._get_variable_index(var)]
                 sk = self.sk[self._get_variable_index(var)]
@@ -258,7 +258,7 @@ class DAdaptAdaGrad(optimizer.Optimizer):
                 "lr": self.lr,
                 "epsilon": self.epsilon,
                 "momentum": self.momentum,
-                "d0_": self.d0_,
+                "d0": self.d0,
                 "growth_rate": self.growth_rate,
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,

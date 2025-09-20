@@ -76,7 +76,7 @@ class DAdaptLion(optimizer.Optimizer):
         self.lr = learning_rate
         self.beta1 = beta1
         self.beta2 = beta2
-        self.d0_ = d0
+        self.d0 = d0
         self.weight_decouple = weight_decouple
         self.fixed_decay = fixed_decay
     
@@ -84,11 +84,11 @@ class DAdaptLion(optimizer.Optimizer):
         self.numerator_weighted = tf.Variable(0.0)
         self.sk_l1 = tf.Variable(0.0)
         self.numerator_accumulator = tf.Variable(0.0)
-        self.d0 = tf.Variable(self.d0_)
+        self.d0_ = tf.Variable(self.d0)
         self._track_variable(self.numerator_weighted)
         self._track_variable(self.sk_l1)
         self._track_variable(self.numerator_accumulator)
-        self._track_variable(self.d0)
+        self._track_variable(self.d0_)
         self._iterations.assign(0)
         for var in self._trainable_variables:
             self.exp_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
@@ -107,11 +107,11 @@ class DAdaptLion(optimizer.Optimizer):
         self.numerator_weighted = tf.Variable(0.0)
         self.sk_l1 = tf.Variable(0.0)
         self.numerator_accumulator = tf.Variable(0.0)
-        self.d0 = tf.Variable(self.d0_)
+        self.d0_ = tf.Variable(self.d0)
         self._track_variable(self.numerator_weighted)
         self._track_variable(self.sk_l1)
         self._track_variable(self.numerator_accumulator)
-        self._track_variable(self.d0)
+        self._track_variable(self.d0_)
         for var in var_list:
             self.exp_avg.append(self.add_variable_from_reference(
                                 reference_variable=var, name="exp_avg"
@@ -131,7 +131,7 @@ class DAdaptLion(optimizer.Optimizer):
     def update_step(self, grads, trainable_variables, learning_rate):
         beta2_sq = math.sqrt(self.beta2)
         
-        d_lr = self.d0 * self.lr
+        d_lr = self.d0_ * learning_rate
         
         for variable, grad in zip(trainable_variables, grads):
             if tf.keras.backend.is_sparse(grad):
@@ -139,7 +139,7 @@ class DAdaptLion(optimizer.Optimizer):
                     'DAdaptLion does not support sparse gradients')
             
             if self.weight_decouple:
-                variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else self.lr)))
+                variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else d_lr)))
             elif self.weight_decay > 0.0:
                 grad += variable * self.weight_decay
             
@@ -161,12 +161,12 @@ class DAdaptLion(optimizer.Optimizer):
         self.numerator_weighted.assign(self.numerator_weighted * beta2_sq + self.numerator_accumulator * (1.0 - beta2_sq))
         
         def update_fn():
-            d = self.d0
+            d = self.d0_
             if self.lr > 0.0:
                 d_hat = self.numerator_weighted / ((1.0 - beta2_sq) * self.sk_l1)
-                d = tf.maximum(self.d0, d_hat)
+                d = tf.maximum(self.d0_, d_hat)
             
-            self.d0.assign(d)
+            self.d0_.assign(d)
             
         def no_update_fn():
             pass
@@ -180,7 +180,7 @@ class DAdaptLion(optimizer.Optimizer):
                 "lr": self.lr,
                 "beta1": self.beta1,
                 "beta2": self.beta2,
-                "d0_": self.d0_,
+                "d0": self.d0,
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,
             }
@@ -236,7 +236,7 @@ class DAdaptLion_e(optimizer.Optimizer):
         self.lr = learning_rate
         self.beta1 = beta1
         self.beta2 = beta2
-        self.d0_ = d0
+        self.d0 = d0
         self.weight_decouple = weight_decouple
         self.fixed_decay = fixed_decay
         self.orthograd = orthograd
@@ -259,11 +259,11 @@ class DAdaptLion_e(optimizer.Optimizer):
         self.numerator_weighted = tf.Variable(0.0)
         self.sk_l1 = tf.Variable(0.0)
         self.numerator_accumulator = tf.Variable(0.0)
-        self.d0 = tf.Variable(self.d0_)
+        self.d0_ = tf.Variable(self.d0)
         self._track_variable(self.numerator_weighted)
         self._track_variable(self.sk_l1)
         self._track_variable(self.numerator_accumulator)
-        self._track_variable(self.d0)
+        self._track_variable(self.d0_)
         for var in var_list:
             if self.lookahead:
                 self.slow_momentum.append(tf.Variable(var))
@@ -318,7 +318,7 @@ class DAdaptLion_e(optimizer.Optimizer):
             
         beta2_sq = math.sqrt(self.beta2)
         
-        d_lr = self.d0 * self.lr
+        d_lr = self.d0_ * learning_rate
         
         for variable, grad in zip(trainable_variables, grads):
             if tf.keras.backend.is_sparse(grad):
@@ -328,7 +328,7 @@ class DAdaptLion_e(optimizer.Optimizer):
             step = tf.cast(self.iterations + 1, variable.dtype)
             
             if self.weight_decouple:
-                variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else self.lr)))
+                variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else d_lr)))
             elif self.weight_decay > 0.0:
                 grad += variable * self.weight_decay
             
@@ -385,12 +385,12 @@ class DAdaptLion_e(optimizer.Optimizer):
         self.numerator_weighted.assign(self.numerator_weighted * beta2_sq + self.numerator_accumulator * (1.0 - beta2_sq))
         
         def update_fn():
-            d = self.d0
+            d = self.d0_
             if self.lr > 0.0:
                 d_hat = self.numerator_weighted / ((1.0 - beta2_sq) * self.sk_l1)
-                d = tf.maximum(self.d0, d_hat)
+                d = tf.maximum(self.d0_, d_hat)
             
-            self.d0.assign(d)
+            self.d0_.assign(d)
             
         def no_update_fn():
             pass
@@ -404,7 +404,7 @@ class DAdaptLion_e(optimizer.Optimizer):
                 "lr": self.lr,
                 "beta1": self.beta1,
                 "beta2": self.beta2,
-                "d0_": self.d0_,
+                "d0": self.d0,
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,
                 "orthograd": self.orthograd,

@@ -260,10 +260,7 @@ class Ranger25(optimizer.Optimizer):
             beta2 = tf.cast(beta2, p.dtype)
             beta3 = tf.cast(beta3, p.dtype)
             
-            if self.DAdapt:
-                lr = tf.cast(self.lr, p.dtype)
-            else:
-                lr = tf.cast(learning_rate, p.dtype)
+            lr = tf.cast(learning_rate, p.dtype)
             
             step = tf.cast(self.iterations + 1, p.dtype)
             
@@ -275,7 +272,7 @@ class Ranger25(optimizer.Optimizer):
             
             if self.DAdapt:
                 # it's not Adam Debias
-                d_lr = self.d0 * self.lr * bias_correction2_sq / bias_correction1
+                d_lr = self.d0 * lr * bias_correction2_sq / bias_correction1
             
             alpha_t = self.schedule_alpha(self.t_alpha_beta3, step, self.alpha)
             beta3_t = self.schedule_beta3(self.t_alpha_beta3, step, beta1, beta3)
@@ -379,7 +376,7 @@ class Ranger25(optimizer.Optimizer):
         
         if self.DAdapt:
             def update_fn():
-                d_lr = self.d0 * self.lr * bias_correction2_sq / bias_correction1
+                d_lr = self.d0 * learning_rate * bias_correction2_sq / bias_correction1
                 
                 beta2_sq = math.sqrt(self.beta2)
                 

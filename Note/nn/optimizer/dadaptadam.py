@@ -85,7 +85,7 @@ class DAdaptAdam(optimizer.Optimizer):
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
-        self.d0_ = d0
+        self.d0 = d0
         self.growth_rate = growth_rate
         self.weight_decouple = weight_decouple
         self.fixed_decay = fixed_decay
@@ -95,11 +95,11 @@ class DAdaptAdam(optimizer.Optimizer):
         self.sk_l1 = tf.Variable(0.0)
         self.numerator_acc = tf.Variable(0.0)
         self.numerator_weighted = tf.Variable(0.0)
-        self.d0 = tf.Variable(self.d0_)
+        self.d0_ = tf.Variable(self.d0)
         self._track_variable(self.sk_l1)
         self._track_variable(self.numerator_acc)
         self._track_variable(self.numerator_weighted)
-        self._track_variable(self.d0)
+        self._track_variable(self.d0_)
         self._iterations.assign(0)
         for var in self._trainable_variables:
             self.s[self._get_variable_index(var)] =  self.add_variable_from_reference(
@@ -122,11 +122,11 @@ class DAdaptAdam(optimizer.Optimizer):
         self.sk_l1 = tf.Variable(0.0)
         self.numerator_acc = tf.Variable(0.0)
         self.numerator_weighted = tf.Variable(0.0)
-        self.d0 = tf.Variable(self.d0_)
+        self.d0_ = tf.Variable(self.d0)
         self._track_variable(self.sk_l1)
         self._track_variable(self.numerator_acc)
         self._track_variable(self.numerator_weighted)
-        self._track_variable(self.d0)
+        self._track_variable(self.d0_)
         for var in var_list:
             self.s.append(self.add_variable_from_reference(
                                 reference_variable=var, name="s"
@@ -161,7 +161,7 @@ class DAdaptAdam(optimizer.Optimizer):
             bias_correction = bias_correction1 / bias_correction2_sq
             
             # it's not Adam Debias
-            d_lr = self.d0 * self.lr if not self.bias_correction else self.d0 * self.lr / bias_correction
+            d_lr = self.d0_ * learning_rate if not self.bias_correction else self.d0_ * learning_rate / bias_correction
             
             exp_avg = self.exp_avg[self._get_variable_index(variable)]
             exp_avg_sq = self.exp_avg_sq[self._get_variable_index(variable)]
@@ -182,14 +182,14 @@ class DAdaptAdam(optimizer.Optimizer):
             self.sk_l1.assign_add(tf.cast(tf.reduce_sum(tf.abs(s)), tf.float32))
         
         def update_fn():
-            d = self.d0
+            d = self.d0_
             self.numerator_weighted.assign(self.numerator_weighted * beta2_sq + self.numerator_acc * (1.0 - beta2_sq))  # fmt: skip
             
             if self.lr > 0.0:
                 d_hat = self.numerator_weighted / (1.0 - beta2_sq) * self.sk_l1
-                d = tf.maximum(self.d0, tf.minimum(d_hat, self.d0 * self.growth_rate))
+                d = tf.maximum(self.d0_, tf.minimum(d_hat, self.d0_ * self.growth_rate))
             
-            self.d0.assign(d)
+            self.d0_.assign(d)
             
             for variable, gradient in zip(trainable_variables, grads):
                 exp_avg = self.exp_avg[self._get_variable_index(variable)]
@@ -198,7 +198,7 @@ class DAdaptAdam(optimizer.Optimizer):
                 de_nom = tf.sqrt(exp_avg_sq) + self.epsilon
                 
                 if self.weight_decouple:
-                    variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else self.lr)))
+                    variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else d_lr)))
                 
                 variable.assign_add(-1.0 * (exp_avg / de_nom))
         
@@ -215,7 +215,7 @@ class DAdaptAdam(optimizer.Optimizer):
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
-                "d0_": self.d0_,
+                "d0": self.d0,
                 "growth_rate": self.growth_rate,
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,
@@ -272,7 +272,7 @@ class DAdaptAdam_sn(optimizer.Optimizer):
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
-        self.d0_ = d0
+        self.d0 = d0
         self.growth_rate = growth_rate
         self.weight_decouple = weight_decouple
         self.fixed_decay = fixed_decay
@@ -286,11 +286,11 @@ class DAdaptAdam_sn(optimizer.Optimizer):
         self.sk_l1 = tf.Variable(0.0)
         self.numerator_acc = tf.Variable(0.0)
         self.numerator_weighted = tf.Variable(0.0)
-        self.d0 = tf.Variable(self.d0_)
+        self.d0_ = tf.Variable(self.d0)
         self._track_variable(self.sk_l1)
         self._track_variable(self.numerator_acc)
         self._track_variable(self.numerator_weighted)
-        self._track_variable(self.d0)
+        self._track_variable(self.d0_)
         self._iterations.assign(0)
         for var in self._trainable_variables:
             self.s[self._get_variable_index(var)] =  self.add_variable_from_reference(
@@ -333,11 +333,11 @@ class DAdaptAdam_sn(optimizer.Optimizer):
         self.sk_l1 = tf.Variable(0.0)
         self.numerator_acc = tf.Variable(0.0)
         self.numerator_weighted = tf.Variable(0.0)
-        self.d0 = tf.Variable(self.d0_)
+        self.d0_ = tf.Variable(self.d0)
         self._track_variable(self.sk_l1)
         self._track_variable(self.numerator_acc)
         self._track_variable(self.numerator_weighted)
-        self._track_variable(self.d0)
+        self._track_variable(self.d0_)
         for var in var_list:
             self.s.append(self.add_variable_from_reference(
                                 reference_variable=var, name="s"
@@ -393,7 +393,7 @@ class DAdaptAdam_sn(optimizer.Optimizer):
             bias_correction = bias_correction1 / bias_correction2_sq
             
             # it's not Adam Debias
-            d_lr = self.d0 * self.lr if not self.bias_correction else self.d0 * self.lr / bias_correction
+            d_lr = self.d0_ * learning_rate if not self.bias_correction else self.d0_ * learning_rate / bias_correction
             
             exp_avg = self.exp_avg[self._get_variable_index(variable)]
             exp_avg_sq = self.exp_avg_sq[self._get_variable_index(variable)]
@@ -420,14 +420,14 @@ class DAdaptAdam_sn(optimizer.Optimizer):
             self.sk_l1.assign_add(tf.cast(tf.reduce_sum(tf.abs(s)), tf.float32))
         
         def update_fn():
-            d = self.d0
+            d = self.d0_
             self.numerator_weighted.assign(self.numerator_weighted * beta2_sq + self.numerator_acc * (1.0 - beta2_sq))  # fmt: skip
             
             if self.lr > 0.0:
                 d_hat = self.numerator_weighted / (1.0 - beta2_sq) * self.sk_l1
-                d = tf.maximum(self.d0, tf.minimum(d_hat, self.d0 * self.growth_rate))
+                d = tf.maximum(self.d0_, tf.minimum(d_hat, self.d0_ * self.growth_rate))
             
-            self.d0.assign(d)
+            self.d0_.assign(d)
             
             for variable, gradient in zip(trainable_variables, grads):
                 exp_avg = self.exp_avg[self._get_variable_index(variable)]
@@ -436,7 +436,7 @@ class DAdaptAdam_sn(optimizer.Optimizer):
                 de_nom = tf.sqrt(exp_avg_sq) + self.epsilon
                 
                 if self.weight_decouple:
-                    variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else self.lr)))
+                    variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else d_lr)))
                 
                 if self.sn:
                     numerator = tf.reshape(exp_avg, (size // self.subset_size_[self._get_variable_index(variable)], self.subset_size_[self._get_variable_index(variable)]))
@@ -458,7 +458,7 @@ class DAdaptAdam_sn(optimizer.Optimizer):
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
-                "d0_": self.d0_,
+                "d0": self.d0,
                 "growth_rate": self.growth_rate,
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,

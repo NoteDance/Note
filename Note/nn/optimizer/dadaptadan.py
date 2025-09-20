@@ -7,6 +7,41 @@ import tensorflow as tf
 from keras.src.optimizers import optimizer
 
 
+def closest_smaller_divisor_of_n_to_k(n, k):
+    r"""Get closest smaller divisor of n to k."""
+    def true_fn():
+        return k
+    
+    def false_fn():
+        def true_fn():
+            raise ValueError
+        def false_fn():
+            pass
+        tf.cond(tf.logical_or(n <= 1, k <= 1), true_fn, false_fn)
+        closest_smaller_divisor = -7
+        for i in tf.range(k, 0, -1):
+            def true_fn():
+                def true_fn():
+                    return i
+                def false_fn():
+                    return -7
+                return tf.cond(closest_smaller_divisor == -7, true_fn, false_fn)
+            def false_fn():
+                return -7  # pragma: no cover
+            closest_smaller_divisor = tf.cond(n % i == 0, true_fn, false_fn)
+        return closest_smaller_divisor
+    
+    closest_smaller_divisor = tf.cond(n % k == 0, true_fn, false_fn)
+    
+    def true_fn():
+        return -1
+    def false_fn():
+        return closest_smaller_divisor
+    closest_smaller_divisor = tf.cond(closest_smaller_divisor == -7, true_fn, false_fn)
+    
+    return closest_smaller_divisor
+
+
 class DAdaptAdan(optimizer.Optimizer):
     def __init__(
         self,
@@ -50,7 +85,7 @@ class DAdaptAdan(optimizer.Optimizer):
         self.beta2 = beta2
         self.beta3 = beta3
         self.epsilon = epsilon
-        self.d0_ = d0
+        self.d0 = d0
         self.growth_rate = growth_rate
         self.weight_decouple = weight_decouple
         self.fixed_decay = fixed_decay
@@ -60,12 +95,12 @@ class DAdaptAdan(optimizer.Optimizer):
         self.sk_sq_weighted = tf.Variable(0.0)
         self.sk_l1 = tf.Variable(0.0)
         self.gsq_weighted = tf.Variable(0.0)
-        self.d0 = tf.Variable(self.d0_)
+        self.d0_ = tf.Variable(self.d0)
         self._track_variable(self.g_sq)
         self._track_variable(self.sk_sq_weighted)
         self._track_variable(self.sk_l1)
         self._track_variable(self.gsq_weighted)
-        self._track_variable(self.d0)
+        self._track_variable(self.d0_)
         self._iterations.assign(0)
         for var in self._trainable_variables:
             self.s[self._get_variable_index(var)] =  self.add_variable_from_reference(
@@ -94,12 +129,12 @@ class DAdaptAdan(optimizer.Optimizer):
         self.sk_sq_weighted = tf.Variable(0.0)
         self.sk_l1 = tf.Variable(0.0)
         self.gsq_weighted = tf.Variable(0.0)
-        self.d0 = tf.Variable(self.d0_)
+        self.d0_ = tf.Variable(self.d0)
         self._track_variable(self.g_sq)
         self._track_variable(self.sk_sq_weighted)
         self._track_variable(self.sk_l1)
         self._track_variable(self.gsq_weighted)
-        self._track_variable(self.d0)
+        self._track_variable(self.d0_)
         for var in var_list:
             self.s.append(self.add_variable_from_reference(
                                 reference_variable=var, name="s"
@@ -124,7 +159,7 @@ class DAdaptAdan(optimizer.Optimizer):
         self.update_step(grads, trainable_variables, learning_rate)
 
     def update_step(self, grads, trainable_variables, learning_rate):
-        d_lr = self.d0 * self.lr
+        d_lr = self.d0_ * learning_rate
             
         for var, grad in zip(trainable_variables, grads):
             if tf.keras.backend.is_sparse(grad):
@@ -173,15 +208,15 @@ class DAdaptAdan(optimizer.Optimizer):
             self.previous_grad[self._get_variable_index(var)].assign(-grad)
         
         def update_fn():
-            d = self.d0
-            d_lr = self.d0 * self.lr
+            d = self.d0_
+            d_lr = self.d0_ * learning_rate
             self.gsq_weighted.assign(self.gsq_weighted * self.beta3 + self.g_sq * (d_lr ** 2) * (1.0 - self.beta3))  # fmt: skip
             
             if self.lr > 0.0:
                 d_hat = (self.sk_sq_weighted / (1.0 - self.beta3) - self.gsq_weighted) / self.sk_l1
-                d = tf.maximum(self.d0, tf.minimum(d_hat, self.d0 * self.growth_rate))
+                d = tf.maximum(self.d0_, tf.minimum(d_hat, self.d0_ * self.growth_rate))
             
-            self.d0.assign(d)
+            self.d0_.assign(d)
             
             for var, grad in zip(trainable_variables, grads):
                 exp_avg = self.exp_avg[self._get_variable_index(var)]
@@ -215,10 +250,291 @@ class DAdaptAdan(optimizer.Optimizer):
                 "beta2": self.beta2,
                 "beta3": self.beta3,
                 "epsilon": self.epsilon,
-                "d0_": self.d0_,
+                "d0": self.d0,
                 "growth_rate": self.growth_rate,
                 "weight_decouple": self.weight_decouple,
                 "fixed_decay": self.fixed_decay,
+            }
+        )
+        return config
+	
+    def _apply_weight_decay(self, variables):
+        pass
+
+
+class DAdaptAdan_sn(optimizer.Optimizer):
+    def __init__(
+        self,
+        learning_rate=1.0,
+        beta1=0.98,
+        beta2=0.92,
+        beta3=0.99,
+        epsilon=1e-8,
+        weight_decay=0.0,
+        d0=1e-6,
+        growth_rate=float('inf'),
+        weight_decouple=True,
+        fixed_decay=False,
+        subset_size=-1,
+        sn=True,
+        clipnorm=None,
+        clipvalue=None,
+        global_clipnorm=None,
+        use_ema=False,
+        ema_momentum=0.99,
+        ema_overwrite_frequency=None,
+        loss_scale_factor=None,
+        gradient_accumulation_steps=None,
+        name="dadaptadan_sn",
+        **kwargs,
+    ):
+        super().__init__(
+            learning_rate=learning_rate,
+            name=name,
+            weight_decay=weight_decay,
+            clipnorm=clipnorm,
+            clipvalue=clipvalue,
+            global_clipnorm=global_clipnorm,
+            use_ema=use_ema,
+            ema_momentum=ema_momentum,
+            ema_overwrite_frequency=ema_overwrite_frequency,
+            loss_scale_factor=loss_scale_factor,
+            gradient_accumulation_steps=gradient_accumulation_steps,
+            **kwargs,
+        )
+        self.lr = learning_rate
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.beta3 = beta3
+        self.epsilon = epsilon
+        self.d0 = d0
+        self.growth_rate = growth_rate
+        self.weight_decouple = weight_decouple
+        self.fixed_decay = fixed_decay
+        self.subset_size = subset_size
+        self.sn = sn
+    
+    def reset(self):
+        self.exp_avg_sq = []
+        self.subset_size_ = []
+        self.g_sq = tf.Variable(0.0)
+        self.sk_sq_weighted = tf.Variable(0.0)
+        self.sk_l1 = tf.Variable(0.0)
+        self.gsq_weighted = tf.Variable(0.0)
+        self.d0_ = tf.Variable(self.d0)
+        self._track_variable(self.g_sq)
+        self._track_variable(self.sk_sq_weighted)
+        self._track_variable(self.sk_l1)
+        self._track_variable(self.gsq_weighted)
+        self._track_variable(self.d0_)
+        self._iterations.assign(0)
+        for var in self._trainable_variables:
+            self.s[self._get_variable_index(var)] =  self.add_variable_from_reference(
+                                                        reference_variable=var, name="s"
+                                                    )
+            self.exp_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
+                                                        reference_variable=var, name="exp_avg"
+                                                    )
+            if self.sn:
+                size = tf.size(var)
+                
+                def true_fn():
+                    return self.subset_size
+                def false_fn():
+                    return tf.cast(tf.sqrt(size) / tf.abs(tf.cast(self.subset_size, tf.int32)), tf.int32)
+                self.subset_size_.append(closest_smaller_divisor_of_n_to_k(
+                    size,
+                    tf.cond(self.subset_size > 0, true_fn, false_fn)
+                ))
+
+                reshaped_grad = tf.reshape(var, (size // self.subset_size_[-1], self.subset_size_[-1]))
+                second_moment_update = tf.reduce_sum(reshaped_grad ** 2, axis=1, keepdims=True)
+                second_moment_update = tf.Variable(second_moment_update)
+                self.exp_avg_sq.append(self.add_variable_from_reference(
+                        reference_variable=second_moment_update, name="exp_avg_sq"
+                    ))
+            else:
+                self.exp_avg_sq.append(self.add_variable_from_reference(
+                        reference_variable=var, name="exp_avg_sq"
+                    ))
+            self.exp_avg_diff[self._get_variable_index(var)] =  self.add_variable_from_reference(
+                                                        reference_variable=var, name="exp_avg_diff"
+                                                    )
+
+    def build(self, var_list):
+        if self.built:
+            return
+        super().build(var_list)
+        self.s = []
+        self.exp_avg = []
+        self.exp_avg_sq = []
+        self.exp_avg_diff = []
+        self.previous_grad = []
+        self.g_sq = tf.Variable(0.0)
+        self.sk_sq_weighted = tf.Variable(0.0)
+        self.sk_l1 = tf.Variable(0.0)
+        self.gsq_weighted = tf.Variable(0.0)
+        self.d0_ = tf.Variable(self.d0)
+        self._track_variable(self.g_sq)
+        self._track_variable(self.sk_sq_weighted)
+        self._track_variable(self.sk_l1)
+        self._track_variable(self.gsq_weighted)
+        self._track_variable(self.d0_)
+        for var in var_list:
+            self.s.append(self.add_variable_from_reference(
+                                reference_variable=var, name="s"
+                                                    ))
+            self.exp_avg.append(self.add_variable_from_reference(
+                                reference_variable=var, name="exp_avg"
+                                                    ))
+            if self.sn:
+                size = tf.size(var)
+                
+                def true_fn():
+                    return self.subset_size
+                def false_fn():
+                    return tf.cast(tf.sqrt(size) / tf.abs(tf.cast(self.subset_size, tf.int32)), tf.int32)
+                self.subset_size_.append(closest_smaller_divisor_of_n_to_k(
+                    size,
+                    tf.cond(self.subset_size > 0, true_fn, false_fn)
+                ))
+
+                reshaped_grad = tf.reshape(var, (size // self.subset_size_[-1], self.subset_size_[-1]))
+                second_moment_update = tf.reduce_sum(reshaped_grad ** 2, axis=1, keepdims=True)  # fmt: skip
+                second_moment_update = tf.Variable(second_moment_update)
+                self.exp_avg_sq.append(self.add_variable_from_reference(
+                        reference_variable=second_moment_update, name="exp_avg_sq"
+                    ))
+            else:
+                self.exp_avg_sq.append(self.add_variable_from_reference(
+                        reference_variable=var, name="exp_avg_sq"
+                    ))
+            self.exp_avg_diff.append(self.add_variable_from_reference(
+                                reference_variable=var, name="exp_avg_diff"
+                                                    ))
+            self.previous_grad.append(tf.Variable(var))
+        
+    def _backend_update_step(self, grads, trainable_variables, learning_rate):
+        """Collective update_step that can be overridden by the backend.
+    
+        It is overridden by torch for performance reasons, and
+        by TF to support tf.distribute.
+        """
+        self.update_step(grads, trainable_variables, learning_rate)
+
+    def update_step(self, grads, trainable_variables, learning_rate):
+        d_lr = self.d0_ * learning_rate
+            
+        for var, grad in zip(trainable_variables, grads):
+            if tf.keras.backend.is_sparse(grad):
+                raise RuntimeError(
+                    'DAdaptAdan does not support sparse gradients')
+            
+            def true_fn():
+                self.previous_grad[self._get_variable_index(var)].assign(-grad)
+            
+            def false_fn():
+                pass
+            
+            tf.cond(self.iterations == 0, true_fn, false_fn)
+                
+            grad_diff = self.previous_grad[self._get_variable_index(var)]
+            self.previous_grad[self._get_variable_index(var)].assign_add(grad)
+            
+            exp_avg = self.exp_avg[self._get_variable_index(var)]
+            exp_avg_sq = self.exp_avg_sq[self._get_variable_index(var)]
+            exp_avg_diff = self.exp_avg_diff[self._get_variable_index(var)]
+            
+            d_lr = tf.cast(d_lr, dtype=var.dtype)
+            
+            exp_avg.assign(exp_avg * self.beta1 + grad * d_lr * (1.0 - self.beta1))
+            exp_avg_diff.assign(exp_avg_diff * self.beta2 + grad_diff * d_lr * (1.0 - self.beta2))
+            
+            self.previous_grad[self._get_variable_index(var)].assign(grad_diff * self.beta2 + grad)
+            x = grad_diff * tf.math.conj(grad_diff)
+            grad_diff = tf.math.real(x) if x.dtype.is_complex else x
+            size = tf.size(grad_diff)
+            if self.sn:
+                reshaped_grad = tf.reshape(grad_diff, (size // self.subset_size_[self._get_variable_index(var)], self.subset_size_[self._get_variable_index(var)]))
+                second_moment_update = tf.reduce_sum(reshaped_grad ** 2, axis=1, keepdims=True)  # fmt: skip
+            else:
+                second_moment_update = tf.pow(grad_diff, 2)
+            exp_avg_sq.assign(exp_avg_sq * self.beta3 + second_moment_update * (1.0 - self.beta3))
+            
+            x = grad * tf.math.conj(grad)
+            grad_power = tf.math.real(x) if x.dtype.is_complex else x
+            de_nom = tf.sqrt(exp_avg_sq) + self.epsilon
+            
+            self.g_sq.assign_add(tf.cast(tf.reduce_sum(grad_power / de_nom), tf.float32))
+            
+            s = self.s[self._get_variable_index(var)]
+            s.assign(s * self.beta3 + grad * d_lr * (1.0 - self.beta3))
+            
+            x = s * tf.math.conj(s)
+            x = tf.math.real(x) if x.dtype.is_complex else x
+            self.sk_sq_weighted.assign_add(tf.cast(tf.reduce_sum(x / de_nom), tf.float32))
+            self.sk_l1.assign_add(tf.cast(tf.reduce_sum(tf.abs(s)), tf.float32))
+            
+            self.previous_grad[self._get_variable_index(var)].assign(-grad)
+        
+        def update_fn():
+            d = self.d0_
+            d_lr = self.d0_ * learning_rate
+            self.gsq_weighted.assign(self.gsq_weighted * self.beta3 + self.g_sq * (d_lr ** 2) * (1.0 - self.beta3))  # fmt: skip
+            
+            if self.lr > 0.0:
+                d_hat = (self.sk_sq_weighted / (1.0 - self.beta3) - self.gsq_weighted) / self.sk_l1
+                d = tf.maximum(self.d0, tf.minimum(d_hat, self.d0 * self.growth_rate))
+            
+            self.d0_.assign(d)
+            
+            for var, grad in zip(trainable_variables, grads):
+                exp_avg = self.exp_avg[self._get_variable_index(var)]
+                exp_avg_sq = self.exp_avg_sq[self._get_variable_index(var)]
+                exp_avg_diff = self.exp_avg_diff[self._get_variable_index(var)]
+                
+                de_nom = tf.sqrt(exp_avg_sq) + self.epsilon
+                
+                d_lr = tf.cast(d_lr, dtype=var.dtype)
+                
+                if self.weight_decouple:
+                    var.assign(var * (1.0 - d_lr * self.weight_decay))
+                
+                if self.sn:
+                    numerator1 = tf.reshape(exp_avg, (size // self.subset_size_[self._get_variable_index(var)], self.subset_size_[self._get_variable_index(var)]))
+                    numerator2 = tf.reshape(exp_avg_diff, (size // self.subset_size_[self._get_variable_index(var)], self.subset_size_[self._get_variable_index(var)]))
+                    norm_grad1 = tf.reshape((numerator1 / de_nom), var.shape)
+                    norm_grad2 = tf.reshape((numerator2 / de_nom), var.shape)
+                    var.assign_add(norm_grad1 * -1.0)
+                    var.assign_add(norm_grad2 * -self.beta2)
+                else:
+                    var.assign_add(-1.0 * exp_avg / de_nom)
+                    var.assign_add(-self.beta2 * exp_avg_diff / de_nom)
+                
+                if not self.weight_decouple:
+                    var.assign(var / (1.0 + d_lr * self.weight_decay))
+        
+        def no_update_fn():
+            pass
+        
+        tf.cond(self.sk_l1 == 0, no_update_fn, update_fn)
+        
+    def get_config(self):
+        config = super().get_config()
+        config.update(
+            {
+                "lr": self.lr,
+                "beta1": self.beta1,
+                "beta2": self.beta2,
+                "beta3": self.beta3,
+                "epsilon": self.epsilon,
+                "d0": self.d0,
+                "growth_rate": self.growth_rate,
+                "weight_decouple": self.weight_decouple,
+                "fixed_decay": self.fixed_decay,
+                "subset_size": self.subset_size,
+                "sn": self.sn,
+                "subset_size_": self.subset_size_,
             }
         )
         return config
