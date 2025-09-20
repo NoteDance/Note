@@ -601,44 +601,58 @@ class Model:
     
     
     @tf.function(jit_compile=True)
-    def backward(self, s, a, next_s, r, d):
+    def backward(self, train_data, labels):
         with tf.GradientTape() as tape:
-            loss = self.__call__(s, a, next_s, r, d)
+            output = self.__call__(train_data)
+            if hasattr(self, 'strategy'):
+                loss = self.compute_loss(labels, output)
+            else:
+                loss = self.loss_object(labels, output)
         gradients = tape.gradient(loss, self.param)
         return gradients
     
     
     @tf.function
-    def backward_(self, s, a, next_s, r, d):
+    def backward_(self, train_data, labels):
         with tf.GradientTape() as tape:
-            loss = self.__call__(s, a, next_s, r, d)
+            output = self.__call__(train_data)
+            if hasattr(self, 'strategy'):
+                loss = self.compute_loss(labels, output)
+            else:
+                loss = self.loss_object(labels, output)
         gradients = tape.gradient(loss, self.param)
         return gradients
     
     
-    def estimate_gradient_variance(self, batch_size, num_samples, jit_compile=True):
+    def estimate_gradient_variance(self, train_ds, batch_size, num_samples, jit_compile=True):
         grads = []
-        idx = np.random.choice(self.state_pool.shape[0], size=batch_size, replace=False)
-        if self.processes_her==None and self.processes_pr==None:
-            s=self.state_pool[idx]
-            a=self.action_pool[idx]
-            next_s=self.next_state_pool[idx]
-            r=self.reward_pool[idx]
-            d=self.done_pool[idx]
+        counter = 0
+        if hasattr(self, 'strategy'):
+            iterator = iter(train_ds)
+            while True:
+                train_data, labels = next(iterator)
+                if counter == num_samples:
+                    break
+                if jit_compile==True:
+                    gradients = self.backward(train_data, labels)
+                else:
+                    gradients = self.backward_(train_data, labels)
+                grad_flat = tf.concat([tf.reshape(grad, [-1]) for grad in gradients], axis=0)
+                grads.append(grad_flat)
+                
+                counter += 1
         else:
-            s=self.state_pool[7][idx]
-            a=self.action_pool[7][idx]
-            next_s=self.next_state_pool[7][idx]
-            r=self.reward_pool[7][idx]
-            d=self.done_pool[7][idx]
-    
-        for _ in range(num_samples):
-            if jit_compile==True:
-                gradients = self.backward(s, a, next_s, r, d)
-            else:
-                gradients = self.backward_(s, a, next_s, r, d)
-            grad_flat = tf.concat([tf.reshape(grad, [-1]) for grad in gradients], axis=0)
-            grads.append(grad_flat)
+            for train_data, labels in train_ds:
+                if counter == num_samples:
+                    break
+                if jit_compile==True:
+                    gradients = self.backward(train_data, labels)
+                else:
+                    gradients = self.backward_(train_data, labels)
+                grad_flat = tf.concat([tf.reshape(grad, [-1]) for grad in gradients], axis=0)
+                grads.append(grad_flat)
+                
+                counter += 1
     
         grads = tf.stack(grads)
         mean_grad = tf.reduce_mean(grads, axis=0)
@@ -647,7 +661,7 @@ class Model:
     
     
     def adabatch(self, train_ds, num_samples, target_noise=1e-3, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, align=None, buffer_size=None, jit_compile=True):
-        single_var = self.estimate_gradient_variance(self.batch, num_samples, jit_compile)
+        single_var = self.estimate_gradient_variance(train_ds, self.batch, num_samples, jit_compile)
         
         estimated_noise = single_var
         
