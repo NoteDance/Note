@@ -413,7 +413,7 @@ class RL:
         target_eps = np.clip(target_eps, eps_params['min'], eps_params['max'])
         smooth = eps_params.get('smooth', 0.2)
         eps = smooth * eps + (1.0 - smooth) * target_eps
-        return eps
+        return float(eps)
     
     
     def adjust_batch_size(self, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, target_ess=None, align=None, alpha_lr=None, alpha_min=None, alpha_max=None, smooth_beta=0.2, lr_params=None, eps_params=None):
