@@ -499,21 +499,21 @@ class RL:
     
     def estimate_gradient_variance(self, batch_size, num_samples, jit_compile=True):
         grads = []
-        idx = np.random.choice(self.state_pool.shape[0], size=batch_size, replace=False)
-        if self.processes_her==None and self.processes_pr==None:
-            s=self.state_pool[idx]
-            a=self.action_pool[idx]
-            next_s=self.next_state_pool[idx]
-            r=self.reward_pool[idx]
-            d=self.done_pool[idx]
-        else:
-            s=self.state_pool[7][idx]
-            a=self.action_pool[7][idx]
-            next_s=self.next_state_pool[7][idx]
-            r=self.reward_pool[7][idx]
-            d=self.done_pool[7][idx]
     
         for _ in range(num_samples):
+            idx = np.random.choice(self.state_pool.shape[0], size=batch_size, replace=False)
+            if self.processes_her==None and self.processes_pr==None:
+                s=self.state_pool[idx]
+                a=self.action_pool[idx]
+                next_s=self.next_state_pool[idx]
+                r=self.reward_pool[idx]
+                d=self.done_pool[idx]
+            else:
+                s=self.state_pool[7][idx]
+                a=self.action_pool[7][idx]
+                next_s=self.next_state_pool[7][idx]
+                r=self.reward_pool[7][idx]
+                d=self.done_pool[7][idx]
             if jit_compile==True:
                 gradients = self.backward(s, a, next_s, r, d)
             else:
