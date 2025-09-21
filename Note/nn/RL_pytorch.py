@@ -411,6 +411,9 @@ class RL_pytorch:
     
     
     def adabatch(self, num_samples, target_noise=1e-3, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, align=None, alpha_lr=None, alpha_min=None, alpha_max=None, smooth_beta=0.2, lr_params=None, eps_params=None):
+        if not hasattr(self, 'ema_noise'):
+            self.ema_noise = None
+        
         single_var = self.estimate_gradient_variance(self.batch, num_samples)
         
         estimated_noise = single_var
@@ -439,13 +442,13 @@ class RL_pytorch:
         new_batch = align * (new_batch // align)
         new_batch = max(1, min(new_batch, max_batch))
         
-        if alpha_lr is not None and target_noise is not None:
+        if alpha_lr is not None:
             target_alpha = self.alpha + alpha_lr * (target_noise - ema_noise) / target_noise
             target_alpha = np.clip(target_alpha, alpha_min, alpha_max)
             self.alpha = smooth_beta * self.alpha + (1.0 - smooth_beta) * target_alpha
             self.alpha = float(self.alpha)
             
-        if lr_params is not None and target_noise is not None:
+        if lr_params is not None:
             if type(self.optimizer) == list:
                 for optimizer in self.optimizer:
                     optimizer.learning_rate.assign(self.adjust_lr(lr_params, optimizer.learning_rate, ema_noise, target_noise))
@@ -456,7 +459,7 @@ class RL_pytorch:
                 if hasattr(optimizer, 'adamw_lr'):
                     self.optimizer.adamw_lr.assign(self.adjust_lr(lr_params, self.optimizer.adamw_lr, ema_noise, target_noise))
     
-        if eps_params is not None and target_noise is not None:
+        if eps_params is not None:
             if type(self.policy) == list:
                 for policy in self.policy:
                     policy.eps = self.adjust_eps(eps_params, policy.eps, ema_noise, target_noise)

@@ -661,6 +661,9 @@ class Model:
     
     
     def adabatch(self, train_ds, num_samples, target_noise=1e-3, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, align=None, lr_params=None, buffer_size=None, jit_compile=True):
+        if not hasattr(self, 'ema_noise'):
+            self.ema_noise = None
+        
         single_var = self.estimate_gradient_variance(train_ds, self.batch, num_samples, jit_compile)
         
         estimated_noise = single_var
@@ -693,7 +696,7 @@ class Model:
         self.buffer_size = buffer_size
         self.batch_size = new_batch
         
-        if lr_params is not None and target_noise is not None:
+        if lr_params is not None:
             if type(self.optimizer) == list:
                 for optimizer in self.optimizer:
                     optimizer.learning_rate.assign(self.adjust_lr(lr_params, optimizer.learning_rate, ema_noise, target_noise))
