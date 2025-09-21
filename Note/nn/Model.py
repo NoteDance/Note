@@ -660,7 +660,7 @@ class Model:
         return variance
     
     
-    def adabatch(self, train_ds, num_samples, target_noise=1e-3, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, align=None, buffer_size=None, jit_compile=True):
+    def adabatch(self, train_ds, num_samples, target_noise=1e-3, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, align=None, lr_params=None, buffer_size=None, jit_compile=True):
         single_var = self.estimate_gradient_variance(train_ds, self.batch, num_samples, jit_compile)
         
         estimated_noise = single_var
@@ -692,6 +692,17 @@ class Model:
         self.batch_size_old=self.batch_size
         self.buffer_size = buffer_size
         self.batch_size = new_batch
+        
+        if lr_params is not None and target_noise is not None:
+            if type(self.optimizer) == list:
+                for optimizer in self.optimizer:
+                    optimizer.learning_rate.assign(self.adjust_lr(lr_params, optimizer.learning_rate, ema_noise, target_noise))
+                    if hasattr(optimizer, 'adamw_lr'):
+                        optimizer.adamw_lr.assign(self.adjust_lr(lr_params, optimizer.adamw_lr, ema_noise, target_noise))
+            else:
+                self.optimizer.learning_rate.assign(self.adjust_lr(lr_params, self.optimizer.learning_rate, ema_noise, target_noise))
+                if hasattr(optimizer, 'adamw_lr'):
+                    self.optimizer.adamw_lr.assign(self.adjust_lr(lr_params, self.optimizer.adamw_lr, ema_noise, target_noise))
         
         if buffer_size is not None:
             return train_ds.shuffle(buffer_size).batch(new_batch)
