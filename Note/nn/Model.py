@@ -689,6 +689,7 @@ class Model:
         new_batch = align * (new_batch // align)
         new_batch = max(1, min(new_batch, max_batch))
         
+        self.batch_size_old=self.batch_size
         self.buffer_size = buffer_size
         self.batch_size = new_batch
         
@@ -716,10 +717,9 @@ class Model:
             mp=multiprocessing
         else:
             mp=None
-        try:
-            self.batch_size=train_ds._batch_size.numpy()
-        except Exception:
-            self.batch_size=None
+        self.batch_size=train_ds._batch_size.numpy()
+        self.batch_size_old=self.batch_size
+        self.batches=train_ds.cardinality().numpy()
         self.loss_object=loss_object
         self.train_loss=train_loss
         if self.optimizer==None:
@@ -728,10 +728,8 @@ class Model:
         self.train_accuracy=train_accuracy
         self.test_loss=test_loss
         self.test_accuracy=test_accuracy
-        try:
+        if test_ds!=None:
             self.test_batch_size=test_ds._batch_size.numpy()
-        except Exception:
-            self.test_batch_size=None
         self.processes=processes
         self.parallel_test_=parallel_test
         self.jit_compile=jit_compile
@@ -754,14 +752,18 @@ class Model:
                 if train_accuracy!=None:
                     train_accuracy.reset_states()
                 
-                if hasattr(self, 'batch_size_fn'):
-                    train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
+                if hasattr(self, 'batch_size_fn') and self.batch_size_old != self.batch_size:
+                    if self.buffer_size != None:
+                        train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
+                    else:
+                        train_ds = train_ds.batch(self.batch_size)
+                    self.batches=train_ds.cardinality().numpy()
             
                 batch = 0
                 for train_data, labels in train_ds:
                     if self.stop_training==True:
                         return
-                    if hasattr(self, 'batch_size_fn') and self.batch_counter % train_ds.cardinality().numpy() == 0:
+                    if hasattr(self, 'batch_size_fn') and self.batch_counter % self.batches == 0:
                         break
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_batch_begin'):
@@ -867,14 +869,18 @@ class Model:
                 if train_accuracy!=None:
                     train_accuracy.reset_states()
                 
-                if hasattr(self, 'batch_size_fn'):
-                    train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
+                if hasattr(self, 'batch_size_fn') and self.batch_size_old != self.batch_size:
+                    if self.buffer_size != None:
+                        train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
+                    else:
+                        train_ds = train_ds.batch(self.batch_size)
+                    self.batches=train_ds.cardinality().numpy()
             
                 batch = 0
                 for train_data, labels in train_ds:
                     if self.stop_training==True:
                         return
-                    if hasattr(self, 'batch_size_fn') and self.batch_counter % train_ds.cardinality().numpy() == 0:
+                    if hasattr(self, 'batch_size_fn') and self.batch_counter % self.batches == 0:
                         break
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_batch_begin'):
@@ -1000,6 +1006,8 @@ class Model:
                 p=1
         self.loss_object=loss_object
         self.global_batch_size=global_batch_size
+        self.batch_size_old=global_batch_size
+        self.batches=train_dataset.cardinality().numpy()
         if self.optimizer==None:
             self.optimizer=optimizer
         self.strategy=strategy
@@ -1042,8 +1050,12 @@ class Model:
                     if test_accuracy!=None:
                         test_accuracy.reset_states()
                     
-                    if hasattr(self, 'batch_size_fn'):
-                        train_dist_dataset = train_dist_dataset.shuffle(self.buffer_size).batch(self.batch_size)
+                    if hasattr(self, 'batch_size_fn') and self.batch_size_old != self.batch_size:
+                        if self.buffer_size != None:
+                            train_dist_dataset = train_dist_dataset.shuffle(self.buffer_size).batch(self.batch_size)
+                        else:
+                            train_dist_dataset = train_dist_dataset.batch(self.batch_size)
+                        self.batches=train_dist_dataset.cardinality().numpy()
                 
                     total_loss = 0.0
                     num_batches = 0
@@ -1051,7 +1063,7 @@ class Model:
                     for x in train_dist_dataset:
                         if self.stop_training==True:
                             return
-                        if hasattr(self, 'batch_size_fn') and self.batch_counter % train_dist_dataset.cardinality().numpy() == 0:
+                        if hasattr(self, 'batch_size_fn') and self.batch_counter % self.batches == 0:
                             break
                         for callback in self.callbacks:
                             if hasattr(callback, 'on_batch_begin'):
@@ -1185,8 +1197,12 @@ class Model:
                     if test_accuracy!=None:
                         test_accuracy.reset_states()
                     
-                    if hasattr(self, 'batch_size_fn'):
-                        train_dist_dataset = train_dist_dataset.shuffle(self.buffer_size).batch(self.batch_size)
+                    if hasattr(self, 'batch_size_fn') and self.batch_size_old != self.batch_size:
+                        if self.buffer_size != None:
+                            train_dist_dataset = train_dist_dataset.shuffle(self.buffer_size).batch(self.batch_size)
+                        else:
+                            train_dist_dataset = train_dist_dataset.batch(self.batch_size)
+                        self.batches=train_dist_dataset.cardinality().numpy()
                 
                     total_loss = 0.0
                     num_batches = 0
@@ -1194,7 +1210,7 @@ class Model:
                     for x in train_dist_dataset:
                         if self.stop_training==True:
                             return
-                        if hasattr(self, 'batch_size_fn') and self.batch_counter % train_dist_dataset.cardinality().numpy() == 0:
+                        if hasattr(self, 'batch_size_fn') and self.batch_counter % self.batches == 0:
                             break
                         for callback in self.callbacks:
                             if hasattr(callback, 'on_batch_begin'):
@@ -1332,10 +1348,11 @@ class Model:
                     if self.steps_per_execution==None and self.end():
                         break
                     
-                    if hasattr(self, 'batch_size_fn'):
+                    if hasattr(self, 'batch_size_fn') and self.batch_size_old != self.batch_size:
                         with strategy.scope():
                             multi_worker_dataset = strategy.distribute_datasets_from_function(
                                     lambda input_context: self.dataset_fn(train_dataset, self.batch_size, input_context))
+                        self.batches=multi_worker_dataset.cardinality().numpy()
                     
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_epoch_begin'):
@@ -1434,10 +1451,12 @@ class Model:
                     if self.steps_per_execution==None and self.end():
                         break
                     
-                    if hasattr(self, 'batch_size_fn'):
+                    if hasattr(self, 'batch_size_fn') and self.batch_size_old != self.batch_size:
                         with strategy.scope():
                             multi_worker_dataset = strategy.distribute_datasets_from_function(
                                     lambda input_context: self.dataset_fn(train_dataset, self.batch_size, input_context))
+                        self.batches=multi_worker_dataset.cardinality().numpy()
+                        
                     
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_epoch_begin'):
@@ -1746,7 +1765,7 @@ class Model:
         batch = 0
         
         while self.step_in_epoch < num_steps_per_epoch:
-            if hasattr(self, 'batch_size_fn') and self.batch_counter % multi_worker_dataset.cardinality().numpy() == 0:
+            if hasattr(self, 'batch_size_fn') and self.batch_counter % self.batches == 0:
                 break
             for callback in self.callbacks:
                 if hasattr(callback, 'on_batch_begin'):
@@ -1818,8 +1837,6 @@ class Model:
         batch = 0
         
         while self.step_in_epoch < num_steps_per_epoch:
-            if hasattr(self, 'batch_size_fn') and self.batch_counter % per_worker_dataset.cardinality().numpy() == 0:
-                break
             for callback in self.callbacks:
                 if hasattr(callback, 'on_batch_begin'):
                     callback.on_batch_begin(batch, logs={})
@@ -1838,8 +1855,6 @@ class Model:
             self.step_in_epoch += 1
             self.batch_counter += 1
             batch += 1
-            if hasattr(self, 'batch_size_fn'):
-                per_worker_iterator = iter(self.batch_size_fn(per_worker_dataset))
             if self.steps_per_execution!=None and self.batch_counter%self.steps_per_execution==0:
                 self.train_loss=total_loss.fetch() / num_batches
                 if self.end():
