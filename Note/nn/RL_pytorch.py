@@ -297,6 +297,13 @@ class RL_pytorch:
         return window_size
     
     
+    def adjust_alpha(self, alpha_params, ema, target_ess):
+        target_alpha = self.alpha + alpha_params['alpha_lr'] * (target_ess - ema) / target_ess
+        target_alpha = np.clip(target_alpha, alpha_params['alpha_min'], alpha_params['alpha_max'])
+        self.alpha = alpha_params['smooth'] * self.alpha + (1.0 - alpha_params['smooth']) * target_alpha
+        self.alpha = float(self.alpha)
+    
+    
     def adjust_lr(self, lr_params, lr, ema, target):      
         target_lr = lr + lr_params['lr_rate'] * (ema / target - 1.0)
         target_lr = np.clip(target_lr, lr_params['min'], lr_params['max'])
@@ -313,7 +320,42 @@ class RL_pytorch:
         return float(eps)
     
     
-    def adjust_batch_size(self, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, target_ess=None, align=None, alpha_lr=None, alpha_min=None, alpha_max=None, smooth_beta=0.2, lr_params=None, eps_params=None):
+    def adjust_update_freq(self, freq_params, ema, target):
+        if self.update_batches is not None:
+            freq = self.update_batches
+        else:
+            freq = self.update_steps
+        target_freq = freq + freq_params['freq_rate'] * (target - ema) / target
+        target_freq = np.clip(target_freq, freq_params['min'], freq_params['max'])
+        smooth = freq_params.get('smooth', 0.2)
+        freq = smooth * freq + (1.0 - smooth) * target_freq
+        if self.update_batches is not None:
+            self.update_batches = int(freq)
+        else:
+            self.update_steps = int(freq)
+
+
+    def adjust_tau(self, tau_params, ema, target):      
+        if hasattr(self, 'tau'):
+            tau = self.tau
+        target_tau = tau + tau_params['tau_rate'] * (ema / target - 1.0)
+        target_tau = np.clip(target_tau, tau_params['min'], tau_params['max'])
+        smooth = tau_params.get('smooth', 0.2)
+        tau = smooth * tau + (1.0 - smooth) * target_tau
+        self.tau = float(tau)
+    
+    
+    def adjust_gamma(self, gamma_params, ema, target):    
+        if hasattr(self, 'gamma'):
+            gamma = self.gamma
+        target_gamma = gamma + gamma_params['gamma_rate'] * (ema / target - 1.0)
+        target_gamma = np.clip(target_gamma, gamma_params['min'], gamma_params['max'])
+        smooth = gamma_params.get('smooth', 0.2)
+        gamma = smooth * gamma + (1.0 - smooth) * target_gamma
+        self.gamma = float(gamma)
+    
+    
+    def adjust_batch_size(self, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, target_ess=None, align=None, alpha_params=None, lr_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None):
         if not hasattr(self, 'ema_ess'):
             self.ema_ess = None
         
@@ -349,11 +391,8 @@ class RL_pytorch:
         new_batch = align * (batch // align)
         new_batch = max(1, new_batch)
         
-        if alpha_lr is not None and target_ess is not None:
-            target_alpha = self.alpha + alpha_lr * (target_ess - ema) / target_ess
-            target_alpha = np.clip(target_alpha, alpha_min, alpha_max)
-            self.alpha = smooth_beta * self.alpha + (1.0 - smooth_beta) * target_alpha
-            self.alpha = float(self.alpha)
+        if alpha_params is not None and target_ess is not None:
+            self.adjust_alpha(alpha_params, ema, target_ess)
             
         if lr_params is not None and target_ess is not None:
             if type(self.optimizer) == list:
@@ -372,6 +411,15 @@ class RL_pytorch:
                     policy.eps = self.adjust_eps(eps_params, policy.eps, ema, target_ess)
             else:
                 self.policy.eps = self.adjust_eps(eps_params, self.policy.eps, ema, target_ess)
+                
+        if freq_params is not None and target_ess is not None:
+            self.adjust_update_freq(freq_params, ema, target_ess)
+        
+        if tau_params is not None and target_ess is not None:
+            self.adjust_tau(tau_params, ema, target_ess)
+            
+        if gamma_params is not None and target_ess is not None:
+            self.adjust_gamma(gamma_params, ema, target_ess)
                 
         new_batch = int(min(new_batch, buf_len))
         
@@ -410,7 +458,7 @@ class RL_pytorch:
         return variance
     
     
-    def adabatch(self, num_samples, target_noise=1e-3, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, align=None, alpha_lr=None, alpha_min=None, alpha_max=None, smooth_beta=0.2, lr_params=None, eps_params=None):
+    def adabatch(self, num_samples, target_noise=1e-3, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, align=None, alpha_params=None, lr_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None):
         if not hasattr(self, 'ema_noise'):
             self.ema_noise = None
         
@@ -442,11 +490,8 @@ class RL_pytorch:
         new_batch = align * (new_batch // align)
         new_batch = max(1, min(new_batch, max_batch))
         
-        if alpha_lr is not None:
-            target_alpha = self.alpha + alpha_lr * (target_noise - ema_noise) / target_noise
-            target_alpha = np.clip(target_alpha, alpha_min, alpha_max)
-            self.alpha = smooth_beta * self.alpha + (1.0 - smooth_beta) * target_alpha
-            self.alpha = float(self.alpha)
+        if alpha_params is not None:
+            self.adjust_alpha(alpha_params, ema_noise, target_noise)
             
         if lr_params is not None:
             if type(self.optimizer) == list:
@@ -465,6 +510,15 @@ class RL_pytorch:
                     policy.eps = self.adjust_eps(eps_params, policy.eps, ema_noise, target_noise)
             else:
                 self.policy.eps = self.adjust_eps(eps_params, self.policy.eps, ema_noise, target_noise)
+            
+        if freq_params is not None:
+            self.adjust_update_freq(freq_params, ema_noise, target_noise)
+        
+        if tau_params is not None:
+            self.adjust_tau(tau_params, ema_noise, target_noise)
+            
+        if gamma_params is not None:
+            self.adjust_gamma(gamma_params, ema_noise, target_noise)
         
         return new_batch
     
