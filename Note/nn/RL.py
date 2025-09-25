@@ -82,6 +82,7 @@ class RL:
                 self.info['jit_compile']=self.jit_compile
                 self.info['pool_network']=self.pool_network
                 self.info['processes']=self.processes
+                self.info['num_store']=self.num_store
                 self.info['processes_her']=self.processes_her
                 self.info['processes_pr']=self.processes_pr
                 self.info['window_size']=self.window_size
@@ -107,6 +108,7 @@ class RL:
                 self.info['jit_compile']=self.jit_compile
                 self.info['pool_network']=self.pool_network
                 self.info['processes']=self.processes
+                self.info['num_store']=self.num_store
                 self.info['processes_her']=self.processes_her
                 self.info['processes_pr']=self.processes_pr
                 self.info['window_size']=self.window_size
@@ -455,9 +457,17 @@ class RL:
         smooth = gamma_params.get('smooth', 0.2)
         gamma = smooth * gamma + (1.0 - smooth) * target_gamma
         self.gamma = float(gamma)
+        
+        
+    def adjust_num_store(self, store_params, ema, target):      
+        target_num_store = self.num_store + store_params['rate'] * (ema / target - 1.0)
+        target_num_store = np.clip(target_num_store, store_params['min'], store_params['max'])
+        smooth = store_params['smooth']
+        num_store = smooth * self.num_store + (1.0 - smooth) * target_num_store
+        self.num_store = int(max(1, num_store))
     
     
-    def adjust_batch_size(self, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, target_ess=None, align=None, alpha_params=None, lr_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None):
+    def adjust_batch_size(self, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, target_ess=None, align=None, alpha_params=None, lr_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None, store_params=None):
         if not hasattr(self, 'ema_ess'):
             self.ema_ess = None
         
@@ -522,6 +532,9 @@ class RL:
             
         if gamma_params is not None and target_ess is not None:
             self.adjust_gamma(gamma_params, ema, target_ess)
+        
+        if store_params is not None and target_ess is not None:
+            self.adjust_num_store(store_params, ema, target_ess)
                 
         new_batch = int(min(new_batch, buf_len))
         
@@ -1602,6 +1615,7 @@ class RL:
             self.modify_ratio_TD()
         else:
             self.modify_TD()
+        counter=0
         while True:
             for p in range(self.processes):
                 process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
@@ -1609,13 +1623,14 @@ class RL:
                 process_list.append(process)
             for process in process_list:
                 process.join()
+            counter+=1
             if self.processes_her==None and self.processes_pr==None:
                 self.state_pool=np.concatenate(self.state_pool_list)
                 self.action_pool=np.concatenate(self.action_pool_list)
                 self.next_state_pool=np.concatenate(self.next_state_pool_list)
                 self.reward_pool=np.concatenate(self.reward_pool_list)
                 self.done_pool=np.concatenate(self.done_pool_list)
-                if len(self.state_pool)<self.batch:
+                if counter<self.num_store and len(self.state_pool)<self.batch:
                     continue
                 if not self.PR and self.num_updates!=None:
                     if len(self.state_pool)>=self.pool_size_:
@@ -1633,7 +1648,7 @@ class RL:
                 self.next_state_pool[7]=np.concatenate(self.next_state_pool_list)
                 self.reward_pool[7]=np.concatenate(self.reward_pool_list)
                 self.done_pool[7]=np.concatenate(self.done_pool_list)
-                if len(self.state_pool[7])<self.batch:
+                if counter<self.num_store and len(self.state_pool[7])<self.batch:
                     continue
                 if not self.PR and self.num_updates!=None:
                     if len(self.state_pool)>=self.pool_size_:
@@ -1666,7 +1681,7 @@ class RL:
             del self.reward_list[0]
     
     
-    def train(self, train_loss, optimizer, episodes=None, jit_compile=True, pool_network=True, processes=None, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, random=False, save_data=True, callbacks=None, p=None):
+    def train(self, train_loss, optimizer, episodes=None, jit_compile=True, pool_network=True, processes=None, num_store=1, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, random=False, save_data=True, callbacks=None, p=None):
         avg_reward=None
         if p!=0:
             if p==None:
@@ -1688,6 +1703,7 @@ class RL:
         self.jit_compile=jit_compile
         self.pool_network=pool_network
         self.processes=processes
+        self.num_store=num_store
         self.processes_her=processes_her
         self.processes_pr=processes_pr
         self.window_size=window_size
@@ -1905,7 +1921,7 @@ class RL:
         return
     
     
-    def distributed_training(self, optimizer, strategy, episodes=None, num_episodes=None, jit_compile=True, pool_network=True, processes=None, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, random=False, save_data=True, callbacks=None, p=None):
+    def distributed_training(self, optimizer, strategy, episodes=None, num_episodes=None, jit_compile=True, pool_network=True, processes=None, num_store=1, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, random=False, save_data=True, callbacks=None, p=None):
         avg_reward=None
         if num_episodes!=None:
             episodes=num_episodes
@@ -1930,6 +1946,7 @@ class RL:
         self.jit_compile=jit_compile
         self.pool_network=pool_network
         self.processes=processes
+        self.num_store=num_store
         self.processes_her=processes_her
         self.processes_pr=processes_pr
         self.window_size=window_size
