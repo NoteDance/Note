@@ -38,6 +38,41 @@ def agc(
     return tf.where(g_norm > max_norm, clipped_grad, grad)
 
 
+def closest_smaller_divisor_of_n_to_k(n, k):
+    r"""Get closest smaller divisor of n to k."""
+    def true_fn():
+        return k
+    
+    def false_fn():
+        def true_fn():
+            raise ValueError
+        def false_fn():
+            pass
+        tf.cond(tf.logical_or(n <= 1, k <= 1), true_fn, false_fn)
+        closest_smaller_divisor = -7
+        for i in tf.range(k, 0, -1):
+            def true_fn():
+                def true_fn():
+                    return i
+                def false_fn():
+                    return -7
+                return tf.cond(closest_smaller_divisor == -7, true_fn, false_fn)
+            def false_fn():
+                return -7  # pragma: no cover
+            closest_smaller_divisor = tf.cond(n % i == 0, true_fn, false_fn)
+        return closest_smaller_divisor
+    
+    closest_smaller_divisor = tf.cond(n % k == 0, true_fn, false_fn)
+    
+    def true_fn():
+        return -1
+    def false_fn():
+        return closest_smaller_divisor
+    closest_smaller_divisor = tf.cond(closest_smaller_divisor == -7, true_fn, false_fn)
+    
+    return closest_smaller_divisor
+
+
 class DAdaptLion(optimizer.Optimizer):
     def __init__(
         self,
@@ -208,6 +243,8 @@ class DAdaptLion_e(optimizer.Optimizer):
         pnm=True,
         agc=True,
         cautious=True,
+        subset_size=-1,
+        sn=True,
         clipnorm=None,
         clipvalue=None,
         global_clipnorm=None,
@@ -246,6 +283,8 @@ class DAdaptLion_e(optimizer.Optimizer):
         self.pnm = pnm
         self.agc = agc
         self.cautious = cautious
+        self.subset_size = subset_size
+        self.sn = sn
             
     def build(self, var_list):
         if self.built:
@@ -256,6 +295,7 @@ class DAdaptLion_e(optimizer.Optimizer):
         self.slow_momentum = []
         self.pos_momentum = []
         self.neg_momentum = []
+        self.subset_size_ = []
         self.numerator_weighted = tf.Variable(0.0)
         self.sk_l1 = tf.Variable(0.0)
         self.numerator_accumulator = tf.Variable(0.0)
@@ -286,6 +326,19 @@ class DAdaptLion_e(optimizer.Optimizer):
             self.s.append(self.add_variable_from_reference(
                                 reference_variable=var, name="s"
                                                     ))
+            if self.sn and var.dtype.is_complex:
+                size = tf.size(var)
+                
+                def true_fn():
+                    return self.subset_size
+                def false_fn():
+                    return tf.cast(tf.sqrt(size) / tf.abs(tf.cast(self.subset_size, tf.int32)), tf.int32)
+                self.subset_size_.append(closest_smaller_divisor_of_n_to_k(
+                    size,
+                    tf.cond(self.subset_size > 0, true_fn, false_fn)
+                ))
+            else:
+                self.subset_size_.append(None)
     
     def apply_orthogonal_gradients(self, params, grads, eps = 1e-16):
         for p, g in zip(params, grads):
@@ -335,8 +388,15 @@ class DAdaptLion_e(optimizer.Optimizer):
             if self.agc:
                 grads[self._get_variable_index(variable)] = agc(variable, grad)  
             
+            if variable.dtype.is_complex:
+                grad = tf.stack([tf.math.real(grad), tf.math.imag(grad)], axis=-1)
+            
+            size = tf.size(grad)
+            
             if not self.pnm:
                 exp_avg = self.exp_avg[self._get_variable_index(variable)]
+                if variable.dtype.is_complex:
+                    exp_avg = tf.stack([tf.math.real(exp_avg), tf.math.imag(exp_avg)], axis=-1)
             s = self.s[self._get_variable_index(variable)]
             
             if not self.pnm:
@@ -348,12 +408,21 @@ class DAdaptLion_e(optimizer.Optimizer):
                 def false_fn():
                     return self.neg_momentum[self._get_variable_index(variable)], self.pos_momentum[self._get_variable_index(variable)]
                 pos_momentum, neg_momentum = tf.cond(step % 2 == 1, true_fn, false_fn)
+                if variable.dtype.is_complex:
+                    pos_momentum = tf.stack([tf.math.real(pos_momentum), tf.math.imag(pos_momentum)], axis=-1)
+                    neg_momentum = tf.stack([tf.math.real(neg_momentum), tf.math.imag(neg_momentum)], axis=-1)
                 pos_momentum.assign(pos_momentum * self.beta1 ** 2 + grad * (1.0 - self.beta1 ** 2))
                 exp_avg = (pos_momentum  * 2.0 + neg_momentum * -1.0) * (1.0 / noise_norm)
             
             d_lr = tf.cast(d_lr, variable.dtype)
             
-            update = tf.math.sign(exp_avg * self.beta1 + grad * (1.0 - self.beta1))
+            if self.sn and variable.dtype.is_complex:
+                exp_avg = tf.reshape(exp_avg, (size // self.subset_size_[self._get_variable_index(variable)], self.subset_size_[self._get_variable_index(variable)]))
+                grad = tf.reshape(grad, (size // self.subset_size_[self._get_variable_index(variable)], self.subset_size_[self._get_variable_index(variable)]))
+                update = tf.math.sign(exp_avg * self.beta1 + grad * (1.0 - self.beta1))
+                update = tf.reshape(update, variable.shape)
+            else:
+                update = tf.math.sign(exp_avg * self.beta1 + grad * (1.0 - self.beta1))
             
             if self.cautious:
                 mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
@@ -414,6 +483,9 @@ class DAdaptLion_e(optimizer.Optimizer):
                 "pnm": self.pnm,
                 "agc": self.agc,
                 "cautious": self.cautious,
+                "subset_size": self.subset_size,
+                "sn": self.sn,
+                "subset_size_": self.subset_size_,
             }
         )
         return config
