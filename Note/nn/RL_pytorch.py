@@ -297,8 +297,32 @@ class RL_pytorch:
         return window_size
     
     
-    def adjust_alpha(self, alpha_params, ema, target_ess):
-        target_alpha = self.alpha + alpha_params['alpha_lr'] * (target_ess - ema) / target_ess
+    def adjust_batch(self, batch_params, ema, target):
+        if self.processes_her==None and self.processes_pr==None:
+            buf_len = len(self.state_pool)
+        else:
+            buf_len = len(self.state_pool[7])
+        if batch_params['min_batch'] is None:
+            cur_batch = self.batch
+            batch_params['min_batch'] = max(1, cur_batch // 2)
+        if batch_params['max_batch'] is None:
+            batch_params['max_batch'] = max(1, buf_len)
+            
+        if target != None:
+            batch = int(round(self.batch * ema / target * float(batch_params['scale'])))
+        else:
+            batch = int(round(ema * float(batch_params['scale'])))
+        batch = int(np.clip(batch, batch_params['min_batch'], batch_params['max_batch']))
+        
+        if batch_params['align'] is None:
+            batch_params['align'] = self.batch
+        new_batch = batch_params['align'] * (batch // batch_params['align'])
+        new_batch = max(1, min(new_batch, batch_params['max_batch']))
+        self.batch = new_batch
+    
+    
+    def adjust_alpha(self, alpha_params, ema, target):
+        target_alpha = self.alpha + alpha_params['alpha_lr'] * (target - ema) / target
         target_alpha = np.clip(target_alpha, alpha_params['alpha_min'], alpha_params['alpha_max'])
         self.alpha = alpha_params['smooth'] * self.alpha + (1.0 - alpha_params['smooth']) * target_alpha
         self.alpha = float(self.alpha)
@@ -362,7 +386,7 @@ class RL_pytorch:
         self.num_store = int(max(1, num_store))
     
     
-    def adjust_batch_size(self, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, target_ess=None, align=None, alpha_params=None, lr_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None, store_params=None):
+    def adjust_batch_size(self, smooth_alpha=0.2, batch_params=None, target_ess=None, alpha_params=None, lr_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None, store_params=None):
         if not hasattr(self, 'ema_ess'):
             self.ema_ess = None
         
@@ -379,24 +403,9 @@ class RL_pytorch:
         else:
             ema = smooth_alpha * ess + (1.0 - smooth_alpha) * self.ema_ess
         self.ema_ess = ema
-            
-        buf_len = len(weights)
-        if min_batch is None:
-            cur_batch = self.batch
-            min_batch = max(1, cur_batch // 2)
-        if max_batch is None:
-            max_batch = max(1, buf_len)
-            
-        if target_ess != None:
-            batch = int(max(1, round(self.batch * ema / target_ess * float(scale))))
-        else:
-            batch = int(max(1, round(ema * float(scale))))
-        batch = int(np.clip(batch, min_batch, max_batch))
         
-        if align is None:
-            align = self.batch
-        new_batch = align * (batch // align)
-        new_batch = max(1, new_batch)
+        if batch_params is not None:
+            self.adjust_batch(batch_params, ema, target_ess)
         
         if alpha_params is not None and target_ess is not None:
             self.adjust_alpha(alpha_params, ema, target_ess)
@@ -430,10 +439,6 @@ class RL_pytorch:
         
         if store_params is not None and target_ess is not None:
             self.adjust_num_store(store_params, ema, target_ess)
-                
-        new_batch = int(min(new_batch, buf_len))
-        
-        return int(new_batch)
     
     
     def estimate_gradient_variance(self, batch_size, num_samples):
@@ -468,7 +473,7 @@ class RL_pytorch:
         return variance
     
     
-    def adabatch(self, num_samples, target_noise=1e-3, scale=1.0, smooth_alpha=0.2, min_batch=None, max_batch=None, align=None, alpha_params=None, lr_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None):
+    def adabatch(self, num_samples, target_noise=1e-3, smooth_alpha=0.2, batch_params=None, alpha_params=None, lr_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None):
         if not hasattr(self, 'ema_noise'):
             self.ema_noise = None
         
@@ -482,23 +487,8 @@ class RL_pytorch:
             ema_noise = smooth_alpha * estimated_noise + (1 - smooth_alpha) * self.ema_noise
         self.ema_noise = ema_noise
         
-        if self.processes_her==None and self.processes_pr==None:
-            buf_len = len(self.state_pool)
-        else:
-            buf_len = len(self.state_pool[7])
-        if min_batch is None:
-            cur_batch = self.batch
-            min_batch = max(1, cur_batch // 2)
-        if max_batch is None:
-            max_batch = max(1, buf_len)
-        
-        base_new_batch = int(round(self.batch * (ema_noise / target_noise) * scale))
-        new_batch = int(np.clip(base_new_batch, min_batch, max_batch))
-        
-        if align is None:
-            align = self.batch
-        new_batch = align * (new_batch // align)
-        new_batch = max(1, min(new_batch, max_batch))
+        if batch_params is not None:
+            self.adjust_batch(batch_params, ema_noise, target_noise)
         
         if alpha_params is not None:
             self.adjust_alpha(alpha_params, ema_noise, target_noise)
@@ -529,8 +519,13 @@ class RL_pytorch:
             
         if gamma_params is not None:
             self.adjust_gamma(gamma_params, ema_noise, target_noise)
-        
-        return new_batch
+    
+    
+    def adjust(self, target_ess=None, target_noise=None, num_samples=None, smooth_alpha=0.2, batch_params=None, alpha_params=None, lr_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None, store_params=None):
+        if target_noise is None:
+            self.adjust_batch_size(smooth_alpha, batch_params, target_ess, alpha_params, lr_params, eps_params, freq_params, tau_params, gamma_params, store_params)
+        else:
+            self.adabatch(num_samples, target_noise, smooth_alpha, batch_params, alpha_params, lr_params, eps_params, freq_params, tau_params, gamma_params)
     
     
     def data_func(self):
@@ -659,8 +654,8 @@ class RL_pytorch:
                             self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
                         else:
                             self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
-                    if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
-                        self.batch = self.batch_size_fn()
+                    if hasattr(self, 'adjust_fn') and len(self.state_pool)>=self.pool_size_:
+                        self.adjust_fn()
             if len(self.state_pool)%self.batch!=0:
                 if self.num_updates!=None and self.batch_counter%self.num_updates==0:
                     return loss.detach().numpy()/batches
@@ -705,8 +700,8 @@ class RL_pytorch:
                             self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
                         else:
                             self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
-                    if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
-                        self.batch = self.batch_size_fn()
+                    if hasattr(self, 'adjust_fn') and len(self.state_pool)>=self.pool_size_:
+                        self.adjust_fn()
         else:
             if self.pool_network==True:
                 train_ds=DataLoader((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool),batch_size=self.batch)
@@ -728,8 +723,8 @@ class RL_pytorch:
                                 self.next_state_pool_list[p]=None
                                 self.reward_pool_list[p]=None
                                 self.done_pool_list[p]=None
-                    if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
-                        self.batch = self.batch_size_fn()
+                    if hasattr(self, 'adjust_fn') and len(self.state_pool)>=self.pool_size_:
+                        self.adjust_fn()
                         if self.num_updates!=None and self.batch_counter%self.update_batches==0:
                             if self.processes_her==None and self.processes_pr==None:
                                 self.state_pool=np.concatenate(self.state_pool_list)
@@ -790,8 +785,8 @@ class RL_pytorch:
                     self.next_state_pool=None
                     self.reward_pool=None
                     self.done_pool=None
-            if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
-                self.batch = self.batch_size_fn()
+            if hasattr(self, 'adjust_fn') and len(self.state_pool)>=self.pool_size_:
+                self.adjust_fn()
                 if self.step_counter%self.update_steps==0:
                     if self.num_updates!=None:
                         if len(self.state_pool)>=self.pool_size_:
@@ -1114,9 +1109,9 @@ class RL_pytorch:
                 self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
             else:
                 self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
-            if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
+            if hasattr(self, 'adjust_fn') and len(self.state_pool)>=self.pool_size_:
                 self.prepare_flag=True
-                self.batch = self.batch_size_fn()
+                self.adjust_fn()
                 self.prepare_flag=False
         self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
         if len(self.reward_list)>self.trial_count:
