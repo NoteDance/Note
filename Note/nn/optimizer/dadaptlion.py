@@ -38,6 +38,41 @@ def agc(
     return tf.where(g_norm > max_norm, clipped_grad, grad)
 
 
+def closest_smaller_divisor_of_n_to_k(n, k):
+    r"""Get closest smaller divisor of n to k."""
+    def true_fn():
+        return k
+    
+    def false_fn():
+        def true_fn():
+            raise ValueError
+        def false_fn():
+            pass
+        tf.cond(tf.logical_or(n <= 1, k <= 1), true_fn, false_fn)
+        closest_smaller_divisor = -7
+        for i in tf.range(k, 0, -1):
+            def true_fn():
+                def true_fn():
+                    return i
+                def false_fn():
+                    return -7
+                return tf.cond(closest_smaller_divisor == -7, true_fn, false_fn)
+            def false_fn():
+                return -7  # pragma: no cover
+            closest_smaller_divisor = tf.cond(n % i == 0, true_fn, false_fn)
+        return closest_smaller_divisor
+    
+    closest_smaller_divisor = tf.cond(n % k == 0, true_fn, false_fn)
+    
+    def true_fn():
+        return -1
+    def false_fn():
+        return closest_smaller_divisor
+    closest_smaller_divisor = tf.cond(closest_smaller_divisor == -7, true_fn, false_fn)
+    
+    return closest_smaller_divisor
+
+
 class DAdaptLion(optimizer.Optimizer):
     def __init__(
         self,
@@ -208,6 +243,8 @@ class DAdaptLion_e(optimizer.Optimizer):
         pnm=True,
         agc=True,
         cautious=True,
+        subset_size=-1,
+        sn=True,
         clipnorm=None,
         clipvalue=None,
         global_clipnorm=None,
@@ -246,6 +283,8 @@ class DAdaptLion_e(optimizer.Optimizer):
         self.pnm = pnm
         self.agc = agc
         self.cautious = cautious
+        self.subset_size = subset_size
+        self.sn = sn
             
     def build(self, var_list):
         if self.built:
@@ -256,6 +295,7 @@ class DAdaptLion_e(optimizer.Optimizer):
         self.slow_momentum = []
         self.pos_momentum = []
         self.neg_momentum = []
+        self.subset_size_ = []
         self.numerator_weighted = tf.Variable(0.0)
         self.sk_l1 = tf.Variable(0.0)
         self.numerator_accumulator = tf.Variable(0.0)
@@ -286,6 +326,17 @@ class DAdaptLion_e(optimizer.Optimizer):
             self.s.append(self.add_variable_from_reference(
                                 reference_variable=var, name="s"
                                                     ))
+            if self.sn:
+                size = tf.size(var)
+                
+                def true_fn():
+                    return self.subset_size
+                def false_fn():
+                    return tf.cast(tf.sqrt(size) / tf.abs(tf.cast(self.subset_size, tf.int32)), tf.int32)
+                self.subset_size_.append(closest_smaller_divisor_of_n_to_k(
+                    size,
+                    tf.cond(self.subset_size > 0, true_fn, false_fn)
+                ))
     
     def apply_orthogonal_gradients(self, params, grads, eps = 1e-16):
         for p, g in zip(params, grads):
@@ -334,6 +385,9 @@ class DAdaptLion_e(optimizer.Optimizer):
             
             if self.agc:
                 grads[self._get_variable_index(variable)] = agc(variable, grad)  
+                grad = grads[self._get_variable_index(variable)]
+            
+            size = tf.size(grad)
             
             if not self.pnm:
                 exp_avg = self.exp_avg[self._get_variable_index(variable)]
@@ -377,7 +431,12 @@ class DAdaptLion_e(optimizer.Optimizer):
             
             exp_avg.assign(exp_avg * self.beta2 + grad * (1.0 - self.beta2) * d_lr)
             
-            self.numerator_accumulator.assign_add(tf.cast(tf.tensordot(tf.reshape(update, [-1]), tf.reshape(s, [-1]), axes=1) * d_lr, tf.float32))
+            if self.sn:
+                reshaped_update = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(variable)], self.subset_size_[self._get_variable_index(variable)]))
+                reshaped_s = tf.reshape(s, (size // self.subset_size_[self._get_variable_index(variable)], self.subset_size_[self._get_variable_index(variable)]))
+                self.numerator_accumulator.assign_add(tf.cast(tf.tensordot(reshaped_update, reshaped_s, axes=len(update.shape)) * d_lr, tf.float32))
+            else:
+                self.numerator_accumulator.assign_add(tf.cast(tf.tensordot(tf.reshape(update, [-1]), tf.reshape(s, [-1]), axes=1) * d_lr, tf.float32))
             s.assign(s * beta2_sq + update * (1.0 - beta2_sq) * d_lr)
             
             self.sk_l1.assign_add(tf.cast(tf.reduce_sum(tf.abs(s)), tf.float32))
@@ -414,6 +473,9 @@ class DAdaptLion_e(optimizer.Optimizer):
                 "pnm": self.pnm,
                 "agc": self.agc,
                 "cautious": self.cautious,
+                "subset_size": self.subset_size,
+                "sn": self.sn,
+                "subset_size_": self.subset_size_,
             }
         )
         return config
