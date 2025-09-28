@@ -899,6 +899,7 @@ class SOAP_e(optimizer.Optimizer):
             
             if self.agc:
                 grads[self._get_variable_index(p)] = agc(p, g) 
+                g = grads[self._get_variable_index(p)]
 
             def true_fn():
                 self.update_pre_conditioner(

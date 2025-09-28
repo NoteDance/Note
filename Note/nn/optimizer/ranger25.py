@@ -285,6 +285,7 @@ class Ranger25(optimizer.Optimizer):
                 g += p * self.weight_decay
                 
             grads[self._get_variable_index(p)] = agc(p, g)
+            g = grads[self._get_variable_index(p)]
 
             exp_avg = self.exp_avg[self._get_variable_index(p)]
             exp_avg_sq = self.exp_avg_sq[self._get_variable_index(p)]

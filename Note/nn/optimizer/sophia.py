@@ -493,7 +493,8 @@ class SophiaH_e(optimizer.Optimizer):
             size = tf.size(p)
                          
             if self.agc:
-                grads[self._get_variable_index(p)] = agc(p, g)   
+                grads[self._get_variable_index(p)] = agc(p, g)
+                g = grads[self._get_variable_index(p)]
 
             if not self.pnm:
                 momentum = self.momentum[self._get_variable_index(p)]

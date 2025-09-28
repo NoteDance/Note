@@ -1189,7 +1189,8 @@ class Muon_e(optimizer.Optimizer):
                     grad += p * self.weight_decay
                 
                 if self.agc:
-                    grads[self._get_variable_index(p)] = agc(p, grad) 
+                    grads[self._get_variable_index(p)] = agc(p, grad)
+                    grad = grads[self._get_variable_index(p)]
                 
                 step = tf.cast(self.iterations + 1, p.dtype)
                 
@@ -1272,6 +1273,7 @@ class Muon_e(optimizer.Optimizer):
                 
                 if self.agc:
                     grads[self._get_variable_index(p)] = agc(p, grad) 
+                    grad = grads[self._get_variable_index(p)]
                     
                 lr = tf.cast(self.adamw_lr, p.dtype)
                 step = tf.cast(self.iterations + 1, p.dtype)
@@ -1894,7 +1896,8 @@ class DistributedMuon_e(optimizer.Optimizer):
                         'DistributedMuon_e does not support sparse gradients')
                 
                 if self.agc:
-                    grads[self._get_variable_index(trainable_variables[i])] = agc(trainable_variables[i], grad) 
+                    grads[self._get_variable_index(trainable_variables[i])] = agc(trainable_variables[i], grad)
+                    grad = grads[self._get_variable_index(trainable_variables[i])]
                 
                 step = tf.cast(self.iterations + 1, trainable_variables[i].dtype)
                 if i + self.rank < len(trainable_variables):
@@ -1992,6 +1995,7 @@ class DistributedMuon_e(optimizer.Optimizer):
                         'DistributedMuon_e does not support sparse gradients')
                 if self.agc:
                     grads[self._get_variable_index(p)] = agc(p, grad)
+                    grad = grads[self._get_variable_index(p)]
                 lr = tf.cast(self.adamw_lr, p.dtype)
                 step = tf.cast(self.iterations + 1, p.dtype)
                 bias_correction1 = 1 - self.beta1 ** step
@@ -2015,8 +2019,6 @@ class DistributedMuon_e(optimizer.Optimizer):
                     exp_avg_slow = self.exp_avg_slow[self._get_variable_index(p)]
             
                     clip = tf.pow(step, 0.25)
-                
-                grad = grads[self._get_variable_index(p)]
                 
                 size = tf.size(grad)
                 
@@ -2179,6 +2181,8 @@ class DistributedMuon_e(optimizer.Optimizer):
                     self.d0_.assign(d)
                     
                     for p in trainable_variables:
+                        grad = grads[self._get_variable_index(p)]
+                        
                         d_lr = tf.cast(d_lr, p.dtype)
                         
                         step = tf.cast(self.iterations + 1, p.dtype)
@@ -2616,6 +2620,7 @@ class AdaMuon_e(optimizer.Optimizer):
                 
                 if self.agc:
                     grads[self._get_variable_index(p)] = agc(p, grad)
+                    grad = grads[self._get_variable_index(p)]
                 
                 step = tf.cast(self.iterations + 1, p.dtype)
                 
@@ -2709,6 +2714,7 @@ class AdaMuon_e(optimizer.Optimizer):
                 
                 if self.agc:
                     grads[self._get_variable_index(p)] = agc(p, grad) 
+                    grad = grads[self._get_variable_index(p)]
                     
                 lr = tf.cast(self.adamw_lr, p.dtype)
                 
@@ -3305,6 +3311,7 @@ class AdaGO_e(optimizer.Optimizer):
                     
                 if self.agc:
                     grads[self._get_variable_index(p)] = agc(p, grad) 
+                    grad = grads[self._get_variable_index(p)]
                 
                 buf = self.momentum_buffer[self._get_variable_index(p)]
                 v = self.v_[self._get_variable_index(p)]
@@ -3391,6 +3398,7 @@ class AdaGO_e(optimizer.Optimizer):
                     
                 if self.agc:
                     grads[self._get_variable_index(p)] = agc(p, grad) 
+                    grad = grads[self._get_variable_index(p)]
                     
                 beta1, beta2, beta3 = self.adamw_betas
                     
