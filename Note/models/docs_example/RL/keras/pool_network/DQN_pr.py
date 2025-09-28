@@ -63,6 +63,11 @@ class DQN_(nn.RL):
         self.q_net=Qnet(state_dim,hidden_dim,action_dim)
         self.target_q_net=Qnet(state_dim,hidden_dim,action_dim)
         self.param=self.q_net.weights
+        self.batch_params={}
+        self.batch_params['min_batch']=None
+        self.batch_params['max_batch']=None
+        self.batch_params['scale']=1.0
+        self.batch_params['align']=None
         self.env=[gym.make('CartPole-v0') for _ in range(processes)]
     
     def action(self,s):
@@ -74,16 +79,17 @@ class DQN_(nn.RL):
     def window_size_fn(self,p):
         return self.adjust_window_size(p)
     
-    def batch_size_fn(self):
+    def adjust_fn(self):
         if self.batch_counter%777 or self.batch_counter%self.update_batches==0:
-            return self.adjust_batch_size()
-        return self.adjust_batch_size()
+            self.adjust(batch_params=self.batch_params)
+            return
+        self.adjust(batch_params=self.batch_params)
     
-#    def batch_size_fn(self):
+#    def adjust_fn(self):
 #        if self.batch_counter%self.update_batches==0:
-#            return self.adabatch(7)
+#            self.adjust(num_samples=7, target_noise=1e-3)
 #        if self.prepare_flag==True:
-#            return self.batch
+#            pass
     
     def __call__(self,s,a,next_s,r,d):
         a=tf.expand_dims(a,axis=1)
@@ -106,6 +112,11 @@ class _DQN(nn.RL):
         self.target_q_net=Qnet(state_dim,hidden_dim,action_dim)
         self.temp=temp
         self.param=self.q_net.weights
+        self.batch_params={}
+        self.batch_params['min_batch']=None
+        self.batch_params['max_batch']=None
+        self.batch_params['scale']=1.0
+        self.batch_params['align']=None
         self.env=[gym.make('CartPole-v0') for _ in range(processes)]
     
     def action(self,s):
@@ -130,16 +141,17 @@ class _DQN(nn.RL):
         features = (features - tf.reduce_min(features)) / (tf.reduce_max(features) - tf.reduce_min(features) + 1e-8)
         return self.controller(features)
     
-    def batch_size_fn(self):
+    def adjust_fn(self):
         if self.batch_counter%777 or self.batch_counter%self.update_batches==0:
-            return self.adjust_batch_size()
-        return self.adjust_batch_size()
+            self.adjust(batch_params=self.batch_params)
+            return
+        self.adjust(batch_params=self.batch_params)
     
-#    def batch_size_fn(self):
+#    def adjust_fn(self):
 #        if self.batch_counter%self.update_batches==0:
-#            return self.adabatch(7)
+#            self.adjust(num_samples=7, target_noise=1e-3)
 #        if self.prepare_flag==True:
-#            return self.batch
+#            pass
     
     def __call__(self,s,a,next_s,r,d):
         a=tf.expand_dims(a,axis=1)
