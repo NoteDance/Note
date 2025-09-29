@@ -434,7 +434,7 @@ class DAdaptLion_e(optimizer.Optimizer):
             if self.sn:
                 reshaped_update = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(variable)], self.subset_size_[self._get_variable_index(variable)]))
                 reshaped_s = tf.reshape(s, (size // self.subset_size_[self._get_variable_index(variable)], self.subset_size_[self._get_variable_index(variable)]))
-                self.numerator_accumulator.assign_add(tf.cast(tf.tensordot(reshaped_update, reshaped_s, axes=len(update.shape)) * d_lr, tf.float32))
+                self.numerator_accumulator.assign_add(tf.cast(tf.tensordot(reshaped_update, reshaped_s, axes=len(reshaped_update.shape)) * d_lr, tf.float32))
             else:
                 self.numerator_accumulator.assign_add(tf.cast(tf.tensordot(tf.reshape(update, [-1]), tf.reshape(s, [-1]), axes=1) * d_lr, tf.float32))
             s.assign(s * beta2_sq + update * (1.0 - beta2_sq) * d_lr)
