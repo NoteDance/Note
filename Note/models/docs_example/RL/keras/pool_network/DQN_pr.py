@@ -64,8 +64,8 @@ class DQN_(nn.RL):
         self.target_q_net=Qnet(state_dim,hidden_dim,action_dim)
         self.param=self.q_net.weights
         self.batch_params={}
-        self.batch_params['min_batch']=None
-        self.batch_params['max_batch']=None
+        self.batch_params['min']=None
+        self.batch_params['max']=None
         self.batch_params['scale']=1.0
         self.batch_params['align']=None
         self.env=[gym.make('CartPole-v0') for _ in range(processes)]
@@ -113,8 +113,8 @@ class _DQN(nn.RL):
         self.temp=temp
         self.param=self.q_net.weights
         self.batch_params={}
-        self.batch_params['min_batch']=None
-        self.batch_params['max_batch']=None
+        self.batch_params['min']=None
+        self.batch_params['max']=None
         self.batch_params['scale']=1.0
         self.batch_params['align']=None
         self.env=[gym.make('CartPole-v0') for _ in range(processes)]

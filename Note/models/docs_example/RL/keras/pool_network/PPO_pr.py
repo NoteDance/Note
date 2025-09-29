@@ -54,8 +54,8 @@ class PPO(nn.RL):
         self.clip_eps=clip_eps
         self.alpha=alpha
         self.batch_params={}
-        self.batch_params['min_batch']=None
-        self.batch_params['max_batch']=None
+        self.batch_params['min']=None
+        self.batch_params['max']=None
         self.batch_params['scale']=1.0
         self.batch_params['align']=None
         self.param=[self.actor.weights,self.critic.weights]
@@ -114,8 +114,8 @@ class PPO_(nn.RL):
         self.alpha=alpha
         self.temp = temp
         self.batch_params={}
-        self.batch_params['min_batch']=None
-        self.batch_params['max_batch']=None
+        self.batch_params['min']=None
+        self.batch_params['max']=None
         self.batch_params['scale']=1.0
         self.batch_params['align']=None
         self.param=[self.actor.weights,self.critic.weights,self.controller.weights]
