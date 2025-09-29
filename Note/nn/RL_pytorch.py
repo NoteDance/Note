@@ -302,22 +302,22 @@ class RL_pytorch:
             buf_len = len(self.state_pool)
         else:
             buf_len = len(self.state_pool[7])
-        if batch_params['min_batch'] is None:
+        if batch_params['min'] is None:
             cur_batch = self.batch
-            batch_params['min_batch'] = max(1, cur_batch // 2)
-        if batch_params['max_batch'] is None:
-            batch_params['max_batch'] = max(1, buf_len)
+            batch_params['min'] = max(1, cur_batch // 2)
+        if batch_params['max'] is None:
+            batch_params['max'] = max(1, buf_len)
             
         if target != None:
             batch = int(round(self.batch * ema / target * float(batch_params['scale'])))
         else:
             batch = int(round(ema * float(batch_params['scale'])))
-        batch = int(np.clip(batch, batch_params['min_batch'], batch_params['max_batch']))
+        batch = int(np.clip(batch, batch_params['min'], batch_params['max']))
         
         if batch_params['align'] is None:
             batch_params['align'] = self.batch
         new_batch = batch_params['align'] * (batch // batch_params['align'])
-        new_batch = max(1, min(new_batch, batch_params['max_batch']))
+        new_batch = max(1, min(new_batch, batch_params['max']))
         self.batch = new_batch
     
     
@@ -336,19 +336,26 @@ class RL_pytorch:
         return lr
     
     
-    def adjust_eps(self, eps_params, eps, ema, target):      
-        target_eps = eps + eps_params['eps_rate'] * (target - ema) / target
+    def adjust_eps(self, eps_params, eps, ema, target, GNS=False):
+        if not GNS:
+            target_eps = eps + eps_params['eps_rate'] * (target - ema) / target
+        else:
+            target_eps = eps + eps_params['eps_rate'] * (target / ema - 1.0)
         target_eps = np.clip(target_eps, eps_params['min'], eps_params['max'])
         smooth = eps_params.get('smooth', 0.2)
         eps = smooth * eps + (1.0 - smooth) * target_eps
         return float(eps)
     
-    def adjust_update_freq(self, freq_params, ema, target):
+    
+    def adjust_update_freq(self, freq_params, ema, target, GNS=False):
         if self.update_batches is not None:
             freq = self.update_batches
         else:
             freq = self.update_steps
-        target_freq = freq + freq_params['freq_rate'] * (target - ema) / target
+        if not GNS:
+            target_freq = freq + freq_params['freq_rate'] * (ema / target - 1.0)
+        else:
+            target_freq = freq + freq_params['freq_rate'] * (1.0 - target / ema)
         target_freq = np.clip(target_freq, freq_params['min'], freq_params['max'])
         smooth = freq_params.get('smooth', 0.2)
         freq = smooth * freq + (1.0 - smooth) * target_freq
@@ -358,20 +365,24 @@ class RL_pytorch:
             self.update_steps = int(freq)
 
 
-    def adjust_tau(self, tau_params, ema, target):      
-        if hasattr(self, 'tau'):
-            tau = self.tau
-        target_tau = tau + tau_params['tau_rate'] * (ema / target - 1.0)
+    def adjust_tau(self, tau_params, ema, target, GNS=False):      
+        tau = self.tau
+        if not GNS:
+            target_tau = tau + tau_params['tau_rate'] * (ema / target - 1.0)
+        else:
+            target_tau = tau + tau_params['tau_rate'] * (1.0 - target / ema)
         target_tau = np.clip(target_tau, tau_params['min'], tau_params['max'])
         smooth = tau_params.get('smooth', 0.2)
         tau = smooth * tau + (1.0 - smooth) * target_tau
         self.tau = float(tau)
     
     
-    def adjust_gamma(self, gamma_params, ema, target):    
-        if hasattr(self, 'gamma'):
-            gamma = self.gamma
-        target_gamma = gamma + gamma_params['gamma_rate'] * (ema / target - 1.0)
+    def adjust_gamma(self, gamma_params, ema, target, GNS=False):    
+        gamma = self.gamma
+        if not GNS:
+            target_gamma = gamma + gamma_params['gamma_rate'] * (ema / target - 1.0)
+        else:
+            target_gamma = gamma + gamma_params['gamma_rate'] * (1.0 - target / ema)
         target_gamma = np.clip(target_gamma, gamma_params['min'], gamma_params['max'])
         smooth = gamma_params.get('smooth', 0.2)
         gamma = smooth * gamma + (1.0 - smooth) * target_gamma
@@ -386,7 +397,52 @@ class RL_pytorch:
         self.num_store = int(max(1, num_store))
     
     
-    def adjust_batch_size(self, smooth_alpha=0.2, batch_params=None, target_ess=None, alpha_params=None, lr_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None, store_params=None):
+    def adjust_weight_decay(self, weight_decay_params, weight_decay, ema, target, GNS=False):
+        if not GNS:
+            target_weight_decay = weight_decay + weight_decay_params['rate'] * (target - ema) / target
+        else:
+            target_weight_decay = weight_decay + weight_decay_params['rate'] * (target / ema - 1.0)
+        target_weight_decay = np.clip(target_weight_decay, weight_decay_params['min'], weight_decay_params['max'])
+        smooth = weight_decay_params.get('smooth', 0.2)
+        weight_decay = smooth * weight_decay + (1.0 - smooth) * target_weight_decay
+        return float(weight_decay)
+    
+    
+    def adjust_beta1(self, beta1_params, beta1, ema, target, GNS=False): 
+        if not GNS:
+            target_beta1 = beta1 + beta1_params['rate'] * (target - ema) / target
+        else:
+            target_beta1 = beta1 + beta1_params['rate'] * (target / ema - 1.0)
+        target_beta1 = np.clip(target_beta1, beta1_params['min'], beta1_params['max'])
+        smooth = beta1_params.get('smooth', 0.2)
+        beta1 = smooth * beta1 + (1.0 - smooth) * target_beta1
+        return float(beta1)
+    
+    
+    def adjust_beta2(self, beta2_params, beta2, ema, target, GNS=False):
+        if not GNS:
+            target_beta2 = beta2 + beta2_params['rate'] * (target - ema) / target
+        else:
+            target_beta2 = beta2 + beta2_params['rate'] * (target / ema - 1.0)
+        target_beta2 = np.clip(target_beta2, beta2_params['min'], beta2_params['max'])
+        smooth = beta2_params.get('smooth', 0.2)
+        beta2 = smooth * beta2 + (1.0 - smooth) * target_beta2
+        return float(beta2)
+    
+    
+    def adjust_clip(self, clip_params, ema, target, GNS=False):      
+        clip = self.clip
+        if not GNS:
+            target_clip = clip + clip_params['rate'] * (ema / target - 1.0)
+        else:
+            target_clip = clip + clip_params['rate'] * (1.0 - target / ema)
+        target_clip = np.clip(target_clip, clip_params['min'], clip_params['max'])
+        smooth = clip_params.get('smooth', 0.2)
+        clip = smooth * clip + (1.0 - smooth) * target_clip
+        self.clip = float(clip)
+    
+    
+    def adjust_batch_size(self, smooth_alpha=0.2, batch_params=None, target_ess=None, alpha_params=None, lr_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None, store_params=None, weight_decay_params=None, beta1_params=None, beta2_params=None, clip_params=None):
         if not hasattr(self, 'ema_ess'):
             self.ema_ess = None
         
@@ -439,6 +495,54 @@ class RL_pytorch:
         
         if store_params is not None and target_ess is not None:
             self.adjust_num_store(store_params, ema, target_ess)
+            
+        if weight_decay_params is not None and target_ess is not None:
+            if type(self.optimizer) == list:
+                for optimizer in self.optimizer:
+                    optimizer.weight_decay = self.adjust_weight_decay(weight_decay_params, optimizer.weight_decay, ema, target_ess)
+                    if hasattr(optimizer, 'adamw_wd'):
+                        optimizer.adamw_wd = self.adjust_weight_decay(weight_decay_params, optimizer.adamw_wd, ema, target_ess)
+            else:
+                self.optimizer.weight_decay = self.adjust_weight_decay(weight_decay_params, self.optimizer.weight_decay, ema, target_ess)
+                if hasattr(optimizer, 'adamw_wd'):
+                    self.optimizer.adamw_wd = self.adjust_weight_decay(weight_decay_params, self.optimizer.adamw_wd, ema, target_ess)
+        
+        if beta1_params is not None and target_ess is not None:
+            if type(self.optimizer) == list:
+                for optimizer in self.optimizer:
+                    if not hasattr(optimizer, 'betas'):
+                        optimizer.beta1 = self.adjust_beta1(beta1_params, optimizer.beta1, ema, target_ess)
+                    else:
+                        optimizer.betas[0] = self.adjust_beta1(beta1_params, optimizer.betas[0], ema, target_ess)
+                    if hasattr(optimizer, 'adamw_betas'):
+                        optimizer.adamw_betas[0] = self.adjust_beta1(beta1_params, optimizer.adamw_betas[0], ema, target_ess)
+            else:
+                if not hasattr(optimizer, 'betas'):
+                    self.optimizer.beta1 = self.adjust_beta1(beta1_params, self.optimizer.beta1, ema, target_ess)
+                else:
+                    self.optimizer.betas[0] = self.adjust_beta1(beta1_params, self.optimizer.betas[0], ema, target_ess)
+                if hasattr(optimizer, 'adamw_betas'):
+                    self.optimizer.adamw_betas[0] = self.adjust_beta1(beta1_params, self.optimizer.adamw_betas[0], ema, target_ess)
+        
+        if beta2_params is not None and target_ess is not None:
+            if type(self.optimizer) == list:
+                for optimizer in self.optimizer:
+                    if not hasattr(optimizer, 'betas'):
+                        optimizer.beta2 = self.adjust_beta2(beta2_params, optimizer.beta2, ema, target_ess)
+                    else:
+                        optimizer.betas[1] = self.adjust_beta2(beta2_params, optimizer.betas[1], ema, target_ess)
+                    if hasattr(optimizer, 'adamw_betas'):
+                        optimizer.adamw_betas[1] = self.adjust_beta2(beta2_params, optimizer.adamw_betas[1], ema, target_ess)
+            else:
+                if not hasattr(optimizer, 'betas'):
+                    self.optimizer.beta2 = self.adjust_beta1(beta2_params, self.optimizer.beta2, ema, target_ess)
+                else:
+                    self.optimizer.betas[1] = self.adjust_beta2(beta2_params, self.optimizer.betas[1], ema, target_ess)
+                if hasattr(optimizer, 'adamw_betas'):
+                    self.optimizer.adamw_betas[1] = self.adjust_beta2(beta2_params, self.optimizer.adamw_betas[1], ema, target_ess)
+        
+        if clip_params is not None and target_ess is not None:
+            self.adjust_clip(clip_params, ema, target_ess)
     
     
     def estimate_gradient_variance(self, batch_size, num_samples):
@@ -473,7 +577,7 @@ class RL_pytorch:
         return variance
     
     
-    def adabatch(self, num_samples, target_noise=1e-3, smooth_alpha=0.2, batch_params=None, alpha_params=None, lr_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None):
+    def adabatch(self, num_samples, target_noise=1e-3, smooth_alpha=0.2, batch_params=None, alpha_params=None, lr_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None, weight_decay_params=None, beta1_params=None, beta2_params=None, clip_params=None):
         if not hasattr(self, 'ema_noise'):
             self.ema_noise = None
         
@@ -507,25 +611,73 @@ class RL_pytorch:
         if eps_params is not None:
             if type(self.policy) == list:
                 for policy in self.policy:
-                    policy.eps = self.adjust_eps(eps_params, policy.eps, ema_noise, target_noise)
+                    policy.eps = self.adjust_eps(eps_params, policy.eps, ema_noise, target_noise, True)
             else:
-                self.policy.eps = self.adjust_eps(eps_params, self.policy.eps, ema_noise, target_noise)
+                self.policy.eps = self.adjust_eps(eps_params, self.policy.eps, ema_noise, target_noise, True)
             
         if freq_params is not None:
-            self.adjust_update_freq(freq_params, ema_noise, target_noise)
+            self.adjust_update_freq(freq_params, ema_noise, target_noise, True)
         
         if tau_params is not None:
-            self.adjust_tau(tau_params, ema_noise, target_noise)
+            self.adjust_tau(tau_params, ema_noise, target_noise, True)
             
         if gamma_params is not None:
-            self.adjust_gamma(gamma_params, ema_noise, target_noise)
+            self.adjust_gamma(gamma_params, ema_noise, target_noise, True)
+        
+        if weight_decay_params is not None:
+            if type(self.optimizer) == list:
+                for optimizer in self.optimizer:
+                    optimizer.weight_decay = self.adjust_weight_decay(weight_decay_params, optimizer.weight_decay, ema_noise, target_noise, True)
+                    if hasattr(optimizer, 'adamw_wd'):
+                        optimizer.adamw_wd = self.adjust_weight_decay(weight_decay_params, optimizer.adamw_wd, ema_noise, target_noise, True)
+            else:
+                self.optimizer.weight_decay = self.adjust_weight_decay(weight_decay_params, self.optimizer.weight_decay, ema_noise, target_noise, True)
+                if hasattr(optimizer, 'adamw_wd'):
+                    self.optimizer.adamw_wd = self.adjust_weight_decay(weight_decay_params, self.optimizer.adamw_wd, ema_noise, target_noise, True)
+        
+        if beta1_params is not None:
+            if type(self.optimizer) == list:
+                for optimizer in self.optimizer:
+                    if not hasattr(optimizer, 'betas'):
+                        optimizer.beta1 = self.adjust_beta1(beta1_params, optimizer.beta1, ema_noise, target_noise, True)
+                    else:
+                        optimizer.betas[0] = self.adjust_beta1(beta1_params, optimizer.betas[0], ema_noise, target_noise, True)
+                    if hasattr(optimizer, 'adamw_betas'):
+                        optimizer.adamw_betas[0] = self.adjust_beta1(beta1_params, optimizer.adamw_betas[0], ema_noise, target_noise, True)
+            else:
+                if not hasattr(optimizer, 'betas'):
+                    self.optimizer.beta1 = self.adjust_beta1(beta1_params, self.optimizer.beta1, ema_noise, target_noise, True)
+                else:
+                    self.optimizer.betas[0] = self.adjust_beta1(beta1_params, self.optimizer.betas[0], ema_noise, target_noise, True)
+                if hasattr(optimizer, 'adamw_betas'):
+                    self.optimizer.adamw_betas[0] = self.adjust_beta1(beta1_params, self.optimizer.adamw_betas[0], ema_noise, target_noise, True)
+        
+        if beta2_params is not None:
+            if type(self.optimizer) == list:
+                for optimizer in self.optimizer:
+                    if not hasattr(optimizer, 'betas'):
+                        optimizer.beta2 = self.adjust_beta2(beta2_params, optimizer.beta2, ema_noise, target_noise, True)
+                    else:
+                        optimizer.betas[1] = self.adjust_beta2(beta2_params, optimizer.betas[1], ema_noise, target_noise, True)
+                    if hasattr(optimizer, 'adamw_betas'):
+                        optimizer.adamw_betas[1] = self.adjust_beta2(beta2_params, optimizer.adamw_betas[1], ema_noise, target_noise, True)
+            else:
+                if not hasattr(optimizer, 'betas'):
+                    self.optimizer.beta2 = self.adjust_beta1(beta2_params, self.optimizer.beta2, ema_noise, target_noise, True)
+                else:
+                    self.optimizer.betas[1] = self.adjust_beta2(beta2_params, self.optimizer.betas[1], ema_noise, target_noise, True)
+                if hasattr(optimizer, 'adamw_betas'):
+                    self.optimizer.adamw_betas[1] = self.adjust_beta2(beta2_params, self.optimizer.adamw_betas[1], ema_noise, target_noise, True)
+        
+        if clip_params is not None:
+            self.adjust_clip(clip_params, ema_noise, target_noise, True)
     
     
-    def adjust(self, target_ess=None, target_noise=None, num_samples=None, smooth_alpha=0.2, batch_params=None, alpha_params=None, lr_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None, store_params=None):
+    def adjust(self, target_ess=None, target_noise=None, num_samples=None, smooth_alpha=0.2, batch_params=None, alpha_params=None, lr_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None, store_params=None, weight_decay_params=None, beta1_params=None, beta2_params=None, clip_params=None):
         if target_noise is None:
-            self.adjust_batch_size(smooth_alpha, batch_params, target_ess, alpha_params, lr_params, eps_params, freq_params, tau_params, gamma_params, store_params)
+            self.adjust_batch_size(smooth_alpha, batch_params, target_ess, alpha_params, lr_params, eps_params, freq_params, tau_params, gamma_params, store_params, weight_decay_params, beta1_params, beta2_params, clip_params)
         else:
-            self.adabatch(num_samples, target_noise, smooth_alpha, batch_params, alpha_params, lr_params, eps_params, freq_params, tau_params, gamma_params)
+            self.adabatch(num_samples, target_noise, smooth_alpha, batch_params, alpha_params, lr_params, eps_params, freq_params, tau_params, gamma_params, weight_decay_params, beta1_params, beta2_params, clip_params)
     
     
     def data_func(self):
