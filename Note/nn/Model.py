@@ -609,7 +609,7 @@ class Model:
     
     
     def adjust_weight_decay(self, weight_decay_params, weight_decay, ema, target):
-        target_weight_decay = weight_decay + weight_decay_params['rate'] * (target / ema - 1.0)
+        target_weight_decay = weight_decay + weight_decay_params['rate'] * (ema / target - 1.0)
         target_weight_decay = np.clip(target_weight_decay, weight_decay_params['min'], weight_decay_params['max'])
         smooth = weight_decay_params.get('smooth', 0.2)
         weight_decay = smooth * weight_decay + (1.0 - smooth) * target_weight_decay
@@ -617,7 +617,7 @@ class Model:
     
     
     def adjust_beta1(self, beta1_params, beta1, ema, target): 
-        target_beta1 = beta1 + beta1_params['rate'] * (target / ema - 1.0)
+        target_beta1 = beta1 + beta1_params['rate'] * (ema / target - 1.0)
         target_beta1 = np.clip(target_beta1, beta1_params['min'], beta1_params['max'])
         smooth = beta1_params.get('smooth', 0.2)
         beta1 = smooth * beta1 + (1.0 - smooth) * target_beta1
@@ -625,7 +625,7 @@ class Model:
     
     
     def adjust_beta2(self, beta2_params, beta2, ema, target):
-        target_beta2 = beta2 + beta2_params['rate'] * (target / ema - 1.0)
+        target_beta2 = beta2 + beta2_params['rate'] * (ema / target - 1.0)
         target_beta2 = np.clip(target_beta2, beta2_params['min'], beta2_params['max'])
         smooth = beta2_params.get('smooth', 0.2)
         beta2 = smooth * beta2 + (1.0 - smooth) * target_beta2

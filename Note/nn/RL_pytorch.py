@@ -327,7 +327,8 @@ class RL_pytorch:
         else:
             target_alpha = self.alpha + alpha_params['alpha_lr'] * (target - ema) / target
         target_alpha = np.clip(target_alpha, alpha_params['alpha_min'], alpha_params['alpha_max'])
-        self.alpha = alpha_params['smooth'] * self.alpha + (1.0 - alpha_params['smooth']) * target_alpha
+        smooth = alpha_params.get('smooth', 0.2)
+        self.alpha = smooth * self.alpha + (1.0 - smooth) * target_alpha
         self.alpha = float(self.alpha)
     
     
@@ -337,8 +338,7 @@ class RL_pytorch:
         else:
             target_lr = lr + lr_params['lr_rate'] * (target - ema) / target
         target_lr = np.clip(target_lr, lr_params['min'], lr_params['max'])
-        smooth = lr_params.get('smooth', 0.2)
-        lr = smooth * lr + (1.0 - smooth) * target_lr
+        lr = lr_params['smooth'] * lr + (1.0 - lr_params['smooth']) * target_lr
         return lr
     
     
@@ -346,10 +346,9 @@ class RL_pytorch:
         if not GNS:
             target_eps = eps + eps_params['eps_rate'] * (target - ema) / target
         else:
-            target_eps = eps + eps_params['eps_rate'] * (target / ema - 1.0)
+            target_eps = eps + eps_params['eps_rate'] * (ema / target - 1.0)
         target_eps = np.clip(target_eps, eps_params['min'], eps_params['max'])
-        smooth = eps_params.get('smooth', 0.2)
-        eps = smooth * eps + (1.0 - smooth) * target_eps
+        eps = eps_params['smooth'] * eps + (1.0 - eps_params['smooth']) * target_eps
         return float(eps)
     
     
@@ -359,9 +358,9 @@ class RL_pytorch:
         else:
             freq = self.update_steps
         if not GNS:
-            target_freq = freq + freq_params['freq_rate'] * (ema / target - 1.0)
+            target_freq = freq + freq_params['freq_rate'] * (target - ema) / target
         else:
-            target_freq = freq + freq_params['freq_rate'] * (1.0 - target / ema)
+            target_freq = freq + freq_params['freq_rate'] * (ema / target - 1.0)
         target_freq = np.clip(target_freq, freq_params['min'], freq_params['max'])
         smooth = freq_params.get('smooth', 0.2)
         freq = smooth * freq + (1.0 - smooth) * target_freq
@@ -376,7 +375,7 @@ class RL_pytorch:
         if not GNS:
             target_tau = tau + tau_params['tau_rate'] * (ema / target - 1.0)
         else:
-            target_tau = tau + tau_params['tau_rate'] * (1.0 - target / ema)
+            target_tau = tau + tau_params['tau_rate'] * (target - ema) / target
         target_tau = np.clip(target_tau, tau_params['min'], tau_params['max'])
         smooth = tau_params.get('smooth', 0.2)
         tau = smooth * tau + (1.0 - smooth) * target_tau
@@ -388,7 +387,7 @@ class RL_pytorch:
         if not GNS:
             target_gamma = gamma + gamma_params['gamma_rate'] * (ema / target - 1.0)
         else:
-            target_gamma = gamma + gamma_params['gamma_rate'] * (1.0 - target / ema)
+            target_gamma = gamma + gamma_params['gamma_rate'] * (target - ema) / target
         target_gamma = np.clip(target_gamma, gamma_params['min'], gamma_params['max'])
         smooth = gamma_params.get('smooth', 0.2)
         gamma = smooth * gamma + (1.0 - smooth) * target_gamma
@@ -396,7 +395,7 @@ class RL_pytorch:
         
         
     def adjust_num_store(self, store_params, ema, target):      
-        target_num_store = self.num_store + store_params['rate'] * (ema / target - 1.0)
+        target_num_store = self.num_store + store_params['rate'] * (target - ema) / target
         target_num_store = np.clip(target_num_store, store_params['min'], store_params['max'])
         smooth = store_params['smooth']
         num_store = smooth * self.num_store + (1.0 - smooth) * target_num_store
@@ -407,7 +406,7 @@ class RL_pytorch:
         if not GNS:
             target_weight_decay = weight_decay + weight_decay_params['rate'] * (target - ema) / target
         else:
-            target_weight_decay = weight_decay + weight_decay_params['rate'] * (target / ema - 1.0)
+            target_weight_decay = weight_decay + weight_decay_params['rate'] * (ema / target - 1.0)
         target_weight_decay = np.clip(target_weight_decay, weight_decay_params['min'], weight_decay_params['max'])
         smooth = weight_decay_params.get('smooth', 0.2)
         weight_decay = smooth * weight_decay + (1.0 - smooth) * target_weight_decay
@@ -415,10 +414,7 @@ class RL_pytorch:
     
     
     def adjust_beta1(self, beta1_params, beta1, ema, target, GNS=False): 
-        if not GNS:
-            target_beta1 = beta1 + beta1_params['rate'] * (target - ema) / target
-        else:
-            target_beta1 = beta1 + beta1_params['rate'] * (target / ema - 1.0)
+        target_beta1 = beta1 + beta1_params['rate'] * (ema / target - 1.0)
         target_beta1 = np.clip(target_beta1, beta1_params['min'], beta1_params['max'])
         smooth = beta1_params.get('smooth', 0.2)
         beta1 = smooth * beta1 + (1.0 - smooth) * target_beta1
@@ -426,10 +422,7 @@ class RL_pytorch:
     
     
     def adjust_beta2(self, beta2_params, beta2, ema, target, GNS=False):
-        if not GNS:
-            target_beta2 = beta2 + beta2_params['rate'] * (target - ema) / target
-        else:
-            target_beta2 = beta2 + beta2_params['rate'] * (target / ema - 1.0)
+        target_beta2 = beta2 + beta2_params['rate'] * (ema / target - 1.0)
         target_beta2 = np.clip(target_beta2, beta2_params['min'], beta2_params['max'])
         smooth = beta2_params.get('smooth', 0.2)
         beta2 = smooth * beta2 + (1.0 - smooth) * target_beta2
@@ -441,7 +434,7 @@ class RL_pytorch:
         if not GNS:
             target_clip = clip + clip_params['rate'] * (ema / target - 1.0)
         else:
-            target_clip = clip + clip_params['rate'] * (1.0 - target / ema)
+            target_clip = clip + clip_params['rate'] * (target - ema) / target
         target_clip = np.clip(target_clip, clip_params['min'], clip_params['max'])
         smooth = clip_params.get('smooth', 0.2)
         clip = smooth * clip + (1.0 - smooth) * target_clip
