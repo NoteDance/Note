@@ -426,15 +426,21 @@ class RL:
         self.batch = new_batch
     
     
-    def adjust_alpha(self, alpha_params, ema, target):
-        target_alpha = self.alpha + alpha_params['alpha_lr'] * (target - ema) / target
+    def adjust_alpha(self, alpha_params, ema, target, GNS=False):
+        if not GNS:
+            target_alpha = self.alpha + alpha_params['alpha_lr'] * (ema / target - 1.0)
+        else:
+            target_alpha = self.alpha + alpha_params['alpha_lr'] * (target - ema) / target
         target_alpha = np.clip(target_alpha, alpha_params['alpha_min'], alpha_params['alpha_max'])
         self.alpha = alpha_params['smooth'] * self.alpha + (1.0 - alpha_params['smooth']) * target_alpha
         self.alpha = float(self.alpha)
     
     
-    def adjust_lr(self, lr_params, lr, ema, target):      
-        target_lr = lr + lr_params['lr_rate'] * (ema / target - 1.0)
+    def adjust_lr(self, lr_params, lr, ema, target, GNS=False): 
+        if not GNS:
+            target_lr = lr + lr_params['lr_rate'] * (ema / target - 1.0)
+        else:
+            target_lr = lr + lr_params['lr_rate'] * (target - ema) / target
         target_lr = np.clip(target_lr, lr_params['min'], lr_params['max'])
         smooth = lr_params.get('smooth', 0.2)
         lr = smooth * lr + (1.0 - smooth) * target_lr
@@ -458,9 +464,9 @@ class RL:
         else:
             freq = self.update_steps
         if not GNS:
-            target_freq = freq + freq_params['freq_rate'] * (ema / target - 1.0)
-        else:
             target_freq = freq + freq_params['freq_rate'] * (1.0 - target / ema)
+        else:
+            target_freq = freq + freq_params['freq_rate'] * (ema / target - 1.0)
         target_freq = np.clip(target_freq, freq_params['min'], freq_params['max'])
         smooth = freq_params.get('smooth', 0.2)
         freq = smooth * freq + (1.0 - smooth) * target_freq
@@ -491,7 +497,7 @@ class RL:
         target_gamma = np.clip(target_gamma, gamma_params['min'], gamma_params['max'])
         smooth = gamma_params.get('smooth', 0.2)
         gamma = smooth * gamma + (1.0 - smooth) * target_gamma
-        self.gamma = float(gamma)
+        self.gamma.assign(gamma)
         
         
     def adjust_num_store(self, store_params, ema, target):      
@@ -510,7 +516,7 @@ class RL:
         target_weight_decay = np.clip(target_weight_decay, weight_decay_params['min'], weight_decay_params['max'])
         smooth = weight_decay_params.get('smooth', 0.2)
         weight_decay = smooth * weight_decay + (1.0 - smooth) * target_weight_decay
-        return float(weight_decay)
+        return weight_decay
     
     
     def adjust_beta1(self, beta1_params, beta1, ema, target, GNS=False): 
@@ -521,7 +527,7 @@ class RL:
         target_beta1 = np.clip(target_beta1, beta1_params['min'], beta1_params['max'])
         smooth = beta1_params.get('smooth', 0.2)
         beta1 = smooth * beta1 + (1.0 - smooth) * target_beta1
-        return float(beta1)
+        return beta1
     
     
     def adjust_beta2(self, beta2_params, beta2, ema, target, GNS=False):
@@ -532,7 +538,7 @@ class RL:
         target_beta2 = np.clip(target_beta2, beta2_params['min'], beta2_params['max'])
         smooth = beta2_params.get('smooth', 0.2)
         beta2 = smooth * beta2 + (1.0 - smooth) * target_beta2
-        return float(beta2)
+        return beta2
     
     
     def adjust_clip(self, clip_params, ema, target, GNS=False):      
@@ -544,7 +550,7 @@ class RL:
         target_clip = np.clip(target_clip, clip_params['min'], clip_params['max'])
         smooth = clip_params.get('smooth', 0.2)
         clip = smooth * clip + (1.0 - smooth) * target_clip
-        self.clip = float(clip)
+        self.clip.assign(clip)
     
     
     def adjust_batch_size(self, smooth_alpha=0.2, batch_params=None, target_ess=None, alpha_params=None, lr_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None, store_params=None, weight_decay_params=None, beta1_params=None, beta2_params=None, clip_params=None):
@@ -604,47 +610,47 @@ class RL:
         if weight_decay_params is not None and target_ess is not None:
             if type(self.optimizer) == list:
                 for optimizer in self.optimizer:
-                    optimizer.weight_decay = self.adjust_weight_decay(weight_decay_params, optimizer.weight_decay, ema, target_ess)
+                    optimizer.weight_decay.assign(self.adjust_weight_decay(weight_decay_params, optimizer.weight_decay, ema, target_ess))
                     if hasattr(optimizer, 'adamw_wd'):
-                        optimizer.adamw_wd = self.adjust_weight_decay(weight_decay_params, optimizer.adamw_wd, ema, target_ess)
+                        optimizer.adamw_wd.assign(self.adjust_weight_decay(weight_decay_params, optimizer.adamw_wd, ema, target_ess))
             else:
-                self.optimizer.weight_decay = self.adjust_weight_decay(weight_decay_params, self.optimizer.weight_decay, ema, target_ess)
+                self.optimizer.weight_decay.assign(self.adjust_weight_decay(weight_decay_params, self.optimizer.weight_decay, ema, target_ess))
                 if hasattr(optimizer, 'adamw_wd'):
-                    self.optimizer.adamw_wd = self.adjust_weight_decay(weight_decay_params, self.optimizer.adamw_wd, ema, target_ess)
+                    self.optimizer.adamw_wd.assign(self.adjust_weight_decay(weight_decay_params, self.optimizer.adamw_wd, ema, target_ess))
         
         if beta1_params is not None and target_ess is not None:
             if type(self.optimizer) == list:
                 for optimizer in self.optimizer:
                     if not hasattr(optimizer, 'betas'):
-                        optimizer.beta1 = self.adjust_beta1(beta1_params, optimizer.beta1, ema, target_ess)
+                        optimizer.beta1.assign(self.adjust_beta1(beta1_params, optimizer.beta1, ema, target_ess))
                     else:
-                        optimizer.betas[0] = self.adjust_beta1(beta1_params, optimizer.betas[0], ema, target_ess)
+                        optimizer.betas[0].assign(self.adjust_beta1(beta1_params, optimizer.betas[0], ema, target_ess))
                     if hasattr(optimizer, 'adamw_betas'):
-                        optimizer.adamw_betas[0] = self.adjust_beta1(beta1_params, optimizer.adamw_betas[0], ema, target_ess)
+                        optimizer.adamw_betas[0].assign(self.adjust_beta1(beta1_params, optimizer.adamw_betas[0], ema, target_ess))
             else:
                 if not hasattr(optimizer, 'betas'):
-                    self.optimizer.beta1 = self.adjust_beta1(beta1_params, self.optimizer.beta1, ema, target_ess)
+                    self.optimizer.beta1.assign(self.adjust_beta1(beta1_params, self.optimizer.beta1, ema, target_ess))
                 else:
-                    self.optimizer.betas[0] = self.adjust_beta1(beta1_params, self.optimizer.betas[0], ema, target_ess)
+                    self.optimizer.betas[0].assign(self.adjust_beta1(beta1_params, self.optimizer.betas[0], ema, target_ess))
                 if hasattr(optimizer, 'adamw_betas'):
-                    self.optimizer.adamw_betas[0] = self.adjust_beta1(beta1_params, self.optimizer.adamw_betas[0], ema, target_ess)
+                    self.optimizer.adamw_betas[0].assign(self.adjust_beta1(beta1_params, self.optimizer.adamw_betas[0], ema, target_ess))
         
         if beta2_params is not None and target_ess is not None:
             if type(self.optimizer) == list:
                 for optimizer in self.optimizer:
                     if not hasattr(optimizer, 'betas'):
-                        optimizer.beta2 = self.adjust_beta2(beta2_params, optimizer.beta2, ema, target_ess)
+                        optimizer.beta2.assign(self.adjust_beta2(beta2_params, optimizer.beta2, ema, target_ess))
                     else:
-                        optimizer.betas[1] = self.adjust_beta2(beta2_params, optimizer.betas[1], ema, target_ess)
+                        optimizer.betas[1].assign(self.adjust_beta2(beta2_params, optimizer.betas[1], ema, target_ess))
                     if hasattr(optimizer, 'adamw_betas'):
-                        optimizer.adamw_betas[1] = self.adjust_beta2(beta2_params, optimizer.adamw_betas[1], ema, target_ess)
+                        optimizer.adamw_betas[1].assign(self.adjust_beta2(beta2_params, optimizer.adamw_betas[1], ema, target_ess))
             else:
                 if not hasattr(optimizer, 'betas'):
-                    self.optimizer.beta2 = self.adjust_beta1(beta2_params, self.optimizer.beta2, ema, target_ess)
+                    self.optimizer.beta2.assign(self.adjust_beta1(beta2_params, self.optimizer.beta2, ema, target_ess))
                 else:
-                    self.optimizer.betas[1] = self.adjust_beta2(beta2_params, self.optimizer.betas[1], ema, target_ess)
+                    self.optimizer.betas[1].assign(self.adjust_beta2(beta2_params, self.optimizer.betas[1], ema, target_ess))
                 if hasattr(optimizer, 'adamw_betas'):
-                    self.optimizer.adamw_betas[1] = self.adjust_beta2(beta2_params, self.optimizer.adamw_betas[1], ema, target_ess)
+                    self.optimizer.adamw_betas[1].assign(self.adjust_beta2(beta2_params, self.optimizer.adamw_betas[1], ema, target_ess))
         
         if clip_params is not None and target_ess is not None:
             self.adjust_clip(clip_params, ema, target_ess)
@@ -714,18 +720,18 @@ class RL:
             self.adjust_batch(batch_params, ema_noise, target_noise)
         
         if alpha_params is not None:
-            self.adjust_alpha(alpha_params, ema_noise, target_noise)
+            self.adjust_alpha(alpha_params, ema_noise, target_noise, True)
             
         if lr_params is not None:
             if type(self.optimizer) == list:
                 for optimizer in self.optimizer:
-                    optimizer.learning_rate.assign(self.adjust_lr(lr_params, optimizer.learning_rate, ema_noise, target_noise))
+                    optimizer.learning_rate.assign(self.adjust_lr(lr_params, optimizer.learning_rate, ema_noise, target_noise, True))
                     if hasattr(optimizer, 'adamw_lr'):
-                        optimizer.adamw_lr.assign(self.adjust_lr(lr_params, optimizer.adamw_lr, ema_noise, target_noise))
+                        optimizer.adamw_lr.assign(self.adjust_lr(lr_params, optimizer.adamw_lr, ema_noise, target_noise, True))
             else:
-                self.optimizer.learning_rate.assign(self.adjust_lr(lr_params, self.optimizer.learning_rate, ema_noise, target_noise))
+                self.optimizer.learning_rate.assign(self.adjust_lr(lr_params, self.optimizer.learning_rate, ema_noise, target_noise, True))
                 if hasattr(optimizer, 'adamw_lr'):
-                    self.optimizer.adamw_lr.assign(self.adjust_lr(lr_params, self.optimizer.adamw_lr, ema_noise, target_noise))
+                    self.optimizer.adamw_lr.assign(self.adjust_lr(lr_params, self.optimizer.adamw_lr, ema_noise, target_noise, True))
     
         if eps_params is not None:
             if type(self.policy) == list:
@@ -746,47 +752,47 @@ class RL:
         if weight_decay_params is not None:
             if type(self.optimizer) == list:
                 for optimizer in self.optimizer:
-                    optimizer.weight_decay = self.adjust_weight_decay(weight_decay_params, optimizer.weight_decay, ema_noise, target_noise, True)
+                    optimizer.weight_decay.assign(self.adjust_weight_decay(weight_decay_params, optimizer.weight_decay, ema_noise, target_noise, True))
                     if hasattr(optimizer, 'adamw_wd'):
-                        optimizer.adamw_wd = self.adjust_weight_decay(weight_decay_params, optimizer.adamw_wd, ema_noise, target_noise, True)
+                        optimizer.adamw_wd.assign(self.adjust_weight_decay(weight_decay_params, optimizer.adamw_wd, ema_noise, target_noise, True))
             else:
-                self.optimizer.weight_decay = self.adjust_weight_decay(weight_decay_params, self.optimizer.weight_decay, ema_noise, target_noise, True)
+                self.optimizer.weight_decay.assign(self.adjust_weight_decay(weight_decay_params, self.optimizer.weight_decay, ema_noise, target_noise, True))
                 if hasattr(optimizer, 'adamw_wd'):
-                    self.optimizer.adamw_wd = self.adjust_weight_decay(weight_decay_params, self.optimizer.adamw_wd, ema_noise, target_noise, True)
+                    self.optimizer.adamw_wd.assign(self.adjust_weight_decay(weight_decay_params, self.optimizer.adamw_wd, ema_noise, target_noise, True))
         
         if beta1_params is not None:
             if type(self.optimizer) == list:
                 for optimizer in self.optimizer:
                     if not hasattr(optimizer, 'betas'):
-                        optimizer.beta1 = self.adjust_beta1(beta1_params, optimizer.beta1, ema_noise, target_noise, True)
+                        optimizer.beta1.assign(self.adjust_beta1(beta1_params, optimizer.beta1, ema_noise, target_noise, True))
                     else:
-                        optimizer.betas[0] = self.adjust_beta1(beta1_params, optimizer.betas[0], ema_noise, target_noise, True)
+                        optimizer.betas[0].assign(self.adjust_beta1(beta1_params, optimizer.betas[0], ema_noise, target_noise, True))
                     if hasattr(optimizer, 'adamw_betas'):
-                        optimizer.adamw_betas[0] = self.adjust_beta1(beta1_params, optimizer.adamw_betas[0], ema_noise, target_noise, True)
+                        optimizer.adamw_betas[0].assign(self.adjust_beta1(beta1_params, optimizer.adamw_betas[0], ema_noise, target_noise, True))
             else:
                 if not hasattr(optimizer, 'betas'):
-                    self.optimizer.beta1 = self.adjust_beta1(beta1_params, self.optimizer.beta1, ema_noise, target_noise, True)
+                    self.optimizer.beta1.assign(self.adjust_beta1(beta1_params, self.optimizer.beta1, ema_noise, target_noise, True))
                 else:
-                    self.optimizer.betas[0] = self.adjust_beta1(beta1_params, self.optimizer.betas[0], ema_noise, target_noise, True)
+                    self.optimizer.betas[0].assign(self.adjust_beta1(beta1_params, self.optimizer.betas[0], ema_noise, target_noise, True))
                 if hasattr(optimizer, 'adamw_betas'):
-                    self.optimizer.adamw_betas[0] = self.adjust_beta1(beta1_params, self.optimizer.adamw_betas[0], ema_noise, target_noise, True)
+                    self.optimizer.adamw_betas[0].assign(self.adjust_beta1(beta1_params, self.optimizer.adamw_betas[0], ema_noise, target_noise, True))
         
         if beta2_params is not None:
             if type(self.optimizer) == list:
                 for optimizer in self.optimizer:
                     if not hasattr(optimizer, 'betas'):
-                        optimizer.beta2 = self.adjust_beta2(beta2_params, optimizer.beta2, ema_noise, target_noise, True)
+                        optimizer.beta2.assign(self.adjust_beta2(beta2_params, optimizer.beta2, ema_noise, target_noise, True))
                     else:
-                        optimizer.betas[1] = self.adjust_beta2(beta2_params, optimizer.betas[1], ema_noise, target_noise, True)
+                        optimizer.betas[1].assign(self.adjust_beta2(beta2_params, optimizer.betas[1], ema_noise, target_noise, True))
                     if hasattr(optimizer, 'adamw_betas'):
-                        optimizer.adamw_betas[1] = self.adjust_beta2(beta2_params, optimizer.adamw_betas[1], ema_noise, target_noise, True)
+                        optimizer.adamw_betas[1].assign(self.adjust_beta2(beta2_params, optimizer.adamw_betas[1], ema_noise, target_noise, True))
             else:
                 if not hasattr(optimizer, 'betas'):
-                    self.optimizer.beta2 = self.adjust_beta1(beta2_params, self.optimizer.beta2, ema_noise, target_noise, True)
+                    self.optimizer.beta2.assign(self.adjust_beta1(beta2_params, self.optimizer.beta2, ema_noise, target_noise, True))
                 else:
-                    self.optimizer.betas[1] = self.adjust_beta2(beta2_params, self.optimizer.betas[1], ema_noise, target_noise, True)
+                    self.optimizer.betas[1].assign(self.adjust_beta2(beta2_params, self.optimizer.betas[1], ema_noise, target_noise, True))
                 if hasattr(optimizer, 'adamw_betas'):
-                    self.optimizer.adamw_betas[1] = self.adjust_beta2(beta2_params, self.optimizer.adamw_betas[1], ema_noise, target_noise, True)
+                    self.optimizer.adamw_betas[1].assign(self.adjust_beta2(beta2_params, self.optimizer.adamw_betas[1], ema_noise, target_noise, True))
         
         if clip_params is not None:
             self.adjust_clip(clip_params, ema_noise, target_noise, True)
