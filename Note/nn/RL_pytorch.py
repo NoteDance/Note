@@ -439,9 +439,21 @@ class RL_pytorch:
         smooth = clip_params.get('smooth', 0.2)
         clip = smooth * clip + (1.0 - smooth) * target_clip
         self.clip = float(clip)
+        
+    
+    def adjust_beta(self, beta_params, ema, target, GNS=False):
+        beta = self.beta
+        if not GNS:
+            target_beta = beta + beta_params['beta_rate'] * (target - ema) / target
+        else:
+            target_beta = beta + beta_params['beta_rate'] * (ema / target - 1.0)
+        target_beta = np.clip(target_beta, beta_params['min'], beta_params['max'])
+        smooth = beta_params.get('smooth', 0.2)
+        beta = smooth * beta + (1.0 - smooth) * target_beta
+        self.beta = float(beta)
     
     
-    def adjust_batch_size(self, smooth_alpha=0.2, batch_params=None, target_ess=None, alpha_params=None, lr_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None, store_params=None, weight_decay_params=None, beta1_params=None, beta2_params=None, clip_params=None):
+    def adjust_batch_size(self, smooth_alpha=0.2, batch_params=None, target_ess=None, alpha_params=None, lr_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None, store_params=None, weight_decay_params=None, beta1_params=None, beta2_params=None, clip_params=None, beta_params=None):
         if not hasattr(self, 'ema_ess'):
             self.ema_ess = None
         
@@ -550,6 +562,9 @@ class RL_pytorch:
         
         if clip_params is not None and target_ess is not None:
             self.adjust_clip(clip_params, ema, target_ess)
+            
+        if beta_params is not None and target_ess is not None:
+            self.adjust_beta(beta_params, ema, target_ess)
     
     
     def estimate_gradient_variance(self, batch_size, num_samples):
@@ -584,7 +599,7 @@ class RL_pytorch:
         return variance
     
     
-    def adabatch(self, num_samples, target_noise=1e-3, smooth_alpha=0.2, batch_params=None, alpha_params=None, lr_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None, weight_decay_params=None, beta1_params=None, beta2_params=None, clip_params=None):
+    def adabatch(self, num_samples, target_noise=1e-3, smooth_alpha=0.2, batch_params=None, alpha_params=None, lr_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None, weight_decay_params=None, beta1_params=None, beta2_params=None, clip_params=None, beta_params=None):
         if not hasattr(self, 'ema_noise'):
             self.ema_noise = None
         
@@ -686,13 +701,16 @@ class RL_pytorch:
         
         if clip_params is not None:
             self.adjust_clip(clip_params, ema_noise, target_noise, True)
+        
+        if beta_params is not None:
+            self.adjust_beta(beta_params, ema_noise, target_noise, True)
     
     
-    def adjust(self, target_ess=None, target_noise=None, num_samples=None, smooth_alpha=0.2, batch_params=None, alpha_params=None, lr_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None, store_params=None, weight_decay_params=None, beta1_params=None, beta2_params=None, clip_params=None):
+    def adjust(self, target_ess=None, target_noise=None, num_samples=None, smooth_alpha=0.2, batch_params=None, alpha_params=None, lr_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None, store_params=None, weight_decay_params=None, beta1_params=None, beta2_params=None, beta_params=None, clip_params=None):
         if target_noise is None:
-            self.adjust_batch_size(smooth_alpha, batch_params, target_ess, alpha_params, lr_params, eps_params, freq_params, tau_params, gamma_params, store_params, weight_decay_params, beta1_params, beta2_params, clip_params)
+            self.adjust_batch_size(smooth_alpha, batch_params, target_ess, alpha_params, lr_params, eps_params, freq_params, tau_params, gamma_params, store_params, weight_decay_params, beta1_params, beta2_params, clip_params, beta_params)
         else:
-            self.adabatch(num_samples, target_noise, smooth_alpha, batch_params, alpha_params, lr_params, eps_params, freq_params, tau_params, gamma_params, weight_decay_params, beta1_params, beta2_params, clip_params)
+            self.adabatch(num_samples, target_noise, smooth_alpha, batch_params, alpha_params, lr_params, eps_params, freq_params, tau_params, gamma_params, weight_decay_params, beta1_params, beta2_params, clip_params, beta_params)
     
     
     def data_func(self):
