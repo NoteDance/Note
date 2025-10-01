@@ -211,9 +211,9 @@ class Muon(optimizer.Optimizer):
                 lr = tf.cast(learning_rate, p.dtype)
                 
                 if self.weight_decouple:
-                    p.assign(p * (1.0 - self.weight_decay * lr))
+                    p.assign(p * (1.0 - tf.cast(self.weight_decay, p.dtype) * lr))
                 elif self.weight_decay > 0.0:
-                    grad += p * self.weight_decay
+                    grad += p * tf.cast(self.weight_decay, p.dtype)
                 
                 buf = self.momentum_buffer[self._get_variable_index(p)]
                 buf.assign(buf * self.momentum + (1.0 - self.momentum) * grad)
@@ -252,9 +252,9 @@ class Muon(optimizer.Optimizer):
                 update = buf1 / (tf.sqrt(buf2) + self.adamw_eps)
     
                 if self.weight_decouple:
-                    p.assign(p * (1.0 - self.adamw_wd * lr))
+                    p.assign(p * (1.0 - tf.cast(self.adamw_wd, p.dtype) * lr))
                 elif self.adamw_wd > 0.0:
-                    grads[self._get_variable_index(p)] += p * self.adamw_wd
+                    grads[self._get_variable_index(p)] += p * tf.cast(self.adamw_wd, p.dtype)
     
                 p.assign_add(update * -step_size)
 
@@ -427,9 +427,9 @@ class DistributedMuon(optimizer.Optimizer):
                         grad = -grad
     
                     if self.weight_decouple:
-                        trainable_variables[i].assign(trainable_variables[i] * (1.0 - self.weight_decay * lr))
+                        trainable_variables[i].assign(trainable_variables[i] * (1.0 - tf.cast(self.weight_decay, trainable_variables[i].dtype) * lr))
                     elif self.weight_decay > 0.0:
-                        grad += trainable_variables[i] * self.weight_decay
+                        grad += trainable_variables[i] * tf.cast(self.weight_decay, trainable_variables[i].dtype)
     
                     buf = self.momentum_buffer[self._get_variable_index(trainable_variables[i])]
                     buf.assign(buf + (1.0 - self.momentum) * (grad - buf))
@@ -619,9 +619,9 @@ class AdaMuon(optimizer.Optimizer):
                 lr = tf.cast(learning_rate, p.dtype)
                     
                 if self.weight_decouple:
-                    p.assign(p * (1.0 - self.weight_decay * lr))
+                    p.assign(p * (1.0 - tf.cast(self.weight_decay, p.dtype) * lr))
                 elif self.weight_decay > 0.0:
-                    grad += p * self.weight_decay
+                    grad += p * tf.cast(self.weight_decay, p.dtype)
                 
                 buf = self.momentum_buffer[self._get_variable_index(p)]
                 buf.assign(buf + 1.0 - self.beta1 * (grad - buf))
@@ -653,6 +653,11 @@ class AdaMuon(optimizer.Optimizer):
                 if tf.keras.backend.is_sparse(grad):
                     raise RuntimeError(
                         ' AdaMuon does not support sparse gradients')
+                if self.weight_decouple:
+                    p.assign(p * (1.0 - tf.cast(self.adamw_wd, p.dtype) * lr))
+                elif self.adamw_wd > 0.0:
+                    grad += p * tf.cast(self.adamw_wd, p.dtype)
+                    
                 lr = tf.cast(self.adamw_lr, p.dtype)
                 
                 step = tf.cast(self.iterations + 1, p.dtype)
@@ -670,9 +675,6 @@ class AdaMuon(optimizer.Optimizer):
                 buf2.assign(buf2 + (1.0 - self.beta2) * (tf.square(grad) - buf2))
     
                 update = buf1 / (tf.sqrt(buf2) + self.epsilon)
-    
-                if self.weight_decouple:
-                    p.assign(p * (1.0 - self.adamw_wd * lr))
     
                 p.assign_add(update * -step_size)
 
@@ -820,9 +822,9 @@ class AdaGO(optimizer.Optimizer):
                     grad = -grad
                 
                 if self.weight_decouple:
-                    p.assign(p * (1.0 - self.weight_decay * lr))
+                    p.assign(p * (1.0 - tf.cast(self.weight_decay, p.dtype) * lr))
                 elif self.weight_decay > 0.0:
-                    grad += p * self.weight_decay
+                    grad += p * tf.cast(self.weight_decay, p.dtype)
                 
                 buf = self.momentum_buffer[self._get_variable_index(p)]
                 v = self.v_[self._get_variable_index(p)]
@@ -848,9 +850,9 @@ class AdaGO(optimizer.Optimizer):
                         'AdaGO does not support sparse gradients')
                 
                 if self.weight_decouple:
-                    p.assign(p * (1.0 - self.adamw_wd * lr))
+                    p.assign(p * (1.0 - tf.cast(self.adamw_wd, p.dtype) * lr))
                 elif self.adamw_wd > 0.0:
-                    grads[self._get_variable_index(p)] += p * self.adamw_wd
+                    grads[self._get_variable_index(p)] += p * tf.cast(self.adamw_wd, p.dtype)
                     
                 lr = tf.cast(self.adamw_lr, p.dtype)
                 
@@ -1184,9 +1186,9 @@ class Muon_e(optimizer.Optimizer):
                 lr = tf.cast(learning_rate, p.dtype)
                 
                 if self.weight_decouple:
-                    p.assign(p * (1.0 - self.weight_decay * lr))
+                    p.assign(p * (1.0 - tf.cast(self.weight_decay, p.dtype) * lr))
                 elif self.weight_decay > 0.0:
-                    grad += p * self.weight_decay
+                    grad += p * tf.cast(self.weight_decay, p.dtype)
                 
                 if self.agc:
                     grads[self._get_variable_index(p)] = agc(p, grad)
@@ -1404,9 +1406,9 @@ class Muon_e(optimizer.Optimizer):
                         update *= trust_ratio
         
                     if self.weight_decouple:
-                        p.assign(p * (1.0 - self.adamw_wd * lr))
+                        p.assign(p * (1.0 - tf.cast(self.adamw_wd, p.dtype) * lr))
                     elif self.adamw_wd > 0.0:
-                        grads[self._get_variable_index(p)] += p * self.adamw_wd
+                        grads[self._get_variable_index(p)] += p * tf.cast(self.adamw_wd, p.dtype)
         
                     p.assign_add(update * -step_size)
                     
@@ -1448,9 +1450,9 @@ class Muon_e(optimizer.Optimizer):
                         grad = grads[self._get_variable_index(p)]
                         
                         if self.weight_decouple:
-                            p.assign(p * (1.0 - self.adamw_wd * d_lr))
+                            p.assign(p * (1.0 - tf.cast(self.adamw_wd, p.dtype) * d_lr))
                         elif self.adamw_wd > 0.0:
-                            grad += p * self.adamw_wd
+                            grad += p * tf.cast(self.adamw_wd, p.dtype)
                         
                         if not self.pnm:
                             buf1 = self.moment1[self._get_variable_index(p)]
@@ -1906,17 +1908,12 @@ class DistributedMuon_e(optimizer.Optimizer):
                     lr = tf.cast(learning_rate, p.dtype)
                     
                     if self.weight_decouple:
-                        trainable_variables[i].assign(trainable_variables[i] * (1.0 - self.weight_decay * lr))
+                        trainable_variables[i].assign(trainable_variables[i] * (1.0 - tf.cast(self.weight_decay, trainable_variables[i].dtype) * lr))
                     elif self.weight_decay > 0.0:
-                        grad += trainable_variables[i] * self.weight_decay
+                        grad += trainable_variables[i] * tf.cast(self.weight_decay, trainable_variables[i].dtype)
 
                     if self.maximize:
                         gradient = -grads[self._get_variable_index(trainable_variables[i])]
-
-                    if self.weight_decouple:
-                        trainable_variables[i].assign(trainable_variables[i] * (1.0 - self.weight_decay * lr))
-                    elif self.weight_decay > 0.0:
-                        gradient += trainable_variables[i] * self.weight_decay
                     
                     if not self.pnm:
                         buf = self.momentum_buffer[self._get_variable_index(trainable_variables[i])]
@@ -2614,9 +2611,9 @@ class AdaMuon_e(optimizer.Optimizer):
                 lr = tf.cast(learning_rate, p.dtype)
                     
                 if self.weight_decouple:
-                    p.assign(p * (1.0 - self.weight_decay * lr))
+                    p.assign(p * (1.0 - tf.cast(self.weight_decay, p.dtype) * lr))
                 elif self.weight_decay > 0.0:
-                    grad += p * self.weight_decay
+                    grad += p * tf.cast(self.weight_decay, p.dtype)
                 
                 if self.agc:
                     grads[self._get_variable_index(p)] = agc(p, grad)
@@ -2810,9 +2807,9 @@ class AdaMuon_e(optimizer.Optimizer):
     
                 if not self.DAdapt:
                     if self.weight_decouple:
-                        p.assign(p * (1.0 - self.weight_decay * lr))
-                    elif self.weight_decay > 0.0:
-                        grad += p * self.weight_decay
+                        p.assign(p * (1.0 - tf.cast(self.adamw_wd, p.dtype) * lr))
+                    elif self.adamw_wd > 0.0:
+                        grad += p * tf.cast(self.adamw_wd, p.dtype)
                     if self.aem:
                         buf1 += exp_avg_slow * alpha_t
                     if self.sn:
@@ -2879,9 +2876,9 @@ class AdaMuon_e(optimizer.Optimizer):
                         grad = grads[self._get_variable_index(p)]
                         
                         if self.weight_decouple:
-                            p.assign(p * (1.0 - self.adamw_wd * d_lr))
+                            p.assign(p * (1.0 - tf.cast(self.adamw_wd, p.dtype) * d_lr))
                         elif self.adamw_wd > 0.0:
-                            grad += p * self.adamw_wd
+                            grad += p * tf.cast(self.adamw_wd, p.dtype)
                         
                         if not self.pnm:
                             buf1 = self.exp_avg[self._get_variable_index(p)]
@@ -3305,9 +3302,9 @@ class AdaGO_e(optimizer.Optimizer):
                     grad = -grad
                 
                 if self.weight_decouple:
-                    p.assign(p * (1.0 - self.weight_decay * lr))
+                    p.assign(p * (1.0 - tf.cast(self.weight_decay, p.dtype) * lr))
                 elif self.weight_decay > 0.0:
-                    grad += p * self.weight_decay
+                    grad += p * tf.cast(self.weight_decay, p.dtype)
                     
                 if self.agc:
                     grads[self._get_variable_index(p)] = agc(p, grad) 
@@ -3496,9 +3493,9 @@ class AdaGO_e(optimizer.Optimizer):
                 
                 if not self.DAdapt:
                     if self.weight_decouple:
-                        p.assign(p * (1.0 - self.adamw_wd * lr))
+                        p.assign(p * (1.0 - tf.cast(self.adamw_wd, p.dtype) * lr))
                     elif self.adamw_wd > 0.0:
-                        grads[self._get_variable_index(p)] += p * self.adamw_wd
+                        grads[self._get_variable_index(p)] += p * tf.cast(self.adamw_wd, p.dtype)
                     if self.aem:
                         exp_avg += exp_avg_slow * alpha_t
                     if self.sn:
@@ -3577,9 +3574,9 @@ class AdaGO_e(optimizer.Optimizer):
                         grad = grads[self._get_variable_index(p)]
                         
                         if self.weight_decouple:
-                            p.assign(p * (1.0 - self.adamw_wd * d_lr))
+                            p.assign(p * (1.0 - tf.cast(self.adamw_wd, p.dtype) * d_lr))
                         elif self.adamw_wd > 0.0:
-                            grad += p * self.adamw_wd
+                            grad += p * tf.cast(self.adamw_wd, p.dtype)
                         
                         if not self.pnm:
                             exp_avg = self.exp_avg[self._get_variable_index(p)]

@@ -174,9 +174,9 @@ class DAdaptLion(optimizer.Optimizer):
                     'DAdaptLion does not support sparse gradients')
             
             if self.weight_decouple:
-                variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else d_lr)))
+                variable.assign(variable * (1.0 - tf.cast(self.weight_decay, variable.dtype) * (1.0 if self.fixed_decay else d_lr)))
             elif self.weight_decay > 0.0:
-                grad += variable * self.weight_decay
+                grad += variable * tf.cast(self.weight_decay, variable.dtype)
             
             exp_avg = self.exp_avg[self._get_variable_index(variable)]
             s = self.s[self._get_variable_index(variable)]
@@ -379,9 +379,9 @@ class DAdaptLion_e(optimizer.Optimizer):
             step = tf.cast(self.iterations + 1, variable.dtype)
             
             if self.weight_decouple:
-                variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else d_lr)))
+                variable.assign(variable * (1.0 - tf.cast(self.weight_decay, variable.dtype) * (1.0 if self.fixed_decay else d_lr)))
             elif self.weight_decay > 0.0:
-                grad += variable * self.weight_decay
+                grad += variable * tf.cast(self.weight_decay, variable.dtype)
             
             if self.agc:
                 grads[self._get_variable_index(variable)] = agc(variable, grad)  

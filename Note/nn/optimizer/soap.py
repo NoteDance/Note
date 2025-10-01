@@ -455,7 +455,7 @@ class SOAP(optimizer.Optimizer):
             p.assign_add(norm_grad * -step_size)
             
             if self.weight_decay > 0.0:
-                p.assign(p * (1.0 - self.weight_decay * lr))
+                p.assign(p * (1.0 - tf.cast(self.weight_decay, p.dtype) * lr))
 
             self.update_pre_conditioner(
                 p,
@@ -1060,7 +1060,7 @@ class SOAP_e(optimizer.Optimizer):
                     tf.cond(step % self.lookahead_merge_time == 0, true_fn, false_fn)
                 
                 if self.weight_decay > 0.0:
-                    p.assign(p * (1.0 - self.weight_decay * lr))
+                    p.assign(p * (1.0 - tf.cast(self.weight_decay, p.dtype) * lr))
     
                 self.update_pre_conditioner(
                     p,
@@ -1177,7 +1177,7 @@ class SOAP_e(optimizer.Optimizer):
                     tf.cond(step % self.lookahead_merge_time == 0, true_fn, false_fn)
                 
                 if self.weight_decay > 0.0:
-                    p.assign(p * (1.0 - self.weight_decay * d_lr))
+                    p.assign(p * (1.0 - tf.cast(self.weight_decay, p.dtype) * d_lr))
     
                 self.update_pre_conditioner(
                     p,

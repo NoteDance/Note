@@ -206,9 +206,9 @@ class SophiaH(optimizer.Optimizer):
             step = tf.cast(self.iterations + 1, p.dtype)
 
             if self.weight_decouple:
-                p.assign(p * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr)))
+                p.assign(p * (1.0 - tf.cast(self.weight_decay, p.dtype) * (1.0 if self.fixed_decay else lr)))
             elif self.weight_decay > 0.0:
-                g += p * self.weight_decay
+                g += p * tf.cast(self.weight_decay, p.dtype)
 
             momentum = self.momentum[self._get_variable_index(p)]
             hessian_moment = self.hessian_moment[self._get_variable_index(p)]
@@ -539,9 +539,9 @@ class SophiaH_e(optimizer.Optimizer):
             
             if not self.DAdapt:
                 if self.weight_decouple:
-                    p.assign(p * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr)))
+                    p.assign(p * (1.0 - tf.cast(self.weight_decay, p.dtype) * (1.0 if self.fixed_decay else lr)))
                 elif self.weight_decay > 0.0:
-                    g += p * self.weight_decay
+                    g += p * tf.cast(self.weight_decay, p.dtype)
                     
                 if self.sn:
                     numerator = tf.reshape(momentum, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
@@ -607,9 +607,9 @@ class SophiaH_e(optimizer.Optimizer):
                 
                 for p, g in zip(trainable_variables, grads):
                     if self.weight_decouple:
-                        p.assign(p * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else d_lr)))
+                        p.assign(p * (1.0 - tf.cast(self.weight_decay, p.dtype) * (1.0 if self.fixed_decay else d_lr)))
                     elif self.weight_decay > 0.0:
-                        g += p * self.weight_decay
+                        g += p * tf.cast(self.weight_decay, p.dtype)
                         
                     d_lr = tf.cast(d_lr, p.dtype)
                     
@@ -800,9 +800,9 @@ class SophiaG(optimizer.Optimizer):
             lr = tf.cast(learning_rate, p.dtype)
 
             if self.weight_decouple:
-                p.assign(p * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr)))
+                p.assign(p * (1.0 - tf.cast(self.weight_decay, p.dtype) * (1.0 if self.fixed_decay else lr)))
             elif self.weight_decay > 0.0:
-                g += p * self.weight_decay
+                g += p * tf.cast(self.weight_decay, p.dtype)
                 grads[self._get_variable_index(p)] = g
             
         sophiag(trainable_variables,
@@ -1273,9 +1273,9 @@ def _single_tensor_sophiag(params,
         
         if not DAdapt:
             if weight_decouple:
-                param.assign(param * (1.0 - weight_decay * (1.0 if fixed_decay else lr)))
+                param.assign(param * (1.0 - tf.cast(weight_decay, param.dtype) * (1.0 if fixed_decay else lr)))
             elif weight_decay > 0.0:
-                grad += param * weight_decay
+                grad += param * tf.cast(weight_decay, param.dtype)
             if sn:
                 numerator = tf.reshape(exp_avg, (size // subset_size_[i], subset_size_[i]))
                 norm_grad = tf.reshape(numerator / de_nom, param.shape)
@@ -1342,9 +1342,9 @@ def _single_tensor_sophiag(params,
                 d_lr = tf.cast(d_lr, param.dtype)
                 grad = grads[i] if not maximize else -grads[i]
                 if weight_decouple:
-                    param.assign(param * (1.0 - weight_decay * (1.0 if fixed_decay else d_lr)))
+                    param.assign(param * (1.0 - tf.cast(weight_decay, param.dtype) * (1.0 if fixed_decay else d_lr)))
                 elif weight_decay > 0.0:
-                    grad += param * weight_decay
+                    grad += param * tf.cast(weight_decay, param.dtype)
                 if not pnm:
                     exp_avg = exp_avgs[i]
                 hess = hessian[i]
