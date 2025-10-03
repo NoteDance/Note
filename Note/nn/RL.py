@@ -1790,6 +1790,8 @@ class RL:
             for process in process_list:
                 process.join()
             counter+=1
+            if self.state_pool is not None and len(self.state_pool)>=self.batch and counter<self.num_store:
+                    continue
             if self.processes_her==None and self.processes_pr==None:
                 self.state_pool=np.concatenate(self.state_pool_list)
                 self.action_pool=np.concatenate(self.action_pool_list)
