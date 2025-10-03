@@ -317,7 +317,6 @@ class RL_pytorch:
         if batch_params['align'] is None:
             batch_params['align'] = self.batch
         new_batch = batch_params['align'] * (batch // batch_params['align'])
-        new_batch = max(1, min(new_batch, batch_params['max']))
         self.batch = new_batch
     
     
