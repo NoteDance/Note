@@ -446,25 +446,31 @@ class RL_pytorch:
         smooth = beta_params.get('smooth', 0.2)
         beta = smooth * beta + (1.0 - smooth) * target_beta
         self.beta = float(beta)
+        
+        
+    def compute_ess(self, ema_ess, smooth_alpha):
+        if self.PPO:
+            scores = self.lambda_ * self.prioritized_replay.TD + (1.0-self.lambda_) * np.abs(self.prioritized_replay.ratio - 1.0)
+            weights = np.pow(scores + 1e-7, self.alpha)
+        else:
+            weights = np.pow(self.prioritized_replay.TD + 1e-7, self.alpha)
+            
+        p = weights / (weights.sum())
+        ess = 1.0 / (np.sum(p * p))
+        
+        if ema_ess is None:
+            ema = ess
+        else:
+            ema = smooth_alpha * ess + (1.0 - smooth_alpha) * ema_ess
+            
+        return float(ema)
     
     
     def adjust_batch_size(self, smooth_alpha=0.2, batch_params=None, target_ess=None, alpha_params=None, lr_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None, store_params=None, weight_decay_params=None, beta1_params=None, beta2_params=None, clip_params=None, beta_params=None):
         if not hasattr(self, 'ema_ess'):
             self.ema_ess = None
         
-        if self.PPO:
-            scores = self.lambda_ * self.prioritized_replay.TD + (1.0-self.lambda_) * np.abs(self.prioritized_replay.ratio - 1.0)
-            weights = np.pow(scores + 1e-7, self.alpha)
-        else:
-            weights = np.pow(self.prioritized_replay.TD + 1e-7, self.alpha)
-        
-        ess = self.compute_ess_from_weights(weights)
-        
-        if self.ema_ess is None:
-            ema = ess
-        else:
-            ema = smooth_alpha * ess + (1.0 - smooth_alpha) * self.ema_ess
-        self.ema_ess = ema
+        ema = self.compute_ess(self.ema_ess, smooth_alpha)
         
         if batch_params is not None:
             self.adjust_batch(batch_params, ema, target_ess)
@@ -562,7 +568,7 @@ class RL_pytorch:
             self.adjust_beta(beta_params, ema, target_ess)
     
     
-    def estimate_gradient_variance(self, batch_size, num_samples):
+    def estimate_gradient_variance(self, batch_size, num_samples, ema_noise, smooth_alpha):
         grads = []
         optimizer = torch.optim.SGD(self.param, lr=0.01)
     
@@ -591,22 +597,20 @@ class RL_pytorch:
         grads = torch.stack(grads)
         mean_grad = grads.mean(dim=0)
         variance = ((grads - mean_grad) ** 2).mean().item()
-        return variance
+        
+        if ema_noise is None:
+            ema_noise = variance
+        else:
+            ema_noise = smooth_alpha * variance + (1 - smooth_alpha) * ema_noise
+            
+        return ema_noise
     
     
     def adabatch(self, num_samples, target_noise=1e-3, smooth_alpha=0.2, batch_params=None, alpha_params=None, lr_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None, weight_decay_params=None, beta1_params=None, beta2_params=None, clip_params=None, beta_params=None):
         if not hasattr(self, 'ema_noise'):
             self.ema_noise = None
         
-        single_var = self.estimate_gradient_variance(self.batch, num_samples)
-        
-        estimated_noise = single_var
-        
-        if self.ema_noise is None:
-            ema_noise = estimated_noise
-        else:
-            ema_noise = smooth_alpha * estimated_noise + (1 - smooth_alpha) * self.ema_noise
-        self.ema_noise = ema_noise
+        ema_noise = self.estimate_gradient_variance(self.batch, num_samples, self.ema_noise, smooth_alpha)
         
         if batch_params is not None:
             self.adjust_batch(batch_params, ema_noise, target_noise)
