@@ -350,6 +350,8 @@ class kernel:
                 reward_batch=np.concatenate((self.reward_pool[p][index1:length],self.reward_pool[p][:index2]),0)
                 done_batch=np.concatenate((self.done_pool[p][index1:length],self.done_pool[p][:index2]),0)
             loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,p)
+            if self.PR:
+                self.nn.pr.update(p=p)
             self.loss[p]+=loss
             self.nn.bc[0]=sum(self._batch_counter)+self.bc
             _batch_counter=self._batch_counter[p]
@@ -369,6 +371,8 @@ class kernel:
                 reward_batch=self.reward_pool[p][index1:index2]
                 done_batch=self.done_pool[p][index1:index2]
             loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,p)
+            if self.PR:
+                self.nn.pr.update(p=p)
             self.loss[p]+=loss
             self.nn.bc[0]=sum(self._batch_counter)+self.bc
             _batch_counter=self._batch_counter[p]
@@ -453,7 +457,7 @@ class kernel:
                 self.reward[p]+=r
                 s=next_s
                 if self.PR:
-                    self.nn.pr.TD[p]=np.append(self.nn.pr.TD[p],self.nn.initial_TD)
+                    self.nn.pr.TD[p]=np.append(self.nn.pr.TD[p],np.max(self.nn.pr.TD[p]))
                 if type(self.done_pool[p])==np.ndarray:
                     self.train_(p)
                     if self.stop_flag.value==True:
