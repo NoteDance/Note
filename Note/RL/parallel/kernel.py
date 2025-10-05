@@ -475,8 +475,12 @@ class kernel:
                     ln=int(np.random.choice(len(g_lock)))
                     g_lock=g_lock[ln]
                 loss,param=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,p,lock,g_lock)
+                if self.PR:
+                    self.nn.pr.update(p=p)
             else:
                 loss,param=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,p,lock)
+                if self.PR:
+                    self.nn.pr.update(p=p)
             if self.stop_flag.value==True:
                 return
             self.param[7]=param
@@ -508,7 +512,11 @@ class kernel:
                     ln=int(np.random.choice(len(g_lock)))
                     g_lock=g_lock[ln]
                 loss,param=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,p,lock,g_lock)
+                if self.PR:
+                    self.nn.pr.update(p=p)
             else:
+                if self.PR:
+                    self.nn.pr.update(p=p)
                 loss,param=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch,p,lock)
             if self.stop_flag.value==True:
                 return
@@ -609,8 +617,7 @@ class kernel:
                 self.reward[p]+=r
                 s=next_s
                 if self.PR:
-                    self.nn.pr.TD[p]=np.append(self.nn.pr.TD[p],self.nn.initial_TD)
-                    self.nn.pr.TD[p]=tf.Variable(self.nn.pr.TD[p])
+                    self.nn.pr.TD[p]=np.append(self.nn.pr.TD[p],np.max(self.nn.pr.TD[p]))
                 if type(self.done_pool[p])==np.ndarray:
                     self.train_(p,lock,g_lock)
                     if self.stop_flag.value==True:
