@@ -47,28 +47,15 @@ class pr_mp:
     
     
     def sample(self,state_pool,action_pool,next_state_pool,reward_pool,done_pool,alpha,batch,p):
-        if self.PPO:
-            scores=self.lambda_*self.TD[p]+(1.0-self.lambda_)*np.abs(self.ratio[p]-1.0)
-            prios=np.pow(scores+1e-7,alpha)
-            prob=prios/np.sum(prios)
-        else:
-            prios=(self.TD[p]+1e-7)**alpha
-            prob=prios/np.sum(prios)
+        prios=(self.TD[p]+1e-7)**alpha
+        prob=prios/np.sum(prios)
         self.index[p]=np.random.choice(np.arange(len(state_pool)),size=[batch],p=prob,replace=False)
         return state_pool[self.index[p]],action_pool[self.index[p]],next_state_pool[self.index[p]],reward_pool[self.index[p]],done_pool[self.index[p]]
     
     
     def update(self,TD=None,ratio=None,p=None):
-        if self.PPO:
-            if TD is not None:
-                self.TD_=TD
-                self.ratio_=ratio
-            else:
-                self.ratio[p][self.index[p]]=self.ratio_
-                self.TD[p][self.index[p]]=np.abs(self.TD_)
+        if TD is not None:
+            self.TD_=TD
         else:
-            if TD is not None:
-                self.TD_=TD
-            else:
-                self.TD[p][self.index[p]]=np.abs(self.TD_)
+            self.TD[p][self.index[p]]=np.abs(self.TD_)
         return
