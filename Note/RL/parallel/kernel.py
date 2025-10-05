@@ -71,7 +71,7 @@ class kernel:
         self.priority_p=Value('i',0)
         self.inverse_len=manager.list([0 for _ in range(self.process)])
         if self.PR:
-            self.nn.pr.TD=manager.list([[self.nn.initial_TD] for _ in range(self.process)])
+            self.nn.pr.TD=manager.list([[self.nn.pr.TD] for _ in range(self.process)])
         if self.priority_flag==True:
             self.opt_counter=Array('i',np.zeros(self.process,dtype='int32'))
         if self.nn is not None:
