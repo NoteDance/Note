@@ -1014,10 +1014,10 @@ class RL_pytorch:
                     if len(self.state_pool)>1:
                         self.prioritized_replay.ratio=np.append(self.prioritized_replay.ratio,np.max(self.prioritized_replay.ratio))
                     if len(self.state_pool)>1:
-                        self.prioritized_replay.TD=np.append(self.prioritized_replay.ratio,np.max(self.prioritized_replay.TD))
+                        self.prioritized_replay.TD=np.append(self.prioritized_replay.TD,np.max(self.prioritized_replay.TD))
                 else:
                     if len(self.state_pool)>1:
-                        self.prioritized_replay.TD=np.append(self.prioritized_replay.ratio,np.max(self.prioritized_replay.TD))
+                        self.prioritized_replay.TD=np.append(self.prioritized_replay.TD,np.max(self.prioritized_replay.TD))
             if self.MARL==True:
                 r,done=self.reward_done_func_ma(r,done)
             self.reward=r+self.reward
