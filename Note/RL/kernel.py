@@ -84,8 +84,6 @@ class kernel:
         self.HER=HER
         self.MARL=MARL
         self.PR=PR
-        if PR!=None:
-            self.nn.pr.pool_network=False
         self.IRL=IRL
         return
     
@@ -363,6 +361,7 @@ class kernel:
                     self.suspend_func()
                     state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.data_func()
                     batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
+                    self.nn.pr.update()
                     loss+=batch_loss
                     if hasattr(self.nn,'bc'):
                         try:
@@ -373,6 +372,7 @@ class kernel:
                     self.suspend_func()
                     state_batch,action_batch,next_state_batch,reward_batch,done_batch=self.data_func()
                     batch_loss=self.opt(state_batch,action_batch,next_state_batch,reward_batch,done_batch)
+                    self.nn.pr.update()
                     loss+=batch_loss
                     if hasattr(self.nn,'bc'):
                         try:
@@ -430,10 +430,8 @@ class kernel:
                 done=np.array(done)
             self.pool(s,a,next_s,r,done)
             if self.PR:
-                self.nn.pr.TD=np.append(self.nn.pr.TD,self.nn.initial_TD)
+                self.nn.pr.TD=np.append(self.nn.pr.TD,np.max(self.nn.pr.TD))
             self.reward=r+self.reward
-            if hasattr(self.platform,'DType'):
-                self.nn.pr.TD=tf.Variable(self.nn.pr.TD)
             loss=self._train()
             if done:
                 self.reward_list.append(self.reward)
