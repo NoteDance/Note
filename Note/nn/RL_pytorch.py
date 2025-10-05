@@ -58,15 +58,16 @@ class RL_pytorch:
         self.MARL=MARL
         self.PR=PR
         self.IRL=IRL
-        if PPO:
-            self.prioritized_replay.PPO=PPO
-            self.initial_ratio=initial_ratio
-            self.prioritized_replay.ratio=initial_ratio
-            self.initial_TD=initial_TD
-            self.prioritized_replay.TD=initial_TD
-        else:
-            self.initial_TD=initial_TD
-            self.prioritized_replay.TD=initial_TD
+        self.initial_ratio=initial_ratio
+        self.initial_TD=initial_TD
+        if PR:
+            if PPO:
+                self.prioritized_replay.PPO=PPO
+                self.prioritized_replay.ratio=initial_ratio
+                self.prioritized_replay.TD=initial_TD
+            else:
+                self.initial_TD=initial_TD
+                self.prioritized_replay.TD=initial_TD
         self.lambda_=lambda_
         self.alpha=alpha
         return
