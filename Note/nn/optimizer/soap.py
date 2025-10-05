@@ -152,14 +152,11 @@ class SOAP(optimizer.Optimizer):
         self.data_format = data_format
     
     def reset(self):
-        self.GG = []
-        self.Q = []
-        self.matrices = []
+        self.GG = {}
+        self.Q = {}
+        self.matrices = {}
         self._iterations.assign(0)
         for var in self._trainable_variables:
-            self.GG.append([])
-            self.Q.append([])
-            self.matrices.append([])
             self.exp_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
                                                         reference_variable=var, name="exp_avg"
                                                     )
@@ -175,13 +172,10 @@ class SOAP(optimizer.Optimizer):
         super().build(var_list)
         self.exp_avg = []
         self.exp_avg_sq = []
-        self.GG = []
-        self.Q = []
-        self.matrices = []
+        self.GG = {}
+        self.Q = {}
+        self.matrices = {}
         for var in var_list:
-            self.GG.append([])
-            self.Q.append([])
-            self.matrices.append([])
             self.exp_avg.append(self.add_variable_from_reference(
                                 reference_variable=var, name="exp_avg"
                                                     ))
@@ -202,16 +196,16 @@ class SOAP(optimizer.Optimizer):
         original_shape = grad.shape
 
         if merge_dims:
-            if self.data_format == 'channels_first' and grad.dim() == 4:
+            if self.data_format == 'channels_first' and len(grad.shape) == 4:
                 permuted_shape = tf.transpose(grad, (0, 2, 3, 1)).shape 
 
             grad = tf.reshape(grad, merge_small_dims(grad.shape, max_precondition_dim))
 
         for mat in self.Q[self._get_variable_index(param)]:
-            if len(mat) > 0:
+            if mat.shape != []:
                 grad = tf.tensordot(grad, mat, axes=[[0], [0 if project_type == 'forward' else 1]])
             else:
-                grad = tf.transpose(grad, ([*list(range(1, len(grad.shape))), 0]))
+                grad = tf.transpose(grad, [*list(range(1, len(grad.shape))), 0])
 
         if merge_dims:
             if self.data_format == 'channels_first' and len(original_shape) == 4:
@@ -220,13 +214,12 @@ class SOAP(optimizer.Optimizer):
                 grad = tf.reshape(grad, original_shape)
 
         return grad
-    
+        
     def get_orthogonal_matrix(self, param, mat):
-        for m in mat:
-            def true_fn():
-                pass
-            
-            def false_fn():
+        for i, m in enumerate(mat):
+            if m.shape==[]:
+                continue
+            else:
                 try:
                     _, q = tf.linalg.eigh(m + 1e-30 * tf.eye(m.shape[0], dtype=m.dtype))
                 except Exception:  # pragma: no cover
@@ -236,10 +229,8 @@ class SOAP(optimizer.Optimizer):
                     q = tf.cast(q, m.dtype)
 
                 q = tf.reverse(q, axis=[1])
-
-                self.matrices[self._get_variable_index(param)].assign(q)
-            
-            tf.cond(tf.cast(m.shape==[], tf.bool), true_fn, false_fn)
+                
+                self.matrices[self._get_variable_index(param)][i].assign(q)
     
     def get_orthogonal_matrix_qr(self, param, max_precondition_dim = 10000, merge_dims = False):
         r"""Compute the eigen-bases of the pre-conditioner using one round of power iteration."""
@@ -252,10 +243,9 @@ class SOAP(optimizer.Optimizer):
             exp_avg_sq = tf.reshape(exp_avg_sq, merge_small_dims(exp_avg_sq.shape, max_precondition_dim))
 
         for ind, (m, o) in enumerate(zip(self.GG[self._get_variable_index(param)], self.Q[self._get_variable_index(param)])):
-            def true_fn():
-                pass
-            
-            def false_fn(exp_avg_sq = exp_avg_sq):
+            if m.shape==[]:
+                continue
+            else:
                 est_eig = tf.linalg.diag_part(tf.matmul(tf.transpose(o), tf.matmul(m, o)))
                 sort_idx = tf.argsort(est_eig, direction='DESCENDING')
                 exp_avg_sq = tf.gather(exp_avg_sq, sort_idx, axis=ind)
@@ -270,9 +260,7 @@ class SOAP(optimizer.Optimizer):
                 q, _ = tf.linalg.qr(tf.cast(power_iter, tf.float32))
                 q = tf.cast(q, power_iter.dtype)
     
-                self.matrices[self._get_variable_index(param)].assign(q)
-            
-            tf.cond(tf.cast(m.shape==[], tf.bool), true_fn, false_fn)
+                self.matrices[self._get_variable_index(param)][ind].assign(q)
 
         if merge_dims:
             if self.data_format == 'channels_first' and len(orig_shape) == 4:
@@ -289,40 +277,44 @@ class SOAP(optimizer.Optimizer):
         precondition_1d = False,
         merge_dims = False,
     ):
+        param_idx = self._get_variable_index(var)
+        self.GG[param_idx] = []
+        self.Q[param_idx] = []
+        self.matrices[param_idx] = []
         if len(var.shape) == 1:
             if not precondition_1d or var.shape[0] > max_precondition_dim:
-                self.GG[self._get_variable_index(var)].append(tf.Variable(tf.ones(())))
-                self.Q[self._get_variable_index(var)].append(tf.Variable(tf.ones(())))
-                self.matrices[self._get_variable_index(var)].append(tf.Variable(tf.ones(())))
-                self._track_variable(self.GG[-1])
-                self._track_variable(self.Q[-1])
-                self._track_variable(self.matrices[-1])
+                self.GG[param_idx].append(tf.Variable(tf.ones(())))
+                self.Q[param_idx].append(tf.Variable(tf.ones(())))
+                self.matrices[param_idx].append(tf.Variable(tf.ones(())))
+                self._track_variable(self.GG[param_idx][-1])
+                self._track_variable(self.Q[param_idx][-1])
+                self._track_variable(self.matrices[param_idx][-1])
             else:
-                self.GG[self._get_variable_index(var)].append(tf.Variable(tf.zeros((var.shape[0], var.shape[0]), dtype=var.dtype)))
-                self.Q[self._get_variable_index(var)].append(tf.Variable(tf.zeros((var.shape[0], var.shape[0]), dtype=var.dtype)))
-                self.matrices[self._get_variable_index(var)].append(tf.Variable(tf.zeros((var.shape[0], var.shape[0]), dtype=var.dtype)))
-                self._track_variable(self.GG[-1])
-                self._track_variable(self.Q[-1])
-                self._track_variable(self.matrices[-1])
+                self.GG[param_idx].append(tf.Variable(tf.zeros((var.shape[0], var.shape[0]), dtype=var.dtype)))
+                self.Q[param_idx].append(tf.Variable(tf.zeros((var.shape[0], var.shape[0]), dtype=var.dtype)))
+                self.matrices[param_idx].append(tf.Variable(tf.zeros((var.shape[0], var.shape[0]), dtype=var.dtype)))
+                self._track_variable(self.GG[param_idx][-1])
+                self._track_variable(self.Q[param_idx][-1])
+                self._track_variable(self.matrices[param_idx][-1])
         else:
             if merge_dims:
                 var = tf.reshape(var, merge_small_dims(var.shape, max_precondition_dim))
 
             for sh in var.shape:
                 if sh > max_precondition_dim:
-                    self.GG[self._get_variable_index(var)].append(tf.Variable(tf.ones(())))
-                    self.Q[self._get_variable_index(var)].append(tf.Variable(tf.ones(())))
-                    self.matrices[self._get_variable_index(var)].append(tf.Variable(tf.ones(())))
-                    self._track_variable(self.GG[-1])
-                    self._track_variable(self.Q[-1])
-                    self._track_variable(self.matrices[-1])
+                    self.GG[param_idx].append(tf.Variable(tf.ones(())))
+                    self.Q[param_idx].append(tf.Variable(tf.ones(())))
+                    self.matrices[param_idx].append(tf.Variable(tf.ones(())))
+                    self._track_variable(self.GG[param_idx][-1])
+                    self._track_variable(self.Q[param_idx][-1])
+                    self._track_variable(self.matrices[param_idx][-1])
                 else:
-                    self.GG[self._get_variable_index(var)].append(tf.Variable(tf.zeros((sh, sh), dtype=var.dtype)))
-                    self.Q[self._get_variable_index(var)].append(tf.Variable(tf.zeros((sh, sh), dtype=var.dtype)))
-                    self.matrices[self._get_variable_index(var)].append(tf.Variable(tf.zeros((sh, sh), dtype=var.dtype)))
-                    self._track_variable(self.GG[-1])
-                    self._track_variable(self.Q[-1])
-                    self._track_variable(self.matrices[-1])
+                    self.GG[param_idx].append(tf.Variable(tf.zeros((sh, sh), dtype=var.dtype)))
+                    self.Q[param_idx].append(tf.Variable(tf.zeros((sh, sh), dtype=var.dtype)))
+                    self.matrices[param_idx].append(tf.Variable(tf.zeros((sh, sh), dtype=var.dtype)))
+                    self._track_variable(self.GG[param_idx][-1])
+                    self._track_variable(self.Q[param_idx][-1])
+                    self._track_variable(self.matrices[param_idx][-1])
     
     def update_pre_conditioner(
         self,
@@ -333,6 +325,8 @@ class SOAP(optimizer.Optimizer):
         precondition_1d = False,
         merge_dims = False,
     ):
+        beta = self.shampoo_beta if self.shampoo_beta is not None else self.beta2
+        
         if len(grad.shape) == 1:
             if precondition_1d and grad.shape[0] <= max_precondition_dim:
                 outer_product = tf.tensordot(
@@ -341,7 +335,7 @@ class SOAP(optimizer.Optimizer):
                 axes=1
                 )
                 GG = self.GG[self._get_variable_index(param)][0]
-                GG.assign(GG * self.shampoo_beta + tf.cast(outer_product, GG.dtype) * (1.0 - self.shampoo_beta))
+                GG.assign(GG * beta + tf.cast(outer_product, GG.dtype) * (1.0 - beta))
         else:
             if merge_dims:
                 grad = tf.reshape(grad, merge_small_dims(grad.shape, max_precondition_dim))
@@ -356,16 +350,16 @@ class SOAP(optimizer.Optimizer):
 
                     GG = self.GG[self._get_variable_index(param)][idx]
                     GG.assign(
-                        GG * self.shampoo_beta + tf.cast(outer_product, GG.dtype) * (1.0 - self.shampoo_beta)
+                        GG * beta + tf.cast(outer_product, GG.dtype) * (1.0 - beta)
                     )
         
         def true_fn1():
             self.get_orthogonal_matrix(param, self.GG[self._get_variable_index(param)])
-            for i in range(len(self.Q)):
-                if type(self.Q[i]) == list:
-                    continue
-                else:
-                    self.Q[i].assign(self.matrices[i])
+            if len(self.Q[self._get_variable_index(param)]) == 1:
+                self.Q[self._get_variable_index(param)][0].assign(self.matrices[self._get_variable_index(param)][0])
+            else:
+                for i in range(len(self.Q[self._get_variable_index(param)])):
+                    self.Q[self._get_variable_index(param)][i].assign(self.matrices[self._get_variable_index(param)][i])
         
         def false_fn1():
             pass
@@ -374,11 +368,11 @@ class SOAP(optimizer.Optimizer):
         
         def true_fn2():
             self.get_orthogonal_matrix_qr(param, max_precondition_dim, merge_dims)
-            for i in range(len(self.Q)):
-                if type(self.Q[i]) == list:
-                    continue
-                else:
-                    self.Q[i].assign(self.matrices[i])
+            if len(self.Q[self._get_variable_index(param)]) == 1:
+                self.Q[self._get_variable_index(param)][0].assign(self.matrices[self._get_variable_index(param)][0])
+            else:
+                for i in range(len(self.Q[self._get_variable_index(param)])):
+                    self.Q[self._get_variable_index(param)][i].assign(self.matrices[self._get_variable_index(param)][i])
         
         def false_fn2():
             pass
@@ -402,7 +396,7 @@ class SOAP(optimizer.Optimizer):
             step = tf.cast(self.iterations + 1, p.dtype)
             
             lr = tf.cast(learning_rate, p.dtype)
-
+            
             def true_fn():
                 self.update_pre_conditioner(
                     p,
@@ -584,9 +578,9 @@ class SOAP_e(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_slow = []
         self.exp_avg_sq = []
-        self.GG = []
-        self.Q = []
-        self.matrices = []
+        self.GG = {}
+        self.Q = {}
+        self.matrices = {}
         self.slow_momentum = []
         self.pos_momentum = []
         self.neg_momentum = []
@@ -602,9 +596,6 @@ class SOAP_e(optimizer.Optimizer):
             self._track_variable(self.numerator_weighted)
             self._track_variable(self.d0_)
         for var in var_list:
-            self.GG.append([])
-            self.Q.append([])
-            self.matrices.append([])
             if self.lookahead:
                 self.slow_momentum.append(tf.Variable(var))
                 self._track_variable(self.slow_momentum[-1])
@@ -667,16 +658,16 @@ class SOAP_e(optimizer.Optimizer):
         original_shape = grad.shape
 
         if merge_dims:
-            if self.data_format == 'channels_first' and grad.dim() == 4:
+            if self.data_format == 'channels_first' and len(grad.shape) == 4:
                 permuted_shape = tf.transpose(grad, (0, 2, 3, 1)).shape 
 
             grad = tf.reshape(grad, merge_small_dims(grad.shape, max_precondition_dim))
 
         for mat in self.Q[self._get_variable_index(param)]:
-            if len(mat) > 0:
+            if mat.shape != []:
                 grad = tf.tensordot(grad, mat, axes=[[0], [0 if project_type == 'forward' else 1]])
             else:
-                grad = tf.transpose(grad, ([*list(range(1, len(grad.shape))), 0]))
+                grad = tf.transpose(grad, [*list(range(1, len(grad.shape))), 0])
 
         if merge_dims:
             if self.data_format == 'channels_first' and len(original_shape) == 4:
@@ -687,11 +678,10 @@ class SOAP_e(optimizer.Optimizer):
         return grad
     
     def get_orthogonal_matrix(self, param, mat):
-        for m in mat:
-            def true_fn():
-                pass
-            
-            def false_fn():
+        for i, m in enumerate(mat):
+            if m.shape==[]:
+                continue
+            else:
                 try:
                     _, q = tf.linalg.eigh(m + 1e-30 * tf.eye(m.shape[0], dtype=m.dtype))
                 except Exception:  # pragma: no cover
@@ -701,10 +691,8 @@ class SOAP_e(optimizer.Optimizer):
                     q = tf.cast(q, m.dtype)
 
                 q = tf.reverse(q, axis=[1])
-
-                self.matrices[self._get_variable_index(param)].assign(q)
-            
-            tf.cond(tf.cast(m.shape==[], tf.bool), true_fn, false_fn)
+                
+                self.matrices[self._get_variable_index(param)][i].assign(q)
     
     def get_orthogonal_matrix_qr(self, param, max_precondition_dim = 10000, merge_dims = False):
         r"""Compute the eigen-bases of the pre-conditioner using one round of power iteration."""
@@ -717,10 +705,9 @@ class SOAP_e(optimizer.Optimizer):
             exp_avg_sq = tf.reshape(exp_avg_sq, merge_small_dims(exp_avg_sq.shape, max_precondition_dim))
 
         for ind, (m, o) in enumerate(zip(self.GG[self._get_variable_index(param)], self.Q[self._get_variable_index(param)])):
-            def true_fn():
-                pass
-            
-            def false_fn(exp_avg_sq = exp_avg_sq):
+            if m.shape==[]:
+                continue
+            else:
                 est_eig = tf.linalg.diag_part(tf.matmul(tf.transpose(o), tf.matmul(m, o)))
                 sort_idx = tf.argsort(est_eig, direction='DESCENDING')
                 exp_avg_sq = tf.gather(exp_avg_sq, sort_idx, axis=ind)
@@ -735,9 +722,7 @@ class SOAP_e(optimizer.Optimizer):
                 q, _ = tf.linalg.qr(tf.cast(power_iter, tf.float32))
                 q = tf.cast(q, power_iter.dtype)
     
-                self.matrices[self._get_variable_index(param)].assign(q)
-            
-            tf.cond(tf.cast(m.shape==[], tf.bool), true_fn, false_fn)
+                self.matrices[self._get_variable_index(param)][ind].assign(q)
 
         if merge_dims:
             if self.data_format == 'channels_first' and len(orig_shape) == 4:
@@ -754,40 +739,44 @@ class SOAP_e(optimizer.Optimizer):
         precondition_1d = False,
         merge_dims = False,
     ):
+        param_idx = self._get_variable_index(var)
+        self.GG[param_idx] = []
+        self.Q[param_idx] = []
+        self.matrices[param_idx] = []
         if len(var.shape) == 1:
             if not precondition_1d or var.shape[0] > max_precondition_dim:
-                self.GG[self._get_variable_index(var)].append(tf.Variable(tf.ones(())))
-                self.Q[self._get_variable_index(var)].append(tf.Variable(tf.ones(())))
-                self.matrices[self._get_variable_index(var)].append(tf.Variable(tf.ones(())))
-                self._track_variable(self.GG[-1])
-                self._track_variable(self.Q[-1])
-                self._track_variable(self.matrices[-1])
+                self.GG[param_idx].append(tf.Variable(tf.ones(())))
+                self.Q[param_idx].append(tf.Variable(tf.ones(())))
+                self.matrices[param_idx].append(tf.Variable(tf.ones(())))
+                self._track_variable(self.GG[param_idx][-1])
+                self._track_variable(self.Q[param_idx][-1])
+                self._track_variable(self.matrices[param_idx][-1])
             else:
-                self.GG[self._get_variable_index(var)].append(tf.Variable(tf.zeros((var.shape[0], var.shape[0]), dtype=var.dtype)))
-                self.Q[self._get_variable_index(var)].append(tf.Variable(tf.zeros((var.shape[0], var.shape[0]), dtype=var.dtype)))
-                self.matrices[self._get_variable_index(var)].append(tf.Variable(tf.zeros((var.shape[0], var.shape[0]), dtype=var.dtype)))
-                self._track_variable(self.GG[-1])
-                self._track_variable(self.Q[-1])
-                self._track_variable(self.matrices[-1])
+                self.GG[param_idx].append(tf.Variable(tf.zeros((var.shape[0], var.shape[0]), dtype=var.dtype)))
+                self.Q[param_idx].append(tf.Variable(tf.zeros((var.shape[0], var.shape[0]), dtype=var.dtype)))
+                self.matrices[param_idx].append(tf.Variable(tf.zeros((var.shape[0], var.shape[0]), dtype=var.dtype)))
+                self._track_variable(self.GG[param_idx][-1])
+                self._track_variable(self.Q[param_idx][-1])
+                self._track_variable(self.matrices[param_idx][-1])
         else:
             if merge_dims:
                 var = tf.reshape(var, merge_small_dims(var.shape, max_precondition_dim))
 
             for sh in var.shape:
                 if sh > max_precondition_dim:
-                    self.GG[self._get_variable_index(var)].append(tf.Variable(tf.ones(())))
-                    self.Q[self._get_variable_index(var)].append(tf.Variable(tf.ones(())))
-                    self.matrices[self._get_variable_index(var)].append(tf.Variable(tf.ones(())))
-                    self._track_variable(self.GG[-1])
-                    self._track_variable(self.Q[-1])
-                    self._track_variable(self.matrices[-1])
+                    self.GG[param_idx].append(tf.Variable(tf.ones(())))
+                    self.Q[param_idx].append(tf.Variable(tf.ones(())))
+                    self.matrices[param_idx].append(tf.Variable(tf.ones(())))
+                    self._track_variable(self.GG[param_idx][-1])
+                    self._track_variable(self.Q[param_idx][-1])
+                    self._track_variable(self.matrices[param_idx][-1])
                 else:
-                    self.GG[self._get_variable_index(var)].append(tf.Variable(tf.zeros((sh, sh), dtype=var.dtype)))
-                    self.Q[self._get_variable_index(var)].append(tf.Variable(tf.zeros((sh, sh), dtype=var.dtype)))
-                    self.matrices[self._get_variable_index(var)].append(tf.Variable(tf.zeros((sh, sh), dtype=var.dtype)))
-                    self._track_variable(self.GG[-1])
-                    self._track_variable(self.Q[-1])
-                    self._track_variable(self.matrices[-1])
+                    self.GG[param_idx].append(tf.Variable(tf.zeros((sh, sh), dtype=var.dtype)))
+                    self.Q[param_idx].append(tf.Variable(tf.zeros((sh, sh), dtype=var.dtype)))
+                    self.matrices[param_idx].append(tf.Variable(tf.zeros((sh, sh), dtype=var.dtype)))
+                    self._track_variable(self.GG[param_idx][-1])
+                    self._track_variable(self.Q[param_idx][-1])
+                    self._track_variable(self.matrices[param_idx][-1])
     
     def update_pre_conditioner(
         self,
@@ -798,6 +787,8 @@ class SOAP_e(optimizer.Optimizer):
         precondition_1d = False,
         merge_dims = False,
     ):
+        beta = self.shampoo_beta if self.shampoo_beta is not None else self.beta2
+        
         if len(grad.shape) == 1:
             if precondition_1d and grad.shape[0] <= max_precondition_dim:
                 outer_product = tf.tensordot(
@@ -806,7 +797,7 @@ class SOAP_e(optimizer.Optimizer):
                 axes=1
                 )
                 GG = self.GG[self._get_variable_index(param)][0]
-                GG.assign(GG * self.shampoo_beta + tf.cast(outer_product, GG.dtype) * (1.0 - self.shampoo_beta))
+                GG.assign(GG * beta + tf.cast(outer_product, GG.dtype) * (1.0 - beta))
         else:
             if merge_dims:
                 grad = tf.reshape(grad, merge_small_dims(grad.shape, max_precondition_dim))
@@ -821,16 +812,16 @@ class SOAP_e(optimizer.Optimizer):
 
                     GG = self.GG[self._get_variable_index(param)][idx]
                     GG.assign(
-                        GG * self.shampoo_beta + tf.cast(outer_product, GG.dtype) * (1.0 - self.shampoo_beta)
+                        GG * beta + tf.cast(outer_product, GG.dtype) * (1.0 - beta)
                     )
         
         def true_fn1():
             self.get_orthogonal_matrix(param, self.GG[self._get_variable_index(param)])
-            for i in range(len(self.Q)):
-                if type(self.Q[i]) == list:
-                    continue
-                else:
-                    self.Q[i].assign(self.matrices[i])
+            if len(self.Q[self._get_variable_index(param)]) == 1:
+                self.Q[self._get_variable_index(param)][0].assign(self.matrices[self._get_variable_index(param)][0])
+            else:
+                for i in range(len(self.Q[self._get_variable_index(param)])):
+                    self.Q[self._get_variable_index(param)][i].assign(self.matrices[self._get_variable_index(param)][i])
         
         def false_fn1():
             pass
@@ -839,11 +830,11 @@ class SOAP_e(optimizer.Optimizer):
         
         def true_fn2():
             self.get_orthogonal_matrix_qr(param, max_precondition_dim, merge_dims)
-            for i in range(len(self.Q)):
-                if type(self.Q[i]) == list:
-                    continue
-                else:
-                    self.Q[i].assign(self.matrices[i])
+            if len(self.Q[self._get_variable_index(param)]) == 1:
+                self.Q[self._get_variable_index(param)][0].assign(self.matrices[self._get_variable_index(param)][0])
+            else:
+                for i in range(len(self.Q[self._get_variable_index(param)])):
+                    self.Q[self._get_variable_index(param)][i].assign(self.matrices[self._get_variable_index(param)][i])
         
         def false_fn2():
             pass

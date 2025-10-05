@@ -49,6 +49,7 @@ class Adan(optimizer.Optimizer):
         epsilon=1e-8,
         weight_decay=0.0,
         no_prox=False,
+        caution=True,
         foreach=True,
         clipnorm=None,
         clipvalue=None,
@@ -141,7 +142,6 @@ class Adan(optimizer.Optimizer):
 
     def update_step(self, grads, trainable_variables, learning_rate):
         params_with_grad = []
-        grads = []
         exp_avgs = []
         exp_avg_sqs = []
         exp_avg_diffs = []
@@ -149,7 +149,6 @@ class Adan(optimizer.Optimizer):
         
         for i in range(len(trainable_variables)):
             params_with_grad.append(trainable_variables[i])
-            grads.append(grads[i])
             
             exp_avgs.append(self.exp_avg[self._get_variable_index(trainable_variables[i])])
             exp_avg_sqs.append(self.exp_avg_sq[self._get_variable_index(trainable_variables[i])])
@@ -171,10 +170,11 @@ class Adan(optimizer.Optimizer):
             weight_decay=self.weight_decay,
             eps=self.epsilon,
             no_prox=self.no_prox,
+            caution=self.caution
         )
 
         if self.foreach:
-            self._multi_tensor_adan(**kwargs)
+            _multi_tensor_adan(**kwargs)
         else:
             _single_tensor_adan(**kwargs)
 
@@ -188,6 +188,7 @@ class Adan(optimizer.Optimizer):
                 "beta3": self.beta3,
                 "epsilon": self.epsilon,
                 "no_prox": self.no_prox,
+                "caution": self.caution,
                 "foreach": self.foreach,
                 "step": self.iterations.numpy(),
             }
