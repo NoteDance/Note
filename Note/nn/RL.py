@@ -555,23 +555,29 @@ class RL:
         self.beta.assign(beta)
     
     
-    def adjust_batch_size(self, smooth_alpha=0.2, batch_params=None, target_ess=None, alpha_params=None, lr_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None, store_params=None, weight_decay_params=None, beta1_params=None, beta2_params=None, clip_params=None, beta_params=None):
-        if not hasattr(self, 'ema_ess'):
-            self.ema_ess = None
-        
+    def compute_ess(self, ema_ess, smooth_alpha):
         if self.PPO:
             scores = self.lambda_ * self.prioritized_replay.TD + (1.0-self.lambda_) * np.abs(self.prioritized_replay.ratio - 1.0)
             weights = np.pow(scores + 1e-7, self.alpha)
         else:
             weights = np.pow(self.prioritized_replay.TD + 1e-7, self.alpha)
+            
+        p = weights / (weights.sum())
+        ess = 1.0 / (np.sum(p * p))
         
-        ess = self.compute_ess_from_weights(weights)
-        
-        if self.ema_ess is None:
+        if ema_ess is None:
             ema = ess
         else:
-            ema = smooth_alpha * ess + (1.0 - smooth_alpha) * self.ema_ess
-        self.ema_ess = ema
+            ema = smooth_alpha * ess + (1.0 - smooth_alpha) * ema_ess
+            
+        return float(ema)
+    
+    
+    def adjust_batch_size(self, smooth_alpha=0.2, batch_params=None, target_ess=None, alpha_params=None, lr_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None, store_params=None, weight_decay_params=None, beta1_params=None, beta2_params=None, clip_params=None, beta_params=None):
+        if not hasattr(self, 'ema_ess'):
+            self.ema_ess = None
+        
+        ema = self.compute_ess(self.ema_ess, smooth_alpha)
         
         if batch_params is not None:
             self.adjust_batch(batch_params, ema, target_ess)
@@ -677,7 +683,7 @@ class RL:
         return gradients
     
     
-    def estimate_gradient_variance(self, batch_size, num_samples, jit_compile=True):
+    def estimate_gradient_variance(self, batch_size, num_samples, ema_noise, smooth_alpha, jit_compile=True):
         grads = []
     
         for _ in range(num_samples):
@@ -704,22 +710,20 @@ class RL:
         grads = tf.stack(grads)
         mean_grad = tf.reduce_mean(grads, axis=0)
         variance = tf.reduce_mean((grads - mean_grad) ** 2)
-        return variance
+        
+        if ema_noise is None:
+            ema_noise = variance
+        else:
+            ema_noise = smooth_alpha * variance + (1 - smooth_alpha) * ema_noise
+            
+        return ema_noise
     
     
     def adabatch(self, num_samples, target_noise=1e-3, smooth_alpha=0.2, batch_params=None, alpha_params=None, lr_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None, weight_decay_params=None, beta1_params=None, beta2_params=None, clip_params=None, beta_params=None, jit_compile=True):
         if not hasattr(self, 'ema_noise'):
             self.ema_noise = None
         
-        single_var = self.estimate_gradient_variance(self.batch, num_samples, jit_compile)
-        
-        estimated_noise = single_var
-        
-        if self.ema_noise is None:
-            ema_noise = estimated_noise
-        else:
-            ema_noise = smooth_alpha * estimated_noise + (1 - smooth_alpha) * self.ema_noise
-        self.ema_noise = ema_noise
+        ema_noise = self.estimate_gradient_variance(self.batch, num_samples, self.ema_noise, smooth_alpha, jit_compile)
         
         if batch_params is not None:
             self.adjust_batch(batch_params, ema_noise, target_noise)
