@@ -150,11 +150,11 @@ class RL:
         if PR:
             if PPO:
                 self.prioritized_replay.PPO=PPO
-                self.prioritized_replay.ratio=initial_ratio
-                self.prioritized_replay.TD=initial_TD
+                self.prioritized_replay.ratio=np.array(initial_ratio).astype('float32')
+                self.prioritized_replay.TD=np.array(initial_TD).astype('float32')
             else:
                 self.initial_TD=initial_TD
-                self.prioritized_replay.TD=initial_TD
+                self.prioritized_replay.TD=np.array(initial_TD).astype('float32')
         self.lambda_=lambda_
         self.alpha=alpha
         return
@@ -1925,14 +1925,14 @@ class RL:
                     self.ratio_list=manager.list()
                     self.TD_list=manager.list()
                     for _ in range(processes):
-                        self.ratio_list.append(np.array(self.initial_ratio).astype('float32'))
-                        self.TD_list.append(np.array(self.initial_TD).astype('float32'))
+                        self.ratio_list.append(self.initial_ratio)
+                        self.TD_list.append(self.initial_TD)
                     self.prioritized_replay.ratio=None
                     self.prioritized_replay.TD=None
                 else:
                     self.TD_list=manager.list()
                     for _ in range(processes):
-                        self.TD_list.append(np.array(self.initial_TD).astype('float32'))
+                        self.TD_list.append(self.initial_TD)
                     self.prioritized_replay.TD=None
             if processes_her!=None or processes_pr!=None:
                 self.state_pool=manager.dict()
@@ -2168,14 +2168,14 @@ class RL:
                     self.ratio_list=manager.list()
                     self.TD_list=manager.list()
                     for _ in range(processes):
-                        self.ratio_list.append(np.array(self.initial_ratio).astype('float32'))
-                        self.TD_list.append(np.array(self.initial_TD).astype('float32'))
+                        self.ratio_list.append(self.initial_ratio)
+                        self.TD_list.append(self.initial_TD)
                     self.prioritized_replay.ratio=None
                     self.prioritized_replay.TD=None
                 else:
                     self.TD_list=manager.list()
                     for _ in range(processes):
-                        self.TD_list.append(np.array(self.initial_TD).astype('float32'))
+                        self.TD_list.append(self.initial_TD)
                     self.prioritized_replay.TD=None
             if processes_her!=None or processes_pr!=None:
                 self.state_pool=manager.dict()
