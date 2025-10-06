@@ -129,7 +129,7 @@ class RL:
         return self.info
     
     
-    def set(self,policy=None,noise=None,pool_size=None,batch=None,num_updates=None,num_steps=None,update_batches=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False,MARL=False,PR=False,IRL=False,initial_ratio=1.0,initial_TD=7.,lambda_=0.5,alpha=0.7):
+    def set(self,policy=None,noise=None,pool_size=None,batch=None,num_updates=None,num_steps=None,update_batches=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False,MARL=False,PR=False,IRL=False,initial_ratio=1.0,initial_TD=7.,lambda_=0.5,alpha=0.7,max_batch=None):
         self.policy=policy
         self.noise=noise
         self.pool_size=pool_size
@@ -152,8 +152,20 @@ class RL:
                 self.prioritized_replay.PPO=PPO
                 self.prioritized_replay.ratio=self.initial_ratio
                 self.prioritized_replay.TD=self.initial_TD
+                if max_batch is not None:
+                    self.prioritized_replay.ratio_=tf.Variable(tf.zeros([max_batch]))
+                    self.prioritized_replay.TD_=tf.Variable(tf.zeros([max_batch]))
+                else:
+                    self.prioritized_replay.ratio_=tf.Variable(tf.zeros([batch]))
+                    self.prioritized_replay.TD_=tf.Variable(tf.zeros([batch]))
+                self.prioritized_replay.batch=tf.Variable(tf.zeros((),dtype=tf.int32))
             else:
                 self.prioritized_replay.TD=self.initial_TD
+                if max_batch is not None:
+                    self.prioritized_replay.TD_=tf.Variable(tf.zeros([max_batch]))
+                else:
+                    self.prioritized_replay.TD_=tf.Variable(tf.zeros([batch]))
+                self.prioritized_replay.batch=tf.Variable(tf.zeros((),dtype=tf.int32))
         self.lambda_=lambda_
         self.alpha=alpha
         return
