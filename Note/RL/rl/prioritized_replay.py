@@ -1,3 +1,4 @@
+import tensorflow as tf
 import numpy as np
 
 
@@ -18,20 +19,27 @@ class pr:
             prios=(self.TD+1e-7)**alpha
             p=prios/np.sum(prios)
         self.index=np.random.choice(np.arange(len(state_pool)),size=[batch],p=p,replace=False)
+        try:
+            self.batch.assign(batch)
+        except Exception:
+            self.batch=batch
         return state_pool[self.index],action_pool[self.index],next_state_pool[self.index],reward_pool[self.index],done_pool[self.index]
     
     
     def update(self,TD=None,ratio=None):
         if self.PPO:
             if TD is not None:
-                self.TD_=TD
-                self.ratio_=ratio
+                TD=tf.cast(TD,tf.float32)
+                ratio=tf.cast(ratio,tf.float32)
+                self.TD_[:self.batch].assign(TD)
+                self.ratio_[:self.batch].assign(ratio)
             else:
                 self.ratio[self.index]=self.ratio_
                 self.TD[self.index]=np.abs(self.TD_)
         else:
             if TD is not None:
-                self.TD_=TD
+                TD=tf.cast(TD,tf.float32)
+                self.TD_[:self.batch].assign(TD)
             else:
                 self.TD[self.index]=np.abs(self.TD_)
         return
@@ -39,7 +47,6 @@ class pr:
 
 class pr_mp:
     def __init__(self):
-        self.ratio=None
         self.TD=None
         self.lambda_=None
         self.index=None
@@ -50,12 +57,17 @@ class pr_mp:
         prios=(self.TD[p]+1e-7)**alpha
         prob=prios/np.sum(prios)
         self.index[p]=np.random.choice(np.arange(len(state_pool)),size=[batch],p=prob,replace=False)
+        self.batch=batch
         return state_pool[self.index[p]],action_pool[self.index[p]],next_state_pool[self.index[p]],reward_pool[self.index[p]],done_pool[self.index[p]]
     
     
     def update(self,TD=None,ratio=None,p=None):
         if TD is not None:
-            self.TD_=TD
+            try:
+                TD=tf.cast(TD,tf.float32)
+                self.TD_[:self.batch].assign(TD)
+            except Exception:
+                self.TD_[:self.batch]=TD
         else:
             self.TD[p][self.index[p]]=np.abs(self.TD_)
         return
