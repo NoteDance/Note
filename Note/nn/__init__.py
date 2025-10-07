@@ -167,6 +167,7 @@ from Note.nn.layer.zeropadding3d import zeropadding3d
 from Note.nn.accuracy import *
 from Note.nn.activation import activation,activation_conv,activation_conv_transpose,activation_dict
 from Note.nn.assign_param import assign_param
+from Note.nn.calculate_drop_path_rates import calculate_drop_path_rates
 from Note.nn.coalesce_sparse import coalesce_sparse
 from Note.nn.conv2d_func import conv2d_func
 from Note.nn.cosine_similarity import cosine_similarity
