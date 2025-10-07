@@ -464,6 +464,8 @@ class DAdaptAdan_sn(optimizer.Optimizer):
             x = grad * tf.math.conj(grad)
             grad_power = tf.math.real(x) if x.dtype.is_complex else x
             de_nom = tf.sqrt(exp_avg_sq) + self.epsilon
+            if self.sn:
+                grad_power = tf.reshape(grad_power, (size // self.subset_size_[self._get_variable_index(var)], self.subset_size_[self._get_variable_index(var)]))
             
             self.g_sq.assign_add(tf.cast(tf.reduce_sum(grad_power / de_nom), tf.float32))
             

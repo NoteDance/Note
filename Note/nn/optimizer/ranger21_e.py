@@ -380,7 +380,7 @@ class Ranger21_e(optimizer.Optimizer):
 
             # stable weight decay
             if self.weight_decouple:
-                p.assign(p * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else self.lr) * 1.0 / variance_normalized))
+                p.assign(p * (1.0 - tf.cast(self.weight_decay, p.dtype) * (1.0 if self.fixed_decay else self.lr) * 1.0 / variance_normalized))
 
             # norm loss
             correction = 2.0 * self.norm_loss_factor * (1.0 - 1.0 / unit_norm(p) + self.epsilon)
@@ -405,6 +405,8 @@ class Ranger21_e(optimizer.Optimizer):
             
             if self.DAdapt:
                 s = self.s[self._get_variable_index(p)]
+                if self.sn:
+                    s = tf.reshape(s, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
             
                 flat_grad = tf.reshape(g, [-1])
                 flat_div = tf.reshape(tf.divide(s, de_nom), [-1])

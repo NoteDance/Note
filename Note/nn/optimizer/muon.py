@@ -1362,6 +1362,8 @@ class Muon_e(optimizer.Optimizer):
                     de_nom = tf.sqrt(buf2) + self.adamw_eps
                 
                 if self.DAdapt:
+                    if self.sn:
+                        s = tf.reshape(s, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
                     flat_grad = tf.reshape(grad, [-1])
                     flat_div = tf.reshape(tf.divide(s, de_nom), [-1])
                     dot_val = tf.tensordot(flat_grad, flat_div, axes=1)
@@ -2082,6 +2084,8 @@ class DistributedMuon_e(optimizer.Optimizer):
                     de_nom = tf.sqrt(exp_avg_sq) + self.adamw_eps
                 
                 if self.DAdapt:
+                    if self.sn:
+                        s = tf.reshape(s, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
                     flat_grad = tf.reshape(grad, [-1])
                     flat_div = tf.reshape(tf.divide(s, de_nom), [-1])
                     dot_val = tf.tensordot(flat_grad, flat_div, axes=1)
@@ -2800,6 +2804,8 @@ class AdaMuon_e(optimizer.Optimizer):
                     de_nom = tf.sqrt(buf2) + self.epsilon
                 
                 if self.DAdapt:
+                    if self.sn:
+                        s = tf.reshape(s, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
                     flat_grad = tf.reshape(grad, [-1])
                     flat_div = tf.reshape(tf.divide(s, de_nom), [-1])
                     dot_val = tf.tensordot(flat_grad, flat_div, axes=1)
@@ -3486,6 +3492,8 @@ class AdaGO_e(optimizer.Optimizer):
                     de_nom = (tf.sqrt(exp_avg_sq) + self.adamw_eps) / bias_correction2_sq
                     
                 if self.DAdapt:
+                    if self.sn:
+                        s = tf.reshape(s, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
                     flat_grad = tf.reshape(grad, [-1])
                     flat_div = tf.reshape(tf.divide(s, de_nom), [-1])
                     dot_val = tf.tensordot(flat_grad, flat_div, axes=1)

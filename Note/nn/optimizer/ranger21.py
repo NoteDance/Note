@@ -287,7 +287,7 @@ class Ranger21(optimizer.Optimizer):
 
             # stable weight decay
             if self.weight_decouple:
-                p.assign(p * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr) * 1.0 / variance_normalized))
+                p.assign(p * (1.0 - tf.cast(self.weight_decay, p.dtype) * (1.0 if self.fixed_decay else lr) * 1.0 / variance_normalized))
 
             # norm loss
             correction = 2.0 * self.norm_loss_factor * (1.0 - 1.0 / unit_norm(p) + self.epsilon)

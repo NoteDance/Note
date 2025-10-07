@@ -930,10 +930,12 @@ class SOAP_e(optimizer.Optimizer):
                 if self.DAdapt:
                     d_lr = self.d0 * lr
             
-            de_nom = tf.sqrt(exp_avg_sq) + self.epsilon
-            
             if self.DAdapt:
+                de_nom = tf.sqrt(exp_avg_sq) + self.epsilon
+                
                 s = self.s[self._get_variable_index(p)]
+                if self.sn:
+                    s = tf.reshape(s, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
             
                 flat_grad = tf.reshape(g, [-1])
                 flat_div = tf.reshape(tf.divide(s, de_nom), [-1])
@@ -989,6 +991,8 @@ class SOAP_e(optimizer.Optimizer):
                     second_moment_update = tf.pow(grad_projected, 2)
     
                 exp_avg_sq.assign(exp_avg_sq * self.beta2 + second_moment_update * (1.0 - self.beta2))
+                
+                de_nom = tf.sqrt(exp_avg_sq) + self.epsilon
     
                 exp_avg_projected = self.project(
                     p, exp_avg, merge_dims=self.merge_dims, max_precondition_dim=self.max_precondition_dim
@@ -1022,9 +1026,6 @@ class SOAP_e(optimizer.Optimizer):
                 
                 if self.trust_ratio:
                     # Layer-wise LR adaptation
-                    if self.sn:
-                        w_norm = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                        g_norm = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
                     w_norm = tf.norm(p, ord=2)
                     g_norm = tf.norm(update, ord=2)
                     trust_ratio = w_norm / g_norm
@@ -1139,9 +1140,6 @@ class SOAP_e(optimizer.Optimizer):
                 
                 if self.trust_ratio:
                     # Layer-wise LR adaptation
-                    if self.sn:
-                        w_norm = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                        g_norm = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
                     w_norm = tf.norm(p, ord=2)
                     g_norm = tf.norm(update, ord=2)
                     trust_ratio = w_norm / g_norm

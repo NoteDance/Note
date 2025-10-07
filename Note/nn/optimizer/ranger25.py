@@ -280,9 +280,9 @@ class Ranger25(optimizer.Optimizer):
             size = tf.size(g)
             
             if self.weight_decouple:
-                p.assign(p * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr)))
+                p.assign(p * (1.0 - tf.cast(self.weight_decay, p.dtype) * (1.0 if self.fixed_decay else lr)))
             elif self.weight_decay > 0.0:
-                g += p * self.weight_decay
+                g += p * tf.cast(self.weight_decay, p.dtype)
                 
             grads[self._get_variable_index(p)] = agc(p, g)
             g = grads[self._get_variable_index(p)]
@@ -303,7 +303,9 @@ class Ranger25(optimizer.Optimizer):
             
             if self.DAdapt:
                 s = self.s[self._get_variable_index(p)]
-            
+                if self.sn:
+                    s = tf.reshape(s, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                
                 flat_grad = tf.reshape(g, [-1])
                 flat_div = tf.reshape(tf.divide(s, de_nom), [-1])
                 dot_val = tf.tensordot(flat_grad, flat_div, axes=1)

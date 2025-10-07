@@ -532,6 +532,8 @@ class SophiaH_e(optimizer.Optimizer):
             de_nom = tf.maximum(hessian_moment, self.epsilon)
             
             if self.DAdapt:
+                if self.sn:
+                    s = tf.reshape(s, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
                 flat_grad = tf.reshape(g, [-1])
                 flat_div = tf.reshape(tf.divide(s, de_nom), [-1])
                 dot_val = tf.tensordot(flat_grad, flat_div, axes=1)
@@ -560,9 +562,6 @@ class SophiaH_e(optimizer.Optimizer):
                 
                 if self.trust_ratio:
                     # Layer-wise LR adaptation
-                    if self.sn:
-                        w_norm = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                        g_norm = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
                     w_norm = tf.norm(p, ord=2)
                     g_norm = tf.norm(update, ord=2)
                     trust_ratio = w_norm / g_norm
@@ -644,9 +643,6 @@ class SophiaH_e(optimizer.Optimizer):
                     
                     if self.trust_ratio:
                         # Layer-wise LR adaptation
-                        if self.sn:
-                            w_norm = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                            g_norm = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
                         w_norm = tf.norm(p, ord=2)
                         g_norm = tf.norm(update, ord=2)
                         trust_ratio = w_norm / g_norm
@@ -1266,6 +1262,8 @@ def _single_tensor_sophiag(params,
         de_nom = (rho * hess + 1e-15)
         
         if DAdapt:
+            if sn:
+                s = tf.reshape(s, (size // subset_size_[i], subset_size_[i]))
             flat_grad = tf.reshape(grad, [-1])
             flat_div = tf.reshape(tf.divide(s, de_nom), [-1])
             dot_val = tf.tensordot(flat_grad, flat_div, axes=1)
@@ -1293,9 +1291,6 @@ def _single_tensor_sophiag(params,
             
             if trust_ratio:
                 # Layer-wise LR adaptation
-                if sn:
-                    w_norm = tf.reshape(param, (size // subset_size_[i], subset_size_[i]))
-                    g_norm = tf.reshape(ratio, (size // subset_size_[i], subset_size_[i]))
                 w_norm = tf.norm(param, ord=2)
                 g_norm = tf.norm(ratio, ord=2)
                 trust_ratio = w_norm / g_norm
@@ -1384,9 +1379,6 @@ def _single_tensor_sophiag(params,
                 
                 if trust_ratio:
                     # Layer-wise LR adaptation
-                    if sn:
-                        w_norm = tf.reshape(param, (size // subset_size_[i], subset_size_[i]))
-                        g_norm = tf.reshape(ratio, (size // subset_size_[i], subset_size_[i]))
                     w_norm = tf.norm(param, ord=2)
                     g_norm = tf.norm(ratio, ord=2)
                     trust_ratio = w_norm / g_norm

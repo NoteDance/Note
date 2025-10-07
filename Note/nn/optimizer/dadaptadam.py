@@ -406,6 +406,8 @@ class DAdaptAdam_sn(optimizer.Optimizer):
                 second_moment_update = tf.pow(gradient, 2)
             
             de_nom = tf.sqrt(exp_avg_sq) + self.epsilon
+            if self.sn:
+                s = tf.reshape(s, (size // self.subset_size_[self._get_variable_index(variable)], self.subset_size_[self._get_variable_index(variable)]))
             flat_grad = tf.reshape(gradient, [-1])
             flat_div = tf.reshape(tf.divide(s, de_nom), [-1])
             dot_val = tf.tensordot(flat_grad, flat_div, axes=1)
