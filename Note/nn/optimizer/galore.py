@@ -102,15 +102,14 @@ class GaLore(optimizer.Optimizer):
                     projection_type=self.projection_type,
                 )
 
-            grad = self.projector[self._get_variable_index(variable)].project(gradient, step)
+            gradient = self.projector[self._get_variable_index(variable)].project(gradient, step)
         
-        if self.weight_decouple:
-            variable.assign(variable * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else lr)))
+        variable.assign(variable * (1.0 - self.weight_decay * lr))
         
         exp_avg = self.exp_avg[self._get_variable_index(variable)]
         exp_avg_sq = self.exp_avg_sq[self._get_variable_index(variable)]
         exp_avg.assign(exp_avg * self.beta1 + gradient * (1.0 - self.beta1))
-        exp_avg_sq.assign(exp_avg_sq * self.beta2 + grad * grad * (1.0 - self.beta2))
+        exp_avg_sq.assign(exp_avg_sq * self.beta2 + gradient * gradient * (1.0 - self.beta2))
         
         de_nom = tf.sqrt(exp_avg_sq) + self.epsilon
         
