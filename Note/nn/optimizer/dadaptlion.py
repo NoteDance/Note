@@ -5,6 +5,7 @@ Copyright 2025 NoteDance
 """
 import tensorflow as tf
 from keras.src.optimizers import optimizer
+from Note.nn.optimizer.galore_projector import GaLoreProjector
 import math
 
 
@@ -114,24 +115,6 @@ class DAdaptLion(optimizer.Optimizer):
         self.d0 = d0
         self.weight_decouple = weight_decouple
         self.fixed_decay = fixed_decay
-    
-    def reset(self):
-        self.numerator_weighted = tf.Variable(0.0)
-        self.sk_l1 = tf.Variable(0.0)
-        self.numerator_accumulator = tf.Variable(0.0)
-        self.d0_ = tf.Variable(self.d0)
-        self._track_variable(self.numerator_weighted)
-        self._track_variable(self.sk_l1)
-        self._track_variable(self.numerator_accumulator)
-        self._track_variable(self.d0_)
-        self._iterations.assign(0)
-        for var in self._trainable_variables:
-            self.exp_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=var, name="exp_avg"
-                                                    )
-            self.s[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=var, name="s"
-                                                    )
             
     def build(self, var_list):
         if self.built:
@@ -243,6 +226,10 @@ class DAdaptLion_e(optimizer.Optimizer):
         pnm=True,
         agc=True,
         cautious=True,
+        rank=None,
+        update_proj_gap=None,
+        scale=None,
+        projection_type=None,
         clipnorm=None,
         clipvalue=None,
         global_clipnorm=None,
@@ -281,6 +268,10 @@ class DAdaptLion_e(optimizer.Optimizer):
         self.pnm = pnm
         self.agc = agc
         self.cautious = cautious
+        self.rank = rank
+        self.update_proj_gap = update_proj_gap
+        self.scale = scale
+        self.projection_type = projection_type
             
     def build(self, var_list):
         if self.built:
@@ -299,6 +290,8 @@ class DAdaptLion_e(optimizer.Optimizer):
         self._track_variable(self.sk_l1)
         self._track_variable(self.numerator_accumulator)
         self._track_variable(self.d0_)
+        self.projector = []
+        self.ortho_matrix = []
         for var in var_list:
             if self.lookahead:
                 self.slow_momentum.append(tf.Variable(var))
@@ -321,6 +314,27 @@ class DAdaptLion_e(optimizer.Optimizer):
             self.s.append(self.add_variable_from_reference(
                                 reference_variable=var, name="s"
                                                     ))
+            if self.update_proj_gap is not None and len(var.shape) == 2:
+                self.projector[self._get_variable_index(var)] = GaLoreProjector(
+                    rank=None,
+                    update_proj_gap=self.update_proj_gap,
+                    scale=self.scale,
+                    projection_type=self.projection_type,
+                )
+                ortho_matrix = self.projector[-1].get_orthogonal_matrix(var, None, self.projection_type)
+                if self.projection_type != 'full':
+                    self.ortho_matrix.append(self.add_variable_from_reference(
+                                    reference_variable=ortho_matrix, name="ortho_matrix"
+                                                        ))
+                else:
+                    self.ortho_matrix.append((self.add_variable_from_reference(
+                                    reference_variable=ortho_matrix[0], name="ortho_matrix"
+                                                        ), self.add_variable_from_reference(
+                                    reference_variable=ortho_matrix[1], name="ortho_matrix"
+                                                        )))
+            else:
+                self.projector.append(None)
+                self.ortho_matrix.append(None) 
     
     def apply_orthogonal_gradients(self, params, grads, eps = 1e-16):
         for p, g in zip(params, grads):
@@ -386,10 +400,17 @@ class DAdaptLion_e(optimizer.Optimizer):
                 pos_momentum, neg_momentum = tf.cond(step % 2 == 1, true_fn, false_fn)
                 pos_momentum.assign(pos_momentum * self.beta1 ** 2 + grad * (1.0 - self.beta1 ** 2))
                 exp_avg = (pos_momentum  * 2.0 + neg_momentum * -1.0) * (1.0 / noise_norm)
+                
+            if self.update_proj_gap is not None and len(variable.shape) == 2:
+                grad = self.projector[self._get_variable_index(variable)].project(grad, step, exp_avg)
+                exp_avg = self.projector[self._get_variable_index(variable)].project(exp_avg, step)
             
             d_lr = tf.cast(d_lr, variable.dtype)
             
             update = tf.math.sign(exp_avg * self.beta1 + grad * (1.0 - self.beta1))
+            
+            if self.update_proj_gap is not None and len(variable.shape) == 2:
+                update = self.projector[self._get_variable_index(variable)].project_back(update)
             
             if self.cautious:
                 mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
@@ -450,6 +471,10 @@ class DAdaptLion_e(optimizer.Optimizer):
                 "pnm": self.pnm,
                 "agc": self.agc,
                 "cautious": self.cautious,
+                "rank": self.rank,
+                "update_proj_gap": self.update_proj_gap,
+                "scale": self.scale,
+                "projection_type": self.projection_type,
             }
         )
         return config
