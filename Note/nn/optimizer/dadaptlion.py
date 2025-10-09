@@ -475,6 +475,7 @@ class DAdaptLion_e(optimizer.Optimizer):
                 "update_proj_gap": self.update_proj_gap,
                 "scale": self.scale,
                 "projection_type": self.projection_type,
+                "projector": self.projector,
             }
         )
         return config
