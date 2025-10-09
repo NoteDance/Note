@@ -17,7 +17,6 @@ class Conda(optimizer.Optimizer):
         beta2=0.999,
         epsilon=1e-8,
         weight_decay=0.0,
-        rank=None,
         update_proj_gap=None,
         scale=None,
         projection_type=None,
@@ -50,7 +49,6 @@ class Conda(optimizer.Optimizer):
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
-        self.rank = rank
         self.update_proj_gap = update_proj_gap
         self.scale = scale
         self.projection_type = projection_type
@@ -140,7 +138,6 @@ class Conda(optimizer.Optimizer):
                 "beta1": self.beta1,
                 "beta2": self.beta2,
                 "epsilon": self.epsilon,
-                "rank": self.rank,
                 "update_proj_gap": self.update_proj_gap,
                 "scale": self.scale,
                 "projection_type": self.projection_type,
@@ -228,7 +225,6 @@ class Conda_e(optimizer.Optimizer):
         beta3=0.9999,
         epsilon=1e-8,
         weight_decay=0.0,
-        rank=None,
         update_proj_gap=None,
         scale=None,
         projection_type=None,
@@ -279,7 +275,6 @@ class Conda_e(optimizer.Optimizer):
         self.beta2 = beta2
         self.beta3 = beta3
         self.epsilon = epsilon
-        self.rank = rank
         self.update_proj_gap = update_proj_gap
         self.scale = scale
         self.projection_type = projection_type
@@ -687,7 +682,6 @@ class Conda_e(optimizer.Optimizer):
                 "beta2": self.beta2,
                 "beta3": self.beta3,
                 "epsilon": self.epsilon,
-                "rank": self.rank,
                 "update_proj_gap": self.update_proj_gap,
                 "scale": self.scale,
                 "projection_type": self.projection_type,

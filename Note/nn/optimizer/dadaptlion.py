@@ -226,7 +226,6 @@ class DAdaptLion_e(optimizer.Optimizer):
         pnm=True,
         agc=True,
         cautious=True,
-        rank=None,
         update_proj_gap=None,
         scale=None,
         projection_type=None,
@@ -268,7 +267,6 @@ class DAdaptLion_e(optimizer.Optimizer):
         self.pnm = pnm
         self.agc = agc
         self.cautious = cautious
-        self.rank = rank
         self.update_proj_gap = update_proj_gap
         self.scale = scale
         self.projection_type = projection_type
@@ -471,7 +469,6 @@ class DAdaptLion_e(optimizer.Optimizer):
                 "pnm": self.pnm,
                 "agc": self.agc,
                 "cautious": self.cautious,
-                "rank": self.rank,
                 "update_proj_gap": self.update_proj_gap,
                 "scale": self.scale,
                 "projection_type": self.projection_type,
