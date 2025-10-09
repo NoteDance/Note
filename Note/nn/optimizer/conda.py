@@ -63,7 +63,30 @@ class Conda(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.projector = []
+        self.ortho_matrix = []
         for var in var_list:
+            if self.update_proj_gap is not None and len(var.shape) == 2:
+                self.projector[self._get_variable_index(var)] = GaLoreProjector(
+                    rank=None,
+                    update_proj_gap=self.update_proj_gap,
+                    scale=self.scale,
+                    projection_type=self.projection_type,
+                )
+                ortho_matrix = self.projector[-1].get_orthogonal_matrix(var, None, self.projection_type)
+                if self.projection_type != 'full':
+                    self.ortho_matrix.append(self.add_variable_from_reference(
+                                    reference_variable=ortho_matrix, name="ortho_matrix"
+                                                        ))
+                else:
+                    self.ortho_matrix.append((self.add_variable_from_reference(
+                                    reference_variable=ortho_matrix[0], name="ortho_matrix"
+                                                        ), self.add_variable_from_reference(
+                                    reference_variable=ortho_matrix[1], name="ortho_matrix"
+                                                        )))
+                self.projector[-1].ortho_matrix = self.ortho_matrix[-1]
+            else:
+                self.projector.append(None)
+                self.ortho_matrix.append(None)
             self.exp_avg.append(self.add_variable_from_reference(
                                 reference_variable=var, name="exp_avg"
                                                     ))
@@ -94,14 +117,6 @@ class Conda(optimizer.Optimizer):
         exp_avg.assign(exp_avg * self.beta1 + gradient * (1.0 - self.beta1))
         
         if self.update_proj_gap is not None and len(variable.shape) == 2:
-            if self.projector[self._get_variable_index(variable)] is None:
-                self.projector[self._get_variable_index(variable)] = GaLoreProjector(
-                    rank=None,
-                    update_proj_gap=self.update_proj_gap,
-                    scale=self.scale,
-                    projection_type=self.projection_type,
-                )
-
             gradient = self.projector[self._get_variable_index(variable)].project(gradient, step, exp_avg)
             exp_avg = self.projector[self._get_variable_index(variable)].project(exp_avg, step)
         
@@ -298,6 +313,7 @@ class Conda_e(optimizer.Optimizer):
         self.neg_momentum = []
         self.subset_size_ = []
         self.projector = []
+        self.ortho_matrix = []
         if self.DAdapt:
             self.s = []
             self.sk_l1 = tf.Variable(0.0)
@@ -312,6 +328,28 @@ class Conda_e(optimizer.Optimizer):
             if self.lookahead:
                 self.slow_momentum.append(tf.Variable(var))
                 self._track_variable(self.slow_momentum[-1])
+            if self.update_proj_gap is not None and len(var.shape) == 2:
+                self.projector[self._get_variable_index(var)] = GaLoreProjector(
+                    rank=None,
+                    update_proj_gap=self.update_proj_gap,
+                    scale=self.scale,
+                    projection_type=self.projection_type,
+                )
+                ortho_matrix = self.projector[-1].get_orthogonal_matrix(var, None, self.projection_type)
+                if self.projection_type != 'full':
+                    self.ortho_matrix.append(self.add_variable_from_reference(
+                                    reference_variable=ortho_matrix, name="ortho_matrix"
+                                                        ))
+                else:
+                    self.ortho_matrix.append((self.add_variable_from_reference(
+                                    reference_variable=ortho_matrix[0], name="ortho_matrix"
+                                                        ), self.add_variable_from_reference(
+                                    reference_variable=ortho_matrix[1], name="ortho_matrix"
+                                                        )))
+                self.projector[-1].ortho_matrix = self.ortho_matrix[-1]
+            else:
+                self.projector.append(None)
+                self.ortho_matrix.append(None)
             if self.pnm:
                 self.pos_momentum.append(
                     self.add_variable_from_reference(
@@ -482,14 +520,6 @@ class Conda_e(optimizer.Optimizer):
                     exp_avg += exp_avg_slow * alpha_t
                     
                 if self.update_proj_gap is not None and len(p.shape) == 2:
-                    if self.projector[self._get_variable_index(p)] is None:
-                        self.projector[self._get_variable_index(p)] = GaLoreProjector(
-                            rank=None,
-                            update_proj_gap=self.update_proj_gap,
-                            scale=self.scale,
-                            projection_type=self.projection_type,
-                        )
-    
                     g = self.projector[self._get_variable_index(p)].project(g, step, exp_avg)
                     exp_avg = self.projector[self._get_variable_index(p)].project(exp_avg, step)
                     
@@ -591,14 +621,6 @@ class Conda_e(optimizer.Optimizer):
                 step_size = tf.cast(d_lr, p.dtype)
     
                 if self.update_proj_gap is not None and len(p.shape) == 2:
-                    if self.projector[self._get_variable_index(p)] is None:
-                        self.projector[self._get_variable_index(p)] = GaLoreProjector(
-                            rank=None,
-                            update_proj_gap=self.update_proj_gap,
-                            scale=self.scale,
-                            projection_type=self.projection_type,
-                        )
-    
                     g = self.projector[self._get_variable_index(p)].project(g, step, exp_avg)
                     exp_avg = self.projector[self._get_variable_index(p)].project(exp_avg, step)
                     

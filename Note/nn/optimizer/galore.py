@@ -52,16 +52,6 @@ class GaLore(optimizer.Optimizer):
         self.update_proj_gap = update_proj_gap
         self.scale = scale
         self.projection_type = projection_type
-    
-    def reset(self):
-        self._iterations.assign(0)
-        for var in self._trainable_variables:
-            self.exp_avg[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=var, name="exp_avg"
-                                                    )
-            self.exp_avg_sq[self._get_variable_index(var)] =  self.add_variable_from_reference(
-                                                        reference_variable=var, name="exp_avg_sq"
-                                                    )
 
     def build(self, var_list):
         if self.built:
@@ -70,14 +60,37 @@ class GaLore(optimizer.Optimizer):
         self.exp_avg = []
         self.exp_avg_sq = []
         self.projector = []
+        self.ortho_matrix = []
         for var in var_list:
+            if self.update_proj_gap is not None and len(var.shape) == 2:
+                self.projector.append(GaLoreProjector(
+                    rank=self.rank,
+                    update_proj_gap=self.update_proj_gap,
+                    scale=self.scale,
+                    projection_type=self.projection_type,
+                ))
+                ortho_matrix = self.projector[-1].get_orthogonal_matrix(var, self.rank, self.projection_type)
+                var = self.projector[-1].project_(var, ortho_matrix)
+                if self.projection_type != 'full':
+                    self.ortho_matrix.append(self.add_variable_from_reference(
+                                    reference_variable=ortho_matrix, name="ortho_matrix"
+                                                        ))
+                else:
+                    self.ortho_matrix.append((self.add_variable_from_reference(
+                                    reference_variable=ortho_matrix[0], name="ortho_matrix"
+                                                        ), self.add_variable_from_reference(
+                                    reference_variable=ortho_matrix[1], name="ortho_matrix"
+                                                        )))
+                self.projector[-1].ortho_matrix = self.ortho_matrix[-1]
+            else:
+                self.projector.append(None)
+                self.ortho_matrix.append(None)
             self.exp_avg.append(self.add_variable_from_reference(
                                 reference_variable=var, name="exp_avg"
                                                     ))
             self.exp_avg_sq.append(self.add_variable_from_reference(
                                 reference_variable=var, name="exp_avg_sq"
                                                     ))
-            self.projector.append(None)
 
     def update_step(self, gradient, variable, learning_rate):
         lr = tf.cast(learning_rate, variable.dtype)
@@ -92,16 +105,8 @@ class GaLore(optimizer.Optimizer):
         if tf.keras.backend.is_sparse(gradient):
             raise RuntimeError(
                 'GaLore does not support sparse gradients')
-        
-        if self.rank is not None and len(variable.shape) > 1:
-            if self.projector[self._get_variable_index(variable)] is None:
-                self.projector[self._get_variable_index(variable)] = GaLoreProjector(
-                    rank=self.rank,
-                    update_proj_gap=self.update_proj_gap,
-                    scale=self.scale,
-                    projection_type=self.projection_type,
-                )
 
+        if self.update_proj_gap is not None and len(variable.shape) == 2:
             gradient = self.projector[self._get_variable_index(variable)].project(gradient, step)
         
         variable.assign(variable * (1.0 - self.weight_decay * lr))
@@ -115,7 +120,7 @@ class GaLore(optimizer.Optimizer):
         
         norm_grad = exp_avg / de_nom
     
-        if self.rank is not None and len(variable.shape) > 1:
+        if self.update_proj_gap is not None and len(variable.shape) == 2:
             norm_grad = self.projector[self._get_variable_index(variable)].project_back(norm_grad)
         
         variable.assign_add(norm_grad * -step_size)
