@@ -1229,10 +1229,13 @@ class Muon_e(optimizer.Optimizer):
                     # Layer-wise LR adaptation
                     if self.sn:
                         size = tf.size(p)
-                        w_norm = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                        g_norm = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                    w_norm = tf.norm(p, ord=2)
-                    g_norm = tf.norm(update, ord=2)
+                        reshaped_p = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                        reshaped_update = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                        w_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_p ** 2, axis=1)))
+                        g_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_update ** 2, axis=1)))
+                    else:
+                        w_norm = tf.norm(p, ord=2)
+                        g_norm = tf.norm(update, ord=2)
                     trust_ratio = w_norm / g_norm
                     trust_ratio = tf.where(
                         w_norm > 0,
@@ -1393,10 +1396,14 @@ class Muon_e(optimizer.Optimizer):
                     if self.trust_ratio:
                         # Layer-wise LR adaptation
                         if self.sn:
-                            w_norm = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                            g_norm = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                        w_norm = tf.norm(p, ord=2)
-                        g_norm = tf.norm(update, ord=2)
+                            size = tf.size(p)
+                            reshaped_p = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                            reshaped_update = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                            w_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_p ** 2, axis=1)))
+                            g_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_update ** 2, axis=1)))
+                        else:
+                            w_norm = tf.norm(p, ord=2)
+                            g_norm = tf.norm(update, ord=2)
                         trust_ratio = w_norm / g_norm
                         trust_ratio = tf.where(
                             w_norm > 0,
@@ -1502,10 +1509,13 @@ class Muon_e(optimizer.Optimizer):
                         if self.trust_ratio:
                             # Layer-wise LR adaptation
                             if self.sn:
-                                w_norm = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                                g_norm = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                            w_norm = tf.norm(p, ord=2)
-                            g_norm = tf.norm(update, ord=2)
+                                reshaped_p = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                                reshaped_update = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                                w_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_p ** 2, axis=1)))
+                                g_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_update ** 2, axis=1)))
+                            else:
+                                w_norm = tf.norm(p, ord=2)
+                                g_norm = tf.norm(update, ord=2)
                             trust_ratio = w_norm / g_norm
                             trust_ratio = tf.where(
                                 w_norm > 0,
@@ -1945,10 +1955,13 @@ class DistributedMuon_e(optimizer.Optimizer):
                         # Layer-wise LR adaptation
                         if self.sn:
                             size = tf.size(p)
-                            w_norm = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                            g_norm = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                        w_norm = tf.norm(p, ord=2)
-                        g_norm = tf.norm(update, ord=2)
+                            reshaped_p = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                            reshaped_update = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                            w_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_p ** 2, axis=1)))
+                            g_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_update ** 2, axis=1)))
+                        else:
+                            w_norm = tf.norm(p, ord=2)
+                            g_norm = tf.norm(update, ord=2)
                         trust_ratio = w_norm / g_norm
                         trust_ratio = tf.where(
                             w_norm > 0,
@@ -2135,10 +2148,14 @@ class DistributedMuon_e(optimizer.Optimizer):
                         if self.trust_ratio:
                             # Layer-wise LR adaptation
                             if self.sn:
-                                w_norm = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                                g_norm = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                            w_norm = tf.norm(p, ord=2)
-                            g_norm = tf.norm(update, ord=2)
+                                size = tf.size(p)
+                                reshaped_p = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                                reshaped_update = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                                w_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_p ** 2, axis=1)))
+                                g_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_update ** 2, axis=1)))
+                            else:
+                                w_norm = tf.norm(p, ord=2)
+                                g_norm = tf.norm(update, ord=2)
                             trust_ratio = w_norm / g_norm
                             trust_ratio = tf.where(
                                 w_norm > 0,
@@ -2226,8 +2243,14 @@ class DistributedMuon_e(optimizer.Optimizer):
                                 update = update * mask
                             if self.trust_ratio:
                                 # Layer-wise LR adaptation
-                                w_norm = tf.norm(p, ord=2)
-                                g_norm = tf.norm(update, ord=2)
+                                if self.sn:
+                                    reshaped_p = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                                    reshaped_update = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                                    w_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_p ** 2, axis=1)))
+                                    g_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_update ** 2, axis=1)))
+                                else:
+                                    w_norm = tf.norm(p, ord=2)
+                                    g_norm = tf.norm(update, ord=2)
                                 trust_ratio = w_norm / g_norm
                                 trust_ratio = tf.where(
                                     w_norm > 0,
@@ -2250,8 +2273,14 @@ class DistributedMuon_e(optimizer.Optimizer):
                                 update = update * mask
                             if self.trust_ratio:
                                 # Layer-wise LR adaptation
-                                w_norm = tf.norm(p, ord=2)
-                                g_norm = tf.norm(update, ord=2)
+                                if self.sn:
+                                    reshaped_p = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                                    reshaped_update = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                                    w_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_p ** 2, axis=1)))
+                                    g_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_update ** 2, axis=1)))
+                                else:
+                                    w_norm = tf.norm(p, ord=2)
+                                    g_norm = tf.norm(update, ord=2)
                                 trust_ratio = w_norm / g_norm
                                 trust_ratio = tf.where(
                                     w_norm > 0,
@@ -2669,10 +2698,13 @@ class AdaMuon_e(optimizer.Optimizer):
                     # Layer-wise LR adaptation
                     if self.sn:
                         size = tf.size(p)
-                        w_norm = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                        g_norm = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                    w_norm = tf.norm(p, ord=2)
-                    g_norm = tf.norm(update, ord=2)
+                        reshaped_p = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                        reshaped_update = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                        w_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_p ** 2, axis=1)))
+                        g_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_update ** 2, axis=1)))
+                    else:
+                        w_norm = tf.norm(p, ord=2)
+                        g_norm = tf.norm(update, ord=2)
                     trust_ratio = w_norm / g_norm
                     trust_ratio = tf.where(
                         w_norm > 0,
@@ -2839,10 +2871,14 @@ class AdaMuon_e(optimizer.Optimizer):
                     if self.trust_ratio:
                         # Layer-wise LR adaptation
                         if self.sn:
-                            w_norm = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                            g_norm = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                        w_norm = tf.norm(p, ord=2)
-                        g_norm = tf.norm(update, ord=2)
+                            size = tf.size(p)
+                            reshaped_p = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                            reshaped_update = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                            w_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_p ** 2, axis=1)))
+                            g_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_update ** 2, axis=1)))
+                        else:
+                            w_norm = tf.norm(p, ord=2)
+                            g_norm = tf.norm(update, ord=2)
                         trust_ratio = w_norm / g_norm
                         trust_ratio = tf.where(
                             w_norm > 0,
@@ -2932,10 +2968,13 @@ class AdaMuon_e(optimizer.Optimizer):
                         if self.trust_ratio:
                             # Layer-wise LR adaptation
                             if self.sn:
-                                w_norm = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                                g_norm = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                            w_norm = tf.norm(p, ord=2)
-                            g_norm = tf.norm(update, ord=2)
+                                reshaped_p = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                                reshaped_update = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                                w_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_p ** 2, axis=1)))
+                                g_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_update ** 2, axis=1)))
+                            else:
+                                w_norm = tf.norm(p, ord=2)
+                                g_norm = tf.norm(update, ord=2)
                             trust_ratio = w_norm / g_norm
                             trust_ratio = tf.where(
                                 w_norm > 0,
@@ -3355,10 +3394,13 @@ class AdaGO_e(optimizer.Optimizer):
                     # Layer-wise LR adaptation
                     if self.sn:
                         size = tf.size(p)
-                        w_norm = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                        g_norm = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                    w_norm = tf.norm(p, ord=2)
-                    g_norm = tf.norm(update, ord=2)
+                        reshaped_p = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                        reshaped_update = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                        w_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_p ** 2, axis=1)))
+                        g_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_update ** 2, axis=1)))
+                    else:
+                        w_norm = tf.norm(p, ord=2)
+                        g_norm = tf.norm(update, ord=2)
                     trust_ratio = w_norm / g_norm
                     trust_ratio = tf.where(
                         w_norm > 0,
@@ -3527,10 +3569,14 @@ class AdaGO_e(optimizer.Optimizer):
                     if self.trust_ratio:
                         # Layer-wise LR adaptation
                         if self.sn:
-                            w_norm = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                            g_norm = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                        w_norm = tf.norm(p, ord=2)
-                        g_norm = tf.norm(update, ord=2)
+                            size = tf.size(p)
+                            reshaped_p = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                            reshaped_update = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                            w_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_p ** 2, axis=1)))
+                            g_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_update ** 2, axis=1)))
+                        else:
+                            w_norm = tf.norm(p, ord=2)
+                            g_norm = tf.norm(update, ord=2)
                         trust_ratio = w_norm / g_norm
                         trust_ratio = tf.where(
                             w_norm > 0,
@@ -3632,10 +3678,13 @@ class AdaGO_e(optimizer.Optimizer):
                         if self.trust_ratio:
                             # Layer-wise LR adaptation
                             if self.sn:
-                                w_norm = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                                g_norm = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                            w_norm = tf.norm(p, ord=2)
-                            g_norm = tf.norm(update, ord=2)
+                                reshaped_p = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                                reshaped_update = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                                w_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_p ** 2, axis=1)))
+                                g_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_update ** 2, axis=1)))
+                            else:
+                                w_norm = tf.norm(p, ord=2)
+                                g_norm = tf.norm(update, ord=2)
                             trust_ratio = w_norm / g_norm
                             trust_ratio = tf.where(
                                 w_norm > 0,
