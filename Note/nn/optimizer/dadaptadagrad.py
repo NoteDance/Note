@@ -189,7 +189,7 @@ class DAdaptAdaGrad(optimizer.Optimizer):
                 d_lr = tf.cast(d_lr, dtype=var.dtype)
                 
                 if self.weight_decouple:
-                    var.assign(var * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else d_lr)))
+                    var.assign(var * (1.0 - self.weight_decay * (1.0 if self.fixed_decay else self.lr)))
                 elif self.weight_decay > 0.0:
                     grad += var * self.weight_decay
                 
