@@ -548,8 +548,14 @@ class Conda_e(optimizer.Optimizer):
                 
                 if self.trust_ratio:
                     # Layer-wise LR adaptation
-                    w_norm = tf.norm(p, ord=2)
-                    g_norm = tf.norm(update, ord=2)
+                    if self.sn:
+                        reshaped_p = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                        reshaped_update = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                        w_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_p ** 2, axis=1)))
+                        g_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_update ** 2, axis=1)))
+                    else:
+                        w_norm = tf.norm(p, ord=2)
+                        g_norm = tf.norm(update, ord=2)
                     trust_ratio = w_norm / g_norm
                     trust_ratio = tf.where(
                         w_norm > 0,
@@ -641,8 +647,14 @@ class Conda_e(optimizer.Optimizer):
                 
                 if self.trust_ratio:
                     # Layer-wise LR adaptation
-                    w_norm = tf.norm(p, ord=2)
-                    g_norm = tf.norm(update, ord=2)
+                    if self.sn:
+                        reshaped_p = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                        reshaped_update = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                        w_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_p ** 2, axis=1)))
+                        g_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_update ** 2, axis=1)))
+                    else:
+                        w_norm = tf.norm(p, ord=2)
+                        g_norm = tf.norm(update, ord=2)
                     trust_ratio = w_norm / g_norm
                     trust_ratio = tf.where(
                         w_norm > 0,
