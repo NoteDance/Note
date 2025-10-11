@@ -229,6 +229,10 @@ class DAdaptLion_e(optimizer.Optimizer):
         update_proj_gap=None,
         scale=None,
         projection_type=None,
+        subset_size=-1,
+        sn=True,
+        trust_ratio=False,
+        trust_clip=False,
         clipnorm=None,
         clipvalue=None,
         global_clipnorm=None,
@@ -270,6 +274,10 @@ class DAdaptLion_e(optimizer.Optimizer):
         self.update_proj_gap = update_proj_gap
         self.scale = scale
         self.projection_type = projection_type
+        self.subset_size = subset_size
+        self.sn = sn
+        self.trust_ratio = trust_ratio
+        self.trust_clip = trust_clip
             
     def build(self, var_list):
         if self.built:
@@ -290,6 +298,7 @@ class DAdaptLion_e(optimizer.Optimizer):
         self._track_variable(self.d0_)
         self.projector = []
         self.ortho_matrix = []
+        self.subset_size_ = []
         for var in var_list:
             if self.lookahead:
                 self.slow_momentum.append(tf.Variable(var))
@@ -332,7 +341,18 @@ class DAdaptLion_e(optimizer.Optimizer):
                                                         )))
             else:
                 self.projector.append(None)
-                self.ortho_matrix.append(None) 
+                self.ortho_matrix.append(None)
+            if self.sn:
+                size = tf.size(var)
+                
+                def true_fn():
+                    return self.subset_size
+                def false_fn():
+                    return tf.cast(tf.sqrt(size) / tf.abs(tf.cast(self.subset_size, tf.int32)), tf.int32)
+                self.subset_size_.append(closest_smaller_divisor_of_n_to_k(
+                    size,
+                    tf.cond(self.subset_size > 0, true_fn, false_fn)
+                ))
     
     def apply_orthogonal_gradients(self, params, grads, eps = 1e-16):
         for p, g in zip(params, grads):
@@ -409,6 +429,27 @@ class DAdaptLion_e(optimizer.Optimizer):
             
             if self.update_proj_gap is not None and len(variable.shape) == 2:
                 update = self.projector[self._get_variable_index(variable)].project_back(update)
+                
+            if self.trust_ratio:
+                # Layer-wise LR adaptation
+                if self.sn:
+                    size = tf.size(variable)
+                    reshaped_p = tf.reshape(variable, (size // self.subset_size_[self._get_variable_index(variable)], self.subset_size_[self._get_variable_index(variable)]))
+                    reshaped_update = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(variable)], self.subset_size_[self._get_variable_index(variable)]))
+                    w_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_p ** 2, axis=1)))
+                    g_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_update ** 2, axis=1)))
+                else:
+                    w_norm = tf.norm(variable, ord=2)
+                    g_norm = tf.norm(update, ord=2)
+                trust_ratio = w_norm / g_norm
+                trust_ratio = tf.where(
+                    w_norm > 0,
+                    tf.where(g_norm > 0, trust_ratio, 1.0),
+                    1.0,
+                )
+                if self.trust_clip:
+                    trust_ratio = tf.minimum(trust_ratio, 1.0)
+                update *= trust_ratio
             
             if self.cautious:
                 mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
@@ -473,6 +514,11 @@ class DAdaptLion_e(optimizer.Optimizer):
                 "scale": self.scale,
                 "projection_type": self.projection_type,
                 "projector": self.projector,
+                "subset_size": self.subset_size,
+                "sn": self.sn,
+                "trust_ratio": self.trust_ratio,
+                "trust_clip": self.trust_clip,
+                "subset_size_": self.subset_size_,
             }
         )
         return config
