@@ -1218,13 +1218,6 @@ class Muon_e(optimizer.Optimizer):
     
                 lr = self.get_adjusted_lr(lr, p.shape, self.use_adjusted_lr)
                 
-                if self.cautious:
-                    mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
-                    numel = tf.cast(tf.size(mask), grad.dtype)
-                    factor = numel / (tf.reduce_sum(mask) + 1)
-                    mask = mask * factor
-                    update = update * mask
-                
                 if self.trust_ratio:
                     # Layer-wise LR adaptation
                     if self.sn:
@@ -1245,6 +1238,13 @@ class Muon_e(optimizer.Optimizer):
                     if self.trust_clip:
                         trust_ratio = tf.minimum(trust_ratio, 1.0)
                     update *= trust_ratio
+                
+                if self.cautious:
+                    mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
+                    numel = tf.cast(tf.size(mask), grad.dtype)
+                    factor = numel / (tf.reduce_sum(mask) + 1)
+                    mask = mask * factor
+                    update = update * mask
     
                 p.assign_add(tf.reshape(update, p.shape) * -lr)
                 
@@ -1386,13 +1386,7 @@ class Muon_e(optimizer.Optimizer):
                         update = normed_grad
                         if self.sophia:
                             update = tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
-                    if self.cautious:
-                        mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
-                        numel = tf.cast(tf.size(mask), grad.dtype)
-                        factor = numel / (tf.reduce_sum(mask) + 1)
-                        mask = mask * factor
-                        update = update * mask
-                    
+                            
                     if self.trust_ratio:
                         # Layer-wise LR adaptation
                         if self.sn:
@@ -1412,7 +1406,14 @@ class Muon_e(optimizer.Optimizer):
                         )
                         if self.trust_clip:
                             trust_ratio = tf.minimum(trust_ratio, 1.0)
-                        update *= trust_ratio
+                        update *= trust_ratio 
+                            
+                    if self.cautious:
+                        mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
+                        numel = tf.cast(tf.size(mask), grad.dtype)
+                        factor = numel / (tf.reduce_sum(mask) + 1)
+                        mask = mask * factor
+                        update = update * mask
         
                     if self.weight_decouple:
                         p.assign(p * (1.0 - tf.cast(self.adamw_wd, p.dtype) * lr))
@@ -1499,13 +1500,7 @@ class Muon_e(optimizer.Optimizer):
                             update = normed_grad
                             if self.sophia:
                                 update = tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
-                        if self.cautious:
-                            mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
-                            numel = tf.cast(tf.size(mask), grad.dtype)
-                            factor = numel / (tf.reduce_sum(mask) + 1)
-                            mask = mask * factor
-                            update = update * mask
-                        
+                                
                         if self.trust_ratio:
                             # Layer-wise LR adaptation
                             if self.sn:
@@ -1525,6 +1520,13 @@ class Muon_e(optimizer.Optimizer):
                             if self.trust_clip:
                                 trust_ratio = tf.minimum(trust_ratio, 1.0)
                             update *= trust_ratio
+                                
+                        if self.cautious:
+                            mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
+                            numel = tf.cast(tf.size(mask), grad.dtype)
+                            factor = numel / (tf.reduce_sum(mask) + 1)
+                            mask = mask * factor
+                            update = update * mask
                         
                         step_size = d_lr / scale
             
@@ -1945,11 +1947,6 @@ class DistributedMuon_e(optimizer.Optimizer):
                         update = tf.reshape(update, (len(update), -1))
 
                     update = zero_power_via_newton_schulz_5(update, num_steps=self.ns_steps)
-
-                    if self.cautions:
-                        mask = tf.cast(update * grad > 0, grad.dtype)
-                        mask /= tf.maximum(tf.reduce_mean(mask), 1e-3)
-                        update *= mask
                     
                     if self.trust_ratio:
                         # Layer-wise LR adaptation
@@ -1971,6 +1968,13 @@ class DistributedMuon_e(optimizer.Optimizer):
                         if self.trust_clip:
                             trust_ratio = tf.minimum(trust_ratio, 1.0)
                         update *= trust_ratio
+
+                    if self.cautions:
+                        mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
+                        numel = tf.cast(tf.size(mask), grad.dtype)
+                        factor = numel / (tf.reduce_sum(mask) + 1)
+                        mask = mask * factor
+                        update = update * mask
 
                     lr = self.get_adjusted_lr(lr, p.shape, use_adjusted_lr=self.use_adjusted_lr)
                     lr = tf.cast(lr, p.dtype)
@@ -2112,12 +2116,6 @@ class DistributedMuon_e(optimizer.Optimizer):
                         normed_grad = tf.reshape(numerator / de_nom, p.shape)
                         if self.sophia:
                             update = tf.clip_by_value(normed_grad, clip_value_min=-p, clip_value_max=p)
-                        if self.cautious:
-                            mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
-                            numel = tf.cast(tf.size(mask), grad.dtype)
-                            factor = numel / (tf.reduce_sum(mask) + 1)
-                            mask = mask * factor
-                            update = update * mask
                         if self.trust_ratio:
                             # Layer-wise LR adaptation
                             if self.sn:
@@ -2134,17 +2132,17 @@ class DistributedMuon_e(optimizer.Optimizer):
                             if self.trust_clip:
                                 trust_ratio = tf.minimum(trust_ratio, 1.0)
                             update *= trust_ratio
-                        p.assign_add(update * -step_size)
-                    else:
-                        normed_grad = exp_avg / de_nom
-                        if self.sophia:
-                            update = tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
                         if self.cautious:
                             mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
                             numel = tf.cast(tf.size(mask), grad.dtype)
                             factor = numel / (tf.reduce_sum(mask) + 1)
                             mask = mask * factor
                             update = update * mask
+                        p.assign_add(update * -step_size)
+                    else:
+                        normed_grad = exp_avg / de_nom
+                        if self.sophia:
+                            update = tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
                         if self.trust_ratio:
                             # Layer-wise LR adaptation
                             if self.sn:
@@ -2165,6 +2163,12 @@ class DistributedMuon_e(optimizer.Optimizer):
                             if self.trust_clip:
                                 trust_ratio = tf.minimum(trust_ratio, 1.0)
                             update *= trust_ratio
+                        if self.cautious:
+                            mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
+                            numel = tf.cast(tf.size(mask), grad.dtype)
+                            factor = numel / (tf.reduce_sum(mask) + 1)
+                            mask = mask * factor
+                            update = update * mask
                         p.assign_add(-step_size * update)
                     
                 if self.lookahead:
@@ -2235,12 +2239,6 @@ class DistributedMuon_e(optimizer.Optimizer):
                             normed_grad = tf.reshape(numerator / de_nom, p.shape)
                             if self.sophia:
                                 update = tf.clip_by_value(normed_grad, clip_value_min=-p, clip_value_max=p)
-                            if self.cautious:
-                                mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
-                                numel = tf.cast(tf.size(mask), grad.dtype)
-                                factor = numel / (tf.reduce_sum(mask) + 1)
-                                mask = mask * factor
-                                update = update * mask
                             if self.trust_ratio:
                                 # Layer-wise LR adaptation
                                 if self.sn:
@@ -2260,17 +2258,17 @@ class DistributedMuon_e(optimizer.Optimizer):
                                 if self.trust_clip:
                                     trust_ratio = tf.minimum(trust_ratio, 1.0)
                                 update *= trust_ratio
+                            if self.cautious:
+                                mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
+                                numel = tf.cast(tf.size(mask), grad.dtype)
+                                factor = numel / (tf.reduce_sum(mask) + 1)
+                                mask = mask * factor
+                                update = update * mask
                             p.assign_add(update * -step_size)
                         else:
                             normed_grad = exp_avg / de_nom
                             if self.sophia:
                                 update = tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
-                            if self.cautious:
-                                mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
-                                numel = tf.cast(tf.size(mask), grad.dtype)
-                                factor = numel / (tf.reduce_sum(mask) + 1)
-                                mask = mask * factor
-                                update = update * mask
                             if self.trust_ratio:
                                 # Layer-wise LR adaptation
                                 if self.sn:
@@ -2290,6 +2288,12 @@ class DistributedMuon_e(optimizer.Optimizer):
                                 if self.trust_clip:
                                     trust_ratio = tf.minimum(trust_ratio, 1.0)
                                 update *= trust_ratio
+                            if self.cautious:
+                                mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
+                                numel = tf.cast(tf.size(mask), grad.dtype)
+                                factor = numel / (tf.reduce_sum(mask) + 1)
+                                mask = mask * factor
+                                update = update * mask
                             p.assign_add(-step_size * update)
                         
                         if self.lookahead:
@@ -2686,13 +2690,6 @@ class AdaMuon_e(optimizer.Optimizer):
                 update = update * 0.2 * math.sqrt(np.prod(p.shape.as_list())) / tf.norm(update) + self.epsilon
     
                 lr = self.get_adjusted_lr(lr, p.shape, self.use_adjusted_lr)
-    
-                if self.cautious:
-                    mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
-                    numel = tf.cast(tf.size(mask), grad.dtype)
-                    factor = numel / (tf.reduce_sum(mask) + 1)
-                    mask = mask * factor
-                    update = update * mask
                 
                 if self.trust_ratio:
                     # Layer-wise LR adaptation
@@ -2714,6 +2711,13 @@ class AdaMuon_e(optimizer.Optimizer):
                     if self.trust_clip:
                         trust_ratio = tf.minimum(trust_ratio, 1.0)
                     update *= trust_ratio
+    
+                if self.cautious:
+                    mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
+                    numel = tf.cast(tf.size(mask), grad.dtype)
+                    factor = numel / (tf.reduce_sum(mask) + 1)
+                    mask = mask * factor
+                    update = update * mask
                 
                 p.assign_add(-lr * update)
                 
@@ -2860,14 +2864,7 @@ class AdaMuon_e(optimizer.Optimizer):
                         update = buf1 / de_nom
                         if self.sophia:
                             update = tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
-                    
-                    if self.cautious:
-                        mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
-                        numel = tf.cast(tf.size(mask), grad.dtype)
-                        factor = numel / (tf.reduce_sum(mask) + 1)
-                        mask = mask * factor
-                        update = update * mask
-                    
+                            
                     if self.trust_ratio:
                         # Layer-wise LR adaptation
                         if self.sn:
@@ -2888,6 +2885,13 @@ class AdaMuon_e(optimizer.Optimizer):
                         if self.trust_clip:
                             trust_ratio = tf.minimum(trust_ratio, 1.0)
                         update *= trust_ratio
+                    
+                    if self.cautious:
+                        mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
+                        numel = tf.cast(tf.size(mask), grad.dtype)
+                        factor = numel / (tf.reduce_sum(mask) + 1)
+                        mask = mask * factor
+                        update = update * mask
         
                     p.assign_add(update * -step_size)
                 
@@ -2958,13 +2962,7 @@ class AdaMuon_e(optimizer.Optimizer):
                             update = normed_grad
                             if self.sophia:
                                 update = tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
-                        if self.cautious:
-                            mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
-                            numel = tf.cast(tf.size(mask), grad.dtype)
-                            factor = numel / (tf.reduce_sum(mask) + 1)
-                            mask = mask * factor
-                            update = update * mask
-                        
+                                
                         if self.trust_ratio:
                             # Layer-wise LR adaptation
                             if self.sn:
@@ -2984,6 +2982,13 @@ class AdaMuon_e(optimizer.Optimizer):
                             if self.trust_clip:
                                 trust_ratio = tf.minimum(trust_ratio, 1.0)
                             update *= trust_ratio
+                                
+                        if self.cautious:
+                            mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
+                            numel = tf.cast(tf.size(mask), grad.dtype)
+                            factor = numel / (tf.reduce_sum(mask) + 1)
+                            mask = mask * factor
+                            update = update * mask
                         
                         step_size = d_lr / scale
             
@@ -3383,13 +3388,6 @@ class AdaGO_e(optimizer.Optimizer):
     
                 lr = self.get_adjusted_lr(lr, p.shape, self.use_adjusted_lr)
                 
-                if self.cautious:
-                    mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
-                    numel = tf.cast(tf.size(mask), grad.dtype)
-                    factor = numel / (tf.reduce_sum(mask) + 1)
-                    mask = mask * factor
-                    update = update * mask
-                
                 if self.trust_ratio:
                     # Layer-wise LR adaptation
                     if self.sn:
@@ -3410,6 +3408,13 @@ class AdaGO_e(optimizer.Optimizer):
                     if self.trust_clip:
                         trust_ratio = tf.minimum(trust_ratio, 1.0)
                     update *= trust_ratio
+                
+                if self.cautious:
+                    mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
+                    numel = tf.cast(tf.size(mask), grad.dtype)
+                    factor = numel / (tf.reduce_sum(mask) + 1)
+                    mask = mask * factor
+                    update = update * mask
     
                 p.assign_add(tf.reshape(update, p.shape) * -tf.maximum(self.epsilon, lr * tf.minimum(tf.norm(grad, ord=2), self.gamma) / v))
                 
@@ -3559,13 +3564,7 @@ class AdaGO_e(optimizer.Optimizer):
                         update = normed_grad
                         if self.sophia:
                             update = tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
-                    if self.cautious:
-                        mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
-                        numel = tf.cast(tf.size(mask), grad.dtype)
-                        factor = numel / (tf.reduce_sum(mask) + 1)
-                        mask = mask * factor
-                        update = update * mask
-                    
+                            
                     if self.trust_ratio:
                         # Layer-wise LR adaptation
                         if self.sn:
@@ -3586,6 +3585,13 @@ class AdaGO_e(optimizer.Optimizer):
                         if self.trust_clip:
                             trust_ratio = tf.minimum(trust_ratio, 1.0)
                         update *= trust_ratio
+                            
+                    if self.cautious:
+                        mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
+                        numel = tf.cast(tf.size(mask), grad.dtype)
+                        factor = numel / (tf.reduce_sum(mask) + 1)
+                        mask = mask * factor
+                        update = update * mask
                         
                     p.assign_add(-step_size * update)
                     
@@ -3668,13 +3674,7 @@ class AdaGO_e(optimizer.Optimizer):
                             update = normed_grad
                             if self.sophia:
                                 update = tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
-                        if self.cautious:
-                            mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
-                            numel = tf.cast(tf.size(mask), grad.dtype)
-                            factor = numel / (tf.reduce_sum(mask) + 1)
-                            mask = mask * factor
-                            update = update * mask
-                        
+                                
                         if self.trust_ratio:
                             # Layer-wise LR adaptation
                             if self.sn:
@@ -3694,6 +3694,13 @@ class AdaGO_e(optimizer.Optimizer):
                             if self.trust_clip:
                                 trust_ratio = tf.minimum(trust_ratio, 1.0)
                             update *= trust_ratio
+                                
+                        if self.cautious:
+                            mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
+                            numel = tf.cast(tf.size(mask), grad.dtype)
+                            factor = numel / (tf.reduce_sum(mask) + 1)
+                            mask = mask * factor
+                            update = update * mask
                         
                         step_size = d_lr / bias_correction1
             

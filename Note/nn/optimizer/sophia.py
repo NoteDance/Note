@@ -553,13 +553,6 @@ class SophiaH_e(optimizer.Optimizer):
                     norm_grad = momentum / de_nom
                     update = tf.clip_by_value(norm_grad, clip_value_min=-p, clip_value_max=p)
                     
-                if self.cautious:
-                    mask = tf.cast(tf.math.greater(update * g, 0), g.dtype)
-                    numel = tf.cast(tf.size(mask), g.dtype)
-                    factor = numel / (tf.reduce_sum(mask) + 1)
-                    mask = mask * factor
-                    update = update * mask
-                
                 if self.trust_ratio:
                     # Layer-wise LR adaptation
                     if self.sn:
@@ -579,6 +572,13 @@ class SophiaH_e(optimizer.Optimizer):
                     if self.trust_clip:
                         trust_ratio = tf.minimum(trust_ratio, 1.0)
                     update *= trust_ratio
+                    
+                if self.cautious:
+                    mask = tf.cast(tf.math.greater(update * g, 0), g.dtype)
+                    numel = tf.cast(tf.size(mask), g.dtype)
+                    factor = numel / (tf.reduce_sum(mask) + 1)
+                    mask = mask * factor
+                    update = update * mask
     
                 p.assign_add(update * -lr) 
                 
@@ -640,13 +640,6 @@ class SophiaH_e(optimizer.Optimizer):
                         norm_grad = momentum / de_nom
                         update = tf.clip_by_value(norm_grad, clip_value_min=-p, clip_value_max=p)
                         
-                    if self.cautious:
-                        mask = tf.cast(tf.math.greater(update * g, 0), g.dtype)
-                        numel = tf.cast(tf.size(mask), g.dtype)
-                        factor = numel / (tf.reduce_sum(mask) + 1)
-                        mask = mask * factor
-                        update = update * mask
-                    
                     if self.trust_ratio:
                         # Layer-wise LR adaptation
                         if self.sn:
@@ -666,6 +659,13 @@ class SophiaH_e(optimizer.Optimizer):
                         if self.trust_clip:
                             trust_ratio = tf.minimum(trust_ratio, 1.0)
                         update *= trust_ratio
+                        
+                    if self.cautious:
+                        mask = tf.cast(tf.math.greater(update * g, 0), g.dtype)
+                        numel = tf.cast(tf.size(mask), g.dtype)
+                        factor = numel / (tf.reduce_sum(mask) + 1)
+                        mask = mask * factor
+                        update = update * mask
         
                     p.assign_add(update * -d_lr) 
                     
@@ -1294,13 +1294,6 @@ def _single_tensor_sophiag(params,
                 norm_grad = exp_avg / de_nom
                 ratio = tf.minimum(norm_grad, 1)
             
-            if cautious:
-                mask = tf.cast(tf.math.greater(ratio * grad, 0), grad.dtype)
-                numel = tf.cast(tf.size(mask), grad.dtype)
-                factor = numel / (tf.reduce_sum(mask) + 1)
-                mask = mask * factor
-                ratio = ratio * mask
-            
             if trust_ratio:
                 # Layer-wise LR adaptation
                 if sn:
@@ -1320,6 +1313,13 @@ def _single_tensor_sophiag(params,
                 if trust_clip:
                     trust_ratio = tf.minimum(trust_ratio, 1.0)
                 ratio *= trust_ratio
+            
+            if cautious:
+                mask = tf.cast(tf.math.greater(ratio * grad, 0), grad.dtype)
+                numel = tf.cast(tf.size(mask), grad.dtype)
+                factor = numel / (tf.reduce_sum(mask) + 1)
+                mask = mask * factor
+                ratio = ratio * mask
                 
             param.assign_add(step_size_neg * tf.sign(exp_avg) * ratio)
             
@@ -1387,14 +1387,7 @@ def _single_tensor_sophiag(params,
                 else:
                     norm_grad = exp_avg / de_nom
                     ratio = tf.minimum(norm_grad, 1)
-                
-                if cautious:
-                    mask = tf.cast(tf.math.greater(ratio * grad, 0), grad.dtype)
-                    numel = tf.cast(tf.size(mask), grad.dtype)
-                    factor = numel / (tf.reduce_sum(mask) + 1)
-                    mask = mask * factor
-                    ratio = ratio * mask
-                
+                    
                 if trust_ratio:
                     # Layer-wise LR adaptation
                     if sn:
@@ -1414,6 +1407,13 @@ def _single_tensor_sophiag(params,
                     if trust_clip:
                         trust_ratio = tf.minimum(trust_ratio, 1.0)
                     ratio *= trust_ratio
+                
+                if cautious:
+                    mask = tf.cast(tf.math.greater(ratio * grad, 0), grad.dtype)
+                    numel = tf.cast(tf.size(mask), grad.dtype)
+                    factor = numel / (tf.reduce_sum(mask) + 1)
+                    mask = mask * factor
+                    ratio = ratio * mask
                 
                 step_size = d_lr
                 step_size_neg = -step_size

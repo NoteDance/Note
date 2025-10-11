@@ -538,13 +538,6 @@ class Conda_e(optimizer.Optimizer):
                     norm_grad = self.projector[self._get_variable_index(p)].project_back(norm_grad)
                     
                 update = norm_grad
-                    
-                if self.cautious:
-                    mask = tf.cast(tf.math.greater(update * g, 0), g.dtype)
-                    numel = tf.cast(tf.size(mask), g.dtype)
-                    factor = numel / (tf.reduce_sum(mask) + 1)
-                    mask = mask * factor
-                    update = update * mask
                 
                 if self.trust_ratio:
                     # Layer-wise LR adaptation
@@ -565,6 +558,13 @@ class Conda_e(optimizer.Optimizer):
                     if self.trust_clip:
                         trust_ratio = tf.minimum(trust_ratio, 1.0)
                     update *= trust_ratio
+                    
+                if self.cautious:
+                    mask = tf.cast(tf.math.greater(update * g, 0), g.dtype)
+                    numel = tf.cast(tf.size(mask), g.dtype)
+                    factor = numel / (tf.reduce_sum(mask) + 1)
+                    mask = mask * factor
+                    update = update * mask
         
                 p.assign_add(update * -step_size)
                 
@@ -638,13 +638,6 @@ class Conda_e(optimizer.Optimizer):
                     
                 update = norm_grad
                 
-                if self.cautious:
-                    mask = tf.cast(tf.math.greater(update * g, 0), g.dtype)
-                    numel = tf.cast(tf.size(mask), g.dtype)
-                    factor = numel / (tf.reduce_sum(mask) + 1)
-                    mask = mask * factor
-                    update = update * mask
-                
                 if self.trust_ratio:
                     # Layer-wise LR adaptation
                     if self.sn:
@@ -664,6 +657,13 @@ class Conda_e(optimizer.Optimizer):
                     if self.trust_clip:
                         trust_ratio = tf.minimum(trust_ratio, 1.0)
                     update *= trust_ratio
+                
+                if self.cautious:
+                    mask = tf.cast(tf.math.greater(update * g, 0), g.dtype)
+                    numel = tf.cast(tf.size(mask), g.dtype)
+                    factor = numel / (tf.reduce_sum(mask) + 1)
+                    mask = mask * factor
+                    update = update * mask
     
                 p.assign_add(update * -step_size)
                 

@@ -1016,14 +1016,7 @@ class SOAP_e(optimizer.Optimizer):
                     update = tf.sqrt(norm_grad / tf.reduce_mean(tf.square(norm_grad))) + self.epsilon
                 else:
                     update = norm_grad
-                
-                if self.cautious:
-                    mask = tf.cast(tf.math.greater(update * g, 0), g.dtype)
-                    numel = tf.cast(tf.size(mask), g.dtype)
-                    factor = numel / (tf.reduce_sum(mask) + 1)
-                    mask = mask * factor
-                    update = update * mask
-                
+                    
                 if self.trust_ratio:
                     # Layer-wise LR adaptation
                     if self.sn:
@@ -1043,6 +1036,13 @@ class SOAP_e(optimizer.Optimizer):
                     if self.trust_clip:
                         trust_ratio = tf.minimum(trust_ratio, 1.0)
                     update *= trust_ratio
+                
+                if self.cautious:
+                    mask = tf.cast(tf.math.greater(update * g, 0), g.dtype)
+                    numel = tf.cast(tf.size(mask), g.dtype)
+                    factor = numel / (tf.reduce_sum(mask) + 1)
+                    mask = mask * factor
+                    update = update * mask
     
                 p.assign_add(update * -step_size)
                 
@@ -1136,14 +1136,7 @@ class SOAP_e(optimizer.Optimizer):
                     update = norm_grad / (tf.sqrt((tf.reduce_mean(tf.square(norm_grad)))) + self.epsilon)
                 else:
                     update = norm_grad
-                
-                if self.cautious:
-                    mask = tf.cast(tf.math.greater(update * g, 0), g.dtype)
-                    numel = tf.cast(tf.size(mask), g.dtype)
-                    factor = numel / (tf.reduce_sum(mask) + 1)
-                    mask = mask * factor
-                    update = update * mask
-                
+                    
                 if self.trust_ratio:
                     # Layer-wise LR adaptation
                     if self.sn:
@@ -1163,6 +1156,13 @@ class SOAP_e(optimizer.Optimizer):
                     if self.trust_clip:
                         trust_ratio = tf.minimum(trust_ratio, 1.0)
                     update *= trust_ratio
+                
+                if self.cautious:
+                    mask = tf.cast(tf.math.greater(update * g, 0), g.dtype)
+                    numel = tf.cast(tf.size(mask), g.dtype)
+                    factor = numel / (tf.reduce_sum(mask) + 1)
+                    mask = mask * factor
+                    update = update * mask
     
                 p.assign_add(update * -step_size)
                 
