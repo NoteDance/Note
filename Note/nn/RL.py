@@ -367,8 +367,8 @@ class RL:
     
     
     def compute_ess_from_weights(self, weights):
-        p = weights / (weights.sum())
-        ess = 1.0 / (np.sum(p * p))
+        p = weights / (tf.reduce_sum(weights))
+        ess = 1.0 / (tf.reduce_sum(p * p))
         return float(ess)
 
 
@@ -569,13 +569,13 @@ class RL:
     
     def compute_ess(self, ema_ess, smooth_alpha):
         if self.PPO:
-            scores = self.lambda_ * self.prioritized_replay.TD + (1.0-self.lambda_) * np.abs(self.prioritized_replay.ratio - 1.0)
-            weights = np.pow(scores + 1e-7, self.alpha)
+            scores = self.lambda_ * self.prioritized_replay.TD + (1.0-self.lambda_) * tf.abs(self.prioritized_replay.ratio - 1.0)
+            weights = tf.pow(scores + 1e-7, self.alpha)
         else:
-            weights = np.pow(self.prioritized_replay.TD + 1e-7, self.alpha)
+            weights = tf.pow(self.prioritized_replay.TD + 1e-7, self.alpha)
             
-        p = weights / (weights.sum())
-        ess = 1.0 / (np.sum(p * p))
+        p = weights / (tf.reduce_sum(weights))
+        ess = 1.0 / (tf.reduce_sum(p * p))
         
         if ema_ess is None:
             ema = ess
