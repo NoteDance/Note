@@ -2111,65 +2111,42 @@ class DistributedMuon_e(optimizer.Optimizer):
                 if not self.DAdapt:
                     if self.aem:
                         exp_avg += exp_avg_slow * alpha_t
+                        
                     if self.sn:
                         numerator = tf.reshape(exp_avg, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
                         normed_grad = tf.reshape(numerator / de_nom, p.shape)
                         if self.sophia:
                             update = tf.clip_by_value(normed_grad, clip_value_min=-p, clip_value_max=p)
-                        if self.trust_ratio:
-                            # Layer-wise LR adaptation
-                            if self.sn:
-                                w_norm = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                                g_norm = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                            w_norm = tf.norm(p, ord=2)
-                            g_norm = tf.norm(update, ord=2)
-                            trust_ratio = w_norm / g_norm
-                            trust_ratio = tf.where(
-                                w_norm > 0,
-                                tf.where(g_norm > 0, trust_ratio, 1.0),
-                                1.0,
-                            )
-                            if self.trust_clip:
-                                trust_ratio = tf.minimum(trust_ratio, 1.0)
-                            update *= trust_ratio
-                        if self.cautious:
-                            mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
-                            numel = tf.cast(tf.size(mask), grad.dtype)
-                            factor = numel / (tf.reduce_sum(mask) + 1)
-                            mask = mask * factor
-                            update = update * mask
-                        p.assign_add(update * -step_size)
                     else:
                         normed_grad = exp_avg / de_nom
                         if self.sophia:
                             update = tf.clip_by_value(update, clip_value_min=-p, clip_value_max=p)
-                        if self.trust_ratio:
-                            # Layer-wise LR adaptation
-                            if self.sn:
-                                size = tf.size(p)
-                                reshaped_p = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                                reshaped_update = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                                w_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_p ** 2, axis=1)))
-                                g_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_update ** 2, axis=1)))
-                            else:
-                                w_norm = tf.norm(p, ord=2)
-                                g_norm = tf.norm(update, ord=2)
-                            trust_ratio = w_norm / g_norm
-                            trust_ratio = tf.where(
-                                w_norm > 0,
-                                tf.where(g_norm > 0, trust_ratio, 1.0),
-                                1.0,
-                            )
-                            if self.trust_clip:
-                                trust_ratio = tf.minimum(trust_ratio, 1.0)
-                            update *= trust_ratio
-                        if self.cautious:
-                            mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
-                            numel = tf.cast(tf.size(mask), grad.dtype)
-                            factor = numel / (tf.reduce_sum(mask) + 1)
-                            mask = mask * factor
-                            update = update * mask
-                        p.assign_add(-step_size * update)
+                    
+                    if self.trust_ratio:
+                        # Layer-wise LR adaptation
+                        if self.sn:
+                            w_norm = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                            g_norm = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
+                        w_norm = tf.norm(p, ord=2)
+                        g_norm = tf.norm(update, ord=2)
+                        trust_ratio = w_norm / g_norm
+                        trust_ratio = tf.where(
+                            w_norm > 0,
+                            tf.where(g_norm > 0, trust_ratio, 1.0),
+                            1.0,
+                        )
+                        if self.trust_clip:
+                            trust_ratio = tf.minimum(trust_ratio, 1.0)
+                        update *= trust_ratio
+                        
+                    if self.cautious:
+                        mask = tf.cast(tf.math.greater(update * grad, 0), grad.dtype)
+                        numel = tf.cast(tf.size(mask), grad.dtype)
+                        factor = numel / (tf.reduce_sum(mask) + 1)
+                        mask = mask * factor
+                        update = update * mask
+                        
+                    p.assign_add(-step_size * update)
                     
                 if self.lookahead:
                     def true_fn():
