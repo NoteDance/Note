@@ -1,4 +1,5 @@
 import tensorflow as tf
+import torch
 import numpy as np
 
 
@@ -12,13 +13,22 @@ class pr:
     
     def sample(self,state_pool,action_pool,next_state_pool,reward_pool,done_pool,lambda_,alpha,batch):
         if self.PPO:
-            scores=self.lambda_*self.TD+(1.0-self.lambda_)*np.abs(self.ratio-1.0)
-            prios=np.pow(scores+1e-7,alpha)
-            p=prios/np.sum(prios)
+            try:
+                scores=self.lambda_*self.TD+(1.0-self.lambda_)*tf.abs(self.ratio-1.0)
+                prios=tf.pow(scores+1e-7,alpha)
+                p=prios/tf.reduce_sum(prios)
+            except Exception:
+                scores=self.lambda_*self.TD+(1.0-self.lambda_)*torch.abs(self.ratio-1.0)
+                prios=torch.pow(scores+1e-7,alpha)
+                p=prios/torch.sum(prios)
         else:
-            prios=(self.TD+1e-7)**alpha
-            p=prios/np.sum(prios)
-        self.index=np.random.choice(np.arange(len(state_pool)),size=[batch],p=p,replace=False)
+            try:
+                prios=(self.TD+1e-7)**alpha
+                p=prios/tf.reduce_sum(prios)
+            except Exception:
+                prios=(self.TD+1e-7)**alpha
+                p=prios/torch.sum(prios)
+        self.index=np.random.choice(np.arange(len(state_pool)),size=[batch],p=p.numpy(),replace=False)
         try:
             self.batch.assign(batch)
         except Exception:
