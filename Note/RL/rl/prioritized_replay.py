@@ -45,13 +45,19 @@ class pr:
                 self.ratio_[:self.batch].assign(ratio)
             else:
                 self.ratio[self.index]=self.ratio_[:self.batch]
-                self.TD[self.index]=np.abs(self.TD_[:self.batch])
+                try:
+                    self.TD[self.index]=tf.abs(self.TD_[:self.batch])
+                except Exception:
+                    self.TD[self.index]=torch.abs(self.TD_[:self.batch])
         else:
             if TD is not None:
                 TD=tf.cast(TD,tf.float32)
                 self.TD_[:self.batch].assign(TD)
             else:
-                self.TD[self.index]=np.abs(self.TD_[:self.batch])
+                try:
+                    self.TD[self.index]=tf.abs(self.TD_[:self.batch])
+                except Exception:
+                    self.TD[self.index]=torch.abs(self.TD_[:self.batch])
         return
 
 
