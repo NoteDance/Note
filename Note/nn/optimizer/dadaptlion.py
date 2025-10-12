@@ -74,7 +74,7 @@ def closest_smaller_divisor_of_n_to_k(n, k):
     return closest_smaller_divisor
 
 
-def zero_power_via_newton_schulz_5(G, steps, sn=None, subset_size=None):
+def zero_power_via_newton_schulz_5(G, steps):
     """
     Newton-Schulz iteration to compute the zeroth power / orthogonalization of G. We opt to use a
     quintic iteration whose coefficients are selected to maximize the slope at zero. For the purpose
@@ -91,13 +91,7 @@ def zero_power_via_newton_schulz_5(G, steps, sn=None, subset_size=None):
         X = tf.linalg.matrix_transpose(X)
 
     # Ensure spectral norm is at most 1
-    if sn:
-        size = tf.size(X)
-        reshaped_X = tf.reshape(X, (size // subset_size, subset_size))
-        norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_X ** 2, axis=1, keepdims=True), axis=0, keepdims=True))
-        X = X / (norm + 1e-7)
-    else:
-        X = X / (tf.norm(X, axis=[-2, -1], keepdims=True) + 1e-7)
+    X = X / (tf.norm(X, axis=[-2, -1], keepdims=True) + 1e-7)
     # Perform the NS iterations
     for _ in range(steps):
         A = tf.matmul(X, tf.linalg.matrix_transpose(X))
@@ -254,18 +248,16 @@ class DAdaptLion_e(optimizer.Optimizer):
         d0=1e-6,
         weight_decouple=True,
         fixed_decay=False,
-        orthograd=True,
+        orthograd=False,
         lookahead_merge_time=5,
         lookahead_blending_alpha=0.5,
-        lookahead=True,
-        pnm=True,
-        agc=True,
-        cautious=True,
+        lookahead=False,
+        pnm=False,
+        agc=False,
+        cautious=False,
         update_proj_gap=None,
         scale=None,
         projection_type=None,
-        subset_size=-1,
-        sn=True,
         trust_ratio=False,
         trust_clip=False,
         muon_ortho=False,
@@ -311,8 +303,6 @@ class DAdaptLion_e(optimizer.Optimizer):
         self.update_proj_gap = update_proj_gap
         self.scale = scale
         self.projection_type = projection_type
-        self.subset_size = subset_size
-        self.sn = sn
         self.trust_ratio = trust_ratio
         self.trust_clip = trust_clip
         self.muon_ortho = muon_ortho
@@ -337,7 +327,6 @@ class DAdaptLion_e(optimizer.Optimizer):
         self._track_variable(self.d0_)
         self.projector = []
         self.ortho_matrix = []
-        self.subset_size_ = []
         for var in var_list:
             if self.lookahead:
                 self.slow_momentum.append(tf.Variable(var))
@@ -381,17 +370,6 @@ class DAdaptLion_e(optimizer.Optimizer):
             else:
                 self.projector.append(None)
                 self.ortho_matrix.append(None)
-            if self.sn:
-                size = tf.size(var)
-                
-                def true_fn():
-                    return self.subset_size
-                def false_fn():
-                    return tf.cast(tf.sqrt(size) / tf.abs(tf.cast(self.subset_size, tf.int32)), tf.int32)
-                self.subset_size_.append(closest_smaller_divisor_of_n_to_k(
-                    size,
-                    tf.cond(self.subset_size > 0, true_fn, false_fn)
-                ))
     
     def apply_orthogonal_gradients(self, params, grads, eps = 1e-16):
         for p, g in zip(params, grads):
@@ -470,19 +448,12 @@ class DAdaptLion_e(optimizer.Optimizer):
                 update = self.projector[self._get_variable_index(variable)].project_back(update)
             
             if self.muon_ortho and len(variable.shape) == 2:
-                update = zero_power_via_newton_schulz_5(update, num_steps=self.muon_steps, sn=self.sn, subset_size=self.subset_size_[self._get_variable_index(variable)])
+                update = zero_power_via_newton_schulz_5(update, num_steps=self.muon_steps)
                 
             if self.trust_ratio:
                 # Layer-wise LR adaptation
-                if self.sn:
-                    size = tf.size(variable)
-                    reshaped_p = tf.reshape(variable, (size // self.subset_size_[self._get_variable_index(variable)], self.subset_size_[self._get_variable_index(variable)]))
-                    reshaped_update = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(variable)], self.subset_size_[self._get_variable_index(variable)]))
-                    w_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_p ** 2, axis=1)))
-                    g_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_update ** 2, axis=1)))
-                else:
-                    w_norm = tf.norm(variable, ord=2)
-                    g_norm = tf.norm(update, ord=2)
+                w_norm = tf.norm(variable, ord=2)
+                g_norm = tf.norm(update, ord=2)
                 trust_ratio = w_norm / g_norm
                 trust_ratio = tf.where(
                     w_norm > 0,
@@ -556,8 +527,6 @@ class DAdaptLion_e(optimizer.Optimizer):
                 "scale": self.scale,
                 "projection_type": self.projection_type,
                 "projector": self.projector,
-                "subset_size": self.subset_size,
-                "sn": self.sn,
                 "trust_ratio": self.trust_ratio,
                 "trust_clip": self.trust_clip,
                 "muon_ortho": self.muon_ortho,

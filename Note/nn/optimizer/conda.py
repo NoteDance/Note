@@ -231,18 +231,18 @@ class Conda_e(optimizer.Optimizer):
         maximize=False,
         lookahead_merge_time=5,
         lookahead_blending_alpha=0.5,
-        lookahead=True,
-        pnm=True,
+        lookahead=False,
+        pnm=False,
         subset_size=-1,
-        sn=True,
-        agc=True,
-        cautious=True,
-        aem=True,
+        sn=False,
+        agc=False,
+        cautious=False,
+        aem=False,
         alpha=5.0,
         t_alpha_beta3=None,
         d0=1e-6,
         growth_rate=float('inf'),
-        DAdapt=True,
+        DAdapt=False,
         trust_ratio=False,
         trust_clip=False,
         clipnorm=None,
@@ -541,14 +541,8 @@ class Conda_e(optimizer.Optimizer):
                 
                 if self.trust_ratio:
                     # Layer-wise LR adaptation
-                    if self.sn:
-                        reshaped_p = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                        reshaped_update = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                        w_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_p ** 2, axis=1)))
-                        g_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_update ** 2, axis=1)))
-                    else:
-                        w_norm = tf.norm(p, ord=2)
-                        g_norm = tf.norm(update, ord=2)
+                    w_norm = tf.norm(p, ord=2)
+                    g_norm = tf.norm(update, ord=2)
                     trust_ratio = w_norm / g_norm
                     trust_ratio = tf.where(
                         w_norm > 0,
@@ -640,14 +634,8 @@ class Conda_e(optimizer.Optimizer):
                 
                 if self.trust_ratio:
                     # Layer-wise LR adaptation
-                    if self.sn:
-                        reshaped_p = tf.reshape(p, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                        reshaped_update = tf.reshape(update, (size // self.subset_size_[self._get_variable_index(p)], self.subset_size_[self._get_variable_index(p)]))
-                        w_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_p ** 2, axis=1)))
-                        g_norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_update ** 2, axis=1)))
-                    else:
-                        w_norm = tf.norm(p, ord=2)
-                        g_norm = tf.norm(update, ord=2)
+                    w_norm = tf.norm(p, ord=2)
+                    g_norm = tf.norm(update, ord=2)
                     trust_ratio = w_norm / g_norm
                     trust_ratio = tf.where(
                         w_norm > 0,
