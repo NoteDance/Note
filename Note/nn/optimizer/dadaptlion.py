@@ -74,6 +74,41 @@ def closest_smaller_divisor_of_n_to_k(n, k):
     return closest_smaller_divisor
 
 
+def zero_power_via_newton_schulz_5(G, steps, sn=None, subset_size=None):
+    """
+    Newton-Schulz iteration to compute the zeroth power / orthogonalization of G. We opt to use a
+    quintic iteration whose coefficients are selected to maximize the slope at zero. For the purpose
+    of minimizing steps, it turns out to be empirically effective to keep increasing the slope at
+    zero even beyond the point where the iteration no longer converges all the way to one everywhere
+    on the interval. This iteration therefore does not produce UV^T but rather something like US'V^T
+    where S' is diagonal with S_{ii}' ~ Uniform(0.5, 1.5), which turns out not to hurt model
+    performance at all relative to UV^T, where USV^T = G is the SVD.
+    """
+    assert len(G.shape) >= 2 # batched Muon implementation by @scottjmaddox, and put into practice in the record by @YouJiacheng
+    a, b, c = (3.4445, -4.7750,  2.0315)
+    X = tf.cast(G, tf.bfloat16)
+    if G.shape[-2] > G.shape[-1]:
+        X = tf.linalg.matrix_transpose(X)
+
+    # Ensure spectral norm is at most 1
+    if sn:
+        size = tf.size(X)
+        reshaped_X = tf.reshape(X, (size // subset_size, subset_size))
+        norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_X ** 2, axis=1, keepdims=True), axis=0, keepdims=True))
+        X = X / (norm + 1e-7)
+    else:
+        X = X / (tf.norm(X, axis=[-2, -1], keepdims=True) + 1e-7)
+    # Perform the NS iterations
+    for _ in range(steps):
+        A = tf.matmul(X, tf.linalg.matrix_transpose(X))
+        B = b * A + c * tf.matmul(A, A) # quintic computation strategy adapted from suggestion by @jxbz, @leloykun, and @YouJiacheng
+        X = a * X + tf.matmul(B, X)
+    
+    if G.shape[-2] > G.shape[-1]:
+        X = tf.linalg.matrix_transpose(X)
+    return X
+
+
 class DAdaptLion(optimizer.Optimizer):
     def __init__(
         self,
@@ -233,6 +268,8 @@ class DAdaptLion_e(optimizer.Optimizer):
         sn=True,
         trust_ratio=False,
         trust_clip=False,
+        muon_ortho=False,
+        muon_steps=5,
         clipnorm=None,
         clipvalue=None,
         global_clipnorm=None,
@@ -278,6 +315,8 @@ class DAdaptLion_e(optimizer.Optimizer):
         self.sn = sn
         self.trust_ratio = trust_ratio
         self.trust_clip = trust_clip
+        self.muon_ortho = muon_ortho
+        self.muon_steps = muon_steps
             
     def build(self, var_list):
         if self.built:
@@ -429,6 +468,9 @@ class DAdaptLion_e(optimizer.Optimizer):
             
             if self.update_proj_gap is not None and len(variable.shape) == 2:
                 update = self.projector[self._get_variable_index(variable)].project_back(update)
+            
+            if self.muon_ortho and len(variable.shape) == 2:
+                update = zero_power_via_newton_schulz_5(update, num_steps=self.muon_steps, sn=self.sn, subset_size=self.subset_size_[self._get_variable_index(variable)])
                 
             if self.trust_ratio:
                 # Layer-wise LR adaptation
@@ -518,6 +560,8 @@ class DAdaptLion_e(optimizer.Optimizer):
                 "sn": self.sn,
                 "trust_ratio": self.trust_ratio,
                 "trust_clip": self.trust_clip,
+                "muon_ortho": self.muon_ortho,
+                "muon_steps": self.muon_steps,
                 "subset_size_": self.subset_size_,
             }
         )
