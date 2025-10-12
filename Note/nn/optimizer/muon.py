@@ -9,7 +9,7 @@ import numpy as np
 import math
 
 
-def zero_power_via_newton_schulz_5(G, steps):
+def zero_power_via_newton_schulz_5(G, steps, sn=None, subset_size=None):
     """
     Newton-Schulz iteration to compute the zeroth power / orthogonalization of G. We opt to use a
     quintic iteration whose coefficients are selected to maximize the slope at zero. For the purpose
@@ -26,7 +26,13 @@ def zero_power_via_newton_schulz_5(G, steps):
         X = tf.linalg.matrix_transpose(X)
 
     # Ensure spectral norm is at most 1
-    X = X / (tf.norm(X, axis=[-2, -1], keepdims=True) + 1e-7)
+    if sn:
+        size = tf.size(X)
+        reshaped_X = tf.reshape(X, (size // subset_size, subset_size))
+        norm = tf.sqrt(tf.reduce_sum(tf.reduce_sum(reshaped_X ** 2, axis=1, keepdims=True), axis=0, keepdims=True))
+        X = X / (norm + 1e-7)
+    else:
+        X = X / (tf.norm(X, axis=[-2, -1], keepdims=True) + 1e-7)
     # Perform the NS iterations
     for _ in range(steps):
         A = tf.matmul(X, tf.linalg.matrix_transpose(X))
@@ -1214,7 +1220,7 @@ class Muon_e(optimizer.Optimizer):
                 if len(grad.shape) > 2:
                     update = tf.reshape(update, (len(update), -1))
     
-                update = zero_power_via_newton_schulz_5(update, num_steps=self.ns_steps)
+                update = zero_power_via_newton_schulz_5(update, num_steps=self.ns_steps, sn=self.sn, subset_size=self.subset_size_[self._get_variable_index(p)])
     
                 lr = self.get_adjusted_lr(lr, p.shape, self.use_adjusted_lr)
                 
@@ -1946,7 +1952,7 @@ class DistributedMuon_e(optimizer.Optimizer):
                     if len(update.shape) > 2:
                         update = tf.reshape(update, (len(update), -1))
 
-                    update = zero_power_via_newton_schulz_5(update, num_steps=self.ns_steps)
+                    update = zero_power_via_newton_schulz_5(update, num_steps=self.ns_steps, sn=self.sn, subset_size=self.subset_size_[self._get_variable_index(p)])
                     
                     if self.trust_ratio:
                         # Layer-wise LR adaptation
@@ -2653,7 +2659,7 @@ class AdaMuon_e(optimizer.Optimizer):
                 if len(update.shape) > 2:
                     update = tf.reshape(update, (len(update), -1))
                 
-                update = zero_power_via_newton_schulz_5(update, num_steps=self.ns_steps)
+                update = zero_power_via_newton_schulz_5(update, num_steps=self.ns_steps, sn=self.sn, subset_size=self.subset_size_[self._get_variable_index(p)])
                 
                 v = self.v[self._get_variable_index(p)]
                 v.assign(v * self.beta2 + grad * grad * (1.0 - self.beta2))
@@ -3361,7 +3367,7 @@ class AdaGO_e(optimizer.Optimizer):
                 if len(update.shape) > 2:
                     update = tf.reshape(update, (len(update), -1))
                 
-                update = zero_power_via_newton_schulz_5(update, num_steps=self.ns_steps)
+                update = zero_power_via_newton_schulz_5(update, num_steps=self.ns_steps, sn=self.sn, subset_size=self.subset_size_[self._get_variable_index(p)])
     
                 lr = self.get_adjusted_lr(lr, p.shape, self.use_adjusted_lr)
                 
