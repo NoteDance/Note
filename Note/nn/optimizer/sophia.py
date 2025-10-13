@@ -701,7 +701,6 @@ class SophiaH_e(optimizer.Optimizer):
                 "DAdapt": self.DAdapt,
                 "trust_ratio": self.trust_ratio,
                 "trust_clip": self.trust_clip,
-                "subset_size_": self.subset_size_,
             }
         )
         return config
@@ -1083,7 +1082,6 @@ class SophiaG_e(optimizer.Optimizer):
                 "DAdapt": self.DAdapt,
                 "trust_ratio": self.trust_ratio,
                 "trust_clip": self.trust_clip,
-                "subset_size_": self.subset_size_,
             }
         )
         return config

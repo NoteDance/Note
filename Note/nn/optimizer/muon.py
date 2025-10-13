@@ -1550,7 +1550,6 @@ class Muon_e(optimizer.Optimizer):
                 "DAdapt": self.DAdapt,
                 "trust_ratio": self.trust_ratio,
                 "trust_clip": self.trust_clip,
-                "subset_size_": self.subset_size_,
             }
         )
         return config
@@ -2262,7 +2261,6 @@ class DistributedMuon_e(optimizer.Optimizer):
                 "maximize": self.maximize,
                 "world_size": self.world_size,
                 "rank": self.rank,
-                "subset_size_": self.subset_size_,
             }
         )
         return config
@@ -2929,7 +2927,6 @@ class AdaMuon_e(optimizer.Optimizer):
                 "DAdapt": self.DAdapt,
                 "trust_ratio": self.trust_ratio,
                 "trust_clip": self.trust_clip,
-                "subset_size_": self.subset_size_,
             }
         )
         return config
@@ -3620,7 +3617,6 @@ class AdaGO_e(optimizer.Optimizer):
                 "DAdapt": self.DAdapt,
                 "trust_ratio": self.trust_ratio,
                 "trust_clip": self.trust_clip,
-                "subset_size_": self.subset_size_,
             }
         )
         return config

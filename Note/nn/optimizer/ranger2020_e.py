@@ -208,6 +208,8 @@ class Ranger_e(optimizer.Optimizer):
             exp_avg_sq = self.exp_avg_sq[self._get_variable_index(variable)]
             if self.DAdapt:
                 s = self.s[self._get_variable_index(variable)]
+                if self.sn:
+                    s = tf.reshape(s, (size // self.subset_size_[self._get_variable_index(variable)], self.subset_size_[self._get_variable_index(variable)]))
             
                 denom = tf.sqrt(exp_avg_sq) + self.epsilon
                 flat_grad = tf.reshape(gradient, [-1])
@@ -411,7 +413,6 @@ class Ranger_e(optimizer.Optimizer):
                 "d0": self.d0,
                 "growth_rate": self.growth_rate,
                 "DAdapt": self.DAdapt,
-                "subset_size_": self.subset_size_,
             }
         )
         return config

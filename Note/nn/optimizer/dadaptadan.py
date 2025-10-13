@@ -536,7 +536,6 @@ class DAdaptAdan_sn(optimizer.Optimizer):
                 "fixed_decay": self.fixed_decay,
                 "subset_size": self.subset_size,
                 "sn": self.sn,
-                "subset_size_": self.subset_size_,
             }
         )
         return config

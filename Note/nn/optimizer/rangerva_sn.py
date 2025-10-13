@@ -289,7 +289,6 @@ class RangerVA_sn(optimizer.Optimizer):
                 "grad_transformer": self.grad_transformer,
                 "subset_size": self.subset_size,
                 "sn": self.sn,
-                "subset_size_": self.subset_size_,
             }
         )
         return config

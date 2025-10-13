@@ -5,7 +5,7 @@ Copyright 2025 NoteDance
 """
 import tensorflow as tf
 from keras.src.optimizers import optimizer
-from Note.nn.optimizer.galore_projector import GaLoreProjector
+from optimizers.galore_projector import GaLoreProjector
 
 
 class GaLore(optimizer.Optimizer):
@@ -136,7 +136,6 @@ class GaLore(optimizer.Optimizer):
                 "update_proj_gap": self.update_proj_gap,
                 "scale": self.scale,
                 "projection_type": self.projection_type,
-                "projector": self.projector,
             }
         )
         return config

@@ -465,7 +465,6 @@ class Ranger25(optimizer.Optimizer):
                 "d0": self.d0,
                 "growth_rate": self.growth_rate,
                 "DAdapt": self.DAdapt,
-                "subset_size_": self.subset_size_,
             }
         )
         return config

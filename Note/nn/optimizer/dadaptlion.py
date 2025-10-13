@@ -5,7 +5,7 @@ Copyright 2025 NoteDance
 """
 import tensorflow as tf
 from keras.src.optimizers import optimizer
-from Note.nn.optimizer.galore_projector import GaLoreProjector
+from optimizers.galore_projector import GaLoreProjector
 import math
 
 
@@ -526,12 +526,10 @@ class DAdaptLion_e(optimizer.Optimizer):
                 "update_proj_gap": self.update_proj_gap,
                 "scale": self.scale,
                 "projection_type": self.projection_type,
-                "projector": self.projector,
                 "trust_ratio": self.trust_ratio,
                 "trust_clip": self.trust_clip,
                 "muon_ortho": self.muon_ortho,
                 "muon_steps": self.muon_steps,
-                "subset_size_": self.subset_size_,
             }
         )
         return config

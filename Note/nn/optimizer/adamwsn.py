@@ -184,7 +184,6 @@ class AdamWSN(optimizer.Optimizer):
                 "subset_size": self.subset_size,
                 "sn": self.sn,
                 "maximize": self.maximize,
-                "subset_size_": self.subset_size_,
             }
         )
         return config

@@ -1085,7 +1085,6 @@ class EmoNavi_sn(optimizer.Optimizer):
                 "sn": self.sn,
                 "maximize": self.maximize,
                 "ema": self.ema,
-                "subset_size_": self.subset_size_,
             }
         )
         return config
@@ -1305,7 +1304,6 @@ class EmoFact_sn(optimizer.Optimizer):
                 "sn": self.sn,
                 "maximize": self.maximize,
                 "ema": self.ema,
-                "subset_size_": self.subset_size_,
             }
         )
         return config
@@ -1555,7 +1553,6 @@ class EmoZeal_sn(optimizer.Optimizer):
                 "sn": self.sn,
                 "maximize": self.maximize,
                 "ema": self.ema,
-                "subset_size_": self.subset_size_,
             }
         )
         return config

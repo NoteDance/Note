@@ -467,7 +467,6 @@ class DAdaptAdam_sn(optimizer.Optimizer):
                 "bias_correction": self.bias_correction,
                 "subset_size": self.subset_size,
                 "sn": self.sn,
-                "subset_size_": self.subset_size_,
             }
         )
         return config
