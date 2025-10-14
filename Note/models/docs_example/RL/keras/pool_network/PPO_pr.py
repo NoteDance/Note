@@ -67,16 +67,16 @@ class PPO(nn.RL):
     def window_size(self,p):
         return self.adjust_window_size(p)
     
-    def window_size_fn(self,p):
+    def window_size_func(self,p):
         return self.adjust_window_size(p)
     
-    def adjust_fn(self):
+    def adjust_func(self):
         if self.batch_counter%777 or self.batch_counter%self.update_batches==0:
             self.adjust(batch_params=self.batch_params)
             return
         self.adjust(batch_params=self.batch_params)
     
-#    def adjust_fn(self):
+#    def adjust_func(self):
 #        if self.batch_counter%self.update_batches==0:
 #            self.adjust(num_samples=7, target_noise=1e-3)
 #        if self.prepare_flag==True:
@@ -135,7 +135,7 @@ class PPO_(nn.RL):
         features = (features - tf.reduce_min(features)) / (tf.reduce_max(features) - tf.reduce_min(features) + 1e-8)
         return self.controller(features)
     
-    def window_size_fn(self,p):
+    def window_size_func(self,p):
         ratio_score = tf.reduce_sum(tf.abs(self.prioritized_replay.ratio_list[p]-1.0))
         td_score = tf.reduce_sum(self.prioritized_replay.TD_list[p])
         scores = self.lambda_ * self.prioritized_replay.TD_list[p] + (1.0-self.lambda_) * tf.abs(self.prioritized_replay.ratio_list[p] - 1.0)
@@ -146,13 +146,13 @@ class PPO_(nn.RL):
         features = (features - tf.reduce_min(features)) / (tf.reduce_max(features) - tf.reduce_min(features) + 1e-8)
         return self.controller(features)
     
-    def adjust_fn(self):
+    def adjust_func(self):
         if self.batch_counter%777 or self.batch_counter%self.update_batches==0:
             self.adjust(batch_params=self.batch_params)
             return
         self.adjust(batch_params=self.batch_params)
     
-#    def adjust_fn(self):
+#    def adjust_func(self):
 #        if self.batch_counter%self.update_batches==0:
 #            self.adjust(num_samples=7, target_noise=1e-3)
 #        if self.prepare_flag==True:
