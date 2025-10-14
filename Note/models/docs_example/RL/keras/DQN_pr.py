@@ -76,16 +76,16 @@ class DQN_(nn.RL):
     def window_size(self):
         return self.adjust_window_size()
     
-    def window_size_fn(self):
+    def window_size_func(self):
         return self.adjust_window_size()
     
-    def adjust_fn(self):
+    def adjust_func(self):
         if self.step_counter%777 or self.step_counter%self.update_steps==0:
             self.adjust(batch_params=self.batch_params)
             return
         self.adjust(batch_params=self.batch_params)
     
-#    def adjust_fn(self):
+#    def adjust_func(self):
 #        if self.step_counter%self.update_steps==0:
 #            self.adjust(num_samples=7, target_noise=1e-3)
     
@@ -129,7 +129,7 @@ class _DQN(nn.RL):
         features = (features - tf.reduce_min(features)) / (tf.reduce_max(features) - tf.reduce_min(features) + 1e-8)
         return self.controller(features)
     
-    def window_size_fn(self):
+    def window_size_func(self):
         td_score = tf.reduce_sum(self.prioritized_replay.TD)
         weights = tf.pow(td_score + 1e-7, self.alpha)
         p = weights / (tf.reduce_sum(weights))
@@ -138,13 +138,13 @@ class _DQN(nn.RL):
         features = (features - tf.reduce_min(features)) / (tf.reduce_max(features) - tf.reduce_min(features) + 1e-8)
         return self.controller(features)
     
-    def adjust_fn(self):
+    def adjust_func(self):
         if self.step_counter%777 or self.step_counter%self.update_steps==0:
             self.adjust(batch_params=self.batch_params)
             return
         self.adjust(batch_params=self.batch_params)
     
-#    def adjust_fn(self):
+#    def adjust_func(self):
 #        if self.step_counter%self.update_steps==0:
 #            self.adjust(num_samples=7, target_noise=1e-3)
     
