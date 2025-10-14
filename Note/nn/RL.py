@@ -970,14 +970,14 @@ class RL:
             if self.pool_network==True:
                 if self.batch_counter%self.update_batches==0:
                     self.update_param()
-                    if not hasattr(self,'window_size_fn'):
+                    if not hasattr(self,'window_size_func'):
                         if self.PPO:
                             window_size=self.window_size_ppo
                         else:
                             window_size=self.window_size_pr
                     for p in range(self.processes):
-                        if hasattr(self,'window_size_fn'):
-                            window_size=int(self.window_size_fn(p))
+                        if hasattr(self,'window_size_func'):
+                            window_size=int(self.window_size_func(p))
                         if window_size!=None and len(self.state_pool_list[p])>window_size:
                             self.state_pool_list[p]=self.state_pool_list[p][window_size:]
                             self.action_pool_list[p]=self.action_pool_list[p][window_size:]
@@ -1004,8 +1004,8 @@ class RL:
                         self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
                     else:
                         self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
-                if hasattr(self, 'adjust_fn') and len(self.state_pool)>=self.pool_size_:
-                    self.adjust_fn()
+                if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
+                    self.adjust_func()
             return total_loss
         else:
             batch = 0
@@ -1038,8 +1038,8 @@ class RL:
                                 self.next_state_pool_list[p]=None
                                 self.reward_pool_list[p]=None
                                 self.done_pool_list[p]=None
-                    if hasattr(self, 'adjust_fn') and len(self.state_pool)>=self.pool_size_:
-                        self.adjust_fn()
+                    if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
+                        self.adjust_func()
                         if self.num_updates!=None and self.batch_counter%self.update_batches==0:
                             if self.processes_her==None and self.processes_pr==None:
                                 self.state_pool=np.concatenate(self.state_pool_list)
@@ -1117,14 +1117,14 @@ class RL:
                         if self.pool_network==True:
                             if self.batch_counter%self.update_batches==0:
                                 self.update_param()
-                                if not hasattr(self,'window_size_fn'):
+                                if not hasattr(self,'window_size_func'):
                                     if self.PPO:
                                         window_size=self.window_size_ppo
                                     else:
                                         window_size=self.window_size_pr
                                 for p in range(self.processes):
-                                    if hasattr(self,'window_size_fn'):
-                                        window_size=int(self.window_size_fn(p))
+                                    if hasattr(self,'window_size_func'):
+                                        window_size=int(self.window_size_func(p))
                                     if window_size!=None and len(self.state_pool_list[p])>window_size:
                                         self.state_pool_list[p]=self.state_pool_list[p][window_size:]
                                         self.action_pool_list[p]=self.action_pool_list[p][window_size:]
@@ -1151,8 +1151,8 @@ class RL:
                                     self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
                                 else:
                                     self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
-                            if hasattr(self, 'adjust_fn') and len(self.state_pool)>=self.pool_size_:
-                                self.adjust_fn()
+                            if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
+                                self.adjust_func()
                 elif isinstance(self.strategy,tf.distribute.MultiWorkerMirroredStrategy):
                     with self.strategy.scope():
                         multi_worker_dataset = self.strategy.distribute_datasets_from_function(
@@ -1171,14 +1171,14 @@ class RL:
                         if self.pool_network==True:
                             if self.batch_counter%self.update_batches==0:
                                 self.update_param()
-                                if not hasattr(self,'window_size_fn'):
+                                if not hasattr(self,'window_size_func'):
                                     if self.PPO:
                                         window_size=self.window_size_ppo
                                     else:
                                         window_size=self.window_size_pr
                                 for p in range(self.processes):
-                                    if hasattr(self,'window_size_fn'):
-                                        window_size=int(self.window_size_fn(p))
+                                    if hasattr(self,'window_size_func'):
+                                        window_size=int(self.window_size_func(p))
                                     if window_size!=None and len(self.state_pool_list[p])>window_size:
                                         self.state_pool_list[p]=self.state_pool_list[p][window_size:]
                                         self.action_pool_list[p]=self.action_pool_list[p][window_size:]
@@ -1205,8 +1205,8 @@ class RL:
                                     self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
                                 else:
                                     self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
-                            if hasattr(self, 'adjust_fn') and len(self.state_pool)>=self.pool_size_:
-                                self.adjust_fn()
+                            if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
+                                self.adjust_func()
                 batch_logs = {'loss': loss.numpy()}
                 for callback in self.callbacks:
                     if hasattr(callback, 'on_batch_end'):
@@ -1242,14 +1242,14 @@ class RL:
                         if self.pool_network==True:
                             if self.batch_counter%self.update_batches==0:
                                 self.update_param()
-                                if not hasattr(self,'window_size_fn'):
+                                if not hasattr(self,'window_size_func'):
                                     if self.PPO:
                                         window_size=self.window_size_ppo
                                     else:
                                         window_size=self.window_size_pr
                                 for p in range(self.processes):
-                                    if hasattr(self,'window_size_fn'):
-                                        window_size=int(self.window_size_fn(p))
+                                    if hasattr(self,'window_size_func'):
+                                        window_size=int(self.window_size_func(p))
                                     if window_size!=None and len(self.state_pool_list[p])>window_size:
                                         self.state_pool_list[p]=self.state_pool_list[p][window_size:]
                                         self.action_pool_list[p]=self.action_pool_list[p][window_size:]
@@ -1276,8 +1276,8 @@ class RL:
                                     self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
                                 else:
                                     self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
-                            if hasattr(self, 'adjust_fn') and len(self.state_pool)>=self.pool_size_:
-                                self.adjust_fn()
+                            if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
+                                self.adjust_func()
                 elif isinstance(self.strategy,tf.distribute.MultiWorkerMirroredStrategy):
                     with self.strategy.scope():
                         multi_worker_dataset = self.strategy.distribute_datasets_from_function(
@@ -1295,14 +1295,14 @@ class RL:
                     if self.pool_network==True:
                         if self.batch_counter%self.update_batches==0:
                             self.update_param()
-                            if not hasattr(self,'window_size_fn'):
+                            if not hasattr(self,'window_size_func'):
                                 if self.PPO:
                                     window_size=self.window_size_ppo
                                 else:
                                     window_size=self.window_size_pr
                             for p in range(self.processes):
-                                if hasattr(self,'window_size_fn'):
-                                    window_size=int(self.window_size_fn(p))
+                                if hasattr(self,'window_size_func'):
+                                    window_size=int(self.window_size_func(p))
                                 if window_size!=None and len(self.state_pool_list[p])>window_size:
                                     self.state_pool_list[p]=self.state_pool_list[p][window_size:]
                                     self.action_pool_list[p]=self.action_pool_list[p][window_size:]
@@ -1329,8 +1329,8 @@ class RL:
                                 self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
                             else:
                                 self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)  
-                        if hasattr(self, 'adjust_fn') and len(self.state_pool)>=self.pool_size_:
-                            self.adjust_fn()
+                        if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
+                            self.adjust_func()
                 batch_logs = {'loss': loss.numpy()}
                 for callback in self.callbacks:
                     if hasattr(callback, 'on_batch_end'):
@@ -1382,8 +1382,8 @@ class RL:
                                         self.next_state_pool_list[p]=None
                                         self.reward_pool_list[p]=None
                                         self.done_pool_list[p]=None
-                            if hasattr(self, 'adjust_fn') and len(self.state_pool)>=self.pool_size_:
-                                self.adjust_fn()
+                            if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
+                                self.adjust_func()
                                 if self.num_updates!=None and self.batch_counter%self.update_batches==0:
                                     if self.processes_her==None and self.processes_pr==None:
                                         self.state_pool=np.concatenate(self.state_pool_list)
@@ -1460,8 +1460,8 @@ class RL:
                                     self.next_state_pool_list[p]=None
                                     self.reward_pool_list[p]=None
                                     self.done_pool_list[p]=None
-                        if hasattr(self, 'adjust_fn') and len(self.state_pool)>=self.pool_size_:
-                            self.adjust_fn()
+                        if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
+                            self.adjust_func()
                             if self.num_updates!=None and self.batch_counter%self.update_batches==0:
                                 if self.processes_her==None and self.processes_pr==None:
                                     self.state_pool=np.concatenate(self.state_pool_list)
@@ -1500,13 +1500,13 @@ class RL:
             if self.step_counter%self.update_steps==0:
                 self.update_param()
                 if self.PR:
-                    if not hasattr(self,'window_size_fn'):
+                    if not hasattr(self,'window_size_func'):
                         if self.PPO:
                             window_size=self.window_size_ppo
                         else:
                             window_size=self.window_size_pr
-                    if hasattr(self,'window_size_fn'):
-                        window_size=int(self.window_size_fn())
+                    if hasattr(self,'window_size_func'):
+                        window_size=int(self.window_size_func())
                     if window_size!=None and len(self.state_pool)>window_size:
                         self.state_pool=self.state_pool[window_size:]
                         self.action_pool=self.action_pool[window_size:]
@@ -1522,8 +1522,8 @@ class RL:
                     self.next_state_pool=None
                     self.reward_pool=None
                     self.done_pool=None
-            if hasattr(self, 'adjust_fn') and len(self.state_pool)>=self.pool_size_:
-                self.adjust_fn()
+            if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
+                self.adjust_func()
                 if self.step_counter%self.update_steps==0:
                     if self.num_updates!=None:
                         if len(self.state_pool)>=self.pool_size_:
@@ -1851,9 +1851,9 @@ class RL:
                 self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
             else:
                 self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
-            if hasattr(self, 'adjust_fn') and len(self.state_pool)>=self.pool_size_:
+            if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
                 self.prepare_flag=True
-                self.adjust_fn()
+                self.adjust_func()
                 self.prepare_flag=False
         self.reward_list.append(np.mean(npc.as_array(self.reward.get_obj())))
         if len(self.reward_list)>self.trial_count:
