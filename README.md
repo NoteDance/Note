@@ -1,5 +1,5 @@
 # Introduction:
-Note is a machine learning library. Note makes the building and training of neural networks easy and flexible. Note can be used not only for deep learning but also for reinforcement learning, it allows you to easily train agents built with Note, Keras, or PyTorch using reinforcement learning.
+Note is an efficient and flexible machine learning library that allows developers to easily build and train neural networks. It supports deep learning and reinforcement learning, enabling developers to easily perform distributed training.
 
 
 # Installation:
@@ -29,38 +29,6 @@ https://github.com/NoteDance/Note/tree/Note-7.0/Note/nn/layer
 
 **Documentation**: https://github.com/NoteDance/Note-documentation/tree/layer-7.0
 
-Using Note’s Layer module, you can determine the shape of the training parameters when you input data like Keras, or you can give the shape of the training parameters in advance like PyTorch.
-
-**Pytorch:**
-```python
-from Note import nn
-
-class model(nn.Model):
-    def __init__(self):
-	super().__init__()
-        self.layer1=nn.dense(128,784,activation='relu')
-        self.layer2=nn.dense(10,128)
-    
-    def __call__(self,data):
-        x=self.layer1(data)
-        x=self.layer2(x)
-        return x
-```
-**Keras:**
-```python
-from Note import nn
-
-class model(nn.Model):
-    def __init__(self):
-	super().__init__()
-        self.layer1=nn.dense(128,activation='relu')
-        self.layer2=nn.dense(10)
-    
-    def __call__(self,data):
-        x=self.layer1(data)
-        x=self.layer2(x)
-        return x
-```
 Note.models.tf package contains neural networks implemented with Note’s layer module that can be trained with TensorFlow. You can also consider these models as examples using the Note. The documentation shows how to train, test, find best lr, find best optimizer, save, and restore models built with Note.
 
 https://github.com/NoteDance/Note/tree/Note-7.0/Note/models/tf
