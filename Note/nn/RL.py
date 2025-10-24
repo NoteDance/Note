@@ -1002,7 +1002,7 @@ class RL:
             return total_loss
         else:
             batch = 0
-            while self.step_in_epoch < num_steps_per_episode:
+            while self.step_in_episode < num_steps_per_episode:
                 if self.num_updates!=None and self.batch_counter%self.num_updates==0:
                     break
                 for callback in self.callbacks:
@@ -1065,7 +1065,7 @@ class RL:
     @tf.function
     def per_worker_dataset_fn_(self):
         return self.strategy.distribute_datasets_from_function(self.dataset_fn)
-    
+
     
     def CTL_param(self, coordinator, num_steps_per_episode=None):
         if self.jit_compile==True:
@@ -1108,17 +1108,24 @@ class RL:
                     self.next_state_pool=np.concatenate(self.next_state_pool_list)
                     self.reward_pool=np.concatenate(self.reward_pool_list)
                     self.done_pool=np.concatenate(self.done_pool_list)
+                    if isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
+                        self.state_pool_[:len(self.state_pool)].assign(self.state_pool)
+                        self.action_pool_[:len(self.state_pool)].assign(self.action_pool)
+                        self.next_state_pool_[:len(self.state_pool)].assign(self.next_state_pool)
+                        self.reward_pool_[:len(self.state_pool)].assign(self.reward_pool)
+                        self.done_pool_[:len(self.state_pool)].assign(self.done_pool)
+                        self.batch_.assign(self.batch)
                     if self.PPO:
                         self.prioritized_replay.ratio=np.concat(self.ratio_list, axis=0)
                         self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
                     else:
                         self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
-                if hasattr(self, 'batch_size_fn') and len(self.state_pool)>=self.pool_size_:
-                    self.batch = self.batch_size_fn()
+                if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
+                    self.adjust_func()
             return total_loss
         else:
             batch = 0
-            while self.step_in_epoch < num_steps_per_episode:
+            while self.step_in_episode < num_steps_per_episode:
                 for callback in self.callbacks:
                     if hasattr(callback, 'on_batch_begin'):
                         callback.on_batch_begin(batch, logs={})
@@ -1147,6 +1154,24 @@ class RL:
                                 self.done_pool_list[p]=None
                     if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
                         self.adjust_func()
+                        if isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
+                            if self.num_updates!=None and self.batch_counter%self.update_batches==0:
+                                self.state_pool=np.concatenate(self.state_pool_list)
+                                self.action_pool=np.concatenate(self.action_pool_list)
+                                self.next_state_pool=np.concatenate(self.next_state_pool_list)
+                                self.reward_pool=np.concatenate(self.reward_pool_list)
+                                self.done_pool=np.concatenate(self.done_pool_list)
+                                self.pool_size_=self.num_updates*self.batch
+                                if len(self.state_pool)>=self.pool_size_:
+                                    idx=np.random.choice(self.state_pool.shape[0], size=self.pool_size_, replace=False)
+                                else:
+                                    idx=np.random.choice(self.state_pool.shape[0], size=self.state_pool.shape[0], replace=False)
+                                self.state_pool_[:len(idx)].assign(self.state_pool[idx])
+                                self.action_pool_[:len(idx)].assign(self.action_pool[idx])
+                                self.next_state_pool_[:len(idx)].assign(self.next_state_pool[idx])
+                                self.reward_pool_[:len(idx)].assign(self.reward_pool[idx])
+                                self.done_pool_[:len(idx)].assign(self.done_pool[idx])
+                                self.batch_.assign(self.batch)
                 if self.stop_training==True:
                     coordinator.join()
                     return total_loss,num_batches
@@ -1488,7 +1513,7 @@ class RL:
                             lambda input_context: self.dataset_fn(train_ds, self.batch, input_context))  
                     total_loss,num_batches=self.CTL(multi_worker_dataset,math.ceil(len(self.state_pool)/self.batch))
                 elif isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
-                    total_loss,num_batches=self.CTL_param(self.coordinator,math.ceil(len(self.state_pool)/self.batch_size))
+                    total_loss,num_batches=self.CTL_param(self.coordinator,math.ceil(len(self.state_pool)/self.batch))
             else:
                 if self.pool_network==True:
                     train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).batch(self.batch)
@@ -1880,7 +1905,7 @@ class RL:
                 self.done_pool=np.concatenate(self.done_pool_list)
                 if counter<self.num_store and len(self.state_pool)<self.batch:
                     continue
-                if not self.PR and self.num_updates!=None:
+                if not isinstance(self.strategy,tf.distribute.ParameterServerStrategy) and not self.PR and self.num_updates!=None:
                     if len(self.state_pool)>=self.pool_size_:
                         idx=np.random.choice(self.state_pool.shape[0], size=self.pool_size_, replace=False)
                     else:
@@ -1890,6 +1915,25 @@ class RL:
                     self.next_state_pool=self.next_state_pool[idx]
                     self.reward_pool=self.reward_pool[idx]
                     self.done_pool=self.done_pool[idx]
+                elif isinstance(self.strategy,tf.distribute.ParameterServerStrategy):
+                    if self.num_updates!=None:
+                        if len(self.state_pool)>=self.pool_size_:
+                            idx=np.random.choice(self.state_pool.shape[0], size=self.pool_size_, replace=False)
+                        else:
+                            idx=np.random.choice(self.state_pool.shape[0], size=self.state_pool.shape[0], replace=False)
+                        self.state_pool_[:len(idx)].assign(self.state_pool[idx])
+                        self.action_pool_[:len(idx)].assign(self.action_pool[idx])
+                        self.next_state_pool_[:len(idx)].assign(self.next_state_pool[idx])
+                        self.reward_pool_[:len(idx)].assign(self.reward_pool[idx])
+                        self.done_pool_[:len(idx)].assign(self.done_pool[idx])
+                        self.batch_.assign(self.batch)
+                    else:
+                        self.state_pool_[:len(self.state_pool)].assign(self.state_pool)
+                        self.action_pool_[:len(self.state_pool)].assign(self.action_pool)
+                        self.next_state_pool_[:len(self.state_pool)].assign(self.next_state_pool)
+                        self.reward_pool_[:len(self.state_pool)].assign(self.reward_pool)
+                        self.done_pool_[:len(self.state_pool)].assign(self.done_pool)
+                        self.batch_.assign(self.batch)
             else:
                 self.state_pool[7]=np.concatenate(self.state_pool_list)
                 self.action_pool[7]=np.concatenate(self.action_pool_list)
