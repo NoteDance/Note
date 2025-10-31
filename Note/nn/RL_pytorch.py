@@ -760,11 +760,12 @@ class RL_pytorch:
                         if self.PPO:
                             self.prioritized_replay.ratio=np.concat(self.ratio_list, axis=0)
                             self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
-                            return loss.detach().numpy()/batches
                         else:
                             self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
                     if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
                         self.adjust_func()
+                    if self.PPO and self.batch_counter%self.update_batches==0:
+                        return loss.detach().numpy()/batches
             if len(self.state_pool)%self.batch!=0:
                 if self.num_updates!=None and self.batch_counter%self.num_updates==0:
                     return loss.detach().numpy()/batches
@@ -807,11 +808,12 @@ class RL_pytorch:
                         if self.PPO:
                             self.prioritized_replay.ratio=np.concat(self.ratio_list, axis=0)
                             self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
-                            return loss.detach().numpy()/batches
                         else:
                             self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
                     if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
                         self.adjust_func()
+                    if self.PPO and self.batch_counter%self.update_batches==0:
+                        return loss.detach().numpy()/batches
         else:
             if self.pool_network==True:
                 train_ds=DataLoader((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool),batch_size=self.batch)
@@ -833,7 +835,6 @@ class RL_pytorch:
                                 self.next_state_pool_list[p]=None
                                 self.reward_pool_list[p]=None
                                 self.done_pool_list[p]=None
-                            break
                     if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
                         self.adjust_func()
                         if self.num_updates!=None and self.batch_counter%self.update_batches==0:
@@ -870,6 +871,8 @@ class RL_pytorch:
                                 self.next_state_pool[7]=self.next_state_pool[7][idx]
                                 self.reward_pool[7]=self.reward_pool[7][idx]
                                 self.done_pool[7]=self.done_pool[7][idx]
+                    if self.PPO and self.batch_counter%self.update_batches==0:
+                        break
         if self.update_steps!=None:
             if self.step_counter%self.update_steps==0:
                 self.update_param()
@@ -896,8 +899,6 @@ class RL_pytorch:
                     self.next_state_pool=None
                     self.reward_pool=None
                     self.done_pool=None
-                if self.PPO:
-                    return loss.detach().numpy()/batches
             if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
                 self.adjust_func()
                 if self.step_counter%self.update_steps==0:
@@ -914,6 +915,8 @@ class RL_pytorch:
                         train_ds=DataLoader((state_pool,action_pool,next_state_pool,reward_pool,done_pool),batch_size=self.batch)
                     else:
                         train_ds=DataLoader((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool),batch_size=self.batch,shuffle=True)
+            if self.PPO and self.step_counter%self.update_steps==0:
+                return loss.detach().numpy()/batches
         else:
             self.update_param()
         return loss.detach().numpy()/batches
