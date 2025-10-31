@@ -769,7 +769,6 @@ class RL:
     
     
     def adjust(self, target_ess=None, target_noise=None, num_samples=None, smooth=0.2, batch_params=None, alpha_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None, store_params=None, clip_params=None, beta_params=None, jit_compile=True):
-        self.adjust_flag = True
         if target_noise is None:
             self.adjust_batch_size(smooth, batch_params, target_ess, alpha_params, eps_params, freq_params, tau_params, gamma_params, store_params, clip_params, beta_params)
         else:
@@ -1943,8 +1942,7 @@ class RL:
             else:
                 if len(self.state_pool[7])>=self.batch:
                     break
-        if hasattr(self, 'adjust_flag'):
-            self.initialize_adjusting()
+        self.initialize_adjusting()
         if self.PR==True:
             if self.PPO:
                 self.prioritized_replay.ratio=np.concat(self.ratio_list, axis=0)
