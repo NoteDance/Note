@@ -735,9 +735,6 @@ class RL:
     
     
     def initialize_adjusting(self):
-        if hasattr(self, 'original_batch'):
-            self.batch = self.original_batch
-            self.ema_ess = None
         if hasattr(self, 'original_alpha'):
             self.alpha = self.original_alpha
             self.ema_alpha = None
@@ -1872,8 +1869,9 @@ class RL:
         else:
             self.modify_TD()
         counter=0
-        if hasattr(self, 'adjust_flag'):
-            self.initialize_adjusting()
+        if hasattr(self, 'original_batch'):
+            self.batch = self.original_batch
+            self.ema_ess = None
         while True:
             for p in range(self.processes):
                 process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
@@ -1945,6 +1943,8 @@ class RL:
             else:
                 if len(self.state_pool[7])>=self.batch:
                     break
+        if hasattr(self, 'adjust_flag'):
+            self.initialize_adjusting()
         if self.PR==True:
             if self.PPO:
                 self.prioritized_replay.ratio=np.concat(self.ratio_list, axis=0)
