@@ -513,7 +513,7 @@ class RL:
     
     def adjust_gamma(self, gamma_params, ema=None, target=None, GNS=False): 
         if not hasattr(self, 'original_gamma'):
-            self.original_gamma = self.gamma
+            self.original_gamma = self.gamma.numpy()
         if ema is None and not hasattr(self, 'ema_gamma'):
             self.ema_gamma = None
         smooth = gamma_params.get('smooth', 0.2)
@@ -543,7 +543,7 @@ class RL:
     
     def adjust_clip(self, clip_params, ema=None, target=None, GNS=False):  
         if not hasattr(self, 'original_clip'):
-            self.original_clip = self.clip
+            self.original_clip = self.clip.numpy()
         if ema is None and not hasattr(self, 'ema_clip'):
             self.ema_clip = None
         smooth = clip_params.get('smooth', 0.2)
@@ -560,7 +560,7 @@ class RL:
         
     def adjust_beta(self, beta_params, ema=None, target=None, GNS=False):
         if not hasattr(self, 'original_beta'):
-            self.original_beta = self.beta
+            self.original_beta = self.beta.numpy()
         if ema is None and not hasattr(self, 'ema_beta'):
             self.ema_beta = None
         smooth = beta_params.get('smooth', 0.2)
@@ -1878,7 +1878,10 @@ class RL:
         counter=0
         if hasattr(self, 'original_batch'):
             self.batch = self.original_batch
-            self.ema_ess = None
+            if hasattr(self, 'ema_ess'):
+                self.ema_ess = None
+            else:
+                self.ema_noise = None
         while True:
             for p in range(self.processes):
                 process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))

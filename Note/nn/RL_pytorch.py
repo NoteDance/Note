@@ -1171,7 +1171,10 @@ class RL_pytorch:
         counter=0
         if hasattr(self, 'original_batch'):
             self.batch = self.original_batch
-            self.ema_ess = None
+            if hasattr(self, 'ema_ess'):
+                self.ema_ess = None
+            else:
+                self.ema_noise = None
         while True:
             for p in range(self.processes):
                 process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
