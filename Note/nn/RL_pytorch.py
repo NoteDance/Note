@@ -755,7 +755,7 @@ class RL_pytorch:
         batches=int((len(self.state_pool)-len(self.state_pool)%self.batch)/self.batch)
         if len(self.state_pool)%self.batch!=0:
             batches+=1
-        if self.PR==True or self.HER==True:
+        if self.PR==True or self.HER==True or self.TRL==True:
             for j in range(batches):
                 if self.num_updates!=None and self.batch_counter%self.num_updates==0:
                     break
@@ -1130,7 +1130,7 @@ class RL_pytorch:
         reward=0
         counter=0
         while True:
-            if self.random or (self.PR!=True and self.HER!=True):
+            if self.random or (self.PR!=True and self.HER!=True and self.TRL!=True):
                 if self.state_pool_list[p] is None:
                     index=p
                     self.inverse_len[index]=1
@@ -1155,7 +1155,7 @@ class RL_pytorch:
             next_s=np.array(next_s)
             r=np.array(r)
             done=np.array(done)
-            if self.random or (self.PR!=True and self.HER!=True):
+            if self.random or (self.PR!=True and self.HER!=True and self.TRL!=True):
                 lock_list[index].acquire()
                 if self.num_steps!=None:
                     if counter==0:
@@ -1340,7 +1340,7 @@ class RL_pytorch:
                         self.store_counter.append(0)
             self.reward=np.zeros(processes,dtype='float32')
             self.reward=Array('f',self.reward)
-            if self.HER!=True:
+            if self.HER!=True or self.TRL!=True:
                 lock_list=[mp.Lock() for _ in range(processes)]
             else:
                 lock_list=None
