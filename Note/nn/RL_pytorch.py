@@ -42,7 +42,7 @@ class RL_pytorch:
         self.total_time=0
     
     
-    def set(self,policy=None,noise=None,pool_size=None,batch=None,num_updates=None,num_steps=None,update_batches=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False,MARL=False,PR=False,IRL=False,initial_ratio=1.0,initial_TD=7,lambda_=0.5,alpha=0.7):
+    def set(self,policy=None,noise=None,pool_size=None,batch=None,num_updates=None,num_steps=None,update_batches=None,update_steps=None,trial_count=None,criterion=None,PPO=False,HER=False,TRL=False,MARL=False,PR=False,IRL=False,initial_ratio=1.0,initial_TD=7,lambda_=0.5,alpha=0.7):
         self.policy=policy
         self.noise=noise
         self.pool_size=pool_size
@@ -55,6 +55,7 @@ class RL_pytorch:
         self.criterion=criterion
         self.PPO=PPO
         self.HER=HER
+        self.TRL=TRL
         self.MARL=MARL
         self.PR=PR
         self.IRL=IRL
@@ -677,7 +678,7 @@ class RL_pytorch:
                     step_state = np.random.randint(0, len(self.state_pool)-1)
                     step_goal = np.random.randint(step_state+1, step_state+np.argmax(self.done_pool[step_state+1:])+2)
                     state = self.state_pool[step_state]
-                    next_state = self.next_state_pool[step_state]
+                    next_state = self.next_state_pool[step_state+1]
                     action = self.action_pool[step_state]
                     goal = self.state_pool[step_goal]
                     reward, done = self.reward_done_func(next_state, goal)
@@ -693,6 +694,43 @@ class RL_pytorch:
                 next_s = np.array(next_s)
                 r = np.array(r)
                 d = np.array(d)
+        elif self.TRL:
+            s_i_list = []
+            s_k_list = []
+            s_j_list = []
+            a_i_list = []
+            a_k_list = []
+            r_i_list = []
+            r_k_list = []
+            d_i_list = []
+            d_k_list = []
+            
+            done_indices = np.where(self.done_pool == 1.0)[0]
+
+            for _ in range(self.batch):
+                traj_end = np.random.choice(done_indices)
+                
+                possible_starts = np.where(self.done_pool[:traj_end] == 1.0)[0]
+                traj_start = 0 if len(possible_starts) == 0 else possible_starts[-1] + 1
+                    
+                indices = np.sort(np.random.choice(np.arange(traj_start, traj_end + 1), 3, replace=False))
+                idx_i, idx_k, idx_j = indices[0], indices[1], indices[2]
+                
+                s_i_list.append(self.state_pool[idx_i])
+                s_k_list.append(self.next_state_pool[idx_k])
+                s_j_list.append(self.next_state_pool[idx_j])
+                a_i_list.append(self.action_pool[idx_i])
+                a_k_list.append(self.action_pool[idx_k])
+                r_i_list.append(self.reward_pool[idx_i])
+                r_k_list.append(self.reward_pool[idx_k])
+                d_i_list.append(self.done_pool[idx_i])
+                d_k_list.append(self.done_pool[idx_k])
+                
+            s = np.stack((np.array(s_i_list), np.array(s_k_list)), axis=1)
+            a = np.stack((np.array(a_i_list), np.array(a_k_list)), axis=1)
+            next_s = np.stack((np.array(s_k_list), np.array(s_j_list)), axis=1)
+            r = np.stack((np.array(r_i_list), np.array(r_k_list)), axis=1)
+            d = np.stack((np.array(d_i_list), np.array(d_k_list)), axis=1)
         return s,a,next_s,r,d
     
     
@@ -1011,7 +1049,7 @@ class RL_pytorch:
                 step_state = np.random.randint(0, len(self.state_pool[7])-1)
                 step_goal = np.random.randint(step_state+1, step_state+np.argmax(self.done_pool[7][step_state+1:])+2)
                 state = self.state_pool[7][step_state]
-                next_state = self.next_state_pool[7][step_state]
+                next_state = self.next_state_pool[7][step_state+1]
                 action = self.action_pool[7][step_state]
                 goal = self.state_pool[7][step_goal]
                 reward, done = self.reward_done_func(next_state, goal)
