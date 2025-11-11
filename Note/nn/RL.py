@@ -346,6 +346,10 @@ class RL:
             else:
                 a=(output[1]+noise.sample()).numpy()
         else:
+            if self.MARL!=True:
+                output=self.action(s)
+            else:
+                output=self.action(s,i)
             a=output.numpy()
         if self.IRL!=True:
             return a
