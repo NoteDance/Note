@@ -1,4 +1,4 @@
-import tensorflow as tf
+import math
 import numpy as np
 
 
@@ -13,8 +13,8 @@ class BaseNode:
     def __init__(self, parent, prior_p):
         self.parent = parent
         self.children = {}
-        self.visit_count = tf.Variable(tf.cast(0, 'int64'))
-        self.value_sum = tf.Variable(0.0)
+        self.visit_count = 0
+        self.value_sum = 0.0
         self.prior_p = prior_p
         self._state = None # Lazily set state
 
@@ -22,7 +22,7 @@ class BaseNode:
         """ (Q) Calculate the average value of this node """
         if self.visit_count == 0:
             return 0
-        return self.value_sum / tf.cast(self.visit_count, self.value_sum.dtype)
+        return self.value_sum / self.visit_count
 
     def is_expanded(self):
         """ Check if this node has been fully expanded """
@@ -33,7 +33,7 @@ class BaseNode:
         best_score = -float('inf')
         best_action = None
         best_child = None
-        sqrt_total_visits = tf.sqrt(self.visit_count)
+        sqrt_total_visits = math.sqrt(self.visit_count)
 
         for action, child_node in self.children.items():
             q_value = child_node.get_value()
@@ -62,8 +62,8 @@ class BaseNode:
         """ **MCTS Step 4: Backpropagate** (Standard version) """
         node = self
         while node is not None:
-            node.visit_count.assign_add(1)
-            node.value_sum.assign_add(value)
+            node.visit_count += 1
+            node.value_sum += value
             node = node.parent
 
 
@@ -72,8 +72,8 @@ class Node:
         self.parent = parent    # Parent node
         self.children = {}      # Child nodes (a map from action -> Node)
         
-        self.visit_count = tf.Variable(tf.cast(0, 'int64'))    # (N) Visit count
-        self.value_sum = tf.Variable(0.0)    # (W) Total value (or Q-value in MuZero)
+        self.visit_count = 0    # (N) Visit count
+        self.value_sum = 0.0    # (W) Total value (or Q-value in MuZero)
         self.prior_p = prior_p    # (P) Prior probability (from the policy network)
         
         self._state = None # The (hidden) state corresponding to this node, set only when needed
@@ -100,7 +100,7 @@ class Node:
         best_child = None
 
         # self.visit_count is the parent's N(s)
-        sqrt_total_visits = tf.sqrt(self.visit_count)
+        sqrt_total_visits = math.sqrt(self.visit_count)
 
         for action, child_node in self.children.items():
             # Q(s,a) = child_node.get_value()
@@ -143,8 +143,8 @@ class Node:
         """
         node = self
         while node is not None:
-            node.visit_count.assign_add(1)
-            node.value_sum.assign_add(value)
+            node.visit_count += 1
+            node.value_sum += value
             node = node.parent
             # Note: For 2-player games, the value should be inverted (value = -value)
             # We assume here for simplicity that the value is already from the correct perspective.
