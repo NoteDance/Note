@@ -242,7 +242,7 @@ def select_action_after_search(root_node, temperature=1.0):
     else:
         # Exploratory selection: sample from the distribution of visit counts
         # (counts ^ (1/temperature)) / sum(counts ^ (1/temperature))
-        counts_temp = counts**(1.0 / temperature)
+        counts_temp = tf.convert_to_tensor(counts)**(1.0 / temperature)
         counts_prob = counts_temp / tf.reduce_sum(counts_temp)
         chosen_action = np.random.choice(actions, p=counts_prob.numpy())
         return chosen_action
