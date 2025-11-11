@@ -329,22 +329,24 @@ class RL:
             if isinstance(policy, rl.SoftmaxPolicy):
                 a=policy.select_action(len(output), output)
             elif isinstance(policy, rl.EpsGreedyQPolicy):
-                a=self.policy.select_action(output)
+                a=policy.select_action(output)
             elif isinstance(policy, rl.AdaptiveEpsGreedyPolicy):
-                a=self.policy.select_action(output, self.step_counter)
+                a=policy.select_action(output, self.step_counter)
             elif isinstance(policy, rl.GreedyQPolicy):
-                a=self.policy.select_action(output)
+                a=policy.select_action(output)
             elif isinstance(policy, rl.BoltzmannQPolicy):
-                a=self.policy.select_action(output)
+                a=policy.select_action(output)
             elif isinstance(policy, rl.MaxBoltzmannQPolicy):
-                a=self.policy.select_action(output)
+                a=policy.select_action(output)
             elif isinstance(policy, rl.BoltzmannGumbelQPolicy):
-                a=self.policy.select_action(output, self.step_counter)
+                a=policy.select_action(output, self.step_counter)
         elif noise!=None:
             if self.IRL!=True:
                 a=(output+noise.sample()).numpy()
             else:
                 a=(output[1]+noise.sample()).numpy()
+        else:
+            a=output.numpy()
         if self.IRL!=True:
             return a
         else:
@@ -453,8 +455,8 @@ class RL:
             target_alpha = self.alpha + alpha_params['rate'] * (ema / target - 1.0)
         else:
             target_alpha = self.alpha + alpha_params['rate'] * (target - ema) / target
-        target_alpha = np.clip(target_alpha, alpha_params['min'], alpha_params['max'])
-        self.alpha = float(self.alpha)
+        alpha = np.clip(target_alpha, alpha_params['min'], alpha_params['max'])
+        self.alpha = float(alpha)
     
     
     def adjust_eps(self, eps_params, eps, ema=None, target=None, GNS=False):
@@ -467,7 +469,7 @@ class RL:
             target_eps = eps + eps_params['rate'] * (target - ema) / target
         else:
             target_eps = eps + eps_params['rate'] * (ema / target - 1.0)
-        target_eps = np.clip(target_eps, eps_params['min'], eps_params['max'])
+        eps = np.clip(target_eps, eps_params['min'], eps_params['max'])
         return float(eps)
     
     
@@ -509,7 +511,7 @@ class RL:
             target_tau = tau + tau_params['rate'] * (ema / target - 1.0)
         else:
             target_tau = tau + tau_params['rate'] * (target - ema) / target
-        target_tau = np.clip(target_tau, tau_params['min'], tau_params['max'])
+        tau = np.clip(target_tau, tau_params['min'], tau_params['max'])
         self.tau = float(tau)
     
     
@@ -526,7 +528,7 @@ class RL:
             target_gamma = gamma + gamma_params['rate'] * (ema / target - 1.0)
         else:
             target_gamma = gamma + gamma_params['rate'] * (target - ema) / target
-        target_gamma = np.clip(target_gamma, gamma_params['min'], gamma_params['max'])
+        gamma = np.clip(target_gamma, gamma_params['min'], gamma_params['max'])
         self.gamma.assign(gamma)
         
         
@@ -556,7 +558,7 @@ class RL:
             target_clip = clip + clip_params['rate'] * (ema / target - 1.0)
         else:
             target_clip = clip + clip_params['rate'] * (target - ema) / target
-        target_clip = np.clip(target_clip, clip_params['min'], clip_params['max'])
+        clip = np.clip(target_clip, clip_params['min'], clip_params['max'])
         self.clip.assign(clip)
         
         
@@ -573,8 +575,21 @@ class RL:
             target_beta = beta + beta_params['rate'] * (target - ema) / target
         else:
             target_beta = beta + beta_params['rate'] * (ema / target - 1.0)
-        target_beta = np.clip(target_beta, beta_params['min'], beta_params['max'])
+        beta = np.clip(target_beta, beta_params['min'], beta_params['max'])
         self.beta.assign(beta)
+        
+        
+    def adjust_num_updates(self, num_updates_params, ema=None, target=None):
+        if not hasattr(self, 'original_num_updates'):
+            self.original_num_updates = self.num_updates
+        if ema is None and not hasattr(self, 'ema_num_updates'):
+            self.ema_num_updates = None
+        smooth = num_updates_params.get('smooth', 0.2)
+        if ema is None:
+            ema = self.compute_ess(self.ema_ess, smooth)
+        target_num_updates = self.num_updates + num_updates_params['rate'] * (ema / target - 1.0)
+        num_updates = np.clip(target_num_updates, num_updates_params['min'], num_updates_params['max'])
+        self.num_updates = int(num_updates)
     
     
     def compute_ess(self, ema_ess, smooth):
@@ -595,7 +610,7 @@ class RL:
         return float(ema)
     
     
-    def adjust_batch_size(self, smooth=0.2, batch_params=None, target_ess=None, alpha_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None, store_params=None, clip_params=None, beta_params=None):
+    def adjust_batch_size(self, smooth=0.2, batch_params=None, target_ess=None, alpha_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None, store_params=None, clip_params=None, beta_params=None, num_updates_params=None):
         if not hasattr(self, 'ema_ess'):
             self.ema_ess = None
         
@@ -639,6 +654,9 @@ class RL:
         
         if beta_params is not None and target_ess is not None:
             self.adjust_beta(beta_params, ema, target_ess)
+        
+        if num_updates_params is not None and target_ess is not None:
+            self.adjust_num_updates(num_updates_params, ema, target_ess)
     
     
     @tf.function(jit_compile=True)
@@ -768,6 +786,9 @@ class RL:
         if hasattr(self, 'original_beta'):
             self.beta.assign(self.original_beta)
             self.ema_beta = None
+        if hasattr(self, 'original_num_updates'):
+            self.num_updates = self.original_num_updates
+            self.ema_num_updates = None
     
     
     def adjust(self, target_ess=None, target_noise=None, num_samples=None, smooth=0.2, batch_params=None, alpha_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None, store_params=None, clip_params=None, beta_params=None, jit_compile=True):
@@ -818,7 +839,7 @@ class RL:
                     step_state = np.random.randint(0, len(self.state_pool)-1)
                     step_goal = np.random.randint(step_state+1, step_state+np.argmax(self.done_pool[step_state+1:])+2)
                     state = self.state_pool[step_state]
-                    next_state = self.next_state_pool[step_state+1]
+                    next_state = self.next_state_pool[step_state]
                     action = self.action_pool[step_state]
                     goal = self.state_pool[step_goal]
                     reward, done = self.reward_done_func(next_state, goal)
@@ -1757,7 +1778,7 @@ class RL:
                 step_state = np.random.randint(0, len(self.state_pool[7])-1)
                 step_goal = np.random.randint(step_state+1, step_state+np.argmax(self.done_pool[7][step_state+1:])+2)
                 state = self.state_pool[7][step_state]
-                next_state = self.next_state_pool[7][step_state+1]
+                next_state = self.next_state_pool[7][step_state]
                 action = self.action_pool[7][step_state]
                 goal = self.state_pool[7][step_goal]
                 reward, done = self.reward_done_func(next_state, goal)
