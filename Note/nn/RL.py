@@ -308,10 +308,6 @@ class RL:
     
     
     def select_action(self,s,i=None,p=None):
-        if self.jit_compile==True:
-            output=self.forward(s,i)
-        else:
-            output=self.forward_(s,i)
         if type(self.policy)==list:
             policy=self.policy[p]
         else:
@@ -320,6 +316,16 @@ class RL:
             noise=self.noise[p]
         else:
             noise=self.noise
+        if policy!=None or noise!=None:
+            if self.jit_compile==True:
+                output=self.forward(s,i)
+            else:
+                output=self.forward_(s,i)
+        else:
+            if self.MARL!=True:
+                a=self.action(s)
+            else:
+                a=self.action(s,i)
         if policy!=None:
             if self.IRL!=True:
                 output=output.numpy()
@@ -345,12 +351,6 @@ class RL:
                 a=(output+noise.sample()).numpy()
             else:
                 a=(output[1]+noise.sample()).numpy()
-        else:
-            if self.MARL!=True:
-                output=self.action(s)
-            else:
-                output=self.action(s,i)
-            a=output.numpy()
         if self.IRL!=True:
             return a
         else:

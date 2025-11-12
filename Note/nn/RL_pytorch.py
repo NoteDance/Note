@@ -228,7 +228,7 @@ class RL_pytorch:
             else:
                 a=(output[1]+noise.sample()).numpy()
         else:
-            a=output.numpy()
+            a=output
         if self.IRL!=True:
             return a
         else:
