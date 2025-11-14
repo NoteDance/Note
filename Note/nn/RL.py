@@ -453,7 +453,7 @@ class RL:
         if ema is None:
             ema = self.compute_ess(self.ema_alpha, smooth)
         if not GNS:
-            target_alpha = self.alpha + alpha_params['rate'] * (ema / target - 1.0)
+            target_alpha = self.alpha + alpha_params['rate'] * (ema / self.ess - 1.0)
         else:
             target_alpha = self.alpha + alpha_params['rate'] * (target - ema) / target
         alpha = np.clip(target_alpha, alpha_params['min'], alpha_params['max'])
@@ -467,7 +467,7 @@ class RL:
         if ema is None:
             ema = self.compute_ess(self.ema_eps, smooth)
         if not GNS:
-            target_eps = eps + eps_params['rate'] * (target - ema) / target
+            target_eps = eps + eps_params['rate'] * (self.ess - ema) / self.ess
         else:
             target_eps = eps + eps_params['rate'] * (ema / target - 1.0)
         eps = np.clip(target_eps, eps_params['min'], eps_params['max'])
@@ -489,7 +489,7 @@ class RL:
             if not hasattr(self, 'original_update_steps'):
                 self.original_update_steps = self.update_steps
         if not GNS:
-            freq = freq_params['scale'] * target / ema * freq
+            freq = freq_params['scale'] * self.ess / ema * freq
         else:
             freq = freq_params['scale'] * ema / target * freq
         freq = np.clip(freq, freq_params['min'], freq_params['max'])
@@ -509,7 +509,7 @@ class RL:
             ema = self.compute_ess(self.ema_tau, smooth)
         tau = self.tau
         if not GNS:
-            target_tau = tau + tau_params['rate'] * (ema / target - 1.0)
+            target_tau = tau + tau_params['rate'] * (ema / self.ess - 1.0)
         else:
             target_tau = tau + tau_params['rate'] * (target - ema) / target
         tau = np.clip(target_tau, tau_params['min'], tau_params['max'])
@@ -526,14 +526,14 @@ class RL:
             ema = self.compute_ess(self.ema_gamma, smooth)
         gamma = self.gamma
         if not GNS:
-            target_gamma = gamma + gamma_params['rate'] * (ema / target - 1.0)
+            target_gamma = gamma + gamma_params['rate'] * (ema / self.ess - 1.0)
         else:
             target_gamma = gamma + gamma_params['rate'] * (target - ema) / target
         gamma = np.clip(target_gamma, gamma_params['min'], gamma_params['max'])
         self.gamma.assign(gamma)
         
         
-    def adjust_num_store(self, store_params, ema=None, target=None):  
+    def adjust_num_store(self, store_params, ema=None):  
         if not hasattr(self, 'original_num_store'):
             self.original_num_store = self.num_store
         if ema is None and not hasattr(self, 'ema_num_store'):
@@ -541,7 +541,7 @@ class RL:
         smooth = store_params.get('smooth', 0.2)
         if ema is None:
             ema = self.compute_ess(self.ema_num_store, smooth)
-        num_store = store_params['scale'] * target / ema * self.num_store
+        num_store = store_params['scale'] * self.ess / ema * self.num_store
         num_store = np.clip(num_store, store_params['min'], store_params['max'])
         self.num_store = int(max(store_params['min'], num_store))
     
@@ -556,7 +556,7 @@ class RL:
             ema = self.compute_ess(self.ema_clip, smooth)
         clip = self.clip
         if not GNS:
-            target_clip = clip + clip_params['rate'] * (ema / target - 1.0)
+            target_clip = clip + clip_params['rate'] * (ema / self.ess - 1.0)
         else:
             target_clip = clip + clip_params['rate'] * (target - ema) / target
         clip = np.clip(target_clip, clip_params['min'], clip_params['max'])
@@ -573,7 +573,7 @@ class RL:
             ema = self.compute_ess(self.ema_beta, smooth)
         beta = self.beta
         if not GNS:
-            target_beta = beta + beta_params['rate'] * (target - ema) / target
+            target_beta = beta + beta_params['rate'] * (self.ess - ema) / self.ess
         else:
             target_beta = beta + beta_params['rate'] * (ema / target - 1.0)
         beta = np.clip(target_beta, beta_params['min'], beta_params['max'])
@@ -588,7 +588,7 @@ class RL:
         smooth = num_updates_params.get('smooth', 0.2)
         if ema is None:
             ema = self.compute_ess(self.ema_num_updates, smooth)
-        target_num_updates = self.num_updates + num_updates_params['rate'] * (ema / self.ess - 1.0)
+        target_num_updates = num_updates_params['scale'] * ema / self.ess * self.num_updates
         num_updates = np.clip(target_num_updates, num_updates_params['min'], num_updates_params['max'])
         self.num_updates = int(num_updates)
     
