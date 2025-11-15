@@ -350,31 +350,6 @@ class RL_pytorch:
             target_eps = eps + eps_params['rate'] * (ema / target - 1.0)
         eps = np.clip(target_eps, eps_params['min'], eps_params['max'])
         return float(eps)
-    
-    
-    def adjust_update_freq(self, freq_params, ema=None, target=None, GNS=False):
-        if ema is None and not hasattr(self, 'ema_update_freq'):
-            self.ema_update_freq = None
-        smooth = freq_params.get('smooth', 0.2)
-        if ema is None:
-            ema = self.compute_ess(self.ema_update_freq, smooth)
-        if self.update_batches is not None:
-            freq = self.update_batches
-            if not hasattr(self, 'original_update_batches'):
-                self.original_update_batches = self.update_batches
-        else:
-            freq = self.update_steps
-            if not hasattr(self, 'original_update_steps'):
-                self.original_update_steps = self.update_steps
-        if not GNS:
-            freq = freq_params['scale'] * self.ess / ema * freq
-        else:
-            freq = freq_params['scale'] * ema / target * freq
-        freq = np.clip(freq, freq_params['min'], freq_params['max'])
-        if self.update_batches is not None:
-            self.update_batches = int(freq)
-        else:
-            self.update_steps = int(freq)
 
 
     def adjust_tau(self, tau_params, ema=None, target=None, GNS=False): 
@@ -468,7 +443,10 @@ class RL_pytorch:
             ema = self.compute_ess(self.ema_ess, smooth)
         target_num_updates = num_updates_params['scale'] * ema / self.ess * self.num_updates
         num_updates = np.clip(target_num_updates, num_updates_params['min'], num_updates_params['max'])
-        self.num_updates = int(num_updates)
+        if int(num_updates) <= self.batch_counter:
+            return
+        else:
+            self.num_updates = int(num_updates)
     
     
     def compute_ess(self, ema_ess, smooth):
@@ -489,7 +467,7 @@ class RL_pytorch:
         return float(ema)
     
     
-    def adjust_batch_size(self, smooth=0.2, batch_params=None, target_ess=None, alpha_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None, store_params=None, clip_params=None, beta_params=None, num_updates_params=None):
+    def adjust_batch_size(self, smooth=0.2, batch_params=None, target_ess=None, alpha_params=None, eps_params=None, tau_params=None, gamma_params=None, store_params=None, clip_params=None, beta_params=None, num_updates_params=None):
         if not hasattr(self, 'ema_ess'):
             self.ema_ess = None
         
@@ -515,9 +493,6 @@ class RL_pytorch:
                 self.policy.eps = self.adjust_eps(eps_params, self.policy.eps, ema, target_ess)
                 if self.original_eps is None:
                         self.original_eps = self.policy.eps
-                
-        if freq_params is not None and target_ess is not None:
-            self.adjust_update_freq(freq_params, ema, target_ess)
         
         if tau_params is not None and target_ess is not None:
             self.adjust_tau(tau_params, ema, target_ess)
@@ -576,7 +551,7 @@ class RL_pytorch:
         return ema_noise
     
     
-    def adabatch(self, num_samples, target_noise=1e-3, smooth=0.2, batch_params=None, alpha_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None, clip_params=None, beta_params=None):
+    def adabatch(self, num_samples, target_noise=1e-3, smooth=0.2, batch_params=None, alpha_params=None, eps_params=None, tau_params=None, gamma_params=None, clip_params=None, beta_params=None):
         if not hasattr(self, 'ema_noise'):
             self.ema_noise = None
         
@@ -594,9 +569,6 @@ class RL_pytorch:
                     policy.eps = self.adjust_eps(eps_params, policy.eps, ema_noise, target_noise, True)
             else:
                 self.policy.eps = self.adjust_eps(eps_params, self.policy.eps, ema_noise, target_noise, True)
-            
-        if freq_params is not None:
-            self.adjust_update_freq(freq_params, ema_noise, target_noise, True)
         
         if tau_params is not None:
             self.adjust_tau(tau_params, ema_noise, target_noise, True)
@@ -622,12 +594,6 @@ class RL_pytorch:
             else:
                 self.policy.eps = self.original_eps
             self.ema_eps = None
-        if hasattr(self, 'original_update_freq'):
-            if self.update_batches is not None:
-                self.update_batches = self.original_update_batches
-            else:
-                self.update_steps = self.original_update_steps
-            self.ema_update_freq = None
         if hasattr(self, 'original_tau'):
             self.tau = self.original_tau
             self.ema_tau = None
@@ -648,11 +614,11 @@ class RL_pytorch:
             self.ema_num_updates = None
     
     
-    def adjust(self, target_ess=None, target_noise=None, num_samples=None, smooth=0.2, batch_params=None, alpha_params=None, eps_params=None, freq_params=None, tau_params=None, gamma_params=None, store_params=None, beta_params=None, clip_params=None):
+    def adjust(self, target_ess=None, target_noise=None, num_samples=None, smooth=0.2, batch_params=None, alpha_params=None, eps_params=None, tau_params=None, gamma_params=None, store_params=None, beta_params=None, clip_params=None):
         if target_noise is None:
-            self.adjust_batch_size(smooth, batch_params, target_ess, alpha_params, eps_params, freq_params, tau_params, gamma_params, store_params, clip_params, beta_params)
+            self.adjust_batch_size(smooth, batch_params, target_ess, alpha_params, eps_params, tau_params, gamma_params, store_params, clip_params, beta_params)
         else:
-            self.adabatch(num_samples, target_noise, smooth, batch_params, alpha_params, eps_params, freq_params, tau_params, gamma_params, clip_params, beta_params)
+            self.adabatch(num_samples, target_noise, smooth, batch_params, alpha_params, eps_params, tau_params, gamma_params, clip_params, beta_params)
     
     
     def data_func(self):
@@ -1231,6 +1197,10 @@ class RL_pytorch:
                 self.ema_ess = None
             else:
                 self.ema_noise = None
+        if hasattr(self, 'original_num_updates'):
+            self.num_updates = self.original_num_updates
+            self.ema_num_updates = None
+            self.batch_counter = 0
         while True:
             for p in range(self.processes):
                 process=mp.Process(target=self.store_in_parallel,args=(p,lock_list))
