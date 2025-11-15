@@ -609,9 +609,6 @@ class RL_pytorch:
         if hasattr(self, 'original_beta'):
             self.beta.assign(self.original_beta)
             self.ema_beta = None
-        if hasattr(self, 'original_num_updates'):
-            self.num_updates = self.original_num_updates
-            self.ema_num_updates = None
     
     
     def adjust(self, target_ess=None, target_noise=None, num_samples=None, smooth=0.2, batch_params=None, alpha_params=None, eps_params=None, tau_params=None, gamma_params=None, store_params=None, beta_params=None, clip_params=None):
