@@ -265,9 +265,9 @@ class RL_pytorch:
             
             if self.PPO:
                 scores = self.lambda_ * self.TD_list[p] + (1.0-self.lambda_) * torch.abs(self.ratio_list[p] - 1.0)
-                weights = torch.pow(scores + 1e-7, self.alpha)
+                weights = scores + 1e-7
             else:
-                weights = torch.pow(self.TD_list[p] + 1e-7, self.alpha)
+                weights = self.TD_list[p] + 1e-7
     
             ess = self.compute_ess_from_weights(weights)
     
@@ -283,9 +283,9 @@ class RL_pytorch:
             
             if self.PPO:
                 scores = self.lambda_ * self.prioritized_replay.TD + (1.0-self.lambda_) * torch.abs(self.prioritized_replay.ratio - 1.0)
-                weights = torch.pow(scores + 1e-7, self.alpha)
+                weights = scores + 1e-7
             else:
-                weights = torch.pow(self.prioritized_replay.TD + 1e-7, self.alpha)
+                weights = self.prioritized_replay.TD + 1e-7
             
             ess = self.compute_ess_from_weights(weights)
             
@@ -455,9 +455,9 @@ class RL_pytorch:
     def compute_ess(self, ema_ess, smooth):
         if self.PPO:
             scores = self.lambda_ * self.prioritized_replay.TD + (1.0-self.lambda_) * np.abs(self.prioritized_replay.ratio - 1.0)
-            weights = torch.pow(scores + 1e-7, self.alpha)
+            weights = scores + 1e-7
         else:
-            weights = torch.pow(self.prioritized_replay.TD + 1e-7, self.alpha)
+            weights = self.prioritized_replay.TD + 1e-7
             
         p = weights / (torch.sum(weights))
         ess = 1.0 / (torch.sum(p * p))
@@ -760,9 +760,9 @@ class RL_pytorch:
                                 window_size=int(self.window_size_func(p))
                                 if self.PPO:
                                     scores = self.lambda_ * self.TD_list[p] + (1.0-self.lambda_) * torch.abs(self.ratio_list[p] - 1.0)
-                                    weights = torch.pow(scores + 1e-7, self.alpha)
+                                    weights = scores + 1e-7
                                 else:
-                                    weights = torch.pow(self.TD_list[p] + 1e-7, self.alpha)
+                                    weights = self.TD_list[p] + 1e-7
                                 p=weights/torch.sum(weights)
                                 idx=np.random.choice(np.arange(len(self.state_pool_list[p])),size=[len(self.state_pool_list[p])-window_size],p=p.numpy(),replace=False)
                             if window_size!=None and len(self.state_pool_list[p])>window_size:
@@ -775,7 +775,7 @@ class RL_pytorch:
                                     self.ratio_list[p]=self.ratio_list[p][idx]
                                 self.TD_list[p]=self.TD_list[p][idx]
                                 if not self.PPO:
-                                    weights = torch.pow(self.TD_list[p] + 1e-7, self.alpha)
+                                    weights = self.TD_list[p] + 1e-7
                                     self.ess_[p] = self.compute_ess_from_weights(weights)
                         if self.PPO:
                             self.prioritized_replay.ratio=np.concat(self.ratio_list, axis=0)
@@ -818,9 +818,9 @@ class RL_pytorch:
                                 window_size=int(self.window_size_func(p))
                                 if self.PPO:
                                     scores = self.lambda_ * self.TD_list[p] + (1.0-self.lambda_) * torch.abs(self.ratio_list[p] - 1.0)
-                                    weights = torch.pow(scores + 1e-7, self.alpha)
+                                    weights = scores + 1e-7
                                 else:
-                                    weights = torch.pow(self.TD_list[p] + 1e-7, self.alpha)
+                                    weights = self.TD_list[p] + 1e-7
                                 p=weights/torch.sum(weights)
                                 idx=np.random.choice(np.arange(len(self.state_pool_list[p])),size=[len(self.state_pool_list[p])-window_size],p=p.numpy(),replace=False)
                             if window_size!=None and len(self.state_pool_list[p])>window_size:
@@ -833,7 +833,7 @@ class RL_pytorch:
                                     self.ratio_list[p]=self.ratio_list[p][idx]
                                 self.TD_list[p]=self.TD_list[p][idx]
                                 if not self.PPO:
-                                    weights = torch.pow(self.TD_list[p] + 1e-7, self.alpha)
+                                    weights = self.TD_list[p] + 1e-7
                                     self.ess_[p] = self.compute_ess_from_weights(weights)
                         if self.PPO:
                             self.prioritized_replay.ratio=np.concat(self.ratio_list, axis=0)
@@ -928,9 +928,9 @@ class RL_pytorch:
                         window_size=int(self.window_size_func())
                         if self.PPO:
                             scores = self.lambda_ * self.prioritized_replay.TD + (1.0-self.lambda_) * torch.abs(self.prioritized_replay.ratio - 1.0)
-                            weights = torch.pow(scores + 1e-7, self.alpha)
+                            weights = scores + 1e-7
                         else:
-                            weights = torch.pow(self.prioritized_replay.TD + 1e-7, self.alpha)
+                            weights = self.prioritized_replay.TD + 1e-7
                         p=weights/torch.sum(weights)
                         idx=np.random.choice(np.arange(len(self.state_pool_list[p])),size=[len(self.state_pool_list[p])-window_size],p=p.numpy(),replace=False)
                     if window_size!=None and len(self.state_pool)>window_size:
@@ -943,7 +943,7 @@ class RL_pytorch:
                             self.prioritized_replay.ratio=self.prioritized_replay.ratio[idx]
                         self.prioritized_replay.TD=self.prioritized_replay.TD[idx]
                         if not self.PPO:
-                            weights = torch.pow(self.prioritized_replay.TD + 1e-7, self.alpha)
+                            weights = self.prioritized_replay.TD + 1e-7
                             self.ess_ = self.compute_ess_from_weights(weights)
                 elif self.PPO:
                     self.state_pool=None
@@ -1006,10 +1006,10 @@ class RL_pytorch:
                     if not hasattr(self,'ess_'):
                         self.ess_ = None
                     if self.PPO:
-                        scores = self.lambda_ * self.prioritized_replay.TD + (1.0-self.lambda_) * np.abs(self.prioritized_replay.ratio - 1.0)
-                        weights = np.pow(scores + 1e-7, self.alpha)
+                        scores = self.lambda_ * self.prioritized_replay.TD + (1.0-self.lambda_) * torch.abs(self.prioritized_replay.ratio - 1.0)
+                        weights = scores + 1e-7
                     else:
-                        weights = np.pow(self.prioritized_replay.TD + 1e-7, self.alpha)
+                        weights = self.prioritized_replay.TD + 1e-7
                     self.ess_ = self.compute_ess_from_weights(weights)
             if self.MARL==True:
                 r,done=self.reward_done_func_ma(r,done)
@@ -1298,9 +1298,9 @@ class RL_pytorch:
                     self.ess_ = [None] * self.processes
                 if self.PPO:
                     scores = self.lambda_ * self.TD_list[p] + (1.0-self.lambda_) * torch.abs(self.ratio_list[p] - 1.0)
-                    weights = torch.pow(scores + 1e-7, self.alpha)
+                    weights = scores + 1e-7
                 else:
-                    weights = torch.pow(self.TD_list[p] + 1e-7, self.alpha)
+                    weights = self.TD_list[p] + 1e-7
                 self.ess_[p] = self.compute_ess_from_weights(weights)
         self.initialize_adjusting()    
         if self.PR==True:
