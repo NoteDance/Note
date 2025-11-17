@@ -967,6 +967,9 @@ class RL:
                             if self.PPO:
                                 self.ratio_list[p]=self.ratio_list[p][idx]
                             self.TD_list[p]=self.TD_list[p][idx]
+                            if not self.PPO:
+                                weights = tf.pow(self.TD_list[p] + 1e-7, self.alpha)
+                                self.ess_[p] = self.compute_ess_from_weights(weights)
                     if self.PPO:
                         self.prioritized_replay.ratio=np.concat(self.ratio_list, axis=0)
                         self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
@@ -1092,6 +1095,9 @@ class RL:
                             if self.PPO:
                                 self.ratio_list[p]=self.ratio_list[p][idx]
                             self.TD_list[p]=self.TD_list[p][idx]
+                            if not self.PPO:
+                                weights = tf.pow(self.TD_list[p] + 1e-7, self.alpha)
+                                self.ess_[p] = self.compute_ess_from_weights(weights)
                     if self.PPO:
                         self.prioritized_replay.ratio=np.concat(self.ratio_list, axis=0)
                         self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
@@ -1227,6 +1233,9 @@ class RL:
                                         if self.PPO:
                                             self.ratio_list[p]=self.ratio_list[p][idx]
                                         self.TD_list[p]=self.TD_list[p][idx]
+                                        if not self.PPO:
+                                            weights = tf.pow(self.TD_list[p] + 1e-7, self.alpha)
+                                            self.ess_[p] = self.compute_ess_from_weights(weights)
                                 if self.PPO:
                                     self.prioritized_replay.ratio=np.concat(self.ratio_list, axis=0)
                                     self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
@@ -1298,6 +1307,9 @@ class RL:
                                         if self.PPO:
                                             self.ratio_list[p]=self.ratio_list[p][idx]
                                         self.TD_list[p]=self.TD_list[p][idx]
+                                        if not self.PPO:
+                                            weights = tf.pow(self.TD_list[p] + 1e-7, self.alpha)
+                                            self.ess_[p] = self.compute_ess_from_weights(weights)
                                 if self.PPO:
                                     self.prioritized_replay.ratio=np.concat(self.ratio_list, axis=0)
                                     self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
@@ -1385,6 +1397,9 @@ class RL:
                                         if self.PPO:
                                             self.ratio_list[p]=self.ratio_list[p][idx]
                                         self.TD_list[p]=self.TD_list[p][idx]
+                                        if not self.PPO:
+                                            weights = tf.pow(self.TD_list[p] + 1e-7, self.alpha)
+                                            self.ess_[p] = self.compute_ess_from_weights(weights)
                                 if self.PPO:
                                     self.prioritized_replay.ratio=np.concat(self.ratio_list, axis=0)
                                     self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
@@ -1455,6 +1470,9 @@ class RL:
                                     if self.PPO:
                                         self.ratio_list[p]=self.ratio_list[p][idx]
                                     self.TD_list[p]=self.TD_list[p][idx]
+                                    if not self.PPO:
+                                        weights = tf.pow(self.TD_list[p] + 1e-7, self.alpha)
+                                        self.ess_[p] = self.compute_ess_from_weights(weights)
                             if self.PPO:
                                 self.prioritized_replay.ratio=np.concat(self.ratio_list, axis=0)
                                 self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
@@ -1664,6 +1682,9 @@ class RL:
                         if self.PPO:
                             self.prioritized_replay.ratio=self.prioritized_replay.ratio[idx]
                         self.prioritized_replay.TD=self.prioritized_replay.TD[idx]
+                        if not self.PPO:
+                            weights = tf.pow(self.prioritized_replay.TD + 1e-7, self.alpha)
+                            self.ess_ = self.compute_ess_from_weights(weights)
                 elif self.PPO:
                     self.state_pool=None
                     self.action_pool=None
