@@ -166,15 +166,13 @@ def run_mcts_search(node, root_state, game, policy_network, value_network, num_s
 
     # Create the root node
     root_node = node
-    
-    # Initial expansion of the root node (MCTS Step 2)
-    if game.is_terminal(root_state):
-        return root_node # The game is already over
         
-    legal_actions = game.get_legal_actions(root_state)
     # Initial evaluation: get policy and value for the root node
-    action_priors = policy_network(root_state, legal_actions) # Returns a list of (action, prior_p)
-    value = value_network(root_state)                         # MCTS Step 3
+    if value_network is not None:
+        action_priors = policy_network(root_state) # Returns a list of (action, prior_p)
+        value = value_network(root_state)                         # MCTS Step 3
+    else:
+        action_priors, value = policy_network(root_state) # Returns a list of (action, prior_p)
     
     root_node.expand(root_state, action_priors)
     root_node.backpropagate(value)                          # MCTS Step 4 (for the root node)
@@ -183,37 +181,40 @@ def run_mcts_search(node, root_state, game, policy_network, value_network, num_s
     for _ in range(num_simulations):
         
         node = root_node
-        current_state = root_state
+        state = root_state
         search_path = [node] # Record the search path for backpropagation
 
         # === Step 1: Select ===
         # As long as the node is expanded, keep going down
         while node.is_expanded():
             action, node = node.select_child(c_puct)
-            current_state = game.get_next_state(current_state, action) # Simulate the environment
+            state, _, done, _ = game.step(action) # Simulate the environment
             search_path.append(node)
             
-            if game.is_terminal(current_state):
+            if done:
                 break # Reached a terminal state
 
         # 'node' is now a leaf node (not yet expanded)
         leaf_node = node
-        leaf_state = current_state
+        leaf_state = state
 
         # === Step 2 & 3: Expand & Evaluate ===
-        if game.is_terminal(leaf_state):
+        if done:
             # If it's a terminal state, the value is determined
-            value = game.get_game_result(leaf_state)
+            if hasattr(game, 'get_game_result'):
+                value = game.get_game_result(leaf_state)
+            else:
+                value = 0.0
         else:
-            # 1. Get legal_actions (for MuZero, this is decided by the model itself)
-            legal_actions = game.get_legal_actions(leaf_state)
-            
-            # 2. Evaluate (MCTS Step 3)
+            # 1. Evaluate (MCTS Step 3)
             #    Use the neural network to evaluate this leaf node
-            action_priors = policy_network(leaf_state, legal_actions)
-            value = value_network(leaf_state)
+            if value_network is not None:
+                action_priors = policy_network(leaf_state)
+                value = value_network(leaf_state)
+            else:
+                action_priors, value = policy_network(leaf_state)
             
-            # 3. Expand (MCTS Step 2)
+            # 2. Expand (MCTS Step 2)
             #    Add the new nodes to the tree
             leaf_node.expand(leaf_state, action_priors)
 
@@ -412,15 +413,13 @@ def run_mcts_search_(node, root_state, game, policy_network, value_network, num_
 
     # Create the root node
     root_node = node
-    
-    # Initial expansion of the root node (MCTS Step 2)
-    if game.is_terminal(root_state):
-        return root_node # The game is already over
         
-    legal_actions = game.get_legal_actions(root_state)
     # Initial evaluation: get policy and value for the root node
-    action_priors = policy_network(root_state, legal_actions) # Returns a list of (action, prior_p)
-    value = value_network(root_state)                         # MCTS Step 3
+    if value_network is not None:
+        action_priors = policy_network(root_state) # Returns a list of (action, prior_p)
+        value = value_network(root_state)                         # MCTS Step 3
+    else:
+        action_priors, value = policy_network(root_state) # Returns a list of (action, prior_p)                      # MCTS Step 3
     
     root_node.expand(root_state, action_priors)
     root_node.backpropagate(value)                          # MCTS Step 4 (for the root node)
@@ -429,37 +428,40 @@ def run_mcts_search_(node, root_state, game, policy_network, value_network, num_
     for _ in range(num_simulations):
         
         node = root_node
-        current_state = root_state
+        state = root_state
         search_path = [node] # Record the search path for backpropagation
 
         # === Step 1: Select ===
         # As long as the node is expanded, keep going down
         while node.is_expanded():
             action, node = node.select_child(c_puct)
-            current_state = game.get_next_state(current_state, action) # Simulate the environment
+            state, _, done, _ = game.step(action) # Simulate the environment
             search_path.append(node)
             
-            if game.is_terminal(current_state):
+            if done:
                 break # Reached a terminal state
 
         # 'node' is now a leaf node (not yet expanded)
         leaf_node = node
-        leaf_state = current_state
+        leaf_state = state
 
         # === Step 2 & 3: Expand & Evaluate ===
-        if game.is_terminal(leaf_state):
+        if done:
             # If it's a terminal state, the value is determined
-            value = game.get_game_result(leaf_state)
+            if hasattr(game, 'get_game_result'):
+                value = game.get_game_result(leaf_state)
+            else:
+                value = 0.0
         else:
-            # 1. Get legal_actions (for MuZero, this is decided by the model itself)
-            legal_actions = game.get_legal_actions(leaf_state)
-            
-            # 2. Evaluate (MCTS Step 3)
+            # 1. Evaluate (MCTS Step 3)
             #    Use the neural network to evaluate this leaf node
-            action_priors = policy_network(leaf_state, legal_actions)
-            value = value_network(leaf_state)
+            if value_network is not None:
+                action_priors = policy_network(leaf_state)
+                value = value_network(leaf_state)
+            else:
+                action_priors, value = policy_network(leaf_state)
             
-            # 3. Expand (MCTS Step 2)
+            # 2. Expand (MCTS Step 2)
             #    Add the new nodes to the tree
             leaf_node.expand(leaf_state, action_priors)
 
