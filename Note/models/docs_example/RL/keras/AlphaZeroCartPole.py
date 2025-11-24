@@ -51,6 +51,7 @@ class AlphaZeroCartPole(RL):
         # Store the MCTS-improved policy (visit distribution) for the current step
         self.current_pi = None
     
+    @tf.function(jit_compile=True)
     def policy_network(self,s):
         logits, value = self.net(s, training=False)
         probs = tf.nn.softmax(logits, axis=-1).numpy().ravel()
