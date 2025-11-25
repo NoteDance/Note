@@ -147,8 +147,7 @@ class Node:
             node.visit_count += 1
             node.value_sum += value
             node = node.parent
-            # Note: For 2-player games, the value should be inverted (value = -value)
-            # We assume here for simplicity that the value is already from the correct perspective.
+            value = -value
 
 
 def run_mcts_search(node, root_state, game, policy_network, value_network, num_simulations, c_puct):
@@ -220,7 +219,8 @@ def run_mcts_search(node, root_state, game, policy_network, value_network, num_s
 
         # === Step 4: Backpropagate ===
         # Propagate the evaluated 'value' back up the search path
-        leaf_node.backpropagate(value)
+        for n in reversed(search_path):
+            n.backpropagate(value)
         
     return root_node
 
@@ -394,8 +394,7 @@ class Node_:
             node.visit_count += 1
             node.value_sum += value
             node = node.parent
-            # Note: For 2-player games, the value should be inverted (value = -value)
-            # We assume here for simplicity that the value is already from the correct perspective.
+            value = -value
 
 
 def run_mcts_search_(node, root_state, game, policy_network, value_network, num_simulations, c_puct):
@@ -467,7 +466,8 @@ def run_mcts_search_(node, root_state, game, policy_network, value_network, num_
 
         # === Step 4: Backpropagate ===
         # Propagate the evaluated 'value' back up the search path
-        leaf_node.backpropagate(value)
+        for n in reversed(search_path):
+            n.backpropagate(value)
         
     return root_node
 
