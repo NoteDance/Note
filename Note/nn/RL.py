@@ -511,15 +511,15 @@ class RL:
         self.gamma.assign(gamma)
         
         
-    def adjust_num_store(self, store_params, ema=None):  
+    def adjust_num_store(self, store_params):  
         if not hasattr(self, 'original_num_store'):
             self.original_num_store = self.num_store
-        if ema is None and not hasattr(self, 'ema_num_store'):
-            self.ema_num_store = None
-        smooth = store_params.get('smooth', 0.2)
-        if ema is None:
-            ema = self.compute_ess(self.ema_num_store, smooth)
-        num_store = store_params['scale'] * self.ess / ema * self.num_store
+        ema = self.compute_ess(None, None)
+        scale = (1.0 - len(self.prioritized_replay.TD) / self.pool_size)
+        if scale > 0:
+            num_store = store_params['scale'] * self.ess / ema * self.num_store * scale
+        else:
+            num_store = store_params['scale'] * self.ess / ema * self.num_store
         num_store = np.clip(num_store, store_params['min'], store_params['max'])
         self.num_store = int(max(store_params['min'], num_store))
     
@@ -749,7 +749,6 @@ class RL:
             self.ema_gamma = None
         if hasattr(self, 'original_num_store'):
             self.num_store = self.original_num_store 
-            self.ema_num_store = None
         if hasattr(self, 'original_clip'):
             self.clip.assign(self.original_clip)
             self.ema_clip = None
