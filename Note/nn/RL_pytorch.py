@@ -605,7 +605,6 @@ class RL_pytorch:
             self.ema_gamma = None
         if hasattr(self, 'original_num_store'):
             self.num_store = self.original_num_store 
-            self.ema_num_store = None
         if hasattr(self, 'original_clip'):
             self.clip.assign(self.original_clip)
             self.ema_clip = None
