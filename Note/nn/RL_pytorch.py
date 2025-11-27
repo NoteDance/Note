@@ -392,12 +392,11 @@ class RL_pytorch:
     def adjust_num_store(self, store_params):  
         if not hasattr(self, 'original_num_store'):
             self.original_num_store = self.num_store
-        ema = self.compute_ess(None, None)
         scale = (1.0 - len(self.prioritized_replay.TD) / self.pool_size)
         if scale > 0:
-            num_store = store_params['scale'] * self.ess / ema * self.num_store * scale
+            num_store = store_params['scale'] * self.ess / self._ess * self.num_store * scale
         else:
-            num_store = store_params['scale'] * self.ess / ema * self.num_store
+            num_store = store_params['scale'] * self.ess / self._ess * self.num_store
         num_store = np.clip(num_store, store_params['min'], store_params['max'])
         self.num_store = int(max(store_params['min'], num_store))
     
@@ -754,6 +753,8 @@ class RL_pytorch:
                                 window_size=self.window_size_ppo
                             else:
                                 window_size=self.window_size_pr
+                        if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
+                            self._ess = self.compute_ess(None, None)
                         for p in range(self.processes):
                             if hasattr(self,'window_size_func'):
                                 window_size=int(self.window_size_func(p))
@@ -812,6 +813,8 @@ class RL_pytorch:
                                 window_size=self.window_size_ppo
                             else:
                                 window_size=self.window_size_pr
+                        if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
+                            self._ess = self.compute_ess(None, None)
                         for p in range(self.processes):
                             if hasattr(self,'window_size_func'):
                                 window_size=int(self.window_size_func(p))
@@ -923,6 +926,8 @@ class RL_pytorch:
                             window_size=self.window_size_ppo
                         else:
                             window_size=self.window_size_pr
+                    if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
+                        self._ess = self.compute_ess(None, None)
                     if hasattr(self,'window_size_func'):
                         window_size=int(self.window_size_func())
                         if self.PPO:
