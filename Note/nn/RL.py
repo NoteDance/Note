@@ -899,7 +899,7 @@ class RL:
     
     
     def _train_step(self, train_data, optimizer):
-        with tf.GradientTape() as tape:
+        with tf.GradientTape(persistent=True) as tape:
             loss = self.__call__(*train_data)
             loss = self.compute_loss(loss)
         if type(optimizer)!=list:
