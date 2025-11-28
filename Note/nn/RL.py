@@ -870,7 +870,7 @@ class RL:
     
     @tf.function(jit_compile=True)
     def train_step(self, train_data, train_loss, optimizer):
-        with tf.GradientTape() as tape:
+        with tf.GradientTape(persistent=True) as tape:
             loss = self.__call__(*train_data)
         if type(optimizer)!=list:
             gradients = tape.gradient(loss, self.param)
@@ -885,7 +885,7 @@ class RL:
       
     @tf.function
     def train_step_(self, train_data, train_loss, optimizer):
-        with tf.GradientTape() as tape:
+        with tf.GradientTape(persistent=True) as tape:
             loss = self.__call__(*train_data)
         if type(optimizer)!=list:
             gradients = tape.gradient(loss, self.param)
@@ -926,6 +926,136 @@ class RL:
                              axis=None)
     
     
+    @tf.function(jit_compile=True)
+    def compute_loss_jit(self, train_data):
+        with tf.GradientTape(persistent=True) as tape:
+            self.tape = tape
+            loss = self.__call__(*train_data)
+        return loss
+    
+    
+    @tf.function(jit_compile=True)
+    def opt_jit(self, i):
+        gradients = self.tape.gradient(self.loss_, self.param[i])
+        self.optimizer[i].apply_gradients(zip(gradients, self.param[i]))
+    
+    
+    @tf.function(jit_compile=True)
+    def compute_loss_jit_(self, train_loss):
+        train_loss(self.loss_)
+    
+    
+    def train_step_p(self, train_data, train_loss, optimizer):
+        self.loss_ = self.compute_loss_jit(train_data)
+        process_list=[]
+        for i in range(len(optimizer)):
+            process=mp.Process(target=self.opt_jit,args=(i))
+            process.start()
+            process_list.append(process)
+        for process in process_list:
+            process.join()
+        self.compute_loss_(train_loss)
+        return self.loss_
+    
+    
+    @tf.function
+    def _compute_loss(self, train_data):
+        with tf.GradientTape(persistent=True) as tape:
+            self.tape = tape
+            loss = self.__call__(*train_data)
+        return loss
+    
+    
+    @tf.function
+    def opt_(self, i):
+        gradients = self.tape.gradient(self.loss_, self.param[i])
+        self.optimizer[i].apply_gradients(zip(gradients, self.param[i]))
+    
+    
+    @tf.function
+    def compute_loss_(self, train_loss):
+        train_loss(self.loss_)
+    
+    
+    def train_step_p_(self, train_data, train_loss, optimizer):
+        self.loss_ = self._compute_loss(train_data)
+        process_list=[]
+        for i in range(len(optimizer)):
+            process=mp.Process(target=self.opt_,args=(i))
+            process.start()
+            process_list.append(process)
+        for process in process_list:
+            process.join()
+        self.compute_loss_(train_loss)
+        return self.loss_
+    
+    
+    @tf.function(jit_compile=True)
+    def compute_loss_jit_d(self, train_data):
+        with tf.GradientTape(persistent=True) as tape:
+            self.tape = tape
+            loss = self.__call__(*train_data)
+            loss = self.compute_loss(loss)
+            self.loss_ = loss
+        return loss
+    
+    
+    def opt_jit_d(self, optimizer, i):
+        gradients = self.tape.gradient(self.loss_, self.param[i])
+        optimizer.apply_gradients(zip(gradients, self.param[i]))
+    
+    
+    @tf.function(jit_compile=True)
+    def opt_jit_d_(self, i):
+        self.strategy.run(self.opt_jit_d, args=(self.optimizer[i], i))
+        
+
+    def distributed_train_step_p(self, dataset_inputs, optimizer, strategy):
+        per_replica_losses = strategy.run(self.compute_loss_jit_d, args=(dataset_inputs))
+        process_list=[]
+        for i in range(len(optimizer)):
+            process=mp.Process(target=self.opt_jit_d_,args=(i))
+            process.start()
+            process_list.append(process)
+        for process in process_list:
+            process.join()
+        return strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses,
+                             axis=None)
+
+
+    @tf.function
+    def compute_loss_d(self, train_data):
+        with tf.GradientTape(persistent=True) as tape:
+            self.tape = tape
+            loss = self.__call__(*train_data)
+            loss = self.compute_loss(loss)
+            self.loss_ = loss
+        return loss
+    
+    
+    def opt_d(self, optimizer, i):
+        gradients = self.tape.gradient(self.loss_, self.param[i])
+        optimizer.apply_gradients(zip(gradients, self.param[i]))
+    
+    
+    @tf.function
+    def opt_d_(self, i):
+        self.strategy.run(self.opt_d, args=(self.optimizer[i], i))
+        
+
+    def distributed_train_step_p_(self, dataset_inputs, optimizer, strategy):
+        per_replica_losses,acc = strategy.run(self.compute_loss_d, args=(dataset_inputs))
+        process_list=[]
+        for i in range(len(optimizer)):
+            process=mp.Process(target=self.opt_d_,args=(i))
+            process.start()
+            process_list.append(process)
+        for process in process_list:
+            process.join()
+        return strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses,
+                             axis=None)
+    
+    
     def CTL(self, multi_worker_dataset, num_steps_per_episode=None):
         iterator = iter(multi_worker_dataset)
         total_loss = 0.0
@@ -933,9 +1063,15 @@ class RL:
         
         if self.PR==True or self.HER==True or self.TRL==True:
             if self.jit_compile==True:
-                total_loss = self.distributed_train_step(next(iterator), self.optimizer)
+                if not self.opt_p:
+                    total_loss = self.distributed_train_step(next(iterator), self.optimizer)
+                else:
+                    total_loss = self.distributed_train_step_p(next(iterator), self.optimizer)
             else:
-                total_loss = self.distributed_train_step_(next(iterator), self.optimizer)
+                if not self.opt_p:
+                    total_loss = self.distributed_train_step_(next(iterator), self.optimizer)
+                else:
+                    total_loss = self.distributed_train_step_p_(next(iterator), self.optimizer)
             self.prioritized_replay.update()
             self.batch_counter += 1
             if self.pool_network==True:
@@ -992,9 +1128,15 @@ class RL:
                     if hasattr(callback, 'on_batch_begin'):
                         callback.on_batch_begin(batch, logs={})
                 if self.jit_compile==True:
-                    loss = self.distributed_train_step(next(iterator), self.optimizer)
+                    if not self.opt_p:
+                        loss = self.distributed_train_step(next(iterator), self.optimizer)
+                    else:
+                        loss = self.distributed_train_step_p(next(iterator), self.optimizer)
                 else:
-                    loss = self.distributed_train_step_(next(iterator), self.optimizer)
+                    if not self.opt_p:
+                        loss = self.distributed_train_step_(next(iterator), self.optimizer)
+                    else:
+                        loss = self.distributed_train_step_p_(next(iterator), self.optimizer)
                 total_loss += loss
                 batch_logs = {'loss': loss.numpy()}
                 for callback in self.callbacks:
@@ -1063,9 +1205,15 @@ class RL:
         
         if self.PR==True or self.HER==True or self.TRL==True:
             if self.jit_compile==True:
-                total_loss = coordinator.schedule(self.distributed_train_step, args=(next(per_worker_iterator), self.optimizer))
+                if not self.opt_p:
+                    total_loss = coordinator.schedule(self.distributed_train_step, args=(next(per_worker_iterator), self.optimizer))
+                else:
+                    total_loss = coordinator.schedule(self.distributed_train_step_p, args=(next(per_worker_iterator), self.optimizer))
             else:
-                total_loss = coordinator.schedule(self.distributed_train_step_, args=(next(per_worker_iterator), self.optimizer))
+                if not self.opt_p:
+                    total_loss = coordinator.schedule(self.distributed_train_step_, args=(next(per_worker_iterator), self.optimizer))
+                else:
+                    total_loss = coordinator.schedule(self.distributed_train_step_p_, args=(next(per_worker_iterator), self.optimizer))
             self.prioritized_replay.update()
             self.batch_counter += 1
             if self.pool_network==True:
@@ -1120,9 +1268,15 @@ class RL:
                     if hasattr(callback, 'on_batch_begin'):
                         callback.on_batch_begin(batch, logs={})
                 if self.jit_compile==True:
-                    loss = coordinator.schedule(self.distributed_train_step, args=(next(per_worker_iterator), self.optimizer))
+                    if not self.opt_p:
+                        loss = coordinator.schedule(self.distributed_train_step, args=(next(per_worker_iterator), self.optimizer))
+                    else:
+                        loss = coordinator.schedule(self.distributed_train_step_p, args=(next(per_worker_iterator), self.optimizer))
                 else:
-                    loss = coordinator.schedule(self.distributed_train_step_, args=(next(per_worker_iterator), self.optimizer))
+                    if not self.opt_p:
+                        loss = coordinator.schedule(self.distributed_train_step_, args=(next(per_worker_iterator), self.optimizer))
+                    else:
+                        loss = coordinator.schedule(self.distributed_train_step_p_, args=(next(per_worker_iterator), self.optimizer))
                 total_loss += loss
                 batch_logs = {'loss': loss.fetch()}
                 for callback in self.callbacks:
@@ -1201,9 +1355,15 @@ class RL:
                     train_ds=self.strategy.experimental_distribute_dataset(train_ds)
                     for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
                         if self.jit_compile==True:
-                            loss=self.distributed_train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.strategy)
+                            if not self.opt_p:
+                                loss=self.distributed_train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.strategy)
+                            else:
+                                loss=self.distributed_train_step_p([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.strategy)
                         else:
-                            loss=self.distributed_train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.strategy)
+                            if not self.opt_p:
+                                loss=self.distributed_train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.strategy)
+                            else:
+                                loss=self.distributed_train_step_p_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.strategy)
                         self.prioritized_replay.update()
                         total_loss+=loss
                         num_batches += 1
@@ -1279,9 +1439,15 @@ class RL:
                 elif self.distributed_flag!=True:
                     for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
                         if self.jit_compile==True:
-                            loss=self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
+                            if not self.opt_p:
+                                loss=self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
+                            else:
+                                loss=self.train_step_p([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
                         else:
-                            loss=self.train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
+                            if not self.opt_p:
+                                loss=self.train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
+                            else:
+                                loss=self.train_step_p_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
                         self.prioritized_replay.update()
                         self.batch_counter+=1
                         if self.pool_network==True:
@@ -1369,9 +1535,15 @@ class RL:
                     train_ds=self.strategy.experimental_distribute_dataset(train_ds)
                     for state_batch,action_batch,next_state_batch,reward_batch,done_batch in train_ds:
                         if self.jit_compile==True:
-                            loss=self.distributed_train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.strategy)
+                            if not self.opt_p:
+                                loss=self.distributed_train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.strategy)
+                            else:
+                                loss=self.distributed_train_step_p([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.strategy)
                         else:
-                            loss=self.distributed_train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.strategy)
+                            if not self.opt_p:
+                                loss=self.distributed_train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.strategy)
+                            else:
+                                loss=self.distributed_train_step_p_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.strategy)
                         self.prioritized_replay.update()
                         total_loss+=loss
                         num_batches += 1
@@ -1446,9 +1618,15 @@ class RL:
                         return total_loss.fetch() / num_batches
                 elif self.distributed_flag!=True:
                     if self.jit_compile==True:
-                        loss=self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
+                        if not self.opt_p:
+                            loss=self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
+                        else:
+                           loss=self.train_step_p([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer) 
                     else:
-                        loss=self.train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
+                        if not self.opt_p:
+                            loss=self.train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
+                        else:
+                            loss=self.train_step_p_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
                     self.prioritized_replay.update()
                     self.batch_counter+=1
                     if self.pool_network==True:
@@ -1536,9 +1714,15 @@ class RL:
                             if hasattr(callback, 'on_batch_begin'):
                                 callback.on_batch_begin(batch, logs={})
                         if self.jit_compile==True:
-                            loss=self.distributed_train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.strategy)
+                            if not self.opt_p:
+                                loss=self.distributed_train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.strategy)
+                            else:
+                                loss=self.distributed_train_step_p([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.strategy)
                         else:
-                            loss=self.distributed_train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.strategy)
+                            if not self.opt_p:
+                                loss=self.distributed_train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.strategy)
+                            else:
+                                loss=self.distributed_train_step_p_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],optimizer,self.strategy)
                         total_loss+=loss
                         batch_logs = {'loss': loss.numpy()}
                         for callback in self.callbacks:
@@ -1607,9 +1791,15 @@ class RL:
                         if hasattr(callback, 'on_batch_begin'):
                             callback.on_batch_begin(batch, logs={})
                     if self.jit_compile==True:
-                        loss=self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
+                        if not self.opt_p:
+                            loss=self.train_step([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
+                        else:
+                           loss=self.train_step_p([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer) 
                     else:
-                        loss=self.train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
+                        if not self.opt_p:
+                            loss=self.train_step_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
+                        else:
+                            loss=self.train_step_p_([state_batch,action_batch,next_state_batch,reward_batch,done_batch],train_loss,optimizer)
                     batch_logs = {'loss': loss.numpy()}
                     for callback in self.callbacks:
                         if hasattr(callback, 'on_batch_end'):
@@ -2102,7 +2292,7 @@ class RL:
             del self.reward_list[0]
     
     
-    def train(self, train_loss, optimizer, episodes=None, jit_compile=True, pool_network=True, processes=None, num_store=1, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, random=False, save_data=True, callbacks=None, p=None):
+    def train(self, train_loss, optimizer, episodes=None, pool_network=True, processes=None, num_store=1, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, opt_p=False, jit_compile=True, random=False, save_data=True, callbacks=None, p=None):
         avg_reward=None
         if p!=0:
             if p==None:
@@ -2121,7 +2311,6 @@ class RL:
         if self.optimizer==None:
             self.optimizer=optimizer
         self.episodes=episodes
-        self.jit_compile=jit_compile
         self.pool_network=pool_network
         self.processes=processes
         self.num_store=num_store
@@ -2132,6 +2321,11 @@ class RL:
         self.window_size_=window_size_
         self.window_size_ppo=window_size_ppo
         self.window_size_pr=window_size_pr
+        self.opt_p=opt_p
+        if opt_p:
+            manager=mp.Manager()
+            self.param=manager.list(self.param)
+        self.jit_compile=jit_compile
         self.random=random
         if self.num_updates!=None:
             self.pool_size_=self.num_updates*self.batch
@@ -2342,7 +2536,7 @@ class RL:
         return
     
     
-    def distributed_training(self, optimizer, strategy, episodes=None, num_episodes=None, jit_compile=True, pool_network=True, processes=None, num_store=1, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, random=False, save_data=True, callbacks=None, p=None):
+    def distributed_training(self, optimizer, strategy, episodes=None, num_episodes=None, pool_network=True, processes=None, num_store=1, processes_her=None, processes_pr=None, window_size=None, clearing_freq=None, window_size_=None, window_size_ppo=None, window_size_pr=None, opt_p=False, jit_compile=True, random=False, save_data=True, callbacks=None, p=None):
         avg_reward=None
         if num_episodes!=None:
             episodes=num_episodes
@@ -2364,7 +2558,6 @@ class RL:
         self.strategy=strategy
         self.episodes=episodes
         self.num_episodes=num_episodes
-        self.jit_compile=jit_compile
         self.pool_network=pool_network
         self.processes=processes
         self.num_store=num_store
@@ -2375,6 +2568,11 @@ class RL:
         self.window_size_=window_size_
         self.window_size_ppo=window_size_ppo
         self.window_size_pr=window_size_pr
+        self.opt_p=opt_p
+        if opt_p:
+            manager=mp.Manager()
+            self.param=manager.list(self.param)
+        self.jit_compile=jit_compile
         self.random=random
         if self.num_updates!=None:
             self.pool_size_=self.num_updates*self.batch
