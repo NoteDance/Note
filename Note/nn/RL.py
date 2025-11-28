@@ -936,17 +936,20 @@ class RL:
     
     @tf.function(jit_compile=True)
     def opt_jit(self, i):
-        gradients = self.tape.gradient(self.loss_, self.param[i])
+        gradients = self.tape[0].gradient(self.loss_[0], self.param[i])
         self.optimizer[i].apply_gradients(zip(gradients, self.param[i]))
     
     
     @tf.function(jit_compile=True)
     def compute_loss_jit_(self, train_loss):
-        train_loss(self.loss_)
+        train_loss(self.loss_[0])
     
     
     def train_step_p(self, train_data, train_loss, optimizer):
         self.loss_ = self.compute_loss_jit(train_data)
+        manager=mp.Manager()
+        self.loss_=manager.list([self.loss_])
+        self.tape=manager.list([self.tape])
         process_list=[]
         for i in range(len(optimizer)):
             process=mp.Process(target=self.opt_jit,args=(i))
@@ -954,8 +957,9 @@ class RL:
             process_list.append(process)
         for process in process_list:
             process.join()
+        del self.tape
         self.compute_loss_(train_loss)
-        return self.loss_
+        return self.loss_[0]
     
     
     @tf.function
@@ -968,17 +972,20 @@ class RL:
     
     @tf.function
     def opt_(self, i):
-        gradients = self.tape.gradient(self.loss_, self.param[i])
+        gradients = self.tape[0].gradient(self.loss_[0], self.param[i])
         self.optimizer[i].apply_gradients(zip(gradients, self.param[i]))
     
     
     @tf.function
     def compute_loss_(self, train_loss):
-        train_loss(self.loss_)
+        train_loss(self.loss_[0])
     
     
     def train_step_p_(self, train_data, train_loss, optimizer):
         self.loss_ = self._compute_loss(train_data)
+        manager=mp.Manager()
+        self.loss_=manager.list([self.loss_])
+        self.tape=manager.list([self.tape])
         process_list=[]
         for i in range(len(optimizer)):
             process=mp.Process(target=self.opt_,args=(i))
@@ -986,8 +993,9 @@ class RL:
             process_list.append(process)
         for process in process_list:
             process.join()
+        del self.tape
         self.compute_loss_(train_loss)
-        return self.loss_
+        return self.loss_[0]
     
     
     @tf.function(jit_compile=True)
@@ -1001,7 +1009,7 @@ class RL:
     
     
     def opt_jit_d(self, optimizer, i):
-        gradients = self.tape.gradient(self.loss_, self.param[i])
+        gradients = self.tape[0].gradient(self.loss_[0], self.param[i])
         optimizer.apply_gradients(zip(gradients, self.param[i]))
     
     
@@ -1012,6 +1020,9 @@ class RL:
 
     def distributed_train_step_p(self, dataset_inputs, optimizer, strategy):
         per_replica_losses = strategy.run(self.compute_loss_jit_d, args=(dataset_inputs))
+        manager=mp.Manager()
+        self.loss_=manager.list([self.loss_])
+        self.tape=manager.list([self.tape])
         process_list=[]
         for i in range(len(optimizer)):
             process=mp.Process(target=self.opt_jit_d_,args=(i))
@@ -1019,6 +1030,7 @@ class RL:
             process_list.append(process)
         for process in process_list:
             process.join()
+        del self.tape
         return strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses,
                              axis=None)
 
@@ -1034,7 +1046,7 @@ class RL:
     
     
     def opt_d(self, optimizer, i):
-        gradients = self.tape.gradient(self.loss_, self.param[i])
+        gradients = self.tape[0].gradient(self.loss_[0], self.param[i])
         optimizer.apply_gradients(zip(gradients, self.param[i]))
     
     
@@ -1045,6 +1057,9 @@ class RL:
 
     def distributed_train_step_p_(self, dataset_inputs, optimizer, strategy):
         per_replica_losses,acc = strategy.run(self.compute_loss_d, args=(dataset_inputs))
+        manager=mp.Manager()
+        self.loss_=manager.list([self.loss_])
+        self.tape=manager.list([self.tape])
         process_list=[]
         for i in range(len(optimizer)):
             process=mp.Process(target=self.opt_d_,args=(i))
@@ -1052,6 +1067,7 @@ class RL:
             process_list.append(process)
         for process in process_list:
             process.join()
+        del self.tape
         return strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses,
                              axis=None)
     

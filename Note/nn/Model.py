@@ -519,20 +519,23 @@ class Model:
     
     @tf.function(jit_compile=True)
     def opt_jit(self, i):
-        gradients = self.tape.gradient(self.loss_, self.param[i])
+        gradients = self.tape[0].gradient(self.loss_[0], self.param[i])
         self.optimizer[i].apply_gradients(zip(gradients, self.param[i]))
     
     
     @tf.function(jit_compile=True)
     def compute_loss_jit_(self, train_loss, labels, output, train_accuracy):
-        train_loss(self.loss_)
+        train_loss(self.loss_[0])
         if train_accuracy!=None:
             acc=train_accuracy(labels, output)
-            return self.loss_,acc
+            return self.loss_[0],acc
     
     
     def train_step_p(self, train_data, labels, loss_object, train_loss, train_accuracy, optimizer):
         self.loss_, output = self.compute_loss_jit(train_data, labels, loss_object)
+        manager=multiprocessing.Manager()
+        self.loss_=manager.list([self.loss_])
+        self.tape=manager.list([self.tape])
         process_list=[]
         for i in range(len(optimizer)):
             process=multiprocessing.Process(target=self.opt_jit,args=(i))
@@ -540,12 +543,13 @@ class Model:
             process_list.append(process)
         for process in process_list:
             process.join()
+        del self.tape
         if train_accuracy!=None:
             loss,acc = self.compute_loss_jit_(train_loss, labels, output)
             return loss,acc
         else:
             self.compute_loss_jit_(train_loss, labels, output)
-            return self.loss_,None
+            return self.loss_[0],None
     
     
     @tf.function
@@ -559,20 +563,23 @@ class Model:
     
     @tf.function
     def opt_(self, i):
-        gradients = self.tape.gradient(self.loss_, self.param[i])
+        gradients = self.tape[0].gradient(self.loss_[0], self.param[i])
         self.optimizer[i].apply_gradients(zip(gradients, self.param[i]))
     
     
     @tf.function
     def compute_loss_(self, train_loss, labels, output, train_accuracy):
-        train_loss(self.loss_)
+        train_loss(self.loss_[0])
         if train_accuracy!=None:
             acc=train_accuracy(labels, output)
-            return self.loss_,acc
+            return self.loss_[0],acc
     
     
     def train_step_p_(self, train_data, labels, loss_object, train_loss, train_accuracy, optimizer):
         self.loss_, output = self._compute_loss(train_data, labels, loss_object)
+        manager=multiprocessing.Manager()
+        self.loss_=manager.list([self.loss_])
+        self.tape=manager.list([self.tape])
         process_list=[]
         for i in range(len(optimizer)):
             process=multiprocessing.Process(target=self.opt_,args=(i))
@@ -580,12 +587,13 @@ class Model:
             process_list.append(process)
         for process in process_list:
             process.join()
+        del self.tape
         if train_accuracy!=None:
             loss,acc = self.compute_loss_(train_loss, labels, output)
             return loss,acc
         else:
             self.compute_loss_(train_loss, labels, output)
-            return self.loss_,None
+            return self.loss_[0],None
     
     
     @tf.function(jit_compile=True)
@@ -603,7 +611,7 @@ class Model:
     
     
     def opt_jit_d(self, optimizer, i):
-        gradients = self.tape.gradient(self.loss_, self.param[i])
+        gradients = self.tape[0].gradient(self.loss_, self.param[i])
         optimizer.apply_gradients(zip(gradients, self.param[i]))
     
     
@@ -614,6 +622,9 @@ class Model:
 
     def distributed_train_step_p(self, dataset_inputs, optimizer, train_accuracy, strategy):
         per_replica_losses,acc = strategy.run(self.compute_loss_jit_d, args=(dataset_inputs, train_accuracy))
+        manager=multiprocessing.Manager()
+        self.loss_=manager.list([self.loss_])
+        self.tape=manager.list([self.tape])
         process_list=[]
         for i in range(len(optimizer)):
             process=multiprocessing.Process(target=self.opt_jit_d_,args=(i))
@@ -621,6 +632,7 @@ class Model:
             process_list.append(process)
         for process in process_list:
             process.join()
+        del self.tape
         if train_accuracy!=None:
             return strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses,
                                  axis=None),acc
@@ -644,7 +656,7 @@ class Model:
     
     
     def opt_d(self, optimizer, i):
-        gradients = self.tape.gradient(self.loss_, self.param[i])
+        gradients = self.tape[0].gradient(self.loss_[0], self.param[i])
         optimizer.apply_gradients(zip(gradients, self.param[i]))
     
     
@@ -655,6 +667,9 @@ class Model:
 
     def distributed_train_step_p_(self, dataset_inputs, optimizer, train_accuracy, strategy):
         per_replica_losses,acc = strategy.run(self.compute_loss_d, args=(dataset_inputs, train_accuracy))
+        manager=multiprocessing.Manager()
+        self.loss_=manager.list([self.loss_])
+        self.tape=manager.list([self.tape])
         process_list=[]
         for i in range(len(optimizer)):
             process=multiprocessing.Process(target=self.opt_d_,args=(i))
@@ -662,6 +677,7 @@ class Model:
             process_list.append(process)
         for process in process_list:
             process.join()
+        del self.tape
         if train_accuracy!=None:
             return strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses,
                                  axis=None),acc
