@@ -35,6 +35,7 @@ class AlphaZeroCartPole(RL):
         super().__init__()
 
         self.env = gym.make(env_name)
+        self.sim_env = gym.make(env_name)
         self.state_dim = self.env.observation_space.shape[0]
         self.action_dim = self.env.action_space.n
 
@@ -70,7 +71,7 @@ class AlphaZeroCartPole(RL):
         root_node = run_mcts_search(
             node=root_node,
             root_state=s,
-            game=self.env,
+            env=self.sim_env,
             policy_network=self.net,      # The same network is used for both policy and value
             value_network=None,
             num_simulations=self.num_simulations,
