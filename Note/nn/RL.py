@@ -323,9 +323,15 @@ class RL:
                 output=self.forward_(s,i)
         else:
             if self.MARL!=True:
-                a=self.action(s)
+                if self.pool_network:
+                    a=self.action(s,p)
+                else:
+                    a=self.action(s)
             else:
-                a=self.action(s,i)
+                if self.pool_network:
+                    a=self.action(s,i)
+                else:
+                    a=self.action(s,i,p)
         if policy!=None:
             if self.IRL!=True:
                 output=output.numpy()

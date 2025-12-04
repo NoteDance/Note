@@ -191,9 +191,15 @@ class RL_pytorch:
     
     def select_action(self,s,i=None,p=None):
         if self.MARL!=True:
-            output=self.action(s)
+            if self.pool_network:
+                output=self.action(s,p)
+            else:
+                output=self.action(s)
         else:
-            output=self.action(s,i)
+            if self.pool_network:
+                output=self.action(s,i)
+            else:
+                output=self.action(s,i,p)
         if type(self.policy)==list:
             policy=self.policy[p]
         else:
