@@ -30,6 +30,7 @@ class AlphaZeroCartPole(nn.RL):
         super().__init__()
 
         self.env = [gym.make(env_name) for _ in range(processes)]
+        self.sim_env = [gym.make(env_name) for _ in range(processes)]
         self.state_dim = self.env.observation_space.shape[0]
         self.action_dim = self.env.action_space.n
 
@@ -53,7 +54,7 @@ class AlphaZeroCartPole(nn.RL):
         return [(a, probs[a]) for a in range(self.action_dim)], value
 
     # Core override: the framework calls action() to choose a move → we use MCTS
-    def action(self, s):
+    def action(self, s, p):
         """
         s: numpy array representing the current state
         Returns a torch tensor with the chosen action (int64)
@@ -65,7 +66,7 @@ class AlphaZeroCartPole(nn.RL):
         root_node = run_mcts_search(
             node=root_node,
             root_state=s,
-            game=self.env,
+            env=self.sim_env[p],
             policy_network=self.net,      # The same network is used for both policy and value
             value_network=None,
             num_simulations=self.num_simulations,
