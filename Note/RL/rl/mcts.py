@@ -150,12 +150,12 @@ class Node:
             value = -value
 
 
-def run_mcts_search(node, root_state, game, policy_network, value_network, num_simulations, c_puct):
+def run_mcts_search(node, root_state, env, policy_network, value_network, num_simulations, c_puct):
     """
     Runs an MCTS search and returns the optimized policy after "thinking".
     
     :param root_state: The current state of the game/environment (or MuZero's hidden state s0)
-    :param game: A game object with methods like .get_legal_actions() and .is_terminal()
+    :param env: A env object
     :param policy_network: f_policy(state) -> [(action, prior_p), ...]
     :param value_network: f_value(state) -> value
     :param num_simulations: The number of "thinking" iterations to run (e.g., 800)
@@ -179,6 +179,8 @@ def run_mcts_search(node, root_state, game, policy_network, value_network, num_s
     # --- Start the MCTS simulation loop ---
     for _ in range(num_simulations):
         
+        env.reset()
+        env.unwrapped.state = root_state
         node = root_node
         state = root_state
         search_path = [node] # Record the search path for backpropagation
@@ -187,7 +189,7 @@ def run_mcts_search(node, root_state, game, policy_network, value_network, num_s
         # As long as the node is expanded, keep going down
         while node.is_expanded():
             action, node = node.select_child(c_puct)
-            state, _, done, _ = game.step(action) # Simulate the environment
+            state, _, done, _ = env.step(action) # Simulate the environment
             search_path.append(node)
             
             if done:
@@ -200,8 +202,8 @@ def run_mcts_search(node, root_state, game, policy_network, value_network, num_s
         # === Step 2 & 3: Expand & Evaluate ===
         if done:
             # If it's a terminal state, the value is determined
-            if hasattr(game, 'get_game_result'):
-                value = game.get_game_result(leaf_state)
+            if hasattr(env, 'get_env_result'):
+                value = env.get_env_result(leaf_state)
             else:
                 value = 0.0
         else:
@@ -397,12 +399,12 @@ class Node_:
             value = -value
 
 
-def run_mcts_search_(node, root_state, game, policy_network, value_network, num_simulations, c_puct):
+def run_mcts_search_(node, root_state, env, policy_network, value_network, num_simulations, c_puct):
     """
     Runs an MCTS search and returns the optimized policy after "thinking".
     
     :param root_state: The current state of the game/environment (or MuZero's hidden state s0)
-    :param game: A game object with methods like .get_legal_actions() and .is_terminal()
+    :param env: A env object
     :param policy_network: f_policy(state) -> [(action, prior_p), ...]
     :param value_network: f_value(state) -> value
     :param num_simulations: The number of "thinking" iterations to run (e.g., 800)
@@ -426,6 +428,8 @@ def run_mcts_search_(node, root_state, game, policy_network, value_network, num_
     # --- Start the MCTS simulation loop ---
     for _ in range(num_simulations):
         
+        env.reset()
+        env.unwrapped.state = root_state
         node = root_node
         state = root_state
         search_path = [node] # Record the search path for backpropagation
@@ -434,7 +438,7 @@ def run_mcts_search_(node, root_state, game, policy_network, value_network, num_
         # As long as the node is expanded, keep going down
         while node.is_expanded():
             action, node = node.select_child(c_puct)
-            state, _, done, _ = game.step(action) # Simulate the environment
+            state, _, done, _ = env.step(action) # Simulate the environment
             search_path.append(node)
             
             if done:
@@ -447,8 +451,8 @@ def run_mcts_search_(node, root_state, game, policy_network, value_network, num_
         # === Step 2 & 3: Expand & Evaluate ===
         if done:
             # If it's a terminal state, the value is determined
-            if hasattr(game, 'get_game_result'):
-                value = game.get_game_result(leaf_state)
+            if hasattr(env, 'get_env_result'):
+                value = env.get_env_result(leaf_state)
             else:
                 value = 0.0
         else:
