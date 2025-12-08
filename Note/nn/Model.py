@@ -987,7 +987,7 @@ class Model:
         self.batches=train_ds.cardinality().numpy()
         self.loss_object=loss_object
         self.train_loss=train_loss
-        if self.optimizer==None:
+        if optimizer!=None:
             self.optimizer=optimizer
         self.epochs=epochs
         self.train_accuracy=train_accuracy
@@ -1001,6 +1001,7 @@ class Model:
         if opt_p:
             manager=mp.Manager()
             self.param=manager.list(self.param)
+            self.optimizer=manager.list(self.optimizer)
         self.jit_compile=jit_compile
         self.p=p
         self.info_flag=0
@@ -1289,7 +1290,7 @@ class Model:
         self.global_batch_size=global_batch_size
         self.batch_size_old=global_batch_size
         self.batches=train_dataset.cardinality().numpy()
-        if self.optimizer==None:
+        if optimizer!=None:
             self.optimizer=optimizer
         self.strategy=strategy
         self.epochs=epochs
@@ -1304,6 +1305,7 @@ class Model:
         if opt_p:
             manager=multiprocessing.Manager()
             self.param=manager.list(self.param)
+            self.optimizer=manager.list(self.optimizer)
         self.jit_compile=jit_compile
         self.p=p
         self.info_flag=1
