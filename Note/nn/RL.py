@@ -894,7 +894,8 @@ class RL:
             gradients = tape.gradient(loss, self.param)
             optimizer.apply_gradients(zip(gradients, self.param))
             if self.parallel_store_and_training:
-                self.share_trainable_variables[7] = optimizer._trainable_variables
+                if self.share_trainable_variables[7] is None:
+                    self.share_trainable_variables[7] = optimizer._trainable_variables
                 state_dict = dict()
                 optimizer.save_own_variables(state_dict)
                 self.share_opt_variables[7] = state_dict
@@ -903,7 +904,8 @@ class RL:
                 gradients = tape.gradient(loss, self.param[i])
                 optimizer[i].apply_gradients(zip(gradients, self.param[i]))
                 if self.parallel_store_and_training:
-                    self.share_trainable_variables[7][i] = optimizer[i]._trainable_variables
+                    if self.share_trainable_variables[7][i] is None:
+                        self.share_trainable_variables[7][i] = optimizer[i]._trainable_variables
                     state_dict = dict()
                     optimizer[i].save_own_variables(state_dict)
                     self.share_opt_variables[7][i] = state_dict
@@ -919,7 +921,8 @@ class RL:
             gradients = tape.gradient(loss, self.param)
             optimizer.apply_gradients(zip(gradients, self.param))
             if self.parallel_store_and_training:
-                self.share_trainable_variables[7] = optimizer._trainable_variables
+                if self.share_trainable_variables[7] is None:
+                    self.share_trainable_variables[7] = optimizer._trainable_variables
                 state_dict = dict()
                 optimizer.save_own_variables(state_dict)
                 self.share_opt_variables[7] = state_dict
@@ -928,7 +931,8 @@ class RL:
                 gradients = tape.gradient(loss, self.param[i])
                 optimizer[i].apply_gradients(zip(gradients, self.param[i]))
                 if self.parallel_store_and_training:
-                    self.share_trainable_variables[7][i] = optimizer[i]._trainable_variables
+                    if self.share_trainable_variables[7][i] is None:
+                        self.share_trainable_variables[7][i] = optimizer[i]._trainable_variables
                     state_dict = dict()
                     optimizer[i].save_own_variables(state_dict)
                     self.share_opt_variables[7][i] = state_dict
@@ -944,7 +948,8 @@ class RL:
             gradients = tape.gradient(loss, self.param)
             optimizer.apply_gradients(zip(gradients, self.param))
             if self.parallel_store_and_training:
-                self.share_trainable_variables[7] = optimizer._trainable_variables
+                if self.share_trainable_variables[7] is None:
+                    self.share_trainable_variables[7] = optimizer._trainable_variables
                 state_dict = dict()
                 optimizer.save_own_variables(state_dict)
                 self.share_opt_variables[7] = state_dict
@@ -953,7 +958,8 @@ class RL:
                 gradients = tape.gradient(loss, self.param[i])
                 optimizer[i].apply_gradients(zip(gradients, self.param[i]))
                 if self.parallel_store_and_training:
-                    self.share_trainable_variables[7][i] = optimizer[i]._trainable_variables
+                    if self.share_trainable_variables[7][i] is None:
+                        self.share_trainable_variables[7][i] = optimizer[i]._trainable_variables
                     state_dict = dict()
                     optimizer[i].save_own_variables(state_dict)
                     self.share_opt_variables[7][i] = state_dict
