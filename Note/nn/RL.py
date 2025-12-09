@@ -782,6 +782,21 @@ class RL:
             next_state_pool=self.share_next_state_pool[7]
             reward_pool=self.share_reward_pool[7]
             done_pool=self.share_done_pool[7]
+            length=len(self.done_pool[7])
+            if self.PPO:
+                TD_length=len(self.share_TD[7])
+                ratio_length=len(self.share_ration[7])
+                length=min(length,TD_length,ratio_length)
+            else:
+                TD_length=len(self.share_TD[7])
+                length=min(length,TD_length)
+            state_pool=self.share_state_pool[7][:length]
+            action_pool=self.share_action_pool[7][:length]
+            next_state_pool=self.share_next_state_pool[7][:length]
+            reward_pool=self.share_reward_pool[7][:length]
+            done_pool=self.share_done_pool[7][:length]
+            self.prioritized_replay.TD=self.share_TD[7][:length]
+            self.prioritized_replay.ratio=self.share_ratio[7][:length]
         if self.PR:
             if self.processes_pr!=None:
                 process_list=[]
@@ -1647,7 +1662,8 @@ class RL:
                     if not self.parallel_store_and_training:
                         train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).batch(self.batch)
                     else:
-                        train_ds=tf.data.Dataset.from_tensor_slices((self.share_state_pool[7],self.share_action_pool[7],self.share_next_state_pool[7],self.share_reward_pool[7],self.share_done_pool[7])).batch(self.batch)
+                        length=len(self.share_done_pool[7])
+                        train_ds=tf.data.Dataset.from_tensor_slices((self.share_state_pool[7][:length],self.share_action_pool[7][:length],self.share_next_state_pool[7][:length],self.share_reward_pool[7][:length],self.share_done_pool[7][:length])).batch(self.batch)
                 else:
                     if self.num_updates!=None:
                         train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).batch(self.batch)
@@ -1727,7 +1743,8 @@ class RL:
                     if not self.parallel_store_and_training:
                         train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).batch(self.batch)
                     else:
-                        train_ds=tf.data.Dataset.from_tensor_slices((self.share_state_pool[7],self.share_action_pool[7],self.share_next_state_pool[7],self.share_reward_pool[7],self.share_done_pool[7])).batch(self.batch)
+                        length=len(self.share_done_pool[7])
+                        train_ds=tf.data.Dataset.from_tensor_slices((self.share_state_pool[7][:length],self.share_action_pool[7][:length],self.share_next_state_pool[7][:length],self.share_reward_pool[7][:length],self.share_done_pool[7][:length])).batch(self.batch)
                 else:
                     if self.num_updates!=None:
                         train_ds=tf.data.Dataset.from_tensor_slices((self.state_pool,self.action_pool,self.next_state_pool,self.reward_pool,self.done_pool)).batch(self.batch)
@@ -2244,10 +2261,17 @@ class RL:
         self.initialize_adjusting()
         if self.PR==True:
             if self.PPO:
-                self.prioritized_replay.ratio=np.concat(self.ratio_list, axis=0)
-                self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
+                if not self.parallel_store_and_training:
+                    self.prioritized_replay.ratio=np.concat(self.ratio_list, axis=0)
+                    self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
+                else:
+                    self.share_ratio=np.concat(self.ratio_list, axis=0)
+                    self.share_TD=np.concat(self.TD_list, axis=0)
             else:
-                self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
+                if not self.parallel_store_and_training:
+                    self.prioritized_replay.TD=np.concat(self.TD_list, axis=0)
+                else:
+                    self.share_TD=np.concat(self.TD_list, axis=0)
             if hasattr(self, 'adjust_func') and len(self.state_pool)>=self.pool_size_:
                 self.ess=self.compute_ess(None,None)
                 self.prepare_flag=True
@@ -2293,6 +2317,11 @@ class RL:
             self.share_trainable_variables=manager.dict()
             self.share_opt_config=manager.dict()
             self.share_opt_variables=manager.dict()
+            if self.PR and self.PPO:
+                self.share_TD=manager.dict()
+                self.share_ratio=manager.dict()
+            elif self.PR:
+                self.share_TD=manager.dict()
             if type(self.optimizer)==list:
                 self.share_opt_class[7]=[opt.__class__ for opt in self.optimizer]
                 self.share_trainable_variables[7]=[None for _ in self.optimizer]
@@ -2415,6 +2444,9 @@ class RL:
                         process_list=[]
                         process=mp.Process(target=self.prepare,args=(lock_list,lock_list_))
                         process.start()
+                        while True:
+                            if self.share_done_pool[7]>=self.batch:
+                                break
                         process_list.append(process)
                         process=mp.Process(target=self.train1,args=(lock_list_))
                         process.start()
@@ -2482,6 +2514,9 @@ class RL:
                         process_list=[]
                         process=mp.Process(target=self.prepare,args=(lock_list,lock_list_))
                         process.start()
+                        while True:
+                            if self.share_done_pool[7]>=self.batch:
+                                break
                         process_list.append(process)
                         process=mp.Process(target=self.train1,args=(lock_list_))
                         process.start()
@@ -2584,6 +2619,11 @@ class RL:
             self.share_trainable_variables=manager.dict()
             self.share_opt_config=manager.dict()
             self.share_opt_variables=manager.dict()
+            if self.PR and self.PPO:
+                self.share_TD=manager.dict()
+                self.share_ratio=manager.dict()
+            elif self.PR:
+                self.share_TD=manager.dict()
             if type(self.optimizer)==list:
                 self.share_opt_class[7]=[opt.__class__ for opt in self.optimizer]
                 self.share_trainable_variables[7]=[None for _ in self.optimizer]
@@ -2709,6 +2749,9 @@ class RL:
                             process_list=[]
                             process=mp.Process(target=self.prepare,args=(lock_list,lock_list_))
                             process.start()
+                            while True:
+                                if self.share_done_pool[7]>=self.batch:
+                                    break
                             process_list.append(process)
                             process=mp.Process(target=self.train1,args=(lock_list_))
                             process.start()
@@ -2775,6 +2818,9 @@ class RL:
                             process_list=[]
                             process=mp.Process(target=self.prepare,args=(lock_list,lock_list_))
                             process.start()
+                            while True:
+                                if self.share_done_pool[7]>=self.batch:
+                                    break
                             process_list.append(process)
                             process=mp.Process(target=self.train1,args=(lock_list_))
                             process.start()
@@ -2844,6 +2890,9 @@ class RL:
                             process_list=[]
                             process=mp.Process(target=self.prepare,args=(lock_list,lock_list_))
                             process.start()
+                            while True:
+                                if self.share_done_pool[7]>=self.batch:
+                                    break
                             process_list.append(process)
                             process=mp.Process(target=self.train1,args=(lock_list_))
                             process.start()
@@ -2918,6 +2967,9 @@ class RL:
                             process_list=[]
                             process=mp.Process(target=self.prepare,args=(lock_list,lock_list_))
                             process.start()
+                            while True:
+                                if self.share_done_pool[7]>=self.batch:
+                                    break
                             process_list.append(process)
                             process=mp.Process(target=self.train1,args=(lock_list_))
                             process.start()
@@ -2990,6 +3042,9 @@ class RL:
                             process_list=[]
                             process=mp.Process(target=self.prepare,args=(lock_list,lock_list_))
                             process.start()
+                            while True:
+                                if self.share_done_pool[7]>=self.batch:
+                                    break
                             process_list.append(process)
                             process=mp.Process(target=self.train1,args=(lock_list_))
                             process.start()
