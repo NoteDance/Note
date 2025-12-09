@@ -1240,13 +1240,21 @@ class RL:
             if type(self.optimizer)==list:
                 optimizer=[]
                 for i in range(len(self.optimizer)):
-                    optimizer.append(self.share_opt_class[7][i]())
+                    if self.strategy is not None:
+                        with self.strategy.scope():
+                            optimizer.append(self.share_opt_class[7][i]())
+                    else:
+                        optimizer.append(self.share_opt_class[7][i]())
                     optimizer.from_config(self.share_opt.config[7][i])
                     if self.share_trainable_variables[7][i] is not None:
                         optimizer.build(self.share_trainable_variables[7][i])
                         optimizer.load_own_variables(self.share_opt_variables[7][i])
             else:
-                optimizer = self.share_opt_class[7]()
+                if self.strategy is not None:
+                    with self.strategy.scope():
+                        optimizer = self.share_opt_class[7]()
+                else:
+                    optimizer = self.share_opt_class[7]()
                 optimizer.from_config(self.share_opt.config[7])
                 if self.share_trainable_variables[7] is not None:
                     optimizer.build(self.share_trainable_variables[7])
